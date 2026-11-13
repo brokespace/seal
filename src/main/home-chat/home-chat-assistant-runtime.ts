@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { HomeChatMachineNote } from '../../shared/home-chat/home-chat-memory-types'
 import type { HomeChatNoticeSource } from '../../shared/home-chat/home-chat-types'
@@ -85,6 +86,7 @@ export function createHomeChatAssistantRuntime(
     services,
     machines,
     load: async () => {
+      await mkdir(deps.rootDir, { recursive: true })
       await memory.load()
       await Promise.all([jobs.load(), subagents.load(), routines.load()])
     },

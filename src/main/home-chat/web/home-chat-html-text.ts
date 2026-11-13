@@ -40,7 +40,7 @@ export function htmlToText(html: string): { title: string | null; text: string }
   const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
   const body = html
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<(script|style|noscript|svg|head|template|iframe)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(script|style|noscript|svg|head|title|template|iframe)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<(nav|footer)\b[\s\S]*?<\/\1>/gi, '')
     .replace(
       /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
