@@ -54,12 +54,12 @@ export function pickSealLaunch(
 
 export function recordSealSession(
   manager: SealAccountManager,
-  assignment: Omit<SealSessionAssignment, 'id' | 'at' | 'machineKey'>
+  assignment: Omit<SealSessionAssignment, 'id' | 'at' | 'machineKey'> & { id?: string }
 ): void {
   manager.store.updateState((next) => {
     next.sessions.push({
       ...assignment,
-      id: randomUUID(),
+      id: assignment.id ?? randomUUID(),
       at: manager.now(),
       machineKey: next.machineKey
     })

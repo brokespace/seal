@@ -607,6 +607,8 @@ import { ClientCapabilitiesUpdate } from './runtime-client-capabilities-params'
 import {
   SealAccountsAddApiKeyParams,
   SealAccountsApplyFleetConfigParams,
+  SealAccountsCredentialFreshnessParams,
+  SealAccountsExportCredentialParams,
   SealAccountsImportCredentialParams,
   SealAccountsPickParams,
   SealAccountsPinWorkspaceParams,
@@ -615,8 +617,10 @@ import {
   SealAccountsSetConfigParams,
   SealAccountsSetPolicyParams,
   SealAccountsSetProfileParams,
+  SealAccountsSetSessionLiveSwapParams,
   SealAccountsStatusParams,
   SealAccountsSwapParams,
+  SealAccountsSwapSessionParams,
   SealAccountsSyncFleetParams
 } from './seal-accounts-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
@@ -1521,6 +1525,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'runtimeEnvironment.wakeRecipeVm': RecipeVmWakeParams,
   'seal.accounts.addApiKey': SealAccountsAddApiKeyParams,
   'seal.accounts.applyFleetConfig': SealAccountsApplyFleetConfigParams,
+  'seal.accounts.credentialFreshness': SealAccountsCredentialFreshnessParams,
+  'seal.accounts.exportCredential': SealAccountsExportCredentialParams,
   'seal.accounts.importCredential': SealAccountsImportCredentialParams,
   'seal.accounts.pick': SealAccountsPickParams,
   'seal.accounts.pinWorkspace': SealAccountsPinWorkspaceParams,
@@ -1529,8 +1535,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'seal.accounts.setConfig': SealAccountsSetConfigParams,
   'seal.accounts.setPolicy': SealAccountsSetPolicyParams,
   'seal.accounts.setProfile': SealAccountsSetProfileParams,
+  'seal.accounts.setSessionLiveSwap': SealAccountsSetSessionLiveSwapParams,
   'seal.accounts.status': SealAccountsStatusParams,
   'seal.accounts.swap': SealAccountsSwapParams,
+  'seal.accounts.swapSession': SealAccountsSwapSessionParams,
   'seal.accounts.syncFleet': SealAccountsSyncFleetParams,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,

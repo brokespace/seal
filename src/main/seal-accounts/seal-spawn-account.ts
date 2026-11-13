@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
@@ -13,11 +14,15 @@ import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-au
 import { getSealAccountManager, type SealAccountManager } from './seal-account-manager'
 import { pinClaudeLaunch } from './seal-claude-launch-pin'
 import { pickSealLaunch, recordSealSession, sealProjectIdentity } from './seal-launch-pick-context'
+import { canIsolateSession, launchInSessionHome } from './seal-session-launch'
+import { ptySpawnPaneFromIds } from '../ipc/pty/spawn-pane-env'
+import { sessionLiveSwapEnabled } from '../../shared/seal-accounts/seal-session-swap-decision'
 
 export type SealSpawnAccountInput = {
   env: Record<string, string> | undefined
   worktreeId?: string
   tabId?: string
+  leafId?: string
   launchAgent?: TuiAgent
   isClaudeLaunch: boolean
   claudeAuth: ClaudeRuntimeAuthPreparation | null
@@ -77,16 +82,54 @@ async function routeTo(
   return { env: pin.env, claudeAuth: isClaudeLaunch ? pin.preparation : current.claudeAuth }
 }
 
-function assignmentLabel(
+function launchedAccount(
   pick: SealLaunchPick,
   manager: SealAccountManager,
   provider: SealProvider
-) {
+): SealAccountCandidate | null {
   if (pick.kind === 'account') {
-    return { key: pick.candidate.key, label: pick.candidate.label }
+    return pick.candidate
   }
-  const selected = manager.candidates(provider).find((candidate) => candidate.active)
-  return { key: selected?.key ?? null, label: selected?.label ?? 'System default' }
+  return manager.candidates(provider).find((candidate) => candidate.active) ?? null
+}
+
+/** A session gets its own login copy when live swaps are on, so Seal can move it later. */
+async function isolateSession(
+  manager: SealAccountManager,
+  provider: SealProvider,
+  account: SealAccountCandidate | null,
+  sessionId: string,
+  applied: Applied,
+  isClaudeLaunch: boolean
+): Promise<{ applied: Applied; profileHome: string | null }> {
+  const settings = manager.getConfig().autoSwap[provider]
+  if (
+    !account ||
+    !sessionLiveSwapEnabled(settings, 'inherit') ||
+    !canIsolateSession(manager, provider, account)
+  ) {
+    return { applied, profileHome: null }
+  }
+  try {
+    const launch = await launchInSessionHome(manager, {
+      provider,
+      candidate: account,
+      sessionId,
+      env: applied.env,
+      claudeAuth: applied.claudeAuth,
+      isClaudeLaunch
+    })
+    return {
+      applied: { env: launch.env, claudeAuth: launch.claudeAuth },
+      profileHome: launch.profileHome
+    }
+  } catch (error) {
+    console.warn(
+      '[seal-accounts] Session runs on the shared login; live swap needs a resume:',
+      error
+    )
+    return { applied, profileHome: null }
+  }
 }
 
 /**
@@ -137,17 +180,31 @@ export async function applySealSpawnAccount(
     if (!launched) {
       continue
     }
-    const account = assignmentLabel(pick, manager, provider)
-    if (account.key) {
+    const account = launchedAccount(pick, manager, provider)
+    const sessionId = randomUUID()
+    const isolated = await isolateSession(
+      manager,
+      provider,
+      account,
+      sessionId,
+      applied,
+      input.isClaudeLaunch
+    )
+    applied = isolated.applied
+    changed ||= isolated.profileHome !== null
+    if (account) {
       applied.env[SEAL_ACCOUNT_KEY_ENV] = account.key
       applied.env[SEAL_ACCOUNT_LABEL_ENV] = account.label
       changed = true
     }
     const project = sealProjectIdentity(manager, input.worktreeId)
     recordSealSession(manager, {
+      id: sessionId,
       provider,
-      accountKey: account.key,
-      accountLabel: account.label,
+      accountKey: account?.key ?? null,
+      accountLabel: account?.label ?? 'System default',
+      paneKey: ptySpawnPaneFromIds(input)?.paneKey ?? null,
+      profileHome: isolated.profileHome,
       reason: pick.kind === 'account' ? pick.reason : 'host-selection',
       worktreeId: input.worktreeId ?? null,
       tabId: input.tabId ?? null,
@@ -162,6 +219,7 @@ type PreflightArgs = {
   env?: Record<string, string>
   worktreeId?: string
   tabId?: string
+  leafId?: string
   launchAgent?: TuiAgent
   command?: string
   connectionId?: string | null
@@ -185,6 +243,7 @@ export async function routeSealSpawnAccount(
     env: args.env,
     worktreeId: args.worktreeId,
     tabId: args.tabId,
+    leafId: args.leafId,
     launchAgent: args.launchAgent,
     isClaudeLaunch: ctx.isClaudeLaunch,
     claudeAuth: ctx.claudeAuth,

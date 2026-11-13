@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { writeSecureJsonFile } from '../../shared/secure-storage/secure-file'
 import {
   parseSealAccountsConfig,
+  type SealAccountKey,
   type SealAccountsConfig,
   type SealProvider
 } from '../../shared/seal-accounts/seal-accounts-config'
@@ -25,6 +26,8 @@ export type SealAccountsLocalState = {
   swapLog: SealSwapEvent[]
   sessions: SealSessionAssignment[]
   workspacePins: SealWorkspacePins
+  /** Logins that also live on other machines: environment id (or `desktop`) → account keys. */
+  fleetCopies: Record<string, SealAccountKey[]>
 }
 
 const LocalStateSchema = z.object({
@@ -33,7 +36,8 @@ const LocalStateSchema = z.object({
   lastSwapAt: z.record(z.string(), z.number()).catch({}),
   swapLog: z.array(z.any()).catch([]),
   sessions: z.array(z.any()).catch([]),
-  workspacePins: z.record(z.string(), z.record(z.string(), z.string())).catch({})
+  workspacePins: z.record(z.string(), z.record(z.string(), z.string())).catch({}),
+  fleetCopies: z.record(z.string(), z.array(z.string())).catch({})
 })
 
 function emptyLocalState(): SealAccountsLocalState {
@@ -43,7 +47,8 @@ function emptyLocalState(): SealAccountsLocalState {
     lastSwapAt: {},
     swapLog: [],
     sessions: [],
-    workspacePins: {}
+    workspacePins: {},
+    fleetCopies: {}
   }
 }
 

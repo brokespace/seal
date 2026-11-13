@@ -1,16 +1,19 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir, userInfo } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { writeSecureFile } from '../../shared/secure-storage/secure-file'
 import type { SealAccountsImportCredential } from '../../shared/rpc-contract/seal-accounts-params'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import { sealAccountKeysMatch, oauthAccountKey } from '../../shared/seal-accounts/seal-account-key'
-import {
-  claudeKeychainService,
-  readActiveClaudeKeychainCredentialsStrict
-} from '../claude-accounts/runtime-auth/keychain'
 import { claudeStateFile } from '../claude-accounts/sign-in/claude-account-folder'
-import { execSecurityCommand } from '../macos-keychain/generic-password'
+import { credentialFreshness } from '../../shared/seal-accounts/seal-credential-freshness'
+import { withClaudeConfigLocks } from './seal-claude-config-lock'
+import {
+  readClaudeHomeCredentials,
+  writeClaudeHomeCredentials,
+  writeClaudeOAuthAccount
+} from './seal-claude-home-credentials'
+import { reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
 import { getSystemCodexHomePath } from '../codex/configuration/homes/codex-home-paths'
 import type { ProviderAccountServices } from '../providers/accounts/provider-account-services'
 import type { SealAccountManager } from './seal-account-manager'
@@ -35,22 +38,6 @@ async function readOptionalFile(path: string): Promise<string | null> {
   return readFile(path, 'utf8').catch(() => null)
 }
 
-async function readClaudeCredentialsJson(configDir: string, isSystem: boolean): Promise<string> {
-  if (process.platform === 'darwin') {
-    const fromKeychain = await readActiveClaudeKeychainCredentialsStrict(
-      isSystem ? undefined : configDir
-    )
-    if (fromKeychain) {
-      return fromKeychain
-    }
-  }
-  const fromFile = await readOptionalFile(join(configDir, '.credentials.json'))
-  if (fromFile !== null) {
-    return fromFile
-  }
-  throw new Error('No Claude credentials were found for this account on this machine.')
-}
-
 /** The login a remote host needs to run this Claude account; never logged or persisted by Seal. */
 export async function exportClaudeCredential(
   services: Pick<ProviderAccountServices, 'claudeRuntimeAuth'>,
@@ -73,7 +60,7 @@ export async function exportClaudeCredential(
       typeof account.organizationUuid === 'string' ? account.organizationUuid : null,
     organizationName:
       typeof account.organizationName === 'string' ? account.organizationName : null,
-    credentialsJson: await readClaudeCredentialsJson(configDir, isSystem),
+    credentialsJson: await requireClaudeCredentials(configDir, isSystem),
     oauthAccountJson: JSON.stringify(account)
   }
 }
@@ -91,28 +78,27 @@ export async function exportCodexCredential(
   return { provider: 'codex', authJson }
 }
 
-async function writeMacKeychainCredential(
-  configDir: string,
-  credentialsJson: string
-): Promise<void> {
-  const user = process.env.USER || userInfo().username
-  await execSecurityCommand([
-    'add-generic-password',
-    '-U',
-    '-s',
-    claudeKeychainService(configDir),
-    '-a',
-    user,
-    '-w',
-    credentialsJson
-  ]).catch(() => {
-    throw new Error('Could not save the Claude login to this Mac’s keychain.')
-  })
+async function requireClaudeCredentials(configDir: string, system: boolean): Promise<string> {
+  const json = await readClaudeHomeCredentials(configDir, { system })
+  if (json === null) {
+    throw new Error('No Claude credentials were found for this account on this machine.')
+  }
+  return json
+}
+
+/** Whether a pushed copy is newer than the one here; an older push must not undo a refresh. */
+function isNewer(provider: 'claude' | 'codex', incoming: string, local: string | null): boolean {
+  if (local === null) {
+    return true
+  }
+  return (
+    (credentialFreshness(provider, incoming) ?? -1) > (credentialFreshness(provider, local) ?? -1)
+  )
 }
 
 /** Saves a Claude login pushed from the managing desktop as a managed account on this host. */
 export async function importClaudeCredential(
-  services: Pick<ProviderAccountServices, 'claudeAccounts'>,
+  services: Pick<ProviderAccountServices, 'claudeAccounts' | 'claudeRuntimeAuth'>,
   credential: ClaudeCredential
 ): Promise<string> {
   const wanted = oauthAccountKey('claude', credential.email, credential.organizationUuid)
@@ -126,6 +112,30 @@ export async function importClaudeCredential(
           wanted
         )
     )
+  const existingHome =
+    existing && services.claudeRuntimeAuth.router.accountLogin(existing.id)
+      ? services.claudeRuntimeAuth.router.accountHome(existing.id)
+      : null
+  if (existing && existingHome) {
+    JSON.parse(credential.credentialsJson)
+    const oauthAccount: unknown = JSON.parse(credential.oauthAccountJson)
+    await withClaudeConfigLocks([existingHome], async () => {
+      if (
+        !isNewer(
+          'claude',
+          credential.credentialsJson,
+          await readClaudeHomeCredentials(existingHome)
+        )
+      ) {
+        return
+      }
+      if (isRecord(oauthAccount)) {
+        await writeClaudeOAuthAccount(existingHome, oauthAccount)
+      }
+      await writeClaudeHomeCredentials(existingHome, credential.credentialsJson)
+    })
+    return existing.id
+  }
   const signIn = await services.claudeAccounts.beginSignIn(
     existing ? { accountId: existing.id } : { runtime: 'host' }
   )
@@ -135,10 +145,7 @@ export async function importClaudeCredential(
     const statePath = claudeStateFile(signIn.configDir)
     const state = (await readJsonObject(statePath)) ?? {}
     writeSecureFile(statePath, JSON.stringify({ ...state, oauthAccount }, null, 2))
-    writeSecureFile(join(signIn.configDir, '.credentials.json'), credential.credentialsJson)
-    if (process.platform === 'darwin') {
-      await writeMacKeychainCredential(signIn.configDir, credential.credentialsJson)
-    }
+    await writeClaudeHomeCredentials(signIn.configDir, credential.credentialsJson)
     await services.claudeAccounts.finishSignIn({ accountId: signIn.accountId, runtime: 'host' })
     return signIn.accountId
   } catch (error) {
@@ -199,7 +206,10 @@ export async function importCodexCredential(
     : undefined
   const existingHome = existing ? managedHome(existing.id) : null
   if (existingHome) {
-    writeSecureFile(join(existingHome, 'auth.json'), credential.authJson)
+    const local = await readOptionalFile(join(existingHome, 'auth.json'))
+    if (isNewer('codex', credential.authJson, local)) {
+      writeSecureFile(join(existingHome, 'auth.json'), credential.authJson)
+    }
     return
   }
   const staging = await mkdtemp(join(tmpdir(), 'seal-codex-'))
@@ -211,12 +221,41 @@ export async function importCodexCredential(
   }
 }
 
+/** The account key a pushed login belongs to. */
+export function importedCredentialKey(credential: SealAccountsImportCredential): string | null {
+  if (credential.provider === 'claude') {
+    return oauthAccountKey('claude', credential.email, credential.organizationUuid)
+  }
+  const identity = codexIdentity(credential.authJson)
+  return identity.email ? oauthAccountKey('codex', identity.email, identity.workspace) : null
+}
+
 export async function importSealCredential(
-  manager: Pick<SealAccountManager, 'services' | 'codexHome' | 'refreshUsage'>,
+  manager: Pick<
+    SealAccountManager,
+    'services' | 'codexHome' | 'refreshUsage' | 'candidates' | 'store' | 'now' | 'machineKey'
+  >,
   credential: SealAccountsImportCredential
 ): Promise<void> {
   await (credential.provider === 'claude'
     ? importClaudeCredential(manager.services, credential)
     : importCodexCredential(manager.services, credential, (id) => manager.codexHome(id)))
+  // Running sessions on this login take the new copy too.
+  const key = importedCredentialKey(credential)
+  const candidate = key
+    ? manager
+        .candidates(credential.provider)
+        .find((entry) => entry.localId && sealAccountKeysMatch(entry.key, key))
+    : undefined
+  if (candidate?.localId) {
+    const args = { accountId: candidate.localId, accountKey: candidate.key }
+    await (
+      credential.provider === 'claude'
+        ? reconcileClaudeLogin(manager, args)
+        : reconcileCodexLogin(manager, args)
+    ).catch((error: unknown) =>
+      console.warn('[seal-accounts] Could not update session logins:', error)
+    )
+  }
   await manager.refreshUsage().catch(() => {})
 }

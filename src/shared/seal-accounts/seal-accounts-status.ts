@@ -12,6 +12,22 @@ export type SealSwapEvent = {
   reason: SealSwapReason | 'manual'
 }
 
+export type SealSessionLiveSwapMode = 'inherit' | 'on' | 'off'
+
+/** How a running session took a new account: credentials rewritten live, or a resume on it. */
+export type SealSessionSwapDelivery = 'live' | 'resume' | 'failed'
+
+export type SealSessionSwapEntry = {
+  at: number
+  from: SealAccountKey | null
+  fromLabel: string
+  to: SealAccountKey
+  toLabel: string
+  reason: SealSwapReason | 'manual'
+  delivery: SealSessionSwapDelivery
+  note?: string
+}
+
 /** Which account one launched session runs on; recorded when the launch picks it. */
 export type SealSessionAssignment = {
   id: string
@@ -25,6 +41,16 @@ export type SealSessionAssignment = {
   projectLabel: string | null
   machineKey: string
   warnings: string[]
+  /** The terminal pane the session runs in (`tabId:leafId`). */
+  paneKey?: string | null
+  /** The session's own Claude config dir or CODEX_HOME, which a live swap rewrites. */
+  profileHome?: string | null
+  liveSwap?: SealSessionLiveSwapMode
+  history?: SealSessionSwapEntry[]
+  lastSwapAt?: number | null
+  /** When its pane was last seen open, and first seen gone (cleared if it comes back). */
+  lastSeenAt?: number | null
+  endedAt?: number | null
 }
 
 export type SealQuarantineEntry = { until: number; reason: string }

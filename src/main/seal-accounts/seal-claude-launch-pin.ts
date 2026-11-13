@@ -88,22 +88,32 @@ export async function pinClaudeLaunch(args: {
       throw new Error('This Claude account is not signed in on this machine.')
     }
   }
-  const pointer = sealPinnedPointerPath(dataRoot, accountId)
-  await writePointer(pointer, home)
+  return pinClaudeLaunchToHome({ dataRoot, pin: accountId, home, env: args.env })
+}
+
+/** Route one launch to a prepared Claude config dir through its own pointer file. */
+export async function pinClaudeLaunchToHome(args: {
+  dataRoot: string
+  pin: string
+  home: string
+  env: Record<string, string>
+}): Promise<SealClaudePin> {
+  const pointer = sealPinnedPointerPath(args.dataRoot, args.pin)
+  await writePointer(pointer, args.home)
   const envPatch = {
     [CLAUDE_PROFILE_POINTER_ENV]: pointer,
-    CLAUDE_CONFIG_DIR: home,
-    [CLAUDE_INJECTED_CONFIG_DIR_ENV]: home
+    CLAUDE_CONFIG_DIR: args.home,
+    [CLAUDE_INJECTED_CONFIG_DIR_ENV]: args.home
   }
   return {
     env: { ...args.env, ...envPatch },
     preparation: {
-      configDir: home,
+      configDir: args.home,
       runtime: 'host',
       wslDistro: null,
       wslLinuxConfigDir: null,
       envPatch,
-      provenance: `seal:${accountId}`
+      provenance: `seal:${args.pin}`
     }
   }
 }

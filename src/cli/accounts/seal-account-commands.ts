@@ -138,7 +138,8 @@ function autoSwapPatch(ctx: HandlerContext): Partial<SealAutoSwapSettings> {
     ['quarantineMinutes', getOptionalNumberFlag(ctx.flags, 'quarantine')],
     ['failoverOnAuthError', onOff(ctx, 'failover')],
     ['respectModelLimits', onOff(ctx, 'model-limits')],
-    ['apiKeyFallback', onOff(ctx, 'api-key-fallback')]
+    ['apiKeyFallback', onOff(ctx, 'api-key-fallback')],
+    ['liveSessionSwap', onOff(ctx, 'live-sessions')]
   ]
   return Object.fromEntries(entries.filter(([, value]) => value !== undefined))
 }

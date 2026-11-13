@@ -77,7 +77,7 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
     path: ['account', 'autoswap'],
     summary: 'Show or change auto-swap rules for an agent',
     usage:
-      'orca account autoswap --agent claude|codex [--enabled on|off] [--strategy best|weekly-first|consume-first|priority] [--session-threshold <pct>] [--weekly-threshold <pct>] [--hysteresis <pct>] [--cooldown <minutes>] [--quarantine <minutes>] [--failover on|off] [--model-limits on|off] [--api-key-fallback on|off] [--json]',
+      'orca account autoswap --agent claude|codex [--enabled on|off] [--strategy best|weekly-first|consume-first|priority] [--session-threshold <pct>] [--weekly-threshold <pct>] [--hysteresis <pct>] [--cooldown <minutes>] [--quarantine <minutes>] [--failover on|off] [--model-limits on|off] [--api-key-fallback on|off] [--live-sessions on|off] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'agent',
@@ -90,11 +90,13 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
       'quarantine',
       'failover',
       'model-limits',
-      'api-key-fallback'
+      'api-key-fallback',
+      'live-sessions'
     ],
     notes: [
       'best: most headroom. weekly-first: lowest weekly use. consume-first: the allowance resetting soonest. priority: account priority order.',
-      'A target must sit `hysteresis` points under each threshold; threshold swaps wait out the cooldown, dead logins fail over at once and are quarantined.'
+      'A target must sit `hysteresis` points under each threshold; threshold swaps wait out the cooldown, dead logins fail over at once and are quarantined.',
+      '--live-sessions (default on) also moves running sessions: Claude takes the new login live; Codex does when its login died, and otherwise resumes the conversation on the new account.'
     ],
     examples: [
       'orca account autoswap --agent claude --enabled on --strategy weekly-first',
@@ -171,8 +173,27 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['account', 'sessions'],
-    summary: 'List which account recent sessions launched with',
+    summary: 'List recent sessions, the account each runs on, and its swap history',
     usage: 'orca account sessions [--json]',
     allowedFlags: [...GLOBAL_FLAGS]
+  },
+  {
+    path: ['account', 'session', 'swap'],
+    summary: 'Move one running session to another account',
+    usage: 'orca account session swap --session <id> --account <ref> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'session', 'account'],
+    notes: [
+      'Session ids (or a unique prefix) come from `orca account sessions`.',
+      'A session with its own login copy switches live; otherwise Seal stops the agent and resumes the conversation on the new account.',
+      ACCOUNT_REF_NOTE
+    ],
+    examples: ['orca account session swap --session 3f2a --account personal']
+  },
+  {
+    path: ['account', 'session', 'live'],
+    summary: 'Turn live auto-swap on or off for one session',
+    usage: 'orca account session live --session <id> --mode inherit|on|off [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'session', 'mode'],
+    examples: ['orca account session live --session 3f2a --mode off']
   }
 ]

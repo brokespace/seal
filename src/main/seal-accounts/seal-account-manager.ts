@@ -29,6 +29,7 @@ import { withWorkspacePin } from '../../shared/seal-accounts/seal-accounts-confi
 import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
 import { SealUsageWatch } from './seal-usage-watch'
+import { startSealSessionWatch } from './seal-session-watch'
 
 const EVALUATE_DEBOUNCE_MS = 2_000
 
@@ -298,6 +299,7 @@ export function installSealAccountManager(deps: SealAccountManagerDeps): SealAcc
   installed?.dispose()
   installed = new SealAccountManager(deps)
   installed.start()
+  startSealSessionWatch(installed)
   return installed
 }
 

@@ -3,7 +3,10 @@ import type {
   SealAccountCandidate,
   SealUsageWindow
 } from '../../shared/seal-accounts/seal-account-candidates'
-import type { SealAccountsStatus } from '../../shared/seal-accounts/seal-accounts-status'
+import type {
+  SealAccountsStatus,
+  SealSessionSwapEntry
+} from '../../shared/seal-accounts/seal-accounts-status'
 import type { SealLaunchPick } from '../../shared/seal-accounts/seal-launch-account-pick'
 
 function formatDuration(ms: number): string {
@@ -111,6 +114,18 @@ export function formatPolicies(status: SealAccountsStatus): string {
   return lines.length > 0 ? lines.join('\n') : 'No project or machine rules.'
 }
 
+const DELIVERY_TEXT: Record<SealSessionSwapEntry['delivery'], string> = {
+  live: 'switched live',
+  resume: 'resumed on it',
+  failed: 'could not switch'
+}
+
+export function formatSwapEntry(entry: SealSessionSwapEntry): string {
+  const when = new Date(entry.at).toLocaleTimeString()
+  const note = entry.note ? ` — ${entry.note}` : ''
+  return `${when}  ${entry.fromLabel} → ${entry.toLabel} (${entry.reason}, ${DELIVERY_TEXT[entry.delivery]})${note}`
+}
+
 export function formatSessions(status: SealAccountsStatus): string {
   if (status.sessions.length === 0) {
     return 'No sessions recorded yet.'
@@ -121,7 +136,10 @@ export function formatSessions(status: SealAccountsStatus): string {
     .map((session) => {
       const when = new Date(session.at).toLocaleString()
       const where = session.projectLabel ?? session.worktreeId ?? 'no workspace'
-      return `${when}  ${session.provider.padEnd(6)} ${session.accountLabel.padEnd(18)} ${session.reason.padEnd(16)} ${where}`
+      const state = session.endedAt ? 'closed' : session.profileHome ? 'live-swap' : 'open'
+      const head = `${session.id.slice(0, 8)}  ${when}  ${session.provider.padEnd(6)} ${session.accountLabel.padEnd(18)} ${state.padEnd(9)} ${where}`
+      const history = (session.history ?? []).map((entry) => `    ${formatSwapEntry(entry)}`)
+      return [head, ...history].join('\n')
     })
     .join('\n')
 }

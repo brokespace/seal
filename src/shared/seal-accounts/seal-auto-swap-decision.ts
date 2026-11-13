@@ -10,7 +10,8 @@ import {
 
 export type SealQuarantine = Readonly<Record<SealAccountKey, { until: number; reason: string }>>
 
-export type SealSwapReason = 'threshold' | 'auth-failure' | 'not-allowed'
+/** `rate-limit` is a session that reported hitting its limit before usage polling saw it. */
+export type SealSwapReason = 'threshold' | 'auth-failure' | 'not-allowed' | 'rate-limit'
 
 export type SealAutoSwapDecision =
   | {

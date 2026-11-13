@@ -13,12 +13,26 @@ import {
   SealAccountsSetProfileParams,
   SealAccountsStatusParams,
   SealAccountsSwapParams,
-  SealAccountsSyncFleetParams
+  SealAccountsSyncFleetParams,
+  SealAccountsSwapSessionParams,
+  SealAccountsSetSessionLiveSwapParams,
+  SealAccountsCredentialFreshnessParams,
+  SealAccountsExportCredentialParams
 } from '../../../../../shared/rpc-contract/seal-accounts-params'
 import { requireSealAccountManager } from '../../../../seal-accounts/seal-account-manager'
 import { addSealApiKey, removeSealApiKey } from '../../../../seal-accounts/seal-api-key-accounts'
 import { syncSealFleet } from '../../../../seal-accounts/seal-fleet-sync'
-import { importSealCredential } from '../../../../seal-accounts/seal-credential-transfer'
+import {
+  importedCredentialKey,
+  importSealCredential
+} from '../../../../seal-accounts/seal-credential-transfer'
+import { exportSealCredential } from '../../../../seal-accounts/seal-fleet-sync'
+import { localLoginFreshness } from '../../../../seal-accounts/seal-fleet-credentials'
+import { recordFleetCopies, SEAL_DESKTOP_COPY } from '../../../../seal-accounts/seal-fleet-copies'
+import {
+  setSealSessionLiveSwap,
+  swapSealSessionTo
+} from '../../../../seal-accounts/seal-session-swap'
 import { pickSealLaunch } from '../../../../seal-accounts/seal-launch-pick-context'
 import {
   withAutoSwap,
@@ -165,6 +179,10 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
     handler: async (params, context) => {
       requireDesktopCaller(context)
       await importSealCredential(accounts(), params)
+      const key = importedCredentialKey(params)
+      if (key) {
+        recordFleetCopies(accounts(), SEAL_DESKTOP_COPY, [key])
+      }
       return {}
     }
   }),
@@ -178,6 +196,43 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
         throw new Error('Push accounts from the Seal desktop app or its CLI.')
       }
       return { results: await syncSealFleet(accounts(), params.environmentIds, params.accounts) }
+    }
+  }),
+  defineMethod({
+    name: 'seal.accounts.swapSession',
+    permission: 'accounts-admin',
+    params: SealAccountsSwapSessionParams,
+    handler: async (params) => {
+      const entry = await swapSealSessionTo(accounts(), params.sessionId, params.account)
+      return { entry, status: accounts().status() }
+    }
+  }),
+  defineMethod({
+    name: 'seal.accounts.setSessionLiveSwap',
+    permission: 'accounts-admin',
+    params: SealAccountsSetSessionLiveSwapParams,
+    handler: async (params) => {
+      setSealSessionLiveSwap(accounts(), params.sessionId, params.mode)
+      return accounts().status()
+    }
+  }),
+  defineMethod({
+    name: 'seal.accounts.credentialFreshness',
+    permission: 'accounts-admin',
+    params: SealAccountsCredentialFreshnessParams,
+    handler: async (params, context) => {
+      requireDesktopCaller(context)
+      return { accounts: await localLoginFreshness(accounts(), params.accounts) }
+    }
+  }),
+  defineMethod({
+    name: 'seal.accounts.exportCredential',
+    permission: 'accounts-admin',
+    params: SealAccountsExportCredentialParams,
+    handler: async (params, context) => {
+      // The managing desktop pulls back a login this host refreshed; phones never see one.
+      requireDesktopCaller(context)
+      return exportSealCredential(accounts(), params.account)
     }
   })
 ]

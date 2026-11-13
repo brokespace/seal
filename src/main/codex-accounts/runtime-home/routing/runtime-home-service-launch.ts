@@ -22,6 +22,7 @@ import { blockedWslDistroForExec } from '../../../wsl/discovery/wsl-background-e
 import { getWslHomeAsync } from '../../../wsl/discovery/distro-catalog'
 import {
   SEAL_CODEX_ACCOUNT_ID_ENV,
+  SEAL_CODEX_SESSION_HOME_ENV,
   SEAL_SYSTEM_ACCOUNT
 } from '../../../../shared/seal-accounts/seal-launch-env'
 
@@ -50,6 +51,10 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
       this.startLegacyWslAuthDrain(wslTarget)
       this.finishWslLaunchPreparation(wslTarget, homePath)
       return homePath
+    }
+    const sealSessionHome = launchEnv?.[SEAL_CODEX_SESSION_HOME_ENV]
+    if (sealSessionHome) {
+      return sealSessionHome
     }
     const sealPin = launchEnv?.[SEAL_CODEX_ACCOUNT_ID_ENV]
     if (sealPin) {

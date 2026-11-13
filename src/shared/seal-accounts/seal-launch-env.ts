@@ -16,6 +16,9 @@ export const SEAL_ACCOUNT_LABEL_ENV = 'SEAL_ACCOUNT_LABEL'
 export const SEAL_CODEX_ACCOUNT_ID_ENV = 'SEAL_CODEX_ACCOUNT_ID'
 export const SEAL_SYSTEM_ACCOUNT = 'system'
 
+/** A session's own CODEX_HOME, which Seal rewrites to move that one session to another login. */
+export const SEAL_CODEX_SESSION_HOME_ENV = 'SEAL_CODEX_SESSION_HOME'
+
 export function sealLaunchOverrideRef(
   env: Readonly<Record<string, string | undefined>> | undefined,
   provider: SealProvider

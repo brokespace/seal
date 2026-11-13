@@ -120,3 +120,26 @@ export const SealAccountsImportCredentialParams = z.discriminatedUnion('provider
     .strict()
 ])
 export type SealAccountsImportCredential = z.infer<typeof SealAccountsImportCredentialParams>
+
+/** Move one running session to another account (live, or by resuming it there). */
+export const SealAccountsSwapSessionParams = z
+  .object({
+    sessionId: z.string().trim().min(1).max(128),
+    account: AccountRef
+  })
+  .strict()
+
+export const SealAccountsSetSessionLiveSwapParams = z
+  .object({
+    sessionId: z.string().trim().min(1).max(128),
+    mode: z.enum(['inherit', 'on', 'off'])
+  })
+  .strict()
+
+/** How fresh this host's copies of these logins are (expiry timestamps only, never tokens). */
+export const SealAccountsCredentialFreshnessParams = z
+  .object({ accounts: z.array(AccountRef).max(200) })
+  .strict()
+
+/** The managing desktop pulls back a login this host refreshed, so other copies can follow. */
+export const SealAccountsExportCredentialParams = z.object({ account: AccountRef }).strict()

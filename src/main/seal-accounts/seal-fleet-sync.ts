@@ -3,6 +3,8 @@ import { findCandidateByRef } from '../../shared/seal-accounts/seal-launch-accou
 import type { SealAccountsImportCredential } from '../../shared/rpc-contract/seal-accounts-params'
 import type { SealAccountManager } from './seal-account-manager'
 import { exportClaudeCredential, exportCodexCredential } from './seal-credential-transfer'
+import { reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
+import { recordFleetCopies } from './seal-fleet-copies'
 
 /** Desktop main sets this to reach paired remote runtimes; orcad leaves it unset. */
 export type SealFleetTransport = (
@@ -24,6 +26,10 @@ export function setSealFleetTransport(next: SealFleetTransport | null): void {
   transport = next
 }
 
+export function sealFleetTransport(): SealFleetTransport | null {
+  return transport
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -39,6 +45,15 @@ export async function exportSealCredential(
     }
     if (candidate.kind === 'api-key') {
       throw new Error('API keys stay in the keychain of the machine they were added on.')
+    }
+    if (candidate.localId) {
+      // Hand out the newest copy (refreshed if near expiry), never one a session already rotated.
+      const args = { accountId: candidate.localId, accountKey: candidate.key }
+      await (
+        provider === 'claude'
+          ? reconcileClaudeLogin(manager, args)
+          : reconcileCodexLogin(manager, args)
+      ).catch(() => {})
     }
     return provider === 'claude'
       ? exportClaudeCredential(manager.services, candidate)
@@ -89,6 +104,7 @@ export async function syncSealFleet(
         try {
           await call(environmentId, 'seal.accounts.importCredential', entry.credential)
           results.push({ account: entry.account, ok: true, error: null })
+          recordFleetCopies(manager, environmentId, [manager.resolveKey(entry.account)])
         } catch (error) {
           results.push({ account: entry.account, ok: false, error: errorMessage(error) })
         }

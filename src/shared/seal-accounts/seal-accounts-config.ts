@@ -80,7 +80,9 @@ export const SealAutoSwapSettingsSchema = z
     /** Count per-model weekly windows (e.g. Claude Fable) against the weekly threshold. */
     respectModelLimits: z.boolean(),
     /** Let pay-as-you-go API keys catch launches when every subscription is exhausted. */
-    apiKeyFallback: z.boolean()
+    apiKeyFallback: z.boolean(),
+    /** Swap running sessions in place (or resume them on the new account); absent means on. */
+    liveSessionSwap: z.boolean().optional()
   })
   .strict()
 export type SealAutoSwapSettings = z.infer<typeof SealAutoSwapSettingsSchema>
@@ -123,7 +125,8 @@ export function defaultSealAutoSwapSettings(): SealAutoSwapSettings {
     failoverOnAuthError: true,
     quarantineMinutes: 60,
     respectModelLimits: true,
-    apiKeyFallback: false
+    apiKeyFallback: false,
+    liveSessionSwap: true
   }
 }
 
