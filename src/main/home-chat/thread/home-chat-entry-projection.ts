@@ -23,7 +23,7 @@ function partEntry(
   at: number,
   result: HomeChatToolResultItem | undefined
 ): HomeChatEntry {
-  const base = { id: part.id, rev: 1, at, ord: part.ord }
+  const base = { id: part.id, rev: 1, at: part.at ?? at, ord: part.ord }
   if (part.kind === 'text') {
     return { ...base, kind: 'assistant', text: part.text, streaming: false }
   }

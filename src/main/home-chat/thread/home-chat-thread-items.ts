@@ -7,6 +7,8 @@ type PartBase = {
   /** Also the id of the chat entry the part renders as. */
   id: string
   ord: number
+  /** When the part began, so its entry shows the same time live and after a restart; imported chats lack it. */
+  at?: number
 }
 
 export type HomeChatToolCallPart = PartBase & {

@@ -129,6 +129,7 @@ export class HomeChatTurnRecorder {
     const part: HomeChatToolCallPart = {
       id: randomUUID(),
       ord: this.thread.nextOrd(),
+      at: Date.now(),
       kind: 'tool_call',
       callId: call.callId,
       tool: call.tool,
@@ -137,12 +138,12 @@ export class HomeChatTurnRecorder {
     this.parts.push(part)
     this.callParts.set(call.callId, part)
     if (!HIDDEN_TOOL_CALLS.has(call.tool)) {
-      this.emitNew(part.id, part.ord, {
-        kind: 'tool',
-        tool: call.tool,
-        input: call.input,
-        status: 'running'
-      })
+      this.emitNew(
+        part.id,
+        part.ord,
+        { kind: 'tool', tool: call.tool, input: call.input, status: 'running' },
+        part.at
+      )
     }
   }
 
@@ -247,14 +248,16 @@ export class HomeChatTurnRecorder {
     }
     this.produced = true
     if (!this.open) {
-      const part = { id: randomUUID(), ord: this.thread.nextOrd(), kind, text: '' }
+      const at = Date.now()
+      const part = { id: randomUUID(), ord: this.thread.nextOrd(), at, kind, text: '' }
       this.parts.push(part)
-      this.open = { part, startedAt: Date.now() }
-      this.emitNew(part.id, part.ord, {
-        kind: kind === 'text' ? 'assistant' : 'thinking',
-        text: '',
-        streaming: true
-      })
+      this.open = { part, startedAt: at }
+      this.emitNew(
+        part.id,
+        part.ord,
+        { kind: kind === 'text' ? 'assistant' : 'thinking', text: '', streaming: true },
+        at
+      )
     }
     this.open.part.text += delta
     const entry = this.live.get(this.open.part.id)
