@@ -10,6 +10,7 @@ import type { LiveSession } from '../../../../shared/live-sessions/live-session-
 import type { LiveTranscriptState } from './use-live-transcript'
 import type { PendingRow } from './live-session-pending-rows'
 import { LiveSessionComposer } from './LiveSessionComposer'
+import { LiveSessionTakeOverButton } from './take-over/LiveSessionTakeOverButton'
 import {
   liveMessageStateLabel,
   liveSessionDotState,
@@ -88,7 +89,7 @@ export function LiveSessionChat({
       ? null
       : t(
           'auto.components.live-sessions.LiveSessionChat.noRoute',
-          'Seal can’t type into this session: it runs outside tmux and a Seal pane'
+          'Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over, or install shell integration (Settings › Agents) for next time.'
         )
 
   return (
@@ -108,6 +109,7 @@ export function LiveSessionChat({
             {session.cwd ? <span className="min-w-0 truncate font-mono">{session.cwd}</span> : null}
           </p>
         </div>
+        <LiveSessionTakeOverButton session={session} />
       </header>
       <div className="flex min-h-0 flex-1 flex-col">
         <NativeChatMessageList

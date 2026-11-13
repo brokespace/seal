@@ -9,6 +9,7 @@ import type {
   LiveSessionRegistrySnapshot,
   LiveTranscriptCursor,
   LiveTranscriptDelta,
+  LiveTakeOverResult,
   LiveTranscriptPage
 } from '../../shared/live-sessions/live-session-types'
 import { LiveSessionRegistry } from './live-session-registry'
@@ -22,6 +23,7 @@ import { LiveMessageOutbox } from './delivery/live-message-outbox'
 import { userTextsOf, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
+import { takeOverSession } from './delivery/session-take-over'
 
 export type LiveSessionServiceDeps = {
   userDataPath: string
@@ -155,6 +157,23 @@ export class LiveSessionService {
         error: error instanceof Error ? error.message : String(error)
       }))
     void this.registry.refresh(session.machine.hostId)
+    return result
+  }
+
+  /** Stops an external session so the caller can reopen it in a Seal pane with `--resume`. */
+  async takeOver(sessionId: string): Promise<LiveTakeOverResult> {
+    const session = this.registry.get(sessionId)
+    const result = await takeOverSession(
+      session,
+      session ? this.registry.host(session.machine.hostId) : null
+    ).catch((error: unknown): LiveTakeOverResult => ({
+      ok: false,
+      reason: 'failed',
+      error: error instanceof Error ? error.message : String(error)
+    }))
+    if (session) {
+      void this.registry.refresh(session.machine.hostId)
+    }
     return result
   }
 

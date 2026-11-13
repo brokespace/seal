@@ -141,3 +141,21 @@ export type LivePermissionAnswerResult =
       reason: 'prompt_not_pending' | 'option_not_offered' | 'not_answerable' | 'failed'
       error?: string
     }
+
+/** Take over: the external process is stopped; reopen it in a Seal pane with these. */
+export type LiveTakeOverResult =
+  | {
+      ok: true
+      provider: LiveSessionProvider
+      providerSessionId: string
+      cwd: string | null
+      machine: LiveSessionMachine
+      transcriptPath: string | null
+      /** Codex sessions outside the default home resume only with their CODEX_HOME. */
+      codexHome: string | null
+    }
+  | {
+      ok: false
+      reason: 'not_found' | 'not_external' | 'not_resumable' | 'still_running' | 'failed'
+      error?: string
+    }

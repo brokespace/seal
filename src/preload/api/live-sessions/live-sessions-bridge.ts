@@ -6,10 +6,15 @@ import type {
   LiveSendRequest,
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot,
+  LiveTakeOverResult,
   LiveTranscriptCursor,
   LiveTranscriptDelta,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
+import type {
+  ShellIntegrationAction,
+  ShellIntegrationStatus
+} from '../../../shared/shell-integration/shell-integration-installer'
 import { LIVE_SESSION_IPC } from '../../../shared/live-sessions/live-session-ipc-channels'
 
 export type LiveSessionsApi = {
@@ -35,6 +40,12 @@ export type LiveSessionsApi = {
   messages: (args?: { sessionId?: string }) => Promise<LiveMessage[]>
   onMessage: (callback: (message: LiveMessage) => void) => () => void
   answer: (answer: LivePermissionAnswer) => Promise<LivePermissionAnswerResult>
+  takeOver: (args: { sessionId: string }) => Promise<LiveTakeOverResult>
+  /** `hostId` is 'local' or an SSH target id; rejects when that host is not connected. */
+  shellIntegration: (args: {
+    hostId: string
+    action: ShellIntegrationAction
+  }) => Promise<ShellIntegrationStatus>
 }
 
 function listen<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -55,5 +66,7 @@ export const liveSessionsApi: LiveSessionsApi = {
   retry: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.retry, args),
   messages: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.messages, args),
   onMessage: (callback) => listen(LIVE_SESSION_IPC.message, callback),
-  answer: (answer) => ipcRenderer.invoke(LIVE_SESSION_IPC.answer, answer)
+  answer: (answer) => ipcRenderer.invoke(LIVE_SESSION_IPC.answer, answer),
+  takeOver: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.takeOver, args),
+  shellIntegration: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.shellIntegration, args)
 }

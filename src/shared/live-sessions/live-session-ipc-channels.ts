@@ -8,6 +8,8 @@ export const LIVE_SESSION_IPC = {
   retry: 'liveSessions:retry',
   messages: 'liveSessions:messages',
   answer: 'liveSessions:answer',
+  takeOver: 'liveSessions:takeOver',
+  shellIntegration: 'liveSessions:shellIntegration',
   /** main → renderer: LiveSessionRegistryEvent */
   event: 'liveSessions:event',
   /** main → renderer: LiveMessage */

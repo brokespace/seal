@@ -31,3 +31,5 @@ export const LiveSessionAnswerParams = z.object({
 })
 
 export const LiveSessionUnwatchParams = z.object({ subscriptionId: z.string().min(1).max(256) })
+
+export const LiveSessionTakeOverParams = z.object({ sessionId: SessionId })

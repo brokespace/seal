@@ -20098,6 +20098,37 @@
           "sent": "Sent, waiting for the session",
           "delivered": "Delivered",
           "failed": "Not delivered"
+        },
+        "shell-integration": {
+          "checking": "Checking this computer…",
+          "notInstalled": "Not installed. Seal can still message sessions you start inside tmux or a Seal pane.",
+          "installedIn": "Installed in {{files}}.",
+          "needsTmux": "Installed, but tmux 3.0 or newer is missing, so claude and codex run unwrapped.",
+          "toggle": "Let Seal message agents started in your terminal",
+          "toggleDescription": "With shell integration installed, claude and codex from zsh or bash run in a private tmux server (tmux -L seal) that Seal can type into. Off runs them directly, here and on SSH hosts.",
+          "localTitle": "Shell integration on this computer",
+          "remove": "Remove",
+          "install": "Install",
+          "sshInstall": "Install shell integration",
+          "sshRemove": "Remove shell integration",
+          "removed": "Shell integration removed. Open a new shell for it to take effect.",
+          "installedNoTmux": "Shell integration installed, but tmux 3.0+ is missing there, so claude and codex still run unwrapped.",
+          "installed": "Shell integration installed. Open a new shell, then start claude or codex as usual.",
+          "failed": "Shell integration failed: {{reason}}"
+        },
+        "takeOver": {
+          "button": "Take over",
+          "title": "Take over this session?",
+          "descriptionAlive": "Seal stops {{agent}} on {{host}} (it ends in the terminal it was started from) and reopens the conversation in a Seal pane with {{resume}}. A reply in progress stops.",
+          "descriptionClosed": "Seal reopens the conversation in a Seal pane with {{resume}}.",
+          "cancel": "Cancel",
+          "confirm": "Take over",
+          "notFound": "That session is no longer listed.",
+          "notExternal": "This session already runs in a Seal pane.",
+          "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
+          "stillRunning": "The agent process didn’t stop.",
+          "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
+          "failed": "Could not take over the session. {{reason}}"
         }
       }
     },
