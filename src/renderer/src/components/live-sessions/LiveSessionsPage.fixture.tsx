@@ -215,3 +215,49 @@ export const permission = defineFixture({
     </div>
   )
 })
+
+const unreachable = session({
+  id: '9d1c2f5e-7a1b-4c3d-9e8f-0a1b2c3d4e5f',
+  title: 'Review the release checklist',
+  machine: box,
+  cwd: '/home/brian/code/seal',
+  inputRoutes: []
+})
+
+function unreachableChat() {
+  return (
+    <div className="flex h-[640px]">
+      <LiveSessionsView
+        loaded
+        sessions={[unreachable, ...sessions]}
+        hostErrors={{}}
+        selectedId={unreachable.id}
+        onSelect={noop}
+        onRefresh={noop}
+        now={NOW}
+        chat={
+          <LiveSessionChat
+            session={unreachable}
+            transcript={{ ...chatTranscript, messages: transcript.slice(0, 2) }}
+            pending={[]}
+            onSend={noop}
+            onRetry={noop}
+            onAnswer={noop}
+            answering={null}
+          />
+        }
+      />
+    </div>
+  )
+}
+
+export const noRoute = defineFixture({ width: 1100, render: unreachableChat })
+
+export const takeOver = defineFixture({
+  width: 1100,
+  render: unreachableChat,
+  interact: (frame) =>
+    [...frame.querySelectorAll<HTMLButtonElement>('header button')]
+      .find((button) => button.textContent === 'Take over')
+      ?.click()
+})
