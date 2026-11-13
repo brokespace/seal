@@ -88,7 +88,7 @@ export function LiveSessionChat({
     session.inputRoutes.length > 0
       ? null
       : t(
-          'auto.components.live-sessions.LiveSessionChat.noRoute',
+          'auto.components.live-sessions.LiveSessionChat.noRouteTakeOver',
           'Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over, or install shell integration (Settings › Agents) for next time.'
         )
 

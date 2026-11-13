@@ -20064,7 +20064,7 @@
       },
       "live-sessions": {
         "LiveSessionChat": {
-          "noRoute": "Seal can’t type into this session: it runs outside tmux and a Seal pane"
+          "noRouteTakeOver": "Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over, or install shell integration (Settings › Agents) for next time."
         },
         "LiveSessionComposer": {
           "placeholder": "Message this session",
