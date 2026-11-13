@@ -41,7 +41,8 @@ function ThreadRow({
         <Input
           autoFocus
           value={draft}
-          className="h-7 flex-1 text-xs"
+          density="compact"
+          className="flex-1"
           aria-label={t('homeChat.threads.renameLabel', 'Thread name')}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
@@ -163,39 +164,41 @@ export function HomeChatThreadList({
           <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-1">
-        <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-medium text-muted-foreground">
-            {t('homeChat.threads.title', 'Threads')}
-          </span>
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={t('homeChat.threads.close', 'Close')}
-            onClick={() => setOpen(false)}
-          >
-            <X />
-          </Button>
-        </div>
-        <div className="scrollbar-sleek max-h-80 space-y-0.5 overflow-y-auto">
-          {chats.length === 0 && (
-            <p className="px-2 py-1.5 text-xs text-muted-foreground">
-              {t('homeChat.noChats', 'No threads yet')}
-            </p>
-          )}
-          {chats.map((chat) => (
-            <ThreadRow
-              key={chat.id}
-              chat={chat}
-              active={chat.id === active?.id}
-              onSelect={() => {
-                onSelect(chat.id)
-                setOpen(false)
-              }}
-              onRename={(title) => onRename(chat.id, title)}
-              onDelete={() => onDelete(chat.id)}
-            />
-          ))}
+      <PopoverContent align="start" className="w-80">
+        <div className="p-1">
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('homeChat.threads.title', 'Threads')}
+            </span>
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label={t('homeChat.threads.close', 'Close')}
+              onClick={() => setOpen(false)}
+            >
+              <X />
+            </Button>
+          </div>
+          <div className="scrollbar-sleek max-h-80 space-y-0.5 overflow-y-auto">
+            {chats.length === 0 && (
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                {t('homeChat.noChats', 'No threads yet')}
+              </p>
+            )}
+            {chats.map((chat) => (
+              <ThreadRow
+                key={chat.id}
+                chat={chat}
+                active={chat.id === active?.id}
+                onSelect={() => {
+                  onSelect(chat.id)
+                  setOpen(false)
+                }}
+                onRename={(title) => onRename(chat.id, title)}
+                onDelete={() => onDelete(chat.id)}
+              />
+            ))}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

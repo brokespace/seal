@@ -25730,7 +25730,6 @@
       "openai": "Model API",
       "codex": "Codex"
     },
-    "delete": "Delete this chat",
     "dismissError": "Dismiss",
     "empty": {
       "title": "Your machines, one chat",

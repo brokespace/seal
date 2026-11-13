@@ -16,6 +16,7 @@ type EntryDraft = HomeChatEntry extends infer E
   : never
 
 function inOrder(entries: EntryDraft[]): HomeChatEntry[] {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a draft is an entry minus `ord`, which is added here; a spread loses the union.
   return entries.map((entry, index) => ({ ...entry, ord: index + 1 }) as HomeChatEntry)
 }
 

@@ -111,7 +111,8 @@ async function expectNoInternalMarkup(page: Page): Promise<void> {
 test('the Home assistant works on a paired machine, loads skills, compacts and survives a restart', async ({
   testRepoPath
 }, testInfo) => {
-  test.setTimeout(600_000)
+  // Starts a Seal server, launches the app twice, and runs a dozen assistant turns in between.
+  test.setTimeout(300_000)
   const model = await startFakeChatCompletionsServer(scriptedHomeChatModel)
   const host = await launchHeadlessPairedRuntimeHost({ extraEnv: { SHELL: '/bin/bash' } })
   let client: PairedElectronClient | null = null

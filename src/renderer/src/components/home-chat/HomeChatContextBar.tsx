@@ -3,6 +3,9 @@ import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { Progress } from '../ui/progress'
+import { HostListOverflowNote } from '../host-picker/HostListOverflowNote'
+import { HostListSearchField } from '../host-picker/HostListSearchField'
+import { useBoundedHostRows } from '../host-picker/use-bounded-host-rows'
 import { MachineStatusDot, useMachineStatusLabel } from '../machines/detail/MachineVitals'
 import type {
   HomeChatMachineOption,
@@ -24,14 +27,15 @@ function MachinesPopover({
   const local = machines.find((machine) => machine.kind === 'local')
   const label = current ?? local?.label ?? t('homeChat.context.thisComputer', 'This computer')
   const online = machines.filter((machine) => machine.status === 'online').length
+  const rows = useBoundedHostRows(machines)
 
   return (
     <Popover onOpenChange={(open) => open && onOpen()}>
       <PopoverTrigger asChild>
         <Button
           size="xs"
-          variant="ghost"
-          className="min-w-0 text-muted-foreground"
+          variant="muted-field-icon"
+          className="min-w-0"
           data-home-chat-machine={label}
           aria-label={t('homeChat.context.machine', 'Machine: {{machine}}', { machine: label })}
         >
@@ -47,12 +51,13 @@ function MachinesPopover({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-2">
-        <p className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+      <PopoverContent align="start" className="w-72">
+        <p className="px-3 pt-2 pb-1 text-xs font-medium text-muted-foreground">
           {t('homeChat.context.machinesTitle', 'Machines the assistant can reach')}
         </p>
-        <ul className="scrollbar-sleek max-h-64 space-y-0.5 overflow-y-auto">
-          {machines.map((machine) => (
+        {rows.searchable && <HostListSearchField value={rows.query} onChange={rows.setQuery} />}
+        <ul className="scrollbar-sleek max-h-64 space-y-0.5 overflow-y-auto px-2 pb-2">
+          {rows.shown.map((machine) => (
             <li
               key={machine.id}
               className="flex items-center gap-2 rounded-md px-1 py-1 text-xs"
@@ -69,6 +74,7 @@ function MachinesPopover({
             </li>
           ))}
         </ul>
+        <HostListOverflowNote hiddenCount={rows.hiddenCount} />
       </PopoverContent>
     </Popover>
   )
@@ -95,8 +101,7 @@ function ContextPopover({
       <PopoverTrigger asChild>
         <Button
           size="xs"
-          variant="ghost"
-          className="text-muted-foreground"
+          variant="muted-field-icon"
           data-home-chat-context={percent}
           aria-label={t('homeChat.context.label', 'Context: {{usage}} tokens', { usage })}
         >
@@ -105,30 +110,32 @@ function ContextPopover({
           <Progress value={percent} className="h-1 w-12" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-2 p-3">
-        <p className="text-sm font-medium">{t('homeChat.context.title', 'Context')}</p>
-        <p className="text-xs text-muted-foreground">
-          {t(
-            'homeChat.context.description',
-            'What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.',
-            { percent }
-          )}
-        </p>
-        {compactions > 0 && (
-          <p className="text-xs text-muted-foreground" data-home-chat-compactions={compactions}>
-            {t('homeChat.context.compactions', 'Summaries so far: {{count}}', {
-              count: compactions
-            })}
+      <PopoverContent align="end" className="w-72">
+        <div className="space-y-2 p-3">
+          <p className="text-sm font-medium">{t('homeChat.context.title', 'Context')}</p>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              'homeChat.context.description',
+              'What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.',
+              { percent }
+            )}
           </p>
-        )}
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={chat.status === 'running'}
-          onClick={onCompact}
-        >
-          {t('homeChat.context.compactNow', 'Summarize older messages now')}
-        </Button>
+          {compactions > 0 && (
+            <p className="text-xs text-muted-foreground" data-home-chat-compactions={compactions}>
+              {t('homeChat.context.compactions', 'Summaries so far: {{count}}', {
+                count: compactions
+              })}
+            </p>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={chat.status === 'running'}
+            onClick={onCompact}
+          >
+            {t('homeChat.context.compactNow', 'Summarize older messages now')}
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   )

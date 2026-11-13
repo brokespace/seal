@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
 import type { HomeChatOpenTarget } from '../../../../shared/home-chat/home-chat-types'
-import type { MachineId } from '../../../../shared/machines/machine-types'
+import { normalizeExecutionHostId } from '../../../../shared/execution-host'
 import { takeOverLiveSession } from '../live-sessions/take-over/live-session-take-over'
 import { rememberMachineSelection } from '../machines/model/machine-selection'
 
@@ -26,10 +26,14 @@ export function openHomeChatTarget(
     case 'thread':
       selectThread(target.chatId)
       return
-    case 'machine':
-      rememberMachineSelection(target.machineId as MachineId)
+    case 'machine': {
+      const machineId = normalizeExecutionHostId(target.machineId)
+      if (machineId) {
+        rememberMachineSelection(machineId)
+      }
       store.openMachinesPage()
       return
+    }
     case 'take-over':
       void takeOver(target.sessionId)
       return

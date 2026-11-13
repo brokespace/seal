@@ -1,6 +1,7 @@
 import { access, readdir, readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, relative } from 'node:path'
+import { getRepoRoutingConnectionId } from '../../../shared/execution-host'
 import type { Repo } from '../../../shared/repo-types'
 import { discoverSkills } from '../../skills/discovery/skill-native-discovery'
 import { readSkillSummary } from '../../skills/discovery/skill-discovery-summary'
@@ -173,7 +174,7 @@ export class HomeChatSkills {
     const projects = await Promise.all(
       this.deps
         .repos()
-        .filter((repo) => !repo.connectionId)
+        .filter((repo) => !getRepoRoutingConnectionId(repo))
         .map(async (repo): Promise<HomeChatProjectInstructions> => {
           const present = await Promise.all(
             PROJECT_INSTRUCTION_FILES.map((file) =>
