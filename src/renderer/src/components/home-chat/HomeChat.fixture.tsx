@@ -19,7 +19,7 @@ const conversation: HomeChatRecord = {
       at: 1,
       kind: 'user',
       text: 'The build box is almost out of disk. Find what is big and clean up old build caches.',
-      delivery: 'sent'
+      delivery: 'delivered'
     },
     {
       id: 'th1',
