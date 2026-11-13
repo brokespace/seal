@@ -79,6 +79,20 @@ describe('one card per real conversation', () => {
     ).toEqual([])
   })
 
+  it('keeps a terminal session listed after Seal resumed it headless', () => {
+    const resumed = claudeFile(
+      '/p/eeeeeeee-0000-4000-8000-000000000005.jsonl',
+      [
+        { ...turn('e1', null, 'Write the migration'), entrypoint: 'cli' },
+        { ...turn('e2', 'e1', 'Also add a rollback'), entrypoint: 'sdk-cli' }
+      ],
+      600_000
+    )
+    expect(assemble([], [resumed]).map((s) => s.id)).toEqual([
+      'eeeeeeee-0000-4000-8000-000000000005'
+    ])
+  })
+
   it('shows a session copied into a second account once, from its newest copy', () => {
     const name = 'dddddddd-0000-4000-8000-000000000004.jsonl'
     const lines = [turn('d1', null, 'Rotate the keys')]

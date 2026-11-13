@@ -181,7 +181,8 @@ function claudeIdentity(
     .map((r) => str(r.leafUuid))
     .filter((id): id is string => id !== null && !headIds.has(id))
   return {
-    headless: head.some((r) => str(r.entrypoint)?.startsWith('sdk') === true),
+    // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
+    headless: str(head.find((r) => str(r.entrypoint))?.entrypoint)?.startsWith('sdk') === true,
     recordIds: [
       ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
     ],
@@ -291,11 +292,11 @@ export function summarizeCodexRollout(input: {
   const all = [...head, ...tail]
   let id = UUID.exec(basename(input.path))?.[1] ?? basename(input.path)
   let cwd: string | null = null
-  let headless = false
+  let headless: boolean | null = null
   for (const record of all) {
     const payload = rec(record.payload)
     if (record.type === 'session_meta') {
-      headless = payload?.source === 'exec' || payload?.originator === 'codex_exec'
+      headless ??= payload?.source === 'exec' || payload?.originator === 'codex_exec'
       id = str(payload?.id) ?? id
       cwd = str(payload?.cwd) ?? cwd
     } else if (record.type === 'turn_context') {
@@ -305,7 +306,7 @@ export function summarizeCodexRollout(input: {
   const firstPrompt = all.map(codexPromptText).find(Boolean)
   const timed = all.map(timeOf).filter((t): t is number => t !== null)
   return {
-    headless,
+    headless: headless === true,
     recordIds: [],
     continues: [],
     provider: 'codex',

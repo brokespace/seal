@@ -11,6 +11,7 @@ import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
 import { registerLiveSessionIpc } from './live-sessions-ipc'
 import { getLiveSessionService, setLiveSessionService } from './live-session-service-instance'
+import { idleReapMinutes, SealIdleReaper } from './delivery/seal-idle-reaper'
 import {
   runShellIntegration,
   ShellIntegrationSync,
@@ -18,7 +19,7 @@ import {
 } from './shell-integration/shell-integration-hosts'
 
 type LiveSessionSettingsStore = {
-  getSettings(): Pick<GlobalSettings, 'liveSessionsWrapAgents'>
+  getSettings(): Pick<GlobalSettings, 'liveSessionsWrapAgents' | 'liveSessionsIdleReapMinutes'>
   onSettingsChanged(listener: (updates: Partial<GlobalSettings>) => void): unknown
 }
 
@@ -77,8 +78,17 @@ export function installLiveSessions(
     }
     return status
   })
+  const reaper = new SealIdleReaper({
+    hosts: allHosts,
+    minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),
+    log
+  })
   setLiveSessionService(service)
   service.start()
-  app.on('will-quit', () => service.stop())
+  reaper.start()
+  app.on('will-quit', () => {
+    service.stop()
+    reaper.stop()
+  })
   return service
 }

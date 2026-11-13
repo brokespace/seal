@@ -20149,6 +20149,13 @@
           "hideOnly": "Remove from Seal",
           "stopAndRemove": "Stop and remove",
           "removeAndDelete": "Remove and delete"
+        },
+        "idleReap": {
+          "minutes": "{{count}} min",
+          "hours": "{{count}} h",
+          "label": "End idle Seal sessions",
+          "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
+          "never": "Never"
         }
       }
     },
