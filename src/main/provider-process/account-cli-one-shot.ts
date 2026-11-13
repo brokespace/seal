@@ -1,5 +1,4 @@
-import { spawn } from 'node:child_process'
-import { getSpawnArgsForWindows } from '../../shared/windows-batch-spawn'
+import { spawnProcess } from '@orca/process-host'
 import { reapAccountCliProcess, trackAccountCliProcess } from './account-cli-process-reaper'
 
 const MAX_OUTPUT_CHARS = 4_000
@@ -18,13 +17,13 @@ export function runAccountCliOnce(args: {
   timeoutMs: number
 }): Promise<AccountCliOneShotResult> {
   return new Promise((resolve, reject) => {
-    const { spawnCmd, spawnArgs } = getSpawnArgsForWindows(args.command, args.args)
     const group = process.platform !== 'win32'
-    const child = spawn(spawnCmd, spawnArgs, {
+    const child = spawnProcess({
+      program: args.command,
+      args: args.args,
       env: args.env,
       stdio: ['ignore', 'pipe', 'pipe'],
-      detached: group,
-      windowsHide: true
+      detached: group
     })
     trackAccountCliProcess(child, { group })
     let output = ''
@@ -32,8 +31,8 @@ export function runAccountCliOnce(args: {
     const append = (chunk: Buffer): void => {
       output = `${output}${chunk.toString()}`.slice(-MAX_OUTPUT_CHARS)
     }
-    child.stdout.on('data', append)
-    child.stderr.on('data', append)
+    child.stdout?.on('data', append)
+    child.stderr?.on('data', append)
     const timer = setTimeout(() => {
       timedOut = true
       reapAccountCliProcess(child, { group })

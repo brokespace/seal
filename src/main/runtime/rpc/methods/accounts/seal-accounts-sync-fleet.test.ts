@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import type { OrcaRuntimeService } from '../../../orca-runtime'
 import { eraseRpcMethods, isStreamingMethod, type RpcContext } from '../../core'
 
-const pushed = vi.hoisted(() => ({ calls: [] as { machines: string[]; accounts?: string[] }[] }))
+const pushed = vi.hoisted(() => {
+  const calls: { machines: string[]; accounts?: string[] }[] = []
+  return { calls }
+})
 
 vi.mock('../../../../seal-accounts/seal-account-manager', () => ({
   requireSealAccountManager: () => ({})

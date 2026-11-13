@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { runAccountCliOnce } from './account-cli-one-shot'
 import {
   killAllAccountCliProcesses,
@@ -42,17 +42,6 @@ function alive(pid: number): boolean {
   }
 }
 
-async function waitFor(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs
-  while (!predicate()) {
-    if (Date.now() >= deadline) {
-      return false
-    }
-    await new Promise((resolve) => setTimeout(resolve, 25))
-  }
-  return true
-}
-
 function readPids(): { cli: number; helper: number } | null {
   try {
     const pids: { cli: number; helper: number } = JSON.parse(readFileSync(pidFile, 'utf8'))
@@ -63,13 +52,21 @@ function readPids(): { cli: number; helper: number } | null {
   }
 }
 
-async function startedPids(): Promise<{ cli: number; helper: number }> {
-  expect(await waitFor(() => readPids() !== null, 15_000)).toBe(true)
-  const pids = readPids()
-  if (!pids) {
-    throw new Error('the stub CLI never reported its pids')
-  }
-  return pids
+function startedPids(): Promise<{ cli: number; helper: number }> {
+  return vi.waitFor(
+    () => {
+      const pids = readPids()
+      if (!pids) {
+        throw new Error('the stub CLI has not reported its pids yet')
+      }
+      return pids
+    },
+    { timeout: 15_000 }
+  )
+}
+
+function expectGone(pids: { cli: number; helper: number }): Promise<void> {
+  return expect.poll(() => alive(pids.cli) || alive(pids.helper), { timeout: 10_000 }).toBe(false)
 }
 
 function spawnStubbornCli() {
@@ -102,12 +99,12 @@ afterEach(() => {
 posixOnly('account CLI processes', () => {
   it('force-kills a cancelled login and its helper when both ignore SIGTERM', async () => {
     const child = spawnStubbornCli()
-    const { cli, helper } = await startedPids()
+    const pids = await startedPids()
     expect(liveAccountCliProcessCount()).toBe(1)
 
     reapAccountCliProcess(child, { group: true, graceMs: 200 })
 
-    expect(await waitFor(() => !alive(cli) && !alive(helper), 10_000)).toBe(true)
+    await expectGone(pids)
     expect(liveAccountCliProcessCount()).toBe(0)
   })
 
@@ -118,22 +115,22 @@ posixOnly('account CLI processes', () => {
       env: { ...process.env, PID_FILE: pidFile },
       timeoutMs: 1_500
     })
-    const { cli, helper } = await startedPids()
+    const pids = await startedPids()
 
     const result = await run
 
     expect(result.timedOut).toBe(true)
     expect(result.code).toBeNull()
-    expect(await waitFor(() => !alive(cli) && !alive(helper), 10_000)).toBe(true)
+    await expectGone(pids)
     expect(liveAccountCliProcessCount()).toBe(0)
   })
 
   it('kills every running account CLI when the app exits mid sign-in', async () => {
     spawnStubbornCli()
-    const { cli, helper } = await startedPids()
+    const pids = await startedPids()
 
     killAllAccountCliProcesses()
 
-    expect(await waitFor(() => !alive(cli) && !alive(helper), 10_000)).toBe(true)
+    await expectGone(pids)
   })
 })

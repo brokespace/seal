@@ -60,17 +60,6 @@ function alive(pid: number): boolean {
   }
 }
 
-async function waitFor(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs
-  while (!predicate()) {
-    if (Date.now() >= deadline) {
-      return false
-    }
-    await new Promise((resolve) => setTimeout(resolve, 25))
-  }
-  return true
-}
-
 function readPids(): { cli: number; helper: number } | null {
   try {
     const pids: { cli: number; helper: number } = JSON.parse(readFileSync(pidFile, 'utf8'))
@@ -83,7 +72,11 @@ function readPids(): { cli: number; helper: number } | null {
 
 async function gone(): Promise<boolean> {
   const pids = readPids()
-  return pids !== null && waitFor(() => !alive(pids.cli) && !alive(pids.helper), 10_000)
+  if (!pids) {
+    return false
+  }
+  await expect.poll(() => alive(pids.cli) || alive(pids.helper), { timeout: 10_000 }).toBe(false)
+  return true
 }
 
 function channel(code: Promise<string>) {

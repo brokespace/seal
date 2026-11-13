@@ -5,7 +5,7 @@ const DEFAULT_GRACE_MS = 2_000
 export type AccountCliChild = {
   pid?: number
   exitCode: number | null
-  signalCode: NodeJS.Signals | string | null
+  signalCode: string | null
   kill(signal?: NodeJS.Signals): boolean
 }
 
