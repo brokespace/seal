@@ -1666,7 +1666,6 @@
         "retainedTerminalPermissions": "Se os novos terminais ainda usarem as permissões anteriores, abra Gerenciar sessões e escolha Reiniciar daemon. Isso fecha os terminais locais e os comandos em execução neles.",
         "administratorRestartFailed": "O Orca não conseguiu reiniciar. Tente novamente ou siga as instruções manuais.",
         "manualAdministratorHelp": "Instruções manuais",
-        "administratorDocumentation": "Ler o guia",
         "cancelAdministratorRestart": "Cancelar",
         "closeAdministratorHelp": "Fechar",
         "restartingAdministrator": "Reiniciando…",
@@ -7297,7 +7296,6 @@
           "connected": "Conectado",
           "reconnectRequired": "Sua sessão expirou. Entre novamente para usar os recursos na nuvem.",
           "unavailable": "O login do Orca não está disponível nesta versão.",
-          "signedOut": "Entre para estender o Orca com recursos na nuvem, incluindo Artifacts e Orca Relay.",
           "checking": "Verificando o status da conta…",
           "account": "Conta do Orca",
           "signOut": "Sair",
@@ -7305,12 +7303,9 @@
           "signIn": "Entrar no Orca",
           "title": "Conta do Orca",
           "description": "Compartilhe trabalho instantaneamente e acesse seu desktop pelo Orca Mobile de onde estiver.",
-          "searchDescription": "Entre ou saia da conta usada por Artifacts e Orca Relay.",
           "benefitsTitle": "Incluído na sua conta",
           "artifactsTitle": "Compartilhamento de Artifacts",
           "artifactsDescription": "Publique arquivos HTML e Markdown e depois gerencie todos os links compartilhados a partir do Orca.",
-          "relayTitle": "Orca Relay",
-          "relayDescription": "Conecte o Orca Mobile a este desktop por rede celular ou qualquer Wi-Fi.",
           "skillsTitle": "Compartilhamento de Skills",
           "skillsDescription": "Compartilhe uma skill ou um conjunto inteiro por trás de um link não listado, e instale-as em qualquer máquina que você use.",
           "keywordAccount": "conta",
@@ -7318,7 +7313,6 @@
           "keywordLogout": "logout",
           "keywordSignIn": "entrar",
           "keywordSignOut": "sair",
-          "keywordRelay": "relay",
           "keywordCloud": "nuvem"
         },
         "GeneralUpdateSettingsSection": {
@@ -7881,15 +7875,10 @@
           "unavailable": "Indisponível",
           "pathGroup": "Como o celular alcança este computador",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "O celular pode estar na rede celular ou em qualquer Wi-Fi. Login necessário somente para o Relay.",
-          "relayUnavailable": "O Seal Relay não está disponível nesta versão. Use a LAN.",
-          "signIn": "Entrar para o Relay",
-          "signInAgain": "Entrar novamente para o Relay",
           "localTitle": "LAN",
           "localDescription": "O celular precisa estar neste Wi-Fi ou conectado via Tailscale. Nenhuma conta necessária.",
           "retrying": "Tentando novamente",
-          "relayCell": "Célula do relay",
-          "relaySignInDetail": "Conecta este computador ao Seal e encaminha a conexão do celular pelos servidores do Seal. A rede local não precisa de conta."
+          "relayCell": "Célula do relay"
         },
         "PluginsSettingsSection": {
           "systemLabel": "Sistema de plugins",
@@ -8192,10 +8181,7 @@
           "283bebb198": "Configurações MCP"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "Instale o Orca Mobile pela",
           "installOutro": ", depois pareie abaixo.",
-          "androidApkLabel": "APK do Android",
           "e7a3ae8c4e": "Mobile",
           "174f4a3c6d": "Controle terminais e agentes a partir do seu celular.",
           "682293cadf": "Mostra o botão do Orca Mobile no topo da barra lateral esquerda.",
@@ -14292,7 +14278,6 @@
           "66270286ac": "· Você pode tentar novamente com segurança.",
           "157de228b4": "Inspecionar skill",
           "69236de8d6": "Verificando…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Link de skill do Orca",
           "releaseNotes": "Notas da versão:",
           "targetHeader": "Destino da Instalação",
@@ -17170,8 +17155,6 @@
           "051978a785": "Seu celular está pareado.",
           "pairingQrError": "Este código de pareamento não pôde ser renderizado como um código QR. Copie-o no Seal Mobile em vez disso.",
           "noRelayCode": "Nenhum código de pareamento disponível",
-          "noPairingCode": "Nenhum código de pareamento disponível",
-          "qrSignInRequired": "Entre para criar um código de pareamento do Relay",
           "qrRenderFailed": "O QR não pôde ser renderizado — copie o código abaixo",
           "qrGeneratePrompt": "Gere um código de pareamento para continuar",
           "pairingCodeReady": "Código de pareamento pronto",
@@ -17223,9 +17206,6 @@
           "retrying": "Tentando novamente…",
           "retry": "Tentar Relay novamente",
           "copyDiagnostics": "Copiar diagnósticos",
-          "reconnectTitle": "Sua sessão da conta Seal expirou.",
-          "reconnectBody": "Entre novamente para usar o Seal Relay, ou use a LAN para parear pelo Tailscale ou o mesmo Wi‑Fi.",
-          "notEntitledTitle": "O Seal Relay não está incluído nesta conta Seal.",
           "rateLimitedBody": "O Seal Relay está ocupado. Aguarde um minuto e tente novamente ou use a LAN para parear pelo Tailscale ou pela mesma rede Wi‑Fi."
         },
         "MobilePageToolbar": {
@@ -19732,8 +19712,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "Você foi desconectado",
         "3e8f5c2a91": "Descartar",
-        "7b4d9e1f2a": "Entre novamente como {{value0}} para restaurar o compartilhamento de artefatos, o Orca Relay, e o compartilhamento de skills.",
-        "5a1c8d3e6f": "Entre novamente para restaurar o compartilhamento de artefatos, o Orca Relay, e o compartilhamento de skills.",
         "1f6b2c9d4e": "O que você recupera",
         "8d2e4f7a1b": "Compartilhamento de artefatos",
         "2c9a5b6e8d": "Publique arquivos HTML e Markdown e gerencie todos os links compartilhados a partir do Orca.",
@@ -20040,7 +20018,6 @@
           "signout": {
             "confirm": {
               "title": "Sair do Orca?",
-              "description": "Os artefatos e o Orca Relay ficarão indisponíveis até você entrar novamente. Seus projetos e worktrees locais não serão afetados.",
               "cancel": "Cancelar",
               "action": "Sair"
             }

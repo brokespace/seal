@@ -595,7 +595,6 @@
         "retainedTerminalPermissions": "Yeni terminaller hâlâ önceki izinleri kullanıyorsa Oturumları Yönet'i açıp Arka plan hizmetini yeniden başlat'ı seçin. Bu işlem yerel terminalleri ve içlerinde çalışan komutları kapatır.",
         "administratorRestartFailed": "Orca yeniden başlatılamadı. Tekrar deneyin veya manuel yönergeleri kullanın.",
         "manualAdministratorHelp": "Manuel yönergeler",
-        "administratorDocumentation": "Kılavuzu okuyun",
         "cancelAdministratorRestart": "İptal",
         "closeAdministratorHelp": "Kapat",
         "restartingAdministrator": "Yeniden başlatılıyor…",
@@ -5556,7 +5555,6 @@
           "66270286ac": "· Güvenle yeniden deneyebilirsiniz.",
           "157de228b4": "Beceriyi incele",
           "69236de8d6": "Kontrol ediliyor…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Orca beceri bağlantısı",
           "releaseNotes": "Sürüm notları:",
           "targetHeader": "Yükleme Hedefi",
@@ -8384,10 +8382,7 @@
           "5f539ff331": "Eşleştirilmiş Cihazlar"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "Orca Mobile'ı",
           "installOutro": " üzerinden yükleyin, ardından aşağıdan eşleştirin.",
-          "androidApkLabel": "Android APK",
           "e7a3ae8c4e": "Mobil",
           "174f4a3c6d": "Terminalleri ve ajanları telefonunuzdan kontrol edin.",
           "682293cadf": "Sol kenar çubuğunun üst kısmında Orca Mobile düğmesini gösterin.",
@@ -11798,15 +11793,10 @@
           "unavailable": "Kullanılamıyor",
           "pathGroup": "Telefonun bu bilgisayara ulaşma yolu",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "Telefon mobil veri veya herhangi bir Wi-Fi üzerinde olabilir. Yalnızca Relay için oturum açma gerekir.",
-          "relayUnavailable": "Seal Relay bu sürümde kullanılamıyor. LAN kullanın.",
-          "signIn": "Relay için oturum aç",
-          "signInAgain": "Relay için yeniden oturum aç",
           "localTitle": "LAN",
           "localDescription": "Telefon bu Wi-Fi'de olmalı veya Tailscale üzerinden bağlanmalıdır. Hesap gerekmez.",
           "retrying": "Yeniden deneniyor",
-          "relayCell": "Relay hücresi",
-          "relaySignInDetail": "Bu masaüstünde Seal oturumu açar ve telefonu Seal sunucuları üzerinden yönlendirir. LAN için hesap gerekmez."
+          "relayCell": "Relay hücresi"
         },
         "MobilePairingSetupSection": {
           "title": "Bir telefonu eşleştir",
@@ -12305,7 +12295,6 @@
           "connected": "Bağlı",
           "reconnectRequired": "Oturumunuzun süresi doldu. Bulut özelliklerini kullanmak için tekrar oturum açın.",
           "unavailable": "Orca oturum açma bu sürümde kullanılamıyor.",
-          "signedOut": "Artifact'ler ve Orca Relay dahil bulut özellikleriyle Orca'yı genişletmek için oturum açın.",
           "checking": "Hesap durumu kontrol ediliyor…",
           "account": "Orca hesabı",
           "signOut": "Oturumu kapat",
@@ -12313,12 +12302,9 @@
           "signIn": "Orca'da oturum aç",
           "title": "Orca Hesabı",
           "description": "Çalışmanızı anında paylaşın ve nerede olursanız olun Orca Mobile'dan masaüstünüze ulaşın.",
-          "searchDescription": "Artifact'ler ve Orca Relay tarafından kullanılan hesapta oturum açın veya kapatın.",
           "benefitsTitle": "Hesabınıza dahil",
           "artifactsTitle": "Artifact paylaşımı",
           "artifactsDescription": "HTML ve Markdown dosyalarını yayınlayın, ardından paylaşılan her bağlantıyı Orca'dan yönetin.",
-          "relayTitle": "Orca Relay",
-          "relayDescription": "Orca Mobile'ı mobil veri veya herhangi bir Wi-Fi üzerinden bu masaüstüne bağlayın.",
           "skillsTitle": "Beceri paylaşımı",
           "skillsDescription": "Tek bir beceriyi veya bir beceri setinin tamamını listelenmeyen bir bağlantı üzerinden paylaşın ve kullandığınız her makineye yükleyin.",
           "keywordAccount": "hesap",
@@ -12326,7 +12312,6 @@
           "keywordLogout": "çıkış",
           "keywordSignIn": "oturum aç",
           "keywordSignOut": "oturumu kapat",
-          "keywordRelay": "relay",
           "keywordCloud": "bulut"
         },
         "automations": {
@@ -15319,8 +15304,6 @@
           "051978a785": "Telefonunuz eşleştirildi.",
           "pairingQrError": "Bu eşleştirme kodu QR koduna dönüştürülemedi. Bunun yerine kodu Seal Mobile'a kopyalayın.",
           "noRelayCode": "Kullanılabilir eşleştirme kodu yok",
-          "noPairingCode": "Kullanılabilir eşleştirme kodu yok",
-          "qrSignInRequired": "Relay eşleştirme kodu oluşturmak için oturum açın",
           "qrRenderFailed": "QR kodu oluşturulamadı, aşağıdaki kodu kopyalayın",
           "qrGeneratePrompt": "Devam etmek için bir eşleştirme kodu oluşturun",
           "pairingCodeReady": "Eşleştirme kodu hazır",
@@ -15456,9 +15439,6 @@
           "retrying": "Yeniden deneniyor…",
           "retry": "Relay'i yeniden dene",
           "copyDiagnostics": "Tanılama bilgilerini kopyala",
-          "reconnectTitle": "Seal hesap oturumunuzun süresi doldu.",
-          "reconnectBody": "Seal Relay'i kullanmak için tekrar oturum açın veya Tailscale ya da aynı Wi-Fi üzerinden eşleştirmek için Yerel Ağı kullanın.",
-          "notEntitledTitle": "Seal Relay bu Seal hesabına dahil değil.",
           "rateLimitedBody": "Seal Relay meşgul. Bir dakika bekleyip yeniden deneyin veya Tailscale ya da aynı Wi‑Fi üzerinden eşleştirmek için LAN kullanın."
         },
         "relayClockSkewMessage": {
@@ -18443,7 +18423,6 @@
           "signout": {
             "confirm": {
               "title": "Orca'dan çıkış yapılsın mı?",
-              "description": "Yeniden oturum açana kadar Artifact'ler ve Orca Relay kullanılamayacak. Yerel projeleriniz ve worktree'leriniz etkilenmeyecek.",
               "cancel": "İptal",
               "action": "Çıkış yap"
             }
@@ -18779,8 +18758,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "Oturumunuz kapatıldı",
         "3e8f5c2a91": "Kapat",
-        "7b4d9e1f2a": "Artifact paylaşımını, Orca Relay'i ve beceri paylaşımını geri yüklemek için {{value0}} olarak yeniden oturum açın.",
-        "5a1c8d3e6f": "Artifact paylaşımını, Orca Relay'i ve beceri paylaşımını geri yüklemek için yeniden oturum açın.",
         "1f6b2c9d4e": "Geri kazandıklarınız",
         "8d2e4f7a1b": "Artifact paylaşımı",
         "2c9a5b6e8d": "HTML ve Markdown dosyalarını yayınlayın ve tüm paylaşılan bağlantıları Orca'dan yönetin.",

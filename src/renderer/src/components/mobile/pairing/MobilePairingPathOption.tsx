@@ -21,7 +21,7 @@ export function MobilePairingPathOption({
   trailing?: ReactNode
   tabIndex: number
   disabled?: boolean
-  /** Stated explicitly: the Sign in panel sits between the radios in the DOM. */
+  /** Stated explicitly: status rows sit between the radios in the DOM. */
   positionInSet: number
   setSize: number
   optionRef?: (el: HTMLDivElement | null) => void

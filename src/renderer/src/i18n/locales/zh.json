@@ -86,7 +86,6 @@
       "windows": {
         "administratorApproval": "Windows 将请求批准，请使用您常用的账户",
         "administratorDialogScope": "这会更改整个应用的权限，SSH 和 WSL 保留各自的权限",
-        "administratorDocumentation": "阅读指南",
         "administratorLabel": "管理员模式",
         "administratorPromptCancellation": "取消 Windows 的提示后，Orca 会带着保留的终端重新打开，SSH 和 WSL 的权限仍由其主机控制",
         "administratorRestartConsequences": "请先保存您的工作，批准后，当前本地终端主机上的终端和代理会关闭，已恢复的标签页会打开新的管理员 shell",
@@ -5268,7 +5267,6 @@
           "66270286ac": "· 可以安全重试",
           "157de228b4": "查看技能",
           "69236de8d6": "正在检查…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Orca 技能链接",
           "releaseNotes": "发行说明：",
           "targetHeader": "安装目标",
@@ -7903,14 +7901,11 @@
           "5f539ff331": "配对设备"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "Apple Store",
           "e7a3ae8c4e": "移动端",
           "174f4a3c6d": "用手机控制终端和代理",
           "682293cadf": "在左侧边栏顶部显示 Orca 手机端按钮",
           "d4f2b65f30": "在边栏中显示 Orca 手机端 快捷入口",
-          "installIntro": "从",
           "installOutro": " 安装 Orca Mobile，然后在下方配对",
-          "androidApkLabel": "Android APK",
           "49089c92b3": "显示 Orca 手机端按钮"
         },
         "NotificationsPane": {
@@ -11400,17 +11395,12 @@
           "available": "可用",
           "reconnecting": "正在重新连接",
           "unavailable": "不可用",
-          "signIn": "登录以使用 Relay",
           "localDescription": "手机必须连接此 Wi‑Fi 或通过 Tailscale，无需账号",
           "pathGroup": "手机访问此电脑的方式",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "手机可通过蜂窝网络或任意 Wi‑Fi 连接，仅 Relay 需要登录",
-          "relayUnavailable": "此版本不支持 Seal Relay，请使用局域网",
-          "signInAgain": "重新登录以使用 Relay",
           "localTitle": "局域网",
           "retrying": "正在重试",
-          "relayCell": "中继单元",
-          "relaySignInDetail": "将此桌面登录到 Seal，并通过 Seal 的服务器路由手机，LAN 无需账户"
+          "relayCell": "中继单元"
         },
         "MobilePairingSetupSection": {
           "title": "配对手机",
@@ -11975,7 +11965,6 @@
           "connected": "已连接",
           "reconnectRequired": "会话已过期，请重新登录以使用云功能",
           "unavailable": "此构建不支持 Orca 登录",
-          "signedOut": "登录以启用 Orca 云功能，包括产物和 Orca Relay",
           "checking": "正在检查账户状态…",
           "account": "Orca 账户",
           "signOut": "退出登录",
@@ -11983,12 +11972,9 @@
           "signIn": "登录 Orca",
           "title": "Orca 账户",
           "description": "即时分享工作，并随时通过 Orca Mobile 访问桌面",
-          "searchDescription": "登录或退出产物和 Orca Relay 使用的账户",
           "benefitsTitle": "账户已包含",
           "artifactsTitle": "产物分享",
           "artifactsDescription": "发布 HTML 和 Markdown 文件，然后在 Orca 中管理所有分享链接",
-          "relayTitle": "Orca Relay",
-          "relayDescription": "通过蜂窝网络或任意 Wi-Fi 将 Orca Mobile 连接到此桌面",
           "skillsTitle": "技能分享",
           "skillsDescription": "通过非公开链接分享单个技能或整套技能，并在你使用的任何设备上安装",
           "keywordAccount": "账户",
@@ -11996,7 +11982,6 @@
           "keywordLogout": "退出登录",
           "keywordSignIn": "登录",
           "keywordSignOut": "退出登录",
-          "keywordRelay": "中继",
           "keywordCloud": "云"
         },
         "automations": {
@@ -14916,8 +14901,6 @@
           "directAddressDisclosure": "也可使用更快的本地连接",
           "directAddressHint": "选择手机在附近(同一 Wi‑Fi 或 Tailscale)时使用的地址，通常比 Relay 更快，外出时仍走 Relay",
           "noRelayCode": "没有可用的配对码",
-          "noPairingCode": "没有可用的配对码",
-          "qrSignInRequired": "登录以创建 Relay 配对码",
           "qrRenderFailed": "无法渲染二维码 — 请复制下方代码",
           "qrGeneratePrompt": "生成配对码以继续",
           "pairingCodeReady": "配对码已就绪",
@@ -15051,9 +15034,6 @@
           "retrying": "正在重试…",
           "retry": "重试 Relay",
           "copyDiagnostics": "复制诊断信息",
-          "reconnectTitle": "你的 Seal 账户会话已过期",
-          "reconnectBody": "请重新登录以使用 Seal Relay，或通过 Tailscale 或同一 Wi‑Fi 使用局域网配对",
-          "notEntitledTitle": "此 Seal 账户不包含 Seal Relay",
           "rateLimitedBody": "Seal Relay 正忙，请等待一分钟再重试，或使用 LAN 通过 Tailscale 或同一 Wi‑Fi 配对"
         },
         "relayClockSkewMessage": {
@@ -18030,7 +18010,6 @@
           "signout": {
             "confirm": {
               "title": "退出 Orca？",
-              "description": "重新登录前，产物和 Orca Relay 将不可用，本地项目和工作树不会受到影响",
               "cancel": "取消",
               "action": "退出登录"
             }
@@ -18415,8 +18394,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "你已退出登录",
         "3e8f5c2a91": "关闭",
-        "7b4d9e1f2a": "以 {{value0}} 重新登录以恢复产物分享、Orca Relay 和技能分享",
-        "5a1c8d3e6f": "重新登录以恢复产物分享、Orca Relay 和技能分享",
         "1f6b2c9d4e": "重新登录后可用",
         "8d2e4f7a1b": "产物分享",
         "2c9a5b6e8d": "发布 HTML 和 Markdown 文件，并在 Orca 中管理所有共享链接",

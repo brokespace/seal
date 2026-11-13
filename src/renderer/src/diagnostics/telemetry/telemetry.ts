@@ -4,11 +4,12 @@
 import type { EventName, EventProps } from '../../../../shared/telemetry-events'
 import type { TelemetryConsentState } from '../../../../shared/telemetry-consent-types'
 import { utcDayIndex } from '../../../../shared/telemetry-day'
+import { SEAL_REPOSITORY_URL } from '../../../../shared/seal-project-links'
 
 import '../../../../shared/agent-kind'
 
 // Single source-of-truth for the privacy doc URL so FirstLaunchBanner and PrivacyPane can't drift.
-export const PRIVACY_URL = 'https://orca.dev/docs/telemetry'
+export const PRIVACY_URL = SEAL_REPOSITORY_URL
 
 let lastTerminalUserInputAt: number | null = null
 

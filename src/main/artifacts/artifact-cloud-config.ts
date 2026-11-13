@@ -1,6 +1,7 @@
 import { app } from 'electron'
 
-const PRODUCTION_ARTIFACTS_API_URL = 'https://share.onorca.dev'
+export const ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE =
+  'Cloud sharing is not available in Seal unless ORCA_ARTIFACTS_API_URL is set.'
 
 function isPackaged(): boolean {
   try {
@@ -10,27 +11,37 @@ function isPackaged(): boolean {
   }
 }
 
-export function resolveArtifactCloudApiUrl(
+/** Seal ships no hosted share service; null means sharing is unavailable. */
+export function findArtifactCloudApiUrl(
   override?: string,
   env: NodeJS.ProcessEnv = process.env,
   packaged = isPackaged()
-): string {
+): string | null {
   const candidate = override?.trim() || env.ORCA_ARTIFACTS_API_URL?.trim()
-  const url = new URL(candidate || PRODUCTION_ARTIFACTS_API_URL)
+  if (!candidate) {
+    return null
+  }
+  const url = new URL(candidate)
   const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)
-  const firstParty = ['onorca.dev', 'orca.dev'].some(
-    (domain) => url.hostname === domain || url.hostname.endsWith(`.${domain}`)
-  )
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback && !packaged)) {
     throw new Error('Artifact API URLs must use HTTPS; local development may use loopback HTTP.')
-  }
-  if (!firstParty && !loopback) {
-    throw new Error('Artifact API URLs must use an onorca.dev, orca.dev, or loopback host.')
   }
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/') {
     throw new Error('Artifact API URL must be an origin without credentials, paths, or parameters.')
   }
   return url.origin
+}
+
+export function resolveArtifactCloudApiUrl(
+  override?: string,
+  env: NodeJS.ProcessEnv = process.env,
+  packaged = isPackaged()
+): string {
+  const url = findArtifactCloudApiUrl(override, env, packaged)
+  if (!url) {
+    throw new Error(ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE)
+  }
+  return url
 }
 
 export function allowsArtifactCloudAuthOverride(

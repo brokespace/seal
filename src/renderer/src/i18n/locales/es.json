@@ -86,7 +86,6 @@
       "windows": {
         "administratorApproval": "Windows pedirá aprobación. Usa tu cuenta habitual.",
         "administratorDialogScope": "Esto cambia los permisos de toda la aplicación. SSH y WSL conservan sus propios permisos.",
-        "administratorDocumentation": "Leer la guía",
         "administratorLabel": "Modo administrador",
         "administratorPromptCancellation": "Si cancelas el aviso de Windows, Orca se vuelve a abrir con sus terminales conservadas. Los permisos de SSH y WSL siguen controlándose en sus hosts.",
         "administratorRestartConsequences": "Guarda tu trabajo primero. Tras la aprobación, las terminales y los agentes del host de terminal local actual se cierran. Las pestañas restauradas abren nuevos shells de administrador.",
@@ -5212,7 +5211,6 @@
           "66270286ac": "· Puedes volver a intentarlo de forma segura.",
           "157de228b4": "inspeccionar habilidad",
           "69236de8d6": "De cheques…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Enlace de habilidad de Orca",
           "releaseNotes": "Notas de la versión:",
           "targetHeader": "Objetivo de instalación",
@@ -7981,14 +7979,11 @@
           "5f539ff331": "Dispositivos emparejados"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
           "e7a3ae8c4e": "Móvil",
           "174f4a3c6d": "Controla terminales y agentes desde tu teléfono.",
           "682293cadf": "Mostrar el botón de Orca Mobile en la parte superior de la barra lateral izquierda.",
           "d4f2b65f30": "Mostrar el acceso directo de Orca Mobile en la barra lateral.",
-          "installIntro": "Instala Orca Mobile desde la",
           "installOutro": ", luego empareja a continuación.",
-          "androidApkLabel": "Android APK",
           "49089c92b3": "Mostrar botón de Orca Mobile"
         },
         "NotificationsPane": {
@@ -11453,17 +11448,12 @@
           "available": "Disponible",
           "reconnecting": "Reconectando",
           "unavailable": "No disponible",
-          "signIn": "Iniciar sesión para Relay",
           "localDescription": "El teléfono debe estar en esta Wi‑Fi o conectado por Tailscale. No se necesita cuenta.",
           "pathGroup": "Cómo llega el teléfono a este ordenador",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "El teléfono puede estar en datos móviles o cualquier Wi‑Fi. El inicio de sesión solo es necesario para Relay.",
-          "relayUnavailable": "Seal Relay no está disponible en esta compilación. Usa LAN.",
-          "signInAgain": "Volver a iniciar sesión para Relay",
           "localTitle": "LAN",
           "retrying": "Reintentando",
-          "relayCell": "celda de relevo",
-          "relaySignInDetail": "Inicia la sesión de este escritorio en Seal y enruta el teléfono a través de los servidores de Seal. LAN no necesita una cuenta."
+          "relayCell": "celda de relevo"
         },
         "MobilePairingSetupSection": {
           "title": "Vincular un teléfono",
@@ -12016,24 +12006,19 @@
           "signIn": "Iniciar sesión en Orca",
           "reconnectRequired": "Tu sesión expiró. Inicie sesión nuevamente para utilizar las funciones de la nube.",
           "unavailable": "El inicio de sesión de Orca no está disponible en esta compilación.",
-          "signedOut": "Inicie sesión para ampliar Orca con funciones en la nube, incluidos Artifacts y Orca Relay.",
           "checking": "Comprobando el estado de la cuenta...",
           "signOut": "desconectar",
           "title": "Cuenta Orca",
           "description": "Comparte tu trabajo al instante y accede a tu escritorio desde Orca Mobile estés donde estés.",
-          "searchDescription": "Iniciar o cerrar sesión en la cuenta utilizada por Artifacts y Orca Relay.",
           "benefitsTitle": "Incluido con tu cuenta",
           "artifactsTitle": "Compartir artefactos",
           "artifactsDescription": "Publique archivos HTML y Markdown, luego administre cada enlace compartido desde Orca.",
-          "relayTitle": "Relevo de Orca",
-          "relayDescription": "Conecte Orca Mobile a esta computadora de escritorio a través de celular o cualquier Wi-Fi.",
           "skillsTitle": "Compartir habilidades",
           "skillsDescription": "Comparta una habilidad o un conjunto completo detrás de un enlace no listado e instálelas en cualquier máquina que utilice.",
           "keywordAccount": "cuenta",
           "keywordLogout": "cerrar sesión",
           "keywordSignIn": "iniciar sesión",
-          "keywordSignOut": "desconectar",
-          "keywordRelay": "relé"
+          "keywordSignOut": "desconectar"
         },
         "automations": {
           "title": "Automatizaciones",
@@ -15027,8 +15012,6 @@
           "directAddressHint": "Opcional. Elige la dirección Wi‑Fi o Tailscale que el teléfono usará cuando esté cerca — suele ser más rápido que Relay. Relay sigue funcionando cuando estás fuera.",
           "pairingCodeReady": "Código de emparejamiento listo",
           "noRelayCode": "No hay código de emparejamiento disponible",
-          "noPairingCode": "No hay código de emparejamiento disponible",
-          "qrSignInRequired": "Inicia sesión para crear un código de emparejamiento de Relay",
           "qrRenderFailed": "No se pudo generar el código QR; copia el código de abajo",
           "qrGeneratePrompt": "Genera un código de emparejamiento para continuar",
           "pairThisMac": "Empareja este Mac.",
@@ -15161,9 +15144,6 @@
           "body": "Reintenta, o usa LAN para emparejar mediante Tailscale o la misma red Wi‑Fi.",
           "useLan": "Usar LAN",
           "retry": "Reintentar Relay",
-          "reconnectTitle": "Tu sesión de la cuenta de Seal ha caducado.",
-          "reconnectBody": "Inicia sesión de nuevo para usar Seal Relay, o usa LAN para emparejar mediante Tailscale o la misma red Wi‑Fi.",
-          "notEntitledTitle": "Seal Relay no está incluido en esta cuenta de Seal.",
           "rateLimitedBody": "Seal Relay está ocupado. Espera un minuto y vuelve a intentarlo, o usa LAN para emparejar por Tailscale o la misma Wi‑Fi."
         },
         "relayClockSkewMessage": {
@@ -18199,7 +18179,6 @@
           "signout": {
             "confirm": {
               "title": "¿Cerrar sesión en Orca?",
-              "description": "Se cerrará tu sesión de Orca en este dispositivo. Tus proyectos y worktrees locales no se verán afectados.",
               "cancel": "Cancelar",
               "action": "Cerrar sesión"
             }
@@ -18596,8 +18575,6 @@
         "4b7d2e8f1a": "Conecte Orca Mobile a esta computadora de escritorio a través de celular o cualquier Wi-Fi.",
         "9a4c6b2d7e": "Compartir habilidades",
         "9f2c1a4b7d": "Se cerró tu sesión",
-        "7b4d9e1f2a": "Inicia sesión de nuevo como {{value0}} para restaurar el uso compartido de artefactos, Orca Relay y el uso compartido de skills.",
-        "5a1c8d3e6f": "Inicia sesión de nuevo para restaurar el uso compartido de artefactos, Orca Relay y el uso compartido de skills.",
         "1f6b2c9d4e": "Lo que recuperas",
         "2c9a5b6e8d": "Publica archivos HTML y Markdown y gestiona todos los enlaces compartidos desde Orca.",
         "3d8e5f1b9c": "Comparte skills mediante un enlace no listado e instálalos en cualquier máquina que uses."

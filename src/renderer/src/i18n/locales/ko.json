@@ -86,7 +86,6 @@
       "windows": {
         "administratorApproval": "Windows에서 승인을 요청합니다. 평소 사용하는 계정을 사용하세요.",
         "administratorDialogScope": "이 변경은 앱 전체의 권한에 적용됩니다. SSH와 WSL은 각자의 권한을 유지합니다.",
-        "administratorDocumentation": "가이드 읽기",
         "administratorLabel": "관리자 모드",
         "administratorPromptCancellation": "Windows 프롬프트를 취소하면 Orca가 유지된 터미널과 함께 다시 열립니다. SSH와 WSL 권한은 각자의 호스트에서 계속 제어됩니다.",
         "administratorRestartConsequences": "먼저 작업을 저장하세요. 승인 후 현재 로컬 터미널 호스트의 터미널과 에이전트가 닫힙니다. 복원된 탭은 새 관리자 셸을 엽니다.",
@@ -5032,7 +5031,6 @@
           "66270286ac": "· 안전하게 재시도할 수 있습니다.",
           "157de228b4": "스킬 점검",
           "69236de8d6": "확인 중…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Orca 스킬 링크",
           "releaseNotes": "릴리스 노트:",
           "targetHeader": "설치 대상",
@@ -7690,14 +7688,11 @@
           "5f539ff331": "페어링된 장치"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "앱스토어",
           "e7a3ae8c4e": "모바일",
           "174f4a3c6d": "휴대폰에서 terminals과 agents를 제어하세요.",
           "682293cadf": "왼쪽 사이드바 상단에 Orca Mobile 버튼을 표시합니다.",
           "d4f2b65f30": "사이드바에 Orca Mobile 바로가기를 표시합니다.",
-          "installIntro": "다음 스토어에서 Orca Mobile 설치",
           "installOutro": "하고 아래에서 페어링하세요.",
-          "androidApkLabel": "Android APK",
           "49089c92b3": "Orca Mobile 버튼 표시"
         },
         "NotificationsPane": {
@@ -11171,17 +11166,12 @@
           "available": "사용 가능",
           "reconnecting": "다시 연결 중",
           "unavailable": "사용할 수 없음",
-          "signIn": "Relay용 로그인",
           "localDescription": "휴대폰이 이 Wi‑Fi에 있거나 Tailscale로 연결되어 있어야 합니다. 계정이 필요하지 않습니다.",
           "pathGroup": "휴대폰이 이 컴퓨터에 연결되는 방식",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "휴대폰이 모바일 네트워크 또는 모든 Wi‑Fi에서 연결할 수 있습니다. 로그인은 Relay에만 필요합니다.",
-          "relayUnavailable": "이 빌드에서는 Seal Relay를 사용할 수 없습니다. LAN을 사용하세요.",
-          "signInAgain": "Relay용 다시 로그인",
           "localTitle": "LAN",
           "retrying": "재시도 중",
-          "relayCell": "릴레이 셀",
-          "relaySignInDetail": "이 데스크톱에서 Seal에 로그인하고 휴대폰 연결을 Seal 서버를 통해 전달합니다. LAN 연결에는 계정이 필요하지 않습니다."
+          "relayCell": "릴레이 셀"
         },
         "MobilePairingSetupSection": {
           "title": "휴대폰 페어링",
@@ -11648,7 +11638,6 @@
           "connected": "연결됨",
           "reconnectRequired": "세션이 만료되었습니다. 클라우드 기능을 사용하려면 다시 로그인하세요.",
           "unavailable": "이 빌드에서는 Orca 로그인을 사용할 수 없습니다.",
-          "signedOut": "로그인하여 아티팩트 및 Orca Relay를 비롯한 클라우드 기능으로 Orca를 확장하세요.",
           "checking": "계정 상태 확인 중…",
           "account": "Orca 계정",
           "signOut": "로그아웃",
@@ -11656,12 +11645,9 @@
           "signIn": "Orca 로그인",
           "title": "Orca 계정",
           "description": "작업을 즉시 공유하고 어디서나 Orca Mobile로 데스크톱에 연결하세요.",
-          "searchDescription": "아티팩트 및 Orca Relay에서 사용하는 계정에 로그인하거나 로그아웃합니다.",
           "benefitsTitle": "계정에 포함된 기능",
           "artifactsTitle": "아티팩트 공유",
           "artifactsDescription": "HTML 및 Markdown 파일을 게시하고 Orca에서 모든 공유 링크를 관리합니다.",
-          "relayTitle": "Orca Relay",
-          "relayDescription": "셀룰러 또는 모든 Wi-Fi 네트워크를 통해 Orca Mobile을 이 데스크톱에 연결합니다.",
           "skillsTitle": "스킬 공유",
           "skillsDescription": "단일 스킬 또는 전체 세트를 비공개 링크로 공유하고 사용하는 모든 기기에 설치하세요.",
           "keywordAccount": "계정",
@@ -11669,7 +11655,6 @@
           "keywordLogout": "로그아웃",
           "keywordSignIn": "로그인",
           "keywordSignOut": "로그아웃",
-          "keywordRelay": "릴레이",
           "keywordCloud": "클라우드"
         },
         "automations": {
@@ -14653,8 +14638,6 @@
           "directAddressDisclosure": "더 빠른 로컬 경로도 사용",
           "directAddressHint": "선택 사항. 근처에 있을 때(같은 Wi‑Fi 또는 Tailscale) 휴대폰이 사용할 주소를 고르세요. 보통 Relay보다 빠릅니다. 외부에 있을 때는 여전히 Relay를 사용합니다.",
           "noRelayCode": "사용 가능한 페어링 코드가 없습니다.",
-          "noPairingCode": "사용 가능한 페어링 코드가 없습니다.",
-          "qrSignInRequired": "Relay 페어링 코드를 생성하려면 로그인하세요.",
           "qrRenderFailed": "QR을 렌더링할 수 없습니다. 아래 코드를 복사하세요.",
           "qrGeneratePrompt": "계속하려면 페어링 코드를 생성하세요.",
           "pairingCodeReady": "페어링 코드 준비됨",
@@ -14788,9 +14771,6 @@
           "retrying": "재시도 중…",
           "retry": "릴레이 재시도",
           "copyDiagnostics": "진단 복사",
-          "reconnectTitle": "Seal 계정 세션이 만료되었습니다.",
-          "reconnectBody": "Seal Relay를 사용하려면 다시 로그인하거나 LAN을 사용하여 Tailscale 또는 동일한 Wi-Fi를 통해 페어링하세요.",
-          "notEntitledTitle": "이 Seal 계정에는 Seal Relay가 포함되어 있지 않습니다.",
           "rateLimitedBody": "Seal Relay가 사용 중입니다. 1분 정도 기다렸다가 다시 시도하거나, LAN을 사용해 Tailscale 또는 동일한 Wi‑Fi로 페어링하세요."
         },
         "relayClockSkewMessage": {
@@ -17739,7 +17719,6 @@
           "signout": {
             "confirm": {
               "title": "Orca에서 로그아웃할까요?",
-              "description": "이 기기의 Orca에서 로그아웃됩니다. 로컬 프로젝트와 워크트리에는 영향을 주지 않습니다.",
               "cancel": "취소",
               "action": "로그아웃"
             }
@@ -18124,8 +18103,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "로그아웃되었습니다",
         "3e8f5c2a91": "닫기",
-        "7b4d9e1f2a": "아티팩트 공유, Orca 릴레이 및 스킬 공유를 복원하려면 {{value0}}로 다시 로그인하세요.",
-        "5a1c8d3e6f": "아티팩트 공유, Orca 릴레이, 스킬 공유를 복원하려면 다시 로그인하세요.",
         "1f6b2c9d4e": "당신이 돌려받는 것",
         "8d2e4f7a1b": "아티팩트 공유",
         "2c9a5b6e8d": "HTML 및 Markdown 파일을 게시하고 Orca의 모든 공유 링크를 관리하세요.",

@@ -13,8 +13,6 @@ import type { MobilePairingConnectionMode } from '../../../../../../shared/remot
 
 type MobilePairingSetupSectionProps = {
   connectionMode: MobilePairingConnectionMode
-  /** False when Anywhere is selected but Relay cannot be committed yet. */
-  canGenerate?: boolean
   /** Reveals the Relay address disclosure when a settings search matches it. */
   addressDisclosureForcedOpen?: boolean
   connectionPathControl: ReactNode
@@ -35,7 +33,6 @@ type MobilePairingSetupSectionProps = {
 
 export function MobilePairingSetupSection({
   connectionMode,
-  canGenerate = true,
   addressDisclosureForcedOpen = false,
   connectionPathControl,
   networkInterfaces,
@@ -61,7 +58,7 @@ export function MobilePairingSetupSection({
   // Render search/custom-address pickers outright; a collapse trigger cannot close pinned-open state.
   const addressDisclosurePinned = addressDisclosureForcedOpen || selectedAddressIsCustom
   // Relay can use main’s default LAN endpoint; LAN-only requires an explicit reachable address.
-  const generateDisabled = loading || !canGenerate || (!usingRelay && !selectedAddress)
+  const generateDisabled = loading || (!usingRelay && !selectedAddress)
   // Present Relay’s direct path as additive; the phone races both and favors direct on ties.
   const relayAddressLabel = t(
     'auto.components.settings.MobilePairingSetupSection.step2RelayDisclosure',

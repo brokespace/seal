@@ -177,13 +177,13 @@ export function UnexpectedSignoutCard(): React.JSX.Element | null {
           <p className="text-sm text-muted-foreground">
             {email
               ? t(
-                  'auto.components.UnexpectedSignoutCard.7b4d9e1f2a',
-                  'Sign in again as {{value0}} to restore Artifact sharing, Orca Relay, and skill sharing.',
+                  'auto.components.UnexpectedSignoutCard.restoreSharingAs',
+                  'Sign in again as {{value0}} to restore Artifact sharing and skill sharing.',
                   { value0: email }
                 )
               : t(
-                  'auto.components.UnexpectedSignoutCard.5a1c8d3e6f',
-                  'Sign in again to restore Artifact sharing, Orca Relay, and skill sharing.'
+                  'auto.components.UnexpectedSignoutCard.restoreSharing',
+                  'Sign in again to restore Artifact sharing and skill sharing.'
                 )}
           </p>
 

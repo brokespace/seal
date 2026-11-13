@@ -568,7 +568,6 @@
         "retainedTerminalPermissions": "如果新終端機仍使用先前的權限，請開啟「管理工作階段」並選擇「重新啟動常駐程式」。這會關閉本機終端機及其正在執行的命令。",
         "administratorRestartFailed": "Orca 無法重新啟動。請重試，或使用手動說明。",
         "manualAdministratorHelp": "手動說明",
-        "administratorDocumentation": "閱讀指南",
         "cancelAdministratorRestart": "取消",
         "closeAdministratorHelp": "關閉",
         "restartingAdministrator": "正在重新啟動…",
@@ -5454,7 +5453,6 @@
           "66270286ac": "· 您可以安全地重試。",
           "157de228b4": "檢驗技能",
           "69236de8d6": "檢查中…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Orca 技能連結",
           "releaseNotes": "發行說明：",
           "targetHeader": "安裝目標",
@@ -8228,10 +8226,7 @@
           "5f539ff331": "配對裝置"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "安裝 Orca Mobile，請前往",
           "installOutro": "，然後在下方配對。",
-          "androidApkLabel": "Android APK",
           "e7a3ae8c4e": "行動版",
           "174f4a3c6d": "透過手機控制終端機和代理程式。",
           "682293cadf": "在左側邊欄頂部顯示 Orca Mobile 按鈕。",
@@ -11642,15 +11637,10 @@
           "unavailable": "不可用",
           "pathGroup": "手機存取此電腦的方式",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "手機可透過行動網路或任意 Wi‑Fi 連線。僅 Relay 需要登入。",
-          "relayUnavailable": "此版本不支援 Seal Relay。請使用區域網路。",
-          "signIn": "登入以使用 Relay",
-          "signInAgain": "重新登入以使用 Relay",
           "localTitle": "區域網路",
           "localDescription": "手機必須連線至此 Wi‑Fi 或透過 Tailscale 連線。無需帳戶。",
           "retrying": "重試",
-          "relayCell": "中繼單元",
-          "relaySignInDetail": "將這台電腦登入 Seal，並透過 Seal 的伺服器轉送手機連線。LAN 無需帳戶。"
+          "relayCell": "中繼單元"
         },
         "MobilePairingSetupSection": {
           "title": "配對手機",
@@ -12149,7 +12139,6 @@
           "connected": "已連線",
           "reconnectRequired": "您的工作階段已過期。重新登入即可使用雲端功能。",
           "unavailable": "Orca 登入在此版本中不可用。",
-          "signedOut": "登入以使用成品和 Orca Relay 等雲端功能。",
           "checking": "檢查帳戶狀態...",
           "account": "Orca 帳戶",
           "signOut": "登出",
@@ -12157,12 +12146,9 @@
           "signIn": "登入 Orca",
           "title": "Orca 帳戶",
           "description": "無論您身在何處，都可以立即分享工作並透過 Orca Mobile 存取您的桌面。",
-          "searchDescription": "登入或登出使用成品與 Orca Relay 的帳戶。",
           "benefitsTitle": "包含在您的帳戶中",
           "artifactsTitle": "成品分享",
           "artifactsDescription": "發布 HTML 和 Markdown 檔案，並管理 Orca 中的分享連結。",
-          "relayTitle": "Orca Relay",
-          "relayDescription": "透過行動網路或任何 Wi-Fi 將 Orca Mobile 連線到此桌面。",
           "skillsTitle": "技能分享",
           "skillsDescription": "透過未公開列出的連結分享單項或整套技能，並安裝到您使用的任何電腦上。",
           "keywordAccount": "帳戶",
@@ -12170,7 +12156,6 @@
           "keywordLogout": "登出",
           "keywordSignIn": "登入",
           "keywordSignOut": "登出",
-          "keywordRelay": "中繼",
           "keywordCloud": "雲"
         },
         "automations": {
@@ -15128,8 +15113,6 @@
           "051978a785": "您的手機已配對。",
           "pairingQrError": "無法將此配對碼呈現為 QR Code。請改為將其複製到 Seal Mobile。",
           "noRelayCode": "沒有可用的配對碼",
-          "noPairingCode": "沒有可用的配對碼",
-          "qrSignInRequired": "登入以建立 Relay 配對碼",
           "qrRenderFailed": "無法呈現 QR Code — 複製下面的配對碼",
           "qrGeneratePrompt": "產生配對碼以繼續",
           "pairingCodeReady": "配對碼已準備就緒",
@@ -15265,9 +15248,6 @@
           "retrying": "正在重試...",
           "retry": "重試 Relay",
           "copyDiagnostics": "複製診斷",
-          "reconnectTitle": "您的 Seal 帳戶工作階段已過期。",
-          "reconnectBody": "再次登入使用 Seal Relay，或使用 LAN 透過 Tailscale 或相同 Wi-Fi 進行配對。",
-          "notEntitledTitle": "此 Seal 帳戶不包含 Seal Relay。",
           "rateLimitedBody": "Seal Relay 正忙。請等待一分鐘再重試，或使用 LAN 透過 Tailscale 或同一 Wi‑Fi 配對。"
         },
         "relayClockSkewMessage": {
@@ -18211,7 +18191,6 @@
           "signout": {
             "confirm": {
               "title": "登出 Orca？",
-              "description": "重新登入之前，成品和 Orca Relay 將無法使用。你的本機專案和工作樹不會受到影響。",
               "cancel": "取消",
               "action": "登出"
             }
@@ -18547,8 +18526,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "你已登出",
         "3e8f5c2a91": "關閉",
-        "7b4d9e1f2a": "重新以 {{value0}} 登入，以恢復成品分享、Orca Relay 和技能分享。",
-        "5a1c8d3e6f": "重新登入以恢復成品分享、Orca Relay 和技能分享。",
         "1f6b2c9d4e": "重新登入後可使用的功能",
         "8d2e4f7a1b": "成品分享",
         "2c9a5b6e8d": "發布 HTML 和 Markdown 檔案，並在 Orca 中管理所有分享連結。",

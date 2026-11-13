@@ -16,7 +16,8 @@ import { prepareArtifactCloudUse } from '../orca-profiles/cloud-auth/profile-art
 import { runWithFreshOrcaCloudSession } from '../orca-profiles/cloud-session/profile-cloud-session-refresh'
 import {
   allowsArtifactCloudAuthOverride,
-  resolveArtifactCloudApiUrl
+  ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE,
+  findArtifactCloudApiUrl
 } from './artifact-cloud-config'
 import {
   type ArtifactShareScope,
@@ -272,7 +273,10 @@ export class ArtifactCloudService {
     options: ArtifactCloudOptions,
     operation: (token: string, apiUrl: string, auth: ArtifactAuthContext) => Promise<T>
   ): Promise<ArtifactCloudOperation<T>> {
-    const apiUrl = resolveArtifactCloudApiUrl(options.apiUrl)
+    const apiUrl = findArtifactCloudApiUrl(options.apiUrl)
+    if (!apiUrl) {
+      return { status: 'unconfigured', message: ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE }
+    }
     const active = ensureActiveOrcaProfile(this.userDataPath)
     prepareArtifactCloudUse(active.profile, this.userDataPath)
     if (options.authToken?.trim()) {
