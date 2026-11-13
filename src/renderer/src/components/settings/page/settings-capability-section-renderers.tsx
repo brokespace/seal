@@ -1,4 +1,5 @@
 import { AccountsPane } from '../accounts/AccountsPane'
+import { SealAccountsDashboard } from '../seal-accounts/SealAccountsDashboard'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
@@ -87,20 +88,26 @@ export function renderAccountsSettingsSection(
           wslCapabilitiesLoading={terminal.localWindowsRuntimeCapabilities.isLoading}
         />
       ) : (
-        <AccountsPane
-          key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
-          nativeAccounts={model.nativeAccounts}
-          onAccountLocationChange={model.releaseNativeAccounts}
-          settings={model.settings}
-          updateSettings={model.updateSettings}
-          updateSettingsOrThrow={model.updateSettingsOrThrow}
-          hostScope={model.settingsHostScope}
-          wslSupportedPlatform={terminal.runtimeWslSupportedPlatform}
-          wslAvailable={terminal.windowsTerminalCapabilities.wslAvailable}
-          wslDistros={terminal.windowsTerminalCapabilities.wslDistros}
-          wslCapabilitiesLoading={terminal.windowsTerminalCapabilities.isLoading}
-          accountOwnerPlatform={terminal.windowsTerminalCapabilities.hostPlatform}
-        />
+        <div className="space-y-8">
+          <SealAccountsDashboard
+            key={getProviderAccountsOwnerKey(model.settingsHostScope.target)}
+            target={model.settingsHostScope.target}
+          />
+          <AccountsPane
+            key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
+            nativeAccounts={model.nativeAccounts}
+            onAccountLocationChange={model.releaseNativeAccounts}
+            settings={model.settings}
+            updateSettings={model.updateSettings}
+            updateSettingsOrThrow={model.updateSettingsOrThrow}
+            hostScope={model.settingsHostScope}
+            wslSupportedPlatform={terminal.runtimeWslSupportedPlatform}
+            wslAvailable={terminal.windowsTerminalCapabilities.wslAvailable}
+            wslDistros={terminal.windowsTerminalCapabilities.wslDistros}
+            wslCapabilitiesLoading={terminal.windowsTerminalCapabilities.isLoading}
+            accountOwnerPlatform={terminal.windowsTerminalCapabilities.hostPlatform}
+          />
+        </div>
       )}
     </SettingsSection>
   )
