@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { MachineId, MachineMetrics } from '../../../../../shared/machines/machine-types'
-import type { MachineSummary } from './machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { parseExecutionHostId } from '../../../../../shared/execution-host'
 

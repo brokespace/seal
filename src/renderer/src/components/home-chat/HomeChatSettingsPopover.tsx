@@ -28,6 +28,7 @@ export function HomeChatSettingsPopover({
   const [baseUrl, setBaseUrl] = useState('')
   const [model, setModel] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [contextWindow, setContextWindow] = useState('')
   const [web, setWeb] = useState<HomeChatWebSearchDraft>({
     searchProvider: 'duckduckgo',
     searxngUrl: '',
@@ -40,6 +41,7 @@ export function HomeChatSettingsPopover({
       setBaseUrl(settings.openai.baseUrl)
       setModel(settings.openai.model)
       setApiKey('')
+      setContextWindow(String(settings.openai.contextWindow))
       setWeb({
         searchProvider: settings.web.searchProvider,
         searxngUrl: settings.web.searxngUrl,
@@ -52,7 +54,12 @@ export function HomeChatSettingsPopover({
   const save = async (): Promise<void> => {
     setSaving(true)
     const saved = await onSave({
-      openai: { baseUrl, model, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) },
+      openai: {
+        baseUrl,
+        model,
+        ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+        ...(Number(contextWindow) > 0 ? { contextWindow: Number(contextWindow) } : {})
+      },
       web: {
         searchProvider: web.searchProvider,
         searxngUrl: web.searxngUrl,
@@ -124,6 +131,25 @@ export function HomeChatSettingsPopover({
               className="h-8"
               onChange={(event) => setApiKey(event.target.value)}
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="home-chat-context-window">
+              {t('homeChat.settings.contextWindow', 'Context window (tokens)')}
+            </Label>
+            <Input
+              id="home-chat-context-window"
+              inputMode="numeric"
+              value={contextWindow}
+              variant="code"
+              className="h-8"
+              onChange={(event) => setContextWindow(event.target.value.replace(/\D/g, ''))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t(
+                'homeChat.settings.contextWindowHint',
+                'Seal summarizes older messages for the model before this fills.'
+              )}
+            </p>
           </div>
           <Separator />
           <HomeChatWebSearchFields

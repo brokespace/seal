@@ -7,7 +7,7 @@ import { Bot, Laptop, Server, Cloud } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineId, MachineMetrics } from '../../../../../shared/machines/machine-types'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import {
   MachineMeter,
   MachineStatusDot,

@@ -14,3 +14,12 @@ export const MACHINE_HOST_WATCH_MAX_DIRS = 256
 
 /** Streams this feature owns; `machineHost.cancel` refuses any other subscription id. */
 export const MACHINE_HOST_SUBSCRIPTION_PREFIX = 'machine-host-'
+
+export const MACHINE_HOST_EXEC_MAX_SCRIPT_CHARS = 1024 * 1024
+
+export const MACHINE_HOST_EXEC_MAX_STDIN_BASE64_CHARS = 2 * 1024 * 1024
+
+export const MACHINE_HOST_EXEC_MAX_TIMEOUT_MS = 60 * 60 * 1000
+
+/** Per stream (stdout, stderr); two of them stay far below the 8 MiB runtime frame cap. */
+export const MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES = 1024 * 1024

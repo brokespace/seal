@@ -23,3 +23,28 @@ export function formatHomeChatBytes(bytes: number): string {
   }
   return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`
 }
+
+/** 12.4k, 200k, 1M: token counts for the context meter. */
+export function formatHomeChatTokens(tokens: number): string {
+  if (tokens < 1000) {
+    return String(Math.max(0, Math.round(tokens)))
+  }
+  if (tokens < 1_000_000) {
+    const thousands = tokens / 1000
+    return `${thousands < 100 ? thousands.toFixed(1).replace(/\.0$/, '') : Math.round(thousands)}k`
+  }
+  return `${(tokens / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+}
+
+/** now, 5m, 3h, 2d: how long ago a thread was last touched. */
+export function formatHomeChatAge(at: number, now = Date.now()): string {
+  const minutes = Math.floor(Math.max(0, now - at) / 60_000)
+  if (minutes < 1) {
+    return 'now'
+  }
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
+  const hours = Math.floor(minutes / 60)
+  return hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d`
+}

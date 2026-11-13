@@ -7,7 +7,7 @@ import type { MachineMetrics } from '../../../../shared/machines/machine-types'
 import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
-import type { MachineSummary } from '../machines/model/machine-summaries'
+import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import {
   liveSessionProviderLabel,
   liveSessionTitle
