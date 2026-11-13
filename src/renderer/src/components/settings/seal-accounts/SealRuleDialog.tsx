@@ -155,7 +155,7 @@ export function SealRuleDialog({
                   id="seal-rule-project"
                   value={project}
                   disabled={rule !== null}
-                  placeholder="github.com/acme/*"
+                  placeholder={t('seal.accounts.rules.projectPlaceholder', 'github.com/acme/*')}
                   onChange={(event) => setProject(event.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">

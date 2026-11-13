@@ -12,7 +12,7 @@ import {
   FIXTURE_NOW,
   populatedScenario,
   type SealAccountsPageScenario
-} from './seal-accounts-page-fixture-data'
+} from './seal-accounts-page.test-fixture'
 import type { SealSignInController } from './use-seal-sign-in'
 
 const done = async (): Promise<boolean> => true

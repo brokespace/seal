@@ -101,7 +101,7 @@ function SwitchPromptDialog({ prompt }: { prompt: ClaudeAccountSwitchPrompt }): 
               </span>
               <span className="block text-xs text-muted-foreground">
                 {t(
-                  'accounts.claude.switchSessions.dontAskAgainHint',
+                  'accounts.claude.switchSessions.turnOffInAccountsHint',
                   'You can turn this off in Settings → Accounts.'
                 )}
               </span>

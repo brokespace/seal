@@ -4,7 +4,6 @@
       "agentLogin": "에이전트 자체 로그인 사용",
       "connecting": "호스트에 연결 중…",
       "connectingTo": "{{name}}에 연결 중…",
-      "default": "시스템 기본값",
       "fableWindow": "Fable",
       "hostNotFound": "호스트를 찾을 수 없습니다.",
       "invalidSnapshot": "호스트에서 받은 계정 스냅샷이 유효하지 않습니다.",

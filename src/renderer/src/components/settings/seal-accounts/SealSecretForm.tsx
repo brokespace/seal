@@ -103,7 +103,13 @@ export function SealSecretForm({
           spellCheck={false}
           aria-invalid={wrongKind}
           value={secret}
-          placeholder={token ? 'sk-ant-oat01-…' : provider === 'claude' ? 'sk-ant-api03-…' : 'sk-…'}
+          placeholder={
+            token
+              ? t('seal.accounts.secret.tokenPlaceholder', 'sk-ant-oat01-…')
+              : provider === 'claude'
+                ? t('seal.accounts.secret.anthropicPlaceholder', 'sk-ant-api03-…')
+                : t('seal.accounts.secret.openaiPlaceholder', 'sk-…')
+          }
           onChange={(event) => setSecret(event.target.value)}
         />
         {wrongKind ? (
