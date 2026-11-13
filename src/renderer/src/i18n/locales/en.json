@@ -20179,6 +20179,44 @@
           "title": "Transfers",
           "clear": "Clear finished"
         }
+      },
+      "live-sessions": {
+        "LiveSessionChat": {
+          "noRoute": "Seal can’t type into this session: it runs outside tmux and a Seal pane"
+        },
+        "LiveSessionComposer": {
+          "placeholder": "Message this session",
+          "send": "Send"
+        },
+        "LiveSessionList": {
+          "label": "Agent sessions",
+          "sealPane": "Seal pane"
+        },
+        "LiveSessionsPage": {
+          "title": "Agent sessions",
+          "refresh": "Scan again",
+          "scanning": "Looking for sessions",
+          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.",
+          "pick": "Pick a session to open its chat"
+        },
+        "LiveSessionsSidebarEntry": {
+          "label": "Agent sessions"
+        },
+        "status": {
+          "working": "Working",
+          "waiting": "Waiting for input",
+          "permission": "Needs permission",
+          "errored": "Errored",
+          "done": "Done"
+        },
+        "untitled": "New session",
+        "message": {
+          "queued": "Waiting to send",
+          "sending": "Sending",
+          "sent": "Sent, waiting for the session",
+          "delivered": "Delivered",
+          "failed": "Not delivered"
+        }
       }
     },
     "i18n": {

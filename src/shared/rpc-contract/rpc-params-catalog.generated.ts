@@ -32,6 +32,15 @@ import {
   DesktopBrowserBridgeAttachParams,
   DesktopBrowserBridgeResultParams
 } from '../desktop-browser-bridge-protocol'
+import {
+  LiveSessionAnswerParams,
+  LiveSessionMessagesParams,
+  LiveSessionRetryParams,
+  LiveSessionSendParams,
+  LiveSessionTranscriptParams,
+  LiveSessionUnwatchParams,
+  LiveSessionWatchTranscriptParams
+} from '../live-sessions/live-session-rpc-params'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
 import { MobileWebBundleLocaleCatalogParamsSchema } from '../mobile-web-bundle/locale-catalog-contract'
 import { OrcadMigrationBlobChunkRequestSchema } from '../orcad-migration/orcad-migration-blob-transfer'
@@ -1368,6 +1377,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'machineHost.stat': MachineHostPath,
   'machineHost.watch': MachineHostWatch,
   'machineHost.writeChunk': MachineHostWriteChunk,
+  'liveSessions.answer': LiveSessionAnswerParams,
+  'liveSessions.list': null,
+  'liveSessions.messages': LiveSessionMessagesParams,
+  'liveSessions.retry': LiveSessionRetryParams,
+  'liveSessions.send': LiveSessionSendParams,
+  'liveSessions.transcript': LiveSessionTranscriptParams,
+  'liveSessions.unwatch': LiveSessionUnwatchParams,
+  'liveSessions.watch': null,
+  'liveSessions.watchTranscript': LiveSessionWatchTranscriptParams,
   'managedRuntime.cancel': ManagedRuntimeCancelParams,
   'managedRuntime.install': ManagedRuntimeAgentParams,
   'managedRuntime.remove': ManagedRuntimeAgentParams,

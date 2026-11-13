@@ -13,6 +13,7 @@ import { SetupGuideSidebarEntry } from './SetupGuideSidebarEntry'
 import { SidebarTaskNavButton } from './SidebarTaskNavButton'
 import { SidebarHomeNavButton } from '../home-overview/SidebarHomeNavButton'
 import { SidebarMachinesNavButton } from './SidebarMachinesNavButton'
+import { LiveSessionsSidebarEntry } from '../live-sessions/LiveSessionsSidebarEntry'
 import { HideSidebarMenu } from './sidebar-nav-controls'
 import { useTranslate } from '@/i18n/use-translate'
 import { lazyWithRetry } from '@/app-shell/startup/lazy-with-retry'
@@ -123,6 +124,7 @@ const SidebarNav = React.memo(function SidebarNav() {
       <SetupGuideSidebarEntry />
       <SidebarTaskNavButton />
       <SidebarMachinesNavButton />
+      <LiveSessionsSidebarEntry />
       {showArtifactsButton ? (
         <ContextMenu>
           <ContextMenuTrigger asChild>
