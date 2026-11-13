@@ -1,4 +1,5 @@
 import { defineMethod, type RpcContext } from '../../core'
+import { resolveRpcCallerIdentity } from '../../callers/rpc-caller-identity'
 import type { OrcadFeature } from '../../startup/orcad-readiness'
 import {
   SealAccountsAddApiKeyParams,
@@ -192,7 +193,8 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
     params: SealAccountsSyncFleetParams,
     handler: async (params, context) => {
       // Exported logins must never leave this desktop for a paired client's request.
-      if (context.clientKind !== undefined) {
+      const caller = resolveRpcCallerIdentity(context)?.kind
+      if (caller !== 'desktop' && caller !== 'local-cli') {
         throw new Error('Push accounts from the Seal desktop app or its CLI.')
       }
       return { results: await syncSealFleet(accounts(), params.environmentIds, params.accounts) }
