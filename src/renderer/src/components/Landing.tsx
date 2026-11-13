@@ -22,7 +22,6 @@ import {
   LandingShortcutList,
   type LandingShortcutItem
 } from './landing-layout'
-import HomeChat from './home-chat/HomeChat'
 
 // Do not deep-link to /stargazers: GitHub 404s that page for users without repo write access.
 const ORCA_GITHUB_URL = 'https://github.com/stablyai/orca'
@@ -252,7 +251,7 @@ export default function Landing(): React.JSX.Element {
   ])
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-background pr-(--home-chat-width) [--home-chat-width:clamp(360px,45%,640px)]">
+    <div className="absolute inset-0 flex items-center justify-center bg-background">
       <div className="w-full max-w-lg px-6">
         <div className="flex flex-col items-center gap-4 py-8">
           <LandingBrand />
@@ -288,11 +287,10 @@ export default function Landing(): React.JSX.Element {
       </div>
 
       {showGitHubSupportFooter && (
-        <div className="absolute bottom-6 left-0 right-(--home-chat-width) flex justify-center">
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
           <GitHubStarButton hasRepos={repos.length > 0} state={starState} setState={setStarState} />
         </div>
       )}
-      <HomeChat className="absolute inset-y-0 right-0 w-(--home-chat-width) border-l border-border" />
     </div>
   )
 }

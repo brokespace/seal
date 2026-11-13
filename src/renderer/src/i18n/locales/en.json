@@ -25629,8 +25629,7 @@
         "paused": "Paused"
       },
       "chat": {
-        "label": "Chat",
-        "placeholder": "Chat with your agents is coming soon."
+        "label": "Chat"
       },
       "machines": {
         "load": "CPU {{percent}}%",
