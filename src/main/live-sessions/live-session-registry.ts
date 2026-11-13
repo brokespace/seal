@@ -5,20 +5,19 @@ import type {
   LiveSessionRegistrySnapshot
 } from '../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
-import {
-  HostSessionScanner,
-  LOCAL_SCAN_LIMITS,
-  SSH_SCAN_LIMITS
-} from './discovery/host-session-scanner'
+import { HostSessionScanner, scanLimitsFor } from './discovery/host-session-scanner'
 import { mergeSealPanes, type SealPane } from './seal-panes/seal-pane-sessions'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
-  /** Every host to scan right now (this machine and connected SSH targets). */
+  /** Every host to scan right now (this machine, connected SSH targets and paired servers). */
   hosts: () => LiveSessionHost[]
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
   subscribeSealPanes?: (onChange: () => void) => () => void
+  /** Sessions the user removed from Seal; never published. */
+  isRemoved?: (session: LiveSession) => boolean
+  onHostScanned?: (host: LiveSessionHost, sessions: LiveSession[]) => void
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
   log?: (message: string, error?: unknown) => void
@@ -181,7 +180,7 @@ export class LiveSessionRegistry {
               run: (script, options) => this.hosts.get(hostId)!.host.run(script, options),
               transcriptFiles: host.transcriptFiles
             },
-            host.machine.kind === 'local' ? LOCAL_SCAN_LIMITS : SSH_SCAN_LIMITS
+            scanLimitsFor(host.machine.kind)
           ),
           sessions: [],
           nextScanAt: 0,
@@ -213,6 +212,7 @@ export class LiveSessionRegistry {
         state.sessions = result.sessions
       }
       state.failures = 0
+      this.deps.onHostScanned?.(state.host, state.sessions)
       this.setHostError(hostId, result.complete ? null : 'The scan was cut short')
       this.publish()
     } catch (error) {
@@ -243,9 +243,15 @@ export class LiveSessionRegistry {
     this.emit({ type: 'host-error', revision: ++this.revision, hostId, error })
   }
 
+  republish(): void {
+    this.publish()
+  }
+
   private publish(): void {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
-    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
+    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine).filter(
+      (session) => !this.deps.isRemoved?.(session)
+    )
     const seen = new Set<string>()
     for (const session of merged) {
       if (seen.has(session.id)) {

@@ -61,31 +61,16 @@ describe('groupHomeSessions', () => {
 })
 
 describe('buildHomeAttentionItems', () => {
-  it('lists blocked sessions, unseen errors, failed machines and accounts near their limit', () => {
-    const items = buildHomeAttentionItems({
-      sessions: [
-        session('working'),
-        session('waiting', { state: 'waiting' }),
-        session('seen-error', { state: 'errored', unseen: false }),
-        session('new-error', { state: 'errored', unseen: true })
-      ],
-      machines: [
-        { id: 'ssh:a', label: 'a', kind: 'ssh', status: 'error' },
-        { id: 'ssh:b', label: 'b', kind: 'ssh', status: 'offline' }
-      ],
-      accounts: [
-        account({ windows: [{ kind: 'session', usedPercent: 92, resetsAt: null }] }),
-        account({
-          id: 'codex:active',
-          windows: [{ kind: 'weekly', usedPercent: 40, resetsAt: null }]
-        })
-      ]
-    })
-    expect(items.map((item) => item.id)).toEqual([
-      'session:waiting',
-      'session:new-error',
-      'machine:ssh:a',
-      'account:claude:active'
+  it('lists only sessions blocked on the user or newly errored, each with its reason', () => {
+    const items = buildHomeAttentionItems([
+      session('working'),
+      session('waiting', { state: 'waiting', askSummary: 'Pick a branch name' }),
+      session('seen-error', { state: 'errored', unseen: false }),
+      session('new-error', { state: 'errored', unseen: true, errorSummary: 'API Error: 500' })
+    ])
+    expect(items.map((item) => [item.id, item.reason])).toEqual([
+      ['session:waiting', 'Pick a branch name'],
+      ['session:new-error', 'API Error: 500']
     ])
   })
 })

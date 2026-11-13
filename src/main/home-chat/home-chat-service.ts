@@ -31,6 +31,7 @@ export type HomeChatServiceDeps = Pick<
   store: HomeChatStore
   accounts: HomeChatAccountProvider
   emit: (event: HomeChatEvent) => void
+  idleCloseMs?: () => number | null
 }
 
 function summary({ entries: _entries, ...rest }: HomeChat): HomeChatSummary {
@@ -83,7 +84,8 @@ export class HomeChatService {
           services.subagents.workerTurnEnded(chatId, failed)
         }
       },
-      onChatChanged: (stored, entry) => this.publish(stored, entry)
+      onChatChanged: (stored, entry) => this.publish(stored, entry),
+      idleCloseMs: deps.idleCloseMs
     })
   }
 

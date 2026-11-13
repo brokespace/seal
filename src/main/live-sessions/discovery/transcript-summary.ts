@@ -24,6 +24,12 @@ export type TranscriptSummary = {
   detail: string | null
   firstAt: number | null
   lastAt: number | null
+  /** Another program drives it (`claude -p`, an Agent SDK host such as Seal's Home chat, `codex exec`). */
+  headless: boolean
+  /** Record ids seen in the head and tail, for linking a resumed copy to what it continues. */
+  recordIds: string[]
+  /** Record ids this file says it continues from: a parent it does not hold, a summary's leaf. */
+  continues: string[]
 }
 
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
@@ -164,6 +170,26 @@ function claudePhase(
   return { phase: 'unknown', detail: null }
 }
 
+function claudeIdentity(
+  head: Record<string, unknown>[],
+  tail: Record<string, unknown>[]
+): Pick<TranscriptSummary, 'headless' | 'recordIds' | 'continues'> {
+  const headIds = new Set(head.map((r) => str(r.uuid)).filter((id): id is string => id !== null))
+  const firstParent = head.map((r) => str(r.parentUuid)).find((id) => id !== null)
+  const leaves = head
+    .filter((r) => r.type === 'summary')
+    .map((r) => str(r.leafUuid))
+    .filter((id): id is string => id !== null && !headIds.has(id))
+  return {
+    // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
+    headless: str(head.find((r) => str(r.entrypoint))?.entrypoint)?.startsWith('sdk') === true,
+    recordIds: [
+      ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
+    ],
+    continues: [...(firstParent && !headIds.has(firstParent) ? [firstParent] : []), ...leaves]
+  }
+}
+
 export function summarizeClaudeTranscript(input: {
   path: string
   head: string | null
@@ -190,6 +216,7 @@ export function summarizeClaudeTranscript(input: {
     .find(Boolean)
   const timed = all.map(timeOf).filter((t): t is number => t !== null)
   return {
+    ...claudeIdentity(head, tail),
     provider: 'claude',
     providerSessionId: id,
     cwd,
@@ -265,9 +292,11 @@ export function summarizeCodexRollout(input: {
   const all = [...head, ...tail]
   let id = UUID.exec(basename(input.path))?.[1] ?? basename(input.path)
   let cwd: string | null = null
+  let headless: boolean | null = null
   for (const record of all) {
     const payload = rec(record.payload)
     if (record.type === 'session_meta') {
+      headless ??= payload?.source === 'exec' || payload?.originator === 'codex_exec'
       id = str(payload?.id) ?? id
       cwd = str(payload?.cwd) ?? cwd
     } else if (record.type === 'turn_context') {
@@ -277,6 +306,9 @@ export function summarizeCodexRollout(input: {
   const firstPrompt = all.map(codexPromptText).find(Boolean)
   const timed = all.map(timeOf).filter((t): t is number => t !== null)
   return {
+    headless: headless === true,
+    recordIds: [],
+    continues: [],
     provider: 'codex',
     providerSessionId: id,
     cwd,

@@ -90,6 +90,7 @@ const SESSIONS: HomeSession[] = [
     agentType: 'codex',
     agentLabel: 'Codex',
     finishedAt: NOW - 40 * MIN,
+    errorSummary: 'CUDA out of memory',
     lastMessage: { role: 'agent', text: 'CUDA out of memory while loading checkpoint.' }
   })
 ]

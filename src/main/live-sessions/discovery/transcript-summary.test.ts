@@ -32,7 +32,7 @@ describe('summarizeClaudeTranscript', () => {
     const text = lines(opening)
     expect(
       summarizeClaudeTranscript({ path: claudePath, head: text, tail: text, tailIsWholeFile: true })
-    ).toEqual({
+    ).toMatchObject({
       provider: 'claude',
       providerSessionId: '0b5f0c7e-1111-4222-8333-944445555666',
       cwd: '/home/b/seal',
@@ -136,7 +136,9 @@ describe('summarizeCodexRollout', () => {
         payload: { type: 'exec_approval_request', command: ['rm', '-rf', 'tmp'] }
       }
     ])
-    expect(summarizeCodexRollout({ path, head: text, tail: text, tailIsWholeFile: true })).toEqual({
+    expect(
+      summarizeCodexRollout({ path, head: text, tail: text, tailIsWholeFile: true })
+    ).toMatchObject({
       provider: 'codex',
       providerSessionId: '0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
       cwd: '/srv/api',

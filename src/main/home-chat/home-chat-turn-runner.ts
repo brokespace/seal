@@ -5,6 +5,7 @@ import { mergeHomeChatEntry } from '../../shared/home-chat/home-chat-entry-merge
 import type { HomeChatAccountProvider } from './home-chat-accounts'
 import type { HomeChatApprovals } from './home-chat-approvals'
 import { HomeChatEntryWriter } from './home-chat-entry-writer'
+import { HomeChatIdleClose } from './home-chat-idle-close'
 import type { HomeChatStore, StoredHomeChat } from './home-chat-store'
 import { withTranscriptPreamble } from './home-chat-transcript-preamble'
 import type { HomeChatBackendSession } from './backends/home-chat-backend'
@@ -28,6 +29,8 @@ export type HomeChatTurnRunnerDeps = {
   onTurnEnded: (chatId: string, failed: boolean) => void
   /** The chat changed: persist and broadcast it. */
   onChatChanged: (stored: StoredHomeChat, entry?: HomeChatEntry) => void
+  /** Close a backend this long after its last turn; null keeps it until the chat closes. */
+  idleCloseMs?: () => number | null
 }
 
 type TurnInput =
@@ -53,6 +56,7 @@ export class HomeChatTurnRunner {
   private readonly sessions = new Map<string, LiveSession>()
   private readonly running = new Map<string, AbortController>()
   private readonly pendingWakes = new Map<string, TurnInput[]>()
+  private readonly idleClose = new HomeChatIdleClose()
 
   constructor(private readonly deps: HomeChatTurnRunnerDeps) {}
 
@@ -107,6 +111,7 @@ export class HomeChatTurnRunner {
 
   private start(stored: StoredHomeChat, input: TurnInput, title: string): void {
     const controller = new AbortController()
+    this.idleClose.clear(stored.chat.id)
     this.running.set(stored.chat.id, controller)
     this.deps.onChatChanged({ ...stored, chat: { ...stored.chat, status: 'running', title } })
     void this.runTurn(stored.chat.id, input, controller)
@@ -132,6 +137,7 @@ export class HomeChatTurnRunner {
 
   async closeSession(chatId: string): Promise<void> {
     this.stop(chatId)
+    this.idleClose.clear(chatId)
     const live = this.sessions.get(chatId)
     this.sessions.delete(chatId)
     await live?.session.close().catch(() => undefined)
@@ -207,10 +213,26 @@ export class HomeChatTurnRunner {
       if (!controller.signal.aborted) {
         this.startNextWake(chatId)
       }
+      if (!this.running.has(chatId)) {
+        this.armIdleClose(chatId)
+      }
+    }
+  }
+
+  // The next turn resumes the conversation from its saved session id, so closing loses nothing.
+  private armIdleClose(chatId: string): void {
+    const ms = this.deps.idleCloseMs?.() ?? null
+    if (ms !== null && this.sessions.has(chatId)) {
+      this.idleClose.arm(chatId, ms, () => {
+        if (!this.running.has(chatId)) {
+          void this.closeSessionOnly(chatId)
+        }
+      })
     }
   }
 
   private async closeSessionOnly(chatId: string): Promise<void> {
+    this.idleClose.clear(chatId)
     const live = this.sessions.get(chatId)
     this.sessions.delete(chatId)
     await live?.session.close().catch(() => undefined)

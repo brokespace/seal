@@ -145,6 +145,8 @@ export function codexQueueOutcome(out: string): RouteAttempt {
   return { outcome: 'unavailable', reason: `codex queue refused it${said ? ` (${said})` : ''}` }
 }
 
+const RESUME_TURN_LIMIT_S = 2 * 60 * 60
+
 /** A closed session: the CLI resumes it headless, which appends to the same transcript. */
 export function resumeCommand(session: LiveSession, text: string): string {
   const b64 = shQuote(Buffer.from(text, 'utf8').toString('base64'))
@@ -158,7 +160,9 @@ export function resumeCommand(session: LiveSession, text: string): string {
   return (
     `${cwd}T=$(printf %s ${b64} | ${B64_DECODE}); ` +
     `command -v ${session.provider} >/dev/null 2>&1 || { echo "@@MISSING"; exit 0; }; ` +
-    `nohup env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT ${run} </dev/null >/dev/null 2>&1 & echo "@@STARTED"`
+    // One turn, then it exits; the time limit ends a turn that hangs instead of leaving it behind.
+    `TO=$(command -v timeout || command -v gtimeout); ` +
+    `nohup env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT \${TO:+"$TO" ${RESUME_TURN_LIMIT_S}} ${run} </dev/null >/dev/null 2>&1 & echo "@@STARTED"`
   )
 }
 

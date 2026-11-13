@@ -19,3 +19,18 @@ export function isSshConfigSourcedTarget(
     (target.source === undefined && isLegacyConfigImportTarget(target))
   )
 }
+
+const VM_TOOL_DIR = /[\\/]\.(colima|lima|orbstack)[\\/]/
+
+/** A host Colima, Lima or OrbStack wrote into ~/.ssh/config for its own VM, not one the user added. */
+export function isVmToolSshConfigTarget(
+  target: Pick<
+    SshTarget,
+    'source' | 'label' | 'configHost' | 'host' | 'identityFile' | 'proxyCommand'
+  >
+): boolean {
+  return (
+    isSshConfigSourcedTarget(target) &&
+    [target.identityFile, target.proxyCommand].some((value) => value && VM_TOOL_DIR.test(value))
+  )
+}

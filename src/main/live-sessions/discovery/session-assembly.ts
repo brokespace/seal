@@ -12,6 +12,7 @@ import { parseAgentScreen, type AgentScreen } from './agent-screen'
 import type { TranscriptPhase, TranscriptSummary } from './transcript-summary'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import { agentProcesses, codexHomeOf, processBinary, sessionIdFromArgs } from './agent-processes'
+import { conversationTranscripts, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
   path: string
@@ -125,7 +126,9 @@ type Claim = {
 function pairProcesses(
   processes: (DiscoveredProcess & { provider: LiveSessionProvider })[],
   transcripts: SummarizedTranscript[],
-  claudeSessionByPid: ReadonlyMap<number, string>
+  claudeSessionByPid: ReadonlyMap<number, string>,
+  ownedPaths: ReadonlyMap<number, ReadonlySet<string>>,
+  freshSince: number
 ): Claim[] {
   const free = new Set(transcripts)
   const claims: Claim[] = []
@@ -140,11 +143,16 @@ function pairProcesses(
     const named =
       (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
       sessionIdFromArgs(process.args)
-    const match = named
-      ? [...free].find(
-          (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
-        )
-      : undefined
+    const owned = ownedPaths.get(process.pid)
+    const match =
+      (named
+        ? [...free].find(
+            (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
+          )
+        : undefined) ??
+      [...free]
+        .filter((t) => t.summary.provider === process.provider && owned?.has(t.path))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     if (match) {
       claims.push({ process, transcript: take(match) })
     } else {
@@ -159,6 +167,16 @@ function pairProcesses(
       .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     claims.push({ process, transcript: take(match) })
   }
+  // A running agent's transcript is being written right now even when its folder says otherwise.
+  for (const provider of ['claude', 'codex'] as const) {
+    const bare = claims.filter((c) => c.process?.provider === provider && !c.transcript)
+    const fresh = [...free].filter(
+      (t) => t.summary.provider === provider && t.mtimeMs >= freshSince
+    )
+    if (bare.length === 1 && fresh.length === 1) {
+      bare[0].transcript = take(fresh[0])
+    }
+  }
   for (const transcript of free) {
     claims.push({ process: null, transcript })
   }
@@ -168,7 +186,7 @@ function pairProcesses(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions'>>
+    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins'>>
   transcripts: SummarizedTranscript[]
   nowMs: number
 }): LiveSession[] {
@@ -181,11 +199,19 @@ export function assembleHostSessions(input: {
   const claudeSessionByPid = new Map(
     (output.claudeSessions ?? []).map((s) => [s.pid, s.sessionId] as const)
   )
+  const ownedPaths = new Map<number, Set<string>>()
+  for (const pin of output.pins ?? []) {
+    if (pin.kind !== 'cwd') {
+      ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
+    }
+  }
   const sessions: LiveSession[] = []
   for (const { process, transcript } of pairProcesses(
     agentProcesses(output.processes),
-    input.transcripts,
-    claudeSessionByPid
+    conversationTranscripts(input.transcripts),
+    claudeSessionByPid,
+    ownedPaths,
+    now - FRESH_WRITE_MS
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
@@ -267,5 +293,5 @@ export function assembleHostSessions(input: {
       permission
     })
   }
-  return sessions
+  return distinctSessions(sessions)
 }

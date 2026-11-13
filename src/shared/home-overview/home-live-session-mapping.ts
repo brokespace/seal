@@ -5,20 +5,28 @@ import type { HomeSession, HomeSessionState } from './home-overview-types'
 /** The fields Home reads; providers stay open so a client decoding newer agents still maps them. */
 export type HomeLiveSessionInput = Pick<
   LiveSession,
-  'id' | 'machine' | 'cwd' | 'project' | 'status' | 'statusDetail' | 'lastActivityAt' | 'startedAt'
+  | 'id'
+  | 'machine'
+  | 'cwd'
+  | 'project'
+  | 'status'
+  | 'statusDetail'
+  | 'lastActivityAt'
+  | 'startedAt'
+  | 'alive'
 > & {
   provider: string
   permission: { question: string } | null
 }
 
-function homeStateFromLive(status: LiveSessionStatus): HomeSessionState {
+function homeStateFromLive(status: LiveSessionStatus, alive: boolean): HomeSessionState {
   switch (status) {
     case 'working':
-      return 'working'
+      return alive ? 'working' : 'done'
     case 'waiting-input':
-      return 'waiting'
+      return alive ? 'waiting' : 'done'
     case 'needs-permission':
-      return 'permission'
+      return alive ? 'permission' : 'done'
     case 'errored':
       return 'errored'
     case 'done':
@@ -27,9 +35,15 @@ function homeStateFromLive(status: LiveSessionStatus): HomeSessionState {
 }
 
 export function liveSessionMachineId(session: Pick<LiveSession, 'machine'>): string {
-  return session.machine.kind === 'local'
-    ? LOCAL_EXECUTION_HOST_ID
-    : toSshExecutionHostId(session.machine.hostId)
+  switch (session.machine.kind) {
+    case 'local':
+      return LOCAL_EXECUTION_HOST_ID
+    case 'ssh':
+      return toSshExecutionHostId(session.machine.hostId)
+    case 'runtime':
+      // Paired servers already carry their `runtime:<id>` machine id.
+      return session.machine.hostId
+  }
 }
 
 /** `labels` carries the caller's localized title and agent name. */
@@ -37,7 +51,7 @@ export function homeSessionFromLive(
   session: HomeLiveSessionInput,
   labels: { title: string; agentLabel: string }
 ): HomeSession {
-  const state = homeStateFromLive(session.status)
+  const state = homeStateFromLive(session.status, session.alive)
   const machineId = liveSessionMachineId(session)
   const project = session.project ?? session.cwd ?? session.machine.label
   const askSummary =
@@ -46,7 +60,8 @@ export function homeSessionFromLive(
   return {
     id: session.id,
     state,
-    unseen: false,
+    // The registry keeps no read state: an agent still running after an error has not been dealt with.
+    unseen: state === 'errored' && session.alive,
     machineId,
     machineLabel: session.machine.label,
     projectId: `${machineId}:${session.cwd ?? project}`,
@@ -59,6 +74,7 @@ export function homeSessionFromLive(
     stateChangedAt: session.lastActivityAt,
     finishedAt: state === 'done' ? session.lastActivityAt : null,
     ...(askSummary ? { askSummary } : {}),
+    ...(state === 'errored' && session.statusDetail ? { errorSummary: session.statusDetail } : {}),
     target: { kind: 'live-session', sessionId: session.id }
   }
 }

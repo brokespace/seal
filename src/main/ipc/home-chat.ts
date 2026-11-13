@@ -31,9 +31,10 @@ type AttachmentArgs = { chatId: string; attachmentId: string }
 
 export function registerHomeChatHandlers(
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
-  repos: () => Repo[]
+  repos: () => Repo[],
+  idleCloseMs?: () => number | null
 ): void {
-  const ready = installHomeChat({ claudeAccounts, repos })
+  const ready = installHomeChat({ claudeAccounts, repos, idleCloseMs })
   onHomeChatEvent(broadcast)
   const handle = <Args, Result>(
     channel: string,

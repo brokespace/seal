@@ -5,6 +5,7 @@ import {
 } from '../execution-host'
 import type { MachineId, MachineOs } from './machine-types'
 import type { SshConnectionState, SshTarget } from '../ssh-types'
+import { isVmToolSshConfigTarget } from '../ssh-target-source'
 import type { PublicKnownRuntimeEnvironment } from '../remote-runtime/host-catalog/runtime-environments'
 import type { RuntimeHostStatusSnapshot } from '../remote-runtime/host-status/runtime-host-status'
 
@@ -111,8 +112,8 @@ export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSumm
     hasRuntime: false
   }
   const ssh = inputs.sshTargets
-    // Server-owned internal hops are plumbing, not machines the user added.
-    .filter((target) => !target.owner)
+    // Server-owned internal hops and VM tools' own hosts are plumbing, not machines the user added.
+    .filter((target) => !target.owner && !isVmToolSshConfigTarget(target))
     .map((target): MachineSummary => {
       const state = inputs.sshStates.get(target.id)
       const { status, detail } = sshMachineStatus(state)

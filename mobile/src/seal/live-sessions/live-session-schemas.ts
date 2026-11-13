@@ -26,7 +26,7 @@ export const liveSessionSchema = z.looseObject({
   machine: z.looseObject({
     hostId: z.string(),
     label: z.string(),
-    kind: z.enum(['local', 'ssh'])
+    kind: z.enum(['local', 'ssh', 'runtime'])
   }),
   origin: z.enum(['seal', 'external']),
   cwd: z.string().nullable(),

@@ -12,6 +12,7 @@ import { runOrcaCli } from './tools/home-chat-orca-cli'
 export type HomeChatInstallDeps = {
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
   repos: () => Repo[]
+  idleCloseMs?: () => number | null
 }
 
 let ready: Promise<HomeChatService> | null = null
@@ -35,6 +36,7 @@ export function installHomeChat(deps: HomeChatInstallDeps): Promise<HomeChatServ
       createMachines: createDefaultHomeChatMachineProvider,
       runOrcaCli,
       repos: deps.repos,
+      idleCloseMs: deps.idleCloseMs,
       emit: (event) => {
         for (const listener of listeners) {
           listener(event)

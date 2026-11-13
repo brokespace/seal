@@ -31,6 +31,8 @@ export type HomeSession = {
   lastMessage?: { role: 'agent' | 'user'; text: string }
   /** Short description of what the agent is asking, for waiting/permission sessions. */
   askSummary?: string
+  /** What went wrong, for errored sessions. */
+  errorSummary?: string
   target: HomeSessionTarget
 }
 

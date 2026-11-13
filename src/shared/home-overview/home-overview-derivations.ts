@@ -124,37 +124,23 @@ export function accountNextReset(account: HomeAccount, now: number): number | nu
   return next
 }
 
-export type HomeAttentionItem =
-  | { kind: 'session'; id: string; session: HomeSession }
-  | { kind: 'account'; id: string; account: HomeAccount; usedPercent: number }
-  | { kind: 'machine'; id: string; machine: HomeMachine }
+export type HomeAttentionItem = {
+  id: string
+  session: HomeSession
+  /** What the agent is asking, or what went wrong, when the provider says. */
+  reason: string | null
+}
 
-export function buildHomeAttentionItems(input: {
-  sessions: readonly HomeSession[]
-  accounts: readonly HomeAccount[]
-  machines: readonly HomeMachine[]
-}): HomeAttentionItem[] {
-  const items: HomeAttentionItem[] = input.sessions
+/** Only agent sessions that are blocked on the user or failed; hosts and accounts have their own pages. */
+export function buildHomeAttentionItems(sessions: readonly HomeSession[]): HomeAttentionItem[] {
+  return sessions
     .filter(sessionNeedsAttention)
     .sort(compareHomeSessions)
-    .map((session) => ({ kind: 'session', id: `session:${session.id}`, session }))
-  for (const machine of input.machines) {
-    if (machine.status === 'error') {
-      items.push({ kind: 'machine', id: `machine:${machine.id}`, machine })
-    }
-  }
-  for (const account of input.accounts) {
-    const peak = peakUsageWindow(account)
-    if (peak && peak.usedPercent >= ACCOUNT_NEAR_LIMIT_PERCENT) {
-      items.push({
-        kind: 'account',
-        id: `account:${account.id}`,
-        account,
-        usedPercent: peak.usedPercent
-      })
-    }
-  }
-  return items
+    .map((session) => ({
+      id: `session:${session.id}`,
+      session,
+      reason: (session.state === 'errored' ? session.errorSummary : session.askSummary) ?? null
+    }))
 }
 
 /** Machines known to the machines provider plus any that only appear as a session's host. */

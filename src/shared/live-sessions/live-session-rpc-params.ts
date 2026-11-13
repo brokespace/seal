@@ -33,3 +33,17 @@ export const LiveSessionAnswerParams = z.object({
 export const LiveSessionUnwatchParams = z.object({ subscriptionId: z.string().min(1).max(256) })
 
 export const LiveSessionTakeOverParams = z.object({ sessionId: SessionId })
+
+export const LiveSessionHostRunParams = z.object({
+  script: z
+    .string()
+    .min(1)
+    .max(256 * 1024),
+  timeoutMs: z.number().int().min(1_000).max(120_000).optional()
+})
+
+export const LiveSessionRemoveParams = z.object({
+  sessionIds: z.array(SessionId).min(1).max(500),
+  stop: z.boolean(),
+  deleteTranscripts: z.boolean()
+})
