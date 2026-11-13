@@ -1,5 +1,5 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
-import { BUSY_HOME_PROVIDERS, EMPTY_HOME_PROVIDERS } from './home-overview-sample-providers'
+import { BUSY_HOME_PROVIDERS, EMPTY_HOME_PROVIDERS } from './home-overview.test-fixture'
 import { HomeOverview } from './HomeOverviewPage'
 
 export const busy = defineFixture({

@@ -19,7 +19,7 @@ vi.mock('@/lib/workspace/activation/worktree-activation', () => ({
 }))
 
 const { sealHomeOverviewProviders } = await import('./seal-home-overview-providers')
-const { BUSY_HOME_PROVIDERS } = await import('./home-overview-sample-providers')
+const { BUSY_HOME_PROVIDERS } = await import('./home-overview.test-fixture')
 const { HomeOverview } = await import('./HomeOverviewPage')
 
 const initialState = useAppStore.getState()
