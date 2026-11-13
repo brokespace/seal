@@ -7,7 +7,7 @@ import {
 } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeAccount } from './home-overview-model'
 import { formatHomeCountdown, homeUsageWindowLabel } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
 
 function UsageBar({ percent }: { percent: number }): React.JSX.Element {
   const clamped = Math.max(0, Math.min(100, percent))
@@ -24,7 +24,15 @@ function UsageBar({ percent }: { percent: number }): React.JSX.Element {
   )
 }
 
-function AccountRow({ account, now }: { account: HomeAccount; now: number }): React.JSX.Element {
+function AccountRow({
+  account,
+  now,
+  onOpen
+}: {
+  account: HomeAccount
+  now: number
+  onOpen: () => void
+}): React.JSX.Element {
   const t = useTranslate()
   const reset = accountNextReset(account, now)
   const statusText =
@@ -36,38 +44,40 @@ function AccountRow({ account, now }: { account: HomeAccount; now: number }): Re
           ? t('home.overview.accounts.noUsage', 'No usage reported')
           : null
   return (
-    <li className="px-3 py-2">
-      <div className="flex items-baseline gap-2">
-        <span className="min-w-0 flex-1 truncate text-xs text-foreground">{account.label}</span>
-        <span className="shrink-0 text-2xs text-muted-foreground">
-          {account.providerLabel}
-          {account.active ? ` · ${t('home.overview.accounts.active', 'active')}` : ''}
+    <li className="p-1">
+      <HomeOverviewRowButton onClick={onOpen} className="block px-2 py-1">
+        <span className="flex items-baseline gap-2">
+          <span className="min-w-0 flex-1 truncate text-xs text-foreground">{account.label}</span>
+          <span className="shrink-0 text-2xs text-muted-foreground">
+            {account.providerLabel}
+            {account.active ? ` · ${t('home.overview.accounts.active', 'active')}` : ''}
+          </span>
         </span>
-      </div>
-      {statusText ? (
-        <p className="mt-1 truncate text-2xs text-muted-foreground">{statusText}</p>
-      ) : (
-        <div className="mt-1.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-1">
-          {account.windows.map((window) => (
-            <div key={window.kind} className="contents">
-              <span className="text-3xs text-muted-foreground">
-                {homeUsageWindowLabel(window.kind, t)}
+        {statusText ? (
+          <span className="mt-1 block truncate text-2xs text-muted-foreground">{statusText}</span>
+        ) : (
+          <span className="mt-1.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-1">
+            {account.windows.map((window) => (
+              <span key={window.kind} className="contents">
+                <span className="text-3xs text-muted-foreground">
+                  {homeUsageWindowLabel(window.kind, t)}
+                </span>
+                <UsageBar percent={window.usedPercent} />
+                <span className="text-3xs text-muted-foreground tabular-nums">
+                  {Math.round(window.usedPercent)}%
+                </span>
               </span>
-              <UsageBar percent={window.usedPercent} />
-              <span className="text-3xs text-muted-foreground tabular-nums">
-                {Math.round(window.usedPercent)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-      {reset ? (
-        <p className="mt-1 text-3xs text-muted-foreground tabular-nums">
-          {t('home.overview.accounts.reset', 'Resets {{when}}', {
-            when: formatHomeCountdown(reset, now)
-          })}
-        </p>
-      ) : null}
+            ))}
+          </span>
+        )}
+        {reset ? (
+          <span className="mt-1 block text-3xs text-muted-foreground tabular-nums">
+            {t('home.overview.accounts.reset', 'Resets {{when}}', {
+              when: formatHomeCountdown(reset, now)
+            })}
+          </span>
+        ) : null}
+      </HomeOverviewRowButton>
     </li>
   )
 }
@@ -101,7 +111,7 @@ export function HomeAccountsPanel({
       ) : (
         <ul className="divide-y divide-border">
           {accounts.map((account) => (
-            <AccountRow key={account.id} account={account} now={now} />
+            <AccountRow key={account.id} account={account} now={now} onOpen={onManage} />
           ))}
         </ul>
       )}

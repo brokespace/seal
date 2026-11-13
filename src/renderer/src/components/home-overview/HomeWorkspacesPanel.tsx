@@ -1,7 +1,7 @@
 import { GitPullRequest } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import type { HomeWorkspace } from './home-overview-model'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
 import { countHomeWorkspaces } from './orca-home-workspace-mapping'
 
 const MAX_REVIEW_ROWS = 6
@@ -18,9 +18,11 @@ function Stat({ value, label }: { value: number; label: string }): React.JSX.Ele
 }
 
 export function HomeWorkspacesPanel({
-  workspaces
+  workspaces,
+  onOpen
 }: {
   workspaces: readonly HomeWorkspace[]
+  onOpen: (workspace: HomeWorkspace) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const counts = countHomeWorkspaces(workspaces)
@@ -54,15 +56,22 @@ export function HomeWorkspacesPanel({
           {reviews.length > 0 ? (
             <ul className="border-t border-border px-1.5 py-1.5">
               {reviews.map((workspace) => (
-                <li key={workspace.id} className="flex items-center gap-2 px-1.5 py-1 text-xs">
-                  <GitPullRequest className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-foreground">{workspace.name}</span>
-                  <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
-                    #{workspace.review?.number}
-                    {workspace.review?.state === 'draft'
-                      ? ` · ${t('home.overview.workspaces.draftLabel', 'draft')}`
-                      : ''}
-                  </span>
+                <li key={workspace.id}>
+                  <HomeOverviewRowButton
+                    onClick={() => onOpen(workspace)}
+                    className="px-1.5 py-1 text-xs"
+                  >
+                    <GitPullRequest className="size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate text-foreground">
+                      {workspace.name}
+                    </span>
+                    <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
+                      #{workspace.review?.number}
+                      {workspace.review?.state === 'draft'
+                        ? ` · ${t('home.overview.workspaces.draftLabel', 'draft')}`
+                        : ''}
+                    </span>
+                  </HomeOverviewRowButton>
                 </li>
               ))}
             </ul>

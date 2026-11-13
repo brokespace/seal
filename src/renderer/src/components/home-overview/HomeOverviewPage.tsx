@@ -68,14 +68,20 @@ function HomeOverviewContent(): React.JSX.Element {
               machines={machines}
               sessions={sessions}
               onManage={actions.openMachines}
+              onOpen={actions.openMachine}
             />
             <HomeAccountsPanel
               accounts={accounts}
               now={now}
               onManage={actions.openAccountsSettings}
             />
-            <HomeWorkspacesPanel workspaces={workspaces} />
-            <HomeAutomationsPanel result={automations} now={now} onOpen={actions.openAutomations} />
+            <HomeWorkspacesPanel workspaces={workspaces} onOpen={actions.openWorkspace} />
+            <HomeAutomationsPanel
+              result={automations}
+              now={now}
+              onOpen={actions.openAutomations}
+              onOpenAutomation={actions.openAutomation}
+            />
           </div>
         </div>
       </div>
