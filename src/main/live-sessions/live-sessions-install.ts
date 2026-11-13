@@ -53,6 +53,10 @@ export function installLiveSessions(
   const sealPanes = createSealPaneAccess(runtime, {
     snapshot: () => agentHookServer.getStatusSnapshot()
   })
+  const reaper = new SealIdleReaper({
+    minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),
+    log
+  })
   const service = new LiveSessionService({
     userDataPath,
     hosts: () => {
@@ -61,6 +65,7 @@ export function installLiveSessions(
       return hosts
     },
     sealPanes,
+    onHostScanned: (host, sessions) => reaper.onHostScanned(host, sessions),
     log
   })
   registerLiveSessionIpc(service, async (hostId, action) => {
@@ -78,17 +83,10 @@ export function installLiveSessions(
     }
     return status
   })
-  const reaper = new SealIdleReaper({
-    hosts: allHosts,
-    minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),
-    log
-  })
   setLiveSessionService(service)
   service.start()
-  reaper.start()
   app.on('will-quit', () => {
     service.stop()
-    reaper.stop()
   })
   return service
 }

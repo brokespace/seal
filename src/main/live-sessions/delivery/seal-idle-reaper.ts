@@ -1,4 +1,6 @@
+import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import { isSealTmuxSocket } from './session-removal'
 
 export const DEFAULT_IDLE_REAP_MINUTES = 120
 const SWEEP_EVERY_MS = 10 * 60_000
@@ -33,50 +35,48 @@ export function reapedSessions(out: string): string[] {
     .map((line) => line.slice('@@REAPED '.length).trim())
 }
 
-/** Sweeps every connected host on a timer; a host that fails is retried on the next sweep. */
+/**
+ * Sweeps a host after a registry scan that found an agent in Seal's tmux server, at most every
+ * SWEEP_EVERY_MS; with no such agent there is nothing to end, so nothing runs.
+ */
 export class SealIdleReaper {
-  private timer: ReturnType<typeof setInterval> | null = null
+  private readonly lastSweep = new Map<string, number>()
 
   constructor(
     private readonly deps: {
-      hosts: () => LiveSessionHost[]
       minutes: () => number | null
+      now?: () => number
       log?: (message: string, error?: unknown) => void
     }
   ) {}
 
-  start(): void {
-    this.timer ??= setInterval(() => void this.sweep(), SWEEP_EVERY_MS)
-    this.timer.unref?.()
-  }
-
-  stop(): void {
-    if (this.timer) {
-      clearInterval(this.timer)
-      this.timer = null
+  onHostScanned(host: LiveSessionHost, sessions: readonly LiveSession[]): void {
+    const hostId = host.machine.hostId
+    const now = (this.deps.now ?? Date.now)()
+    const inSealTmux = sessions.some((session) =>
+      session.inputRoutes.some((route) => route.kind === 'tmux' && isSealTmuxSocket(route.socket))
+    )
+    if (!inSealTmux || now - (this.lastSweep.get(hostId) ?? -Infinity) < SWEEP_EVERY_MS) {
+      return
     }
+    this.lastSweep.set(hostId, now)
+    void this.sweep(host)
   }
 
-  async sweep(): Promise<string[]> {
+  async sweep(host: LiveSessionHost): Promise<string[]> {
     const minutes = this.deps.minutes()
     if (minutes === null) {
       return []
     }
-    const reaped: string[] = []
-    for (const host of this.deps.hosts()) {
-      try {
-        const names = reapedSessions(await host.run(sealIdleReapScript(minutes * 60)))
-        if (names.length > 0) {
-          this.deps.log?.(
-            `[live-sessions] ended idle Seal sessions on ${host.machine.label}`,
-            names
-          )
-        }
-        reaped.push(...names)
-      } catch (error) {
-        this.deps.log?.(`[live-sessions] idle sweep of ${host.machine.label} failed`, error)
+    try {
+      const names = reapedSessions(await host.run(sealIdleReapScript(minutes * 60)))
+      if (names.length > 0) {
+        this.deps.log?.(`[live-sessions] ended idle Seal sessions on ${host.machine.label}`, names)
       }
+      return names
+    } catch (error) {
+      this.deps.log?.(`[live-sessions] idle sweep of ${host.machine.label} failed`, error)
+      return []
     }
-    return reaped
   }
 }

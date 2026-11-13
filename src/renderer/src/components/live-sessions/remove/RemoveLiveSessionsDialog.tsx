@@ -63,9 +63,8 @@ export function RemoveLiveSessionsDialog({
       onOpenChange(false)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
     }
+    setBusy(false)
   }
 
   return (

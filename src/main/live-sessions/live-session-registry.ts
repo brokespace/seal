@@ -17,6 +17,7 @@ export type LiveSessionRegistryDeps = {
   subscribeSealPanes?: (onChange: () => void) => () => void
   /** Sessions the user removed from Seal; never published. */
   isRemoved?: (session: LiveSession) => boolean
+  onHostScanned?: (host: LiveSessionHost, sessions: LiveSession[]) => void
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
   log?: (message: string, error?: unknown) => void
@@ -211,6 +212,7 @@ export class LiveSessionRegistry {
         state.sessions = result.sessions
       }
       state.failures = 0
+      this.deps.onHostScanned?.(state.host, state.sessions)
       this.setHostError(hostId, result.complete ? null : 'The scan was cut short')
       this.publish()
     } catch (error) {

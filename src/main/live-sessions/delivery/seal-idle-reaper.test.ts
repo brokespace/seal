@@ -37,10 +37,7 @@ describe.skipIf(process.platform === 'win32')('the idle reaper', () => {
     await tmux('-L', 'seal', 'new-session', '-d', '-s', 'claude-4242', 'sleep 600')
     await tmux('-L', 'default', 'new-session', '-d', '-s', 'mine', 'sleep 600')
 
-    const reaped = await new SealIdleReaper({
-      hosts: () => [localHost('mbp')],
-      minutes: () => 1
-    }).sweep()
+    const reaped = await new SealIdleReaper({ minutes: () => 1 }).sweep(localHost('mbp'))
     expect(reaped).toEqual([])
 
     const out = await localHost('mbp').run(sealIdleReapScript(0))

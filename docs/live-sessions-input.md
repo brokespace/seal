@@ -152,8 +152,9 @@ none waits forever for input that will not come.
 | Home chat backend (`claude` in stream-json mode, in `<userData>/home-chat/workspace`) | Seal, per Home chat               | It is kept between turns for speed and closed after an error, an account or backend switch, when the chat is deleted, on quit, and after the idle limit. The next message resumes it with `--resume`.                       |
 | Codex usage probe (`codex app-server`)                                                | Seal, for rate limits             | Right after it answers: it is a short-lived probe.                                                                                                                                                                          |
 
-**Idle reaper.** Every 10 minutes Seal ends Seal-owned sessions that have had nothing attached and
-no activity for **End idle Seal sessions** (Settings › Agents; default 2 hours, or Never):
+**Idle reaper.** Seal ends Seal-owned sessions that have had nothing attached and no activity for
+**End idle Seal sessions** (Settings › Agents; default 2 hours, or Never). It checks a host at most
+every 10 minutes, and only after a scan found an agent there to check:
 
 - `tmux -L seal` sessions with no client attached, on this computer, connected SSH hosts and paired
   servers. Only that socket is read; the user's own tmux servers are never listed or touched.
