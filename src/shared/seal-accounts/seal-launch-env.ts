@@ -8,7 +8,7 @@ export const SEAL_PROVIDER_ACCOUNT_ENV: Record<SealProvider, string> = {
   codex: 'SEAL_CODEX_ACCOUNT'
 }
 
-/** Set on launched sessions so agents (and `orca account current`) can see which account they run on. */
+/** Set on launched sessions so agents (and `seal account current`) can see which account they run on. */
 export const SEAL_ACCOUNT_KEY_ENV = 'SEAL_ACCOUNT_KEY'
 export const SEAL_ACCOUNT_LABEL_ENV = 'SEAL_ACCOUNT_LABEL'
 

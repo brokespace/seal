@@ -21,9 +21,9 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
       remove: z.boolean().optional()
     }
   },
-  orca_cli: {
+  seal_cli: {
     description:
-      "Run Seal's Orca CLI on this computer with the given arguments (without the leading `orca`). Use it to list projects/worktrees, create worktrees on any host with --host, launch agents and send them messages. Prefer --json.",
+      'Run the Seal CLI on this computer with the given arguments (without the leading `seal`). Use it to list projects/worktrees, create worktrees on any host with --host, launch agents and send them messages. Prefer --json.',
     shape: {
       args: z.array(z.string()).min(1),
       timeout_seconds: z.number().int().min(1).max(1800).optional()
@@ -54,7 +54,7 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
   },
   spawn_subagent: {
     description:
-      'Hand a self-contained task to a background worker and keep talking to the user; you get a notice in this chat when it finishes. mode "agent" starts an Orca coding agent in a new worktree (on its own branch) of a project on a machine: use it for any repository coding work. mode "assistant" starts a background copy of you for research or multi-step operations. Write the task so it stands alone: goal, context, constraints, and how to verify.',
+      'Hand a self-contained task to a background worker and keep talking to the user; you get a notice in this chat when it finishes. mode "agent" starts a Seal coding agent in a new worktree (on its own branch) of a project on a machine: use it for any repository coding work. mode "assistant" starts a background copy of you for research or multi-step operations. Write the task so it stands alone: goal, context, constraints, and how to verify.',
     shape: {
       mode: z.enum(['agent', 'assistant']),
       title: z.string().min(1).describe('Short name, also used for the worktree'),
@@ -62,7 +62,7 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
       project: z
         .string()
         .optional()
-        .describe('agent mode: project id or name from `orca_cli project list --json`'),
+        .describe('agent mode: project id or name from `seal_cli project list --json`'),
       machine: z
         .string()
         .optional()

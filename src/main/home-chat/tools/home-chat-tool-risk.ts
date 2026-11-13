@@ -62,14 +62,14 @@ export function assessShellCommandRisk(command: string): HomeChatToolRisk {
   return SAFE
 }
 
-/** Orca CLI calls that remove work or type into a running agent. */
+/** Seal CLI calls that remove work or type into a running agent. */
 function assessOrcaArgs(args: readonly string[]): HomeChatToolRisk {
   const command = args
     .filter((arg) => !arg.startsWith('-'))
     .slice(0, 3)
     .join(' ')
   if (/^(worktree rm|project setup-delete|workspace cleanup run)\b/.test(command)) {
-    return { requiresApproval: true, reason: 'This removes Orca workspaces or projects.' }
+    return { requiresApproval: true, reason: 'This removes Seal workspaces or projects.' }
   }
   if (/^terminal (close|stop)\b/.test(command)) {
     return { requiresApproval: true, reason: 'This stops a running terminal.' }
@@ -89,7 +89,7 @@ export function assessHomeChatToolRisk(
       return assessShellCommandRisk(String(input.command ?? ''))
     case 'delete_path':
       return { requiresApproval: true, reason: `This deletes ${String(input.path)}.` }
-    case 'orca_cli':
+    case 'seal_cli':
       return assessOrcaArgs(Array.isArray(input.args) ? input.args.map(String) : [])
     // Jobs, subagents and routines are the assistant's own; routine runs still hit approvals.
     case 'list_machines':

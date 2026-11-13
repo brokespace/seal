@@ -38,10 +38,10 @@ describe('assessHomeChatToolRisk', () => {
 
   it('asks before removing a worktree but not before launching an agent', () => {
     expect(
-      assessHomeChatToolRisk('orca_cli', { args: ['worktree', 'rm', '--worktree', 'id:1'] })
+      assessHomeChatToolRisk('seal_cli', { args: ['worktree', 'rm', '--worktree', 'id:1'] })
     ).toMatchObject({ requiresApproval: true })
     expect(
-      assessHomeChatToolRisk('orca_cli', { args: ['agent', 'launch', '--agent', 'claude'] })
+      assessHomeChatToolRisk('seal_cli', { args: ['agent', 'launch', '--agent', 'claude'] })
     ).toEqual({ requiresApproval: false })
   })
 })

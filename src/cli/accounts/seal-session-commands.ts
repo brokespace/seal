@@ -11,7 +11,7 @@ import { formatSwapEntry } from './seal-account-format'
 
 const LIVE_MODES: readonly SealSessionLiveSwapMode[] = ['inherit', 'on', 'off']
 
-/** Accepts a full session id or a unique prefix of one, as `orca account sessions` shows it. */
+/** Accepts a full session id or a unique prefix of one, as `seal account sessions` shows it. */
 async function sessionId(ctx: HandlerContext): Promise<string> {
   const ref = getRequiredStringFlag(ctx.flags, 'session')
   const { result } = await ctx.client.call<SealAccountsStatus>('seal.accounts.status', {})

@@ -45,7 +45,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   write_file: FilePen,
   transfer_file: ArrowLeftRight,
   delete_path: Trash2,
-  orca_cli: Bot,
+  seal_cli: Bot,
   list_machines: Server,
   job_status: Activity,
   job_output: FileText,
@@ -105,8 +105,8 @@ function toolSummary(entry: ToolEntry): string {
       return [str('action'), str('name') || str('id'), str('schedule')].filter(Boolean).join(' ')
     case 'transfer_file':
       return `${str('from_machine')}:${str('from_path')} → ${str('to_machine')}:${str('to_path')}`
-    case 'orca_cli':
-      return `orca ${Array.isArray(input.args) ? input.args.join(' ') : ''}`
+    case 'seal_cli':
+      return `seal ${Array.isArray(input.args) ? input.args.join(' ') : ''}`
     case 'list_machines':
       return input.probe_load === true ? 'with load' : ''
     default:

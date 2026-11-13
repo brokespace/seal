@@ -32,7 +32,7 @@ async function spawnSubagent(
   const project = optionalStr(input.project)
   if (!project) {
     return {
-      text: 'Agent mode needs a project: find it with orca_cli ["project", "list", "--json"].',
+      text: 'Agent mode needs a project: find it with seal_cli ["project", "list", "--json"].',
       isError: true
     }
   }
@@ -99,7 +99,7 @@ export async function executeAssistantTool(
 ): Promise<HomeChatToolResult> {
   const { services } = ctx
   switch (tool) {
-    case 'orca_cli': {
+    case 'seal_cli': {
       const args = Array.isArray(input.args) ? input.args.map(String) : []
       const timeoutSeconds = typeof input.timeout_seconds === 'number' ? input.timeout_seconds : 300
       return formatExecResult(
