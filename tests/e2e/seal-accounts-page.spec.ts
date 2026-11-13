@@ -412,6 +412,13 @@ test('a paired machine shows on each card, takes a pushed login and the synced r
     const dialog = orcaPage.getByRole('dialog')
     await dialog.getByLabel('Repo or folder').fill('github.com/acme/*')
     await dialog.getByRole('button', { name: 'Save' }).click()
+    await orcaPage.getByRole('button', { name: 'Add rule' }).click()
+    await dialog.getByRole('radio', { name: 'Machine' }).click()
+    await dialog.getByRole('combobox', { name: 'Machine' }).click()
+    await orcaPage.getByRole('option', { name: 'build-box' }).click()
+    await capture(orcaPage, '24b-rule-for-machine')
+    await dialog.getByRole('button', { name: 'Save' }).click()
+    await expect(orcaPage.locator('#seal-accounts-rules')).toContainText('build-box')
     await orcaPage.getByRole('button', { name: 'Sync to machines' }).click()
     await expect(
       orcaPage.getByText('Rules and auto-swap settings pushed to build-box.')

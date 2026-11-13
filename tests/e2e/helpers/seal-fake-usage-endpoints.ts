@@ -12,20 +12,16 @@ export async function serveFakeAccountUsage(
   usageByAccessToken: Record<string, FakeAccountUsage>
 ): Promise<void> {
   await app.evaluate(({ net, session }, usage) => {
-    const state = globalThis as typeof globalThis & {
-      sealFakeUsage?: Record<string, FakeAccountUsage>
-    }
-    const installed = state.sealFakeUsage !== undefined
-    state.sealFakeUsage = usage
-    if (installed) {
-      return
-    }
     const json = (body: unknown, status = 200): Response =>
       new Response(JSON.stringify(body), {
         status,
         headers: { 'content-type': 'application/json' }
       })
-    session.defaultSession.protocol.handle('https', (request) => {
+    const { protocol } = session.defaultSession
+    if (protocol.isProtocolHandled('https')) {
+      protocol.unhandle('https')
+    }
+    protocol.handle('https', (request) => {
       const url = new URL(request.url)
       const claude = url.hostname === 'api.anthropic.com' && url.pathname === '/api/oauth/usage'
       const codex = url.hostname === 'chatgpt.com' && url.pathname === '/backend-api/wham/usage'
@@ -33,7 +29,7 @@ export async function serveFakeAccountUsage(
         return net.fetch(request, { bypassCustomProtocolHandlers: true })
       }
       const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
-      const reading = state.sealFakeUsage?.[token]
+      const reading = usage[token]
       if (!reading || reading === 'rejected') {
         return json(
           { error: { type: 'authentication_error', message: 'OAuth token revoked' } },

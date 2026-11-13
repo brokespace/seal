@@ -5,6 +5,7 @@ import type {
   SealFleetAccount,
   SealFleetMachine
 } from '../../../../../shared/seal-accounts/seal-fleet-overview'
+import { HostCombobox } from '../../host-picker/HostCombobox'
 import { Button } from '../../ui/button'
 import { Checkbox } from '../../ui/checkbox'
 import {
@@ -53,14 +54,14 @@ export function SealRuleDialog({
   const [saving, setSaving] = useState(false)
   const choices = accounts.filter((account) => account.provider === provider)
   const preferable = allow.length > 0 ? choices.filter((a) => allow.includes(a.key)) : choices
-  const machineKeys = machines.map((entry) => ({
-    key: sealMachineRuleKey(entry, homeMachineKey),
+  const paired = machines.map((entry) => ({
+    id: sealMachineRuleKey(entry, homeMachineKey),
     label: entry.label
   }))
   // A saved rule may name a machine that is no longer paired; keep it selectable.
-  const machineOptions = machineKeys.some((entry) => entry.key === machine)
-    ? machineKeys
-    : [...machineKeys, { key: machine, label: machine }]
+  const machineOptions = paired.some((entry) => entry.id === machine)
+    ? paired
+    : [...paired, { id: machine, label: machine }]
   const target = scope === 'project' ? project.trim() : machine
 
   const changeProvider = (next: SealProvider): void => {
@@ -179,19 +180,17 @@ export function SealRuleDialog({
             </>
           ) : (
             <div className="grid gap-1">
-              <Label>{t('seal.accounts.rules.machine', 'Machine')}</Label>
-              <Select value={machine} onValueChange={setMachine} disabled={rule !== null}>
-                <SelectTrigger size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {machineOptions.map((entry) => (
-                    <SelectItem key={entry.key} value={entry.key}>
-                      {entry.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="seal-rule-machine">
+                {t('seal.accounts.rules.machine', 'Machine')}
+              </Label>
+              <HostCombobox
+                id="seal-rule-machine"
+                size="sm"
+                value={machine}
+                onChange={setMachine}
+                options={machineOptions}
+                disabled={rule !== null}
+              />
             </div>
           )}
           <fieldset className="grid gap-2">
