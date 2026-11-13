@@ -460,6 +460,17 @@ import {
 import { CreateProject } from './linear-project-create-params'
 import { LinkPreviewGetParams } from './link-preview-params'
 import {
+  MachineHostCancel,
+  MachineHostCreateFile,
+  MachineHostDownloadUrl,
+  MachineHostListDir,
+  MachineHostPath,
+  MachineHostReadChunk,
+  MachineHostRename,
+  MachineHostWatch,
+  MachineHostWriteChunk
+} from './machine-host-params'
+import {
   ManagedRuntimeAgentParams,
   ManagedRuntimeCancelParams
 } from './managed-runtime-install-params'
@@ -1325,6 +1336,19 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
   'linkPreview.get': LinkPreviewGetParams,
+  'machineHost.cancel': MachineHostCancel,
+  'machineHost.createDir': MachineHostPath,
+  'machineHost.createFile': MachineHostCreateFile,
+  'machineHost.downloadUrl': MachineHostDownloadUrl,
+  'machineHost.homeDir': null,
+  'machineHost.listDir': MachineHostListDir,
+  'machineHost.metrics': null,
+  'machineHost.readChunk': MachineHostReadChunk,
+  'machineHost.remove': MachineHostPath,
+  'machineHost.rename': MachineHostRename,
+  'machineHost.stat': MachineHostPath,
+  'machineHost.watch': MachineHostWatch,
+  'machineHost.writeChunk': MachineHostWriteChunk,
   'managedRuntime.cancel': ManagedRuntimeCancelParams,
   'managedRuntime.install': ManagedRuntimeAgentParams,
   'managedRuntime.remove': ManagedRuntimeAgentParams,

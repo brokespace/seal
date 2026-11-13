@@ -30,6 +30,7 @@ describe('parsePosixMachineMetrics', () => {
       cpuCount: 12,
       cpuModel: 'Apple M2 Max',
       loadAverage: [2.5, 2, 1.5],
+      cpuUsagePercent: null,
       memTotalBytes: 34359738368,
       memAvailableBytes: 8589934592,
       diskTotalBytes: 976490576 * 1024,

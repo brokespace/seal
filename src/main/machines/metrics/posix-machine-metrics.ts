@@ -87,6 +87,7 @@ export function parsePosixMachineMetrics(output: string, collectedAt: number): M
     cpuCount: finiteNumber(fields.get('cpus')),
     cpuModel: nonEmpty(fields.get('cpumodel')),
     loadAverage: parseLoadAverage(fields.get('loadavg')),
+    cpuUsagePercent: null,
     memTotalBytes: kibToBytes(fields.get('memtotal_kb')) ?? finiteNumber(fields.get('memtotal_b')),
     memAvailableBytes:
       kibToBytes(fields.get('memavail_kb')) ?? finiteNumber(fields.get('memavail_b')),

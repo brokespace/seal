@@ -15,6 +15,8 @@ export type MachineMetrics = {
   cpuModel: string | null
   /** 1/5/15 minute load averages; null on hosts that do not report them. */
   loadAverage: [number, number, number] | null
+  /** Instant CPU busy percentage, for hosts (Windows) that report no load average. */
+  cpuUsagePercent: number | null
   memTotalBytes: number | null
   memAvailableBytes: number | null
   diskTotalBytes: number | null
