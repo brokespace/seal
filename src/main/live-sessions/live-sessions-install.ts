@@ -1,3 +1,4 @@
+import { hostname } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -11,13 +12,7 @@ import { connectedSshHosts, LOCAL_HOST_ID, localHost } from './hosts/live-sessio
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
 import { registerLiveSessionIpc } from './live-sessions-ipc'
-
-let service: LiveSessionService | null = null
-
-/** The running live-session service; null before startup or in builds that don't install it. */
-export function getLiveSessionService(): LiveSessionService | null {
-  return service
-}
+import { getLiveSessionService, setLiveSessionService } from './live-session-service-instance'
 
 /** Same transcript roots AI Vault indexes on this machine (account profiles, config overrides). */
 function localExtraRoots(): { claudeProjectsDirs: string[]; codexSessionsDirs: string[] } {
@@ -31,15 +26,16 @@ function localExtraRoots(): { claudeProjectsDirs: string[]; codexSessionsDirs: s
 }
 
 export function installLiveSessions(runtime: OrcaRuntimeService): LiveSessionService {
-  if (service) {
-    return service
+  const existing = getLiveSessionService()
+  if (existing) {
+    return existing
   }
   // Discovery reads `ps`, tmux and transcripts with a POSIX shell; Windows reaches its SSH hosts only.
-  const local = process.platform === 'win32' ? null : localHost('This machine')
+  const local = process.platform === 'win32' ? null : localHost(hostname())
   const sealPanes = createSealPaneAccess(runtime, {
     snapshot: () => agentHookServer.getStatusSnapshot()
   })
-  service = new LiveSessionService({
+  const service = new LiveSessionService({
     userDataPath: app.getPath('userData'),
     hosts: () => [...(local ? [local] : []), ...connectedSshHosts()],
     sealPanes,
@@ -50,7 +46,8 @@ export function installLiveSessions(runtime: OrcaRuntimeService): LiveSessionSer
     log: (message, error) => console.warn(message, error ?? '')
   })
   registerLiveSessionIpc(service)
+  setLiveSessionService(service)
   service.start()
-  app.on('will-quit', () => service?.stop())
+  app.on('will-quit', () => service.stop())
   return service
 }
