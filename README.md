@@ -1,6 +1,13 @@
 <h1 align="center">
-  <a href="https://orca.dev"><img src="resources/build/icon.png" alt="Orca" width="64" valign="middle" /></a> Orca
+  <a href="https://github.com/brokespace/seal"><img src="resources/build/icon.png" alt="Seal" width="64" valign="middle" /></a> Seal
 </h1>
+
+> **Seal is a fork of [Orca](https://github.com/stablyai/orca)** by [Stably AI](https://github.com/stablyai), maintained by [brokespace](https://github.com/brokespace) for Brian Kessel.
+> All credit for the underlying IDE goes to the Orca authors. Seal stays under Orca's [MIT license](LICENSE), and the upstream copyright notice is kept unchanged.
+>
+> Seal installs and runs beside Orca: it has its own app id (`com.brokespace.seal`), profile folder, `seal` CLI command and icon. It never checks Orca's release feeds for updates, and it does not send telemetry, feedback or crash reports to Stably's servers. See [UPSTREAM.md](UPSTREAM.md) for how Seal syncs with Orca.
+>
+> Everything below this notice is Orca's original README. Links to orca.dev, Orca releases and Orca's community point at the upstream project, not at Seal.
 
 <p align="center">
   <a href="https://github.com/stablyai/orca"><img src="https://img.shields.io/github/stars/stablyai/orca?style=flat&amp;label=%E2%98%85&amp;color=08C" alt="GitHub stars" /></a>
