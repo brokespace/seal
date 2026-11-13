@@ -65,6 +65,13 @@ $s"; done
     done
   done
 fi
+for d in "$HOME/.claude/sessions" "\${CLAUDE_CONFIG_DIR:-}/sessions"; do
+  [ -d "$d" ] || continue
+  for f in "$d"/[0-9]*.json; do
+    [ -f "$f" ] || continue
+    printf '@@CLAUDESESSION %s ' "$f"; head -c 8192 "$f" | b64; echo
+  done
+done
 for f in "$HOME"/.config/sisomewhere/agents/*.json; do
   [ -f "$f" ] || continue
   printf '@@HOOK %s ' "$f"; b64 < "$f"; echo

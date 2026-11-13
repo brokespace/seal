@@ -27,6 +27,8 @@ export type LiveSessionMachine = {
 export type LiveSessionInputRoute =
   /** A Seal (Orca) terminal pane, through the runtime's own prompt writer. */
   | { kind: 'seal-pane'; paneKey: string }
+  /** Codex's own queue (`codex queue`): a real user turn, after any running one, never in a draft. */
+  | { kind: 'codex-queue'; thread: string; binary: string | null; codexHome: string | null }
   /** A tmux pane on the session's machine: bracketed paste at a free prompt. */
   | { kind: 'tmux'; target: string; socket?: string }
   /** No live terminal: the provider CLI resumes the session headless in the background. */

@@ -30,6 +30,9 @@ export function confirmSent(
           }
         })
       }
+    } else if (item.route === 'codex-queue') {
+      // Codex keeps it queued with the thread; it is delivered whenever the session runs again.
+      continue
     } else if ((!session || !session.alive) && since > timing.goneGraceMs) {
       out.push({
         item,

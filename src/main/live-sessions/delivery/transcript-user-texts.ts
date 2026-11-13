@@ -5,6 +5,7 @@ import {
   parseJsonRecord,
   recordField
 } from '../../../shared/live-sessions/transcript-json-record'
+import { codexUserMessageText } from '../discovery/codex-user-message'
 
 export type UserText = { offset: number; text: string }
 
@@ -51,7 +52,7 @@ function contentText(content: unknown): string {
 export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine[]): UserText[] {
   const out: UserText[] = []
   for (const { offset, text } of lines) {
-    if (!text.includes('user') && !text.includes('attachment')) {
+    if (!/user|UserMessage|attachment/.test(text)) {
       continue
     }
     const record = parseJsonRecord(text)
@@ -67,11 +68,7 @@ export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine
         said = contentText(attachment.prompt)
       }
     } else {
-      // Codex also echoes each prompt as a response_item; counting both would confirm a repeat twice.
-      const payload = recordField(record, 'payload')
-      if (record.type === 'event_msg' && payload?.type === 'user_message') {
-        said = typeof payload.message === 'string' ? payload.message : ''
-      }
+      said = codexUserMessageText(record) ?? ''
     }
     if (said.trim()) {
       out.push({ offset, text: normalizeForMatch(said) })

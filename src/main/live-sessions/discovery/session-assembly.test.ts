@@ -56,11 +56,12 @@ function assemble(
   processes: DiscoveredProcess[],
   transcripts: SummarizedTranscript[],
   panes: DiscoveredPane[] = [],
-  hookStates: { path: string; text: string }[] = []
+  hookStates: { path: string; text: string }[] = [],
+  claudeSessions: { pid: number; sessionId: string }[] = []
 ) {
   return assembleHostSessions({
     machine,
-    output: { processes, panes, hookStates, hostNowMs: NOW },
+    output: { processes, panes, hookStates, hostNowMs: NOW, claudeSessions },
     transcripts,
     nowMs: NOW
   })
@@ -125,6 +126,46 @@ describe('assembleHostSessions', () => {
       { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
     ])
     expect(live.status).toBe('waiting-input')
+  })
+
+  it("names a fresh Claude from Claude's session registry and skips daemons and tool commands", () => {
+    const id = '88888888-8888-4888-8888-888888888888'
+    const sessions = assemble(
+      [
+        proc(100, 'claude', '/srv/app'),
+        proc(200, '/opt/codex/bin/codex app-server --listen unix://', '/'),
+        proc(300, 'claude mcp list', '/srv/app'),
+        proc(400, 'node /usr/lib/node_modules/@openai/codex/bin/codex.js queue --thread x', '/')
+      ],
+      [],
+      [],
+      [],
+      [{ pid: 100, sessionId: id }]
+    )
+    expect(sessions.map((s) => [s.providerSessionId, s.pid])).toEqual([[id, 100]])
+  })
+
+  it("routes a live Codex session through its own queue first, with that session's binary and home", () => {
+    const id = '99999999-9999-4999-8999-999999999999'
+    const rollout: SummarizedTranscript = {
+      ...transcript(id, '/srv/api', 1_000),
+      path: `/home/b/.codex-work/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${id}.jsonl`,
+      summary: { ...transcript(id, '/srv/api', 1_000).summary, provider: 'codex' }
+    }
+    const [session] = assemble(
+      [proc(100, '/opt/codex/bin/codex', '/srv/api', 'pts/3')],
+      [rollout],
+      [pane('pts/3', '\u203a Ask Codex')]
+    )
+    expect(session.inputRoutes).toEqual([
+      {
+        kind: 'codex-queue',
+        thread: id,
+        binary: '/opt/codex/bin/codex',
+        codexHome: '/home/b/.codex-work'
+      },
+      { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
+    ])
   })
 
   it('takes a permission dialog on screen over hooks and the transcript', () => {

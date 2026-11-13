@@ -114,6 +114,37 @@ export async function typeIntoTmux(
   return { outcome: 'sent' }
 }
 
+type CodexQueueRoute = Extract<LiveSessionInputRoute, { kind: 'codex-queue' }>
+
+/** Codex's own queue: the running TUI takes it as a user turn once any running turn ends. */
+export function codexQueueCommand(route: CodexQueueRoute, text: string): string {
+  const b64 = shQuote(Buffer.from(text, 'utf8').toString('base64'))
+  const codex = route.binary ? shQuote(route.binary) : 'codex'
+  const home = route.codexHome ? `CODEX_HOME=${shQuote(route.codexHome)} ` : ''
+  return (
+    `T=$(printf %s ${b64} | ${B64_DECODE}); ` +
+    `command -v ${codex} >/dev/null 2>&1 || { echo "@@MISSING"; exit 0; }; ` +
+    `${home}${codex} queue --thread ${shQuote(route.thread)} --message "$T" </dev/null 2>&1; echo "@@RC $?"`
+  )
+}
+
+export function codexQueueOutcome(out: string): RouteAttempt {
+  if (/^Queued message \S+ for thread/m.test(out)) {
+    return { outcome: 'sent' }
+  }
+  if (out.includes('@@MISSING')) {
+    return { outcome: 'unavailable', reason: 'codex is not on the session machine' }
+  }
+  // Older Codex has no `queue`; nothing was queued, so the next route may type it instead.
+  const said =
+    out
+      .replace(/@@RC \d+\s*$/, '')
+      .trim()
+      .split('\n')
+      .at(-1) ?? ''
+  return { outcome: 'unavailable', reason: `codex queue refused it${said ? ` (${said})` : ''}` }
+}
+
 /** A closed session: the CLI resumes it headless, which appends to the same transcript. */
 export function resumeCommand(session: LiveSession, text: string): string {
   const b64 = shQuote(Buffer.from(text, 'utf8').toString('base64'))
@@ -161,6 +192,9 @@ export class SessionInputRoutes {
     }
     if (route.kind === 'tmux') {
       return typeIntoTmux(host, route, typed, this.sleep)
+    }
+    if (route.kind === 'codex-queue') {
+      return codexQueueOutcome(await host.run(codexQueueCommand(route, typed)))
     }
     const out = await host.run(resumeCommand(session, typed))
     if (out.includes('@@MISSING')) {

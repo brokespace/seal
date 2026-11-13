@@ -11,6 +11,7 @@ import type { DiscoveredPane, DiscoveredProcess, DiscoveryOutput } from './disco
 import { parseAgentScreen, type AgentScreen } from './agent-screen'
 import type { TranscriptPhase, TranscriptSummary } from './transcript-summary'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
+import { agentProcesses, codexHomeOf, processBinary, sessionIdFromArgs } from './agent-processes'
 
 export type SummarizedTranscript = {
   path: string
@@ -29,7 +30,6 @@ type HookState = {
   pid: number | null
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
 const FRESH_WRITE_MS = 2 * 60_000
 /** A hook state older than the transcript by more than this has gone quiet; the transcript wins. */
@@ -49,50 +49,6 @@ export function projectOf(cwd: string | null): string | null {
   }
   const parts = cwd.split(/[\\/]/).filter(Boolean)
   return parts.at(-1) ?? null
-}
-
-export function processProvider(args: string): LiveSessionProvider | null {
-  const [command = '', script = ''] = args.split(/\s+/)
-  const name = (value: string) => value.split('/').pop() ?? ''
-  const tool = /^(claude|codex)(\.js)?$/
-  const direct = tool.exec(name(command))?.[1]
-  if (direct === 'claude' || direct === 'codex') {
-    return direct
-  }
-  if (name(command) !== 'node') {
-    return null
-  }
-  if (script.endsWith('claude-code/cli.js') || name(script).startsWith('claude')) {
-    return 'claude'
-  }
-  return /@openai\/codex\//.test(script) || name(script).startsWith('codex') ? 'codex' : null
-}
-
-/** The session a command line names: `--resume <id>`, `--session-id <id>`, `codex resume <id>`. */
-export function sessionIdFromArgs(args: string): string | null {
-  const words = args.split(/\s+/)
-  for (let i = 0; i < words.length - 1; i++) {
-    const flag = words[i]
-    if (
-      (flag === '--resume' || flag === '-r' || flag === '--session-id' || flag === 'resume') &&
-      UUID.test(words[i + 1])
-    ) {
-      return words[i + 1]
-    }
-  }
-  return null
-}
-
-/** Only the outermost agent process per session: npm's codex wrapper spawns the native binary. */
-function agentProcesses(
-  processes: DiscoveredProcess[]
-): (DiscoveredProcess & { provider: LiveSessionProvider })[] {
-  const agents = processes.flatMap((p) => {
-    const provider = processProvider(p.args)
-    return provider ? [{ ...p, provider }] : []
-  })
-  const byPid = new Map(agents.map((p) => [p.pid, p]))
-  return agents.filter((p) => byPid.get(p.ppid)?.provider !== p.provider)
 }
 
 export function parseHookStates(files: { path: string; text: string }[]): HookState[] {
@@ -168,7 +124,8 @@ type Claim = {
 /** Pair agent processes with the transcripts they write. */
 function pairProcesses(
   processes: (DiscoveredProcess & { provider: LiveSessionProvider })[],
-  transcripts: SummarizedTranscript[]
+  transcripts: SummarizedTranscript[],
+  claudeSessionByPid: ReadonlyMap<number, string>
 ): Claim[] {
   const free = new Set(transcripts)
   const claims: Claim[] = []
@@ -180,7 +137,9 @@ function pairProcesses(
   }
   const pending: typeof processes = []
   for (const process of processes) {
-    const named = sessionIdFromArgs(process.args)
+    const named =
+      (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
+      sessionIdFromArgs(process.args)
     const match = named
       ? [...free].find(
           (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
@@ -208,7 +167,8 @@ function pairProcesses(
 
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
-  output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'>
+  output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
+    Partial<Pick<DiscoveryOutput, 'claudeSessions'>>
   transcripts: SummarizedTranscript[]
   nowMs: number
 }): LiveSession[] {
@@ -218,15 +178,22 @@ export function assembleHostSessions(input: {
   const hooks = new Map(
     parseHookStates(output.hookStates).map((h) => [`${h.provider}:${h.providerSessionId}`, h])
   )
+  const claudeSessionByPid = new Map(
+    (output.claudeSessions ?? []).map((s) => [s.pid, s.sessionId] as const)
+  )
   const sessions: LiveSession[] = []
   for (const { process, transcript } of pairProcesses(
     agentProcesses(output.processes),
-    input.transcripts
+    input.transcripts,
+    claudeSessionByPid
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
-    // A fresh agent has no transcript until its first prompt; it is still a session to show.
-    const providerSessionId = summary?.providerSessionId ?? `pid-${process!.pid}`
+    // A fresh agent has no transcript until its first prompt; Claude names it in its registry at once.
+    const providerSessionId =
+      summary?.providerSessionId ??
+      (provider === 'claude' ? claudeSessionByPid.get(process!.pid) : undefined) ??
+      `pid-${process!.pid}`
     const lastWrite = Math.max(transcript?.mtimeMs ?? 0, summary?.lastAt ?? 0)
     const running = process !== null || now - lastWrite < FRESH_WRITE_MS
     const pane = process?.tty ? panesByTty.get(process.tty) : undefined
@@ -262,6 +229,14 @@ export function assembleHostSessions(input: {
       statusDetail = null
     }
     const inputRoutes: LiveSessionInputRoute[] = []
+    if (provider === 'codex' && process && summary) {
+      inputRoutes.push({
+        kind: 'codex-queue',
+        thread: providerSessionId,
+        binary: processBinary(process.args, 'codex'),
+        codexHome: codexHomeOf(transcript?.path ?? null)
+      })
+    }
     if (pane && process) {
       inputRoutes.push({ kind: 'tmux', target: pane.paneId, socket: pane.socket })
     }
