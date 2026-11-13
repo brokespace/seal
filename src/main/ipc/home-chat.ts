@@ -9,7 +9,8 @@ import type {
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { Repo } from '../../shared/repo-types'
-import { createClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
+import { createSealClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 import { HomeChatService } from '../home-chat/home-chat-service'
 import { HomeChatStore } from '../home-chat/home-chat-store'
 import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
@@ -41,7 +42,10 @@ export function registerHomeChatHandlers(
     const service = new HomeChatService({
       rootDir,
       store,
-      accounts: createClaudeAccountsProvider(claudeAccounts),
+      accounts: createSealClaudeAccountsProvider({
+        candidates: () => getSealAccountManager()?.candidates('claude') ?? null,
+        listAccounts: () => claudeAccounts.listAccounts()
+      }),
       createMachines: createDefaultHomeChatMachineProvider,
       runOrcaCli,
       repos,

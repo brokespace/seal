@@ -15,7 +15,7 @@ function openSettingsPane(target: SettingsNavigationTarget): void {
   state.openSettingsPage()
 }
 
-/** Settings > AI provider accounts, where Seal's account vault lives. */
+/** Settings > Accounts, where Seal's account vault lives. */
 function openAccountsSettings(): void {
   openSettingsPane({ pane: 'accounts', repoId: null })
 }

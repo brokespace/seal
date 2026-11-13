@@ -115,7 +115,7 @@ export function HomeChatComposer({
                   value={account.id ?? DEFAULT_ACCOUNT_VALUE}
                 >
                   {account.id === null
-                    ? t('homeChat.account.default', 'Default login')
+                    ? t('homeChat.account.current', 'Current account')
                     : account.label}
                   {account.detail && (
                     <span className="text-muted-foreground"> · {account.detail}</span>

@@ -248,7 +248,7 @@ export class HomeChatService {
     }
     const accounts = await this.deps.accounts.list().catch(() => [])
     const account = accounts.find((option) => option.id === chat.accountId)
-    return `Now answering with Claude Code on ${account?.label ?? 'the default login'}.`
+    return `Now answering with Claude Code on ${account?.label ?? 'the current account'}.`
   }
 
   private workerHost(): HomeChatWorkerHost {

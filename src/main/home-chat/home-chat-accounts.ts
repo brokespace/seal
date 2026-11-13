@@ -1,33 +1,55 @@
 import type { HomeChatAccountOption } from '../../shared/home-chat/home-chat-types'
 import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
+import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 
-/** The seam seal/multi-account's vault plugs into; null always means the default Claude login. */
 export type HomeChatAccountProvider = {
   list: () => Promise<HomeChatAccountOption[]>
-  /** CLAUDE_CONFIG_DIR for the account, or null to run on the default login. */
+  /** CLAUDE_CONFIG_DIR for the account, or null to run on this computer's current Claude login. */
   claudeConfigDir: (accountId: string | null) => Promise<string | null>
 }
 
-/** Backed by Orca's saved Claude accounts until the Seal vault lands. */
-export function createClaudeAccountsProvider(source: {
+type SealClaudeAccountSource = {
+  /** Seal's Claude accounts, or null before the account manager has started. */
+  candidates: () => SealAccountCandidate[] | null
   listAccounts: () => ClaudeRateLimitAccountsState
-}): HomeChatAccountProvider {
+}
+
+function identityDetail(candidate: SealAccountCandidate): string | undefined {
+  const parts = [candidate.email, candidate.orgName].filter(
+    (part): part is string => Boolean(part) && part !== candidate.label
+  )
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}
+
+/** A saved login a chat can run on by its own config dir; keys and tokens need a launch env. */
+function isSavedLogin(candidate: SealAccountCandidate): boolean {
+  return (
+    candidate.kind === 'oauth' &&
+    candidate.localId !== null &&
+    candidate.launchable &&
+    !candidate.disabled &&
+    candidate.health?.state !== 'dead'
+  )
+}
+
+/** Home chat picks from the same Claude accounts Settings > Accounts lists. */
+export function createSealClaudeAccountsProvider(
+  source: SealClaudeAccountSource
+): HomeChatAccountProvider {
   return {
     list: () => {
-      const state = source.listAccounts()
+      const candidates = source.candidates() ?? []
+      const current = candidates.find((candidate) => candidate.active)
       return Promise.resolve([
         {
           id: null,
-          label: 'Default login',
-          ...(state.systemDefaultEmail ? { detail: state.systemDefaultEmail } : {})
+          label: 'Current account',
+          ...(current ? { detail: current.label } : {})
         },
-        ...state.accounts
-          .filter((account) => !account.needsSignIn)
-          .map((account) => ({
-            id: account.id,
-            label: account.email,
-            ...(account.organizationName ? { detail: account.organizationName } : {})
-          }))
+        ...candidates.filter(isSavedLogin).map((candidate) => {
+          const detail = identityDetail(candidate)
+          return { id: candidate.localId, label: candidate.label, ...(detail ? { detail } : {}) }
+        })
       ])
     },
     claudeConfigDir: (accountId) => {

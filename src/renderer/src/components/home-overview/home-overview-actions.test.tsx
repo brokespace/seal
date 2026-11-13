@@ -68,7 +68,7 @@ it('every Home button navigates away or hands off to a real handler', () => {
   }
 })
 
-it('Accounts Manage opens Settings on AI provider accounts', () => {
+it('Accounts Manage opens Settings on Accounts', () => {
   renderHome()
   fireEvent.click(within(panel('Accounts')).getByRole('button', { name: 'Manage' }))
   expect(useAppStore.getState().activeView).toBe('settings')

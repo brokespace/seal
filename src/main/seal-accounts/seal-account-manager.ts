@@ -179,7 +179,7 @@ export class SealAccountManager {
 
   /** Sets priorities from a drag order: the first account is preferred. */
   reorder(provider: SealProvider, refs: readonly string[]): void {
-    const keys = refs.map((ref) => this.requireCandidate(provider, ref).key)
+    const keys = refs.map((ref) => this.resolveKey(ref, provider))
     this.saveConfig(withAccountOrder(this.getConfig(), keys))
   }
 

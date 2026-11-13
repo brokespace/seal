@@ -26,6 +26,7 @@ import {
 } from './usage/usage-selectors'
 import { MobileAgentIcon } from '../components/MobileAgentIcon'
 import { getProviderDisplayName } from '../../../src/shared/usage-provider-windows'
+import { showsSystemLoginRow } from '../../../src/shared/seal-accounts/seal-account-switch-view'
 import { ProviderUsageWindows } from './ProviderUsageWindows'
 import {
   getActiveCodexAccountIdForRateLimitTarget,
@@ -181,6 +182,8 @@ export function MobileAccountsScreen() {
         ? getActiveCodexAccountIdForRateLimitTarget(snapshot)
         : state.activeAccountId
     const activeUsage = getActiveProviderRateLimits(snapshot, provider)
+    // The desktop's own names and rows, so the phone lists what Settings > Accounts lists.
+    const sealView = snapshot.seal?.[provider]
     const resetCredit = provider === 'codex' ? getCodexResetCreditSummary(activeUsage, now) : null
     const Icon = provider === 'claude' ? ClaudeIcon : OpenAIIcon
     // Stored rows may name a selection or Codex target the desktop has since changed.
@@ -195,20 +198,24 @@ export function MobileAccountsScreen() {
         />
         <ListGroup style={styles.group}>
           {/* A blocked row drops its press instead of dimming, so the picked one keeps full contrast. */}
-          <ListRow
-            key="default"
-            title={t('accounts.screen.default', 'System default')}
-            subtitle={t('accounts.screen.agentLogin', "Use the agent's own login")}
-            detail={
-              // Show system-default login usage for users without managed accounts.
-              activeAccountId === null && hasActiveProviderUsage(activeUsage) ? (
-                <ProviderUsageWindows limits={activeUsage} now={now} showEmptyWindows />
-              ) : undefined
-            }
-            accessory={busyAccountId === `${provider}:default` ? spinner : undefined}
-            selected={activeAccountId === null}
-            onPress={switchBlocked ? undefined : () => void selectAccount(provider, null)}
-          />
+          {showsSystemLoginRow(sealView, activeAccountId) ? (
+            <ListRow
+              key="default"
+              title={
+                sealView?.systemLogin?.label ?? t('accounts.screen.systemLogin', 'System login')
+              }
+              subtitle={t('accounts.screen.agentLogin', "Use the agent's own login")}
+              detail={
+                // Show the system login's usage for users without saved accounts.
+                activeAccountId === null && hasActiveProviderUsage(activeUsage) ? (
+                  <ProviderUsageWindows limits={activeUsage} now={now} showEmptyWindows />
+                ) : undefined
+              }
+              accessory={busyAccountId === `${provider}:default` ? spinner : undefined}
+              selected={activeAccountId === null}
+              onPress={switchBlocked ? undefined : () => void selectAccount(provider, null)}
+            />
+          ) : null}
           {state.accounts.map((account) => {
             const isActive = activeAccountId === account.id
             const inactiveEntry = !isActive
@@ -221,7 +228,7 @@ export function MobileAccountsScreen() {
             return (
               <ListRow
                 key={account.id}
-                title={account.email}
+                title={sealView?.labels[account.id] ?? account.email}
                 detail={
                   <>
                     <ProviderUsageWindows

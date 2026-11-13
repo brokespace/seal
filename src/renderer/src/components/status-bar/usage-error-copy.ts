@@ -198,7 +198,7 @@ export function getProviderUsageErrorMessage(
       case 'missing-credentials':
         return t(
           'accounts.claude.usageSignInMessage',
-          'The selected Claude account needs you to sign in again. Open Settings > AI Provider Accounts, or choose System default.'
+          'The selected Claude account needs you to sign in again. Open Settings > Accounts, or pick another account.'
         )
       case 'server':
       case 'parse':
