@@ -10,6 +10,7 @@ import {
 import { describeSubagent } from '../delegation/home-chat-subagents'
 import { describeRoutine } from '../routines/home-chat-routines'
 import { webFetch, webSearch } from '../web/home-chat-web'
+import { resolveHomeChatMachineId } from '../machines/home-chat-machine-provider'
 
 const ok = (text: string): HomeChatToolResult => ({ text, isError: false })
 
@@ -37,7 +38,7 @@ async function spawnSubagent(
     }
   }
   const machine = optionalStr(input.machine) ?? 'local'
-  const host = machine === 'local' || machine.startsWith('ssh:') ? machine : `ssh:${machine}`
+  const host = await agentHostFor(machine, ctx)
   const item = await ctx.services.subagents.spawnAgent({
     chatId: ctx.chatId,
     task,
@@ -47,6 +48,16 @@ async function spawnSubagent(
     agent: optionalStr(input.agent) ?? 'claude'
   })
   return ok(`Started ${describeSubagent(item)}. You will get a notice here when it goes idle.`)
+}
+
+/** Agents launch on the transport the machine uses now, even when named by an old `ssh:` id. */
+async function agentHostFor(machine: string, ctx: HomeChatToolContext): Promise<string> {
+  if (machine === 'local' || machine.startsWith('runtime:')) {
+    return machine
+  }
+  const machines = await ctx.machines.list()
+  const id = resolveHomeChatMachineId(machine, machines)
+  return machines.find((info) => info.id === id)?.executionHostId ?? id
 }
 
 function routines(input: Record<string, unknown>, ctx: HomeChatToolContext): HomeChatToolResult {

@@ -1,30 +1,15 @@
-import {
-  connectRegisteredSshTarget,
-  getRegisteredSshState,
-  getSshConnectionManager,
-  listRegisteredSshTargets
-} from '../../ssh/targets/ssh-target-registry'
-import type { SshConnection } from '../../ssh/connection/ssh-connection'
-import { detectRemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform-detection'
-import {
-  getRemoteHostPlatform,
-  type RemoteHostPlatform
-} from '../../ssh/remote-host/ssh-remote-platform'
-import type { SshTarget } from '../../../shared/ssh-types'
+import type { MachineView } from '../../../shared/machines/machine-view'
+import type { MachineConnection } from '../../machines/connection/machine-connection'
 import type { HomeChatMachineNote } from '../../../shared/home-chat/home-chat-memory-types'
 import { createHopMachine, hopMachineInfo, isHopNote } from './home-chat-hop-machine'
 import { createLocalMachine } from './home-chat-local-machine'
-import { createSshMachine, sshMachineInfo } from './home-chat-ssh-machine'
+import { createUnifiedMachine, unifiedMachineInfo } from './home-chat-unified-machine'
 import {
   LOCAL_MACHINE_ID,
   type HomeChatMachine,
   type HomeChatMachineInfo,
   type HomeChatMachineProvider
 } from './home-chat-machine-types'
-
-function userSshTargets(): SshTarget[] {
-  return listRegisteredSshTargets().filter((target) => !target.owner)
-}
 
 /** Match an id, a bare SSH target id, or a label; ambiguity is an error the model can act on. */
 export function resolveHomeChatMachineId(
@@ -36,8 +21,14 @@ export function resolveHomeChatMachineId(
     return LOCAL_MACHINE_ID
   }
   const exact = machines.find((m) => {
-    const id = m.id.toLowerCase()
-    return id === wanted || id === `ssh:${wanted}` || id === `hop:${wanted}`
+    const ids = [m.id, ...(m.aliases ?? [])].map((id) => id.toLowerCase())
+    return ids.some(
+      (id) =>
+        id === wanted ||
+        id === `ssh:${wanted}` ||
+        id === `machine:${wanted}` ||
+        id === `hop:${wanted}`
+    )
   })
   if (exact) {
     return exact.id
@@ -60,73 +51,51 @@ function withNotes(
   info: HomeChatMachineInfo,
   notes: readonly HomeChatMachineNote[]
 ): HomeChatMachineInfo {
-  const note = notes.find((n) => n.machine === info.id)
+  const ids = new Set([info.id, ...(info.aliases ?? [])])
+  const note = notes.find((n) => ids.has(n.machine))
   return note?.notes ? { ...info, notes: note.notes } : info
 }
 
-const WINDOWS_FALLBACK = getRemoteHostPlatform('win32-x64')
+export type HomeChatMachineSource = {
+  list: () => readonly MachineView[]
+  connection: (machineId: string) => MachineConnection
+}
 
 export function createDefaultHomeChatMachineProvider(
-  machineNotes: () => readonly HomeChatMachineNote[]
+  machineNotes: () => readonly HomeChatMachineNote[],
+  machines: HomeChatMachineSource
 ): HomeChatMachineProvider {
   const local = createLocalMachine()
-  const platforms = new Map<string, { generation: number; host: RemoteHostPlatform | null }>()
-
-  const detectPlatform = async (
-    targetId: string,
-    conn: SshConnection,
-    note: HomeChatMachineNote | undefined
-  ): Promise<RemoteHostPlatform | null> => {
-    const generation = conn.getConnectGeneration()
-    const cached = platforms.get(targetId)
-    if (cached?.generation === generation) {
-      return cached.host
-    }
-    const host = await detectRemoteHostPlatform(conn).catch(() =>
-      note?.os === 'windows' ? WINDOWS_FALLBACK : null
-    )
-    platforms.set(targetId, { generation, host })
-    return host
-  }
 
   const list = (): Promise<HomeChatMachineInfo[]> => {
     const notes = machineNotes()
     const direct = [
       local.info,
-      ...userSshTargets().map((target) =>
-        sshMachineInfo(target, getRegisteredSshState(target.id)?.status === 'connected')
-      )
+      ...machines
+        .list()
+        .map((view) => unifiedMachineInfo(view, machines.connection(view.id).isConnected()))
     ].map((info) => withNotes(info, notes))
+    const viaOf = (via: string | undefined) =>
+      direct.find((m) => m.id === via || m.aliases?.includes(via ?? ''))
     const hops = notes
       .filter(isHopNote)
-      .map((note) =>
-        hopMachineInfo(note, direct.find((m) => m.id === note.via)?.connected ?? false)
-      )
+      .map((note) => hopMachineInfo(note, viaOf(note.via)?.connected ?? false))
     return Promise.resolve([...direct, ...hops])
   }
 
-  const openSsh = async (id: string): Promise<HomeChatMachine> => {
-    const targetId = id.slice('ssh:'.length)
-    const target = userSshTargets().find((t) => t.id === targetId)
-    if (!target) {
-      throw new Error(`SSH machine ${id} is no longer configured`)
+  const openMachine = async (id: string): Promise<HomeChatMachine> => {
+    const view = machines.list().find((candidate) => candidate.id === id)
+    if (!view) {
+      throw new Error(`Machine ${id} is no longer configured`)
     }
-    let conn = getSshConnectionManager()?.getConnection(targetId)
-    if (conn?.getState().status !== 'connected') {
-      const state = await connectRegisteredSshTarget(targetId, { automatic: true })
-      if (state.status !== 'connected') {
-        throw new Error(
-          `Could not connect to ${target.label}: ${state.error ?? state.status}. Ask the user to connect it in Seal.`
-        )
-      }
-      conn = getSshConnectionManager()?.getConnection(targetId)
+    try {
+      const machine = await createUnifiedMachine(view, machines.connection(id))
+      return { ...machine, info: withNotes(machine.info, machineNotes()) }
+    } catch (error) {
+      throw new Error(
+        `Could not connect to ${view.name}: ${error instanceof Error ? error.message : String(error)}. Ask the user to connect it in Seal.`
+      )
     }
-    if (!conn) {
-      throw new Error(`No SSH connection to ${target.label}`)
-    }
-    const note = machineNotes().find((n) => n.machine === id)
-    const machine = createSshMachine(target, conn, await detectPlatform(targetId, conn, note))
-    return { ...machine, info: withNotes(machine.info, machineNotes()) }
   }
 
   const open = async (query: string, depth = 0): Promise<HomeChatMachine> => {
@@ -134,8 +103,8 @@ export function createDefaultHomeChatMachineProvider(
     if (id === LOCAL_MACHINE_ID) {
       return local
     }
-    if (id.startsWith('ssh:')) {
-      return openSsh(id)
+    if (id.startsWith('machine:')) {
+      return openMachine(id)
     }
     const note = machineNotes().find((n) => n.machine === id && isHopNote(n))
     if (!note?.via) {

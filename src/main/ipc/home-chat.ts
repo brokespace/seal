@@ -13,6 +13,7 @@ import { createClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
 import { HomeChatService } from '../home-chat/home-chat-service'
 import { HomeChatStore } from '../home-chat/home-chat-store'
 import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
+import { getMachineRegistry } from '../machines/registry/machine-registry-service'
 import { runOrcaCli } from '../home-chat/tools/home-chat-orca-cli'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
@@ -42,7 +43,11 @@ export function registerHomeChatHandlers(
       rootDir,
       store,
       accounts: createClaudeAccountsProvider(claudeAccounts),
-      createMachines: createDefaultHomeChatMachineProvider,
+      createMachines: (machineNotes) =>
+        createDefaultHomeChatMachineProvider(machineNotes, {
+          list: () => getMachineRegistry().list(),
+          connection: (machineId) => getMachineRegistry().connection(machineId)
+        }),
       runOrcaCli,
       repos,
       emit: broadcast

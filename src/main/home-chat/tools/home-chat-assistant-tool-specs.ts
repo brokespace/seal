@@ -66,7 +66,7 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
       machine: z
         .string()
         .optional()
-        .describe('agent mode: host for the worktree, "local" or "ssh:<id>"'),
+        .describe('agent mode: machine for the worktree, "local" or an id from list_machines'),
       agent: z.string().optional().describe('agent mode: agent id (default claude)')
     }
   },

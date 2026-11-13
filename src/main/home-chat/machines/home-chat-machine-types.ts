@@ -4,10 +4,14 @@
 export type HomeChatShellDialect = 'posix' | 'powershell'
 
 export type HomeChatMachineInfo = {
-  /** `local`, `ssh:<target-id>` (the spelling `orca --host` takes), or `hop:<name>`. */
+  /** `local`, `machine:<id>`, or `hop:<name>`. */
   id: string
   label: string
-  kind: 'local' | 'ssh' | 'hop'
+  kind: 'local' | 'remote' | 'hop'
+  /** Older spellings (`ssh:<target-id>`) that saved notes and hops may still use. */
+  aliases?: string[]
+  /** The `--host` value agents on this machine launch with: the transport it uses now. */
+  executionHostId?: string
   /** user@host:port for SSH machines. */
   address?: string
   /** How Seal reaches it when not directly: a ProxyJump/ProxyCommand or another machine's id. */
@@ -55,7 +59,7 @@ export type HomeChatMachine = {
 
 export type HomeChatMachineProvider = {
   list: () => Promise<HomeChatMachineInfo[]>
-  /** Resolve by id, `ssh:` id, or label (case-insensitive); connects SSH machines on demand. */
+  /** Resolve by id, legacy `ssh:` id, or label (case-insensitive); connects machines on demand. */
   open: (machine: string) => Promise<HomeChatMachine>
 }
 

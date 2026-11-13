@@ -17,7 +17,7 @@ afterEach(async () => {
 
 /** A "remote" machine whose filesystem is a folder; only the transfer surface is real. */
 function folderMachine(id: string, fsRoot: string): HomeChatMachine {
-  const info: HomeChatMachineInfo = { id, label: id, kind: 'ssh', connected: true }
+  const info: HomeChatMachineInfo = { id, label: id, kind: 'remote', connected: true }
   const unsupported = (): Promise<never> => Promise.reject(new Error('unsupported'))
   return {
     info,

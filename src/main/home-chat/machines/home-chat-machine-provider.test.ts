@@ -4,19 +4,20 @@ import type { HomeChatMachineInfo } from './home-chat-machine-types'
 
 const machines: HomeChatMachineInfo[] = [
   { id: 'local', label: 'laptop (this computer)', kind: 'local', connected: true },
-  { id: 'ssh:t1', label: 'gpu-box', kind: 'ssh', connected: true },
-  { id: 'ssh:t2', label: 'gpu-box-2', kind: 'ssh', connected: false },
-  { id: 'ssh:t3', label: 'build server', kind: 'ssh', connected: true }
+  { id: 'machine:t1', label: 'gpu-box', kind: 'remote', aliases: ['ssh:t1'], connected: true },
+  { id: 'machine:t2', label: 'gpu-box-2', kind: 'remote', aliases: ['ssh:t2'], connected: false },
+  { id: 'machine:env-3', label: 'build server', kind: 'remote', connected: true }
 ]
 
 describe('resolveHomeChatMachineId', () => {
   it('prefers an exact label over a partial match', () => {
-    expect(resolveHomeChatMachineId('GPU-box', machines)).toBe('ssh:t1')
+    expect(resolveHomeChatMachineId('GPU-box', machines)).toBe('machine:t1')
   })
 
-  it('accepts bare SSH target ids and unique partial labels', () => {
-    expect(resolveHomeChatMachineId('t2', machines)).toBe('ssh:t2')
-    expect(resolveHomeChatMachineId('build', machines)).toBe('ssh:t3')
+  it('still resolves the ssh: ids older notes and chats used, and unique partial labels', () => {
+    expect(resolveHomeChatMachineId('ssh:t2', machines)).toBe('machine:t2')
+    expect(resolveHomeChatMachineId('t2', machines)).toBe('machine:t2')
+    expect(resolveHomeChatMachineId('build', machines)).toBe('machine:env-3')
   })
 
   it('maps empty and local spellings to this computer', () => {
@@ -25,7 +26,7 @@ describe('resolveHomeChatMachineId', () => {
 
   it('rejects an ambiguous partial label', () => {
     expect(() => resolveHomeChatMachineId('gpu', machines)).toThrow(
-      '"gpu" matches several machines: ssh:t1, ssh:t2'
+      '"gpu" matches several machines: machine:t1, machine:t2'
     )
   })
 })
