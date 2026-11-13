@@ -8,6 +8,7 @@ import type {
   HomeChatSettings
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatBackendState } from './backends/home-chat-backend'
+import { isRecord } from './home-chat-record-guard'
 
 const SAVE_DELAY_MS = 400
 
@@ -60,10 +61,6 @@ async function readJson(path: string): Promise<unknown> {
   } catch {
     return null
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function isStoredHomeChat(value: unknown): value is StoredHomeChat {

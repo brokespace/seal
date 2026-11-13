@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../../filesystem/atomic-file-publication'
+import { isRecord } from '../home-chat-record-guard'
 import type {
   HomeChatMachineNote,
   HomeChatMemory,
@@ -25,10 +26,6 @@ export type HomeChatMachineNotePatch = Partial<Omit<HomeChatMachineNote, 'machin
 
 function emptyMemory(): HomeChatMemory {
   return { rules: [], facts: [], machines: [], journal: [] }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function parseItems(value: unknown): HomeChatMemoryItem[] {

@@ -1,12 +1,13 @@
 // Readers for `orca ... --json` output; fields follow the CLI's documented result shapes.
+import { isRecord } from '../home-chat-record-guard'
 
 function field(value: unknown, ...path: string[]): unknown {
   let current = value
   for (const key of path) {
-    if (typeof current !== 'object' || current === null) {
+    if (!isRecord(current)) {
       return undefined
     }
-    current = Reflect.get(current, key)
+    current = current[key]
   }
   return current
 }

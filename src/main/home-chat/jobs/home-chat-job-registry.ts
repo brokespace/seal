@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../../filesystem/atomic-file-publication'
+import { isRecord } from '../home-chat-record-guard'
 import type { HomeChatMachineProvider } from '../machines/home-chat-machine-types'
 import {
   jobKillScript,
@@ -54,11 +55,10 @@ const MAX_KEPT_JOBS = 200
 
 function isJob(value: unknown): value is HomeChatJob {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof Reflect.get(value, 'id') === 'string' &&
-    typeof Reflect.get(value, 'chatId') === 'string' &&
-    typeof Reflect.get(value, 'machine') === 'string'
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.chatId === 'string' &&
+    typeof value.machine === 'string'
   )
 }
 

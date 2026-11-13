@@ -89,23 +89,6 @@ export const HOME_CHAT_MACHINE_TOOLS = {
     description: 'Delete a file or directory on a machine. Always asks the user first.',
     shape: { machine, path: z.string().min(1), recursive: z.boolean().optional() }
   },
-  configure_machine: {
-    description:
-      'Save notes about a machine (user, port, OS, shell quirks, what runs there) that you will see every turn, or define a machine reached through another: use machine "hop:<name>" with via (the machine that runs ssh), host, and optionally user, port and os. Set remove to delete the entry.',
-    shape: {
-      machine: z
-        .string()
-        .min(1)
-        .describe('Machine id, or "hop:<name>" for a machine reached through another'),
-      notes: z.string().optional(),
-      os: z.enum(['linux', 'macos', 'windows']).optional(),
-      via: z.string().optional(),
-      host: z.string().optional(),
-      user: z.string().optional(),
-      port: z.number().int().min(1).max(65535).optional(),
-      remove: z.boolean().optional()
-    }
-  },
   attach_file: {
     description:
       'Show a file from any machine in the chat: images appear inline, other files as a download. Use it to hand results to the user (screenshots, reports, logs, archives).',

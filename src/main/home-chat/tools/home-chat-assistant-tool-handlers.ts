@@ -1,4 +1,4 @@
-import type { HomeChatToolName } from './home-chat-tool-definitions'
+import type { HomeChatAssistantToolName } from './home-chat-tool-definitions'
 import {
   clipToolText,
   formatExecResult,
@@ -93,7 +93,7 @@ function routines(input: Record<string, unknown>, ctx: HomeChatToolContext): Hom
 }
 
 export async function executeAssistantTool(
-  tool: HomeChatToolName,
+  tool: HomeChatAssistantToolName,
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
 ): Promise<HomeChatToolResult> {
@@ -186,7 +186,5 @@ export async function executeAssistantTool(
     }
     case 'routines':
       return routines(input, ctx)
-    default:
-      return { text: `Tool ${tool} is not available.`, isError: true }
   }
 }

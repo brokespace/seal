@@ -6,6 +6,12 @@ import { HOME_CHAT_MACHINE_TOOLS } from './home-chat-machine-tool-specs'
 export const HOME_CHAT_TOOLS = { ...HOME_CHAT_MACHINE_TOOLS, ...HOME_CHAT_ASSISTANT_TOOLS }
 
 export type HomeChatToolName = keyof typeof HOME_CHAT_TOOLS
+export type HomeChatMachineToolName = keyof typeof HOME_CHAT_MACHINE_TOOLS
+export type HomeChatAssistantToolName = keyof typeof HOME_CHAT_ASSISTANT_TOOLS
+
+export function isHomeChatMachineToolName(name: string): name is HomeChatMachineToolName {
+  return Object.hasOwn(HOME_CHAT_MACHINE_TOOLS, name)
+}
 
 export function isHomeChatToolName(name: string): name is HomeChatToolName {
   return Object.hasOwn(HOME_CHAT_TOOLS, name)

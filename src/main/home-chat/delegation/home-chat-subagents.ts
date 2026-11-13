@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../../filesystem/atomic-file-publication'
+import { isRecord } from '../home-chat-record-guard'
 import type { HomeChatToolContext } from '../tools/home-chat-tool-executor'
 import {
   delay,
@@ -60,12 +61,7 @@ export const WORKER_BRIEF =
   'You are a background worker started by another Seal chat. Do the task below end to end without asking the user anything (approval cards still reach them). When you finish, reply with a short report: what you did, on which machines, how you verified it, and anything left open.'
 
 function isSubagent(value: unknown): value is HomeChatSubagent {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof Reflect.get(value, 'id') === 'string' &&
-    typeof Reflect.get(value, 'chatId') === 'string'
-  )
+  return isRecord(value) && typeof value.id === 'string' && typeof value.chatId === 'string'
 }
 
 /** Delegated work: Orca agents in worktrees for code, background assistant chats for ops. */

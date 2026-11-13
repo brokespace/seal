@@ -51,12 +51,12 @@ export function HomeChatMemoryDialog({
       return
     }
     setSaving(true)
-    try {
-      setMemory(await api.updateMemory({ memory }))
+    const saved = await api.updateMemory({ memory }).catch(() => null)
+    setSaving(false)
+    if (saved) {
+      setMemory(saved)
       setDirty(false)
       setOpen(false)
-    } finally {
-      setSaving(false)
     }
   }
 

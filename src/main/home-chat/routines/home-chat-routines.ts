@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../../filesystem/atomic-file-publication'
+import { isRecord } from '../home-chat-record-guard'
 import { isValidAutomationSchedule } from '../../../shared/automations/scheduling/automation-schedule-parsing'
 import { nextAutomationOccurrenceAfter } from '../../../shared/automations/scheduling/automation-schedule-occurrences'
 import { formatAutomationSchedule } from '../../../shared/automations/scheduling/automation-schedules'
@@ -33,11 +34,10 @@ const MAX_TIMER_MS = 60 * 60_000
 
 function isRoutine(value: unknown): value is HomeChatRoutine {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof Reflect.get(value, 'id') === 'string' &&
-    typeof Reflect.get(value, 'schedule') === 'string' &&
-    typeof Reflect.get(value, 'prompt') === 'string'
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.schedule === 'string' &&
+    typeof value.prompt === 'string'
   )
 }
 

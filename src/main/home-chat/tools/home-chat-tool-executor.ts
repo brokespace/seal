@@ -1,4 +1,8 @@
-import type { HomeChatToolName } from './home-chat-tool-definitions'
+import {
+  isHomeChatMachineToolName,
+  type HomeChatMachineToolName,
+  type HomeChatToolName
+} from './home-chat-tool-definitions'
 import {
   clipToolText,
   formatExecResult,
@@ -91,10 +95,10 @@ async function jobStatus(
 }
 
 async function executeMachineTool(
-  tool: HomeChatToolName,
+  tool: HomeChatMachineToolName,
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
-): Promise<HomeChatToolResult | null> {
+): Promise<HomeChatToolResult> {
   switch (tool) {
     case 'list_machines':
       return listMachines(ctx, input.probe_load === true)
@@ -177,8 +181,6 @@ async function executeMachineTool(
         machine: machine.info.label
       }
     }
-    default:
-      return null
   }
 }
 
@@ -208,5 +210,7 @@ export async function executeHomeChatTool(
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
 ): Promise<HomeChatToolResult> {
-  return (await executeMachineTool(tool, input, ctx)) ?? executeAssistantTool(tool, input, ctx)
+  return isHomeChatMachineToolName(tool)
+    ? executeMachineTool(tool, input, ctx)
+    : executeAssistantTool(tool, input, ctx)
 }

@@ -1,6 +1,7 @@
 import { getMainHttpClient } from '../../network/http-client'
 import type { HomeChatSearchProvider } from '../../../shared/home-chat/home-chat-types'
 import { htmlToText, stripTags } from './home-chat-html-text'
+import { isRecord } from '../home-chat-record-guard'
 
 export type HomeChatWebConfig = {
   searchProvider: HomeChatSearchProvider
@@ -72,8 +73,8 @@ export function parseDuckDuckGoResults(html: string, count: number): HomeChatSea
 }
 
 function records(value: unknown, key: string): Record<string, unknown>[] {
-  const list = typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined
-  return Array.isArray(list) ? list.filter((item) => typeof item === 'object' && item !== null) : []
+  const list = isRecord(value) ? value[key] : undefined
+  return Array.isArray(list) ? list.filter(isRecord) : []
 }
 
 const text = (value: unknown): string => (typeof value === 'string' ? value : '')
@@ -96,7 +97,7 @@ export async function webSearch(
       headers: { Accept: 'application/json', 'X-Subscription-Token': String(config.apiKey) }
     })
     const body: unknown = await response.json()
-    const web = typeof body === 'object' && body !== null ? Reflect.get(body, 'web') : null
+    const web = isRecord(body) ? body.web : null
     return records(web, 'results').map((r) => ({
       title: text(r.title),
       url: text(r.url),

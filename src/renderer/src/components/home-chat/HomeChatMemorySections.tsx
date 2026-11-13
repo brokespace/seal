@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
-import { getIntlLocale } from '@/i18n/i18n'
-import { useTranslate } from '@/i18n/use-translate'
+import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
@@ -30,6 +29,7 @@ export function HomeChatMemoryItems({
   onChange: (items: HomeChatMemoryItem[]) => void
 }): React.JSX.Element {
   const t = useTranslate()
+  const locale = useIntlLocale()
   const [draft, setDraft] = useState('')
   const add = (): void => {
     if (draft.trim()) {
@@ -45,7 +45,7 @@ export function HomeChatMemoryItems({
           <li key={item.id} className="flex items-center gap-2">
             {showDates && (
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {new Date(item.at).toLocaleDateString(getIntlLocale())}
+                {new Date(item.at).toLocaleDateString(locale)}
               </span>
             )}
             <Input

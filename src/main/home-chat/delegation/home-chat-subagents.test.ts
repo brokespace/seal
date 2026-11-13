@@ -19,8 +19,9 @@ afterEach(async () => {
 })
 
 function fakeWorkers(): HomeChatWorkerHost & { sent: [string, string][]; answer: string } {
+  const sent: [string, string][] = []
   const host = {
-    sent: [] as [string, string][],
+    sent,
     answer: '',
     create: (parentChatId: string) => `worker-of-${parentChatId}`,
     send: (workerChatId: string, text: string) => {
