@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import { Button } from '@/components/ui/button'
-import { AddRemoteHostDialog } from '@/components/sidebar/host-admission/ssh/AddRemoteHostDialog'
+import { AddMachineDialog, AddMachineMenu, type AddMachineRequest } from './add/AddMachineFlow'
 import { cn } from '@/lib/class-names'
 import type { MachineId } from '../../../../shared/machines/machine-types'
 import { MachineDetail } from './detail/MachineDetail'
@@ -33,7 +31,7 @@ export default function MachinesPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<MachineId | null>(lastSelectedMachineId)
   // Narrow layouts show one pane at a time; this tracks whether the detail pane is in front.
   const [showDetailOnNarrow, setShowDetailOnNarrow] = useState(lastSelectedMachineId !== null)
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState<AddMachineRequest | null>(null)
 
   const selected = machines.find((machine) => machine.id === selectedId) ?? machines[0] ?? null
   const sessionCountById = useMemo(
@@ -56,10 +54,7 @@ export default function MachinesPage(): React.JSX.Element {
         <h1 className="min-w-0 flex-1 truncate text-base leading-8 font-semibold">
           {t('auto.components.machines.page.title', 'Machines')}
         </h1>
-        <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)}>
-          <Plus />
-          {t('auto.components.machines.page.add', 'Add machine')}
-        </Button>
+        <AddMachineMenu onPick={(mode) => setAdding({ mode, machineId: null })} />
       </header>
       <div className="flex min-h-0 flex-1 border-t border-border">
         <aside
@@ -96,14 +91,13 @@ export default function MachinesPage(): React.JSX.Element {
         </div>
       </div>
       <MachineTransfersPanel transfers={transfers} onClearFinished={clearFinished} />
-      <AddRemoteHostDialog
-        mode={adding ? 'ssh' : null}
-        onOpenChange={(mode) => {
-          setAdding(mode !== null)
-          if (mode === null) {
-            reload()
-          }
+      <AddMachineDialog
+        request={adding}
+        onClose={() => {
+          setAdding(null)
+          reload()
         }}
+        onAdopted={reload}
       />
     </main>
   )
