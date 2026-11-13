@@ -1,0 +1,246 @@
+import { defineFixture } from '../../component-fixtures/component-fixture'
+import type {
+  HomeAccount,
+  HomeAutomationsResult,
+  HomeMachine,
+  HomeOverviewProviders,
+  HomeSession,
+  HomeWorkspace
+} from './home-overview-model'
+import { HomeOverview } from './HomeOverviewPage'
+
+const NOW = Date.now()
+const MIN = 60_000
+
+function session(id: string, overrides: Partial<HomeSession>): HomeSession {
+  return {
+    id,
+    state: 'working',
+    unseen: false,
+    machineId: 'local',
+    machineLabel: 'Local Mac',
+    projectId: 'seal',
+    projectName: 'seal',
+    workspaceName: 'main',
+    title: id,
+    agentType: 'claude',
+    agentLabel: 'Claude',
+    startedAt: NOW - 14 * MIN,
+    stateChangedAt: NOW - 2 * MIN,
+    finishedAt: null,
+    target: {
+      kind: 'orca-pane',
+      reveal: { repoId: 'seal', worktreeId: id, tabId: id, leafId: null }
+    },
+    ...overrides
+  }
+}
+
+const SESSIONS: HomeSession[] = [
+  session('Add Home overview page', {
+    workspaceName: 'seal/home-overview',
+    model: 'claude-opus-4',
+    account: 'brian@example.com',
+    lastMessage: { role: 'agent', text: 'Wired the sessions provider; running the typecheck now.' }
+  }),
+  session('Rebrand app icons', {
+    state: 'permission',
+    unseen: true,
+    workspaceName: 'seal/rebrand',
+    model: 'claude-sonnet-4',
+    account: 'brian@example.com',
+    askSummary: 'Run `pnpm build:icons`?'
+  }),
+  session('Multi-account switcher', {
+    state: 'done',
+    unseen: true,
+    agentType: 'codex',
+    agentLabel: 'Codex',
+    model: 'gpt-5-codex',
+    workspaceName: 'seal/multi-account',
+    finishedAt: NOW - 6 * MIN,
+    lastMessage: { role: 'agent', text: 'Opened PR #12 with the account picker and tests.' }
+  }),
+  session('Train tokenizer', {
+    machineId: 'ssh:gpu',
+    machineLabel: 'gpu-box',
+    projectId: 'ml',
+    projectName: 'ml-experiments',
+    workspaceName: 'tokenizer-v2',
+    state: 'waiting',
+    unseen: true,
+    askSummary: 'Which dataset split should I use for validation?',
+    startedAt: NOW - 3 * 60 * MIN
+  }),
+  session('Nightly eval', {
+    machineId: 'ssh:gpu',
+    machineLabel: 'gpu-box',
+    projectId: 'ml',
+    projectName: 'ml-experiments',
+    workspaceName: 'eval',
+    state: 'errored',
+    unseen: true,
+    agentType: 'codex',
+    agentLabel: 'Codex',
+    finishedAt: NOW - 40 * MIN,
+    lastMessage: { role: 'agent', text: 'CUDA out of memory while loading checkpoint.' }
+  })
+]
+
+const MACHINES: HomeMachine[] = [
+  {
+    id: 'local',
+    label: 'Local Mac',
+    kind: 'local',
+    status: 'online',
+    load: 0.32,
+    memoryUsedPercent: 61
+  },
+  { id: 'ssh:gpu', label: 'gpu-box', kind: 'ssh', status: 'online' },
+  { id: 'ssh:pi', label: 'raspberry-pi', kind: 'ssh', status: 'offline' },
+  {
+    id: 'ssh:old',
+    label: 'old-server',
+    kind: 'ssh',
+    status: 'error',
+    error: 'Authentication failed'
+  }
+]
+
+const ACCOUNTS: HomeAccount[] = [
+  {
+    id: 'claude:active',
+    provider: 'claude',
+    providerLabel: 'Claude',
+    label: 'brian@example.com',
+    active: true,
+    status: 'ok',
+    windows: [
+      { kind: 'session', usedPercent: 86, resetsAt: NOW + 95 * MIN },
+      { kind: 'weekly', usedPercent: 41, resetsAt: NOW + 3 * 24 * 60 * MIN }
+    ]
+  },
+  {
+    id: 'claude:work',
+    provider: 'claude',
+    providerLabel: 'Claude',
+    label: 'brian@work.example',
+    active: false,
+    status: 'ok',
+    windows: [{ kind: 'session', usedPercent: 8, resetsAt: NOW + 4 * 60 * MIN }]
+  },
+  {
+    id: 'codex:active',
+    provider: 'codex',
+    providerLabel: 'Codex',
+    label: 'Codex',
+    active: true,
+    status: 'ok',
+    windows: [
+      { kind: 'session', usedPercent: 22, resetsAt: NOW + 3 * 60 * MIN },
+      { kind: 'weekly', usedPercent: 57, resetsAt: NOW + 5 * 24 * 60 * MIN }
+    ]
+  }
+]
+
+const WORKSPACES: HomeWorkspace[] = [
+  { id: 'a', projectName: 'seal', name: 'seal/home-overview', machineId: 'local', isFolder: false },
+  {
+    id: 'b',
+    projectName: 'seal',
+    name: 'seal/multi-account',
+    machineId: 'local',
+    isFolder: false,
+    review: { number: 12, state: 'open' }
+  },
+  {
+    id: 'c',
+    projectName: 'seal',
+    name: 'seal/rebrand',
+    machineId: 'local',
+    isFolder: false,
+    review: { number: 9, state: 'draft' }
+  },
+  {
+    id: 'd',
+    projectName: 'ml-experiments',
+    name: 'tokenizer-v2',
+    machineId: 'ssh:gpu',
+    isFolder: false
+  }
+]
+
+const AUTOMATIONS: HomeAutomationsResult = {
+  status: 'ready',
+  automations: [
+    {
+      id: '1',
+      name: 'Nightly dependency bump',
+      enabled: true,
+      nextRunAt: NOW + 7 * 60 * MIN,
+      lastRunAt: null
+    },
+    {
+      id: '2',
+      name: 'Triage new issues',
+      enabled: true,
+      nextRunAt: NOW + 25 * MIN,
+      lastRunAt: null
+    },
+    { id: '3', name: 'Weekly release notes', enabled: false, nextRunAt: null, lastRunAt: null }
+  ]
+}
+
+const noop = (): void => {}
+
+function staticProviders(data: {
+  sessions: HomeSession[]
+  machines: HomeMachine[]
+  accounts: HomeAccount[]
+  workspaces: HomeWorkspace[]
+  automations: HomeAutomationsResult
+}): HomeOverviewProviders {
+  return {
+    sessions: { useSessions: () => data.sessions },
+    machines: { useMachines: () => data.machines },
+    accounts: { useAccounts: () => data.accounts },
+    workspaces: { useWorkspaces: () => data.workspaces },
+    automations: { useAutomations: () => data.automations },
+    useActions: () => ({
+      openSession: noop,
+      openAutomations: noop,
+      openMachinesSettings: noop,
+      openAccountsSettings: noop
+    })
+  }
+}
+
+export const busy = defineFixture({
+  width: 1200,
+  render: () => (
+    <HomeOverview
+      providers={staticProviders({
+        sessions: SESSIONS,
+        machines: MACHINES,
+        accounts: ACCOUNTS,
+        workspaces: WORKSPACES,
+        automations: AUTOMATIONS
+      })}
+    />
+  )
+})
+
+export const empty = defineFixture({
+  width: 1200,
+  render: () => (
+    <HomeOverview
+      providers={staticProviders({
+        sessions: [],
+        machines: [MACHINES[0]],
+        accounts: [],
+        workspaces: [],
+        automations: { status: 'ready', automations: [] }
+      })}
+    />
+  )
+})

@@ -20,6 +20,7 @@ import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel
 const MemoFloatingTerminalToggleButton = memo(FloatingTerminalToggleButton)
 
 const Landing = lazy(() => import('../components/Landing'))
+const HomeOverviewPage = lazy(() => import('../components/home-overview/HomeOverviewPage'))
 const WorktreeCreationPanel = lazy(
   () => import('../components/worktree-creation/WorktreeCreationPanel')
 )
@@ -87,10 +88,23 @@ function PendingCreationSurface(props: {
   return opensChat ? <PendingNativeChatCreation {...props} /> : <WorktreeCreationPanel {...props} />
 }
 
+// Home is the landing surface once a project exists; first-run onboarding stays on Landing.
+function HomeOrLanding(): React.JSX.Element {
+  const hasProjects = useAppStore((s) => s.repos.length > 0)
+  return hasProjects ? (
+    <div className="absolute inset-0 flex">
+      <HomeOverviewPage />
+    </div>
+  ) : (
+    <Landing />
+  )
+}
+
 function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
   const { activeView, hasActiveWorktree, activePendingCreationId, creationLayoutActive } = layout
   return (
     <>
+      {activeView === 'home' ? <HomeOrLanding /> : null}
       {activeView === 'settings' ? <Settings /> : null}
       {activeView === 'skills' ? <SkillsPage /> : null}
       {activeView === 'artifacts' ? <ArtifactsPage /> : null}
@@ -106,7 +120,7 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
         />
       ) : null}
       {activeView === 'terminal' && !hasActiveWorktree && !creationLayoutActive ? (
-        <Landing />
+        <HomeOrLanding />
       ) : null}
     </>
   )
