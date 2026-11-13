@@ -2,6 +2,7 @@ import { runProcess } from '@orca/process-host'
 import { appendFile, copyFile, mkdir, open, writeFile } from 'node:fs/promises'
 import { cpus, hostname, loadavg } from 'node:os'
 import { dirname } from 'node:path'
+import { encodePowerShellCommand } from '../../../shared/powershell-command-encoding'
 import {
   LOCAL_MACHINE_ID,
   type HomeChatExecOptions,
@@ -15,7 +16,13 @@ function shellInvocation(command: string): { program: string; args: string[] } {
   if (process.platform === 'win32') {
     return {
       program: 'powershell.exe',
-      args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command]
+      args: [
+        '-NoLogo',
+        '-NoProfile',
+        '-NonInteractive',
+        '-EncodedCommand',
+        encodePowerShellCommand(command)
+      ]
     }
   }
   return { program: process.env.SHELL || '/bin/sh', args: ['-lc', command] }
@@ -30,6 +37,7 @@ async function execLocal(
     program,
     args,
     cwd: options.cwd,
+    ...(options.stdin !== undefined ? { input: options.stdin } : {}),
     env: process.env,
     timeoutMs: options.timeoutMs,
     signal: options.signal,
@@ -73,6 +81,7 @@ export function createLocalMachine(): HomeChatMachine {
       connected: true,
       platform: process.platform
     },
+    dialect: process.platform === 'win32' ? 'powershell' : 'posix',
     exec: execLocal,
     readTextFile: readLocalText,
     writeTextFile: async (path, content, { append }) => {

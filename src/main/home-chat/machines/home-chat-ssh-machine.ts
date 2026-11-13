@@ -1,44 +1,66 @@
-import { readFile } from 'node:fs/promises'
+import { Readable } from 'node:stream'
 import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import {
   execCommand,
   isSshCommandExitError,
   isSshExecTimeout
 } from '../../ssh/remote-exec/remote-exec-command'
+import { powerShellCommand } from '../../ssh/remote-exec/ssh-remote-powershell'
+import type { RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import type { SshTarget } from '../../../shared/ssh-types'
+import {
+  decodeBase64File,
+  posixLoadProbeScript,
+  powerShellLoadProbeScript,
+  parseLoadProbe,
+  powerShellLiteral,
+  readFileBase64Script,
+  scriptWithCwd
+} from './home-chat-machine-scripts'
 import type {
   HomeChatExecOptions,
   HomeChatExecResult,
   HomeChatMachine,
-  HomeChatMachineInfo
+  HomeChatMachineInfo,
+  HomeChatShellDialect
 } from './home-chat-machine-types'
 
 export function sshMachineInfo(target: SshTarget, connected: boolean): HomeChatMachineInfo {
+  const via = target.jumpHost
+    ? `ProxyJump ${target.jumpHost}`
+    : target.proxyCommand
+      ? `ProxyCommand ${target.proxyCommand}`
+      : undefined
   return {
     id: `ssh:${target.id}`,
     label: target.label,
     kind: 'ssh',
     address: `${target.username}@${target.host}:${target.port}`,
+    ...(via ? { via } : {}),
     connected
   }
 }
 
 async function execSsh(
   conn: SshConnection,
-  command: string,
+  dialect: HomeChatShellDialect,
+  script: string,
   options: HomeChatExecOptions
 ): Promise<HomeChatExecResult> {
-  const script = options.cwd ? `cd ${quotePosixShell(options.cwd)} && ${command}` : command
+  const body = scriptWithCwd(dialect, script, options.cwd)
+  // conn.exec encodes POSIX scripts itself; PowerShell needs -EncodedCommand to survive cmd.exe.
+  const command = dialect === 'powershell' ? powerShellCommand(body) : body
   let stderr = ''
-  const onStderr = (chunk: string): void => {
-    stderr += chunk
-  }
   try {
-    const stdout = await execCommand(conn, script, {
+    const stdout = await execCommand(conn, command, {
       timeoutMs: options.timeoutMs,
       signal: options.signal,
-      onStderr
+      onStderr: (chunk) => {
+        stderr += chunk
+      },
+      ...(dialect === 'powershell' ? { wrapCommand: false } : { compressCommand: true }),
+      ...(options.stdin !== undefined ? { stdin: Readable.from([Buffer.from(options.stdin)]) } : {})
     })
     return { exitCode: 0, stdout, stderr, timedOut: false }
   } catch (error) {
@@ -52,44 +74,56 @@ async function execSsh(
   }
 }
 
-export function createSshMachine(target: SshTarget, conn: SshConnection): HomeChatMachine {
-  const quietExec = (command: string): Promise<HomeChatExecResult> =>
-    execSsh(conn, command, { timeoutMs: 20_000 })
+export function createSshMachine(
+  target: SshTarget,
+  conn: SshConnection,
+  host: RemoteHostPlatform | null
+): HomeChatMachine {
+  const dialect: HomeChatShellDialect =
+    host?.commandDialect === 'powershell' ? 'powershell' : 'posix'
+  const run = (script: string, options: HomeChatExecOptions): Promise<HomeChatExecResult> =>
+    execSsh(conn, dialect, script, options)
+  const quiet = (script: string): Promise<HomeChatExecResult> => run(script, { timeoutMs: 30_000 })
+  const transferOptions = host ? { hostPlatform: host } : undefined
   return {
-    info: sshMachineInfo(target, true),
-    exec: (command, options) => execSsh(conn, command, options),
+    info: { ...sshMachineInfo(target, true), ...(host ? { platform: host.os } : {}) },
+    dialect,
+    exec: run,
     readTextFile: async (path, maxBytes) => {
-      const quoted = quotePosixShell(path)
-      // One extra byte tells a file of exactly maxBytes apart from a longer one.
-      const result = await quietExec(`head -c ${maxBytes + 1} -- ${quoted}`)
+      const result = await quiet(readFileBase64Script(dialect, path, maxBytes))
       if (result.exitCode !== 0) {
         throw new Error(result.stderr.trim() || `could not read ${path}`)
       }
-      const truncated = Buffer.byteLength(result.stdout, 'utf8') > maxBytes
-      return { text: truncated ? result.stdout.slice(0, maxBytes) : result.stdout, truncated }
+      return decodeBase64File(result.stdout, maxBytes)
     },
     writeTextFile: async (path, content, { append }) => {
-      const dir = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
+      const dir = path.replaceAll('\\', '/').split('/').slice(0, -1).join('/')
       if (dir) {
-        await quietExec(`mkdir -p -- ${quotePosixShell(dir)}`)
+        await quiet(
+          dialect === 'powershell'
+            ? `New-Item -ItemType Directory -Force -Path ${powerShellLiteral(dir)} | Out-Null`
+            : `mkdir -p -- ${quotePosixShell(dir)}`
+        )
       }
-      await conn.writeBuffer(path, Buffer.from(content, 'utf8'), { append })
+      await conn.writeBuffer(path, Buffer.from(content, 'utf8'), { append, ...transferOptions })
     },
-    downloadTo: (remotePath, localPath) => conn.downloadFile(remotePath, localPath),
+    downloadTo: (remotePath, localPath) =>
+      conn.downloadFile(remotePath, localPath, transferOptions),
     uploadFrom: async (localPath, remotePath) => {
-      await conn.writeBuffer(remotePath, await readFile(localPath))
-    },
-    probeLoad: async () => {
-      const result = await quietExec(
-        'getconf _NPROCESSORS_ONLN 2>/dev/null || nproc 2>/dev/null; cut -d" " -f1 /proc/loadavg 2>/dev/null || sysctl -n vm.loadavg 2>/dev/null | tr -d "{}" | cut -d" " -f2'
-      )
-      const [cpu, load] = result.stdout.trim().split(/\s+/)
-      const cpuCount = Number.parseInt(cpu ?? '', 10)
-      const loadAverage = Number.parseFloat(load ?? '')
-      return {
-        cpuCount: Number.isFinite(cpuCount) ? cpuCount : null,
-        loadAverage1m: Number.isFinite(loadAverage) ? loadAverage : null
+      const session = await conn.openFileUploadSession(transferOptions)
+      try {
+        await session.uploadFile(localPath, remotePath)
+      } finally {
+        session.close()
       }
-    }
+    },
+    probeLoad: async () =>
+      parseLoadProbe(
+        (
+          await quiet(
+            dialect === 'powershell' ? powerShellLoadProbeScript() : posixLoadProbeScript()
+          )
+        ).stdout
+      )
   }
 }
