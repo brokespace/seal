@@ -189,9 +189,10 @@ export default function LiveSessionsPage(): React.JSX.Element {
   const state = useLiveSessions()
   const now = useNow(30_000)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const currentId = selectedId ? liveSessionRegistryStore.currentId(selectedId) : null
   const selected =
-    state.sessions.find((s) => s.id === selectedId) ??
-    (selectedId ? null : (state.sessions[0] ?? null))
+    state.sessions.find((s) => s.id === currentId) ??
+    (currentId ? null : (state.sessions[0] ?? null))
   return (
     <LiveSessionsView
       loaded={state.loaded}

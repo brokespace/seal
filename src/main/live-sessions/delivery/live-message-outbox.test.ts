@@ -131,6 +131,27 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  it('types a message once when its session is renamed while the prompt is busy', async () => {
+    let busy = true
+    attempt = async (_route, text) => {
+      if (busy) {
+        return { outcome: 'busy' }
+      }
+      typed.push(text)
+      return { outcome: 'sent' }
+    }
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })
+    await vi.waitFor(() => expect(box.list()[0].state).toBe('queued'))
+    box.renameSession(session.id, 'local:claude:real-id')
+    busy = false
+    await settle(box, ([m]) => m.state === 'sent')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(typed).toEqual(['hello'])
+    expect(box.list()[0].sessionId).toBe('local:claude:real-id')
+    box.stop()
+  })
+
   it('fails a sent message when the session closes without reading it', async () => {
     const box = outbox()
     await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })

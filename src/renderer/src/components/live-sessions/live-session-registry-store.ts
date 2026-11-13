@@ -29,6 +29,7 @@ class LiveSessionRegistryStore {
   private revision = -1
   private readonly listeners = new Set<() => void>()
   private teardown: (() => void) | null = null
+  private readonly renamed = new Map<string, string>()
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
@@ -45,6 +46,15 @@ class LiveSessionRegistryStore {
   }
 
   readonly getState = (): LiveSessionsState => this.state
+
+  /** The id a session goes by now: a fresh agent's id changes when its first prompt names it. */
+  currentId(sessionId: string): string {
+    let id = sessionId
+    for (let hops = 0; hops < 8 && this.renamed.has(id); hops++) {
+      id = this.renamed.get(id)!
+    }
+    return id
+  }
 
   private connect(): void {
     const api = window.api?.liveSessions
@@ -101,6 +111,9 @@ class LiveSessionRegistryStore {
       const sessions = [event.session, ...rest].sort((a, b) => b.lastActivityAt - a.lastActivityAt)
       this.set({ ...this.state, sessions })
     } else if (event.type === 'remove') {
+      if (event.replacedBy) {
+        this.renamed.set(event.sessionId, event.replacedBy)
+      }
       this.set({
         ...this.state,
         sessions: this.state.sessions.filter((s) => s.id !== event.sessionId)

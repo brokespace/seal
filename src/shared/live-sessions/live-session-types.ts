@@ -78,7 +78,8 @@ export type LiveSessionRegistrySnapshot = {
 export type LiveSessionRegistryEvent =
   | { type: 'snapshot'; snapshot: LiveSessionRegistrySnapshot }
   | { type: 'upsert'; revision: number; session: LiveSession }
-  | { type: 'remove'; revision: number; sessionId: string }
+  /** `replacedBy`: the same session under the id its transcript gave it (first prompt of a fresh agent). */
+  | { type: 'remove'; revision: number; sessionId: string; replacedBy?: string }
   | { type: 'host-error'; revision: number; hostId: string; error: string | null }
 
 /** A transcript byte offset: every message's position, and where a reader resumes. */

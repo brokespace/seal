@@ -59,7 +59,8 @@ $s"; done
   done
   echo "$SOCKS" | sort -u | while read -r sock; do
     [ -n "$sock" ] || continue
-    tmux -S "$sock" list-panes -a -F '#{pane_id}	#{pane_tty}	#{pane_pid}	#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while IFS='	' read -r pane ptty ppid name; do
+    # Spaces, not tabs: tmux 3.x prints control characters in -F output as '_'. The name comes last.
+    tmux -S "$sock" list-panes -a -F '#{pane_id} #{pane_tty} #{pane_pid} #{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read -r pane ptty ppid name; do
       echo "@@TMUX $sock	$pane	$ptty	$ppid	$name"
       short=\${ptty#/dev/}
       case "$TTYS" in *"|$short|"*)

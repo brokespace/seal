@@ -44,6 +44,8 @@ export class LiveSessionRegistry {
   private readonly hosts = new Map<string, HostState>()
   private readonly published = new Map<string, { session: LiveSession; json: string }>()
   private readonly hostErrors = new Map<string, string>()
+  /** Ids a session had before its transcript named it: a fresh agent is `pid-<pid>` until its first prompt. */
+  private readonly renamed = new Map<string, string>()
   private readonly listeners = new Set<(event: LiveSessionRegistryEvent) => void>()
   private revision = 0
   private timer: ReturnType<typeof setInterval> | null = null
@@ -86,7 +88,16 @@ export class LiveSessionRegistry {
   }
 
   get(sessionId: string): LiveSession | null {
-    return this.published.get(sessionId)?.session ?? null
+    return this.published.get(this.currentId(sessionId))?.session ?? null
+  }
+
+  /** The id a session goes by now, following its renames. */
+  currentId(sessionId: string): string {
+    let id = sessionId
+    for (let hops = 0; hops < 8 && this.renamed.has(id); hops++) {
+      id = this.renamed.get(id)!
+    }
+    return id
   }
 
   host(hostId: string): LiveSessionHost | null {
@@ -210,11 +221,29 @@ export class LiveSessionRegistry {
       this.published.set(session.id, { session, json })
       this.emit({ type: 'upsert', revision: ++this.revision, session })
     }
-    for (const sessionId of this.published.keys()) {
-      if (!seen.has(sessionId)) {
-        this.published.delete(sessionId)
-        this.emit({ type: 'remove', revision: ++this.revision, sessionId })
+    for (const [sessionId, { session: gone }] of this.published) {
+      if (seen.has(sessionId)) {
+        continue
       }
+      this.published.delete(sessionId)
+      const successor =
+        gone.pid !== null && gone.providerSessionId.startsWith('pid-')
+          ? merged.find(
+              (s) =>
+                s.pid === gone.pid &&
+                s.machine.hostId === gone.machine.hostId &&
+                s.provider === gone.provider
+            )
+          : undefined
+      if (successor) {
+        this.renamed.set(sessionId, successor.id)
+      }
+      this.emit({
+        type: 'remove',
+        revision: ++this.revision,
+        sessionId,
+        ...(successor ? { replacedBy: successor.id } : {})
+      })
     }
   }
 

@@ -81,7 +81,7 @@ export async function typeIntoTmux(
   const b64 = Buffer.from(text, 'utf8').toString('base64')
   const out = await host.run(
     `t=$(mktemp); printf %s ${shQuote(b64)} | ${B64_DECODE} > "$t"; ` +
-      `${tmux(route)} load-buffer -b ${buffer} "$t" && ${tmux(route)} paste-buffer -p -d -b ${buffer} -t ${shQuote(route.target)}; ` +
+      `${tmux(route)} load-buffer -b ${buffer} "$t" && ${tmux(route)} paste-buffer -p -r -d -b ${buffer} -t ${shQuote(route.target)}; ` +
       `rc=$?; rm -f "$t"; echo "@@RC $rc"`
   )
   if (!/@@RC 0/.test(out)) {

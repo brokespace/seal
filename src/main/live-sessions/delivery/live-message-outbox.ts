@@ -1,6 +1,7 @@
 import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions/live-session-types'
 import type { RouteAttempt } from './session-input-routes'
-import { matchDelivered, type UserText } from './transcript-user-texts'
+import type { UserText } from './transcript-user-texts'
+import { confirmSent } from './live-message-confirmation'
 import { LiveMessageStore } from './live-message-store'
 import {
   DEFAULT_OUTBOX_TIMING,
@@ -25,6 +26,8 @@ import {
 export class LiveMessageOutbox {
   private readonly items = new Map<string, Item>()
   private readonly running = new Set<string>()
+  /** Messages a worker holds, from picking one until it is typed or given up: no second worker takes them. */
+  private readonly claimed = new Set<string>()
   private readonly now: () => number
   private readonly sleep: (ms: number) => Promise<void>
   private readonly timing: typeof DEFAULT_OUTBOX_TIMING
@@ -113,6 +116,18 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
+  /** The session now goes by another id; its messages follow it, in order. */
+  renameSession(from: string, to: string): void {
+    for (const item of this.items.values()) {
+      if (item.sessionId === from) {
+        this.set(item, { sessionId: to })
+      }
+    }
+    if (this.next(to)) {
+      this.kick(to)
+    }
+  }
+
   private kick(sessionId: string): void {
     if (this.running.has(sessionId)) {
       return
@@ -132,6 +147,7 @@ export class LiveMessageOutbox {
       if (
         item.sessionId === sessionId &&
         item.state === 'queued' &&
+        !this.claimed.has(item.messageId) &&
         (!best || item.createdAt < best.createdAt)
       ) {
         best = item
@@ -146,9 +162,9 @@ export class LiveMessageOutbox {
       if (
         other !== item &&
         other.sessionId === item.sessionId &&
-        other.state === 'sent' &&
         other.createdAt <= item.createdAt &&
-        now - (other.sentAt ?? now) < this.timing.orderHoldMs
+        (this.claimed.has(other.messageId) ||
+          (other.state === 'sent' && now - (other.sentAt ?? now) < this.timing.orderHoldMs))
       ) {
         return true
       }
@@ -162,10 +178,15 @@ export class LiveMessageOutbox {
       if (!item || this.abort.signal.aborted) {
         return
       }
-      while (this.aheadInFlight(item) && !this.abort.signal.aborted) {
-        await this.sleep(200)
+      this.claimed.add(item.messageId)
+      try {
+        while (this.aheadInFlight(item) && !this.abort.signal.aborted) {
+          await this.sleep(200)
+        }
+        await this.deliver(item)
+      } finally {
+        this.claimed.delete(item.messageId)
       }
-      await this.deliver(item)
     }
   }
 
@@ -265,27 +286,14 @@ export class LiveMessageOutbox {
           const from = Math.min(...items.map((i) => i.offset))
           records = await this.deps.userTexts(session, from).catch(() => [])
         }
-        const delivered = matchDelivered(items, records)
-        const now = this.now()
-        for (const item of items) {
-          if (delivered.has(item)) {
-            this.set(item, { state: 'delivered', error: null })
-            continue
-          }
-          const since = now - (item.sentAt ?? now)
-          if (item.route === 'resume') {
-            if (since > this.timing.resumeConfirmMs) {
-              this.set(item, {
-                state: 'failed',
-                error: 'The session was resumed, but its transcript never showed the message'
-              })
-            }
-          } else if ((!session || !session.alive) && since > this.timing.goneGraceMs) {
-            this.set(item, {
-              state: 'failed',
-              error: 'The session closed before it read the message'
-            })
-          }
+        for (const { item, patch } of confirmSent(
+          items,
+          records,
+          session,
+          this.now(),
+          this.timing
+        )) {
+          this.set(item, patch)
         }
       }
     } finally {

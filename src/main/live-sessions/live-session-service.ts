@@ -85,6 +85,11 @@ export class LiveSessionService {
   }
 
   start(): void {
+    this.registry.subscribe((event) => {
+      if (event.type === 'remove' && event.replacedBy) {
+        this.outbox.renameSession(event.sessionId, event.replacedBy)
+      }
+    })
     this.registry.start()
     void this.outbox.start()
   }
