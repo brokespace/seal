@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-api'
 import { mergeHomeChatEntry } from '../../../../shared/home-chat/home-chat-entry-merge'
 import type {
@@ -31,6 +31,7 @@ export function useHomeChat(api: HomeChatApi) {
   const [settings, setSettings] = useState<HomeChatSettings | null>(null)
   const [accounts, setAccounts] = useState<HomeChatAccountOption[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [memoryVersion, setMemoryVersion] = useState(0)
 
   const guard = useCallback(async <T>(action: () => Promise<T>): Promise<T | undefined> => {
     setError(null)
@@ -66,9 +67,11 @@ export function useHomeChat(api: HomeChatApi) {
       } else if (event.type === 'summary') {
         setChats((list) => upsertSummary(list, event.chat))
         setActive((prev) => (prev?.id === event.chat.id ? { ...prev, ...event.chat } : prev))
-      } else {
+      } else if (event.type === 'deleted') {
         setChats((list) => list.filter((chat) => chat.id !== event.chatId))
         setActiveId((current) => (current === event.chatId ? null : current))
+      } else {
+        setMemoryVersion((version) => version + 1)
       }
     })
     return () => {
@@ -113,8 +116,21 @@ export function useHomeChat(api: HomeChatApi) {
     [api, guard, activeId, newChat]
   )
 
+  const attachments = useMemo(
+    () => ({
+      read: (attachmentId: string) => api.readAttachment({ chatId: activeId ?? '', attachmentId }),
+      save: (attachmentId: string, name: string) =>
+        void guard(() => api.saveAttachment({ chatId: activeId ?? '', attachmentId, name })),
+      reveal: (attachmentId: string) =>
+        void guard(() => api.revealAttachment({ chatId: activeId ?? '', attachmentId }))
+    }),
+    [api, guard, activeId]
+  )
+
   return {
     chats,
+    attachments,
+    memoryVersion,
     active,
     settings,
     accounts,

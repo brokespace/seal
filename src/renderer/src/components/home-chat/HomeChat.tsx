@@ -1,6 +1,7 @@
 import { Check, ChevronDown, MessageSquarePlus, Sparkles, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
+import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-api'
 import { HomeChatComposer } from './HomeChatComposer'
 import { HomeChatConversation } from './HomeChatConversation'
+import { HomeChatMemoryDialog } from './HomeChatMemoryDialog'
 import { useHomeChat } from './use-home-chat'
 
 function HomeChatPanel({
@@ -38,6 +40,9 @@ function HomeChatPanel({
               <span className="truncate text-[13px] font-medium">
                 {active?.title ?? t('homeChat.title', 'Assistant')}
               </span>
+              {active?.parentChatId && (
+                <Badge variant="referenceLabel">{t('homeChat.worker', 'Worker')}</Badge>
+              )}
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -50,6 +55,9 @@ function HomeChatPanel({
             {chats.map((chat) => (
               <DropdownMenuItem key={chat.id} onSelect={() => state.select(chat.id)}>
                 <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+                {chat.parentChatId && (
+                  <Badge variant="referenceLabel">{t('homeChat.worker', 'Worker')}</Badge>
+                )}
                 {chat.id === active?.id && <Check className="size-3.5" />}
               </DropdownMenuItem>
             ))}
@@ -65,6 +73,7 @@ function HomeChatPanel({
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex-1" />
+        <HomeChatMemoryDialog api={api} memoryVersion={state.memoryVersion} />
         <Button
           variant="ghost"
           size="icon-xs"
@@ -80,6 +89,7 @@ function HomeChatPanel({
           entries={active.entries}
           running={active.status === 'running'}
           onRespond={state.respondApproval}
+          attachments={state.attachments}
         />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-8 text-center">
@@ -88,8 +98,8 @@ function HomeChatPanel({
           </p>
           <p className="text-xs text-muted-foreground">
             {t(
-              'homeChat.empty.body',
-              'Ask for anything that runs on this computer or your SSH hosts: check a build, move files, start an agent in a worktree.'
+              'homeChat.empty.capabilities',
+              'Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree.'
             )}
           </p>
         </div>

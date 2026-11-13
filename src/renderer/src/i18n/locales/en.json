@@ -25463,8 +25463,8 @@
     "delete": "Delete this chat",
     "dismissError": "Dismiss",
     "empty": {
-      "body": "Ask for anything that runs on this computer or your SSH hosts: check a build, move files, start an agent in a worktree.",
-      "title": "Your machines, one chat"
+      "title": "Your machines, one chat",
+      "capabilities": "Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree."
     },
     "label": "Seal assistant",
     "messageLabel": "Message",
@@ -25485,9 +25485,9 @@
       "clearKey": "Remove key",
       "description": "Used by chats set to Model API: any OpenAI-compatible endpoint such as OpenRouter, xAI, OpenAI or a local server.",
       "model": "Default model",
-      "open": "Model API settings",
       "save": "Save",
-      "title": "Model API"
+      "title": "Model API",
+      "openAssistant": "Assistant settings"
     },
     "stop": "Stop",
     "thinking": {
@@ -25496,6 +25496,45 @@
       "live": "Thinking…"
     },
     "title": "Assistant",
-    "working": "Working…"
+    "working": "Working…",
+    "worker": "Worker",
+    "attachment": {
+      "reveal": "Show in folder",
+      "save": "Save as…"
+    },
+    "memory": {
+      "open": "Memory",
+      "title": "Assistant memory",
+      "description": "Read by the assistant at the start of every turn, in every chat. It adds to this as it works; edit anything here.",
+      "rules": "Rules",
+      "facts": "Facts",
+      "machines": "Machines",
+      "journal": "Journal",
+      "rulePlaceholder": "e.g. Always push to a feature branch",
+      "rulesEmpty": "No standing rules yet.",
+      "factPlaceholder": "e.g. The GPU box is called tower",
+      "factsEmpty": "No facts yet.",
+      "journalPlaceholder": "Add a note",
+      "journalEmpty": "Nothing logged yet.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "remove": "Remove",
+      "add": "Add",
+      "machinesEmpty": "No machine notes yet. The assistant adds them as it learns your machines, or ask it to reach a machine through another one."
+    },
+    "notice": {
+      "job": "Background job",
+      "subagent": "Subagent",
+      "routine": "Routine",
+      "approval": "Waiting for you"
+    },
+    "web": {
+      "title": "Web search",
+      "description": "DuckDuckGo works without a key; the others are more reliable.",
+      "provider": "Provider",
+      "searxngUrl": "SearXNG URL",
+      "apiKey": "Search API key",
+      "apiKeyRequired": "Required for this provider"
+    }
   }
 }

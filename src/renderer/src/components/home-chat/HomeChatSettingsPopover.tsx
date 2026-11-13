@@ -5,10 +5,12 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { Separator } from '../ui/separator'
 import type {
   HomeChatSettings,
   HomeChatSettingsUpdate
 } from '../../../../shared/home-chat/home-chat-types'
+import { HomeChatWebSearchFields, type HomeChatWebSearchDraft } from './HomeChatWebSearchFields'
 
 const BASE_URL_EXAMPLE = 'https://openrouter.ai/api/v1'
 const MODEL_EXAMPLE = 'anthropic/claude-sonnet-4.5'
@@ -26,6 +28,11 @@ export function HomeChatSettingsPopover({
   const [baseUrl, setBaseUrl] = useState('')
   const [model, setModel] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [web, setWeb] = useState<HomeChatWebSearchDraft>({
+    searchProvider: 'duckduckgo',
+    searxngUrl: '',
+    apiKey: ''
+  })
   const [saving, setSaving] = useState(false)
 
   const onOpenChange = (next: boolean): void => {
@@ -33,6 +40,11 @@ export function HomeChatSettingsPopover({
       setBaseUrl(settings.openai.baseUrl)
       setModel(settings.openai.model)
       setApiKey('')
+      setWeb({
+        searchProvider: settings.web.searchProvider,
+        searxngUrl: settings.web.searxngUrl,
+        apiKey: ''
+      })
     }
     setOpen(next)
   }
@@ -40,7 +52,12 @@ export function HomeChatSettingsPopover({
   const save = async (): Promise<void> => {
     setSaving(true)
     const saved = await onSave({
-      openai: { baseUrl, model, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) }
+      openai: { baseUrl, model, ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}) },
+      web: {
+        searchProvider: web.searchProvider,
+        searxngUrl: web.searxngUrl,
+        ...(web.apiKey.trim() ? { apiKey: web.apiKey.trim() } : {})
+      }
     })
     setSaving(false)
     if (saved) {
@@ -54,12 +71,16 @@ export function HomeChatSettingsPopover({
         <Button
           size="icon-xs"
           variant="ghost"
-          aria-label={t('homeChat.settings.open', 'Model API settings')}
+          aria-label={t('homeChat.settings.openAssistant', 'Assistant settings')}
         >
           <Settings2 />
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="w-80">
+      <PopoverContent
+        side="top"
+        align="start"
+        className="scrollbar-sleek max-h-[80vh] w-80 overflow-y-auto"
+      >
         <div className="space-y-3">
           <div className="space-y-0.5">
             <p className="text-sm font-medium">{t('homeChat.settings.title', 'Model API')}</p>
@@ -108,6 +129,12 @@ export function HomeChatSettingsPopover({
               onChange={(event) => setApiKey(event.target.value)}
             />
           </div>
+          <Separator />
+          <HomeChatWebSearchFields
+            draft={web}
+            keySaved={settings?.web.searchApiKeyConfigured ?? false}
+            onChange={setWeb}
+          />
           <div className="flex justify-between gap-2">
             {settings?.openai.apiKeyConfigured ? (
               <Button

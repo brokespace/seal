@@ -4,6 +4,8 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import CommentMarkdown from '../sidebar/CommentMarkdown'
 import type { HomeChatEntry } from '../../../../shared/home-chat/home-chat-types'
+import { HomeChatAttachment, type HomeChatAttachmentActions } from './HomeChatAttachment'
+import { HomeChatNotice } from './HomeChatNotice'
 import { HomeChatToolCall } from './HomeChatToolCall'
 import { formatHomeChatDuration } from './home-chat-format'
 
@@ -37,10 +39,12 @@ function Thinking({ entry }: { entry: ThinkingEntry }): React.JSX.Element {
 
 function Entry({
   entry,
-  onRespond
+  onRespond,
+  attachments
 }: {
   entry: HomeChatEntry
   onRespond: (entryId: string, approved: boolean) => void
+  attachments: HomeChatAttachmentActions
 }): React.JSX.Element | null {
   const t = useTranslate()
   switch (entry.kind) {
@@ -82,6 +86,10 @@ function Entry({
           <span className="whitespace-pre-wrap">{entry.text}</span>
         </p>
       )
+    case 'notice':
+      return <HomeChatNotice entry={entry} />
+    case 'attachment':
+      return <HomeChatAttachment entry={entry} actions={attachments} />
   }
 }
 
@@ -90,11 +98,13 @@ const STICK_TO_BOTTOM_PX = 48
 export function HomeChatConversation({
   entries,
   running,
-  onRespond
+  onRespond,
+  attachments
 }: {
   entries: readonly HomeChatEntry[]
   running: boolean
   onRespond: (entryId: string, approved: boolean) => void
+  attachments: HomeChatAttachmentActions
 }): React.JSX.Element {
   const t = useTranslate()
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -109,7 +119,8 @@ export function HomeChatConversation({
   }, [entries])
 
   const last = entries.at(-1)
-  const waiting = running && (!last || last.kind === 'user' || last.kind === 'tool')
+  const waiting =
+    running && (!last || last.kind === 'user' || last.kind === 'tool' || last.kind === 'notice')
 
   return (
     <div
@@ -122,7 +133,7 @@ export function HomeChatConversation({
     >
       <div className="mx-auto flex max-w-2xl flex-col gap-3">
         {entries.map((entry) => (
-          <Entry key={entry.id} entry={entry} onRespond={onRespond} />
+          <Entry key={entry.id} entry={entry} onRespond={onRespond} attachments={attachments} />
         ))}
         {waiting && (
           <p className="text-xs text-muted-foreground">{t('homeChat.working', 'Working…')}</p>
