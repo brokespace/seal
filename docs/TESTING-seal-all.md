@@ -163,10 +163,17 @@ then deploys and pairs its runtime over SSH itself.
 
 ### Multi-account
 
-- [ ] Settings → Accounts shows the Seal accounts dashboard above the provider accounts: live usage, auto-swap rules, policies, API keys, fleet sync, activity.
-- [ ] Turn on auto-swap for Claude, push one account near its threshold, and watch a new session launch on another account; running sessions swap on polled 5h/7d usage.
+- [ ] Settings → Accounts is one page: Claude, Codex and API keys groups, then Auto-swap, Rules, Running sessions, Swap history and Other providers. No account appears twice, and there is no machine dropdown in the header.
+- [ ] Each card shows alias, email and organisation, plan, health (Working, Expires <date>, Login rejected), 5h and 7d bars with reset times, the next-swap estimate, running sessions and a chip per machine holding the login.
+- [ ] Add account → Claude: browser sign-in with the pasted code, "Use Claude login <email>" for this computer's login, and a pasted `claude setup-token`. Cancelling or closing the dialog leaves no `claude` process (`pgrep -fl claude`).
+- [ ] Add account → Codex: browser or device code, and "Use Codex login <email>". No `codex` process is left afterwards.
+- [ ] This computer's own `~/.claude` and `~/.codex` logins are tagged "System login" and can be removed: "Remove from Seal" keeps the CLI signed in, "Remove and log out" signs it out. Either way the account stays gone after Refresh usage and after a restart, until it is imported again.
+- [ ] Drag a card (or focus its handle and use the arrow keys) to change priority; Rename, Sign in again, Push to machine and Remove work from the card menu.
+- [ ] With a second machine paired, the summary reads "N accounts across 2 machines", Push to machine adds that machine's chip, and Sync to machines copies logins and rules.
+- [ ] Turn on auto-swap for Claude, push one account near its threshold, and watch a new session launch on another account; running sessions swap on polled 5h/7d usage and the move is listed under Swap history.
 - [ ] A Seal-launched agent tab shows its account badge; the badge menu moves the session (Claude live, Codex by resume) and the toast says which.
-- [ ] `seal account usage|current|swap|pick|alias|autoswap|policy|pin|key|sync|sessions --help` all print `seal account …` usage; `--environment <id>` targets the Linux server.
+- [ ] Home → Accounts card lists the same accounts with compact usage, and Manage opens Settings → Accounts.
+- [ ] `seal account usage` prints one aligned table per provider; `seal account import|remove|order|token add|key add|key rm` change the same roster the page shows. `seal account current|swap|pick|alias|autoswap|policy|pin|sync|sessions --help` all print `seal account …` usage; `--environment <id>` targets the Linux server.
 - [ ] On the Linux server: `seal account usage --json` answers from its own vault.
 
 ### Live sessions
