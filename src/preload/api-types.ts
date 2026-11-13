@@ -62,6 +62,7 @@ import type { KeybindingsApi, SettingsApi } from './api/preferences/settings-api
 import type { ShellApi } from './api/terminal/shell-api'
 import type { SpeechApi } from './api/speech/speech-api'
 import type { SshApi } from './api/ssh/ssh-api'
+import type { MachinesApi } from './api/machines/machines-bridge'
 import type { PlainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
 import type { LegacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import type {
@@ -176,6 +177,8 @@ export type PreloadApi = {
   ssh: SshApi
   /** Desktop only: an unmanaged ssh login to a host whose move is blocked. */
   plainSsh?: PlainSshTerminalApi
+  /** Desktop only: machine file browsing, transfers and metrics. */
+  machines?: MachinesApi
   /** COMPAT(legacy-relay-bridge): desktop-only, revisit 2027-01-15. */
   legacyRelayBridge?: LegacyRelayBridgeApi
   automations: AutomationsApi
