@@ -25444,5 +25444,88 @@
       "read": "Usage could not be loaded. Try Refresh again.",
       "retry": "Refresh"
     }
+  },
+  "home": {
+    "overview": {
+      "accounts": {
+        "loading": "Reading usage…",
+        "error": "Usage unavailable",
+        "noUsage": "No usage reported",
+        "active": "active",
+        "reset": "Resets {{when}}",
+        "title": "Accounts",
+        "manage": "Manage",
+        "empty": "No account usage yet. Sign in to an agent to track limits."
+      },
+      "attention": {
+        "machineError": "Connection failed",
+        "accountUsage": "{{provider}} at {{percent}}% of limit",
+        "title": "Needs attention",
+        "empty": "Nothing is waiting on you."
+      },
+      "automations": {
+        "title": "Automations",
+        "open": "Open",
+        "loading": "Loading…",
+        "error": "Automations could not be loaded.",
+        "empty": "No automations. Schedule an agent run to see it here.",
+        "summary": "{{enabled}} of {{total}} enabled",
+        "paused": "Paused"
+      },
+      "chat": {
+        "label": "Chat",
+        "placeholder": "Chat with your agents is coming soon."
+      },
+      "machines": {
+        "load": "CPU {{percent}}%",
+        "memory": "Mem {{percent}}%",
+        "title": "Machines",
+        "manage": "Manage",
+        "empty": "No machines.",
+        "summary": "{{online}} of {{total}} online",
+        "active": "{{count}} active"
+      },
+      "summary": {
+        "working": "{{count}} working",
+        "waiting": "{{count}} waiting on you",
+        "done": "{{count}} done"
+      },
+      "title": "Home",
+      "session": {
+        "you": "You"
+      },
+      "sessions": {
+        "title": "Sessions",
+        "empty": "No agent sessions yet. Start an agent in a workspace and it shows up here."
+      },
+      "workspaces": {
+        "title": "Worktrees & PRs",
+        "empty": "No active worktrees.",
+        "active": "Active",
+        "open": "Open PRs",
+        "draft": "Drafts",
+        "draftLabel": "draft"
+      },
+      "nav": "Home",
+      "state": {
+        "working": "Working",
+        "waiting": "Waiting on you",
+        "permission": "Needs permission",
+        "errored": "Errored",
+        "done": "Done",
+        "idle": "Idle"
+      },
+      "machine": {
+        "online": "Online",
+        "connecting": "Connecting",
+        "offline": "Offline",
+        "error": "Connection failed"
+      },
+      "usage": {
+        "session": "5h",
+        "weekly": "Week",
+        "monthly": "Month"
+      }
+    }
   }
 }
