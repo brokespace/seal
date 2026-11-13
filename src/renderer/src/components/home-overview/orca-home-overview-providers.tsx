@@ -18,6 +18,14 @@ import type {
   HomeOverviewProviders,
   HomeSession
 } from './home-overview-model'
+import {
+  HomeAccountsContext,
+  HomeActionsContext,
+  HomeAutomationsContext,
+  HomeMachinesContext,
+  HomeSessionsContext,
+  HomeWorkspacesContext
+} from './home-overview-contexts'
 import { orcaHomeSessionFromCard } from './orca-home-session-mapping'
 import { orcaActiveAccountsByAgent, orcaHomeAccounts } from './orca-home-account-mapping'
 import { orcaLocalMachine, orcaSshMachines } from './orca-home-machine-mapping'
@@ -27,7 +35,7 @@ const HOST_LOAD_POLL_MS = 10_000
 
 const OrcaSnapshotContext = createContext<DashboardSnapshot>(EMPTY_DASHBOARD_SNAPSHOT)
 
-/** Builds the dashboard snapshot once for both the sessions and workspaces hooks. */
+/** Builds the dashboard snapshot once for both the sessions and workspaces providers. */
 function OrcaHomeRoot({ children }: { children: ReactNode }): React.JSX.Element {
   const snapshot = useLiveDashboardSnapshot()
   return <OrcaSnapshotContext.Provider value={snapshot}>{children}</OrcaSnapshotContext.Provider>
@@ -155,13 +163,51 @@ function useOrcaActions(): HomeOverviewActions {
   )
 }
 
+type Children = { children: ReactNode }
+
+function OrcaSessions({ children }: Children): React.JSX.Element {
+  const sessions = useOrcaSessions()
+  return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
+}
+
+function OrcaMachines({ children }: Children): React.JSX.Element {
+  const machines = useOrcaMachines()
+  return <HomeMachinesContext.Provider value={machines}>{children}</HomeMachinesContext.Provider>
+}
+
+function OrcaAccounts({ children }: Children): React.JSX.Element {
+  const accounts = useOrcaAccounts()
+  return <HomeAccountsContext.Provider value={accounts}>{children}</HomeAccountsContext.Provider>
+}
+
+function OrcaWorkspaces({ children }: Children): React.JSX.Element {
+  const workspaces = useOrcaWorkspaces()
+  return (
+    <HomeWorkspacesContext.Provider value={workspaces}>{children}</HomeWorkspacesContext.Provider>
+  )
+}
+
+function OrcaAutomations({ children }: Children): React.JSX.Element {
+  const automations = useOrcaAutomations()
+  return (
+    <HomeAutomationsContext.Provider value={automations}>
+      {children}
+    </HomeAutomationsContext.Provider>
+  )
+}
+
+function OrcaActions({ children }: Children): React.JSX.Element {
+  const actions = useOrcaActions()
+  return <HomeActionsContext.Provider value={actions}>{children}</HomeActionsContext.Provider>
+}
+
 /** Home backed by what Orca tracks today; swap pieces as dedicated registries land. */
 export const orcaHomeOverviewProviders: HomeOverviewProviders = {
   Root: OrcaHomeRoot,
-  sessions: { useSessions: useOrcaSessions },
-  machines: { useMachines: useOrcaMachines },
-  accounts: { useAccounts: useOrcaAccounts },
-  workspaces: { useWorkspaces: useOrcaWorkspaces },
-  automations: { useAutomations: useOrcaAutomations },
-  useActions: useOrcaActions
+  Sessions: OrcaSessions,
+  Machines: OrcaMachines,
+  Accounts: OrcaAccounts,
+  Workspaces: OrcaWorkspaces,
+  Automations: OrcaAutomations,
+  Actions: OrcaActions
 }

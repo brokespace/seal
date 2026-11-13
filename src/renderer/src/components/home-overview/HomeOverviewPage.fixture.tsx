@@ -1,4 +1,12 @@
+import type { ReactNode } from 'react'
 import { defineFixture } from '../../component-fixtures/component-fixture'
+import {
+  HomeAccountsContext,
+  HomeAutomationsContext,
+  HomeMachinesContext,
+  HomeSessionsContext,
+  HomeWorkspacesContext
+} from './home-overview-contexts'
 import type {
   HomeAccount,
   HomeAutomationsResult,
@@ -191,7 +199,12 @@ const AUTOMATIONS: HomeAutomationsResult = {
   ]
 }
 
-const noop = (): void => {}
+type Children = { children: ReactNode }
+
+// Unset contexts keep their no-op defaults, so Actions passes children through.
+function PassThrough({ children }: Children): React.JSX.Element {
+  return <>{children}</>
+}
 
 function staticProviders(data: {
   sessions: HomeSession[]
@@ -201,46 +214,48 @@ function staticProviders(data: {
   automations: HomeAutomationsResult
 }): HomeOverviewProviders {
   return {
-    sessions: { useSessions: () => data.sessions },
-    machines: { useMachines: () => data.machines },
-    accounts: { useAccounts: () => data.accounts },
-    workspaces: { useWorkspaces: () => data.workspaces },
-    automations: { useAutomations: () => data.automations },
-    useActions: () => ({
-      openSession: noop,
-      openAutomations: noop,
-      openMachinesSettings: noop,
-      openAccountsSettings: noop
-    })
+    Sessions: ({ children }: Children) => (
+      <HomeSessionsContext.Provider value={data.sessions}>{children}</HomeSessionsContext.Provider>
+    ),
+    Machines: ({ children }: Children) => (
+      <HomeMachinesContext.Provider value={data.machines}>{children}</HomeMachinesContext.Provider>
+    ),
+    Accounts: ({ children }: Children) => (
+      <HomeAccountsContext.Provider value={data.accounts}>{children}</HomeAccountsContext.Provider>
+    ),
+    Workspaces: ({ children }: Children) => (
+      <HomeWorkspacesContext.Provider value={data.workspaces}>
+        {children}
+      </HomeWorkspacesContext.Provider>
+    ),
+    Automations: ({ children }: Children) => (
+      <HomeAutomationsContext.Provider value={data.automations}>
+        {children}
+      </HomeAutomationsContext.Provider>
+    ),
+    Actions: PassThrough
   }
 }
 
-export const busy = defineFixture({
-  width: 1200,
-  render: () => (
-    <HomeOverview
-      providers={staticProviders({
-        sessions: SESSIONS,
-        machines: MACHINES,
-        accounts: ACCOUNTS,
-        workspaces: WORKSPACES,
-        automations: AUTOMATIONS
-      })}
-    />
-  )
+const BUSY = staticProviders({
+  sessions: SESSIONS,
+  machines: MACHINES,
+  accounts: ACCOUNTS,
+  workspaces: WORKSPACES,
+  automations: AUTOMATIONS
 })
+
+const EMPTY = staticProviders({
+  sessions: [],
+  machines: [MACHINES[0]],
+  accounts: [],
+  workspaces: [],
+  automations: { status: 'ready', automations: [] }
+})
+
+export const busy = defineFixture({ width: 1200, render: () => <HomeOverview providers={BUSY} /> })
 
 export const empty = defineFixture({
   width: 1200,
-  render: () => (
-    <HomeOverview
-      providers={staticProviders({
-        sessions: [],
-        machines: [MACHINES[0]],
-        accounts: [],
-        workspaces: [],
-        automations: { status: 'ready', automations: [] }
-      })}
-    />
-  )
+  render: () => <HomeOverview providers={EMPTY} />
 })

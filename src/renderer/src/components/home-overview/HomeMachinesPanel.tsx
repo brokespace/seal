@@ -6,11 +6,17 @@ import type { HomeMachine, HomeMachineStatus, HomeSession } from './home-overvie
 import { homeMachineStatusLabel } from './home-overview-presentation'
 import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
 
-const STATUS_DOT: Record<HomeMachineStatus, string> = {
-  online: 'bg-status-success',
-  connecting: 'bg-status-warning',
-  offline: 'bg-muted-foreground/40',
-  error: 'bg-destructive'
+function statusDotClass(status: HomeMachineStatus): string {
+  switch (status) {
+    case 'online':
+      return 'bg-status-success'
+    case 'connecting':
+      return 'bg-status-warning'
+    case 'offline':
+      return 'bg-muted-foreground/40'
+    case 'error':
+      return 'bg-destructive'
+  }
 }
 
 function loadLabel(machine: HomeMachine, t: Translate): string | null {
@@ -81,7 +87,10 @@ export function HomeMachinesPanel({
                     <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
                       <span
                         aria-hidden
-                        className={cn('size-1.5 shrink-0 rounded-full', STATUS_DOT[machine.status])}
+                        className={cn(
+                          'size-1.5 shrink-0 rounded-full',
+                          statusDotClass(machine.status)
+                        )}
                       />
                       <span className="truncate tabular-nums">
                         {[homeMachineStatusLabel(machine.status, t), load]

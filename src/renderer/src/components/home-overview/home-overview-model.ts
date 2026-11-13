@@ -101,17 +101,19 @@ export type HomeOverviewActions = {
   openAccountsSettings: () => void
 }
 
+export type HomeProviderComponent = ComponentType<{ children: ReactNode }>
+
 /**
- * Data sources behind Home. Each `use*` is a React hook called once per render of the page,
- * so a provider object must keep the same hooks for its whole lifetime.
+ * Data sources behind Home. Each provider renders its matching context from
+ * `home-overview-contexts` around `children`; swap one to change where that data comes from.
  */
 export type HomeOverviewProviders = {
-  /** Optional wrapper for state shared between this provider's hooks. */
-  Root?: ComponentType<{ children: ReactNode }>
-  sessions: { useSessions: () => HomeSession[] }
-  machines: { useMachines: () => HomeMachine[] }
-  accounts: { useAccounts: () => HomeAccount[] }
-  workspaces: { useWorkspaces: () => HomeWorkspace[] }
-  automations: { useAutomations: () => HomeAutomationsResult }
-  useActions: () => HomeOverviewActions
+  /** Optional wrapper for state shared between this bundle's providers. */
+  Root?: HomeProviderComponent
+  Sessions: HomeProviderComponent
+  Machines: HomeProviderComponent
+  Accounts: HomeProviderComponent
+  Workspaces: HomeProviderComponent
+  Automations: HomeProviderComponent
+  Actions: HomeProviderComponent
 }

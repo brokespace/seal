@@ -11,12 +11,7 @@ import type {
 } from './home-overview-model'
 
 export function homeSessionDotState(state: HomeSessionState): AgentDotState {
-  switch (state) {
-    case 'errored':
-      return 'failed'
-    default:
-      return state
-  }
+  return state === 'errored' ? 'failed' : state
 }
 
 export function homeSessionStateLabel(state: HomeSessionState, t: Translate): string {

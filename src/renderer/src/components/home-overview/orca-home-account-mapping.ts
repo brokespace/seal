@@ -13,18 +13,19 @@ type RateLimitProviderKey = Exclude<
   undefined
 >
 
-const PROVIDERS: readonly { key: RateLimitProviderKey; label: string }[] = [
-  { key: 'claude', label: 'Claude' },
-  { key: 'codex', label: 'Codex' },
-  { key: 'gemini', label: 'Gemini' },
-  { key: 'antigravity', label: 'Antigravity' },
-  { key: 'cursor', label: 'Cursor' },
-  { key: 'grok', label: 'Grok' },
-  { key: 'opencodeGo', label: 'OpenCode Go' },
-  { key: 'kimi', label: 'Kimi' },
-  { key: 'minimax', label: 'MiniMax' },
-  { key: 'zcode', label: 'ZCode' },
-  { key: 'muse', label: 'Muse' }
+// Brand names, not translated.
+const PROVIDERS: readonly { key: RateLimitProviderKey; brand: string }[] = [
+  { key: 'claude', brand: 'Claude' },
+  { key: 'codex', brand: 'Codex' },
+  { key: 'gemini', brand: 'Gemini' },
+  { key: 'antigravity', brand: 'Antigravity' },
+  { key: 'cursor', brand: 'Cursor' },
+  { key: 'grok', brand: 'Grok' },
+  { key: 'opencodeGo', brand: 'OpenCode Go' },
+  { key: 'kimi', brand: 'Kimi' },
+  { key: 'minimax', brand: 'MiniMax' },
+  { key: 'zcode', brand: 'ZCode' },
+  { key: 'muse', brand: 'Muse' }
 ]
 
 export type OrcaAccountSettings = Pick<
@@ -101,7 +102,7 @@ export function orcaHomeAccounts(
       : undefined
   }
   const accounts: HomeAccount[] = []
-  for (const { key, label } of PROVIDERS) {
+  for (const { key, brand } of PROVIDERS) {
     const limits = rateLimits[key]
     if (!shouldListProvider(limits)) {
       continue
@@ -109,8 +110,8 @@ export function orcaHomeAccounts(
     accounts.push({
       id: `${key}:active`,
       provider: key,
-      providerLabel: label,
-      label: activeLabels[key] ?? limits.usageMetadata?.account?.email ?? label,
+      providerLabel: brand,
+      label: activeLabels[key] ?? limits.usageMetadata?.account?.email ?? brand,
       active: true,
       status: accountStatus(limits),
       windows: usageWindows(limits),

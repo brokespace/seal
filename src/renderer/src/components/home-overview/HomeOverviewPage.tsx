@@ -5,6 +5,14 @@ import {
   countSessionsByState,
   mergeSessionMachines
 } from './home-overview-derivations'
+import {
+  HomeAccountsContext,
+  HomeActionsContext,
+  HomeAutomationsContext,
+  HomeMachinesContext,
+  HomeSessionsContext,
+  HomeWorkspacesContext
+} from './home-overview-contexts'
 import type { HomeOverviewProviders } from './home-overview-model'
 import { useHomeNow } from './home-overview-presentation'
 import { HomeOverviewProvidersContext } from './home-overview-providers-context'
@@ -16,19 +24,15 @@ import { HomeMachinesPanel } from './HomeMachinesPanel'
 import { HomeSessionsPanel } from './HomeSessionsPanel'
 import { HomeWorkspacesPanel } from './HomeWorkspacesPanel'
 
-function HomeOverviewContent({
-  providers
-}: {
-  providers: HomeOverviewProviders
-}): React.JSX.Element {
+function HomeOverviewContent(): React.JSX.Element {
   const t = useTranslate()
   const now = useHomeNow()
-  const sessions = providers.sessions.useSessions()
-  const providedMachines = providers.machines.useMachines()
-  const accounts = providers.accounts.useAccounts()
-  const workspaces = providers.workspaces.useWorkspaces()
-  const automations = providers.automations.useAutomations()
-  const actions = providers.useActions()
+  const sessions = useContext(HomeSessionsContext)
+  const providedMachines = useContext(HomeMachinesContext)
+  const accounts = useContext(HomeAccountsContext)
+  const workspaces = useContext(HomeWorkspacesContext)
+  const automations = useContext(HomeAutomationsContext)
+  const actions = useContext(HomeActionsContext)
   const machines = useMemo(
     () => mergeSessionMachines(providedMachines, sessions),
     [providedMachines, sessions]
@@ -84,10 +88,30 @@ export function HomeOverview({
 }: {
   providers: HomeOverviewProviders
 }): React.JSX.Element {
-  const Root = providers.Root ?? Fragment
+  const {
+    Root = Fragment,
+    Sessions,
+    Machines,
+    Accounts,
+    Workspaces,
+    Automations,
+    Actions
+  } = providers
   return (
     <Root>
-      <HomeOverviewContent providers={providers} />
+      <Sessions>
+        <Machines>
+          <Accounts>
+            <Workspaces>
+              <Automations>
+                <Actions>
+                  <HomeOverviewContent />
+                </Actions>
+              </Automations>
+            </Workspaces>
+          </Accounts>
+        </Machines>
+      </Sessions>
     </Root>
   )
 }
