@@ -98,6 +98,9 @@ docs/**
 !docs/readme/**
 !docs/bug-reproductions/
 !docs/bug-reproductions/**
+!docs/live-sessions-*.md
+!docs/home-chat-architecture.md
+!docs/TESTING-seal-all.md
 !docs/STYLEGUIDE.md
 !docs/development.md
 !docs/styleguide/

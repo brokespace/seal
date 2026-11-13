@@ -853,12 +853,12 @@
     "quitAndStopAllSessionsTooltip": "Arrête aussi toutes les sessions de terminal, y compris les agents en cours. Quitter simplement les laisse tourner pour qu'Orca s'y reconnecte au prochain lancement."
   },
   "tray": {
-    "openOrca": "Ouvrir Orca",
+    "openOrca": "Ouvrir Seal",
     "quit": "Quitter",
     "minimizeNotice": {
-      "body": "Orca continue de tourner dans la zone de notification"
+      "body": "Seal continue de tourner dans la zone de notification"
     },
-    "activityWaiting": "Orca - activité en attente",
+    "activityWaiting": "Seal - activité en attente",
     "activityWaitingSuffix": "activité en attente"
   },
   "worktreeJumpPalette": {
@@ -942,7 +942,7 @@
       "df1d56bf87": "Le shell de l'espace de travail a rencontré une erreur.",
       "9e0b441a91": "Basculer la barre latérale droite",
       "e81217c1b7": "Masquer le nom de l'app",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "Menu de l'application",
       "caea5b51b9": "Redémarrer maintenant",
       "0a9e810705": "Les modifications ne seront enregistrées qu'après redémarrage. Vos onglets précédents sont en sécurité sur le disque.",
@@ -4340,7 +4340,7 @@
             "bbcd9b7b85": "Réduire l'espace de travail",
             "c4a8968bdd": "Développer l'espace de travail",
             "b10695d6ce": "Tuer la session",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "Réduire Orca",
             "e419d27083": "Développer Orca",
             "41ae4fa725": "Arrêt forcé…",
@@ -15080,7 +15080,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "Bienvenue dans Orca",
           "adaa0aa627": "Aller à l'étape {{value0}} de la prise en main : {{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Prise en main d'Orca",
           "97c42cda00": "Installez le CLI GitHub pour :",
           "ae3b00ca82": "Configurer les tâches GitHub",
@@ -15355,7 +15355,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "Ordinateurs",
             "af761a0c0d": "Paramètres",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "Envoyer",
@@ -17021,7 +17021,7 @@
             "88fea8e84e": "Ne pas envoyer",
             "50b00dc327": "Copier les détails",
             "6d3ebe216a": "Texte de diagnostic",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "Rapport de plantage envoyé.",
             "8b8473c544": "Rapport de plantage copié.",
             "765591798d": "Recherche de rapports de plantage...",

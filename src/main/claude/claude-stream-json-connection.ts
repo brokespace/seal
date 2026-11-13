@@ -42,11 +42,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+type ToolScopeOption = 'mcpServers' | 'allowedTools' | 'disallowedTools'
 export type ClaudeStreamJsonLaunch = {
   /** Orca's resolved user CLI; the SDK falls back to a bundled binary that is not installed. */
   pathToClaudeCodeExecutable: string
   prefixArgs?: readonly string[]
-  options: ClaudeStructuredSdkOptions
+  options: ClaudeStructuredSdkOptions &
+    Pick<ClaudeAgentSdk.Options, ToolScopeOption | 'tools' | 'persistSession'>
   cwd: string
   env?: Record<string, string>
   /** Delete these keys after merging inherited and launch env. */

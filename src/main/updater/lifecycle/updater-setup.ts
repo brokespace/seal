@@ -114,6 +114,10 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
     super.dismissAvailableUpdate()
   }
 
+  reportNoUpdateFeed(): void {
+    this.sendStatus({ state: 'not-available', userInitiated: true })
+  }
+
   setupAutoUpdater(mainWindow: BrowserWindow | null, opts?: UpdaterSetupOptions): void {
     // Keep direct-window callers compatible; desktop composition supplies the lifecycle getter.
     this.getMainWindow = opts?.getMainWindow ?? (mainWindow ? () => mainWindow : this.getMainWindow)

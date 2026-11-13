@@ -50,6 +50,16 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
       set((state) => ({
         activeView: state.previousViewBeforeSpace
       })),
+    openMachinesPage: () =>
+      set((state) => ({
+        activeView: 'machines',
+        previousViewBeforeMachines:
+          state.activeView === 'machines' ? state.previousViewBeforeMachines : state.activeView
+      })),
+    closeMachinesPage: () =>
+      set((state) => ({
+        activeView: state.previousViewBeforeMachines
+      })),
     openSkillsPage: () => {
       get().recordViewVisit('skills')
       set((state) => ({
@@ -105,6 +115,16 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
     closeMobilePage: () =>
       set((state) => ({
         activeView: state.previousViewBeforeMobile
+      })),
+    openSessionsPage: () =>
+      set((state) => ({
+        activeView: 'sessions',
+        previousViewBeforeSessions:
+          state.activeView === 'sessions' ? state.previousViewBeforeSessions : state.activeView
+      })),
+    closeSessionsPage: () =>
+      set((state) => ({
+        activeView: state.previousViewBeforeSessions
       })),
     setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
     clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null })

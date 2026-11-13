@@ -25,6 +25,7 @@ import {
   SshTargetServerStatusLine,
   type SshTargetServerDialog
 } from '../server-actions/SshTargetServerStatus'
+import { SshShellIntegrationMenuItems } from '../../../live-sessions/shell-integration/SshShellIntegrationMenuItems'
 import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
@@ -288,6 +289,7 @@ export function SshTargetCard({
               state={state}
               onOpenDialog={setServerDialog}
             />
+            <SshShellIntegrationMenuItems targetId={target.id} state={state} />
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"

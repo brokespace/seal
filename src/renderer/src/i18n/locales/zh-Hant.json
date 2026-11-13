@@ -1032,12 +1032,12 @@
     "quitAndStopAllSessionsTooltip": "同時停止所有終端機工作階段，包括執行中的代理程式。一般的「結束」會讓這些工作階段繼續執行，以便 Orca 下次啟動時重新連線。"
   },
   "tray": {
-    "openOrca": "開啟 Orca",
+    "openOrca": "開啟 Seal",
     "quit": "退出",
     "minimizeNotice": {
-      "body": "Orca 仍在系統匣中執行"
+      "body": "Seal 仍在系統匣中執行"
     },
-    "activityWaiting": "Orca - 活動等待中",
+    "activityWaiting": "Seal - 活動等待中",
     "activityWaitingSuffix": "活動等待中"
   },
   "worktreeJumpPalette": {
@@ -1119,7 +1119,7 @@
       "df1d56bf87": "工作區介面遇到錯誤。",
       "9e0b441a91": "切換右側邊欄",
       "e81217c1b7": "隱藏應用程式名稱",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "應用程式選單",
       "caea5b51b9": "立即重新啟動",
       "0a9e810705": "重新啟動前不會儲存變更。先前的分頁已安全儲存在磁碟上。",
@@ -4490,7 +4490,7 @@
             "bbcd9b7b85": "摺疊工作區",
             "c4a8968bdd": "展開工作區",
             "b10695d6ce": "終止工作階段",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "摺疊 Orca",
             "e419d27083": "展開 Orca",
             "41ae4fa725": "正在結束…",
@@ -14913,7 +14913,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "歡迎使用 Orca",
           "adaa0aa627": "前往入門步驟 {{value0}}：{{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Orca 入門引導",
           "97c42cda00": "安裝 GitHub CLI 以：",
           "ae3b00ca82": "設定 GitHub 任務",
@@ -15188,7 +15188,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "電腦",
             "af761a0c0d": "設定",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "傳送",
@@ -16819,7 +16819,7 @@
             "88fea8e84e": "不傳送",
             "50b00dc327": "複製詳情",
             "6d3ebe216a": "診斷文字",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "已傳送當機報告。",
             "8b8473c544": "已複製當機報告。",
             "765591798d": "正在檢查當機報告...",

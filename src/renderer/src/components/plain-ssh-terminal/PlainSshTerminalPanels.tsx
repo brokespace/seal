@@ -116,6 +116,7 @@ function PlainSshTerminalCard({ panel }: { panel: PlainSshPanel }): React.JSX.El
       >
         <PlainSshTerminalView
           targetId={panel.targetId}
+          purpose={panel.purpose}
           hidden={panel.minimized}
           onPhase={setPhase}
         />

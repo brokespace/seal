@@ -593,12 +593,12 @@
     "quitAndStopAllSessionsTooltip": "실행 중인 에이전트를 포함한 모든 터미널 세션도 중지합니다. 일반 종료는 세션을 계속 실행해 두어 다음 실행 시 Orca가 다시 연결합니다."
   },
   "tray": {
-    "openOrca": "Orca 열기",
+    "openOrca": "Seal 열기",
     "quit": "종료",
     "minimizeNotice": {
-      "body": "Orca가 시스템 트레이에서 계속 실행 중입니다"
+      "body": "Seal이 시스템 트레이에서 계속 실행 중입니다"
     },
-    "activityWaiting": "Orca - 활동 대기 중",
+    "activityWaiting": "Seal - 활동 대기 중",
     "activityWaitingSuffix": "activity waiting"
   },
   "worktreeJumpPalette": {
@@ -680,7 +680,7 @@
       "df1d56bf87": "워크스페이스 셸에 오류가 발생했습니다.",
       "9e0b441a91": "오른쪽 사이드바 표시/숨기기",
       "e81217c1b7": "앱 이름 숨기기",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "애플리케이션 메뉴",
       "caea5b51b9": "지금 재시작",
       "0a9e810705": "다시 시작할 때까지 변경사항이 저장되지 않습니다. 이전 탭은 디스크에 안전합니다.",
@@ -3995,7 +3995,7 @@
             "bbcd9b7b85": "워크스페이스 축소",
             "c4a8968bdd": "워크스페이스 확장",
             "b10695d6ce": "세션 강제 종료",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "Orca 접기",
             "e419d27083": "Orca 확장",
             "41ae4fa725": "강제 종료 중…",
@@ -14436,7 +14436,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "Orca에 오신 것을 환영합니다",
           "adaa0aa627": "온보딩 단계 {{value0}}: {{value1}}로 이동",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Orca 온보딩",
           "97c42cda00": "GitHub CLI를 설치하여 다음을 수행합니다.",
           "ae3b00ca82": "GitHub 작업 설정",
@@ -14711,7 +14711,7 @@
             "19c212e25e": "맥북 프로",
             "2f1a1d10c4": "데스크탑",
             "af761a0c0d": "설정",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "보내기",
@@ -16343,7 +16343,7 @@
             "88fea8e84e": "보내지 않음",
             "50b00dc327": "세부정보 복사",
             "6d3ebe216a": "진단 텍스트",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "크래시 보고서가 전송되었습니다.",
             "8b8473c544": "크래시 보고서가 복사되었습니다.",
             "765591798d": "크래시 보고서 확인 중...",
