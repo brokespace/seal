@@ -28,7 +28,9 @@ import type {
 import { withWorkspacePin } from '../../shared/seal-accounts/seal-accounts-config-edits'
 import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
-import { SealUsageWatch } from './seal-usage-watch'
+import type { SealUsageFetch, SealUsagePoller } from './seal-usage-poller'
+import { sealUsageFetcher } from './seal-usage-fetch'
+import { createSealUsagePoller, sealAccountsInUse, withUsageSchedule } from './seal-usage-schedule'
 import { startSealSessionWatch } from './seal-session-watch'
 
 const EVALUATE_DEBOUNCE_MS = 2_000
@@ -38,6 +40,7 @@ export type SealAccountManagerDeps = {
   services: ProviderAccountServices
   dataRoot?: string
   now?: () => number
+  fetchUsage?: SealUsageFetch
 }
 
 /** One host's account brain: candidates, claude-swap auto-swap, and per-launch picks. */
@@ -51,7 +54,7 @@ export class SealAccountManager {
     codex: null
   }
   private unsubscribeUsage: (() => void) | null = null
-  private readonly usageWatch: SealUsageWatch
+  readonly usage: SealUsagePoller
   private evaluateTimer: ReturnType<typeof setTimeout> | null = null
   private evaluating: Promise<unknown> = Promise.resolve()
 
@@ -61,11 +64,8 @@ export class SealAccountManager {
     this.store = new SealAccountsStore(dir)
     this.vault = new SealApiKeyVault(dir)
     this.now = deps.now ?? Date.now
-    this.usageWatch = new SealUsageWatch(
-      deps.services.rateLimits,
-      () => this.refreshUsage(),
-      () => this.scheduleEvaluation()
-    )
+    this.usage = createSealUsagePoller(this, deps.fetchUsage ?? sealUsageFetcher(this))
+    this.usage.onPolled(() => this.scheduleEvaluation())
   }
 
   get services(): ProviderAccountServices {
@@ -79,7 +79,7 @@ export class SealAccountManager {
 
   dispose(): void {
     this.unsubscribeUsage?.()
-    this.usageWatch.dispose()
+    this.usage.dispose()
     clearTimeout(this.evaluateTimer ?? undefined)
   }
 
@@ -91,17 +91,33 @@ export class SealAccountManager {
     return this.store.getState().machineKey
   }
 
-  candidates(provider: SealProvider): SealAccountCandidate[] {
+  /** Every account with its freshest usage, before the poll schedule and swap estimate. */
+  baseCandidates(provider: SealProvider): SealAccountCandidate[] {
     return buildSealCandidates(
       {
         config: this.getConfig(),
         claude: this.services.claudeAccounts.listAccounts(),
         codex: this.services.codexAccounts.listAccounts(),
         rateLimits: this.services.rateLimits.getState(),
-        storedApiKeyIds: this.vault.storedIds()
+        storedApiKeyIds: this.vault.storedIds(),
+        polled: (key) => this.usage.limitsFor(key)
       },
       provider
     )
+  }
+
+  candidates(provider: SealProvider): SealAccountCandidate[] {
+    return withUsageSchedule(this.baseCandidates(provider), {
+      poller: this.usage,
+      config: this.getConfig(),
+      inUse: this.accountsInUse(provider),
+      now: this.now()
+    })
+  }
+
+  accountsInUse(provider: SealProvider): Set<SealAccountKey> {
+    const sessions = this.store.getState().sessions
+    return sealAccountsInUse(provider, this.baseCandidates(provider), sessions, this.now())
   }
 
   policy(provider: SealProvider, project: SealProjectIdentity | null): ResolvedSealPolicy {
@@ -147,8 +163,8 @@ export class SealAccountManager {
     return SEAL_PROVIDERS.some((provider) => this.getConfig().autoSwap[provider].enabled)
   }
 
-  private syncUsageViewer(): void {
-    this.usageWatch.sync(this.anyAutoSwapEnabled())
+  syncUsageViewer(): void {
+    this.usage.sync()
   }
 
   private scheduleEvaluation(): void {

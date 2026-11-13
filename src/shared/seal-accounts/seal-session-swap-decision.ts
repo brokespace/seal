@@ -62,7 +62,7 @@ export type SealSessionSwapInput = {
     accountKey: SealAccountKey | null
     liveSwap: SealSessionLiveSwapMode | undefined
     lastSwapAt: number | null
-    /** The agent printed a usage/rate-limit stop for this session. */
+    /** Fallback only: the agent printed a usage/rate-limit stop for this session. */
     rateLimited: boolean
   }
   capability: SealSessionCapability
@@ -73,12 +73,18 @@ export type SealSessionSwapInput = {
   now: number
 }
 
-/** The host-wide claude-swap loop, applied to one running session and its own account. */
+/**
+ * claude-swap's usage-based decision applied to one running session and its own account. Polled
+ * 5h/7d usage is the trigger; a printed limit stop counts only as a last-resort fallback, when
+ * polling saw nothing (e.g. a limit the usage endpoint has not reported yet).
+ */
 export function decideSessionSwap(input: SealSessionSwapInput): SealSessionSwapDecision {
-  const { session, settings } = input
-  if (!settings.enabled || !sessionLiveSwapEnabled(settings, session.liveSwap)) {
+  const { session } = input
+  if (!sessionLiveSwapEnabled(input.settings, session.liveSwap)) {
     return { kind: 'stay', reason: 'disabled' }
   }
+  // Running sessions follow their own switch; the host-wide toggle only moves new launches.
+  const settings = { ...input.settings, enabled: true }
   const currentKey = session.accountKey
   const current = currentKey
     ? input.candidates.find((candidate) => sealAccountKeysMatch(candidate.key, currentKey))
@@ -86,27 +92,36 @@ export function decideSessionSwap(input: SealSessionSwapInput): SealSessionSwapD
   if (!current || current.kind === 'api-key') {
     return { kind: 'stay', reason: 'no-current' }
   }
-  // A reported rate-limit stop counts as exhausted even before polling sees the window fill.
-  const candidates = input.candidates.map((candidate) => {
-    if (candidate.key !== current.key) {
-      return { ...candidate, active: false }
-    }
-    const active = { ...candidate, active: true }
-    return session.rateLimited ? withFullSessionWindow(active, input.now) : active
-  })
-  const decision = decideAutoSwap({
-    settings,
-    candidates,
-    policy: input.policy,
-    quarantine: input.quarantine,
-    lastSwapAt: session.lastSwapAt,
-    now: input.now
-  })
-  if (decision.kind === 'stay') {
-    return decision.reason === 'disabled' ? { kind: 'stay', reason: 'disabled' } : decision
+  const asActive = (candidate: SealAccountCandidate) =>
+    candidate.key === current.key ? { ...candidate, active: true } : { ...candidate, active: false }
+  const candidates = input.candidates.map(asActive)
+  const decide = (pool: SealAccountCandidate[]) =>
+    decideAutoSwap({
+      settings,
+      candidates: pool,
+      policy: input.policy,
+      quarantine: input.quarantine,
+      lastSwapAt: session.lastSwapAt,
+      now: input.now
+    })
+  let decision = decide(candidates)
+  let reason: SealSwapReason | null = decision.kind === 'swap' ? decision.reason : null
+  if (
+    decision.kind === 'stay' &&
+    decision.reason === 'healthy' &&
+    session.rateLimited &&
+    settings.rateLimitFallback !== false
+  ) {
+    decision = decide(
+      candidates.map((candidate) =>
+        candidate.key === current.key ? withFullSessionWindow(candidate, input.now) : candidate
+      )
+    )
+    reason = decision.kind === 'swap' ? 'rate-limit' : null
   }
-  const reason: SealSwapReason =
-    session.rateLimited && decision.reason === 'threshold' ? 'rate-limit' : decision.reason
+  if (decision.kind === 'stay' || reason === null) {
+    return decision.kind === 'stay' ? decision : { kind: 'stay', reason: 'healthy' }
+  }
   const delivery = sessionSwapDelivery(input.capability, reason)
   if (!delivery) {
     return { kind: 'stay', reason: 'not-swappable' }

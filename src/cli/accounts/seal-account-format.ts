@@ -55,7 +55,15 @@ export function formatCandidate(
   const extras = [
     candidate.disabled ? 'disabled' : null,
     candidate.launchable ? null : 'not signed in here',
-    usage?.error ? `usage: ${usage.error}` : null
+    usage?.error ? `usage: ${usage.error}` : null,
+    candidate.swapEstimate
+      ? candidate.swapEstimate.at <= now
+        ? `swap: now (${candidate.swapEstimate.window} ≥ ${candidate.swapEstimate.line}%)`
+        : `swap: ~${formatDuration(candidate.swapEstimate.at - now)} (${candidate.swapEstimate.window} → ${candidate.swapEstimate.line}%)`
+      : null,
+    candidate.nextPollAt && candidate.nextPollAt > now
+      ? `next read ${formatDuration(candidate.nextPollAt - now)}`
+      : null
   ].filter(Boolean)
   return [
     head + (candidate.email ?? '').padEnd(28),
@@ -74,7 +82,7 @@ export function formatProviderStatus(
 ): string {
   const settings = status.config.autoSwap[provider]
   const providerStatus = status.providers[provider]
-  const header = `${provider} on ${status.machineKey} — auto-swap ${settings.enabled ? 'on' : 'off'} · ${settings.strategy} · 5h ${settings.sessionThreshold}% / 7d ${settings.weeklyThreshold}%`
+  const header = `${provider} on ${status.machineKey} — running sessions ${settings.liveSessionSwap === false ? 'stay' : 'move'} · new launches auto-swap ${settings.enabled ? 'on' : 'off'} · ${settings.strategy} · swap at 5h ${settings.sessionThreshold}% / 7d ${settings.weeklyThreshold}% · margin ${settings.hysteresis} · cooldown ${settings.cooldownMinutes}m`
   const rows = providerStatus.candidates.map((candidate) => formatCandidate(candidate, status, now))
   const lines = [header, ...(rows.length > 0 ? rows : ['   (no accounts)'])]
   if (providerStatus.lastDecision) {

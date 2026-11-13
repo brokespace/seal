@@ -33,28 +33,29 @@ export function SealAutoSwapRows({
     { value: 'consume-first', label: t('seal.accounts.strategy.consumeFirst', 'Use it up') },
     { value: 'priority', label: t('seal.accounts.strategy.priority', 'Priority') }
   ]
+  const liveSessions = settings.liveSessionSwap !== false
   return (
     <>
       <SettingsSwitchRow
-        label={t('seal.accounts.autoSwap.enabled', 'Auto-swap')}
+        label={t('seal.accounts.autoSwap.liveSessions', 'Move running sessions')}
+        description={t(
+          'seal.accounts.autoSwap.liveSessionsDescription',
+          'Seal polls every account’s 5-hour and weekly usage and moves a running agent to another account before it crosses a limit below, or right away if its login dies. It resumes the conversation when it cannot switch live.'
+        )}
+        checked={liveSessions}
+        onChange={() => onChange({ liveSessionSwap: !liveSessions })}
+      />
+      <SettingsSwitchRow
+        label={t('seal.accounts.autoSwap.enabled', 'Auto-swap new sessions')}
         description={t(
           'seal.accounts.autoSwap.enabledDescription',
-          'Switch the account new sessions use before a limit is hit.'
+          'Also switch the account new sessions start on, using the same limits.'
         )}
         checked={settings.enabled}
         onChange={() => onChange({ enabled: !settings.enabled })}
       />
-      {settings.enabled ? (
+      {settings.enabled || liveSessions ? (
         <SettingsGroupNestedRows>
-          <SettingsSwitchRow
-            label={t('seal.accounts.autoSwap.liveSessions', 'Move running sessions')}
-            description={t(
-              'seal.accounts.autoSwap.liveSessionsDescription',
-              'Switch a running agent to another account when its own runs low, hits a rate limit or loses its login. Seal resumes the conversation when it cannot switch live.'
-            )}
-            checked={settings.liveSessionSwap !== false}
-            onChange={() => onChange({ liveSessionSwap: settings.liveSessionSwap === false })}
-          />
           <SettingsRow
             label={t('seal.accounts.autoSwap.strategy', 'Strategy')}
             control={
@@ -71,7 +72,7 @@ export function SealAutoSwapRows({
             label={t('seal.accounts.autoSwap.sessionThreshold', '5h limit')}
             description={t(
               'seal.accounts.autoSwap.sessionThresholdDescription',
-              'Swap away once the 5-hour window passes this.'
+              'Swap away once the 5-hour window reaches this. 90% matches claude-swap.'
             )}
             value={settings.sessionThreshold}
             min={1}
@@ -84,7 +85,7 @@ export function SealAutoSwapRows({
             label={t('seal.accounts.autoSwap.weeklyThreshold', '7d limit')}
             description={t(
               'seal.accounts.autoSwap.weeklyThresholdDescription',
-              'Swap away once the weekly window passes this.'
+              'Swap away once the weekly (or a per-model weekly) window reaches this.'
             )}
             value={settings.weeklyThreshold}
             min={1}
@@ -97,7 +98,7 @@ export function SealAutoSwapRows({
             label={t('seal.accounts.autoSwap.hysteresis', 'Headroom margin')}
             description={t(
               'seal.accounts.autoSwap.hysteresisDescription',
-              'Only swap to accounts at least this far under the limits, so swaps do not bounce.'
+              'A swap target needs this many more points of headroom than the current account, and must be under its own limits, so swaps never bounce.'
             )}
             value={settings.hysteresis}
             min={0}
@@ -110,7 +111,7 @@ export function SealAutoSwapRows({
             label={t('seal.accounts.autoSwap.cooldown', 'Cooldown')}
             description={t(
               'seal.accounts.autoSwap.cooldownDescription',
-              'Minimum time between automatic swaps.'
+              'Minimum time between swaps before a limit. A full window or dead login skips it.'
             )}
             value={settings.cooldownMinutes}
             min={0}
@@ -145,6 +146,18 @@ export function SealAutoSwapRows({
             )}
             checked={settings.apiKeyFallback}
             onChange={() => onChange({ apiKeyFallback: !settings.apiKeyFallback })}
+          />
+          <SettingsSwitchRow
+            label={t(
+              'seal.accounts.autoSwap.rateLimitFallback',
+              'Fallback: react to limit messages'
+            )}
+            description={t(
+              'seal.accounts.autoSwap.rateLimitFallbackDescription',
+              'Last resort only. If an agent stops with a usage-limit message that polling has not caught yet, move it anyway.'
+            )}
+            checked={settings.rateLimitFallback !== false}
+            onChange={() => onChange({ rateLimitFallback: settings.rateLimitFallback === false })}
           />
           <SettingsRow
             label={t('seal.accounts.autoSwap.lastDecision', 'Last check')}

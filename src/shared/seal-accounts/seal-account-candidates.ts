@@ -1,4 +1,5 @@
 import type { SealAccountKey, SealProvider } from './seal-accounts-config'
+import type { SealSwapEstimate } from './seal-swap-estimate'
 
 export type SealUsageWindow = {
   usedPercent: number
@@ -39,6 +40,10 @@ export type SealAccountCandidate = {
   usage: SealAccountUsage | null
   sessionThreshold: number | null
   weeklyThreshold: number | null
+  /** When Seal's usage poller reads this account next; absent while it is not polling. */
+  nextPollAt?: number | null
+  /** When this account (if in use) is expected to cross a switch line. */
+  swapEstimate?: SealSwapEstimate | null
 }
 
 export const DEFAULT_SEAL_ACCOUNT_PRIORITY = 100

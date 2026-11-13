@@ -66,7 +66,7 @@ export const SealAutoSwapSettingsSchema = z
     strategy: z.enum(SEAL_SWAP_STRATEGIES),
     sessionThreshold: Percent,
     weeklyThreshold: Percent,
-    /** Points below a threshold an account must sit before it is swapped to. */
+    /** Extra headroom (points) a proactive swap target needs over the current account. */
     hysteresis: z.number().min(0).max(50),
     cooldownMinutes: z
       .number()
@@ -82,7 +82,9 @@ export const SealAutoSwapSettingsSchema = z
     /** Let pay-as-you-go API keys catch launches when every subscription is exhausted. */
     apiKeyFallback: z.boolean(),
     /** Swap running sessions in place (or resume them on the new account); absent means on. */
-    liveSessionSwap: z.boolean().optional()
+    liveSessionSwap: z.boolean().optional(),
+    /** Last resort: also swap when an agent prints a limit stop usage polling missed; absent means on. */
+    rateLimitFallback: z.boolean().optional()
   })
   .strict()
 export type SealAutoSwapSettings = z.infer<typeof SealAutoSwapSettingsSchema>
@@ -117,16 +119,19 @@ export type SealAccountsConfig = z.infer<typeof SealAccountsConfigSchema>
 export function defaultSealAutoSwapSettings(): SealAutoSwapSettings {
   return {
     enabled: false,
+    // claude-swap's AutoSwitchSettings: threshold 90 on every window (no separate weekly line),
+    // hysteresisPct 10, cooldownSeconds 300.
     strategy: 'best',
     sessionThreshold: 90,
-    weeklyThreshold: 95,
-    hysteresis: 5,
-    cooldownMinutes: 10,
+    weeklyThreshold: 90,
+    hysteresis: 10,
+    cooldownMinutes: 5,
     failoverOnAuthError: true,
     quarantineMinutes: 60,
     respectModelLimits: true,
     apiKeyFallback: false,
-    liveSessionSwap: true
+    liveSessionSwap: true,
+    rateLimitFallback: true
   }
 }
 

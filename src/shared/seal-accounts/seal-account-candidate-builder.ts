@@ -123,6 +123,22 @@ export type SealCandidateSources = {
   rateLimits: RateLimitState | null
   /** API-key vault ids whose secret this host can decrypt. */
   storedApiKeyIds: ReadonlySet<string>
+  /** Seal's own per-account usage readings, preferred when newer than the usage bar's. */
+  polled?: (key: SealAccountKey) => ProviderRateLimits | null
+}
+
+function freshest(
+  service: ProviderRateLimits | null,
+  polled: ProviderRateLimits | null | undefined
+): ProviderRateLimits | null {
+  if (!polled) {
+    return service
+  }
+  return !service || polled.updatedAt >= service.updatedAt ? polled : service
+}
+
+function withPolled(seed: CandidateSeed, sources: SealCandidateSources): CandidateSeed {
+  return { ...seed, limits: freshest(seed.limits, sources.polled?.(seed.key)) }
 }
 
 function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[] {
@@ -161,7 +177,7 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
       })
     }
   }
-  return seeds.map((seed) => toCandidate(seed, config))
+  return seeds.map((seed) => toCandidate(withPolled(seed, sources), config))
 }
 
 function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] {
@@ -200,7 +216,7 @@ function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] 
       })
     }
   }
-  return seeds.map((seed) => toCandidate(seed, config))
+  return seeds.map((seed) => toCandidate(withPolled(seed, sources), config))
 }
 
 function apiKeyCandidates(

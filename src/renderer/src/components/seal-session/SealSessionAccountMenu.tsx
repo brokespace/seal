@@ -1,6 +1,7 @@
 import { ArrowLeftRight } from 'lucide-react'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
+import { formatResetDuration } from '../../../../shared/rate-limit-reset-format'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,8 @@ export function SealSessionAccountMenu({
   const t = useTranslate()
   const current = candidates.find((candidate) => candidate.key === session.accountKey) ?? null
   const used = windowUsedPercent(current?.usage?.session ?? null, readAt)
+  const weekly = windowUsedPercent(current?.usage?.weekly ?? null, readAt)
+  const estimate = current?.swapEstimate ?? null
   const targets = sessionSwapTargets(session, candidates)
   const last = session.history?.at(-1) ?? null
   const label = current?.label ?? session.accountLabel
@@ -98,6 +101,27 @@ export function SealSessionAccountMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
+        <p className="px-2 pt-1.5 text-2xs text-muted-foreground tabular-nums">
+          {[
+            used !== null
+              ? t('seal.session.menu.usage5h', '5h {{value0}}%', { value0: used })
+              : null,
+            weekly !== null
+              ? t('seal.session.menu.usage7d', '7d {{value0}}%', { value0: weekly })
+              : null,
+            estimate
+              ? estimate.at <= readAt
+                ? t('seal.session.menu.swapNow', 'swapping now')
+                : t('seal.session.menu.swapAt', 'next swap ~{{value0}}', {
+                    value0: formatResetDuration(estimate.at - readAt)
+                  })
+              : current?.nextPollAt
+                ? t('seal.session.menu.noSwap', 'no swap expected before reset')
+                : null
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
         <DropdownMenuLabel>
           {t('seal.session.menu.switch', 'Move this session to')}
         </DropdownMenuLabel>

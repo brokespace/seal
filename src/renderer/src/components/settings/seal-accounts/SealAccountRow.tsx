@@ -1,4 +1,5 @@
 import { useTranslate } from '@/i18n/use-translate'
+import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
 import type { SealAccountCandidate } from '../../../../../shared/seal-accounts/seal-account-candidates'
@@ -128,6 +129,34 @@ export function SealAccountRow({
           ))}
         </div>
       )}
+      {candidate.kind !== 'api-key' && (candidate.swapEstimate || candidate.nextPollAt) ? (
+        <span className="text-xs text-muted-foreground" data-slot="seal-swap-estimate">
+          {[
+            candidate.swapEstimate
+              ? candidate.swapEstimate.at <= now
+                ? t('seal.accounts.estimate.now', 'Over its {{value0}} limit; swapping', {
+                    value0: candidate.swapEstimate.window
+                  })
+                : t(
+                    'seal.accounts.estimate.at',
+                    'Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)',
+                    {
+                      value0: formatResetDuration(candidate.swapEstimate.at - now),
+                      value1: candidate.swapEstimate.window,
+                      value2: candidate.swapEstimate.line
+                    }
+                  )
+              : null,
+            candidate.nextPollAt && candidate.nextPollAt > now
+              ? t('seal.accounts.estimate.nextPoll', 'Usage read again in {{value0}}', {
+                  value0: formatResetDuration(candidate.nextPollAt - now)
+                })
+              : null
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </span>
+      ) : null}
       {usage?.error && !candidate.authFailure ? (
         <span className="text-xs text-muted-foreground">{usage.error}</span>
       ) : null}
