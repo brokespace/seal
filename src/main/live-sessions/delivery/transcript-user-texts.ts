@@ -1,5 +1,10 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import type { TranscriptLine } from '../transcripts/live-transcript-reader'
+import {
+  isJsonRecord,
+  parseJsonRecord,
+  recordField
+} from '../../../shared/live-sessions/transcript-json-record'
 
 export type UserText = { offset: number; text: string }
 
@@ -31,8 +36,9 @@ function contentText(content: unknown): string {
       if (typeof block === 'string') {
         return block
       }
-      const b = block as Record<string, unknown> | null
-      return b && b.type === 'text' && typeof b.text === 'string' ? b.text : ''
+      return isJsonRecord(block) && block.type === 'text' && typeof block.text === 'string'
+        ? block.text
+        : ''
     })
     .filter(Boolean)
     .join('\n')
@@ -48,23 +54,21 @@ export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine
     if (!text.includes('user') && !text.includes('attachment')) {
       continue
     }
-    let record: Record<string, unknown>
-    try {
-      record = JSON.parse(text) as Record<string, unknown>
-    } catch {
+    const record = parseJsonRecord(text)
+    if (!record) {
       continue
     }
     let said = ''
     if (provider === 'claude') {
-      const attachment = record.attachment as Record<string, unknown> | undefined
+      const attachment = recordField(record, 'attachment')
       if (record.type === 'user') {
-        said = contentText((record.message as Record<string, unknown> | undefined)?.content)
+        said = contentText(recordField(record, 'message')?.content)
       } else if (record.type === 'attachment' && attachment?.type === 'queued_command') {
         said = contentText(attachment.prompt)
       }
     } else {
       // Codex also echoes each prompt as a response_item; counting both would confirm a repeat twice.
-      const payload = record.payload as Record<string, unknown> | undefined
+      const payload = recordField(record, 'payload')
       if (record.type === 'event_msg' && payload?.type === 'user_message') {
         said = typeof payload.message === 'string' ? payload.message : ''
       }

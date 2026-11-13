@@ -13,6 +13,7 @@ import { useLiveTranscript } from './use-live-transcript'
 import { pendingRows } from './live-session-pending-rows'
 import { LiveSessionList } from './LiveSessionList'
 import { LiveSessionChat } from './LiveSessionChat'
+import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 
 const SEND_ATTEMPTS = 3
 
@@ -47,8 +48,7 @@ async function sendIdempotently(message: LiveMessage): Promise<void> {
 function useNow(everyMs: number): number {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), everyMs)
-    return () => window.clearInterval(id)
+    return installWindowVisibilityInterval({ run: () => setNow(Date.now()), intervalMs: everyMs })
   }, [everyMs])
   return now
 }
@@ -71,9 +71,7 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
     <main className="relative flex h-full min-h-0 flex-1 flex-col bg-background pt-5 text-foreground md:pt-6">
       <header
         className="flex shrink-0 items-center gap-2 px-3 pb-3 md:px-5"
-        style={
-          { paddingRight: 'max(0.75rem, var(--window-controls-width, 0px))' } as React.CSSProperties
-        }
+        style={{ paddingRight: 'max(0.75rem, var(--window-controls-width, 0px))' }}
       >
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-8">
           {t('auto.components.live-sessions.LiveSessionsPage.title', 'Agent sessions')}

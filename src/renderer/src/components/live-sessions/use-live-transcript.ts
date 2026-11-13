@@ -40,11 +40,6 @@ export function useLiveTranscript(sessionId: string | null): LiveTranscriptState
   const [attach, setAttach] = useState(0)
 
   useEffect(() => {
-    held.current = { byId: new Map(), cursor: null, start: null }
-    setState({ phase: 'loading', error: null, messages: [], hasMore: false, loadingEarlier: false })
-  }, [sessionId])
-
-  useEffect(() => {
     const api = window.api?.liveSessions
     if (!sessionId || !api) {
       return

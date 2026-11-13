@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { runProcess } from '@orca/process-host'
 import { Readable } from 'node:stream'
 import type { LiveSessionMachine } from '../../../shared/live-sessions/live-session-types'
 import { getSshConnectionManager } from '../../ssh/targets/ssh-target-registry'
@@ -17,31 +17,21 @@ const MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 const PATH_PREFIX =
   'PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$HOME/bin"; export PATH\n'
 
-export function runLocalScript(script: string, options?: { timeoutMs?: number }): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('/bin/sh', ['-s'], { stdio: ['pipe', 'pipe', 'ignore'] })
-    const chunks: Buffer[] = []
-    let bytes = 0
-    const timer = setTimeout(() => {
-      child.kill('SIGKILL')
-      reject(new Error('Live session scan timed out'))
-    }, options?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
-    child.stdout.on('data', (chunk: Buffer) => {
-      bytes += chunk.length
-      if (bytes <= MAX_OUTPUT_BYTES) {
-        chunks.push(chunk)
-      }
-    })
-    child.on('error', (error) => {
-      clearTimeout(timer)
-      reject(error)
-    })
-    child.on('close', () => {
-      clearTimeout(timer)
-      resolve(Buffer.concat(chunks).toString('utf8'))
-    })
-    child.stdin.end(PATH_PREFIX + script)
+export async function runLocalScript(
+  script: string,
+  options?: { timeoutMs?: number }
+): Promise<string> {
+  const result = await runProcess({
+    program: '/bin/sh',
+    args: ['-s'],
+    input: PATH_PREFIX + script,
+    timeoutMs: options?.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+    maxOutputBytes: MAX_OUTPUT_BYTES
   })
+  if (result.timedOut) {
+    throw new Error('Live session scan timed out')
+  }
+  return result.stdout
 }
 
 export function localHost(label: string): LiveSessionHost {

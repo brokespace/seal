@@ -1,4 +1,4 @@
-import { appendFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -28,7 +28,7 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
   it('finds Claude and Codex transcripts, then follows one as it grows', async () => {
     const claudeFile = join(home, '.claude/projects/-srv-app', `${CLAUDE_ID}.jsonl`)
     await mkdir(join(home, '.claude/projects/-srv-app'), { recursive: true })
-    const now = new Date().toISOString()
+    const now = '2026-11-13T10:00:00.000Z'
     await writeFile(
       claudeFile,
       line({
@@ -60,7 +60,7 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
       claudeProjectsDirs: [],
       codexSessionsDirs: []
     }))
-    const first = await scanner.scan(Date.now())
+    const first = await scanner.scan((await stat(claudeFile)).mtimeMs)
     expect(first.complete).toBe(true)
     const ours = (sessions: typeof first.sessions) =>
       Object.fromEntries(
@@ -81,11 +81,11 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
       claudeFile,
       line({
         type: 'user',
-        timestamp: new Date().toISOString(),
+        timestamp: '2026-11-13T10:01:00.000Z',
         message: { role: 'user', content: 'Now add a test' }
       })
     )
-    const second = await scanner.scan(Date.now())
+    const second = await scanner.scan((await stat(claudeFile)).mtimeMs)
     expect(ours(second.sessions)[`local:claude:${CLAUDE_ID}`]).toEqual({
       project: 'app',
       title: 'Fix the login bug',

@@ -1,4 +1,5 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import { isJsonRecord, parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 /** What the transcript alone says; liveness, hooks and the screen refine it later. */
 export type TranscriptPhase =
@@ -43,22 +44,17 @@ function recordsOf(text: string | null, dropFirstPartial: boolean): Record<strin
     if (!line.startsWith('{')) {
       continue
     }
-    try {
-      const value: unknown = JSON.parse(line)
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        out.push(value as Record<string, unknown>)
-      }
-    } catch {
-      // A cut-off last line; the next scan reads it whole.
+    // A cut-off last line parses to null; the next scan reads it whole.
+    const record = parseJsonRecord(line)
+    if (record) {
+      out.push(record)
     }
   }
   return out
 }
 
 function rec(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null
+  return isJsonRecord(value) ? value : null
 }
 
 function str(value: unknown): string | null {

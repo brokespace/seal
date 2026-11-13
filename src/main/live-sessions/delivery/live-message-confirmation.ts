@@ -39,3 +39,17 @@ export function confirmSent(
   }
   return out
 }
+
+/** Typed but unconfirmed messages, per session, oldest first. */
+export function sentBySession(items: Iterable<OutboxItem>): Map<string, OutboxItem[]> {
+  const bySession = new Map<string, OutboxItem[]>()
+  for (const item of items) {
+    if (item.state === 'sent') {
+      bySession.set(item.sessionId, [...(bySession.get(item.sessionId) ?? []), item])
+    }
+  }
+  for (const list of bySession.values()) {
+    list.sort((a, b) => a.createdAt - b.createdAt)
+  }
+  return bySession
+}

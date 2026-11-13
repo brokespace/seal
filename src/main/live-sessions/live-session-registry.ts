@@ -32,9 +32,15 @@ type HostState = {
   sessions: LiveSession[]
   nextScanAt: number
   scanning: boolean
+  /** Scans in a row that found nothing new; each stretches the wait, up to MAX_IDLE_STRETCH. */
+  idleScans: number
+  failures: number
 }
 
-const TICK_MS = 1_000
+/** New SSH connections are picked up within this. */
+const HOST_SYNC_MS = 5_000
+const MAX_IDLE_STRETCH = 2
+const MAX_FAILURE_STRETCH = 4
 
 /**
  * Every Claude Code and Codex session on every connected machine, whether Seal started it or not.
@@ -48,7 +54,8 @@ export class LiveSessionRegistry {
   private readonly renamed = new Map<string, string>()
   private readonly listeners = new Set<(event: LiveSessionRegistryEvent) => void>()
   private revision = 0
-  private timer: ReturnType<typeof setInterval> | null = null
+  private timer: ReturnType<typeof setTimeout> | null = null
+  private running = false
   private releaseSealPanes: (() => void) | null = null
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }
@@ -59,18 +66,18 @@ export class LiveSessionRegistry {
   }
 
   start(): void {
-    if (this.timer) {
+    if (this.running) {
       return
     }
+    this.running = true
     this.releaseSealPanes = this.deps.subscribeSealPanes?.(() => this.publish()) ?? null
-    this.timer = setInterval(() => this.tick(), TICK_MS)
-    this.timer.unref?.()
     this.tick()
   }
 
   stop(): void {
+    this.running = false
     if (this.timer) {
-      clearInterval(this.timer)
+      clearTimeout(this.timer)
     }
     this.timer = null
     this.releaseSealPanes?.()
@@ -115,11 +122,15 @@ export class LiveSessionRegistry {
     await Promise.all(
       [...this.hosts.values()]
         .filter((state) => !hostId || state.host.machine.hostId === hostId)
-        .map((state) => this.scanHost(state))
+        .map((state) => {
+          state.idleScans = 0
+          return this.scanHost(state)
+        })
     )
   }
 
   private tick(): void {
+    this.timer = null
     this.syncHosts()
     const now = this.now()
     for (const state of this.hosts.values()) {
@@ -127,6 +138,26 @@ export class LiveSessionRegistry {
         void this.scanHost(state)
       }
     }
+    this.schedule()
+  }
+
+  /** Wake for the next host due, or the next host sync, whichever comes first. */
+  private schedule(): void {
+    if (!this.running) {
+      return
+    }
+    if (this.timer) {
+      clearTimeout(this.timer)
+    }
+    const now = this.now()
+    let wakeAt = now + HOST_SYNC_MS
+    for (const state of this.hosts.values()) {
+      if (!state.scanning) {
+        wakeAt = Math.min(wakeAt, state.nextScanAt)
+      }
+    }
+    this.timer = setTimeout(() => this.tick(), Math.max(0, wakeAt - now))
+    this.timer.unref?.()
   }
 
   private syncHosts(): void {
@@ -157,7 +188,9 @@ export class LiveSessionRegistry {
           ),
           sessions: [],
           nextScanAt: 0,
-          scanning: false
+          scanning: false,
+          idleScans: 0,
+          failures: 0
         })
       }
     }
@@ -178,18 +211,26 @@ export class LiveSessionRegistry {
         return
       }
       if (result.complete || result.sessions.length >= state.sessions.length) {
+        const unchanged = JSON.stringify(result.sessions) === JSON.stringify(state.sessions)
+        state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
       }
+      state.failures = 0
       this.setHostError(hostId, result.complete ? null : 'The scan was cut short')
       this.publish()
     } catch (error) {
+      state.failures++
       this.deps.log?.(`[live-sessions] scan of ${hostId} failed`, error)
       this.setHostError(hostId, error instanceof Error ? error.message : String(error))
     } finally {
       state.scanning = false
-      state.nextScanAt =
-        this.now() +
-        (state.host.machine.kind === 'local' ? this.intervals.local : this.intervals.ssh)
+      const base = state.host.machine.kind === 'local' ? this.intervals.local : this.intervals.ssh
+      const stretch =
+        state.failures > 0
+          ? 2 ** Math.min(state.failures, MAX_FAILURE_STRETCH)
+          : 2 ** Math.min(state.idleScans, MAX_IDLE_STRETCH)
+      state.nextScanAt = this.now() + base * stretch
+      this.schedule()
     }
   }
 

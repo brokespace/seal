@@ -12,7 +12,7 @@ export class LiveMessageStore<T extends { messageId: string; sessionId: string }
 
   async load(): Promise<T[]> {
     try {
-      const list = JSON.parse(await readFile(this.path, 'utf8')) as unknown
+      const list: unknown = JSON.parse(await readFile(this.path, 'utf8'))
       return (Array.isArray(list) ? list : []).filter(
         (item): item is T =>
           !!item && typeof item.messageId === 'string' && typeof item.sessionId === 'string'

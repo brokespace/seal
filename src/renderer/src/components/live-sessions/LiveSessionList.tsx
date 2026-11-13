@@ -28,7 +28,10 @@ export function LiveSessionList({
 }): React.JSX.Element {
   const t = useTranslate()
   const groups = groupByMachine(sessions)
-  const erroredHosts = Object.keys(hostErrors).filter((id) => !groups.some((g) => g.hostId === id))
+  // Only connected hosts are scanned, so this stays as short as the connection list.
+  const scanErrors = Object.entries(hostErrors).filter(
+    ([id]) => !groups.some((g) => g.hostId === id)
+  )
   return (
     <nav
       className="scrollbar-sleek flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-2 pb-3"
@@ -85,7 +88,7 @@ export function LiveSessionList({
                         .join(' \u00b7 ')}
                     </span>
                     {session.origin === 'seal' ? (
-                      <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-3xs">
+                      <Badge variant="outline" className="shrink-0">
                         {t('auto.components.live-sessions.LiveSessionList.sealPane', 'Seal pane')}
                       </Badge>
                     ) : null}
@@ -96,9 +99,9 @@ export function LiveSessionList({
           </section>
         )
       })}
-      {erroredHosts.map((hostId) => (
-        <p key={hostId} className="px-2 text-xs text-destructive">
-          {hostErrors[hostId]}
+      {scanErrors.map(([id, message]) => (
+        <p key={id} className="px-2 text-xs text-destructive">
+          {message}
         </p>
       ))}
     </nav>

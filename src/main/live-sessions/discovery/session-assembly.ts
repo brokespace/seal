@@ -10,6 +10,7 @@ import type {
 import type { DiscoveredPane, DiscoveredProcess, DiscoveryOutput } from './discovery-output'
 import { parseAgentScreen, type AgentScreen } from './agent-screen'
 import type { TranscriptPhase, TranscriptSummary } from './transcript-summary'
+import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 export type SummarizedTranscript = {
   path: string
@@ -95,29 +96,28 @@ function agentProcesses(
 }
 
 export function parseHookStates(files: { path: string; text: string }[]): HookState[] {
-  return files.flatMap(({ path, text }) => {
-    try {
-      const raw = JSON.parse(text) as Record<string, unknown>
-      const provider = raw.provider === 'codex' ? 'codex' : raw.provider ? null : 'claude'
-      if (!provider || (raw.provider && raw.provider !== provider)) {
-        return []
-      }
-      const fileId = (path.split('/').pop() ?? '').replace(/\.json$/, '')
-      const id = typeof raw.id === 'string' && raw.id ? raw.id : fileId.replace(/^codex-/, '')
-      const updated = typeof raw.updated === 'number' ? raw.updated * 1000 : 0
-      return [
-        {
-          provider,
-          providerSessionId: id,
-          state: typeof raw.state === 'string' ? raw.state : '',
-          detail: typeof raw.detail === 'string' && raw.detail ? raw.detail : null,
-          updatedMs: updated,
-          pid: typeof raw.pid === 'number' ? raw.pid : null
-        }
-      ]
-    } catch {
+  return files.flatMap(({ path, text }): HookState[] => {
+    const raw = parseJsonRecord(text)
+    if (!raw) {
       return []
     }
+    const provider = raw.provider === 'codex' ? 'codex' : raw.provider ? null : 'claude'
+    if (!provider || (raw.provider && raw.provider !== provider)) {
+      return []
+    }
+    const fileId = (path.split('/').pop() ?? '').replace(/\.json$/, '')
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : fileId.replace(/^codex-/, '')
+    const updated = typeof raw.updated === 'number' ? raw.updated * 1000 : 0
+    return [
+      {
+        provider,
+        providerSessionId: id,
+        state: typeof raw.state === 'string' ? raw.state : '',
+        detail: typeof raw.detail === 'string' && raw.detail ? raw.detail : null,
+        updatedMs: updated,
+        pid: typeof raw.pid === 'number' ? raw.pid : null
+      }
+    ]
   })
 }
 
@@ -134,7 +134,8 @@ function phaseStatus(phase: TranscriptPhase, running: boolean): LiveSessionStatu
       return 'working'
     case 'approval-requested':
       return 'needs-permission'
-    default:
+    case 'turn-ended':
+    case 'unknown':
       return 'waiting-input'
   }
 }

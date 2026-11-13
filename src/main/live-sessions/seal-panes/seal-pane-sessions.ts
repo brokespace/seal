@@ -47,7 +47,8 @@ function hookStatus(state: SealPaneRow['state']): LiveSessionStatus {
       return 'working'
     case 'blocked':
       return 'needs-permission'
-    default:
+    case 'waiting':
+    case 'done':
       // A finished turn in a live pane waits for the next prompt.
       return 'waiting-input'
   }

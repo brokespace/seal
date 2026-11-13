@@ -4,6 +4,7 @@ import {
   readTranscriptPage,
   type TranscriptSource
 } from './live-transcript-reader'
+import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 
 const user = (text: string) =>
   JSON.stringify({ type: 'user', uuid: text, message: { role: 'user', content: text } })
@@ -20,8 +21,8 @@ function memorySource(initial: string, maxRead = 1024): TranscriptSource & { tex
   return source
 }
 
-const texts = (messages: { blocks: unknown[] }[]) =>
-  messages.map((m) => (m.blocks[0] as { text?: string }).text)
+const texts = (messages: NativeChatMessage[]) =>
+  messages.map((m) => (m.blocks[0]?.type === 'text' ? m.blocks[0].text : null))
 
 describe('live transcript reading', () => {
   it('pages backwards with byte offsets as stable ids', async () => {

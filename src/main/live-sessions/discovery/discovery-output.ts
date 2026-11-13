@@ -140,7 +140,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         const m = /^(claude|codex) (\d+) (\d+) (.+)$/.exec(rest)
         if (m) {
           files.set(m[4], {
-            provider: m[1] as LiveSessionProvider,
+            provider: m[1] === 'codex' ? 'codex' : 'claude',
             size: Number(m[2]),
             mtimeMs: Number(m[3]) * 1000,
             path: m[4],

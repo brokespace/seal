@@ -1,7 +1,7 @@
 import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions/live-session-types'
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
-import { confirmSent } from './live-message-confirmation'
+import { confirmSent, sentBySession } from './live-message-confirmation'
 import { LiveMessageStore } from './live-message-store'
 import {
   DEFAULT_OUTBOX_TIMING,
@@ -31,7 +31,7 @@ export class LiveMessageOutbox {
   private readonly now: () => number
   private readonly sleep: (ms: number) => Promise<void>
   private readonly timing: typeof DEFAULT_OUTBOX_TIMING
-  private confirmTimer: ReturnType<typeof setInterval> | null = null
+  private confirmTimer: ReturnType<typeof setTimeout> | null = null
   private confirming = false
   private readonly store: LiveMessageStore<Item>
   private started: Promise<void> | null = null
@@ -59,8 +59,7 @@ export class LiveMessageOutbox {
       for (const sessionId of new Set([...this.items.values()].map((i) => i.sessionId))) {
         this.kick(sessionId)
       }
-      this.confirmTimer = setInterval(() => void this.confirm(), this.timing.confirmEveryMs)
-      this.confirmTimer.unref?.()
+      this.scheduleConfirm()
     })
     return this.started
   }
@@ -68,8 +67,24 @@ export class LiveMessageOutbox {
   stop(): void {
     this.abort.abort()
     if (this.confirmTimer) {
-      clearInterval(this.confirmTimer)
+      clearTimeout(this.confirmTimer)
     }
+    this.confirmTimer = null
+  }
+
+  /** Look again while anything typed is still unconfirmed; settle once nothing is. */
+  private scheduleConfirm(): void {
+    if (this.confirmTimer || this.abort.signal.aborted) {
+      return
+    }
+    if (![...this.items.values()].some((i) => i.state === 'sent')) {
+      return
+    }
+    this.confirmTimer = setTimeout(() => {
+      this.confirmTimer = null
+      void this.confirm()
+    }, this.timing.confirmEveryMs)
+    this.confirmTimer.unref?.()
   }
 
   list(sessionId?: string): LiveMessage[] {
@@ -272,15 +287,8 @@ export class LiveMessageOutbox {
     }
     this.confirming = true
     try {
-      const bySession = new Map<string, Item[]>()
-      for (const item of this.items.values()) {
-        if (item.state === 'sent') {
-          bySession.set(item.sessionId, [...(bySession.get(item.sessionId) ?? []), item])
-        }
-      }
-      for (const [sessionId, items] of bySession) {
+      for (const [sessionId, items] of sentBySession(this.items.values())) {
         const session = this.deps.getSession(sessionId)
-        items.sort((a, b) => a.createdAt - b.createdAt)
         let records: UserText[] = []
         if (session?.transcriptPath) {
           const from = Math.min(...items.map((i) => i.offset))
@@ -298,6 +306,7 @@ export class LiveMessageOutbox {
       }
     } finally {
       this.confirming = false
+      this.scheduleConfirm()
     }
   }
 

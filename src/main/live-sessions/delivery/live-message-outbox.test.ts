@@ -50,7 +50,7 @@ function outbox(storePath = join(dir, 'outbox.json')) {
     now: () => clock,
     sleep: async (ms) => {
       clock += ms
-      await new Promise((resolve) => setTimeout(resolve, 1))
+      await new Promise((resolve) => setImmediate(resolve))
     },
     timing: { confirmEveryMs: 60_000, busyTimeoutMs: 5_000 }
   })
@@ -146,7 +146,9 @@ describe('LiveMessageOutbox', () => {
     box.renameSession(session.id, 'local:claude:real-id')
     busy = false
     await settle(box, ([m]) => m.state === 'sent')
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    for (let turn = 0; turn < 20; turn++) {
+      await new Promise((resolve) => setImmediate(resolve))
+    }
     expect(typed).toEqual(['hello'])
     expect(box.list()[0].sessionId).toBe('local:claude:real-id')
     box.stop()
