@@ -27,8 +27,8 @@ export function LiveSessionsIdleReapSetting({
     <SettingsRow
       label={t('auto.components.live-sessions.idleReap.label', 'End idle Seal sessions')}
       description={t(
-        'auto.components.live-sessions.idleReap.description',
-        'A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.'
+        'auto.components.live-sessions.idleReap.descriptionWithHomeChat',
+        'Ends what Seal keeps running for you once nothing has happened in it for this long: a claude or codex in its own tmux server (tmux -L seal) that no terminal shows, and the agent behind each Home chat, which picks up where it left off on your next message. Sessions you run in your own terminal or tmux are never touched.'
       )}
       control={
         <SettingsSegmentedControl
