@@ -14,6 +14,12 @@ export function withTranscriptPreamble(entries: readonly HomeChatEntry[], messag
     if (entry.kind === 'tool' && entry.status !== 'awaiting-approval') {
       return [`(tool ${entry.tool} ${entry.status}${entry.machine ? ` on ${entry.machine}` : ''})`]
     }
+    if (entry.kind === 'notice') {
+      return [`(${entry.source} notice: ${entry.text.slice(0, 500)})`]
+    }
+    if (entry.kind === 'attachment') {
+      return [`(showed the user ${entry.name})`]
+    }
     return []
   })
   if (lines.length === 0) {

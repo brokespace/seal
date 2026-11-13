@@ -3,7 +3,11 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { HomeChatMachine, HomeChatMachineInfo } from '../machines/home-chat-machine-types'
-import { executeHomeChatTool, type HomeChatToolContext } from './home-chat-tool-executor'
+import {
+  createTestHomeChatRuntime,
+  testToolContext
+} from '../testing/home-chat-runtime.test-support'
+import { executeHomeChatTool } from './home-chat-tool-executor'
 
 let root: string
 
@@ -17,6 +21,7 @@ function folderMachine(id: string, fsRoot: string): HomeChatMachine {
   const unsupported = (): Promise<never> => Promise.reject(new Error('unsupported'))
   return {
     info,
+    dialect: 'posix',
     exec: unsupported,
     readTextFile: unsupported,
     writeTextFile: unsupported,
@@ -36,14 +41,11 @@ describe('executeHomeChatTool transfer_file', () => {
     const b = folderMachine('ssh:b', join(root, 'b'))
     await mkdir(join(root, 'a', 'data'), { recursive: true })
     await writeFile(join(root, 'a', 'data', 'model.bin'), 'weights')
-    const ctx: HomeChatToolContext = {
-      machines: {
-        list: () => Promise.resolve([a.info, b.info]),
-        open: (id) => Promise.resolve(id === 'ssh:a' ? a : b)
-      },
-      runOrcaCli: () => Promise.reject(new Error('unused')),
-      reportProgress: () => undefined
-    }
+    const { runtime } = createTestHomeChatRuntime(root, {
+      list: () => Promise.resolve([a.info, b.info]),
+      open: (id) => Promise.resolve(id === 'ssh:a' ? a : b)
+    })
+    const ctx = testToolContext(runtime)
 
     const result = await executeHomeChatTool(
       'transfer_file',

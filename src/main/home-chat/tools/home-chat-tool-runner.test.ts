@@ -7,6 +7,7 @@ import type { HomeChatEntry } from '../../../shared/home-chat/home-chat-types'
 import { HomeChatApprovals } from '../home-chat-approvals'
 import { HomeChatEntryWriter } from '../home-chat-entry-writer'
 import { createLocalMachine } from '../machines/home-chat-local-machine'
+import { createTestHomeChatRuntime } from '../testing/home-chat-runtime.test-support'
 import { runHomeChatToolCall, type HomeChatToolRunContext } from './home-chat-tool-runner'
 
 let dir: string
@@ -14,14 +15,16 @@ let entries: HomeChatEntry[]
 
 function context(approvals: HomeChatApprovals): HomeChatToolRunContext {
   const local = createLocalMachine()
+  const machines = { list: () => Promise.resolve([local.info]), open: () => Promise.resolve(local) }
   return {
     chatId: 'c1',
     approvals,
     writer: new HomeChatEntryWriter((entry) => {
       entries = mergeHomeChatEntry(entries, entry)
     }),
-    machines: { list: () => Promise.resolve([local.info]), open: () => Promise.resolve(local) },
-    runOrcaCli: () => Promise.reject(new Error('unused'))
+    machines,
+    runOrcaCli: () => Promise.reject(new Error('unused')),
+    services: createTestHomeChatRuntime(join(dir, 'runtime'), machines).runtime.services
   }
 }
 

@@ -91,11 +91,28 @@ export function assessHomeChatToolRisk(
       return { requiresApproval: true, reason: `This deletes ${String(input.path)}.` }
     case 'orca_cli':
       return assessOrcaArgs(Array.isArray(input.args) ? input.args.map(String) : [])
+    // Jobs, subagents and routines are the assistant's own; routine runs still hit approvals.
     case 'list_machines':
+    case 'job_status':
+    case 'job_output':
+    case 'job_kill':
+    case 'job_cleanup':
     case 'read_file':
     case 'write_file':
     case 'transfer_file':
+    case 'configure_machine':
+    case 'attach_file':
     case 'report_progress':
+    case 'remember':
+    case 'forget':
+    case 'load_skill':
+    case 'spawn_subagent':
+    case 'check_subagent':
+    case 'message_subagent':
+    case 'stop_subagent':
+    case 'web_search':
+    case 'web_fetch':
+    case 'routines':
       return SAFE
   }
 }

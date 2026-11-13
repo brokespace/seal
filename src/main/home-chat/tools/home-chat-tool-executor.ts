@@ -1,74 +1,185 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
 import type { HomeChatToolName } from './home-chat-tool-definitions'
-import type {
-  HomeChatExecResult,
-  HomeChatMachineProvider
-} from '../machines/home-chat-machine-types'
-import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import {
+  clipToolText,
+  formatExecResult,
+  optionalStr,
+  str,
+  type HomeChatToolContext,
+  type HomeChatToolResult
+} from './home-chat-tool-context'
+import { quoteForDialect } from '../machines/home-chat-machine-scripts'
+import { executeAssistantTool } from './home-chat-assistant-tool-handlers'
+import { transferBetweenMachines } from './home-chat-transfer'
 
-const MAX_TOOL_OUTPUT_CHARS = 30_000
+export type { HomeChatToolContext, HomeChatToolResult } from './home-chat-tool-context'
+export { formatExecResult } from './home-chat-tool-context'
 
-export type HomeChatToolContext = {
-  machines: HomeChatMachineProvider
-  runOrcaCli: (
-    args: readonly string[],
-    options: { timeoutMs: number; signal?: AbortSignal }
-  ) => Promise<HomeChatExecResult>
-  reportProgress: (message: string) => void
-  signal?: AbortSignal
+const DEFAULT_WAIT_SECONDS = 30
+
+const num = (value: unknown): number | undefined => (typeof value === 'number' ? value : undefined)
+
+function outputBlock(output: string, totalBytes: number): string {
+  const shown = Buffer.byteLength(output, 'utf8')
+  const note =
+    totalBytes > shown ? `[last ${shown} of ${totalBytes} bytes; job_output reads more]\n` : ''
+  return output.trim()
+    ? `\n\noutput (stdout+stderr):\n${note}${clipToolText(output.trimEnd())}`
+    : '\n\n(no output)'
 }
 
-export type HomeChatToolResult = { text: string; isError: boolean; machine?: string }
-
-function clip(text: string): string {
-  if (text.length <= MAX_TOOL_OUTPUT_CHARS) {
-    return text
-  }
-  const half = MAX_TOOL_OUTPUT_CHARS / 2
-  return `${text.slice(0, half)}\n… [${text.length - MAX_TOOL_OUTPUT_CHARS} characters omitted] …\n${text.slice(-half)}`
-}
-
-export function formatExecResult(result: HomeChatExecResult): HomeChatToolResult {
-  const status = result.timedOut ? 'timed out' : `exit code ${result.exitCode ?? 'unknown'}`
-  const parts = [status]
-  if (result.stdout.trim()) {
-    parts.push(`stdout:\n${clip(result.stdout.trimEnd())}`)
-  }
-  if (result.stderr.trim()) {
-    parts.push(`stderr:\n${clip(result.stderr.trimEnd())}`)
-  }
-  return { text: parts.join('\n\n'), isError: result.timedOut || result.exitCode !== 0 }
-}
-
-const str = (value: unknown): string => String(value ?? '')
-
-async function transfer(
-  ctx: HomeChatToolContext,
-  input: Record<string, unknown>
+async function runCommand(
+  input: Record<string, unknown>,
+  ctx: HomeChatToolContext
 ): Promise<HomeChatToolResult> {
-  const from = await ctx.machines.open(str(input.from_machine))
-  const to = await ctx.machines.open(str(input.to_machine))
-  const label = `${from.info.label} → ${to.info.label}`
-  const fromPath = str(input.from_path)
-  const toPath = str(input.to_path)
-  if (from.info.kind === 'local') {
-    await to.uploadFrom(fromPath, toPath)
-  } else if (to.info.kind === 'local') {
-    await from.downloadTo(fromPath, toPath)
-  } else {
-    // Machines cannot reach each other directly, so stage through this computer.
-    const staging = await mkdtemp(join(tmpdir(), 'seal-transfer-'))
-    try {
-      const staged = join(staging, basename(fromPath) || 'file')
-      await from.downloadTo(fromPath, staged)
-      await to.uploadFrom(staged, toPath)
-    } finally {
-      await rm(staging, { recursive: true, force: true })
+  const waitSeconds =
+    input.background === true ? 0 : (num(input.timeout_seconds) ?? DEFAULT_WAIT_SECONDS)
+  const result = await ctx.services.jobs.run({
+    chatId: ctx.chatId,
+    machine: str(input.machine),
+    command: str(input.command),
+    cwd: optionalStr(input.cwd),
+    waitSeconds,
+    signal: ctx.signal
+  })
+  if (result.kind === 'finished') {
+    return {
+      text: `exit code ${result.exitCode ?? 'unknown'}${outputBlock(result.output, result.totalBytes)}`,
+      isError: result.exitCode !== 0,
+      machine: result.machineLabel
     }
   }
-  return { text: `Copied ${fromPath} to ${toPath} (${label}).`, isError: false, machine: label }
+  const { job } = result
+  const lead =
+    waitSeconds === 0
+      ? `Started background job ${job.id} on ${job.machineLabel}.`
+      : `Still running after ${waitSeconds}s, so it continues as background job ${job.id} on ${job.machineLabel}.`
+  return {
+    text: `${lead} A notice will arrive in this chat when it exits; check it with job_status/job_output or stop it with job_kill.${outputBlock(result.output, result.totalBytes)}`,
+    isError: false,
+    machine: job.machineLabel
+  }
+}
+
+async function jobStatus(
+  input: Record<string, unknown>,
+  ctx: HomeChatToolContext
+): Promise<HomeChatToolResult> {
+  const id = optionalStr(input.job_id)
+  if (!id) {
+    const jobs = ctx.services.jobs.list(ctx.chatId)
+    const rows = jobs.map(
+      (job) =>
+        `${job.id} on ${job.machineLabel}: ${job.state}${job.exitCode !== undefined && job.exitCode !== null ? ` (exit ${job.exitCode})` : ''}, started ${new Date(job.startedAt).toISOString()}: ${job.command.slice(0, 120)}`
+    )
+    return { text: rows.join('\n') || 'No background jobs in this chat.', isError: false }
+  }
+  const { job, report } = await ctx.services.jobs.status(id)
+  const state =
+    report.state === 'exited'
+      ? `exited with code ${report.exitCode}`
+      : report.state === 'running'
+        ? `running (pid ${report.pid})`
+        : report.state === 'lost'
+          ? 'lost (the process is gone without an exit code, e.g. the machine rebooted)'
+          : 'missing (its folder was removed)'
+  const tail = 'output' in report ? outputBlock(report.output, report.totalBytes) : ''
+  return {
+    text: `Job ${job.id} on ${job.machineLabel}: ${state}.${tail}`,
+    isError: false,
+    machine: job.machineLabel
+  }
+}
+
+async function executeMachineTool(
+  tool: HomeChatToolName,
+  input: Record<string, unknown>,
+  ctx: HomeChatToolContext
+): Promise<HomeChatToolResult | null> {
+  switch (tool) {
+    case 'list_machines':
+      return listMachines(ctx, input.probe_load === true)
+    case 'run_command':
+      return runCommand(input, ctx)
+    case 'job_status':
+      return jobStatus(input, ctx)
+    case 'job_output': {
+      const text = await ctx.services.jobs.output(str(input.job_id), {
+        offset: num(input.offset),
+        length: num(input.max_bytes) ?? 20_000
+      })
+      return { text: clipToolText(text), isError: false }
+    }
+    case 'job_kill': {
+      const job = await ctx.services.jobs.kill(str(input.job_id))
+      return {
+        text: `Stopped job ${job.id} on ${job.machineLabel}.`,
+        isError: false,
+        machine: job.machineLabel
+      }
+    }
+    case 'job_cleanup':
+      await ctx.services.jobs.remove(str(input.job_id))
+      return { text: `Removed job ${str(input.job_id)}'s folder.`, isError: false }
+    case 'read_file': {
+      const machine = await ctx.machines.open(str(input.machine))
+      const maxBytes = num(input.max_bytes) ?? 200_000
+      const { text, truncated } = await machine.readTextFile(str(input.path), maxBytes)
+      const suffix = truncated ? `\n… [truncated at ${maxBytes} bytes]` : ''
+      return { text: clipToolText(text) + suffix, isError: false, machine: machine.info.label }
+    }
+    case 'write_file': {
+      const machine = await ctx.machines.open(str(input.machine))
+      const content = str(input.content)
+      await machine.writeTextFile(str(input.path), content, { append: input.append === true })
+      const verb = input.append === true ? 'Appended' : 'Wrote'
+      return {
+        text: `${verb} ${Buffer.byteLength(content, 'utf8')} bytes to ${str(input.path)}.`,
+        isError: false,
+        machine: machine.info.label
+      }
+    }
+    case 'transfer_file': {
+      const method = input.method === 'direct' || input.method === 'relay' ? input.method : 'auto'
+      const { text, label } = await transferBetweenMachines(ctx.machines, {
+        fromMachine: str(input.from_machine),
+        fromPath: str(input.from_path),
+        toMachine: str(input.to_machine),
+        toPath: str(input.to_path),
+        recursive: input.recursive === true,
+        method,
+        signal: ctx.signal
+      })
+      return { text, isError: false, machine: label }
+    }
+    case 'delete_path': {
+      const machine = await ctx.machines.open(str(input.machine))
+      const path = quoteForDialect(machine.dialect, str(input.path))
+      const recursive = input.recursive === true
+      const command =
+        machine.dialect === 'powershell'
+          ? `Remove-Item -LiteralPath ${path} -Force${recursive ? ' -Recurse' : ''}`
+          : `rm -f${recursive ? 'r' : ''} -- ${path}`
+      const result = await machine.exec(command, { timeoutMs: 120_000, signal: ctx.signal })
+      return { ...formatExecResult(result), machine: machine.info.label }
+    }
+    case 'attach_file': {
+      const machine = await ctx.machines.open(str(input.machine))
+      const info = await ctx.services.attachments.importFrom(
+        machine,
+        ctx.chatId,
+        str(input.path),
+        optionalStr(input.name)
+      )
+      ctx.showAttachment({ ...info, machine: machine.info.label })
+      return {
+        text: `Showed ${info.name} (${info.mimeType}, ${info.size} bytes) to the user.`,
+        isError: false,
+        machine: machine.info.label
+      }
+    }
+    default:
+      return null
+  }
 }
 
 async function listMachines(
@@ -97,60 +208,5 @@ export async function executeHomeChatTool(
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
 ): Promise<HomeChatToolResult> {
-  switch (tool) {
-    case 'list_machines':
-      return listMachines(ctx, input.probe_load === true)
-    case 'run_command': {
-      const machine = await ctx.machines.open(str(input.machine))
-      const timeoutSeconds = typeof input.timeout_seconds === 'number' ? input.timeout_seconds : 120
-      const result = await machine.exec(str(input.command), {
-        cwd: typeof input.cwd === 'string' ? input.cwd : undefined,
-        timeoutMs: timeoutSeconds * 1000,
-        signal: ctx.signal
-      })
-      return { ...formatExecResult(result), machine: machine.info.label }
-    }
-    case 'read_file': {
-      const machine = await ctx.machines.open(str(input.machine))
-      const maxBytes = typeof input.max_bytes === 'number' ? input.max_bytes : 200_000
-      const { text, truncated } = await machine.readTextFile(str(input.path), maxBytes)
-      const suffix = truncated ? `\n… [truncated at ${maxBytes} bytes]` : ''
-      return { text: clip(text) + suffix, isError: false, machine: machine.info.label }
-    }
-    case 'write_file': {
-      const machine = await ctx.machines.open(str(input.machine))
-      const content = str(input.content)
-      await machine.writeTextFile(str(input.path), content, { append: input.append === true })
-      const verb = input.append === true ? 'Appended' : 'Wrote'
-      return {
-        text: `${verb} ${Buffer.byteLength(content, 'utf8')} bytes to ${str(input.path)}.`,
-        isError: false,
-        machine: machine.info.label
-      }
-    }
-    case 'transfer_file':
-      return transfer(ctx, input)
-    case 'delete_path': {
-      const machine = await ctx.machines.open(str(input.machine))
-      const path = str(input.path)
-      const command =
-        machine.info.platform === 'win32'
-          ? `Remove-Item -LiteralPath '${path.replaceAll("'", "''")}' -Force${input.recursive === true ? ' -Recurse' : ''}`
-          : `rm -f${input.recursive === true ? 'r' : ''} -- ${quotePosixShell(path)}`
-      const result = await machine.exec(command, { timeoutMs: 120_000, signal: ctx.signal })
-      return { ...formatExecResult(result), machine: machine.info.label }
-    }
-    case 'orca_cli': {
-      const args = Array.isArray(input.args) ? input.args.map(String) : []
-      const timeoutSeconds = typeof input.timeout_seconds === 'number' ? input.timeout_seconds : 300
-      const result = await ctx.runOrcaCli(args, {
-        timeoutMs: timeoutSeconds * 1000,
-        signal: ctx.signal
-      })
-      return formatExecResult(result)
-    }
-    case 'report_progress':
-      ctx.reportProgress(str(input.message))
-      return { text: 'Shown to the user.', isError: false }
-  }
+  return (await executeMachineTool(tool, input, ctx)) ?? executeAssistantTool(tool, input, ctx)
 }

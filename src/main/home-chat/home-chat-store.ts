@@ -2,21 +2,34 @@ import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../filesystem/atomic-file-publication'
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
-import type { HomeChat, HomeChatSettings } from '../../shared/home-chat/home-chat-types'
+import type {
+  HomeChat,
+  HomeChatSearchProvider,
+  HomeChatSettings
+} from '../../shared/home-chat/home-chat-types'
 import type { HomeChatBackendState } from './backends/home-chat-backend'
 
 const SAVE_DELAY_MS = 400
 
 export type StoredHomeChat = { chat: HomeChat; backendState: HomeChatBackendState }
 
-type StoredSettings = Omit<HomeChatSettings, 'openai'> & {
+type StoredSettings = Omit<HomeChatSettings, 'openai' | 'web'> & {
   openai: Omit<HomeChatSettings['openai'], 'apiKeyConfigured'>
+  web: Omit<HomeChatSettings['web'], 'searchApiKeyConfigured'>
 }
 
 const DEFAULT_SETTINGS: StoredSettings = {
   defaultBackend: 'claude-code',
-  openai: { baseUrl: 'https://openrouter.ai/api/v1', model: '' }
+  openai: { baseUrl: 'https://openrouter.ai/api/v1', model: '' },
+  web: { searchProvider: 'duckduckgo', searxngUrl: '' }
 }
+
+const SEARCH_PROVIDERS: readonly HomeChatSearchProvider[] = [
+  'duckduckgo',
+  'brave',
+  'tavily',
+  'searxng'
+]
 
 const apiKeyStore = createEncryptedApiKeyFileStore({
   fileName: 'home-chat-openai-api-key.enc',
@@ -24,6 +37,21 @@ const apiKeyStore = createEncryptedApiKeyFileStore({
   providerLabel: 'Assistant model API',
   logScope: 'home-chat'
 })
+
+const searchKeyStore = createEncryptedApiKeyFileStore({
+  fileName: 'home-chat-search-api-key.enc',
+  envelopePrefix: 'seal-home-chat-search-key:v1:',
+  providerLabel: 'Assistant web search',
+  logScope: 'home-chat'
+})
+
+function saveKey(store: typeof apiKeyStore, key: string | null | undefined): void {
+  if (key === null || key === '') {
+    store.clear()
+  } else if (key !== undefined) {
+    store.save(key)
+  }
+}
 
 async function readJson(path: string): Promise<unknown> {
   try {
@@ -53,7 +81,14 @@ function parseStoredSettings(value: unknown): StoredSettings {
     return DEFAULT_SETTINGS
   }
   const openai = isRecord(value.openai) ? value.openai : {}
+  const web = isRecord(value.web) ? value.web : {}
   return {
+    web: {
+      searchProvider:
+        SEARCH_PROVIDERS.find((provider) => provider === web.searchProvider) ??
+        DEFAULT_SETTINGS.web.searchProvider,
+      searxngUrl: typeof web.searxngUrl === 'string' ? web.searxngUrl : ''
+    },
     defaultBackend:
       value.defaultBackend === 'openai-compatible' ? 'openai-compatible' : 'claude-code',
     openai: {
@@ -124,23 +159,29 @@ export class HomeChatStore {
   readSettings(): HomeChatSettings {
     return {
       defaultBackend: this.settings.defaultBackend,
-      openai: { ...this.settings.openai, apiKeyConfigured: apiKeyStore.has() }
+      openai: { ...this.settings.openai, apiKeyConfigured: apiKeyStore.has() },
+      web: { ...this.settings.web, searchApiKeyConfigured: searchKeyStore.has() }
     }
   }
 
-  writeSettings(settings: HomeChatSettings, apiKey?: string | null): void {
+  writeSettings(
+    settings: HomeChatSettings,
+    keys: { apiKey?: string | null; searchApiKey?: string | null } = {}
+  ): void {
     const { apiKeyConfigured: _configured, ...openai } = settings.openai
-    this.settings = { defaultBackend: settings.defaultBackend, openai }
+    const { searchApiKeyConfigured: _searchConfigured, ...web } = settings.web
+    this.settings = { defaultBackend: settings.defaultBackend, openai, web }
     writeFileAtomically(this.settingsPath, JSON.stringify(this.settings, null, 2))
-    if (apiKey === null || apiKey === '') {
-      apiKeyStore.clear()
-    } else if (apiKey !== undefined) {
-      apiKeyStore.save(apiKey)
-    }
+    saveKey(apiKeyStore, keys.apiKey)
+    saveKey(searchKeyStore, keys.searchApiKey)
   }
 
   readApiKey(): string | null {
     return apiKeyStore.read()
+  }
+
+  readSearchApiKey(): string | null {
+    return searchKeyStore.read()
   }
 
   private flush(chatId: string): void {

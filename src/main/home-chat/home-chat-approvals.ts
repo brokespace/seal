@@ -4,10 +4,13 @@ type PendingApproval = { chatId: string; resolve: (approved: boolean) => void }
 export class HomeChatApprovals {
   private readonly pending = new Map<string, PendingApproval>()
 
+  constructor(private readonly onRequest: (chatId: string) => void = () => {}) {}
+
   request(chatId: string, entryId: string, signal?: AbortSignal): Promise<boolean> {
     if (signal?.aborted) {
       return Promise.resolve(false)
     }
+    this.onRequest(chatId)
     return new Promise<boolean>((resolve) => {
       const settle = (approved: boolean): void => {
         signal?.removeEventListener('abort', onAbort)

@@ -8,6 +8,9 @@ import type {
   HomeChatSummary,
   HomeChatUpdateArgs
 } from '../../../shared/home-chat/home-chat-types'
+import type { HomeChatMemory } from '../../../shared/home-chat/home-chat-memory-types'
+
+type HomeChatAttachmentRef = { chatId: string; attachmentId: string }
 
 export type HomeChatApi = {
   list: () => Promise<HomeChatSummary[]>
@@ -25,5 +28,11 @@ export type HomeChatApi = {
   getSettings: () => Promise<HomeChatSettings>
   updateSettings: (args: HomeChatSettingsUpdate) => Promise<HomeChatSettings>
   listAccounts: () => Promise<HomeChatAccountOption[]>
+  getMemory: () => Promise<HomeChatMemory>
+  updateMemory: (args: { memory: HomeChatMemory }) => Promise<HomeChatMemory>
+  readAttachment: (args: HomeChatAttachmentRef) => Promise<{ mimeType: string; base64: string }>
+  revealAttachment: (args: HomeChatAttachmentRef) => Promise<void>
+  /** False when the user cancels the save dialog. */
+  saveAttachment: (args: HomeChatAttachmentRef & { name: string }) => Promise<boolean>
   onEvent: (callback: (event: HomeChatEvent) => void) => () => void
 }

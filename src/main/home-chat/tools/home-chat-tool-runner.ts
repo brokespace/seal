@@ -14,8 +14,10 @@ import { assessHomeChatToolRisk } from './home-chat-tool-risk'
 
 const MAX_UI_OUTPUT_CHARS = 20_000
 
-export type HomeChatToolRunContext = Omit<HomeChatToolContext, 'reportProgress'> & {
-  chatId: string
+export type HomeChatToolRunContext = Omit<
+  HomeChatToolContext,
+  'reportProgress' | 'showAttachment'
+> & {
   writer: HomeChatEntryWriter
   approvals: HomeChatApprovals
 }
@@ -41,7 +43,8 @@ export async function runHomeChatToolCall(
   }
   const toolCtx: HomeChatToolContext = {
     ...ctx,
-    reportProgress: (text) => ctx.writer.create({ kind: 'progress', text })
+    reportProgress: (text) => ctx.writer.create({ kind: 'progress', text }),
+    showAttachment: (attachment) => ctx.writer.create({ kind: 'attachment', ...attachment })
   }
   if (tool === 'report_progress') {
     return executeHomeChatTool(tool, input, toolCtx)

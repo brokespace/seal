@@ -10,19 +10,26 @@ import type {
   HomeChatSummary,
   HomeChatUpdateArgs
 } from '../../shared/home-chat/home-chat-types'
+import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { HomeChatAccountProvider } from './home-chat-accounts'
 import { HomeChatApprovals } from './home-chat-approvals'
+import {
+  createHomeChatAssistantRuntime,
+  type HomeChatAssistantRuntime,
+  type HomeChatRuntimeDeps
+} from './home-chat-assistant-runtime'
+import { systemPromptForChat } from './home-chat-prompt-context'
 import type { HomeChatStore, StoredHomeChat } from './home-chat-store'
 import { HomeChatTurnRunner } from './home-chat-turn-runner'
-import type { HomeChatMachineProvider } from './machines/home-chat-machine-types'
-import type { HomeChatToolContext } from './tools/home-chat-tool-executor'
+import type { HomeChatWorkerHost } from './delegation/home-chat-subagents'
 
-export type HomeChatServiceDeps = {
+export type HomeChatServiceDeps = Pick<
+  HomeChatRuntimeDeps,
+  'createMachines' | 'runOrcaCli' | 'repos'
+> & {
   rootDir: string
   store: HomeChatStore
   accounts: HomeChatAccountProvider
-  machines: HomeChatMachineProvider
-  runOrcaCli: HomeChatToolContext['runOrcaCli']
   emit: (event: HomeChatEvent) => void
 }
 
@@ -31,19 +38,58 @@ function summary({ entries: _entries, ...rest }: HomeChat): HomeChatSummary {
 }
 
 export class HomeChatService {
-  private readonly approvals = new HomeChatApprovals()
+  private readonly approvals = new HomeChatApprovals((chatId) =>
+    this.notifyParentOfApproval(chatId)
+  )
   private readonly turns: HomeChatTurnRunner
+  private readonly runtime: HomeChatAssistantRuntime
 
   constructor(private readonly deps: HomeChatServiceDeps) {
+    this.runtime = createHomeChatAssistantRuntime({
+      rootDir: deps.rootDir,
+      createMachines: deps.createMachines,
+      runOrcaCli: deps.runOrcaCli,
+      repos: deps.repos,
+      webConfig: () => {
+        const { web } = deps.store.readSettings()
+        return {
+          searchProvider: web.searchProvider,
+          searxngUrl: web.searxngUrl,
+          apiKey: deps.store.readSearchApiKey()
+        }
+      },
+      wake: (chatId, source, text) => this.turns.wake(chatId, source, text),
+      memoryChanged: () => deps.emit({ type: 'memory' }),
+      workers: this.workerHost()
+    })
+    const { services, machines } = this.runtime
     this.turns = new HomeChatTurnRunner({
       rootDir: deps.rootDir,
       store: deps.store,
       accounts: deps.accounts,
-      machines: deps.machines,
+      machines,
       approvals: this.approvals,
       runOrcaCli: deps.runOrcaCli,
+      services,
+      systemPrompt: (chatId) =>
+        systemPromptForChat(
+          services,
+          machines,
+          chatId,
+          Boolean(deps.store.get(chatId)?.chat.parentChatId)
+        ),
+      onTurnEnded: (chatId, failed) => {
+        if (deps.store.get(chatId)?.chat.parentChatId) {
+          services.subagents.workerTurnEnded(chatId, failed)
+        }
+      },
       onChatChanged: (stored, entry) => this.publish(stored, entry)
     })
+  }
+
+  /** Loads jobs, subagents and routines; missed routine runs and finished jobs report right away. */
+  start(): Promise<void> {
+    return this.runtime.load()
   }
 
   listChats(): HomeChatSummary[] {
@@ -54,11 +100,12 @@ export class HomeChatService {
     return this.deps.store.get(chatId)?.chat ?? null
   }
 
-  createChat(args: HomeChatCreateArgs = {}): HomeChat {
+  createChat(args: HomeChatCreateArgs = {}, parentChatId?: string): HomeChat {
     const now = Date.now()
     const chat: HomeChat = {
       id: randomUUID(),
       title: 'New chat',
+      ...(parentChatId ? { parentChatId } : {}),
       backend: args.backend ?? this.deps.store.readSettings().defaultBackend,
       accountId: args.accountId ?? null,
       model: args.model ?? null,
@@ -107,7 +154,13 @@ export class HomeChatService {
 
   async deleteChat(chatId: string): Promise<void> {
     await this.turns.closeSession(chatId)
+    const { services } = this.runtime
+    services.routines.deleteForChat(chatId)
+    for (const item of services.subagents.list(chatId).filter((sub) => sub.state === 'running')) {
+      await services.subagents.stop(item.id).catch(() => undefined)
+    }
     this.deps.store.delete(chatId)
+    await services.attachments.deleteChat(chatId)
     this.deps.emit({ type: 'deleted', chatId })
   }
 
@@ -139,10 +192,43 @@ export class HomeChatService {
         ...current.openai,
         ...(update.openai?.baseUrl !== undefined ? { baseUrl: update.openai.baseUrl.trim() } : {}),
         ...(update.openai?.model !== undefined ? { model: update.openai.model.trim() } : {})
+      },
+      web: {
+        ...current.web,
+        ...(update.web?.searchProvider ? { searchProvider: update.web.searchProvider } : {}),
+        ...(update.web?.searxngUrl !== undefined
+          ? { searxngUrl: update.web.searxngUrl.trim() }
+          : {})
       }
     }
-    this.deps.store.writeSettings(next, update.openai?.apiKey)
+    this.deps.store.writeSettings(next, {
+      apiKey: update.openai?.apiKey,
+      searchApiKey: update.web?.apiKey
+    })
     return this.deps.store.readSettings()
+  }
+
+  getMemory(): HomeChatMemory {
+    return this.runtime.services.memory.get()
+  }
+
+  updateMemory(memory: HomeChatMemory): HomeChatMemory {
+    return this.runtime.services.memory.replace(memory)
+  }
+
+  readAttachment(
+    chatId: string,
+    attachmentId: string
+  ): Promise<{ mimeType: string; base64: string }> {
+    return this.runtime.services.attachments.read(chatId, attachmentId)
+  }
+
+  attachmentPath(chatId: string, attachmentId: string): Promise<string> {
+    return this.runtime.services.attachments.pathOf(chatId, attachmentId)
+  }
+
+  saveAttachment(chatId: string, attachmentId: string, destination: string): Promise<void> {
+    return this.runtime.services.attachments.saveAs(chatId, attachmentId, destination)
   }
 
   listAccounts(): Promise<HomeChatAccountOption[]> {
@@ -150,6 +236,7 @@ export class HomeChatService {
   }
 
   async dispose(): Promise<void> {
+    this.runtime.dispose()
     await this.turns.closeAll()
     this.deps.store.flushAll()
   }
@@ -162,6 +249,44 @@ export class HomeChatService {
     const accounts = await this.deps.accounts.list().catch(() => [])
     const account = accounts.find((option) => option.id === chat.accountId)
     return `Now answering with Claude Code on ${account?.label ?? 'the default login'}.`
+  }
+
+  private workerHost(): HomeChatWorkerHost {
+    return {
+      create: (parentChatId, title) => {
+        const parent = this.require(parentChatId).chat
+        const chat = this.createChat(
+          { backend: parent.backend, accountId: parent.accountId, model: parent.model },
+          parentChatId
+        )
+        this.publish({
+          chat: { ...chat, title: `Worker: ${title}`.slice(0, 80) },
+          backendState: {}
+        })
+        return chat.id
+      },
+      send: (workerChatId, text) => this.turns.send(workerChatId, text),
+      stop: (workerChatId) => this.turns.stop(workerChatId),
+      isRunning: (workerChatId) => this.turns.isRunning(workerChatId),
+      lastAnswer: (workerChatId) => {
+        const entries = this.deps.store.get(workerChatId)?.chat.entries ?? []
+        const last = entries.findLast((entry) => entry.kind === 'assistant' && entry.text.trim())
+        return last?.kind === 'assistant' ? last.text : ''
+      }
+    }
+  }
+
+  /** A worker chat runs unattended, so its approval cards are surfaced in the chat that started it. */
+  private notifyParentOfApproval(chatId: string): void {
+    const stored = this.deps.store.get(chatId)
+    const parentId = stored?.chat.parentChatId
+    if (parentId && this.deps.store.get(parentId)) {
+      this.turns.writerFor(parentId).create({
+        kind: 'notice',
+        source: 'approval',
+        text: `Worker "${stored.chat.title}" is waiting for your approval. Open it from the chat list to approve or decline.`
+      })
+    }
   }
 
   private require(chatId: string): StoredHomeChat {

@@ -14,6 +14,11 @@ export const homeChatApi = {
   getSettings: () => ipcRenderer.invoke('homeChat:getSettings'),
   updateSettings: (args) => ipcRenderer.invoke('homeChat:updateSettings', args),
   listAccounts: () => ipcRenderer.invoke('homeChat:listAccounts'),
+  getMemory: () => ipcRenderer.invoke('homeChat:getMemory'),
+  updateMemory: (args) => ipcRenderer.invoke('homeChat:updateMemory', args),
+  readAttachment: (args) => ipcRenderer.invoke('homeChat:readAttachment', args),
+  revealAttachment: (args) => ipcRenderer.invoke('homeChat:revealAttachment', args),
+  saveAttachment: (args) => ipcRenderer.invoke('homeChat:saveAttachment', args),
   onEvent: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: HomeChatEvent): void =>
       callback(payload)

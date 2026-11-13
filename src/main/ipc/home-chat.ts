@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
 import type {
@@ -7,6 +7,8 @@ import type {
   HomeChatSettingsUpdate,
   HomeChatUpdateArgs
 } from '../../shared/home-chat/home-chat-types'
+import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
+import type { Repo } from '../../shared/repo-types'
 import { createClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
 import { HomeChatService } from '../home-chat/home-chat-service'
 import { HomeChatStore } from '../home-chat/home-chat-store'
@@ -28,21 +30,26 @@ function broadcast(event: HomeChatEvent): void {
   }
 }
 
-export function registerHomeChatHandlers(claudeAccounts: {
-  listAccounts: () => ClaudeRateLimitAccountsState
-}): void {
+type AttachmentArgs = { chatId: string; attachmentId: string }
+
+export function registerHomeChatHandlers(
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
+  repos: () => Repo[]
+): void {
   const rootDir = join(app.getPath('userData'), 'home-chat')
-  const ready = HomeChatStore.open(rootDir).then(
-    (store) =>
-      new HomeChatService({
-        rootDir,
-        store,
-        accounts: createClaudeAccountsProvider(claudeAccounts),
-        machines: createDefaultHomeChatMachineProvider(),
-        runOrcaCli,
-        emit: broadcast
-      })
-  )
+  const ready = HomeChatStore.open(rootDir).then(async (store) => {
+    const service = new HomeChatService({
+      rootDir,
+      store,
+      accounts: createClaudeAccountsProvider(claudeAccounts),
+      createMachines: createDefaultHomeChatMachineProvider,
+      runOrcaCli,
+      repos,
+      emit: broadcast
+    })
+    await service.start()
+    return service
+  })
   app.once('before-quit', () => {
     void ready.then((service) => service.dispose())
   })
@@ -72,4 +79,26 @@ export function registerHomeChatHandlers(claudeAccounts: {
     service.updateSettings(args)
   )
   handle('homeChat:listAccounts', (service) => service.listAccounts())
+  handle('homeChat:getMemory', (service) => service.getMemory())
+  handle('homeChat:updateMemory', (service, args: { memory: HomeChatMemory }) =>
+    service.updateMemory(args.memory)
+  )
+  handle('homeChat:readAttachment', (service, args: AttachmentArgs) =>
+    service.readAttachment(args.chatId, args.attachmentId)
+  )
+  handle('homeChat:revealAttachment', async (service, args: AttachmentArgs) => {
+    shell.showItemInFolder(await service.attachmentPath(args.chatId, args.attachmentId))
+  })
+  handle('homeChat:saveAttachment', async (service, args: AttachmentArgs & { name: string }) => {
+    const parent = BrowserWindow.getFocusedWindow()
+    const options = { defaultPath: join(app.getPath('downloads'), args.name) }
+    const result = parent
+      ? await dialog.showSaveDialog(parent, options)
+      : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) {
+      return false
+    }
+    await service.saveAttachment(args.chatId, args.attachmentId, result.filePath)
+    return true
+  })
 }

@@ -33,11 +33,25 @@ export type HomeChatEntry = HomeChatEntryBase &
       }
     | { kind: 'progress'; text: string }
     | { kind: 'error'; text: string }
+    /** Something finished or fired while nobody was typing: a job, a worker or a routine. */
+    | { kind: 'notice'; source: HomeChatNoticeSource; text: string }
+    | {
+        kind: 'attachment'
+        attachmentId: string
+        name: string
+        mimeType: string
+        size: number
+        machine?: string
+      }
   )
+
+export type HomeChatNoticeSource = 'job' | 'subagent' | 'routine' | 'approval'
 
 export type HomeChatSummary = {
   id: string
   title: string
+  /** Set on background worker chats spawned by another chat. */
+  parentChatId?: string
   backend: HomeChatBackendKind
   /** Claude account id from the account provider; null runs on the default login. */
   accountId: string | null
@@ -65,14 +79,25 @@ export type HomeChatOpenAiSettings = {
   apiKeyConfigured: boolean
 }
 
+export type HomeChatSearchProvider = 'duckduckgo' | 'brave' | 'tavily' | 'searxng'
+
+export type HomeChatWebSettings = {
+  searchProvider: HomeChatSearchProvider
+  /** Base URL of a SearXNG instance, used when searchProvider is searxng. */
+  searxngUrl: string
+  searchApiKeyConfigured: boolean
+}
+
 export type HomeChatSettings = {
   defaultBackend: HomeChatBackendKind
   openai: HomeChatOpenAiSettings
+  web: HomeChatWebSettings
 }
 
 export type HomeChatSettingsUpdate = {
   defaultBackend?: HomeChatBackendKind
   openai?: { baseUrl?: string; model?: string; apiKey?: string | null }
+  web?: { searchProvider?: HomeChatSearchProvider; searxngUrl?: string; apiKey?: string | null }
 }
 
 export type HomeChatCreateArgs = {
@@ -93,3 +118,4 @@ export type HomeChatEvent =
   | { type: 'entry'; chatId: string; entry: HomeChatEntry }
   | { type: 'summary'; chat: HomeChatSummary }
   | { type: 'deleted'; chatId: string }
+  | { type: 'memory' }

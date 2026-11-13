@@ -102,11 +102,11 @@ export function createClaudeCodeSession(options: ClaudeCodeSessionOptions): Home
         options: {
           includePartialMessages: true,
           systemPrompt: { type: 'preset', preset: 'claude_code', append: systemPrompt },
-          // Isolate from the user's hooks and project settings, which target coding sessions.
-          settingSources: [],
+          // User settings bring the user's skills and plugins; project settings target coding sessions.
+          settingSources: ['user'],
           supportedDialogKinds: [],
           mcpServers: { [SEAL_MCP_SERVER_NAME]: server },
-          allowedTools: [`mcp__${SEAL_MCP_SERVER_NAME}`],
+          allowedTools: [`mcp__${SEAL_MCP_SERVER_NAME}`, 'Skill'],
           disallowedTools: DISALLOWED_BUILTIN_TOOLS,
           ...(resume ? { resume } : { sessionId })
         }
