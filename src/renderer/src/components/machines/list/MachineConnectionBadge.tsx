@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 /** The transport is a detail: a quiet badge, never a different kind of machine. */
 export function MachineConnectionBadge({

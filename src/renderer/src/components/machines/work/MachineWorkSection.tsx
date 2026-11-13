@@ -18,7 +18,7 @@ import {
 } from '../../../../../shared/machines/machine-paths'
 import type { MachineWorktree } from '../../../../../shared/machines/machine-view'
 import { launchMachineAgent, openMachineTerminal } from '../detail/machine-quick-actions'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

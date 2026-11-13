@@ -1,6 +1,13 @@
 // The home-page assistant chat: one conversation per chat, persisted by main and streamed to the renderer.
 
-export type HomeChatBackendKind = 'claude-code' | 'openai-compatible'
+/** Who runs the model: the Claude Agent SDK, `codex exec`, or Seal's own loop over a model API. */
+export type HomeChatBackendKind = 'claude-code' | 'codex' | 'openai-compatible'
+
+export const HOME_CHAT_BACKEND_KINDS: readonly HomeChatBackendKind[] = [
+  'claude-code',
+  'codex',
+  'openai-compatible'
+]
 
 export type HomeChatStatus = 'idle' | 'running' | 'error'
 
@@ -12,6 +19,8 @@ type HomeChatEntryBase = {
   rev: number
   /** Epoch ms when the entry was first created. */
   at: number
+  /** Position in the thread, assigned once by main; viewers sort by it, never by arrival. */
+  ord: number
 }
 
 export type HomeChatEntry = HomeChatEntryBase &
@@ -32,6 +41,8 @@ export type HomeChatEntry = HomeChatEntryBase &
         approvalReason?: string
       }
     | { kind: 'progress'; text: string }
+    /** Older messages were summarized for the model; the thread above stays readable. */
+    | { kind: 'compaction'; summary: string; auto: boolean }
     | { kind: 'error'; text: string }
     /** Something finished or fired while nobody was typing: a job, a worker or a routine. */
     | { kind: 'notice'; source: HomeChatNoticeSource; text: string }
@@ -53,13 +64,23 @@ export type HomeChatSummary = {
   /** Set on background worker chats spawned by another chat. */
   parentChatId?: string
   backend: HomeChatBackendKind
-  /** Claude account id from the account provider; null runs on the default login. */
+  /** Account id for the backend's provider; null runs on the default login. */
   accountId: string | null
-  /** OpenAI-compatible model override; null uses the configured default. */
+  /** Model override; null uses the backend's default. */
   model: string | null
   status: HomeChatStatus
   createdAt: number
   updatedAt: number
+  context: HomeChatContextUsage
+  /** Label of the machine the assistant last acted on in this thread. */
+  lastMachine: string | null
+}
+
+export type HomeChatContextUsage = {
+  /** Tokens the next request to the model would carry, measured or estimated. */
+  usedTokens: number
+  windowTokens: number
+  compactions: number
 }
 
 export type HomeChat = HomeChatSummary & {
@@ -67,7 +88,8 @@ export type HomeChat = HomeChatSummary & {
 }
 
 export type HomeChatAccountOption = {
-  /** Null is the default Claude login. */
+  backend: 'claude-code' | 'codex'
+  /** Null is the provider's default login. */
   id: string | null
   label: string
   detail?: string
@@ -77,6 +99,19 @@ export type HomeChatOpenAiSettings = {
   baseUrl: string
   model: string
   apiKeyConfigured: boolean
+  /** The model's context window in tokens; compaction starts before it fills. */
+  contextWindow: number
+}
+
+export type HomeChatMachineStatus = 'online' | 'connecting' | 'offline' | 'error'
+
+/** One machine as the assistant sees it, for the chat's context bar. */
+export type HomeChatMachineOption = {
+  id: string
+  label: string
+  kind: 'local' | 'remote' | 'hop'
+  status: HomeChatMachineStatus
+  address?: string
 }
 
 export type HomeChatSearchProvider = 'duckduckgo' | 'brave' | 'tavily' | 'searxng'
@@ -96,7 +131,7 @@ export type HomeChatSettings = {
 
 export type HomeChatSettingsUpdate = {
   defaultBackend?: HomeChatBackendKind
-  openai?: { baseUrl?: string; model?: string; apiKey?: string | null }
+  openai?: { baseUrl?: string; model?: string; apiKey?: string | null; contextWindow?: number }
   web?: { searchProvider?: HomeChatSearchProvider; searxngUrl?: string; apiKey?: string | null }
 }
 
@@ -119,3 +154,22 @@ export type HomeChatEvent =
   | { type: 'summary'; chat: HomeChatSummary }
   | { type: 'deleted'; chatId: string }
   | { type: 'memory' }
+  /** The assistant asked Seal to show something. */
+  | { type: 'open'; target: HomeChatOpenTarget }
+
+export type HomeChatOpenView =
+  | 'home'
+  | 'machines'
+  | 'sessions'
+  | 'tasks'
+  | 'activity'
+  | 'automations'
+  | 'skills'
+  | 'settings'
+
+export type HomeChatOpenTarget =
+  | { kind: 'view'; view: HomeChatOpenView }
+  | { kind: 'thread'; chatId: string }
+  | { kind: 'machine'; machineId: string }
+  /** Stop an external agent session and resume it in a Seal pane. */
+  | { kind: 'take-over'; sessionId: string }

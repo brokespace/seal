@@ -1,5 +1,8 @@
 import { z } from 'zod'
 import {
+  MACHINE_HOST_EXEC_MAX_SCRIPT_CHARS,
+  MACHINE_HOST_EXEC_MAX_STDIN_BASE64_CHARS,
+  MACHINE_HOST_EXEC_MAX_TIMEOUT_MS,
   MACHINE_HOST_LIST_PAGE_MAX,
   MACHINE_HOST_READ_CHUNK_MAX_BYTES,
   MACHINE_HOST_WATCH_MAX_DIRS,
@@ -44,24 +47,15 @@ export const MachineHostWatch = z.object({
   dirs: z.array(HostPath).min(1).max(MACHINE_HOST_WATCH_MAX_DIRS)
 })
 
-export const MachineHostCancel = z.object({ subscriptionId: z.string().min(1).max(256) })
-
+/** Runs in the host's login shell as the paired user, the same reach a terminal there has. */
 export const MachineHostExec = z.object({
-  script: z
-    .string()
-    .min(1)
-    .max(1024 * 1024),
+  script: z.string().min(1).max(MACHINE_HOST_EXEC_MAX_SCRIPT_CHARS),
   cwd: HostPath.optional(),
-  stdinBase64: z
-    .string()
-    .max(4 * 1024 * 1024)
-    .optional(),
-  timeoutMs: z
-    .number()
-    .int()
-    .min(1)
-    .max(30 * 60 * 1000)
+  timeoutMs: z.number().int().min(1_000).max(MACHINE_HOST_EXEC_MAX_TIMEOUT_MS),
+  stdinBase64: z.string().max(MACHINE_HOST_EXEC_MAX_STDIN_BASE64_CHARS).optional()
 })
+
+export const MachineHostCancel = z.object({ subscriptionId: z.string().min(1).max(256) })
 
 const TerminalSize = z.number().int().min(1).max(1000)
 

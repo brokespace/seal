@@ -2,9 +2,11 @@ import type { MachineExecResult } from '../../../shared/machines/machine-host-wi
 import type { MachineIdentity } from '../../../shared/machines/machine-record'
 import type { MachineId, MachineMetrics } from '../../../shared/machines/machine-types'
 import type { MachineFileSystem } from '../filesystem/machine-filesystem'
-import type { MachineExecOptions } from './local-machine-exec'
+import type { LocalShellExecOptions } from '../exec/local-shell-exec'
 
 export type MachineTransport = 'local' | 'ssh' | 'server'
+
+export type MachineExecOptions = Omit<LocalShellExecOptions, 'maxOutputBytes'>
 
 export type MachineShellDialect = 'posix' | 'powershell'
 

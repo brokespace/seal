@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const subagentId = z.string().min(1).describe('Subagent id returned by spawn_subagent')
 
-/** Tools for memory, skills, delegation, the web, schedules and Orca. */
+/** Tools for memory, delegation, the web, schedules and the Seal CLI. */
 export const HOME_CHAT_ASSISTANT_TOOLS = {
   configure_machine: {
     description:
@@ -47,11 +47,6 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
       'Remove a rule, fact or journal entry from memory by its id (shown in brackets) or by text matching exactly one entry.',
     shape: { query: z.string().min(1) }
   },
-  load_skill: {
-    description:
-      "Load a skill's full instructions by name (skills are listed in the system prompt). Load it before doing a task the skill covers.",
-    shape: { name: z.string().min(1) }
-  },
   spawn_subagent: {
     description:
       'Hand a self-contained task to a background worker and keep talking to the user; you get a notice in this chat when it finishes. mode "agent" starts a Seal coding agent in a new worktree (on its own branch) of a project on a machine: use it for any repository coding work. mode "assistant" starts a background copy of you for research or multi-step operations. Write the task so it stands alone: goal, context, constraints, and how to verify.',
@@ -66,7 +61,7 @@ export const HOME_CHAT_ASSISTANT_TOOLS = {
       machine: z
         .string()
         .optional()
-        .describe('agent mode: machine for the worktree, "local" or an id from list_machines'),
+        .describe('agent mode: machine for the worktree (id or label; default this computer)'),
       agent: z.string().optional().describe('agent mode: agent id (default claude)')
     }
   },

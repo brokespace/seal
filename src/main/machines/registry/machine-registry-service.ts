@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
+import { isVmToolSshConfigTarget } from '../../../shared/ssh-target-source'
 import { getRuntimeSshAccess } from '../../../shared/remote-runtime/host-catalog/runtime-environments'
 import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store'
 import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/runtime-environment-request-connections'
@@ -59,10 +60,10 @@ function createRegistry(userDataPath: string): MachineRegistry {
   return new MachineRegistry({
     readStore: () => readMachineStore(userDataPath),
     writeStore: (store) => writeMachineStore(userDataPath, store),
-    // Owned targets back managed servers and VMs, which surface through their server instead.
+    // Owned targets back managed servers and VMs; VM tools' own hosts are plumbing, not machines.
     sshTargets: () =>
       listRegisteredSshTargets()
-        .filter((target) => !target.owner)
+        .filter((target) => !target.owner && !isVmToolSshConfigTarget(target))
         .map((target) => ({
           id: target.id,
           label: target.label,

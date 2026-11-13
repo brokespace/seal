@@ -2,6 +2,7 @@ import { defineFixture } from '../../../component-fixtures/component-fixture'
 import { getDefaultSettings } from '../../../../../shared/constants'
 import type { ShellIntegrationStatus } from '../../../../../shared/shell-integration/shell-integration-installer'
 import { LiveSessionsShellIntegrationSetting } from './LiveSessionsShellIntegrationSetting'
+import { LiveSessionsIdleReapSetting } from './LiveSessionsIdleReapSetting'
 
 function withStatus(status: ShellIntegrationStatus) {
   return () => {
@@ -15,6 +16,10 @@ function withStatus(status: ShellIntegrationStatus) {
 const render = () => (
   <div className="px-4">
     <LiveSessionsShellIntegrationSetting
+      settings={getDefaultSettings('/Users/brian')}
+      updateSettings={() => {}}
+    />
+    <LiveSessionsIdleReapSetting
       settings={getDefaultSettings('/Users/brian')}
       updateSettings={() => {}}
     />

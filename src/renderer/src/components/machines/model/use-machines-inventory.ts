@@ -3,7 +3,10 @@ import { useAppStore } from '@/store/index'
 import type { MachineOs } from '../../../../../shared/machines/machine-types'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import type { RuntimeHostStatusSnapshot } from '../../../../../shared/remote-runtime/host-status/runtime-host-status'
-import { buildMachineSummaries, type MachineSummary } from './machine-summaries'
+import {
+  buildMachineSummaries,
+  type MachineSummary
+} from '../../../../../shared/machines/machine-summaries'
 
 function localOs(): MachineOs | null {
   const platform = window.api.platform?.get().platform

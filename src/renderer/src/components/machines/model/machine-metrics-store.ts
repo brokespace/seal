@@ -4,7 +4,7 @@ import {
   type MachineId,
   type MachineMetrics
 } from '../../../../../shared/machines/machine-types'
-import type { MachineSummary } from './machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 
 const METRICS_POLL_MS = 15_000

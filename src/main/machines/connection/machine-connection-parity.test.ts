@@ -6,6 +6,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { createUnifiedMachine } from '../../home-chat/machines/home-chat-unified-machine'
 import { machineLiveSessionHost } from '../../live-sessions/hosts/live-session-hosts'
+import { runtimeLiveSessionHost } from '../../live-sessions/hosts/runtime-live-session-host'
+import type { MachineSummary } from '../../../shared/machines/machine-summaries'
 import { installLoginOnMachine } from '../../seal-accounts/seal-machine-login-install'
 import {
   createInProcessRuntimeChannel,
@@ -16,7 +18,7 @@ import {
   listMachineWorktrees,
   removeMachineWorktree
 } from '../work/machine-worktrees'
-import { execOnThisMachine } from './local-machine-exec'
+import { runLocalShellScript } from '../exec/local-shell-exec'
 import { openLocalPty } from './local-machine-shell'
 import type { MachineConnection } from './machine-connection'
 import { ServerMachineConnection } from './server-machine-connection'
@@ -54,13 +56,23 @@ function sshConnection(): MachineConnection {
   })
 }
 
+const server = createInProcessRuntimeChannel().channel
+
 function serverConnection(): MachineConnection {
   return new ServerMachineConnection('machine:loop-server', {
-    channel: createInProcessRuntimeChannel().channel,
+    channel: server,
     isConnected: () => true,
     connect: async () => {}
   })
 }
+
+// What the desktop wires in for server machines: the server's own `liveSessions.hostRun`.
+const serverScan = runtimeLiveSessionHost({ id: 'loop', label: 'loop' }, async (...call) => ({
+  id: '1',
+  ok: true,
+  result: await server.call(call[1], call[2], call[3]),
+  _meta: { runtimeId: 'loop' }
+})).run
 
 function viewFor(connection: MachineConnection): MachineView {
   return {
@@ -70,6 +82,21 @@ function viewFor(connection: MachineConnection): MachineView {
     connection: connection.transport === 'server' ? 'server' : 'ssh',
     ssh: null,
     server: null
+  }
+}
+
+function summaryFor(connection: MachineConnection): MachineSummary {
+  return {
+    id: connection.machineId,
+    connection: connection.transport === 'server' ? 'server' : 'ssh',
+    label: 'loop',
+    address: null,
+    status: 'online',
+    statusDetail: null,
+    os: 'linux',
+    sshTargetId: null,
+    runtimeEnvironmentId: null,
+    executionHostId: connection.transport === 'server' ? 'runtime:loop' : 'ssh:loop'
   }
 }
 
@@ -187,7 +214,7 @@ describe.skipIf(process.platform !== 'linux').each([
   it('creates, lists and removes worktrees', async () => {
     const repo = await scratch()
     const git = `git -c user.email=seal@example.com -c user.name=Seal`
-    await execOnThisMachine(`git init -q -b main && ${git} commit -q --allow-empty -m init`, {
+    await runLocalShellScript(`git init -q -b main && ${git} commit -q --allow-empty -m init`, {
       timeoutMs: 15_000,
       cwd: repo
     })
@@ -215,9 +242,10 @@ describe.skipIf(process.platform !== 'linux').each([
       machineId: machine.machineId,
       name: 'loop',
       executionHostId: 'x',
-      connection: machine
+      connection: machine,
+      ...(machine.transport === 'server' ? { serverRun: serverScan } : {})
     })
-    const chat = await createUnifiedMachine(viewFor(machine), machine)
+    const chat = await createUnifiedMachine(viewFor(machine), summaryFor(machine), machine)
     await chat.writeTextFile(path.join(dir, 'log', 'chat.txt'), 'one\n', { append: false })
     await chat.writeTextFile(path.join(dir, 'log', 'chat.txt'), 'two\n', { append: true })
 

@@ -13,9 +13,9 @@ import { scriptWithCwd } from '../../home-chat/machines/home-chat-machine-script
 import type { MachineFileSystem } from '../filesystem/machine-filesystem'
 import { SshMachineFileSystem } from '../filesystem/ssh-machine-filesystem'
 import { collectSshMachineMetrics } from '../metrics/machine-metrics'
-import type { MachineExecOptions } from './local-machine-exec'
 import type {
   MachineConnection,
+  MachineExecOptions,
   MachineShell,
   MachineShellDialect,
   MachineShellHandlers,

@@ -123,18 +123,32 @@ export function mergeSealPanes(
 ): LiveSession[] {
   const out = [...discovered]
   for (const pane of panes) {
-    const index = out.findIndex(
-      (s) =>
-        s.provider === pane.provider &&
-        s.providerSessionId === pane.providerSessionId &&
-        (pane.connectionId === null) === (s.machine.hostId === LOCAL_HOST_ID)
-    )
+    const sameHost = (s: LiveSession) =>
+      s.provider === pane.provider &&
+      (pane.connectionId === null) === (s.machine.hostId === LOCAL_HOST_ID)
+    // The pane's own process, found before its first prompt or under another file name.
+    const index = [
+      (s: LiveSession) => s.providerSessionId === pane.providerSessionId,
+      (s: LiveSession) => pane.transcriptPath !== null && s.transcriptPath === pane.transcriptPath,
+      (s: LiveSession) =>
+        s.providerSessionId.startsWith('pid-') && s.alive && s.cwd === pane.cwd && s.cwd !== null
+    ]
+      .map((matches) => out.findIndex((s) => sameHost(s) && matches(s)))
+      .find((i) => i !== -1)
     const route = { kind: 'seal-pane' as const, paneKey: pane.paneKey }
-    if (index !== -1) {
+    if (index !== undefined) {
       const found = out[index]
       const screenAsks = found.statusSource === 'screen' && found.permission !== null
+      const named = found.providerSessionId.startsWith('pid-')
+        ? {
+            id: liveSessionId(found.machine.hostId, pane.provider, pane.providerSessionId),
+            providerSessionId: pane.providerSessionId,
+            transcriptPath: found.transcriptPath ?? pane.transcriptPath
+          }
+        : {}
       out[index] = {
         ...found,
+        ...named,
         origin: 'seal',
         status: screenAsks ? found.status : pane.status,
         statusSource: screenAsks ? 'screen' : 'seal-hooks',

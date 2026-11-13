@@ -1,4 +1,5 @@
-// The assistant's view of a machine. seal/machines can replace the default provider without touching tools.
+// The assistant's view of a machine: the same machines the Machines page lists, plus hops it defined itself.
+import type { HomeChatMachineStatus } from '../../../shared/home-chat/home-chat-types'
 
 /** How scripts run on the machine: a POSIX shell, or PowerShell on Windows. */
 export type HomeChatShellDialect = 'posix' | 'powershell'
@@ -16,7 +17,13 @@ export type HomeChatMachineInfo = {
   address?: string
   /** How Seal reaches it when not directly: a ProxyJump/ProxyCommand or another machine's id. */
   via?: string
+  /** Ready to run commands right now; an offline SSH machine still connects on demand. */
   connected: boolean
+  status: HomeChatMachineStatus
+  /** Why it is in an error state. */
+  statusDetail?: string
+  /** A Seal server is paired on this machine. */
+  sealServer?: boolean
   platform?: string
   /** The user's or assistant's notes about this machine (user, shell quirks, what runs there). */
   notes?: string

@@ -160,6 +160,8 @@ export class MachineRegistry {
     machineId: string
     name: string
     executionHostId: string
+    /** Set when the machine connects via its Seal server. */
+    environmentId: string | null
     connection: MachineConnection
   }[] {
     this.reconcile()
@@ -175,6 +177,7 @@ export class MachineRegistry {
           name: record.name,
           executionHostId:
             transport === 'ssh' ? `ssh:${record.sshTargetId}` : `runtime:${record.environmentId}`,
+          environmentId: transport === 'server' ? record.environmentId : null,
           connection: this.connection(toMachineId(record.id))
         }
       ]

@@ -1,24 +1,38 @@
 import type { MachineConnection } from '../../machines/connection/machine-connection'
 import type { MachineView } from '../../../shared/machines/machine-view'
+import type { MachineSummary } from '../../../shared/machines/machine-summaries'
 import type { HomeChatMachine, HomeChatMachineInfo } from './home-chat-machine-types'
 
 // Appends re-send the whole file; past this, the chat should write a new file instead.
 const MAX_APPEND_BASE_BYTES = 8 * 1024 * 1024
 
 /** Info for a machine, whichever transport it uses; the old `ssh:` spelling stays an alias. */
-export function unifiedMachineInfo(view: MachineView, connected: boolean): HomeChatMachineInfo {
+export function unifiedMachineInfo(
+  view: MachineView,
+  summary: MachineSummary
+): HomeChatMachineInfo {
+  const overSsh = summary.connection === 'ssh'
   return {
     id: view.id,
     label: view.name,
     kind: 'remote',
-    ...(view.ssh ? { address: view.ssh.address } : {}),
-    ...(view.ssh?.jumpHost ? { via: `ProxyJump ${view.ssh.jumpHost}` } : {}),
-    aliases: view.ssh ? [`ssh:${view.ssh.targetId}`] : [],
-    executionHostId:
-      view.connection === 'ssh' && view.ssh
-        ? `ssh:${view.ssh.targetId}`
-        : `runtime:${view.server?.environmentId ?? view.recordId}`,
-    connected
+    ...(summary.address ? { address: summary.address } : {}),
+    ...(overSsh && view.ssh?.jumpHost
+      ? { via: `ProxyJump ${view.ssh.jumpHost}` }
+      : overSsh
+        ? {}
+        : { via: 'Seal server' }),
+    aliases: [
+      ...(view.ssh ? [`ssh:${view.ssh.targetId}`] : []),
+      ...(view.server ? [`runtime:${view.server.environmentId}`] : [])
+    ],
+    executionHostId: summary.executionHostId,
+    // An offline SSH machine still connects on demand; a server must already answer.
+    connected: summary.status === 'online',
+    status: summary.status,
+    ...(summary.statusDetail ? { statusDetail: summary.statusDetail } : {}),
+    ...(view.server ? { sealServer: true } : {}),
+    ...(summary.os ? { platform: summary.os } : {})
   }
 }
 
@@ -31,13 +45,14 @@ function parentDir(path: string): string | null {
 /** Every home-chat tool runs through the machine's own connection, so SSH and server match. */
 export async function createUnifiedMachine(
   view: MachineView,
+  summary: MachineSummary,
   connection: MachineConnection
 ): Promise<HomeChatMachine> {
   await connection.connect()
   const dialect = await connection.dialect()
   const files = connection.files
   return {
-    info: unifiedMachineInfo(view, true),
+    info: unifiedMachineInfo(view, { ...summary, status: 'online', statusDetail: null }),
     dialect,
     exec: (script, options) =>
       connection.exec(script, {

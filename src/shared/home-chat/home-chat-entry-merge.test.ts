@@ -3,7 +3,7 @@ import { mergeHomeChatEntry } from './home-chat-entry-merge'
 import type { HomeChatEntry } from './home-chat-types'
 
 function assistant(id: string, rev: number, text: string): HomeChatEntry {
-  return { id, rev, at: 1, kind: 'assistant', text, streaming: rev < 3 }
+  return { id, rev, at: 1, ord: id === 'a' ? 1 : 2, kind: 'assistant', text, streaming: rev < 3 }
 }
 
 describe('mergeHomeChatEntry', () => {
@@ -17,5 +17,22 @@ describe('mergeHomeChatEntry', () => {
       ['a', 'Hello'],
       ['b', 'other']
     ])
+  })
+
+  it('places an entry that arrives late by its position in the thread', () => {
+    const entry = (id: string, ord: number): HomeChatEntry => ({
+      id,
+      rev: 1,
+      at: 1,
+      ord,
+      kind: 'progress',
+      text: id
+    })
+    let entries = mergeHomeChatEntry([], entry('first', 1))
+    entries = mergeHomeChatEntry(entries, entry('third', 3))
+    entries = mergeHomeChatEntry(entries, entry('second', 2))
+    entries = mergeHomeChatEntry(entries, entry('divider', 0.5))
+
+    expect(entries.map((e) => e.id)).toEqual(['divider', 'first', 'second', 'third'])
   })
 })

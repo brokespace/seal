@@ -30,6 +30,7 @@ import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { useTranslate } from '@/i18n/use-translate'
 import { AgentWorkspaceTrustSetting } from './behavior/AgentWorkspaceTrustSetting'
 import { LiveSessionsShellIntegrationSetting } from '../../live-sessions/shell-integration/LiveSessionsShellIntegrationSetting'
+import { LiveSessionsIdleReapSetting } from '../../live-sessions/shell-integration/LiveSessionsIdleReapSetting'
 
 type AgentSettingProps = {
   settings: GlobalSettings
@@ -111,6 +112,7 @@ export function AgentsPane({
               settings={settings}
               updateSettings={updateSettings}
             />
+            <LiveSessionsIdleReapSetting settings={settings} updateSettings={updateSettings} />
           </>
         ) : null}
       </SettingsGroup>

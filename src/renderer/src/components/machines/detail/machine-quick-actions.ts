@@ -5,7 +5,7 @@ import { revealFloatingWorkspacePanel } from '@/components/floating-terminal/flo
 import { createFloatingWorkspaceTerminalTab } from '@/components/floating-terminal/floating-workspace-tab-creation'
 import { showMachineTerminalPanel } from '@/ssh/plain-ssh-terminal-panels'
 import { toSshExecutionHostId } from '../../../../../shared/execution-host'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

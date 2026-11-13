@@ -6,6 +6,8 @@ import { toastSshConnectFailure } from '@/ssh/ssh-connect-failure-toast'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { SshTargetList } from './targets/SshTargetList'
 import { SshTargetsEmptyState } from './targets/SshTargetsEmptyState'
+import { SshAutoImportedHostsToggle } from './targets/SshAutoImportedHostsToggle'
+import { isVmToolSshConfigTarget } from '../../../../../shared/ssh-target-source'
 import { SshTargetDestructiveActions } from './targets/SshTargetDestructiveActions'
 import { SshHostsHeaderActions, SshHostsListToolbar } from './SshPaneToolbar'
 import { SshHostsHeaderPortal } from './ssh-hosts-header-slot'
@@ -45,7 +47,19 @@ type SshPaneProps = { addTargetIntentSignal?: number }
 
 export function SshPane({ addTargetIntentSignal }: SshPaneProps): React.JSX.Element {
   const t = useTranslate()
-  const [targets, setTargets] = useState<SshTarget[]>([])
+  const [allTargets, setTargets] = useState<SshTarget[]>([])
+  const [showAutoImported, setShowAutoImported] = useState(false)
+  const autoImportedCount = useMemo(
+    () => allTargets.filter(isVmToolSshConfigTarget).length,
+    [allTargets]
+  )
+  const targets = useMemo(
+    () =>
+      showAutoImported
+        ? allTargets
+        : allTargets.filter((target) => !isVmToolSshConfigTarget(target)),
+    [allTargets, showAutoImported]
+  )
   // Reuse globally hydrated SSH state instead of duplicate listeners and per-target IPC reads.
   const sshConnectionStates = useAppStore((s) => s.sshConnectionStates)
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
@@ -320,6 +334,20 @@ export function SshPane({ addTargetIntentSignal }: SshPaneProps): React.JSX.Elem
                 onServerChanged={() => void loadTargets()}
               />
             )}
+            <SshAutoImportedHostsToggle
+              count={autoImportedCount}
+              shown={showAutoImported}
+              onShownChange={(shown) => {
+                setShowAutoImported(shown)
+                if (!shown) {
+                  selection.retain(
+                    allTargets
+                      .filter((target) => !isVmToolSshConfigTarget(target))
+                      .map((target) => target.id)
+                  )
+                }
+              }}
+            />
           </>
         )}
       </SshTargetDestructiveActions>

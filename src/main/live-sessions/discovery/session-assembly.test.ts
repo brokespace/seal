@@ -25,7 +25,10 @@ function transcript(
       phase,
       detail: null,
       firstAt: NOW - 3_600_000,
-      lastAt: NOW - ageMs
+      lastAt: NOW - ageMs,
+      headless: false,
+      recordIds: [],
+      continues: []
     }
   }
 }
@@ -88,6 +91,29 @@ describe('assembleHostSessions', () => {
       '22222222-2222-4222-8222-222222222222': 100
     })
     expect(sessions.every((s) => s.id === `ssh-1:claude:${s.providerSessionId}`)).toBe(true)
+  })
+
+  it('pairs a process with the transcript it holds open before guessing by folder', () => {
+    const old = transcript('44444444-4444-4444-8444-444444444444', '/srv/app', 3 * 86_400_000)
+    const fresh = transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 10_000)
+    const sessions = assembleHostSessions({
+      machine,
+      output: {
+        processes: [proc(100, 'claude', '/srv/app'), proc(200, 'claude', '/srv/app')],
+        panes: [],
+        hookStates: [],
+        hostNowMs: NOW,
+        pins: [{ pid: 200, kind: 'open', provider: 'claude', path: old.path }]
+      },
+      transcripts: [old, fresh],
+      nowMs: NOW
+    })
+    expect(
+      Object.fromEntries(sessions.map((s) => [s.providerSessionId, [s.pid, s.alive]]))
+    ).toEqual({
+      '44444444-4444-4444-8444-444444444444': [200, true],
+      '55555555-5555-4555-8555-555555555555': [100, true]
+    })
   })
 
   it('keeps only the outermost agent process', () => {

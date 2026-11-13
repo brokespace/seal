@@ -4,7 +4,7 @@ import {
   type ExecutionHostId
 } from '../../../../../shared/execution-host'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
-import type { MachineSummary } from './machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { isFreshNonDoneAgentStatus } from '../../../../../shared/agent-status/contracts/agent-status-freshness'
 import type { AgentStatusEntry } from '../../../../../shared/agent-status/contracts/agent-status-types'
 import { resolveAgentStatusWorktreeId } from '../../../../../shared/agent-status/identity/agent-status-worktree-attribution'

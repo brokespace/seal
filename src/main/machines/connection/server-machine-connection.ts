@@ -1,3 +1,4 @@
+import { MACHINE_HOST_EXEC_MAX_TIMEOUT_MS } from '../../../shared/machines/machine-host-limits'
 import {
   parseMachineExecResult,
   type MachineExecResult
@@ -7,9 +8,9 @@ import type { MachineId, MachineMetrics } from '../../../shared/machines/machine
 import type { MachineFileSystem } from '../filesystem/machine-filesystem'
 import { RuntimeMachineFileSystem } from '../runtime/runtime-machine-filesystem'
 import type { RuntimeMachineChannel } from '../runtime/runtime-machine-channel'
-import type { MachineExecOptions } from './local-machine-exec'
 import type {
   MachineConnection,
+  MachineExecOptions,
   MachineShell,
   MachineShellDialect,
   MachineShellHandlers,
@@ -75,18 +76,20 @@ export class ServerMachineConnection implements MachineConnection {
     if (options.signal?.aborted) {
       throw abortError()
     }
+    // The server accepts 1s..1h; longer work belongs in a background job.
+    const timeoutMs = Math.min(Math.max(options.timeoutMs, 1_000), MACHINE_HOST_EXEC_MAX_TIMEOUT_MS)
     const call = this.deps.channel
       .call(
         'machineHost.exec',
         {
           script,
-          timeoutMs: options.timeoutMs,
+          timeoutMs,
           ...(options.cwd ? { cwd: options.cwd } : {}),
           ...(options.stdin !== undefined
             ? { stdinBase64: Buffer.from(options.stdin).toString('base64') }
             : {})
         },
-        options.timeoutMs + RPC_SLACK_MS
+        timeoutMs + RPC_SLACK_MS
       )
       .then(parseMachineExecResult)
     const signal = options.signal

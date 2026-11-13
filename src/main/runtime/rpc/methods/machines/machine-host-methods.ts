@@ -14,8 +14,9 @@ import {
   MachineHostWatch,
   MachineHostWriteChunk
 } from '../../../../../shared/rpc-contract/machine-host-params'
+import { MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES } from '../../../../../shared/machines/machine-host-limits'
+import { runLocalShellScript } from '../../../../machines/exec/local-shell-exec'
 import { collectLocalMachineMetrics } from '../../../../machines/metrics/local-machine-metrics'
-import { execOnThisMachine } from '../../../../machines/connection/local-machine-exec'
 import {
   resizeMachineHostShell,
   runMachineHostShell,
@@ -131,8 +132,9 @@ export const MACHINE_HOST_METHODS = [
     permission: 'workspace',
     params: MachineHostExec,
     handler: async (params) =>
-      execOnThisMachine(params.script, {
+      runLocalShellScript(params.script, {
         timeoutMs: params.timeoutMs,
+        maxOutputBytes: MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES,
         ...(params.cwd ? { cwd: requireHostPath(params.cwd) } : {}),
         ...(params.stdinBase64 !== undefined
           ? { stdin: Buffer.from(params.stdinBase64, 'base64') }

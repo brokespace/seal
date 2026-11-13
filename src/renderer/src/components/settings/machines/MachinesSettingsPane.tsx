@@ -22,7 +22,7 @@ import { MachineStatusDot, useMachineStatusLabel } from '../../machines/detail/M
 import { switchMachineConnection } from '../../machines/detail/machine-quick-actions'
 import { MachineConnectionBadge } from '../../machines/list/MachineConnectionBadge'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
-import type { MachineSummary } from '../../machines/model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

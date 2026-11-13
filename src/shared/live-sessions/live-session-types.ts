@@ -164,3 +164,16 @@ export type LiveTakeOverResult =
       reason: 'not_found' | 'not_external' | 'not_resumable' | 'still_running' | 'failed'
       error?: string
     }
+
+/** Remove from Seal: hidden for good; optionally stopped first and its transcript deleted. */
+export type LiveRemoveRequest = {
+  sessionIds: string[]
+  /** End a running agent (and its Seal tmux pane) before hiding it. */
+  stop: boolean
+  deleteTranscripts: boolean
+}
+
+export type LiveRemoveResult = {
+  removed: string[]
+  failed: { sessionId: string; reason: 'still_running' | 'failed'; error?: string }[]
+}

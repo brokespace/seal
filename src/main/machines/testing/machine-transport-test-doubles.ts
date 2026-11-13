@@ -42,7 +42,10 @@ import {
 } from '../../../shared/rpc-contract/machine-host-params'
 import type { MachineHostStreamEvent } from '../../../shared/machines/machine-host-wire'
 import { collectLocalMachineMetrics } from '../metrics/local-machine-metrics'
-import { execOnThisMachine } from '../connection/local-machine-exec'
+import { runLiveSessionHostScript } from '../../live-sessions/hosts/live-session-host-run'
+import { LiveSessionHostRunParams } from '../../../shared/live-sessions/live-session-rpc-params'
+import { runLocalShellScript } from '../exec/local-shell-exec'
+import { MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES } from '../../../shared/machines/machine-host-limits'
 import type { RuntimeMachineChannel } from '../runtime/runtime-machine-channel'
 import type { SshMachineLink } from '../connection/ssh-machine-link'
 
@@ -84,10 +87,13 @@ export function createInProcessRuntimeChannel(
       await machineHostFileSystem.rename(requireHostPath(p.from), requireHostPath(p.to))
     },
     'machineHost.remove': async (raw) => removeHostPath(MachineHostPath.parse(raw).path),
+    'liveSessions.hostRun': async (raw) =>
+      runLiveSessionHostScript(LiveSessionHostRunParams.parse(raw)),
     'machineHost.exec': async (raw) => {
       const p = MachineHostExec.parse(raw)
-      return execOnThisMachine(p.script, {
+      return runLocalShellScript(p.script, {
         timeoutMs: p.timeoutMs,
+        maxOutputBytes: MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES,
         ...(p.cwd ? { cwd: requireHostPath(p.cwd) } : {}),
         ...(p.stdinBase64 !== undefined ? { stdin: Buffer.from(p.stdinBase64, 'base64') } : {})
       })

@@ -1,10 +1,9 @@
-import { randomUUID } from 'node:crypto'
 import type {
   HomeChat,
   HomeChatAccountOption,
   HomeChatCreateArgs,
-  HomeChatEntry,
   HomeChatEvent,
+  HomeChatMachineOption,
   HomeChatSettings,
   HomeChatSettingsUpdate,
   HomeChatSummary,
@@ -18,30 +17,36 @@ import {
   type HomeChatAssistantRuntime,
   type HomeChatRuntimeDeps
 } from './home-chat-assistant-runtime'
+import type { HomeChatSealAccess } from './home-chat-assistant-services'
 import { systemPromptForChat } from './home-chat-prompt-context'
-import type { HomeChatStore, StoredHomeChat } from './home-chat-store'
-import { HomeChatTurnRunner } from './home-chat-turn-runner'
+import { mergeHomeChatSettings, type HomeChatSettingsStore } from './home-chat-settings-store'
 import type { HomeChatWorkerHost } from './delegation/home-chat-subagents'
+import type { HomeChatDriver } from './drivers/home-chat-driver'
+import { homeChatDriverFor, modelChangeNote } from './drivers/home-chat-driver-selection'
+import { HomeChatTurnEngine } from './engine/home-chat-turn-engine'
+import type { HomeChatThread } from './thread/home-chat-thread'
+import type { HomeChatThreadStore } from './thread/home-chat-thread-store'
+import { homeChatThreadSummary } from './thread/home-chat-thread-summary'
 
 export type HomeChatServiceDeps = Pick<
   HomeChatRuntimeDeps,
   'createMachines' | 'runOrcaCli' | 'repos'
 > & {
   rootDir: string
-  store: HomeChatStore
+  threads: HomeChatThreadStore
+  settings: Pick<HomeChatSettingsStore, 'read' | 'write' | 'readApiKey' | 'readSearchApiKey'>
   accounts: HomeChatAccountProvider
+  seal: Omit<HomeChatSealAccess, 'open'>
   emit: (event: HomeChatEvent) => void
-}
-
-function summary({ entries: _entries, ...rest }: HomeChat): HomeChatSummary {
-  return rest
+  /** Replaces the model drivers, for tests. */
+  driverFor?: (thread: HomeChatThread) => Promise<HomeChatDriver>
 }
 
 export class HomeChatService {
   private readonly approvals = new HomeChatApprovals((chatId) =>
     this.notifyParentOfApproval(chatId)
   )
-  private readonly turns: HomeChatTurnRunner
+  private readonly engine: HomeChatTurnEngine
   private readonly runtime: HomeChatAssistantRuntime
 
   constructor(private readonly deps: HomeChatServiceDeps) {
@@ -51,39 +56,39 @@ export class HomeChatService {
       runOrcaCli: deps.runOrcaCli,
       repos: deps.repos,
       webConfig: () => {
-        const { web } = deps.store.readSettings()
+        const { web } = deps.settings.read()
         return {
           searchProvider: web.searchProvider,
           searxngUrl: web.searxngUrl,
-          apiKey: deps.store.readSearchApiKey()
+          apiKey: deps.settings.readSearchApiKey()
         }
       },
-      wake: (chatId, source, text) => this.turns.wake(chatId, source, text),
+      wake: (chatId, source, text) => this.engine.wake(chatId, source, text),
       memoryChanged: () => deps.emit({ type: 'memory' }),
-      workers: this.workerHost()
+      workers: this.workerHost(),
+      seal: { ...deps.seal, open: (target) => deps.emit({ type: 'open', target }) }
     })
     const { services, machines } = this.runtime
-    this.turns = new HomeChatTurnRunner({
-      rootDir: deps.rootDir,
-      store: deps.store,
-      accounts: deps.accounts,
-      machines,
+    this.engine = new HomeChatTurnEngine({
+      thread: (chatId) => deps.threads.get(chatId),
       approvals: this.approvals,
+      machines,
       runOrcaCli: deps.runOrcaCli,
       services,
-      systemPrompt: (chatId) =>
-        systemPromptForChat(
-          services,
-          machines,
-          chatId,
-          Boolean(deps.store.get(chatId)?.chat.parentChatId)
-        ),
+      driverFor: deps.driverFor ?? ((thread) => homeChatDriverFor(thread, deps)),
+      systemPrompt: (thread) =>
+        systemPromptForChat(services, machines, {
+          chatId: thread.id,
+          isWorker: Boolean(thread.meta.parentChatId),
+          lastMachine: thread.meta.lastMachine ?? null
+        }),
       onTurnEnded: (chatId, failed) => {
-        if (deps.store.get(chatId)?.chat.parentChatId) {
+        if (deps.threads.get(chatId)?.meta.parentChatId) {
           services.subagents.workerTurnEnded(chatId, failed)
         }
       },
-      onChatChanged: (stored, entry) => this.publish(stored, entry)
+      publishEntry: (chatId, entry) => deps.emit({ type: 'entry', chatId, entry }),
+      publishSummary: (thread) => this.publish(thread)
     })
   }
 
@@ -93,73 +98,67 @@ export class HomeChatService {
   }
 
   listChats(): HomeChatSummary[] {
-    return this.deps.store.list().map((stored) => summary(stored.chat))
+    return this.deps.threads.list().map(homeChatThreadSummary)
   }
 
   getChat(chatId: string): HomeChat | null {
-    return this.deps.store.get(chatId)?.chat ?? null
+    const thread = this.deps.threads.get(chatId)
+    return thread ? { ...homeChatThreadSummary(thread), entries: [...thread.entries] } : null
   }
 
-  createChat(args: HomeChatCreateArgs = {}, parentChatId?: string): HomeChat {
-    const now = Date.now()
-    const chat: HomeChat = {
-      id: randomUUID(),
-      title: 'New chat',
-      ...(parentChatId ? { parentChatId } : {}),
-      backend: args.backend ?? this.deps.store.readSettings().defaultBackend,
+  createChat(args: HomeChatCreateArgs = {}, parentChatId?: string, title?: string): HomeChat {
+    const thread = this.deps.threads.create({
+      backend: args.backend ?? this.deps.settings.read().defaultBackend,
       accountId: args.accountId ?? null,
       model: args.model ?? null,
-      status: 'idle',
-      createdAt: now,
-      updatedAt: now,
-      entries: []
-    }
-    this.publish({ chat, backendState: {} })
-    return chat
+      ...(parentChatId ? { parentChatId } : {}),
+      ...(title ? { title } : {})
+    })
+    this.publish(thread)
+    return { ...homeChatThreadSummary(thread), entries: [] }
   }
 
   async updateChat(args: HomeChatUpdateArgs): Promise<HomeChatSummary> {
-    const stored = this.require(args.chatId)
-    const next: HomeChat = {
-      ...stored.chat,
-      ...(args.title !== undefined ? { title: args.title.trim() || stored.chat.title } : {}),
-      ...(args.backend !== undefined ? { backend: args.backend } : {}),
-      ...(args.accountId !== undefined ? { accountId: args.accountId } : {}),
-      ...(args.model !== undefined ? { model: args.model?.trim() || null } : {})
+    const thread = this.require(args.chatId)
+    const before = thread.meta
+    const next = {
+      title: args.title !== undefined ? args.title.trim() || before.title : before.title,
+      backend: args.backend ?? before.backend,
+      accountId: args.accountId !== undefined ? args.accountId : before.accountId,
+      model: args.model !== undefined ? args.model?.trim() || null : before.model
     }
-    const changesRuntime =
-      next.backend !== stored.chat.backend ||
-      next.accountId !== stored.chat.accountId ||
-      next.model !== stored.chat.model
-    if (changesRuntime && this.turns.isRunning(args.chatId)) {
-      throw new Error('Stop the current answer before switching backend, account or model')
+    const changesModel =
+      next.backend !== before.backend ||
+      next.accountId !== before.accountId ||
+      next.model !== before.model
+    if (changesModel && this.engine.isRunning(args.chatId)) {
+      throw new Error('Stop the current answer before switching model source, account or model')
     }
-    // Another account's Claude home cannot resume this session, so it starts fresh.
-    const backendState =
-      next.accountId !== stored.chat.accountId
-        ? { ...stored.backendState, claudeSessionId: undefined }
-        : stored.backendState
-    if (changesRuntime) {
-      await this.turns.closeSession(args.chatId)
-    }
-    this.publish({ chat: next, backendState })
-    if (changesRuntime && stored.chat.entries.length > 0) {
-      this.turns.writerFor(args.chatId).create({
+    // Sizes measured for the old model say nothing about the new one.
+    thread.updateMeta({
+      ...next,
+      ...(changesModel
+        ? { contextTokens: undefined, contextUsed: undefined, contextWindow: undefined }
+        : {})
+    })
+    if (changesModel && thread.items.length > 0) {
+      this.engine.note(args.chatId, {
         kind: 'progress',
-        text: await this.runtimeChangeNote(next)
+        text: await modelChangeNote(thread, this.deps)
       })
     }
-    return summary(next)
+    this.publish(thread)
+    return homeChatThreadSummary(thread)
   }
 
   async deleteChat(chatId: string): Promise<void> {
-    await this.turns.closeSession(chatId)
+    this.engine.stop(chatId)
     const { services } = this.runtime
     services.routines.deleteForChat(chatId)
     for (const item of services.subagents.list(chatId).filter((sub) => sub.state === 'running')) {
       await services.subagents.stop(item.id).catch(() => undefined)
     }
-    this.deps.store.delete(chatId)
+    await this.deps.threads.delete(chatId)
     await services.attachments.deleteChat(chatId)
     this.deps.emit({ type: 'deleted', chatId })
   }
@@ -169,11 +168,16 @@ export class HomeChatService {
     if (!trimmed) {
       throw new Error('Type a message first')
     }
-    this.turns.send(chatId, trimmed)
+    this.engine.send(chatId, trimmed)
   }
 
   stop(chatId: string): void {
-    this.turns.stop(chatId)
+    this.engine.stop(chatId)
+  }
+
+  /** Summarize the older part of the thread for the model now. False when there is nothing to summarize. */
+  compact(chatId: string): Promise<boolean> {
+    return this.engine.compactNow(chatId)
   }
 
   respondApproval(chatId: string, entryId: string, approved: boolean): boolean {
@@ -181,31 +185,16 @@ export class HomeChatService {
   }
 
   getSettings(): HomeChatSettings {
-    return this.deps.store.readSettings()
+    return this.deps.settings.read()
   }
 
   updateSettings(update: HomeChatSettingsUpdate): HomeChatSettings {
-    const current = this.deps.store.readSettings()
-    const next: HomeChatSettings = {
-      defaultBackend: update.defaultBackend ?? current.defaultBackend,
-      openai: {
-        ...current.openai,
-        ...(update.openai?.baseUrl !== undefined ? { baseUrl: update.openai.baseUrl.trim() } : {}),
-        ...(update.openai?.model !== undefined ? { model: update.openai.model.trim() } : {})
-      },
-      web: {
-        ...current.web,
-        ...(update.web?.searchProvider ? { searchProvider: update.web.searchProvider } : {}),
-        ...(update.web?.searxngUrl !== undefined
-          ? { searxngUrl: update.web.searxngUrl.trim() }
-          : {})
-      }
-    }
-    this.deps.store.writeSettings(next, {
+    const next = mergeHomeChatSettings(this.deps.settings.read(), update)
+    this.deps.settings.write(next, {
       apiKey: update.openai?.apiKey,
       searchApiKey: update.web?.apiKey
     })
-    return this.deps.store.readSettings()
+    return this.deps.settings.read()
   }
 
   getMemory(): HomeChatMemory {
@@ -235,41 +224,38 @@ export class HomeChatService {
     return this.deps.accounts.list()
   }
 
-  async dispose(): Promise<void> {
-    this.runtime.dispose()
-    await this.turns.closeAll()
-    this.deps.store.flushAll()
+  /** The machines the assistant can act on, as the Machines page lists them. */
+  async listMachines(): Promise<HomeChatMachineOption[]> {
+    return (await this.runtime.machines.list()).map((machine) => ({
+      id: machine.id,
+      label: machine.label,
+      kind: machine.kind,
+      status: machine.status,
+      ...(machine.address ? { address: machine.address } : {})
+    }))
   }
 
-  private async runtimeChangeNote(chat: HomeChat): Promise<string> {
-    if (chat.backend === 'openai-compatible') {
-      const model = chat.model || this.deps.store.readSettings().openai.model || 'the default model'
-      return `Now answering with ${model} through the model API.`
-    }
-    const accounts = await this.deps.accounts.list().catch(() => [])
-    const account = accounts.find((option) => option.id === chat.accountId)
-    return `Now answering with Claude Code on ${account?.label ?? 'the default login'}.`
+  async dispose(): Promise<void> {
+    this.runtime.dispose()
+    this.engine.stopAll()
+    await this.deps.threads.flushAll()
   }
 
   private workerHost(): HomeChatWorkerHost {
     return {
       create: (parentChatId, title) => {
-        const parent = this.require(parentChatId).chat
-        const chat = this.createChat(
+        const parent = this.require(parentChatId).meta
+        return this.createChat(
           { backend: parent.backend, accountId: parent.accountId, model: parent.model },
-          parentChatId
-        )
-        this.publish({
-          chat: { ...chat, title: `Worker: ${title}`.slice(0, 80) },
-          backendState: {}
-        })
-        return chat.id
+          parentChatId,
+          `Worker: ${title}`.slice(0, 80)
+        ).id
       },
-      send: (workerChatId, text) => this.turns.send(workerChatId, text),
-      stop: (workerChatId) => this.turns.stop(workerChatId),
-      isRunning: (workerChatId) => this.turns.isRunning(workerChatId),
+      send: (workerChatId, text) => this.engine.send(workerChatId, text),
+      stop: (workerChatId) => this.engine.stop(workerChatId),
+      isRunning: (workerChatId) => this.engine.isRunning(workerChatId),
       lastAnswer: (workerChatId) => {
-        const entries = this.deps.store.get(workerChatId)?.chat.entries ?? []
+        const entries = this.deps.threads.get(workerChatId)?.entries ?? []
         const last = entries.findLast((entry) => entry.kind === 'assistant' && entry.text.trim())
         return last?.kind === 'assistant' ? last.text : ''
       }
@@ -278,31 +264,26 @@ export class HomeChatService {
 
   /** A worker chat runs unattended, so its approval cards are surfaced in the chat that started it. */
   private notifyParentOfApproval(chatId: string): void {
-    const stored = this.deps.store.get(chatId)
-    const parentId = stored?.chat.parentChatId
-    if (parentId && this.deps.store.get(parentId)) {
-      this.turns.writerFor(parentId).create({
+    const thread = this.deps.threads.get(chatId)
+    const parentId = thread?.meta.parentChatId
+    if (thread && parentId) {
+      this.engine.note(parentId, {
         kind: 'notice',
         source: 'approval',
-        text: `Worker "${stored.chat.title}" is waiting for your approval. Open it from the chat list to approve or decline.`
+        text: `Worker "${thread.meta.title}" is waiting for your approval. Open it from the chat list to approve or decline.`
       })
     }
   }
 
-  private require(chatId: string): StoredHomeChat {
-    const stored = this.deps.store.get(chatId)
-    if (!stored) {
+  private require(chatId: string): HomeChatThread {
+    const thread = this.deps.threads.get(chatId)
+    if (!thread) {
       throw new Error('This chat no longer exists')
     }
-    return stored
+    return thread
   }
 
-  private publish(stored: StoredHomeChat, entry?: HomeChatEntry): void {
-    this.deps.store.put(stored)
-    if (entry) {
-      this.deps.emit({ type: 'entry', chatId: stored.chat.id, entry })
-    } else {
-      this.deps.emit({ type: 'summary', chat: summary(stored.chat) })
-    }
+  private publish(thread: HomeChatThread): void {
+    this.deps.emit({ type: 'summary', chat: homeChatThreadSummary(thread) })
   }
 }

@@ -31,7 +31,7 @@ import { MachineWorkSection } from '../work/MachineWorkSection'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import type { MachineAgentSession } from '../model/machine-agent-sessions'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
 import {
