@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { HomeChatEntry } from '../../shared/home-chat/home-chat-types'
 import { mergeHomeChatEntry } from '../../shared/home-chat/home-chat-entry-merge'
@@ -204,7 +204,7 @@ export class HomeChatTurnRunner {
   ): Promise<HomeChatBackendSession> {
     if (stored.chat.backend === 'claude-code') {
       const cwd = join(this.deps.rootDir, 'workspace')
-      mkdirSync(cwd, { recursive: true })
+      await mkdir(cwd, { recursive: true })
       return createClaudeCodeSession({
         cwd,
         claudeConfigDir: await this.deps.accounts.claudeConfigDir(stored.chat.accountId),

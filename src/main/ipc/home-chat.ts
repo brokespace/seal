@@ -32,37 +32,44 @@ export function registerHomeChatHandlers(claudeAccounts: {
   listAccounts: () => ClaudeRateLimitAccountsState
 }): void {
   const rootDir = join(app.getPath('userData'), 'home-chat')
-  const service = new HomeChatService({
-    rootDir,
-    store: new HomeChatStore(rootDir),
-    accounts: createClaudeAccountsProvider(claudeAccounts),
-    machines: createDefaultHomeChatMachineProvider(),
-    runOrcaCli,
-    emit: broadcast
-  })
-  app.once('before-quit', () => {
-    void service.dispose()
-  })
-
-  ipcMain.handle('homeChat:list', () => service.listChats())
-  ipcMain.handle('homeChat:get', (_event, args: { chatId: string }) => service.getChat(args.chatId))
-  ipcMain.handle('homeChat:create', (_event, args?: HomeChatCreateArgs) => service.createChat(args))
-  ipcMain.handle('homeChat:update', (_event, args: HomeChatUpdateArgs) => service.updateChat(args))
-  ipcMain.handle('homeChat:delete', (_event, args: { chatId: string }) =>
-    service.deleteChat(args.chatId)
+  const ready = HomeChatStore.open(rootDir).then(
+    (store) =>
+      new HomeChatService({
+        rootDir,
+        store,
+        accounts: createClaudeAccountsProvider(claudeAccounts),
+        machines: createDefaultHomeChatMachineProvider(),
+        runOrcaCli,
+        emit: broadcast
+      })
   )
-  ipcMain.handle('homeChat:send', (_event, args: { chatId: string; text: string }) =>
+  app.once('before-quit', () => {
+    void ready.then((service) => service.dispose())
+  })
+  const handle = <Args, Result>(
+    channel: string,
+    run: (service: HomeChatService, args: Args) => Result
+  ): void => {
+    ipcMain.handle(channel, async (_event, args: Args) => run(await ready, args))
+  }
+
+  handle('homeChat:list', (service) => service.listChats())
+  handle('homeChat:get', (service, args: { chatId: string }) => service.getChat(args.chatId))
+  handle('homeChat:create', (service, args?: HomeChatCreateArgs) => service.createChat(args))
+  handle('homeChat:update', (service, args: HomeChatUpdateArgs) => service.updateChat(args))
+  handle('homeChat:delete', (service, args: { chatId: string }) => service.deleteChat(args.chatId))
+  handle('homeChat:send', (service, args: { chatId: string; text: string }) =>
     service.send(args.chatId, args.text)
   )
-  ipcMain.handle('homeChat:stop', (_event, args: { chatId: string }) => service.stop(args.chatId))
-  ipcMain.handle(
+  handle('homeChat:stop', (service, args: { chatId: string }) => service.stop(args.chatId))
+  handle(
     'homeChat:respondApproval',
-    (_event, args: { chatId: string; entryId: string; approved: boolean }) =>
+    (service, args: { chatId: string; entryId: string; approved: boolean }) =>
       service.respondApproval(args.chatId, args.entryId, args.approved)
   )
-  ipcMain.handle('homeChat:getSettings', () => service.getSettings())
-  ipcMain.handle('homeChat:updateSettings', (_event, args: HomeChatSettingsUpdate) =>
+  handle('homeChat:getSettings', (service) => service.getSettings())
+  handle('homeChat:updateSettings', (service, args: HomeChatSettingsUpdate) =>
     service.updateSettings(args)
   )
-  ipcMain.handle('homeChat:listAccounts', () => service.listAccounts())
+  handle('homeChat:listAccounts', (service) => service.listAccounts())
 }

@@ -91,7 +91,11 @@ export function assessHomeChatToolRisk(
       return { requiresApproval: true, reason: `This deletes ${String(input.path)}.` }
     case 'orca_cli':
       return assessOrcaArgs(Array.isArray(input.args) ? input.args.map(String) : [])
-    default:
+    case 'list_machines':
+    case 'read_file':
+    case 'write_file':
+    case 'transfer_file':
+    case 'report_progress':
       return SAFE
   }
 }

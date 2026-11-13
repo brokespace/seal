@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { writeFileAtomically } from '../filesystem/atomic-file-publication'
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
@@ -25,11 +25,42 @@ const apiKeyStore = createEncryptedApiKeyFileStore({
   logScope: 'home-chat'
 })
 
-function readJson<T>(path: string): T | null {
+async function readJson(path: string): Promise<unknown> {
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as T
+    const parsed: unknown = JSON.parse(await readFile(path, 'utf8'))
+    return parsed
   } catch {
     return null
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isStoredHomeChat(value: unknown): value is StoredHomeChat {
+  return (
+    isRecord(value) &&
+    isRecord(value.chat) &&
+    typeof value.chat.id === 'string' &&
+    Array.isArray(value.chat.entries) &&
+    isRecord(value.backendState)
+  )
+}
+
+function parseStoredSettings(value: unknown): StoredSettings {
+  if (!isRecord(value)) {
+    return DEFAULT_SETTINGS
+  }
+  const openai = isRecord(value.openai) ? value.openai : {}
+  return {
+    defaultBackend:
+      value.defaultBackend === 'openai-compatible' ? 'openai-compatible' : 'claude-code',
+    openai: {
+      baseUrl:
+        typeof openai.baseUrl === 'string' ? openai.baseUrl : DEFAULT_SETTINGS.openai.baseUrl,
+      model: typeof openai.model === 'string' ? openai.model : DEFAULT_SETTINGS.openai.model
+    }
   }
 }
 
@@ -39,19 +70,24 @@ export class HomeChatStore {
   private readonly settingsPath: string
   private readonly pendingSaves = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly chats = new Map<string, StoredHomeChat>()
+  private settings: StoredSettings = DEFAULT_SETTINGS
 
-  constructor(rootDir: string) {
+  private constructor(rootDir: string) {
     this.chatsDir = join(rootDir, 'chats')
     this.settingsPath = join(rootDir, 'settings.json')
-    mkdirSync(this.chatsDir, { recursive: true })
-    for (const file of readdirSync(this.chatsDir)) {
-      const stored = file.endsWith('.json')
-        ? readJson<StoredHomeChat>(join(this.chatsDir, file))
-        : null
-      if (stored?.chat?.id && Array.isArray(stored.chat.entries)) {
-        this.chats.set(stored.chat.id, normalizeLoadedChat(stored))
+  }
+
+  static async open(rootDir: string): Promise<HomeChatStore> {
+    const store = new HomeChatStore(rootDir)
+    await mkdir(store.chatsDir, { recursive: true })
+    for (const file of await readdir(store.chatsDir)) {
+      const stored = file.endsWith('.json') ? await readJson(join(store.chatsDir, file)) : null
+      if (isStoredHomeChat(stored)) {
+        store.chats.set(stored.chat.id, normalizeLoadedChat(stored))
       }
     }
+    store.settings = parseStoredSettings(await readJson(store.settingsPath))
+    return store
   }
 
   list(): StoredHomeChat[] {
@@ -76,7 +112,7 @@ export class HomeChatStore {
     clearTimeout(this.pendingSaves.get(chatId))
     this.pendingSaves.delete(chatId)
     this.chats.delete(chatId)
-    rmSync(this.chatPath(chatId), { force: true })
+    void rm(this.chatPath(chatId), { force: true }).catch(() => {})
   }
 
   flushAll(): void {
@@ -86,20 +122,16 @@ export class HomeChatStore {
   }
 
   readSettings(): HomeChatSettings {
-    const stored = readJson<Partial<StoredSettings>>(this.settingsPath)
     return {
-      defaultBackend: stored?.defaultBackend ?? DEFAULT_SETTINGS.defaultBackend,
-      openai: {
-        ...DEFAULT_SETTINGS.openai,
-        ...stored?.openai,
-        apiKeyConfigured: apiKeyStore.has()
-      }
+      defaultBackend: this.settings.defaultBackend,
+      openai: { ...this.settings.openai, apiKeyConfigured: apiKeyStore.has() }
     }
   }
 
   writeSettings(settings: HomeChatSettings, apiKey?: string | null): void {
     const { apiKeyConfigured: _configured, ...openai } = settings.openai
-    writeFileAtomically(this.settingsPath, JSON.stringify({ ...settings, openai }, null, 2))
+    this.settings = { defaultBackend: settings.defaultBackend, openai }
+    writeFileAtomically(this.settingsPath, JSON.stringify(this.settings, null, 2))
     if (apiKey === null || apiKey === '') {
       apiKeyStore.clear()
     } else if (apiKey !== undefined) {

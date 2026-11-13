@@ -22,9 +22,9 @@ afterEach(() => {
 })
 
 describe('HomeChatStore', () => {
-  it('reopens a chat saved mid-turn as idle with its unfinished pieces settled', () => {
+  it('reopens a chat saved mid-turn as idle with its unfinished pieces settled', async () => {
     dir = mkdtempSync(join(tmpdir(), 'home-chat-store-'))
-    const store = new HomeChatStore(dir)
+    const store = await HomeChatStore.open(dir)
     store.put({
       backendState: { claudeSessionId: 's1' },
       chat: {
@@ -52,7 +52,7 @@ describe('HomeChatStore', () => {
     })
     store.flushAll()
 
-    const reopened = new HomeChatStore(dir).get('c1')
+    const reopened = (await HomeChatStore.open(dir)).get('c1')
 
     expect(reopened?.backendState).toEqual({ claudeSessionId: 's1' })
     expect(reopened?.chat.status).toBe('idle')
