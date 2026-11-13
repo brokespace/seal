@@ -70,7 +70,7 @@ export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void 
       runOrcaCli,
       repos: sources.repos,
       seal: {
-        sessions: createHomeChatSessionAccess({ live: getLiveSessionService, runtimes }),
+        sessions: createHomeChatSessionAccess({ live: getLiveSessionService }),
         accounts: createHomeChatAccountAccess(getSealAccountManager)
       },
       emit: broadcast

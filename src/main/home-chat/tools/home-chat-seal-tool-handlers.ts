@@ -218,11 +218,6 @@ export async function executeSealTool(
             : `${session.id} cannot be taken over yet: Seal has not seen its transcript. Send it a message first, then try again.`
         )
       }
-      if (session.id.startsWith('runtime:')) {
-        return failed(
-          `${session.id} runs on a paired Seal server; take it over from that machine's Seal, or steer it here with message_session.`
-        )
-      }
       seal.open({ kind: 'take-over', sessionId: session.id })
       return ok(
         `Seal is stopping the external process and reopening ${session.id} in a Seal pane. Confirm with list_sessions: it should now show "in a Seal pane".`,

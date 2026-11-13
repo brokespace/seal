@@ -140,6 +140,9 @@ Specs are zod shapes in `tools/home-chat-*-tool-specs.ts`. All three drivers exp
 | Web                  | `web_search`, `web_fetch`                                                                                      |
 | Thread               | `report_progress`, `attach_file`                                                                               |
 
+The session tools read Seal's live-session service, the one behind the Agent sessions page. They
+cover the same sessions: on this computer, SSH hosts and paired Seal servers.
+
 Approval is decided in `tools/home-chat-tool-risk.ts`. These always ask: `delete_path`,
 `take_over_session`, `switch_account`. `run_command` asks when a shell segment deletes files,
 force-pushes, discards git work, stops processes, sends data over the network, publishes, or shuts
@@ -267,8 +270,7 @@ answer. From there:
 
 ## Limits
 
-- `take_over_session` does not work for a session on a paired Seal server, and `start_session`
-  does not work on a hop host. Both tools say so and name the alternative.
+- `start_session` does not work on a hop host. The tool says so and names the alternative.
 - Codex keeps its own built-in tools. Seal restricts its shell to a read-only sandbox rather than
   removing it.
 - Claude's context use is the provider's own count. Codex's is an estimate, because `codex exec`
