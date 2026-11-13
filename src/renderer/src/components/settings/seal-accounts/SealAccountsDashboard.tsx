@@ -69,6 +69,14 @@ export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget 
       void mutate('seal.accounts.setPolicy', { ...rule, remove: true }, failed),
     addApiKey: (input) => mutate('seal.accounts.addApiKey', input, failed),
     removeApiKey: (id) => void mutate('seal.accounts.removeApiKey', { id }, failed),
+    swapSession: (sessionId, account) =>
+      void mutate(
+        'seal.accounts.swapSession',
+        { sessionId, account },
+        t('seal.session.error.swap', 'Could not switch this session')
+      ),
+    setSessionLiveSwap: (sessionId, mode) =>
+      void mutate('seal.accounts.setSessionLiveSwap', { sessionId, mode }, failed),
     syncHost: async (environmentId, includeLogins) => {
       const accounts = includeLogins
         ? SEAL_PROVIDERS.flatMap((provider) => status?.providers[provider].candidates ?? [])

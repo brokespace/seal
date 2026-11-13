@@ -10,7 +10,10 @@ import {
   type SealAutoSwapSettings,
   type SealProvider
 } from '../../../../../shared/seal-accounts/seal-accounts-config'
-import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
+import type {
+  SealAccountsStatus,
+  SealSessionLiveSwapMode
+} from '../../../../../shared/seal-accounts/seal-accounts-status'
 import type { SealAccountCandidate } from '../../../../../shared/seal-accounts/seal-account-candidates'
 import { SealAccountRow } from './SealAccountRow'
 import { SealSessionRows, SealSwapRows } from './SealActivityRows'
@@ -31,6 +34,8 @@ export type SealAccountsActions = {
   addApiKey: (input: { provider: SealProvider; label: string; apiKey: string }) => Promise<boolean>
   removeApiKey: (id: string) => void
   syncHost: (environmentId: string, includeLogins: boolean) => Promise<string | null>
+  swapSession: (sessionId: string, account: string) => void
+  setSessionLiveSwap: (sessionId: string, mode: SealSessionLiveSwapMode) => void
 }
 
 type SealAccountsViewProps = {
@@ -183,7 +188,13 @@ export function SealAccountsView({
 
       <SettingsGroup title={t('seal.accounts.activity.title', 'Activity')}>
         <SettingsGroupSubsection title={t('seal.accounts.sessions.title', 'Recent sessions')}>
-          <SealSessionRows sessions={status.sessions} />
+          <SealSessionRows
+            sessions={status.sessions}
+            providers={status.providers}
+            now={now}
+            onSwap={actions.swapSession}
+            onSetLiveSwap={actions.setSessionLiveSwap}
+          />
         </SettingsGroupSubsection>
         <SettingsGroupSubsection title={t('seal.accounts.swap.title', 'Swaps')}>
           <SealSwapRows swaps={status.swapLog} labelOf={labelOf} />

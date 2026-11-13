@@ -25538,7 +25538,8 @@
       "sessions": {
         "title": "Recent sessions",
         "empty": "No agent sessions launched yet.",
-        "warning": "Check policy"
+        "warning": "Check policy",
+        "closed": "Closed"
       },
       "swap": {
         "title": "Swaps",
@@ -25547,7 +25548,8 @@
         "threshold": "Near limit",
         "notAllowed": "Policy change",
         "empty": "No swaps yet.",
-        "fromTo": "{{value0}} to {{value1}}"
+        "fromTo": "{{value0}} to {{value1}}",
+        "rateLimit": "Rate limited"
       },
       "strategy": {
         "best": "Most headroom",
@@ -25557,7 +25559,7 @@
       },
       "autoSwap": {
         "enabled": "Auto-swap",
-        "enabledDescription": "Switch the account new sessions use before a limit is hit. Running sessions keep theirs.",
+        "enabledDescription": "Switch the account new sessions use before a limit is hit.",
         "strategy": "Strategy",
         "sessionThreshold": "5h limit",
         "sessionThresholdDescription": "Swap away once the 5-hour window passes this.",
@@ -25575,7 +25577,9 @@
         "apiKeyFallbackDescription": "Launch on a pay-as-you-go key when every subscription is exhausted.",
         "lastDecision": "Last check",
         "noDecision": "Not run yet",
-        "evaluate": "Check now"
+        "evaluate": "Check now",
+        "liveSessions": "Move running sessions",
+        "liveSessionsDescription": "Switch a running agent to another account when its own runs low, hits a rate limit or loses its login. Seal resumes the conversation when it cannot switch live."
       },
       "minutes": "min",
       "meter": {
@@ -25585,6 +25589,36 @@
         "claudeCode": "Claude Code",
         "codex": "Codex",
         "claude": "Claude"
+      }
+    },
+    "session": {
+      "liveSwap": {
+        "inherit": "Follow the global setting",
+        "on": "Always move this session",
+        "off": "Never move this session"
+      },
+      "delivery": {
+        "live": "switched live",
+        "resume": "resumed",
+        "failed": "failed"
+      },
+      "badge": {
+        "title": "Running on {{value0}}. Click to switch.",
+        "aria": "Session account {{value0}}"
+      },
+      "menu": {
+        "switch": "Move this session to",
+        "liveSwap": "When this account runs low",
+        "lastSwap": "{{value0}} to {{value1}}, {{value2}}"
+      },
+      "error": {
+        "swap": "Could not switch this session",
+        "liveSwap": "Could not change this session’s setting"
+      },
+      "notice": {
+        "resumed": "Session resumed on {{value0}}",
+        "resumedDescription": "It could not switch logins while running, so Seal restarted it on the new account with the same conversation.",
+        "failed": "Could not move a session to {{value0}}"
       }
     }
   }

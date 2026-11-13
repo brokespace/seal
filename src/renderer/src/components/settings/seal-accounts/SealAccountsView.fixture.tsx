@@ -6,6 +6,7 @@ import {
 import type { SealAccountCandidate } from '../../../../../shared/seal-accounts/seal-account-candidates'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import { SettingsGroup, SettingsGroupSubsection } from '../section-layout/SettingsGroup'
+import { SealSessionAccountMenu } from '../../seal-session/SealSessionAccountMenu'
 import { SealSessionRows, SealSwapRows } from './SealActivityRows'
 import { SealAccountsView, type SealAccountsActions } from './SealAccountsView'
 import { SealApiKeyRows } from './SealApiKeyRows'
@@ -136,14 +137,51 @@ const status: SealAccountsStatus = {
       id: 's1',
       at: NOW - 20 * 60 * 1000,
       provider: 'claude',
-      accountKey: 'claude:work@example.com',
-      accountLabel: 'Work Max',
+      accountKey: 'claude:me@example.com',
+      accountLabel: 'me@example.com',
       reason: 'project-default',
       worktreeId: 'w1',
       tabId: 't1',
       projectLabel: 'acme/api',
       machineKey: 'local',
-      warnings: []
+      warnings: [],
+      liveSwap: 'inherit',
+      history: [
+        {
+          at: NOW - 5 * 60 * 1000,
+          from: 'claude:work@example.com',
+          fromLabel: 'Work Max',
+          to: 'claude:me@example.com',
+          toLabel: 'me@example.com',
+          reason: 'threshold',
+          delivery: 'live'
+        }
+      ]
+    },
+    {
+      id: 's2',
+      at: NOW - 50 * 60 * 1000,
+      provider: 'codex',
+      accountKey: 'codex:me@example.com',
+      accountLabel: 'me@example.com',
+      reason: 'machine-default',
+      worktreeId: 'w2',
+      tabId: 't2',
+      projectLabel: 'acme/web',
+      machineKey: 'local',
+      warnings: [],
+      endedAt: NOW - 10 * 60 * 1000,
+      history: [
+        {
+          at: NOW - 30 * 60 * 1000,
+          from: 'codex:old@example.com',
+          fromLabel: 'old@example.com',
+          to: 'codex:me@example.com',
+          toLabel: 'me@example.com',
+          reason: 'rate-limit',
+          delivery: 'resume'
+        }
+      ]
     }
   ],
   workspacePins: {},
@@ -161,7 +199,9 @@ const actions: SealAccountsActions = {
   removePolicy: () => {},
   addApiKey: resolved,
   removeApiKey: () => {},
-  syncHost: async () => null
+  syncHost: async () => null,
+  swapSession: () => {},
+  setSessionLiveSwap: () => {}
 }
 
 export const dashboard = defineFixture({
@@ -201,12 +241,38 @@ export const rulesKeysAndActivity = defineFixture({
       </SettingsGroup>
       <SettingsGroup title="Activity">
         <SettingsGroupSubsection title="Recent sessions">
-          <SealSessionRows sessions={status.sessions} />
+          <SealSessionRows
+            sessions={status.sessions}
+            providers={status.providers}
+            now={NOW}
+            onSwap={() => {}}
+            onSetLiveSwap={() => {}}
+          />
         </SettingsGroupSubsection>
         <SettingsGroupSubsection title="Swaps">
           <SealSwapRows swaps={status.swapLog} labelOf={labelOf} />
         </SettingsGroupSubsection>
       </SettingsGroup>
+    </div>
+  )
+})
+
+// A terminal tab running a Seal session, with its account menu open.
+export const sessionBadge = defineFixture({
+  width: 420,
+  render: () => (
+    <div className="h-80">
+      <div className="flex h-8 items-center gap-1 border-b border-border bg-card px-2 text-xs">
+        <span className="truncate">claude: fix flaky login test</span>
+        <SealSessionAccountMenu
+          session={status.sessions[0]}
+          candidates={status.providers.claude.candidates}
+          readAt={NOW}
+          onSwap={() => {}}
+          onSetLiveSwap={() => {}}
+          defaultOpen
+        />
+      </div>
     </div>
   )
 })

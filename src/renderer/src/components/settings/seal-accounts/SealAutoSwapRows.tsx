@@ -39,13 +39,22 @@ export function SealAutoSwapRows({
         label={t('seal.accounts.autoSwap.enabled', 'Auto-swap')}
         description={t(
           'seal.accounts.autoSwap.enabledDescription',
-          'Switch the account new sessions use before a limit is hit. Running sessions keep theirs.'
+          'Switch the account new sessions use before a limit is hit.'
         )}
         checked={settings.enabled}
         onChange={() => onChange({ enabled: !settings.enabled })}
       />
       {settings.enabled ? (
         <SettingsGroupNestedRows>
+          <SettingsSwitchRow
+            label={t('seal.accounts.autoSwap.liveSessions', 'Move running sessions')}
+            description={t(
+              'seal.accounts.autoSwap.liveSessionsDescription',
+              'Switch a running agent to another account when its own runs low, hits a rate limit or loses its login. Seal resumes the conversation when it cannot switch live.'
+            )}
+            checked={settings.liveSessionSwap !== false}
+            onChange={() => onChange({ liveSessionSwap: settings.liveSessionSwap === false })}
+          />
           <SettingsRow
             label={t('seal.accounts.autoSwap.strategy', 'Strategy')}
             control={
