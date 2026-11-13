@@ -1,14 +1,24 @@
-import { importJWK, SignJWT, type JWK } from 'jose'
+import { importJWK, SignJWT } from 'jose'
+import { z } from 'zod'
 import type { SealEnv } from './env'
 
 export const RELAY_TOKEN_TTL_MS = 60 * 60 * 1000
+
+const PrivateJwkSchema = z.looseObject({
+  kty: z.literal('EC'),
+  d: z.string(),
+  kid: z.string().optional()
+})
 
 let cachedSigner: { source: string; key: CryptoKey; kid: string | undefined } | null = null
 
 async function signer(env: SealEnv): Promise<{ key: CryptoKey; kid: string | undefined }> {
   if (cachedSigner?.source !== env.RELAY_JWT_PRIVATE_JWK) {
-    const jwk = JSON.parse(env.RELAY_JWT_PRIVATE_JWK) as JWK
-    const key = (await importJWK(jwk, 'ES256')) as CryptoKey
+    const jwk = PrivateJwkSchema.parse(JSON.parse(env.RELAY_JWT_PRIVATE_JWK))
+    const key = await importJWK(jwk, 'ES256')
+    if (key instanceof Uint8Array) {
+      throw new Error('RELAY_JWT_PRIVATE_JWK must be an EC key')
+    }
     cachedSigner = { source: env.RELAY_JWT_PRIVATE_JWK, key, kid: jwk.kid }
   }
   return cachedSigner

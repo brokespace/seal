@@ -1,4 +1,5 @@
 import { importPKCS8, SignJWT } from 'jose'
+import { z } from 'zod'
 import { apnsBody } from '../../../cloud/apps/push/src/providers/apns/apns-client'
 import type { ApnsTransport } from '../../../cloud/apps/push/src/providers/apns/apns-http2-transport'
 import type { PushDelivery } from '../../../cloud/apps/push/src/delivery/push-delivery-message'
@@ -8,6 +9,7 @@ const APNS_HOSTS = {
   production: 'api.push.apple.com',
   sandbox: 'api.sandbox.push.apple.com'
 } as const
+const ApnsErrorSchema = z.object({ reason: z.string() })
 const DEAD_TOKEN_REASONS = new Set(['BadDeviceToken', 'Unregistered'])
 // Apple rejects tokens older than an hour and throttles reissue under ~20 minutes.
 const TOKEN_ROTATION_MS = 50 * 60 * 1000
@@ -16,8 +18,8 @@ export type ApnsCredentials = { teamId: string; keyId: string; keyPem: string }
 
 function readReason(body: string): string {
   try {
-    const parsed = JSON.parse(body) as { reason?: unknown }
-    return typeof parsed.reason === 'string' ? parsed.reason : 'unknown'
+    const parsed = ApnsErrorSchema.safeParse(JSON.parse(body))
+    return parsed.success ? parsed.data.reason : 'unknown'
   } catch {
     return 'unparseable'
   }

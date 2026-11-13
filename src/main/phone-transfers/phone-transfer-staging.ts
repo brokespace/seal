@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import { createReadStream } from 'node:fs'
 import { mkdtemp, open, rm, stat, type FileHandle } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -11,7 +10,7 @@ import {
 } from '../../shared/rpc-contract/phone-transfer-params'
 import { attachmentMimeType } from '../home-chat/attachments/home-chat-attachments'
 
-// Abandoned phone transfers (app killed mid-upload) are swept after this long idle.
+// Abandoned phone transfers (app killed mid-upload) are dropped after this long idle.
 const IDLE_EXPIRY_MS = 10 * 60_000
 const MAX_ACTIVE = 16
 
@@ -22,7 +21,7 @@ type StagedUpload = {
   size: number
   received: number
   handle: FileHandle
-  touchedAt: number
+  expiry: ReturnType<typeof setTimeout>
 }
 
 type StagedDownload = {
@@ -31,7 +30,7 @@ type StagedDownload = {
   size: number
   /** Deleted when the phone finishes; host-owned originals are never removed. */
   ownedDir: string | null
-  touchedAt: number
+  expiry: ReturnType<typeof setTimeout>
 }
 
 export type CommittedPhoneUpload = {
@@ -44,30 +43,11 @@ export type CommittedPhoneUpload = {
 
 const uploads = new Map<string, StagedUpload>()
 const downloads = new Map<string, StagedDownload>()
-let sweepTimer: ReturnType<typeof setInterval> | null = null
 
-function scheduleSweep(): void {
-  if (sweepTimer) {
-    return
-  }
-  sweepTimer = setInterval(() => {
-    const cutoff = Date.now() - IDLE_EXPIRY_MS
-    for (const [id, upload] of uploads) {
-      if (upload.touchedAt < cutoff) {
-        void abortPhoneUpload(id)
-      }
-    }
-    for (const [id, download] of downloads) {
-      if (download.touchedAt < cutoff) {
-        void endPhoneDownload(id)
-      }
-    }
-    if (uploads.size === 0 && downloads.size === 0 && sweepTimer) {
-      clearInterval(sweepTimer)
-      sweepTimer = null
-    }
-  }, 60_000)
-  sweepTimer.unref?.()
+function expireAfterIdle(onExpire: () => Promise<void>): ReturnType<typeof setTimeout> {
+  const timer = setTimeout(() => void onExpire(), IDLE_EXPIRY_MS)
+  timer.unref?.()
+  return timer
 }
 
 export async function beginPhoneUpload(
@@ -81,8 +61,8 @@ export async function beginPhoneUpload(
   const path = join(dir, basename(fileName))
   const handle = await open(path, 'w')
   const uploadId = randomUUID()
-  uploads.set(uploadId, { dir, path, fileName, size, received: 0, handle, touchedAt: Date.now() })
-  scheduleSweep()
+  const expiry = expireAfterIdle(() => abortPhoneUpload(uploadId))
+  uploads.set(uploadId, { dir, path, fileName, size, received: 0, handle, expiry })
   return { uploadId, chunkBytes: PHONE_TRANSFER_CHUNK_BYTES }
 }
 
@@ -91,7 +71,8 @@ function requireUpload(uploadId: string): StagedUpload {
   if (!upload) {
     throw new Error('This upload expired; start it again.')
   }
-  upload.touchedAt = Date.now()
+  clearTimeout(upload.expiry)
+  upload.expiry = expireAfterIdle(() => abortPhoneUpload(uploadId))
   return upload
 }
 
@@ -117,6 +98,7 @@ export async function appendPhoneUpload(
 export async function commitPhoneUpload(uploadId: string): Promise<CommittedPhoneUpload> {
   const upload = requireUpload(uploadId)
   uploads.delete(uploadId)
+  clearTimeout(upload.expiry)
   await upload.handle.close()
   if (upload.received !== upload.size) {
     await rm(upload.dir, { recursive: true, force: true })
@@ -136,6 +118,7 @@ export async function abortPhoneUpload(uploadId: string): Promise<void> {
     return
   }
   uploads.delete(uploadId)
+  clearTimeout(upload.expiry)
   await upload.handle.close().catch(() => {})
   await rm(upload.dir, { recursive: true, force: true })
 }
@@ -159,9 +142,8 @@ export async function openPhoneDownload(
     fileName,
     size: info.size,
     ownedDir: options.ownedDir ?? null,
-    touchedAt: Date.now()
+    expiry: expireAfterIdle(() => endPhoneDownload(downloadId))
   })
-  scheduleSweep()
   return {
     downloadId,
     fileName,
@@ -180,16 +162,23 @@ export async function readPhoneDownload(
   if (!download) {
     throw new Error('This download expired; start it again.')
   }
-  download.touchedAt = Date.now()
+  clearTimeout(download.expiry)
+  download.expiry = expireAfterIdle(() => endPhoneDownload(downloadId))
   if (offset >= download.size) {
     return { dataBase64: '', eof: true }
   }
   const end = Math.min(download.size, offset + Math.min(length, PHONE_TRANSFER_CHUNK_BYTES))
-  const chunks: Buffer[] = []
-  for await (const chunk of createReadStream(download.path, { start: offset, end: end - 1 })) {
-    chunks.push(chunk as Buffer)
+  const buffer = Buffer.alloc(end - offset)
+  const handle = await open(download.path, 'r')
+  try {
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, offset)
+    return {
+      dataBase64: buffer.subarray(0, bytesRead).toString('base64'),
+      eof: bytesRead === 0 || offset + bytesRead >= download.size
+    }
+  } finally {
+    await handle.close()
   }
-  return { dataBase64: Buffer.concat(chunks).toString('base64'), eof: end >= download.size }
 }
 
 export async function endPhoneDownload(downloadId: string): Promise<void> {
@@ -198,6 +187,7 @@ export async function endPhoneDownload(downloadId: string): Promise<void> {
     return
   }
   downloads.delete(downloadId)
+  clearTimeout(download.expiry)
   if (download.ownedDir) {
     await rm(download.ownedDir, { recursive: true, force: true })
   }

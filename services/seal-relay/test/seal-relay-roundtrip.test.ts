@@ -14,6 +14,7 @@ import {
   requestRelayAssignment
 } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-http-client'
 import { RelayAssignRateGate } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-assign-rate-gate'
+import type { E2EEKeypair } from '../../../src/main/runtime/rpc/server/pairing/e2ee-keypair'
 import { CloudRelayTransport } from '../../../src/main/runtime/rpc/transports/relay-transport'
 import { PushGatewayClient } from '../../../src/main/runtime/push/push-gateway-client'
 import {
@@ -23,7 +24,7 @@ import {
   waitFor
 } from './seal-relay-harness'
 
-type Keypair = { publicKey: Uint8Array; secretKey: Uint8Array; publicKeyB64: string }
+type Keypair = E2EEKeypair
 
 function newHostKeypair(): Keypair {
   const box = nacl.box.keyPair()
@@ -56,7 +57,7 @@ async function goLive(keypair: Keypair) {
   const { relayToken } = await exchangeRelayAuthorization({
     endpoint: endpoints.relayTokenEndpoint,
     accessToken: context!.accessToken,
-    keypair: keypair as never
+    keypair: keypair
   })
   const assignment = await requestRelayAssignment({
     directorUrl: endpoints.relayDirectorUrl,
@@ -73,7 +74,7 @@ async function goLive(keypair: Keypair) {
     relayHostId,
     assignmentEpoch: assignment.assignmentEpoch,
     identity: sealRelayIdentity(relayHostId),
-    keypair: keypair as never,
+    keypair: keypair,
     appVersion: 'seal-test',
     onConnectionOpen: (open) => {
       opens.push(open)
@@ -106,10 +107,7 @@ describe('Seal relay', () => {
     const live = await goLive(hostKeys)
     expect(live.assignment.assignmentEpoch).toBe(first.assignment.assignmentEpoch)
     // The desktop only ever sees ciphertext from the relay and answers in ciphertext.
-    live.transport.onMessage(((
-      message: string | Uint8Array,
-      reply: (response: Uint8Array) => void
-    ) => {
+    live.transport.onMessage((message, reply) => {
       if (typeof message === 'string') {
         return
       }
@@ -127,7 +125,7 @@ describe('Seal relay', () => {
         hostKeys.secretKey
       )
       reply(Buffer.concat([answerNonce, answer]))
-    }) as never)
+    })
     const invite = await live.client.createInvite('phone-1')
     const resolved = await fetch(`${relay.origin}/v1/resolve`, {
       method: 'POST',
@@ -224,7 +222,7 @@ function base64UrlDecode(value: string): Uint8Array {
 describe('Seal push', () => {
   it('delivers to APNs with the Seal topic and a provider token signed by the .p8 key, and retires dead tokens', async () => {
     const host = newHostKeypair()
-    const push = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: host as never })
+    const push = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: host })
     const token = randomBytes(32).toString('hex')
     const registered = await push.registerDevice({
       deviceId: 'iphone-1',
@@ -294,7 +292,7 @@ describe('Seal push', () => {
   it('delivers to FCM with a service-account access token', async () => {
     const push = new PushGatewayClient({
       gatewayUrl: relay.origin,
-      keypair: newHostKeypair() as never
+      keypair: newHostKeypair()
     })
     const token = `fcm:${randomBytes(24).toString('base64url')}`
     const registered = await push.registerDevice({
@@ -337,7 +335,7 @@ describe('Seal push', () => {
   it('scopes devices to the host key that registered them', async () => {
     const owner = new PushGatewayClient({
       gatewayUrl: relay.origin,
-      keypair: newHostKeypair() as never
+      keypair: newHostKeypair()
     })
     const registered = await owner.registerDevice({
       deviceId: 'iphone-2',
@@ -350,7 +348,7 @@ describe('Seal push', () => {
     }
     const stranger = new PushGatewayClient({
       gatewayUrl: relay.origin,
-      keypair: newHostKeypair() as never
+      keypair: newHostKeypair()
     })
     const before = providers.requests.length
     const result = await stranger.send({

@@ -1,4 +1,5 @@
 import { importPKCS8, SignJWT } from 'jose'
+import { z } from 'zod'
 import type { ApnsTransport } from '../../../cloud/apps/push/src/providers/apns/apns-http2-transport'
 import {
   FCM_SCOPE,
@@ -56,7 +57,16 @@ function fetchFcmTransport(env: SealEnv): FcmTransport {
     )
 }
 
-type ServiceAccount = { project_id: string; client_email: string; private_key: string }
+const ServiceAccountSchema = z.object({
+  project_id: z.string(),
+  client_email: z.string(),
+  private_key: z.string()
+})
+type ServiceAccount = z.infer<typeof ServiceAccountSchema>
+const GoogleTokenSchema = z.object({
+  access_token: z.string().min(1),
+  expires_in: z.number().optional()
+})
 
 function googleAccessToken(env: SealEnv, account: ServiceAccount): () => Promise<string> {
   let cached: { token: string; expiresAt: number } | null = null
@@ -83,10 +93,7 @@ function googleAccessToken(env: SealEnv, account: ServiceAccount): () => Promise
     if (!response.ok) {
       throw new Error(`fcm_access_token_${response.status}`)
     }
-    const body = (await response.json()) as { access_token?: string; expires_in?: number }
-    if (!body.access_token) {
-      throw new Error('fcm_access_token_unavailable')
-    }
+    const body = GoogleTokenSchema.parse(await response.json())
     cached = { token: body.access_token, expiresAt: Date.now() + (body.expires_in ?? 3600) * 1000 }
     return cached.token
   }
@@ -107,7 +114,7 @@ export function createPushProviders(env: SealEnv): PushProviders {
       : null
   let fcm: FcmClient | null = null
   if (env.FCM_SERVICE_ACCOUNT_JSON) {
-    const account = JSON.parse(env.FCM_SERVICE_ACCOUNT_JSON) as ServiceAccount
+    const account = ServiceAccountSchema.parse(JSON.parse(env.FCM_SERVICE_ACCOUNT_JSON))
     fcm = new FcmClient({
       projectId: account.project_id,
       accessToken: googleAccessToken(env, account),
