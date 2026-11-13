@@ -1,4 +1,7 @@
-import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import type {
+  LiveSession,
+  LiveSessionMachine
+} from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { buildDiscoveryScript } from './discovery-script'
 import { parseDiscoveryOutput, type DiscoveredFile } from './discovery-output'
@@ -23,6 +26,20 @@ export const LOCAL_SCAN_LIMITS: HostScanLimits = {
 
 // SSH exec keeps only the last 1 MB of output; a handful of reads stays well under it.
 export const SSH_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxFiles: 40, maxReads: 6 }
+
+// A runtime answers up to 4 MB of JSON; the server caps the script's output below that.
+export const RUNTIME_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxReads: 16 }
+
+export function scanLimitsFor(kind: LiveSessionMachine['kind']): HostScanLimits {
+  switch (kind) {
+    case 'local':
+      return LOCAL_SCAN_LIMITS
+    case 'ssh':
+      return SSH_SCAN_LIMITS
+    case 'runtime':
+      return RUNTIME_SCAN_LIMITS
+  }
+}
 
 type CachedTranscript = SummarizedTranscript & { head: string | null }
 
@@ -49,18 +66,16 @@ export class HostSessionScanner {
       known: findFiles ? [] : known,
       headKnown: findFiles ? [] : headKnown
     })
-    const [stdout, files] = await Promise.all([
-      this.host.run(script),
-      findFiles?.({
+    const output = parseDiscoveryOutput(await this.host.run(script))
+    if (findFiles) {
+      // After the script: it names the transcripts running agents own, which are listed however old.
+      output.files = await findFiles({
         ...this.limits,
         nowMs,
         known: new Map(known.map((k) => [k.path, k.size])),
-        headKnown: new Set(headKnown)
+        headKnown: new Set(headKnown),
+        pinned: output.pins
       })
-    ])
-    const output = parseDiscoveryOutput(stdout)
-    if (files) {
-      output.files = files
     }
     const listed = new Set(output.files.map((f) => f.path))
     for (const file of output.files) {

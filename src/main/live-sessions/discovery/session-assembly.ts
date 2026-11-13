@@ -125,7 +125,8 @@ type Claim = {
 function pairProcesses(
   processes: (DiscoveredProcess & { provider: LiveSessionProvider })[],
   transcripts: SummarizedTranscript[],
-  claudeSessionByPid: ReadonlyMap<number, string>
+  claudeSessionByPid: ReadonlyMap<number, string>,
+  ownedPaths: ReadonlyMap<number, ReadonlySet<string>>
 ): Claim[] {
   const free = new Set(transcripts)
   const claims: Claim[] = []
@@ -140,11 +141,16 @@ function pairProcesses(
     const named =
       (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
       sessionIdFromArgs(process.args)
-    const match = named
-      ? [...free].find(
-          (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
-        )
-      : undefined
+    const owned = ownedPaths.get(process.pid)
+    const match =
+      (named
+        ? [...free].find(
+            (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
+          )
+        : undefined) ??
+      [...free]
+        .filter((t) => t.summary.provider === process.provider && owned?.has(t.path))
+        .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     if (match) {
       claims.push({ process, transcript: take(match) })
     } else {
@@ -168,7 +174,7 @@ function pairProcesses(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions'>>
+    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins'>>
   transcripts: SummarizedTranscript[]
   nowMs: number
 }): LiveSession[] {
@@ -181,11 +187,18 @@ export function assembleHostSessions(input: {
   const claudeSessionByPid = new Map(
     (output.claudeSessions ?? []).map((s) => [s.pid, s.sessionId] as const)
   )
+  const ownedPaths = new Map<number, Set<string>>()
+  for (const pin of output.pins ?? []) {
+    if (pin.kind !== 'cwd') {
+      ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
+    }
+  }
   const sessions: LiveSession[] = []
   for (const { process, transcript } of pairProcesses(
     agentProcesses(output.processes),
     input.transcripts,
-    claudeSessionByPid
+    claudeSessionByPid,
+    ownedPaths
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider

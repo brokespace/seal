@@ -13,7 +13,10 @@ export function processProvider(args: string): LiveSessionProvider | null {
   const [command = '', script = '', ...rest] = args.split(/\s+/)
   const name = (value: string) => value.split('/').pop() ?? ''
   const tool = /^(claude|codex)(\.js)?$/
-  const direct = tool.exec(name(command))?.[1]
+  // Claude's native installer names its binary for the version: `~/.local/share/claude/versions/2.1.3`.
+  const direct = /\/claude\/versions\/[\d.]+$/.test(command)
+    ? 'claude'
+    : tool.exec(name(command))?.[1]
   let provider: LiveSessionProvider | null = null
   let subcommand = ''
   if (direct === 'claude' || direct === 'codex') {

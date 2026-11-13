@@ -288,8 +288,11 @@ Pair with your desktop app to monitor and steer your agents from your phone.
 
 ### Seal: chat with agents started outside the app
 
-Seal's **Agent sessions** view finds Claude Code and Codex sessions on this computer and on connected
-SSH hosts, including ones you started in your own terminal, and lets you chat with them.
+Seal's **Agent sessions** view finds Claude Code and Codex sessions on this computer, on connected
+SSH hosts and on paired servers (**Settings › Remote servers**), including ones you started in your
+own terminal, and lets you chat with them. A running agent is listed however long ago it last wrote.
+A paired server needs a Seal build with live sessions; an older one shows an "update Seal on this
+server" notice.
 Codex sessions and sessions inside tmux need no setup. For Claude sessions started in a plain
 terminal tab, install shell integration once per machine:
 

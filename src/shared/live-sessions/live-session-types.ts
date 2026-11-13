@@ -17,10 +17,10 @@ export type LiveSessionStatus = (typeof LIVE_SESSION_STATUSES)[number]
 export type LiveSessionStatusSource = 'seal-hooks' | 'agent-hooks' | 'screen' | 'transcript'
 
 export type LiveSessionMachine = {
-  /** `local`, or the SSH target id. */
+  /** `local`, the SSH target id, or `runtime:<environmentId>` for a paired remote server. */
   hostId: string
   label: string
-  kind: 'local' | 'ssh'
+  kind: 'local' | 'ssh' | 'runtime'
 }
 
 /** How a message reaches the session, in the order delivery tries them. */

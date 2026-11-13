@@ -5,16 +5,12 @@ import type {
   LiveSessionRegistrySnapshot
 } from '../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
-import {
-  HostSessionScanner,
-  LOCAL_SCAN_LIMITS,
-  SSH_SCAN_LIMITS
-} from './discovery/host-session-scanner'
+import { HostSessionScanner, scanLimitsFor } from './discovery/host-session-scanner'
 import { mergeSealPanes, type SealPane } from './seal-panes/seal-pane-sessions'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
-  /** Every host to scan right now (this machine and connected SSH targets). */
+  /** Every host to scan right now (this machine, connected SSH targets and paired servers). */
   hosts: () => LiveSessionHost[]
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
@@ -181,7 +177,7 @@ export class LiveSessionRegistry {
               run: (script, options) => this.hosts.get(hostId)!.host.run(script, options),
               transcriptFiles: host.transcriptFiles
             },
-            host.machine.kind === 'local' ? LOCAL_SCAN_LIMITS : SSH_SCAN_LIMITS
+            scanLimitsFor(host.machine.kind)
           ),
           sessions: [],
           nextScanAt: 0,

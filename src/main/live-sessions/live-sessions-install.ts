@@ -5,6 +5,7 @@ import type { GlobalSettings } from '../../shared/global-settings-types'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { localAiVaultScanRoots } from '../ai-vault/discovery/ai-vault-scan-roots'
 import { connectedSshHosts, LOCAL_HOST_ID, localHost } from './hosts/live-session-hosts'
+import { connectedRuntimeHosts } from './hosts/connected-runtime-hosts'
 import { aiVaultTranscriptFiles } from './discovery/local-transcript-files'
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
@@ -35,7 +36,12 @@ export function installLiveSessions(
     process.platform === 'win32'
       ? null
       : localHost(hostname(), aiVaultTranscriptFiles(localAiVaultScanRoots))
-  const allHosts = () => [...(local ? [local] : []), ...connectedSshHosts()]
+  const userDataPath = app.getPath('userData')
+  const allHosts = () => [
+    ...(local ? [local] : []),
+    ...connectedSshHosts(),
+    ...connectedRuntimeHosts(userDataPath)
+  ]
   const wrapSync = new ShellIntegrationSync(() => wrapAgentsEnabled(store.getSettings()), log)
   store.onSettingsChanged((updates) => {
     if ('liveSessionsWrapAgents' in updates) {
@@ -47,7 +53,7 @@ export function installLiveSessions(
     snapshot: () => agentHookServer.getStatusSnapshot()
   })
   const service = new LiveSessionService({
-    userDataPath: app.getPath('userData'),
+    userDataPath,
     hosts: () => {
       const hosts = allHosts()
       wrapSync.reconcile(hosts)
@@ -62,7 +68,7 @@ export function installLiveSessions(
       throw new Error(
         hostId === LOCAL_HOST_ID
           ? 'Shell integration needs macOS or Linux'
-          : 'Connect to this SSH host first'
+          : 'Connect to this host first'
       )
     }
     const status = await runShellIntegration(host, action)

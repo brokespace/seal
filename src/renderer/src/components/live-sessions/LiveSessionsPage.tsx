@@ -91,8 +91,8 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
           ) : props.sessions.length === 0 ? (
             <p className="px-4 py-2 text-xs text-muted-foreground">
               {t(
-                'auto.components.live-sessions.LiveSessionsPage.empty',
-                'No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.'
+                'auto.components.live-sessions.LiveSessionsPage.emptyAnyHost',
+                'No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server.'
               )}
             </p>
           ) : null}

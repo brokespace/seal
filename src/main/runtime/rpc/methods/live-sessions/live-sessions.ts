@@ -1,5 +1,6 @@
 import {
   LiveSessionAnswerParams,
+  LiveSessionHostRunParams,
   LiveSessionTakeOverParams,
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
@@ -11,6 +12,7 @@ import {
 import { getLiveSessionService } from '../../../../live-sessions/live-session-service-instance'
 import type { LiveSessionService } from '../../../../live-sessions/live-session-service'
 import { defineMethod, defineStreamingMethod, type RpcContext } from '../../core'
+import { runLiveSessionHostScript } from '../../../../live-sessions/hosts/live-session-host-run'
 
 function service(): LiveSessionService {
   const found = getLiveSessionService()
@@ -139,6 +141,14 @@ export const LIVE_SESSION_METHODS = [
     permission: 'workspace',
     params: LiveSessionAnswerParams,
     handler: (answer) => service().answer(answer)
+  }),
+  // A paired desktop's live-sessions registry scans, types into and answers agents on this machine through this.
+  // 'workspace' already allows running commands here as this user (terminals), so a script adds no reach.
+  defineMethod({
+    name: 'liveSessions.hostRun',
+    permission: 'workspace',
+    params: LiveSessionHostRunParams,
+    handler: (params) => runLiveSessionHostScript(params)
   }),
   defineMethod({
     name: 'liveSessions.takeOver',

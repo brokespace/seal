@@ -34,6 +34,7 @@ import {
 } from '../desktop-browser-bridge-protocol'
 import {
   LiveSessionAnswerParams,
+  LiveSessionHostRunParams,
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
   LiveSessionSendParams,
@@ -1336,6 +1337,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.updateIssue': IssueUpdateOfLinearParams,
   'linkPreview.get': LinkPreviewGetParams,
   'liveSessions.answer': LiveSessionAnswerParams,
+  'liveSessions.hostRun': LiveSessionHostRunParams,
   'liveSessions.list': null,
   'liveSessions.messages': LiveSessionMessagesParams,
   'liveSessions.retry': LiveSessionRetryParams,
