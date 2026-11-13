@@ -67,7 +67,7 @@ function HomeOverviewContent(): React.JSX.Element {
             <HomeMachinesPanel
               machines={machines}
               sessions={sessions}
-              onManage={actions.openMachinesSettings}
+              onManage={actions.openMachines}
             />
             <HomeAccountsPanel
               accounts={accounts}

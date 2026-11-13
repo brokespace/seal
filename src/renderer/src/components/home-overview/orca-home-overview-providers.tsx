@@ -41,7 +41,7 @@ function OrcaHomeRoot({ children }: { children: ReactNode }): React.JSX.Element 
   return <OrcaSnapshotContext.Provider value={snapshot}>{children}</OrcaSnapshotContext.Provider>
 }
 
-function useOrcaSessions(): HomeSession[] {
+export function useOrcaSessions(): HomeSession[] {
   const snapshot = useContext(OrcaSnapshotContext)
   const live = useAppStore((s) => s.agentStatusByPaneKey)
   const retained = useAppStore((s) => s.retainedAgentsByPaneKey)
@@ -104,7 +104,7 @@ function useOrcaMachines(): HomeMachine[] {
   )
 }
 
-function useOrcaAccounts(): ReturnType<typeof orcaHomeAccounts> {
+export function useOrcaAccounts(): ReturnType<typeof orcaHomeAccounts> {
   const rateLimits = useAppStore((s) => s.rateLimits)
   const settings = useAppStore((s) => s.settings)
   return useMemo(() => orcaHomeAccounts(rateLimits, settings), [rateLimits, settings])
@@ -156,7 +156,7 @@ function useOrcaActions(): HomeOverviewActions {
         }
       },
       openAutomations: openAutomationsPage,
-      openMachinesSettings: () => openSettingsTarget({ pane: 'servers', repoId: null }),
+      openMachines: () => openSettingsTarget({ pane: 'servers', repoId: null }),
       openAccountsSettings: () => openSettingsTarget({ pane: 'accounts', repoId: null })
     }),
     [openAutomationsPage, openSettingsTarget]
@@ -170,7 +170,7 @@ function OrcaSessions({ children }: Children): React.JSX.Element {
   return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
 }
 
-function OrcaMachines({ children }: Children): React.JSX.Element {
+export function OrcaMachines({ children }: Children): React.JSX.Element {
   const machines = useOrcaMachines()
   return <HomeMachinesContext.Provider value={machines}>{children}</HomeMachinesContext.Provider>
 }

@@ -11,6 +11,10 @@ import type {
 import { liveSessionRegistryStore, useLiveSessions } from './live-session-registry-store'
 import { useLiveTranscript } from './use-live-transcript'
 import { pendingRows } from './live-session-pending-rows'
+import {
+  getLastSelectedLiveSessionId,
+  rememberLiveSessionSelection
+} from './live-session-selection'
 import { LiveSessionList } from './LiveSessionList'
 import { LiveSessionChat } from './LiveSessionChat'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
@@ -186,7 +190,11 @@ function SelectedSessionChat({
 export default function LiveSessionsPage(): React.JSX.Element {
   const state = useLiveSessions()
   const now = useNow(30_000)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(getLastSelectedLiveSessionId)
+  const select = useCallback((sessionId: string) => {
+    rememberLiveSessionSelection(sessionId)
+    setSelectedId(sessionId)
+  }, [])
   const currentId = selectedId ? liveSessionRegistryStore.currentId(selectedId) : null
   const selected =
     state.sessions.find((s) => s.id === currentId) ??
@@ -197,7 +205,7 @@ export default function LiveSessionsPage(): React.JSX.Element {
       sessions={state.sessions}
       hostErrors={state.hostErrors}
       selectedId={selected?.id ?? null}
-      onSelect={setSelectedId}
+      onSelect={select}
       onRefresh={() => void window.api.liveSessions?.refresh()}
       now={now}
       chat={

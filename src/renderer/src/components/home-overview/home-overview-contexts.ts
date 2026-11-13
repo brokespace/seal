@@ -21,6 +21,6 @@ export const HomeAutomationsContext = createContext<HomeAutomationsResult>({
 export const HomeActionsContext = createContext<HomeOverviewActions>({
   openSession: noop,
   openAutomations: noop,
-  openMachinesSettings: noop,
+  openMachines: noop,
   openAccountsSettings: noop
 })

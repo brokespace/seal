@@ -5,7 +5,9 @@ import type { DashboardRevealAgentArgs } from '../../../../shared/dashboard-snap
 export type HomeSessionState = 'working' | 'waiting' | 'permission' | 'errored' | 'done' | 'idle'
 
 /** Where clicking a session goes. New registries add their own kinds alongside Orca panes. */
-export type HomeSessionTarget = { kind: 'orca-pane'; reveal: DashboardRevealAgentArgs }
+export type HomeSessionTarget =
+  | { kind: 'orca-pane'; reveal: DashboardRevealAgentArgs }
+  | { kind: 'live-session'; sessionId: string }
 
 export type HomeSession = {
   id: string
@@ -97,7 +99,7 @@ export type HomeAutomationsResult = {
 export type HomeOverviewActions = {
   openSession: (session: HomeSession) => void
   openAutomations: () => void
-  openMachinesSettings: () => void
+  openMachines: () => void
   openAccountsSettings: () => void
 }
 
