@@ -1,4 +1,3 @@
-import type { OrcaCloudAuthConfig } from '../../orca-profiles/cloud-auth/profile-cloud-auth-config'
 import type { MobilePairingConnectionContext } from '../rpc/server/runtime-rpc-pairing-types'
 import type { OrcaRuntimeRpcServer } from '../rpc/server/runtime-rpc'
 import type {
@@ -8,7 +7,9 @@ import type {
   PairingProvisionRelayParams
 } from '../../../shared/remote-runtime/relay/mobile-relay-credential-contract'
 import type { RelayHostCloseReason } from '../../../shared/relay-host-close-reason'
-import { readRelayAuthContext } from './authentication/relay-auth-context'
+import type { RelayAuthContext } from './authentication/relay-auth-identity'
+import type { RelayEndpointConfig } from './authentication/seal-relay-host-auth'
+import type { E2EEKeypair } from '../rpc/server/pairing/e2ee-keypair'
 import { relayIdentityKey } from './authentication/relay-auth-identity'
 import { RelayAuthCoordinator } from './authentication/relay-auth-coordinator'
 import { RelayUnavailableError } from './authentication/relay-readiness'
@@ -26,7 +27,9 @@ import { RelayDemandLedger } from './demand/relay-demand-ledger'
 import { createRelayRegionPreferenceReader } from './region-selection/relay-region-preference-reader'
 
 type DesktopRelayServiceOptions = {
-  authConfig: OrcaCloudAuthConfig
+  authConfig: RelayEndpointConfig
+  /** Who the host is to the relay and the bearer that mints its relay token. */
+  readContext: (keypair: E2EEKeypair) => () => Promise<RelayAuthContext | null>
   userDataPath: string
   appVersion: string
   runtimeRpc: OrcaRuntimeRpcServer
@@ -63,7 +66,7 @@ export class DesktopRelayService {
     })
     const regionPreference = createRelayRegionPreferenceReader(options)
     this.coordinator = new RelayAuthCoordinator({
-      readContext: () => readRelayAuthContext(options.authConfig, options.userDataPath),
+      readContext: options.readContext(keypair),
       hasDemand: ({ identity }) => this.demandLedger.hasDemand(relayIdentityKey(identity)),
       openBroker: async ({ context, isCurrent, refreshAccessToken }) => {
         const broker = await RelaySessionBroker.connect({

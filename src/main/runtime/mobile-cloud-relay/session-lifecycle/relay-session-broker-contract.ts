@@ -22,7 +22,7 @@ export type RelayAccessTokenRefresh =
   | { accessToken: null; hostCloseReason?: RelayHostCloseReason }
 
 export type RelaySessionBrokerOptions = {
-  authConfig: OrcaCloudAuthConfig
+  authConfig: Pick<OrcaCloudAuthConfig, 'relayDirectorUrl' | 'relayTokenEndpoint'>
   accessToken: string
   identity: RelayIdentity
   keypair: E2EEKeypair
