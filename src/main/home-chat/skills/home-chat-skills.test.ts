@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { createLocalMachine } from '../machines/home-chat-local-machine'
+import type { HomeChatMachine } from '../machines/home-chat-machine-types'
 import { HomeChatSkills } from './home-chat-skills'
 
 let root: string
@@ -51,7 +53,55 @@ describe('HomeChatSkills', () => {
     expect(loaded).toContain('Run the deploy script.')
     expect(loaded).toContain(join(sealSkillsDir, 'deploy', 'deploy.sh'))
     await expect(skills.load('missing')).rejects.toThrow(
-      'No skill named "missing". Available: deploy-site'
+      'No skill named "missing" on this computer. Available: deploy-site.'
     )
   })
+
+  it.skipIf(process.platform === 'win32')(
+    'discovers the skills and instructions on another machine and loads one from there',
+    async () => {
+      // This computer's shell stands in for the remote one; its home is the temp folder.
+      const home = join(root, 'remote-home')
+      const originalHome = process.env.HOME
+      process.env.HOME = home
+      try {
+        await writeSkill(
+          join(home, '.claude', 'skills', 'gpu-check'),
+          'gpu-check',
+          'Check GPU health on the training rig',
+          'Run nvidia-smi and report temperatures.'
+        )
+        await writeFile(join(home, '.claude', 'skills', 'gpu-check', 'thresholds.json'), '{}')
+        await writeFile(join(home, '.claude', 'CLAUDE.md'), 'Always use tabs.')
+        const machine: HomeChatMachine = {
+          ...createLocalMachine(),
+          info: {
+            id: 'ssh:kessel',
+            label: 'kessel-ml',
+            kind: 'ssh',
+            connected: true,
+            status: 'online'
+          }
+        }
+        const skills = new HomeChatSkills({
+          sealSkillsDir: join(root, 'none'),
+          homeDir: join(root, 'local-home'),
+          repos: () => [],
+          discover: () => Promise.resolve({ skills: [], sources: [], scannedAt: 0 })
+        })
+
+        const catalog = await skills.machineCatalog(machine)
+        expect(catalog.entries.map((e) => [e.kind, e.name, e.description])).toEqual([
+          ['skill', 'gpu-check', 'Check GPU health on the training rig'],
+          ['instructions', 'CLAUDE', '']
+        ])
+        const loaded = await skills.load('gpu-check', machine)
+        expect(loaded).toContain('Run nvidia-smi and report temperatures.')
+        expect(loaded).toContain(join(home, '.claude', 'skills', 'gpu-check', 'thresholds.json'))
+        expect(loaded).toContain('on machine "ssh:kessel"')
+      } finally {
+        process.env.HOME = originalHome
+      }
+    }
+  )
 })

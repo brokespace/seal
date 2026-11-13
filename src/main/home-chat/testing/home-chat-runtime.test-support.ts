@@ -3,6 +3,7 @@ import {
   createHomeChatAssistantRuntime,
   type HomeChatAssistantRuntime
 } from '../home-chat-assistant-runtime'
+import type { HomeChatSealAccess } from '../home-chat-assistant-services'
 import type { HomeChatWorkerHost } from '../delegation/home-chat-subagents'
 import type { HomeChatMachineProvider } from '../machines/home-chat-machine-types'
 import type { HomeChatToolContext } from '../tools/home-chat-tool-executor'
@@ -19,11 +20,23 @@ export const unusedWorkers: HomeChatWorkerHost = {
   lastAnswer: () => ''
 }
 
+const unused = (): Promise<never> => Promise.reject(new Error('unused'))
+
+export const unusedSeal: HomeChatSealAccess = {
+  sessions: { list: unused, transcript: unused, send: unused },
+  accounts: { usage: unused, swap: unused },
+  open: () => undefined
+}
+
 /** A real runtime rooted in a temp dir, recording every wake instead of starting turns. */
 export function createTestHomeChatRuntime(
   rootDir: string,
   machines: HomeChatMachineProvider,
-  overrides: { workers?: HomeChatWorkerHost; runOrcaCli?: HomeChatToolContext['runOrcaCli'] } = {}
+  overrides: {
+    workers?: HomeChatWorkerHost
+    runOrcaCli?: HomeChatToolContext['runOrcaCli']
+    seal?: HomeChatSealAccess
+  } = {}
 ): { runtime: HomeChatAssistantRuntime; wakes: RecordedWake[] } {
   const wakes: RecordedWake[] = []
   const runtime = createHomeChatAssistantRuntime({
@@ -34,7 +47,8 @@ export function createTestHomeChatRuntime(
     webConfig: () => ({ searchProvider: 'duckduckgo', searxngUrl: '', apiKey: null }),
     wake: (chatId, source, text) => wakes.push({ chatId, source, text }),
     memoryChanged: () => undefined,
-    workers: overrides.workers ?? unusedWorkers
+    workers: overrides.workers ?? unusedWorkers,
+    seal: overrides.seal ?? unusedSeal
   })
   return { runtime, wakes }
 }

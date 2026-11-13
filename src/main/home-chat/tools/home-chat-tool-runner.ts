@@ -1,6 +1,9 @@
 import type { HomeChatApprovals } from '../home-chat-approvals'
-import type { HomeChatEntryWriter } from '../home-chat-entry-writer'
+import { type RepeatGuard, stalledRefusal } from '../engine/home-chat-repeat-guard'
+import type { HomeChatTurnRecorder } from '../engine/home-chat-turn-recorder'
+import type { HomeChatToolOutcome } from '../thread/home-chat-thread-items'
 import {
+  HOME_CHAT_TOOLS,
   isHomeChatToolName,
   parseHomeChatToolInput,
   type HomeChatToolName
@@ -10,88 +13,133 @@ import {
   type HomeChatToolContext,
   type HomeChatToolResult
 } from './home-chat-tool-executor'
+import {
+  failureReply,
+  invalidArgumentsReply,
+  notAnObjectReply,
+  unknownToolReply
+} from './home-chat-tool-replies'
 import { assessHomeChatToolRisk } from './home-chat-tool-risk'
-
-const MAX_UI_OUTPUT_CHARS = 20_000
 
 export type HomeChatToolRunContext = Omit<
   HomeChatToolContext,
   'reportProgress' | 'showAttachment'
 > & {
-  writer: HomeChatEntryWriter
+  recorder: HomeChatTurnRecorder
   approvals: HomeChatApprovals
+  /** This turn's memory of failing calls. */
+  guard: RepeatGuard
+  /** A tool acted on a machine; the thread remembers the last one. */
+  onMachine?: (label: string) => void
 }
 
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+/** What a tool call answered. Every call gets one: a refusal or failure is a reply, never a throw. */
+export type HomeChatToolReply = { text: string; outcome: HomeChatToolOutcome; machine?: string }
+
+export type HomeChatToolCall = { callId: string; tool: string; input: unknown }
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-/** Run one model-requested tool call: render it, ask first when risky, then execute. */
-export async function runHomeChatToolCall(
-  tool: string,
-  rawInput: unknown,
+async function execute(
+  tool: HomeChatToolName,
+  input: Record<string, unknown>,
+  callId: string,
   ctx: HomeChatToolRunContext
-): Promise<HomeChatToolResult> {
-  if (!isHomeChatToolName(tool)) {
-    return { text: `Unknown tool ${tool}.`, isError: true }
+): Promise<HomeChatToolReply> {
+  if (ctx.guard.stalled(tool, input)) {
+    return { text: stalledRefusal(tool), outcome: 'refusal' }
+  }
+  const risk = assessHomeChatToolRisk(tool, input)
+  if (risk.requiresApproval) {
+    ctx.recorder.toolStatus(callId, { status: 'awaiting-approval', approvalReason: risk.reason })
+    const entryId = ctx.recorder.entryIdForCall(callId)
+    const approved = entryId ? await ctx.approvals.request(ctx.chatId, entryId, ctx.signal) : false
+    if (!approved) {
+      return {
+        text: ctx.signal?.aborted
+          ? 'Cancelled: the user stopped the turn before deciding.'
+          : 'The user declined this action. Do not retry it or work around it; ask how they want to proceed.',
+        outcome: ctx.signal?.aborted ? 'interrupted' : 'denied'
+      }
+    }
+    ctx.recorder.toolStatus(callId, { status: 'running' })
+  }
+  let result: HomeChatToolResult
+  try {
+    result = await executeHomeChatTool(tool, input, {
+      ...ctx,
+      reportProgress: (text) => ctx.recorder.event({ kind: 'progress', text }),
+      showAttachment: (attachment) => ctx.recorder.event({ kind: 'attachment', ...attachment })
+    })
+  } catch (error) {
+    if (ctx.signal?.aborted) {
+      return { text: 'Cancelled: the user stopped the turn.', outcome: 'interrupted' }
+    }
+    result = { text: failureReply(tool, error), isError: true }
+  }
+  if (!result.isError) {
+    ctx.guard.succeeded(tool, input)
+    return {
+      text: result.text,
+      outcome: 'ok',
+      ...(result.machine ? { machine: result.machine } : {})
+    }
+  }
+  const { note } = ctx.guard.failed(tool, input, result.text)
+  return {
+    text: note ? `${result.text}\n\n${note}` : result.text,
+    outcome: 'error',
+    ...(result.machine ? { machine: result.machine } : {})
+  }
+}
+
+async function answer(
+  call: HomeChatToolCall,
+  rawInput: Record<string, unknown>,
+  ctx: HomeChatToolRunContext
+): Promise<HomeChatToolReply> {
+  if (ctx.signal?.aborted) {
+    return { text: 'Cancelled: the user stopped the turn.', outcome: 'interrupted' }
+  }
+  if (!isHomeChatToolName(call.tool)) {
+    return { text: unknownToolReply(call.tool, Object.keys(HOME_CHAT_TOOLS)), outcome: 'refusal' }
+  }
+  if (call.input !== undefined && call.input !== null && !isObject(call.input)) {
+    return { text: notAnObjectReply(call.tool), outcome: 'refusal' }
   }
   let input: Record<string, unknown>
   try {
-    input = parseHomeChatToolInput(tool, rawInput)
+    input = parseHomeChatToolInput(call.tool, rawInput)
   } catch (error) {
-    return { text: `Invalid arguments for ${tool}: ${errorText(error)}`, isError: true }
+    return { text: invalidArgumentsReply(call.tool, error), outcome: 'refusal' }
   }
-  const toolCtx: HomeChatToolContext = {
-    ...ctx,
-    reportProgress: (text) => ctx.writer.create({ kind: 'progress', text }),
-    showAttachment: (attachment) => ctx.writer.create({ kind: 'attachment', ...attachment })
-  }
-  if (tool === 'report_progress') {
-    return executeHomeChatTool(tool, input, toolCtx)
-  }
-  return runVisibleTool(tool, input, ctx, toolCtx)
+  return execute(call.tool, input, call.callId, ctx)
 }
 
-async function runVisibleTool(
-  tool: HomeChatToolName,
-  input: Record<string, unknown>,
-  ctx: HomeChatToolRunContext,
-  toolCtx: HomeChatToolContext
-): Promise<HomeChatToolResult> {
-  const risk = assessHomeChatToolRisk(tool, input)
-  const machine = typeof input.machine === 'string' ? input.machine : undefined
-  const entry = ctx.writer.create({
-    kind: 'tool',
-    tool,
-    input,
-    ...(machine ? { machine } : {}),
-    status: risk.requiresApproval ? 'awaiting-approval' : 'running',
-    ...(risk.requiresApproval ? { approvalReason: risk.reason } : {})
-  })
-  if (risk.requiresApproval) {
-    const approved = await ctx.approvals.request(ctx.chatId, entry.id, ctx.signal)
-    if (!approved) {
-      entry.update({ status: 'denied' })
-      return {
-        text: 'The user declined this action. Do not retry it; ask how they want to proceed.',
-        isError: true
-      }
-    }
-    entry.update({ status: 'running' })
-  }
+/**
+ * Run one model-requested tool call end to end: record it, check it, ask first when risky, execute,
+ * and record the answer. The reply always comes back, so the model can recover from its own mistakes.
+ */
+export async function runHomeChatToolCall(
+  call: HomeChatToolCall,
+  ctx: HomeChatToolRunContext
+): Promise<HomeChatToolReply> {
+  const rawInput = isObject(call.input) ? call.input : {}
+  ctx.recorder.toolCall({ callId: call.callId, tool: call.tool, input: rawInput })
   const startedAt = Date.now()
-  try {
-    const result = await executeHomeChatTool(tool, input, toolCtx)
-    entry.update({
-      status: result.isError ? 'error' : 'ok',
-      output: result.text.slice(0, MAX_UI_OUTPUT_CHARS),
-      durationMs: Date.now() - startedAt,
-      ...(result.machine ? { machine: result.machine } : {})
-    })
-    return result
-  } catch (error) {
-    const text = errorText(error)
-    entry.update({ status: 'error', output: text, durationMs: Date.now() - startedAt })
-    return { text, isError: true }
+  const reply = await answer(call, rawInput, ctx)
+  if (reply.machine) {
+    ctx.onMachine?.(reply.machine)
   }
+  ctx.recorder.toolResult({
+    callId: call.callId,
+    tool: call.tool,
+    content: reply.text,
+    outcome: reply.outcome,
+    durationMs: Date.now() - startedAt,
+    ...(reply.machine ? { machine: reply.machine } : {})
+  })
+  return reply
 }

@@ -13,11 +13,15 @@ export type OpenAiChatMessage =
 
 export type OpenAiStreamDelta = { kind: 'text' | 'reasoning'; text: string }
 
+export type OpenAiUsage = { promptTokens: number; completionTokens: number }
+
 export type OpenAiStreamResult = {
   content: string
   reasoning: string
   toolCalls: OpenAiToolCall[]
   finishReason: string | null
+  /** Present when the server reports it (`stream_options.include_usage`). */
+  usage: OpenAiUsage | null
 }
 
 type Rec = Record<string, unknown>
@@ -28,6 +32,7 @@ export class OpenAiStreamAccumulator {
   private content = ''
   private reasoning = ''
   private finishReason: string | null = null
+  private usage: OpenAiUsage | null = null
   private readonly calls = new Map<number, OpenAiToolCall>()
 
   /** Feed raw response text in any chunking; returns the visible deltas it completed. */
@@ -51,7 +56,8 @@ export class OpenAiStreamAccumulator {
       content: this.content,
       reasoning: this.reasoning,
       toolCalls,
-      finishReason: this.finishReason
+      finishReason: this.finishReason,
+      usage: this.usage
     }
   }
 
@@ -71,6 +77,13 @@ export class OpenAiStreamAccumulator {
     }
     if (isRec(parsed) && isRec(parsed.error)) {
       throw new Error(String(parsed.error.message ?? 'The model API returned an error'))
+    }
+    if (isRec(parsed) && isRec(parsed.usage) && typeof parsed.usage.prompt_tokens === 'number') {
+      this.usage = {
+        promptTokens: parsed.usage.prompt_tokens,
+        completionTokens:
+          typeof parsed.usage.completion_tokens === 'number' ? parsed.usage.completion_tokens : 0
+      }
     }
     const choice = isRec(parsed) && Array.isArray(parsed.choices) ? parsed.choices[0] : null
     if (!isRec(choice)) {

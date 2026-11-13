@@ -67,7 +67,8 @@ describe('OpenAiStreamAccumulator', () => {
           function: { name: 'run_command', arguments: '{"machine":"local","command":"ls"}' }
         },
         { id: 'call_1', type: 'function', function: { name: 'list_machines', arguments: '{}' } }
-      ]
+      ],
+      usage: null
     })
   })
 

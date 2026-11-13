@@ -5,6 +5,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import CommentMarkdown from '../sidebar/CommentMarkdown'
 import type { HomeChatEntry } from '../../../../shared/home-chat/home-chat-types'
 import { HomeChatAttachment, type HomeChatAttachmentActions } from './HomeChatAttachment'
+import { HomeChatCompactionDivider } from './HomeChatCompactionDivider'
 import { HomeChatNotice } from './HomeChatNotice'
 import { HomeChatToolCall } from './HomeChatToolCall'
 import { formatHomeChatDuration } from './home-chat-format'
@@ -51,7 +52,10 @@ function Entry({
     case 'user':
       return (
         <div className="flex flex-col items-end gap-1">
-          <div className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-foreground">
+          <div
+            className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
+            data-home-chat-user
+          >
             {entry.text}
           </div>
           {entry.delivery === 'failed' && (
@@ -69,7 +73,7 @@ function Entry({
         />
       ) : null
     case 'thinking':
-      return <Thinking entry={entry} />
+      return entry.text || entry.streaming ? <Thinking entry={entry} /> : null
     case 'tool':
       return <HomeChatToolCall entry={entry} onRespond={(ok) => onRespond(entry.id, ok)} />
     case 'progress':
@@ -86,6 +90,8 @@ function Entry({
           <span className="whitespace-pre-wrap">{entry.text}</span>
         </p>
       )
+    case 'compaction':
+      return <HomeChatCompactionDivider entry={entry} />
     case 'notice':
       return <HomeChatNotice entry={entry} />
     case 'attachment':
