@@ -5,107 +5,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RuntimeSubscriptionRegistry } from '../../runtime/client/runtime-subscription-registry'
-import {
-  createHostFile,
-  listHostDirPage,
-  machineHostFileSystem,
-  readHostChunk,
-  removeHostPath,
-  requireHostPath,
-  writeHostChunk
-} from '../../runtime/rpc/methods/machines/machine-host-file-io'
-import {
-  cancelMachineHostStream,
-  runMachineHostUrlDownload,
-  runMachineHostWatch,
-  type MachineHostSubscriptions
-} from '../../runtime/rpc/methods/machines/machine-host-streams'
-import {
-  MachineHostCancel,
-  MachineHostCreateFile,
-  MachineHostDownloadUrl,
-  MachineHostListDir,
-  MachineHostPath,
-  MachineHostReadChunk,
-  MachineHostRename,
-  MachineHostWatch,
-  MachineHostWriteChunk
-} from '../../../shared/rpc-contract/machine-host-params'
+import { machineHostFileSystem } from '../../runtime/rpc/methods/machines/machine-host-file-io'
 import type { MachineHostStreamEvent } from '../../../shared/machines/machine-host-wire'
+import { createInProcessRuntimeChannel } from '../testing/machine-transport-test-doubles'
 import { RuntimeMachineFileSystem } from './runtime-machine-filesystem'
-import { runtimeMachineError, type RuntimeMachineChannel } from './runtime-machine-channel'
-
-/** Routes the desktop client straight into the runtime-side handlers; params go through the RPC schemas. */
-function createInProcessChannel(registry: RuntimeSubscriptionRegistry) {
-  const runtime: MachineHostSubscriptions = {
-    registerSubscriptionCleanup: (id, cleanup, connectionId) =>
-      registry.register(id, cleanup, connectionId),
-    cleanupSubscription: (id) => registry.cleanup(id),
-    cleanupSubscriptionAndWait: (id) => registry.cleanupAndWait(id)
-  }
-  const unary: Record<string, (params: unknown) => Promise<unknown>> = {
-    'machineHost.homeDir': async () => ({ path: os.homedir() }),
-    'machineHost.listDir': async (raw) => {
-      const p = MachineHostListDir.parse(raw)
-      return listHostDirPage(p.path, p.offset, p.limit)
-    },
-    'machineHost.stat': async (raw) =>
-      machineHostFileSystem.stat(requireHostPath(MachineHostPath.parse(raw).path)),
-    'machineHost.readChunk': async (raw) => {
-      const p = MachineHostReadChunk.parse(raw)
-      return readHostChunk(p.path, p.offset, p.length)
-    },
-    'machineHost.createFile': async (raw) => {
-      const p = MachineHostCreateFile.parse(raw)
-      await createHostFile(p.path, p.contentBase64)
-    },
-    'machineHost.writeChunk': async (raw) => {
-      const p = MachineHostWriteChunk.parse(raw)
-      await writeHostChunk(p.path, p.offset, p.contentBase64)
-    },
-    'machineHost.createDir': async (raw) =>
-      machineHostFileSystem.createDir(requireHostPath(MachineHostPath.parse(raw).path)),
-    'machineHost.rename': async (raw) => {
-      const p = MachineHostRename.parse(raw)
-      await machineHostFileSystem.rename(requireHostPath(p.from), requireHostPath(p.to))
-    },
-    'machineHost.remove': async (raw) => removeHostPath(MachineHostPath.parse(raw).path),
-    'machineHost.cancel': async (raw) =>
-      cancelMachineHostStream(runtime, MachineHostCancel.parse(raw).subscriptionId)
-  }
-  const emitted: MachineHostStreamEvent[] = []
-  let connectionSeq = 0
-  const channel: RuntimeMachineChannel = {
-    async call(method, params) {
-      const handler = unary[method]
-      if (!handler) {
-        throw new Error(`Unexpected method ${method}`)
-      }
-      return handler(params)
-    },
-    async stream(method, raw, handlers) {
-      const connectionId = `conn-${++connectionSeq}`
-      const emit = (event: MachineHostStreamEvent): void => {
-        emitted.push(event)
-        handlers.onEvent(event)
-      }
-      const ctx = { runtime, connectionId }
-      const run =
-        method === 'machineHost.watch'
-          ? runMachineHostWatch(MachineHostWatch.parse(raw).dirs, ctx, emit)
-          : runMachineHostUrlDownload(
-              MachineHostDownloadUrl.parse(raw).url,
-              MachineHostDownloadUrl.parse(raw).destination,
-              ctx,
-              emit
-            )
-      void run.then(handlers.onClose, (error: unknown) => handlers.onError(String(error)))
-      // Closing the subscription socket is what retires a stream on a real runtime.
-      return { close: () => registry.cleanupForConnection(connectionId) }
-    }
-  }
-  return { channel, emitted }
-}
+import { runtimeMachineError } from './runtime-machine-channel'
 
 describe('RuntimeMachineFileSystem over the machineHost runtime surface', () => {
   let root: string
@@ -117,7 +21,7 @@ describe('RuntimeMachineFileSystem over the machineHost runtime surface', () => 
   beforeEach(async () => {
     root = await mkdtemp(path.join(os.tmpdir(), 'seal-runtime-machine-'))
     registry = new RuntimeSubscriptionRegistry()
-    const inProcess = createInProcessChannel(registry)
+    const inProcess = createInProcessRuntimeChannel(registry)
     emitted = inProcess.emitted
     fs = new RuntimeMachineFileSystem('machine:kessel-ml', inProcess.channel)
   })

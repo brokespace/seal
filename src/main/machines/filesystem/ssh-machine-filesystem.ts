@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import type { SFTPWrapper } from 'ssh2'
 import type { MachineId } from '../../../shared/machines/machine-types'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import type { SshMachineLink } from '../connection/ssh-machine-link'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
 import { removeDirectorySftp } from '../../ssh/file-transfer/sftp/sftp-upload'
@@ -176,16 +177,26 @@ export class SshMachineFileSystem implements MachineFileSystem {
       return this.withSftp(conn, (sftp) => sftpReadHead(sftp, target, maxBytes))
     }
     const { size } = await this.stat(target)
-    if (size > maxBytes) {
-      throw new Error('File is too large to preview on this connection; download it instead')
-    }
+    // Without SFTP a partial read is a remote head into a temp file, fetched like a full preview.
+    const headPath =
+      size > maxBytes
+        ? (
+            await this.exec(
+              conn,
+              `t=$(mktemp) && head -c ${Math.floor(maxBytes)} -- ${quotePosixShell(target)} > "$t" && printf %s "$t"`
+            )
+          ).trim()
+        : null
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'seal-machine-preview-'))
     try {
       const local = path.join(tempDir, 'preview')
-      await conn.downloadFile(target, local)
+      await conn.downloadFile(headPath ?? target, local)
       return { size, data: await readFile(local) }
     } finally {
       await rm(tempDir, { recursive: true, force: true })
+      if (headPath) {
+        await this.exec(conn, `rm -f -- ${quotePosixShell(headPath)}`).catch(() => {})
+      }
     }
   }
 
