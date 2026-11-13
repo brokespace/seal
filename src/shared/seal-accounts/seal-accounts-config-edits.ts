@@ -112,3 +112,45 @@ export function withWorkspacePin(
   }
   return next
 }
+
+function withoutKey(policy: SealScopePolicy | undefined, key: SealAccountKey) {
+  if (!policy) {
+    return undefined
+  }
+  const matches = (saved: SealAccountKey): boolean => sealAccountKeysMatch(saved, key)
+  return {
+    ...policy,
+    ...(policy.allow ? { allow: policy.allow.filter((saved) => !matches(saved)) } : {}),
+    ...(policy.default && matches(policy.default) ? { default: null } : {})
+  }
+}
+
+/** Drops a removed account from its profile and from every rule that named it. */
+export function withoutAccountReferences(
+  config: SealAccountsConfig,
+  key: SealAccountKey
+): SealAccountsConfig {
+  const strip = <T extends { claude?: SealScopePolicy; codex?: SealScopePolicy }>(rule: T): T => ({
+    ...rule,
+    ...(rule.claude ? { claude: withoutKey(rule.claude, key) } : {}),
+    ...(rule.codex ? { codex: withoutKey(rule.codex, key) } : {})
+  })
+  return {
+    ...withProfile(config, key, null),
+    projects: config.projects.map(strip),
+    machines: config.machines.map(strip)
+  }
+}
+
+const PRIORITY_STEP = 10
+
+/** Priorities follow the given order (first is preferred); other profile fields are kept. */
+export function withAccountOrder(
+  config: SealAccountsConfig,
+  keys: readonly SealAccountKey[]
+): SealAccountsConfig {
+  return keys.reduce((next, key, index) => {
+    const saved = Object.entries(next.profiles).find(([entry]) => sealAccountKeysMatch(entry, key))
+    return withProfile(next, key, { ...saved?.[1], priority: (index + 1) * PRIORITY_STEP })
+  }, config)
+}

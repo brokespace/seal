@@ -75,7 +75,8 @@ export async function syncSealFleet(
   if (!call) {
     throw new Error('Only the Seal desktop app can push accounts to other machines.')
   }
-  const config = manager.getConfig()
+  // Keys stay sealed in the keychain of the machine they were added on; hosts keep their own.
+  const config = { ...manager.getConfig(), apiKeys: [] }
   const credentials = await Promise.all(
     accounts.map(async (account) => {
       try {

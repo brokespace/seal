@@ -2,6 +2,7 @@ import type {
   ClaudeRateLimitAccountsState,
   CodexRateLimitAccountsState
 } from './managed-account-types'
+import type { SealSignInOutcome } from './seal-accounts/seal-sign-in'
 
 export type HostAccountSignInProvider = 'claude' | 'codex'
 
@@ -43,6 +44,8 @@ export type HostAccountSignInStatus = {
   errorCode?: string
   claude?: ClaudeRateLimitAccountsState
   codex?: CodexRateLimitAccountsState
+  /** The account a Seal sign-in added or refreshed. */
+  seal?: SealSignInOutcome
 }
 
 // One English table for sign-in failures Orca names itself; the login's own errors stay uncoded.

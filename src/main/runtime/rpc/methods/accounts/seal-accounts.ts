@@ -33,6 +33,7 @@ import {
   swapSealSessionTo
 } from '../../../../seal-accounts/seal-session-swap'
 import { pickSealLaunch } from '../../../../seal-accounts/seal-launch-pick-context'
+import { SEAL_ACCOUNT_ROSTER_METHODS } from './seal-account-roster'
 import {
   withAutoSwap,
   withPolicyEdit,
@@ -236,7 +237,10 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
   })
 ]
 
-export const SEAL_ACCOUNT_METHODS = SEAL_ACCOUNT_METHOD_DEFINITIONS.map((method) => ({
+export const SEAL_ACCOUNT_METHODS = [
+  ...SEAL_ACCOUNT_METHOD_DEFINITIONS,
+  ...SEAL_ACCOUNT_ROSTER_METHODS
+].map((method) => ({
   ...method,
   requires: ['accounts'] satisfies OrcadFeature[]
 }))
