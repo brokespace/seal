@@ -23,7 +23,7 @@ import {
 } from './posix-machine-commands'
 import {
   hasInotifyWait,
-  runPosixUrlDownload,
+  runRemoteUrlDownload,
   startPosixInotifyWatch
 } from './ssh-machine-remote-jobs'
 import {
@@ -278,13 +278,11 @@ export class SshMachineFileSystem implements MachineFileSystem {
     if (!isAllowedDownloadUrl(url)) {
       throw new Error('Only http and https URLs can be downloaded')
     }
-    if (this.isWindowsHost()) {
-      throw new Error('Downloading from a URL is not supported on Windows hosts yet')
-    }
     const conn = this.connection()
     await this.createDir(remoteDirname(destination))
-    await runPosixUrlDownload({
+    await runRemoteUrlDownload({
       conn,
+      windows: this.isWindowsHost(),
       url,
       destination,
       onProgress,

@@ -7,14 +7,37 @@ import {
   posixInotifyWatchCommand,
   posixUrlContentLengthCommand
 } from './posix-machine-commands'
+import {
+  parseWindowsContentLength,
+  windowsDownloadUrlCommand,
+  windowsUrlContentLengthCommand
+} from './windows-machine-commands'
 
 const URL_DOWNLOAD_TIMEOUT_MS = 12 * 60 * 60 * 1000
 const URL_PROGRESS_POLL_MS = 1_000
 const URL_PROGRESS_MAX_POLL_MS = 15_000
 
-/** Runs curl/wget on the host itself, so the bytes never cross this computer; progress comes from polling the file size. */
-export async function runPosixUrlDownload(args: {
+function urlDownloadCommands(windows: boolean, url: string, destination: string) {
+  return windows
+    ? {
+        lengthCommand: windowsUrlContentLengthCommand(url),
+        parseLength: parseWindowsContentLength,
+        downloadCommand: windowsDownloadUrlCommand(url, destination),
+        // PowerShell output is not POSIX-fenced.
+        wrapCommand: false
+      }
+    : {
+        lengthCommand: posixUrlContentLengthCommand(url),
+        parseLength: parseContentLength,
+        downloadCommand: posixDownloadUrlCommand(url, destination),
+        wrapCommand: undefined
+      }
+}
+
+/** Runs curl/wget (or PowerShell on Windows) on the host itself, so the bytes never cross this computer; progress polls the file size. */
+export async function runRemoteUrlDownload(args: {
   conn: SshConnection
+  windows: boolean
   url: string
   destination: string
   onProgress: (transferred: number, total: number | null) => void
@@ -22,8 +45,12 @@ export async function runPosixUrlDownload(args: {
   stat: (target: string) => Promise<MachineFileStat>
 }): Promise<void> {
   const { conn, url, destination, onProgress, signal, stat } = args
-  const total = parseContentLength(
-    await execCommand(conn, posixUrlContentLengthCommand(url), { signal }).catch(() => '')
+  const commands = urlDownloadCommands(args.windows, url, destination)
+  const total = commands.parseLength(
+    await execCommand(conn, commands.lengthCommand, {
+      signal,
+      wrapCommand: commands.wrapCommand
+    }).catch(() => '')
   )
   // A stalled download (slow DNS, a server that has not sent bytes yet) backs the size poll off.
   let delay = URL_PROGRESS_POLL_MS
@@ -55,9 +82,10 @@ export async function runPosixUrlDownload(args: {
   }
   poll()
   try {
-    await execCommand(conn, posixDownloadUrlCommand(url, destination), {
+    await execCommand(conn, commands.downloadCommand, {
       timeoutMs: URL_DOWNLOAD_TIMEOUT_MS,
-      signal
+      signal,
+      wrapCommand: commands.wrapCommand
     })
     const done = await stat(destination).catch(() => null)
     onProgress(done?.size ?? total ?? 0, done?.size ?? total)
