@@ -275,7 +275,7 @@ describe.skipIf(process.platform === 'win32')('Codex shell launch preflight', ()
 // Verified launcher paths may contain spaces in app bundles or Program Files.
 describe.skipIf(process.platform === 'win32')('Codex preflight paths containing spaces', () => {
   function writeSpacedPreflight(root: string): { preflightPath: string; markerPath: string } {
-    const dir = join(root, 'Orca Dev.app', 'Contents', 'Resources', 'bin')
+    const dir = join(root, 'Seal Dev.app', 'Contents', 'Resources', 'bin')
     mkdirSync(dir, { recursive: true })
     const markerPath = join(root, 'preflight-ran')
     const preflightPath = join(dir, 'orca')

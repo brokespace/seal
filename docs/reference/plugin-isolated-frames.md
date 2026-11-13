@@ -18,14 +18,14 @@ Every plugin frame on desktop is an Electron `<webview>`:
 - **Origin**: `orca-plugin-frame://<key>/<path>`, a privileged scheme (`standard`, `secure`,
   `supportFetchAPI`, `stream`) handled on that partition's session. Paths resolve inside the plugin root with
   the same containment and content-integrity checks as `readPanelEntry`; anything else is 404.
-  `orca-plugin-frame://<key>/__orca/*` is reserved for files Orca ships.
+  `orca-plugin-frame://<key>/__orca/*` is reserved for files Seal ships.
 - **CSP** (response header on every HTML document):
   `default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' data: blob:;
   worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`.
 - **Network is denied at the session**, not by CSP. "No network" means the frame itself makes no
   connections, requests or DNS lookups. The one way data leaves is a URL the person agrees to open:
-  `orca.shell.openExternal` needs a click or key press, and Orca asks before opening a host this plugin
+  `orca.shell.openExternal` needs a click or key press, and Seal asks before opening a host this plugin
   was not allowed before (see Host APIs below).
   - `webRequest.onBeforeRequest` cancels every URL that is not `orca-plugin-frame://<key>/`, `data:`, `blob:`
     or `devtools:`.
@@ -52,7 +52,7 @@ Every plugin frame on desktop is an Electron `<webview>`:
 - **Bridge**: every HTML document the protocol serves starts with the same frame-API script as the iframe
   shell (`api`, `host.call/has`, `on`, `shell`, `files`, `document.get/onDidChange/applyEdit`), so the two
   cannot diverge. The guest preload only hands that script a one-shot transport (deleted before plugin code
-  runs; offered only to `text/html` top documents, so an SVG or XML page Orca does not wrap never gets one)
+  runs; offered only to `text/html` top documents, so an SVG or XML page Seal does not wrap never gets one)
   that caps bytes and rate in the isolated world and relays the `{orca:1, kind, …}` envelopes with
   `ipcRenderer.sendToHost('orca-plugin-frame', msg, userActivation)` / `ipcRenderer.on('orca-plugin-frame')`;
   `userActivation` is read in the isolated world, so page script cannot forge it. Why not
@@ -67,9 +67,9 @@ Every plugin frame on desktop is an Electron `<webview>`:
 - **Reloads**: the guest URL carries `rev=`: the installed content hash, or for a dev folder a per-run
   counter the dev watcher bumps on each change it reports under that folder (`plugin-dev-revision.ts`;
   the tree is never hashed for this). An update or an asset-only dev edit remounts the guest.
-- **Input**: Orca's window shortcuts are forwarded from a focused guest through the browser tab path, minus
+- **Input**: Seal's window shortcuts are forwarded from a focused guest through the browser tab path, minus
   browser-page chords (address bar, find, reload, history, page zoom); a custom editor's save chord still
-  rides `editor.keydown`, so it fires once. Editable fields get Orca's Cut/Copy/Paste context menu.
+  rides `editor.keydown`, so it fires once. Editable fields get Seal's Cut/Copy/Paste context menu.
 - **Switch (default on)**: rolling back is the constant `PLUGIN_ISOLATED_FRAMES_DEFAULT` in
   `src/main/plugins/panels/guest-isolation/plugin-frame-isolation.ts`. `ORCA_PLUGIN_ISOLATED_FRAMES=0` turns guests off
   for one machine and `=1` on, overriding the
@@ -85,9 +85,9 @@ Every plugin frame on desktop is an Electron `<webview>`:
   Documents, scripts, styles, JSON, SVG and WASM are read whole (16 MiB cap). A declared HTML entry is a
   document whatever its extension. Path segments ending in a dot or space are refused.
 - **Source modules**: `.ts`, `.tsx`, `.mts` and `.jsx` are read whole (1 MiB cap), digest-checked like
-  any script, then transpiled with sucrase on one shared, lazily started worker thread (types stripped, automatic JSX for `orca`, lines
+  any script, then transpiled with sucrase on one shared, lazily started worker thread (types stripped, automatic JSX for `seal`, lines
   kept, inline source map) and served as `text/javascript`. Relative imports are rewritten to exact
-  files from the verified file list (the disk, for a dev tree); `orca` and URLs are left to the import
+  files from the verified file list (the disk, for a dev tree); `seal` and URLs are left to the import
   map and CSP; any other bare import is served as a module that throws, naming the file and import.
   Results are cached in main by sha256 of the source, transpiler version and options. A transform
   still running after 2 s is cut short: the worker is terminated and the next file starts a fresh
@@ -108,20 +108,20 @@ Every plugin frame on desktop is an Electron `<webview>`:
 No new capability; both require transient user activation in the frame and are rate-limited. The shell
 checks `navigator.userActivation` first; the frame host re-checks the activation that arrived with the
 message: only a guest's preload stamp counts. A srcdoc iframe shares the host window, whose activation any
-keystroke in Orca sets, so iframes (browser clients) are never offered these methods and get
+keystroke in Seal sets, so iframes (browser clients) are never offered these methods and get
 `not_permitted`. Main runs them only for calls from its own window over IPC, so a dialog or browser tab
 never opens on another machine. A components panel's hidden guest never has activation of its own; only a
-press on a stationary Orca-drawn control grants one call (see
+press on a stationary Seal-drawn control grants one call (see
 [User gestures](./plugin-declarative-ui.md#user-gestures)).
 
 - `orca.shell.openExternal(url)`: `http:`/`https:`/`mailto:` only, opened in the OS browser. Anything
-  in the URL leaves the machine, so for an `http:`/`https:` host this plugin has not been allowed, Orca
+  in the URL leaves the machine, so for an `http:`/`https:` host this plugin has not been allowed, Seal
   first shows "<Plugin> wants to open <host>" with the URL (truncated to 300 characters), Open / Cancel,
   and "Always allow <host> for this plugin". The choice is kept per plugin and host (with port) in main's
   settings (`pluginExternalHostGrants`, which the renderer cannot write) and cleared on uninstall.
   `mailto:` opens without asking: it fills a draft the person still has to send. Resolves
   `{ opened: false }` when the person cancels.
-- `orca.files.saveAs({ suggestedName, mimeType, data })`: Orca shows its save dialog; the plugin never sees
+- `orca.files.saveAs({ suggestedName, mimeType, data })`: Seal shows its save dialog; the plugin never sees
   the chosen path. `data` is a string or `ArrayBuffer`, capped at 64 MiB. Resolves with
   `{ status: 'saved' }`, or `{ status: 'cancelled' }` when the person cancels. Any `mimeType` is accepted;
   the dialog filter comes from the suggested name's extension. Executable, script, installer, shortcut and
@@ -133,4 +133,4 @@ press on a stationary Orca-drawn control grants one call (see
   consented and not kill-listed right before it writes, opens a tab or sends terminal input, so a save
   dialog left open while the plugin is disabled or uninstalled writes nothing. Dialogs and rate budgets bind
   to the window whose frame made the call (its WebContents travels with the IPC call).
-- `orca.locale`: Orca's UI locale from `hello` (guests' `navigator.language` follows the OS).
+- `orca.locale`: Seal's UI locale from `hello` (guests' `navigator.language` follows the OS).

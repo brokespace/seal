@@ -253,7 +253,7 @@ describe('reconcileRealHomeCodexHookEntries', () => {
       await reconcile()
       expect(readHooks().hooks.Stop?.[0]?.hooks?.[0]).toMatchObject({
         command: expect.stringMatching(/^: orca-agent-hook-form=2;/),
-        statusMessage: 'Reporting status to Orca'
+        statusMessage: 'Reporting status to Seal'
       })
     }
   )
@@ -267,7 +267,7 @@ describe('reconcileRealHomeCodexHookEntries', () => {
     expect(readHooks().hooks.Stop).toEqual([orcaGroup(newer)])
   })
 
-  it("keeps the approval of Orca's entry in an event this Codex does not list", async () => {
+  it("keeps the approval of Seal's entry in an event this Codex does not list", async () => {
     const interrupt: HookDefinition = { hooks: [buildCodexManagedHook(frozen(), 'Interrupt')] }
     writeHooks({ hooks: { Interrupt: [interrupt] } })
     // Simulate approval by a newer Codex sharing the same home.
@@ -310,7 +310,7 @@ describe('reconcileRealHomeCodexHookEntries', () => {
     expect(await reconcile()).toBe('unchanged')
   })
 
-  it("moves Orca's handler out of a user's matcher group, with the shifted user approvals", async () => {
+  it("moves Seal's handler out of a user's matcher group, with the shifted user approvals", async () => {
     const userGroup: HookDefinition = {
       matcher: 'Bash',
       hooks: [
@@ -346,7 +346,7 @@ describe('reconcileRealHomeCodexHookEntries', () => {
     expect(trustAt(orca)).toEqual({ trustedHash: CODEX_HASHES.pre_tool_use, enabled: true })
   })
 
-  it("drops Orca's approval at the slot its copy left in a user's matcher group", async () => {
+  it("drops Seal's approval at the slot its copy left in a user's matcher group", async () => {
     const lint = { type: 'command' as const, command: 'lint.sh' }
     const userGroup: HookDefinition = {
       matcher: 'Bash',

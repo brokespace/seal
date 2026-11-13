@@ -172,7 +172,7 @@ export default function HiddenWorktreeRecoveryList({
                     )
                   : t(
                       'auto.components.sidebar.WorktreeVisibilityDialog.noneFound',
-                      'No non-Orca worktrees found'
+                      'No non-Seal worktrees found'
                     )}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -188,7 +188,7 @@ export default function HiddenWorktreeRecoveryList({
                     )
                   : t(
                       'auto.components.sidebar.WorktreeVisibilityDialog.appearWhenDetected',
-                      'New worktrees will appear here when Orca detects them.'
+                      'New worktrees will appear here when Seal detects them.'
                     )}
             </div>
           </div>

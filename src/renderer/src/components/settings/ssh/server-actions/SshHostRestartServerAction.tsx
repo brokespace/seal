@@ -73,12 +73,12 @@ export function SshHostRestartServerDialog({
       <DialogContent showCloseButton={!busy}>
         <DialogHeader>
           <DialogTitle>
-            {t('auto.components.settings.restartServer.title', 'Restart Orca’s server')}
+            {t('auto.components.settings.restartServer.title', 'Restart Seal’s server')}
           </DialogTitle>
           <DialogDescription>
             {t(
               'auto.components.settings.restartServer.description',
-              'Orca restarts its server on this host from your current connection. It restarts only when no terminals are running on the host, because terminals that are still open stay cut off. Close them first.'
+              'Seal restarts its server on this host from your current connection. It restarts only when no terminals are running on the host, because terminals that are still open stay cut off. Close them first.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -103,12 +103,12 @@ function refusalText(result: Exclude<OrcadManagedRestartResult, { outcome: 'rest
   if (result.liveSessions === null) {
     return translate(
       'auto.components.settings.restartServer.terminalsUnknown',
-      'Orca couldn’t confirm whether terminals are running on this host, so it didn’t restart Orca’s server.'
+      'Seal couldn’t confirm whether terminals are running on this host, so it didn’t restart Seal’s server.'
     )
   }
   return translate(
     'auto.components.settings.restartServer.terminalsRunning',
-    '{{count}} terminals are still running on this host. Close them, then restart Orca’s server.',
+    '{{count}} terminals are still running on this host. Close them, then restart Seal’s server.',
     { count: result.liveSessions }
   )
 }

@@ -46,7 +46,7 @@ async function updateCandidate(
   const { source } = entry
   switch (source.kind) {
     case 'bundled':
-      return { status: 'pinned', reason: 'It is bundled with Orca and updates with Orca.' }
+      return { status: 'pinned', reason: 'It is bundled with Seal and updates with Seal.' }
     case 'marketplace':
       return catalogUpdateCandidate(host, deps.catalogs, entry)
     case 'local-path':
@@ -97,7 +97,7 @@ export async function updatePluginFromCli(
   if (!entry) {
     throw new PluginCliError(
       PLUGIN_NOT_FOUND_CODE,
-      `${pluginKey} is not installed on this Orca host.`,
+      `${pluginKey} is not installed on this Seal host.`,
       {
         pluginKey,
         nextSteps: [

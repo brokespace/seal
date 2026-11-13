@@ -27,12 +27,12 @@ export function OrcaProfileSignOutConfirmDialog({
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>
-            {t('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Orca?')}
+            {t('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Seal?')}
           </DialogTitle>
           <DialogDescription>
             {t(
               'auto.components.orca.profiles.signout.confirm.description',
-              "Artifacts and Orca Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected."
+              "Artifacts and Seal Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected."
             )}
           </DialogDescription>
         </DialogHeader>

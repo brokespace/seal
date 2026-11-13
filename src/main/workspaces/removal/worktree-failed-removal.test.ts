@@ -221,7 +221,7 @@ describe('a delete that fails after Git dropped the registration', () => {
       publish: () => {}
     }))
 
-    const message = `A different checkout is now at ${checkout}; Orca left it in place. Delete it again to remove it.`
+    const message = `A different checkout is now at ${checkout}; Seal left it in place. Delete it again to remove it.`
     await expect(retried).rejects.toThrow(message)
     await _settlePendingWorktreeRemovalsForTests()
     expect(run).not.toHaveBeenCalled()
@@ -247,7 +247,7 @@ describe('a delete that fails after Git dropped the registration', () => {
     expect(await readWorktreeRemovalRecords(join(directory, 'profile'))).toEqual([])
   })
 
-  it('ends at startup once its repo is removed from Orca, leaving the files', async () => {
+  it('ends at startup once its repo is removed from Seal, leaving the files', async () => {
     await failRemoval()
     _resetPendingWorktreeRemovalsForTests()
 

@@ -62,14 +62,14 @@ export function MacosUpdateRequirementDialog({
       >
         <DialogHeader>
           <DialogTitle size="display" className="mr-6">
-            {t('macosUpdateRequirement.title', 'Orca updates now need macOS {{macos}}', {
+            {t('macosUpdateRequirement.title', 'Seal updates now need macOS {{macos}}', {
               macos
             })}
           </DialogTitle>
           <DialogDescription>
             {t(
               'macosUpdateRequirement.description',
-              'Orca {{version}} requires macOS {{macos}} or later. This version keeps working, but it won’t get new updates on this Mac.',
+              'Seal {{version}} requires macOS {{macos}} or later. This version keeps working, but it won’t get new updates on this Mac.',
               { version: requirement.version, macos }
             )}
           </DialogDescription>
@@ -82,7 +82,7 @@ export function MacosUpdateRequirementDialog({
               : canUpgrade
                 ? t(
                     'macosUpdateRequirement.upgradeDescription',
-                    'Your Mac can upgrade. Update macOS to get the latest Orca.'
+                    'Your Mac can upgrade. Update macOS to get the latest Seal.'
                   )
                 : cannotUpgrade
                   ? t(
@@ -110,7 +110,7 @@ export function MacosUpdateRequirementDialog({
               <p>
                 {t(
                   'macosUpdateRequirement.whyIntro',
-                  'We updated parts of Orca’s foundation, like Electron and the on-device speech engine, to bring:'
+                  'We updated parts of Seal’s foundation, like Electron and the on-device speech engine, to bring:'
                 )}
               </p>
               <ul className="list-disc space-y-2 pl-4">

@@ -44,7 +44,7 @@ function insertSessionCoordinatedRun(db: OrchestrationDb, runId: string): void {
     .run(runId, CHAT_SESSION_ID)
 }
 
-describe('Run coordinator Orca session address', () => {
+describe('Run coordinator Seal session address', () => {
   let db: OrchestrationDb | undefined
   const tempRoots: string[] = []
 
@@ -75,7 +75,7 @@ describe('Run coordinator Orca session address', () => {
     expect(db.getMessageById(reply.id)?.to_handle).toBe('run:run_session')
   })
 
-  it("never leaves a replaced structured coordinator's Orca session id on the Run", () => {
+  it("never leaves a replaced structured coordinator's Seal session id on the Run", () => {
     db = new OrchestrationDb(':memory:')
     const handle = mintStructuredWorkerHandle()
     const pane = mintStructuredWorkerPaneKey(WORKER_SESSION_ID)

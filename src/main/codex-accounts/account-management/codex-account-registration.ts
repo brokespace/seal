@@ -122,7 +122,7 @@ export class CodexAccountRegistration {
     await this.loginThroughStagingHome(managedHomePath, account.id)
     const identity = await this.dependencies.readIdentityFromHome(managedHomePath, account.id)
     if (!identity.email) {
-      throw new Error('Codex login completed, but Orca could not resolve the account email.')
+      throw new Error('Codex login completed, but Seal could not resolve the account email.')
     }
 
     const settings = this.dependencies.store.getSettings()
@@ -211,7 +211,7 @@ export class CodexAccountRegistration {
       accountId
     )
     if (!identity.email) {
-      throw new Error('Codex login completed, but Orca could not resolve the account email.')
+      throw new Error('Codex login completed, but Seal could not resolve the account email.')
     }
     const now = Date.now()
     const account: CodexManagedAccount = {

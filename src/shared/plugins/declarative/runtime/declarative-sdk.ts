@@ -14,7 +14,7 @@ function hostError(code: string, message: string): Error {
 }
 
 function unavailable(what: string): Promise<never> {
-  return Promise.reject(hostError('unavailable', `${what} is not available in this Orca`))
+  return Promise.reject(hostError('unavailable', `${what} is not available in this Seal`))
 }
 
 function isComponentTag(name: string): name is keyof typeof PLUGIN_DECLARATIVE_COMPONENT_PROPS {

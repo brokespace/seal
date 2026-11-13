@@ -154,7 +154,7 @@ test('idle Claude keeps chat, mobile transcript, and return identity through nes
   await orcaPage.getByRole('button', { name: 'Show terminal', exact: true }).click()
   await expect(chat).toHaveCount(0)
   await expect(
-    orcaPage.getByText('Orca could not verify the originating Codex session file', { exact: false })
+    orcaPage.getByText('Seal could not verify the originating Codex session file', { exact: false })
   ).toHaveCount(0)
   expect(
     await orcaPage.evaluate(

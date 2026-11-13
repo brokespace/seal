@@ -82,7 +82,7 @@ export function addManagedOrcadEnvironment(
   if (!registered?.orcadDeployment) {
     throw new RuntimeEnvironmentStoreError(
       'runtime_error',
-      'This host’s Orca server was saved without its deployment link.'
+      'This host’s Seal server was saved without its deployment link.'
     )
   }
   return registered

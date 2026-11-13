@@ -153,7 +153,7 @@ export function buildRemediation(
       ),
       detail: t(
         'projectViews.authHelp.ghMissingDetail',
-        'Orca uses `gh` to talk to GitHub Projects. Install it from cli.github.com, then sign in.'
+        'Seal uses `gh` to talk to GitHub Projects. Install it from cli.github.com, then sign in.'
       ),
       commands: [
         {
@@ -184,12 +184,12 @@ export function buildRemediation(
     const removal = IS_WINDOWS
       ? t(
           'projectViews.authHelp.envTokenRemoveWindows',
-          'Find where `{{varName}}` is set (System or User environment variables, or your PowerShell profile), remove it, then restart Orca so the new environment is picked up.',
+          'Find where `{{varName}}` is set (System or User environment variables, or your PowerShell profile), remove it, then restart Seal so the new environment is picked up.',
           { varName }
         )
       : t(
           'projectViews.authHelp.envTokenRemovePosix',
-          "Find where `{{varName}}` is exported (commonly `~/.zshrc`, `~/.zshenv`, `~/.bashrc`, `~/.profile`, or your shell's secrets manager), remove it, then restart Orca so the new environment is picked up.",
+          "Find where `{{varName}}` is exported (commonly `~/.zshrc`, `~/.zshenv`, `~/.bashrc`, `~/.profile`, or your shell's secrets manager), remove it, then restart Seal so the new environment is picked up.",
           { varName }
         )
     return {
@@ -210,18 +210,18 @@ export function buildRemediation(
     return {
       summary: t(
         'projectViews.authHelp.envTokenInherited',
-        "Orca inherited `{{varName}}` from your shell, and `gh` is using that token. `gh auth refresh` doesn't apply to env-supplied tokens.",
+        "Seal inherited `{{varName}}` from your shell, and `gh` is using that token. `gh auth refresh` doesn't apply to env-supplied tokens.",
         { varName }
       ),
       detail: IS_WINDOWS
         ? t(
             'projectViews.authHelp.envTokenInheritedDetailWindows',
-            'Unset `{{varName}}` in the shell that launches Orca (or in your user environment variables), then restart Orca.',
+            'Unset `{{varName}}` in the shell that launches Seal (or in your user environment variables), then restart Seal.',
             { varName }
           )
         : t(
             'projectViews.authHelp.envTokenInheritedDetailPosix',
-            'Unset `{{varName}}` in the shell that launches Orca (or in your shell rc file), then restart Orca.',
+            'Unset `{{varName}}` in the shell that launches Seal (or in your shell rc file), then restart Seal.',
             { varName }
           ),
       commands: [findEnvVarCommand(varName, t), unsetEnvVarCommand(varName, t)],

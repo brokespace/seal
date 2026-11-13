@@ -10,14 +10,14 @@ export const EPHEMERAL_VM_FAILURE_COPY = {
   runtimeRepoMissing: 'Ephemeral VM runtime has no repo id: {{runtimeId}}',
   provisionCancelled: 'Provisioning cancelled.',
   provisionInterrupted:
-    'Orca stopped while this VM was being created. Destroy it to release any provider resources.',
+    'Seal stopped while this VM was being created. Destroy it to release any provider resources.',
   startRefUnresolved: 'Could not resolve provisioned-root start ref: {{ref}}',
   defaultStartRefUnresolved: 'Could not resolve a default provisioned-root start ref.',
   recipeExited: 'Recipe exited with code {{exitCode}}.',
   recipeExitedWithoutCode: 'Recipe exited with code unknown.',
   recipeResultMissing: 'Recipe produced no JSON result.',
   recipeResultNotJsonObject: 'Recipe stdout must be one JSON object.',
-  recipeResultPairingCodeInvalid: 'Recipe result pairingCode is not a valid Orca pairing code.',
+  recipeResultPairingCodeInvalid: 'Recipe result pairingCode is not a valid Seal pairing code.',
   recipeResultProjectRootNotAbsolute: 'Recipe result projectRoot must be an absolute runtime path.',
   provisionedRootResultRequired:
     'Provisioned-root recipes must return schemaVersion 2 with checkoutMode "provisioned-root".',
@@ -28,7 +28,7 @@ export const EPHEMERAL_VM_FAILURE_COPY = {
   resumeExited: 'Resume exited with code {{exitCode}}.',
   resumeExitedWithoutCode: 'Resume exited with code unknown.',
   recipeTimedOut:
-    'The recipe {{mode}} step did not finish within {{timeout}}, so Orca stopped it. Check the recipe output, or raise timeoutSeconds in orca.yaml if it needs longer.',
+    'The recipe {{mode}} step did not finish within {{timeout}}, so Seal stopped it. Check the recipe output, or raise timeoutSeconds in orca.yaml if it needs longer.',
   destroyExited: 'Destroy exited with code {{exitCode}}.',
   destroyExitedWithoutCode: 'Destroy exited with code unknown.',
   destroyFailed: 'Destroy failed.',

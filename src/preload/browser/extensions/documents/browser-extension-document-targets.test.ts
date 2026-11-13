@@ -218,7 +218,7 @@ function install(permissions: string[], nativeScripting = true) {
   return { chrome, executeScript, insertCSS, sendMessage, calls, nativeListeners }
 }
 
-describe('Orca documentIds in native scripting targets', () => {
+describe('Seal documentIds in native scripting targets', () => {
   it.each([1, 2])(
     'rejects script navigation at discovery snapshot %i before executing user code',
     async (snapshot) => {

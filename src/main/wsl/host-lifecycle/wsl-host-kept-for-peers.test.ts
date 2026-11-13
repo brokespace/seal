@@ -40,7 +40,7 @@ function connector(serverStop: WslHostServerStop): WslHostConnector {
   } as Partial<WslHostConnector> as WslHostConnector
 }
 
-describe('a WSL host kept for another Orca', () => {
+describe('a WSL host kept for another Seal', () => {
   let userData: string
   beforeEach(() => {
     userData = mkdtempSync(join(tmpdir(), 'orca-wsl-kept-'))
@@ -52,7 +52,7 @@ describe('a WSL host kept for another Orca', () => {
   it('is recorded by a Remove that kept the server, and cleared by one that stopped it', async () => {
     await removeWslHostServer(
       userData,
-      connector({ stopped: true, keptForOtherDesktops: ['Orca Dev'] }),
+      connector({ stopped: true, keptForOtherDesktops: ['Seal Dev'] }),
       RECORD
     )
     expect(store.removed).toEqual(['wsl:ubuntu'])
@@ -70,7 +70,7 @@ describe('a WSL host kept for another Orca', () => {
     mkdirSync(join(blocked, 'orca-wsl-hosts-kept-for-peers.json'), { recursive: true })
     const removal = await removeWslHostServer(
       blocked,
-      connector({ stopped: true, keptForOtherDesktops: ['Orca Dev'] }),
+      connector({ stopped: true, keptForOtherDesktops: ['Seal Dev'] }),
       RECORD
     )
     expect(removal).toMatchObject({

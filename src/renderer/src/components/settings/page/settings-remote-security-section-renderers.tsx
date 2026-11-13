@@ -20,16 +20,16 @@ export function renderServersSettingsSection(
     <RuntimeServersPageProvider>
       <SettingsSection
         id="servers"
-        title={t('auto.components.settings.Settings.022effa46f', 'Remote Orca servers')}
+        title={t('auto.components.settings.Settings.022effa46f', 'Remote Seal servers')}
         description={
           model.isWebClient
             ? t(
                 'auto.components.settings.Settings.7686cb5c36',
-                'Connect this browser to a saved Orca server.'
+                'Connect this browser to a saved Seal server.'
               )
             : t(
                 'auto.components.settings.Settings.remoteServersDescription',
-                'Run Orca on another machine and work on it from here.'
+                'Run Seal on another machine and work on it from here.'
               )
         }
         searchEntries={navigation.getSectionSearchEntries('servers')}

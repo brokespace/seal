@@ -177,7 +177,7 @@ try {
   if (isWindowsNativeLockError(err)) {
     console.error(
       '[rebuild] A Windows process appears to be using a native .node file. ' +
-        'Close running Orca/Electron/dev processes for this worktree, then rerun `pnpm install` ' +
+        'Close running Seal/Electron/dev processes for this worktree, then rerun `pnpm install` ' +
         'or `pnpm run rebuild:electron`.'
     )
     if (isPostinstall() && process.env.ORCA_STRICT_NATIVE_REBUILD !== '1') {
@@ -600,7 +600,7 @@ function loadNativeModule(moduleName) {
       throw new Error(
         'node-pty resolved to ' +
           native.dir +
-          '; expected build/Release so Orca\\'s node-pty patch is active'
+          '; expected build/Release so Seal\\'s node-pty patch is active'
       )
     }
     return

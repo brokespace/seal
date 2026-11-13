@@ -123,7 +123,7 @@ export function readEnvironmentStoreRecords(
 function invalidEnvironmentStoreError(path: string): RuntimeEnvironmentStoreError {
   return new RuntimeEnvironmentStoreError(
     'runtime_error',
-    `Could not read Orca environments at ${path}; the file is invalid.`
+    `Could not read Seal environments at ${path}; the file is invalid.`
   )
 }
 

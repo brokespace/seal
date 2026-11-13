@@ -27,7 +27,7 @@ export function captureGitHubImageUpload(
       ? readStoredWebRuntimeEnvironment()
       : null
   if (isWebClientLocation() && address.runtime.kind === 'local' && !webEnvironment) {
-    throw new Error('Pair this web client with an Orca server first.')
+    throw new Error('Pair this web client with a Seal server first.')
   }
   const runtime = webEnvironment
     ? { kind: 'environment' as const, environmentId: webEnvironment.id }
@@ -49,7 +49,7 @@ export function captureGitHubImageUpload(
     supported ??= call<RuntimeStatus>('status.get', undefined, signal).then((status) => {
       if (!status.capabilities?.includes(GITHUB_IMAGE_ATTACHMENT_CAPABILITY)) {
         throw new Error(
-          'This Orca server cannot upload images yet. Update it, or use an image URL.'
+          'This Seal server cannot upload images yet. Update it, or use an image URL.'
         )
       }
     })

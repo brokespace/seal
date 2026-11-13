@@ -73,7 +73,7 @@ describe('orca plugin dev watch', () => {
   it('treats a transport failure as a lost host but a host error reply as a reply', async () => {
     const call = vi
       .fn()
-      .mockRejectedValueOnce(new RuntimeClientError('runtime_unavailable', 'Orca is not running'))
+      .mockRejectedValueOnce(new RuntimeClientError('runtime_unavailable', 'Seal is not running'))
       .mockRejectedValueOnce(rpcFailure('internal_error'))
     const host = bindPluginDevWatchHost(context(call), '/work/notes')
     await expect(host.list()).rejects.toBeInstanceOf(PluginHostUnreachableError)

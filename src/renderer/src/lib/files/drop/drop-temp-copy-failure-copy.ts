@@ -12,7 +12,7 @@ export function describeDropTempCopyFailure(
     case 'changed':
       return translate(
         'auto.lib.dropTempCopyFailure.changed',
-        'The file changed while Orca was copying it. Try the drop again.'
+        'The file changed while Seal was copying it. Try the drop again.'
       )
     case 'out-of-space':
       return translate(
@@ -22,12 +22,12 @@ export function describeDropTempCopyFailure(
     case 'storage-unavailable':
       return translate(
         'auto.lib.dropTempCopyFailure.storageUnavailable',
-        "Orca couldn't create storage for dropped files."
+        "Seal couldn't create storage for dropped files."
       )
     case 'storage-not-private':
       return translate(
         'auto.lib.dropTempCopyFailure.storageNotPrivate',
-        "Orca's storage for dropped files can be read by other users, so nothing was copied."
+        "Seal's storage for dropped files can be read by other users, so nothing was copied."
       )
     case 'timed-out':
       return translate(
@@ -42,12 +42,12 @@ export function describeDropTempCopyFailure(
     case 'too-large':
       return translate(
         'auto.lib.dropTempCopyFailure.tooLarge',
-        "Too large to copy, so Orca couldn't hand it to the agent."
+        "Too large to copy, so Seal couldn't hand it to the agent."
       )
     case 'storage-full':
       return translate(
         'auto.lib.dropTempCopyFailure.storageFull',
-        "Orca's storage for dropped files is full, so Orca couldn't hand it to the agent."
+        "Seal's storage for dropped files is full, so Seal couldn't hand it to the agent."
       )
     case 'copy-failed':
     case undefined:

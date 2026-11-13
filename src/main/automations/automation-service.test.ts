@@ -171,7 +171,7 @@ describe('AutomationService', () => {
     const poisonRun = reloaded.listAutomationRuns(poison.id)[0]
     expect(poisonRun?.status).toBe('skipped_unavailable')
     expect(poisonRun?.error).toBe(
-      'Orca could not evaluate this automation and skipped the occurrence.'
+      'Seal could not evaluate this automation and skipped the occurrence.'
     )
     expect(logged).toHaveBeenCalled()
   })
@@ -221,7 +221,7 @@ describe('AutomationService', () => {
       expect.objectContaining({
         id: retained.id,
         status: 'dispatch_failed',
-        error: 'Orca stopped before this run could launch.'
+        error: 'Seal stopped before this run could launch.'
       })
     ])
     expect(launch).not.toHaveBeenCalled()

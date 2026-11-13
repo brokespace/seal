@@ -60,7 +60,7 @@ export function resolvePluginEditorTypography(
 export const PLUGIN_EDITOR_TYPOGRAPHY_API = {
   'editor.readTypography': spec({
     summary:
-      "The font family, size, weight, line height, ligatures, word wrap and minimap Orca's file editor uses now, editor zoom included. `editor.typography.changed` reports each change after.",
+      "The font family, size, weight, line height, ligatures, word wrap and minimap Seal's file editor uses now, editor zoom included. `editor.typography.changed` reports each change after.",
     since: 6,
     scope: 'desktop',
     capability: null,

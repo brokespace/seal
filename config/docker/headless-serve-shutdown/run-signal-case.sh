@@ -96,7 +96,7 @@ if [[ "$entrypoint_kind" == appimage ]]; then
     exit 1
   fi
   if ! registered_help=$("$registered_cli" --help 2>&1) \
-    || [[ "$registered_help" != *'Usage: orca <command>'* ]]; then
+    || [[ "$registered_help" != *'Usage: seal <command>'* ]]; then
     echo "FAIL: registered CLI did not execute the packaged help command" >&2
     printf '%s\n' "$registered_help" >&2
     exit 1

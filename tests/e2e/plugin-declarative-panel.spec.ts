@@ -22,7 +22,7 @@ test.use(ISOLATED_FRAMES_E2E)
 
 const TITLE = 'Hello Components'
 
-test('a declarative panel renders with Orca components and updates on input', async ({
+test('a declarative panel renders with Seal components and updates on input', async ({
   orcaPage
 }) => {
   const requests: string[] = []

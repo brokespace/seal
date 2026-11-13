@@ -158,7 +158,7 @@ export function silentUninstall(installDir, { allowDefaultLocation = false } = {
   if (!allowDefaultLocation && pathsEqual(resolved, path.join(programsRoot(), PRODUCT_NAME))) {
     throw new Error(
       `Refusing to uninstall the default install location "${resolved}" — this is where a ` +
-        `developer's REAL Orca lives. Isolated mode must target a separate --install-dir.`
+        `developer's REAL Seal lives. Isolated mode must target a separate --install-dir.`
     )
   }
   const exe = path.join(resolved, EXE_NAME)

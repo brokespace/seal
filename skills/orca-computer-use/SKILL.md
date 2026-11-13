@@ -9,7 +9,7 @@ description: >-
   for Orca's embedded browser (`orca-cli`).
 ---
 
-# Orca Computer Use
+# Seal Computer Use
 
 This discovery stub loads the version-matched guide from the Orca executable used for this session.
 

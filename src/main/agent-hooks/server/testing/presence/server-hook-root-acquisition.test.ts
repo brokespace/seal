@@ -222,7 +222,7 @@ describe('the pane root’s exit', () => {
   })
 })
 
-describe('terminal reports and Orca restatements', () => {
+describe('terminal reports and Seal restatements', () => {
   it('keeps a resumed Codex conversation over a Claude run inside it', async () => {
     const server = await createServer()
     runningPane(49969, [49969, 101, 49969, 'codex resume cx', 'S+'], ...NESTED)

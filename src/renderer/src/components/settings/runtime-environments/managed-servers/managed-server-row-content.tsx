@@ -67,7 +67,7 @@ export function ManagedServerDetailLines({
       <p>
         {t(
           'auto.components.settings.managedServers.row.orcaVersion',
-          'Orca on this host: {{version}}',
+          'Seal on this host: {{version}}',
           {
             version: managedServerVersionLabel(status, statusError, t)
           }
@@ -249,7 +249,7 @@ export function ManagedServerConfirmations({
       <ConfirmStrip
         message={t(
           'auto.components.settings.managedServers.row.stopOrcaDescription',
-          'Stops Orca on the SSH host and removes it from this list.'
+          'Stops Seal on the SSH host and removes it from this list.'
         )}
         confirmLabel={t(
           'auto.components.settings.managedServers.row.confirmStop',
@@ -328,7 +328,7 @@ export function ManagedServerMenuItems({
         <ArrowUpCircle />
         {t(
           'auto.components.settings.managedServers.row.updateOrcaOnHost',
-          'Update Orca on this host'
+          'Update Seal on this host'
         )}
       </DropdownMenuItem>
       {status?.rollbackAvailable ? (

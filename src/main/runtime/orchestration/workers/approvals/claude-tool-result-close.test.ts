@@ -12,7 +12,7 @@ afterEach(async () => {
   dir = null
 })
 
-it("takes an allowed call whose command then failed as Orca's allow, from Claude's own transcript", async () => {
+it("takes an allowed call whose command then failed as Seal's allow, from Claude's own transcript", async () => {
   dir = await mkdtemp(path.join(tmpdir(), 'claude-tool-record-'))
   const transcript = path.join(dir, 'session.jsonl')
   // The lines Claude 2.1.322 wrote for the owner's live case (2026-11-11), trimmed to what is read.

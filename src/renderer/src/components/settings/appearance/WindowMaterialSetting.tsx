@@ -108,7 +108,7 @@ function RestartBanner(): React.JSX.Element {
         <p className="text-xs text-muted-foreground">
           {t(
             'settings.windowMaterial.restartDescription',
-            'Restart Orca to apply the window material change.'
+            'Restart Seal to apply the window material change.'
           )}
         </p>
       </div>

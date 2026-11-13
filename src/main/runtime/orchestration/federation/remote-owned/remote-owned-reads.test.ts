@@ -26,7 +26,7 @@ const SERVER: OrchestrationWorkerServer = {
 }
 const LAST_HEARD = '2026-11-09 08:30:00'
 
-describe('reads of workers a paired server runs, from this Orca’s records', () => {
+describe('reads of workers a paired server runs, from this Seal’s records', () => {
   let db: OrchestrationDb
   let runtime: OrcaRuntimeService
   let run: RunRow
@@ -99,7 +99,7 @@ describe('reads of workers a paired server runs, from this Orca’s records', ()
     closeRemoteRunLink(
       db,
       record.conversation_id,
-      "devB was removed from this Orca's paired servers."
+      "devB was removed from this Seal's paired servers."
     )
 
     const listed = await listWorkers({ run: run.id, paginate: true })

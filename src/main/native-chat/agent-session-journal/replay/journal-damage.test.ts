@@ -133,7 +133,7 @@ describe('a damaged chat', () => {
   })
 
   it.each([1, 3])(
-    "reads past damage at row %i to a newer build's row, which fails the load as a newer Orca's instead",
+    "reads past damage at row %i to a newer build's row, which fails the load as a newer Seal's instead",
     async (damaged) => {
       await writeChat()
       await withJournalDatabase((db) => {

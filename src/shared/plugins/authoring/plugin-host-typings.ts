@@ -120,7 +120,7 @@ declare module 'orca/host' {
   } from 'orca'
   export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
   export type Disposable = { dispose(): void }
-  /** \`orca.api\`: check \`minor\` (or \`host.has\`) before calling a method newer than your oldest Orca. */
+  /** \`orca.api\`: check \`minor\` (or \`host.has\`) before calling a method newer than your oldest Seal. */
   export type HostApiVersion = { readonly major: number; readonly minor: number }
   /** Open set: treat a code you do not know as \`action_failed\`. */
   export type HostErrorCode = ${union(PLUGIN_ERROR_CODES)}
@@ -148,7 +148,7 @@ ${renderPluginHostMethodMembers('    ')}  }
   export type HostApi<S extends HostSurface> = {
     /** Rejects with a {@link HostCallError}. */
     call<M extends HostMethodFor<S>>(method: M, ...args: HostCallArgs<M>): Promise<HostResult<M>>
-    /** Synchronous: whether this Orca offers \`method\` on this surface. */
+    /** Synchronous: whether this Seal offers \`method\` on this surface. */
     has(method: string): boolean
   }
 

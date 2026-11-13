@@ -6,7 +6,7 @@ function count(value: number | null): string {
 
 export function formatManagedServerStatus(status: OrcadManagedRuntimeStatus): string {
   const lines = [
-    `Active version: ${status.activeVersion ?? 'none'}${status.activeAppVersion ? ` (Orca ${status.activeAppVersion})` : ''}`,
+    `Active version: ${status.activeVersion ?? 'none'}${status.activeAppVersion ? ` (Seal ${status.activeAppVersion})` : ''}`,
     `Previous version: ${status.previousVersion ?? 'none'}${status.rollbackAvailable ? ' (rollback available)' : ''}`,
     `Live terminals: ${count(status.terminals.liveSessions)}`
   ]

@@ -88,7 +88,7 @@ export function TerminalWorkspaceDialogs({
               {windowCloseDialogKind === 'unverifiable'
                 ? t(
                     'auto.components.Terminal.b7c1f0a934',
-                    'A remote host could not be reached, so Orca cannot tell whether work is still running there. Close the window anyway?'
+                    'A remote host could not be reached, so Seal cannot tell whether work is still running there. Close the window anyway?'
                   )
                 : t(
                     'auto.components.Terminal.93c2e9d845',

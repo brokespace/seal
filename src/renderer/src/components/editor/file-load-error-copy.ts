@@ -43,7 +43,7 @@ export function formatFileLoadErrorMessage(message: string): string {
   if (unwrapped === REMOTE_FILE_PAGED_READ_UNSUPPORTED_MESSAGE) {
     return translate(
       'auto.components.editor.fileLoadError.remotePagedReadUnsupported',
-      'Remote file is larger than the 512 KB this Orca server can send. Update the server to open it.'
+      'Remote file is larger than the 512 KB this Seal server can send. Update the server to open it.'
     )
   }
   const tooLarge = unwrapped.match(
