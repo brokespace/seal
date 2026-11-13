@@ -89,7 +89,11 @@ export function SealPolicyRules({ config, labelOf, onRemove }: SealPolicyRulesPr
                 ? t('seal.accounts.policy.project', 'Project')
                 : t('seal.accounts.policy.machine', 'Machine')}
             </Badge>
-            <Badge variant="secondary">{row.provider === 'claude' ? 'Claude' : 'Codex'}</Badge>
+            <Badge variant="secondary">
+              {row.provider === 'claude'
+                ? t('seal.accounts.provider.claude', 'Claude')
+                : t('seal.accounts.provider.codex', 'Codex')}
+            </Badge>
           </span>
         }
         description={t(

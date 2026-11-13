@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { writeSecureJsonFile } from '../../shared/secure-storage/secure-file'
@@ -47,13 +47,18 @@ function emptyLocalState(): SealAccountsLocalState {
   }
 }
 
+function isMissingFile(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
+}
+
+/** Read once at construction; every later read is served from memory. */
 function readJson(path: string): unknown {
-  if (!existsSync(path)) {
-    return undefined
-  }
   try {
     return JSON.parse(readFileSync(path, 'utf8'))
   } catch (error) {
+    if (isMissingFile(error)) {
+      return undefined
+    }
     console.warn(`[seal-accounts] Ignoring unreadable ${path}:`, error)
     return undefined
   }

@@ -107,14 +107,14 @@ export function SealPolicyRuleDialog({
                 setDefaultKey(NO_DEFAULT)
               }}
               options={[
-                { value: 'claude', label: 'Claude' },
-                { value: 'codex', label: 'Codex' }
+                { value: 'claude', label: t('seal.accounts.provider.claude', 'Claude') },
+                { value: 'codex', label: t('seal.accounts.provider.codex', 'Codex') }
               ]}
               ariaLabel={t('seal.accounts.policy.provider', 'Provider')}
             />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="seal-rule-target" className="text-xs">
+            <Label htmlFor="seal-rule-target">
               {scope === 'project'
                 ? t('seal.accounts.policy.projectMatch', 'Repo or folder')
                 : t('seal.accounts.policy.machineMatch', 'Machine')}
@@ -123,17 +123,21 @@ export function SealPolicyRuleDialog({
               id="seal-rule-target"
               value={target}
               onChange={(event) => setTarget(event.target.value)}
-              placeholder={scope === 'project' ? 'github.com/acme/*' : machineKey}
+              placeholder={
+                scope === 'project'
+                  ? t('seal.accounts.policy.projectPlaceholder', 'github.com/acme/*')
+                  : machineKey
+              }
             />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="seal-rule-label" className="text-xs">
+            <Label htmlFor="seal-rule-label">
               {t('seal.accounts.policy.label', 'Name (optional)')}
             </Label>
             <Input id="seal-rule-label" value={label} onChange={(e) => setLabel(e.target.value)} />
           </div>
           <div className="grid gap-2">
-            <Label className="text-xs">
+            <Label>
               {t('seal.accounts.policy.allowed', 'Allowed accounts (none checked allows all)')}
             </Label>
             {accounts.map((candidate) => (
@@ -153,7 +157,7 @@ export function SealPolicyRuleDialog({
             ))}
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs">{t('seal.accounts.policy.default', 'Default')}</Label>
+            <Label>{t('seal.accounts.policy.default', 'Default')}</Label>
             <Select value={defaultKey} onValueChange={setDefaultKey}>
               <SelectTrigger size="sm">
                 <SelectValue />

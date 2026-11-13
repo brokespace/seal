@@ -43,8 +43,6 @@ type SealAccountsViewProps = {
   actions: SealAccountsActions
 }
 
-const PROVIDER_TITLES: Record<SealProvider, string> = { claude: 'Claude Code', codex: 'Codex' }
-
 export function SealAccountsView({
   status,
   error,
@@ -54,6 +52,10 @@ export function SealAccountsView({
   actions
 }: SealAccountsViewProps) {
   const t = useTranslate()
+  const providerTitles: Record<SealProvider, string> = {
+    claude: t('seal.accounts.provider.claudeCode', 'Claude Code'),
+    codex: t('seal.accounts.provider.codex', 'Codex')
+  }
   const [ruleOpen, setRuleOpen] = useState(false)
   const [keyOpen, setKeyOpen] = useState(false)
 
@@ -82,9 +84,10 @@ export function SealAccountsView({
   const allCandidates = SEAL_PROVIDERS.flatMap((provider) => status.providers[provider].candidates)
   const labelOf = (key: string): string =>
     allCandidates.find((candidate) => candidate.key === key)?.label ?? key
-  const candidatesByProvider = Object.fromEntries(
-    SEAL_PROVIDERS.map((provider) => [provider, status.providers[provider].candidates])
-  ) as Record<SealProvider, SealAccountCandidate[]>
+  const candidatesByProvider: Record<SealProvider, SealAccountCandidate[]> = {
+    claude: status.providers.claude.candidates,
+    codex: status.providers.codex.candidates
+  }
   const portableLogins = allCandidates.filter(
     (candidate) => candidate.kind === 'oauth' && candidate.launchable
   ).length
@@ -97,7 +100,7 @@ export function SealAccountsView({
         return (
           <SettingsGroup
             key={provider}
-            title={PROVIDER_TITLES[provider]}
+            title={providerTitles[provider]}
             description={t(
               'seal.accounts.providerDescription',
               'Live usage per account. New sessions launch on the account marked Next launch unless a rule or override says otherwise.'

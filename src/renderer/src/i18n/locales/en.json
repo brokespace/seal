@@ -25512,7 +25512,8 @@
         "empty": "No rules: every project and machine may use every account.",
         "allAccounts": "All accounts",
         "summary": "Allowed: {{value0}} · Default: {{value1}}",
-        "remove": "Remove rule"
+        "remove": "Remove rule",
+        "projectPlaceholder": "github.com/acme/*"
       },
       "keys": {
         "title": "API keys",
@@ -25525,7 +25526,11 @@
         "anthropic": "Anthropic (Claude)",
         "openai": "OpenAI (Codex)",
         "label": "Name",
-        "secret": "Key"
+        "secret": "Key",
+        "anthropicShort": "Anthropic",
+        "openaiShort": "OpenAI",
+        "anthropicPlaceholder": "sk-ant-…",
+        "openaiPlaceholder": "sk-…"
       },
       "activity": {
         "title": "Activity"
@@ -25575,6 +25580,11 @@
       "minutes": "min",
       "meter": {
         "resetsIn": "resets in {{value0}}"
+      },
+      "provider": {
+        "claudeCode": "Claude Code",
+        "codex": "Codex",
+        "claude": "Claude"
       }
     }
   }

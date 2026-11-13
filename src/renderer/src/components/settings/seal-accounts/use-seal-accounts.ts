@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useState } from 'react'
 import { toast } from 'sonner'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
+import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 
 const POLL_MS = 30_000
 
@@ -12,78 +13,109 @@ export type SealAccountsMutation = (
   failureMessage: string
 ) => Promise<boolean>
 
+type Snapshot = { status: SealAccountsStatus; at: number }
+
+function isSealAccountsStatus(value: unknown): value is SealAccountsStatus {
+  return typeof value === 'object' && value !== null && 'providers' in value
+}
+
+/** Mutations answer with fresh status, either bare or as `{ status }` beside their own result. */
 function statusFrom(result: unknown): SealAccountsStatus | null {
-  if (!result || typeof result !== 'object') {
-    return null
+  if (isSealAccountsStatus(result)) {
+    return result
   }
-  if ('providers' in result && 'config' in result) {
-    return result as SealAccountsStatus
+  if (typeof result === 'object' && result !== null && 'status' in result) {
+    return isSealAccountsStatus(result.status) ? result.status : null
   }
-  return 'status' in result ? statusFrom((result as { status: unknown }).status) : null
+  return null
+}
+
+function errorText(caught: unknown): string {
+  return caught instanceof Error ? caught.message : String(caught)
+}
+
+async function loadStatus(
+  target: RuntimeClientTarget,
+  refreshUsage: boolean
+): Promise<{ status: SealAccountsStatus } | { error: string }> {
+  try {
+    return {
+      status: await callRuntimeRpc<SealAccountsStatus>(
+        target,
+        'seal.accounts.status',
+        { refreshUsage },
+        { timeoutMs: 30_000 }
+      )
+    }
+  } catch (caught) {
+    return { error: errorText(caught) }
+  }
 }
 
 /** Live Seal account status for one host; every mutation returns fresh status from that host. */
 export function useSealAccounts(target: RuntimeClientTarget): {
   status: SealAccountsStatus | null
+  /** When the shown status was read; reset countdowns are measured from it. */
+  readAt: number
   error: string | null
   refreshing: boolean
   refresh: (refreshUsage?: boolean) => Promise<void>
   mutate: SealAccountsMutation
 } {
-  const [status, setStatus] = useState<SealAccountsStatus | null>(null)
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-  const targetKey = target.kind === 'local' ? 'local' : target.environmentId
-  const targetRef = useRef(target)
-  targetRef.current = target
 
-  const refresh = useCallback(async (refreshUsage = false) => {
-    setRefreshing(true)
-    try {
-      const result = await callRuntimeRpc<SealAccountsStatus>(
-        targetRef.current,
-        'seal.accounts.status',
-        { refreshUsage },
-        { timeoutMs: 30_000 }
-      )
-      setStatus(result)
-      setError(null)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught))
-    } finally {
+  const refresh = useCallback(
+    async (refreshUsage = false) => {
+      setRefreshing(true)
+      const result = await loadStatus(target, refreshUsage)
       setRefreshing(false)
-    }
-  }, [])
+      if ('status' in result) {
+        setSnapshot({ status: result.status, at: Date.now() })
+        setError(null)
+      } else {
+        setError(result.error)
+      }
+    },
+    [target]
+  )
 
+  const poll = useEffectEvent((refreshUsage: boolean) => void refresh(refreshUsage))
   useEffect(() => {
-    setStatus(null)
-    void refresh(true)
-    const timer = setInterval(() => void refresh(false), POLL_MS)
-    return () => clearInterval(timer)
-  }, [refresh, targetKey])
+    poll(true)
+    return installWindowVisibilityInterval({
+      run: () => poll(false),
+      intervalMs: POLL_MS,
+      slowWhileUnfocused: true
+    })
+  }, [])
 
   const mutate = useCallback<SealAccountsMutation>(
     async (method, params, failureMessage) => {
       try {
-        const result = await callRuntimeRpc<unknown>(targetRef.current, method, params, {
-          timeoutMs: 60_000
-        })
+        const result = await callRuntimeRpc<unknown>(target, method, params, { timeoutMs: 60_000 })
         const next = statusFrom(result)
         if (next) {
-          setStatus(next)
+          setSnapshot({ status: next, at: Date.now() })
         } else {
           await refresh(false)
         }
         return true
       } catch (caught) {
-        toast.error(failureMessage, {
-          description: caught instanceof Error ? caught.message : String(caught)
-        })
+        toast.error(failureMessage, { description: errorText(caught) })
         return false
       }
     },
-    [refresh]
+    [refresh, target]
   )
 
-  return { status, error, refreshing, refresh, mutate }
+  return {
+    status: snapshot?.status ?? null,
+    readAt: snapshot?.at ?? 0,
+    error,
+    refreshing,
+    refresh,
+    mutate
+  }
 }

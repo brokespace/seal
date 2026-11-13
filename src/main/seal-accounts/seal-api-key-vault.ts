@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { getSecretStore, hasSecretStore } from '../../shared/secret-store'
 import { writeSecureJsonFile } from '../../shared/secure-storage/secure-file'
@@ -13,6 +13,22 @@ export class SealApiKeyVaultUnavailableError extends Error {
   }
 }
 
+function loadSealed(path: string): SealedKeys {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {}
+    }
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string'
+      )
+    )
+  } catch {
+    return {}
+  }
+}
+
 /** API keys sealed with the OS keychain (Electron safeStorage, or orcad's secret store). */
 export class SealApiKeyVault {
   constructor(private readonly dir: string) {}
@@ -21,23 +37,12 @@ export class SealApiKeyVault {
     return join(this.dir, 'api-keys.json')
   }
 
+  private sealed: SealedKeys | null = null
+
+  /** Loaded once; the vault is the file's only writer, so memory stays authoritative. */
   private readSealed(): SealedKeys {
-    if (!existsSync(this.path)) {
-      return {}
-    }
-    try {
-      const parsed: unknown = JSON.parse(readFileSync(this.path, 'utf8'))
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return {}
-      }
-      return Object.fromEntries(
-        Object.entries(parsed).filter(
-          (entry): entry is [string, string] => typeof entry[1] === 'string'
-        )
-      )
-    } catch {
-      return {}
-    }
+    this.sealed ??= loadSealed(this.path)
+    return this.sealed
   }
 
   isAvailable(): boolean {
@@ -59,9 +64,12 @@ export class SealApiKeyVault {
     if (!this.isAvailable()) {
       throw new SealApiKeyVaultUnavailableError()
     }
-    const sealed = this.readSealed()
-    sealed[id] = getSecretStore().encryptString(apiKey).toString('base64')
+    const sealed = {
+      ...this.readSealed(),
+      [id]: getSecretStore().encryptString(apiKey).toString('base64')
+    }
     writeSecureJsonFile(this.path, sealed)
+    this.sealed = sealed
   }
 
   read(id: string): string | null {
@@ -82,7 +90,8 @@ export class SealApiKeyVault {
     if (!(id in sealed)) {
       return
     }
-    delete sealed[id]
-    writeSecureJsonFile(this.path, sealed)
+    const next = Object.fromEntries(Object.entries(sealed).filter(([saved]) => saved !== id))
+    writeSecureJsonFile(this.path, next)
+    this.sealed = next
   }
 }

@@ -41,7 +41,11 @@ export function SealApiKeyRows({
       label={
         <span className="flex items-center gap-2">
           <span className="truncate">{key.label}</span>
-          <Badge variant="secondary">{key.provider === 'claude' ? 'Anthropic' : 'OpenAI'}</Badge>
+          <Badge variant="secondary">
+            {key.provider === 'claude'
+              ? t('seal.accounts.keys.anthropicShort', 'Anthropic')
+              : t('seal.accounts.keys.openaiShort', 'OpenAI')}
+          </Badge>
         </span>
       }
       description={`••••${key.keyHint}`}
@@ -112,22 +116,22 @@ export function SealApiKeyDialog({
             ariaLabel={t('seal.accounts.policy.provider', 'Provider')}
           />
           <div className="grid gap-1">
-            <Label htmlFor="seal-key-label" className="text-xs">
-              {t('seal.accounts.keys.label', 'Name')}
-            </Label>
+            <Label htmlFor="seal-key-label">{t('seal.accounts.keys.label', 'Name')}</Label>
             <Input id="seal-key-label" value={label} onChange={(e) => setLabel(e.target.value)} />
           </div>
           <div className="grid gap-1">
-            <Label htmlFor="seal-key-secret" className="text-xs">
-              {t('seal.accounts.keys.secret', 'Key')}
-            </Label>
+            <Label htmlFor="seal-key-secret">{t('seal.accounts.keys.secret', 'Key')}</Label>
             <Input
               id="seal-key-secret"
               type="password"
               autoComplete="off"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={provider === 'claude' ? 'sk-ant-…' : 'sk-…'}
+              placeholder={
+                provider === 'claude'
+                  ? t('seal.accounts.keys.anthropicPlaceholder', 'sk-ant-…')
+                  : t('seal.accounts.keys.openaiPlaceholder', 'sk-…')
+              }
             />
           </div>
         </div>

@@ -172,7 +172,7 @@ export const dashboard = defineFixture({
       error={null}
       refreshing={false}
       now={NOW}
-      fleetHosts={[{ id: 'env-1', name: 'build-box (SSH)' }]}
+      fleetHosts={[{ id: 'env-1', label: 'build-box (SSH)' }]}
       actions={actions}
     />
   )
@@ -194,7 +194,7 @@ export const rulesKeysAndActivity = defineFixture({
       </SettingsGroup>
       <SettingsGroup title="Remote hosts">
         <SealFleetRows
-          hosts={[{ id: 'env-1', name: 'build-box (SSH)' }]}
+          hosts={[{ id: 'env-1', label: 'build-box (SSH)' }]}
           loginCount={2}
           onSync={async () => null}
         />

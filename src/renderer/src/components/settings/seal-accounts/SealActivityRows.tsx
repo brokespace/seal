@@ -1,4 +1,4 @@
-import { useTranslate } from '@/i18n/use-translate'
+import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { Badge } from '../../ui/badge'
 import type {
   SealSessionAssignment,
@@ -16,8 +16,10 @@ function formatTime(at: number): string {
   })
 }
 
-function providerName(provider: string): string {
-  return provider === 'claude' ? 'Claude' : 'Codex'
+function providerName(provider: string, t: Translate): string {
+  return provider === 'claude'
+    ? t('seal.accounts.provider.claude', 'Claude')
+    : t('seal.accounts.provider.codex', 'Codex')
 }
 
 /** Recent launches with the account each one got, newest first. */
@@ -33,7 +35,7 @@ export function SealSessionRows({ sessions }: { sessions: SealSessionAssignment[
   }
   return recent.map((session) => (
     <div key={session.id} className="flex items-center gap-2 py-2 text-xs" data-settings-row="">
-      <Badge variant="secondary">{providerName(session.provider)}</Badge>
+      <Badge variant="secondary">{providerName(session.provider, t)}</Badge>
       <span className="truncate font-medium">{session.accountLabel}</span>
       <span className="truncate text-muted-foreground">
         {session.projectLabel ?? session.machineKey}
@@ -85,7 +87,7 @@ export function SealSwapRows({
       className="flex items-center gap-2 py-2 text-xs"
       data-settings-row=""
     >
-      <Badge variant="secondary">{providerName(swap.provider)}</Badge>
+      <Badge variant="secondary">{providerName(swap.provider, t)}</Badge>
       <span className="truncate">
         {swap.from
           ? t('seal.accounts.swap.fromTo', '{{value0}} to {{value1}}', {

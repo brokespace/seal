@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir, userInfo } from 'node:os'
 import { join } from 'node:path'
 import { writeSecureFile } from '../../shared/secure-storage/secure-file'
@@ -18,18 +18,21 @@ import type { SealAccountManager } from './seal-account-manager'
 type ClaudeCredential = Extract<SealAccountsImportCredential, { provider: 'claude' }>
 type CodexCredential = Extract<SealAccountsImportCredential, { provider: 'codex' }>
 
-function readJsonObject(path: string): Record<string, unknown> | null {
-  if (!existsSync(path)) {
-    return null
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+async function readJsonObject(path: string): Promise<Record<string, unknown> | null> {
   try {
-    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'))
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : null
+    const parsed: unknown = JSON.parse(await readFile(path, 'utf8'))
+    return isRecord(parsed) ? parsed : null
   } catch {
     return null
   }
+}
+
+async function readOptionalFile(path: string): Promise<string | null> {
+  return readFile(path, 'utf8').catch(() => null)
 }
 
 async function readClaudeCredentialsJson(configDir: string, isSystem: boolean): Promise<string> {
@@ -41,9 +44,9 @@ async function readClaudeCredentialsJson(configDir: string, isSystem: boolean): 
       return fromKeychain
     }
   }
-  const file = join(configDir, '.credentials.json')
-  if (existsSync(file)) {
-    return readFileSync(file, 'utf8')
+  const fromFile = await readOptionalFile(join(configDir, '.credentials.json'))
+  if (fromFile !== null) {
+    return fromFile
   }
   throw new Error('No Claude credentials were found for this account on this machine.')
 }
@@ -58,12 +61,11 @@ export async function exportClaudeCredential(
   const configDir = isSystem
     ? router.systemDefaultHome()
     : router.accountHome(candidate.localId ?? '')
-  const state = readJsonObject(claudeStateFile(isSystem ? router.userConfigDir() : configDir))
-  const oauthAccount = state?.oauthAccount
-  if (!oauthAccount || typeof oauthAccount !== 'object') {
+  const state = await readJsonObject(claudeStateFile(isSystem ? router.userConfigDir() : configDir))
+  const account = state?.oauthAccount
+  if (!isRecord(account)) {
     throw new Error('This Claude account has no saved login on this machine.')
   }
-  const account = oauthAccount as Record<string, unknown>
   return {
     provider: 'claude',
     email: String(account.emailAddress ?? candidate.email ?? ''),
@@ -72,21 +74,21 @@ export async function exportClaudeCredential(
     organizationName:
       typeof account.organizationName === 'string' ? account.organizationName : null,
     credentialsJson: await readClaudeCredentialsJson(configDir, isSystem),
-    oauthAccountJson: JSON.stringify(oauthAccount)
+    oauthAccountJson: JSON.stringify(account)
   }
 }
 
-export function exportCodexCredential(
+export async function exportCodexCredential(
   candidate: SealAccountCandidate,
   managedHome: (accountId: string) => string | null
-): CodexCredential {
+): Promise<CodexCredential> {
   const home =
     candidate.localId === null ? getSystemCodexHomePath() : managedHome(candidate.localId)
-  const authPath = home ? join(home, 'auth.json') : null
-  if (!authPath || !existsSync(authPath)) {
+  const authJson = home ? await readOptionalFile(join(home, 'auth.json')) : null
+  if (authJson === null) {
     throw new Error('No Codex login was found for this account on this machine.')
   }
-  return { provider: 'codex', authJson: readFileSync(authPath, 'utf8') }
+  return { provider: 'codex', authJson }
 }
 
 async function writeMacKeychainCredential(
@@ -131,7 +133,7 @@ export async function importClaudeCredential(
     JSON.parse(credential.credentialsJson)
     const oauthAccount: unknown = JSON.parse(credential.oauthAccountJson)
     const statePath = claudeStateFile(signIn.configDir)
-    const state = readJsonObject(statePath) ?? {}
+    const state = (await readJsonObject(statePath)) ?? {}
     writeSecureFile(statePath, JSON.stringify({ ...state, oauthAccount }, null, 2))
     writeSecureFile(join(signIn.configDir, '.credentials.json'), credential.credentialsJson)
     if (process.platform === 'darwin') {
@@ -151,19 +153,24 @@ export async function importClaudeCredential(
 
 function codexIdentity(authJson: string): { email: string | null; workspace: string | null } {
   try {
-    const auth = JSON.parse(authJson) as { tokens?: { id_token?: string } }
-    const payload = auth.tokens?.id_token?.split('.')[1]
+    const auth: unknown = JSON.parse(authJson)
+    const tokens = isRecord(auth) ? auth.tokens : null
+    const idToken = isRecord(tokens) ? tokens.id_token : null
+    const payload = typeof idToken === 'string' ? idToken.split('.')[1] : undefined
     if (!payload) {
       return { email: null, workspace: null }
     }
-    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as Record<
-      string,
-      unknown
-    >
-    const openai = claims['https://api.openai.com/auth'] as Record<string, unknown> | undefined
+    const claims: unknown = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    if (!isRecord(claims)) {
+      return { email: null, workspace: null }
+    }
+    const openai = claims['https://api.openai.com/auth']
     return {
       email: typeof claims.email === 'string' ? claims.email : null,
-      workspace: typeof openai?.chatgpt_account_id === 'string' ? openai.chatgpt_account_id : null
+      workspace:
+        isRecord(openai) && typeof openai.chatgpt_account_id === 'string'
+          ? openai.chatgpt_account_id
+          : null
     }
   } catch {
     return { email: null, workspace: null }
@@ -195,12 +202,12 @@ export async function importCodexCredential(
     writeSecureFile(join(existingHome, 'auth.json'), credential.authJson)
     return
   }
-  const staging = mkdtempSync(join(tmpdir(), 'seal-codex-'))
+  const staging = await mkdtemp(join(tmpdir(), 'seal-codex-'))
   try {
     writeSecureFile(join(staging, 'auth.json'), credential.authJson)
     await services.codexAccounts.addAccountFromHome(staging)
   } finally {
-    rmSync(staging, { recursive: true, force: true })
+    await rm(staging, { recursive: true, force: true })
   }
 }
 

@@ -28,9 +28,9 @@ import type {
 import { withWorkspacePin } from '../../shared/seal-accounts/seal-accounts-config-edits'
 import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
+import { SealUsageWatch } from './seal-usage-watch'
 
 const EVALUATE_DEBOUNCE_MS = 2_000
-const USAGE_REFRESH_INTERVAL_MS = 5 * 60_000
 
 export type SealAccountManagerDeps = {
   store: Pick<Store, 'getRepo' | 'getSettings'>
@@ -50,8 +50,7 @@ export class SealAccountManager {
     codex: null
   }
   private unsubscribeUsage: (() => void) | null = null
-  private releaseUsageViewer: (() => void) | null = null
-  private refreshTimer: ReturnType<typeof setInterval> | null = null
+  private readonly usageWatch: SealUsageWatch
   private evaluateTimer: ReturnType<typeof setTimeout> | null = null
   private evaluating: Promise<unknown> = Promise.resolve()
 
@@ -61,6 +60,11 @@ export class SealAccountManager {
     this.store = new SealAccountsStore(dir)
     this.vault = new SealApiKeyVault(dir)
     this.now = deps.now ?? Date.now
+    this.usageWatch = new SealUsageWatch(
+      deps.services.rateLimits,
+      () => this.refreshUsage(),
+      () => this.scheduleEvaluation()
+    )
   }
 
   get services(): ProviderAccountServices {
@@ -69,20 +73,12 @@ export class SealAccountManager {
 
   start(): void {
     this.unsubscribeUsage = this.services.rateLimits.onStateChange(() => this.scheduleEvaluation())
-    this.refreshTimer = setInterval(() => {
-      if (this.anyAutoSwapEnabled()) {
-        void this.refreshUsage().finally(() => this.scheduleEvaluation())
-      }
-    }, USAGE_REFRESH_INTERVAL_MS)
-    this.refreshTimer.unref?.()
     this.syncUsageViewer()
   }
 
   dispose(): void {
     this.unsubscribeUsage?.()
-    this.releaseUsageViewer?.()
-    this.releaseUsageViewer = null
-    clearInterval(this.refreshTimer ?? undefined)
+    this.usageWatch.dispose()
     clearTimeout(this.evaluateTimer ?? undefined)
   }
 
@@ -150,15 +146,8 @@ export class SealAccountManager {
     return SEAL_PROVIDERS.some((provider) => this.getConfig().autoSwap[provider].enabled)
   }
 
-  /** Auto-swap must see usage even with no window open, like a paired client watching it. */
   private syncUsageViewer(): void {
-    const wanted = this.anyAutoSwapEnabled()
-    if (wanted && !this.releaseUsageViewer) {
-      this.releaseUsageViewer = this.services.rateLimits.addUsageViewer()
-    } else if (!wanted && this.releaseUsageViewer) {
-      this.releaseUsageViewer()
-      this.releaseUsageViewer = null
-    }
+    this.usageWatch.sync(this.anyAutoSwapEnabled())
   }
 
   private scheduleEvaluation(): void {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
@@ -26,19 +26,15 @@ function isEmptyProfile(profile: SealAccountProfile): boolean {
 /** Seal's account vault, policies and auto-swap for the host these settings target. */
 export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget }) {
   const t = useTranslate()
-  const { status, error, refreshing, refresh, mutate } = useSealAccounts(target)
+  const { status, readAt, error, refreshing, refresh, mutate } = useSealAccounts(target)
   const runtimeEnvironments = useAppStore((s) => s.runtimeEnvironments)
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(timer)
-  }, [])
-
   const fleetHosts = useMemo(
     () =>
       target.kind === 'local'
-        ? runtimeEnvironments.map((environment) => ({ id: environment.id, name: environment.name }))
+        ? runtimeEnvironments.map((environment) => ({
+            id: environment.id,
+            label: environment.name
+          }))
         : null,
     [runtimeEnvironments, target.kind]
   )
@@ -119,7 +115,7 @@ export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget 
       status={status}
       error={error}
       refreshing={refreshing}
-      now={now}
+      now={readAt}
       fleetHosts={fleetHosts}
       actions={actions}
     />

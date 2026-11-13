@@ -62,9 +62,7 @@ export function SealAccountProfileEditor({
     placeholder?: string
   ) => (
     <div className="grid gap-1">
-      <Label htmlFor={id} className="text-xs">
-        {label}
-      </Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
         value={value}
@@ -131,7 +129,7 @@ export function SealAccountProfileEditor({
             )}
           </div>
           <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="seal-disabled" className="text-xs">
+            <Label htmlFor="seal-disabled">
               {t('seal.accounts.profile.disabled', 'Never pick automatically')}
             </Label>
             <Switch id="seal-disabled" checked={disabled} onCheckedChange={setDisabled} />

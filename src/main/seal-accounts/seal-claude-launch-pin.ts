@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { mkdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { writeFileAtomically } from '../filesystem/atomic-file-publication'
 import {
@@ -26,11 +26,11 @@ export function sealPinnedPointerPath(dataRoot: string, pin: string): string {
   return join(dataRoot, 'claude-profiles', 'seal-pinned', pin)
 }
 
-function writePointer(path: string, home: string): void {
-  if (existsSync(path) && readFileSync(path, 'utf8') === home) {
+async function writePointer(path: string, home: string): Promise<void> {
+  if ((await readFile(path, 'utf8').catch(() => null)) === home) {
     return
   }
-  mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 })
   writeFileAtomically(path, home, { mode: 0o600 })
 }
 
@@ -58,7 +58,7 @@ export async function pinClaudeLaunch(args: {
   if (accountId === null || router.coveredBySystemDefault(accountId)) {
     const pointer = sealPinnedPointerPath(dataRoot, 'system')
     // An empty pointer makes the shell function restore the user's own Claude config.
-    writePointer(pointer, '')
+    await writePointer(pointer, '')
     const env = { ...withoutInjectedConfigDir(args.env), [CLAUDE_PROFILE_POINTER_ENV]: pointer }
     return {
       env,
@@ -89,7 +89,7 @@ export async function pinClaudeLaunch(args: {
     }
   }
   const pointer = sealPinnedPointerPath(dataRoot, accountId)
-  writePointer(pointer, home)
+  await writePointer(pointer, home)
   const envPatch = {
     [CLAUDE_PROFILE_POINTER_ENV]: pointer,
     CLAUDE_CONFIG_DIR: home,
