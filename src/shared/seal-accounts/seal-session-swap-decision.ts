@@ -154,7 +154,7 @@ function withFullSessionWindow(candidate: SealAccountCandidate, now: number): Se
 const RATE_LIMIT_PATTERNS = [
   /usage limit (?:reached|hit)/i,
   /\b(?:5-hour|weekly|session|opus|sonnet) limit reached\b/i,
-  /you(?:'|’)ve hit your (?:usage )?limit/i,
+  /you(?:'|\u2019)ve hit your (?:usage )?limit/i,
   /rate[_ -]limit(?:ed| exceeded|_error)/i
 ]
 
