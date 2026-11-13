@@ -348,11 +348,6 @@
           }
         }
       },
-      "live-sessions": {
-        "LiveSessionsPage": {
-          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host."
-        }
-      },
       "onboarding": {
         "AgentStep": {
           "showMoreAgents": "Show {{value0}} more agents →",

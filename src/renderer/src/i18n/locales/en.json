@@ -20078,7 +20078,6 @@
           "title": "Agent sessions",
           "refresh": "Scan again",
           "scanning": "Looking for sessions",
-          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.",
           "pick": "Pick a session to open its chat",
           "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server."
         },
