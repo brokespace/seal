@@ -25737,5 +25737,182 @@
       "apiKey": "Search API key",
       "apiKeyRequired": "Required for this provider"
     }
+  },
+  "seal": {
+    "accounts": {
+      "profile": {
+        "edit": "Edit {{value0}}",
+        "alias": "Alias",
+        "plan": "Plan",
+        "planPlaceholder": "Detected from usage",
+        "priority": "Priority (lower first)",
+        "sessionThreshold": "5h limit %",
+        "default": "Default",
+        "weeklyThreshold": "7d limit %",
+        "disabled": "Never pick automatically"
+      },
+      "cancel": "Cancel",
+      "save": "Save",
+      "badge": {
+        "apiKey": "API key",
+        "active": "Next launch",
+        "default": "Machine default",
+        "loginExpired": "Login expired",
+        "paused": "Paused until {{value0}}",
+        "manualOnly": "Manual only",
+        "notHere": "Not on this machine"
+      },
+      "priorityShort": "P{{value0}}",
+      "useNow": "Use for new sessions",
+      "apiKeyUsage": "Pay as you go; no plan limits",
+      "window": {
+        "session": "5h",
+        "weekly": "7d"
+      },
+      "error": "Could not update accounts",
+      "fleet": {
+        "failed": "Sync failed: {{value0}}",
+        "partial": "Rules synced; {{value0}} logins copied, {{value1}} failed.",
+        "done": "Rules synced; {{value0}} logins copied.",
+        "title": "Remote hosts",
+        "description": "Each SSH host swaps accounts on its own. Push your rules and logins so it can.",
+        "empty": "Add an SSH host or remote server to share accounts and rules with it.",
+        "hostDescription": "Runs agents with its own copy of your logins.",
+        "pushRules": "Push rules",
+        "pushLogins": "Copy logins ({{value0}})"
+      },
+      "refresh": "Refresh usage",
+      "title": "Accounts and auto-swap",
+      "loading": "Loading accounts…",
+      "providerDescription": "Live usage per account. New sessions launch on the account marked Next launch unless a rule or override says otherwise.",
+      "noAccounts": "No accounts yet. Sign in below or add an API key.",
+      "policy": {
+        "title": "Account rules",
+        "description": "Per-project and per-machine allow-lists and defaults. This machine is {{value0}}.",
+        "add": "Add rule",
+        "provider": "Provider",
+        "addTitle": "Account rule",
+        "addDescription": "Limit which accounts a project or machine may use, and which it prefers.",
+        "project": "Project",
+        "machine": "Machine",
+        "scope": "Applies to",
+        "projectMatch": "Repo or folder",
+        "machineMatch": "Machine",
+        "label": "Name (optional)",
+        "allowed": "Allowed accounts (none checked allows all)",
+        "default": "Default",
+        "noDefault": "Best available",
+        "empty": "No rules: every project and machine may use every account.",
+        "allAccounts": "All accounts",
+        "summary": "Allowed: {{value0}} · Default: {{value1}}",
+        "remove": "Remove rule",
+        "projectPlaceholder": "github.com/acme/*"
+      },
+      "keys": {
+        "title": "API keys",
+        "description": "Pay-as-you-go keys, encrypted with the system keychain. Use them as a fallback or pin them to a project.",
+        "add": "Add key",
+        "empty": "No API keys stored.",
+        "remove": "Remove key",
+        "addTitle": "Add API key",
+        "addDescription": "Stored encrypted in the system keychain on the machine that runs the agent.",
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI (Codex)",
+        "label": "Name",
+        "secret": "Key",
+        "anthropicShort": "Anthropic",
+        "openaiShort": "OpenAI",
+        "anthropicPlaceholder": "sk-ant-…",
+        "openaiPlaceholder": "sk-…"
+      },
+      "activity": {
+        "title": "Activity"
+      },
+      "sessions": {
+        "title": "Recent sessions",
+        "empty": "No agent sessions launched yet.",
+        "warning": "Check policy",
+        "closed": "Closed"
+      },
+      "swap": {
+        "title": "Swaps",
+        "manual": "Manual",
+        "authFailure": "Login died",
+        "threshold": "Near limit",
+        "notAllowed": "Policy change",
+        "empty": "No swaps yet.",
+        "fromTo": "{{value0}} to {{value1}}",
+        "rateLimit": "Rate limited"
+      },
+      "strategy": {
+        "best": "Most headroom",
+        "weeklyFirst": "Save weekly",
+        "consumeFirst": "Use it up",
+        "priority": "Priority"
+      },
+      "autoSwap": {
+        "enabled": "Auto-swap",
+        "enabledDescription": "Switch the account new sessions use before a limit is hit.",
+        "strategy": "Strategy",
+        "sessionThreshold": "5h limit",
+        "sessionThresholdDescription": "Swap away once the 5-hour window passes this.",
+        "weeklyThreshold": "7d limit",
+        "weeklyThresholdDescription": "Swap away once the weekly window passes this.",
+        "hysteresis": "Headroom margin",
+        "hysteresisDescription": "Only swap to accounts at least this far under the limits, so swaps do not bounce.",
+        "cooldown": "Cooldown",
+        "cooldownDescription": "Minimum time between automatic swaps.",
+        "failover": "Fail over on dead logins",
+        "failoverDescription": "Swap immediately when the current login expires or is revoked, and pause that account.",
+        "modelLimits": "Count per-model limits",
+        "modelLimitsDescription": "Treat a model-specific weekly cap like the weekly limit.",
+        "apiKeyFallback": "Fall back to API keys",
+        "apiKeyFallbackDescription": "Launch on a pay-as-you-go key when every subscription is exhausted.",
+        "lastDecision": "Last check",
+        "noDecision": "Not run yet",
+        "evaluate": "Check now",
+        "liveSessions": "Move running sessions",
+        "liveSessionsDescription": "Switch a running agent to another account when its own runs low, hits a rate limit or loses its login. Seal resumes the conversation when it cannot switch live."
+      },
+      "minutes": "min",
+      "meter": {
+        "resetsIn": "resets in {{value0}}"
+      },
+      "provider": {
+        "claudeCode": "Claude Code",
+        "codex": "Codex",
+        "claude": "Claude"
+      }
+    },
+    "session": {
+      "liveSwap": {
+        "inherit": "Follow the global setting",
+        "on": "Always move this session",
+        "off": "Never move this session"
+      },
+      "delivery": {
+        "live": "switched live",
+        "resume": "resumed",
+        "failed": "failed"
+      },
+      "badge": {
+        "title": "Running on {{value0}}. Click to switch.",
+        "aria": "Session account {{value0}}"
+      },
+      "menu": {
+        "switch": "Move this session to",
+        "liveSwap": "When this account runs low",
+        "lastSwap": "{{value0}} to {{value1}}, {{value2}}"
+      },
+      "error": {
+        "swap": "Could not switch this session",
+        "liveSwap": "Could not change this session’s setting"
+      },
+      "notice": {
+        "resumed": "Session resumed on {{value0}}",
+        "resumedDescription": "It could not switch logins while running, so Seal restarted it on the new account with the same conversation.",
+        "failed": "Could not move a session to {{value0}}"
+      }
+    }
   }
 }
