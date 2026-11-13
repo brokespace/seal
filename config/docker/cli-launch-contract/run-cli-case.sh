@@ -35,10 +35,10 @@ case "$case_name" in
   nofuse-userns-bundled-status) command=("$launcher" status) ;;
   # Direct binaries must hand off before Ozone initializes.
   nofuse-nosandbox-direct-binary-skills)
-    command=("$extracted_root/orca-ide" --no-sandbox skills --help)
+    command=("$extracted_root/seal" --no-sandbox skills --help)
     ;;
   stale-display-nosandbox-direct-binary-gui)
-    command=("$extracted_root/orca-ide" --no-sandbox)
+    command=("$extracted_root/seal" --no-sandbox)
     ;;
   *)
     echo "UNKNOWN_CASE $case_name"
