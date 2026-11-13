@@ -9,10 +9,8 @@ export type DiscoveryScriptOptions = {
   maxReads: number
   headBytes: number
   tailBytes: number
-  /** Extra Claude `projects/` dirs (account profiles, config overrides) beyond the host defaults. */
-  claudeProjectsDirs: string[]
-  /** Extra Codex `sessions/` dirs beyond the host defaults. */
-  codexSessionsDirs: string[]
+  /** False when the host finds transcripts another way (this machine uses AI Vault discovery). */
+  transcripts: boolean
   /** `path|size` of transcripts already read at that size: their bytes are skipped. */
   known: { path: string; size: number }[]
   /** Paths whose head was already read: only their tail is sent when they grow. */
@@ -21,10 +19,6 @@ export type DiscoveryScriptOptions = {
 
 function shQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`
-}
-
-function shList(values: string[]): string {
-  return values.map(shQuote).join(' ')
 }
 
 export function buildDiscoveryScript(options: DiscoveryScriptOptions): string {
@@ -75,11 +69,19 @@ for f in "$HOME"/.config/sisomewhere/agents/*.json; do
   [ -f "$f" ] || continue
   printf '@@HOOK %s ' "$f"; b64 < "$f"; echo
 done
-{
-  for root in "$HOME/.claude/projects" "\${CLAUDE_CONFIG_DIR:+$CLAUDE_CONFIG_DIR/projects}" ${shList(options.claudeProjectsDirs)}; do
+${transcriptSection(options)}echo "@@DONE"
+`
+}
+
+function transcriptSection(options: DiscoveryScriptOptions): string {
+  if (!options.transcripts) {
+    return ''
+  }
+  return `{
+  for root in "$HOME/.claude/projects" "\${CLAUDE_CONFIG_DIR:+$CLAUDE_CONFIG_DIR/projects}"; do
     [ -n "$root" ] && [ -d "$root" ] && find "$root" -mindepth 2 -maxdepth 2 -type f -name '*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/claude /'
   done
-  for root in "$HOME/.codex/sessions" "\${CODEX_HOME:+$CODEX_HOME/sessions}" ${shList(options.codexSessionsDirs)}; do
+  for root in "$HOME/.codex/sessions" "\${CODEX_HOME:+$CODEX_HOME/sessions}"; do
     [ -n "$root" ] && [ -d "$root" ] && find "$root" -type f -name 'rollout-*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/codex /'
   done
 } | sort -u -k2 | while read -r provider f; do
@@ -95,6 +97,5 @@ done | sort -rn | head -n ${options.maxFiles} | { reads=0; while read -r mtime s
   fi
   printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes} "$f" | b64; echo
 done; }
-echo "@@DONE"
 `
 }

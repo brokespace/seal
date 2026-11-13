@@ -3,11 +3,14 @@ import { Readable } from 'node:stream'
 import type { LiveSessionMachine } from '../../../shared/live-sessions/live-session-types'
 import { getSshConnectionManager } from '../../ssh/targets/ssh-target-registry'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
+import type { TranscriptFileSource } from '../discovery/local-transcript-files'
 
 /** A machine the registry can scan and type into: one shell script in, its stdout back. */
 export type LiveSessionHost = {
   machine: LiveSessionMachine
   run(script: string, options?: { timeoutMs?: number }): Promise<string>
+  /** Finds transcripts without the script; hosts without one are searched by the script's `find`. */
+  transcriptFiles?: TranscriptFileSource
 }
 
 export const LOCAL_HOST_ID = 'local'
@@ -34,10 +37,11 @@ export async function runLocalScript(
   return result.stdout
 }
 
-export function localHost(label: string): LiveSessionHost {
+export function localHost(label: string, transcriptFiles?: TranscriptFileSource): LiveSessionHost {
   return {
     machine: { hostId: LOCAL_HOST_ID, label, kind: 'local' },
-    run: runLocalScript
+    run: runLocalScript,
+    transcriptFiles
   }
 }
 

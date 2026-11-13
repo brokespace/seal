@@ -35,18 +35,33 @@ export class HostSessionScanner {
 
   constructor(
     private readonly host: LiveSessionHost,
-    private readonly limits: HostScanLimits,
-    private readonly extraRoots: () => { claudeProjectsDirs: string[]; codexSessionsDirs: string[] }
+    private readonly limits: HostScanLimits
   ) {}
 
   async scan(nowMs: number): Promise<HostScanResult> {
+    const cached = [...this.cache.values()]
+    const known = cached.map((t) => ({ path: t.path, size: t.size }))
+    const headKnown = cached.filter((t) => t.head !== null).map((t) => t.path)
+    const findFiles = this.host.transcriptFiles
     const script = buildDiscoveryScript({
       ...this.limits,
-      ...this.extraRoots(),
-      known: [...this.cache.values()].map((t) => ({ path: t.path, size: t.size })),
-      headKnown: [...this.cache.values()].filter((t) => t.head !== null).map((t) => t.path)
+      transcripts: !findFiles,
+      known: findFiles ? [] : known,
+      headKnown: findFiles ? [] : headKnown
     })
-    const output = parseDiscoveryOutput(await this.host.run(script))
+    const [stdout, files] = await Promise.all([
+      this.host.run(script),
+      findFiles?.({
+        ...this.limits,
+        nowMs,
+        known: new Map(known.map((k) => [k.path, k.size])),
+        headKnown: new Set(headKnown)
+      })
+    ])
+    const output = parseDiscoveryOutput(stdout)
+    if (files) {
+      output.files = files
+    }
     const listed = new Set(output.files.map((f) => f.path))
     for (const file of output.files) {
       this.absorb(file)

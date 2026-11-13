@@ -19,8 +19,6 @@ export type LiveSessionRegistryDeps = {
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
   subscribeSealPanes?: (onChange: () => void) => () => void
-  /** Extra transcript roots for a host (account profiles); defaults are found on the host. */
-  extraRoots?: (hostId: string) => { claudeProjectsDirs: string[]; codexSessionsDirs: string[] }
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
   log?: (message: string, error?: unknown) => void
@@ -180,11 +178,10 @@ export class LiveSessionRegistry {
           scanner: new HostSessionScanner(
             {
               machine: host.machine,
-              run: (script, options) => this.hosts.get(hostId)!.host.run(script, options)
+              run: (script, options) => this.hosts.get(hostId)!.host.run(script, options),
+              transcriptFiles: host.transcriptFiles
             },
-            host.machine.kind === 'local' ? LOCAL_SCAN_LIMITS : SSH_SCAN_LIMITS,
-            () =>
-              this.deps.extraRoots?.(hostId) ?? { claudeProjectsDirs: [], codexSessionsDirs: [] }
+            host.machine.kind === 'local' ? LOCAL_SCAN_LIMITS : SSH_SCAN_LIMITS
           ),
           sessions: [],
           nextScanAt: 0,

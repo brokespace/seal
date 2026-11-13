@@ -11,7 +11,7 @@ import type {
   LiveTranscriptDelta,
   LiveTranscriptPage
 } from '../../shared/live-sessions/live-session-types'
-import { LiveSessionRegistry, type LiveSessionRegistryDeps } from './live-session-registry'
+import { LiveSessionRegistry } from './live-session-registry'
 import {
   LiveTranscriptStreams,
   type LiveTranscriptSubscription
@@ -31,7 +31,6 @@ export type LiveSessionServiceDeps = {
     input: SealPaneInput
     subscribe: (onChange: () => void) => () => void
   }
-  extraRoots?: LiveSessionRegistryDeps['extraRoots']
   log?: (message: string, error?: unknown) => void
 }
 
@@ -54,7 +53,6 @@ export class LiveSessionService {
       hosts: deps.hosts,
       sealPanes: () => deps.sealPanes?.panes() ?? [],
       subscribeSealPanes: deps.sealPanes?.subscribe,
-      extraRoots: deps.extraRoots,
       log: deps.log
     })
     this.streams = new LiveTranscriptStreams(this.registry, { log: deps.log })
