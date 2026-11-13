@@ -6,6 +6,11 @@ import type {
 } from '../../../shared/live-sessions/live-session-types'
 import { decodeClaudeTranscriptLine } from '../../native-chat/transcript-decoding/transcript-line-decoders-claude'
 import { decodeCodexTranscriptLine } from '../../native-chat/transcript-decoding/transcript-line-decoders-codex'
+import {
+  classifyLiveTranscriptRecord,
+  cleanLiveTranscriptMessage,
+  summarizedDivider
+} from './live-transcript-cleanup'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 
 /** Raw bytes of one range of a transcript and the file's size when read. */
@@ -98,11 +103,18 @@ export function decodeTranscriptLines(
 ): NativeChatMessage[] {
   const decode = provider === 'claude' ? decodeClaudeTranscriptLine : decodeCodexTranscriptLine
   return lines.flatMap(({ offset, text }) => {
-    const message = decode(text, `o${offset}`)
+    const kind = classifyLiveTranscriptRecord(provider, text)
+    if (kind === 'hidden') {
+      return []
+    }
     // Offsets are the same in every read of the file, so they key messages across reconnects.
-    return message
-      ? [{ ...message, id: `o${offset}`, transcriptOffset: offset, transcriptOrder: offset }]
-      : []
+    const id = `o${offset}`
+    const decoded = kind === 'summarized' ? summarizedDivider(id, null) : decode(text, id)
+    return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => ({
+      ...message,
+      transcriptOffset: offset,
+      transcriptOrder: offset
+    }))
   })
 }
 

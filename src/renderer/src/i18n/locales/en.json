@@ -20196,8 +20196,8 @@
           "title": "Agent sessions",
           "refresh": "Scan again",
           "scanning": "Looking for sessions",
-          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.",
-          "pick": "Pick a session to open its chat"
+          "pick": "Pick a session to open its chat",
+          "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server."
         },
         "LiveSessionsSidebarEntry": {
           "label": "Agent sessions"
@@ -20247,6 +20247,33 @@
           "stillRunning": "The agent process didn’t stop.",
           "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
           "failed": "Could not take over the session. {{reason}}"
+        },
+        "remove": {
+          "select": "Select",
+          "selected": "{{count}} selected",
+          "selectNone": "Select none",
+          "selectAll": "Select all",
+          "removeSelected": "Remove",
+          "done": "Done",
+          "button": "Remove from Seal",
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.",
+          "titleOne": "Remove this session from Seal?",
+          "titleMany": "Remove {{count}} sessions from Seal?",
+          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
+          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
+          "deleteFiles": "Also delete transcript files",
+          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
+          "cancel": "Cancel",
+          "hideOnly": "Remove from Seal",
+          "stopAndRemove": "Stop and remove",
+          "removeAndDelete": "Remove and delete"
+        },
+        "idleReap": {
+          "minutes": "{{count}} min",
+          "hours": "{{count}} h",
+          "label": "End idle Seal sessions",
+          "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
+          "never": "Never"
         }
       }
     },
@@ -25645,8 +25672,6 @@
         "empty": "No account usage yet. Sign in to an agent to track limits."
       },
       "attention": {
-        "machineError": "Connection failed",
-        "accountUsage": "{{provider}} at {{percent}}% of limit",
         "title": "Needs attention",
         "empty": "Nothing is waiting on you."
       },

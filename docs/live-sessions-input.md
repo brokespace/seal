@@ -136,3 +136,33 @@ shell functions to zsh and bash that run the real binary inside `tmux -L seal -f
 clipboard, the session ends with its window). It never touches the user's tmux server or
 `~/.tmux.conf`, and runs the binary directly inside tmux, inside Seal, for non-interactive commands,
 or with `SEAL_NO_WRAP=1`. See [installation](./live-sessions-shell-integration.md).
+
+## Process lifecycle
+
+Seal only starts a Claude Code or Codex process for the cases below. Each one ends on its own;
+none waits forever for input that will not come.
+
+| Process                                                                                                    | Started by                              | Ends when                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agent in a Seal pane (new agent, **Take over**, AI Vault resume)                                           | Seal, in an ordinary terminal tab       | The tab closes: closing it kills its terminal and the agent with it.                                                                                                                                                        |
+| Agent inside `tmux -L seal` (shell integration)                                                            | The user, from their own terminal       | The terminal window closes: the wrapper sets `destroy-unattached` and `exit-empty`, so the tmux session, and the agent in it, end with it, as they would without Seal. The idle reaper ends any left with nothing attached. |
+| Message to a closed session (`resume` route)                                                               | Seal                                    | After one turn: `claude -p --resume <id>` or `codex exec resume <id>`, with a 2-hour limit (`timeout`/`gtimeout` when installed) so a hung turn cannot linger.                                                              |
+| Message to a live session (`codex queue`, tmux paste, Seal pane)                                           | Nothing new                             | `codex queue` and `tmux send-keys` exit at once; the agent that reads the message is the one already running.                                                                                                               |
+| Account swap                                                                                               | Seal, in the same pane                  | The old agent is stopped and must exit before `--resume` is typed into that pane; if it does not exit, the swap fails instead of starting a second agent.                                                                   |
+| Home assistant turn (`claude` through the Agent SDK, or `codex exec`, in `<userData>/home-chat/workspace`) | Seal, per message to the Home assistant | When the turn ends. Nothing is kept between turns; the next message resumes the conversation by its session id. See [the Home assistant](./home-chat-architecture.md).                                                      |
+| Codex usage probe (`codex app-server`)                                                                     | Seal, for rate limits                   | Right after it answers: it is a short-lived probe.                                                                                                                                                                          |
+
+**Idle reaper.** Seal ends Seal-owned sessions that have had nothing attached and no activity for
+**End idle Seal sessions** (Settings › Agents; default 2 hours, or Never). It checks a host at most
+every 10 minutes, and only after a scan found an agent there to check:
+
+- `tmux -L seal` sessions with no client attached, on this computer, connected SSH hosts and paired
+  servers. Only that socket is read; the user's own tmux servers are never listed or touched.
+
+It never stops an agent the user runs in their own terminal or tmux, a Seal pane tab that is open,
+or a session only discovered by the scan.
+
+**Remove from Seal.** The Agent sessions page hides a session for good (`<userData>/live-sessions/removed.json`).
+For a running session, **Stop and remove** sends the agent SIGTERM (SIGKILL after 5 seconds), closes its
+`tmux -L seal` pane, and only then hides it. **Also delete transcript files** deletes the transcript and,
+for Claude, the session's folder beside it, after a confirmation listing each path.

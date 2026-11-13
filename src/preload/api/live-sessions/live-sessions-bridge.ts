@@ -7,6 +7,8 @@ import type {
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot,
   LiveTakeOverResult,
+  LiveRemoveRequest,
+  LiveRemoveResult,
   LiveTranscriptCursor,
   LiveTranscriptDelta,
   LiveTranscriptPage
@@ -41,6 +43,8 @@ export type LiveSessionsApi = {
   onMessage: (callback: (message: LiveMessage) => void) => () => void
   answer: (answer: LivePermissionAnswer) => Promise<LivePermissionAnswerResult>
   takeOver: (args: { sessionId: string }) => Promise<LiveTakeOverResult>
+  /** Hide for good; optionally stop the agent and delete its transcript first. */
+  remove: (request: LiveRemoveRequest) => Promise<LiveRemoveResult>
   /** `hostId` is 'local' or an SSH target id; rejects when that host is not connected. */
   shellIntegration: (args: {
     hostId: string
@@ -68,5 +72,6 @@ export const liveSessionsApi: LiveSessionsApi = {
   onMessage: (callback) => listen(LIVE_SESSION_IPC.message, callback),
   answer: (answer) => ipcRenderer.invoke(LIVE_SESSION_IPC.answer, answer),
   takeOver: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.takeOver, args),
+  remove: (request) => ipcRenderer.invoke(LIVE_SESSION_IPC.remove, request),
   shellIntegration: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.shellIntegration, args)
 }
