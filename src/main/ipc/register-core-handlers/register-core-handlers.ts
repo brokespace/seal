@@ -109,6 +109,7 @@ import type { PluginService } from '../../plugins/plugin-service'
 import type { PluginMarketplaceHandlerServices } from '../plugin-marketplaces'
 import { settleWithinMs } from '../../startup/quit/quit-teardown-deadline'
 import { getRuntimeEnvironmentRegistryRoot } from '../runtime-environments/runtime-environment-registry-root'
+import { idleReapMinutes } from '../../live-sessions/delivery/seal-idle-reaper'
 
 let registered = false
 // Same cap as the restart path's auth preservation: bookkeeping must not hold Restart on a stalled disk.
@@ -182,7 +183,14 @@ export function registerCoreHandlers(
   registerAgentHookHandlers(runtime, { getPtyIdForPaneKey })
   registerCodexConfigSyncHandlers(codexAccounts.runtimeHomeService)
   registerClaudeAccountHandlers(claudeAccounts)
-  registerHomeChatHandlers(claudeAccounts, () => store.getRepos())
+  registerHomeChatHandlers(
+    claudeAccounts,
+    () => store.getRepos(),
+    () => {
+      const minutes = idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes)
+      return minutes === null ? null : minutes * 60_000
+    }
+  )
   registerOpenCodeGoCredentialsHandlers(rateLimits)
   registerMiniMaxCredentialsHandlers(rateLimits)
   registerZcodePlanCredentialsHandlers(rateLimits)

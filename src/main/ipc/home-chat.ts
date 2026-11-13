@@ -34,7 +34,8 @@ type AttachmentArgs = { chatId: string; attachmentId: string }
 
 export function registerHomeChatHandlers(
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
-  repos: () => Repo[]
+  repos: () => Repo[],
+  idleCloseMs?: () => number | null
 ): void {
   const rootDir = join(app.getPath('userData'), 'home-chat')
   const ready = HomeChatStore.open(rootDir).then(async (store) => {
@@ -45,7 +46,8 @@ export function registerHomeChatHandlers(
       createMachines: createDefaultHomeChatMachineProvider,
       runOrcaCli,
       repos,
-      emit: broadcast
+      emit: broadcast,
+      idleCloseMs
     })
     await service.start()
     return service

@@ -41,4 +41,35 @@ describe('buildMachineSummaries', () => {
     })
     expect(machines[2]?.statusDetail).toBe('Permission denied')
   })
+
+  it('leaves out hosts Colima, Lima and OrbStack import for their own VMs', () => {
+    const machines = buildMachineSummaries({
+      localName: 'This computer',
+      localOs: 'darwin',
+      sshTargets: [
+        target('colima', 'colima', {
+          source: 'ssh-config',
+          host: '127.0.0.1',
+          identityFile: '/Users/brian/.colima/_lima/_config/user'
+        }),
+        target('orb', 'orb', {
+          source: 'ssh-config',
+          proxyCommand: '/Users/brian/.orbstack/bin/orb-ssh-proxy'
+        }),
+        target('box', 'box', {
+          source: 'ssh-config',
+          identityFile: '/Users/brian/.ssh/id_ed25519'
+        }),
+        target('vm', 'my vm', {
+          source: 'manual',
+          identityFile: '/Users/brian/.lima/_config/user'
+        })
+      ],
+      sshStates: new Map([['colima', { status: 'error', error: 'Connection refused' }]]),
+      runtimeEnvironments: [],
+      runtimeStatuses: new Map()
+    })
+
+    expect(machines.map((m) => m.id)).toEqual(['local', 'ssh:box', 'ssh:vm'])
+  })
 })

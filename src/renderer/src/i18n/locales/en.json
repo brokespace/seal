@@ -25672,8 +25672,6 @@
         "empty": "No account usage yet. Sign in to an agent to track limits."
       },
       "attention": {
-        "machineError": "Connection failed",
-        "accountUsage": "{{provider}} at {{percent}}% of limit",
         "title": "Needs attention",
         "empty": "Nothing is waiting on you."
       },
