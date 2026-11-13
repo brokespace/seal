@@ -121,6 +121,8 @@ export function renderSettingsPage(
           onClose={interactions.closeSettingsPageWithPromptGuard}
           hostPicker={
             !model.isWebClient &&
+            // Accounts are one fleet-wide list; its page shows the machines per account instead.
+            model.activeSectionId !== 'accounts' &&
             shouldShowSettingsHostScopePicker(
               model.settingsHostScope,
               model.runtimeEnvironments

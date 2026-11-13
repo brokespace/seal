@@ -25828,7 +25828,10 @@
         "loginExpired": "Login expired",
         "paused": "Paused until {{value0}}",
         "manualOnly": "Manual only",
-        "notHere": "Not on this machine"
+        "notHere": "Not on this machine",
+        "systemLoginHint": "This is the login the CLI on this computer uses outside Seal.",
+        "systemLogin": "System login",
+        "wsl": "WSL: {{value0}}"
       },
       "priorityShort": "P{{value0}}",
       "useNow": "Use for new sessions",
@@ -25900,7 +25903,8 @@
         "title": "Recent sessions",
         "empty": "No agent sessions launched yet.",
         "warning": "Check policy",
-        "closed": "Closed"
+        "closed": "Closed",
+        "description": "Each open agent session and the account it runs on. Pick another account to move a session."
       },
       "swap": {
         "title": "Swaps",
@@ -25942,7 +25946,13 @@
         "liveSessions": "Move running sessions",
         "liveSessionsDescription": "Seal polls every account’s 5-hour and weekly usage and moves a running agent to another account before it crosses a limit below, or right away if its login dies. It resumes the conversation when it cannot switch live.",
         "rateLimitFallback": "Fallback: react to limit messages",
-        "rateLimitFallbackDescription": "Last resort only. If an agent stops with a usage-limit message that polling has not caught yet, move it anyway."
+        "rateLimitFallbackDescription": "Last resort only. If an agent stops with a usage-limit message that polling has not caught yet, move it anyway.",
+        "stateOn": "on",
+        "stateOff": "off",
+        "title": "Auto-swap",
+        "description": "Seal reads every account’s 5-hour and 7-day usage and moves work to the next account in the list before a limit is hit. Each provider has its own settings.",
+        "provider": "Provider",
+        "tab": "{{value0}} · {{value1}}"
       },
       "minutes": "min",
       "meter": {
@@ -25957,6 +25967,282 @@
         "now": "Over its {{value0}} limit; swapping",
         "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
         "nextPoll": "Usage read again in {{value0}}"
+      },
+      "otherProviders": {
+        "title": "Other providers",
+        "description": "Usage and sign-in setup for agents Seal does not swap accounts for. These settings belong to one machine at a time."
+      },
+      "section": {
+        "title": "Accounts",
+        "description": "The Claude, Codex and API-key accounts Seal runs agents on, how it swaps between them, and which machines hold each login."
+      },
+      "card": {
+        "oneSession": "1 session running",
+        "sessions": "{{value0}} sessions running",
+        "noSessions": "No sessions running",
+        "rankHint": "Order of preference in this group",
+        "setupTokenUsage": "Runs on your Claude subscription. Claude does not report usage for setup tokens.",
+        "apiKeyUsage": "Pay as you go; no plan limits to track."
+      },
+      "action": {
+        "relogin": "Sign in again",
+        "use": "Use for new sessions",
+        "more": "Actions for {{value0}}",
+        "rename": "Rename and limits…",
+        "reloginMenu": "Sign in again…",
+        "push": "Push to machine",
+        "pushUpdate": "Update login",
+        "pushCopy": "Copy login",
+        "remove": "Remove…",
+        "reorder": "Change the priority of {{value0}}"
+      },
+      "reorderHint": "Drag to change priority, or focus the handle and use Space and the arrow keys.",
+      "add": {
+        "apiKey": "Add API key",
+        "account": "Add account",
+        "browser": "Sign in with your browser",
+        "browserClaude": "Runs `claude` login in a folder of its own, so it never touches your other logins.",
+        "browserCodex": "Runs `codex login` in a CODEX_HOME of its own, so it never touches your other logins.",
+        "device": "Sign in with a device code",
+        "deviceDescription": "Shows a short code to enter on any device. Use it when a browser cannot reach this computer.",
+        "reloginTitle": "Sign in again to {{value0}}",
+        "title": "Add an account",
+        "reloginDescription": "Sign in as the same account to replace its login. Sessions keep running.",
+        "description": "The account is saved on this computer. Push it to other machines from its card.",
+        "kind": "Kind of account",
+        "import": "Use the login already on this computer",
+        "importNone": "The `{{value0}}` CLI on this computer is not signed in.",
+        "importListed": "{{value0}} is already in the list.",
+        "importAvailable": "Lists {{value0}}, the account `{{value1}}` is signed in to. Nothing is copied.",
+        "setupToken": "Paste a setup token",
+        "setupTokenDescription": "A one-year token from `claude setup-token`, for a subscription you cannot sign in to here."
+      },
+      "empty": {
+        "claude": "No Claude accounts yet. Sign in with your browser, use the login already on this computer, or paste a setup token.",
+        "codex": "No Codex accounts yet. Sign in with your browser or a device code, or use the login already on this computer.",
+        "apiKeys": "No API keys. Add one if you want sessions to fall back to pay-as-you-go when every subscription is used up."
+      },
+      "machine": {
+        "activeThere": "new sessions start on it",
+        "systemThere": "system login",
+        "sessionsThere": "{{value0}} running",
+        "heldOn": "Signed in on",
+        "notHere": "Not on this computer",
+        "thisComputer": "This computer",
+        "thisServer": "This server"
+      },
+      "notice": {
+        "mergedTitle": "Seal merged duplicate accounts",
+        "mergedBody": "Accounts saved more than once now appear once, keeping the copy with the newest login:",
+        "mergedEntry": "{{value0}} ({{value1}} removed)",
+        "dismiss": "Dismiss",
+        "unreachable": "{{value0}} did not answer, so its logins and sessions are not shown.",
+        "stale": "Showing the last reading. {{value0}}"
+      },
+      "onboarding": {
+        "title": "Add your first account",
+        "body": "Seal runs Claude Code and Codex on the accounts you add here. With two or more, it watches each account’s 5-hour and 7-day usage and moves work to the next one before a limit stops you.",
+        "step1": "Add each subscription. Every sign-in gets a folder of its own, so accounts never overwrite each other.",
+        "step2": "Drag accounts into the order you prefer, and turn on auto-swap.",
+        "step3": "Optionally pin projects or machines to specific accounts with rules, and push logins to your other machines.",
+        "addClaude": "Add Claude account",
+        "addCodex": "Add Codex account",
+        "importHint": "This computer’s own CLI is already signed in. Use that login without signing in again:",
+        "importClaude": "Use Claude login {{value0}}",
+        "importCodex": "Use Codex login {{value0}}"
+      },
+      "remove": {
+        "failedOn": "Could not remove it from {{value0}}",
+        "logoutFailed": "Removed {{value0}} from Seal, but could not sign this computer out",
+        "doneLoggedOut": "Removed {{value0}} and signed out",
+        "done": "Removed {{value0}}",
+        "nowUsing": "New sessions now start on {{value0}}.",
+        "title": "Remove {{value0}}?",
+        "secret": "Seal deletes this secret from the keychain and drops it from every rule. Sessions already running on it keep going.",
+        "systemOnly": "Seal stops listing and using this account and drops it from every rule. Sessions already running on it keep going until they end.",
+        "login": "Seal forgets this account, deletes the login it saved, and drops it from every rule. Sessions already running on it keep going until they end.",
+        "remoteOnly": "This account is not on this computer. Seal removes it from the machines checked below.",
+        "systemLogin": "This is also the login the `{{value0}}` CLI uses on this computer outside Seal.",
+        "systemKeep": "Remove from Seal: `{{value0}}` stays signed in in your own terminal. Seal stops listing and using the account until you add it again.",
+        "systemLogout": "Remove and log out: also runs `{{value0}}` and signs this computer out.",
+        "alsoFrom": "Also remove its login from",
+        "confirmLogout": "Remove and log out",
+        "confirmSeal": "Remove from Seal",
+        "confirm": "Remove"
+      },
+      "push": {
+        "done": "Pushed {{value0}} to {{value1}}",
+        "failed": "Could not push {{value0}} to {{value1}}"
+      },
+      "rules": {
+        "synced": "Rules and auto-swap settings pushed to {{value0}}.",
+        "syncFailed": "Could not reach {{value0}}: {{value1}}",
+        "syncError": "Sync failed: {{value0}}",
+        "editTitle": "Edit rule",
+        "addTitle": "Add rule",
+        "dialogDescription": "A project rule narrows what its machine allows. Sessions already running are not moved.",
+        "appliesTo": "Applies to",
+        "project": "Project",
+        "machine": "Machine",
+        "provider": "Provider",
+        "projectMatch": "Repo or folder",
+        "projectHelp": "A git remote such as github.com/owner/repo, a repo path, or a folder name. Use * to match many.",
+        "name": "Name (optional)",
+        "allowed": "Accounts it may use",
+        "noAccounts": "Add an account for this provider first.",
+        "allowedAll": "Nothing checked: every account is allowed.",
+        "allowedSome": "Only the checked accounts are allowed.",
+        "preferred": "Preferred account",
+        "bestAvailable": "The one with the most headroom",
+        "title": "Rules",
+        "description": "Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.",
+        "sync": "Sync to machines",
+        "add": "Add rule",
+        "empty": "No rules yet. Add one to keep a client’s repos on a work account, or a shared machine on a single login.",
+        "mayUse": "May use {{value0}}.",
+        "mayUseAny": "May use any account.",
+        "prefers": "Prefers {{value0}}.",
+        "prefersBest": "Picks the one with the most headroom.",
+        "edit": "Edit rule for {{value0}}",
+        "remove": "Remove rule for {{value0}}"
+      },
+      "summary": {
+        "none": "No accounts yet.",
+        "fleet": "{{value0}} accounts across {{value1}} machines. Each card shows the machines that hold its login.",
+        "one": "1 account on this computer.",
+        "local": "{{value0}} accounts on this computer."
+      },
+      "group": {
+        "claude": "Claude",
+        "codex": "Codex",
+        "apiKey": "API key",
+        "apiKeys": "API keys",
+        "claudeDescription": "Claude subscriptions for Claude Code. The first working account in the list is preferred.",
+        "codexDescription": "ChatGPT logins for Codex. The first working account in the list is preferred.",
+        "apiKeysDescription": "Pay-as-you-go Anthropic and OpenAI keys, sealed in this computer’s keychain. Used when a rule picks one or as a fallback."
+      },
+      "history": {
+        "manual": "You switched",
+        "authFailure": "Login stopped working",
+        "threshold": "Near its limit",
+        "rateLimit": "Hit a rate limit",
+        "notAllowed": "A rule changed",
+        "live": "switched live",
+        "resume": "resumed on the new account",
+        "failed": "could not be moved",
+        "title": "Swap history",
+        "description": "Every time Seal or you moved new sessions or a running session to another account.",
+        "empty": "No swaps yet.",
+        "newSessions": "new sessions",
+        "session": "running session"
+      },
+      "edit": {
+        "title": "Rename and limits",
+        "alias": "Name",
+        "aliasHelp": "Shown everywhere instead of the email, and accepted by `seal account` commands.",
+        "plan": "Plan label",
+        "planPlaceholder": "e.g. Max 20x",
+        "sessionLimit": "Swap at 5h usage (%)",
+        "useDefault": "Auto-swap default",
+        "weeklyLimit": "Swap at 7d usage (%)",
+        "manualOnly": "Manual only",
+        "manualOnlyHelp": "Auto-swap and rules never pick it; you can still choose it yourself."
+      },
+      "secret": {
+        "tokenHelp": "Run `claude setup-token` in a terminal where that account is signed in, then paste the token it prints. It is sealed in this computer’s keychain and used only for sessions Seal starts.",
+        "keyHelp": "Sealed in this computer’s keychain. Keys never leave the machine they were added on.",
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI (Codex)",
+        "provider": "Provider",
+        "label": "Name",
+        "tokenLabelPlaceholder": "Work subscription",
+        "keyLabelPlaceholder": "Team key",
+        "token": "Setup token",
+        "key": "Key",
+        "notSetupToken": "Setup tokens start with sk-ant-oat. For an API key, choose API key instead.",
+        "saveToken": "Add token",
+        "saveKey": "Add key"
+      },
+      "signIn": {
+        "copied": "Copied",
+        "copyFailed": "Could not copy",
+        "pasteCodeHelp": "If the page shows a code instead of returning here, paste it:",
+        "submitCode": "Continue",
+        "starting": "Starting `{{value0}}` sign-in…",
+        "waitingDevice": "Open the page below on any device and enter the code. Seal finishes as soon as you approve.",
+        "waitingBrowser": "Finish signing in in the browser window that just opened. Seal continues on its own.",
+        "waitingLink": "Open the page below, sign in, and Seal continues on its own.",
+        "verifying": "Finishing sign-in…",
+        "copyLink": "Copy link",
+        "open": "Open page",
+        "enterCode": "Code to enter on that page:",
+        "copyCode": "Copy code",
+        "added": "Added {{value0}}.",
+        "refreshed": "{{value0}} is signed in again. Its sessions pick up the new login.",
+        "otherAccount": "You signed in as {{value0}}, not {{value1}}. {{value1}} still needs its own sign-in.",
+        "failed": "The sign-in did not finish.",
+        "cancelled": "Sign-in cancelled. Nothing was added.",
+        "cancel": "Cancel sign-in",
+        "addAnother": "Add another",
+        "retry": "Try again"
+      },
+      "done": "Done",
+      "back": "Back",
+      "health": {
+        "ok": "Working",
+        "expiring": "Expires {{value0}}",
+        "signedOut": "Signed out",
+        "rejected": "Login rejected",
+        "expired": "Expired",
+        "missingSecret": "Secret missing",
+        "advice": {
+          "tokenExpiring": "Setup tokens last one year. Paste a new one before this one runs out.",
+          "loginExpiring": "This login cannot renew itself. Sign in again before it runs out.",
+          "missingSecret": "This computer’s keychain no longer holds the secret. Remove it and add it again.",
+          "tokenDead": "The provider no longer accepts this token. Remove it and paste a new one.",
+          "loginDead": "The provider no longer accepts this login. Sign in again to keep using it."
+        }
+      },
+      "identity": {
+        "setupToken": "Claude setup token",
+        "anthropicKey": "Anthropic API key",
+        "openaiKey": "OpenAI API key"
+      },
+      "search": {
+        "accounts": {
+          "title": "Claude and Codex accounts",
+          "description": "Add, sign in again, rename, order, remove and push the accounts Seal runs agents on."
+        },
+        "keyword": {
+          "claude": "claude",
+          "codex": "codex",
+          "account": "account",
+          "signIn": "sign in",
+          "login": "login",
+          "apiKey": "api key",
+          "setupToken": "setup token",
+          "usage": "usage",
+          "machine": "machine",
+          "swap": "swap",
+          "limit": "limit",
+          "cooldown": "cooldown",
+          "quota": "quota",
+          "rule": "rule",
+          "project": "project",
+          "history": "history"
+        },
+        "autoSwap": {
+          "title": "Auto-swap",
+          "description": "Move to another account when the 5-hour or weekly limit gets close."
+        },
+        "rules": {
+          "title": "Account rules",
+          "description": "Choose which accounts a project or a machine may use."
+        },
+        "history": {
+          "title": "Swap history",
+          "description": "Every account swap Seal made, and why."
+        }
       }
     },
     "session": {
