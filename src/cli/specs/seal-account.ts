@@ -77,7 +77,7 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
     path: ['account', 'autoswap'],
     summary: 'Show or change auto-swap rules for an agent',
     usage:
-      'orca account autoswap --agent claude|codex [--enabled on|off] [--strategy best|weekly-first|consume-first|priority] [--session-threshold <pct>] [--weekly-threshold <pct>] [--hysteresis <pct>] [--cooldown <minutes>] [--quarantine <minutes>] [--failover on|off] [--model-limits on|off] [--api-key-fallback on|off] [--live-sessions on|off] [--json]',
+      'orca account autoswap --agent claude|codex [--enabled on|off] [--strategy best|weekly-first|consume-first|priority] [--session-threshold <pct>] [--weekly-threshold <pct>] [--hysteresis <pct>] [--cooldown <minutes>] [--quarantine <minutes>] [--failover on|off] [--model-limits on|off] [--api-key-fallback on|off] [--live-sessions on|off] [--rate-limit-fallback on|off] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'agent',
@@ -91,12 +91,15 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
       'failover',
       'model-limits',
       'api-key-fallback',
-      'live-sessions'
+      'live-sessions',
+      'rate-limit-fallback'
     ],
     notes: [
       'best: most headroom. weekly-first: lowest weekly use. consume-first: the allowance resetting soonest. priority: account priority order.',
-      'A target must sit `hysteresis` points under each threshold; threshold swaps wait out the cooldown, dead logins fail over at once and are quarantined.',
-      '--live-sessions (default on) also moves running sessions: Claude takes the new login live; Codex does when its login died, and otherwise resumes the conversation on the new account.'
+      'Defaults follow claude-swap: swap once the 5h or 7d window reaches 90%, only to an account under its own limits with `hysteresis` (10) more points of headroom, at most once per cooldown (5 min). A full window or dead login swaps at once; dead logins are quarantined.',
+      'Usage is polled per account: in-use accounts every 3-5 min (every 1 min while a window climbs within 15 points of its limit), others every 5-10 min, exhausted ones every 10 min.',
+      '--live-sessions (default on) moves running sessions on that polled usage: Claude takes the new login live; Codex does when its login died, and otherwise resumes the conversation on the new account.',
+      '--rate-limit-fallback (default on) is a last resort: a session that prints a usage-limit stop polling missed is moved too.'
     ],
     examples: [
       'orca account autoswap --agent claude --enabled on --strategy weekly-first',

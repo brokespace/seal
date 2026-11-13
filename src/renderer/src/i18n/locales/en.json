@@ -25558,17 +25558,17 @@
         "priority": "Priority"
       },
       "autoSwap": {
-        "enabled": "Auto-swap",
-        "enabledDescription": "Switch the account new sessions use before a limit is hit.",
+        "enabled": "Auto-swap new sessions",
+        "enabledDescription": "Also switch the account new sessions start on, using the same limits.",
         "strategy": "Strategy",
         "sessionThreshold": "5h limit",
-        "sessionThresholdDescription": "Swap away once the 5-hour window passes this.",
+        "sessionThresholdDescription": "Swap away once the 5-hour window reaches this. 90% matches claude-swap.",
         "weeklyThreshold": "7d limit",
-        "weeklyThresholdDescription": "Swap away once the weekly window passes this.",
+        "weeklyThresholdDescription": "Swap away once the weekly (or a per-model weekly) window reaches this.",
         "hysteresis": "Headroom margin",
-        "hysteresisDescription": "Only swap to accounts at least this far under the limits, so swaps do not bounce.",
+        "hysteresisDescription": "A swap target needs this many more points of headroom than the current account, and must be under its own limits, so swaps never bounce.",
         "cooldown": "Cooldown",
-        "cooldownDescription": "Minimum time between automatic swaps.",
+        "cooldownDescription": "Minimum time between swaps before a limit. A full window or dead login skips it.",
         "failover": "Fail over on dead logins",
         "failoverDescription": "Swap immediately when the current login expires or is revoked, and pause that account.",
         "modelLimits": "Count per-model limits",
@@ -25579,7 +25579,9 @@
         "noDecision": "Not run yet",
         "evaluate": "Check now",
         "liveSessions": "Move running sessions",
-        "liveSessionsDescription": "Switch a running agent to another account when its own runs low, hits a rate limit or loses its login. Seal resumes the conversation when it cannot switch live."
+        "liveSessionsDescription": "Seal polls every account’s 5-hour and weekly usage and moves a running agent to another account before it crosses a limit below, or right away if its login dies. It resumes the conversation when it cannot switch live.",
+        "rateLimitFallback": "Fallback: react to limit messages",
+        "rateLimitFallbackDescription": "Last resort only. If an agent stops with a usage-limit message that polling has not caught yet, move it anyway."
       },
       "minutes": "min",
       "meter": {
@@ -25589,6 +25591,11 @@
         "claudeCode": "Claude Code",
         "codex": "Codex",
         "claude": "Claude"
+      },
+      "estimate": {
+        "now": "Over its {{value0}} limit; swapping",
+        "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
+        "nextPoll": "Usage read again in {{value0}}"
       }
     },
     "session": {
@@ -25609,7 +25616,12 @@
       "menu": {
         "switch": "Move this session to",
         "liveSwap": "When this account runs low",
-        "lastSwap": "{{value0}} to {{value1}}, {{value2}}"
+        "lastSwap": "{{value0}} to {{value1}}, {{value2}}",
+        "usage5h": "5h {{value0}}%",
+        "usage7d": "7d {{value0}}%",
+        "swapNow": "swapping now",
+        "swapAt": "next swap ~{{value0}}",
+        "noSwap": "no swap expected before reset"
       },
       "error": {
         "swap": "Could not switch this session",

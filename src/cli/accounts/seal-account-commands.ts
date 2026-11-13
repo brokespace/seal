@@ -139,7 +139,8 @@ function autoSwapPatch(ctx: HandlerContext): Partial<SealAutoSwapSettings> {
     ['failoverOnAuthError', onOff(ctx, 'failover')],
     ['respectModelLimits', onOff(ctx, 'model-limits')],
     ['apiKeyFallback', onOff(ctx, 'api-key-fallback')],
-    ['liveSessionSwap', onOff(ctx, 'live-sessions')]
+    ['liveSessionSwap', onOff(ctx, 'live-sessions')],
+    ['rateLimitFallback', onOff(ctx, 'rate-limit-fallback')]
   ]
   return Object.fromEntries(entries.filter(([, value]) => value !== undefined))
 }

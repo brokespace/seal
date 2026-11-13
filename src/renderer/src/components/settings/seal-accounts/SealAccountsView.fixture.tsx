@@ -79,14 +79,18 @@ const status: SealAccountsStatus = {
           plan: 'Max 20x',
           priority: 10,
           active: true,
-          usage: usage(92, 41, [{ name: 'Fable', used: 63 }])
+          usage: usage(92, 41, [{ name: 'Fable', used: 63 }]),
+          swapEstimate: { at: NOW, window: '5h', line: 90 },
+          nextPollAt: NOW + 60 * 1000
         }),
         candidate({
           key: 'claude:me@example.com',
           email: 'me@example.com',
           label: 'me@example.com',
           plan: 'Pro',
-          usage: usage(18, 22)
+          usage: usage(18, 22),
+          swapEstimate: { at: NOW + 95 * 60 * 1000, window: '5h', line: 90 },
+          nextPollAt: NOW + 3 * 60 * 1000
         }),
         candidate({
           key: 'claude:old@example.com',

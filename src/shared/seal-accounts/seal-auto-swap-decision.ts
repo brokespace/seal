@@ -115,7 +115,8 @@ export function isSwapLanding(
       return (lineRoom(windows, lines) ?? 0) >= settings.hysteresis
     case 'priority':
       return true
-    default:
+    case 'best':
+    case 'weekly-first':
       return binding.lineHeadroom - options.activeLineHeadroom >= settings.hysteresis
   }
 }
