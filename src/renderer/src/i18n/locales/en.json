@@ -25444,5 +25444,58 @@
       "read": "Usage could not be loaded. Try Refresh again.",
       "retry": "Refresh"
     }
+  },
+  "homeChat": {
+    "account": {
+      "default": "Default login",
+      "label": "Claude account"
+    },
+    "approval": {
+      "approve": "Approve",
+      "decline": "Decline",
+      "default": "This action needs your approval."
+    },
+    "backend": {
+      "claude": "Claude Code",
+      "label": "Backend",
+      "openai": "Model API"
+    },
+    "delete": "Delete this chat",
+    "dismissError": "Dismiss",
+    "empty": {
+      "body": "Ask for anything that runs on this computer or your SSH hosts: check a build, move files, start an agent in a worktree.",
+      "title": "Your machines, one chat"
+    },
+    "label": "Seal assistant",
+    "messageLabel": "Message",
+    "model": {
+      "label": "Model",
+      "placeholder": "Model"
+    },
+    "new": "New chat",
+    "noChats": "No chats yet",
+    "notSent": "Not sent",
+    "placeholder": "Ask Seal to do something on any of your machines…",
+    "send": "Send",
+    "settings": {
+      "apiKey": "API key",
+      "apiKeyOptional": "Optional for local servers",
+      "apiKeySaved": "Saved — type to replace",
+      "baseUrl": "Base URL",
+      "clearKey": "Remove key",
+      "description": "Used by chats set to Model API: any OpenAI-compatible endpoint such as OpenRouter, xAI, OpenAI or a local server.",
+      "model": "Default model",
+      "open": "Model API settings",
+      "save": "Save",
+      "title": "Model API"
+    },
+    "stop": "Stop",
+    "thinking": {
+      "brief": "Thought briefly",
+      "done": "Thought for {{duration}}",
+      "live": "Thinking…"
+    },
+    "title": "Assistant",
+    "working": "Working…"
   }
 }
