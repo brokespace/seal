@@ -87,6 +87,7 @@ import { cursorAccountsApi } from './api/agent-accounts/cursor-accounts-bridge'
 import { sshApi } from './api/ssh/ssh-bridge'
 import { plainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
 import { machinesApi } from './api/machines/machines-bridge'
+import { homeChatApi } from './api/home-chat/home-chat-bridge'
 import { legacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import { automationsApi } from './api/automations/automations-bridge'
 import { e2eApi } from './api/diagnostics/e2e-bridge'
@@ -194,6 +195,7 @@ const api = {
   ssh: sshApi,
   plainSsh: plainSshTerminalApi,
   machines: machinesApi,
+  homeChat: homeChatApi,
   legacyRelayBridge: legacyRelayBridgeApi,
   automations: automationsApi,
   e2e: e2eApi,

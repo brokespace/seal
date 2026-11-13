@@ -64,6 +64,7 @@ import type { SpeechApi } from './api/speech/speech-api'
 import type { SshApi } from './api/ssh/ssh-api'
 import type { MachinesApi } from './api/machines/machines-bridge'
 import type { PlainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
+import type { HomeChatApi } from './api/home-chat/home-chat-api'
 import type { LegacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import type {
   DiagnosticsApi,
@@ -179,6 +180,8 @@ export type PreloadApi = {
   plainSsh?: PlainSshTerminalApi
   /** Desktop only: machine file browsing, transfers and metrics. */
   machines?: MachinesApi
+  /** Desktop only: the home-page assistant chat. */
+  homeChat?: HomeChatApi
   /** COMPAT(legacy-relay-bridge): desktop-only, revisit 2027-01-15. */
   legacyRelayBridge?: LegacyRelayBridgeApi
   automations: AutomationsApi
