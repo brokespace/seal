@@ -113,24 +113,24 @@ describe('one card per real conversation', () => {
     ])
   })
 
-  it('folds a resume that opens with a copy of the earlier history into one session', () => {
-    const before = claudeFile(
-      '/p/aaaaaaaa-0000-4000-8000-000000000001.jsonl',
-      [turn('u1', null, 'Fix the build'), turn('u2', 'u1', 'API Error: 529 Overloaded')],
-      3_600_000
-    )
-    const after = claudeFile(
-      '/p/bbbbbbbb-0000-4000-8000-000000000002.jsonl',
-      [
-        turn('u1', null, 'Fix the build'),
-        turn('u2', 'u1', 'API Error: 529 Overloaded'),
-        turn('u3', 'u2', 'Try again')
-      ],
-      600_000
-    )
-    expect(assemble([], [before, after]).map((s) => s.id)).toEqual([
-      'bbbbbbbb-0000-4000-8000-000000000002'
-    ])
+  it('folds a session forked after an error into one card, the fork', () => {
+    expect(
+      assemble(
+        [],
+        [
+          recorded(
+            'claude-2.1.325-error-then-continue.jsonl',
+            '/p/e503cd0b-d59c-4221-a949-3c685cf99554.jsonl',
+            120_000
+          ),
+          recorded(
+            'claude-2.1.325-fork-of-errored.jsonl',
+            '/p/7f01a62c-a158-4451-a43b-a2e253ed713e.jsonl',
+            60_000
+          )
+        ]
+      ).map((s) => s.id)
+    ).toEqual(['7f01a62c-a158-4451-a43b-a2e253ed713e'])
   })
 
   it('pairs a running agent with the transcript it is writing even outside its folder', () => {
