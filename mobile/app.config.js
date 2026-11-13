@@ -10,6 +10,7 @@ module.exports = ({ config }) => ({
   buildCacheProvider: { plugin: './scripts/native-build-cache.cjs' },
   ios: {
     ...config.ios,
+    ...(process.env.SEAL_APPLE_TEAM_ID ? { appleTeamId: process.env.SEAL_APPLE_TEAM_ID } : {}),
     entitlements: { ...config.ios?.entitlements, 'aps-environment': APS_ENVIRONMENT }
   },
   plugins: (config.plugins ?? []).map((plugin) =>

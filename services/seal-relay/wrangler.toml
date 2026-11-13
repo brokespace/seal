@@ -1,0 +1,77 @@
+# Seal relay + push: one Worker serving both hostnames. Set CLOUDFLARE_ACCOUNT_ID in your shell
+# (or uncomment account_id) before deploying; see deploy.md.
+name = "seal-relay"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+# account_id = "<your Cloudflare account id>"
+
+routes = [
+  { pattern = "relay.seal.wotarmelon.com", custom_domain = true },
+  { pattern = "push.seal.wotarmelon.com", custom_domain = true }
+]
+
+[alias]
+"@orca-cloud/relay-contract" = "../../cloud/packages/relay-contract/src/index.ts"
+"@orca-cloud/relay-contract/persistence-invariants" = "../../cloud/packages/relay-contract/src/persistence-invariants.ts"
+"@orca-cloud/relay-contract/protocol-limits" = "../../cloud/packages/relay-contract/src/protocol-limits.ts"
+"@orca-cloud/relay-contract/credential-messages" = "../../cloud/packages/relay-contract/src/credential-messages.ts"
+"@orca-cloud/relay-contract/relay-regions" = "../../cloud/packages/relay-contract/src/relay-regions.ts"
+"@orca-cloud/push-contract/push-limits" = "../../cloud/packages/push-contract/src/push-limits.ts"
+# The shared edge code statically imports its Postgres backend; Seal runs only the object backend.
+"pg" = "./src/postgres-unavailable.ts"
+"jose" = "./node_modules/jose"
+"tweetnacl" = "./node_modules/tweetnacl"
+"zod" = "./node_modules/zod"
+
+[[durable_objects.bindings]]
+name = "HOST_RELAY"
+class_name = "SealHostRelay"
+
+[[durable_objects.bindings]]
+name = "SEAL_HOST_RELAY"
+class_name = "SealHostRelay"
+
+[[durable_objects.bindings]]
+name = "SPLICE_RELAY"
+class_name = "SpliceRelay"
+
+[[durable_objects.bindings]]
+name = "PUSH_HOSTS"
+class_name = "SealPushHost"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SealHostRelay", "SpliceRelay", "SealPushHost"]
+
+# Unauthenticated phone/data upgrades and host-auth handshakes, per source IP per colo.
+[[ratelimits]]
+name = "PREAUTH_LIMITER"
+namespace_id = "7301"
+simple = { limit = 120, period = 60 }
+
+[[ratelimits]]
+name = "HOST_AUTH_LIMITER"
+namespace_id = "7302"
+simple = { limit = 30, period = 60 }
+
+[vars]
+EDGE_BACKEND = "object"
+EDGE_CELL_ID = "seal"
+RELAY_JWT_AUDIENCE = "seal-relay"
+# Director admin routes are not exposed by the Seal router; the shared edge config still requires an issuer.
+ADMIN_ISSUER = "https://seal-relay.invalid/admin-disabled"
+PING_INTERVAL_MS = "30000"
+SILENCE_TIMEOUT_MS = "75000"
+ORPHAN_GRACE_MS = "30000"
+APNS_TOPIC = "com.brokespace.seal.mobile"
+ANDROID_CHANNEL_ID = "orca-desktop"
+
+# Secrets (wrangler secret bulk .secrets.json; see deploy.md):
+#   RELAY_JWT_PRIVATE_JWK  ES256 private JWK that signs relay tokens
+#   RELAY_JWKS             public JWK set for RELAY_JWT_PRIVATE_JWK
+#   HOST_SESSION_SECRET    HMAC key for host session tokens
+#   ADMIN_SIGNING_KEY      required by the shared edge config; unused (admin routes are off)
+#   APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY   Apple push (token-based .p8 auth)
+#   FCM_SERVICE_ACCOUNT_JSON                      optional Android push
