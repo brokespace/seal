@@ -230,14 +230,14 @@ async function activateOrcadRuntime(
   const { wireGitHubIssueLinkTitleFill } =
     await import('../../github/workspace-links/github-issue-link-title-wiring')
   registerCleanup(wireGitHubIssueLinkTitleFill(profileStore, runtime))
-  const { installOrcadEmulatorBridge } = await import('./orcad-emulator-bridge')
-  installOrcadEmulatorBridge(runtime, registerCleanup)
+  ;(await import('./orcad-emulator-bridge')).installOrcadEmulatorBridge(runtime, registerCleanup)
 
   // Restore prior desktop-pushed account selection before automations or CLI launches.
   const { restoreOrcadHostAccountLaunchEnv } =
     await import('../account-launch/orcad-host-account-launch-env-store')
   restoreOrcadHostAccountLaunchEnv(runtime, runtimeUserDataPath)
   featureReadiness.open('accounts')
+  ;(await import('./orcad-seal-hub')).installOrcadSealHub(runtime, profileStore, accountLaunch)
 
   const { installOrcadSessionSearchService } = await import('./orcad-session-search')
   sessionSearch = await installOrcadSessionSearchService({

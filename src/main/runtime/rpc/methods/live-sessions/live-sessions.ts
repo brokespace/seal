@@ -10,7 +10,8 @@ import {
 } from '../../../../../shared/live-sessions/live-session-rpc-params'
 import { getLiveSessionService } from '../../../../live-sessions/live-session-service-instance'
 import type { LiveSessionService } from '../../../../live-sessions/live-session-service'
-import { defineMethod, defineStreamingMethod, type RpcContext } from '../../core'
+import { defineMethod, defineStreamingMethod } from '../../core'
+import { holdSubscription } from '../rpc-subscription-hold'
 
 function service(): LiveSessionService {
   const found = getLiveSessionService()
@@ -18,40 +19,6 @@ function service(): LiveSessionService {
     throw new Error('Live sessions are not available on this host')
   }
   return found
-}
-
-let watchSeq = 0
-
-/** Runs `start` until the caller aborts or unwatches; `start` returns its own teardown. */
-async function holdSubscription(
-  prefix: string,
-  { runtime, connectionId, signal }: RpcContext,
-  emit: (result: unknown) => void,
-  start: (subscriptionId: string) => () => void
-): Promise<void> {
-  if (signal?.aborted) {
-    return
-  }
-  const stopped = Promise.withResolvers<void>()
-  const subscriptionId = `${prefix}-${connectionId ?? 'inproc'}-${++watchSeq}`
-  const release = (): void => runtime.cleanupSubscription(subscriptionId)
-  const teardown = start(subscriptionId)
-  runtime.registerSubscriptionCleanup(
-    subscriptionId,
-    () => {
-      signal?.removeEventListener('abort', release)
-      teardown()
-      stopped.resolve()
-    },
-    connectionId
-  )
-  try {
-    signal?.addEventListener('abort', release, { once: true })
-    await stopped.promise
-    emit({ type: 'end' })
-  } finally {
-    release()
-  }
 }
 
 export const LIVE_SESSION_METHODS = [

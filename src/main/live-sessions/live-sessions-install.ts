@@ -1,5 +1,5 @@
 import { hostname } from 'node:os'
-import { app } from 'electron'
+import { getAppEnvironment } from '../../shared/app-environment'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
@@ -8,8 +8,11 @@ import { connectedSshHosts, LOCAL_HOST_ID, localHost } from './hosts/live-sessio
 import { aiVaultTranscriptFiles } from './discovery/local-transcript-files'
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
-import { registerLiveSessionIpc } from './live-sessions-ipc'
 import { getLiveSessionService, setLiveSessionService } from './live-session-service-instance'
+import type {
+  ShellIntegrationAction,
+  ShellIntegrationStatus
+} from '../../shared/shell-integration/shell-integration-installer'
 import {
   runShellIntegration,
   ShellIntegrationSync,
@@ -21,13 +24,18 @@ type LiveSessionSettingsStore = {
   onSettingsChanged(listener: (updates: Partial<GlobalSettings>) => void): unknown
 }
 
+export type HostShellIntegration = (
+  hostId: string,
+  action: ShellIntegrationAction
+) => Promise<ShellIntegrationStatus>
+
+/** Starts discovery on this host; the desktop additionally wires its window IPC to the result. */
 export function installLiveSessions(
   runtime: OrcaRuntimeService,
   store: LiveSessionSettingsStore
-): LiveSessionService {
-  const existing = getLiveSessionService()
-  if (existing) {
-    return existing
+): { service: LiveSessionService; shellIntegration: HostShellIntegration } | null {
+  if (getLiveSessionService()) {
+    return null
   }
   const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
   // Discovery reads `ps`, tmux and transcripts with a POSIX shell; Windows reaches its SSH hosts only.
@@ -47,7 +55,7 @@ export function installLiveSessions(
     snapshot: () => agentHookServer.getStatusSnapshot()
   })
   const service = new LiveSessionService({
-    userDataPath: app.getPath('userData'),
+    userDataPath: getAppEnvironment().getPath('userData'),
     hosts: () => {
       const hosts = allHosts()
       wrapSync.reconcile(hosts)
@@ -56,7 +64,7 @@ export function installLiveSessions(
     sealPanes,
     log
   })
-  registerLiveSessionIpc(service, async (hostId, action) => {
+  const shellIntegration: HostShellIntegration = async (hostId, action) => {
     const host = allHosts().find((candidate) => candidate.machine.hostId === hostId)
     if (!host) {
       throw new Error(
@@ -70,9 +78,9 @@ export function installLiveSessions(
       return runShellIntegration(host, 'disable')
     }
     return status
-  })
+  }
   setLiveSessionService(service)
   service.start()
-  app.on('will-quit', () => service.stop())
-  return service
+  getAppEnvironment().onWillQuit(() => service.stop())
+  return { service, shellIntegration }
 }

@@ -10,6 +10,7 @@ import type {
   AiVaultPrepareSessionResumeResult
 } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
 import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
+import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-account-types'
 import { resolveTuiAgentLaunchEnv } from '../../../shared/agent-launch/choices/tui-agent-launch-defaults'
 import { createProviderAccountServices } from '../../providers/accounts/provider-account-services'
 import { bindSealSessionTerminal } from '../../seal-accounts/seal-runtime-terminal'
@@ -38,6 +39,7 @@ type OrcadAccountServices = {
     ) => Promise<AiVaultPrepareSessionResumeResult>
   }
   listCodexSessionHomes: () => string[]
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
   attachToRuntime: (
     runtime: Pick<
       OrcaRuntimeService,
@@ -114,6 +116,7 @@ export function createOrcadAccountServices(args: {
         })
     },
     listCodexSessionHomes: () => codexRuntimeHome.getHostCodexHomePathsForSessionDiscovery(),
+    claudeAccounts: services.claudeAccounts,
     attachToRuntime: (runtime) => {
       runtime.setAccountServices({
         claudeAccounts: services.claudeAccounts,

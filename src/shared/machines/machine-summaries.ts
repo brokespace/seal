@@ -2,11 +2,11 @@ import {
   LOCAL_EXECUTION_HOST_ID,
   toRuntimeExecutionHostId,
   toSshExecutionHostId
-} from '../../../../../shared/execution-host'
-import type { MachineId, MachineOs } from '../../../../../shared/machines/machine-types'
-import type { SshConnectionState, SshTarget } from '../../../../../shared/ssh-types'
-import type { PublicKnownRuntimeEnvironment } from '../../../../../shared/remote-runtime/host-catalog/runtime-environments'
-import type { RuntimeHostStatusSnapshot } from '../../../../../shared/remote-runtime/host-status/runtime-host-status'
+} from '../execution-host'
+import type { MachineId, MachineOs } from './machine-types'
+import type { SshConnectionState, SshTarget } from '../ssh-types'
+import type { PublicKnownRuntimeEnvironment } from '../remote-runtime/host-catalog/runtime-environments'
+import type { RuntimeHostStatusSnapshot } from '../remote-runtime/host-status/runtime-host-status'
 
 export type MachineStatus = 'online' | 'connecting' | 'offline' | 'error'
 

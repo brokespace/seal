@@ -7,6 +7,7 @@ import { ORCHESTRATION_ASK_MAX_TIMEOUT_MS } from '../../../../shared/orchestrati
 import { isDurableMutation } from '../../../../shared/orchestration/orchestration-rpc-contract'
 import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
 import { ALL_RPC_METHODS } from '../../../runtime/rpc/methods/rpc-method-registry'
+import type { RpcAnyMethodDeclaration } from '../../../runtime/rpc/core'
 import {
   hashCanonical,
   readPromptBasePayloadHash,
@@ -85,7 +86,9 @@ export function isExactLegacyRelayCliReplay(
   call: LegacyRelayCliCall
 ): boolean {
   const receipt = runtime.getOrchestrationDb().getMutationReceipt(fingerprint, requestId)
-  const method = ALL_RPC_METHODS.find((entry) => entry.name === call.method)
+  const method: RpcAnyMethodDeclaration | undefined = ALL_RPC_METHODS.find(
+    (entry) => entry.name === call.method
+  )
   if (
     receipt?.state !== 'completed' ||
     receipt.method !== call.method ||

@@ -9,11 +9,8 @@ import type {
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { Repo } from '../../shared/repo-types'
-import { createClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
-import { HomeChatService } from '../home-chat/home-chat-service'
-import { HomeChatStore } from '../home-chat/home-chat-store'
-import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
-import { runOrcaCli } from '../home-chat/tools/home-chat-orca-cli'
+import type { HomeChatService } from '../home-chat/home-chat-service'
+import { installHomeChat, onHomeChatEvent } from '../home-chat/home-chat-install'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
 
@@ -36,23 +33,8 @@ export function registerHomeChatHandlers(
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
   repos: () => Repo[]
 ): void {
-  const rootDir = join(app.getPath('userData'), 'home-chat')
-  const ready = HomeChatStore.open(rootDir).then(async (store) => {
-    const service = new HomeChatService({
-      rootDir,
-      store,
-      accounts: createClaudeAccountsProvider(claudeAccounts),
-      createMachines: createDefaultHomeChatMachineProvider,
-      runOrcaCli,
-      repos,
-      emit: broadcast
-    })
-    await service.start()
-    return service
-  })
-  app.once('before-quit', () => {
-    void ready.then((service) => service.dispose())
-  })
+  const ready = installHomeChat({ claudeAccounts, repos })
+  onHomeChatEvent(broadcast)
   const handle = <Args, Result>(
     channel: string,
     run: (service: HomeChatService, args: Args) => Result

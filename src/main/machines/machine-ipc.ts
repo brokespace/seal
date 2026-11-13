@@ -10,21 +10,19 @@ import { parseExecutionHostId } from '../../shared/execution-host'
 import {
   MACHINE_IPC,
   MACHINE_PREVIEW_MAX_BYTES,
-  type MachineDirChangedEvent,
   type MachineFileRead,
   type MachineId
 } from '../../shared/machines/machine-types'
-import { machinePathDirname } from '../../shared/machines/machine-paths'
-import type { MachineFileSystem } from './filesystem/machine-filesystem'
-import { createLocalMachineFileSystem } from './filesystem/local-machine-filesystem'
-import { SshMachineFileSystem } from './filesystem/ssh-machine-filesystem'
-import { MachineDirectoryService } from './listing/machine-directory-service'
-import { MachineTransferManager } from './transfers/machine-transfer-manager'
-import { MachineDragOutStager } from './drag-out/machine-drag-out'
 import { collectMachineMetrics } from './metrics/machine-metrics'
-import { getSshTargetRegistryStore } from '../ssh/targets/ssh-target-registry'
-import { RuntimeMachineFileSystem } from './runtime/runtime-machine-filesystem'
-import { createRuntimeMachineChannel } from './runtime/runtime-machine-channel'
+import {
+  getMachineServices as getServices,
+  invalidateMachineParentDir as invalidateParent,
+  onMachineDirChanged,
+  onMachineTransferUpdated,
+  removeMachinePaths,
+  resolveMachineFileSystem as resolveFileSystem,
+  resolveRuntimeMachineFileSystem as resolveRuntimeFileSystem
+} from './machine-services'
 
 const INVOKE_CHANNELS = [
   MACHINE_IPC.getMetrics,
@@ -43,80 +41,14 @@ const INVOKE_CHANNELS = [
   MACHINE_IPC.clearFinishedTransfers
 ] as const
 
-type MachineServices = {
-  directories: MachineDirectoryService
-  transfers: MachineTransferManager
-  dragOut: MachineDragOutStager
-}
-
-let services: MachineServices | null = null
 let currentGetMainWindow: () => BrowserWindow | null = () => null
-const fileSystems = new Map<MachineId, MachineFileSystem>()
-const runtimeFileSystems = new Map<string, RuntimeMachineFileSystem>()
-
-function resolveRuntimeFileSystem(environmentId: string): RuntimeMachineFileSystem {
-  let fs = runtimeFileSystems.get(environmentId)
-  if (!fs) {
-    fs = new RuntimeMachineFileSystem(
-      environmentId,
-      createRuntimeMachineChannel(app.getPath('userData'), environmentId)
-    )
-    runtimeFileSystems.set(environmentId, fs)
-  }
-  return fs
-}
-
-function resolveFileSystem(machineId: MachineId): MachineFileSystem {
-  const existing = fileSystems.get(machineId)
-  if (existing) {
-    return existing
-  }
-  const parsed = parseExecutionHostId(machineId)
-  let fs: MachineFileSystem
-  if (parsed?.kind === 'local') {
-    fs = createLocalMachineFileSystem()
-  } else if (parsed?.kind === 'ssh' && getSshTargetRegistryStore()?.getTarget(parsed.targetId)) {
-    fs = new SshMachineFileSystem(parsed.targetId)
-  } else if (parsed?.kind === 'runtime') {
-    fs = resolveRuntimeFileSystem(parsed.environmentId)
-  } else {
-    throw new Error('Unknown machine')
-  }
-  fileSystems.set(machineId, fs)
-  return fs
-}
+let unsubscribeRendererEvents: (() => void) | null = null
 
 function sendToRenderer(channel: string, payload: unknown): void {
   const window = currentGetMainWindow()
   if (window && !window.isDestroyed()) {
     window.webContents.send(channel, payload)
   }
-}
-
-function getServices(): MachineServices {
-  if (services) {
-    return services
-  }
-  const directories = new MachineDirectoryService({
-    resolveFileSystem,
-    onDirChanged: (machineId, path) =>
-      sendToRenderer(MACHINE_IPC.dirChanged, { machineId, path } satisfies MachineDirChangedEvent)
-  })
-  services = {
-    directories,
-    transfers: new MachineTransferManager({
-      resolveFileSystem,
-      onUpdate: (transfer) => sendToRenderer(MACHINE_IPC.transferUpdated, transfer),
-      onRemoteDirChanged: (machineId, dir) => directories.invalidate(machineId, dir)
-    }),
-    dragOut: new MachineDragOutStager(resolveFileSystem)
-  }
-  app.once('will-quit', () => {
-    services?.transfers.dispose()
-    services?.directories.dispose()
-    void services?.dragOut.dispose()
-  })
-  return services
 }
 
 /** Machine file access is a desktop-window capability; guests and plugin frames never get it. */
@@ -157,13 +89,6 @@ function machineIdOf(value: unknown): MachineId {
   return parsed.id
 }
 
-function invalidateParent(machineId: MachineId, target: string): void {
-  const parent = machinePathDirname(target)
-  if (parent) {
-    getServices().directories.invalidate(machineId, parent)
-  }
-}
-
 type Handler = (args: Record<string, unknown>) => unknown
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -179,6 +104,15 @@ function handle(channel: string, handler: Handler): void {
 
 export function registerMachineHandlers(getMainWindow: () => BrowserWindow | null): void {
   currentGetMainWindow = getMainWindow
+  unsubscribeRendererEvents?.()
+  const offDirs = onMachineDirChanged((event) => sendToRenderer(MACHINE_IPC.dirChanged, event))
+  const offTransfers = onMachineTransferUpdated((transfer) =>
+    sendToRenderer(MACHINE_IPC.transferUpdated, transfer)
+  )
+  unsubscribeRendererEvents = () => {
+    offDirs()
+    offTransfers()
+  }
   for (const channel of INVOKE_CHANNELS) {
     ipcMain.removeHandler(channel)
   }
@@ -244,17 +178,9 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
     invalidateParent(machineId, to)
   })
 
-  handle(MACHINE_IPC.remove, async (args) => {
-    const machineId = machineIdOf(args.machineId)
-    const fs = resolveFileSystem(machineId)
-    for (const path of requireStrings(args.paths, 'paths')) {
-      if (machinePathDirname(path) === null) {
-        throw new Error('Refusing to delete a filesystem root')
-      }
-      await fs.remove(path)
-      invalidateParent(machineId, path)
-    }
-  })
+  handle(MACHINE_IPC.remove, (args) =>
+    removeMachinePaths(machineIdOf(args.machineId), requireStrings(args.paths, 'paths'))
+  )
 
   handle(MACHINE_IPC.upload, (args) =>
     getServices().transfers.upload(
