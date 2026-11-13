@@ -3,7 +3,7 @@ name: Seal Relay
 on:
   pull_request:
     paths:
-      - services/seal-relay/**
+      - cloud/seal-relay/**
       - cloud/apps/relay-edge/src/**
       - cloud/apps/push/src/**
       - cloud/packages/push-contract/src/**
@@ -15,7 +15,7 @@ on:
   push:
     branches: [main, seal/all]
     paths:
-      - services/seal-relay/**
+      - cloud/seal-relay/**
       - .github/workflows/seal-relay.yml
 
 permissions:
@@ -40,11 +40,11 @@ jobs:
       - name: Install desktop dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Install worker dependencies
-        working-directory: services/seal-relay
+        working-directory: cloud/seal-relay
         run: pnpm install --frozen-lockfile
       - name: Typecheck
-        working-directory: services/seal-relay
+        working-directory: cloud/seal-relay
         run: pnpm typecheck
       - name: Test
-        working-directory: services/seal-relay
+        working-directory: cloud/seal-relay
         run: pnpm test

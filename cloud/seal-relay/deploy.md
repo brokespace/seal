@@ -20,7 +20,7 @@ Both hostnames route to the same code. Desktops (Electron and `seal serve`/orcad
 ## Steps
 
 ```bash
-cd services/seal-relay
+cd cloud/seal-relay
 pnpm install
 
 npx wrangler login
