@@ -5,7 +5,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
 export const RUNTIME_DATA_FILES = ['icudtl.dat', 'snapshot_blob.bin', 'v8_context_snapshot.bin']
-export const HOST_EXE = 'Orca.exe'
+export const HOST_EXE = 'Seal.exe'
 
 // Prefer packaged build/Release over node-pty architecture prebuild directories.
 const NODE_PTY_NATIVE_CANDIDATES = ['build/Release', 'prebuilds/win32-x64', 'prebuilds/win32-arm64']

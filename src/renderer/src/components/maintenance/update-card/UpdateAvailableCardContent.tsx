@@ -15,7 +15,7 @@ function ExternallyManagedNote(): React.JSX.Element {
     <p className="text-xs leading-relaxed text-muted-foreground">
       {t(
         'auto.components.UpdateCard.7f1a4c9e02',
-        'Your system package manager installed Orca, so update it from there — Orca cannot install this release itself.'
+        'Your system package manager installed Seal, so update it from there — Seal cannot install this release itself.'
       )}
     </p>
   )
@@ -149,7 +149,7 @@ export function UpdateAvailableSimpleContent({
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        {t('auto.components.UpdateCard.05ad78a6d1', 'Orca v{{value0}} is ready.', {
+        {t('auto.components.UpdateCard.05ad78a6d1', 'Seal v{{value0}} is ready.', {
           value0: version
         })}
       </p>

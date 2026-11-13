@@ -91,7 +91,7 @@ export function claudeResultFailure(
 }
 
 /** Keep unknown wire kinds in disclosure, with readable placeholder text on the row. */
-export const CLAUDE_UNRENDERABLE_CONTENT_TEXT = 'Claude sent content Orca cannot display yet'
+export const CLAUDE_UNRENDERABLE_CONTENT_TEXT = 'Claude sent content Seal cannot display yet'
 
 export function isModeledClaudeContent(value: unknown): boolean {
   const part = claudeRecord(value)

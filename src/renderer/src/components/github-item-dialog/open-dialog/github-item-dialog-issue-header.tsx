@@ -123,7 +123,7 @@ export function GitHubItemDialogIssueHeader({
                   {refreshUnsupported
                     ? t(
                         'auto.components.GitHubItemDialog.refreshTaskUnsupported',
-                        'Update Orca on this server to refresh tasks here.'
+                        'Update Seal on this server to refresh tasks here.'
                       )
                     : t('auto.components.GitHubItemDialog.refreshTask', 'Refresh task')}
                 </TooltipContent>

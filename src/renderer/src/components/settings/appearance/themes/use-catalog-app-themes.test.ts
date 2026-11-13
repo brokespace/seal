@@ -8,7 +8,7 @@ function themeListing(
 ): PluginMarketplaceHostListing {
   return {
     marketplaceSourceId: 'official',
-    marketplaceName: 'Orca Official Plugins',
+    marketplaceName: 'Seal Official Plugins',
     marketplaceOwner: 'stablyai',
     marketplaceCommit: 'abc123',
     pluginKey,

@@ -85,7 +85,7 @@ const contributionGrowthLabel = (point: PluginContributionPoint): string => {
 const replacementLine = (command: string, action: string, t: Translate = translate): string =>
   t(
     'auto.components.settings.PluginUpdateAllDialog.replacesAction',
-    '{{value0}} runs instead of Orca’s {{value1}}',
+    '{{value0}} runs instead of Seal’s {{value1}}',
     { value0: command, value1: builtInActionTitle(action) }
   )
 
@@ -244,7 +244,7 @@ export function CandidateRow({
       <p className="text-xs text-destructive">
         {t(
           'auto.components.settings.PluginMarketplaceListingRow.blocked',
-          "Blocked by Orca's safety list: {{value0}}",
+          "Blocked by Seal's safety list: {{value0}}",
           { value0: preview.blockedByKillList.reason }
         )}
       </p>
@@ -260,7 +260,7 @@ export function CandidateRow({
       <p className="text-xs text-status-warning-text">
         {t(
           'auto.components.settings.PluginUpdateAllDialog.needsOrca',
-          'Needs Orca {{value0}} or later',
+          'Needs Seal {{value0}} or later',
           { value0: needsOrca }
         )}
       </p>

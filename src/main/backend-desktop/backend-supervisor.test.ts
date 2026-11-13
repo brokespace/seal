@@ -284,7 +284,7 @@ it('retries a rejected signal-free launch on new demand without replay or false 
   expect(quit).toBe(false)
   children[4].emit('exit', 0)
   await stopped
-  await expect(read()).rejects.toThrow('Orca is shutting down')
+  await expect(read()).rejects.toThrow('Seal is shutting down')
   expect(children).toHaveLength(5)
 })
 

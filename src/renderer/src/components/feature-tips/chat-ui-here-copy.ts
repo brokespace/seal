@@ -32,7 +32,7 @@ export function getChatUiHereVariantCopy(
     paragraphs: [
       t(
         'featureTips.chatUiHere.onIntro',
-        'Chat UI is out of Experimental and now part of Orca. Your agents keep opening as chats, with rich messages, visuals and images.'
+        'Chat UI is out of Experimental and now part of Seal. Your agents keep opening as chats, with rich messages, visuals and images.'
       ),
       t(
         'featureTips.chatUiHere.onTerminal',

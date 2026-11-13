@@ -31,7 +31,7 @@ export async function replyOverPeerMail(args: {
   if (!conversation) {
     throw new OrchestrationError(
       'request_mismatch',
-      `The conversation ${original.id} came on is gone from this Orca. No reply was sent.`,
+      `The conversation ${original.id} came on is gone from this Seal. No reply was sent.`,
       NOTHING_SENT
     )
   }

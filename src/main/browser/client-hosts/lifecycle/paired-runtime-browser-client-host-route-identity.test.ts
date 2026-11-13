@@ -195,7 +195,7 @@ beforeEach(() => {
   compositions.length = 0
 })
 
-describe('client host identity for a server Orca re-pairs in place', () => {
+describe('client host identity for a server Seal re-pairs in place', () => {
   it('adopts a per-process jar under the fingerprint an older build reads', async () => {
     configurePairedRuntimeBrowserClientHostsForOrcaProfile({ orcaProfileId: 'profile-a' })
     const filePath = bindingStorePath()

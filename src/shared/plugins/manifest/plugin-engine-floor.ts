@@ -99,7 +99,7 @@ export function validatePluginEngineFloor(
     ctx.addIssue({
       code: 'custom',
       path: ['engines', 'orca'],
-      message: `must be at least >=${floor.version}, because ${floor.field} needs Orca ${floor.version}`
+      message: `must be at least >=${floor.version}, because ${floor.field} needs Seal ${floor.version}`
     })
   }
 }

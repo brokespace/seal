@@ -40,7 +40,7 @@ export const AGENT_LAUNCH_HANDLERS: Record<string, CommandHandler> = {
       }
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'This Orca host cannot start agents from the CLI. Update Orca on the execution host.'
+        'This Seal host cannot start agents from the CLI. Update Seal on the execution host.'
       )
     }
     const result = await callAgentLaunch(

@@ -165,10 +165,10 @@ export function AppSection({
           className="pl-2 py-2 pr-0.5 transition-colors hover:bg-muted/50"
           aria-label={
             isCollapsed
-              ? t('auto.components.status.bar.ResourceUsageStatusSegment.e419d27083', 'Expand Orca')
+              ? t('auto.components.status.bar.ResourceUsageStatusSegment.e419d27083', 'Expand Seal')
               : t(
                   'auto.components.status.bar.ResourceUsageStatusSegment.53dd5560ae',
-                  'Collapse Orca'
+                  'Collapse Seal'
                 )
           }
           aria-expanded={!isCollapsed}

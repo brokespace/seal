@@ -128,7 +128,7 @@ async function expectRenderedLink(page: Page, worktreeId: string, url: string): 
     .toMatch(/^cookie:/)
 }
 
-test('a managed SSH terminal link opens in the Orca Browser through the SSH host', async (// oxlint-disable-next-line no-empty-pattern -- Owns app launch.
+test('a managed SSH terminal link opens in the Seal Browser through the SSH host', async (// oxlint-disable-next-line no-empty-pattern -- Owns app launch.
 {}, testInfo) => {
   test.setTimeout(5 * 60_000)
   const target = startDockerSshHostTarget(testInfo)
@@ -179,7 +179,7 @@ test('a managed SSH terminal link opens in the Orca Browser through the SSH host
     const popover = page.locator('[data-terminal-link-action-popover]')
     await expect(popover).toBeVisible()
     await expect(popover.getByRole('button').filter({ hasText: 'System Browser' })).toBeVisible()
-    const orcaBrowser = popover.getByRole('button').filter({ hasText: 'Orca Browser' })
+    const orcaBrowser = popover.getByRole('button').filter({ hasText: 'Seal Browser' })
     await expect(orcaBrowser).toBeVisible()
     await page.screenshot({ path: testInfo.outputPath('managed-terminal-link-popover.png') })
     await orcaBrowser.click()
@@ -190,7 +190,7 @@ test('a managed SSH terminal link opens in the Orca Browser through the SSH host
     await expect
       .poll(() => readSshRemoteOnlyRequests(target).map((request) => request.path), {
         timeout: 60_000,
-        message: 'the Orca Browser page never reached the SSH host'
+        message: 'the Seal Browser page never reached the SSH host'
       })
       .toContain('/echo/popover')
     await expectRenderedLink(page, seeded.worktreeId, popoverUrl)

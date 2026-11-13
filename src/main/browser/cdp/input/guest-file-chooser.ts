@@ -93,7 +93,7 @@ export async function interceptFileChooser(
         })
       ),
       PAGE_REPLY_TIMEOUT_MS,
-      'The page is not responding, so Orca did not send the input.'
+      'The page is not responding, so Seal did not send the input.'
     )
   } catch (error) {
     abandoned = true
@@ -128,7 +128,7 @@ export async function withFileChooserBlocked<T>(
       throw new BrowserError(
         'browser_file_chooser_opened',
         agent
-          ? 'The action opened a file picker, which Orca closed so the system dialog would not take over the screen. To choose files, run `upload --element <ref> --files <paths>` on the file input or the button that opens it.'
+          ? 'The action opened a file picker, which Seal closed so the system dialog would not take over the screen. To choose files, run `upload --element <ref> --files <paths>` on the file input or the button that opens it.'
           : "This page's file picker can't open from a remote view."
       )
     }

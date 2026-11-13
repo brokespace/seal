@@ -161,7 +161,7 @@ function antigravityAccounts(ctx: HandlerContext): ProviderAccounts {
     if (!(await supportsAntigravityAccounts(ctx))) {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'Update or restart this Orca host to manage Antigravity accounts.'
+        'Update or restart this Seal host to manage Antigravity accounts.'
       )
     }
     return client.call<AntigravityAccountState>('accounts.antigravityList', target)
@@ -295,7 +295,7 @@ export async function selectAgentAccount(ctx: HandlerContext): Promise<void> {
   if (agent === 'claude' && query === 'system' && getWslAccountTarget(ctx.cwd)) {
     throw new RuntimeClientError(
       'invalid_argument',
-      'Select the Claude system default for a WSL distro in Orca Settings > AI Provider Accounts.'
+      'Select the Claude system default for a WSL distro in Seal Settings > AI Provider Accounts.'
     )
   }
   const provider = providerAccounts(ctx, agent)

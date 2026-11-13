@@ -52,11 +52,11 @@ export class CliInstaller extends CliPathRegistration {
     const launcherPath = await this.resolveLauncherPath()
     if (!launcherPath) {
       const detail = this.hasUnverifiedAppImageRuntime
-        ? 'Orca could not verify the inherited AppImage runtime identity, so CLI registration is unavailable.'
+        ? 'Seal could not verify the inherited AppImage runtime identity, so CLI registration is unavailable.'
         : this.isLinuxAppImage() && this.appImagePath
           ? `The AppImage file at ${this.appImagePath} is missing. Move it back or re-run CLI registration from the current AppImage location.`
           : this.isPackaged
-            ? 'The bundled CLI launcher is missing from this Orca build.'
+            ? 'The bundled CLI launcher is missing from this Seal build.'
             : 'Development mode uses a generated launcher for validation only.'
       return {
         platform: this.platform,
@@ -95,7 +95,7 @@ export class CliInstaller extends CliPathRegistration {
         ? {
             ...inspectedStatus,
             state: 'stale' as const,
-            detail: `${spec.commandPath} does not point to the current Orca AppImage payload.`
+            detail: `${spec.commandPath} does not point to the current Seal AppImage payload.`
           }
         : inspectedStatus
     const pathDirectory = dirname(spec.commandPath)
@@ -119,7 +119,7 @@ export class CliInstaller extends CliPathRegistration {
     }
     if (initialStatus.state === 'conflict') {
       throw new Error(
-        `Refusing to replace non-Orca command at ${initialStatus.commandPath}. Remove it and register again if it is no longer needed.`
+        `Refusing to replace non-Seal command at ${initialStatus.commandPath}. Remove it and register again if it is no longer needed.`
       )
     }
     const extractedRoot = await this.ensureLinuxAppImagePayload()
@@ -131,7 +131,7 @@ export class CliInstaller extends CliPathRegistration {
     }
     if (status.state === 'conflict') {
       throw new Error(
-        `Refusing to replace non-Orca command at ${status.commandPath}. Remove it and register again if it is no longer needed.`
+        `Refusing to replace non-Seal command at ${status.commandPath}. Remove it and register again if it is no longer needed.`
       )
     }
 
@@ -181,10 +181,10 @@ export class CliInstaller extends CliPathRegistration {
       return status
     }
     if (status.state === 'conflict') {
-      throw new Error(`Refusing to remove non-Orca command at ${status.commandPath}.`)
+      throw new Error(`Refusing to remove non-Seal command at ${status.commandPath}.`)
     }
     if (status.state === 'stale' && status.installMethod !== 'symlink') {
-      throw new Error(`Refusing to remove a command not owned by Orca at ${status.commandPath}.`)
+      throw new Error(`Refusing to remove a command not owned by Seal at ${status.commandPath}.`)
     }
 
     if (status.state === 'stale' && this.isAppImageRegistrationOwnedBySibling(status)) {

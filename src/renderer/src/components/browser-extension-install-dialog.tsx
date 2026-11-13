@@ -75,7 +75,7 @@ function promptDescription(
         'It runs in tabs that use the {{profile}} profile.',
         { profile: translateBrowserSessionProfileLabel(request.profileLabel) }
       )
-    : t('browserExtensions.install.description', 'It runs in Orca browser tabs.')
+    : t('browserExtensions.install.description', 'It runs in Seal browser tabs.')
 }
 
 /** Orca's confirmation for store installs and store-page removals; main waits on the answer. */

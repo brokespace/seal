@@ -77,7 +77,7 @@ async function resolveWslAccountDistro(wslDistro: string | null | undefined): Pr
   }
   const distro = wslDistro?.trim() || (await resolveWslDefaultDistro())
   if (typeof distro !== 'string' || !distro) {
-    throw new Error('Orca could not determine the default WSL distro for Antigravity accounts.')
+    throw new Error('Seal could not determine the default WSL distro for Antigravity accounts.')
   }
   return distro
 }

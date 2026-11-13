@@ -74,7 +74,7 @@ describe('a client that predates the cause', () => {
 })
 
 describe('the cut Continue answers', () => {
-  it('is the latest turn when an Orca stop cut it and nothing was sent since', () => {
+  it('is the latest turn when a Seal stop cut it and nothing was sent since', () => {
     expect(latestNativeChatOrcaStopCut([userMessage(1), cutTurn(), stopRow(update)], [])).toEqual({
       turnItemId: turnId,
       cause: 'update'
@@ -137,7 +137,7 @@ describe('the cut Continue answers', () => {
     ).toBeNull()
   })
 
-  it("is none for a stop with no Orca cause, a person's Stop, or an unscoped row", () => {
+  it("is none for a stop with no Seal cause, a person's Stop, or an unscoped row", () => {
     expect(latestNativeChatOrcaStopCut([cutTurn(), stopRow(undefined)], [])).toBeNull()
     expect(latestNativeChatOrcaStopCut([cutTurn('cancellation'), stopRow(update)], [])).toBeNull()
     expect(latestNativeChatOrcaStopCut([cutTurn(), stopRow(update, false)], [])).toBeNull()

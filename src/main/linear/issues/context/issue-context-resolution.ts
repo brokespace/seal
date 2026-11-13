@@ -44,7 +44,7 @@ export async function searchLinearIssuesForAgents(args: {
       throw entryFailures[0].error
     }
     throw linearError('linear_not_connected', 'Linear is not connected.', {
-      nextSteps: ['Connect Linear from Orca settings, then retry the search.']
+      nextSteps: ['Connect Linear from Seal settings, then retry the search.']
     })
   }
 
@@ -96,7 +96,7 @@ export async function resolveIssue(
       throw entryFailures[0].error
     }
     throw linearError('linear_not_connected', 'Linear is not connected.', {
-      nextSteps: ['Connect Linear from Orca settings, then retry the issue read.']
+      nextSteps: ['Connect Linear from Seal settings, then retry the issue read.']
     })
   }
 
@@ -185,7 +185,7 @@ export async function withLinearRead<T>(
     if (isAuthError(error)) {
       clearToken(entry.workspace.id)
       throw linearError('linear_auth_expired', 'Linear authentication expired.', {
-        nextSteps: ['Reconnect Linear from Orca settings.']
+        nextSteps: ['Reconnect Linear from Seal settings.']
       })
     }
     throw toLinearAccessError(error)

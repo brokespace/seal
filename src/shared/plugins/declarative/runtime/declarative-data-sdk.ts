@@ -5,7 +5,7 @@ import type { OrcaBridge, OrcaDisposable } from './declarative-runtime-types'
 
 function unavailable(what: string): Promise<never> {
   return Promise.reject(
-    Object.assign(new Error(`${what} is not available in this Orca`), {
+    Object.assign(new Error(`${what} is not available in this Seal`), {
       code: 'unavailable',
       retryable: false
     })

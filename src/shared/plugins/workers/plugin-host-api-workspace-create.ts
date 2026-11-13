@@ -74,7 +74,7 @@ const agentResumeResult = z.object({
 export const PLUGIN_WORKSPACE_CREATE_API = {
   'workspace.create': spec({
     summary:
-      "Creates a workspace (a new branch and worktree) in a Git project, local or SSH, and returns its id; with `agent`, starts that agent there once setup has run, in the background unless `open`; if the agent fails after the workspace exists, the error names its id. Orca's workspace-create and agent hooks run as for any create.",
+      "Creates a workspace (a new branch and worktree) in a Git project, local or SSH, and returns its id; with `agent`, starts that agent there once setup has run, in the background unless `open`; if the agent fails after the workspace exists, the error names its id. Seal's workspace-create and agent hooks run as for any create.",
     since: 8,
     scope: 'any-workspace',
     capability: 'workspace:create',
@@ -86,7 +86,7 @@ export const PLUGIN_WORKSPACE_CREATE_API = {
   }),
   'agent.resume': spec({
     summary:
-      "Resumes an agent's earlier session by its `sessionId` in a new terminal of a workspace, in the background; `started` is false when an Orca terminal already runs it. From host API 1.9, a session no Orca pane runs that Agent Session History lists on this computer (among the workspace's own sessions and the 200 newest) is prepared and started as Orca's own Resume does, in the agent account Orca would pick; only `agent:launch` is needed, since the plugin must already know the id. Other sessions, and workspaces on another host, resume by id. In WSL it uses the distro's default agent account, as `agent.launch` does.",
+      "Resumes an agent's earlier session by its `sessionId` in a new terminal of a workspace, in the background; `started` is false when a Seal terminal already runs it. From host API 1.9, a session no Seal pane runs that Agent Session History lists on this computer (among the workspace's own sessions and the 200 newest) is prepared and started as Seal's own Resume does, in the agent account Seal would pick; only `agent:launch` is needed, since the plugin must already know the id. Other sessions, and workspaces on another host, resume by id. In WSL it uses the distro's default agent account, as `agent.launch` does.",
     since: 8,
     scope: 'any-workspace',
     capability: 'agent:launch',

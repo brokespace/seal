@@ -219,7 +219,7 @@ describe('terminal worker approval holds', () => {
 
     // The card closed when the dialog left; the late result only names how.
     expect(ctx.closing()).toEqual([
-      expect.stringContaining('Closed without an answer Orca can name'),
+      expect.stringContaining('Closed without an answer Seal can name'),
       expect.stringContaining("Denied in the worker's terminal")
     ])
     // Not an expiry: only the agent's own timeout is one.
@@ -284,7 +284,7 @@ describe('terminal worker approval holds', () => {
     ])
   })
 
-  it("doesn't take Orca's allow when the person's No won the race", async () => {
+  it("doesn't take Seal's allow when the person's No won the race", async () => {
     const ctx = setup()
     const approvalId = await opened(
       ctx,
@@ -340,7 +340,7 @@ describe('terminal worker approval holds', () => {
     closeOrphanedTerminalApprovals(ctx.db)
     expect(ctx.closing()).toEqual([
       expect.stringContaining(
-        `Closed without an answer Orca can name: approval ${approval.approvalId}`
+        `Closed without an answer Seal can name: approval ${approval.approvalId}`
       )
     ])
   })

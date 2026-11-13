@@ -76,7 +76,7 @@ function runOrca(
 }
 
 describe.runIf(process.platform !== 'win32')('the bare orca dispatcher as a shell runs it', () => {
-  it("leaves another `orca` on PATH (GNOME's screen reader) to everyone but Orca's children", async () => {
+  it("leaves another `orca` on PATH (GNOME's screen reader) to everyone but Seal's children", async () => {
     const fixture = await makeFixture()
     const binDir = join(fixture.homePath, '.local', 'bin')
 

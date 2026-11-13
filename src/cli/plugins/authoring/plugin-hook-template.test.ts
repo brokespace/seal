@@ -21,7 +21,7 @@ async function hookPlugin(): Promise<string> {
 
 describe('orca plugin create --template hook', () => {
   it(
-    "passes its own worker test under `orca plugin test` on Orca's runtime",
+    "passes its own worker test under `orca plugin test` on Seal's runtime",
     async () => {
       const dir = await hookPlugin()
       const files = await findPluginTestFiles(dir)

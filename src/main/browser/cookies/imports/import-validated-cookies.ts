@@ -57,7 +57,7 @@ export async function importValidatedCookies(
     return {
       ok: false,
       reason:
-        'This Orca client cannot report cookies skipped for an unreadable site partition. Update Orca on this device and try again.'
+        'This Seal client cannot report cookies skipped for an unreadable site partition. Update Seal on this device and try again.'
     }
   }
   // Partition skips are already part of skippedCookies; count them only once.

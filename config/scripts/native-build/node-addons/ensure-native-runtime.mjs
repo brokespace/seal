@@ -326,7 +326,7 @@ function loadNodePtyNativeModule() {
   assertNodePtyJobOwnership({ nativeName, native, addonPath })
   if (requiresPatchedNodePtySourceBuild() && !isSourceBuildDir(native?.dir)) {
     throw new Error(
-      `node-pty resolved to ${native.dir}; expected build/Release so Orca's node-pty patch is active`
+      `node-pty resolved to ${native.dir}; expected build/Release so Seal's node-pty patch is active`
     )
   }
 }

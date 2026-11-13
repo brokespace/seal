@@ -58,7 +58,7 @@ export const PROJECT_SECTION_PARITY_HOSTS: readonly ParityHostAnswer[] = [
       projects: [
         {
           id: 'github:stablyai/orca',
-          displayName: 'Orca',
+          displayName: 'Seal',
           badgeColor: '#737373',
           providerIdentity: { provider: 'github', owner: 'stablyai', repo: 'orca' },
           sourceRepoIds: [windowsRepo.id],

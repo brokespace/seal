@@ -234,7 +234,7 @@ ${PLUGIN_FRAME_DOCUMENT_SCRIPT}  if (C.surface === 'editor') {
   }
   Object.defineProperty(window, 'orca', { value: Object.freeze(orca), writable: false, configurable: false })
   if (C.declarativePost) {
-    // One-shot for Orca's boot script, which deletes it before importing the plugin module.
+    // One-shot for Seal's boot script, which deletes it before importing the plugin module.
     Object.defineProperty(window, C.declarativePost, { configurable: true, value: function (event, payload) {
       post({ kind: 'evt', event: String(event), payload: payload })
     } })

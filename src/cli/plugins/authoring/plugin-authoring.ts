@@ -34,7 +34,7 @@ function formatGrants(report: PluginValidationReport): string[] {
   return [
     ...formatPluginGrantLines(plugin),
     plugin.needsApproval
-      ? '  Loading or enabling it needs --approve <fingerprint>; Orca prints the fingerprint.'
+      ? '  Loading or enabling it needs --approve <fingerprint>; Seal prints the fingerprint.'
       : '  Content only: loads without approval.'
   ]
 }
@@ -134,7 +134,7 @@ export const PLUGIN_AUTHORING_HANDLERS: Record<string, CommandHandler> = {
       ctx,
       { path: dir, files },
       [
-        `Wrote Orca plugin typings into ${dir}:`,
+        `Wrote Seal plugin typings into ${dir}:`,
         ...files.map((file) => `  ${file}`),
         'Extend them from tsconfig.json: { "extends": "./.orca/types/tsconfig.json" }'
       ].join('\n')

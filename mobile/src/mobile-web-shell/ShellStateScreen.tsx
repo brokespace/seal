@@ -78,7 +78,7 @@ function Failed({
         {webViewTooOld
           ? t(
               'webShell.shellStateScreen.isolationUnavailableAndroid',
-              'Orca needs Android System WebView or Chrome 101 or newer. Update it from the Play Store, or pick a newer one in Developer options > WebView implementation.'
+              'Seal needs Android System WebView or Chrome 101 or newer. Update it from the Play Store, or pick a newer one in Developer options > WebView implementation.'
             )
           : failureMessage(state.reason, t)}
       </Text>

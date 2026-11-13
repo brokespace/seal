@@ -22,10 +22,10 @@ export function renderOrcaAccountSettingsSection(
   return model.showDesktopOnlySettings ? (
     <SettingsSection
       id="orca-account"
-      title={t('auto.components.settings.orcaAccount.title', 'Orca Account')}
+      title={t('auto.components.settings.orcaAccount.title', 'Seal Account')}
       description={t(
         'auto.components.settings.orcaAccount.description',
-        'Share work instantly and reach your desktop from Orca Mobile wherever you are.'
+        'Share work instantly and reach your desktop from Seal Mobile wherever you are.'
       )}
       searchEntries={navigation.getSectionSearchEntries('orca-account')}
     >
@@ -49,7 +49,7 @@ export function renderSetupGuideSettingsSection(
       title={t('auto.components.settings.Settings.6d119427ef', 'Onboarding checklist')}
       description={t(
         'auto.components.settings.Settings.6855b0f77d',
-        'Finish the core workflows that make Orca useful for parallel agent work.'
+        'Finish the core workflows that make Seal useful for parallel agent work.'
       )}
       searchEntries={navigation.getSectionSearchEntries('setup-guide')}
       bodyClassName="overflow-hidden"
@@ -223,7 +223,7 @@ export function renderSessionHistorySettingsSection(
       title={t('sessionHistory.settings.title', 'Agent Session Search')}
       description={t(
         'sessionHistory.settings.description',
-        'Search everything your agents have said and done, on this computer and on any paired Orca server.'
+        'Search everything your agents have said and done, on this computer and on any paired Seal server.'
       )}
       searchEntries={navigation.getSectionSearchEntries('session-history')}
     >
