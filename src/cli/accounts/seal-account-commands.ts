@@ -34,10 +34,11 @@ import {
 
 function provider(ctx: HandlerContext): SealProvider {
   const value = getRequiredStringFlag(ctx.flags, 'agent')
-  if (!SEAL_PROVIDERS.includes(value as SealProvider)) {
+  const match = SEAL_PROVIDERS.find((entry) => entry === value)
+  if (!match) {
     throw new RuntimeClientError('invalid_argument', '--agent must be claude or codex')
   }
-  return value as SealProvider
+  return match
 }
 
 function optionalProviders(ctx: HandlerContext): SealProvider[] {
@@ -121,7 +122,7 @@ function profilePatch(
 
 function autoSwapPatch(ctx: HandlerContext): Partial<SealAutoSwapSettings> {
   const strategy = getOptionalStringFlag(ctx.flags, 'strategy')
-  if (strategy !== undefined && !SEAL_SWAP_STRATEGIES.includes(strategy as never)) {
+  if (strategy !== undefined && !SEAL_SWAP_STRATEGIES.some((entry) => entry === strategy)) {
     throw new RuntimeClientError(
       'invalid_argument',
       `--strategy must be one of ${SEAL_SWAP_STRATEGIES.join(', ')}`
