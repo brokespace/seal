@@ -41,7 +41,7 @@ SEAL_APPLE_TEAM_ID=ABCDE12345 node scripts/seal-ios-build.mjs adhoc --install <d
 2. In Seal Mobile, tap **Pair** and scan it. On the same LAN, the phone connects directly. Off-LAN, it goes through `relay.seal.wotarmelon.com`, end-to-end encrypted.
 3. Allow notifications when asked. The desktop registers the phone's push token with `push.seal.wotarmelon.com`.
 
-Headless hosts pair over LAN/Tailscale: run `seal serve --mobile-pairing` and scan the printed QR code, or run `seal pair` later. To reach them off-LAN, go through a paired desktop: the desktop's relay carries the phone, and the desktop forwards to the server.
+Headless hosts pair the same way: run `seal serve --mobile-pairing` and scan the printed QR code, or run `seal pair` later. `seal serve` joins the Seal relay with its own pairing key, so you can reach it off-LAN without a desktop.
 
 ## Troubleshooting
 

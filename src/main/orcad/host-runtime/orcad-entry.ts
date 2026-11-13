@@ -128,8 +128,6 @@ async function activateOrcadRuntime(
   })
   registerCleanup(stopOrcadStructuredAgentSessions)
   registerCleanup(() => disposeWatcherProcessAndWait())
-  const { DesktopPushService } = await import('../../runtime/push/desktop-push-service')
-  const { resolvePushGatewayOrigin } = await import('../../runtime/push/push-gateway-origin')
 
   const runtimeUserDataPath = getAppEnvironment().getPath('userData')
   const { startEventLoopDelayProbe } = await import('../../diagnostics/event-loop-delay-probe')
@@ -331,13 +329,8 @@ async function activateOrcadRuntime(
   // The daemon has no window to wait for; its CI-line watches start with the runtime.
   runtime.startPullRequestWatches()
   startOrcadSchedulers(runtime, profileStore, registerCleanup)
-  const pushService = DesktopPushService.create({
-    runtime,
-    runtimeRpc: rpc,
-    gatewayUrl: resolvePushGatewayOrigin(process.env, getAppEnvironment().isPackaged())
-  })
-  pushService?.start()
-  getAppEnvironment().onWillQuit(() => pushService?.stop())
+  const { startOrcadSealCloudServices } = await import('./orcad-seal-cloud-services')
+  startOrcadSealCloudServices({ runtime, rpc, userDataPath: runtimeUserDataPath, registerCleanup })
   console.error(`[orcad] ${describeOrcadBindExposure(bindHost)}`)
 
   const readiness = await buildOrcadServeReadiness({
