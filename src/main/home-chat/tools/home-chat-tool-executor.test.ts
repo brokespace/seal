@@ -45,6 +45,7 @@ describe('executeHomeChatTool transfer_file', () => {
       list: () => Promise.resolve([a.info, b.info]),
       open: (id) => Promise.resolve(id === 'ssh:a' ? a : b)
     })
+    await runtime.load()
     const ctx = testToolContext(runtime)
 
     const result = await executeHomeChatTool(
