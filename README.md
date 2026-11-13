@@ -286,6 +286,26 @@ Pair with your desktop app to monitor and steer your agents from your phone.
 - **iOS:** [Download on the App Store](https://apps.apple.com/us/app/orca-ide/id6766130217)
 - **Android:** [Download APK](https://orca.dev/download/android) · [Install guide](https://orca.dev/docs/android-apk)
 
+### Seal: chat with agents started outside the app
+
+Seal's **Agent sessions** view finds Claude Code and Codex sessions on this computer, on connected
+SSH hosts and on paired servers (**Settings › Remote servers**), including ones you started in your
+own terminal, and lets you chat with them. A running agent is listed however long ago it last wrote.
+A paired server needs a Seal build with live sessions; an older one shows an "update Seal on this
+server" notice.
+Codex sessions and sessions inside tmux need no setup. For Claude sessions started in a plain
+terminal tab, install shell integration once per machine:
+
+```bash
+orca shell-integration install              # this computer (zsh and bash)
+orca shell-integration install --ssh myhost # an SSH host
+```
+
+You can also install it from **Settings › Agents** or from an SSH host's **⋯** menu in **Settings › SSH**.
+Any session can also be moved into a Seal pane with **Take over**. Details:
+[shell integration](docs/live-sessions-shell-integration.md) ·
+[how input delivery works](docs/live-sessions-input.md).
+
 ---
 
 ## Community &amp; Support

@@ -32,6 +32,18 @@ import {
   DesktopBrowserBridgeAttachParams,
   DesktopBrowserBridgeResultParams
 } from '../desktop-browser-bridge-protocol'
+import {
+  LiveSessionAnswerParams,
+  LiveSessionHostRunParams,
+  LiveSessionMessagesParams,
+  LiveSessionRemoveParams,
+  LiveSessionRetryParams,
+  LiveSessionSendParams,
+  LiveSessionTakeOverParams,
+  LiveSessionTranscriptParams,
+  LiveSessionUnwatchParams,
+  LiveSessionWatchTranscriptParams
+} from '../live-sessions/live-session-rpc-params'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
 import { MobileWebBundleLocaleCatalogParamsSchema } from '../mobile-web-bundle/locale-catalog-contract'
 import { OrcadMigrationBlobChunkRequestSchema } from '../orcad-migration/orcad-migration-blob-transfer'
@@ -1325,6 +1337,18 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
   'linkPreview.get': LinkPreviewGetParams,
+  'liveSessions.answer': LiveSessionAnswerParams,
+  'liveSessions.hostRun': LiveSessionHostRunParams,
+  'liveSessions.list': null,
+  'liveSessions.messages': LiveSessionMessagesParams,
+  'liveSessions.remove': LiveSessionRemoveParams,
+  'liveSessions.retry': LiveSessionRetryParams,
+  'liveSessions.send': LiveSessionSendParams,
+  'liveSessions.takeOver': LiveSessionTakeOverParams,
+  'liveSessions.transcript': LiveSessionTranscriptParams,
+  'liveSessions.unwatch': LiveSessionUnwatchParams,
+  'liveSessions.watch': null,
+  'liveSessions.watchTranscript': LiveSessionWatchTranscriptParams,
   'managedRuntime.cancel': ManagedRuntimeCancelParams,
   'managedRuntime.install': ManagedRuntimeAgentParams,
   'managedRuntime.remove': ManagedRuntimeAgentParams,

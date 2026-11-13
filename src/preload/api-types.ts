@@ -38,6 +38,7 @@ import type { BitbucketApi, HostedReviewApi } from './api/hosted-review/hosted-r
 import type { JiraApi } from './api/work-items/jira-api'
 import type { LinearApi } from './api/work-items/linear-api'
 import type { MobileApi } from './api/mobile/mobile-api'
+import type { LiveSessionsApi } from './api/live-sessions/live-sessions-bridge'
 import type { NativeChatApi } from './api/native-chat/native-chat-api'
 import type { OnboardingApi, StarNagApi } from './api/onboarding/onboarding-api'
 import type { OrcaProfileApi } from './api/profiles/orca-profile-api'
@@ -126,6 +127,7 @@ export type PreloadApi = {
   keybindings: KeybindingsApi
   codexAccounts: CodexAccountsApi
   claudeAccounts: ClaudeAccountsApi
+  liveSessions: LiveSessionsApi
   cli: CliApi
   codexConfigSync: CodexConfigSyncApi
   preflight: PreflightApi
