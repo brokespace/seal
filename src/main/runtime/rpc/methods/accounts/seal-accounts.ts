@@ -21,12 +21,11 @@ import {
 } from '../../../../../shared/rpc-contract/seal-accounts-params'
 import { requireSealAccountManager } from '../../../../seal-accounts/seal-account-manager'
 import { addSealApiKey, removeSealApiKey } from '../../../../seal-accounts/seal-api-key-accounts'
-import { syncSealFleet } from '../../../../seal-accounts/seal-fleet-sync'
 import {
   importedCredentialKey,
   importSealCredential
 } from '../../../../seal-accounts/seal-credential-transfer'
-import { exportSealCredential } from '../../../../seal-accounts/seal-fleet-sync'
+import { exportSealCredential, syncSealFleet } from '../../../../seal-accounts/seal-fleet-sync'
 import { localLoginFreshness } from '../../../../seal-accounts/seal-fleet-credentials'
 import { recordFleetCopies, SEAL_DESKTOP_COPY } from '../../../../seal-accounts/seal-fleet-copies'
 import {

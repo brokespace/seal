@@ -41,6 +41,7 @@ function tokenIn(dir: string): string {
 }
 
 function manager(sessionHomes: string[]) {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: reconcile reads only these members of the manager
   return {
     services: { claudeRuntimeAuth: { router: { accountHome: () => join(root, 'account') } } },
     store: {

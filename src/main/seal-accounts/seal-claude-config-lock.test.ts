@@ -38,12 +38,14 @@ describe('withClaudeConfigLocks', () => {
     const home = join(root, 'home')
     mkdirSync(home)
     mkdirSync(`${home}.lock`)
+    // ast-grep-ignore: test-no-wall-clock -- proper-lockfile judges staleness by real mtime against the real clock
     const thirtySecondsAgo = new Date(Date.now() - 30_000)
     utimesSync(`${home}.lock`, thirtySecondsAgo, thirtySecondsAgo)
     let ran = false
     const work = withClaudeConfigLocks([home], async () => {
       ran = true
     })
+    // ast-grep-ignore: test-no-real-time-wait -- proving a lock is NOT taken needs a real window for its retries
     await new Promise((resolve) => setTimeout(resolve, 600))
     expect(ran).toBe(false)
     rmdirSync(`${home}.lock`)
