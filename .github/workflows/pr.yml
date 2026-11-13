@@ -1411,7 +1411,7 @@ jobs:
         run: pnpm exec electron-builder --config config/electron-builder.config.cjs --dir
 
       - name: Smoke packaged Windows PTY native capability
-        run: pnpm run smoke:windows-pty-native-capability -- --exe=dist/win-unpacked/Orca.exe
+        run: pnpm run smoke:windows-pty-native-capability -- --exe=dist/win-unpacked/Seal.exe
 
       - name: Smoke packaged CLI
         run: node config/scripts/desktop-distribution/runtime-verification/smoke-packaged-cli.mjs --app-dir=dist/win-unpacked
