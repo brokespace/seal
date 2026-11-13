@@ -599,12 +599,12 @@
     "quitAndStopAllSessionsTooltip": "También detiene todas las sesiones de terminal, incluidos los agentes en ejecución. Salir sin más las mantiene activas para que Orca se vuelva a conectar en el próximo inicio."
   },
   "tray": {
-    "openOrca": "Abrir Orca",
+    "openOrca": "Abrir Seal",
     "quit": "Salir",
     "minimizeNotice": {
-      "body": "Orca sigue ejecutándose en la bandeja del sistema"
+      "body": "Seal sigue ejecutándose en la bandeja del sistema"
     },
-    "activityWaiting": "Orca: actividad en espera",
+    "activityWaiting": "Seal: actividad en espera",
     "activityWaitingSuffix": "activity waiting"
   },
   "worktreeJumpPalette": {
@@ -688,7 +688,7 @@
       "df1d56bf87": "La vista del espacio de trabajo tuvo un error.",
       "9e0b441a91": "Alternar barra lateral derecha",
       "e81217c1b7": "Ocultar nombre de la aplicación",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "Menú de aplicaciones",
       "caea5b51b9": "Reiniciar ahora",
       "0a9e810705": "Hasta que reinicies, los cambios no se guardarán. Tus pestañas anteriores siguen guardadas en disco.",
@@ -4069,7 +4069,7 @@
             "bbcd9b7b85": "Contraer espacio de trabajo",
             "c4a8968bdd": "Expandir espacio de trabajo",
             "b10695d6ce": "Terminar sesión",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "Contraer Orca",
             "e419d27083": "Expandir Orca",
             "41ae4fa725": "Terminando…",
@@ -14809,7 +14809,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "Bienvenido a Orca",
           "adaa0aa627": "Vaya al paso de incorporación {{value0}}: {{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Incorporación de Orca",
           "97c42cda00": "Instale la CLI de GitHub para:",
           "ae3b00ca82": "Configurar tareas de GitHub",
@@ -15084,7 +15084,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "Escritorios",
             "af761a0c0d": "Ajustes",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "Enviar",
@@ -16750,7 +16750,7 @@
             "88fea8e84e": "No enviar",
             "50b00dc327": "Copiar detalles",
             "6d3ebe216a": "Texto de diagnóstico",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "Informe de fallo enviado.",
             "8b8473c544": "Se copió el informe de fallos.",
             "765591798d": "Comprobando informes de fallos...",
