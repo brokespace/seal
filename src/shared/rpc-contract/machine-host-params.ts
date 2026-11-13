@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import {
   MACHINE_HOST_LIST_PAGE_MAX,
   MACHINE_HOST_READ_CHUNK_MAX_BYTES,

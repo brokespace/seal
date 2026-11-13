@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import { parseExecutionHostId } from '../execution-host'
 import type { MachineSummary } from '../machines/machine-summaries'
 

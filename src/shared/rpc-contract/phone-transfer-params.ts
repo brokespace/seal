@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import { isValidBase64 } from './clipboard-params'
 
 /** Per-request payload budget, matching clipboard uploads so relay frames stay small. */

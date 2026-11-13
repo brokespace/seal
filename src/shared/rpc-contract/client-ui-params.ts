@@ -1,5 +1,5 @@
 import { GitHistoryRefName } from './git-params'
-import { z } from 'zod'
+import * as z from 'zod'
 import { isFeatureTipSeenId } from '../feature-tips'
 import {
   WORKTREE_CARD_PROPERTIES,
