@@ -125,11 +125,15 @@ export function SealAccountsPageView({
           {overview.total === 0
             ? t('seal.accounts.summary.none', 'No accounts yet.')
             : machineCount > 1
-              ? t(
-                  'seal.accounts.summary.fleet',
-                  '{{value0}} accounts across {{value1}} machines. Each card shows the machines that hold its login.',
-                  { value0: overview.total, value1: machineCount }
-                )
+              ? overview.total === 1
+                ? t('seal.accounts.summary.fleetOne', '1 account across {{value0}} machines.', {
+                    value0: machineCount
+                  })
+                : t(
+                    'seal.accounts.summary.fleet',
+                    '{{value0}} accounts across {{value1}} machines.',
+                    { value0: overview.total, value1: machineCount }
+                  )
               : overview.total === 1
                 ? t('seal.accounts.summary.one', '1 account on this computer.')
                 : t('seal.accounts.summary.local', '{{value0}} accounts on this computer.', {

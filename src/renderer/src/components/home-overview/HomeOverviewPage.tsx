@@ -52,7 +52,7 @@ function HomeOverviewContent(): React.JSX.Element {
 
   return (
     <div className="scrollbar-sleek flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 py-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 pt-6 pb-16">
         <header className="flex items-baseline justify-between gap-4">
           <h1 className="text-xl font-semibold text-foreground">
             {t('home.overview.title', 'Home')}
