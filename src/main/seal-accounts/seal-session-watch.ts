@@ -1,5 +1,4 @@
 import { SEAL_PROVIDERS } from '../../shared/seal-accounts/seal-accounts-config'
-import type { SealSessionAssignment } from '../../shared/seal-accounts/seal-accounts-status'
 import {
   decideSessionSwap,
   isRateLimitStop
@@ -11,41 +10,42 @@ import { loginIsCopied, reconcileClaudeLogin, reconcileCodexLogin } from './seal
 import { removeSessionHome } from './seal-session-homes'
 import { swapSealSession } from './seal-session-swap'
 import { sealSessionTerminal, type SealAgentStatusRow } from './seal-session-terminal'
+import { isLiveSealSession, SEAL_SESSION_TICK_MS } from './seal-usage-schedule'
 
-const TICK_MS = 60_000
+const TICK_MS = SEAL_SESSION_TICK_MS
 const USAGE_DEBOUNCE_MS = 3_000
 const LOGIN_UPKEEP_MS = 5 * 60_000
 // A pane must stay gone this long before its session home goes; a brief detach keeps it.
 const SESSION_HOME_GRACE_MS = 24 * 60 * 60_000
 const SPAWN_GRACE_MS = 2 * 60_000
 
-/** A session whose pane was seen open on a recent pass; others cannot be steered. */
-function isLive(session: SealSessionAssignment, now: number): boolean {
-  return !session.endedAt && !!session.paneKey && now - (session.lastSeenAt ?? 0) < 3 * TICK_MS
-}
-
 /**
- * The running-session half of auto-swap: watches each open session's own account, rate-limit
- * stops and dead logins, moves that session alone, keeps its login copies fresh, and cleans up
- * after it closes. Runs on every host (desktop and each remote runtime) for its own panes.
+ * The running-session half of auto-swap: after every usage poll (and once a minute) it checks each
+ * open session's own account against its 5h/7d lines and dead logins, moves that session alone,
+ * keeps its login copies fresh, and cleans up after it closes. A printed limit stop is only a
+ * last-resort fallback. Runs on every host (desktop and each remote runtime) for its own panes.
  */
 export class SealSessionWatch {
   private timer: ReturnType<typeof setTimeout> | null = null
   private running: Promise<void> | null = null
   private lastUpkeep = 0
   private disposed = false
-  private readonly unsubscribe: () => void
+  private readonly unsubscribe: (() => void)[]
 
   constructor(private readonly manager: SealAccountManager) {
-    this.unsubscribe = manager.services.rateLimits.onStateChange(() =>
-      this.schedule(USAGE_DEBOUNCE_MS)
-    )
+    const soon = () => this.schedule(USAGE_DEBOUNCE_MS)
+    this.unsubscribe = [
+      manager.services.rateLimits.onStateChange(soon),
+      manager.usage.onPolled(soon)
+    ]
     this.schedule(TICK_MS)
   }
 
   dispose(): void {
     this.disposed = true
-    this.unsubscribe()
+    for (const unsubscribe of this.unsubscribe) {
+      unsubscribe()
+    }
     clearTimeout(this.timer ?? undefined)
   }
 
@@ -71,6 +71,7 @@ export class SealSessionWatch {
   }
 
   private async runTick(): Promise<void> {
+    this.manager.syncUsageViewer()
     const terminal = sealSessionTerminal()
     if (terminal) {
       await this.trackPanes(terminal.handleForPane.bind(terminal))
@@ -117,9 +118,10 @@ export class SealSessionWatch {
   private async evaluate(rows: readonly SealAgentStatusRow[]): Promise<void> {
     const state = this.manager.store.getState()
     const now = this.manager.now()
-    for (const session of state.sessions.filter((entry) => isLive(entry, now))) {
+    for (const session of state.sessions.filter((entry) => isLiveSealSession(entry, now))) {
       const settings = this.manager.getConfig().autoSwap[session.provider]
       const row = session.paneKey ? rows.find((entry) => entry.paneKey === session.paneKey) : null
+      // Last-resort fallback only; polled usage decides first (decideSessionSwap).
       const rateLimited =
         !!row &&
         row.state !== 'working' &&

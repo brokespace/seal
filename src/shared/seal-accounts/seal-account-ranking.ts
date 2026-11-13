@@ -1,5 +1,6 @@
 import type { SealAutoSwapSettings, SealSwapStrategy } from './seal-accounts-config'
 import type { SealAccountCandidate, SealUsageWindow } from './seal-account-candidates'
+import { accountLines, bindingWindow, relevantWindows } from './seal-usage-lines'
 
 export type SealThresholdSettings = Pick<
   SealAutoSwapSettings,
@@ -66,25 +67,16 @@ export function isExhausted(pressure: SealAccountPressure): boolean {
   )
 }
 
-/** A swap target must sit `hysteresis` points under each threshold so two accounts cannot flap. */
-export function hasComfortableHeadroom(pressure: SealAccountPressure, hysteresis: number): boolean {
-  return (
-    (pressure.session === null || pressure.session < pressure.sessionThreshold - hysteresis) &&
-    (pressure.weekly === null || pressure.weekly < pressure.weeklyThreshold - hysteresis)
+function headroom(candidate: SealAccountCandidate, settings: SealThresholdSettings, now: number) {
+  const binding = bindingWindow(
+    relevantWindows(candidate, settings, now),
+    accountLines(candidate, settings)
   )
+  // Unknown usage ranks below any account known to have real room but stays usable for launches.
+  return binding ? binding.lineHeadroom : 25
 }
 
-function headroom(pressure: SealAccountPressure): number {
-  // Unknown usage ranks below any account known to have real room but stays usable.
-  if (!pressure.known) {
-    return 25
-  }
-  const session = pressure.session === null ? 100 : pressure.sessionThreshold - pressure.session
-  const weekly = pressure.weekly === null ? 100 : pressure.weeklyThreshold - pressure.weekly
-  return Math.min(session, weekly)
-}
-
-type Ranked = { candidate: SealAccountCandidate; pressure: SealAccountPressure }
+type Ranked = { candidate: SealAccountCandidate; pressure: SealAccountPressure; headroom: number }
 
 function compareTieBreak(a: Ranked, b: Ranked): number {
   return (
@@ -93,7 +85,7 @@ function compareTieBreak(a: Ranked, b: Ranked): number {
 }
 
 const COMPARATORS: Record<SealSwapStrategy, (a: Ranked, b: Ranked) => number> = {
-  best: (a, b) => headroom(b.pressure) - headroom(a.pressure) || compareTieBreak(a, b),
+  best: (a, b) => b.headroom - a.headroom || compareTieBreak(a, b),
   'weekly-first': (a, b) =>
     (a.pressure.weekly ?? 50) - (b.pressure.weekly ?? 50) ||
     (a.pressure.session ?? 50) - (b.pressure.session ?? 50) ||
@@ -112,7 +104,11 @@ export function rankCandidates(
   now: number
 ): SealAccountCandidate[] {
   return candidates
-    .map((candidate) => ({ candidate, pressure: accountPressure(candidate, settings, now) }))
+    .map((candidate) => ({
+      candidate,
+      pressure: accountPressure(candidate, settings, now),
+      headroom: headroom(candidate, settings, now)
+    }))
     .sort(COMPARATORS[strategy])
     .map((ranked) => ranked.candidate)
 }

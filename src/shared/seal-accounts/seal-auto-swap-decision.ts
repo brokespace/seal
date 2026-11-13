@@ -1,16 +1,18 @@
 import type { SealAccountKey, SealAutoSwapSettings } from './seal-accounts-config'
 import type { SealAccountCandidate } from './seal-account-candidates'
 import { isAllowedByPolicy, type ResolvedSealPolicy } from './seal-account-policy'
+import { rankCandidates } from './seal-account-ranking'
 import {
-  accountPressure,
-  hasComfortableHeadroom,
-  isExhausted,
-  rankCandidates
-} from './seal-account-ranking'
+  accountLines,
+  bindingWindow,
+  lineRoom,
+  rawHeadroom,
+  relevantWindows
+} from './seal-usage-lines'
 
 export type SealQuarantine = Readonly<Record<SealAccountKey, { until: number; reason: string }>>
 
-/** `rate-limit` is a session that reported hitting its limit before usage polling saw it. */
+/** `rate-limit` is the last-resort fallback: a session printed a limit stop usage polling missed. */
 export type SealSwapReason = 'threshold' | 'auth-failure' | 'not-allowed' | 'rate-limit'
 
 export type SealAutoSwapDecision =
@@ -81,10 +83,49 @@ export function apiKeyFallbackTargets(
     .sort((a, b) => a.priority - b.priority || a.key.localeCompare(b.key))
 }
 
+type SealSwapTrigger = 'proactive' | 'escape'
+
 /**
- * claude-swap's loop for one provider on one machine: leave an account once it crosses a
- * threshold (or its login dies, or policy forbids it), only for an account comfortably under
- * every threshold, and never twice within the cooldown unless the current login is dead.
+ * Whether `candidate` may take over from an account with `activeLineHeadroom`, per claude-swap's
+ * `best` landing rules: it reports usage, can serve requests, sits under every one of its own
+ * lines, and (on a proactive move) beats the current account by the hysteresis margin.
+ */
+export function isSwapLanding(
+  candidate: SealAccountCandidate,
+  options: {
+    settings: SealAutoSwapSettings
+    trigger: SealSwapTrigger
+    activeLineHeadroom: number
+    now: number
+  }
+): boolean {
+  const { settings, now } = options
+  const windows = relevantWindows(candidate, settings, now)
+  const lines = accountLines(candidate, settings)
+  const binding = bindingWindow(windows, lines)
+  const raw = rawHeadroom(windows)
+  if (!binding || raw === null || raw <= 0 || binding.over) {
+    return false
+  }
+  if (options.trigger !== 'proactive') {
+    return true
+  }
+  switch (settings.strategy) {
+    case 'consume-first':
+      return (lineRoom(windows, lines) ?? 0) >= settings.hysteresis
+    case 'priority':
+      return true
+    default:
+      return binding.lineHeadroom - options.activeLineHeadroom >= settings.hysteresis
+  }
+}
+
+/**
+ * claude-swap's `cswap auto` decision for one provider on one machine. Leave the current account
+ * once any window crosses its line (5h against the session line, 7d and per-model windows against
+ * the weekly line), immediately when a window is full or the login died, and land only on an
+ * account under all of its lines. A proactive move waits out the cooldown and needs the
+ * hysteresis margin of extra headroom, so two accounts near a line never ping-pong.
  */
 export function decideAutoSwap(input: SealAutoSwapInput): SealAutoSwapDecision {
   const { settings, candidates, policy, quarantine, now } = input
@@ -97,29 +138,30 @@ export function decideAutoSwap(input: SealAutoSwapInput): SealAutoSwapDecision {
   }
   const authDead = current.authFailure && settings.failoverOnAuthError && current.kind !== 'api-key'
   const notAllowed = !isAllowedByPolicy(policy, current.key)
-  const exhausted = isExhausted(accountPressure(current, settings, now))
+  const windows = relevantWindows(current, settings, now)
+  const binding = bindingWindow(windows, accountLines(current, settings))
+  const raw = rawHeadroom(windows)
+  const atLimit = raw !== null && raw <= 0
   const reason: SealSwapReason | null = authDead
     ? 'auth-failure'
     : notAllowed
       ? 'not-allowed'
-      : exhausted
+      : binding?.over
         ? 'threshold'
         : null
   if (reason === null) {
     return { kind: 'stay', reason: 'healthy' }
   }
+  const trigger: SealSwapTrigger = reason === 'threshold' && !atLimit ? 'proactive' : 'escape'
   const cooldownMs = settings.cooldownMinutes * 60_000
-  if (reason === 'threshold' && input.lastSwapAt !== null && now - input.lastSwapAt < cooldownMs) {
+  if (trigger === 'proactive' && input.lastSwapAt !== null && now - input.lastSwapAt < cooldownMs) {
     return { kind: 'stay', reason: 'cooldown' }
   }
-  const targets = eligibleTargets(candidates, {
-    policy,
-    quarantine,
-    now
-  }).filter(
+  const activeLineHeadroom = binding?.lineHeadroom ?? raw ?? 0
+  const targets = eligibleTargets(candidates, { policy, quarantine, now }).filter(
     (candidate) =>
       candidate.key !== current.key &&
-      hasComfortableHeadroom(accountPressure(candidate, settings, now), settings.hysteresis)
+      isSwapLanding(candidate, { settings, trigger, activeLineHeadroom, now })
   )
   const [best] = rankCandidates(targets, settings.strategy, settings, now)
   if (!best) {
@@ -146,7 +188,7 @@ export function describeAutoSwapDecision(decision: SealAutoSwapDecision): string
     case 'cooldown':
       return 'Over a threshold; waiting out the cooldown before switching again.'
     case 'no-candidate':
-      return 'Over a threshold, but no other allowed account has room.'
+      return 'Over a threshold, but no other allowed account is comfortably under its limits.'
     case 'no-current':
       return 'No account is selected on this machine.'
   }

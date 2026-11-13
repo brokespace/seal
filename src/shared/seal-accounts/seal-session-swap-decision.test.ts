@@ -93,11 +93,65 @@ describe('decideSessionSwap', () => {
     })
   })
 
-  it('treats a reported limit stop as exhausted before polling catches up', () => {
-    const decision = decide([account('claude:a@x.io', 40), account('claude:b@x.io', 10)], {
-      session: { rateLimited: true }
+  it('moves a session at 91% of its 5h window, before the limit, with no limit message', () => {
+    // Defaults: claude-swap's 90% line; the host-wide auto-swap toggle stays off.
+    const decision = decide([account('claude:a@x.io', 91), account('claude:b@x.io', 30)], {
+      settings: defaultSealAutoSwapSettings()
     })
-    expect(decision).toMatchObject({ kind: 'swap', reason: 'rate-limit', delivery: 'live' })
+    expect(decision).toMatchObject({
+      kind: 'swap',
+      to: { key: 'claude:b@x.io' },
+      reason: 'threshold',
+      delivery: 'live'
+    })
+  })
+
+  it('keeps a session at 89% where it is', () => {
+    const decision = decide([account('claude:a@x.io', 89), account('claude:b@x.io', 0)], {
+      settings: defaultSealAutoSwapSettings()
+    })
+    expect(decision).toEqual({ kind: 'stay', reason: 'healthy' })
+  })
+
+  it('moves a session whose 7-day window crosses its line while the 5h window has room', () => {
+    const weeklyFull = account('claude:a@x.io', 20)
+    const decision = decide(
+      [
+        {
+          ...weeklyFull,
+          usage: weeklyFull.usage && {
+            ...weeklyFull.usage,
+            weekly: { usedPercent: 92, resetsAt: NOW + 86_400_000 }
+          }
+        },
+        account('claude:b@x.io', 10)
+      ],
+      { settings: defaultSealAutoSwapSettings() }
+    )
+    expect(decision).toMatchObject({ kind: 'swap', to: { key: 'claude:b@x.io' } })
+  })
+
+  it('never moves onto an account that is close to its own line', () => {
+    // 95% -> 88% gains 7 points of headroom, under claude-swap's 10-point margin.
+    const decision = decide([account('claude:a@x.io', 95), account('claude:b@x.io', 88)], {
+      settings: defaultSealAutoSwapSettings()
+    })
+    expect(decision).toEqual({ kind: 'stay', reason: 'no-candidate' })
+  })
+
+  it('falls back to a printed limit stop only when usage shows nothing, and only if allowed', () => {
+    const accounts = [account('claude:a@x.io', 40), account('claude:b@x.io', 10)]
+    expect(decide(accounts, { session: { rateLimited: true } })).toMatchObject({
+      kind: 'swap',
+      reason: 'rate-limit',
+      delivery: 'live'
+    })
+    expect(
+      decide(accounts, {
+        session: { rateLimited: true },
+        settings: { ...enabled, rateLimitFallback: false }
+      })
+    ).toEqual({ kind: 'stay', reason: 'healthy' })
   })
 
   it('resumes a Codex session near its limit, since Codex only reloads auth after a 401', () => {
