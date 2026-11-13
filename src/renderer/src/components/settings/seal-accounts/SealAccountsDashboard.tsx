@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useAppStore } from '@/store'
+import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import { useTranslate } from '@/i18n/use-translate'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
@@ -15,6 +16,7 @@ type SyncResult = {
     environmentId: string
     ok: boolean
     error: string | null
+    policyApplied?: boolean
     credentials: { account: string; ok: boolean; error: string | null }[]
   }[]
 }
@@ -28,16 +30,22 @@ export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget 
   const t = useTranslate()
   const { status, readAt, error, refreshing, refresh, mutate } = useSealAccounts(target)
   const runtimeEnvironments = useAppStore((s) => s.runtimeEnvironments)
-  const fleetHosts = useMemo(
-    () =>
-      target.kind === 'local'
-        ? runtimeEnvironments.map((environment) => ({
-            id: environment.id,
-            label: environment.name
-          }))
-        : null,
-    [runtimeEnvironments, target.kind]
-  )
+  const { machines } = useMachinesInventory('')
+  // The desktop pushes to every machine, however it connects; the web client only knows servers.
+  const fleetHosts = useMemo(() => {
+    if (target.kind !== 'local') {
+      return null
+    }
+    if (window.api.machines) {
+      return machines
+        .filter((machine) => machine.connection !== 'local')
+        .map((machine) => ({ id: machine.id, label: machine.label }))
+    }
+    return runtimeEnvironments.map((environment) => ({
+      id: environment.id,
+      label: environment.name
+    }))
+  }, [machines, runtimeEnvironments, target.kind])
 
   const failed = t('seal.accounts.error', 'Could not update accounts')
   const actions: SealAccountsActions = {
@@ -87,7 +95,12 @@ export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget 
         const { results } = await callRuntimeRpc<SyncResult>(
           target,
           'seal.accounts.syncFleet',
-          { environmentIds: [environmentId], ...(accounts ? { accounts } : {}) },
+          {
+            ...(environmentId.startsWith('machine:')
+              ? { machineIds: [environmentId] }
+              : { environmentIds: [environmentId] }),
+            ...(accounts ? { accounts } : {})
+          },
           { timeoutMs: 120_000 }
         )
         const result = results[0]
@@ -98,6 +111,13 @@ export function SealAccountsDashboard({ target }: { target: RuntimeClientTarget 
         }
         const copied = result.credentials.filter((credential) => credential.ok).length
         const failedLogins = result.credentials.length - copied
+        if (result.policyApplied === false) {
+          return t(
+            'seal.accounts.fleet.loginsOnly',
+            '{{value0}} logins installed ({{value1}} failed). Swap rules run only where a Seal server runs.',
+            { value0: copied, value1: failedLogins }
+          )
+        }
         return failedLogins > 0
           ? t(
               'seal.accounts.fleet.partial',

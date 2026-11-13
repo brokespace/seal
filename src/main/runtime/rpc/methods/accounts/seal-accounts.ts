@@ -194,7 +194,8 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
       if (context.clientKind !== undefined) {
         throw new Error('Push accounts from the Seal desktop app or its CLI.')
       }
-      return { results: await syncSealFleet(accounts(), params.environmentIds, params.accounts) }
+      const targets = [...(params.environmentIds ?? []), ...(params.machineIds ?? [])]
+      return { results: await syncSealFleet(accounts(), targets, params.accounts) }
     }
   }),
   defineMethod({
