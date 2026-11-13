@@ -236,6 +236,7 @@ export function createSealSignInFlows(manager: SealAccountManager): SealSignInFl
             codexLoginUrl = listener
           }))
       manager.loginExpiry.invalidate()
+      manager.usage.forget(seal.accountKey)
       manager.store.updateState((next) => {
         delete next.quarantine[seal.accountKey]
       })

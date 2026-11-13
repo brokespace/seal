@@ -87,7 +87,7 @@ export class SealAccountManager {
 
   start(): void {
     this.unsubscribeUsage = this.services.rateLimits.onStateChange(() => this.scheduleEvaluation())
-    this.syncUsageViewer()
+    this.usage.sync()
     this.migrated = runSealAccountsMigration(this).catch((error: unknown) => {
       console.warn('[seal-accounts] Could not merge duplicate accounts:', error)
     })
@@ -189,16 +189,13 @@ export class SealAccountManager {
       rateLimits.refreshIfStale(),
       rateLimits.fetchInactiveClaudeAccountsOnOpen(),
       rateLimits.fetchInactiveCodexAccountsOnOpen(),
-      this.loginExpiry.refresh(this)
+      this.loginExpiry.refresh(this),
+      this.usage.refreshNow()
     ])
   }
 
   private anyAutoSwapEnabled(): boolean {
     return SEAL_PROVIDERS.some((provider) => this.getConfig().autoSwap[provider].enabled)
-  }
-
-  syncUsageViewer(): void {
-    this.usage.sync()
   }
 
   private scheduleEvaluation(): void {
@@ -291,7 +288,7 @@ export class SealAccountManager {
 
   saveConfig(config: SealAccountsConfig): void {
     this.store.saveConfig({ ...config, updatedAt: this.now() })
-    this.syncUsageViewer()
+    this.usage.sync()
     this.scheduleEvaluation()
   }
 
@@ -301,7 +298,7 @@ export class SealAccountManager {
     this.store.updateState((next) => {
       next.machineKey = machineKey
     })
-    this.syncUsageViewer()
+    this.usage.sync()
     this.scheduleEvaluation()
   }
 
