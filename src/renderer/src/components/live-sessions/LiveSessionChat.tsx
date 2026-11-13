@@ -11,6 +11,7 @@ import type { LiveTranscriptState } from './use-live-transcript'
 import type { PendingRow } from './live-session-pending-rows'
 import { LiveSessionComposer } from './LiveSessionComposer'
 import { LiveSessionTakeOverButton } from './take-over/LiveSessionTakeOverButton'
+import { LiveSessionRemoveButton } from './remove/LiveSessionRemoveButton'
 import {
   liveMessageStateLabel,
   liveSessionDotState,
@@ -110,6 +111,7 @@ export function LiveSessionChat({
           </p>
         </div>
         <LiveSessionTakeOverButton session={session} />
+        <LiveSessionRemoveButton session={session} />
       </header>
       <div className="flex min-h-0 flex-1 flex-col">
         <NativeChatMessageList

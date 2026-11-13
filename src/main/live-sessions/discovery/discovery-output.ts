@@ -21,6 +21,16 @@ export type DiscoveredPane = {
   screen: string | null
 }
 
+/** How the script tied a transcript to a running agent; `cwd` is only a guess for listing it. */
+export type TranscriptPinKind = 'open' | 'hook' | 'id' | 'cwd'
+
+export type TranscriptPin = {
+  pid: number
+  kind: TranscriptPinKind
+  provider: LiveSessionProvider
+  path: string
+}
+
 export type DiscoveredFile = {
   provider: LiveSessionProvider
   path: string
@@ -39,9 +49,18 @@ export type DiscoveryOutput = {
   hookStates: { path: string; text: string }[]
   /** Claude Code's own registry of running sessions (`~/.claude/sessions/<pid>.json`): pid → session. */
   claudeSessions: { pid: number; sessionId: string }[]
+  /** Transcripts running agents own, listed whatever their age. */
+  pins: TranscriptPin[]
   files: DiscoveredFile[]
   /** The script ran to its end; a cut-off scan must not drop sessions. */
   complete: boolean
+}
+
+const PIN_KINDS: Partial<Record<string, TranscriptPinKind>> = {
+  open: 'open',
+  hook: 'hook',
+  id: 'id',
+  cwd: 'cwd'
 }
 
 function decode(b64: string): string {
@@ -70,6 +89,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
     panes: [],
     hookStates: [],
     claudeSessions: [],
+    pins: [],
     files: [],
     complete: false
   }
@@ -145,6 +165,19 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
       case 'HOOK': {
         const { path, payload } = pathAndPayload(rest)
         out.hookStates.push({ path, text: decode(payload) })
+        break
+      }
+      case 'PIN': {
+        const m = /^(\d+) (\w+) (claude|codex) (.+)$/.exec(rest)
+        const kind = m ? PIN_KINDS[m[2]] : undefined
+        if (m && kind) {
+          out.pins.push({
+            pid: Number(m[1]),
+            kind,
+            provider: m[3] === 'codex' ? 'codex' : 'claude',
+            path: m[4]
+          })
+        }
         break
       }
       case 'FILE': {

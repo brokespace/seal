@@ -10,9 +10,11 @@ import type {
   LiveTranscriptCursor,
   LiveTranscriptDelta,
   LiveTakeOverResult,
-  LiveTranscriptPage
+  LiveTranscriptPage,
+  LiveRemoveRequest,
+  LiveRemoveResult
 } from '../../shared/live-sessions/live-session-types'
-import { LiveSessionRegistry } from './live-session-registry'
+import { LiveSessionRegistry, type LiveSessionRegistryDeps } from './live-session-registry'
 import {
   LiveTranscriptStreams,
   type LiveTranscriptSubscription
@@ -24,6 +26,7 @@ import { userTextsOf, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
+import { LiveSessionRemovals, removeFromHost } from './delivery/session-removal'
 
 export type LiveSessionServiceDeps = {
   userDataPath: string
@@ -33,6 +36,7 @@ export type LiveSessionServiceDeps = {
     input: SealPaneInput
     subscribe: (onChange: () => void) => () => void
   }
+  onHostScanned?: LiveSessionRegistryDeps['onHostScanned']
   log?: (message: string, error?: unknown) => void
 }
 
@@ -48,13 +52,20 @@ export class LiveSessionService {
   private readonly routes: SessionInputRoutes
   private readonly outbox: LiveMessageOutbox
   private readonly messageListeners = new Set<(message: LiveMessage) => void>()
+  private readonly removals: LiveSessionRemovals
 
   constructor(deps: LiveSessionServiceDeps) {
+    this.removals = new LiveSessionRemovals(
+      join(deps.userDataPath, 'live-sessions', 'removed.json'),
+      deps.log
+    )
     this.registry = new LiveSessionRegistry({
+      isRemoved: (session) => this.removals.has(session.id),
       localMachine: { hostId: LOCAL_HOST_ID, label: hostname(), kind: 'local' },
       hosts: deps.hosts,
       sealPanes: () => deps.sealPanes?.panes() ?? [],
       subscribeSealPanes: deps.sealPanes?.subscribe,
+      onHostScanned: deps.onHostScanned,
       log: deps.log
     })
     this.streams = new LiveTranscriptStreams(this.registry, { log: deps.log })
@@ -90,7 +101,8 @@ export class LiveSessionService {
         this.outbox.renameSession(event.sessionId, event.replacedBy)
       }
     })
-    this.registry.start()
+    // Removed sessions must not flash back in before the list is read.
+    void this.removals.load().finally(() => this.registry.start())
     void this.outbox.start()
   }
 
@@ -173,6 +185,36 @@ export class LiveSessionService {
     }))
     if (session) {
       void this.registry.refresh(session.machine.hostId)
+    }
+    return result
+  }
+
+  /** Hides sessions for good; stops them and deletes their transcripts first when asked. */
+  async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
+    const result: LiveRemoveResult = { removed: [], failed: [] }
+    const hostIds = new Set<string>()
+    for (const sessionId of new Set(request.sessionIds)) {
+      const session = this.registry.get(sessionId)
+      const host = session ? this.registry.host(session.machine.hostId) : null
+      try {
+        const outcome = session && host ? await removeFromHost(session, host, request) : 'removed'
+        if (outcome === 'removed') {
+          result.removed.push(sessionId)
+        } else {
+          result.failed.push({ sessionId, reason: outcome })
+        }
+        if (session) {
+          hostIds.add(session.machine.hostId)
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        result.failed.push({ sessionId, reason: 'failed', error: message })
+      }
+    }
+    this.removals.add(result.removed, Date.now())
+    this.registry.republish()
+    for (const hostId of hostIds) {
+      void this.registry.refresh(hostId)
     }
     return result
   }

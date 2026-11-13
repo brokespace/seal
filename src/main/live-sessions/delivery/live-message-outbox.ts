@@ -2,11 +2,12 @@ import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
 import { confirmSent, sentBySession } from './live-message-confirmation'
-import { LiveMessageStore } from './live-message-store'
+import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
   DEFAULT_OUTBOX_TIMING,
   publicView,
   type LiveMessageOutboxDeps,
+  isOutboxItem,
   type OutboxItem as Item
 } from './live-message-outbox-types'
 
@@ -33,7 +34,7 @@ export class LiveMessageOutbox {
   private readonly timing: typeof DEFAULT_OUTBOX_TIMING
   private confirmTimer: ReturnType<typeof setTimeout> | null = null
   private confirming = false
-  private readonly store: LiveMessageStore<Item>
+  private readonly store: LiveSessionJsonStore<Item>
   private started: Promise<void> | null = null
   private readonly abort = new AbortController()
 
@@ -41,7 +42,7 @@ export class LiveMessageOutbox {
     this.now = deps.now ?? Date.now
     this.sleep = deps.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))
     this.timing = { ...DEFAULT_OUTBOX_TIMING, ...deps.timing }
-    this.store = new LiveMessageStore(deps.storePath, deps.log)
+    this.store = new LiveSessionJsonStore(deps.storePath, isOutboxItem, deps.log)
   }
 
   start(): Promise<void> {

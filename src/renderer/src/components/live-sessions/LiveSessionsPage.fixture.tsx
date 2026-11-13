@@ -261,3 +261,61 @@ export const takeOver = defineFixture({
       .find((button) => button.textContent === 'Take over')
       ?.click()
 })
+
+const server = { hostId: 'runtime:kessel', label: 'kessel-ml', kind: 'runtime' } as const
+const serverSessions: LiveSession[] = [
+  ...sessions.slice(0, 2),
+  session({
+    id: 'k1',
+    machine: server,
+    cwd: '/home/brian/ml/train',
+    project: 'train',
+    title: 'Sweep learning rates on the sonnet eval',
+    status: 'working',
+    startedAt: NOW - 3 * 86_400_000,
+    lastActivityAt: NOW - 20_000,
+    inputRoutes: [{ kind: 'tmux', target: '%0' }]
+  }),
+  session({
+    id: 'k2',
+    machine: server,
+    cwd: '/home/brian/ml/data',
+    project: 'data',
+    title: 'Dedupe the crawl shards',
+    status: 'waiting-input',
+    startedAt: NOW - 3 * 86_400_000,
+    lastActivityAt: NOW - 2 * 86_400_000,
+    inputRoutes: [{ kind: 'tmux', target: '%36' }]
+  })
+]
+
+export const pairedServers = defineFixture({
+  width: 1100,
+  render: () => (
+    <div className="flex h-[640px]">
+      <LiveSessionsView
+        loaded
+        sessions={serverSessions}
+        hostErrors={{
+          'runtime:old':
+            'gpu-box runs an older Seal: update Seal on this server to see and message its agent sessions'
+        }}
+        selectedId="k1"
+        onSelect={noop}
+        onRefresh={noop}
+        now={NOW}
+        chat={
+          <LiveSessionChat
+            session={serverSessions[2]}
+            transcript={chatTranscript}
+            pending={[]}
+            onSend={noop}
+            onRetry={noop}
+            onAnswer={noop}
+            answering={null}
+          />
+        }
+      />
+    </div>
+  )
+})
