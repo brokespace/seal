@@ -7,6 +7,7 @@ import { SERVE_PAIRING_HANDLER_GROUPS } from '../server/serve-pairing-handler-gr
 import { PLUGIN_HANDLER_GROUPS } from '../plugins/plugin-handler-groups'
 import { HOST_HANDLER_GROUPS } from '../hosts/host-handler-groups'
 import { WORKTREE_HANDLER_GROUPS } from '../workspaces/worktree-handler-groups'
+import { SEAL_ACCOUNT_HANDLER_GROUPS } from '../accounts/seal-account-handler-groups'
 
 export type HandlerGroup = {
   name: string
@@ -41,31 +42,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['account add', 'account list', 'account select', 'account rm'],
     load: async () => (await import('../accounts/account.js')).ACCOUNT_HANDLERS
   },
-  {
-    name: 'seal-account',
-    keys: [
-      'account usage',
-      'account current',
-      'account swap',
-      'account pick',
-      'account alias',
-      'account autoswap',
-      'account policy list',
-      'account policy set',
-      'account policy rm',
-      'account pin',
-      'account key add',
-      'account key rm',
-      'account sync',
-      'account sessions'
-    ],
-    load: async () => (await import('../accounts/seal-account-commands.js')).SEAL_ACCOUNT_HANDLERS
-  },
-  {
-    name: 'seal-session',
-    keys: ['account session swap', 'account session live'],
-    load: async () => (await import('../accounts/seal-session-commands.js')).SEAL_SESSION_HANDLERS
-  },
+  ...SEAL_ACCOUNT_HANDLER_GROUPS,
   {
     name: 'artifacts',
     keys: [

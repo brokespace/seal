@@ -25,12 +25,8 @@ import {
   SEAL_ACCOUNT_KEY_ENV,
   SEAL_ACCOUNT_LABEL_ENV
 } from '../../shared/seal-accounts/seal-launch-env'
-import {
-  formatPick,
-  formatPolicies,
-  formatProviderStatus,
-  formatSessions
-} from './seal-account-format'
+import { formatPick, formatPolicies, formatSessions } from './seal-account-format'
+import { formatSealAccountsTable } from './seal-account-table'
 
 function provider(ctx: HandlerContext): SealProvider {
   const value = getRequiredStringFlag(ctx.flags, 'agent')
@@ -89,9 +85,7 @@ function printStatus(
   providers = [...SEAL_PROVIDERS]
 ) {
   const now = Date.now()
-  printResult(response, ctx.json, (value) =>
-    providers.map((entry) => formatProviderStatus(entry, value, now)).join('\n\n')
-  )
+  printResult(response, ctx.json, (value) => formatSealAccountsTable(value, providers, now))
 }
 
 function profilePatch(
@@ -160,7 +154,7 @@ export const SEAL_ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
       for (const entry of providers) {
         const active = value.providers[entry].candidates.find((candidate) => candidate.active)
         lines.push(
-          `${entry} on ${value.machineKey}: ${active ? `${active.label} (${active.key})` : 'system default'}`
+          `${entry} on ${value.machineKey}: ${active ? `${active.label} (${active.key})` : 'no account'}`
         )
       }
       return lines.join('\n')

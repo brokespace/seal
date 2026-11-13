@@ -14,6 +14,7 @@ import type {
 } from '../../shared/managed-account-types'
 import type { RuntimeStatus } from '../../shared/runtime-session-contracts'
 import { getWslAccountTarget } from './account-wsl-location'
+import { listSealProviderAccounts } from './seal-account-table'
 import {
   formatAccountsBlock,
   formatAntigravityAccounts,
@@ -56,22 +57,18 @@ function emailChoices(state: { accounts: readonly { id: string; email: string }[
 
 function claudeAccounts({ client, json }: HandlerContext): ProviderAccounts {
   const read = () => client.call<ClaudeCodexSnapshot>('accounts.list', { refreshUsage: false })
+  const formatClaude = (state: ClaudeRateLimitAccountsState) => formatAccountsBlock('Claude', state)
   const print = async (method: string, accountId: string | null) =>
     printResult(
       await client.call<ClaudeRateLimitAccountsState>(method, { accountId }),
       json,
-      (state) => formatAccountsBlock('Claude', state)
+      formatClaude
     )
   return {
     label: 'Claude',
     hasSystemDefault: true,
     choices: async () => emailChoices((await read()).result.claude),
-    list: async () => {
-      const response = await read()
-      printResult({ ...response, result: response.result.claude }, json, (state) =>
-        formatAccountsBlock('Claude', state)
-      )
-    },
+    list: () => listSealProviderAccounts({ client, json }, 'claude'),
     select: (accountId) => print('accounts.selectClaude', accountId),
     remove: (accountId) => print('accounts.removeClaude', accountId)
   }
@@ -85,10 +82,7 @@ function codexAccounts({ client, cwd, json }: HandlerContext): ProviderAccounts 
     label: 'Codex',
     hasSystemDefault: true,
     choices: async () => emailChoices((await read()).result.codex),
-    list: async () => {
-      const response = await read()
-      printResult({ ...response, result: response.result.codex }, json, format)
-    },
+    list: () => listSealProviderAccounts({ client, json }, 'codex'),
     // Why ForTarget from WSL: plain selectCodex always writes the Windows host slot.
     select: async (accountId) =>
       printResult(
@@ -295,7 +289,7 @@ export async function selectAgentAccount(ctx: HandlerContext): Promise<void> {
   if (agent === 'claude' && query === 'system' && getWslAccountTarget(ctx.cwd)) {
     throw new RuntimeClientError(
       'invalid_argument',
-      'Select the Claude system default for a WSL distro in Orca Settings > AI Provider Accounts.'
+      'Select the Claude system default for a WSL distro in Seal Settings > Accounts.'
     )
   }
   const provider = providerAccounts(ctx, agent)
