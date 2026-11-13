@@ -46,7 +46,8 @@ export type ClaudeStreamJsonLaunch = {
   /** Orca's resolved user CLI; the SDK falls back to a bundled binary that is not installed. */
   pathToClaudeCodeExecutable: string
   prefixArgs?: readonly string[]
-  options: ClaudeStructuredSdkOptions
+  options: ClaudeStructuredSdkOptions &
+    Pick<ClaudeAgentSdk.Options, 'mcpServers' | 'allowedTools' | 'disallowedTools'>
   cwd: string
   env?: Record<string, string>
   /** Delete these keys after merging inherited and launch env. */

@@ -63,6 +63,7 @@ import type { ShellApi } from './api/terminal/shell-api'
 import type { SpeechApi } from './api/speech/speech-api'
 import type { SshApi } from './api/ssh/ssh-api'
 import type { PlainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
+import type { HomeChatApi } from './api/home-chat/home-chat-api'
 import type { LegacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import type {
   DiagnosticsApi,
@@ -176,6 +177,8 @@ export type PreloadApi = {
   ssh: SshApi
   /** Desktop only: an unmanaged ssh login to a host whose move is blocked. */
   plainSsh?: PlainSshTerminalApi
+  /** Desktop only: the home-page assistant chat. */
+  homeChat?: HomeChatApi
   /** COMPAT(legacy-relay-bridge): desktop-only, revisit 2027-01-15. */
   legacyRelayBridge?: LegacyRelayBridgeApi
   automations: AutomationsApi
