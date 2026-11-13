@@ -105,12 +105,12 @@ grep 'Pairing URL' ~/seal-serve.log        # the access link for the Mac
   --port 6768 --bind "$TS_IP" --pairing-address "$TS_IP"
 loginctl enable-linger "$USER"             # keep it running after logout
 ~/.local/bin/seal serve service status
-journalctl --user -u orca-serve.service -f
+journalctl --user -u seal-serve.service -f
 ~/.local/bin/seal pair --address "$TS_IP"  # the service never logs a link; mint one here
 ```
 
-The unit is named `orca-serve.service` (upstream's name), so do not install it next to an
-Orca server on the same account. Remove it with `seal serve service uninstall`.
+The unit is named `seal-serve.service`, so it can run next to an Orca server's
+`orca-serve.service` on the same account. Remove it with `seal serve service uninstall`.
 
 If the server is bound to `127.0.0.1` (for SSH tunnelling), `seal pair` cannot expose it for
 pairing; use the `Pairing URL` printed at startup and connect through
@@ -118,7 +118,7 @@ pairing; use the `Pairing URL` printed at startup and connect through
 
 ### Connect the Mac
 
-In Seal on the Mac: Settings → **Remote Orca Servers** → **Add server**, name it, paste the
+In Seal on the Mac: Settings → **Remote Seal Servers** → **Add server**, name it, paste the
 pairing URL, **Add server**, then **Connect** if it shows Disconnected. Keep both machines on
 the same tailnet or LAN; never expose the port to the internet.
 

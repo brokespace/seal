@@ -15,8 +15,8 @@ Shell integration covers the rest: a Claude session started in a plain terminal 
 On this computer, either:
 
 - **Settings › Agents › Shell integration on this computer › Install**, or
-- `seal shell-integration install` in a terminal. (Seal's CLI is installed as `orca`, so the command is
-  `seal shell-integration install`.)
+- `seal shell-integration install` in a terminal. (Inside Seal terminals the same CLI also runs as
+  `orca`.)
 
 Then open a new terminal tab, or run `exec $SHELL`.
 

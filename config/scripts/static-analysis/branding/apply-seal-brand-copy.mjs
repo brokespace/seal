@@ -47,8 +47,13 @@ const SKIPPED_PATHS = [
   'config/scripts/skills/',
   'config/scripts/static-analysis/branding/'
 ]
-// Upstream-sync instructions name Orca on purpose.
-const SKIPPED_DOCS = new Set(['docs/UPSTREAM.md'])
+// Upstream-sync instructions and side-by-side guides name an installed Orca on purpose.
+const SKIPPED_DOCS = new Set([
+  'docs/UPSTREAM.md',
+  'docs/TESTING-seal-all.md',
+  'docs/live-sessions-input.md',
+  'docs/live-sessions-shell-integration.md'
+])
 
 function walkFiles(dir, extensions, files = []) {
   let entries
