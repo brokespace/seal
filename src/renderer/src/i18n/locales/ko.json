@@ -1535,8 +1535,6 @@
         "d91ae31fbd": "macOS 권한",
         "95a1886d94": "휴대폰에서 terminals과 agents를 제어하세요.",
         "1cd25673df": "모바일",
-        "31e57d1c70": "SSH를 통해 기존 머신의 파일, terminals, Git, 워크스페이스를 사용합니다.",
-        "94a5afe910": "SSH 호스트",
         "40d80bad8a": "베타",
         "de0c2907a1": "원격 Orca 서버",
         "b351014180": "Orca 통계와 Claude, Codex, OpenCode, Muse 토큰 분석 및 Grok 구독 사용량.",

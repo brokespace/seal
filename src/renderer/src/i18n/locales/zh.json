@@ -1721,8 +1721,6 @@
         "d91ae31fbd": "macOS 权限",
         "95a1886d94": "用手机控制终端和代理",
         "1cd25673df": "移动端",
-        "31e57d1c70": "通过 SSH 在已有机器上处理文件、终端、Git 和工作区",
-        "94a5afe910": "SSH 主机",
         "40d80bad8a": "测试版",
         "de0c2907a1": "远程 Orca 服务器",
         "b351014180": "Orca 统计，以及 Claude、Codex、OpenCode、Muse Token 分析和 Grok 订阅使用量",

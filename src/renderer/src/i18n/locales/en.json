@@ -2567,8 +2567,6 @@
         "d91ae31fbd": "macOS Permissions",
         "95a1886d94": "Control terminals and agents from your phone.",
         "1cd25673df": "Mobile",
-        "31e57d1c70": "Use existing machines over SSH for files, terminals, Git, and workspaces.",
-        "94a5afe910": "SSH Hosts",
         "40d80bad8a": "Beta",
         "de0c2907a1": "Remote Orca Servers",
         "b351014180": "Orca stats plus Claude, Codex, OpenCode, Muse token analytics and Grok subscription usage.",
@@ -2637,7 +2635,9 @@
         "automationsDescription": "Schedule agent work and choose whether Automations appears in the sidebar.",
         "shareSkillsTitle": "Share Skills",
         "shareSkillsDescription": "Share your skills with an unlisted link. Anyone who has it can install them.",
-        "floatingWorkspaceWebDescription": "Global terminal and markdown tabs."
+        "floatingWorkspaceWebDescription": "Global terminal and markdown tabs.",
+        "machinesTitle": "Machines",
+        "machinesDescription": "Other computers Seal works on, over SSH or a Seal server."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "Paste is too large."
@@ -9679,7 +9679,11 @@
           "742ca66ea6": "Privacy & telemetry",
           "c2bb9fc528": "Floating workspace",
           "f1fddf7764": "Input & editing",
-          "d60b7f0e58": "Quick commands"
+          "d60b7f0e58": "Quick commands",
+          "machinesTitle": "Machines",
+          "machinesDescription": "Other computers Seal works on: files, terminals, agents, Git and workspaces.",
+          "machinesServers": "Seal servers",
+          "machinesSsh": "SSH connections"
         },
         "SettingsFormControls": {
           "42a4d15a30": "No matching fonts.",
@@ -14300,6 +14304,24 @@
           "cancel": "Cancel",
           "confirm": "Remove",
           "unknownHost": "Unknown host"
+        },
+        "machines": {
+          "add": "Add machine",
+          "addOverSsh": "Connect over SSH…",
+          "addViaServer": "Connect via Seal server (pairing link)…",
+          "name": "Machine name",
+          "sshLabel": "SSH",
+          "notSet": "Not set up",
+          "serverLabel": "Seal server",
+          "connectsVia": "Connects via",
+          "more": "More actions",
+          "rename": "Rename",
+          "addSsh": "Add SSH details…",
+          "pairServer": "Pair a Seal server…",
+          "separate": "These are different machines — split",
+          "summary": "Each machine connects over SSH or through a Seal server running on it. Every feature works the same either way.",
+          "empty": "No machines yet.",
+          "advanced": "SSH keys, port forwards and server pairing"
         }
       },
       "right": {
@@ -20067,7 +20089,6 @@
         "page": {
           "localName": "This computer",
           "title": "Machines",
-          "add": "Add machine",
           "list": "Machines"
         },
         "detail": {
@@ -20080,8 +20101,10 @@
           "editor": "Open in editor",
           "more": "More actions",
           "refreshStats": "Refresh stats",
-          "edit": "Edit machine…",
-          "remove": "Remove machine…"
+          "remove": "Remove machine…",
+          "useSsh": "Connect over SSH instead",
+          "useServer": "Connect via Seal server instead",
+          "editSsh": "Edit SSH details…"
         },
         "edit": {
           "saved": "Machine updated"
@@ -20101,7 +20124,6 @@
           "disk": "Disk"
         },
         "actions": {
-          "runtimeTerminal": "Open a workspace on this runtime to start a terminal there.",
           "editorAlias": "Add {{host}} to your SSH config to open it in an editor.",
           "editorFailed": "Could not open the editor ({{reason}}).",
           "nameLabel": "Name",
@@ -20115,7 +20137,8 @@
           "urlConfirm": "Download",
           "urlLabel": "URL",
           "urlInvalid": "Enter an http or https URL.",
-          "urlFileName": "File name (optional)"
+          "urlFileName": "File name (optional)",
+          "editorNeedsSsh": "Add SSH details to this machine to open it in VS Code. You can edit its files here under Files."
         },
         "delete": {
           "titleOne": "Delete {{name}}?",
@@ -20178,6 +20201,24 @@
           "running": "Transfers · {{count}} running",
           "title": "Transfers",
           "clear": "Clear finished"
+        },
+        "connection": {
+          "ssh": "SSH",
+          "server": "Seal server"
+        },
+        "work": {
+          "startAgent": "Start agent",
+          "title": "Agents & worktrees",
+          "repoPlaceholder": "Repository path, e.g. {{path}}",
+          "list": "Worktrees",
+          "terminalHere": "Terminal here",
+          "remove": "Remove worktree",
+          "branchPlaceholder": "New branch name",
+          "create": "New worktree"
+        },
+        "terminal": {
+          "agentTitle": "{{agent}} · {{host}}",
+          "title": "Terminal · {{host}}"
         }
       },
       "live-sessions": {
@@ -25847,7 +25888,8 @@
         "empty": "Add an SSH host or remote server to share accounts and rules with it.",
         "hostDescription": "Runs agents with its own copy of your logins.",
         "pushRules": "Push rules",
-        "pushLogins": "Copy logins ({{value0}})"
+        "pushLogins": "Copy logins ({{value0}})",
+        "loginsOnly": "{{value0}} logins installed ({{value1}} failed). Swap rules run only where a Seal server runs."
       },
       "refresh": "Refresh usage",
       "title": "Accounts and auto-swap",
