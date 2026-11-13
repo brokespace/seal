@@ -1,20 +1,12 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import { AGENT_TOOL_SUBCOMMANDS } from '../../../shared/live-sessions/agent-subcommands'
 import type { DiscoveredProcess } from './discovery-output'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Subcommands that are tools around sessions (daemons, viewers, setup), not sessions themselves.
 const NOT_A_SESSION: Record<LiveSessionProvider, ReadonlySet<string>> = {
-  claude: new Set(
-    'agents attach auth auto-mode config doctor gateway import install kill logs mcp plugin plugins purge respawn rm setup-token stop ultrareview update upgrade'.split(
-      ' '
-    )
-  ),
-  codex: new Set(
-    'agents app-server apply archive cloud completion debug delete doctor exec-server features login logout mcp mcp-server migrate-nfs-db migrate-rollouts plugin queue remote-control sandbox unarchive update'.split(
-      ' '
-    )
-  )
+  claude: new Set(AGENT_TOOL_SUBCOMMANDS.claude),
+  codex: new Set(AGENT_TOOL_SUBCOMMANDS.codex)
 }
 
 export function processProvider(args: string): LiveSessionProvider | null {
