@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
+import {
+  selectDetectedWorktreesByRepo,
+  selectFolderWorkspaces,
+  selectWorktreesByRepo
+} from '@/store/workspaces/catalog/workspace-record-fields'
 import { getExecutionHostIdForWorktree } from '@/lib/workspace/ownership/worktree-runtime-owner'
 import type { WorktreeRuntimeOwnerState } from '@/lib/workspace/ownership/worktree-runtime-owner-state'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
@@ -17,9 +22,9 @@ export function useMachineAgentSessions(): Map<ExecutionHostId, MachineAgentSess
     useShallow((s): WorktreeRuntimeOwnerState => ({
       repos: s.repos,
       settings: s.settings,
-      worktreesByRepo: s.worktreesByRepo,
-      detectedWorktreesByRepo: s.detectedWorktreesByRepo,
-      folderWorkspaces: s.folderWorkspaces,
+      worktreesByRepo: selectWorktreesByRepo(s),
+      detectedWorktreesByRepo: selectDetectedWorktreesByRepo(s),
+      folderWorkspaces: selectFolderWorkspaces(s),
       projectGroups: s.projectGroups,
       restoredRuntimeHostIdByWorkspaceSessionKey: s.restoredRuntimeHostIdByWorkspaceSessionKey,
       activeWorktreeId: s.activeWorktreeId,

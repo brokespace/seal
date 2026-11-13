@@ -11,8 +11,12 @@ import type { MachineSummary } from '../model/machine-summaries'
 import { MachineDeleteDialog } from './MachineDeleteDialog'
 import { MachineExplorerMenu } from './MachineExplorerMenu'
 import { MachineExplorerToolbar } from './MachineExplorerToolbar'
-import type { MachineExplorerRowHandlers } from './MachineExplorerRow'
-import { MachineExplorerVirtualRows } from './MachineExplorerVirtualRows'
+import { VirtualizedList } from '@/components/virtualized-list'
+import {
+  MACHINE_EXPLORER_ROW_HEIGHT,
+  MachineExplorerRow,
+  type MachineExplorerRowHandlers
+} from './MachineExplorerRow'
 import { MachineFilePreview } from './MachineFilePreview'
 import { MachinePromptDialog } from './MachinePromptDialog'
 import type { ExplorerRow } from './machine-explorer-rows'
@@ -40,7 +44,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
   const [preview, setPreview] = useState<PreviewTarget | null>(null)
   const [menuRow, setMenuRow] = useState<EntryRow | null>(null)
   const [dropDir, setDropDir] = useState<string | null>(null)
-  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
   const dropOwnerRef = useRef<HTMLElement | null>(null)
 
   const root = tree.root
@@ -191,7 +195,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
           <ContextMenuTrigger asChild>
             <div
               ref={(element) => {
-                scrollRef.current = element
+                setScrollElement(element)
                 attachDropOwner(element)
               }}
               role="tree"
@@ -243,12 +247,23 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
                   {t('auto.components.machines.explorer.empty', 'This folder is empty.')}
                 </p>
               ) : (
-                <MachineExplorerVirtualRows
+                <VirtualizedList
                   rows={tree.rows}
-                  scrollRef={scrollRef}
-                  selected={selected}
-                  dropDir={dropDir}
-                  handlers={handlers}
+                  getRowKey={(row) => row.key}
+                  scrollElement={scrollElement}
+                  estimateRowHeightPx={MACHINE_EXPLORER_ROW_HEIGHT}
+                  renderRow={(row) => (
+                    <div key={row.key} style={{ height: MACHINE_EXPLORER_ROW_HEIGHT }}>
+                      <MachineExplorerRow
+                        row={row}
+                        selected={row.type === 'entry' && selected.has(row.path)}
+                        dropTarget={
+                          row.type === 'entry' && row.entry.isDirectoryLike && dropDir === row.path
+                        }
+                        handlers={handlers}
+                      />
+                    </div>
+                  )}
                 />
               )}
             </div>
