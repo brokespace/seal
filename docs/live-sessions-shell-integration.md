@@ -16,14 +16,14 @@ On this computer, either:
 
 - **Settings › Agents › Shell integration on this computer › Install**, or
 - `seal shell-integration install` in a terminal. (Seal's CLI is installed as `orca`, so the command is
-  `orca shell-integration install`.)
+  `seal shell-integration install`.)
 
 Then open a new terminal tab, or run `exec $SHELL`.
 
 On an SSH host:
 
 - **Settings › SSH**, connect to the host, then **⋯ › Install shell integration**, or
-- `orca shell-integration install --ssh <host>` from your machine, using your `~/.ssh/config`.
+- `seal shell-integration install --ssh <host>` from your machine, using your `~/.ssh/config`.
 
 Requirements: macOS or Linux, zsh or bash, and tmux 3.0 or newer on the machine where the agent runs
 (`brew install tmux`, `apt install tmux`, `dnf install tmux`). Without tmux the wrappers run the real
@@ -33,10 +33,10 @@ Other commands, all of which also take `--ssh <host>` and `--json`:
 
 | Command                            | Effect                                                 |
 | ---------------------------------- | ------------------------------------------------------ |
-| `orca shell-integration status`    | Installed? Wrapping on? tmux version, rc files touched |
-| `orca shell-integration disable`   | Keep it installed, but run `claude`/`codex` directly   |
-| `orca shell-integration enable`    | Undo `disable`                                         |
-| `orca shell-integration uninstall` | Remove everything below                                |
+| `seal shell-integration status`    | Installed? Wrapping on? tmux version, rc files touched |
+| `seal shell-integration disable`   | Keep it installed, but run `claude`/`codex` directly   |
+| `seal shell-integration enable`    | Undo `disable`                                         |
+| `seal shell-integration uninstall` | Remove everything below                                |
 
 The **Let Seal message agents started in your terminal** switch in Settings › Agents runs
 `disable`/`enable` on this computer and on every connected SSH host, including hosts that connect

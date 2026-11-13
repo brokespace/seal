@@ -11,9 +11,9 @@ const NOTES = [
 const action = (name: string, summary: string): CommandSpec => ({
   path: ['shell-integration', name],
   summary,
-  usage: `orca shell-integration ${name} [--ssh <destination>] [--json]`,
+  usage: `seal shell-integration ${name} [--ssh <destination>] [--json]`,
   allowedFlags: FLAGS,
-  examples: [`orca shell-integration ${name}`, `orca shell-integration ${name} --ssh build-box`],
+  examples: [`seal shell-integration ${name}`, `seal shell-integration ${name} --ssh build-box`],
   notes: NOTES
 })
 
