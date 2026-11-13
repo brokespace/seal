@@ -10,7 +10,7 @@ import { withoutAccountReferences } from '../../shared/seal-accounts/seal-accoun
 import { findCandidateByRef } from '../../shared/seal-accounts/seal-launch-account-pick'
 import type { SealAccountManager } from './seal-account-manager'
 import { removeSealApiKey } from './seal-api-key-accounts'
-import { logOutSealSystemLogin } from './seal-system-login'
+import { logOutSealSystemLogin, refreshSealSystemLogins } from './seal-system-login'
 import { dismissSealSystemLogin } from './seal-system-login-listing'
 
 export type SealRemoveAccountResult = {
@@ -71,6 +71,7 @@ export async function removeSealAccount(
   ref: string,
   options: { logout?: boolean; provider?: SealProvider } = {}
 ): Promise<SealRemoveAccountResult> {
+  await refreshSealSystemLogins()
   const candidate = find(manager, ref, options.provider)
   const { provider, key } = candidate
   const result: SealRemoveAccountResult = {

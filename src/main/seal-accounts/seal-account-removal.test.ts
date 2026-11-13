@@ -12,6 +12,7 @@ const logOut = vi.fn(async (_services: unknown, provider: SealProvider) => {
 
 vi.mock('./seal-system-login', () => ({
   readSealSystemLogins: () => ({ ...machine }),
+  refreshSealSystemLogins: async () => {},
   logOutSealSystemLogin: logOut
 }))
 

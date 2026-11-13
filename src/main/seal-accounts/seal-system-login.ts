@@ -1,4 +1,4 @@
-import { readFileSync, rmSync, statSync } from 'node:fs'
+import { readFile, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealSystemIdentity } from '../../shared/seal-accounts/seal-system-login-candidate'
@@ -19,36 +19,59 @@ const LOGOUT_TIMEOUT_MS = 20_000
 
 type SystemLoginServices = Pick<ProviderAccountServices, 'claudeRuntimeAuth' | 'codexRuntimeHome'>
 
-let codexRead: { mtimeMs: number; size: number; identity: SealSystemIdentity | null } | null = null
+type CodexAuthRead = { mtimeMs: number; size: number; identity: SealSystemIdentity | null }
+
+let codexRead: CodexAuthRead | null = null
+let codexReadAt = 0
+let codexReading: Promise<SealSystemIdentity | null> | null = null
 
 function codexAuthPath(): string {
   return join(getSystemCodexHomePath(), 'auth.json')
 }
 
-/** The ChatGPT login in `~/.codex`; an API-key auth file names no account. */
-function readCodexSystemLogin(): SealSystemIdentity | null {
+async function readCodexAuthFile(): Promise<CodexAuthRead | null> {
   const path = codexAuthPath()
-  let stat: { mtimeMs: number; size: number }
   try {
-    stat = statSync(path)
-  } catch {
-    codexRead = null
-    return null
-  }
-  if (codexRead?.mtimeMs === stat.mtimeMs && codexRead.size === stat.size) {
-    return codexRead.identity
-  }
-  let identity: SealSystemIdentity | null = null
-  try {
-    const parsed = readCodexAuthIdentity(readFileSync(path, 'utf8'))
-    identity = parsed?.email
+    const { mtimeMs, size } = await stat(path)
+    if (codexRead?.mtimeMs === mtimeMs && codexRead.size === size) {
+      return codexRead
+    }
+    const parsed = readCodexAuthIdentity(await readFile(path, 'utf8'))
+    // An API-key auth file names no account.
+    const identity = parsed?.email
       ? { email: parsed.email, scope: parsed.workspaceAccountId, orgName: parsed.workspaceLabel }
       : null
+    return { mtimeMs, size, identity }
   } catch {
-    identity = null
+    return null
   }
-  codexRead = { ...stat, identity }
-  return identity
+}
+
+/** Re-reads the ChatGPT login in `~/.codex`. */
+function refreshCodexSystemLogin(): Promise<SealSystemIdentity | null> {
+  codexReading ??= readCodexAuthFile()
+    .then((read) => {
+      codexRead = read
+      codexReadAt = Date.now()
+      return read?.identity ?? null
+    })
+    .finally(() => {
+      codexReading = null
+    })
+  return codexReading
+}
+
+/** The last read of `~/.codex`; an old one is re-read in the background for the next caller. */
+function codexSystemLogin(): SealSystemIdentity | null {
+  if (Date.now() - codexReadAt > SYSTEM_LOGIN_MAX_AGE_MS) {
+    void refreshCodexSystemLogin()
+  }
+  return codexRead?.identity ?? null
+}
+
+/** Call before a listing that must reflect a login made or removed outside Seal a moment ago. */
+export async function refreshSealSystemLogins(): Promise<void> {
+  await refreshCodexSystemLogin()
 }
 
 /** The accounts this machine's own `claude` and `codex` CLIs are signed in to. */
@@ -60,14 +83,14 @@ export function readSealSystemLogins(
     claude: claude
       ? { email: claude.email, scope: claude.organizationUuid, orgName: claude.organizationName }
       : null,
-    codex: readCodexSystemLogin()
+    codex: codexSystemLogin()
   }
 }
 
 /** What `claude auth logout` does, for a machine where the CLI cannot run. */
 async function clearClaudeSystemLogin(services: SystemLoginServices): Promise<void> {
   const router = services.claudeRuntimeAuth.router
-  rmSync(join(router.systemDefaultHome(), '.credentials.json'), { force: true })
+  await rm(join(router.systemDefaultHome(), '.credentials.json'), { force: true })
   if (process.platform === 'darwin') {
     await execSecurityCommand([
       'delete-generic-password',
@@ -122,10 +145,10 @@ async function logOutCodex(services: SystemLoginServices): Promise<void> {
   } catch (error) {
     console.warn('[seal-accounts] `codex logout` failed; clearing the login directly:', error)
   }
-  if (readCodexSystemLogin()) {
-    rmSync(codexAuthPath(), { force: true })
+  if (await refreshCodexSystemLogin()) {
+    await rm(codexAuthPath(), { force: true })
   }
-  if (readCodexSystemLogin()) {
+  if (await refreshCodexSystemLogin()) {
     throw new Error('Could not sign this machine out of Codex. Run `codex logout`.')
   }
   // Seal's shared Codex home mirrors `~/.codex`; let it drop the login too.

@@ -20,6 +20,7 @@ import { dedupeSealAccounts } from './seal-account-migration'
 import { selectSealFallbackAccount } from './seal-account-removal'
 import { readClaudeHomeCredentials } from './seal-claude-home-credentials'
 import { importClaudeCredential } from './seal-credential-transfer'
+import { refreshSealSystemLogins } from './seal-system-login'
 
 const CLAUDE_NO_LOGIN_MESSAGE = 'Claude finished without signing in. Start the sign-in again.'
 const CODEX_NO_LOGIN_MESSAGE = 'Codex finished without signing in. Start the sign-in again.'
@@ -171,6 +172,7 @@ async function signInCodex(
   const expected = expectedAccount(manager, request)
   const before = codexAccounts.listAccounts()
   const knownIds = new Set(before.accounts.map((account) => account.id))
+  await refreshSealSystemLogins()
   const systemLoginListed = manager.baseCandidates('codex').some((entry) => entry.kind === 'system')
   const knownKeys = manager
     .baseCandidates('codex')

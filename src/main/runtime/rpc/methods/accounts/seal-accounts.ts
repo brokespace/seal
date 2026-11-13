@@ -34,6 +34,7 @@ import {
   swapSealSessionTo
 } from '../../../../seal-accounts/seal-session-swap'
 import { pickSealLaunch } from '../../../../seal-accounts/seal-launch-pick-context'
+import { refreshSealSystemLogins } from '../../../../seal-accounts/seal-system-login'
 import { SEAL_ACCOUNT_ROSTER_METHODS } from './seal-account-roster'
 import {
   withAutoSwap,
@@ -59,6 +60,7 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
       if (params?.refreshUsage) {
         await accounts().refreshUsage()
       }
+      await refreshSealSystemLogins()
       return accounts().status()
     }
   }),

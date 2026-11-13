@@ -12,6 +12,7 @@ import {
   SealAccountsSignInWaitParams
 } from '../../../../../shared/rpc-contract/seal-accounts-params'
 import { requireSealAccountManager } from '../../../../seal-accounts/seal-account-manager'
+import { refreshSealSystemLogins } from '../../../../seal-accounts/seal-system-login'
 import { removeSealAccount } from '../../../../seal-accounts/seal-account-removal'
 import { addSealApiKey } from '../../../../seal-accounts/seal-api-key-accounts'
 import {
@@ -67,6 +68,7 @@ export const SEAL_ACCOUNT_ROSTER_METHODS = [
     params: SealAccountsImportSystemLoginParams,
     handler: async (params, context) => {
       requireDesktopCaller(context)
+      await refreshSealSystemLogins()
       const login = restoreSealSystemLogin(accounts(), params.provider)
       return { login, status: accounts().status() }
     }
