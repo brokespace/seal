@@ -604,6 +604,21 @@ import {
 } from './repo-params'
 import { BrowserTarget, ExpectUrlBrowserTarget } from './rpc-param-primitives'
 import { ClientCapabilitiesUpdate } from './runtime-client-capabilities-params'
+import {
+  SealAccountsAddApiKeyParams,
+  SealAccountsApplyFleetConfigParams,
+  SealAccountsImportCredentialParams,
+  SealAccountsPickParams,
+  SealAccountsPinWorkspaceParams,
+  SealAccountsRemoveApiKeyParams,
+  SealAccountsSetAutoSwapParams,
+  SealAccountsSetConfigParams,
+  SealAccountsSetPolicyParams,
+  SealAccountsSetProfileParams,
+  SealAccountsStatusParams,
+  SealAccountsSwapParams,
+  SealAccountsSyncFleetParams
+} from './seal-accounts-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
 import {
   ActivateTab,
@@ -1504,6 +1519,19 @@ export const RPC_PARAMS_BY_METHOD = {
   'runtime.clientEvents.subscribe': ClientEventsSubscribeParams,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
   'runtimeEnvironment.wakeRecipeVm': RecipeVmWakeParams,
+  'seal.accounts.addApiKey': SealAccountsAddApiKeyParams,
+  'seal.accounts.applyFleetConfig': SealAccountsApplyFleetConfigParams,
+  'seal.accounts.importCredential': SealAccountsImportCredentialParams,
+  'seal.accounts.pick': SealAccountsPickParams,
+  'seal.accounts.pinWorkspace': SealAccountsPinWorkspaceParams,
+  'seal.accounts.removeApiKey': SealAccountsRemoveApiKeyParams,
+  'seal.accounts.setAutoSwap': SealAccountsSetAutoSwapParams,
+  'seal.accounts.setConfig': SealAccountsSetConfigParams,
+  'seal.accounts.setPolicy': SealAccountsSetPolicyParams,
+  'seal.accounts.setProfile': SealAccountsSetProfileParams,
+  'seal.accounts.status': SealAccountsStatusParams,
+  'seal.accounts.swap': SealAccountsSwapParams,
+  'seal.accounts.syncFleet': SealAccountsSyncFleetParams,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,

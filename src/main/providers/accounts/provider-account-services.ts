@@ -24,6 +24,7 @@ import { createAccountRuntimeTargetSettingsSync } from '../../rate-limits/servic
 import { normalizeCodexRuntimeSelection } from '../../codex-accounts/account-management/runtime-selection'
 import { normalizeClaudeRuntimeSelection } from '../../claude-accounts/selection/runtime-selection'
 import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
+import { installSealAccountManager } from '../../seal-accounts/seal-account-manager'
 
 export type ProviderAccountServices = {
   rateLimits: RateLimitService
@@ -203,5 +204,13 @@ export function createProviderAccountServices(
   })
   // Every host runs the poll timer; ticks fetch only while a window or remote reader watches.
   rateLimits.start({ fetchImmediately: false })
-  return { rateLimits, codexRuntimeHome, codexAccounts, claudeRuntimeAuth, claudeAccounts }
+  const services = {
+    rateLimits,
+    codexRuntimeHome,
+    codexAccounts,
+    claudeRuntimeAuth,
+    claudeAccounts
+  }
+  installSealAccountManager({ store, services })
+  return services
 }
