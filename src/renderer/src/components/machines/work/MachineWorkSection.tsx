@@ -81,6 +81,24 @@ function AgentMenu({
 }
 
 /** Agents and git worktrees on a remote machine, run through its connection like everything else. */
+async function runWorktreeWork(
+  work: () => Promise<MachineWorktree[] | undefined>,
+  setBusy: (busy: boolean) => void,
+  setWorktrees: (worktrees: MachineWorktree[]) => void
+): Promise<void> {
+  setBusy(true)
+  try {
+    const next = await work()
+    if (next) {
+      setWorktrees(next)
+    }
+  } catch (error) {
+    toast.error(errorText(error))
+  } finally {
+    setBusy(false)
+  }
+}
+
 export function MachineWorkSection({
   machine,
   online,
@@ -100,19 +118,8 @@ export function MachineWorkSection({
     return null
   }
   const machines = window.api.machines
-  const run = async (work: () => Promise<MachineWorktree[] | undefined>): Promise<void> => {
-    setBusy(true)
-    try {
-      const next = await work()
-      if (next) {
-        setWorktrees(next)
-      }
-    } catch (error) {
-      toast.error(errorText(error))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const run = (work: () => Promise<MachineWorktree[] | undefined>): Promise<void> =>
+    runWorktreeWork(work, setBusy, setWorktrees)
   const repo = repoPath.trim()
   const load = (): Promise<void> =>
     run(async () => machines?.listWorktrees({ machineId: machine.id, repoPath: repo }))
@@ -160,7 +167,8 @@ export function MachineWorkSection({
         }}
       >
         <Input
-          className="h-7 flex-1 font-mono text-xs"
+          variant="code"
+          className="h-7 flex-1"
           value={repoPath}
           placeholder={t(
             'auto.components.machines.work.repoPlaceholder',
@@ -223,7 +231,7 @@ export function MachineWorkSection({
             }}
           >
             <Input
-              className="h-7 flex-1 text-xs"
+              className="h-7 flex-1"
               value={branch}
               placeholder={t('auto.components.machines.work.branchPlaceholder', 'New branch name')}
               onChange={(event) => setBranch(event.target.value)}

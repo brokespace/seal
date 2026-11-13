@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { createUnifiedMachine } from '../../home-chat/machines/home-chat-unified-machine'
 import { machineLiveSessionHost } from '../../live-sessions/hosts/live-session-hosts'
@@ -152,20 +152,26 @@ describe.skipIf(process.platform !== 'linux').each([
     expect(progress).toBe(600_000)
   })
 
-  it('tells a watcher when a folder changes', async () => {
+  // An SSH host without inotifywait is polled every 3s, so a change can take a few ticks to land.
+  it('tells a watcher when a folder changes', { timeout: 15_000 }, async () => {
     const dir = await scratch()
-    const changed = new Promise<string>((resolve) => {
-      void machine.files.watch([dir], resolve).then((stop) => {
-        void changed.finally(() => stop?.())
-      })
-    })
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    await writeFile(path.join(dir, 'new.txt'), 'x')
+    const seen: string[] = []
+    const stop = await machine.files.watch([dir], (changed) => seen.push(changed))
+    try {
+      await vi.waitFor(
+        async () => {
+          await writeFile(path.join(dir, `touch-${seen.length}.txt`), 'x')
+          expect(seen).toContain(dir)
+        },
+        { timeout: 12_000, interval: 500 }
+      )
+    } finally {
+      stop?.()
+    }
+  })
 
-    expect(await changed).toBe(dir)
-  }, 15_000)
-
-  it('runs a command in a terminal and reports its exit', async () => {
+  // A real PTY starting a login shell is slow on loaded CI machines.
+  it('runs a command in a terminal and reports its exit', { timeout: 20_000 }, async () => {
     let output = ''
     const exited = new Promise<number | null>((resolve) => {
       void machine.openShell(
@@ -176,7 +182,7 @@ describe.skipIf(process.platform !== 'linux').each([
 
     await exited
     expect(output).toContain('parity-42')
-  }, 20_000)
+  })
 
   it('creates, lists and removes worktrees', async () => {
     const repo = await scratch()

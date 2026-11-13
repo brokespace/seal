@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { readNodeFileSyncWithinLimit } from '../../../shared/file-content/node-bounded-file-reader'
 import {
@@ -17,14 +16,14 @@ export function machineStorePath(userDataPath: string): string {
 
 /** A missing or unreadable file starts empty; the next reconcile rebuilds it from the stores it binds. */
 export function readMachineStore(userDataPath: string): MachineStore {
-  const path = machineStorePath(userDataPath)
-  if (!existsSync(path)) {
-    return EMPTY_MACHINE_STORE
-  }
   try {
-    const read = readNodeFileSyncWithinLimit(path, MAX_MACHINE_STORE_BYTES, {
-      regularFileOnly: true
-    })
+    const read = readNodeFileSyncWithinLimit(
+      machineStorePath(userDataPath),
+      MAX_MACHINE_STORE_BYTES,
+      {
+        regularFileOnly: true
+      }
+    )
     const parsed = MachineStoreSchema.safeParse(JSON.parse(read.buffer.toString('utf8')))
     return parsed.success ? parsed.data : EMPTY_MACHINE_STORE
   } catch {

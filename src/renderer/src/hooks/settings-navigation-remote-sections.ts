@@ -56,7 +56,10 @@ export function buildRemoteSettingsSections(
       : {
           id: 'servers',
           title: t('auto.hooks.useSettingsNavigationMetadata.de0c2907a1', 'Remote Orca Servers'),
-          description: 'Connect this browser to a saved Orca server.',
+          description: t(
+            'auto.components.settings.Settings.7686cb5c36',
+            'Connect this browser to a saved Orca server.'
+          ),
           icon: Server,
           searchEntries: [runtimeEnvironmentsSearchEntry],
           group: 'remote'

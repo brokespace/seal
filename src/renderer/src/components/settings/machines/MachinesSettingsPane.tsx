@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { ChevronRight, EllipsisVertical } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
@@ -98,7 +98,7 @@ function MachineSettingsRow({
             <Input
               autoFocus
               value={name}
-              className="h-6 max-w-56 text-sm"
+              className="h-6 max-w-56"
               aria-label={t('auto.components.settings.machines.name', 'Machine name')}
               onChange={(event) => setName(event.target.value)}
               onBlur={() => void rename()}
@@ -140,10 +140,10 @@ function MachineSettingsRow({
           aria-label={t('auto.components.settings.machines.connectsVia', 'Connects via')}
           onValueChange={(next) => void choose(next)}
         >
-          <ToggleGroupItem value="ssh" disabled={!view.ssh} className="px-2 text-xs">
+          <ToggleGroupItem value="ssh" disabled={!view.ssh}>
             {t('auto.components.machines.connection.ssh', 'SSH')}
           </ToggleGroupItem>
-          <ToggleGroupItem value="server" disabled={!view.server} className="px-2 text-xs">
+          <ToggleGroupItem value="server" disabled={!view.server}>
             {t('auto.components.machines.connection.server', 'Seal server')}
           </ToggleGroupItem>
         </ToggleGroup>
@@ -214,18 +214,12 @@ export function MachinesSettingsPane({
   const { machines, views, reload } = useMachinesInventory('')
   const [adding, setAdding] = useState<AddMachineRequest | null>(null)
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const seenSignals = useRef({ ssh: sshAddSignal, server: serverAddSignal })
-
-  useEffect(() => {
-    if (sshAddSignal !== seenSignals.current.ssh) {
-      seenSignals.current.ssh = sshAddSignal
-      setAdding({ mode: 'ssh', machineId: null })
-    }
-    if (serverAddSignal !== seenSignals.current.server) {
-      seenSignals.current.server = serverAddSignal
-      setAdding({ mode: 'server', machineId: null })
-    }
-  }, [sshAddSignal, serverAddSignal])
+  // Intent signals open the add flow; compare during render so the dialog opens on the same paint.
+  const [seenSignals, setSeenSignals] = useState({ ssh: sshAddSignal, server: serverAddSignal })
+  if (sshAddSignal !== seenSignals.ssh || serverAddSignal !== seenSignals.server) {
+    setSeenSignals({ ssh: sshAddSignal, server: serverAddSignal })
+    setAdding({ mode: sshAddSignal !== seenSignals.ssh ? 'ssh' : 'server', machineId: null })
+  }
 
   const remote = machines.filter((machine) => machine.connection !== 'local')
 
@@ -264,7 +258,7 @@ export function MachinesSettingsPane({
 
       <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
         <CollapsibleTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+          <Button type="button" variant="ghost" size="sm" className="-ml-2">
             <ChevronRight className={advancedOpen ? 'rotate-90' : undefined} />
             {t(
               'auto.components.settings.machines.advanced',
@@ -272,7 +266,9 @@ export function MachinesSettingsPane({
             )}
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-6 pt-2">{advanced}</CollapsibleContent>
+        <CollapsibleContent>
+          <div className="space-y-6 pt-2">{advanced}</div>
+        </CollapsibleContent>
       </Collapsible>
 
       <AddMachineDialog request={adding} onClose={() => setAdding(null)} onAdopted={reload} />
