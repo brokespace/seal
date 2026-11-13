@@ -23,6 +23,8 @@ import { MachineTransferManager } from './transfers/machine-transfer-manager'
 import { MachineDragOutStager } from './drag-out/machine-drag-out'
 import { collectMachineMetrics } from './metrics/machine-metrics'
 import { getSshTargetRegistryStore } from '../ssh/targets/ssh-target-registry'
+import { RuntimeMachineFileSystem } from './runtime/runtime-machine-filesystem'
+import { createRuntimeMachineChannel } from './runtime/runtime-machine-channel'
 
 const INVOKE_CHANNELS = [
   MACHINE_IPC.getMetrics,
@@ -50,6 +52,19 @@ type MachineServices = {
 let services: MachineServices | null = null
 let currentGetMainWindow: () => BrowserWindow | null = () => null
 const fileSystems = new Map<MachineId, MachineFileSystem>()
+const runtimeFileSystems = new Map<string, RuntimeMachineFileSystem>()
+
+function resolveRuntimeFileSystem(environmentId: string): RuntimeMachineFileSystem {
+  let fs = runtimeFileSystems.get(environmentId)
+  if (!fs) {
+    fs = new RuntimeMachineFileSystem(
+      environmentId,
+      createRuntimeMachineChannel(app.getPath('userData'), environmentId)
+    )
+    runtimeFileSystems.set(environmentId, fs)
+  }
+  return fs
+}
 
 function resolveFileSystem(machineId: MachineId): MachineFileSystem {
   const existing = fileSystems.get(machineId)
@@ -62,6 +77,8 @@ function resolveFileSystem(machineId: MachineId): MachineFileSystem {
     fs = createLocalMachineFileSystem()
   } else if (parsed?.kind === 'ssh' && getSshTargetRegistryStore()?.getTarget(parsed.targetId)) {
     fs = new SshMachineFileSystem(parsed.targetId)
+  } else if (parsed?.kind === 'runtime') {
+    fs = resolveRuntimeFileSystem(parsed.environmentId)
   } else {
     throw new Error('Unknown machine')
   }
@@ -167,7 +184,9 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
   }
   ipcMain.removeAllListeners(MACHINE_IPC.startDrag)
 
-  handle(MACHINE_IPC.getMetrics, (args) => collectMachineMetrics(machineIdOf(args.machineId)))
+  handle(MACHINE_IPC.getMetrics, (args) =>
+    collectMachineMetrics(machineIdOf(args.machineId), resolveRuntimeFileSystem)
+  )
 
   handle(MACHINE_IPC.listDir, async (args) => {
     const machineId = machineIdOf(args.machineId)
