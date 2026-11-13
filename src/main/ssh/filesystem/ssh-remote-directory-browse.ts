@@ -279,7 +279,7 @@ function powerShellPathExpression(s: string): string {
 }
 
 // Normalize renderer /C:/ and drive-relative C: to rooted Windows paths before Set-Location.
-function normalizeWindowsDrivePath(s: string): string {
+export function normalizeWindowsDrivePath(s: string): string {
   const stripped = s.replace(/^\/(?=[A-Za-z]:(?:[/\\]|$))/, '')
   return /^[A-Za-z]:$/.test(stripped) ? `${stripped}/` : stripped
 }

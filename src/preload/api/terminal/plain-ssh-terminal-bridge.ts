@@ -10,6 +10,7 @@ export type PlainSshTerminalApi = {
     targetId: string
     cols: number
     rows: number
+    purpose?: 'machine-shell'
   }) => Promise<PlainSshTerminalOpenResult>
   write: (args: { sessionId: string; data: string }) => void
   resize: (args: { sessionId: string; cols: number; rows: number }) => void

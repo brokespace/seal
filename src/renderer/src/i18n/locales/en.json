@@ -6953,7 +6953,8 @@
           "fee535205b": "Tasks",
           "d599269755": "Hide from sidebar",
           "artifacts": "Artifacts",
-          "skills": "Skills"
+          "skills": "Skills",
+          "machines": "Machines"
         },
         "SidebarRepositoryFilterSection": {
           "d3a9c4cea1": "Clear",
@@ -20061,6 +20062,123 @@
       },
       "NewWorkspaceComposerFooter": {
         "create": "Create"
+      },
+      "machines": {
+        "page": {
+          "localName": "This computer",
+          "title": "Machines",
+          "add": "Add machine",
+          "list": "Machines"
+        },
+        "detail": {
+          "noSessions": "No agents running on this machine.",
+          "agent": "Agent",
+          "back": "All machines",
+          "reconnect": "Reconnect",
+          "connect": "Connect",
+          "terminal": "Terminal",
+          "editor": "Open in editor",
+          "more": "More actions",
+          "refreshStats": "Refresh stats",
+          "edit": "Edit machine…",
+          "remove": "Remove machine…"
+        },
+        "edit": {
+          "saved": "Machine updated"
+        },
+        "status": {
+          "online": "Online",
+          "connecting": "Connecting",
+          "error": "Connection failed",
+          "offline": "Offline"
+        },
+        "vitals": {
+          "cores": "{{count}} cores",
+          "uptime": "up {{uptime}}",
+          "cpu": "CPU",
+          "load": "load {{load}}",
+          "memory": "RAM",
+          "disk": "Disk"
+        },
+        "actions": {
+          "runtimeTerminal": "Open a workspace on this runtime to start a terminal there.",
+          "editorAlias": "Add {{host}} to your SSH config to open it in an editor.",
+          "editorFailed": "Could not open the editor ({{reason}}).",
+          "nameLabel": "Name",
+          "invalidName": "Enter a name without slashes.",
+          "newFolderTitle": "New folder",
+          "create": "Create",
+          "renameTitle": "Rename {{name}}",
+          "rename": "Rename",
+          "urlTitle": "Download from URL",
+          "urlDescription": "The machine fetches the file itself, so it never passes through this computer. Saving to {{dir}}.",
+          "urlConfirm": "Download",
+          "urlLabel": "URL",
+          "urlInvalid": "Enter an http or https URL.",
+          "urlFileName": "File name (optional)"
+        },
+        "delete": {
+          "titleOne": "Delete {{name}}?",
+          "titleMany": "Delete {{count}} items?",
+          "description": "This permanently deletes them from {{machine}}, including everything inside folders. It cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        },
+        "menu": {
+          "openFolder": "Open folder",
+          "preview": "Preview",
+          "download": "Download to this computer…",
+          "copyPath": "Copy path",
+          "newFolder": "New folder…",
+          "upload": "Upload files…",
+          "downloadUrl": "Download from URL…",
+          "rename": "Rename…",
+          "delete": "Delete…"
+        },
+        "explorer": {
+          "loading": "Loading…",
+          "retry": "Retry",
+          "more": "Show {{count}} more",
+          "home": "Home folder",
+          "up": "Parent folder",
+          "path": "Current folder",
+          "refresh": "Refresh",
+          "hideHidden": "Hide hidden files",
+          "showHidden": "Show hidden files",
+          "newFolder": "New folder",
+          "upload": "Upload files",
+          "downloadUrl": "Download from URL",
+          "unresolvedDrop": "Some dropped items have no local file.",
+          "connecting": "Connecting…",
+          "offline": "Connect to this machine to browse its files.",
+          "empty": "This folder is empty."
+        },
+        "preview": {
+          "desktopOnly": "Previews need the desktop app",
+          "saved": "Saved {{name}}",
+          "tooLarge": "This file is {{size}}, too large to preview here.",
+          "download": "Download",
+          "binary": "Binary file · {{size}}",
+          "truncated": "Showing first {{size}}",
+          "edit": "Edit",
+          "save": "Save",
+          "close": "Close preview"
+        },
+        "prompt": {
+          "cancel": "Cancel"
+        },
+        "list": {
+          "sessions": "{{count}} running agents"
+        },
+        "transfers": {
+          "files": "{{done}} of {{total}} files",
+          "failed": "Failed",
+          "cancelled": "Cancelled",
+          "cancel": "Cancel transfer",
+          "running": "Transfers · {{count}} running",
+          "title": "Transfers",
+          "clear": "Clear finished"
+        }
       }
     },
     "i18n": {

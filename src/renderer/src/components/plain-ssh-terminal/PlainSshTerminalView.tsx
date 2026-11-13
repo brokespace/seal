@@ -80,10 +80,12 @@ function resolveThemeColors(
 /** One plain SSH session on Orca's standalone terminal; it starts on mount and hangs up on unmount. */
 export function PlainSshTerminalView({
   targetId,
+  purpose,
   hidden,
   onPhase
 }: {
   targetId: string
+  purpose?: 'machine-shell'
   hidden: boolean
   onPhase: (phase: PlainSshTerminalPhase) => void
 }): React.JSX.Element {
@@ -220,7 +222,7 @@ export function PlainSshTerminalView({
       }
     })
     void api
-      .open({ targetId, cols: terminal.cols, rows: terminal.rows })
+      .open({ targetId, cols: terminal.cols, rows: terminal.rows, purpose })
       .then((result) => {
         if (disposed) {
           if (result.ok) {
@@ -280,7 +282,7 @@ export function PlainSshTerminalView({
       terminalRef.current = null
       fitRef.current = null
     }
-  }, [targetId])
+  }, [targetId, purpose])
 
   // Why: appearance and Option-as-Alt changes must land live; reopening would hang up ssh.
   useEffect(() => {
