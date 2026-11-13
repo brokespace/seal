@@ -1,8 +1,5 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react'
-import { useAppStore } from '@/store'
-import { revealDashboardAgent } from '@/components/dashboard/reveal-dashboard-agent'
 import { useLiveSessions } from '@/components/live-sessions/live-session-registry-store'
-import { rememberLiveSessionSelection } from '@/components/live-sessions/live-session-selection'
 import {
   useMachineMetricsEntries,
   useMachineMetricsPolling
@@ -21,7 +18,8 @@ import {
   HomeMachinesContext,
   HomeSessionsContext
 } from './home-overview-contexts'
-import type { HomeOverviewActions, HomeOverviewProviders } from './home-overview-model'
+import { sealHomeOverviewActions } from './home-overview-actions'
+import type { HomeOverviewProviders } from './home-overview-model'
 import {
   OrcaMachines,
   orcaHomeOverviewProviders,
@@ -92,27 +90,11 @@ function SealAccounts({ children }: Children): React.JSX.Element {
 }
 
 function SealActions({ children }: Children): React.JSX.Element {
-  const openAutomationsPage = useAppStore((s) => s.openAutomationsPage)
-  const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
-  const openMachinesPage = useAppStore((s) => s.openMachinesPage)
-  const openSessionsPage = useAppStore((s) => s.openSessionsPage)
-  const actions = useMemo<HomeOverviewActions>(
-    () => ({
-      openSession: (session) => {
-        if (session.target.kind === 'orca-pane') {
-          revealDashboardAgent(session.target.reveal)
-          return
-        }
-        rememberLiveSessionSelection(session.target.sessionId)
-        openSessionsPage()
-      },
-      openAutomations: openAutomationsPage,
-      openMachines: openMachinesPage,
-      openAccountsSettings: () => openSettingsTarget({ pane: 'accounts', repoId: null })
-    }),
-    [openAutomationsPage, openSettingsTarget, openMachinesPage, openSessionsPage]
+  return (
+    <HomeActionsContext.Provider value={sealHomeOverviewActions}>
+      {children}
+    </HomeActionsContext.Provider>
   )
-  return <HomeActionsContext.Provider value={actions}>{children}</HomeActionsContext.Provider>
 }
 
 /** Home backed by Seal's live-session registry, machines service and account vault. */

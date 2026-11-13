@@ -1,20 +1,22 @@
 import { CalendarClock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
-import type { HomeAutomationsResult } from './home-overview-model'
+import type { HomeAutomation, HomeAutomationsResult } from './home-overview-model'
 import { formatHomeCountdown } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
 
 const MAX_AUTOMATION_ROWS = 5
 
 export function HomeAutomationsPanel({
   result,
   now,
-  onOpen
+  onOpen,
+  onOpenAutomation
 }: {
   result: HomeAutomationsResult
   now: number
   onOpen: () => void
+  onOpenAutomation: (automation: HomeAutomation) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const enabled = result.automations.filter((automation) => automation.enabled)
@@ -50,14 +52,19 @@ export function HomeAutomationsPanel({
           </p>
           <ul className="px-1.5 py-1.5">
             {result.automations.slice(0, MAX_AUTOMATION_ROWS).map((automation) => (
-              <li key={automation.id} className="flex items-center gap-2 px-1.5 py-1 text-xs">
-                <CalendarClock className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate text-foreground">{automation.name}</span>
-                <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
-                  {automation.nextRunAt
-                    ? formatHomeCountdown(automation.nextRunAt, now)
-                    : t('home.overview.automations.paused', 'Paused')}
-                </span>
+              <li key={automation.id}>
+                <HomeOverviewRowButton
+                  onClick={() => onOpenAutomation(automation)}
+                  className="px-1.5 py-1 text-xs"
+                >
+                  <CalendarClock className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate text-foreground">{automation.name}</span>
+                  <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
+                    {automation.nextRunAt
+                      ? formatHomeCountdown(automation.nextRunAt, now)
+                      : t('home.overview.automations.paused', 'Paused')}
+                  </span>
+                </HomeOverviewRowButton>
               </li>
             ))}
           </ul>

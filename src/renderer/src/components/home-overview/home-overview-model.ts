@@ -96,11 +96,15 @@ export type HomeAutomationsResult = {
   status: 'loading' | 'ready' | 'error'
 }
 
+/** Every Home click goes through one of these; each must navigate somewhere real. */
 export type HomeOverviewActions = {
   openSession: (session: HomeSession) => void
-  openAutomations: () => void
+  openMachine: (machine: HomeMachine) => void
   openMachines: () => void
   openAccountsSettings: () => void
+  openWorkspace: (workspace: HomeWorkspace) => void
+  openAutomation: (automation: HomeAutomation) => void
+  openAutomations: () => void
 }
 
 export type HomeProviderComponent = ComponentType<{ children: ReactNode }>
