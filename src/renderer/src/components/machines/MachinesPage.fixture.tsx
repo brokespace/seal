@@ -10,6 +10,7 @@ import type { SshConnectionState } from '../../../../shared/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
 import MachinesPage from './MachinesPage'
+import { MachinesSettingsPane } from '../settings/machines/MachinesSettingsPane'
 
 const GPU = 'gpu-box'
 const NAS = 'nas'
@@ -393,3 +394,14 @@ function previewFixture(fileName: string) {
 export const markdownPreview = previewFixture('README.md')
 
 export const imagePreview = previewFixture('loss-curve.png')
+
+export const settingsMachines = defineFixture({
+  width: 860,
+  store: { sshConnectionStates: STATES },
+  setup: installFakes,
+  render: () => (
+    <div style={{ padding: 24 }}>
+      <MachinesSettingsPane sshAddSignal={0} serverAddSignal={0} advanced={null} />
+    </div>
+  )
+})
