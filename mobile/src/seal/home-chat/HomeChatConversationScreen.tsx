@@ -140,9 +140,11 @@ export function HomeChatConversationScreen() {
         ? t('seal.homeChat.status.error', 'Stopped with an error')
         : chat?.backend === 'openai-compatible'
           ? t('seal.homeChat.backend.openai', 'Model API')
-          : chat
-            ? t('seal.homeChat.backend.claude', 'Claude Code')
-            : undefined
+          : chat?.backend === 'codex'
+            ? t('seal.homeChat.backend.codex', 'Codex')
+            : chat
+              ? t('seal.homeChat.backend.claude', 'Claude Code')
+              : undefined
 
   let body: React.ReactNode
   if (!detail?.loaded) {

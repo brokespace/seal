@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
 const ChatId = z.string().min(1).max(200)
-const Backend = z.enum(['claude-code', 'openai-compatible'])
+const Backend = z.enum(['claude-code', 'codex', 'openai-compatible'])
 
 export const HomeChatIdParams = z.object({ chatId: ChatId }).strict()
 

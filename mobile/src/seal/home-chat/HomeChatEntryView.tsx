@@ -111,6 +111,17 @@ function HomeChatEntryViewContent({
           <Text style={styles.progressText}>{entry.text}</Text>
         </View>
       )
+    case 'compaction':
+      return (
+        <View style={styles.inlineRow}>
+          <Dot size={18} color={colors.textSecondary} />
+          <Text style={styles.progressText}>
+            {entry.auto
+              ? t('seal.homeChat.compaction.auto', 'Earlier messages summarized for the model')
+              : t('seal.homeChat.compaction.manual', 'Earlier messages summarized at your request')}
+          </Text>
+        </View>
+      )
     case 'error':
       return (
         <View style={styles.inlineRow}>

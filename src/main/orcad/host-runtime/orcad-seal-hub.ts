@@ -15,6 +15,7 @@ export function installOrcadSealHub(
   installLiveSessions(runtime, store)
   void installHomeChat({
     claudeAccounts: accounts?.claudeAccounts ?? { listAccounts: () => NO_CLAUDE_ACCOUNTS },
+    codexAccounts: () => store.getSettings().codexManagedAccounts,
     repos: () => store.getRepos()
   }).catch((error: unknown) => console.warn('[orcad] Home chat failed to start:', error))
 }

@@ -1,6 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
-import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
+import type {
+  ClaudeRateLimitAccountsState,
+  CodexManagedAccount
+} from '../../shared/managed-account-types'
 import type {
   HomeChatCreateArgs,
   HomeChatEvent,
@@ -29,12 +32,14 @@ function broadcast(event: HomeChatEvent): void {
 
 type AttachmentArgs = { chatId: string; attachmentId: string }
 
-export function registerHomeChatHandlers(
-  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
-  repos: () => Repo[],
-  idleCloseMs?: () => number | null
-): void {
-  const ready = installHomeChat({ claudeAccounts, repos, idleCloseMs })
+export type HomeChatHandlerSources = {
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
+  codexAccounts: () => readonly CodexManagedAccount[]
+  repos: () => Repo[]
+}
+
+export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void {
+  const ready = installHomeChat(sources)
   onHomeChatEvent(broadcast)
   const handle = <Args, Result>(
     channel: string,
@@ -52,6 +57,8 @@ export function registerHomeChatHandlers(
     service.send(args.chatId, args.text)
   )
   handle('homeChat:stop', (service, args: { chatId: string }) => service.stop(args.chatId))
+  handle('homeChat:compact', (service, args: { chatId: string }) => service.compact(args.chatId))
+  handle('homeChat:listMachines', (service) => service.listMachines())
   handle(
     'homeChat:respondApproval',
     (service, args: { chatId: string; entryId: string; approved: boolean }) =>

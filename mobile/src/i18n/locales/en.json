@@ -5062,7 +5062,8 @@
       },
       "backend": {
         "openai": "Model API",
-        "claude": "Claude Code"
+        "claude": "Claude Code",
+        "codex": "Codex"
       },
       "chatLoadFailed": "Could not load this chat",
       "retry": "Retry",
@@ -5110,7 +5111,8 @@
         "claude": "Claude Code · {{account}}",
         "openaiDetail": "Uses the model set on the desktop",
         "title": "New chat",
-        "accountsFailed": "Could not load Claude accounts"
+        "codex": "Codex · {{account}}",
+        "accountsLoadFailed": "Could not load accounts"
       },
       "notice": {
         "job": "Background job",
@@ -5124,6 +5126,10 @@
         "ok": "Done",
         "error": "Failed",
         "denied": "Denied"
+      },
+      "compaction": {
+        "auto": "Earlier messages summarized for the model",
+        "manual": "Earlier messages summarized at your request"
       }
     },
     "liveSessions": {

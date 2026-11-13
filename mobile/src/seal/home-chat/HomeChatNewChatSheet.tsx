@@ -10,7 +10,6 @@ import { fetchHomeChatAccounts } from './home-chat-operations'
 
 export type HomeChatNewChatChoice = { backend: HomeChatBackendKind; accountId: string | null }
 
-const CLAUDE_PREFIX = 'claude:'
 const MODEL_API = 'openai'
 
 /** Picks where a new chat runs: a Claude account (the default login first) or the configured model API. */
@@ -44,18 +43,23 @@ export function HomeChatNewChatSheet({
     }
   }, [visible, client])
 
-  const claudeAccounts: HomeChatAccountOption[] = accounts ?? [
-    { id: null, label: t('seal.homeChat.account.default', 'Default login') }
+  const accountOptions: HomeChatAccountOption[] = accounts ?? [
+    { backend: 'claude-code', id: null, label: '' },
+    { backend: 'codex', id: null, label: '' }
   ]
   const options: PickerOption[] = [
-    ...claudeAccounts.map((account) => ({
-      value: `${CLAUDE_PREFIX}${account.id ?? ''}`,
-      label: t('seal.homeChat.newChat.claude', 'Claude Code · {{account}}', {
-        account:
-          account.id === null ? t('seal.homeChat.account.default', 'Default login') : account.label
-      }),
-      subtitle: account.detail
-    })),
+    ...accountOptions.map((account) => {
+      const name =
+        account.id === null ? t('seal.homeChat.account.default', 'Default login') : account.label
+      return {
+        value: `${account.backend}:${account.id ?? ''}`,
+        label:
+          account.backend === 'codex'
+            ? t('seal.homeChat.newChat.codex', 'Codex · {{account}}', { account: name })
+            : t('seal.homeChat.newChat.claude', 'Claude Code · {{account}}', { account: name }),
+        subtitle: account.detail
+      }
+    }),
     {
       value: MODEL_API,
       label: t('seal.homeChat.backend.openai', 'Model API'),
@@ -69,7 +73,7 @@ export function HomeChatNewChatSheet({
       title={t('seal.homeChat.newChat.title', 'New chat')}
       subtitle={
         failed
-          ? t('seal.homeChat.newChat.accountsFailed', 'Could not load Claude accounts')
+          ? t('seal.homeChat.newChat.accountsLoadFailed', 'Could not load accounts')
           : undefined
       }
       options={options}
@@ -80,8 +84,12 @@ export function HomeChatNewChatSheet({
           onPick({ backend: 'openai-compatible', accountId: null })
           return
         }
-        const id = value.slice(CLAUDE_PREFIX.length)
-        onPick({ backend: 'claude-code', accountId: id === '' ? null : id })
+        const cut = value.indexOf(':')
+        const id = value.slice(cut + 1)
+        onPick({
+          backend: value.slice(0, cut) === 'codex' ? 'codex' : 'claude-code',
+          accountId: id === '' ? null : id
+        })
       }}
       onClose={onClose}
     />

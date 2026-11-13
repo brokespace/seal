@@ -11681,6 +11681,10 @@
             "893c8717f2": "Import from SSH config",
             "50416e3809": "Test connection",
             "004ef87a84": "Add SSH target"
+          },
+          "autoImported": {
+            "label": "Show auto-imported hosts",
+            "description": "{{count}} host(s) that Colima, Lima or OrbStack added to ~/.ssh/config for their own VMs."
           }
         },
         "tasks": {
@@ -25714,7 +25718,7 @@
   "homeChat": {
     "account": {
       "default": "Default login",
-      "label": "Claude account"
+      "label": "Account"
     },
     "approval": {
       "approve": "Approve",
@@ -25722,15 +25726,15 @@
       "default": "This action needs your approval."
     },
     "backend": {
-      "claude": "Claude Code",
-      "label": "Backend",
-      "openai": "Model API"
+      "claude": "Claude",
+      "label": "Model source",
+      "openai": "Model API",
+      "codex": "Codex"
     },
-    "delete": "Delete this chat",
     "dismissError": "Dismiss",
     "empty": {
       "title": "Your machines, one chat",
-      "capabilities": "Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree."
+      "capabilities": "Ask Seal for anything on this computer or any connected machine: run a command, move files, check on an agent session, switch accounts, or hand coding work to an agent in a worktree."
     },
     "label": "Seal assistant",
     "messageLabel": "Message",
@@ -25738,8 +25742,8 @@
       "label": "Model",
       "placeholder": "Model"
     },
-    "new": "New chat",
-    "noChats": "No chats yet",
+    "new": "New thread",
+    "noChats": "No threads yet",
     "notSent": "Not sent",
     "placeholder": "Ask Seal to do something on any of your machines…",
     "send": "Send",
@@ -25753,7 +25757,9 @@
       "model": "Default model",
       "save": "Save",
       "title": "Model API",
-      "openAssistant": "Assistant settings"
+      "openAssistant": "Assistant settings",
+      "contextWindow": "Context window (tokens)",
+      "contextWindowHint": "Seal summarizes older messages for the model before this fills."
     },
     "stop": "Stop",
     "thinking": {
@@ -25761,7 +25767,7 @@
       "done": "Thought for {{duration}}",
       "live": "Thinking…"
     },
-    "title": "Assistant",
+    "title": "Seal assistant",
     "working": "Working…",
     "worker": "Worker",
     "attachment": {
@@ -25801,6 +25807,35 @@
       "searxngUrl": "SearXNG URL",
       "apiKey": "Search API key",
       "apiKeyRequired": "Required for this provider"
+    },
+    "compaction": {
+      "auto": "Earlier messages summarized for the model",
+      "manual": "Earlier messages summarized at your request"
+    },
+    "context": {
+      "thisComputer": "This computer",
+      "machine": "Machine: {{machine}}",
+      "online": "· {{online}} of {{total}} machines online",
+      "machinesTitle": "Machines the assistant can reach",
+      "usage": "{{used}} / {{window}}",
+      "label": "Context: {{usage}} tokens",
+      "title": "Context",
+      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
+      "compactions": "Summaries so far: {{count}}",
+      "compactNow": "Summarize older messages now"
+    },
+    "threads": {
+      "renameLabel": "Thread name",
+      "confirmDelete": "Delete \"{{title}}\"?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "rename": "Rename",
+      "open": "Threads",
+      "title": "Threads",
+      "close": "Close"
+    },
+    "open": {
+      "sessionGone": "That agent session is no longer running."
     }
   },
   "seal": {

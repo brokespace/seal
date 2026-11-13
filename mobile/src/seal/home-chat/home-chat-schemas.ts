@@ -8,7 +8,7 @@ import type {
 } from '../../../../src/shared/home-chat/home-chat-types'
 import { salvagingArray } from '../../../../src/shared/zod-salvage'
 
-const entryBase = { id: z.string().min(1), rev: z.number(), at: z.number() }
+const entryBase = { id: z.string().min(1), rev: z.number(), at: z.number(), ord: z.number() }
 
 export const homeChatEntrySchema: z.ZodType<HomeChatEntry> = z.discriminatedUnion('kind', [
   z.object({
@@ -42,6 +42,12 @@ export const homeChatEntrySchema: z.ZodType<HomeChatEntry> = z.discriminatedUnio
     approvalReason: z.string().optional()
   }),
   z.object({ ...entryBase, kind: z.literal('progress'), text: z.string() }),
+  z.object({
+    ...entryBase,
+    kind: z.literal('compaction'),
+    summary: z.string(),
+    auto: z.boolean()
+  }),
   z.object({ ...entryBase, kind: z.literal('error'), text: z.string() }),
   z.object({
     ...entryBase,
@@ -64,12 +70,18 @@ const summaryShape = {
   id: z.string().min(1),
   title: z.string(),
   parentChatId: z.string().optional(),
-  backend: z.enum(['claude-code', 'openai-compatible']),
+  backend: z.enum(['claude-code', 'codex', 'openai-compatible']),
   accountId: z.string().nullable(),
   model: z.string().nullable(),
   status: z.enum(['idle', 'running', 'error']),
   createdAt: z.number(),
-  updatedAt: z.number()
+  updatedAt: z.number(),
+  context: z.object({
+    usedTokens: z.number(),
+    windowTokens: z.number(),
+    compactions: z.number()
+  }),
+  lastMachine: z.string().nullable()
 }
 
 export const homeChatSummarySchema: z.ZodType<HomeChatSummary> = z.object(summaryShape)
@@ -83,6 +95,7 @@ export const homeChatSchema: z.ZodType<HomeChat> = z.object({
 export const homeChatSummaryListSchema = salvagingArray(homeChatSummarySchema)
 
 export const homeChatAccountOptionSchema: z.ZodType<HomeChatAccountOption> = z.object({
+  backend: z.enum(['claude-code', 'codex']),
   id: z.string().nullable(),
   label: z.string(),
   detail: z.string().optional()
@@ -92,7 +105,28 @@ const homeChatEventSchema: z.ZodType<HomeChatEvent> = z.discriminatedUnion('type
   z.object({ type: z.literal('entry'), chatId: z.string(), entry: homeChatEntrySchema }),
   z.object({ type: z.literal('summary'), chat: homeChatSummarySchema }),
   z.object({ type: z.literal('deleted'), chatId: z.string() }),
-  z.object({ type: z.literal('memory') })
+  z.object({ type: z.literal('memory') }),
+  z.object({
+    type: z.literal('open'),
+    target: z.discriminatedUnion('kind', [
+      z.object({
+        kind: z.literal('view'),
+        view: z.enum([
+          'home',
+          'machines',
+          'sessions',
+          'tasks',
+          'activity',
+          'automations',
+          'skills',
+          'settings'
+        ])
+      }),
+      z.object({ kind: z.literal('thread'), chatId: z.string() }),
+      z.object({ kind: z.literal('machine'), machineId: z.string() }),
+      z.object({ kind: z.literal('take-over'), sessionId: z.string() })
+    ])
+  })
 ])
 
 export const homeChatWatchFrameSchema = z.discriminatedUnion('type', [

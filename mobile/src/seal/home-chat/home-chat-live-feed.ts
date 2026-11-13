@@ -259,6 +259,7 @@ export class HomeChatLiveFeed {
         this.removeChat(event.chatId)
         return
       case 'memory':
+      case 'open':
         return
     }
   }

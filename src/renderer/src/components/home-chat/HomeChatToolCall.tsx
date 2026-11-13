@@ -1,118 +1,18 @@
 import { useState } from 'react'
-import {
-  Activity,
-  ArrowLeftRight,
-  Ban,
-  BookOpen,
-  Bot,
-  Brain,
-  CalendarClock,
-  Check,
-  ChevronRight,
-  Eraser,
-  FilePen,
-  FileText,
-  Globe,
-  ListChecks,
-  Loader2,
-  Megaphone,
-  MessageSquare,
-  Paperclip,
-  Search,
-  Server,
-  ServerCog,
-  ShieldAlert,
-  Square,
-  Terminal,
-  Trash2,
-  Users,
-  Wrench,
-  X,
-  type LucideIcon
-} from 'lucide-react'
+import { Ban, Check, ChevronRight, Loader2, Server, ShieldAlert, X } from 'lucide-react'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
 import { SecuritySurface } from '../ui/security-surface'
 import type { HomeChatEntry } from '../../../../shared/home-chat/home-chat-types'
 import { formatHomeChatDuration } from './home-chat-format'
+import {
+  HOME_CHAT_FALLBACK_TOOL_ICON,
+  HOME_CHAT_TOOL_ICONS,
+  homeChatToolSummary
+} from './home-chat-tool-presentation'
 
 type ToolEntry = Extract<HomeChatEntry, { kind: 'tool' }>
-
-const TOOL_ICONS: Record<string, LucideIcon> = {
-  run_command: Terminal,
-  read_file: FileText,
-  write_file: FilePen,
-  transfer_file: ArrowLeftRight,
-  delete_path: Trash2,
-  seal_cli: Bot,
-  list_machines: Server,
-  job_status: Activity,
-  job_output: FileText,
-  job_kill: Square,
-  job_cleanup: Eraser,
-  configure_machine: ServerCog,
-  attach_file: Paperclip,
-  report_progress: Megaphone,
-  remember: Brain,
-  forget: Eraser,
-  load_skill: BookOpen,
-  spawn_subagent: Users,
-  check_subagent: ListChecks,
-  message_subagent: MessageSquare,
-  stop_subagent: Square,
-  web_search: Search,
-  web_fetch: Globe,
-  routines: CalendarClock
-}
-
-/** One line that says what the call does, in the words of the tool's own arguments. */
-function toolSummary(entry: ToolEntry): string {
-  const input = entry.input
-  const str = (key: string): string => String(input[key] ?? '')
-  switch (entry.tool) {
-    case 'run_command':
-      return `${input.background === true ? '& ' : '$ '}${str('command')}`
-    case 'read_file':
-    case 'write_file':
-    case 'delete_path':
-    case 'attach_file':
-      return str('path')
-    case 'job_status':
-    case 'job_output':
-    case 'job_kill':
-    case 'job_cleanup':
-      return str('job_id')
-    case 'configure_machine':
-      return str('machine')
-    case 'remember':
-      return `${str('kind') || 'fact'}: ${str('text')}`
-    case 'forget':
-      return str('query')
-    case 'load_skill':
-      return str('name')
-    case 'spawn_subagent':
-      return str('title')
-    case 'check_subagent':
-    case 'message_subagent':
-    case 'stop_subagent':
-      return str('id')
-    case 'web_search':
-      return str('query')
-    case 'web_fetch':
-      return str('url')
-    case 'routines':
-      return [str('action'), str('name') || str('id'), str('schedule')].filter(Boolean).join(' ')
-    case 'transfer_file':
-      return `${str('from_machine')}:${str('from_path')} → ${str('to_machine')}:${str('to_path')}`
-    case 'seal_cli':
-      return `seal ${Array.isArray(input.args) ? input.args.join(' ') : ''}`
-    case 'list_machines':
-      return input.probe_load === true ? 'with load' : ''
-    default:
-      return JSON.stringify(input)
-  }
-}
 
 function StatusIcon({ status }: { status: ToolEntry['status'] }): React.JSX.Element {
   switch (status) {
@@ -138,13 +38,18 @@ export function HomeChatToolCall({
 }): React.JSX.Element {
   const t = useTranslate()
   const [open, setOpen] = useState(false)
-  const Icon = TOOL_ICONS[entry.tool] ?? Wrench
+  const Icon = HOME_CHAT_TOOL_ICONS[entry.tool] ?? HOME_CHAT_FALLBACK_TOOL_ICON
   const label = entry.tool.replace(/^mcp__\w+__/, '').replaceAll('_', ' ')
-  const summary = toolSummary(entry)
-  const expandable = Boolean(entry.output) || entry.tool === 'write_file'
+  const summary = homeChatToolSummary(entry.tool, entry.input)
+  const hasInput = Object.keys(entry.input).length > 0
+  const expandable = Boolean(entry.output) || hasInput
 
   return (
-    <div className="rounded-md border border-border text-xs" data-tool-status={entry.status}>
+    <div
+      className="rounded-md border border-border text-xs"
+      data-tool-status={entry.status}
+      data-tool-name={entry.tool}
+    >
       <button
         type="button"
         className={cn(
@@ -183,9 +88,9 @@ export function HomeChatToolCall({
 
       {open && (
         <div className="space-y-2 border-t border-border px-2.5 py-2">
-          {entry.tool === 'write_file' && (
-            <pre className="scrollbar-sleek max-h-48 overflow-auto whitespace-pre-wrap font-mono text-muted-foreground">
-              {String(entry.input.content ?? '')}
+          {hasInput && (
+            <pre className="scrollbar-sleek max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-muted-foreground">
+              {JSON.stringify(entry.input, null, 2)}
             </pre>
           )}
           {entry.output && (

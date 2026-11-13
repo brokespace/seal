@@ -8,7 +8,8 @@ import {
 import { powerShellCommand } from '../../ssh/remote-exec/ssh-remote-powershell'
 import type { RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
-import type { SshTarget } from '../../../shared/ssh-types'
+import type { SshConnectionState, SshTarget } from '../../../shared/ssh-types'
+import { sshMachineStatus } from '../../../shared/machines/machine-summaries'
 import {
   decodeBase64File,
   posixLoadProbeScript,
@@ -26,7 +27,11 @@ import type {
   HomeChatShellDialect
 } from './home-chat-machine-types'
 
-export function sshMachineInfo(target: SshTarget, connected: boolean): HomeChatMachineInfo {
+export function sshMachineInfo(
+  target: SshTarget,
+  state: Pick<SshConnectionState, 'status' | 'error'> | undefined
+): HomeChatMachineInfo {
+  const { status, detail } = sshMachineStatus(state)
   const via = target.jumpHost
     ? `ProxyJump ${target.jumpHost}`
     : target.proxyCommand
@@ -38,7 +43,9 @@ export function sshMachineInfo(target: SshTarget, connected: boolean): HomeChatM
     kind: 'ssh',
     address: `${target.username}@${target.host}:${target.port}`,
     ...(via ? { via } : {}),
-    connected
+    connected: status === 'online',
+    status,
+    ...(detail ? { statusDetail: detail } : {})
   }
 }
 
@@ -86,7 +93,10 @@ export function createSshMachine(
   const quiet = (script: string): Promise<HomeChatExecResult> => run(script, { timeoutMs: 30_000 })
   const transferOptions = host ? { hostPlatform: host } : undefined
   return {
-    info: { ...sshMachineInfo(target, true), ...(host ? { platform: host.os } : {}) },
+    info: {
+      ...sshMachineInfo(target, { status: 'connected', error: null }),
+      ...(host ? { platform: host.os } : {})
+    },
     dialect,
     exec: run,
     readTextFile: async (path, maxBytes) => {

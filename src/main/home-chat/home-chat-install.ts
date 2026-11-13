@@ -1,18 +1,30 @@
 import { join } from 'node:path'
 import { getAppEnvironment } from '../../shared/app-environment'
 import type { HomeChatEvent } from '../../shared/home-chat/home-chat-types'
-import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
+import type {
+  ClaudeRateLimitAccountsState,
+  CodexManagedAccount
+} from '../../shared/managed-account-types'
 import type { Repo } from '../../shared/repo-types'
-import { createClaudeAccountsProvider } from './home-chat-accounts'
+import { getLiveSessionService } from '../live-sessions/live-session-service-instance'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
+import { createHomeChatAccountProvider } from './home-chat-accounts'
 import { HomeChatService } from './home-chat-service'
-import { HomeChatStore } from './home-chat-store'
-import { createDefaultHomeChatMachineProvider } from './machines/home-chat-machine-provider'
+import { HomeChatSettingsStore } from './home-chat-settings-store'
+import {
+  createDefaultHomeChatMachineProvider,
+  SSH_MACHINE_SOURCES
+} from './machines/home-chat-machine-provider'
+import { createPairedRuntimeSource } from './machines/home-chat-runtime-source'
+import { createHomeChatAccountAccess } from './seal/home-chat-account-access'
+import { createHomeChatSessionAccess } from './seal/home-chat-session-access'
+import { HomeChatThreadStore } from './thread/home-chat-thread-store'
 import { runOrcaCli } from './tools/home-chat-orca-cli'
 
 export type HomeChatInstallDeps = {
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
+  codexAccounts: () => readonly CodexManagedAccount[]
   repos: () => Repo[]
-  idleCloseMs?: () => number | null
 }
 
 let ready: Promise<HomeChatService> | null = null
@@ -28,15 +40,27 @@ export function installHomeChat(deps: HomeChatInstallDeps): Promise<HomeChatServ
     return ready
   }
   const rootDir = homeChatRootDir()
-  ready = HomeChatStore.open(rootDir).then(async (store) => {
+  const runtimes = createPairedRuntimeSource()
+  ready = Promise.all([
+    HomeChatThreadStore.open(rootDir),
+    HomeChatSettingsStore.open(rootDir)
+  ]).then(async ([threads, settings]) => {
     const service = new HomeChatService({
       rootDir,
-      store,
-      accounts: createClaudeAccountsProvider(deps.claudeAccounts),
-      createMachines: createDefaultHomeChatMachineProvider,
+      threads,
+      settings,
+      accounts: createHomeChatAccountProvider({
+        listClaudeAccounts: () => deps.claudeAccounts.listAccounts(),
+        listCodexAccounts: deps.codexAccounts
+      }),
+      createMachines: (machineNotes) =>
+        createDefaultHomeChatMachineProvider(machineNotes, { ...SSH_MACHINE_SOURCES, runtimes }),
       runOrcaCli,
       repos: deps.repos,
-      idleCloseMs: deps.idleCloseMs,
+      seal: {
+        sessions: createHomeChatSessionAccess({ live: getLiveSessionService }),
+        accounts: createHomeChatAccountAccess(getSealAccountManager)
+      },
       emit: (event) => {
         for (const listener of listeners) {
           listener(event)
