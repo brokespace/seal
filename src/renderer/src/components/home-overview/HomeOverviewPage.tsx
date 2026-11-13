@@ -4,7 +4,7 @@ import {
   buildHomeAttentionItems,
   countSessionsByState,
   mergeSessionMachines
-} from './home-overview-derivations'
+} from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
   HomeActionsContext,

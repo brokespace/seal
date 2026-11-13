@@ -4,7 +4,7 @@ import type {
   HomeSession,
   HomeSessionState,
   HomeUsageWindow
-} from './home-overview-model'
+} from './home-overview-types'
 
 export const ACCOUNT_NEAR_LIMIT_PERCENT = 80
 

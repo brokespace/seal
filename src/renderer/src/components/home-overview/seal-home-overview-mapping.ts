@@ -1,13 +1,15 @@
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../../../../shared/execution-host'
-import type {
-  LiveSession,
-  LiveSessionStatus
-} from '../../../../shared/live-sessions/live-session-types'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { homeSessionFromLive as homeSessionFromLiveFields } from '../../../../shared/home-overview/home-live-session-mapping'
 import type { MachineMetrics } from '../../../../shared/machines/machine-types'
 import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
+import {
+  machineLoad,
+  machineMemoryUsedPercent
+} from '../../../../shared/home-overview/home-machine-readings'
 import {
   liveSessionProviderLabel,
   liveSessionTitle
@@ -18,56 +20,14 @@ import type {
   HomeAccountStatus,
   HomeMachine,
   HomeSession,
-  HomeSessionState,
   HomeUsageWindow
 } from './home-overview-model'
 
-function homeStateFromLive(status: LiveSessionStatus): HomeSessionState {
-  switch (status) {
-    case 'working':
-      return 'working'
-    case 'waiting-input':
-      return 'waiting'
-    case 'needs-permission':
-      return 'permission'
-    case 'errored':
-      return 'errored'
-    case 'done':
-      return 'done'
-  }
-}
-
-export function liveSessionMachineId(session: Pick<LiveSession, 'machine'>): string {
-  return session.machine.kind === 'local'
-    ? LOCAL_EXECUTION_HOST_ID
-    : toSshExecutionHostId(session.machine.hostId)
-}
-
 export function homeSessionFromLive(session: LiveSession): HomeSession {
-  const state = homeStateFromLive(session.status)
-  const machineId = liveSessionMachineId(session)
-  const project = session.project ?? session.cwd ?? session.machine.label
-  const askSummary =
-    session.permission?.question ??
-    (state === 'waiting' || state === 'permission' ? session.statusDetail : null)
-  return {
-    id: session.id,
-    state,
-    unseen: false,
-    machineId,
-    machineLabel: session.machine.label,
-    projectId: `${machineId}:${session.cwd ?? project}`,
-    projectName: project,
-    workspaceName: session.project ?? '',
+  return homeSessionFromLiveFields(session, {
     title: liveSessionTitle(session),
-    agentType: session.provider,
-    agentLabel: liveSessionProviderLabel(session),
-    startedAt: session.startedAt ?? session.lastActivityAt,
-    stateChangedAt: session.lastActivityAt,
-    finishedAt: state === 'done' ? session.lastActivityAt : null,
-    ...(askSummary ? { askSummary } : {}),
-    target: { kind: 'live-session', sessionId: session.id }
-  }
+    agentLabel: liveSessionProviderLabel(session)
+  })
 }
 
 /**
@@ -94,25 +54,13 @@ export function mergeLiveSessions(
   return merged
 }
 
-function percentOf(used: number, total: number): number {
-  return Math.max(0, Math.min(100, (used / total) * 100))
-}
-
 export function homeMachineFromSummary(
   summary: MachineSummary,
   metrics: MachineMetrics | null | undefined,
   localLabel: string
 ): HomeMachine {
-  let load: number | undefined
-  if (metrics?.loadAverage && metrics.cpuCount) {
-    load = metrics.loadAverage[0] / metrics.cpuCount
-  } else if (metrics?.cpuUsagePercent != null) {
-    load = metrics.cpuUsagePercent / 100
-  }
-  const memoryUsedPercent =
-    metrics?.memTotalBytes && metrics.memAvailableBytes != null
-      ? percentOf(metrics.memTotalBytes - metrics.memAvailableBytes, metrics.memTotalBytes)
-      : undefined
+  const load = machineLoad(metrics)
+  const memoryUsedPercent = machineMemoryUsedPercent(metrics)
   return {
     id: summary.id,
     label: summary.kind === 'local' ? localLabel : summary.label,

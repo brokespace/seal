@@ -696,7 +696,8 @@
       "accounts": "Accounts",
       "tasks": "Tasks",
       "moreActions": "More actions",
-      "automations": "Automations"
+      "automations": "Automations",
+      "seal": "Seal"
     },
     "hostScreenOverlays": {
       "deleteConfirmMessage": "Delete \"{{name}}\" ({{branch}})?",
@@ -5001,7 +5002,32 @@
         "off": "Never move this session"
       },
       "sessionSheetTitle": "Session account",
-      "sessionSheetMessage": "{{value0}} is on {{value1}}. Pick an account to move it to, or whether auto-swap may move it."
+      "sessionSheetMessage": "{{value0}} is on {{value1}}. Pick an account to move it to, or whether auto-swap may move it.",
+      "authFailure": "Signed out; sign in again on your computer.",
+      "disabled": "Turned off for auto-swap",
+      "active": "In use",
+      "apiKey": "API key; no usage windows",
+      "window5h": "5h",
+      "windowWeekly": "Week",
+      "autoSwap": "Auto-swap",
+      "autoSwapHint": "Switch accounts before one runs out",
+      "liveSessionSwap": "Move running sessions",
+      "liveSessionSwapHint": "Sessions already running follow the swap",
+      "failover": "Swap when signed out",
+      "failoverHint": "Move off an account whose login stops working",
+      "rateLimitFallback": "Swap on limit messages",
+      "rateLimitFallbackHint": "When an agent stops at a limit usage missed",
+      "apiKeyFallback": "Fall back to API keys",
+      "apiKeyFallbackHint": "Pay-as-you-go once every subscription is used up",
+      "title": "Accounts",
+      "loading": "Loading accounts",
+      "emptyTitle": "No accounts yet",
+      "emptyMessage": "Add Claude or Codex accounts in Seal’s settings on your computer to swap between them here.",
+      "useAccount": "Use for new sessions",
+      "swapNow": "Pick the best account now",
+      "sessions": "Running sessions",
+      "noSessions": "No sessions Seal launched are open.",
+      "failedTitle": "Couldn’t change the account"
     },
     "homeChat": {
       "attachment": {
@@ -5126,7 +5152,32 @@
       "emptyMessage": "Claude Code and Codex sessions on this computer and its SSH hosts show up here.",
       "title": "Live sessions",
       "hideFinished": "Hide finished sessions",
-      "showFinished": "Show {{value0}} finished"
+      "showFinished": "Show {{value0}} finished",
+      "answerFailed": "The session didn’t take that answer.",
+      "takeOverDoneTitle": "Session stopped",
+      "takeOverDoneMessage": "Seal stopped the agent. Phones can’t open Seal panes, so reopen it on your computer: choose Take over on this session there, or run {{value0}}.",
+      "takeOverFailedTitle": "Couldn’t take over",
+      "session": "Session",
+      "account": "Session account",
+      "takeOverButton": "Take over",
+      "transcriptError": "Couldn’t read the transcript.",
+      "loadingTranscript": "Loading transcript",
+      "emptyTranscript": "Nothing here yet",
+      "emptyTranscriptMessage": "Messages show up as the session writes them.",
+      "ended": "This session is no longer running.",
+      "noRouteTakeOver": "Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over to reply.",
+      "noRoute": "Seal can’t type into this session.",
+      "loadEarlier": "Load earlier messages",
+      "takeOverTitle": "Take over this session?",
+      "takeOverMessage": "Seal stops {{value0}} on {{value1}} (it ends in the terminal it was started from). A reply in progress stops. Phones can’t open Seal panes, so you finish on your computer.",
+      "takeOverConfirm": "Stop and take over",
+      "takeOver": {
+        "notFound": "That session is no longer listed.",
+        "notExternal": "This session already runs in a Seal pane.",
+        "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
+        "stillRunning": "The agent process didn’t stop.",
+        "failed": "Something went wrong."
+      }
     },
     "machines": {
       "status": {
@@ -5251,6 +5302,24 @@
       "assistant": "Assistant",
       "assistantHint": "Ask about your sessions and machines",
       "title": "Seal"
+    },
+    "overview": {
+      "machineConnecting": "Connecting",
+      "machineError": "Unreachable",
+      "machineOffline": "Offline",
+      "machineReadings": "CPU {{value0}} · Mem {{value1}} · Disk {{value2}}",
+      "metricsUnavailable": "Metrics unavailable",
+      "metricsLoading": "Reading metrics…",
+      "title": "Overview",
+      "attention": "Needs you",
+      "sessions": "Sessions",
+      "loading": "Loading…",
+      "noSessions": "No agents running right now.",
+      "machines": "Machines",
+      "noMachines": "No machines yet.",
+      "accounts": "Accounts",
+      "noAccounts": "No accounts set up for auto-swap.",
+      "manageAccounts": "Manage accounts"
     }
   }
 }

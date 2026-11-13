@@ -6,7 +6,7 @@ import {
   homeElapsed,
   mergeSessionMachines
 } from './home-overview-derivations'
-import type { HomeAccount, HomeSession } from './home-overview-model'
+import type { HomeAccount, HomeSession } from './home-overview-types'
 
 function session(id: string, overrides: Partial<HomeSession> = {}): HomeSession {
   return {
