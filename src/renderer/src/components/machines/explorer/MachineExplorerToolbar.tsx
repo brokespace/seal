@@ -39,7 +39,6 @@ function ToolbarButton({
 
 export function MachineExplorerToolbar({
   root,
-  writable,
   isRemote,
   showHidden,
   onToggleHidden,
@@ -48,7 +47,6 @@ export function MachineExplorerToolbar({
   actions
 }: {
   root: string | null
-  writable: boolean
   isRemote: boolean
   showHidden: boolean
   onToggleHidden: () => void
@@ -113,7 +111,7 @@ export function MachineExplorerToolbar({
       >
         {showHidden ? <Eye /> : <EyeOff />}
       </ToolbarButton>
-      {writable && root ? (
+      {root ? (
         <>
           <ToolbarButton
             label={t('auto.components.machines.explorer.newFolder', 'New folder')}

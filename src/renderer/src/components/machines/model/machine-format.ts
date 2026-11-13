@@ -22,13 +22,14 @@ export function usedPercent(total: number | null, available: number | null): num
   return Math.min(100, Math.max(0, ((total - available) / total) * 100))
 }
 
-/** 1-minute load as a share of all cores, the closest portable stand-in for CPU busy %. */
+/** 1-minute load as a share of all cores, else the host's sampled busy %, which Windows reports instead. */
 export function cpuLoadPercent(
   loadAverage: [number, number, number] | null,
-  cpuCount: number | null
+  cpuCount: number | null,
+  cpuUsagePercent: number | null = null
 ): number | null {
   if (!loadAverage || !cpuCount || cpuCount <= 0) {
-    return null
+    return cpuUsagePercent === null ? null : Math.min(100, Math.max(0, cpuUsagePercent))
   }
   return Math.min(100, Math.max(0, (loadAverage[0] / cpuCount) * 100))
 }

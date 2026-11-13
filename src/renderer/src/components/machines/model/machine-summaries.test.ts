@@ -40,6 +40,5 @@ describe('buildMachineSummaries', () => {
       runtimeEnvironmentId: 'r2'
     })
     expect(machines[2]?.statusDetail).toBe('Permission denied')
-    expect(machines[3]?.browseMode).toBe('read-only')
   })
 })

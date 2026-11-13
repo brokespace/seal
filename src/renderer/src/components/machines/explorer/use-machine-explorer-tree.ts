@@ -159,7 +159,7 @@ export function useMachineExplorerTree(
   const watchKey = root && online ? [root, ...expanded].join('\n') : ''
   useEffect(() => {
     const api = window.api.machines
-    if (!api || machineId.startsWith('runtime:')) {
+    if (!api) {
       return
     }
     const dirs = watchKey ? watchKey.split('\n') : []

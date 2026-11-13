@@ -34,7 +34,6 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
 export function MachineFileExplorer({ machine }: { machine: MachineSummary }): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
-  const writable = machine.browseMode === 'full'
   const isRemote = machine.kind !== 'local'
   const [showHidden, setShowHidden] = useState(false)
   const tree = useMachineExplorerTree(machine.id, online, showHidden)
@@ -50,7 +49,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
   const root = tree.root
   const attachDropOwner = useOsFileDropOwner<string | null>(dropOwnerRef, {
     kind: 'files',
-    canAccept: writable && root !== null,
+    canAccept: root !== null,
     captureDestination: (event) => dropDirFromTarget(event.target) ?? root,
     onFiles: (files, context) => {
       setDropDir(null)
@@ -86,18 +85,9 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
         setPreview(null)
         return
       }
-      if (machine.kind === 'runtime') {
-        toast.message(
-          t(
-            'auto.components.machines.explorer.runtimePreview',
-            'Previews for runtime machines are not available yet.'
-          )
-        )
-        return
-      }
       setPreview({ path: row.path, entry: row.entry })
     },
-    [machine.kind, navigate, t]
+    [navigate]
   )
 
   const handlers = useMemo<MachineExplorerRowHandlers>(
@@ -150,8 +140,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
           size: row.entry.size
         })
       },
-      canDragOut: (row) =>
-        machine.kind !== 'runtime' && (!row.entry.isDirectoryLike || machine.kind === 'local'),
+      canDragOut: (row) => !row.entry.isDirectoryLike || machine.kind === 'local',
       onRetry: (path) => refresh(path),
       onLoadMore: (path) => loadMore(path)
     }),
@@ -182,7 +171,6 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
     <div className="flex min-h-0 flex-1 flex-col" data-machine-explorer={machine.id}>
       <MachineExplorerToolbar
         root={root}
-        writable={writable}
         isRemote={isRemote}
         showHidden={showHidden}
         onToggleHidden={() => setShowHidden((value) => !value)}
@@ -207,7 +195,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
               )}
               tabIndex={0}
               onDragEnter={(event) => {
-                if (writable && event.dataTransfer.types.includes('Files')) {
+                if (event.dataTransfer.types.includes('Files')) {
                   setDropDir(dropDirFromTarget(event.target) ?? root)
                 }
               }}
@@ -222,7 +210,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
                 }
               }}
               onKeyDown={(event) => {
-                if (!writable || selectedPaths.length === 0) {
+                if (selectedPaths.length === 0) {
                   return
                 }
                 if (event.key === 'Delete' || (event.key === 'Backspace' && event.metaKey)) {
@@ -272,7 +260,6 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
             menuRow={menuRow}
             menuDir={menuDir}
             selectedPaths={selectedPaths}
-            writable={writable}
             machineKind={machine.kind}
             onOpen={openEntry}
             actions={actions}
@@ -284,7 +271,6 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
             machineId={machine.id}
             path={preview.path}
             entry={preview.entry}
-            writable={writable}
             onClose={() => setPreview(null)}
             onDownload={() => actions.download([preview.path])}
           />

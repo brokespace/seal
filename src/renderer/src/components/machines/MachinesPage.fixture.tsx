@@ -1,16 +1,19 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
-import { toSshExecutionHostId } from '../../../../shared/execution-host'
+import { toRuntimeExecutionHostId, toSshExecutionHostId } from '../../../../shared/execution-host'
 import type {
   MachineFileEntry,
   MachineMetrics,
   MachineTransfer
 } from '../../../../shared/machines/machine-types'
 import type { SshConnectionState, SshTarget } from '../../../../shared/ssh-types'
+import type { PublicKnownRuntimeEnvironment } from '../../../../shared/remote-runtime/host-catalog/runtime-environments'
+import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
 import MachinesPage from './MachinesPage'
 
 const GPU = 'gpu-box'
 const NAS = 'nas'
+const KESSEL = 'kessel-ml'
 const HOME = '/home/brian'
 const now = Date.now()
 
@@ -92,6 +95,7 @@ function metrics(overrides: Partial<MachineMetrics>): MachineMetrics {
     cpuCount: 8,
     cpuModel: null,
     loadAverage: [1, 1, 1],
+    cpuUsagePercent: null,
     memTotalBytes: 32 * 1024 ** 3,
     memAvailableBytes: 16 * 1024 ** 3,
     diskTotalBytes: 1024 ** 4,
@@ -112,6 +116,7 @@ const METRICS: Record<string, MachineMetrics> = {
     arch: 'arm64',
     cpuCount: 12,
     loadAverage: [2.1, 1.8, 1.6],
+    cpuUsagePercent: null,
     homeDir: '/Users/brian'
   }),
   [toSshExecutionHostId(GPU)]: metrics({
@@ -120,11 +125,24 @@ const METRICS: Record<string, MachineMetrics> = {
     cpuCount: 32,
     cpuModel: 'AMD Ryzen Threadripper 7970X',
     loadAverage: [26.4, 22.1, 18.9],
+    cpuUsagePercent: null,
     memTotalBytes: 128 * 1024 ** 3,
     memAvailableBytes: 22 * 1024 ** 3,
     diskTotalBytes: 4 * 1024 ** 4,
     diskAvailableBytes: 1.1 * 1024 ** 4,
     uptimeSeconds: 1_209_600
+  }),
+  [toRuntimeExecutionHostId(KESSEL)]: metrics({
+    hostname: 'kessel-ml',
+    osRelease: 'Ubuntu 22.04.5 LTS',
+    cpuCount: 24,
+    cpuModel: 'Intel Xeon w5-3435X',
+    loadAverage: [9.8, 8.4, 7.9],
+    memTotalBytes: 256 * 1024 ** 3,
+    memAvailableBytes: 141 * 1024 ** 3,
+    diskTotalBytes: 8 * 1024 ** 4,
+    diskAvailableBytes: 5.2 * 1024 ** 4,
+    uptimeSeconds: 432_000
   })
 }
 
@@ -160,6 +178,22 @@ const TRANSFERS: MachineTransfer[] = [
     finishedAt: now - 240_000
   }
 ]
+
+TRANSFERS.unshift({
+  id: 't0',
+  machineId: toRuntimeExecutionHostId(KESSEL),
+  direction: 'upload',
+  label: 'llama-8b-q4.gguf',
+  destination: `${HOME}/checkpoints`,
+  totalBytes: 4_900_000_000,
+  transferredBytes: 1_720_000_000,
+  filesTotal: 1,
+  filesDone: 0,
+  status: 'running',
+  error: null,
+  startedAt: now - 45_000,
+  finishedAt: null
+})
 
 const fakeMachinesApi: MachinesApi = {
   getMetrics: async ({ machineId }) => {
@@ -228,20 +262,55 @@ const STATES = new Map<string, SshConnectionState>([
   ]
 ])
 
+const KESSEL_RUNTIME: PublicKnownRuntimeEnvironment = {
+  id: KESSEL,
+  name: 'kessel-ml',
+  source: 'manual',
+  createdAt: 1,
+  updatedAt: 1,
+  lastUsedAt: null,
+  runtimeId: 'kessel-runtime',
+  preferredEndpointId: 'default',
+  endpoints: []
+}
+
+const KESSEL_STATUS: RuntimeHostStatusSnapshot = {
+  environmentId: KESSEL,
+  pairingRevision: 1,
+  sequence: 1,
+  checkedAt: now,
+  verification: 'verified',
+  transport: 'ready',
+  status: {
+    runtimeId: 'kessel-runtime',
+    rendererGraphEpoch: 1,
+    graphStatus: 'ready',
+    authoritativeWindowId: null,
+    liveTabCount: 0,
+    liveLeafCount: 0,
+    hostPlatform: 'linux',
+    machineName: 'kessel-ml'
+  }
+}
+
 function installFakes(): void {
   window.api.machines = fakeMachinesApi
   window.api.ssh.listTargets = async () => TARGETS
+  window.api.runtimeEnvironments.list = async () => [KESSEL_RUNTIME]
+  window.api.runtimeEnvironments.getStatusSnapshots = async () => [KESSEL_STATUS]
 }
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function openGpuBox(frame: HTMLElement): Promise<void> {
+async function openMachine(frame: HTMLElement, machineId: string): Promise<void> {
   await wait(50)
-  frame.querySelector<HTMLElement>(`[data-machine-id="${toSshExecutionHostId(GPU)}"]`)?.click()
+  frame.querySelector<HTMLElement>(`[data-machine-id="${machineId}"]`)?.click()
   await wait(150)
 }
+
+const openGpuBox = (frame: HTMLElement) => openMachine(frame, toSshExecutionHostId(GPU))
 
 function Page(): React.JSX.Element {
   return (
@@ -257,6 +326,14 @@ export const sshMachine = defineFixture({
   setup: installFakes,
   render: () => <Page />,
   interact: openGpuBox
+})
+
+export const runtimeMachine = defineFixture({
+  width: 1200,
+  store: { sshConnectionStates: STATES },
+  setup: installFakes,
+  render: () => <Page />,
+  interact: (frame) => openMachine(frame, toRuntimeExecutionHostId(KESSEL))
 })
 
 function previewFixture(fileName: string) {

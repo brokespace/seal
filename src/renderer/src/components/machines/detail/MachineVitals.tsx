@@ -120,7 +120,9 @@ export function machineMeterValues(metrics: MachineMetrics | null): {
   disk: number | null
 } {
   return {
-    cpu: metrics ? cpuLoadPercent(metrics.loadAverage, metrics.cpuCount) : null,
+    cpu: metrics
+      ? cpuLoadPercent(metrics.loadAverage, metrics.cpuCount, metrics.cpuUsagePercent)
+      : null,
     memory: metrics ? usedPercent(metrics.memTotalBytes, metrics.memAvailableBytes) : null,
     disk: metrics ? usedPercent(metrics.diskTotalBytes, metrics.diskAvailableBytes) : null
   }

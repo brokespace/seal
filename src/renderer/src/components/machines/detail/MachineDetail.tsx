@@ -191,7 +191,7 @@ export function MachineDetail({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-44">
               <DropdownMenuItem
-                disabled={!online || machine.kind === 'runtime'}
+                disabled={!online}
                 onSelect={() => void refreshMachineMetrics(machine.id)}
               >
                 <RefreshCw />
@@ -222,7 +222,7 @@ export function MachineDetail({
           </DropdownMenu>
         </div>
       </header>
-      {online && machine.kind !== 'runtime' ? (
+      {online ? (
         <section className="shrink-0 space-y-3 border-b border-border px-3 py-3 md:px-5">
           <MachineVitalsStrip metrics={metrics} error={metricsError} />
           <AgentSessionList sessions={sessions} />

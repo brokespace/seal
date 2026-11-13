@@ -20149,7 +20149,6 @@
           "upload": "Upload files",
           "downloadUrl": "Download from URL",
           "unresolvedDrop": "Some dropped items have no local file.",
-          "runtimePreview": "Previews for runtime machines are not available yet.",
           "connecting": "Connecting…",
           "offline": "Connect to this machine to browse its files.",
           "empty": "This folder is empty."

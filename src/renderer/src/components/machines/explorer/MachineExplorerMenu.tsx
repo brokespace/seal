@@ -15,7 +15,6 @@ export function MachineExplorerMenu({
   menuRow,
   menuDir,
   selectedPaths,
-  writable,
   machineKind,
   onOpen,
   actions
@@ -23,7 +22,6 @@ export function MachineExplorerMenu({
   menuRow: EntryRow | null
   menuDir: string | null
   selectedPaths: string[]
-  writable: boolean
   machineKind: MachineSummary['kind']
   onOpen: (row: EntryRow) => void
   actions: MachineFileActions
@@ -39,7 +37,7 @@ export function MachineExplorerMenu({
             : t('auto.components.machines.menu.preview', 'Preview')}
         </ContextMenuItem>
       ) : null}
-      {menuRow && machineKind !== 'runtime' ? (
+      {menuRow ? (
         <ContextMenuItem onSelect={() => actions.download(selectedPaths)}>
           {t('auto.components.machines.menu.download', 'Download to this computer…')}
         </ContextMenuItem>
@@ -49,7 +47,7 @@ export function MachineExplorerMenu({
           {t('auto.components.machines.menu.copyPath', 'Copy path')}
         </ContextMenuItem>
       ) : null}
-      {writable && menuDir ? (
+      {menuDir ? (
         <>
           {menuRow ? <ContextMenuSeparator /> : null}
           <ContextMenuItem onSelect={() => actions.newFolder(menuDir)}>
@@ -65,7 +63,7 @@ export function MachineExplorerMenu({
           ) : null}
         </>
       ) : null}
-      {writable && menuRow ? (
+      {menuRow ? (
         <>
           <ContextMenuSeparator />
           <ContextMenuItem

@@ -37,14 +37,12 @@ export function MachineFilePreview({
   machineId,
   path,
   entry,
-  writable,
   onClose,
   onDownload
 }: {
   machineId: MachineId
   path: string
   entry: MachineFileEntry
-  writable: boolean
   onClose: () => void
   onDownload: () => void
 }): React.JSX.Element {
@@ -119,7 +117,7 @@ export function MachineFilePreview({
     [machineId, path, entry.name, saving, t]
   )
 
-  const canEdit = writable && file?.text !== null && file?.truncated === false
+  const canEdit = file?.text !== null && file?.truncated === false
   const dirty = draft !== null && draft !== file?.text
 
   let body: React.JSX.Element

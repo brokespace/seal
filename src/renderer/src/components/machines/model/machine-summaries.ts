@@ -10,9 +10,6 @@ import type { RuntimeHostStatusSnapshot } from '../../../../../shared/remote-run
 
 export type MachineStatus = 'online' | 'connecting' | 'offline' | 'error'
 
-/** What the explorer can do: full read/write over SFTP or local fs, or listing via a runtime. */
-export type MachineBrowseMode = 'full' | 'read-only' | 'none'
-
 export type MachineSummary = {
   id: MachineId
   kind: 'local' | 'ssh' | 'runtime'
@@ -22,7 +19,6 @@ export type MachineSummary = {
   status: MachineStatus
   statusDetail: string | null
   os: MachineOs | null
-  browseMode: MachineBrowseMode
   sshTargetId: string | null
   runtimeEnvironmentId: string | null
   /** SSH host whose Orca runtime is also paired. */
@@ -110,7 +106,6 @@ export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSumm
     status: 'online',
     statusDetail: null,
     os: inputs.localOs,
-    browseMode: 'full',
     sshTargetId: null,
     runtimeEnvironmentId: null,
     hasRuntime: false
@@ -129,7 +124,6 @@ export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSumm
         status,
         statusDetail: detail,
         os: osFromPlatform(state?.remotePlatform),
-        browseMode: 'full',
         sshTargetId: target.id,
         runtimeEnvironmentId: runtimeBySshTarget.get(target.id)?.id ?? null,
         hasRuntime: runtimeBySshTarget.has(target.id)
@@ -152,7 +146,6 @@ export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSumm
         status,
         statusDetail: detail,
         os: osFromPlatform(snapshot?.status?.hostPlatform),
-        browseMode: 'read-only',
         sshTargetId: null,
         runtimeEnvironmentId: environment.id,
         hasRuntime: true

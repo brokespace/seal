@@ -49,7 +49,7 @@ export function useMachineMetricsEntries(): ReadonlyMap<MachineId, MetricsEntry>
 /** Polls every online machine that reports metrics while the Machines page is mounted. */
 export function useMachineMetricsPolling(machines: readonly MachineSummary[]): void {
   const pollable = machines
-    .filter((machine) => machine.status === 'online' && machine.kind !== 'runtime')
+    .filter((machine) => machine.status === 'online')
     .map((machine) => machine.id)
     .join('\n')
   useEffect(() => {
