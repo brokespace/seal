@@ -33,6 +33,7 @@ import { COMPUTER_METHODS } from './computer/computer'
 import { SESSION_TAB_METHODS } from './session-tabs/session-tabs'
 import { NATIVE_CHAT_METHODS } from './native-chat/native-chat'
 import { FILE_METHODS } from './files/files'
+import { MACHINE_HOST_METHODS } from './machines/machine-host-methods'
 import { GIT_METHODS } from './source-control/git/git'
 import { GITHUB_METHODS } from './source-control/github/github'
 import { GITLAB_METHODS } from './source-control/gitlab/gitlab'
@@ -132,6 +133,7 @@ export const ALL_RPC_METHODS = [
   ...(ORCA_LAYOUT_OWNER_IS_MAIN ? [...LAYOUT_APPLY_METHODS, ...LAYOUT_VIEW_REPORT_METHODS] : []),
   ...NATIVE_CHAT_METHODS,
   ...FILE_METHODS,
+  ...MACHINE_HOST_METHODS,
   ...GIT_METHODS,
   ...GITHUB_METHODS,
   ...GITLAB_METHODS,

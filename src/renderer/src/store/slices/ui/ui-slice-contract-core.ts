@@ -120,6 +120,7 @@ export type UiViewHistory =
   | 'tasks'
   | 'activity'
   | 'automations'
+  | 'machines'
   | 'space'
   | 'skills'
   | 'artifacts'
@@ -161,6 +162,7 @@ export type UISliceCore = {
   previousViewBeforeActivity: Exclude<UiViewHistory, 'activity'>
   previousViewBeforeAutomations: Exclude<UiViewHistory, 'automations'>
   previousViewBeforeSpace: Exclude<UiViewHistory, 'space'>
+  previousViewBeforeMachines: Exclude<UiViewHistory, 'machines'>
   previousViewBeforeSkills: Exclude<UiViewHistory, 'skills'>
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
@@ -194,6 +196,8 @@ export type UISliceCore = {
   closeAutomationsPage: () => void
   openSpacePage: () => void
   closeSpacePage: () => void
+  openMachinesPage: () => void
+  closeMachinesPage: () => void
   openSkillsPage: () => void
   closeSkillsPage: () => void
   pendingSkillShareId: string | null
