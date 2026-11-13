@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "120364513935",
-    "project_id": "onorca-cloud",
-    "storage_bucket": "onorca-cloud.firebasestorage.app"
+    "project_number": "000000000000",
+    "project_id": "seal-mobile-placeholder",
+    "storage_bucket": "seal-mobile-placeholder.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:120364513935:android:1d951dc430aeb9bc664efa",
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
         "android_client_info": {
-          "package_name": "com.stably.orca.mobile"
+          "package_name": "com.brokespace.seal.mobile"
         }
       },
       "oauth_client": [
         {
-          "client_id": "120364513935-evfa8502bp5r9hn7afhd9i03oibs8223.apps.googleusercontent.com",
+          "client_id": "000000000000-replacewithsealfirebaseclientid.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBmT_w0OUQSiVfxblx-F0qlRvGkBBkTNQU"
+          "current_key": "REPLACE_WITH_SEAL_FIREBASE_API_KEY"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "120364513935-evfa8502bp5r9hn7afhd9i03oibs8223.apps.googleusercontent.com",
+              "client_id": "000000000000-replacewithsealfirebaseclientid.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

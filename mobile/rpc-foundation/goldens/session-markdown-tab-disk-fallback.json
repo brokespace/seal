@@ -9,7 +9,7 @@
       "ordinal": 2,
       "json": "{\"id\":\"frame-1\",\"deviceToken\":\"recording-device\",\"method\":\"markdown.readTab\",\"params\":{\"worktree\":\"id:workspace-1\",\"tabId\":\"tab-md\"}}"
     },
-    "c6cea5310098": {
+    "452aa75f7690": {
       "file": {},
       "markdown": {
         "tab-md": {
@@ -18,7 +18,7 @@
           "editable": false,
           "isDirty": false,
           "localContent": "# disk",
-          "readOnlyReason": "Editing needs Orca desktop running.",
+          "readOnlyReason": "Editing needs Seal desktop running.",
           "stale": false,
           "status": "ready"
         }
@@ -122,7 +122,7 @@
           "settlements": {
             "markdown": "eb79a9b3682a"
           },
-          "state": "c6cea5310098",
+          "state": "452aa75f7690",
           "effects": []
         }
       }

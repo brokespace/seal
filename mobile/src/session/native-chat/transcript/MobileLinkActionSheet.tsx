@@ -23,7 +23,7 @@ export function MobileLinkActionSheet(props: {
   if (openInOrca) {
     actions.push({
       id: 'openInOrca',
-      label: t('session.linkActionSheet.openInOrca', 'Open in Orca browser'),
+      label: t('session.linkActionSheet.openInOrca', 'Open in Seal browser'),
       icon: Globe,
       closeBeforePress: true,
       onPress: () => openInOrca(url)

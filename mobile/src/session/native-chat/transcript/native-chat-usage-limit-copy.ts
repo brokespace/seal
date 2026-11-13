@@ -54,10 +54,10 @@ export function nativeChatUsageLimitStatusText(
           }),
     autoContinue === 'scheduled'
       ? resetPassed
-        ? t('chat.usageLimit.statusContinuesShortly', 'Orca continues shortly')
-        : t('chat.usageLimit.statusContinuesThen', 'Orca continues then')
+        ? t('chat.usageLimit.statusContinuesShortly', 'Seal continues shortly')
+        : t('chat.usageLimit.statusContinuesThen', 'Seal continues then')
       : autoContinue === 'cancelled'
-        ? t('chat.usageLimit.statusWontContinue', "Orca won't continue automatically")
+        ? t('chat.usageLimit.statusWontContinue', "Seal won't continue automatically")
         : null
   ]
   return parts.filter((part) => part !== null).join(' · ')

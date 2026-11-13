@@ -1,10 +1,9 @@
 import { useTranslate } from '@/i18n/use-translate'
 import type { PairingNetworkInterface } from '../../../../shared/pairing-address-auto-selection'
-import { HeroFlow, type Platform, type StepIndex } from './MobileHero'
+import { HeroFlow, type StepIndex } from './MobileHero'
 import { HeroIntro } from './MobileHeroIntro'
 import { HeroPaired } from './MobileHeroPairedDevices'
 import type { PairedMobileDevice } from './paired-mobile-devices'
-import { getInstallCopy } from './mobile-platform-copy'
 import type { MobilePageStage } from './mobile-page-stage'
 import { MobilePageToolbar } from './MobilePageToolbar'
 import { PhoneCarousel } from './PhoneCarousel'
@@ -13,12 +12,10 @@ import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/r
 
 type MobilePageContentProps = {
   closeMobilePage: () => void
-  copyInstallUrl: () => void
   copyPairingCode: () => void
   devices: readonly PairedMobileDevice[]
   enterFlow: () => void
   generatePairing: (rotate: boolean) => void
-  canGeneratePairing: boolean
   handleAddressChange: (address: string) => void
   customAddresses: readonly string[]
   selectedAddressIsCustom: boolean
@@ -27,11 +24,9 @@ type MobilePageContentProps = {
   beforeCustomAddressChange: (address: string) => Promise<boolean>
   handleBack: () => void
   handleContinue: () => void
-  installQrUrl: string | null
   loadNetworkInterfaces: () => void
   networkInterfaces: PairingNetworkInterface[]
-  openAndroidInstallGuide: () => void
-  openInstallUrl: () => void
+  openInstallGuide: () => void
   pairAnotherDevice: () => void
   pairLoading: boolean
   connectionMode: MobilePairingConnectionMode
@@ -44,12 +39,10 @@ type MobilePageContentProps = {
   onUseLan: () => void
   onRetryRelay: () => void
   onCopyRelayDiagnostics: () => void
-  platform: Platform
   refreshingNetworkInterfaces: boolean
   revokeDevice: (id: string) => void
   revokingDeviceIds: readonly string[]
   selectedAddress: string | undefined
-  setPlatform: (platform: Platform) => void
   showMobileButton: boolean
   showPairedDevices: (deviceCount: number) => void
   stage: MobilePageStage | null
@@ -59,12 +52,10 @@ type MobilePageContentProps = {
 
 export function MobilePageContent({
   closeMobilePage,
-  copyInstallUrl,
   copyPairingCode,
   devices,
   enterFlow,
   generatePairing,
-  canGeneratePairing,
   handleAddressChange,
   customAddresses,
   selectedAddressIsCustom,
@@ -73,11 +64,9 @@ export function MobilePageContent({
   beforeCustomAddressChange,
   handleBack,
   handleContinue,
-  installQrUrl,
   loadNetworkInterfaces,
   networkInterfaces,
-  openAndroidInstallGuide,
-  openInstallUrl,
+  openInstallGuide,
   pairAnotherDevice,
   pairLoading,
   connectionMode,
@@ -90,12 +79,10 @@ export function MobilePageContent({
   onUseLan,
   onRetryRelay,
   onCopyRelayDiagnostics,
-  platform,
   refreshingNetworkInterfaces,
   revokeDevice,
   revokingDeviceIds,
   selectedAddress,
-  setPlatform,
   showMobileButton,
   showPairedDevices,
   stage,
@@ -124,13 +111,7 @@ export function MobilePageContent({
           ) : (
             <HeroFlow
               stepIdx={stepIdx}
-              platform={platform}
-              onPlatformChange={setPlatform}
-              installQrUrl={installQrUrl}
-              installCopy={getInstallCopy(platform, t)}
-              onOpenAndroidInstallGuide={openAndroidInstallGuide}
-              onOpenInstallUrl={openInstallUrl}
-              onCopyInstallUrl={copyInstallUrl}
+              onOpenInstallGuide={openInstallGuide}
               pairQrDataUrl={pairQrDataUrl}
               pairQrSize={pairQrSize}
               pairingUrl={pairingUrl}
@@ -143,7 +124,6 @@ export function MobilePageContent({
               connectionMode={connectionMode}
               onConnectionModeChange={handleConnectionModeChange}
               onRegeneratePairing={() => generatePairing(true)}
-              canGeneratePairing={canGeneratePairing}
               onCopyPairingCode={copyPairingCode}
               networkInterfaces={networkInterfaces}
               customAddresses={customAddresses}

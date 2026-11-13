@@ -1580,7 +1580,7 @@
         "b411ec0069": "Connect",
         "2cf9e5a294": "Clear saved server",
         "4a4c017be1": "Endpoint:",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "Pairing URL or code",
         "cb4d287238": "Server name",
         "3affe7de3a": "Paste a pairing URL from an Orca server that this browser can reach.",
@@ -6188,7 +6188,8 @@
           "releaseNotes": "Release notes:",
           "targetHeader": "Installation Target",
           "placementsChecked_one": "{{count}} placement checked.",
-          "placementsChecked_other": "{{count}} placements checked."
+          "placementsChecked_other": "{{count}} placements checked.",
+          "protocolPlaceholder": "orca://skills/share/…"
         },
         "SkillInstallTargetFields": {
           "8e6a972229": "No workspaces are known on this machine.",
@@ -7713,7 +7714,7 @@
           "nameInOrca": "Name in Orca",
           "serverNamePlaceholder": "Dev box",
           "accessLink": "Access link",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config already in sync.",
           "sshImportFailed": "Failed to import SSH config.",
           "sshAlreadyExists": "That SSH host is already in Orca.",
@@ -9088,7 +9089,9 @@
           "174f4a3c6d": "Control terminals and agents from your phone.",
           "682293cadf": "Show the Orca Mobile button at the top of the left sidebar.",
           "d4f2b65f30": "Show the Orca Mobile shortcut in the sidebar.",
-          "49089c92b3": "Show Orca Mobile button"
+          "49089c92b3": "Show Orca Mobile button",
+          "installIntroSeal": "Install Seal Mobile using the",
+          "installGuideLabel": "install guide"
         },
         "NotificationsPane": {
           "2772d2f257": "Skip notifications when the triggering worktree is already visible.",
@@ -12552,16 +12555,17 @@
           "reconnecting": "Reconnecting",
           "unavailable": "Unavailable",
           "pathGroup": "How the phone reaches this computer",
-          "anywhereTitle": "Orca Relay",
+          "anywhereTitle": "Seal Relay",
           "anywhereDescription": "Phone can be on cellular or any Wi‑Fi. Sign-in required for Relay only.",
-          "relayUnavailable": "Orca Relay isn’t available in this build. Use LAN.",
+          "relayUnavailable": "Seal Relay isn’t available in this build. Use LAN.",
           "signIn": "Sign in for Relay",
           "signInAgain": "Sign in again for Relay",
           "localTitle": "LAN",
           "localDescription": "Phone must be on this Wi‑Fi or connected through Tailscale. No account needed.",
           "retrying": "Retrying",
           "relayCell": "Relay cell",
-          "relaySignInDetail": "Signs this desktop in to Orca and routes the phone through Orca’s servers. LAN does not need an account."
+          "relaySignInDetail": "Signs this desktop in to Seal and routes the phone through Seal’s servers. LAN does not need an account.",
+          "anywhereDescriptionNoAccount": "Phone can be on cellular or any Wi‑Fi, through the Seal relay. No account needed."
         },
         "MobilePairingSetupSection": {
           "title": "Pair a phone",
@@ -12598,7 +12602,7 @@
           "manageConnectionLink": "Integrations"
         },
         "MobileRelayBetaNotice": {
-          "notice": "Orca Relay is in beta."
+          "notice": "Seal Relay is in beta."
         },
         "EditorFontFamilySetting": {
           "description": "Font used by file editors and diff views, and by Markdown code when set. Leave empty to follow the terminal font.",
@@ -12946,7 +12950,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux workstation",
           "accessLink": "Access link",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Orca shows the destination before connecting. Credentials stay hidden.",
           "destination": "Link destination",
           "loopbackTitle": "This link points back to this device",
@@ -13087,7 +13091,9 @@
           "keywordSignIn": "sign in",
           "keywordSignOut": "sign out",
           "keywordRelay": "relay",
-          "keywordCloud": "cloud"
+          "keywordCloud": "cloud",
+          "signedOutNoRelay": "Sign in to extend Orca with cloud features, including Artifacts.",
+          "searchDescriptionNoRelay": "Sign in or out of the account used by Artifacts and skill sharing."
         },
         "automations": {
           "showButtonDescription": "Show the Automations shortcut in the sidebar.",
@@ -16212,29 +16218,25 @@
           "85067b9e06": "Refresh network interfaces",
           "dfd2aa9d5d": "Network",
           "3960f5c339": "Step 2 of 2",
-          "3241f3c26a": "Install QR",
-          "aa97420ba4": "Copy install link",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Scan this download QR with your phone's camera. Already have Orca Mobile? Continue to step 2 for the pairing QR.",
-          "0d9b33299e": "Download the app.",
           "92ddfdfa1f": "Step 1 of 2",
           "ff48d9d520": "Pair another device",
           "f9cbf4bb53": "Revoke device",
           "34f878d04f": "Revoke {{value0}}",
           "94829abdb1": "Paired",
-          "266c18c105": "Open Orca Mobile to pick up where you left off, or pair another device.",
-          "5410d55d79": "Orca Mobile",
+          "266c18c105": "Open Seal Mobile to pick up where you left off, or pair another device.",
+          "5410d55d79": "Seal Mobile",
           "10d27b4cba": "Get started",
           "da1d5e5ed0": "Available on",
           "ec0607bf66": "Supported mobile platforms",
-          "b4ccce5cb7": "Control Orca from your phone. Check on agents, review changes, and kick off tasks while you're away from your desk.",
+          "b4ccce5cb7": "Control Seal from your phone. Check on agents, review changes, and kick off tasks while you're away from your desk.",
           "cd4e5e816f": "Your workspaces, in your pocket.",
           "a6cffbbb0b": "Generate code",
           "e59a252eca": "Regenerate code",
           "d0b52871ce": "Your phones are paired.",
           "051978a785": "Your phone is paired.",
-          "pairingQrError": "This pairing code couldn’t be rendered as a QR code. Copy it into Orca Mobile instead.",
+          "pairingQrError": "This pairing code couldn’t be rendered as a QR code. Copy it into Seal Mobile instead.",
           "noRelayCode": "No pairing code available",
           "noPairingCode": "No pairing code available",
           "qrSignInRequired": "Sign in to create a Relay pairing code",
@@ -16246,15 +16248,13 @@
           "pairThisComputer": "Pair this computer.",
           "directAddressDisclosure": "Also use a faster local path",
           "directAddressHint": "Optional. Pick the Wi‑Fi or Tailscale address your phone should use when nearby — usually faster than Relay. Relay still works when you’re away.",
-          "androidHelp": {
-            "guide": "Install guide"
-          },
-          "openAppAndScan": "Open Orca Mobile, tap <strong>Pair Desktop</strong>, and scan the code."
+          "openAppAndScan": "Open Seal Mobile, tap <strong>Pair Desktop</strong>, and scan the code.",
+          "installHeading": "Install Seal Mobile.",
+          "installLead": "Seal Mobile is not on the App Store or Google Play. Build and install it from the Seal repository, then continue to step 2 for the pairing QR.",
+          "installGuide": "Open install guide"
         },
         "MobilePage": {
           "e17393c6a3": "Phone preview",
-          "baea63c445": "Failed to copy link",
-          "fad833de8d": "Install link copied",
           "6a66e38943": "Failed to copy pairing code",
           "3c1f7168bb": "Pairing code copied",
           "4c8bd11c1a": "Failed to generate pairing code",
@@ -16266,7 +16266,7 @@
         },
         "MobilePageToolbar": {
           "ad2284a9e2": "Close · Esc",
-          "9883b58693": "Close Orca Mobile",
+          "9883b58693": "Close Seal Mobile",
           "fb5f28330e": "Show in sidebar",
           "c669abcf8f": "Hide from sidebar",
           "e1c7b4a92d": "Configure in Settings > Mobile.",
@@ -16275,15 +16275,7 @@
         "PhoneCarousel": {
           "96d651cb87": "Terminal session",
           "93217b41c1": "Worktree list",
-          "89c7713645": "Orca Mobile home screen"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "Download APK",
-              "openAppStore": "Open App Store"
-            }
-          }
+          "89c7713645": "Seal Mobile home screen"
         },
         "slides": {
           "HomeSlide": {
@@ -16369,24 +16361,24 @@
           "remove-custom": "Remove {{address}}"
         },
         "WindowsFirewallNotice": {
-          "repair-success": "Windows Firewall now allows Orca Mobile on private networks",
+          "repair-success": "Windows Firewall now allows Seal Mobile on private networks",
           "repair-failed": "Could not update the Windows Firewall rules",
           "public-title": "Windows marks this network as public",
           "missing-title": "Allow phone connections through Windows Firewall",
-          "public-description": "Change this trusted Wi-Fi network to Private before allowing Orca Mobile connections.",
-          "missing-description": "Windows may block the pairing server. Add a rule for this Orca app and TCP port {{port}} on Private networks.",
+          "public-description": "Change this trusted Wi-Fi network to Private before allowing Seal Mobile connections.",
+          "missing-description": "Windows may block the pairing server. Add a rule for this Seal app and TCP port {{port}} on Private networks.",
           "open-settings": "Open network settings",
           "waiting": "Waiting for Windows…",
           "allow": "Allow phone connections",
           "repair-unverified": "Windows Firewall access could not be verified",
-          "blocked-title": "Windows may be blocking Orca Mobile",
-          "blocked-description": "An existing inbound Block rule can override the pairing exception. Repair removes conflicting TCP rules for this Orca app, then allows port {{port}} on Private networks.",
+          "blocked-title": "Windows may be blocking Seal Mobile",
+          "blocked-description": "An existing inbound Block rule can override the pairing exception. Repair removes conflicting TCP rules for this Seal app, then allows port {{port}} on Private networks.",
           "repair": "Repair firewall access",
-          "relay-note": "Pairing still works over Orca Relay — allowing this only adds the faster local connection."
+          "relay-note": "Pairing still works over Seal Relay — allowing this only adds the faster local connection."
         },
         "MobileRelayMintFailureNotice": {
-          "retryingTitle": "Retrying Orca Relay…",
-          "unavailableTitle": "Orca Relay isn’t available on this desktop.",
+          "retryingTitle": "Retrying Seal Relay…",
+          "unavailableTitle": "Seal Relay isn’t available on this desktop.",
           "title": "Couldn’t create a Relay pairing code.",
           "retryingBody": "Creating a new pairing code. This can take a moment over a remote connection.",
           "unavailableBody": "Use LAN to pair over Tailscale or the same Wi‑Fi.",
@@ -16395,10 +16387,10 @@
           "retrying": "Retrying…",
           "retry": "Retry Relay",
           "copyDiagnostics": "Copy diagnostics",
-          "reconnectTitle": "Your Orca account session expired.",
-          "reconnectBody": "Sign in again to use Orca Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.",
-          "notEntitledTitle": "Orca Relay isn’t included with this Orca account.",
-          "rateLimitedBody": "Orca Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi."
+          "reconnectTitle": "Your Seal account session expired.",
+          "reconnectBody": "Sign in again to use Seal Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.",
+          "notEntitledTitle": "Seal Relay isn’t included with this Seal account.",
+          "rateLimitedBody": "Seal Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi."
         },
         "relayClockSkewMessage": {
           "message": "Your computer's clock is off by about {{seconds}} seconds. Turn on automatic time, then retry."
@@ -19461,7 +19453,8 @@
               "title": "Sign out of Orca?",
               "description": "Artifacts and Orca Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected.",
               "cancel": "Cancel",
-              "action": "Sign out"
+              "action": "Sign out",
+              "descriptionNoRelay": "Artifact and skill sharing will be unavailable until you sign in again. Seal Relay, your local projects and worktrees won't be affected."
             }
           }
         }
@@ -19804,7 +19797,9 @@
         "4b7d2e8f1a": "Connect Orca Mobile to this desktop across cellular or any Wi-Fi.",
         "9a4c6b2d7e": "Skill sharing",
         "3d8e5f1b9c": "Share skills behind an unlisted link and install them on any machine you use.",
-        "c5b3e8a17d": "Sign in to Orca"
+        "c5b3e8a17d": "Sign in to Orca",
+        "restoreSharingAs": "Sign in again as {{value0}} to restore Artifact sharing and skill sharing.",
+        "restoreSharing": "Sign in again to restore Artifact sharing and skill sharing."
       },
       "NativeChatResumeOutcomeRow": {
         "openChat": "Open chat",
@@ -24858,7 +24853,7 @@
       "serverTooOld": "The selected Orca server is too old for this client. Update Orca on the server. Server protocol {{serverProtocol}}, client requires server protocol {{requiredProtocol}}."
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.",
+      "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload.",
       "selfPairingCode": "This pairing code is for this Orca itself. Generate the code on the other computer instead.",
       "managedDeployment": "Orca runs this server on an SSH host for you; its pairing cannot be replaced or removed here. To decommission it, run `orca environment stop --environment <name> --yes` or use Settings > Orca on your SSH hosts; for a host that is gone, run `orca environment forget --environment <name> --yes`.",
       "sshAccessChangePending": "This server's SSH access change didn't finish. Retry or cancel it under Settings > Remote Orca Servers > SSH access for paired servers before replacing its pairing or removing it.",

@@ -757,7 +757,7 @@
         "b411ec0069": "连接",
         "2cf9e5a294": "清除已保存的服务器",
         "4a4c017be1": "端点：",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "配对 URL 或代码",
         "cb4d287238": "服务器名称",
         "3affe7de3a": "粘贴来自该浏览器可以访问的 Orca 服务器的配对 URL",
@@ -6639,7 +6639,7 @@
           "nameInOrca": "在 Orca 中的名称",
           "serverNamePlaceholder": "开发机",
           "accessLink": "访问链接",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config 已同步",
           "sshImportFailed": "导入 SSH 配置失败",
           "advanced": "高级",
@@ -11403,14 +11403,14 @@
           "signIn": "登录以使用 Relay",
           "localDescription": "手机必须连接此 Wi‑Fi 或通过 Tailscale，无需账号",
           "pathGroup": "手机访问此电脑的方式",
-          "anywhereTitle": "Orca Relay",
+          "anywhereTitle": "Seal Relay",
           "anywhereDescription": "手机可通过蜂窝网络或任意 Wi‑Fi 连接，仅 Relay 需要登录",
-          "relayUnavailable": "此版本不支持 Orca Relay，请使用局域网",
+          "relayUnavailable": "此版本不支持 Seal Relay，请使用局域网",
           "signInAgain": "重新登录以使用 Relay",
           "localTitle": "局域网",
           "retrying": "正在重试",
           "relayCell": "中继单元",
-          "relaySignInDetail": "将此桌面登录到 Orca，并通过 Orca 的服务器路由手机，LAN 无需账户"
+          "relaySignInDetail": "将此桌面登录到 Seal，并通过 Seal 的服务器路由手机，LAN 无需账户"
         },
         "MobilePairingSetupSection": {
           "title": "配对手机",
@@ -11447,7 +11447,7 @@
           "manageConnectionLink": "集成"
         },
         "MobileRelayBetaNotice": {
-          "notice": "Orca Relay 目前处于测试阶段"
+          "notice": "Seal Relay 目前处于测试阶段"
         },
         "EditorFontFamilySetting": {
           "description": "文件编辑器和差异视图使用的字体，留空则跟随终端字体",
@@ -11834,7 +11834,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux 工作站",
           "accessLink": "访问链接",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Orca 会在连接前显示目标，凭据保持隐藏",
           "destination": "链接目标",
           "loopbackTitle": "此链接指向此设备",
@@ -14894,29 +14894,25 @@
           "85067b9e06": "刷新网络接口",
           "dfd2aa9d5d": "网络",
           "3960f5c339": "第 2 步(共 2 步)",
-          "3241f3c26a": "安装二维码",
-          "aa97420ba4": "复制安装链接",
           "ac1eb64952": "安卓",
           "711e6f4b47": "iOS系统",
-          "e75647ace0": "用手机相机扫描此下载二维码。已经安装 Orca Mobile？继续到第 2 步查看配对二维码",
-          "0d9b33299e": "下载应用",
           "92ddfdfa1f": "第 1 步(共 2 步)",
           "ff48d9d520": "与另一台设备配对",
           "f9cbf4bb53": "撤销设备",
           "34f878d04f": "撤销 {{value0}}",
           "94829abdb1": "配对",
-          "266c18c105": "打开 Orca 手机端 从上次中断的地方继续，或配对其他设备",
-          "5410d55d79": "Orca 手机端",
+          "266c18c105": "打开 Seal 手机端 从上次中断的地方继续，或配对其他设备",
+          "5410d55d79": "Seal 手机端",
           "10d27b4cba": "开始使用",
           "da1d5e5ed0": "可用于",
           "ec0607bf66": "支持的手机平台",
-          "b4ccce5cb7": "从您的手机控制 Orca，在您离开办公桌时，可以检查代理、查看更改并启动任务",
+          "b4ccce5cb7": "从您的手机控制 Seal，在您离开办公桌时，可以检查代理、查看更改并启动任务",
           "cd4e5e816f": "工作区就在您的口袋里",
           "a6cffbbb0b": "生成代码",
           "e59a252eca": "重新生成代码",
           "d0b52871ce": "您的手机已配对",
           "051978a785": "您的手机已配对",
-          "pairingQrError": "无法将此配对码呈现为二维码，请改为将其复制到 Orca Mobile",
+          "pairingQrError": "无法将此配对码呈现为二维码，请改为将其复制到 Seal Mobile",
           "directAddressDisclosure": "也可使用更快的本地连接",
           "directAddressHint": "选择手机在附近(同一 Wi‑Fi 或 Tailscale)时使用的地址，通常比 Relay 更快，外出时仍走 Relay",
           "noRelayCode": "没有可用的配对码",
@@ -14928,15 +14924,13 @@
           "pairThisMac": "配对此 Mac",
           "pairThisPc": "配对此 PC",
           "pairThisComputer": "配对此电脑",
-          "androidHelp": {
-            "guide": "安装指南"
-          },
-          "openAppAndScan": "打开 Orca Mobile，点按 <strong>配对桌面</strong>，然后扫描二维码"
+          "openAppAndScan": "打开 Seal Mobile，点按 <strong>配对桌面</strong>，然后扫描二维码",
+          "installHeading": "安装 Seal Mobile。",
+          "installLead": "Seal Mobile 未在 App Store 或 Google Play 上架。请从 Seal 仓库构建并安装，然后继续第 2 步获取配对二维码。",
+          "installGuide": "打开安装指南"
         },
         "MobilePage": {
           "e17393c6a3": "手机预览",
-          "baea63c445": "复制链接失败",
-          "fad833de8d": "安装链接已复制",
           "6a66e38943": "复制配对码失败",
           "3c1f7168bb": "配对码已复制",
           "4c8bd11c1a": "生成配对码失败",
@@ -14948,7 +14942,7 @@
         },
         "MobilePageToolbar": {
           "ad2284a9e2": "关闭 · Esc",
-          "9883b58693": "关闭 Orca 手机",
+          "9883b58693": "关闭 Seal 手机",
           "fb5f28330e": "在侧边栏中显示",
           "c669abcf8f": "从侧边栏隐藏",
           "e1c7b4a92d": "在设置 > 移动端中配置",
@@ -14957,15 +14951,7 @@
         "PhoneCarousel": {
           "96d651cb87": "终端会话",
           "93217b41c1": "工作树列表",
-          "89c7713645": "Orca 手机主屏幕"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "下载 APK",
-              "openAppStore": "打开 App Store"
-            }
-          }
+          "89c7713645": "Seal 手机主屏幕"
         },
         "slides": {
           "HomeSlide": {
@@ -15039,24 +15025,24 @@
           "remove-custom": "移除 {{address}}"
         },
         "WindowsFirewallNotice": {
-          "repair-success": "Windows 防火墙现已允许 Orca Mobile 在专用网络上通信",
+          "repair-success": "Windows 防火墙现已允许 Seal Mobile 在专用网络上通信",
           "repair-failed": "无法更新 Windows 防火墙规则",
           "public-title": "Windows 将此网络标记为公用",
           "missing-title": "允许手机连接通过 Windows 防火墙",
-          "public-description": "请先将此受信任的 Wi-Fi 网络更改为专用网络，然后再允许 Orca Mobile 连接",
-          "missing-description": "Windows 可能会阻止配对服务器，请为此 Orca 应用和专用网络上的 TCP 端口 {{port}} 添加规则",
+          "public-description": "请先将此受信任的 Wi-Fi 网络更改为专用网络，然后再允许 Seal Mobile 连接",
+          "missing-description": "Windows 可能会阻止配对服务器，请为此 Seal 应用和专用网络上的 TCP 端口 {{port}} 添加规则",
           "open-settings": "打开网络设置",
           "waiting": "正在等待 Windows…",
           "allow": "允许手机连接",
           "repair-unverified": "无法验证 Windows 防火墙访问权限",
-          "blocked-title": "Windows 可能正在阻止 Orca Mobile",
-          "blocked-description": "现有的入站阻止规则可能会覆盖配对例外，修复将移除此 Orca 应用的冲突 TCP 规则，然后在专用网络上允许端口 {{port}}",
+          "blocked-title": "Windows 可能正在阻止 Seal Mobile",
+          "blocked-description": "现有的入站阻止规则可能会覆盖配对例外，修复将移除此 Seal 应用的冲突 TCP 规则，然后在专用网络上允许端口 {{port}}",
           "repair": "修复防火墙访问权限",
-          "relay-note": "配对仍可通过 Orca Relay 进行 — 允许后只是额外获得更快的本地连接"
+          "relay-note": "配对仍可通过 Seal Relay 进行 — 允许后只是额外获得更快的本地连接"
         },
         "MobileRelayMintFailureNotice": {
-          "retryingTitle": "正在重试 Orca Relay…",
-          "unavailableTitle": "此桌面不可用 Orca Relay",
+          "retryingTitle": "正在重试 Seal Relay…",
+          "unavailableTitle": "此桌面不可用 Seal Relay",
           "title": "无法创建 Relay 配对码",
           "retryingBody": "正在创建新配对码，远程连接时可能需要一点时间",
           "unavailableBody": "使用 LAN 通过 Tailscale 或同一 Wi‑Fi 配对",
@@ -15065,10 +15051,10 @@
           "retrying": "正在重试…",
           "retry": "重试 Relay",
           "copyDiagnostics": "复制诊断信息",
-          "reconnectTitle": "你的 Orca 账户会话已过期",
-          "reconnectBody": "请重新登录以使用 Orca Relay，或通过 Tailscale 或同一 Wi‑Fi 使用局域网配对",
-          "notEntitledTitle": "此 Orca 账户不包含 Orca Relay",
-          "rateLimitedBody": "Orca Relay 正忙，请等待一分钟再重试，或使用 LAN 通过 Tailscale 或同一 Wi‑Fi 配对"
+          "reconnectTitle": "你的 Seal 账户会话已过期",
+          "reconnectBody": "请重新登录以使用 Seal Relay，或通过 Tailscale 或同一 Wi‑Fi 使用局域网配对",
+          "notEntitledTitle": "此 Seal 账户不包含 Seal Relay",
+          "rateLimitedBody": "Seal Relay 正忙，请等待一分钟再重试，或使用 LAN 通过 Tailscale 或同一 Wi‑Fi 配对"
         },
         "relayClockSkewMessage": {
           "message": "你的电脑时钟偏差约 {{seconds}} 秒。请开启自动设置时间，然后重试"
@@ -22970,7 +22956,7 @@
       "serverTooOld": "所选 Orca 服务器版本过旧，无法与此客户端兼容。请更新服务器上的 Orca。服务器协议版本为 {{serverProtocol}}，客户端要求的服务器协议版本为 {{requiredProtocol}}"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "配对码无效。需要 orca://pair?... URL 或原始配对数据",
+      "invalidPairingCode": "配对码无效。需要 seal://pair?... URL 或原始配对数据",
       "selfPairingCode": "这是当前 Orca 的配对码。请改在另一台计算机上生成配对码",
       "managedDeployment": "Orca 为你在 SSH 主机上运行此服务器；无法在此替换或移除其配对。要停用它，请运行 `orca environment stop --environment <name> --yes`，或前往设置 > SSH 主机上的 Orca；如果主机已不存在，请运行 `orca environment forget --environment <name> --yes`",
       "sshAccessChangePending": "此服务器的 SSH 访问更改未完成。替换配对或移除此服务器之前，请在设置 > 远程 Orca 服务器 > 已配对服务器的 SSH 访问下重试或取消更改",

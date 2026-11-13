@@ -1170,7 +1170,7 @@
         "b411ec0069": "Bağlan",
         "2cf9e5a294": "Kayıtlı sunucuyu temizle",
         "4a4c017be1": "Uç nokta:",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "Eşleştirme URL'si veya kodu",
         "cb4d287238": "Sunucu adı",
         "3affe7de3a": "Bu tarayıcının ulaşabildiği bir Orca sunucusundan eşleştirme URL'si yapıştırın.",
@@ -7046,7 +7046,7 @@
           "nameInOrca": "Orca'daki adı",
           "serverNamePlaceholder": "Geliştirme sunucusu",
           "accessLink": "Erişim bağlantısı",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config zaten senkronize.",
           "sshImportFailed": "SSH yapılandırması içe aktarılamadı.",
           "sshAlreadyExists": "Bu SSH sunucusu zaten Orca'da.",
@@ -11797,16 +11797,16 @@
           "reconnecting": "Yeniden bağlanıyor",
           "unavailable": "Kullanılamıyor",
           "pathGroup": "Telefonun bu bilgisayara ulaşma yolu",
-          "anywhereTitle": "Orca Relay",
+          "anywhereTitle": "Seal Relay",
           "anywhereDescription": "Telefon mobil veri veya herhangi bir Wi-Fi üzerinde olabilir. Yalnızca Relay için oturum açma gerekir.",
-          "relayUnavailable": "Orca Relay bu sürümde kullanılamıyor. LAN kullanın.",
+          "relayUnavailable": "Seal Relay bu sürümde kullanılamıyor. LAN kullanın.",
           "signIn": "Relay için oturum aç",
           "signInAgain": "Relay için yeniden oturum aç",
           "localTitle": "LAN",
           "localDescription": "Telefon bu Wi-Fi'de olmalı veya Tailscale üzerinden bağlanmalıdır. Hesap gerekmez.",
           "retrying": "Yeniden deneniyor",
           "relayCell": "Relay hücresi",
-          "relaySignInDetail": "Bu masaüstünde Orca oturumu açar ve telefonu Orca sunucuları üzerinden yönlendirir. LAN için hesap gerekmez."
+          "relaySignInDetail": "Bu masaüstünde Seal oturumu açar ve telefonu Seal sunucuları üzerinden yönlendirir. LAN için hesap gerekmez."
         },
         "MobilePairingSetupSection": {
           "title": "Bir telefonu eşleştir",
@@ -11843,7 +11843,7 @@
           "manageConnectionLink": "Entegrasyonlar"
         },
         "MobileRelayBetaNotice": {
-          "notice": "Orca Relay beta aşamasındadır."
+          "notice": "Seal Relay beta aşamasındadır."
         },
         "EditorFontFamilySetting": {
           "description": "Dosya düzenleyicilerinde ve diff görünümlerinde kullanılan yazı tipi. Terminal yazı tipini kullanmak için boş bırakın.",
@@ -12186,7 +12186,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux iş istasyonu",
           "accessLink": "Erişim bağlantısı",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Orca, bağlanmadan önce hedefi gösterir. Kimlik bilgileri gizli kalır.",
           "destination": "Bağlantı hedefi",
           "loopbackTitle": "Bu bağlantı bu cihaza geri işaret ediyor",
@@ -15299,29 +15299,25 @@
           "85067b9e06": "Ağ arabirimlerini yenile",
           "dfd2aa9d5d": "Ağ",
           "3960f5c339": "Adım 2/2",
-          "3241f3c26a": "Kurulum QR",
-          "aa97420ba4": "Kurulum bağlantısını kopyala",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Bu indirme QR kodunu telefonunuzun kamerasıyla tarayın. Orca Mobile zaten yüklü mü? Eşleştirme QR kodu için 2. adıma geçin.",
-          "0d9b33299e": "Uygulamayı indirin.",
           "92ddfdfa1f": "Adım 1/2",
           "ff48d9d520": "Başka bir cihaz eşleştir",
           "f9cbf4bb53": "Cihazı iptal et",
           "34f878d04f": "{{value0}} cihazını iptal et",
           "94829abdb1": "Eşleştirildi",
-          "266c18c105": "Kaldığınız yerden devam etmek için Orca Mobile'ı açın veya başka bir cihaz eşleştirin.",
-          "5410d55d79": "Orca Mobile",
+          "266c18c105": "Kaldığınız yerden devam etmek için Seal Mobile'ı açın veya başka bir cihaz eşleştirin.",
+          "5410d55d79": "Seal Mobile",
           "10d27b4cba": "Başlayın",
           "da1d5e5ed0": "Şunlarda kullanılabilir",
           "ec0607bf66": "Desteklenen mobil platformlar",
-          "b4ccce5cb7": "Orca'yı telefonunuzdan kontrol edin. Masanızdan uzaktayken ajanlarınızı kontrol edin, değişiklikleri inceleyin ve görevler başlatın.",
+          "b4ccce5cb7": "Seal'i telefonunuzdan kontrol edin. Masanızdan uzaktayken ajanlarınızı kontrol edin, değişiklikleri inceleyin ve görevler başlatın.",
           "cd4e5e816f": "Çalışma alanlarınız, cebinizde.",
           "a6cffbbb0b": "Kod oluştur",
           "e59a252eca": "Kodu yeniden oluştur",
           "d0b52871ce": "Telefonlarınız eşleştirildi.",
           "051978a785": "Telefonunuz eşleştirildi.",
-          "pairingQrError": "Bu eşleştirme kodu QR koduna dönüştürülemedi. Bunun yerine kodu Orca Mobile'a kopyalayın.",
+          "pairingQrError": "Bu eşleştirme kodu QR koduna dönüştürülemedi. Bunun yerine kodu Seal Mobile'a kopyalayın.",
           "noRelayCode": "Kullanılabilir eşleştirme kodu yok",
           "noPairingCode": "Kullanılabilir eşleştirme kodu yok",
           "qrSignInRequired": "Relay eşleştirme kodu oluşturmak için oturum açın",
@@ -15333,15 +15329,13 @@
           "pairThisComputer": "Bu bilgisayarı eşleştirin.",
           "directAddressDisclosure": "Daha hızlı bir yerel yol da kullanın",
           "directAddressHint": "İsteğe bağlı. Telefonunuzun yakındayken kullanması gereken Wi-Fi veya Tailscale adresini seçin; genellikle Relay'den daha hızlıdır. Uzaktayken Relay yine çalışır.",
-          "androidHelp": {
-            "guide": "Kurulum kılavuzu"
-          },
-          "openAppAndScan": "Orca Mobile'ı açın, <strong>Masaüstünü Eşleştir</strong> seçeneğine dokunun ve kodu tarayın."
+          "openAppAndScan": "Seal Mobile'ı açın, <strong>Masaüstünü Eşleştir</strong> seçeneğine dokunun ve kodu tarayın.",
+          "installHeading": "Seal Mobile uygulamasını yükleyin.",
+          "installLead": "Seal Mobile, App Store'da veya Google Play'de yok. Seal deposundan derleyip yükleyin, ardından eşleştirme QR kodu için 2. adıma geçin.",
+          "installGuide": "Kurulum kılavuzunu aç"
         },
         "MobilePage": {
           "e17393c6a3": "Telefon önizlemesi",
-          "baea63c445": "Bağlantı kopyalanamadı",
-          "fad833de8d": "Kurulum bağlantısı kopyalandı",
           "6a66e38943": "Eşleştirme kodu kopyalanamadı",
           "3c1f7168bb": "Eşleştirme kodu kopyalandı",
           "4c8bd11c1a": "Eşleştirme kodu oluşturulamadı",
@@ -15353,7 +15347,7 @@
         },
         "MobilePageToolbar": {
           "ad2284a9e2": "Kapat · Esc",
-          "9883b58693": "Orca Mobile'ı kapat",
+          "9883b58693": "Seal Mobile'ı kapat",
           "fb5f28330e": "Kenar çubuğunda göster",
           "c669abcf8f": "Kenar çubuğundan gizle",
           "e1c7b4a92d": "Ayarlar > Mobil bölümünden yapılandırın.",
@@ -15362,15 +15356,7 @@
         "PhoneCarousel": {
           "96d651cb87": "Terminal oturumu",
           "93217b41c1": "Worktree listesi",
-          "89c7713645": "Orca Mobile ana ekranı"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "APK indir",
-              "openAppStore": "App Store'u aç"
-            }
-          }
+          "89c7713645": "Seal Mobile ana ekranı"
         },
         "slides": {
           "HomeSlide": {
@@ -15444,24 +15430,24 @@
           "remove-custom": "{{address}} adresini kaldır"
         },
         "WindowsFirewallNotice": {
-          "repair-success": "Windows Güvenlik Duvarı artık Orca Mobile'a özel ağlarda izin veriyor",
+          "repair-success": "Windows Güvenlik Duvarı artık Seal Mobile'a özel ağlarda izin veriyor",
           "repair-failed": "Windows Güvenlik Duvarı kuralları güncellenemedi",
           "public-title": "Windows bu ağı genel olarak işaretliyor",
           "missing-title": "Windows Güvenlik Duvarı üzerinden telefon bağlantılarına izin ver",
-          "public-description": "Orca Mobile bağlantılarına izin vermeden önce bu güvenilir Wi-Fi ağını Özel olarak değiştirin.",
-          "missing-description": "Windows eşleştirme sunucusunu engelleyebilir. Özel ağlarda bu Orca uygulaması ve TCP {{port}} bağlantı noktası için bir kural ekleyin.",
+          "public-description": "Seal Mobile bağlantılarına izin vermeden önce bu güvenilir Wi-Fi ağını Özel olarak değiştirin.",
+          "missing-description": "Windows eşleştirme sunucusunu engelleyebilir. Özel ağlarda bu Seal uygulaması ve TCP {{port}} bağlantı noktası için bir kural ekleyin.",
           "open-settings": "Ağ ayarlarını aç",
           "waiting": "Windows bekleniyor…",
           "allow": "Telefon bağlantılarına izin ver",
           "repair-unverified": "Windows Güvenlik Duvarı erişimi doğrulanamadı",
-          "blocked-title": "Windows Orca Mobile'ı engelliyor olabilir",
-          "blocked-description": "Var olan bir gelen Engelle kuralı, eşleştirme istisnasını geçersiz kılabilir. Onarım, bu Orca uygulaması için çakışan TCP kurallarını kaldırır ve ardından Özel ağlarda {{port}} bağlantı noktasına izin verir.",
+          "blocked-title": "Windows Seal Mobile'ı engelliyor olabilir",
+          "blocked-description": "Var olan bir gelen Engelle kuralı, eşleştirme istisnasını geçersiz kılabilir. Onarım, bu Seal uygulaması için çakışan TCP kurallarını kaldırır ve ardından Özel ağlarda {{port}} bağlantı noktasına izin verir.",
           "repair": "Güvenlik duvarı erişimini onar",
-          "relay-note": "Eşleştirme Orca Relay üzerinden çalışmaya devam eder; bu izin yalnızca daha hızlı bir yerel bağlantı sağlar."
+          "relay-note": "Eşleştirme Seal Relay üzerinden çalışmaya devam eder; bu izin yalnızca daha hızlı bir yerel bağlantı sağlar."
         },
         "MobileRelayMintFailureNotice": {
-          "retryingTitle": "Orca Relay yeniden deneniyor…",
-          "unavailableTitle": "Orca Relay bu masaüstünde kullanılamıyor.",
+          "retryingTitle": "Seal Relay yeniden deneniyor…",
+          "unavailableTitle": "Seal Relay bu masaüstünde kullanılamıyor.",
           "title": "Relay eşleştirme kodu oluşturulamadı.",
           "retryingBody": "Yeni bir eşleştirme kodu oluşturuluyor. Uzak bir bağlantı üzerinden bu biraz zaman alabilir.",
           "unavailableBody": "Tailscale veya aynı Wi-Fi üzerinden eşleştirmek için Yerel Ağı kullanın.",
@@ -15470,10 +15456,10 @@
           "retrying": "Yeniden deneniyor…",
           "retry": "Relay'i yeniden dene",
           "copyDiagnostics": "Tanılama bilgilerini kopyala",
-          "reconnectTitle": "Orca hesap oturumunuzun süresi doldu.",
-          "reconnectBody": "Orca Relay'i kullanmak için tekrar oturum açın veya Tailscale ya da aynı Wi-Fi üzerinden eşleştirmek için Yerel Ağı kullanın.",
-          "notEntitledTitle": "Orca Relay bu Orca hesabına dahil değil.",
-          "rateLimitedBody": "Orca Relay meşgul. Bir dakika bekleyip yeniden deneyin veya Tailscale ya da aynı Wi‑Fi üzerinden eşleştirmek için LAN kullanın."
+          "reconnectTitle": "Seal hesap oturumunuzun süresi doldu.",
+          "reconnectBody": "Seal Relay'i kullanmak için tekrar oturum açın veya Tailscale ya da aynı Wi-Fi üzerinden eşleştirmek için Yerel Ağı kullanın.",
+          "notEntitledTitle": "Seal Relay bu Seal hesabına dahil değil.",
+          "rateLimitedBody": "Seal Relay meşgul. Bir dakika bekleyip yeniden deneyin veya Tailscale ya da aynı Wi‑Fi üzerinden eşleştirmek için LAN kullanın."
         },
         "relayClockSkewMessage": {
           "message": "Bilgisayarınızın saati yaklaşık {{seconds}} saniye farklı. Otomatik saat ayarını açıp yeniden deneyin."
@@ -22879,7 +22865,7 @@
       "serverReplaced": "Farklı sunucu"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Geçersiz eşleştirme kodu. orca://pair?... biçiminde bir URL veya salt eşleştirme verisi bekleniyor.",
+      "invalidPairingCode": "Geçersiz eşleştirme kodu. seal://pair?... biçiminde bir URL veya salt eşleştirme verisi bekleniyor.",
       "selfPairingCode": "Bu eşleştirme kodu bu Orca örneğinin kendisi içindir. Kodu diğer bilgisayarda oluşturun.",
       "managedDeployment": "Orca bu sunucuyu sizin için bir SSH sunucusunda çalıştırır; eşleştirmesi burada değiştirilemez veya kaldırılamaz. Hizmetten çıkarmak için `orca environment stop --environment <name> --yes` komutunu çalıştırın ya da Ayarlar > SSH sunucularınızda Orca bölümünü kullanın; SSH sunucusu artık yoksa `orca environment forget --environment <name> --yes` komutunu çalıştırın.",
       "sshAccessChangePending": "Bu sunucunun SSH erişimi değişikliği tamamlanamadı. Eşleştirmesini değiştirmeden veya sunucuyu kaldırmadan önce Ayarlar > Uzak Orca Sunucuları > Eşleştirilmiş sunucular için SSH erişimi bölümünden yeniden deneyin veya iptal edin.",

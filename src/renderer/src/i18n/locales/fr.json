@@ -965,7 +965,7 @@
         "b411ec0069": "Se connecter",
         "2cf9e5a294": "Effacer le serveur enregistré",
         "4a4c017be1": "Point de terminaison :",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "URL ou code d'appairage",
         "cb4d287238": "Nom du serveur",
         "3affe7de3a": "Collez une URL d'appairage provenant d'un serveur Orca accessible depuis ce navigateur.",
@@ -6918,7 +6918,7 @@
           "nameInOrca": "Nom dans Orca",
           "serverNamePlaceholder": "Machine de dev",
           "accessLink": "Lien d'accès",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config est déjà à jour.",
           "sshImportFailed": "Échec de l'import de la config SSH.",
           "sshAlreadyExists": "Cet hôte SSH est déjà dans Orca.",
@@ -11703,16 +11703,16 @@
           "reconnecting": "Reconnexion",
           "unavailable": "Indisponible",
           "pathGroup": "Comment le téléphone joint cet ordinateur",
-          "anywhereTitle": "Orca Relay",
+          "anywhereTitle": "Seal Relay",
           "anywhereDescription": "Le téléphone peut être en données mobiles ou sur n'importe quel Wi‑Fi. Connexion requise uniquement pour Relay.",
-          "relayUnavailable": "Orca Relay n'est pas disponible dans ce build. Utilisez le LAN.",
+          "relayUnavailable": "Seal Relay n'est pas disponible dans ce build. Utilisez le LAN.",
           "signIn": "Se connecter pour Relay",
           "signInAgain": "Se reconnecter pour Relay",
           "localTitle": "LAN",
           "localDescription": "Le téléphone doit être sur ce Wi‑Fi ou connecté via Tailscale. Aucun compte requis.",
           "retrying": "Nouvelle tentative",
           "relayCell": "Cellule relais",
-          "relaySignInDetail": "Connecte ce bureau à Orca et fait passer le téléphone par les serveurs d'Orca. Le LAN ne nécessite pas de compte."
+          "relaySignInDetail": "Connecte ce bureau à Seal et fait passer le téléphone par les serveurs d'Seal. Le LAN ne nécessite pas de compte."
         },
         "MobilePairingSetupSection": {
           "title": "Jumeler un téléphone",
@@ -11749,7 +11749,7 @@
           "manageConnectionLink": "Intégrations"
         },
         "MobileRelayBetaNotice": {
-          "notice": "Orca Relay est en bêta."
+          "notice": "Seal Relay est en bêta."
         },
         "EditorFontFamilySetting": {
           "description": "Police utilisée par les éditeurs de fichiers et les vues de diff. Laissez vide pour suivre la police du terminal.",
@@ -12149,7 +12149,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Station de travail Linux",
           "accessLink": "Lien d'accès",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Orca affiche la destination avant de se connecter. Les identifiants restent masqués.",
           "destination": "Destination du lien",
           "loopbackTitle": "Ce lien pointe vers cet appareil lui-même",
@@ -15275,29 +15275,25 @@
           "85067b9e06": "Actualiser les interfaces réseau",
           "dfd2aa9d5d": "Réseau",
           "3960f5c339": "Étape 2 sur 2",
-          "3241f3c26a": "QR d'installation",
-          "aa97420ba4": "Copier le lien d'installation",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Scannez ce QR de téléchargement avec l’appareil photo de votre téléphone. Vous avez déjà Orca Mobile ? Passez à l’étape 2 pour le QR d’association.",
-          "0d9b33299e": "Téléchargez l’app.",
           "92ddfdfa1f": "Étape 1 sur 2",
           "ff48d9d520": "Appairer un autre appareil",
           "f9cbf4bb53": "Révoquer l'appareil",
           "34f878d04f": "Révoquer {{value0}}",
           "94829abdb1": "Appairé",
-          "266c18c105": "Ouvrez Orca Mobile pour reprendre là où vous en étiez, ou appairez un autre appareil.",
-          "5410d55d79": "Orca Mobile",
+          "266c18c105": "Ouvrez Seal Mobile pour reprendre là où vous en étiez, ou appairez un autre appareil.",
+          "5410d55d79": "Seal Mobile",
           "10d27b4cba": "Commencer",
           "da1d5e5ed0": "Disponible sur",
           "ec0607bf66": "Plateformes mobiles prises en charge",
-          "b4ccce5cb7": "Pilotez Orca depuis votre téléphone. Suivez les agents, examinez les changements et lancez des tâches même loin de votre bureau.",
+          "b4ccce5cb7": "Pilotez Seal depuis votre téléphone. Suivez les agents, examinez les changements et lancez des tâches même loin de votre bureau.",
           "cd4e5e816f": "Vos espaces de travail, dans votre poche.",
           "a6cffbbb0b": "Générer le code",
           "e59a252eca": "Régénérer le code",
           "d0b52871ce": "Vos téléphones sont appairés.",
           "051978a785": "Votre téléphone est appairé.",
-          "pairingQrError": "Ce code d'appairage n'a pas pu être rendu sous forme de QR code. Copiez-le plutôt dans Orca Mobile.",
+          "pairingQrError": "Ce code d'appairage n'a pas pu être rendu sous forme de QR code. Copiez-le plutôt dans Seal Mobile.",
           "noRelayCode": "Aucun code d'appairage disponible",
           "noPairingCode": "Aucun code d'appairage disponible",
           "qrSignInRequired": "Connectez-vous pour créer un code d'appairage Relay",
@@ -15309,15 +15305,13 @@
           "pairThisComputer": "Appairez cet ordinateur.",
           "directAddressDisclosure": "Utiliser aussi un chemin local plus rapide",
           "directAddressHint": "Facultatif. Choisissez l'adresse Wi‑Fi ou Tailscale que votre téléphone utilisera à proximité — généralement plus rapide que Relay. Relay reste fonctionnel quand vous êtes loin.",
-          "androidHelp": {
-            "guide": "Guide d'installation"
-          },
-          "openAppAndScan": "Ouvrez Orca Mobile, appuyez sur <strong>Appairer l'ordinateur</strong> et scannez le code."
+          "openAppAndScan": "Ouvrez Seal Mobile, appuyez sur <strong>Appairer l'ordinateur</strong> et scannez le code.",
+          "installHeading": "Installez Seal Mobile.",
+          "installLead": "Seal Mobile n'est pas disponible sur l'App Store ni sur Google Play. Compilez-le et installez-le depuis le dépôt Seal, puis passez à l'étape 2 pour le QR d'appairage.",
+          "installGuide": "Ouvrir le guide d'installation"
         },
         "MobilePage": {
           "e17393c6a3": "Aperçu du téléphone",
-          "baea63c445": "Échec de la copie du lien",
-          "fad833de8d": "Lien d'installation copié",
           "6a66e38943": "Échec de la copie du code d'appairage",
           "3c1f7168bb": "Code d'appairage copié",
           "4c8bd11c1a": "Échec de la génération du code d'appairage",
@@ -15329,7 +15323,7 @@
         },
         "MobilePageToolbar": {
           "ad2284a9e2": "Fermer · Esc",
-          "9883b58693": "Fermer Orca Mobile",
+          "9883b58693": "Fermer Seal Mobile",
           "fb5f28330e": "Afficher dans la barre latérale",
           "c669abcf8f": "Masquer de la barre latérale",
           "e1c7b4a92d": "À configurer dans Réglages > Mobile.",
@@ -15338,15 +15332,7 @@
         "PhoneCarousel": {
           "96d651cb87": "Session de terminal",
           "93217b41c1": "Liste des worktrees",
-          "89c7713645": "Écran d'accueil d'Orca Mobile"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "Télécharger l'APK",
-              "openAppStore": "Ouvrir l'App Store"
-            }
-          }
+          "89c7713645": "Écran d'accueil d'Seal Mobile"
         },
         "slides": {
           "HomeSlide": {
@@ -15420,24 +15406,24 @@
           "remove-custom": "Supprimer {{address}}"
         },
         "WindowsFirewallNotice": {
-          "repair-success": "Le Pare-feu Windows autorise désormais Orca Mobile sur les réseaux privés",
+          "repair-success": "Le Pare-feu Windows autorise désormais Seal Mobile sur les réseaux privés",
           "repair-failed": "Impossible de mettre à jour les règles du Pare-feu Windows",
           "public-title": "Windows marque ce réseau comme public",
           "missing-title": "Autoriser les connexions des téléphones via le Pare-feu Windows",
-          "public-description": "Définissez ce réseau Wi-Fi approuvé comme Privé avant d'autoriser les connexions Orca Mobile.",
-          "missing-description": "Windows peut bloquer le serveur d'appairage. Ajoutez une règle pour cette application Orca et le port TCP {{port}} sur les réseaux privés.",
+          "public-description": "Définissez ce réseau Wi-Fi approuvé comme Privé avant d'autoriser les connexions Seal Mobile.",
+          "missing-description": "Windows peut bloquer le serveur d'appairage. Ajoutez une règle pour cette application Seal et le port TCP {{port}} sur les réseaux privés.",
           "open-settings": "Ouvrir les paramètres réseau",
           "waiting": "Attente de Windows…",
           "allow": "Autoriser les connexions des téléphones",
           "repair-unverified": "Impossible de vérifier l'accès au Pare-feu Windows",
-          "blocked-title": "Windows bloque peut-être Orca Mobile",
-          "blocked-description": "Une règle entrante de blocage existante peut prendre le pas sur l'exception d'appairage. La réparation supprime les règles TCP conflictuelles de cette application Orca, puis autorise le port {{port}} sur les réseaux privés.",
+          "blocked-title": "Windows bloque peut-être Seal Mobile",
+          "blocked-description": "Une règle entrante de blocage existante peut prendre le pas sur l'exception d'appairage. La réparation supprime les règles TCP conflictuelles de cette application Seal, puis autorise le port {{port}} sur les réseaux privés.",
           "repair": "Réparer l'accès pare-feu",
-          "relay-note": "L'appairage fonctionne toujours via Orca Relay — cette autorisation ajoute seulement la connexion locale, plus rapide."
+          "relay-note": "L'appairage fonctionne toujours via Seal Relay — cette autorisation ajoute seulement la connexion locale, plus rapide."
         },
         "MobileRelayMintFailureNotice": {
-          "retryingTitle": "Nouvelle tentative via Orca Relay…",
-          "unavailableTitle": "Orca Relay n'est pas disponible sur ce poste de bureau.",
+          "retryingTitle": "Nouvelle tentative via Seal Relay…",
+          "unavailableTitle": "Seal Relay n'est pas disponible sur ce poste de bureau.",
           "title": "Impossible de créer un code d'appairage Relay.",
           "retryingBody": "Création d'un nouveau code d'appairage. Cela peut prendre un moment via une connexion distante.",
           "unavailableBody": "Utilisez le LAN pour appairer via Tailscale ou le même Wi-Fi.",
@@ -15446,10 +15432,10 @@
           "retrying": "Nouvelle tentative…",
           "retry": "Réessayer Relay",
           "copyDiagnostics": "Copier les diagnostics",
-          "reconnectTitle": "La session de votre compte Orca a expiré.",
-          "reconnectBody": "Connectez-vous à nouveau pour utiliser Orca Relay, ou utilisez le réseau local pour effectuer le couplage via Tailscale ou le même Wi‑Fi.",
-          "notEntitledTitle": "Orca Relay n'est pas inclus avec ce compte Orca.",
-          "rateLimitedBody": "Orca Relay est occupé. Attendez une minute et réessayez, ou utilisez le LAN pour appairer via Tailscale ou le même Wi‑Fi."
+          "reconnectTitle": "La session de votre compte Seal a expiré.",
+          "reconnectBody": "Connectez-vous à nouveau pour utiliser Seal Relay, ou utilisez le réseau local pour effectuer le couplage via Tailscale ou le même Wi‑Fi.",
+          "notEntitledTitle": "Seal Relay n'est pas inclus avec ce compte Seal.",
+          "rateLimitedBody": "Seal Relay est occupé. Attendez une minute et réessayez, ou utilisez le LAN pour appairer via Tailscale ou le même Wi‑Fi."
         },
         "relayClockSkewMessage": {
           "message": "L’horloge de votre ordinateur est décalée d’environ {{seconds}} secondes. Activez le réglage automatique de l’heure, puis réessayez."
@@ -23325,7 +23311,7 @@
       "serverTooOld": "Le serveur Orca sélectionné est trop ancien pour ce client. Mettez Orca à jour sur le serveur. Protocole du serveur : {{serverProtocol}} ; le client exige le protocole serveur {{requiredProtocol}}."
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Code d’appairage invalide. Une URL orca://pair?... ou des données d’appairage brutes sont attendues.",
+      "invalidPairingCode": "Code d’appairage invalide. Une URL seal://pair?... ou des données d’appairage brutes sont attendues.",
       "selfPairingCode": "Ce code d’appairage concerne cette instance même d’Orca. Générez plutôt le code sur l’autre ordinateur.",
       "managedDeployment": "Orca exécute ce serveur pour vous sur un hôte SSH ; son appairage ne peut être ni remplacé ni supprimé ici. Pour le mettre hors service, exécutez `orca environment stop --environment <name> --yes` ou utilisez Paramètres > Orca sur vos hôtes SSH ; si l’hôte n’existe plus, exécutez `orca environment forget --environment <name> --yes`.",
       "sshAccessChangePending": "La modification de l’accès SSH de ce serveur n’a pas abouti. Réessayez ou annulez-la dans Paramètres > Serveurs Orca distants > Accès SSH aux serveurs appairés avant de remplacer son appairage ou de le supprimer.",

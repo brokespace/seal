@@ -200,7 +200,7 @@ export function useMobileTasksProjectLoadingActions(model: TaskPaginationActions
             ? views.find((view) => view.number === options.viewNumber)
             : undefined
         if (explicitView && explicitView.layout !== 'TABLE_LAYOUT') {
-          throw new Error("Orca doesn't support this GitHub Project layout yet.")
+          throw new Error("Seal doesn't support this GitHub Project layout yet.")
         }
         // A remembered Board or Roadmap view (desktop renders those) cannot open here.
         const rememberedViewId =

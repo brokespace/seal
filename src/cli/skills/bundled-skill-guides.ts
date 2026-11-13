@@ -961,7 +961,6 @@ const ORCA_CLI_PLUGINS_REFERENCE_MARKDOWN = [
   "2. Set `version` in `orca-plugin.json`, commit, then tag that commit `v<version>` and push the",
   "   tag: `git tag -a v1.2.0 -m v1.2.0 && git push origin v1.2.0`.",
   "3. Add the `orca-plugin` topic to the repository: `gh repo edit <owner>/<repo> --add-topic orca-plugin`.",
-  "4. Check the listing status at `https://www.onorca.dev/plugins/<owner>/<repo>`.",
   "",
   "For a catalog (`orca-catalog.json`), commit the plugin and run `plugin release-entry <dir>`: it",
   "prints the `releases` entry for `HEAD` (and the `source.path` for a plugin in a subdirectory) to",

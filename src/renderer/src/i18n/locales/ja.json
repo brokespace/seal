@@ -703,7 +703,7 @@
         "b411ec0069": "接続",
         "2cf9e5a294": "保存済みサーバーをクリア",
         "4a4c017be1": "エンドポイント：",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "ペアリング URL またはコード",
         "cb4d287238": "サーバー名",
         "3affe7de3a": "このブラウザが到達できる Orca サーバーからペアリング URL を貼り付けます。",
@@ -6432,7 +6432,7 @@
           "nameInOrca": "Orca での名前",
           "serverNamePlaceholder": "開発環境",
           "accessLink": "アクセスリンク",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config はすでに同期されています。",
           "sshImportFailed": "SSH 構成のインポートに失敗しました。",
           "advanced": "詳細設定",
@@ -11177,14 +11177,14 @@
           "signIn": "Relay にサインイン",
           "localDescription": "スマートフォンがこの Wi‑Fi または Tailscale に接続されている必要があります。アカウントは不要です。",
           "pathGroup": "スマートフォンがこのコンピュータに到達する方法",
-          "anywhereTitle": "Orca Relay",
+          "anywhereTitle": "Seal Relay",
           "anywhereDescription": "スマートフォンはモバイル回線または任意の Wi‑Fi から接続できます。サインインが必要なのは Relay のみです。",
-          "relayUnavailable": "このビルドでは Orca Relay を利用できません。LAN をご利用ください。",
+          "relayUnavailable": "このビルドでは Seal Relay を利用できません。LAN をご利用ください。",
           "signInAgain": "Relay に再サインイン",
           "localTitle": "LAN",
           "retrying": "再試行中",
           "relayCell": "リレーセル",
-          "relaySignInDetail": "このデスクトップを Orca にサインインさせ、スマートフォンの通信を Orca のサーバー経由でルーティングします。LAN ではアカウントは不要です。"
+          "relaySignInDetail": "このデスクトップを Seal にサインインさせ、スマートフォンの通信を Seal のサーバー経由でルーティングします。LAN ではアカウントは不要です。"
         },
         "MobilePairingSetupSection": {
           "title": "スマートフォンをペアリング",
@@ -11221,7 +11221,7 @@
           "manageConnectionLink": "連携"
         },
         "MobileRelayBetaNotice": {
-          "notice": "Orca Relay はベータ版です。"
+          "notice": "Seal Relay はベータ版です。"
         },
         "EditorFontFamilySetting": {
           "description": "ファイルエディターと差分ビューで使用されるフォント。空の場合はターミナルフォントに従います。",
@@ -11608,7 +11608,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux ワークステーション",
           "accessLink": "アクセスリンク",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Orca は接続前に接続先を表示します。認証情報は非表示のままです。",
           "destination": "リンク先",
           "loopbackTitle": "このリンクはこのデバイス自身を指しています",
@@ -14634,29 +14634,25 @@
           "85067b9e06": "ネットワークインターフェースを更新",
           "dfd2aa9d5d": "ネットワーク",
           "3960f5c339": "ステップ 2/2",
-          "3241f3c26a": "QRをインストールする",
-          "aa97420ba4": "インストールリンクをコピーする",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "スマートフォンのカメラでこのダウンロード用QRコードをスキャンしてください。すでにOrca Mobileをお持ちですか？ステップ2に進むとペアリング用QRコードが表示されます。",
-          "0d9b33299e": "アプリをダウンロード。",
           "92ddfdfa1f": "ステップ 1/2",
           "ff48d9d520": "別のデバイスをペアリングする",
           "f9cbf4bb53": "デバイスを取り消します",
           "34f878d04f": "{{value0}}を取り消す",
           "94829abdb1": "ペアリング済み",
-          "266c18c105": "Orca Mobile を開いて中断したところから再開するか、別のデバイスをペアリングします。",
-          "5410d55d79": "Orca モバイル",
+          "266c18c105": "Seal Mobile を開いて中断したところから再開するか、別のデバイスをペアリングします。",
+          "5410d55d79": "Seal モバイル",
           "10d27b4cba": "始めましょう",
           "da1d5e5ed0": "で利用可能",
           "ec0607bf66": "サポートされているモバイルプラットフォーム",
-          "b4ccce5cb7": "スマートフォンから Orca をコントロールします。デスクから離れていても、Agent の状況を確認し、変更を確認し、タスクを開始できます。",
+          "b4ccce5cb7": "スマートフォンから Seal をコントロールします。デスクから離れていても、Agent の状況を確認し、変更を確認し、タスクを開始できます。",
           "cd4e5e816f": "ワークスペースをポケットに。",
           "a6cffbbb0b": "コードを生成する",
           "e59a252eca": "コードを再生成する",
           "d0b52871ce": "スマートフォンはペアリングされています。",
           "051978a785": "スマートフォンはペアリングされています。",
-          "pairingQrError": "このペアリングコードを QR コードとして表示できませんでした。代わりに Orca Mobile にコピーしてください。",
+          "pairingQrError": "このペアリングコードを QR コードとして表示できませんでした。代わりに Seal Mobile にコピーしてください。",
           "directAddressDisclosure": "より速いローカル経路も使う",
           "directAddressHint": "任意。近く（同じ Wi‑Fi または Tailscale）にいるときにスマホが使うアドレスを選びます。通常は Relay より高速です。外出中は引き続き Relay が使われます。",
           "noRelayCode": "利用可能なペアリングコードがありません",
@@ -14668,15 +14664,13 @@
           "pairThisMac": "この Mac をペアリングします。",
           "pairThisPc": "この PC をペアリングします。",
           "pairThisComputer": "このコンピュータをペアリングします。",
-          "androidHelp": {
-            "guide": "インストールガイド"
-          },
-          "openAppAndScan": "Orca Mobile を開き、<strong>デスクトップのペアリング</strong>をタップしてコードをスキャンしてください。"
+          "openAppAndScan": "Seal Mobile を開き、<strong>デスクトップのペアリング</strong>をタップしてコードをスキャンしてください。",
+          "installHeading": "Seal Mobile をインストールします。",
+          "installLead": "Seal Mobile は App Store や Google Play では配信されていません。Seal リポジトリからビルドしてインストールし、ステップ 2 に進んでペアリング用 QR コードを表示してください。",
+          "installGuide": "インストールガイドを開く"
         },
         "MobilePage": {
           "e17393c6a3": "スマートフォンプレビュー",
-          "baea63c445": "リンクのコピーに失敗しました",
-          "fad833de8d": "インストールリンクをコピーしました",
           "6a66e38943": "ペアリングコードのコピーに失敗しました",
           "3c1f7168bb": "ペアリングコードをコピーしました",
           "4c8bd11c1a": "ペアリングコードの生成に失敗しました",
@@ -14688,7 +14682,7 @@
         },
         "MobilePageToolbar": {
           "ad2284a9e2": "閉じる・Esc",
-          "9883b58693": "Orca モバイルを閉じる",
+          "9883b58693": "Seal モバイルを閉じる",
           "fb5f28330e": "サイドバーに表示",
           "c669abcf8f": "サイドバーから非表示",
           "e1c7b4a92d": "[設定] > [モバイル] で設定します。",
@@ -14697,15 +14691,7 @@
         "PhoneCarousel": {
           "96d651cb87": "ターミナルセッション",
           "93217b41c1": "ワークツリーリスト",
-          "89c7713645": "Orca モバイルのホーム画面"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "APK をダウンロード",
-              "openAppStore": "App Store を開く"
-            }
-          }
+          "89c7713645": "Seal モバイルのホーム画面"
         },
         "slides": {
           "HomeSlide": {
@@ -14779,24 +14765,24 @@
           "remove-custom": "{{address}} を削除"
         },
         "WindowsFirewallNotice": {
-          "repair-success": "Windows ファイアウォールで、プライベートネットワーク上の Orca Mobile を許可しました",
+          "repair-success": "Windows ファイアウォールで、プライベートネットワーク上の Seal Mobile を許可しました",
           "repair-failed": "Windows ファイアウォールのルールを更新できませんでした",
           "public-title": "Windows は、このネットワークをパブリックとして扱っています",
           "missing-title": "Windows ファイアウォールでスマートフォンからの接続を許可",
-          "public-description": "Orca モバイル接続を許可する前に、この信頼されたWi-Fiネットワークをプライベートに変更してください。",
-          "missing-description": "Windowsがペアリングサーバーをブロックする可能性があります。プライベートネットワーク上のこの Orca アプリとTCPポート{{port}}のルールを追加してください。",
+          "public-description": "Seal モバイル接続を許可する前に、この信頼されたWi-Fiネットワークをプライベートに変更してください。",
+          "missing-description": "Windowsがペアリングサーバーをブロックする可能性があります。プライベートネットワーク上のこの Seal アプリとTCPポート{{port}}のルールを追加してください。",
           "open-settings": "ネットワーク設定を開く",
           "waiting": "Windowsを待機中…",
           "allow": "電話接続を許可",
           "repair-unverified": "Windows ファイアウォールのアクセスを確認できませんでした",
-          "blocked-title": "Windowsが Orca モバイルをブロックしている可能性があります",
-          "blocked-description": "既存のインバウンドブロックルールがペアリング例外を上書きする可能性があります。修復はこの Orca アプリの競合するTCPルールを削除し、プライベートネットワーク上のポート{{port}}を許可します。",
+          "blocked-title": "Windowsが Seal モバイルをブロックしている可能性があります",
+          "blocked-description": "既存のインバウンドブロックルールがペアリング例外を上書きする可能性があります。修復はこの Seal アプリの競合するTCPルールを削除し、プライベートネットワーク上のポート{{port}}を許可します。",
           "repair": "ファイアウォールアクセスを修復",
-          "relay-note": "ペアリングは Orca Relay 経由で引き続き機能します。許可すると、より高速なローカル接続が追加されるだけです。"
+          "relay-note": "ペアリングは Seal Relay 経由で引き続き機能します。許可すると、より高速なローカル接続が追加されるだけです。"
         },
         "MobileRelayMintFailureNotice": {
-          "retryingTitle": "Orca リレーを再試行しています…",
-          "unavailableTitle": "Orca Relay はこのデスクトップでは使用できません。",
+          "retryingTitle": "Seal リレーを再試行しています…",
+          "unavailableTitle": "Seal Relay はこのデスクトップでは使用できません。",
           "title": "リレーペアリングコードを作成できませんでした。",
           "retryingBody": "新規ペアリングコードを作成します。リモート接続ではこれに少し時間がかかる場合があります。",
           "unavailableBody": "LAN を使用して、Tailscale または同じ Wi-Fi 経由でペアリングします。",
@@ -14805,10 +14791,10 @@
           "retrying": "再試行中…",
           "retry": "リトライリレー",
           "copyDiagnostics": "コピー診断",
-          "reconnectTitle": "Orca アカウントのセッションが期限切れになりました。",
-          "reconnectBody": "もう一度サインインして Orca Relay を使用するか、LAN を使用して Tailscale または同じ Wi-Fi 経由でペアリングします。",
-          "notEntitledTitle": "Orca Relay はこの Orca アカウントには含まれていません。",
-          "rateLimitedBody": "Orca Relay が混雑しています。1 分待って再試行するか、LAN を使用して Tailscale または同じ Wi‑Fi 経由でペアリングしてください。"
+          "reconnectTitle": "Seal アカウントのセッションが期限切れになりました。",
+          "reconnectBody": "もう一度サインインして Seal Relay を使用するか、LAN を使用して Tailscale または同じ Wi-Fi 経由でペアリングします。",
+          "notEntitledTitle": "Seal Relay はこの Seal アカウントには含まれていません。",
+          "rateLimitedBody": "Seal Relay が混雑しています。1 分待って再試行するか、LAN を使用して Tailscale または同じ Wi‑Fi 経由でペアリングしてください。"
         },
         "relayClockSkewMessage": {
           "message": "コンピューターの時計が約 {{seconds}} 秒ずれています。時刻の自動設定をオンにしてから、もう一度お試しください。"
@@ -22630,7 +22616,7 @@
       "serverTooOld": "選択した Orca サーバーは古すぎるため、このクライアントと互換性がありません。サーバーの Orca を更新してください。サーバーのプロトコルは {{serverProtocol}}、クライアントが要求するサーバーのプロトコルは {{requiredProtocol}} です。"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "ペアリングコードが無効です。orca://pair?... 形式の URL または生のペアリングデータが必要です。",
+      "invalidPairingCode": "ペアリングコードが無効です。seal://pair?... 形式の URL または生のペアリングデータが必要です。",
       "selfPairingCode": "このペアリングコードは、この Orca 自身のものです。もう一方のコンピューターでコードを生成してください。",
       "managedDeployment": "Orca が SSH ホスト上でこのサーバーを実行しているため、ここではペアリングを置き換えたり解除したりできません。廃止するには `orca environment stop --environment <name> --yes` を実行するか、設定 > SSH ホスト上の Orca を使用してください。ホストが存在しない場合は `orca environment forget --environment <name> --yes` を実行してください。",
       "sshAccessChangePending": "このサーバーの SSH アクセスの変更が完了しませんでした。ペアリングの置き換えやサーバーの削除を行う前に、設定 > リモート Orca サーバー > ペアリング済みサーバーの SSH アクセスで再試行するかキャンセルしてください。",
