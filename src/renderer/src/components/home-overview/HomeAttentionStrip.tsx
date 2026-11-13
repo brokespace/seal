@@ -34,7 +34,11 @@ function AttentionChip({
     }
     case 'machine':
       return (
-        <button type="button" className={CHIP_CLASS} onClick={actions.openMachines}>
+        <button
+          type="button"
+          className={CHIP_CLASS}
+          onClick={() => actions.openMachine(item.machine)}
+        >
           <ServerCrash className="size-4 shrink-0 text-destructive" />
           <span className="min-w-0">
             <span className="block truncate font-medium text-foreground">{item.machine.label}</span>

@@ -6,14 +6,12 @@ import type { MachineId } from '../../../../shared/machines/machine-types'
 import { MachineDetail } from './detail/MachineDetail'
 import { MachineList } from './list/MachineList'
 import { useMachineMetricsEntries, useMachineMetricsPolling } from './model/machine-metrics-store'
+import { getLastSelectedMachineId, rememberMachineSelection } from './model/machine-selection'
 import { useMachineAgentSessions } from './model/use-machine-agent-sessions'
 import { groupSessionsByMachine } from './model/machine-agent-sessions'
 import { useMachinesInventory } from './model/use-machines-inventory'
 import { MachineTransfersPanel } from './transfers/MachineTransfersPanel'
 import { useMachineTransfers } from './transfers/use-machine-transfers'
-
-// Reopening the page returns to the machine the user was last looking at.
-let lastSelectedMachineId: MachineId | null = null
 
 export default function MachinesPage(): React.JSX.Element {
   const t = useTranslate()
@@ -28,9 +26,11 @@ export default function MachinesPage(): React.JSX.Element {
     [machines, sessionsByHost]
   )
   const { transfers, clearFinished } = useMachineTransfers()
-  const [selectedId, setSelectedId] = useState<MachineId | null>(lastSelectedMachineId)
+  const [selectedId, setSelectedId] = useState<MachineId | null>(getLastSelectedMachineId)
   // Narrow layouts show one pane at a time; this tracks whether the detail pane is in front.
-  const [showDetailOnNarrow, setShowDetailOnNarrow] = useState(lastSelectedMachineId !== null)
+  const [showDetailOnNarrow, setShowDetailOnNarrow] = useState(
+    () => getLastSelectedMachineId() !== null
+  )
   const [adding, setAdding] = useState<AddMachineRequest | null>(null)
 
   const selected = machines.find((machine) => machine.id === selectedId) ?? machines[0] ?? null
@@ -39,7 +39,7 @@ export default function MachinesPage(): React.JSX.Element {
     [sessionsByMachine]
   )
   const select = (id: MachineId): void => {
-    lastSelectedMachineId = id
+    rememberMachineSelection(id)
     setSelectedId(id)
     setShowDetailOnNarrow(true)
   }

@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useAppStore } from '@/store'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { useLiveDashboardSnapshot } from '@/components/dashboard/useLiveDashboardSnapshot'
-import { revealDashboardAgent } from '@/components/dashboard/reveal-dashboard-agent'
 import { AUTOMATIONS_CHANGED_EVENT } from '@/components/automations/events/automations-changed-window-event'
 import { listAutomationsForTarget } from '@/components/automations/hosts/automation-host-client'
 import {
@@ -14,7 +13,6 @@ import type { HostMemory } from '../../../../shared/process-stats-types'
 import type {
   HomeAutomationsResult,
   HomeMachine,
-  HomeOverviewActions,
   HomeOverviewProviders,
   HomeSession
 } from './home-overview-model'
@@ -26,6 +24,7 @@ import {
   HomeSessionsContext,
   HomeWorkspacesContext
 } from './home-overview-contexts'
+import { orcaHomeOverviewActions } from './home-overview-actions'
 import { orcaHomeSessionFromCard } from './orca-home-session-mapping'
 import { orcaActiveAccountsByAgent, orcaHomeAccounts } from './orca-home-account-mapping'
 import { orcaLocalMachine, orcaSshMachines } from './orca-home-machine-mapping'
@@ -145,24 +144,6 @@ function useOrcaAutomations(): HomeAutomationsResult {
   return result
 }
 
-function useOrcaActions(): HomeOverviewActions {
-  const openAutomationsPage = useAppStore((s) => s.openAutomationsPage)
-  const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
-  return useMemo(
-    () => ({
-      openSession: (session) => {
-        if (session.target.kind === 'orca-pane') {
-          revealDashboardAgent(session.target.reveal)
-        }
-      },
-      openAutomations: openAutomationsPage,
-      openMachines: () => openSettingsTarget({ pane: 'servers', repoId: null }),
-      openAccountsSettings: () => openSettingsTarget({ pane: 'accounts', repoId: null })
-    }),
-    [openAutomationsPage, openSettingsTarget]
-  )
-}
-
 type Children = { children: ReactNode }
 
 function OrcaSessions({ children }: Children): React.JSX.Element {
@@ -197,8 +178,11 @@ function OrcaAutomations({ children }: Children): React.JSX.Element {
 }
 
 function OrcaActions({ children }: Children): React.JSX.Element {
-  const actions = useOrcaActions()
-  return <HomeActionsContext.Provider value={actions}>{children}</HomeActionsContext.Provider>
+  return (
+    <HomeActionsContext.Provider value={orcaHomeOverviewActions}>
+      {children}
+    </HomeActionsContext.Provider>
+  )
 }
 
 /** Home backed by what Orca tracks today; swap pieces as dedicated registries land. */

@@ -4,7 +4,7 @@ import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { HomeMachine, HomeMachineStatus, HomeSession } from './home-overview-model'
 import { homeMachineStatusLabel } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
 
 function statusDotClass(status: HomeMachineStatus): string {
   switch (status) {
@@ -41,11 +41,13 @@ function loadLabel(machine: HomeMachine, t: Translate): string | null {
 export function HomeMachinesPanel({
   machines,
   sessions,
-  onManage
+  onManage,
+  onOpen
 }: {
   machines: readonly HomeMachine[]
   sessions: readonly HomeSession[]
   onManage: () => void
+  onOpen: (machine: HomeMachine) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const activeByMachine = new Map<string, number>()
@@ -80,30 +82,34 @@ export function HomeMachinesPanel({
               const load = loadLabel(machine, t)
               const active = activeByMachine.get(machine.id) ?? 0
               return (
-                <li key={machine.id} className="flex items-center gap-2 rounded-md px-1.5 py-1.5">
-                  <Icon className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs text-foreground">{machine.label}</span>
-                    <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'size-1.5 shrink-0 rounded-full',
-                          statusDotClass(machine.status)
-                        )}
-                      />
-                      <span className="truncate tabular-nums">
-                        {[homeMachineStatusLabel(machine.status, t), load]
-                          .filter(Boolean)
-                          .join(' · ')}
+                <li key={machine.id}>
+                  <HomeOverviewRowButton onClick={() => onOpen(machine)} className="px-1.5 py-1.5">
+                    <Icon className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs text-foreground">
+                        {machine.label}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'size-1.5 shrink-0 rounded-full',
+                            statusDotClass(machine.status)
+                          )}
+                        />
+                        <span className="truncate tabular-nums">
+                          {[homeMachineStatusLabel(machine.status, t), load]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                  {active > 0 ? (
-                    <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
-                      {t('home.overview.machines.active', '{{count}} active', { count: active })}
-                    </span>
-                  ) : null}
+                    {active > 0 ? (
+                      <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
+                        {t('home.overview.machines.active', '{{count}} active', { count: active })}
+                      </span>
+                    ) : null}
+                  </HomeOverviewRowButton>
                 </li>
               )
             })}
