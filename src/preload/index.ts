@@ -41,6 +41,7 @@ import { localhostWorktreeLabelsApi } from './api/workspaces/localhost-worktree-
 import { keybindingsApi } from './api/preferences/keybindings-bridge'
 import { codexAccountsApi } from './api/agent-accounts/codex-accounts-bridge'
 import { claudeAccountsApi } from './api/agent-accounts/claude-accounts-bridge'
+import { liveSessionsApi } from './api/live-sessions/live-sessions-bridge'
 import { cliApi } from './api/cli-install/cli-bridge'
 import { codexConfigSyncApi } from './api/agent-accounts/codex-config-sync-bridge'
 import { preflightApi } from './api/preflight/preflight-bridge'
@@ -147,6 +148,7 @@ const api = {
   keybindings: keybindingsApi,
   codexAccounts: codexAccountsApi,
   claudeAccounts: claudeAccountsApi,
+  liveSessions: liveSessionsApi,
   cli: cliApi,
   codexConfigSync: codexConfigSyncApi,
   preflight: preflightApi,
