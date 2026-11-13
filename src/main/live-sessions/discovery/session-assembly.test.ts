@@ -25,7 +25,10 @@ function transcript(
       phase,
       detail: null,
       firstAt: NOW - 3_600_000,
-      lastAt: NOW - ageMs
+      lastAt: NOW - ageMs,
+      headless: false,
+      recordIds: [],
+      continues: []
     }
   }
 }
