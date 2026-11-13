@@ -27,6 +27,8 @@ export type LiveSessionMachine = {
 export type LiveSessionInputRoute =
   /** A Seal (Orca) terminal pane, through the runtime's own prompt writer. */
   | { kind: 'seal-pane'; paneKey: string }
+  /** Codex's own queue (`codex queue`): a real user turn, after any running one, never in a draft. */
+  | { kind: 'codex-queue'; thread: string; binary: string | null; codexHome: string | null }
   /** A tmux pane on the session's machine: bracketed paste at a free prompt. */
   | { kind: 'tmux'; target: string; socket?: string }
   /** No live terminal: the provider CLI resumes the session headless in the background. */
@@ -137,5 +139,23 @@ export type LivePermissionAnswerResult =
   | {
       ok: false
       reason: 'prompt_not_pending' | 'option_not_offered' | 'not_answerable' | 'failed'
+      error?: string
+    }
+
+/** Take over: the external process is stopped; reopen it in a Seal pane with these. */
+export type LiveTakeOverResult =
+  | {
+      ok: true
+      provider: LiveSessionProvider
+      providerSessionId: string
+      cwd: string | null
+      machine: LiveSessionMachine
+      transcriptPath: string | null
+      /** Codex sessions outside the default home resume only with their CODEX_HOME. */
+      codexHome: string | null
+    }
+  | {
+      ok: false
+      reason: 'not_found' | 'not_external' | 'not_resumable' | 'still_running' | 'failed'
       error?: string
     }

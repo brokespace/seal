@@ -1,5 +1,6 @@
 import {
   LiveSessionAnswerParams,
+  LiveSessionTakeOverParams,
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
   LiveSessionSendParams,
@@ -138,5 +139,11 @@ export const LIVE_SESSION_METHODS = [
     permission: 'workspace',
     params: LiveSessionAnswerParams,
     handler: (answer) => service().answer(answer)
+  }),
+  defineMethod({
+    name: 'liveSessions.takeOver',
+    permission: 'workspace',
+    params: LiveSessionTakeOverParams,
+    handler: ({ sessionId }) => service().takeOver(sessionId)
   })
 ]

@@ -231,6 +231,19 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('../agents/agent-hooks.js')).AGENT_HOOK_HANDLERS
   },
   {
+    name: 'shell-integration',
+    keys: [
+      'shell-integration install',
+      'shell-integration uninstall',
+      'shell-integration status',
+      'shell-integration enable',
+      'shell-integration disable'
+    ],
+    load: async () =>
+      (await import('../shell-integration/shell-integration-commands.js'))
+        .SHELL_INTEGRATION_HANDLERS
+  },
+  {
     name: 'agent-launch',
     keys: ['agent launch'],
     load: async () => (await import('../agents/agent-launch.js')).AGENT_LAUNCH_HANDLERS

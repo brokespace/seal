@@ -70,7 +70,7 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   initializeMainProcessAutomations()
   startWorkspaceCleanupRunner(runtime, store)
   configureRuntimeServices(runtime)
-  installLiveSessions(runtime)
+  installLiveSessions(runtime, store)
   installFirstWorkRenameHookSubscription()
   await initializeMainProcessPlugins(runtime)
   state.starNag = new StarNagService(store, state.stats!)

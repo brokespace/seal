@@ -1,4 +1,5 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 export type DiscoveredProcess = {
   pid: number
@@ -36,6 +37,8 @@ export type DiscoveryOutput = {
   panes: DiscoveredPane[]
   /** Raw hook state files (SISomewhere-compatible), keyed by path. */
   hookStates: { path: string; text: string }[]
+  /** Claude Code's own registry of running sessions (`~/.claude/sessions/<pid>.json`): pid → session. */
+  claudeSessions: { pid: number; sessionId: string }[]
   files: DiscoveredFile[]
   /** The script ran to its end; a cut-off scan must not drop sessions. */
   complete: boolean
@@ -66,6 +69,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
     processes: [],
     panes: [],
     hookStates: [],
+    claudeSessions: [],
     files: [],
     complete: false
   }
@@ -128,6 +132,13 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         const { path: paneId, payload } = pathAndPayload(rest.slice(tab + 1))
         if (tab > 0) {
           screens.set(`${rest.slice(0, tab)}\t${paneId}`, decode(payload))
+        }
+        break
+      }
+      case 'CLAUDESESSION': {
+        const record = parseJsonRecord(decode(pathAndPayload(rest).payload))
+        if (record && typeof record.pid === 'number' && typeof record.sessionId === 'string') {
+          out.claudeSessions.push({ pid: record.pid, sessionId: record.sessionId })
         }
         break
       }

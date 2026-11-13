@@ -37,6 +37,7 @@ import {
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
   LiveSessionSendParams,
+  LiveSessionTakeOverParams,
   LiveSessionTranscriptParams,
   LiveSessionUnwatchParams,
   LiveSessionWatchTranscriptParams
@@ -1369,6 +1370,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'liveSessions.messages': LiveSessionMessagesParams,
   'liveSessions.retry': LiveSessionRetryParams,
   'liveSessions.send': LiveSessionSendParams,
+  'liveSessions.takeOver': LiveSessionTakeOverParams,
   'liveSessions.transcript': LiveSessionTranscriptParams,
   'liveSessions.unwatch': LiveSessionUnwatchParams,
   'liveSessions.watch': null,

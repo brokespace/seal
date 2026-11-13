@@ -6,6 +6,22 @@ import type {
 } from '../../shared/live-sessions/live-session-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
 import type { LiveSessionService } from './live-session-service'
+import type {
+  ShellIntegrationAction,
+  ShellIntegrationStatus
+} from '../../shared/shell-integration/shell-integration-installer'
+
+const SHELL_INTEGRATION_ACTIONS: readonly ShellIntegrationAction[] = [
+  'install',
+  'uninstall',
+  'status',
+  'enable',
+  'disable'
+]
+
+function shellIntegrationActionOf(value: unknown): ShellIntegrationAction | null {
+  return SHELL_INTEGRATION_ACTIONS.find((action) => action === value) ?? null
+}
 
 function broadcast(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -23,7 +39,13 @@ function cursorOf(value: unknown): LiveTranscriptCursor | null {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
 }
 
-export function registerLiveSessionIpc(service: LiveSessionService): void {
+export function registerLiveSessionIpc(
+  service: LiveSessionService,
+  shellIntegration: (
+    hostId: string,
+    action: ShellIntegrationAction
+  ) => Promise<ShellIntegrationStatus>
+): void {
   service.subscribe((event) => broadcast(LIVE_SESSION_IPC.event, event))
   service.subscribeMessages((message) => broadcast(LIVE_SESSION_IPC.message, message))
 
@@ -110,4 +132,20 @@ export function registerLiveSessionIpc(service: LiveSessionService): void {
       optionId: args.optionId
     })
   })
+  ipcMain.handle(LIVE_SESSION_IPC.takeOver, (_event, args: { sessionId: unknown }) => {
+    if (!isString(args?.sessionId)) {
+      throw new Error('sessionId is required')
+    }
+    return service.takeOver(args.sessionId)
+  })
+  ipcMain.handle(
+    LIVE_SESSION_IPC.shellIntegration,
+    (_event, args: { hostId: unknown; action: unknown }) => {
+      const action = shellIntegrationActionOf(args?.action)
+      if (!isString(args?.hostId, 256) || !action) {
+        throw new Error('hostId and a shell integration action are required')
+      }
+      return shellIntegration(args.hostId, action)
+    }
+  )
 }

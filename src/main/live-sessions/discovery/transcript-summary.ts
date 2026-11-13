@@ -1,5 +1,6 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import { isJsonRecord, parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
+import { codexUserMessageText } from './codex-user-message'
 
 /** What the transcript alone says; liveness, hooks and the screen refine it later. */
 export type TranscriptPhase =
@@ -241,7 +242,7 @@ function codexPhase(
       const command = Array.isArray(payload?.command) ? payload.command.join(' ') : 'command'
       return { phase: 'tool-pending', detail: oneLine(`Bash: ${command}`, 80) }
     }
-    if (CODEX_WORKING.has(kind)) {
+    if (CODEX_WORKING.has(kind) || codexUserMessageText(record) !== null) {
       return { phase: 'working', detail: 'Thinking' }
     }
   }
@@ -249,11 +250,7 @@ function codexPhase(
 }
 
 function codexPromptText(record: Record<string, unknown>): string | null {
-  const payload = rec(record.payload)
-  if (record.type !== 'event_msg' || payload?.type !== 'user_message') {
-    return null
-  }
-  const text = str(payload.message)?.trim()
+  const text = codexUserMessageText(record)?.trim()
   return text && !text.startsWith('<') ? text : null
 }
 

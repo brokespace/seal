@@ -35,6 +35,24 @@ describe('userTextsOf', () => {
       ])
     ).toEqual([{ offset: 0, text: 'ship it' }])
   })
+
+  it('reads the item_completed user turns newer Codex writes instead of user_message', () => {
+    expect(
+      userTextsOf('codex', [
+        at(0, {
+          type: 'event_msg',
+          payload: {
+            type: 'item_completed',
+            item: { type: 'UserMessage', content: [{ type: 'text', text: 'queued from Seal' }] }
+          }
+        }),
+        at(90, {
+          type: 'event_msg',
+          payload: { type: 'item_completed', item: { type: 'AgentMessage', content: [] } }
+        })
+      ])
+    ).toEqual([{ offset: 0, text: 'queued from Seal' }])
+  })
 })
 
 describe('matchDelivered', () => {
