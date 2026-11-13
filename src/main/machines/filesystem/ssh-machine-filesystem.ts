@@ -2,11 +2,10 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { SFTPWrapper } from 'ssh2'
-import { toSshExecutionHostId } from '../../../shared/execution-host'
-import type { SshConnection } from '../../ssh/connection/ssh-connection'
+import type { MachineId } from '../../../shared/machines/machine-types'
+import type { SshMachineLink } from '../connection/ssh-machine-link'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
 import { removeDirectorySftp } from '../../ssh/file-transfer/sftp/sftp-upload'
-import { getSshConnectionManager } from '../../ssh/targets/ssh-target-registry'
 import {
   isAllowedDownloadUrl,
   type MachineFileStat,
@@ -56,20 +55,20 @@ function remoteDirname(target: string): string {
 
 /** Browses one SSH host over a long-lived SFTP channel, or plain exec when the host uses system ssh. */
 export class SshMachineFileSystem implements MachineFileSystem {
-  readonly machineId
   private sftpChannel: {
-    conn: SshConnection
+    conn: SshMachineLink
     generation: number
     sftp: Promise<SFTPWrapper>
   } | null = null
   private inotifyAvailable: boolean | null = null
 
-  constructor(private readonly targetId: string) {
-    this.machineId = toSshExecutionHostId(targetId)
-  }
+  constructor(
+    readonly machineId: MachineId,
+    private readonly link: () => SshMachineLink | null
+  ) {}
 
-  private connection(): SshConnection {
-    const conn = getSshConnectionManager()?.getConnection(this.targetId)
+  private connection(): SshMachineLink {
+    const conn = this.link()
     if (!conn || conn.getState().status !== 'connected') {
       throw new Error('Machine is not connected')
     }
@@ -80,11 +79,11 @@ export class SshMachineFileSystem implements MachineFileSystem {
     return this.connection().getState().remotePlatform === 'win32'
   }
 
-  private usesSftp(conn: SshConnection): boolean {
+  private usesSftp(conn: SshMachineLink): boolean {
     return !conn.usesSystemSshTransport()
   }
 
-  private persistentSftp(conn: SshConnection): Promise<SFTPWrapper> {
+  private persistentSftp(conn: SshMachineLink): Promise<SFTPWrapper> {
     const generation = conn.getConnectGeneration()
     const cached = this.sftpChannel
     if (cached && cached.conn === conn && cached.generation === generation) {
@@ -111,7 +110,7 @@ export class SshMachineFileSystem implements MachineFileSystem {
   }
 
   /** Runs on the shared SFTP channel, reopening it once when the channel (not the file) failed. */
-  private async withSftp<T>(conn: SshConnection, operation: (sftp: SFTPWrapper) => Promise<T>) {
+  private async withSftp<T>(conn: SshMachineLink, operation: (sftp: SFTPWrapper) => Promise<T>) {
     try {
       return await operation(await this.persistentSftp(conn))
     } catch (error) {
@@ -124,7 +123,7 @@ export class SshMachineFileSystem implements MachineFileSystem {
   }
 
   private exec(
-    conn: SshConnection,
+    conn: SshMachineLink,
     command: string,
     options?: { timeoutMs?: number; signal?: AbortSignal }
   ) {

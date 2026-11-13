@@ -1,3 +1,4 @@
+import type { MachineIdentity } from './machine-record'
 import type { MachineFileEntry, MachineFileKind, MachineMetrics, MachineOs } from './machine-types'
 
 export type MachineHostDirPage = { entries: MachineFileEntry[]; total: number }
@@ -13,7 +14,16 @@ export type MachineHostStreamEvent =
   | { type: 'done'; transferred: number; total: number | null }
   | { type: 'cancelled' }
   | { type: 'error'; message: string }
+  | { type: 'data'; dataBase64: string }
+  | { type: 'exit'; exitCode: number | null }
   | { type: 'end' }
+
+export type MachineExecResult = {
+  exitCode: number | null
+  stdout: string
+  stderr: string
+  timedOut: boolean
+}
 
 type Fields = Record<string, unknown>
 
@@ -104,6 +114,12 @@ export function parseMachineHostStreamEvent(value: unknown): MachineHostStreamEv
       return { type: value.type }
     case 'error':
       return { type: 'error', message: text(value.message) ?? 'Runtime operation failed' }
+    case 'data':
+      return typeof value.dataBase64 === 'string'
+        ? { type: 'data', dataBase64: value.dataBase64 }
+        : null
+    case 'exit':
+      return { type: 'exit', exitCode: finite(value.exitCode) }
     default:
       return null
   }
@@ -139,4 +155,22 @@ export function parseMachineMetrics(value: unknown, collectedAt: number): Machin
     homeDir: text(value.homeDir),
     collectedAt
   }
+}
+
+export function parseMachineExecResult(value: unknown): MachineExecResult {
+  if (!isFields(value)) {
+    throw new Error('Runtime returned an invalid command result')
+  }
+  return {
+    exitCode: finite(value.exitCode),
+    stdout: typeof value.stdout === 'string' ? value.stdout : '',
+    stderr: typeof value.stderr === 'string' ? value.stderr : '',
+    timedOut: value.timedOut === true
+  }
+}
+
+export function parseMachineIdentity(value: unknown): MachineIdentity {
+  return isFields(value)
+    ? { hostname: text(value.hostname), machineId: text(value.machineId) }
+    : { hostname: null, machineId: null }
 }

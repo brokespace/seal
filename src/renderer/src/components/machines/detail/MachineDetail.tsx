@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import {
   ArrowLeft,
   Bot,
+  ArrowLeftRight,
   Code,
   EllipsisVertical,
   Pencil,
@@ -26,12 +27,19 @@ import { cn } from '@/lib/class-names'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
 import { MachineFileExplorer } from '../explorer/MachineFileExplorer'
+import { MachineWorkSection } from '../work/MachineWorkSection'
+import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import type { MachineAgentSession } from '../model/machine-agent-sessions'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../model/machine-summaries'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
-import { connectMachine, openMachineInEditor, openMachineTerminal } from './machine-quick-actions'
+import {
+  connectMachine,
+  openMachineInEditor,
+  openMachineTerminal,
+  switchMachineConnection
+} from './machine-quick-actions'
 
 function AgentSessionList({
   sessions
@@ -82,7 +90,6 @@ export function MachineDetail({
   metrics,
   metricsError,
   sessions,
-  sshTarget,
   onBack,
   onChanged
 }: {
@@ -90,7 +97,6 @@ export function MachineDetail({
   metrics: MachineMetrics | null
   metricsError: string | null
   sessions: readonly MachineAgentSession[]
-  sshTarget: SshTarget | null
   onBack: () => void
   onChanged: () => void
 }): React.JSX.Element {
@@ -98,10 +104,20 @@ export function MachineDetail({
   const statusLabel = useMachineStatusLabel()
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
-  const removal = resolveHostRemoval(machine.id)
+  const removal =
+    machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
   const homeDir = metrics?.homeDir ?? null
-  const canConnect = machine.kind === 'ssh' && machine.status !== 'connecting'
+  const canConnect = machine.connection !== 'local' && machine.status !== 'connecting'
+  const otherConnection = machine.connection === 'ssh' ? 'server' : 'ssh'
+  const canSwitch =
+    machine.connection !== 'local' &&
+    machine.sshTargetId !== null &&
+    machine.runtimeEnvironmentId !== null
+  const editSshDetails = async (): Promise<void> => {
+    const targets = await window.api.ssh.listTargets()
+    setEditing(targets.find((target) => target.id === machine.sshTargetId) ?? null)
+  }
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-machine-detail={machine.id}>
@@ -120,6 +136,7 @@ export function MachineDetail({
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="truncate text-sm font-semibold">{machine.label}</h2>
             <MachineStatusDot status={machine.status} />
+            <MachineConnectionBadge connection={machine.connection} />
             <span className="shrink-0 text-2xs text-muted-foreground">
               {statusLabel(machine.status)}
             </span>
@@ -156,7 +173,7 @@ export function MachineDetail({
             type="button"
             variant="outline"
             size="sm"
-            disabled={machine.kind !== 'local' && !online}
+            disabled={machine.status === 'connecting'}
             onClick={() => openMachineTerminal(machine)}
           >
             <SquareTerminal />
@@ -164,20 +181,18 @@ export function MachineDetail({
               {t('auto.components.machines.detail.terminal', 'Terminal')}
             </span>
           </Button>
-          {machine.kind !== 'runtime' ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!online || !homeDir}
-              onClick={() => homeDir && void openMachineInEditor(machine, homeDir)}
-            >
-              <Code />
-              <span className="hidden sm:inline">
-                {t('auto.components.machines.detail.editor', 'Open in editor')}
-              </span>
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!online || !homeDir}
+            onClick={() => homeDir && void openMachineInEditor(machine, homeDir)}
+          >
+            <Code />
+            <span className="hidden sm:inline">
+              {t('auto.components.machines.detail.editor', 'Open in editor')}
+            </span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -197,7 +212,7 @@ export function MachineDetail({
                 <RefreshCw />
                 {t('auto.components.machines.detail.refreshStats', 'Refresh stats')}
               </DropdownMenuItem>
-              {machine.kind === 'ssh' && online ? (
+              {machine.connection !== 'local' && online ? (
                 <DropdownMenuItem
                   onSelect={() => void connectMachine({ ...machine, status: 'error' })}
                 >
@@ -205,11 +220,26 @@ export function MachineDetail({
                   {t('auto.components.machines.detail.reconnect', 'Reconnect')}
                 </DropdownMenuItem>
               ) : null}
-              {sshTarget || removal ? <DropdownMenuSeparator /> : null}
-              {sshTarget ? (
-                <DropdownMenuItem onSelect={() => setEditing(sshTarget)}>
+              {canSwitch ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    void switchMachineConnection(machine, otherConnection).then(onChanged)
+                  }
+                >
+                  <ArrowLeftRight />
+                  {otherConnection === 'ssh'
+                    ? t('auto.components.machines.detail.useSsh', 'Connect over SSH instead')
+                    : t(
+                        'auto.components.machines.detail.useServer',
+                        'Connect via Seal server instead'
+                      )}
+                </DropdownMenuItem>
+              ) : null}
+              {machine.sshTargetId || removal ? <DropdownMenuSeparator /> : null}
+              {machine.sshTargetId ? (
+                <DropdownMenuItem onSelect={() => void editSshDetails()}>
                   <Pencil />
-                  {t('auto.components.machines.detail.edit', 'Edit machine…')}
+                  {t('auto.components.machines.detail.editSsh', 'Edit SSH details…')}
                 </DropdownMenuItem>
               ) : null}
               {removal ? (
@@ -226,6 +256,7 @@ export function MachineDetail({
         <section className="shrink-0 space-y-3 border-b border-border px-3 py-3 md:px-5">
           <MachineVitalsStrip metrics={metrics} error={metricsError} />
           <AgentSessionList sessions={sessions} />
+          <MachineWorkSection machine={machine} online={online} homeDir={homeDir} />
         </section>
       ) : sessions.length > 0 ? (
         <section className="shrink-0 border-b border-border px-3 py-3 md:px-5">
@@ -243,7 +274,7 @@ export function MachineDetail({
               onChanged()
             }
           }}
-          hostId={machine.id}
+          hostId={machine.executionHostId}
           label={machine.label}
           target={removal}
         />

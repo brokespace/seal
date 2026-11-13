@@ -1,4 +1,4 @@
-import type { SshConnection } from '../../ssh/connection/ssh-connection'
+import type { SshMachineLink } from '../connection/ssh-machine-link'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
 import type { MachineFileStat } from './machine-filesystem'
 import {
@@ -36,7 +36,7 @@ function urlDownloadCommands(windows: boolean, url: string, destination: string)
 
 /** Runs curl/wget (or PowerShell on Windows) on the host itself, so the bytes never cross this computer; progress polls the file size. */
 export async function runRemoteUrlDownload(args: {
-  conn: SshConnection
+  conn: SshMachineLink
   windows: boolean
   url: string
   destination: string
@@ -97,7 +97,7 @@ export async function runRemoteUrlDownload(args: {
   }
 }
 
-export async function hasInotifyWait(conn: SshConnection): Promise<boolean> {
+export async function hasInotifyWait(conn: SshMachineLink): Promise<boolean> {
   return execCommand(conn, 'command -v inotifywait >/dev/null 2>&1 && echo yes')
     .then((out) => out.trim() === 'yes')
     .catch(() => false)
@@ -105,7 +105,7 @@ export async function hasInotifyWait(conn: SshConnection): Promise<boolean> {
 
 /** Streams `inotifywait` over one exec channel and reports which watched folder changed. */
 export async function startPosixInotifyWatch(
-  conn: SshConnection,
+  conn: SshMachineLink,
   dirs: string[],
   onChange: (dir: string) => void
 ): Promise<() => void> {

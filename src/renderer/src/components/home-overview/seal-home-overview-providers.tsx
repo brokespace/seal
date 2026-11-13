@@ -32,7 +32,8 @@ import {
   applySealSessionAccounts,
   homeMachineFromSummary,
   mergeLiveSessions,
-  mergeSealAccounts
+  mergeSealAccounts,
+  unifySessionMachines
 } from './seal-home-overview-mapping'
 
 type Children = { children: ReactNode }
@@ -53,9 +54,14 @@ function SealSessions({ children }: Children): React.JSX.Element {
   const paneSessions = useOrcaSessions()
   const live = useLiveSessions()
   const seal = useLocalSealAccountsStatus()
+  const { machines } = useMachinesInventory(getLocalExecutionHostLabel())
   const sessions = useMemo(
-    () => mergeLiveSessions(applySealSessionAccounts(paneSessions, seal), live.sessions),
-    [paneSessions, live.sessions, seal]
+    () =>
+      unifySessionMachines(
+        mergeLiveSessions(applySealSessionAccounts(paneSessions, seal), live.sessions),
+        machines
+      ),
+    [paneSessions, live.sessions, seal, machines]
   )
   return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
 }

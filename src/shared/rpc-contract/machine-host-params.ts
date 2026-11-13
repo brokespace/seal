@@ -45,3 +45,45 @@ export const MachineHostWatch = z.object({
 })
 
 export const MachineHostCancel = z.object({ subscriptionId: z.string().min(1).max(256) })
+
+export const MachineHostExec = z.object({
+  script: z
+    .string()
+    .min(1)
+    .max(1024 * 1024),
+  cwd: HostPath.optional(),
+  stdinBase64: z
+    .string()
+    .max(4 * 1024 * 1024)
+    .optional(),
+  timeoutMs: z
+    .number()
+    .int()
+    .min(1)
+    .max(30 * 60 * 1000)
+})
+
+const TerminalSize = z.number().int().min(1).max(1000)
+
+/** `command` runs in the login shell instead of an interactive prompt (agents launch this way). */
+export const MachineHostShell = z.object({
+  cols: TerminalSize,
+  rows: TerminalSize,
+  cwd: HostPath.optional(),
+  command: z
+    .string()
+    .min(1)
+    .max(64 * 1024)
+    .optional()
+})
+
+export const MachineHostShellInput = z.object({
+  subscriptionId: z.string().min(1).max(256),
+  dataBase64: z.string().max(1024 * 1024)
+})
+
+export const MachineHostShellResize = z.object({
+  subscriptionId: z.string().min(1).max(256),
+  cols: TerminalSize,
+  rows: TerminalSize
+})

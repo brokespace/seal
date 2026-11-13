@@ -1,44 +1,66 @@
 import { describe, expect, it } from 'vitest'
-import type { SshTarget } from '../../../../../shared/ssh-types'
-import { buildMachineSummaries } from './machine-summaries'
+import type { MachineView } from '../../../../../shared/machines/machine-view'
+import type { RuntimeHostStatusSnapshot } from '../../../../../shared/remote-runtime/host-status/runtime-host-status'
+import { buildMachineSummaries, type MachineSummaryInputs } from './machine-summaries'
 
-function target(id: string, label: string, extra: Partial<SshTarget> = {}): SshTarget {
-  return { id, label, host: `${id}.example`, port: 22, username: 'me', ...extra }
+const kesselMl: MachineView = {
+  id: 'machine:kessel-ssh',
+  recordId: 'kessel-ssh',
+  name: 'kessel-ml',
+  connection: 'server',
+  ssh: {
+    targetId: 'kessel-ssh',
+    address: 'brian@kessel-ml:2222',
+    host: 'kessel-ml',
+    username: 'brian',
+    port: 2222,
+    identityFile: null,
+    jumpHost: null
+  },
+  server: { environmentId: 'env-kessel', name: 'kessel-ml server', endpoint: 'ws://kessel-ml:6768' }
+}
+
+const droppedServer: RuntimeHostStatusSnapshot = {
+  environmentId: 'env-kessel',
+  pairingRevision: 1,
+  sequence: 1,
+  checkedAt: 1,
+  status: null,
+  verification: 'verified',
+  transport: 'disconnected'
 }
 
 describe('buildMachineSummaries', () => {
-  it('lists this computer, then SSH hosts, then runtimes not reachable over SSH', () => {
-    const machines = buildMachineSummaries({
+  it('reports each machine once, through the transport it is set to use', () => {
+    const inputs: Omit<MachineSummaryInputs, 'machines'> = {
       localName: 'This computer',
       localOs: 'darwin',
-      sshTargets: [
-        target('b', 'zeta'),
-        target('a', 'alpha', { port: 2222 }),
-        target('hop', 'internal hop', { owner: { type: 'on-demand-runtime', runtimeId: 'r9' } })
-      ],
       sshStates: new Map([
-        ['a', { status: 'connected', error: null, remotePlatform: 'linux' }],
-        ['b', { status: 'auth-failed', error: 'Permission denied' }]
+        ['kessel-ssh', { status: 'connected', error: null, remotePlatform: 'linux' }]
       ]),
-      runtimeEnvironments: [
-        { id: 'r1', name: 'gpu box' },
-        { id: 'r2', name: 'alpha runtime', sshAccess: { sshTargetId: 'a' } }
-      ],
-      runtimeStatuses: new Map()
+      runtimeStatuses: new Map([['env-kessel', droppedServer]])
+    }
+    const overServer = buildMachineSummaries({ ...inputs, machines: [kesselMl] })
+    expect(overServer.map((m) => m.id)).toEqual(['local', 'machine:kessel-ssh'])
+    expect(overServer[1]).toMatchObject({
+      connection: 'server',
+      // A live SSH session must not make a server machine look online.
+      status: 'offline',
+      address: 'brian@kessel-ml:2222',
+      executionHostId: 'runtime:env-kessel',
+      sshTargetId: 'kessel-ssh'
     })
 
-    expect(machines.map((m) => [m.id, m.status])).toEqual([
-      ['local', 'online'],
-      ['ssh:a', 'online'],
-      ['ssh:b', 'error'],
-      ['runtime:r1', 'offline']
-    ])
-    expect(machines[1]).toMatchObject({
-      address: 'me@a.example:2222',
-      os: 'linux',
-      hasRuntime: true,
-      runtimeEnvironmentId: 'r2'
+    const overSsh = buildMachineSummaries({
+      ...inputs,
+      machines: [{ ...kesselMl, connection: 'ssh' }]
     })
-    expect(machines[2]?.statusDetail).toBe('Permission denied')
+    expect(overSsh[1]).toMatchObject({
+      connection: 'ssh',
+      status: 'online',
+      os: 'linux',
+      executionHostId: 'ssh:kessel-ssh',
+      runtimeEnvironmentId: 'env-kessel'
+    })
   })
 })

@@ -34,7 +34,7 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
 export function MachineFileExplorer({ machine }: { machine: MachineSummary }): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
-  const isRemote = machine.kind !== 'local'
+  const isRemote = machine.connection !== 'local'
   const [showHidden, setShowHidden] = useState(false)
   const tree = useMachineExplorerTree(machine.id, online, showHidden)
   const { navigate, toggle, refresh, loadMore } = tree
@@ -140,11 +140,11 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
           size: row.entry.size
         })
       },
-      canDragOut: (row) => !row.entry.isDirectoryLike || machine.kind === 'local',
+      canDragOut: (row) => !row.entry.isDirectoryLike || machine.connection === 'local',
       onRetry: (path) => refresh(path),
       onLoadMore: (path) => loadMore(path)
     }),
-    [isRemote, loadMore, machine.id, machine.kind, openEntry, refresh, toggle]
+    [isRemote, loadMore, machine.id, machine.connection, openEntry, refresh, toggle]
   )
 
   const selectedPaths = [...selected]
@@ -260,7 +260,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
             menuRow={menuRow}
             menuDir={menuDir}
             selectedPaths={selectedPaths}
-            machineKind={machine.kind}
+            machineKind={machine.connection}
             onOpen={openEntry}
             actions={actions}
           />

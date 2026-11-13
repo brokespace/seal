@@ -16,7 +16,7 @@ import {
   useMachineStatusLabel
 } from '../detail/MachineVitals'
 
-const KIND_ICON = { local: Laptop, ssh: Server, runtime: Cloud } as const
+const CONNECTION_ICON = { local: Laptop, ssh: Server, server: Cloud }
 
 function MachineListItem({
   machine,
@@ -33,7 +33,7 @@ function MachineListItem({
 }): React.JSX.Element {
   const t = useTranslate()
   const statusLabel = useMachineStatusLabel()
-  const Icon = KIND_ICON[machine.kind]
+  const Icon = CONNECTION_ICON[machine.connection]
   const values = machineMeterValues(metrics)
   const os = machineOsLabel(metrics?.os ?? machine.os)
   const subtitle = [machine.address, os].filter(Boolean).join(' · ')

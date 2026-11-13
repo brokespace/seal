@@ -14,17 +14,17 @@ export type MachineHostSubscriptions = Pick<
   'registerSubscriptionCleanup' | 'cleanupSubscription' | 'cleanupSubscriptionAndWait'
 >
 
-type StreamContext = {
+export type StreamContext = {
   runtime: MachineHostSubscriptions
   connectionId?: string
   signal?: AbortSignal
 }
 
-type Emit = (event: MachineHostStreamEvent) => void
+export type Emit = (event: MachineHostStreamEvent) => void
 
 let subscriptionSeq = 0
 
-function nextSubscriptionId(kind: string, connectionId: string | undefined): string {
+export function nextSubscriptionId(kind: string, connectionId: string | undefined): string {
   return `${MACHINE_HOST_SUBSCRIPTION_PREFIX}${kind}-${connectionId ?? 'inproc'}-${++subscriptionSeq}`
 }
 

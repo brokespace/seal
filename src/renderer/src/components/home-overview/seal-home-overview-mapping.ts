@@ -1,4 +1,8 @@
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../../../../shared/execution-host'
+import {
+  LOCAL_EXECUTION_HOST_ID,
+  toRuntimeExecutionHostId,
+  toSshExecutionHostId
+} from '../../../../shared/execution-host'
 import type {
   LiveSession,
   LiveSessionStatus
@@ -38,9 +42,41 @@ function homeStateFromLive(status: LiveSessionStatus): HomeSessionState {
 }
 
 export function liveSessionMachineId(session: Pick<LiveSession, 'machine'>): string {
+  if (session.machine.machineId) {
+    return session.machine.machineId
+  }
   return session.machine.kind === 'local'
     ? LOCAL_EXECUTION_HOST_ID
     : toSshExecutionHostId(session.machine.hostId)
+}
+
+/** Pane sessions name the execution host they run on; home groups by machine, whichever transport. */
+export function unifySessionMachines(
+  sessions: readonly HomeSession[],
+  machines: readonly MachineSummary[]
+): HomeSession[] {
+  const byHost = new Map<string, MachineSummary>()
+  for (const machine of machines) {
+    byHost.set(machine.id, machine)
+    byHost.set(machine.executionHostId, machine)
+    if (machine.sshTargetId) {
+      byHost.set(toSshExecutionHostId(machine.sshTargetId), machine)
+    }
+    if (machine.runtimeEnvironmentId) {
+      byHost.set(toRuntimeExecutionHostId(machine.runtimeEnvironmentId), machine)
+    }
+  }
+  return sessions.map((session) => {
+    const machine = byHost.get(session.machineId)
+    if (!machine || machine.id === session.machineId) {
+      return session
+    }
+    return {
+      ...session,
+      machineId: machine.id,
+      machineLabel: machine.connection === 'local' ? session.machineLabel : machine.label
+    }
+  })
 }
 
 export function homeSessionFromLive(session: LiveSession): HomeSession {
@@ -115,8 +151,8 @@ export function homeMachineFromSummary(
       : undefined
   return {
     id: summary.id,
-    label: summary.kind === 'local' ? localLabel : summary.label,
-    kind: summary.kind,
+    label: summary.connection === 'local' ? localLabel : summary.label,
+    kind: summary.connection === 'server' ? 'runtime' : summary.connection,
     status: summary.status,
     ...(load !== undefined ? { load } : {}),
     ...(memoryUsedPercent !== undefined ? { memoryUsedPercent } : {}),

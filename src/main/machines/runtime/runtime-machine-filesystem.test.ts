@@ -119,7 +119,7 @@ describe('RuntimeMachineFileSystem over the machineHost runtime surface', () => 
     registry = new RuntimeSubscriptionRegistry()
     const inProcess = createInProcessChannel(registry)
     emitted = inProcess.emitted
-    fs = new RuntimeMachineFileSystem('kessel-ml', inProcess.channel)
+    fs = new RuntimeMachineFileSystem('machine:kessel-ml', inProcess.channel)
   })
 
   afterEach(async () => {
@@ -251,7 +251,7 @@ describe('RuntimeMachineFileSystem over the machineHost runtime surface', () => 
 
   it('asks for a runtime update instead of failing opaquely on an older Seal runtime', async () => {
     const outdated = runtimeMachineError({ code: 'method_not_found', message: 'Unknown method' })
-    const old = new RuntimeMachineFileSystem('old-box', {
+    const old = new RuntimeMachineFileSystem('machine:old-box', {
       call: async () => {
         throw outdated
       },

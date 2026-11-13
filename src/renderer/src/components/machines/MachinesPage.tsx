@@ -9,6 +9,7 @@ import { MachineDetail } from './detail/MachineDetail'
 import { MachineList } from './list/MachineList'
 import { useMachineMetricsEntries, useMachineMetricsPolling } from './model/machine-metrics-store'
 import { useMachineAgentSessions } from './model/use-machine-agent-sessions'
+import { groupSessionsByMachine } from './model/machine-agent-sessions'
 import { useMachinesInventory } from './model/use-machines-inventory'
 import { MachineTransfersPanel } from './transfers/MachineTransfersPanel'
 import { useMachineTransfers } from './transfers/use-machine-transfers'
@@ -18,12 +19,16 @@ let lastSelectedMachineId: MachineId | null = null
 
 export default function MachinesPage(): React.JSX.Element {
   const t = useTranslate()
-  const { machines, sshTargets, reload } = useMachinesInventory(
+  const { machines, reload } = useMachinesInventory(
     t('auto.components.machines.page.localName', 'This computer')
   )
   const metricsById = useMachineMetricsEntries()
   useMachineMetricsPolling(machines)
-  const sessionsByMachine = useMachineAgentSessions()
+  const sessionsByHost = useMachineAgentSessions()
+  const sessionsByMachine = useMemo(
+    () => groupSessionsByMachine(machines, sessionsByHost),
+    [machines, sessionsByHost]
+  )
   const { transfers, clearFinished } = useMachineTransfers()
   const [selectedId, setSelectedId] = useState<MachineId | null>(lastSelectedMachineId)
   // Narrow layouts show one pane at a time; this tracks whether the detail pane is in front.
@@ -84,7 +89,6 @@ export default function MachinesPage(): React.JSX.Element {
               metrics={selectedMetrics?.metrics ?? null}
               metricsError={selectedMetrics?.error ?? null}
               sessions={sessionsByMachine.get(selected.id) ?? []}
-              sshTarget={sshTargets.find((target) => target.id === selected.sshTargetId) ?? null}
               onBack={() => setShowDetailOnNarrow(false)}
               onChanged={reload}
             />

@@ -1,8 +1,11 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import type { MachineId, MachineMetrics } from '../../../../../shared/machines/machine-types'
+import {
+  parseMachineId,
+  type MachineId,
+  type MachineMetrics
+} from '../../../../../shared/machines/machine-types'
 import type { MachineSummary } from './machine-summaries'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
-import { parseExecutionHostId } from '../../../../../shared/execution-host'
 
 const METRICS_POLL_MS = 15_000
 
@@ -53,7 +56,7 @@ export function useMachineMetricsPolling(machines: readonly MachineSummary[]): v
     .map((machine) => machine.id)
     .join('\n')
   useEffect(() => {
-    const ids = pollable.split('\n').flatMap((value) => parseExecutionHostId(value)?.id ?? [])
+    const ids = pollable.split('\n').flatMap((value) => parseMachineId(value) ?? [])
     if (ids.length === 0) {
       return
     }
