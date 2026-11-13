@@ -1,5 +1,10 @@
 import type { ComponentType, ReactNode } from 'react'
-import type { HomeSession } from '../../../../shared/home-overview/home-overview-types'
+import type {
+  HomeAutomation,
+  HomeMachine,
+  HomeSession,
+  HomeWorkspace
+} from '../../../../shared/home-overview/home-overview-types'
 
 export type {
   HomeAccount,

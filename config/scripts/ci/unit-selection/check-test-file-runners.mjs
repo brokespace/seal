@@ -55,6 +55,12 @@ const NON_UNIT_TEST_RUNNERS = [
     sources: ['cloud/apps/relay-edge/vitest.config.ts'],
     mirrors: ["include: ['test/**/*.test.ts']"]
   },
+  {
+    name: 'seal relay worker',
+    include: ['services/seal-relay/test/**/*.test.ts'],
+    sources: ['services/seal-relay/vitest.config.ts', '.github/workflows/seal-relay.yml'],
+    mirrors: ["include: ['test/**/*.test.ts']", 'working-directory: services/seal-relay']
+  },
   ...[
     'cloud/apps/relay-fence-broker',
     'cloud/packages/cloud-database',
