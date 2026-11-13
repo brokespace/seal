@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readdir, rename, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { APP_PRODUCT_NAME } from '../../shared/app-identity'
 
 export type SpeechModelCacheDir = {
   modelsDir: string
@@ -55,7 +56,7 @@ export function getSpeechModelCacheDirCandidates(
     .digest('hex')
     .slice(0, WINDOWS_SAFE_CACHE_HASH_LENGTH)
   const candidates = getWindowsAsciiSharedDataRoots()
-    .map((root) => join(root, 'Orca', 'speech-models', requestedModelsDirHash))
+    .map((root) => join(root, APP_PRODUCT_NAME, 'speech-models', requestedModelsDirHash))
     .filter((modelsDir) => !hasNonAsciiCharacters(modelsDir))
     .map((modelsDir) => ({ modelsDir, migrationSourceDir: requestedModelsDir }))
 

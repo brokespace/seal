@@ -1,5 +1,8 @@
 import { dirname, join } from 'node:path'
-import { resolveAppImageGenerationOfExecutable } from '../../../shared/appimage-cache-identity'
+import {
+  LINUX_EXECUTABLE_NAME,
+  resolveAppImageGenerationOfExecutable
+} from '../../../shared/appimage-cache-identity'
 import {
   isAppImageStableLauncherReady,
   resolveAppImageStableLauncherPath
@@ -7,7 +10,9 @@ import {
 
 // Generation services lack $APPIMAGE; register the stable launcher so later pruning cannot break it.
 export function resolveGenerationStableLauncherPath(resourcesPath: string): string | null {
-  const generation = resolveAppImageGenerationOfExecutable(join(dirname(resourcesPath), 'orca-ide'))
+  const generation = resolveAppImageGenerationOfExecutable(
+    join(dirname(resourcesPath), LINUX_EXECUTABLE_NAME)
+  )
   if (!generation || !isAppImageStableLauncherReady(generation.cacheRootPath)) {
     return null
   }

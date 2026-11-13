@@ -1,4 +1,5 @@
 import { getAppEnvironment, hasAppEnvironment } from '../../shared/app-environment'
+import { APP_PRODUCT_NAME } from '../../shared/app-identity'
 import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
 
@@ -10,12 +11,12 @@ function getUserDataDir(): string {
   }
   const home = homedir()
   if (platform() === 'darwin') {
-    return join(home, 'Library', 'Application Support', 'Orca')
+    return join(home, 'Library', 'Application Support', APP_PRODUCT_NAME)
   }
   if (platform() === 'win32') {
-    return join(process.env.APPDATA ?? home, 'Orca')
+    return join(process.env.APPDATA ?? home, APP_PRODUCT_NAME)
   }
-  return join(home, '.config', 'Orca')
+  return join(home, '.config', APP_PRODUCT_NAME)
 }
 
 export function getLogsDirectory(): string {
