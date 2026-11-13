@@ -187,11 +187,15 @@ export class HomeChatTurnEngine {
       measured = { driver, systemPrompt }
       const guard = new RepeatGuard()
       const compaction = { thread, driver, systemPrompt, recorder, signal, auto: true }
-      // Before the first round the divider belongs above the message that just arrived.
-      await compactHomeChatThread({ ...compaction, force: false, ord: item.ord - 0.5 })
+      // A divider never parts a turn's own steps: it sits above the message that started the turn.
+      let dividers = 0
       const compact = async (force = false): Promise<void> => {
-        await compactHomeChatThread({ ...compaction, force })
+        const ord = item.ord - 0.5 + dividers * 0.01
+        if (await compactHomeChatThread({ ...compaction, force, ord })) {
+          dividers++
+        }
       }
+      await compact()
       await driver.runTurn({
         thread,
         input: item,

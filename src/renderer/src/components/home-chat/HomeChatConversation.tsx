@@ -125,8 +125,13 @@ export function HomeChatConversation({
   }, [entries])
 
   const last = entries.at(-1)
+  // An approval card is waiting on the user, not on the assistant.
   const waiting =
-    running && (!last || last.kind === 'user' || last.kind === 'tool' || last.kind === 'notice')
+    running &&
+    (!last ||
+      last.kind === 'user' ||
+      last.kind === 'notice' ||
+      (last.kind === 'tool' && last.status !== 'awaiting-approval'))
 
   return (
     <div

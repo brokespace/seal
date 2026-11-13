@@ -38,8 +38,8 @@ function MachinesPopover({
           <Server />
           <span className="max-w-40 truncate">{label}</span>
           {machines.length > 1 && (
-            <span className="tabular-nums">
-              {t('homeChat.context.online', '{{online}}/{{total}} online', {
+            <span className="tabular-nums text-muted-foreground/70">
+              {t('homeChat.context.online', '· {{online}} of {{total}} machines online', {
                 online,
                 total: machines.length
               })}
@@ -116,7 +116,7 @@ function ContextPopover({
         </p>
         {compactions > 0 && (
           <p className="text-xs text-muted-foreground" data-home-chat-compactions={compactions}>
-            {t('homeChat.context.compactions', 'Summarized {{count}} times so far.', {
+            {t('homeChat.context.compactions', 'Summaries so far: {{count}}', {
               count: compactions
             })}
           </p>

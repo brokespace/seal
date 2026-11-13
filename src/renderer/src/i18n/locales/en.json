@@ -25815,13 +25815,13 @@
     "context": {
       "thisComputer": "This computer",
       "machine": "Machine: {{machine}}",
-      "online": "{{online}}/{{total}} online",
+      "online": "· {{online}} of {{total}} machines online",
       "machinesTitle": "Machines the assistant can reach",
       "usage": "{{used}} / {{window}}",
       "label": "Context: {{usage}} tokens",
       "title": "Context",
       "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
-      "compactions": "Summarized {{count}} times so far.",
+      "compactions": "Summaries so far: {{count}}",
       "compactNow": "Summarize older messages now"
     },
     "threads": {
