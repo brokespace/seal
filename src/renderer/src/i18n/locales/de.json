@@ -1083,12 +1083,12 @@
     "quitAndStopAllSessionsTooltip": "Beendet auch alle Terminal-Sitzungen einschließlich laufender Agenten. Beim einfachen Beenden laufen sie weiter, sodass Orca beim nächsten Start die Verbindung wiederherstellt."
   },
   "tray": {
-    "openOrca": "Orca öffnen",
+    "openOrca": "Seal öffnen",
     "quit": "Beenden",
     "minimizeNotice": {
-      "body": "Orca läuft weiterhin im Infobereich"
+      "body": "Seal läuft weiterhin im Infobereich"
     },
-    "activityWaiting": "Orca - Ausstehende Aktivität",
+    "activityWaiting": "Seal - Ausstehende Aktivität",
     "activityWaitingSuffix": "ausstehende Aktivität"
   },
   "worktreeJumpPalette": {
@@ -1171,7 +1171,7 @@
       "df1d56bf87": "In der Arbeitsbereichs-Shell ist ein Fehler aufgetreten.",
       "9e0b441a91": "Rechte Seitenleiste ein-/ausblenden",
       "e81217c1b7": "App-Namen ausblenden",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "Anwendungsmenü",
       "caea5b51b9": "Jetzt neu starten",
       "0a9e810705": "Änderungen werden erst nach einem Neustart gespeichert. Die bisherigen Tabs sind sicher auf dem Datenträger gespeichert.",
@@ -4576,7 +4576,7 @@
             "bbcd9b7b85": "Arbeitsbereich einklappen",
             "c4a8968bdd": "Arbeitsbereich ausklappen",
             "b10695d6ce": "Sitzung zwangsweise beenden",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "Orca einklappen",
             "e419d27083": "Orca ausklappen",
             "41ae4fa725": "Wird zwangsweise beendet…",
@@ -15127,7 +15127,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "Willkommen bei Orca",
           "adaa0aa627": "Zu Einrichtungsschritt {{value0}} wechseln: {{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Orca-Einrichtung",
           "97c42cda00": "Die GitHub CLI für folgende Funktionen installieren:",
           "ae3b00ca82": "GitHub-Aufgaben einrichten",
@@ -15402,7 +15402,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "Desktop-Computer",
             "af761a0c0d": "Einstellungen",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "Senden",
@@ -17049,7 +17049,7 @@
             "88fea8e84e": "Nicht senden",
             "50b00dc327": "Details kopieren",
             "6d3ebe216a": "Diagnosetext",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "Absturzbericht gesendet.",
             "8b8473c544": "Absturzbericht kopiert.",
             "765591798d": "Es wird nach Absturzberichten gesucht…",

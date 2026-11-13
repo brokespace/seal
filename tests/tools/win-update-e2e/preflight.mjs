@@ -7,10 +7,10 @@ import { captureBaseline } from './window-watch.mjs'
 import { locateInstalledExe } from './installer-steps.mjs'
 import { findDaemonProcesses } from './daemon-processes.mjs'
 
-// Find app processes by excluding daemon-entry.js from Orca.exe command lines; exe path scopes isolated-target refusals.
+// Find app processes by excluding daemon-entry.js from Seal.exe command lines; exe path scopes isolated-target refusals.
 export function findAppProcesses() {
   const command = [
-    `$procs = @(Get-CimInstance Win32_Process -Filter "Name = 'Orca.exe'" -ErrorAction SilentlyContinue |`,
+    `$procs = @(Get-CimInstance Win32_Process -Filter "Name = 'Seal.exe'" -ErrorAction SilentlyContinue |`,
     `  Where-Object { -not ($_.CommandLine -match 'daemon-entry\\.js') })`,
     `$out = @($procs | ForEach-Object {`,
     `  [pscustomobject]@{ pid = $_.ProcessId; path = $_.ExecutablePath; commandLine = $_.CommandLine } })`,

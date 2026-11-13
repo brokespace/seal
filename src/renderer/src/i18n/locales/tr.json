@@ -1059,12 +1059,12 @@
     "quitAndStopAllSessionsTooltip": "Çalışan ajanlar da dahil olmak üzere tüm terminal oturumlarını da durdurur. Çık komutu bunları çalışır durumda tutar; böylece Orca bir sonraki açılışta yeniden bağlanır."
   },
   "tray": {
-    "openOrca": "Orca'yı Aç",
+    "openOrca": "Seal'ı Aç",
     "quit": "Çıkış",
     "minimizeNotice": {
-      "body": "Orca sistem tepsisinde çalışmaya devam ediyor"
+      "body": "Seal sistem tepsisinde çalışmaya devam ediyor"
     },
-    "activityWaiting": "Orca - etkinlik bekleniyor",
+    "activityWaiting": "Seal - etkinlik bekleniyor",
     "activityWaitingSuffix": "etkinlik bekleniyor"
   },
   "worktreeJumpPalette": {
@@ -1147,7 +1147,7 @@
       "df1d56bf87": "Çalışma alanı kabuğu bir hatayla karşılaştı.",
       "9e0b441a91": "Sağ kenar çubuğunu aç/kapat",
       "e81217c1b7": "Uygulama Adını Gizle",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "Uygulama menüsü",
       "caea5b51b9": "Şimdi yeniden başlat",
       "0a9e810705": "Değişiklikler yeniden başlatana kadar kaydedilmeyecek. Önceki sekmeleriniz diskte güvende.",
@@ -4542,7 +4542,7 @@
             "bbcd9b7b85": "Çalışma alanını daralt",
             "c4a8968bdd": "Çalışma alanını genişlet",
             "b10695d6ce": "Oturumu sonlandır",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "Orca'yı daralt",
             "e419d27083": "Orca'yı genişlet",
             "41ae4fa725": "Sonlandırılıyor…",
@@ -15104,7 +15104,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "Orca'ya Hoş Geldiniz",
           "adaa0aa627": "Onboarding adımı {{value0}}'a git: {{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Orca onboarding",
           "97c42cda00": "Şunlar için GitHub CLI'yi kurun:",
           "ae3b00ca82": "GitHub görevlerini ayarla",
@@ -15379,7 +15379,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "Masaüstleri",
             "af761a0c0d": "Ayarlar",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "Gönder",
@@ -17026,7 +17026,7 @@
             "88fea8e84e": "Gönderme",
             "50b00dc327": "Ayrıntıları Kopyala",
             "6d3ebe216a": "Tanılama metni",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "Çökme raporu gönderildi.",
             "8b8473c544": "Çökme raporu kopyalandı.",
             "765591798d": "Çökme raporları kontrol ediliyor...",

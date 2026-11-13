@@ -634,9 +634,9 @@
     "selectAll": "全选",
     "quitAndStopAllSessions": "完全退出...",
     "quitAndStopAllSessionsTooltip": "同时停止所有终端会话，包括正在运行的智能体。普通退出会保留这些会话，以便 Orca 下次启动时重新连接",
-    "about": "关于 Orca",
+    "about": "关于 Seal",
     "cut": "剪切",
-    "hide": "隐藏 Orca",
+    "hide": "隐藏 Seal",
     "hideOthers": "隐藏其他",
     "minimize": "最小化",
     "redo": "重做",
@@ -647,12 +647,12 @@
     "zoom": "缩放"
   },
   "tray": {
-    "openOrca": "打开 Orca",
+    "openOrca": "打开 Seal",
     "quit": "退出",
     "minimizeNotice": {
-      "body": "Orca 仍在系统托盘中运行"
+      "body": "Seal 仍在系统托盘中运行"
     },
-    "activityWaiting": "Orca - 活动等待中",
+    "activityWaiting": "Seal - 活动等待中",
     "activityWaitingSuffix": "有待处理活动"
   },
   "worktreeJumpPalette": {
@@ -734,7 +734,7 @@
       "df1d56bf87": "工作区界面遇到错误",
       "9e0b441a91": "切换右侧边栏",
       "e81217c1b7": "隐藏应用名称",
-      "5096cbbc86": "Orca",
+      "5096cbbc86": "Seal",
       "8b0b8eb54f": "应用菜单",
       "caea5b51b9": "立即重启",
       "0a9e810705": "重新启动之前不会保存更改，您以前的选项卡在磁盘上是安全的",
@@ -4193,7 +4193,7 @@
             "bbcd9b7b85": "折叠工作区",
             "c4a8968bdd": "扩大工作区",
             "b10695d6ce": "终止会话",
-            "288a4dd177": "Orca",
+            "288a4dd177": "Seal",
             "53dd5560ae": "折叠 Orca",
             "e419d27083": "展开 Orca",
             "41ae4fa725": "正在结束…",
@@ -14684,7 +14684,7 @@
         "OnboardingFlow": {
           "1b5e182e9f": "欢迎使用 Orca",
           "adaa0aa627": "前往入门步骤 {{value0}}：{{value1}}",
-          "a249f81538": "Orca",
+          "a249f81538": "Seal",
           "277ba45540": "Orca 入门引导",
           "97c42cda00": "安装 GitHub CLI 以：",
           "ae3b00ca82": "设置 GitHub 任务",
@@ -14974,7 +14974,7 @@
             "19c212e25e": "MacBook Pro",
             "2f1a1d10c4": "桌面设备",
             "af761a0c0d": "设置",
-            "5d94e8ddcc": "Orca"
+            "5d94e8ddcc": "Seal"
           },
           "TerminalSlide": {
             "0bb39f8fe6": "发送",
@@ -16634,7 +16634,7 @@
             "88fea8e84e": "不发送",
             "50b00dc327": "复制详情",
             "6d3ebe216a": "诊断文本",
-            "835037edc9": "Orca",
+            "835037edc9": "Seal",
             "8e24fe4f75": "已发送错误报告",
             "8b8473c544": "已复制错误报告",
             "765591798d": "正在检查错误报告...",
