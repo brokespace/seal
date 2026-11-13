@@ -15,6 +15,8 @@ export type LiveSessionRegistryDeps = {
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
   subscribeSealPanes?: (onChange: () => void) => () => void
+  /** Sessions the user removed from Seal; never published. */
+  isRemoved?: (session: LiveSession) => boolean
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
   log?: (message: string, error?: unknown) => void
@@ -239,9 +241,15 @@ export class LiveSessionRegistry {
     this.emit({ type: 'host-error', revision: ++this.revision, hostId, error })
   }
 
+  republish(): void {
+    this.publish()
+  }
+
   private publish(): void {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
-    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
+    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine).filter(
+      (session) => !this.deps.isRemoved?.(session)
+    )
     const seen = new Set<string>()
     for (const session of merged) {
       if (seen.has(session.id)) {

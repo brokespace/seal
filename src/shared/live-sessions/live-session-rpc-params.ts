@@ -41,3 +41,9 @@ export const LiveSessionHostRunParams = z.object({
     .max(256 * 1024),
   timeoutMs: z.number().int().min(1_000).max(120_000).optional()
 })
+
+export const LiveSessionRemoveParams = z.object({
+  sessionIds: z.array(SessionId).min(1).max(500),
+  stop: z.boolean(),
+  deleteTranscripts: z.boolean()
+})

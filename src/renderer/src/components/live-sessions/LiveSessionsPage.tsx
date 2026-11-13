@@ -13,6 +13,8 @@ import { useLiveTranscript } from './use-live-transcript'
 import { pendingRows } from './live-session-pending-rows'
 import { LiveSessionList } from './LiveSessionList'
 import { LiveSessionChat } from './LiveSessionChat'
+import { LiveSessionBulkActions } from './remove/LiveSessionBulkActions'
+import type { RemoveLiveSessionsDialogProps } from './remove/RemoveLiveSessionsDialog'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 
 const SEND_ATTEMPTS = 3
@@ -62,11 +64,25 @@ export type LiveSessionsViewProps = {
   onRefresh: () => void
   now: number
   chat: React.ReactNode
+  /** Fixtures open the page already picking these, with the removal dialog up. */
+  initialChecked?: readonly string[]
+  removeSessions?: RemoveLiveSessionsDialogProps['remove']
 }
 
 /** The page without its data sources, so fixtures can render it. */
 export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Element {
   const t = useTranslate()
+  const [checked, setChecked] = useState<ReadonlySet<string> | null>(() =>
+    props.initialChecked ? new Set(props.initialChecked) : null
+  )
+  const onCheck = (sessionId: string) =>
+    setChecked((current) => {
+      const next = new Set(current)
+      if (!next.delete(sessionId)) {
+        next.add(sessionId)
+      }
+      return next
+    })
   return (
     <main className="relative flex h-full min-h-0 flex-1 flex-col bg-background pt-5 text-foreground md:pt-6">
       <header
@@ -76,6 +92,13 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
         <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-8">
           {t('auto.components.live-sessions.LiveSessionsPage.title', 'Agent sessions')}
         </h1>
+        <LiveSessionBulkActions
+          sessions={props.sessions}
+          checked={checked}
+          onCheckedChange={setChecked}
+          remove={props.removeSessions}
+          initiallyConfirming={props.initialChecked !== undefined}
+        />
         <Button type="button" variant="ghost" size="sm" onClick={props.onRefresh}>
           <RefreshCw className="size-4" />
           {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
@@ -101,6 +124,8 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
             hostErrors={props.hostErrors}
             selectedId={props.selectedId}
             onSelect={props.onSelect}
+            checked={checked}
+            onCheck={onCheck}
             now={props.now}
           />
         </aside>

@@ -2,6 +2,7 @@ import {
   LiveSessionAnswerParams,
   LiveSessionHostRunParams,
   LiveSessionTakeOverParams,
+  LiveSessionRemoveParams,
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
   LiveSessionSendParams,
@@ -155,5 +156,11 @@ export const LIVE_SESSION_METHODS = [
     permission: 'workspace',
     params: LiveSessionTakeOverParams,
     handler: ({ sessionId }) => service().takeOver(sessionId)
+  }),
+  defineMethod({
+    name: 'liveSessions.remove',
+    permission: 'workspace',
+    params: LiveSessionRemoveParams,
+    handler: (request) => service().remove(request)
   })
 ]

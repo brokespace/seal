@@ -20129,6 +20129,26 @@
           "stillRunning": "The agent process didn’t stop.",
           "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
           "failed": "Could not take over the session. {{reason}}"
+        },
+        "remove": {
+          "select": "Select",
+          "selected": "{{count}} selected",
+          "selectNone": "Select none",
+          "selectAll": "Select all",
+          "removeSelected": "Remove",
+          "done": "Done",
+          "button": "Remove from Seal",
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.",
+          "titleOne": "Remove this session from Seal?",
+          "titleMany": "Remove {{count}} sessions from Seal?",
+          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
+          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
+          "deleteFiles": "Also delete transcript files",
+          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
+          "cancel": "Cancel",
+          "hideOnly": "Remove from Seal",
+          "stopAndRemove": "Stop and remove",
+          "removeAndDelete": "Remove and delete"
         }
       }
     },
