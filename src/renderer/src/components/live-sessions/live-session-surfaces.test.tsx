@@ -5,9 +5,7 @@ import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
-import { HomeAttentionStrip } from '../home-overview/HomeAttentionStrip'
 import { HomeSessionsPanel } from '../home-overview/HomeSessionsPanel'
-import { sealHomeOverviewActions } from '../home-overview/home-overview-actions'
 import { MachineSessionList } from '../machines/detail/MachineSessionList'
 import { activeLiveSessionsByMachine } from '../machines/model/machine-live-sessions'
 import ActiveAgentsSection from './active-agents/ActiveAgentsSection'
@@ -52,7 +50,7 @@ const SESSIONS: LiveSession[] = [
   sampleLiveSession('local-idle')
 ]
 
-const SURFACES = ['active-agents', 'home', 'home-attention', 'machines'] as const
+const SURFACES = ['active-agents', 'home', 'machines'] as const
 
 function Surfaces(): React.JSX.Element {
   const { sessions } = useLiveSessions()
@@ -63,12 +61,6 @@ function Surfaces(): React.JSX.Element {
       </div>
       <div data-surface="home">
         <HomeSessionsPanel sessions={sessions} now={SAMPLE_NOW} />
-      </div>
-      <div data-surface="home-attention">
-        <HomeAttentionStrip
-          sessions={sessions.filter((session) => session.id === ASKS.id)}
-          onOpen={sealHomeOverviewActions.openSession}
-        />
       </div>
       <div data-surface="machines">
         <MachineSessionList
@@ -132,12 +124,9 @@ describe('one session on every surface', () => {
       ).toBe('needs-permission')
       expect(element.textContent).toContain('Fix the coupon bug')
     }
-    expect(new Set(rows.map((element) => element.textContent)).size).toBe(1)
-    expect(
-      surface('home-attention')
-        .querySelector('[data-live-session-status]')
-        ?.getAttribute('data-live-session-status')
-    ).toBe('needs-permission')
+    // Home's card adds what the session asks; the lists stay the one compact row.
+    expect(row('active-agents').textContent).toBe(row('machines').textContent)
+    expect(row('home').textContent).toContain('Waiting for approval\u00b7 Allow Bash?')
   })
 
   it('lists a machine with the sessions Active agents lists under it, in the same order', async () => {
@@ -160,13 +149,6 @@ describe('one session on every surface', () => {
       expect(useAppStore.getState().activeView).toBe('sessions')
     }
   )
-
-  it('opens as the same session tab from the Home attention strip', async () => {
-    await renderSurfaces()
-    fireEvent.click(surface('home-attention').querySelector('[data-home-attention="asks"]')!)
-    expect(liveSessionTabsStore.getState()).toMatchObject({ activeId: 'asks', previewId: 'asks' })
-    expect(useAppStore.getState().activeView).toBe('sessions')
-  })
 
   it.each(['active-agents', 'home', 'machines'] as const)(
     'asks before stopping it through the one session dialog from its %s menu',

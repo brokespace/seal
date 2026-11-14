@@ -451,10 +451,12 @@
         },
         "status": {
           "working": "Working",
-          "waiting": "Waiting for input",
-          "permission": "Needs permission",
-          "errored": "Errored",
-          "done": "Done",
+          "runningShell": "Running shell",
+          "waiting": "Asking you a question",
+          "permission": "Waiting for approval",
+          "yourTurn": "Waiting on you",
+          "errored": "Error",
+          "done": "Ended",
           "waitingSubagent": "Waiting on subagents",
           "waitingTask": "Waiting on background tasks",
           "idle": "Idle"
@@ -986,10 +988,6 @@
         "manage": "Manage",
         "empty": "No account usage yet. Sign in to an agent to track limits."
       },
-      "attention": {
-        "title": "Needs attention",
-        "empty": "Nothing is waiting on you."
-      },
       "automations": {
         "title": "Automations",
         "open": "Open",
@@ -1013,6 +1011,7 @@
       },
       "summary": {
         "working": "{{count}} working",
+        "blocked": "{{count}} blocked on you",
         "waiting": "{{count}} waiting on you",
         "idle": "{{count}} idle"
       },

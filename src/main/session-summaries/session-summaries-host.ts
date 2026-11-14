@@ -21,7 +21,9 @@ import type { UtilityModelHostContext } from '../utility-model/utility-model-pro
 import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
 import { PaneSessionSummaries } from './pane-session-summaries'
+import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
 import { SessionSummarizer } from './session-summarizer'
+import { unrefTimer } from './unref-timer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
 
@@ -60,18 +62,13 @@ export type SessionSummariesInstallOptions = {
 
 const CONFIGURED_RECHECK_MS = 60_000
 
-function unrefTimer(run: () => void, delayMs: number): { cancel: () => void } {
-  const timer = setTimeout(run, delayMs)
-  timer.unref?.()
-  return { cancel: () => clearTimeout(timer) }
-}
-
 /** Session status summaries on this host: what makes them, and what clients read. */
 export class SessionSummariesHost {
   private readonly models: Record<UtilityModelTask, UtilityModelClient>
   private readonly summarizer: SessionSummarizer
   private readonly panes: PaneSessionSummaries
   private readonly live: LiveSessionSummaries | null
+  private readonly replyAsks: ReplyAskClassifier | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
   private readonly configured: Record<UtilityModelTask, boolean> = {
@@ -117,6 +114,17 @@ export class SessionSummariesHost {
             serverSummaries: options.serverSummaries,
             onChange: () => this.republishSoon(),
             setTimer: unrefTimer,
+            log
+          })
+        : null
+    this.replyAsks =
+      liveSessions && options.summarizeLive !== false
+        ? createReplyAskClassifier({
+            liveSessions,
+            userDataPath: options.userDataPath,
+            model: () => this.model('summaries'),
+            enabled: () => this.isAvailable(),
+            onChange: () => this.republishSoon(),
             log
           })
         : null
@@ -188,6 +196,7 @@ export class SessionSummariesHost {
     this.options.liveSessions?.registry.setDecorator(null)
     this.panes.dispose()
     this.live?.dispose()
+    this.replyAsks?.dispose()
     this.recap?.dispose()
     this.summarizer.dispose()
   }
@@ -258,7 +267,9 @@ export class SessionSummariesHost {
   }
 
   private decorate(session: LiveSession): LiveSession {
-    const summarized = this.settingOn() && this.live ? this.live.decorate(session) : session
+    const on = this.settingOn()
+    const settled = on && this.replyAsks ? this.replyAsks.decorate(session) : session
+    const summarized = on && this.live ? this.live.decorate(settled) : settled
     return this.recap ? this.recap.recaps.decorate(summarized) : summarized
   }
 
@@ -294,6 +305,7 @@ export class SessionSummariesHost {
     this.available = available
     if (cameBack) {
       this.summarizer.retryFailed()
+      this.replyAsks?.retryFailed()
     }
     // Recaps run with summaries switched off, so they watch the provider on their own terms.
     const recapReady = this.running('recaps')

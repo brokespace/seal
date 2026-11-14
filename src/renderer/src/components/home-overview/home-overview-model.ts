@@ -4,7 +4,6 @@ import type {
   HomeMachine,
   HomeWorkspace
 } from '../../../../shared/home-overview/home-overview-types'
-import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 
 export type {
   HomeAccount,
@@ -19,7 +18,6 @@ export type {
 
 /** Every Home click goes through one of these; each must navigate somewhere real. */
 export type HomeOverviewActions = {
-  openSession: (session: LiveSession) => void
   openMachine: (machine: HomeMachine) => void
   openMachines: () => void
   openAccountsSettings: () => void

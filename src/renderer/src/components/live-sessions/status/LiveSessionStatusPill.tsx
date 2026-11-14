@@ -1,33 +1,36 @@
-import { AgentStateDot } from '@/components/AgentStateDot'
 import { cn } from '@/lib/class-names'
-import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
+import {
+  liveSessionStatusGroup,
+  liveSessionStatusTone
+} from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { liveSessionDotState, liveSessionStatusText } from '../live-session-presentation'
+import { liveSessionStatusText } from '../live-session-presentation'
+import { LIVE_SESSION_TONE_TEXT, LiveSessionStatusDot } from './LiveSessionStatusDot'
 
 /**
- * A session's status wherever one is shown: the dot and what it waits on, blue while it works or
- * waits on its own subagents and tasks, the attention color when it needs the user.
+ * A session's status wherever one is shown: the dot and what it waits on, each in the status's
+ * color. `dot={false}` is for a row that already shows the dot large.
  */
 export function LiveSessionStatusPill({
   session,
+  dot = true,
   className
 }: {
   session: Pick<LiveSession, 'status' | 'activity'>
+  dot?: boolean
   className?: string
 }): React.JSX.Element {
-  const group = liveSessionStatusGroup(session.status)
   return (
     <span
       data-live-session-status={session.status}
-      data-status-group={group}
+      data-status-group={liveSessionStatusGroup(session.status)}
       className={cn(
         'flex min-w-0 items-center gap-1',
-        group === 'working' && 'text-agent-working',
-        group === 'attention' && 'text-agent-question-text',
+        LIVE_SESSION_TONE_TEXT[liveSessionStatusTone(session.status)],
         className
       )}
     >
-      <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
+      {dot ? <LiveSessionStatusDot status={session.status} /> : null}
       <span className="min-w-0 truncate">{liveSessionStatusText(session)}</span>
     </span>
   )
