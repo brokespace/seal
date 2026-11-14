@@ -1,5 +1,5 @@
 import { useAppStore } from '@/store'
-import { revealDashboardAgent } from '@/components/dashboard/reveal-dashboard-agent'
+import { revealDashboardAgent } from '@/components/dashboard/navigation/reveal-dashboard-agent'
 import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
 import { openLiveSessionView } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'

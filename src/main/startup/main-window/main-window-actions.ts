@@ -14,18 +14,16 @@ import type { AppMenuQuitHandlers } from '../../menu/app-menu-quit-item'
 import type { createWebContentsTimedFlag } from './web-contents-timed-flag'
 import { recordCrashBreadcrumb } from '../../crash-reporting/breadcrumbs/crash-breadcrumb-store'
 import { recordDurableCrashBreadcrumb } from '../../crash-reporting/breadcrumbs/durable-crash-breadcrumb'
-import {
-  checkForUpdatesFromMenu,
-  isQuittingForUpdate,
-  reportNoUpdateFeed
-} from '../../updater/updater-service'
-import { isUpstreamUpdateFeedEnabled } from '../../upstream-service-policy'
+import { checkForUpdatesFromMenu, isQuittingForUpdate } from '../../updater/updater-service'
 import {
   createSystemTray,
   setMacMenuBarIconVisible,
   type SystemTrayOptions
 } from '../../tray/system-tray'
-import { ensureAutoUpdaterConfigured } from '../../updater/lifecycle/main-window-updater'
+import {
+  ensureAutoUpdaterConfigured,
+  stoppedForMissingUpdateFeed
+} from '../../updater/lifecycle/main-window-updater'
 import {
   focusExistingMainWindow,
   safelyRevealWindow
@@ -52,18 +50,21 @@ import {
 import { isHoldingForNewerProtocolDaemon } from '../../daemon/providers/routing/daemon-newer-protocol-hold'
 import { getDaemonProvider } from '../../daemon/providers/lifecycle/daemon-provider-state'
 import { confirmNoDaemonSessionsRemain } from '../../ipc/pty/pty-management'
+import type { MainWindowOpenOptions } from '../../window/main-window/main-window-contracts'
+import type { DesktopActivationRequest } from '../serve-launch/serve-desktop-activation'
 
 // Inject the opener to avoid an actions/lifecycle import cycle.
-let openWindow: (options?: { revealOnDidFinishLoad?: boolean }) => BrowserWindow
+let openWindow: (options?: MainWindowOpenOptions) => BrowserWindow
 export function setMainWindowOpener(
-  opener: (options?: { revealOnDidFinishLoad?: boolean }) => BrowserWindow
+  opener: (options?: MainWindowOpenOptions) => BrowserWindow
 ): void {
   openWindow = opener
 }
 
-export function focusExistingWindow(): void {
+export function focusExistingWindow(request: DesktopActivationRequest = {}): void {
   focusExistingMainWindow({
     app,
+    background: request.background === true,
     getWindow: () => state.mainWindow,
     openWindow,
     // Repair rewrites renderer DACLs; second-click activation during a blank launch must wait for the gated opener.
@@ -213,8 +214,7 @@ export async function quitAfterRendererStoppedAllSessions(
 }
 
 export function runUserInitiatedUpdateCheck(options?: UpdateCheckOptions): void {
-  if (!isUpstreamUpdateFeedEnabled()) {
-    reportNoUpdateFeed()
+  if (stoppedForMissingUpdateFeed()) {
     return
   }
   ensureAutoUpdaterConfigured()

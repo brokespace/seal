@@ -2,7 +2,7 @@ import { hostname } from 'node:os'
 import { buildMachineSummaries, type MachineSummary } from '../../shared/machines/machine-summaries'
 import type { MachineOs } from '../../shared/machines/machine-types'
 import type { SshConnectionState } from '../../shared/ssh-types'
-import { getRuntimeEnvironmentStatusSnapshots } from '../ipc/runtime-environments/runtime-environment-request-connections'
+import { getRuntimeEnvironmentStatusSnapshots } from '../ipc/runtime-environments/connections/runtime-environment-request-connections'
 import { getSshConnectionManager } from '../ssh/targets/ssh-target-registry'
 import { listMachineViews } from './machine-services'
 

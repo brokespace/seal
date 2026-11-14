@@ -11,7 +11,7 @@ const navigation = vi.hoisted(() => ({
   reveal: vi.fn((): boolean => true),
   activate: vi.fn((): boolean => true)
 }))
-vi.mock('@/components/dashboard/reveal-dashboard-agent', () => ({
+vi.mock('@/components/dashboard/navigation/reveal-dashboard-agent', () => ({
   revealDashboardAgent: navigation.reveal
 }))
 vi.mock('@/lib/workspace/activation/worktree-activation', () => ({

@@ -38,6 +38,15 @@ export function ensureAutoUpdaterConfigured(): void {
   pendingAutoUpdaterSetup?.()
 }
 
+/** Tells the person Seal has no update feed; true when a requested check should stop there. */
+export function stoppedForMissingUpdateFeed(): boolean {
+  if (isUpstreamUpdateFeedEnabled()) {
+    return false
+  }
+  reportNoUpdateFeed()
+  return true
+}
+
 type UpdaterSetupHooks = {
   onBeforeUpdateQuit?: () => void | Promise<void>
   onBeforeUpdateQuitFailure?: PreQuitCleanupFailureMode
@@ -162,8 +171,8 @@ export function registerUpdaterHandlers(_store: Store): void {
   ipcMain.handle('updater:getStatus', () => getUpdateStatus())
   ipcMain.handle('updater:getVersion', () => app.getVersion())
   ipcMain.handle('updater:check', (_event, options?: UpdateCheckOptions) => {
-    if (!isUpstreamUpdateFeedEnabled()) {
-      return reportNoUpdateFeed()
+    if (stoppedForMissingUpdateFeed()) {
+      return
     }
     ensureAutoUpdaterConfigured()
     return checkForUpdatesFromMenu(options)

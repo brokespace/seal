@@ -39,6 +39,8 @@ seal open --json
 seal status --json
 ```
 
+`seal open` starts Seal without taking keyboard focus from the app you're using. If a Seal window is already open, it does nothing.
+
 Use `--json` when another tool will parse the result. Human-readable output is for quick terminal checks.
 
 ## Selectors
@@ -306,6 +308,7 @@ Use `seal computer` for native desktop apps outside the built-in browser:
 ```bash
 seal computer permissions --json
 seal computer list-apps --json
+seal computer launch-app Safari --json
 seal computer get-app-state --app com.apple.Safari --json
 seal computer click --app com.apple.Safari --element-index 12 --json
 seal computer paste-text --app com.apple.Safari --text "hello" --json
