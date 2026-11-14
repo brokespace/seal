@@ -4,6 +4,7 @@ import { claudePhase, claudePromptText } from './claude-transcript-phase'
 import { codexPhase } from './codex-transcript-phase'
 import { basename, oneLine, rec, recordsOf, str, timeOf } from './transcript-records'
 import type { TranscriptRecord } from './transcript-records'
+import type { ReplyAsk } from './reply-ask'
 
 export { oneLine } from './transcript-records'
 
@@ -21,14 +22,24 @@ export type TranscriptPhase =
   | 'errored'
   | 'unknown'
 
+/**
+ * A pending call the process list can read further: a `shell` command shows as a process while it
+ * runs, and an `edit` is instant, so either one standing with nothing running waits on an approval.
+ * A `shell-wait` resumes a command started by an earlier call (Codex's `wait` on a yielded cell).
+ */
+export type PendingCallKind = 'shell' | 'edit' | 'shell-wait'
+
 export type TranscriptTurn = {
   phase: TranscriptPhase
   /** The tool or error behind `phase`, one line. */
   detail: string | null
   /** The tool a `tool-pending` phase waits on. */
   pendingTool: string | null
-  /** The turn ended on a question to the user. */
-  asksUser: boolean
+  pendingKind: PendingCallKind | null
+  /** When the pending call was made (epoch ms, host clock). */
+  pendingSince: number | null
+  /** Whether the reply that ended the turn asks the user something. */
+  replyAsk: ReplyAsk
   /** The transcript recorded the turn's end, rather than just stopping after a reply. */
   settled: boolean
   /** The agent's newest reply, one line. */
@@ -44,6 +55,11 @@ export type TranscriptSummary = TranscriptTurn & {
   titleNamed?: true
   firstAt: number | null
   lastAt: number | null
+  /**
+   * How it asks before acting: Claude's permission mode (`default`, `acceptEdits`, `auto`,
+   * `bypassPermissions`, `plan`) or Codex's approval policy (`on-request`, `never`, …).
+   */
+  approvalMode: string | null
   /** Another program drives it (`claude -p`, an Agent SDK host such as Seal's Home chat, `codex exec`). */
   headless: boolean
   /** Record ids seen in the head and tail, for linking a resumed copy to what it continues. */
@@ -61,7 +77,9 @@ export const UNKNOWN_TURN: TranscriptTurn = {
   phase: 'unknown',
   detail: null,
   pendingTool: null,
-  asksUser: false,
+  pendingKind: null,
+  pendingSince: null,
+  replyAsk: 'tells',
   settled: false,
   lastMessage: null
 }
@@ -103,12 +121,15 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
   let cwd: string | null = null
   let customTitle: string | null = null
   let summary: string | null = null
+  let approvalMode: string | null = null
   for (const record of all) {
     cwd = str(record.cwd) ?? cwd
     if (record.type === 'custom-title') {
       customTitle = str(record.customTitle) ?? customTitle
     } else if (record.type === 'summary') {
       summary = str(record.summary) ?? summary
+    } else if (record.type === 'permission-mode') {
+      approvalMode = str(record.permissionMode) ?? approvalMode
     }
   }
   const firstPrompt = head
@@ -123,6 +144,7 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
     title: customTitle ?? summary ?? (firstPrompt ? oneLine(firstPrompt, 80) : null),
     ...(customTitle ? { titleNamed: true as const } : {}),
     ...claudePhase(tail.length > 0 ? tail : head),
+    approvalMode,
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: null,
@@ -145,6 +167,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
   let headless: boolean | null = null
   let spawn: TranscriptRecord | null = null
   let meta: TranscriptRecord | null = null
+  let approvalMode: string | null = null
   for (const record of all) {
     const payload = rec(record.payload)
     if (record.type === 'session_meta') {
@@ -155,6 +178,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
       spawn ??= rec(rec(rec(payload?.source)?.subagent)?.thread_spawn)
     } else if (record.type === 'turn_context') {
       cwd = str(payload?.cwd) ?? cwd
+      approvalMode = str(payload?.approval_policy) ?? approvalMode
     }
   }
   const firstPrompt = all.map(codexPromptText).find(Boolean)
@@ -168,6 +192,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
     cwd,
     title: firstPrompt ? oneLine(firstPrompt, 80) : null,
     ...codexPhase(tail.length > 0 ? tail : head),
+    approvalMode,
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: str(spawn?.parent_thread_id) ?? str(meta?.parent_thread_id),
