@@ -1,13 +1,11 @@
 import { formatResetDuration } from '../../../../src/shared/rate-limit-reset-format'
-import { windowPct } from '../../../../src/shared/seal-accounts/seal-usage-lines'
 import { translate } from '../../i18n/mobile-i18n'
 import type { LiveSession } from '../live-sessions/live-session-schemas'
 import type {
   SealAccountsStatusRead,
   SealCandidate,
   SealLiveSwapMode,
-  SealSessionAssignmentRead,
-  SealUsageWindowRead
+  SealSessionAssignmentRead
 } from './seal-accounts-schemas'
 
 export function sealProviderLabel(provider: string): string {
@@ -21,21 +19,17 @@ export function sealProviderLabel(provider: string): string {
   }
 }
 
-/** Percent of a window used as of `now`; a window past its reset counts as empty. */
-export function sealWindowUsedPercent(
-  window: SealUsageWindowRead | null | undefined,
-  now: number
-): number | null {
-  return window ? Math.round(windowPct(window, now)) : null
-}
-
-export function sealResetText(window: SealUsageWindowRead | null | undefined, now: number) {
-  if (!window?.resetsAt || window.resetsAt <= now) {
+/** Out of quota right now, as the host reads it; null when the account has room. */
+export function sealRateLimitText(candidate: SealCandidate, now: number): string | null {
+  const limit = candidate.rateLimit
+  if (!limit) {
     return null
   }
-  return translate('seal.accounts.resetsIn', 'Resets in {{value0}}', {
-    value0: formatResetDuration(window.resetsAt - now)
-  })
+  return limit.resetsAt !== null && limit.resetsAt > now
+    ? translate('seal.accounts.rateLimitedUntil', 'Rate limited · resets in {{value0}}', {
+        value0: formatResetDuration(limit.resetsAt - now)
+      })
+    : translate('seal.accounts.rateLimited', 'Rate limited')
 }
 
 /** The account first, then the rest in host order, so the one new sessions use leads. */
