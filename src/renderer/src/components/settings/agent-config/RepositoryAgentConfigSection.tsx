@@ -1,13 +1,32 @@
 import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
+import { useAppStore } from '@/store/index'
 import { getRepoExecutionHostId } from '../../../../../shared/execution-host'
 import type { Repo } from '../../../../../shared/repo-types'
 import { AgentConfigPanel } from '../../agent-config/AgentConfigPanel'
+import { agentConfigAvailable } from '../../agent-config/model/agent-config-client'
 import { SettingsSubsectionHeader } from '../form-controls/SettingsFormControls'
+import { matchesRepositoryIdentitySearch } from '../repository/identity/repository-identity-search'
+import { matchesSettingsSearch } from '../search/settings-search'
+import { getAgentConfigSearchEntries } from './agent-config-search'
 import { useAgentConfigMachines } from './use-agent-config-machines'
 
+/** Decides its own visibility so the project pane needs one line to mount it. */
+export function RepositoryAgentConfigSection({ repo }: { repo: Repo }): React.JSX.Element | null {
+  const t = useTranslate()
+  const searchQuery = useAppStore((state) => state.settingsSearchQuery)
+  // Folder projects have agent files too; only the desktop window can reach them.
+  if (!agentConfigAvailable()) {
+    return null
+  }
+  const visible =
+    matchesRepositoryIdentitySearch(searchQuery, repo) ||
+    matchesSettingsSearch(searchQuery, getAgentConfigSearchEntries(repo.displayName, t))
+  return visible ? <ProjectAgentConfig repo={repo} /> : null
+}
+
 /** A project's own agent files on the machine that holds it, merged with the account's. */
-export function RepositoryAgentConfigSection({ repo }: { repo: Repo }): React.JSX.Element {
+function ProjectAgentConfig({ repo }: { repo: Repo }): React.JSX.Element {
   const t = useTranslate()
   const { machines, projects } = useAgentConfigMachines()
   const hostId = getRepoExecutionHostId(repo)

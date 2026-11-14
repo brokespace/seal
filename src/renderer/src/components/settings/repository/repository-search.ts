@@ -20,6 +20,7 @@ import {
 } from './worktrees/repository-git-worktree-search-entries'
 import { getRepositoryFormatterSearchEntry } from './RepositoryFormatterSection'
 import { getRepositoryAgentTrustSearchEntry } from './RepositoryAgentTrustSection'
+import { getRepositoryWorkspaceCleanupSearchEntry } from './workspace-cleanup/repository-workspace-cleanup-search'
 
 type RepositoryPaneSearchOptions = {
   isLocalWindowsProject?: boolean
@@ -250,6 +251,7 @@ export function getRepositoryPaneSearchEntries(
   }
   if (!isFolderRepo(repo)) {
     entries.push(...getRepositoryGitWorktreeSearchEntries(repo, t))
+    entries.push(getRepositoryWorkspaceCleanupSearchEntry(repo, t))
   }
   entries.push(parts.sidebarVisibility, parts.removeProject)
   if (parts.sourceControlAi) {
@@ -296,7 +298,6 @@ export function getRepositoryPaneSearchMetadata(
     sharedPaths: worktrees?.sharedPaths ?? [],
     sourceControlAi: parts.sourceControlAi ?? [],
     mcp: parts.mcp ?? [],
-    agentConfig: parts.agentConfig ?? null,
     hooks: parts.hooks ?? [],
     // Host setups has no indexed descriptor; keep its existing empty-query admission.
     hostSetups: [] satisfies SettingsSearchEntry[]
