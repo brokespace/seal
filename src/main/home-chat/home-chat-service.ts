@@ -27,6 +27,7 @@ import { HomeChatTurnEngine } from './engine/home-chat-turn-engine'
 import type { HomeChatThread } from './thread/home-chat-thread'
 import type { HomeChatThreadStore } from './thread/home-chat-thread-store'
 import { homeChatThreadSummary } from './thread/home-chat-thread-summary'
+import type { HomeChatToolContext } from './tools/home-chat-tool-context'
 
 export type HomeChatServiceDeps = Pick<
   HomeChatRuntimeDeps,
@@ -233,6 +234,12 @@ export class HomeChatService {
       status: machine.status,
       ...(machine.address ? { address: machine.address } : {})
     }))
+  }
+
+  /** What the assistant's tools run on, so Seal's MCP server runs the same tools on the same machines. */
+  toolRuntime(): Pick<HomeChatToolContext, 'services' | 'machines' | 'runOrcaCli'> {
+    const { services, machines } = this.runtime
+    return { services, machines, runOrcaCli: this.deps.runOrcaCli }
   }
 
   async dispose(): Promise<void> {
