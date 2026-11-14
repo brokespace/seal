@@ -1,5 +1,5 @@
 import { encodePowerShellCommand } from '../../../shared/powershell-command-encoding'
-import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import { posixPathWord } from '../machines/home-chat-machine-paths'
 import { powerShellLiteral } from '../machines/home-chat-machine-scripts'
 import type { HomeChatShellDialect } from '../machines/home-chat-machine-types'
 
@@ -14,7 +14,7 @@ export type JobLaunch = {
   /** Seconds to wait for the job to finish before reporting it as running; 0 returns at once. */
   waitSeconds: number
   tailBytes: number
-  /** Delete the job folder when it finishes inside the wait. */
+  /** Delete the job folder when it finishes inside the wait and its whole log fit in the reply. */
   removeWhenFinished: boolean
 }
 
@@ -95,7 +95,7 @@ function posixLaunch(job: JobLaunch): string {
   return [
     posixPrelude(job.jobId),
     // The detached job inherits this directory.
-    job.cwd ? `cd ${quotePosixShell(job.cwd)} || exit 1` : '',
+    job.cwd ? `cd ${posixPathWord(job.cwd)} || exit 1` : '',
     'mkdir -p "$d" || exit 1',
     `find "$HOME/.seal/jobs" -mindepth 1 -maxdepth 1 -type d -mtime +${PRUNE_DAYS} -exec rm -rf {} + 2>/dev/null`,
     posixWriteFile('"$d/cmd"', job.command, job.jobId),
@@ -113,7 +113,9 @@ function posixLaunch(job: JobLaunch): string {
     `i=0; n=$((${Math.max(0, Math.floor(job.waitSeconds))} * per))`,
     'while [ ! -f "$d/exit" ] && [ "$i" -lt "$n" ]; do sleep "$step"; i=$((i + 1)); done',
     posixReport(job.tailBytes),
-    job.removeWhenFinished ? '[ -f "$d/exit" ] && rm -rf "$d"' : '',
+    job.removeWhenFinished
+      ? `[ -f "$d/exit" ] && [ "$size" -le ${job.tailBytes} ] && rm -rf "$d"`
+      : '',
     'exit 0'
   ].join('\n')
 }
@@ -143,7 +145,7 @@ function powerShellLaunch(job: JobLaunch): string {
     'while (-not (Test-Path -LiteralPath (Join-Path $d "exit")) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 200 }',
     powerShellReport(job.tailBytes),
     job.removeWhenFinished
-      ? 'if (Test-Path -LiteralPath (Join-Path $d "exit")) { Remove-Item -LiteralPath $d -Recurse -Force }'
+      ? `if ((Test-Path -LiteralPath (Join-Path $d "exit")) -and $size -le ${job.tailBytes}) { Remove-Item -LiteralPath $d -Recurse -Force }`
       : ''
   ].join('\n')
 }
