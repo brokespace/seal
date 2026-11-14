@@ -6,6 +6,7 @@ import { matchesSettingsSearch } from '../search/settings-search'
 import { SealAccountsPage } from '../seal-accounts/SealAccountsPage'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
+import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
 import { ComputerUsePane } from '../computer-use/ComputerUsePane'
@@ -59,6 +60,26 @@ export function renderAgentsSettingsSection(
       ) : null}
     </SettingsSection>
   )
+}
+
+export function renderAgentConfigSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="agent-config"
+      title={t('auto.components.agentConfig.search.title', 'Agent configuration')}
+      description={t(
+        'auto.components.agentConfig.search.description',
+        'Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('agent-config')}
+    >
+      {view.isSectionMounted('agent-config') ? <AgentConfigSettingsPane /> : null}
+    </SettingsSection>
+  ) : null
 }
 
 export function renderAccountsSettingsSection(

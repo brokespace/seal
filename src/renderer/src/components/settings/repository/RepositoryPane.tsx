@@ -24,6 +24,7 @@ import { RepositorySidebarVisibilitySection } from './RepositorySidebarVisibilit
 import { RepositoryRemoveProjectSection } from './RepositoryRemoveProjectSection'
 import type { SettingsProjectRemovalScope } from '../navigation/settings-project-list'
 import { matchesSettingsSearch } from '../search/settings-search'
+import { RepositoryAgentConfigSection } from '../agent-config/RepositoryAgentConfigSection'
 import { useAppStore } from '@/store/index'
 import { getRepositoryIconSectionId } from './repository-settings-targets'
 import { RepositoryIconPicker } from './identity/RepositoryIconPicker'
@@ -165,9 +166,7 @@ export function RepositoryPane({
   )
 
   const updateSelectedRepoHookSettings = (nextSettings: RepoHookSettings) => {
-    updateSelectedRepo(repo.id, {
-      hookSettings: nextSettings
-    })
+    updateSelectedRepo(repo.id, { hookSettings: nextSettings })
   }
 
   const handleCopyTemplate = async () => {
@@ -397,6 +396,7 @@ export function RepositoryPane({
     !isFolder && (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, mcpEntries)) ? (
       <McpConfigSection key={`mcp-configs:${selectedHostId}:${repo.id}`} repo={repo} />
     ) : null,
+    <RepositoryAgentConfigSection key={`agent-config:${selectedHostId}:${repo.id}`} repo={repo} />,
     forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, [sidebarVisibilityEntry]) ? (
       <RepositorySidebarVisibilitySection
         key="sidebar-visibility"

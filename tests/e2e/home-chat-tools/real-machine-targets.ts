@@ -9,7 +9,10 @@ import {
   type TestInfo
 } from '@stablyai/playwright-test'
 import { startHomeChatToolDriver } from '../helpers/home-chat-tool-driver'
-import { launchHeadlessPairedRuntimeHost } from '../helpers/headless-paired-runtime-host'
+import {
+  launchHeadlessPairedRuntimeHost,
+  type HeadlessPairedRuntimeHost
+} from '../helpers/headless-paired-runtime-host'
 import { startLocalSshdMachines, type LocalSshdUser } from '../helpers/local-sshd-machines'
 import { forwardElectronProcessLogs } from '../helpers/orca-app'
 import { createRestartSession } from '../helpers/orca-restart'
@@ -128,7 +131,12 @@ async function waitUntilOnline(page: Page, labels: readonly string[]): Promise<v
     .toEqual([])
 }
 
-export type RealMachineSuite = { env: ToolEnv; dispose: () => Promise<void> }
+export type RealMachineSuite = {
+  env: ToolEnv
+  /** The paired Seal server, for setting up what lives on it (its projects). */
+  server: HeadlessPairedRuntimeHost
+  dispose: () => Promise<void>
+}
 
 /**
  * The real app with the assistant pointed at a scripted model, plus the machines it works on:
@@ -258,6 +266,7 @@ export async function launchHomeChatOnRealMachines(
 
     return {
       dispose,
+      server: host,
       env: {
         app,
         page,
