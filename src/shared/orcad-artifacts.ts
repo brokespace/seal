@@ -245,6 +245,8 @@ export const ORCAD_ARTIFACTS: readonly OrcadArtifact[] = [
   { filename: ORCAD_PORT_SCAN_COMMAND_WORKER_ENTRY },
   // Forked so transcript parsing stays off the server's event loop.
   { filename: ORCAD_SESSION_SCANNER_SERVICE_ENTRY },
+  // The disk-usage index daemon; also the one file copied to SSH machines.
+  { filename: 'disk-usage-index-entry.js' },
   // Session search queries run in a worker thread, also off the event loop.
   { filename: ORCAD_SESSION_SEARCH_WORKER_ENTRY },
   // Account worker threads keep CLI probes and Claude setup off the event loop.
