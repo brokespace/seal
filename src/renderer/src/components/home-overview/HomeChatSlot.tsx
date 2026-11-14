@@ -9,7 +9,7 @@ export function HomeChatSlot(): React.JSX.Element | null {
   }
   return (
     <section data-home-slot="chat" aria-label={t('home.overview.chat.label', 'Chat')}>
-      <HomeChat className="h-[clamp(360px,55vh,640px)] overflow-hidden rounded-xl border border-border" />
+      <HomeChat className="h-[clamp(360px,60vh,800px)] overflow-hidden rounded-xl border border-border" />
     </section>
   )
 }
