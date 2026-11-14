@@ -86,7 +86,6 @@
       "windows": {
         "administratorApproval": "Windows が承認を求めます。普段お使いのアカウントを使用してください。",
         "administratorDialogScope": "これによりアプリ全体の権限が変更されます。SSH と WSL はそれぞれ独自の権限を保持します。",
-        "administratorDocumentation": "ガイドを読む",
         "administratorLabel": "管理者モード",
         "administratorPromptCancellation": "Windows のプロンプトをキャンセルすると、保持されているターミナルとともに Seal が再び開きます。SSH と WSL の権限はそれぞれのホストで管理されたままです。",
         "administratorRestartConsequences": "先に作業を保存してください。承認後、現在のローカルターミナルホスト上のターミナルと Agent が閉じられます。復元されたタブは新規管理者シェルを開きます。",
@@ -700,7 +699,7 @@
         "b411ec0069": "接続",
         "2cf9e5a294": "保存済みサーバーをクリア",
         "4a4c017be1": "エンドポイント：",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "ペアリング URL またはコード",
         "cb4d287238": "サーバー名",
         "3affe7de3a": "このブラウザが到達できる Seal サーバーからペアリング URL を貼り付けます。",
@@ -5027,7 +5026,6 @@
           "66270286ac": "・安全にリトライできる。",
           "157de228b4": "スキルを検査する",
           "69236de8d6": "確認中…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal のスキルリンク",
           "releaseNotes": "リリースノート:",
           "targetHeader": "インストール対象",
@@ -6422,7 +6420,7 @@
           "nameInOrca": "Seal での名前",
           "serverNamePlaceholder": "開発環境",
           "accessLink": "アクセスリンク",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config はすでに同期されています。",
           "sshImportFailed": "SSH 構成のインポートに失敗しました。",
           "advanced": "詳細設定",
@@ -7675,14 +7673,11 @@
           "5f539ff331": "ペアリングされたデバイス"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "アプリストア",
           "e7a3ae8c4e": "モバイル",
           "174f4a3c6d": "スマートフォンからターミナルと Agent を操作します。",
           "682293cadf": "左サイドバー上部に Seal Mobile ボタンを表示します。",
           "d4f2b65f30": "サイドバーに Seal Mobile ショートカットを表示します。",
-          "installIntro": "Seal Mobile は",
           "installOutro": "からインストールし、以下でペアリングしてください。",
-          "androidApkLabel": "Android APK",
           "49089c92b3": "Seal Mobile ボタンを表示"
         },
         "NotificationsPane": {
@@ -11101,17 +11096,12 @@
           "available": "利用可能",
           "reconnecting": "再接続中",
           "unavailable": "利用不可",
-          "signIn": "Relay にサインイン",
           "localDescription": "スマートフォンがこの Wi‑Fi または Tailscale に接続されている必要があります。アカウントは不要です。",
           "pathGroup": "スマートフォンがこのコンピュータに到達する方法",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "スマートフォンはモバイル回線または任意の Wi‑Fi から接続できます。サインインが必要なのは Relay のみです。",
-          "relayUnavailable": "このビルドでは Seal Relay を利用できません。LAN をご利用ください。",
-          "signInAgain": "Relay に再サインイン",
           "localTitle": "LAN",
           "retrying": "再試行中",
-          "relayCell": "リレーセル",
-          "relaySignInDetail": "このデスクトップを Seal にサインインさせ、スマートフォンの通信を Seal のサーバー経由でルーティングします。LAN ではアカウントは不要です。"
+          "relayCell": "リレーセル"
         },
         "MobilePairingSetupSection": {
           "title": "スマートフォンをペアリング",
@@ -11535,7 +11525,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux ワークステーション",
           "accessLink": "アクセスリンク",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal は接続前に接続先を表示します。認証情報は非表示のままです。",
           "destination": "リンク先",
           "loopbackTitle": "このリンクはこのデバイス自身を指しています",
@@ -11676,7 +11666,6 @@
           "connected": "接続済み",
           "reconnectRequired": "セッションの有効期限が切れました。クラウド機能を使用するには、再度サインインします。",
           "unavailable": "このビルドでは Seal サインインは利用できません。",
-          "signedOut": "サインインして、Artifacts や Seal Relay などのクラウド機能を使用して Seal を拡張します。",
           "checking": "アカウントのステータスを確認しています…",
           "account": "Seal アカウント",
           "signOut": "サインアウト",
@@ -11684,12 +11673,9 @@
           "signIn": "Seal にサインインする",
           "title": "Seal アカウント",
           "description": "作業を即座に共有し、どこにいても Seal Mobile からデスクトップにアクセスできます。",
-          "searchDescription": "Artifacts と Seal Relay で使用されるアカウントにサインインまたはサインアウトします。",
           "benefitsTitle": "アカウントに含まれています",
           "artifactsTitle": "成果物の共有",
           "artifactsDescription": "HTML ファイルと Markdown ファイルを公開し、Seal からのすべての共有リンクを管理します。",
-          "relayTitle": "Seal リレー",
-          "relayDescription": "Seal Mobile を携帯電話または Wi-Fi 経由でこのデスクトップに接続します。",
           "skillsTitle": "スキルの共有",
           "skillsDescription": "1 つのスキルまたはスキルセット全体を非公開リンクで共有し、使用するマシンにインストールします。",
           "keywordAccount": "アカウント",
@@ -11697,7 +11683,6 @@
           "keywordLogout": "ログアウト",
           "keywordSignIn": "サインイン",
           "keywordSignOut": "サインアウト",
-          "keywordRelay": "リレー",
           "keywordCloud": "雲"
         },
         "automations": {
@@ -14561,12 +14546,8 @@
           "85067b9e06": "ネットワークインターフェースを更新",
           "dfd2aa9d5d": "ネットワーク",
           "3960f5c339": "ステップ 2/2",
-          "3241f3c26a": "QRをインストールする",
-          "aa97420ba4": "インストールリンクをコピーする",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "スマートフォンのカメラでこのダウンロード用QRコードをスキャンしてください。すでにSeal Mobileをお持ちですか？ステップ2に進むとペアリング用QRコードが表示されます。",
-          "0d9b33299e": "アプリをダウンロード。",
           "92ddfdfa1f": "ステップ 1/2",
           "ff48d9d520": "別のデバイスをペアリングする",
           "f9cbf4bb53": "デバイスを取り消します",
@@ -14587,23 +14568,19 @@
           "directAddressDisclosure": "より速いローカル経路も使う",
           "directAddressHint": "任意。近く（同じ Wi‑Fi または Tailscale）にいるときにスマホが使うアドレスを選びます。通常は Relay より高速です。外出中は引き続き Relay が使われます。",
           "noRelayCode": "利用可能なペアリングコードがありません",
-          "noPairingCode": "利用可能なペアリングコードがありません",
-          "qrSignInRequired": "サインインしてリレーペアリングコードを作成する",
           "qrRenderFailed": "QR をレンダリングできませんでした - 以下のコードをコピーしてください",
           "qrGeneratePrompt": "続行するにはペアリングコードを生成してください",
           "pairingCodeReady": "ペアリングコードの準備完了",
           "pairThisMac": "この Mac をペアリングします。",
           "pairThisPc": "この PC をペアリングします。",
           "pairThisComputer": "このコンピュータをペアリングします。",
-          "androidHelp": {
-            "guide": "インストールガイド"
-          },
-          "openAppAndScan": "Seal Mobile を開き、<strong>デスクトップのペアリング</strong>をタップしてコードをスキャンしてください。"
+          "openAppAndScan": "Seal Mobile を開き、<strong>デスクトップのペアリング</strong>をタップしてコードをスキャンしてください。",
+          "installHeading": "Seal Mobile をインストールします。",
+          "installLead": "Seal Mobile は App Store や Google Play では配信されていません。Seal リポジトリからビルドしてインストールし、ステップ 2 に進んでペアリング用 QR コードを表示してください。",
+          "installGuide": "インストールガイドを開く"
         },
         "MobilePage": {
           "e17393c6a3": "スマートフォンプレビュー",
-          "baea63c445": "リンクのコピーに失敗しました",
-          "fad833de8d": "インストールリンクをコピーしました",
           "6a66e38943": "ペアリングコードのコピーに失敗しました",
           "3c1f7168bb": "ペアリングコードをコピーしました",
           "4c8bd11c1a": "ペアリングコードの生成に失敗しました",
@@ -14625,14 +14602,6 @@
           "96d651cb87": "ターミナルセッション",
           "93217b41c1": "ワークツリーリスト",
           "89c7713645": "Seal モバイルのホーム画面"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "APK をダウンロード",
-              "openAppStore": "App Store を開く"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -14732,9 +14701,6 @@
           "retrying": "再試行中…",
           "retry": "リトライリレー",
           "copyDiagnostics": "コピー診断",
-          "reconnectTitle": "Seal アカウントのセッションが期限切れになりました。",
-          "reconnectBody": "もう一度サインインして Seal Relay を使用するか、LAN を使用して Tailscale または同じ Wi-Fi 経由でペアリングします。",
-          "notEntitledTitle": "Seal Relay はこの Seal アカウントには含まれていません。",
           "rateLimitedBody": "Seal Relay が混雑しています。1 分待って再試行するか、LAN を使用して Tailscale または同じ Wi‑Fi 経由でペアリングしてください。"
         },
         "relayClockSkewMessage": {
@@ -17683,7 +17649,6 @@
           "signout": {
             "confirm": {
               "title": "Seal からログアウトしますか？",
-              "description": "このデバイスで Seal からログアウトします。ローカルのプロジェクトとワークツリーには影響しません。",
               "cancel": "キャンセル",
               "action": "サインアウト"
             }
@@ -18068,8 +18033,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "サインアウトされました",
         "3e8f5c2a91": "閉じる",
-        "7b4d9e1f2a": "アーティファクトの共有、Seal Relay、およびスキルの共有を復元するには、{{value0}} として再度サインインします。",
-        "5a1c8d3e6f": "再度サインインして、アーティファクトの共有、Seal Relay、およびスキルの共有を復元します。",
         "1f6b2c9d4e": "何が戻ってくるか",
         "8d2e4f7a1b": "成果物の共有",
         "2c9a5b6e8d": "HTML ファイルと Markdown ファイルを公開し、Seal からのすべての共有リンクを管理します。",
@@ -22530,7 +22493,7 @@
       "serverTooOld": "選択した Seal サーバーは古すぎるため、このクライアントと互換性がありません。サーバーの Seal を更新してください。サーバーのプロトコルは {{serverProtocol}}、クライアントが要求するサーバーのプロトコルは {{requiredProtocol}} です。"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "ペアリングコードが無効です。orca://pair?... 形式の URL または生のペアリングデータが必要です。",
+      "invalidPairingCode": "ペアリングコードが無効です。seal://pair?... 形式の URL または生のペアリングデータが必要です。",
       "selfPairingCode": "このペアリングコードは、この Seal 自身のものです。もう一方のコンピューターでコードを生成してください。",
       "managedDeployment": "Seal が SSH ホスト上でこのサーバーを実行しているため、ここではペアリングを置き換えたり解除したりできません。廃止するには `seal environment stop --environment <name> --yes` を実行するか、設定 > SSH ホスト上の Seal を使用してください。ホストが存在しない場合は `seal environment forget --environment <name> --yes` を実行してください。",
       "sshAccessChangePending": "このサーバーの SSH アクセスの変更が完了しませんでした。ペアリングの置き換えやサーバーの削除を行う前に、設定 > リモート Seal サーバー > ペアリング済みサーバーの SSH アクセスで再試行するかキャンセルしてください。",

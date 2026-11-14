@@ -6,8 +6,8 @@ export const getOrcaAccountSettingsSearchEntries = createLocalizedCatalog(() => 
   {
     title: translate('auto.components.settings.orcaAccount.account', 'Seal account'),
     description: translate(
-      'auto.components.settings.orcaAccount.searchDescription',
-      'Sign in or out of the account used by Artifacts and Seal Relay.'
+      'auto.components.settings.orcaAccount.searchDescriptionNoRelay',
+      'Sign in or out of the account used by Artifacts and skill sharing.'
     ),
     keywords: [
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordAccount', 'account'),
@@ -15,7 +15,6 @@ export const getOrcaAccountSettingsSearchEntries = createLocalizedCatalog(() => 
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordLogout', 'logout'),
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordSignIn', 'sign in'),
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordSignOut', 'sign out'),
-      ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordRelay', 'relay'),
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordCloud', 'cloud')
     ]
   }

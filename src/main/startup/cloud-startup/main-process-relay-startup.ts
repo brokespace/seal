@@ -1,5 +1,9 @@
 import { app, powerMonitor } from 'electron'
-import { getOrcaCloudAuthConfig } from '../../orca-profiles/cloud-auth/profile-cloud-auth-config'
+import { resolveSealRelayOrigin } from '../../../shared/seal-cloud/seal-service-origins'
+import {
+  createSealRelayContextReader,
+  sealRelayEndpointConfig
+} from '../../runtime/mobile-cloud-relay/authentication/seal-relay-host-auth'
 import { getProfileUserDataPath } from '../../orca-profiles/profile-storage-paths'
 import type { OrcaRuntimeRpcServer } from '../../runtime/rpc/server/runtime-rpc'
 import { DesktopRelayService } from '../../runtime/mobile-cloud-relay/desktop-relay-service'
@@ -14,16 +18,15 @@ export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void
     whenNetworkReady: state.initialProxyApplicationReady,
     isFenced: () => state.isQuitting,
     create: () => {
-      const cloudAuth = getOrcaCloudAuthConfig()
-      return cloudAuth.configured
-        ? new DesktopRelayService({
-            authConfig: cloudAuth.config,
-            userDataPath: getProfileUserDataPath(),
-            appVersion: app.getVersion(),
-            runtimeRpc,
-            onStatus: publishDesktopRelayStatus
-          })
-        : null
+      const relayOrigin = resolveSealRelayOrigin(process.env, app.isPackaged)
+      return new DesktopRelayService({
+        authConfig: sealRelayEndpointConfig(relayOrigin),
+        readContext: (keypair) => createSealRelayContextReader({ relayOrigin, keypair }),
+        userDataPath: getProfileUserDataPath(),
+        appVersion: app.getVersion(),
+        runtimeRpc,
+        onStatus: publishDesktopRelayStatus
+      })
     },
     onInstalled: (service) => {
       state.desktopRelayService = service

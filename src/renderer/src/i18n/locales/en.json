@@ -646,7 +646,6 @@
         "retainedTerminalPermissions": "If new terminals still use the previous permissions, open Manage Sessions and choose Restart daemon. This closes local terminals and their running commands.",
         "administratorRestartFailed": "Seal could not restart. Try again or use the manual instructions.",
         "manualAdministratorHelp": "Manual instructions",
-        "administratorDocumentation": "Read the guide",
         "cancelAdministratorRestart": "Cancel",
         "closeAdministratorHelp": "Close",
         "restartingAdministrator": "Restarting…",
@@ -1577,7 +1576,7 @@
         "b411ec0069": "Connect",
         "2cf9e5a294": "Clear saved server",
         "4a4c017be1": "Endpoint:",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "Pairing URL or code",
         "cb4d287238": "Server name",
         "3affe7de3a": "Paste a pairing URL from a Seal server that this browser can reach.",
@@ -6177,12 +6176,12 @@
           "66270286ac": "· You can retry safely.",
           "157de228b4": "Inspect skill",
           "69236de8d6": "Checking…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal skill link",
           "releaseNotes": "Release notes:",
           "targetHeader": "Installation Target",
           "placementsChecked_one": "{{count}} placement checked.",
-          "placementsChecked_other": "{{count}} placements checked."
+          "placementsChecked_other": "{{count}} placements checked.",
+          "protocolPlaceholder": "orca://skills/share/…"
         },
         "SkillInstallTargetFields": {
           "8e6a972229": "No workspaces are known on this machine.",
@@ -7707,7 +7706,7 @@
           "nameInOrca": "Name in Seal",
           "serverNamePlaceholder": "Dev box",
           "accessLink": "Access link",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config already in sync.",
           "sshImportFailed": "Failed to import SSH config.",
           "sshAlreadyExists": "That SSH host is already in Seal.",
@@ -9029,15 +9028,14 @@
           "5f539ff331": "Paired devices"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "Install Seal Mobile from the",
           "installOutro": ", then pair below.",
-          "androidApkLabel": "Android APK",
           "e7a3ae8c4e": "Mobile",
           "174f4a3c6d": "Control terminals and agents from your phone.",
           "682293cadf": "Show the Seal Mobile button at the top of the left sidebar.",
           "d4f2b65f30": "Show the Seal Mobile shortcut in the sidebar.",
-          "49089c92b3": "Show Seal Mobile button"
+          "49089c92b3": "Show Seal Mobile button",
+          "installIntroSeal": "Install Seal Mobile using the",
+          "installGuideLabel": "install guide"
         },
         "NotificationsPane": {
           "2772d2f257": "Skip notifications when the triggering worktree is already visible.",
@@ -12495,15 +12493,11 @@
           "unavailable": "Unavailable",
           "pathGroup": "How the phone reaches this computer",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "Phone can be on cellular or any Wi‑Fi. Sign-in required for Relay only.",
-          "relayUnavailable": "Seal Relay isn’t available in this build. Use LAN.",
-          "signIn": "Sign in for Relay",
-          "signInAgain": "Sign in again for Relay",
           "localTitle": "LAN",
           "localDescription": "Phone must be on this Wi‑Fi or connected through Tailscale. No account needed.",
           "retrying": "Retrying",
           "relayCell": "Relay cell",
-          "relaySignInDetail": "Signs this desktop in to Seal and routes the phone through Seal’s servers. LAN does not need an account."
+          "anywhereDescriptionNoAccount": "Phone can be on cellular or any Wi‑Fi, through the Seal relay. No account needed."
         },
         "MobilePairingSetupSection": {
           "title": "Pair a phone",
@@ -12888,7 +12882,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux workstation",
           "accessLink": "Access link",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal shows the destination before connecting. Credentials stay hidden.",
           "destination": "Link destination",
           "loopbackTitle": "This link points back to this device",
@@ -13007,7 +13001,6 @@
           "connected": "Connected",
           "reconnectRequired": "Your session expired. Sign in again to use cloud features.",
           "unavailable": "Seal sign-in is unavailable in this build.",
-          "signedOut": "Sign in to extend Seal with cloud features, including Artifacts and Seal Relay.",
           "checking": "Checking account status…",
           "account": "Seal account",
           "signOut": "Sign out",
@@ -13015,12 +13008,9 @@
           "signIn": "Sign in to Seal",
           "title": "Seal Account",
           "description": "Share work instantly and reach your desktop from Seal Mobile wherever you are.",
-          "searchDescription": "Sign in or out of the account used by Artifacts and Seal Relay.",
           "benefitsTitle": "Included with your account",
           "artifactsTitle": "Artifact sharing",
           "artifactsDescription": "Publish HTML and Markdown files, then manage every shared link from Seal.",
-          "relayTitle": "Seal Relay",
-          "relayDescription": "Connect Seal Mobile to this desktop across cellular or any Wi-Fi.",
           "skillsTitle": "Skill sharing",
           "skillsDescription": "Share one skill or a whole set behind an unlisted link, and install them on any machine you use.",
           "keywordAccount": "account",
@@ -13028,8 +13018,9 @@
           "keywordLogout": "logout",
           "keywordSignIn": "sign in",
           "keywordSignOut": "sign out",
-          "keywordRelay": "relay",
-          "keywordCloud": "cloud"
+          "keywordCloud": "cloud",
+          "signedOutNoRelay": "Sign in to extend Orca with cloud features, including Artifacts.",
+          "searchDescriptionNoRelay": "Sign in or out of the account used by Artifacts and skill sharing."
         },
         "automations": {
           "showButtonDescription": "Show the Automations shortcut in the sidebar.",
@@ -16172,12 +16163,8 @@
           "85067b9e06": "Refresh network interfaces",
           "dfd2aa9d5d": "Network",
           "3960f5c339": "Step 2 of 2",
-          "3241f3c26a": "Install QR",
-          "aa97420ba4": "Copy install link",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Scan this download QR with your phone's camera. Already have Seal Mobile? Continue to step 2 for the pairing QR.",
-          "0d9b33299e": "Download the app.",
           "92ddfdfa1f": "Step 1 of 2",
           "ff48d9d520": "Pair another device",
           "f9cbf4bb53": "Revoke device",
@@ -16196,8 +16183,6 @@
           "051978a785": "Your phone is paired.",
           "pairingQrError": "This pairing code couldn’t be rendered as a QR code. Copy it into Seal Mobile instead.",
           "noRelayCode": "No pairing code available",
-          "noPairingCode": "No pairing code available",
-          "qrSignInRequired": "Sign in to create a Relay pairing code",
           "qrRenderFailed": "QR couldn’t be rendered — copy the code below",
           "qrGeneratePrompt": "Generate a pairing code to continue",
           "pairingCodeReady": "Pairing code ready",
@@ -16206,15 +16191,13 @@
           "pairThisComputer": "Pair this computer.",
           "directAddressDisclosure": "Also use a faster local path",
           "directAddressHint": "Optional. Pick the Wi‑Fi or Tailscale address your phone should use when nearby — usually faster than Relay. Relay still works when you’re away.",
-          "androidHelp": {
-            "guide": "Install guide"
-          },
-          "openAppAndScan": "Open Seal Mobile, tap <strong>Pair Desktop</strong>, and scan the code."
+          "openAppAndScan": "Open Seal Mobile, tap <strong>Pair Desktop</strong>, and scan the code.",
+          "installHeading": "Install Seal Mobile.",
+          "installLead": "Seal Mobile is not on the App Store or Google Play. Build and install it from the Seal repository, then continue to step 2 for the pairing QR.",
+          "installGuide": "Open install guide"
         },
         "MobilePage": {
           "e17393c6a3": "Phone preview",
-          "baea63c445": "Failed to copy link",
-          "fad833de8d": "Install link copied",
           "6a66e38943": "Failed to copy pairing code",
           "3c1f7168bb": "Pairing code copied",
           "4c8bd11c1a": "Failed to generate pairing code",
@@ -16236,14 +16219,6 @@
           "96d651cb87": "Terminal session",
           "93217b41c1": "Worktree list",
           "89c7713645": "Seal Mobile home screen"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "Download APK",
-              "openAppStore": "Open App Store"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -16355,9 +16330,6 @@
           "retrying": "Retrying…",
           "retry": "Retry Relay",
           "copyDiagnostics": "Copy diagnostics",
-          "reconnectTitle": "Your Seal account session expired.",
-          "reconnectBody": "Sign in again to use Seal Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.",
-          "notEntitledTitle": "Seal Relay isn’t included with this Seal account.",
           "rateLimitedBody": "Seal Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi."
         },
         "relayClockSkewMessage": {
@@ -19419,9 +19391,9 @@
           "signout": {
             "confirm": {
               "title": "Sign out of Seal?",
-              "description": "Artifacts and Seal Relay will be unavailable until you sign in again. Your local projects and worktrees won't be affected.",
               "cancel": "Cancel",
-              "action": "Sign out"
+              "action": "Sign out",
+              "descriptionNoRelay": "Artifact and skill sharing will be unavailable until you sign in again. Seal Relay, your local projects and worktrees won't be affected."
             }
           }
         }
@@ -19755,8 +19727,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "You've been signed out",
         "3e8f5c2a91": "Dismiss",
-        "7b4d9e1f2a": "Sign in again as {{value0}} to restore Artifact sharing, Seal Relay, and skill sharing.",
-        "5a1c8d3e6f": "Sign in again to restore Artifact sharing, Seal Relay, and skill sharing.",
         "1f6b2c9d4e": "What you get back",
         "8d2e4f7a1b": "Artifact sharing",
         "2c9a5b6e8d": "Publish HTML and Markdown files and manage every shared link from Seal.",
@@ -19764,7 +19734,9 @@
         "4b7d2e8f1a": "Connect Seal Mobile to this desktop across cellular or any Wi-Fi.",
         "9a4c6b2d7e": "Skill sharing",
         "3d8e5f1b9c": "Share skills behind an unlisted link and install them on any machine you use.",
-        "c5b3e8a17d": "Sign in to Seal"
+        "c5b3e8a17d": "Sign in to Seal",
+        "restoreSharingAs": "Sign in again as {{value0}} to restore Artifact sharing and skill sharing.",
+        "restoreSharing": "Sign in again to restore Artifact sharing and skill sharing."
       },
       "NativeChatResumeOutcomeRow": {
         "openChat": "Open chat",
@@ -24892,7 +24864,7 @@
       "serverTooOld": "The selected Seal server is too old for this client. Update Seal on the server. Server protocol {{serverProtocol}}, client requires server protocol {{requiredProtocol}}."
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.",
+      "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload.",
       "selfPairingCode": "This pairing code is for this Seal itself. Generate the code on the other computer instead.",
       "managedDeployment": "Seal runs this server on an SSH host for you; its pairing cannot be replaced or removed here. To decommission it, run `seal environment stop --environment <name> --yes` or use Settings > Seal on your SSH hosts; for a host that is gone, run `seal environment forget --environment <name> --yes`.",
       "sshAccessChangePending": "This server's SSH access change didn't finish. Retry or cancel it under Settings > Remote Seal Servers > SSH access for paired servers before replacing its pairing or removing it.",
