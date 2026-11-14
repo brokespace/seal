@@ -28,6 +28,7 @@ import {
   type ScanProgressCounters
 } from './disk-index-scan-progress'
 import type { DiskIndexDaemonReply, DiskIndexEnvelope } from './disk-index-socket'
+import { errnoCodeOrUnknown } from '../../../shared/errno-code'
 
 const TICK_MS = 30_000
 const ROOTS_FRESH_MS = 5000
@@ -58,7 +59,7 @@ function isRunning(pid: number): boolean {
     process.kill(pid, 0)
     return true
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === 'EPERM'
+    return errnoCodeOrUnknown(error) === 'EPERM'
   }
 }
 

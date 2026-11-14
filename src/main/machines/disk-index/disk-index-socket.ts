@@ -6,6 +6,7 @@ import {
   type MachineDiskIndexReply,
   type MachineDiskIndexRequest
 } from '../../../shared/machines/machine-disk-index-types'
+import { errnoCodeOrUnknown } from '../../../shared/errno-code'
 
 const MAX_REQUEST_BYTES = 64 * 1024
 
@@ -117,7 +118,7 @@ export async function listenForDiskIndexRequests(
   try {
     await listen()
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') {
+    if (errnoCodeOrUnknown(error) !== 'EADDRINUSE') {
       throw error
     }
     if (await isAnswering(socketPath, build)) {

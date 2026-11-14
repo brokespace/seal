@@ -7,6 +7,7 @@ import {
   type MachineDiskIndexListing
 } from '../../../shared/machines/machine-disk-index-types'
 import { NODE_STUB, NODE_UNREADABLE, type DiskIndex } from './disk-index-layout'
+import { errnoCodeOrUnknown } from '../../../shared/errno-code'
 
 /** Direct children sized live per listing; a folder with more shows only what was read. */
 const MAX_LIVE_ENTRIES = 20_000
@@ -72,7 +73,7 @@ async function readLiveChildren(
   try {
     directory = await opendir(path)
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code
+    const code = errnoCodeOrUnknown(error)
     if (code === 'ENOENT' || code === 'ENOTDIR') {
       throw new Error('That folder no longer exists on this machine.')
     }

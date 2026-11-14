@@ -40,7 +40,9 @@ export function MachineCleanupSection({
   const [targets, setTargets] = useState<Partial<Record<MachineCleanupTargetId, TargetState>>>({})
   const [reviewing, setReviewing] = useState<MachineCleanupScan | null>(null)
   const reviewingRef = useRef(false)
-  reviewingRef.current = reviewing !== null
+  useEffect(() => {
+    reviewingRef.current = reviewing !== null
+  }, [reviewing])
 
   const scanTarget = useCallback(
     async (target: MachineCleanupTargetId, isCurrent: () => boolean): Promise<void> => {

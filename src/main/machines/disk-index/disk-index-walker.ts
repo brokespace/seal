@@ -18,6 +18,7 @@ import {
   type WalkerInit,
   type WalkerMessage
 } from './disk-index-walk-protocol'
+import { errnoCodeOrUnknown } from '../../../shared/errno-code'
 
 const BATCH_FOLDERS = 2048
 const BATCH_NAME_BYTES = 512 * 1024
@@ -130,7 +131,7 @@ export class DiskWalker {
     try {
       entries = this.fs.readdir(task.path)
     } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code
+      const code = errnoCodeOrUnknown(error)
       this.record(task, task.selfBytes, 0, code !== 'ENOENT' && code !== 'ENOTDIR', -1)
       return
     }
