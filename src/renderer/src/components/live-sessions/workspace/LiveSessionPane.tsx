@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
-import { ArrowLeft, Bot, Brain, Ellipsis, ListTodo, NotebookText, X } from 'lucide-react'
+import { ArrowLeft, Bot, Ellipsis, ListTodo, NotebookText, X } from 'lucide-react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Button } from '@/components/ui/button'
 import {
@@ -108,10 +108,6 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
     () => pendingRows(transcript.messages, props.messages),
     [transcript.messages, props.messages]
   )
-  const reasoning = useMemo(
-    () => transcript.messages.filter((message) => message.role === 'reasoning'),
-    [transcript.messages]
-  )
   const toggle = (next: LiveSessionPanel) => props.onPanel(panel === next ? null : next)
   const onOpenSubagent = (id: string | null): void => {
     setReveal(null)
@@ -175,16 +171,6 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
           onToggle={toggle}
         >
           <ListTodo className="size-3.5" />
-        </PanelButton>
-        <PanelButton
-          panel="reasoning"
-          active={panel === 'reasoning'}
-          count={reasoning.length}
-          running={false}
-          label={t('auto.components.live-sessions.activity.reasoning', 'Reasoning')}
-          onToggle={toggle}
-        >
-          <Brain className="size-3.5" />
         </PanelButton>
         {props.menu}
         {props.onCloseSplit ? (
@@ -263,7 +249,6 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
             panel={panel}
             provider={session.provider}
             activity={activity}
-            reasoning={reasoning}
             openSubagentId={openSubagentId}
             onOpenSubagent={(id) => onOpenSubagent(id === openSubagentId ? null : id)}
             onClose={() => props.onPanel(null)}
@@ -296,7 +281,7 @@ function SessionMenuButton({ session }: { session: LiveSession }): React.JSX.Ele
   )
 }
 
-/** One open session: its transcript, subagents, tasks, reasoning, send box and permission card. */
+/** One open session: its transcript, subagents, tasks, send box and permission card. */
 export function LiveSessionPane({
   session,
   messages,

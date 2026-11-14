@@ -33,7 +33,10 @@ export function NativeChatReasoningRow({
   markdown,
   turnIsWorking = false
 }: {
-  message: Pick<NativeChatMessage, 'id' | 'role' | 'state' | 'completedAt' | 'timestamp'>
+  message: Pick<
+    NativeChatMessage,
+    'id' | 'role' | 'state' | 'completedAt' | 'timestamp' | 'shownInline'
+  >
   markdown: string
   /** The row's own turn (or subagent) is still running; an open row there has not ended. */
   turnIsWorking?: boolean
@@ -41,7 +44,7 @@ export function NativeChatReasoningRow({
   const t = useTranslate()
   // Keyed like the live line, so a block opened while it streamed lands open, and windowing keeps it.
   const disclosureKey = nativeChatReasoningDisclosureKey(message.id)
-  const disclosure = useNativeChatDisclosure(disclosureKey, false)
+  const disclosure = useNativeChatDisclosure(disclosureKey, message.shownInline === true)
   if (!markdown.trim()) {
     return null
   }

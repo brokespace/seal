@@ -1,7 +1,6 @@
-import { Check, ChevronRight, Circle, CircleDot, FileText } from 'lucide-react'
+import { Check, Circle, CircleDot, FileText } from 'lucide-react'
 import { AgentStateDot, type AgentDotState } from '@/components/AgentStateDot'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/class-names'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
@@ -13,8 +12,6 @@ import type {
   LiveTodo
 } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSessionProvider } from '../../../../../shared/live-sessions/live-session-types'
-import type { NativeChatMessage } from '../../../../../shared/native-chat/native-chat-types'
-import { nativeChatReasoningHeadline } from '../../../../../shared/native-chat/transcript/native-chat-reasoning-row'
 import type { LiveSessionPanel } from './live-session-tabs-store'
 import {
   LiveSessionPanelEmpty as Empty,
@@ -164,13 +161,6 @@ function TodoRow({ todo }: { todo: LiveTodo }): React.JSX.Element {
   )
 }
 
-function textOf(message: NativeChatMessage): string {
-  return message.blocks
-    .map((block) => (block.type === 'text' ? block.text : ''))
-    .join('\n')
-    .trim()
-}
-
 /** Two to-dos may read the same; the nth of a kind keeps its key as the list changes around it. */
 function keyedTodos<T extends { content: string }>(
   todos: readonly T[]
@@ -183,46 +173,10 @@ function keyedTodos<T extends { content: string }>(
   })
 }
 
-function ReasoningItem({ message }: { message: NativeChatMessage }): React.JSX.Element {
-  const t = useTranslate()
-  const headline = nativeChatReasoningHeadline(message, { live: false })
-  const text = textOf(message)
-  return (
-    <Collapsible asChild>
-      <li data-live-reasoning={message.id} className="px-2">
-        <CollapsibleTrigger variant="row">
-          <span className="flex min-w-0 flex-1 items-start gap-1.5 px-1">
-            <ChevronRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-xs font-medium">
-                {headline.kind === 'thoughtFor'
-                  ? t('components.native-chat.thoughtForDuration', 'Thought for {{duration}}', {
-                      duration: headline.duration
-                    })
-                  : t('components.native-chat.thought', 'Thought')}
-              </span>
-              <span className="truncate text-xs text-muted-foreground group-data-[state=open]:hidden">
-                {text.split('\n')[0]}
-              </span>
-            </span>
-          </span>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <p className="px-6 pb-2 text-xs leading-5 break-words whitespace-pre-wrap text-muted-foreground">
-            {text}
-          </p>
-        </CollapsibleContent>
-      </li>
-    </Collapsible>
-  )
-}
-
 export type LiveSessionActivityPanelProps = {
   panel: LiveSessionActivityPanelKind
   provider: LiveSessionProvider
   activity: LiveSessionActivity | undefined
-  /** The transcript's reasoning rows read so far, oldest first. */
-  reasoning: readonly NativeChatMessage[]
   /** The subagent whose transcript is showing. */
   openSubagentId: string | null
   onOpenSubagent: (subagentId: string) => void
@@ -230,12 +184,11 @@ export type LiveSessionActivityPanelProps = {
   now: number
 }
 
-/** Beside a session's chat: its subagents, its background tasks and plan, or its reasoning. */
+/** Beside a session's chat: its subagents, or its background tasks and plan. */
 export function LiveSessionActivityPanel({
   panel,
   provider,
   activity,
-  reasoning,
   openSubagentId,
   onOpenSubagent,
   onClose,
@@ -247,8 +200,7 @@ export function LiveSessionActivityPanel({
   const todos = activity?.todos ?? []
   const titles: Record<LiveSessionActivityPanelKind, string> = {
     subagents: t('auto.components.live-sessions.activity.subagents', 'Subagents'),
-    tasks: t('auto.components.live-sessions.activity.tasks', 'Tasks'),
-    reasoning: t('auto.components.live-sessions.activity.reasoning', 'Reasoning')
+    tasks: t('auto.components.live-sessions.activity.tasks', 'Tasks')
   }
   return (
     <LiveSessionSidePanel panel={panel} title={titles[panel]} onClose={onClose}>
@@ -310,22 +262,6 @@ export function LiveSessionActivityPanel({
             </Empty>
           )}
         </>
-      ) : null}
-      {panel === 'reasoning' ? (
-        reasoning.length > 0 ? (
-          <ul className="flex flex-col pt-1">
-            {reasoning.map((message) => (
-              <ReasoningItem key={message.id} message={message} />
-            ))}
-          </ul>
-        ) : (
-          <Empty>
-            {t(
-              'auto.components.live-sessions.activity.noReasoning',
-              'No reasoning in the part of the transcript read so far.'
-            )}
-          </Empty>
-        )
       ) : null}
     </LiveSessionSidePanel>
   )

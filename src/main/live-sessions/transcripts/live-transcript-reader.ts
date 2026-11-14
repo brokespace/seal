@@ -12,7 +12,7 @@ import {
   summarizedDivider
 } from './live-transcript-cleanup'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
-import { unrecordedReasoning, withReasoningSpan } from './live-transcript-reasoning'
+import { codexRawReasoning, withReasoningSpan } from './live-transcript-reasoning'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 /** Raw bytes of one range of a transcript and the file's size when read. */
@@ -121,7 +121,8 @@ export function decodeTranscriptLines(
     const decoded =
       kind === 'summarized'
         ? summarizedDivider(id, null)
-        : (decode(text, id) ?? (record ? unrecordedReasoning(provider, record, id) : null))
+        : (decode(text, id) ??
+          (record && provider === 'codex' ? codexRawReasoning(record, id) : null))
     return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => ({
       ...(record ? withReasoningSpan(message, record) : message),
       transcriptOffset: offset,

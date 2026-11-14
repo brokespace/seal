@@ -2,7 +2,6 @@ import { Fragment } from 'react'
 import {
   ArrowRightLeft,
   Bot,
-  Brain,
   Check,
   Columns2,
   Copy,
@@ -86,7 +85,6 @@ const ICONS: Record<LiveSessionMenuItemId, LucideIcon> = {
   'answer-permission': ShieldQuestion,
   'view-subagents': Bot,
   'view-tasks': ListTodo,
-  'view-reasoning': Brain,
   rename: Pencil,
   pin: Pin,
   'copy-session-id': Copy,
@@ -122,8 +120,6 @@ export function liveSessionMenuLabel(
       return t('auto.components.live-sessions.menu.subagents', 'View subagents')
     case 'view-tasks':
       return t('auto.components.live-sessions.menu.tasks', 'View tasks')
-    case 'view-reasoning':
-      return t('auto.components.live-sessions.menu.reasoning', 'View reasoning')
     case 'rename':
       return t('auto.components.live-sessions.menu.rename', 'Rename…')
     case 'pin':
