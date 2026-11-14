@@ -16,6 +16,7 @@ const rpc = vi.hoisted(() => ({
 }))
 vi.mock('@/runtime/rpc/calls/runtime-rpc-call', () => ({ callRuntimeRpc: rpc.call }))
 
+const NOW = Date.UTC(2026, 10, 14, 9, 0)
 const LOCAL: RuntimeClientTarget = { kind: 'local' }
 const SERVER: RuntimeClientTarget = { kind: 'environment', environmentId: 'env-1' }
 const WORK = 'claude:work@acme.dev#Acme'
@@ -30,7 +31,7 @@ function reading(
     provider: 'claude',
     session: { usedPercent: session, windowMinutes: 300, resetsAt: null, resetDescription: null },
     weekly: { usedPercent: weekly, windowMinutes: 10_080, resetsAt: null, resetDescription: null },
-    updatedAt: Date.now(),
+    updatedAt: NOW,
     error: null,
     status: 'ok',
     ...patch
@@ -79,11 +80,14 @@ function usageOf(status: SealAccountsStatus, key: string): [number, number] | nu
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(NOW)
   vi.stubGlobal('api', {})
 })
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   rpc.call.mockReset()
 })
@@ -121,8 +125,7 @@ it('asks the host for fresh usage once when two views open together', async () =
   ])
   const refreshes = rpc.call.mock.calls.filter(
     ([, method, params]) =>
-      method === 'seal.accounts.status' &&
-      (params as { refreshUsage?: boolean }).refreshUsage === true
+      method === 'seal.accounts.status' && JSON.stringify(params) === '{"refreshUsage":true}'
   )
   expect(refreshes).toHaveLength(1)
 })
@@ -183,7 +186,7 @@ it('a throttled check leaves the last good figures and their age in both views',
       claude: reading(37, 64, {
         status: 'error',
         error: 'Claude usage is rate limited right now.',
-        updatedAt: Date.now() - 12 * 60_000,
+        updatedAt: NOW - 12 * 60_000,
         usageMetadata: { failureKind: 'rate-limited' }
       })
     })
