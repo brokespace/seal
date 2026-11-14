@@ -1,4 +1,9 @@
-import { UtilityModelSetCloudflareParams } from '../../../../../shared/rpc-contract/utility-model-params'
+import {
+  UtilityModelProviderParams,
+  UtilityModelSetCloudflareParams,
+  UtilityModelSetOpenRouterParams,
+  UtilityModelTestParams
+} from '../../../../../shared/rpc-contract/utility-model-params'
 import { getUtilityModelHost } from '../../../../utility-model/utility-model-host'
 import { defineMethod, type RpcContext } from '../../core'
 
@@ -9,7 +14,9 @@ function requireDesktopCaller({ clientKind }: Pick<RpcContext, 'clientKind'>): v
   }
 }
 
-/** The host's utility model (session summaries). Replies carry presence and health, never the token. */
+const DEFAULT_PROVIDER = 'cloudflare-workers-ai'
+
+/** The host's utility models (session summaries and recaps). Replies carry presence and health, never a key. */
 export const UTILITY_MODEL_METHODS = [
   defineMethod({
     name: 'utilityModel.status',
@@ -36,18 +43,50 @@ export const UTILITY_MODEL_METHODS = [
     }
   }),
   defineMethod({
-    name: 'utilityModel.listModels',
+    name: 'utilityModel.providers',
     permission: 'workspace',
     params: null,
-    handler: async () => getUtilityModelHost().service.listModels()
+    handler: async () => getUtilityModelHost().providers()
+  }),
+  defineMethod({
+    name: 'utilityModel.setOpenRouter',
+    permission: 'accounts-admin',
+    params: UtilityModelSetOpenRouterParams,
+    handler: async ({ apiKey }, context) => {
+      requireDesktopCaller(context)
+      return getUtilityModelHost().setOpenRouter(apiKey)
+    }
+  }),
+  defineMethod({
+    name: 'utilityModel.clearOpenRouter',
+    permission: 'accounts-admin',
+    params: null,
+    handler: async (_, context) => {
+      requireDesktopCaller(context)
+      return getUtilityModelHost().clearOpenRouter()
+    }
+  }),
+  defineMethod({
+    name: 'utilityModel.listModels',
+    permission: 'workspace',
+    params: UtilityModelProviderParams,
+    handler: async ({ provider }) =>
+      getUtilityModelHost()
+        .provider(provider ?? DEFAULT_PROVIDER)
+        .listModels()
   }),
   defineMethod({
     name: 'utilityModel.test',
     permission: 'accounts-admin',
-    params: null,
-    handler: async () => {
+    params: UtilityModelTestParams,
+    handler: async ({ provider = DEFAULT_PROVIDER, model = null, fallbackModel = null }) => {
       const host = getUtilityModelHost()
-      return { result: await host.service.test(), status: await host.status() }
+      const result = await host.provider(provider).test({ choice: { model, fallbackModel } })
+      return {
+        result,
+        status: await host.status(),
+        providerStatus: await host.providerStatus(provider)
+      }
     }
   })
 ] as const

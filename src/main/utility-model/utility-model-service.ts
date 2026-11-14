@@ -1,15 +1,25 @@
+import {
+  utilityModelCandidates,
+  type UtilityModelChoice
+} from '../../shared/utility-model/utility-model-selection'
 import type {
   UtilityModelCatalogResult,
   UtilityModelFailure,
+  UtilityModelProviderId,
   UtilityModelRequest,
   UtilityModelTestResult
 } from '../../shared/utility-model/utility-model-types'
 import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
 
-/** The configured provider and the models to try, preferred first. */
+/** The configured provider and the models it runs when a caller names none, preferred first. */
 export type UtilityModelBackend = {
   provider: UtilityModelProvider
   models: string[]
+}
+
+export type UtilityModelCallOptions = {
+  /** The caller's own model and fallback, tried before the provider's. */
+  choice?: Pick<UtilityModelChoice, 'model' | 'fallbackModel'>
 }
 
 export type UtilityModelHealth = {
@@ -18,7 +28,12 @@ export type UtilityModelHealth = {
   lastFailure: UtilityModelFailure | null
 }
 
-export type UtilityModelReply = { text: string; model: string; usedFallback: boolean }
+export type UtilityModelReply = {
+  text: string
+  provider: UtilityModelProviderId
+  model: string
+  usedFallback: boolean
+}
 
 export type UtilityModelServiceDeps = {
   /** Null when no provider is configured on this host. */
@@ -27,6 +42,8 @@ export type UtilityModelServiceDeps = {
 }
 
 const SHORT_RATE_LIMIT_PAUSE_MS = 60_000
+/** A request tries at most this many models: a fallback chain is not a retry budget. */
+const MAX_MODELS_PER_REQUEST = 3
 /** This many 429s in a row without one success reads as a spent daily allocation, whatever the wording. */
 const RATE_LIMITS_BEFORE_DAY_PAUSE = 3
 
@@ -36,11 +53,14 @@ export function nextUtcDayStart(now: number): number {
 }
 
 /**
- * Runs utility model requests for every feature on this host: falls back when the plan refuses a
- * model, and holds all requests after a rate limit so a spent allocation costs nothing more.
+ * Runs one provider's utility model requests for every feature on this host: falls back when a
+ * model is refused or its host is limited, and holds all requests after an account rate limit so
+ * a spent allocation costs nothing more.
  */
 export class UtilityModelService {
   private readonly unavailable = new Map<string, UtilityModelFailure>()
+  /** Models resting after a limit of their own, by the time they may be tried again. */
+  private readonly cooling = new Map<string, number>()
   private readonly listeners = new Set<() => void>()
   private pausedUntil: number | null = null
   private lastFailure: UtilityModelFailure | null = null
@@ -74,6 +94,7 @@ export class UtilityModelService {
   /** New credentials or models: what the old ones were refused no longer applies. */
   configChanged(): void {
     this.unavailable.clear()
+    this.cooling.clear()
     this.pausedUntil = null
     this.lastFailure = null
     this.rateLimitsInARow = 0
@@ -81,22 +102,31 @@ export class UtilityModelService {
   }
 
   /** Background work: throws `rate-limited` without a request while paused. */
-  async complete(request: UtilityModelRequest, signal?: AbortSignal): Promise<UtilityModelReply> {
+  async complete(
+    request: UtilityModelRequest,
+    signal?: AbortSignal,
+    options: UtilityModelCallOptions = {}
+  ): Promise<UtilityModelReply> {
     this.liftExpiredPause()
     if (this.pausedUntil !== null) {
       throw new UtilityModelError('rate-limited', 'Paused after a rate limit')
     }
-    return await this.run(request, signal)
+    return await this.run(request, signal, options, false)
   }
 
-  /** A person asked: runs even while paused, and a success lifts the pause. */
-  async test(): Promise<UtilityModelTestResult> {
+  /** A person asked: runs even while paused or cooling, and a success lifts the pause. */
+  async test(options: UtilityModelCallOptions = {}): Promise<UtilityModelTestResult> {
     const startedAt = this.now()
     try {
-      const reply = await this.run({
-        messages: [{ role: 'user', content: 'Reply with the single word: ready' }],
-        maxTokens: 16
-      })
+      const reply = await this.run(
+        {
+          messages: [{ role: 'user', content: 'Reply with the single word: ready' }],
+          maxTokens: 16
+        },
+        undefined,
+        options,
+        true
+      )
       return {
         ok: true,
         model: reply.model,
@@ -128,12 +158,17 @@ export class UtilityModelService {
 
   private async run(
     request: UtilityModelRequest,
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    options: UtilityModelCallOptions,
+    asked: boolean
   ): Promise<UtilityModelReply> {
     const backend = await this.requireBackend()
-    const models = [...new Set(backend.models)]
-    const candidates = models.filter((model) => !this.unavailable.has(model))
-    if (candidates.length === 0) {
+    const models = utilityModelCandidates(
+      options.choice ?? { model: null, fallbackModel: null },
+      backend.models
+    ).slice(0, MAX_MODELS_PER_REQUEST)
+    const usable = models.filter((model) => !this.unavailable.has(model))
+    if (usable.length === 0) {
       const refused = this.unavailable.get(models[0] ?? '')
       throw new UtilityModelError(
         refused?.kind ?? 'not-configured',
@@ -141,26 +176,47 @@ export class UtilityModelService {
         { model: refused?.model ?? undefined }
       )
     }
+    const now = this.now()
+    const rested = usable.filter((model) => asked || (this.cooling.get(model) ?? 0) <= now)
+    if (rested.length === 0) {
+      throw this.pauseUntilRested(usable)
+    }
     let lastError: unknown = null
-    for (const model of candidates) {
+    for (const model of rested) {
       try {
         const text = await backend.provider.complete(model, request, signal)
+        this.cooling.delete(model)
         this.recordSuccess()
-        return { text, model, usedFallback: model !== models[0] }
+        return { text, provider: backend.provider.id, model, usedFallback: model !== models[0] }
       } catch (error) {
         if (signal?.aborted) {
           throw error
         }
         lastError = error
-        const failure = this.recordFailure(error)
-        if (failure.kind !== 'plan-unavailable' && failure.kind !== 'model-not-found') {
+        const scoped = error instanceof UtilityModelError && error.detail.modelScoped === true
+        const failure = this.recordFailure(error, scoped ? model : null)
+        if (failure.kind === 'plan-unavailable' || failure.kind === 'model-not-found') {
+          this.unavailable.set(model, failure)
+          this.emit()
+        } else if (!scoped) {
           throw error
         }
-        this.unavailable.set(model, failure)
-        this.emit()
       }
     }
+    if (usable.every((model) => (this.cooling.get(model) ?? 0) > this.now())) {
+      this.pauseUntilRested(usable)
+    }
     throw lastError
+  }
+
+  /** Every model this call could use is resting: hold the provider until the first one is back. */
+  private pauseUntilRested(models: readonly string[]): UtilityModelError {
+    const until = Math.min(...models.map((model) => this.cooling.get(model) ?? 0))
+    if (this.pausedUntil === null || this.pausedUntil < until) {
+      this.pausedUntil = until
+      this.emit()
+    }
+    return new UtilityModelError('rate-limited', 'Paused after a rate limit')
   }
 
   private failureOf(error: unknown): UtilityModelFailure {
@@ -189,17 +245,27 @@ export class UtilityModelService {
     }
   }
 
-  private recordFailure(error: unknown): UtilityModelFailure {
+  /** `scopedModel`: the limit is that model's alone, so it rests and the provider keeps running. */
+  private recordFailure(error: unknown, scopedModel: string | null): UtilityModelFailure {
     const failure = this.failureOf(error)
     this.lastFailure = failure
-    if (failure.kind === 'rate-limited' && error instanceof UtilityModelError) {
+    if (!(error instanceof UtilityModelError)) {
+      this.emit()
+      return failure
+    }
+    const now = this.now()
+    // A reset time already past still earns a moment's rest.
+    const wait = Math.max(
+      now + 1000,
+      error.detail.resetAt ?? now + (error.detail.retryAfterMs ?? SHORT_RATE_LIMIT_PAUSE_MS)
+    )
+    if (scopedModel !== null) {
+      this.cooling.set(scopedModel, wait)
+    } else if (failure.kind === 'rate-limited') {
       this.rateLimitsInARow += 1
-      const now = this.now()
       const untilNextDay =
         error.detail.dailyLimit === true || this.rateLimitsInARow >= RATE_LIMITS_BEFORE_DAY_PAUSE
-      this.pausedUntil = untilNextDay
-        ? nextUtcDayStart(now)
-        : now + (error.detail.retryAfterMs ?? SHORT_RATE_LIMIT_PAUSE_MS)
+      this.pausedUntil = untilNextDay ? (error.detail.resetAt ?? nextUtcDayStart(now)) : wait
     }
     this.emit()
     return failure

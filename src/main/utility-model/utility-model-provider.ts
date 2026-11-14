@@ -27,6 +27,10 @@ export class UtilityModelError extends Error {
       dailyLimit?: boolean
       /** The provider's own wait hint for a short rate limit. */
       retryAfterMs?: number
+      /** When the provider says the limit lifts. */
+      resetAt?: number
+      /** The limit is this model's alone (an upstream host's): another model may still answer. */
+      modelScoped?: boolean
     } = {}
   ) {
     super(message)
