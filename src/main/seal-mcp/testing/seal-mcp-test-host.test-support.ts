@@ -57,7 +57,13 @@ export async function createSealMcpTestHost(
   const local = createLocalMachine()
   const gpu: HomeChatMachine = {
     ...local,
-    info: { ...local.info, id: GPU_MACHINE_ID, label: 'gpu', kind: 'ssh' }
+    info: {
+      ...local.info,
+      id: GPU_MACHINE_ID,
+      label: 'gpu',
+      kind: 'remote',
+      executionHostId: 'ssh:gpu'
+    }
   }
   const sessions = [
     session('s-local', 'local', local.info.label),

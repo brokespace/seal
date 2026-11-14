@@ -122,7 +122,8 @@ describe('SealMcpService sign-in', () => {
 
     const stored = `${await readFile(join(host.root, 'mcp', 'clients.json'), 'utf8')}${await readFile(join(host.root, 'mcp', 'audit.jsonl'), 'utf8')}`
     expect(stored).not.toContain(token)
-    expect(stored).not.toContain(token.split('_')[2])
+    // The secret is base64url and may hold underscores itself, so it is cut out by position.
+    expect(stored).not.toContain(token.slice('smcp_000000000000_'.length))
   })
 })
 
@@ -399,6 +400,36 @@ describe('SealMcpService start_session with a machine allowlist', () => {
       ['agent', 'launch', '--agent', 'claude', '--worktree', 'id:w-1', '--prompt', 'go', '--json']
     ])
   })
+
+  it('starts a session on the allowed machine through the transport that machine uses', async () => {
+    const { token } = host.createToken({ scopes: ['sessions'], machines: [GPU_MACHINE_ID] })
+
+    const started = await callTool(token, 'start_session', {
+      prompt: 'train',
+      machine: 'gpu',
+      project: 'models',
+      name: 'run-1'
+    })
+
+    expect(started.isError).toBe(false)
+    expect(host.cliRuns).toEqual([
+      [
+        'worktree',
+        'create',
+        '--project',
+        'r-gpu',
+        '--name',
+        'run-1',
+        '--agent',
+        'claude',
+        '--prompt',
+        'train',
+        '--host',
+        'ssh:gpu',
+        '--json'
+      ]
+    ])
+  })
 })
 
 describe('SealMcpService limits and RPC-backed tools', () => {
@@ -420,6 +451,9 @@ describe('SealMcpService limits and RPC-backed tools', () => {
     expect((await callTool(everything.token, 'list_projects', {})).text).toContain('r-local')
     const projects = await callTool(gpuOnly.token, 'list_projects', {})
     expect(projects.text).not.toContain('r-local')
+    expect(JSON.parse(projects.text)).toEqual([
+      { id: 'r-gpu', name: 'models', path: '/srv/models', kind: 'git', machine: GPU_MACHINE_ID }
+    ])
     const workspaces = await callTool(everything.token, 'list_workspaces', { project: 'seal' })
     expect(workspaces.text).toContain('w-1')
     expect(host.rpcCalls).toContainEqual({

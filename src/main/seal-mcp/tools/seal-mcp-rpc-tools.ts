@@ -23,37 +23,27 @@ function repoHost(repo: Rec): string {
 }
 
 /**
- * The execution hosts a restricted client may see, or null when it may see all. A project's host
- * is `local`, `ssh:<id>` or `runtime:<id>`; a machine names the one it uses as `executionHostId`.
+ * Projects with the machine they live on. A project names its execution host (`local`,
+ * `ssh:<id>` or `runtime:<id>`); the machine that uses that host is the id a client passes back.
+ * `runtime` must already be narrowed to the client's allowlist, so with `restricted` a project
+ * on any other machine is left out.
  */
-async function allowedHosts(
-  runtime: SealMcpToolRuntime,
-  restricted: boolean
-): Promise<ReadonlySet<string> | null> {
-  if (!restricted) {
-    return null
-  }
-  const machines = await runtime.machines.list()
-  return new Set(
-    machines.flatMap((machine) => [
-      machine.id,
-      'executionHostId' in machine && typeof machine.executionHostId === 'string'
-        ? machine.executionHostId
-        : machine.id
-    ])
-  )
-}
-
-/** Projects on machines the client may use. `runtime` must already be narrowed to its allowlist. */
 export async function visibleRepos(
   runtime: SealMcpToolRuntime,
   restricted: boolean
-): Promise<Rec[]> {
+): Promise<(Rec & { machine: string })[]> {
   const reply = await runtime.callRpc('repo.list', {})
-  const hosts = await allowedHosts(runtime, restricted)
-  return records(isRec(reply) ? reply.repos : null).filter(
-    (repo) => !hosts || hosts.has(repoHost(repo))
+  const machineByHost = new Map(
+    (await runtime.machines.list()).map((machine) => [
+      machine.executionHostId ?? machine.id,
+      machine.id
+    ])
   )
+  return records(isRec(reply) ? reply.repos : null).flatMap((repo) => {
+    const host = repoHost(repo)
+    const machine = machineByHost.get(host)
+    return machine || !restricted ? [{ ...repo, machine: machine ?? host }] : []
+  })
 }
 
 async function listProjects(
@@ -67,7 +57,7 @@ async function listProjects(
       name: repo.displayName,
       path: repo.path,
       kind: repo.kind ?? 'git',
-      machine: repoHost(repo)
+      machine: repo.machine
     }))
   )
 }

@@ -16,7 +16,7 @@ export async function pinSessionTargetToAllowedMachines(
 ): Promise<{ input: Input } | { refusal: string }> {
   const machine = await scoped.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
   // A paired Seal server resolves the names itself, and all of it is the one allowed machine.
-  if (machine.info.kind === 'runtime') {
+  if (machine.info.executionHostId?.startsWith('runtime:')) {
     return { input }
   }
   const repos = await visibleRepos(scoped, true)
