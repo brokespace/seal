@@ -25,6 +25,7 @@ import {
 } from '../../mobile-web-app/mobile-web-app-route-manifest.mjs'
 import { MOBILE_WEB_PAGE_ROUTES } from './mobile-web-page-routes.mjs'
 import { reactNativeSvgWebPlugin } from './react-native-svg-web-plugin.mjs'
+import { sealBrandCopyEsbuild } from '../../../seal/brand-copy/seal-brand-esbuild-plugin.mjs'
 import {
   ROUTE_ENTRY_NAMESPACE,
   entryStaticClosure,
@@ -313,7 +314,8 @@ export function mobileWebAppBuildOptions(
       ),
       lucideBarrelPlugin,
       reactNativeSvgWebPlugin,
-      hairlineDevicePixelPlugin
+      hairlineDevicePixelPlugin,
+      sealBrandCopyEsbuild()
     ],
     resolveExtensions: [
       '.web.tsx',

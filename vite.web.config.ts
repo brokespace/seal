@@ -1,3 +1,4 @@
+import { sealBrandCopy } from './config/seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { markdownParserAliases } from './config/build-plugins/markdown-parser-exports'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
@@ -14,6 +15,7 @@ export default defineConfig({
   // Resolve assets relatively for reverse-proxy pairing prefixes such as /orca/web-index.html.
   base: './',
   plugins: [
+    sealBrandCopy(),
     react(reactPluginOptions()),
     tailwindcss(),
     createPdfjsViewerAssetsPlugin(),
@@ -39,6 +41,7 @@ export default defineConfig({
     }
   },
   worker: {
-    format: 'es'
+    format: 'es',
+    plugins: () => [sealBrandCopy()]
   }
 })

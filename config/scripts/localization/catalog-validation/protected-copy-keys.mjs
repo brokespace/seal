@@ -1,6 +1,6 @@
 // Generates the translation keys no plugin language pack may replace, from markers in source.
 // Usage: node config/scripts/protected-copy-keys.mjs [--fix]
-import fs from 'node:fs/promises'
+import fs from '../../../seal/locale-overlay/seal-catalog-gate-fs.mjs'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

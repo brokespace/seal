@@ -1,3 +1,4 @@
+import { sealBrandCopy } from './seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { globSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
@@ -32,6 +33,7 @@ const transforms = {
   tsconfig: resolve(import.meta.dirname, 'tsconfig.vitest-transform.json'),
   oxc: { exclude: [/\.js$/, phoneContractPattern] },
   plugins: [
+    sealBrandCopy(),
     {
       // These plain TS consumers need no Expo app configuration in root-only installs.
       name: 'phone-contract-oxc',

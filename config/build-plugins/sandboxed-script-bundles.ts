@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { build, type Plugin } from 'vite'
+import { sealBrandCopy } from '../seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { verifySandboxPreloadImports } from '../scripts/desktop-build/output-contracts/sandbox-preload-imports.mjs'
 import {
   BROWSER_EXTENSION_CONTENT_SCRIPT_FILE,
@@ -47,6 +48,7 @@ async function bundleScript(
   const result = await build({
     configFile: false,
     logLevel: 'silent',
+    plugins: [sealBrandCopy()],
     build: {
       write: false,
       minify: false,

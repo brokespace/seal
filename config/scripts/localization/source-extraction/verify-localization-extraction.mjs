@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises'
+import fs from '../../../seal/locale-overlay/seal-catalog-gate-fs.mjs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'

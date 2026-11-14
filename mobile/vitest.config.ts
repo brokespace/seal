@@ -1,10 +1,12 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
+import { sealBrandCopy } from '../config/seal/brand-copy/seal-brand-vite-plugin.mjs'
 
 const vitestOxcConfig = { tsconfig: false } as never
 
 export default defineConfig({
   root: import.meta.dirname,
+  plugins: [sealBrandCopy()],
   // Tests are excluded from the app tsconfig; disable that config for OXC so test modules still transform.
   oxc: vitestOxcConfig,
   resolve: {
