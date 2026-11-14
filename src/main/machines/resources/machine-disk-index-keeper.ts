@@ -1,6 +1,7 @@
 import { LOCAL_MACHINE_ID, type MachineId } from '../../../shared/machines/machine-types'
 import type { MachineConnection } from '../connection/machine-connection'
 import { listMachineViews, resolveMachineConnection } from '../machine-services'
+import { getMainE2EConfig } from '../../startup/testing/e2e-config'
 import { keepMachineDiskIndex } from './machine-disk-index'
 import { logDiskIndexStart } from './machine-disk-index-log'
 
@@ -25,22 +26,31 @@ function connectedMachines(): MachineConnection[] {
   })
 }
 
+/** Runs that must leave the disk alone; a background launch is not one of them. */
+function skipReason(launch: { orcadSidecar: boolean }): string | null {
+  if (getMainE2EConfig().enabled) {
+    return 'this is an end-to-end test run'
+  }
+  return launch.orcadSidecar ? 'this is a headless browser sidecar' : null
+}
+
 /**
  * Keeps the disk index running on this computer and on connected machines for as long as this
  * process lives, on the desktop and on a Seal server alike. It depends on nothing but the process
- * having started: no window, no open panel, and not on how the app was launched. `skipReason` is
- * for runs that must leave the disk alone, and is written to the log. A machine that connects
- * between two passes is picked up by the next one, or sooner when its vitals are read.
+ * having started: no window, no open panel, and not on how the app was launched. A run that is
+ * skipped says so in the log. A machine that connects between two passes is picked up by the next
+ * one, or sooner when its vitals are read.
  */
-export function startMachineDiskIndexKeeper(skipReason: string | null): void {
+export function startMachineDiskIndexKeeper(launch: { orcadSidecar: boolean }): void {
   if (started) {
     return
   }
   started = true
-  if (skipReason) {
+  const skipped = skipReason(launch)
+  if (skipped) {
     logDiskIndexStart(
       { machineId: LOCAL_MACHINE_ID, transport: 'local' },
-      { outcome: 'skipped', detail: skipReason }
+      { outcome: 'skipped', detail: skipped }
     )
     return
   }

@@ -6,7 +6,6 @@ import { startMachineDiskIndexKeeper } from '../../machines/resources/machine-di
 import type { Store } from '../../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { installSealMcp } from '../../seal-mcp/seal-mcp-install'
-import { getMainE2EConfig } from '../../startup/testing/e2e-config'
 
 const NO_CLAUDE_ACCOUNTS: ClaudeRateLimitAccountsState = { accounts: [], activeAccountId: null }
 
@@ -36,5 +35,5 @@ export function installOrcadSealHub(
   }).catch((error: unknown) => console.warn('[orcad] Home chat failed to start:', error))
   installSealMcp(runtime)
   // A server keeps its own disks indexed; waiting for a desktop to look would leave it unindexed.
-  startMachineDiskIndexKeeper(getMainE2EConfig().enabled ? 'this is an end-to-end test run' : null)
+  startMachineDiskIndexKeeper({ orcadSidecar: false })
 }

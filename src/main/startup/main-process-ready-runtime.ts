@@ -54,7 +54,6 @@ import { startWorkspaceCleanupRunner } from '../workspaces/cleanup/workspace-cle
 import { installLiveSessions } from '../live-sessions/live-sessions-install'
 import { startMachineDiskIndexKeeper } from '../machines/resources/machine-disk-index-keeper'
 import { isOrcadSidecarLaunch } from '../window/activation/foreground-activation-policy'
-import { getMainE2EConfig } from './testing/e2e-config'
 import { installSealMcp } from '../seal-mcp/seal-mcp-install'
 import { installDesktopSessionSummaries } from '../session-summaries/desktop-session-summaries'
 import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
@@ -80,13 +79,7 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   configureRuntimeServices(runtime)
   const liveSessions = installLiveSessions(runtime, store)
   installSealMcp(runtime)
-  startMachineDiskIndexKeeper(
-    getMainE2EConfig().enabled
-      ? 'this is an end-to-end test run'
-      : isOrcadSidecarLaunch()
-        ? 'this is a headless browser sidecar'
-        : null
-  )
+  startMachineDiskIndexKeeper({ orcadSidecar: isOrcadSidecarLaunch() })
   if (liveSessions) {
     registerLiveSessionIpc(liveSessions.service, liveSessions.shellIntegration)
     installLiveSessionDesktopNotifications(liveSessions.service, store)

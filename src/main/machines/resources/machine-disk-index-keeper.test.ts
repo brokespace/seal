@@ -29,7 +29,7 @@ function view(id: MachineId): MachineView {
 }
 
 /** A fresh keeper: it starts once per process. */
-async function loadKeeper(): Promise<(skipReason: string | null) => void> {
+async function loadKeeper(): Promise<(launch: { orcadSidecar: boolean }) => void> {
   vi.resetModules()
   return (await import('./machine-disk-index-keeper')).startMachineDiskIndexKeeper
 }
@@ -52,7 +52,7 @@ describe('the disk index keeper', () => {
     vi.stubEnv('ORCA_BACKGROUND_LAUNCH', '1')
     const startMachineDiskIndexKeeper = await loadKeeper()
 
-    startMachineDiskIndexKeeper(null)
+    startMachineDiskIndexKeeper({ orcadSidecar: false })
     await vi.advanceTimersByTimeAsync(30_000)
 
     expect(ensured).toEqual(['local'])
@@ -72,7 +72,7 @@ describe('the disk index keeper', () => {
       liveSessionSources: () => []
     })
 
-    startMachineDiskIndexKeeper(null)
+    startMachineDiskIndexKeeper({ orcadSidecar: false })
     await vi.advanceTimersByTimeAsync(30_000 + MINUTE_MS)
 
     expect(ensured).toEqual(['local', 'machine:up', 'local', 'machine:up'])
@@ -82,7 +82,7 @@ describe('the disk index keeper', () => {
     dueAfterMs = 30 * MINUTE_MS
     const startMachineDiskIndexKeeper = await loadKeeper()
 
-    startMachineDiskIndexKeeper(null)
+    startMachineDiskIndexKeeper({ orcadSidecar: false })
     await vi.advanceTimersByTimeAsync(30_000 + 29 * MINUTE_MS)
     expect(ensured).toEqual(['local'])
 
@@ -90,15 +90,25 @@ describe('the disk index keeper', () => {
     expect(ensured).toEqual(['local', 'local'])
   })
 
-  it('leaves the disk alone in a run that says why, and writes the reason down', async () => {
+  it('leaves the disk alone in an end-to-end test run, and writes that down', async () => {
+    vi.stubEnv('ORCA_E2E_USER_DATA_DIR', '/tmp/e2e-profile')
     const startMachineDiskIndexKeeper = await loadKeeper()
 
-    startMachineDiskIndexKeeper('this is an end-to-end test run')
+    startMachineDiskIndexKeeper({ orcadSidecar: false })
     await vi.advanceTimersByTimeAsync(60 * MINUTE_MS)
 
     expect(ensured).toEqual([])
     expect(console.info).toHaveBeenCalledWith(
       '[disk-index] local machine local: the disk index is not started here: this is an end-to-end test run'
     )
+  })
+
+  it('leaves the disk alone in the browser sidecar a server starts', async () => {
+    const startMachineDiskIndexKeeper = await loadKeeper()
+
+    startMachineDiskIndexKeeper({ orcadSidecar: true })
+    await vi.advanceTimersByTimeAsync(60 * MINUTE_MS)
+
+    expect(ensured).toEqual([])
   })
 })
