@@ -11,6 +11,10 @@ import {
   LiveSessionUnwatchParams,
   LiveSessionWatchTranscriptParams
 } from '../../../../../shared/live-sessions/live-session-rpc-params'
+import {
+  liveSessionEventForClient,
+  liveSessionSnapshotForClient
+} from '../../../../../shared/live-sessions/live-session-status-compat'
 import { getLiveSessionService } from '../../../../live-sessions/live-session-service-instance'
 import type { LiveSessionService } from '../../../../live-sessions/live-session-service'
 import { defineMethod, defineStreamingMethod } from '../../core'
@@ -30,7 +34,8 @@ export const LIVE_SESSION_METHODS = [
     name: 'liveSessions.list',
     permission: 'workspace',
     params: null,
-    handler: () => service().snapshot()
+    handler: (_params, ctx) =>
+      liveSessionSnapshotForClient(service().snapshot(), ctx.clientCapabilities)
   }),
   // Snapshot first, then registry events and outbox message changes, each in emit order.
   defineStreamingMethod({
@@ -40,12 +45,14 @@ export const LIVE_SESSION_METHODS = [
     handler: async (_params, ctx, emit) => {
       const live = service()
       await holdSubscription('live-sessions', ctx, emit, (subscriptionId) => {
-        const offEvents = live.subscribe((event) => emit({ type: 'event', event }))
+        const offEvents = live.subscribe((event) =>
+          emit({ type: 'event', event: liveSessionEventForClient(event, ctx.clientCapabilities) })
+        )
         const offMessages = live.subscribeMessages((message) => emit({ type: 'message', message }))
         emit({
           type: 'ready',
           subscriptionId,
-          snapshot: live.snapshot(),
+          snapshot: liveSessionSnapshotForClient(live.snapshot(), ctx.clientCapabilities),
           messages: live.messages()
         })
         return () => {

@@ -24,6 +24,7 @@ import { AGENT_SESSION_BACKGROUND_TASK_CHILD_VIEWS_CAPABILITY } from '../agent-s
 import { SKILL_INSTALL_RESULT_V2_CAPABILITY } from '../skill-install-capability'
 import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../sidebar-inputs-switch'
 import { WORKSPACE_UNREAD_HOST_RAISES_CAPABILITY } from '../workspace-unread-raise-capability'
+import { LIVE_SESSION_STATUS_V2_CLIENT_CAPABILITY } from '../live-sessions/live-session-status-compat'
 import {
   COMPRESSED_FRAMES_CLIENT_CAPABILITY,
   compressedFramesDisabled
@@ -50,6 +51,7 @@ export function remoteRuntimeClientCapabilities(
       REPO_SEARCH_QUALIFIED_REFS_RUNTIME_CAPABILITY,
       TERMINAL_QUICK_COMMAND_LONG_PROMPTS_RUNTIME_CAPABILITY,
       TERMINAL_QUICK_COMMAND_LARGE_LISTS_RUNTIME_CAPABILITY,
+      LIVE_SESSION_STATUS_V2_CLIENT_CAPABILITY,
       // Switch point: every desktop socket, browser hosting's included, leaves the unread flag to
       // a host that raises it.
       ...(ORCA_SIDEBAR_INPUTS_IS_MAIN ? [WORKSPACE_UNREAD_HOST_RAISES_CAPABILITY] : []),
