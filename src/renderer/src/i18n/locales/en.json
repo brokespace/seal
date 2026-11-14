@@ -25823,7 +25823,11 @@
         "manualOnly": "Manual only",
         "systemLoginHint": "This is the login the CLI on this computer uses outside Seal.",
         "systemLogin": "System login",
-        "wsl": "WSL: {{value0}}"
+        "wsl": "WSL: {{value0}}",
+        "apiBilling": "API billing",
+        "apiBillingHint": "This login belongs to a Console organization that pays per token.",
+        "subscription": "Subscription",
+        "subscriptionHint": "This login runs on a plan seat, not on API usage."
       },
       "window": {
         "session": "5h",
