@@ -257,6 +257,8 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
           <div
             ref={list}
             role="listbox"
+            // Sidebar chrome, not a popup: Escape and arrow keys stay with the page beside it.
+            data-focus-behavior="page"
             aria-multiselectable={marks.picked !== null}
             aria-label={title}
             onKeyDown={onListKeyDown}
