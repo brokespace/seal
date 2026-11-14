@@ -53,7 +53,8 @@ const refused = (outcome) => outcome.http < 400 || outcome.http >= 500
 
 // Raw HTTP so that Content-Length, chunking and the path are exactly what we choose. The last
 // body chunk is held back for `holdLastMs`: an answer that arrives meanwhile shows the server
-// refused without waiting for (and buffering) the whole body.
+// refused without waiting for (and buffering) the whole body. So does the server dropping the
+// connection meanwhile: a reset can discard the response it had already written.
 function raw(head, bodyChunks = [], { timeoutMs = 20000, holdLastMs = 0 } = {}) {
   return new Promise((resolve) => {
     const started = Date.now()
@@ -62,6 +63,7 @@ function raw(head, bodyChunks = [], { timeoutMs = 20000, holdLastMs = 0 } = {}) 
     let sent = 0
     let answeredAt = null
     let lastChunkAt = null
+    let gaveUp = false
     socket.on('connect', async () => {
       socket.write(head)
       for (const [index, chunk] of bodyChunks.entries()) {
@@ -95,11 +97,15 @@ function raw(head, bodyChunks = [], { timeoutMs = 20000, holdLastMs = 0 } = {}) 
         http: Number(/^HTTP\/1\.1 (\d+)/.exec(data)?.[1] ?? 0),
         bytesSent: sent,
         answeredAtMs: answeredAt,
-        answeredBeforeBodyEnd: answeredAt !== null && lastChunkAt === null
+        answeredBeforeBodyEnd: answeredAt !== null && lastChunkAt === null,
+        droppedBeforeBodyEnd: answeredAt === null && lastChunkAt === null && !gaveUp
       })
     )
     socket.on('error', () => {})
-    setTimeout(() => socket.destroy(), timeoutMs)
+    setTimeout(() => {
+      gaveUp = true
+      socket.destroy()
+    }, timeoutMs)
   })
 }
 const post = (path, extra = '') =>
@@ -135,8 +141,9 @@ await check(
 )
 // 8 MiB is 2048x the 4 KiB cap; the refusal lands before the body ends, so no huge body is buffered.
 // Only the early refusal matters: flooding a half-closed socket makes workerd report the lost
-// response as 413, 500 or a reset, so the judge accepts any non-2xx answered before the last chunk.
+// response as 413, 500 or a reset, so the judge accepts a reset or any non-2xx before the last chunk.
 const accepted = (o) => o.http >= 200 && o.http < 400
+const bufferedWholeBody = (o) => !(o.answeredBeforeBodyEnd || o.droppedBeforeBodyEnd) || accepted(o)
 await check(
   'challenge: 8 MiB chunked body, no Content-Length (unauthenticated)',
   () =>
@@ -147,7 +154,7 @@ await check(
         holdLastMs: 3000
       }
     ),
-  (o) => !o.answeredBeforeBodyEnd || accepted(o)
+  bufferedWholeBody
 )
 for (const [path, maxBytes] of [
   ['/v1/host/session', RELAY_BODY_MAX_BYTES],
@@ -171,7 +178,7 @@ for (const [path, maxBytes] of [
         ],
         { holdLastMs: 3000 }
       ),
-    (o) => !o.answeredBeforeBodyEnd || accepted(o)
+    bufferedWholeBody
   )
 }
 await check(
