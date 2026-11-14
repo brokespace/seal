@@ -37,7 +37,10 @@ export function conversations(transcripts: readonly SummarizedTranscript[]): Con
       if (other === t || other.summary.provider !== t.summary.provider) {
         continue
       }
-      const [older, newer] = other.mtimeMs <= t.mtimeMs ? [other, t] : [t, other]
+      // Files saved in the same instant still need one order, or each folds into the other.
+      const otherIsOlder =
+        other.mtimeMs < t.mtimeMs || (other.mtimeMs === t.mtimeMs && other.path < t.path)
+      const [older, newer] = otherIsOlder ? [other, t] : [t, other]
       const known = continuedBy.get(older)
       if (!known || newer.mtimeMs > known.mtimeMs) {
         continuedBy.set(older, newer)
