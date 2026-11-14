@@ -77,8 +77,16 @@ SEAL_RELAY_URL=http://127.0.0.1:8787 SEAL_PUSH_URL=http://127.0.0.1:8787 pnpm de
 
 Local workerd speaks only HTTP/1.1 to upstreams, so APNs (HTTP/2 only) is unreachable from `wrangler dev`. Deployed Workers reach APNs over HTTP/2. The tests use a fake APNs server (`pnpm test`).
 
+## MCP endpoint
+
+`relay.seal.wotarmelon.com/mcp/<hostId>` is Seal's MCP endpoint for cloud clients; see `docs/mcp.md`. A server that turned relay access on dials `wss://relay.seal.wotarmelon.com/v1/host/mcp` with its host session, and the `SealMcpTunnel` Durable Object passes each public request down that socket.
+
+- The first deploy that includes it applies migration `v2` (`new_sqlite_classes = ["SealMcpTunnel"]`) and the `MCP_LIMITER` rate-limit binding. Nothing else changes, and no new secret is needed.
+- Unlike pairing traffic, MCP requests on this path are **not** end-to-end encrypted: the Worker terminates TLS and can read them. It stores and logs none of them. Do not turn on Workers Logs or Logpush for this Worker without reading the threat model in `docs/mcp.md`.
+- Smoke check once deployed: `curl -s -o /dev/null -w '%{http_code}\n' -X POST https://relay.seal.wotarmelon.com/mcp/0000000000000000` answers `401` (no token).
+
 ## Notes
 
-- Only end-to-end-encrypted frames cross the relay. The desktop and the phone run their own X25519 E2EE channel; the Worker splices bytes and stores credential hashes.
+- Only end-to-end-encrypted frames cross the relay for pairing, terminals and device traffic. The MCP endpoint above is the exception. The desktop and the phone run their own X25519 E2EE channel; the Worker splices bytes and stores credential hashes.
 - Nothing in this Worker calls Orca's cloud. Each host is its own relay account (`seal:<relayHostId>`), proven by its pairing key.
 - If you change `wrangler.toml` routes, keep `relay.` and `push.` on the same Worker, or deploy the Worker twice with the same secrets.
