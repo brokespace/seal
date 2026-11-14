@@ -33,6 +33,28 @@ export function MachineDiskMounts({
       age: formatMachineUptime(Math.max(0, (status.now - mount.scannedAt) / 1000))
     })
   }
+  const unavailable = {
+    'no-node': t(
+      'seal.machines.disk.unavailable.noNode',
+      'This machine has no Node.js 20 or newer, so the background index cannot run on it.'
+    ),
+    'no-program': t(
+      'seal.machines.disk.unavailable.noProgram',
+      'Seal could not read its disk index program on this machine.'
+    ),
+    'install-failed': t(
+      'seal.machines.disk.unavailable.installFailed',
+      'The disk index program could not be copied to this machine.'
+    ),
+    'daemon-failed': t(
+      'seal.machines.disk.unavailable.daemonFailed',
+      'The background index did not start on this machine.'
+    ),
+    'command-failed': t(
+      'seal.machines.disk.unavailable.commandFailed',
+      'The command that starts the background index failed on this machine.'
+    )
+  }
   return (
     <View style={styles.card}>
       {status.mounts.map((mount) => {
@@ -93,12 +115,17 @@ export function MachineDiskMounts({
           </Text>
         </View>
       ) : status.source === 'live' ? (
-        <Text style={styles.cardDetail}>
-          {t(
+        <>
+          <Text
+            style={styles.cardDetail}
+          >{`${unavailable[status.unavailableReason ?? 'daemon-failed']} ${t(
             'seal.machines.disk.live',
-            'This machine has no background index, so folders are measured when you open them.'
-          )}
-        </Text>
+            'Folders are measured when you open them.'
+          )}`}</Text>
+          {status.unavailableDetail ? (
+            <Text style={[styles.cardDetail, styles.mono]}>{status.unavailableDetail}</Text>
+          ) : null}
+        </>
       ) : null}
     </View>
   )

@@ -28,6 +28,11 @@ const diskScanSchema = z.looseObject({
 export const machineDiskStatusSchema = z.looseObject({
   status: z.looseObject({
     source: z.enum(['index', 'live']).catch('live'),
+    unavailableReason: z
+      .enum(['no-node', 'no-program', 'install-failed', 'daemon-failed', 'command-failed'])
+      .nullable()
+      .catch(null),
+    unavailableDetail: z.string().nullable().catch(null),
     mounts: z.array(diskMountSchema),
     scan: diskScanSchema.nullable().catch(null),
     now: z.number().catch(0),

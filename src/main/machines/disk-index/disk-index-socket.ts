@@ -10,14 +10,12 @@ import { errnoCodeOrUnknown } from '../../../shared/errno-code'
 
 const MAX_REQUEST_BYTES = 64 * 1024
 
-/** `build` names the program file the caller runs, so a daemon from an older build can step aside. */
 export type DiskIndexEnvelope = {
   protocol: number
-  build: string
   request: MachineDiskIndexRequest
 }
 
-/** `superseded` tells a newer caller this daemon is stepping aside for its build. */
+/** `superseded` tells a caller with a newer protocol that this daemon is stepping aside for it. */
 export type DiskIndexDaemonReply = MachineDiskIndexReply | { ok: false; superseded: true }
 
 export function diskIndexSocketPath(dataDir: string): string {
@@ -27,7 +25,6 @@ export function diskIndexSocketPath(dataDir: string): string {
 /** One request, one reply, newline-delimited JSON. Rejects when no daemon is listening. */
 export function requestDiskIndexDaemon(
   socketPath: string,
-  build: string,
   request: MachineDiskIndexRequest,
   timeoutMs: number
 ): Promise<DiskIndexDaemonReply> {
@@ -37,7 +34,7 @@ export function requestDiskIndexDaemon(
     socket.setEncoding('utf8')
     socket.setTimeout(timeoutMs, () => socket.destroy(new Error('The disk index did not answer.')))
     socket.on('connect', () => {
-      const envelope: DiskIndexEnvelope = { protocol: DISK_INDEX_PROTOCOL, build, request }
+      const envelope: DiskIndexEnvelope = { protocol: DISK_INDEX_PROTOCOL, request }
       socket.write(`${JSON.stringify(envelope)}\n`)
     })
     socket.on('data', (chunk: string) => {
@@ -84,10 +81,8 @@ function serve(
 
 const SUPERSEDED_EXIT_WAIT_MS = 200
 
-async function isAnswering(socketPath: string, build: string): Promise<boolean> {
-  const reply = await requestDiskIndexDaemon(socketPath, build, { op: 'status' }, 5000).catch(
-    () => null
-  )
+async function isAnswering(socketPath: string): Promise<boolean> {
+  const reply = await requestDiskIndexDaemon(socketPath, { op: 'status' }, 5000).catch(() => null)
   if (reply && 'superseded' in reply) {
     await new Promise((resolve) => setTimeout(resolve, SUPERSEDED_EXIT_WAIT_MS))
     return false
@@ -106,7 +101,6 @@ export type DiskIndexListener = {
  */
 export async function listenForDiskIndexRequests(
   socketPath: string,
-  build: string,
   handle: (envelope: DiskIndexEnvelope) => Promise<DiskIndexDaemonReply>
 ): Promise<DiskIndexListener | null> {
   const listen = (): Promise<Server> =>
@@ -121,7 +115,7 @@ export async function listenForDiskIndexRequests(
     if (errnoCodeOrUnknown(error) !== 'EADDRINUSE') {
       throw error
     }
-    if (await isAnswering(socketPath, build)) {
+    if (await isAnswering(socketPath)) {
       return null
     }
     // A daemon that was killed leaves its socket file behind.

@@ -7,7 +7,8 @@ import { cn } from '@/lib/class-names'
 import type {
   MachineDiskIndexMount,
   MachineDiskIndexSkipReason,
-  MachineDiskIndexStatus
+  MachineDiskIndexStatus,
+  MachineDiskIndexUnavailableReason
 } from '../../../../../shared/machines/machine-disk-index-types'
 import { formatBytes, formatCount, formatUptime } from '../model/machine-format'
 import type { MachineDiskIndexState } from './use-machine-disk-index'
@@ -48,6 +49,40 @@ function useMountNote(): (mount: MachineDiskIndexMount, status: MachineDiskIndex
     }
     return parts.join(' · ')
   }
+}
+
+/** Says which step of starting the index failed; the machine's own words are shown under it. */
+function useUnavailableText(): (reason: MachineDiskIndexUnavailableReason | null) => string {
+  const t = useTranslate()
+  const onDemand = t(
+    'auto.components.machines.disk.index.onDemand',
+    'Folders are measured when you open them, which is slow on big disks.'
+  )
+  const steps: Record<MachineDiskIndexUnavailableReason, string> = {
+    'no-node': t(
+      'auto.components.machines.disk.index.noNode',
+      'This machine has no Node.js 20 or newer, so the background index cannot run on it.'
+    ),
+    'no-program': t(
+      'auto.components.machines.disk.index.noProgram',
+      'This copy of Seal could not read its disk index program.'
+    ),
+    'install-failed': t(
+      'auto.components.machines.disk.index.installFailed',
+      'The disk index program could not be copied to this machine.'
+    ),
+    'daemon-failed': t(
+      'auto.components.machines.disk.index.daemonFailed',
+      'The background index did not start on this machine.'
+    ),
+    'command-failed': t(
+      'auto.components.machines.disk.index.commandFailed',
+      'The command that starts the background index failed on this machine.'
+    )
+  }
+  // A server from before the steps were told apart sends a reason this build does not know.
+  return (reason) =>
+    `${(reason && Object.hasOwn(steps, reason) ? steps[reason] : null) ?? steps['daemon-failed']} ${onDemand}`
 }
 
 function IndexActivity({ status }: { status: MachineDiskIndexStatus }): React.JSX.Element | null {
@@ -176,19 +211,9 @@ export function MachineDiskMountsCard({
 }): React.JSX.Element {
   const t = useTranslate()
   const note = useMountNote()
+  const unavailableText = useUnavailableText()
   const { status, error } = index
-  const unavailable =
-    status?.source !== 'live'
-      ? null
-      : status.unavailableReason === 'no-node'
-        ? t(
-            'auto.components.machines.disk.index.noNode',
-            'This machine has no Node.js 20 or newer, so there is no background index: folders are measured when you open them, which is slow on big disks.'
-          )
-        : t(
-            'auto.components.machines.disk.index.failed',
-            'The background index could not be started on this machine, so folders are measured when you open them.'
-          )
+  const unavailable = status?.source === 'live' ? unavailableText(status.unavailableReason) : null
   return (
     <PageCard
       title={t('auto.components.machines.disk.mounts', 'Disks')}
@@ -228,9 +253,15 @@ export function MachineDiskMountsCard({
         </div>
       ) : null}
       {unavailable ? (
-        <p className="border-t border-border px-3 py-2 text-2xs text-muted-foreground">
-          {unavailable}
-        </p>
+        <div
+          className="space-y-1 border-t border-border px-3 py-2 text-2xs text-muted-foreground"
+          data-machine-disk-unavailable={status?.unavailableReason ?? ''}
+        >
+          <p>{unavailable}</p>
+          {status?.unavailableDetail ? (
+            <p className="font-mono [overflow-wrap:anywhere]">{status.unavailableDetail}</p>
+          ) : null}
+        </div>
       ) : null}
       {status?.protectedFoldersSkipped ? (
         <div className="flex items-center gap-3 border-t border-border px-3 py-2 text-2xs text-muted-foreground">

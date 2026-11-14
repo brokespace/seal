@@ -2,6 +2,7 @@ import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-accou
 import { installHomeChat } from '../../home-chat/home-chat-install'
 import type { HomeChatMachineSource } from '../../home-chat/machines/home-chat-machine-provider'
 import { installLiveSessions } from '../../live-sessions/live-sessions-install'
+import { startMachineDiskIndexKeeper } from '../../machines/resources/machine-disk-index-keeper'
 import type { Store } from '../../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { installSealMcp } from '../../seal-mcp/seal-mcp-install'
@@ -33,4 +34,6 @@ export function installOrcadSealHub(
     machines: HEADLESS_MACHINES
   }).catch((error: unknown) => console.warn('[orcad] Home chat failed to start:', error))
   installSealMcp(runtime)
+  // A server keeps its own disks indexed; waiting for a desktop to look would leave it unindexed.
+  startMachineDiskIndexKeeper({ orcadSidecar: false })
 }

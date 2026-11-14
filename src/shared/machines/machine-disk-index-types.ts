@@ -1,5 +1,8 @@
-/** Bump when a daemon built from older sources can no longer answer this build's requests. */
-export const DISK_INDEX_PROTOCOL = 1
+/**
+ * A running daemon steps aside for a caller with a higher number. Bump it for every change a
+ * machine's daemon has to pick up; a build that only differs in name is answered as it is.
+ */
+export const DISK_INDEX_PROTOCOL = 2
 
 /** Why a disk is not walked by the background index. */
 export type MachineDiskIndexSkipReason = 'virtual' | 'network' | 'removable' | 'excluded'
@@ -40,11 +43,26 @@ export type MachineDiskIndexProgress = {
   expectedFolders: number | null
 }
 
+/** Which step of getting a machine's index running did not work. */
+export type MachineDiskIndexUnavailableReason =
+  /** The machine has no Node.js new enough to run the index. */
+  | 'no-node'
+  /** This copy of Seal cannot read its own index program. */
+  | 'no-program'
+  /** The program could not be copied to the machine. */
+  | 'install-failed'
+  /** The program is there, but its daemon did not come up. */
+  | 'daemon-failed'
+  /** The command that asks the daemon failed before it reached it. */
+  | 'command-failed'
+
 export type MachineDiskIndexStatus = {
   /** `live` means the machine has no index and sizes are measured on demand. */
   source: 'index' | 'live'
-  /** Why there is no index, in the machine's own words; null when there is one. */
-  unavailableReason: 'no-node' | 'failed' | null
+  /** Why there is no index; null when there is one. */
+  unavailableReason: MachineDiskIndexUnavailableReason | null
+  /** What the machine or Seal said when that step failed, shown as it is. */
+  unavailableDetail?: string | null
   mounts: MachineDiskIndexMount[]
   scan: MachineDiskIndexProgress | null
   nextScanAt: number | null

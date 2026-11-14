@@ -18,7 +18,7 @@ What was wrong was the shape of it, not the tool:
 - Opening the panel reads the stored index. Folder sizes appear at once, with the index's age, and a progress line while a scan is running.
 - After the first scan, rescans are **incremental**: a folder whose modification time and inode have not changed is not read again.
 - The same index serves the drill-down, the largest files and the largest folders, on the desktop and on the phone.
-- A machine that cannot run the index (no Node 20 or newer, or the daemon would not start) falls back to the old on-demand `df` and `du` and says why.
+- A machine that cannot run the index (no Node 20 or newer, or the daemon would not start) falls back to the old on-demand `df` and `du`, says which step failed and shows what the machine said.
 
 ## Pieces
 
@@ -87,9 +87,25 @@ Every request goes through `queryMachineDiskIndex`, which builds one POSIX scrip
 
 `ionice -c 3` is the idle I/O class and `nice -n 19` the lowest CPU priority; either is skipped when the machine does not have it. The daemon also lowers its own priority with `os.setPriority`, which its threads inherit.
 
-The daemon is started as soon as Seal talks to a machine, not when the panel opens, so the first index is usually already there: `ensureMachineDiskIndex` runs for this computer 30 seconds after the app starts and for any machine whenever its vitals are read, from the desktop or the phone. Apps launched by agents and tests (`ORCA_BACKGROUND_LAUNCH=1`) leave this computer's disk alone.
+**Starting it.** The index is kept running by a keeper (`machine-disk-index-keeper.ts`) that starts with the process and depends on nothing else: no window, no open panel, and not on how the app was launched. The desktop starts it in `initializeReadyRuntimeServices` and a Seal server in `installOrcadSealHub`, so a server indexes its own disks whether or not a desktop ever looks at it. Thirty seconds after start the keeper asks this computer and every machine Seal is already connected to (`keepMachineDiskIndex`); it dials nobody. A machine whose index answers is due again after 30 minutes. One that fails is due after 1 minute, then 5, then every 30. The keeper sleeps until the first machine is due, so it wakes once a minute only while something is failing. A machine that connects in between is picked up at the next pass, or at once when its vitals are read, from the desktop or the phone (`ensureMachineDiskIndex`).
 
-**Lifetime.** One daemon per user per machine; the socket decides who owns it. A daemon started by this computer exits when Seal's process is gone. A remote daemon exits after 7 days without a request, and Seal asks every 6 hours while connected, so a machine Seal no longer uses stops indexing by itself. A daemon from an older build hands over to the new one, but not in the middle of a scan it would have to start again.
+Only two kinds of run leave the disk alone, and each writes that to the log: an end-to-end test run (`ORCA_E2E_HEADLESS`, `ORCA_E2E_USER_DATA_DIR`) and the headless browser sidecar a server starts. `ORCA_BACKGROUND_LAUNCH=1` does **not** skip it. That variable only says "do not take the screen", and it reaches a packaged app whenever the app is opened from a shell that has it set, because macOS `open` hands the caller's environment to the app. The first version skipped the index on that variable, so an app opened that way ran with no index, no folder and nothing in any log.
+
+**When it does not start.** Nothing fails silently. `queryMachineDiskIndex` names the step that failed and what was said, and the machine is then measured on demand:
+
+| Reason           | Meaning                                                                       | What is shown with it                                              |
+| ---------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `no-program`     | This copy of Seal cannot read its own program file                            | The read error                                                     |
+| `install-failed` | The program could not be copied to the machine, or the shell does not find it | The file error                                                     |
+| `no-node`        | No Node 20 or newer on the machine                                            |                                                                    |
+| `daemon-failed`  | The daemon was started and did not answer                                     | The last lines the daemon wrote to `~/.seal/disk-index/daemon.log` |
+| `command-failed` | The script itself failed before it reached the daemon                         | Its first error line                                               |
+
+The reason and the machine's own words travel in the status reply (`unavailableReason`, `unavailableDetail`) and are shown under the disks on the desktop and on the phone. Every change is also logged as `[disk-index] <transport> machine <id>: …` on the console and as a `machines.disk-index` span in the local trace file, which is where to look on a packaged build: `main.trace.ndjson` in the `logs` folder of the desktop's user-data folder, and `orcad.trace.ndjson` in the server's logs folder (`~/.orca/logs` on a default install). The same lines record a successful start and a skipped one. The script stops waiting as soon as the daemon process is gone, so a daemon that dies at start is reported in about a second instead of after ten.
+
+**Lifetime.** One daemon per user per machine; the socket decides who owns it. A daemon started by this computer, or by a Seal server for its own disks, exits when that process is gone, and whichever Seal is still running on the machine starts it again at its next pass. A daemon started over SSH or through a server connection exits after 7 days without a request, and the keeper asks every 30 minutes while connected, so a machine Seal no longer uses stops indexing by itself.
+
+**Several Seal builds on one machine.** A desktop, the server on the same machine and a phone talking to that server each carry their own copy of the program, with a different file name. A daemon answers all of them. It steps aside only for a caller with a higher `DISK_INDEX_PROTOCOL`, which is bumped whenever running daemons have to be replaced. The first version stepped aside for any other file name, so two builds polling the same machine kept stopping each other's daemon.
 
 **Relation to the Seal server.** The daemon is a process of its own rather than a thread inside `orcad`. A machine connected over SSH has no resident Seal at all, and an index tied to the server's lifetime would stop being kept whenever the server restarts for an update. The Seal server ships the same program and starts it the same way, which is how the phone reaches the index of a server machine.
 
@@ -268,9 +284,12 @@ The benchmark was run on the development VM. It has not been run on `kessel-ml` 
 - A folder moved between two indexed folders is read again in its new place; the index has no notion of a move.
 - Totals are per user: folders the daemon's user cannot read are lower bounds.
 - Windows machines are not indexed.
+- A change to the daemon reaches a remote machine only when `DISK_INDEX_PROTOCOL` is bumped or its daemon has stopped; a daemon on this computer is replaced with every app start.
+- The packaged macOS app could not be launched while this was written. The start path is covered by the tests below and by packaged Linux launches; on a Mac, the `[disk-index]` line in `main.trace.ndjson` says what happened.
 
 ## Tests
 
-| Test                                                   | Covers                                                                                                                                           |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/main/machines/disk-index/disk-index-scan.test.ts` | Hard-link shares, staying out of other filesystems and stops, unreadable folders, and an incremental rescan picking up added and removed folders |
+- `src/main/machines/disk-index/disk-index-scan.test.ts`: hard-link shares, staying out of other filesystems and stops, unreadable folders, and an incremental rescan picking up added and removed folders.
+- `src/main/machines/resources/machine-disk-index-start.integration.test.ts`: the real start path. The program is bundled as the build bundles it, placed where a packaged macOS app keeps it (`Seal.app/Contents/Resources/app.asar.unpacked/out/main/`), resolved the way production resolves it, copied to a temporary home and started through `sh`. It checks that the daemon answers, that a second build is answered by the same daemon, and that a program that cannot be copied, a daemon that does not come up and a missing program each give their reason.
+- `src/main/machines/resources/machine-disk-index-keeper.test.ts`: the keeper starts this computer's index in a background launch, comes back to connected machines only, and stays off when given a reason.
+- `config/scripts/desktop-distribution/runtime-verification/verify-packaged-disk-index-program.cjs`: runs in `afterPack` on every packaged build. It fails the build when the program is not at the path the app reads it from, cannot be copied alone, or does not index a folder from that path. On Linux it also runs the program under the packaged app as Node.

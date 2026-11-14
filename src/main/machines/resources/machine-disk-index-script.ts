@@ -9,6 +9,8 @@ export const DISK_INDEX_NO_NODE = '@nonode'
 export const DISK_INDEX_NO_DAEMON = '@nodaemon'
 
 const NO_DAEMON_EXIT_CODE = 3
+/** What a daemon that did not come up last wrote, printed ahead of the marker as the reason. */
+const DAEMON_LOG_LINES_SHOWN = 3
 const MINIMUM_NODE_MAJOR = 20
 /** A machine Seal no longer talks to stops indexing on its own. */
 const REMOTE_IDLE_EXIT_HOURS = 7 * 24
@@ -63,13 +65,22 @@ else
   command -v ionice >/dev/null 2>&1 && low="ionice -c 3 $low"
 fi
 nohup $low "$node" "$program" daemon ${lifetime} >"$dir/daemon.log" 2>&1 &
+daemon=$!
 tries=0
 while [ $tries -lt 50 ]; do
   sleep 0.2
   "$node" "$program" query ${request}
   [ $? = ${NO_DAEMON_EXIT_CODE} ] || return 0
+  if ! kill -0 "$daemon" 2>/dev/null; then
+    # It also leaves when another daemon got the socket first, and that one answers.
+    "$node" "$program" query ${request}
+    [ $? = ${NO_DAEMON_EXIT_CODE} ] || return 0
+    break
+  fi
   tries=$((tries + 1))
 done
+tail -n ${DAEMON_LOG_LINES_SHOWN} "$dir/daemon.log" 2>/dev/null
+echo
 echo "${DISK_INDEX_NO_DAEMON}"
 `
 }
