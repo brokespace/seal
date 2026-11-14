@@ -7,6 +7,10 @@ import { buildDiscoveryScript } from './discovery-script'
 import { parseDiscoveryOutput, type DiscoveredFile } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
 import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
+import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
+import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subagent-files'
+import { codexPlan } from './codex-transcript-activity'
+import { recordsOf } from './transcript-records'
 
 export type HostScanLimits = {
   maxAgeMinutes: number
@@ -14,6 +18,10 @@ export type HostScanLimits = {
   maxReads: number
   headBytes: number
   tailBytes: number
+  /** Subagent transcripts listed per session, and how many are read per scan across the host. */
+  maxSubagents: number
+  maxSubagentReads: number
+  subagentTailBytes: number
 }
 
 export const LOCAL_SCAN_LIMITS: HostScanLimits = {
@@ -21,11 +29,21 @@ export const LOCAL_SCAN_LIMITS: HostScanLimits = {
   maxFiles: 60,
   maxReads: 60,
   headBytes: 16 * 1024,
-  tailBytes: 48 * 1024
+  tailBytes: 48 * 1024,
+  maxSubagents: 24,
+  maxSubagentReads: 48,
+  subagentTailBytes: 12 * 1024
 }
 
 // SSH exec keeps only the last 1 MB of output; a handful of reads stays well under it.
-export const SSH_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxFiles: 40, maxReads: 6 }
+export const SSH_SCAN_LIMITS: HostScanLimits = {
+  ...LOCAL_SCAN_LIMITS,
+  maxFiles: 40,
+  maxReads: 6,
+  maxSubagents: 12,
+  maxSubagentReads: 10,
+  subagentTailBytes: 6 * 1024
+}
 
 // A runtime answers up to 4 MB of JSON; the server caps the script's output below that.
 export const RUNTIME_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxReads: 16 }
@@ -37,7 +55,10 @@ export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
   return machine.connection === 'server' ? RUNTIME_SCAN_LIMITS : SSH_SCAN_LIMITS
 }
 
-type CachedTranscript = SummarizedTranscript & { head: string | null }
+type CachedTranscript = SummarizedTranscript & {
+  head: string | null
+  subagentFiles: Map<string, SubagentFileSummary>
+}
 
 export type HostScanResult = { sessions: LiveSession[]; complete: boolean }
 
@@ -53,7 +74,10 @@ export class HostSessionScanner {
 
   async scan(nowMs: number): Promise<HostScanResult> {
     const cached = [...this.cache.values()]
-    const known = cached.map((t) => ({ path: t.path, size: t.size }))
+    const known = cached.flatMap((t) => [
+      { path: t.path, size: t.size },
+      ...[...t.subagentFiles.values()].map((sub) => ({ path: sub.path, size: sub.size }))
+    ])
     const headKnown = cached.filter((t) => t.head !== null).map((t) => t.path)
     const findFiles = this.host.transcriptFiles
     const script = buildDiscoveryScript({
@@ -105,8 +129,27 @@ export class HostSessionScanner {
     return { sessions, complete: output.complete }
   }
 
+  /** Subagent transcripts change while their session's own file stands still. */
+  private absorbSubagents(cached: CachedTranscript, file: DiscoveredFile): void {
+    const listed = new Map<string, SubagentFileSummary>()
+    for (const sub of file.subagents ?? []) {
+      const previous = cached.subagentFiles.get(sub.path)
+      const summary = summarizeSubagentFile(sub, this.limits.subagentTailBytes, previous)
+      if (summary) {
+        // Unread bytes (over the budget) keep the size they were last read at, so they are read later.
+        const unread = sub.tail === null && previous?.size !== sub.size
+        listed.set(sub.path, unread ? { ...summary, size: previous?.size ?? -1 } : summary)
+      }
+    }
+    cached.subagentFiles = listed
+    cached.subagents = [...listed.values()]
+  }
+
   private absorb(file: DiscoveredFile): void {
     const cached = this.cache.get(file.path)
+    if (cached) {
+      this.absorbSubagents(cached, file)
+    }
     if (cached && cached.size === file.size) {
       cached.mtimeMs = file.mtimeMs
       return
@@ -126,7 +169,15 @@ export class HostSessionScanner {
       tail: file.tail,
       tailIsWholeFile: file.size <= this.limits.tailBytes
     })
-    this.cache.set(file.path, {
+    const tailIsWholeFile = file.size <= this.limits.tailBytes
+    const records = recordsOf(file.tail, !tailIsWholeFile)
+    // A file that shrank was rewritten: what the old bytes launched no longer holds.
+    const grew = cached !== undefined && file.size > cached.size
+    const claudeActivity = (grew ? cached.claudeActivity : undefined) ?? newClaudeActivityState()
+    if (file.provider === 'claude') {
+      foldClaudeActivity(claudeActivity, records)
+    }
+    const next: CachedTranscript = {
       path: file.path,
       size: file.size,
       mtimeMs: file.mtimeMs,
@@ -135,8 +186,18 @@ export class HostSessionScanner {
         ...summary,
         title: summary.title ?? cached?.summary.title ?? null,
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
-        firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null
-      }
-    })
+        firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
+        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null
+      },
+      ...(file.provider === 'claude'
+        ? { claudeActivity }
+        : { codexPlan: codexPlan(records, (grew ? cached.codexPlan : null) ?? null) }),
+      subagentFiles: cached?.subagentFiles ?? new Map(),
+      subagents: cached?.subagents ?? []
+    }
+    this.cache.set(file.path, next)
+    if (!cached) {
+      this.absorbSubagents(next, file)
+    }
   }
 }

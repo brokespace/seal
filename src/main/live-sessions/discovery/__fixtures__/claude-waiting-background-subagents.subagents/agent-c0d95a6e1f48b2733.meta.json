@@ -1,0 +1,10 @@
+{
+  "agentType": "general-purpose",
+  "isBuiltIn": true,
+  "description": "Migrate the wishlist store",
+  "toolUseId": "toolu_01d3f0edfd81d86f97dc1c05",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true,
+  "model": "sonnet"
+}

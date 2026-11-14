@@ -1,0 +1,10 @@
+{
+  "agentType": "general-purpose",
+  "isBuiltIn": true,
+  "description": "Migrate the cart store",
+  "toolUseId": "toolu_01039da7eeaf4b5fb09373f0",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true,
+  "model": "sonnet"
+}

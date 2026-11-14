@@ -1,13 +1,27 @@
 // The live-session registry's public contract: plain JSON, shared by main, preload, renderer and RPC.
 import type { NativeChatMessage } from '../native-chat/native-chat-types'
+import type { LiveSessionActivity } from './live-session-activity'
 
 export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
 
+/**
+ * working           a turn is running
+ * waiting-subagent  the agent waits for subagents it started (still busy, nothing for the user to do)
+ * waiting-task      the agent waits for background commands it started
+ * needs-permission  a permission prompt is up
+ * waiting-input     the agent asked the user something
+ * idle              the agent is running at an empty prompt with nothing pending
+ * done              the agent process has ended
+ * errored           the last turn failed
+ */
 export const LIVE_SESSION_STATUSES = [
   'working',
+  'waiting-subagent',
+  'waiting-task',
   'waiting-input',
   'needs-permission',
+  'idle',
   'done',
   'errored'
 ] as const
@@ -73,6 +87,14 @@ export type LiveSession = {
   transcriptPath: string | null
   inputRoutes: LiveSessionInputRoute[]
   permission: LiveSessionPermissionPrompt | null
+  /** Subagents, background tasks and the todo list; absent from hosts that report none. */
+  activity?: LiveSessionActivity
+  /** The agent's newest message, one line. */
+  lastMessage?: string | null
+  /** The name the user gave it in Seal; shown instead of `title`. */
+  customTitle?: string | null
+  /** The provider config folder it runs under (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`), which names its account. */
+  configDir?: string | null
 }
 
 export type LiveSessionRegistrySnapshot = {
