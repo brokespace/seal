@@ -10,6 +10,7 @@ import type { SealProvider } from '../../../../../shared/seal-accounts/seal-acco
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import type { SealSignInController } from './use-seal-sign-in'
+import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
 
 function CopyButton({ text, label }: { text: string; label: string }): React.JSX.Element {
   const t = useTranslate()
@@ -165,7 +166,11 @@ export function SealSignInProgress({
             {url}
           </span>
           <CopyButton text={url} label={t('seal.accounts.signIn.copyLink', 'Copy link')} />
-          <Button variant="outline" size="xs" onClick={() => void window.api.shell.openUrl(url)}>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => openAppHttpLink(url, { destination: 'system' })}
+          >
             <ExternalLink />
             {t('seal.accounts.signIn.open', 'Open page')}
           </Button>
