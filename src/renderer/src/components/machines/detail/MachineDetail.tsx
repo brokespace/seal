@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   ArrowLeft,
   Bot,
   ArrowLeftRight,
-  Code,
   EllipsisVertical,
+  KeyRound,
   Pencil,
   Plug,
   RefreshCw,
@@ -26,7 +26,11 @@ import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-a
 import { cn } from '@/lib/class-names'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
-import { MachineFileExplorer } from '../explorer/MachineFileExplorer'
+import { MachineEditorButton } from '../editor/MachineEditorButton'
+import {
+  MachineFileExplorer,
+  type MachineFileExplorerHandle
+} from '../explorer/MachineFileExplorer'
 import { MachineWorkSection } from '../work/MachineWorkSection'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import type { MachineAgentSession } from '../model/machine-agent-sessions'
@@ -36,7 +40,6 @@ import { MachineEditDialog } from './MachineEditDialog'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
 import {
   connectMachine,
-  openMachineInEditor,
   openMachineTerminal,
   switchMachineConnection
 } from './machine-quick-actions'
@@ -91,7 +94,8 @@ export function MachineDetail({
   metricsError,
   sessions,
   onBack,
-  onChanged
+  onChanged,
+  onAddSshDetails
 }: {
   machine: MachineSummary
   metrics: MachineMetrics | null
@@ -99,11 +103,13 @@ export function MachineDetail({
   sessions: readonly MachineAgentSession[]
   onBack: () => void
   onChanged: () => void
+  onAddSshDetails: () => void
 }): React.JSX.Element {
   const t = useTranslate()
   const statusLabel = useMachineStatusLabel()
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
+  const explorerRef = useRef<MachineFileExplorerHandle>(null)
   const removal =
     machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
@@ -181,18 +187,12 @@ export function MachineDetail({
               {t('auto.components.machines.detail.terminal', 'Terminal')}
             </span>
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!online || !homeDir}
-            onClick={() => homeDir && void openMachineInEditor(machine, homeDir)}
-          >
-            <Code />
-            <span className="hidden sm:inline">
-              {t('auto.components.machines.detail.editor', 'Open in editor')}
-            </span>
-          </Button>
+          <MachineEditorButton
+            machine={machine}
+            disabled={!online}
+            onOpen={(choice) => explorerRef.current?.openCurrentFolderInEditor(choice)}
+            onAddSshDetails={onAddSshDetails}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -235,11 +235,16 @@ export function MachineDetail({
                       )}
                 </DropdownMenuItem>
               ) : null}
-              {machine.sshTargetId || removal ? <DropdownMenuSeparator /> : null}
+              {machine.connection !== 'local' ? <DropdownMenuSeparator /> : null}
               {machine.sshTargetId ? (
                 <DropdownMenuItem onSelect={() => void editSshDetails()}>
                   <Pencil />
                   {t('auto.components.machines.detail.editSsh', 'Edit SSH details…')}
+                </DropdownMenuItem>
+              ) : machine.connection !== 'local' ? (
+                <DropdownMenuItem onSelect={onAddSshDetails}>
+                  <KeyRound />
+                  {t('auto.components.machines.editor.addSshDetails', 'Add SSH details…')}
                 </DropdownMenuItem>
               ) : null}
               {removal ? (
@@ -263,7 +268,12 @@ export function MachineDetail({
           <AgentSessionList sessions={sessions} />
         </section>
       ) : null}
-      <MachineFileExplorer key={machine.id} machine={machine} />
+      <MachineFileExplorer
+        key={machine.id}
+        ref={explorerRef}
+        machine={machine}
+        onAddSshDetails={onAddSshDetails}
+      />
       <MachineEditDialog target={editing} onClose={() => setEditing(null)} onSaved={onChanged} />
       {removal ? (
         <HostRemoveDialog

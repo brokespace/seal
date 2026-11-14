@@ -86,6 +86,9 @@ export default function MachinesPage(): React.JSX.Element {
               sessions={sessionsByMachine.get(selected.id) ?? []}
               onBack={() => setShowDetailOnNarrow(false)}
               onChanged={reload}
+              onAddSshDetails={() =>
+                setAdding({ mode: 'ssh', machineId: selected.id, keepConnection: 'server' })
+              }
             />
           ) : null}
         </div>

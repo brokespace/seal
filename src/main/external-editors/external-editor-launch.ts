@@ -18,6 +18,11 @@ import {
 } from './jetbrains-windows-gui-launchers'
 import { findInstalledVsCodeCli } from './vscode-cli-install-paths'
 import { getCmdExePath, getSpawnArgsForWindows } from '../../shared/windows-batch-spawn'
+import {
+  describeEditorExitFailure,
+  describeEditorSpawnFailure,
+  ExternalEditorLaunchError
+} from './external-editor-launch-failure'
 
 export const EXTERNAL_EDITOR_CLI_COMMAND = 'code'
 const WINDOWS_CONSOLE_EDITORS = new Set(['nvim', 'vim'])
@@ -268,13 +273,30 @@ function startExternalEditorProcess(launchSpec: ExternalEditorLaunchSpec): Child
   return spawnProcess({ program: spawnCmd, args: spawnArgs, ...detachedOptions })
 }
 
-export async function launchExternalEditor(launchSpec: ExternalEditorLaunchSpec): Promise<void> {
+/** Launchers hand off to the editor and exit; one that fails does so well inside this window. */
+export const EXTERNAL_EDITOR_EARLY_EXIT_GRACE_MS = 1500
+
+/**
+ * Starts the editor. With `earlyExitGraceMs`, a launcher that exits with an error inside that
+ * window fails the launch instead of looking like a success that opened nothing.
+ */
+export async function launchExternalEditor(
+  launchSpec: ExternalEditorLaunchSpec,
+  options: { earlyExitGraceMs?: number } = {}
+): Promise<void> {
+  // The command the user would recognise: the shell line for shell launches, else the executable.
+  const command =
+    launchSpec.kind === 'shell' ? (launchSpec.spawnArgs.at(-1) ?? '') : launchSpec.spawnCmd
+  const graceMs = options.earlyExitGraceMs ?? 0
   await new Promise<void>((resolvePromise, rejectPromise) => {
     const child = startExternalEditorProcess(launchSpec)
     let settled = false
+    let graceTimer: ReturnType<typeof setTimeout> | undefined
     function cleanup(): void {
+      clearTimeout(graceTimer)
       child.off('error', onError)
       child.off('spawn', onSpawn)
+      child.off('exit', onExit)
     }
     function settle(callback: () => void): void {
       if (settled) {
@@ -285,13 +307,33 @@ export async function launchExternalEditor(launchSpec: ExternalEditorLaunchSpec)
       callback()
     }
     function onError(error: Error): void {
-      settle(() => rejectPromise(error))
+      settle(() =>
+        rejectPromise(new ExternalEditorLaunchError(describeEditorSpawnFailure(error, command)))
+      )
+    }
+    function onExit(exitCode: number | null): void {
+      settle(() =>
+        exitCode === null || exitCode === 0
+          ? resolvePromise()
+          : rejectPromise(
+              new ExternalEditorLaunchError(
+                describeEditorExitFailure(exitCode, command, launchSpec.spawnCmd === '/bin/sh')
+              )
+            )
+      )
     }
     function onSpawn(): void {
       child.unref()
-      settle(resolvePromise)
+      if (graceMs <= 0) {
+        settle(resolvePromise)
+        return
+      }
+      graceTimer = setTimeout(() => settle(resolvePromise), graceMs)
     }
     child.once('error', onError)
     child.once('spawn', onSpawn)
+    if (graceMs > 0) {
+      child.once('exit', onExit)
+    }
   })
 }

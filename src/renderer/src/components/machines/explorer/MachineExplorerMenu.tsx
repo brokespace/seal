@@ -17,6 +17,8 @@ export function MachineExplorerMenu({
   selectedPaths,
   machineKind,
   onOpen,
+  editorLabel,
+  onOpenInEditor,
   actions
 }: {
   menuRow: EntryRow | null
@@ -24,6 +26,8 @@ export function MachineExplorerMenu({
   selectedPaths: string[]
   machineKind: MachineSummary['connection']
   onOpen: (row: EntryRow) => void
+  editorLabel: string
+  onOpenInEditor: (row: EntryRow) => void
   actions: MachineFileActions
 }): React.JSX.Element {
   const t = useTranslate()
@@ -36,6 +40,9 @@ export function MachineExplorerMenu({
             ? t('auto.components.machines.menu.openFolder', 'Open folder')
             : t('auto.components.machines.menu.preview', 'Preview')}
         </ContextMenuItem>
+      ) : null}
+      {menuRow ? (
+        <ContextMenuItem onSelect={() => onOpenInEditor(menuRow)}>{editorLabel}</ContextMenuItem>
       ) : null}
       {menuRow ? (
         <ContextMenuItem onSelect={() => actions.download(selectedPaths)}>

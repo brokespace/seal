@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
@@ -8,6 +8,8 @@ import { cn } from '@/lib/class-names'
 import type { MachineFileEntry } from '../../../../../shared/machines/machine-types'
 import { machinePathDirname } from '../../../../../shared/machines/machine-paths'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineEditorChoice } from '../editor/MachineEditorButton'
+import { useMachineExplorerEditor } from '../editor/use-machine-explorer-editor'
 import { MachineDeleteDialog } from './MachineDeleteDialog'
 import { MachineExplorerMenu } from './MachineExplorerMenu'
 import { MachineExplorerToolbar } from './MachineExplorerToolbar'
@@ -31,7 +33,20 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
   return element?.getAttribute('data-machine-drop-dir') ?? null
 }
 
-export function MachineFileExplorer({ machine }: { machine: MachineSummary }): React.JSX.Element {
+export type MachineFileExplorerHandle = {
+  /** Opens the folder on screen in the chosen editor. */
+  openCurrentFolderInEditor: (choice: MachineEditorChoice) => void
+}
+
+export function MachineFileExplorer({
+  machine,
+  onAddSshDetails,
+  ref
+}: {
+  machine: MachineSummary
+  onAddSshDetails: () => void
+  ref?: React.Ref<MachineFileExplorerHandle>
+}): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
   const isRemote = machine.connection !== 'local'
@@ -89,6 +104,23 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
     },
     [navigate]
   )
+
+  const editor = useMachineExplorerEditor({
+    machine,
+    root,
+    rootError: tree.rootError,
+    rows: tree.rows,
+    onAddSshDetails,
+    showFolder: (path) => {
+      navigate(path)
+      setPreview(null)
+      scrollElement?.focus()
+    },
+    showFile: (path, entry) => setPreview({ path, entry })
+  })
+  useImperativeHandle(ref, () => ({ openCurrentFolderInEditor: editor.openCurrentFolder }), [
+    editor.openCurrentFolder
+  ])
 
   const handlers = useMemo<MachineExplorerRowHandlers>(
     () => ({
@@ -262,6 +294,8 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
             selectedPaths={selectedPaths}
             machineKind={machine.connection}
             onOpen={openEntry}
+            editorLabel={editor.label}
+            onOpenInEditor={editor.openRow}
             actions={actions}
           />
         </ContextMenu>

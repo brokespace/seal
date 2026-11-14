@@ -1,10 +1,8 @@
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
-import { translate as t } from '@/i18n/i18n'
 import { revealFloatingWorkspacePanel } from '@/components/floating-terminal/floating-workspace-panel-reveal'
 import { createFloatingWorkspaceTerminalTab } from '@/components/floating-terminal/floating-workspace-tab-creation'
 import { showMachineTerminalPanel } from '@/ssh/plain-ssh-terminal-panels'
-import { toSshExecutionHostId } from '../../../../../shared/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
@@ -36,46 +34,6 @@ export function launchMachineAgent(
     ...(options.cwd ? { cwd: options.cwd } : {}),
     ...(options.prompt ? { prompt: options.prompt } : {})
   })
-}
-
-/** VS Code dials the stored SSH details itself, whichever transport Seal is using. */
-export async function openMachineInEditor(machine: MachineSummary, path: string): Promise<void> {
-  if (machine.connection !== 'local' && !machine.sshTargetId) {
-    toast.message(
-      t(
-        'auto.components.machines.actions.editorNeedsSsh',
-        'Add SSH details to this machine to open it in VS Code. You can edit its files here under Files.'
-      )
-    )
-    return
-  }
-  try {
-    const result = await window.api.shell.openInExternalEditor({
-      path,
-      builtInEditorId: 'vscode',
-      connectionId: machine.sshTargetId,
-      ownerHostId: machine.sshTargetId ? toSshExecutionHostId(machine.sshTargetId) : 'local'
-    })
-    if (!result.ok) {
-      toast.error(
-        result.reason === 'ssh-alias-required'
-          ? t(
-              'auto.components.machines.actions.editorAlias',
-              'Add {{host}} to your SSH config to open it in an editor.',
-              { host: result.host }
-            )
-          : t(
-              'auto.components.machines.actions.editorFailed',
-              'Could not open the editor ({{reason}}).',
-              {
-                reason: result.reason
-              }
-            )
-      )
-    }
-  } catch (error) {
-    toast.error(errorText(error))
-  }
 }
 
 export async function connectMachine(machine: MachineSummary): Promise<void> {

@@ -20059,8 +20059,6 @@
           "disk": "Disk"
         },
         "actions": {
-          "editorAlias": "Add {{host}} to your SSH config to open it in an editor.",
-          "editorFailed": "Could not open the editor ({{reason}}).",
           "nameLabel": "Name",
           "invalidName": "Enter a name without slashes.",
           "newFolderTitle": "New folder",
@@ -20072,8 +20070,7 @@
           "urlConfirm": "Download",
           "urlLabel": "URL",
           "urlInvalid": "Enter an http or https URL.",
-          "urlFileName": "File name (optional)",
-          "editorNeedsSsh": "Add SSH details to this machine to open it in VS Code. You can edit its files here under Files."
+          "urlFileName": "File name (optional)"
         },
         "delete": {
           "titleOne": "Delete {{name}}?",
@@ -20154,6 +20151,29 @@
         "terminal": {
           "agentTitle": "{{agent}} · {{host}}",
           "title": "Terminal · {{host}}"
+        },
+        "editor": {
+          "addSshDetails": "Add SSH details…",
+          "openInApp": "Open in {{app}}",
+          "openInSealEditor": "Open in Seal’s editor",
+          "choose": "Choose editor",
+          "sealEditor": "Seal’s editor",
+          "customizeApps": "Choose apps…",
+          "openedFileInSeal": "Opened the file in Seal’s editor",
+          "openedFolderInSeal": "Showing the folder in Seal’s files",
+          "noSshDetails": "{{machine}} is reached through its Seal server only. Add SSH details to open it in VS Code, Cursor, or Zed on this computer.",
+          "noApps": "No Open In apps are set up. Add one to open paths in another editor.",
+          "noRemoteEditor": "None of your Open In apps can open a remote machine. Add VS Code, Cursor, or Zed.",
+          "commandNotFound": "The “{{command}}” command was not found on this computer. Install the app’s command-line launcher, or choose another app.",
+          "commandNotExecutable": "“{{command}}” is not allowed to run on this computer.",
+          "commandExited": "“{{command}}” quit with exit code {{exitCode}} before opening anything.",
+          "commandError": "“{{command}}” could not start: {{message}}",
+          "openInSeal": "Open in Seal",
+          "aliasRequired": "{{app}} needs an SSH config alias for {{machine}}",
+          "aliasRequiredDetail": "It cannot dial a custom port directly. Add a Host alias for {{host}}:{{port}} to your SSH config and connect this machine through that alias.",
+          "launchFailed": "Could not open {{app}}",
+          "launchFailedDetail": "Check this app’s command under Open In apps.",
+          "filesLoading": "Still loading this machine’s files. Try again in a moment."
         }
       },
       "live-sessions": {
