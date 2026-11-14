@@ -31,10 +31,11 @@ export function getHeaderCreateWorkspaceTarget(
     : {}
 }
 
-/** A project header's Create: the composer seeded with its repo, pinned to its host when its rows all sit there. */
+/** A project header's +: New agent session seeded with its repo, pinned to its host when its rows all sit there. */
 export function openHeaderCreateComposer(repo: Repo, { pinHost }: { pinHost: boolean }): void {
   const { repos, projectHostSetups, openModal } = useAppStore.getState()
   openModal('new-workspace-composer', {
+    agentSession: true,
     initialRepoId: repo.id,
     ...(pinHost ? getHeaderCreateWorkspaceTarget(repo, repos, projectHostSetups) : {}),
     telemetrySource: 'sidebar'

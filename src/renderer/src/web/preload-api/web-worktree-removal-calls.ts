@@ -24,6 +24,7 @@ export function createWebWorktreeRemovalCalls(): Pick<
       force,
       approvedNestedWorktrees,
       allowUnverifiedPtyStop,
+      unlockLockedWorktree,
       skipArchive
     }) => {
       invalidateRuntimeWorktreeCaches()
@@ -36,6 +37,7 @@ export function createWebWorktreeRemovalCalls(): Pick<
           ...(approvedNestedWorktrees ? { approvedNestedWorktrees } : {}),
           // Forward Force Delete waiver or paired clients stay wedged (#11960).
           allowUnverifiedPtyStop,
+          ...(unlockLockedWorktree === true ? { unlockLockedWorktree: true } : {}),
           runHooks: skipArchive !== true
         },
         // Why: the host replies once Git has deleted the checkout, past the default 30 s budget.
