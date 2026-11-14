@@ -32,6 +32,9 @@ export function homeMachineFromSummary(
       : undefined
   return {
     id: summary.id,
+    executionHostId: summary.executionHostId,
+    sshTargetId: summary.sshTargetId,
+    runtimeEnvironmentId: summary.runtimeEnvironmentId,
     label: summary.connection === 'local' ? localLabel : summary.label,
     kind: summary.connection === 'server' ? 'runtime' : summary.connection,
     status: summary.status,

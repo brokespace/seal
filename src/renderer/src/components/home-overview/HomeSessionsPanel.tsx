@@ -8,6 +8,7 @@ import {
 } from '../live-sessions/active-agents/active-agents-model'
 import { useLiveSessionLinks } from '../live-sessions/links/use-live-session-links'
 import { LiveSessionRows } from '../live-sessions/row/LiveSessionRows'
+import { useSessionMachineName } from '../machines/model/use-local-machine-name'
 import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
 
 /** Active agents' machines and rows, on Home: the same sessions in the same order. */
@@ -20,6 +21,7 @@ export function HomeSessionsPanel({
 }): React.JSX.Element {
   const t = useTranslate()
   const { links } = useLiveSessionLinks()
+  const machineName = useSessionMachineName()
   const view = useMemo(
     () => buildActiveAgents(sessions, NO_ACTIVE_AGENTS_FILTER, links, now),
     [sessions, links, now]
@@ -46,12 +48,16 @@ export function HomeSessionsPanel({
               <div key={machine.hostId} data-home-sessions-machine={machine.hostId} className="p-2">
                 <h3 className="flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium text-foreground">
                   <MachineIcon className="size-3.5 text-muted-foreground" />
-                  <span className="truncate">{machine.label}</span>
+                  <span className="truncate">{machineName(machine)}</span>
                   <span className="text-2xs font-normal text-muted-foreground tabular-nums">
                     {machine.sessions.length}
                   </span>
                 </h3>
-                <LiveSessionRows sessions={machine.sessions} label={machine.label} now={now} />
+                <LiveSessionRows
+                  sessions={machine.sessions}
+                  label={machineName(machine)}
+                  now={now}
+                />
               </div>
             )
           })}

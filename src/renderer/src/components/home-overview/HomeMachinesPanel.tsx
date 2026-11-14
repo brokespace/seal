@@ -2,8 +2,7 @@ import { Monitor, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { liveSessionMachineId } from '../../../../shared/live-sessions/live-session-machine-id'
-import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
+import { liveSessionsOnMachine } from '../../../../shared/live-sessions/live-session-machine-id'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type { HomeMachine, HomeMachineStatus } from './home-overview-model'
 import { homeMachineStatusLabel } from './home-overview-presentation'
@@ -53,14 +52,6 @@ export function HomeMachinesPanel({
   onOpen: (machine: HomeMachine) => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const activeByMachine = new Map<string, number>()
-  for (const session of sessions) {
-    const group = liveSessionStatusGroup(session.status)
-    if (group === 'attention' || group === 'working') {
-      const machineId = liveSessionMachineId(session.machine)
-      activeByMachine.set(machineId, (activeByMachine.get(machineId) ?? 0) + 1)
-    }
-  }
   const online = machines.filter((machine) => machine.status === 'online').length
   return (
     <HomeOverviewPanel
@@ -85,7 +76,7 @@ export function HomeMachinesPanel({
             {machines.map((machine) => {
               const Icon = machine.kind === 'local' ? Monitor : Server
               const load = loadLabel(machine, t)
-              const active = activeByMachine.get(machine.id) ?? 0
+              const active = liveSessionsOnMachine(sessions, machine).length
               return (
                 <li key={machine.id}>
                   <HomeOverviewRowButton onClick={() => onOpen(machine)} className="px-1.5 py-1.5">

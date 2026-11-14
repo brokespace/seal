@@ -4,12 +4,12 @@ import {
   useMachineMetricsEntries,
   useMachineMetricsPolling
 } from '@/components/machines/model/machine-metrics-store'
+import { useLocalMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import {
   sealHostSnapshot,
   subscribeSealHost
 } from '@/components/seal-session/seal-session-status-store'
-import { getLocalExecutionHostLabel } from '../../../../shared/execution-host'
 import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import {
@@ -47,7 +47,7 @@ function SealSessions({ children }: Children): React.JSX.Element {
 }
 
 function MachinesServiceMachines({ children }: Children): React.JSX.Element {
-  const localLabel = getLocalExecutionHostLabel()
+  const localLabel = useLocalMachineName()
   const { machines: summaries } = useMachinesInventory(localLabel)
   useMachineMetricsPolling(summaries)
   const metricsById = useMachineMetricsEntries()

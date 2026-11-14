@@ -9,15 +9,14 @@ import { useMachineMetricsEntries, useMachineMetricsPolling } from './model/mach
 import { getLastSelectedMachineId, rememberMachineSelection } from './model/machine-selection'
 import { useLiveSessions } from '../live-sessions/live-session-registry-store'
 import { activeLiveSessionsByMachine } from './model/machine-live-sessions'
+import { useLocalMachineName } from './model/use-local-machine-name'
 import { useMachinesInventory } from './model/use-machines-inventory'
 import { MachineTransfersPanel } from './transfers/MachineTransfersPanel'
 import { useMachineTransfers } from './transfers/use-machine-transfers'
 
 export default function MachinesPage(): React.JSX.Element {
   const t = useTranslate()
-  const { machines, reload } = useMachinesInventory(
-    t('auto.components.machines.page.localName', 'This computer')
-  )
+  const { machines, reload } = useMachinesInventory(useLocalMachineName())
   const metricsById = useMachineMetricsEntries()
   useMachineMetricsPolling(machines)
   const { sessions } = useLiveSessions()

@@ -20320,7 +20320,7 @@
           "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
           "chipAttention": "Needs attention",
           "chipWorking": "Working",
-          "chipMine": "This machine",
+          "chipMine": "This computer",
           "chipMineTitle": "Mine, on this machine",
           "search": "Filter by name, project, machine, agent, status",
           "searchLabel": "Filter sessions",

@@ -1,11 +1,11 @@
 import type { ComponentType, ReactNode } from 'react'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import type { LiveSessionMachineIdentity } from '../../../../shared/live-sessions/live-session-machine-id'
 
 export type HomeMachineKind = 'local' | 'ssh' | 'runtime'
 export type HomeMachineStatus = 'online' | 'connecting' | 'offline' | 'error'
 
-export type HomeMachine = {
-  id: string
+export type HomeMachine = LiveSessionMachineIdentity & {
   label: string
   kind: HomeMachineKind
   status: HomeMachineStatus

@@ -17,17 +17,20 @@ export function liveSessionMachineId(machine: LiveSessionMachine): string {
   return machine.kind === 'local' ? LOCAL_EXECUTION_HOST_ID : toSshExecutionHostId(machine.hostId)
 }
 
-type MachineIdentity = Pick<
-  MachineSummary,
-  'id' | 'executionHostId' | 'sshTargetId' | 'runtimeEnvironmentId'
+/** A machine by every id its sessions may name it: one machine however Seal reaches it. */
+export type LiveSessionMachineIdentity = { id: string } & Partial<
+  Pick<MachineSummary, 'executionHostId' | 'sshTargetId' | 'runtimeEnvironmentId'>
 >
 
 /** Its sessions on either transport: a merged machine is one machine however Seal reaches it. */
 export function liveSessionsOnMachine<T extends Pick<LiveSession, 'machine'>>(
   sessions: readonly T[],
-  machine: MachineIdentity
+  machine: LiveSessionMachineIdentity
 ): T[] {
-  const ids = new Set<string>([machine.id, machine.executionHostId])
+  const ids = new Set<string>([machine.id])
+  if (machine.executionHostId) {
+    ids.add(machine.executionHostId)
+  }
   if (machine.sshTargetId) {
     ids.add(toSshExecutionHostId(machine.sshTargetId))
   }
