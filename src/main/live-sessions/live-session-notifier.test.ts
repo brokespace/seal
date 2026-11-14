@@ -41,7 +41,7 @@ describe('session notifications', () => {
     expect(shown).toEqual([])
 
     see({ status: 'waiting-task' })
-    see({ status: 'idle', lastMessage: 'Both reviews are in; nothing blocking.' })
+    see({ status: 'your-turn', lastMessage: 'Both reviews are in; nothing blocking.' })
     expect(shown).toEqual([
       {
         sessionId: 'box:claude:s1',
@@ -50,6 +50,14 @@ describe('session notifications', () => {
         body: 'Claude Code on build-box finished: Both reviews are in; nothing blocking.'
       }
     ])
+  })
+
+  it('announce a finished turn once when its reply is then read as a question', () => {
+    const { shown, see } = watch()
+    see({ status: 'working' })
+    see({ status: 'your-turn', lastMessage: 'Should I go ahead with staging' })
+    see({ status: 'waiting-input', statusSource: 'classifier' })
+    expect(shown.map((n) => n.kind)).toEqual(['finished'])
   })
 
   it('say what a session asks for, once', () => {

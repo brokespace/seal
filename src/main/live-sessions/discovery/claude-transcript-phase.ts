@@ -1,7 +1,17 @@
 // Where a Claude Code transcript's newest turn stands, read from its last records.
-import { blocks, contentText, oneLine, rec, str, toolLabel } from './transcript-records'
+import {
+  askedQuestion,
+  blocks,
+  contentText,
+  oneLine,
+  rec,
+  str,
+  timeOf,
+  toolLabel
+} from './transcript-records'
 import type { TranscriptRecord } from './transcript-records'
-import type { TranscriptTurn } from './transcript-summary'
+import { replyAskOf } from './reply-ask'
+import type { PendingCallKind, TranscriptTurn } from './transcript-summary'
 
 /** Tools that hand the turn to the user: the call stays open until they answer. */
 const ASK_TOOLS: Partial<Record<string, string>> = {
@@ -9,12 +19,28 @@ const ASK_TOOLS: Partial<Record<string, string>> = {
   ExitPlanMode: 'Plan ready for review'
 }
 
+export function isClaudeAskTool(name: string): boolean {
+  return ASK_TOOLS[name] !== undefined
+}
+
 /** The tools that start a subagent (`Task` before Claude Code 2.x renamed it). */
 export const CLAUDE_SUBAGENT_TOOLS: ReadonlySet<string> = new Set(['Agent', 'Task'])
 
-type Turn = Omit<TranscriptTurn, 'lastMessage' | 'asksUser'>
+/** Tools that change files at once unless a permission prompt holds them. */
+const EDIT_TOOLS: ReadonlySet<string> = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
+
+type Turn = Pick<TranscriptTurn, 'phase' | 'detail' | 'pendingTool' | 'settled'> &
+  Partial<Pick<TranscriptTurn, 'pendingKind' | 'pendingSince'>>
 
 const WORKING: Turn = { phase: 'working', detail: 'Thinking', pendingTool: null, settled: false }
+
+function pendingKind(name: string, input: TranscriptRecord | null): PendingCallKind | null {
+  if (name === 'Bash') {
+    // A background command returns at once; only a foreground one holds the call open while it runs.
+    return input?.run_in_background === true ? null : 'shell'
+  }
+  return EDIT_TOOLS.has(name) ? 'edit' : null
+}
 
 /** A prompt the user typed, not a command echo, hook text or tool result. */
 export function claudePromptText(record: TranscriptRecord): string | null {
@@ -49,15 +75,39 @@ function assistantError(record: TranscriptRecord): Turn | null {
   }
 }
 
-function pendingTool(tool: TranscriptRecord): Turn {
+/** A turn the API refused still closes with its duration record; the error is the reply before it. */
+function errorBefore(records: TranscriptRecord[], index: number): Turn | null {
+  for (let i = index - 1; i >= 0; i--) {
+    const record = records[i]
+    if (record.isSidechain === true) {
+      continue
+    }
+    if (record.type === 'assistant') {
+      return assistantError(record)
+    }
+    if (record.type === 'user') {
+      return null
+    }
+  }
+  return null
+}
+
+function pendingTool(tool: TranscriptRecord, record: TranscriptRecord): Turn {
   const name = str(tool.name) ?? 'Tool'
   const ask = ASK_TOOLS[name]
   return ask
-    ? { phase: 'input-requested', detail: ask, pendingTool: name, settled: true }
+    ? {
+        phase: 'input-requested',
+        detail: askedQuestion(rec(tool.input)) ?? ask,
+        pendingTool: name,
+        settled: true
+      }
     : {
         phase: 'tool-pending',
         detail: toolLabel(name, rec(tool.input)),
         pendingTool: name,
+        pendingKind: pendingKind(name, rec(tool.input)),
+        pendingSince: timeOf(record),
         settled: false
       }
 }
@@ -81,7 +131,14 @@ function turnOf(records: TranscriptRecord[]): Turn {
         }
       }
       if (record.subtype === 'turn_duration' || record.subtype === 'stop_hook_summary') {
-        return { phase: 'turn-ended', detail: null, pendingTool: null, settled: true }
+        return (
+          errorBefore(records, i) ?? {
+            phase: 'turn-ended',
+            detail: null,
+            pendingTool: null,
+            settled: true
+          }
+        )
       }
       continue
     }
@@ -94,7 +151,7 @@ function turnOf(records: TranscriptRecord[]): Turn {
       const tools = blocks(content).filter((b) => b.type === 'tool_use')
       const open = tools.findLast((tool) => !answered.has(str(tool.id) ?? ''))
       if (open) {
-        return pendingTool(open)
+        return pendingTool(open, record)
       }
       if (tools.length > 0 && afterResult) {
         continue
@@ -152,25 +209,14 @@ function lastReply(records: TranscriptRecord[]): string | null {
   return null
 }
 
-/** A reply whose last line is a question leaves the next move to the user. */
-export function endsWithQuestion(text: string | null): boolean {
-  return (
-    text
-      ?.trim()
-      .split('\n')
-      .at(-1)
-      ?.trim()
-      .replace(/[*_`)\]"']+$/, '')
-      .endsWith('?') === true
-  )
-}
-
 export function claudePhase(records: TranscriptRecord[]): TranscriptTurn {
   const turn = turnOf(records)
   const reply = lastReply(records)
   return {
+    pendingKind: null,
+    pendingSince: null,
     ...turn,
     lastMessage: reply ? oneLine(reply, 200) : null,
-    asksUser: turn.phase === 'turn-ended' && turn.detail === null && endsWithQuestion(reply)
+    replyAsk: turn.phase === 'turn-ended' && turn.detail === null ? replyAskOf(reply) : 'tells'
   }
 }

@@ -160,10 +160,12 @@
     "liveSessions": {
       "status": {
         "working": "Working",
-        "waiting": "Waiting for input",
-        "permission": "Needs permission",
-        "errored": "Errored",
-        "done": "Done",
+        "runningShell": "Running shell",
+        "waiting": "Asking you a question",
+        "permission": "Waiting for approval",
+        "yourTurn": "Waiting on you",
+        "errored": "Error",
+        "done": "Ended",
         "waitingSubagent": "Waiting on subagents",
         "waitingTask": "Waiting on background tasks",
         "idle": "Idle"
@@ -421,12 +423,12 @@
         "done": "Done"
       },
       "state": {
-        "paused": "Cloudflare’s free limit for today is used up. The recap resumes when it resets.",
-        "pausedUntil": "Cloudflare’s free limit for today is used up. The recap resumes at {{time}}.",
-        "overBudget": "Today’s share of the free Cloudflare allocation for recaps is used. It resets at midnight UTC.",
+        "paused": "The model provider’s limit was reached. The recap resumes when it resets.",
+        "pausedUntil": "The model provider’s limit was reached. The recap resumes at {{time}}.",
+        "overBudget": "Today’s budget for recaps is used. It resets at midnight UTC.",
         "failedWhy": "The last update failed: {{reason}}",
         "failed": "The last update failed.",
-        "unavailable": "Recaps are off, or no Cloudflare Workers AI account is set up on the computer running Seal.",
+        "unavailable": "Recaps are off, or the model provider chosen for them is not set up on the computer running Seal.",
         "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
         "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
         "stale": "The session has moved on since this was written."

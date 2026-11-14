@@ -42,14 +42,17 @@ The registry covers Claude Code and Codex. Other terminal agents (Gemini, OpenCo
 
 `src/shared/live-sessions/live-session-status.ts` is the only place that interprets a session's status. It is shared by main, the window, the CLI and mobile.
 
-| Status                                           | Group       | Meaning                 |
-| ------------------------------------------------ | ----------- | ----------------------- |
-| `needs-permission`, `waiting-input`, `errored`   | `attention` | Waiting on you.         |
-| `working`, `waiting-subagent`, `waiting-task`    | `working`   | Busy.                   |
-| `idle`                                           | `idle`      | Alive, nothing running. |
-| `done`, or any status once the process has ended | `finished`  | No longer running.      |
+| Status                                                         | Group       | Meaning                 |
+| -------------------------------------------------------------- | ----------- | ----------------------- |
+| `needs-permission`, `waiting-input`, `errored`                 | `attention` | Blocked on you.         |
+| `working`, `running-shell`, `waiting-subagent`, `waiting-task` | `working`   | Busy.                   |
+| `your-turn`, `idle`                                            | `idle`      | Alive, nothing running. |
+| `done`, or any status once the process has ended               | `finished`  | No longer running.      |
+
+What each status means, its color, and how it is detected: [`session-status.md`](./session-status.md).
 
 - `liveSessionStatusGroup` gives the group; `isActiveLiveSession` says whether it is still running.
+- `liveSessionStatusTone` gives the color a status reads in; `LiveSessionStatusDot` draws it.
 - `liveSessionDotState` gives the dot drawn for a status, on desktop and mobile.
 - `compareLiveSessions` orders by urgency. `compareListedLiveSessions` puts pinned sessions first. `groupLiveSessionsByMachine` puts this computer first. Every list uses these (`src/shared/live-sessions/live-session-summary.ts`).
 - `countLiveSessionGroups` and `liveSessionsNeedingAttention` produce every count and every "needs attention" list.

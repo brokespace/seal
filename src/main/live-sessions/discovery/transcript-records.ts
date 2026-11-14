@@ -79,3 +79,10 @@ export function jsonField(value: unknown): TranscriptRecord | null {
   }
   return value.trimStart().startsWith('{') ? parseJsonRecord(value) : null
 }
+
+/** The first question of an ask-the-user tool call (`{ questions: [{ question }] }`), in one line. */
+export function askedQuestion(input: TranscriptRecord | null): string | null {
+  const first = Array.isArray(input?.questions) ? rec(input.questions[0]) : null
+  const question = str(first?.question)?.trim()
+  return question ? oneLine(question, 120) : null
+}

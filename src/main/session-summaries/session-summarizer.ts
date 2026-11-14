@@ -11,6 +11,26 @@ import {
 
 export type { SessionSummaryView }
 
+/** What is asked about a message: the status sentence by default, or any other one-line answer. */
+export type SessionSummarizerTask = {
+  /** What of the message goes to the model; empty when there is nothing to ask about. */
+  prepare: (message: string) => string
+  hash: (input: string, asking: boolean) => string
+  /** The answer when no request is worth making. */
+  withoutModel: (input: string) => string | null
+  request: (input: string, asking: boolean) => UtilityModelRequest
+  /** The answer in the model's reply; null when it gave none. */
+  clean: (reply: string) => string | null
+}
+
+const SUMMARY_TASK: SessionSummarizerTask = {
+  prepare: prepareSummaryInput,
+  hash: summaryInputHash,
+  withoutModel: summaryWithoutModel,
+  request: summaryRequest,
+  clean: cleanSummary
+}
+
 export type SessionSummarizerDeps = {
   /** The utility model's reply text; rejects when it cannot answer (unconfigured, paused, failed). */
   complete: (request: UtilityModelRequest, signal: AbortSignal) => Promise<string>
@@ -18,6 +38,7 @@ export type SessionSummarizerDeps = {
   enabled: () => boolean
   cache: SessionSummaryCache
   onChange: (sessionKey: string) => void
+  task?: SessionSummarizerTask
   setTimer?: (run: () => void, delayMs: number) => { cancel: () => void }
   now?: () => number
   debounceMs?: number
@@ -45,27 +66,30 @@ function defaultTimer(run: () => void, delayMs: number): { cancel: () => void } 
 }
 
 /**
- * One short sentence per waiting agent session. A message is summarized once per session (cache),
- * after it has stood for the debounce, with at most one request in flight per session.
+ * One short answer per waiting agent session (its status sentence, unless given another task). A
+ * message is asked about once per session (cache), after it has stood for the debounce, with at
+ * most one request in flight per session.
  */
 export class SessionSummarizer {
   private readonly entries = new Map<string, Entry>()
   private readonly setTimer: NonNullable<SessionSummarizerDeps['setTimer']>
   private readonly debounceMs: number
+  private readonly task: SessionSummarizerTask
 
   constructor(private readonly deps: SessionSummarizerDeps) {
+    this.task = deps.task ?? SUMMARY_TASK
     this.setTimer = deps.setTimer ?? defaultTimer
     this.debounceMs = deps.debounceMs ?? DEFAULT_DEBOUNCE_MS
   }
 
   /** The session stopped on `message`: show its summary, asking the model only for one never seen. */
   request(sessionKey: string, message: string, asking: boolean): void {
-    const input = prepareSummaryInput(message)
+    const input = this.task.prepare(message)
     if (!input) {
       this.clear(sessionKey)
       return
     }
-    const hash = summaryInputHash(input, asking)
+    const hash = this.task.hash(input, asking)
     const entry = this.entry(sessionKey)
     if (entry.wanted?.hash === hash && !entry.failed) {
       return
@@ -73,7 +97,7 @@ export class SessionSummarizer {
     entry.timer?.cancel()
     entry.timer = null
     entry.failed = false
-    const known = this.deps.cache.get(sessionKey, hash) ?? summaryWithoutModel(input)
+    const known = this.deps.cache.get(sessionKey, hash) ?? this.task.withoutModel(input)
     entry.wanted = { hash, input, asking }
     entry.text = known
     if (known === null) {
@@ -169,9 +193,9 @@ export class SessionSummarizer {
     const controller = new AbortController()
     entry.inFlight = controller
     void this.deps
-      .complete(summaryRequest(wanted.input, wanted.asking), controller.signal)
+      .complete(this.task.request(wanted.input, wanted.asking), controller.signal)
       .then(
-        (reply) => cleanSummary(reply),
+        (reply) => this.task.clean(reply),
         () => null
       )
       .then((text) => {

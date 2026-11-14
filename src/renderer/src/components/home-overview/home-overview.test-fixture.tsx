@@ -50,7 +50,7 @@ const SESSIONS: LiveSession[] = [
   }),
   session('Multi-account switcher', {
     provider: 'codex',
-    status: 'idle',
+    status: 'your-turn',
     lastMessage:
       'I pushed the branch and opened PR #12. It adds the account picker to the composer, a keyboard shortcut, and tests for the switch-on-limit path.',
     summary: 'Opened PR #12 with the account picker and its tests.'
@@ -79,11 +79,92 @@ const SESSIONS: LiveSession[] = [
 export const BUSY_HOME_SESSIONS: LiveSession[] = [
   ...SESSIONS,
   session('Fix flaky upload test', {
-    status: 'idle',
+    status: 'your-turn',
     lastActivityAt: NOW - 1 * MIN,
     lastMessage: 'The retry now waits for the server to close the stream.',
     summaryPending: true
   })
+]
+
+const subagent = (id: string, title: string, running: boolean) => ({
+  id,
+  title,
+  agentType: 'general-purpose',
+  model: 'sonnet',
+  status: running ? ('running' as const) : ('completed' as const),
+  background: true,
+  activity: running ? 'Read: webhook.ts' : null,
+  startedAt: NOW - 4 * MIN,
+  lastActivityAt: NOW - MIN,
+  transcriptPath: null
+})
+
+/** One session in each status, in the order Home lists them. */
+export const EVERY_STATUS_HOME_SESSIONS: LiveSession[] = [
+  session('Rebrand app icons', {
+    status: 'needs-permission',
+    statusSource: 'screen',
+    statusDetail: 'Allow Bash: pnpm build:icons?'
+  }),
+  session('Train tokenizer', {
+    status: 'waiting-input',
+    statusDetail: 'Which dataset split should I use for validation?',
+    // Recap counts stay off the card: its status already says it waits on the user.
+    recap: { title: 'Train tokenizer', rev: 2, questions: 2, actions: 2 }
+  }),
+  session('Nightly eval', {
+    provider: 'codex',
+    status: 'errored',
+    statusDetail: 'CUDA out of memory',
+    lastActivityAt: NOW - 40 * MIN
+  }),
+  session('Add Home overview page', {
+    status: 'working',
+    statusDetail: 'Edit: HomeSessionsPanel.tsx'
+  }),
+  session('Migrate the orders table', {
+    status: 'running-shell',
+    statusSource: 'process',
+    statusDetail: 'Bash: pnpm migrate:up --all',
+    startedAt: NOW - 6 * MIN
+  }),
+  session('Audit payment webhooks', {
+    status: 'waiting-subagent',
+    statusDetail: 'Waiting on 2 subagents',
+    activity: {
+      subagents: [
+        subagent('a1', 'Audit the Stripe webhook', true),
+        subagent('a2', 'Audit the PayPal webhook', true),
+        subagent('a3', 'List the webhook routes', false)
+      ],
+      tasks: [],
+      todos: []
+    }
+  }),
+  session('Profile the dev server', {
+    status: 'waiting-task',
+    statusDetail: 'Waiting on 1 background task',
+    activity: {
+      subagents: [],
+      tasks: [
+        {
+          id: 'bash_4',
+          label: 'pnpm dev --port 4310',
+          status: 'running',
+          startedAt: NOW - 3 * MIN,
+          summary: null
+        }
+      ],
+      todos: []
+    }
+  }),
+  session('Multi-account switcher', {
+    provider: 'codex',
+    status: 'your-turn',
+    summary: 'Opened PR #12 with the account picker and its tests.',
+    lastActivityAt: NOW - 9 * MIN
+  }),
+  session('Scratch', { status: 'idle', title: null, lastActivityAt: NOW - 25 * MIN })
 ]
 
 const MACHINES: HomeMachine[] = [

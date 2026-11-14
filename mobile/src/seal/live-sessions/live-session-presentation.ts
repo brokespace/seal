@@ -13,20 +13,24 @@ export function liveSessionStatusLabel(status: LiveSession['status']): string {
   switch (status) {
     case 'working':
       return translate('seal.liveSessions.status.working', 'Working')
+    case 'running-shell':
+      return translate('seal.liveSessions.status.runningShell', 'Running shell')
     case 'waiting-subagent':
       return translate('seal.liveSessions.status.waitingSubagent', 'Waiting on subagents')
     case 'waiting-task':
       return translate('seal.liveSessions.status.waitingTask', 'Waiting on background tasks')
+    case 'your-turn':
+      return translate('seal.liveSessions.status.yourTurn', 'Waiting on you')
     case 'idle':
       return translate('seal.liveSessions.status.idle', 'Idle')
     case 'waiting-input':
-      return translate('seal.liveSessions.status.waiting', 'Waiting for input')
+      return translate('seal.liveSessions.status.waiting', 'Asking you a question')
     case 'needs-permission':
-      return translate('seal.liveSessions.status.permission', 'Needs permission')
+      return translate('seal.liveSessions.status.permission', 'Waiting for approval')
     case 'errored':
-      return translate('seal.liveSessions.status.errored', 'Errored')
+      return translate('seal.liveSessions.status.errored', 'Error')
     case 'done':
-      return translate('seal.liveSessions.status.done', 'Done')
+      return translate('seal.liveSessions.status.done', 'Ended')
   }
 }
 

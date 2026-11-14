@@ -25,6 +25,7 @@ import {
   LiveSessionMenuItems,
   type LiveSessionMenuKit
 } from '../menu/LiveSessionMenuItems'
+import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
 
@@ -47,6 +48,8 @@ export type LiveSessionRowProps = {
   onPick: (session: LiveSession, range: boolean) => void
   /** The sidebar's colors, or those of a page or panel. */
   tone?: keyof typeof TONES
+  /** `card` leads with a large status dot and the status in words, for a list scanned by status. */
+  layout?: 'row' | 'card'
   /** Fixtures and tests pass their own menu; the default runs the real handlers. */
   menu?: (session: LiveSession, kit: LiveSessionMenuKit) => React.ReactNode
 }
@@ -93,6 +96,15 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
     group === 'working' ? (session.startedAt ?? session.lastActivityAt) : session.lastActivityAt
   const place = props.workspaceName ?? session.project
   const summary = liveSessionSummaryView(session)
+  const card = props.layout === 'card'
+  // What it runs, asks for or failed on. A wait already names what it waits on.
+  const detail =
+    card &&
+    group !== 'idle' &&
+    session.status !== 'waiting-subagent' &&
+    session.status !== 'waiting-task'
+      ? (session.statusDetail ?? session.permission?.question)
+      : null
 
   return (
     <ContextMenu onOpenChange={setMenuOpen}>
@@ -135,7 +147,8 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 }
               }}
               className={cn(
-                'group/agent relative flex min-w-0 cursor-pointer items-start gap-1.5 rounded-md py-1 pr-1 pl-1.5 outline-none',
+                'group/agent relative flex min-w-0 cursor-pointer items-start rounded-md pr-1 outline-none',
+                card ? 'gap-2 py-1.5 pl-2' : 'gap-1.5 py-1 pl-1.5',
                 'focus-visible:ring-2 focus-visible:ring-inset',
                 tone.row,
                 props.current && tone.current,
@@ -154,6 +167,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   }}
                 />
               ) : null}
+              {card ? <LiveSessionStatusDot status={session.status} size="lg" /> : null}
               <span className="relative mt-0.5 flex shrink-0">
                 <AgentIcon agent={session.provider} size={14} />
                 {props.unread ? (
@@ -195,11 +209,19 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   </span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1 text-2xs leading-4 text-muted-foreground">
-                  <LiveSessionStatusPill session={session} className="shrink-0 max-w-[70%]" />
+                  <LiveSessionStatusPill
+                    session={session}
+                    dot={!card}
+                    className={cn('max-w-[70%] shrink-0', card && 'font-medium')}
+                  />
                   <span className="min-w-0 flex-1 truncate">
-                    {place ? `\u00b7 ${place}` : null}
+                    {[detail, place]
+                      .filter(Boolean)
+                      .map((part) => `\u00b7 ${part}`)
+                      .join(' ')}
                   </span>
-                  <SessionRecapBadge brief={session.recap} />
+                  {/* The card's status says whether it waits on the user; counts beside it only repeat that. */}
+                  {card ? null : <SessionRecapBadge brief={session.recap} />}
                   {subagents > 0 ? (
                     <span
                       data-live-session-subagents={subagents}

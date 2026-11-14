@@ -1,7 +1,7 @@
 // Where a Codex rollout's newest turn stands, read from its last records.
 import { codexUserMessageText } from './codex-user-message'
-import { endsWithQuestion } from './claude-transcript-phase'
-import { oneLine, rec, str } from './transcript-records'
+import { replyAskOf } from './reply-ask'
+import { askedQuestion, oneLine, rec, str, timeOf } from './transcript-records'
 import type { TranscriptRecord } from './transcript-records'
 import type { TranscriptTurn } from './transcript-summary'
 
@@ -26,10 +26,127 @@ const CODEX_WORKING = new Set([
 /** The calls that park a Codex turn until its helper threads report back. */
 export const CODEX_WAIT_TOOLS: ReadonlySet<string> = new Set(['wait_agent', 'wait'])
 
-type Turn = Omit<TranscriptTurn, 'lastMessage' | 'asksUser'>
+/** The calls that run a shell command, across Codex versions. */
+const CODEX_SHELL_TOOLS: ReadonlySet<string> = new Set([
+  'shell',
+  'shell_command',
+  'exec_command',
+  'local_shell',
+  'unified_exec',
+  'container.exec'
+])
+const CODEX_CALLS: ReadonlySet<string> = new Set([
+  'function_call',
+  'custom_tool_call',
+  'local_shell_call'
+])
+const CODEX_CALL_OUTPUTS: ReadonlySet<string> = new Set([
+  'function_call_output',
+  'custom_tool_call_output',
+  'local_shell_call_output'
+])
+/** `tools.exec_command({ cmd: "…" })` inside a code-mode `exec` cell (Codex 0.169+). */
+const EXEC_CELL_COMMAND = /\bexec_command\(\s*\{[^}]*?\bcmd:\s*(["'`])((?:\\.|(?!\1).)*)\1/s
+
+/** `tools.write_stdin({ session_id })` polls a command that outlived the `exec_command` that started it. */
+const EXEC_CELL_POLL = /\bwrite_stdin\(/
+
+type Turn = Pick<TranscriptTurn, 'phase' | 'detail' | 'pendingTool' | 'settled'> &
+  Partial<Pick<TranscriptTurn, 'pendingKind' | 'pendingSince'>>
 
 function turn(phase: Turn['phase'], detail: string | null, extra?: Partial<Turn>): Turn {
   return { phase, detail, pendingTool: null, settled: false, ...extra }
+}
+
+function shellCall(
+  command: string | null,
+  record: TranscriptRecord,
+  pendingKind: 'shell' | 'shell-wait' = 'shell'
+): Turn {
+  return turn('tool-pending', oneLine(`Bash: ${command ?? 'command'}`, 80), {
+    pendingTool: 'shell',
+    pendingKind,
+    pendingSince: timeOf(record)
+  })
+}
+
+function argumentsOf(payload: TranscriptRecord): TranscriptRecord | null {
+  try {
+    return rec(JSON.parse(str(payload.arguments) ?? 'null'))
+  } catch {
+    return null
+  }
+}
+
+function commandText(command: unknown): string | null {
+  return Array.isArray(command) ? command.join(' ') : str(command)
+}
+
+/** A call the rollout holds no output for: what the turn waits on, when the call says. */
+function pendingCall(
+  kind: string,
+  payload: TranscriptRecord,
+  record: TranscriptRecord
+): Turn | null {
+  const name = str(payload.name) ?? ''
+  if (kind === 'local_shell_call') {
+    return shellCall(commandText(rec(payload.action)?.command), record)
+  }
+  if (kind === 'custom_tool_call') {
+    const input = str(payload.input) ?? ''
+    const command = EXEC_CELL_COMMAND.exec(input)
+    if (name === 'exec' && command) {
+      return shellCall(command[2], record)
+    }
+    if (name === 'exec' && EXEC_CELL_POLL.test(input)) {
+      return shellCall(null, record, 'shell-wait')
+    }
+    if (name === 'apply_patch') {
+      return turn('tool-pending', 'Edit: patch', {
+        pendingTool: name,
+        pendingKind: 'edit',
+        pendingSince: timeOf(record)
+      })
+    }
+    return turn('tool-pending', name || 'Tool', { pendingTool: name || 'tool' })
+  }
+  const args = argumentsOf(payload)
+  if (name === 'request_user_input') {
+    return turn('input-requested', askedQuestion(args) ?? 'Question for you', {
+      pendingTool: name,
+      settled: true
+    })
+  }
+  if (CODEX_SHELL_TOOLS.has(name)) {
+    return shellCall(commandText(args?.command) ?? str(args?.cmd), record)
+  }
+  // `wait` on a cell resumes a command that outlived its `exec` call; on anything else, helpers.
+  if ((name === 'wait' && str(args?.cell_id)) || name === 'write_stdin') {
+    return shellCall(null, record, 'shell-wait')
+  }
+  if (CODEX_WAIT_TOOLS.has(name)) {
+    return turn('tool-pending', 'Waiting on helpers', { pendingTool: 'wait_agent' })
+  }
+  return null
+}
+
+/** The command a poll waits on: the one its turn started last. */
+function commandBefore(records: TranscriptRecord[], index: number): string | null {
+  for (let i = index - 1; i >= 0; i--) {
+    const record = records[i]
+    const payload = rec(record.payload)
+    const kind = str(payload?.type)
+    if (record.type === 'event_msg' && kind === 'task_started') {
+      return null
+    }
+    if (record.type === 'response_item' && kind && payload && CODEX_CALLS.has(kind)) {
+      const call = pendingCall(kind, payload, record)
+      if (call?.pendingKind === 'shell') {
+        return call.detail
+      }
+    }
+  }
+  return null
 }
 
 function turnOf(records: TranscriptRecord[]): Turn {
@@ -39,19 +156,30 @@ function turnOf(records: TranscriptRecord[]): Turn {
     const payload = rec(record.payload)
     const kind = str(payload?.type)
     if (record.type === 'response_item') {
-      if (kind === 'function_call_output') {
+      if (kind && CODEX_CALL_OUTPUTS.has(kind)) {
         answered.add(str(payload?.call_id) ?? '')
       } else if (
-        kind === 'function_call' &&
-        CODEX_WAIT_TOOLS.has(str(payload?.name) ?? '') &&
-        !answered.has(str(payload?.call_id) ?? '')
+        kind &&
+        payload &&
+        CODEX_CALLS.has(kind) &&
+        !answered.has(str(payload.call_id) ?? '')
       ) {
-        return turn('tool-pending', 'Waiting on helpers', { pendingTool: 'wait_agent' })
+        const pending = pendingCall(kind, payload, record)
+        if (pending) {
+          return pending.pendingKind === 'shell-wait'
+            ? { ...pending, detail: commandBefore(records, i) ?? pending.detail }
+            : pending
+        }
       }
       continue
     }
     if (record.type !== 'event_msg' || !kind) {
       continue
+    }
+    // Codex 0.169 ends a failed turn with `task_complete` carrying the error.
+    const failure = kind === 'task_complete' ? rec(payload?.error) : null
+    if (failure) {
+      return turn('errored', oneLine(str(failure.message) ?? 'Error'), { settled: true })
     }
     if (kind === 'task_complete' || kind === 'turn_aborted') {
       return turn('turn-ended', kind === 'turn_aborted' ? 'Interrupted' : null, { settled: true })
@@ -71,7 +199,7 @@ function turnOf(records: TranscriptRecord[]): Turn {
     }
     if (kind === 'exec_command_begin') {
       const command = Array.isArray(payload?.command) ? payload.command.join(' ') : 'command'
-      return turn('tool-pending', oneLine(`Bash: ${command}`, 80), { pendingTool: 'shell' })
+      return shellCall(command, record)
     }
     if (CODEX_WORKING.has(kind) || codexUserMessageText(record) !== null) {
       return turn('working', 'Thinking')
@@ -103,8 +231,10 @@ export function codexPhase(records: TranscriptRecord[]): TranscriptTurn {
   const found = turnOf(records)
   const reply = lastReply(records)
   return {
+    pendingKind: null,
+    pendingSince: null,
     ...found,
     lastMessage: reply ? oneLine(reply, 200) : null,
-    asksUser: found.phase === 'turn-ended' && found.detail === null && endsWithQuestion(reply)
+    replyAsk: found.phase === 'turn-ended' && found.detail === null ? replyAskOf(reply) : 'tells'
   }
 }

@@ -12,6 +12,7 @@ export function LiveSessionRows({
   label,
   now,
   tone = 'surface',
+  layout,
   menu
 }: {
   sessions: readonly LiveSession[]
@@ -19,6 +20,7 @@ export function LiveSessionRows({
   label: string
   now: number
   tone?: LiveSessionRowProps['tone']
+  layout?: LiveSessionRowProps['layout']
   menu?: LiveSessionRowProps['menu']
 }): React.JSX.Element {
   const rowState = useLiveSessionRowState()
@@ -34,6 +36,7 @@ export function LiveSessionRows({
           tabStop
           now={now}
           tone={tone}
+          layout={layout}
           onOpen={openLiveSessionFromRow}
           // Only Active agents multi-selects; elsewhere a modified click still opens.
           onPick={(picked) => openLiveSessionFromRow(picked)}
