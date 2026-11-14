@@ -70,6 +70,11 @@ export function AgentConfigPanel({
     [reload]
   )
 
+  // One object for as long as the place is the same: a reload must not look like a new place.
+  const target = useMemo<AgentConfigPanelState['target']>(
+    () => ({ machineId: machine.id, agent, ...(projectPath ? { projectPath } : {}) }),
+    [agent, machine.id, projectPath]
+  )
   const context = useMemo<AgentConfigPanelState | null>(
     () =>
       snapshot
@@ -77,7 +82,7 @@ export function AgentConfigPanel({
             machine,
             machines,
             projects,
-            target: snapshot.target,
+            target,
             layout,
             snapshot,
             homeScope: projectPath ? 'project' : 'user',
@@ -85,7 +90,7 @@ export function AgentConfigPanel({
             apply
           }
         : null,
-    [apply, layout, machine, machines, projectPath, projects, reload, snapshot]
+    [apply, layout, machine, machines, projectPath, projects, reload, snapshot, target]
   )
 
   if (!online) {
