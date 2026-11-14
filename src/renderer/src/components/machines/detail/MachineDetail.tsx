@@ -267,7 +267,12 @@ export function MachineDetail({
         hidden={resource !== null}
         folderRequest={folderRequest}
       />
-      <MachineEditDialog target={editing} onClose={() => setEditing(null)} onSaved={onChanged} />
+      <MachineEditDialog
+        machineId={machine.id}
+        target={editing}
+        onClose={() => setEditing(null)}
+        onSaved={onChanged}
+      />
       {removal ? (
         <HostRemoveDialog
           open={removing}

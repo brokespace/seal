@@ -8,26 +8,39 @@ import {
   getEditingTargetForSshTarget,
   type EditingTarget
 } from '@/components/ssh-host-form/ssh-target-draft'
+import type { MachineId } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
-async function saveMachineEdit(targetId: string, form: EditingTarget): Promise<string | null> {
+async function saveMachineEdit(
+  machineId: MachineId,
+  target: SshTarget,
+  form: EditingTarget
+): Promise<string | null> {
   const result = buildSshTargetSavePayload(form)
   if (!result.ok) {
     return result.error
   }
   try {
-    await window.api.ssh.updateTarget({ id: targetId, updates: result.payload.updates })
+    await window.api.ssh.updateTarget({ id: target.id, updates: result.payload.updates })
+    const label = form.label.trim()
+    // The machine keeps its own name, so a new label has to be carried over to it.
+    if (label && label !== target.label) {
+      await window.api.machines?.renameMachine({ machineId, name: label })
+    }
     return null
   } catch (error) {
-    return error instanceof Error ? error.message : String(error)
+    return readIpcErrorMessage(error) ?? String(error)
   }
 }
 
 export function MachineEditDialog({
+  machineId,
   target,
   onClose,
   onSaved
 }: {
+  machineId: MachineId
   target: SshTarget | null
   onClose: () => void
   onSaved: () => void
@@ -46,7 +59,7 @@ export function MachineEditDialog({
       return
     }
     setSaving(true)
-    const error = await saveMachineEdit(target.id, form)
+    const error = await saveMachineEdit(machineId, target, form)
     setSaving(false)
     if (error) {
       toast.error(error)
