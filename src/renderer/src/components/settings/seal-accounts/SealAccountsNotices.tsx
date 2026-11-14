@@ -20,7 +20,9 @@ export function SealAccountsNotices({
 }: SealAccountsNoticesProps): React.JSX.Element | null {
   const t = useTranslate()
   const notice = status.migrationNotice?.merged.length ? status.migrationNotice : null
-  const unreachable = overview.machines.filter((machine) => !machine.home && !machine.reachable)
+  const unreachable = overview.machines.filter(
+    (machine) => !machine.home && machine.runsSeal && !machine.reachable
+  )
   if (!notice && unreachable.length === 0 && !error && !status.secretStorage.protectionGap) {
     return null
   }

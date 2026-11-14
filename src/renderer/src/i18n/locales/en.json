@@ -25946,6 +25946,7 @@
         "sessionsThere": "{{value0}} running",
         "heldOn": "Signed in on",
         "notHere": "Not on this computer",
+        "pushedThere": "Login pushed from this computer. This machine has no Seal server, so its state is not shown.",
         "thisComputer": "This computer",
         "thisServer": "This server"
       },
@@ -25984,13 +25985,15 @@
         "systemKeep": "Remove from Seal: `{{value0}}` stays signed in in your own terminal. Seal stops listing and using the account until you add it again.",
         "systemLogout": "Remove and log out: also runs `{{value0}}` and signs this computer out.",
         "alsoFrom": "Also remove its login from",
+        "leftBehind": "The login pushed to {{value0}} stays there: that machine has no Seal server to remove it. Sign out there to remove it.",
         "confirmLogout": "Remove and log out",
         "confirmSeal": "Remove from Seal",
         "confirm": "Remove"
       },
       "push": {
         "done": "Pushed {{value0}} to {{value1}}",
-        "failed": "Could not push {{value0}} to {{value1}}"
+        "failed": "Could not push {{value0}} to {{value1}}",
+        "loginOnly": "Sessions there can use this login. Rules and auto-swap run only where a Seal server runs."
       },
       "rules": {
         "synced": "Rules and auto-swap settings pushed to {{value0}}.",

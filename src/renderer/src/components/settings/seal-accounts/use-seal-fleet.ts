@@ -13,8 +13,14 @@ import { useSealAccounts, type SealAccountsMutation } from './use-seal-accounts'
 const REMOTE_POLL_MS = 60_000
 const REMOTE_TIMEOUT_MS = 20_000
 
-/** Another machine with a Seal runtime, which can hold copies of accounts. */
-export type SealRemoteMachine = { id: string; label: string }
+/** Another machine that can hold copies of accounts. */
+export type SealRemoteMachine = {
+  /** The paired server's environment id, or the `machine:` id of one reached over SSH only. */
+  id: string
+  label: string
+  /** Set when it has no Seal server to ask: it only takes pushed logins. */
+  loginsOnly?: { connected: boolean }
+}
 
 type RemoteReading = { status: SealAccountsStatus | null; error: string | null }
 
@@ -23,6 +29,9 @@ function errorText(caught: unknown): string {
 }
 
 async function readRemote(machine: SealRemoteMachine): Promise<RemoteReading> {
+  if (machine.loginsOnly) {
+    return { status: null, error: null }
+  }
   try {
     const status = await callRuntimeRpc<SealAccountsStatus>(
       { kind: 'environment', environmentId: machine.id },
@@ -118,7 +127,8 @@ export function useSealFleet(
               label: machine.label,
               home: false,
               status: readings[machine.id]?.status ?? null,
-              error: readings[machine.id]?.error ?? null
+              error: readings[machine.id]?.error ?? null,
+              loginsOnly: machine.loginsOnly
             }))
           ])
         : null,

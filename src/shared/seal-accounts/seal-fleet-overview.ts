@@ -15,10 +15,15 @@ export type SealFleetMachineReading = {
   home: boolean
   status: SealAccountsStatus | null
   error: string | null
+  /** Set for a machine reached over SSH only: it takes pushed logins, reports nothing, never swaps. */
+  loginsOnly?: { connected: boolean }
 }
 
 export type SealFleetMachine = Pick<SealFleetMachineReading, 'id' | 'label' | 'home' | 'error'> & {
+  /** It answered, or for a machine without a Seal server, its SSH connection is up. */
   reachable: boolean
+  /** It runs Seal: it reports its accounts, follows rules and swaps on its own. */
+  runsSeal: boolean
 }
 
 export const SEAL_ACCOUNT_GROUPS = ['claude', 'codex', 'apiKeys'] as const
@@ -36,6 +41,8 @@ export type SealAccountPresence = {
   systemLogin: boolean
   /** Open sessions on that machine running on it. */
   sessions: number
+  /** False when the machine has no Seal server: the login was pushed there and its state is unknown. */
+  reported: boolean
 }
 
 export type SealFleetAccount = {
@@ -90,7 +97,30 @@ function presence(
     active: candidate.active,
     systemLogin: candidate.systemLogin === true,
     sessions: (machine.status?.sessions ?? []).filter((session) => isOpenOn(session, candidate.key))
-      .length
+      .length,
+    reported: true
+  }
+}
+
+/** A machine without a Seal server holds exactly the logins the home machine pushed to it. */
+function addPushedCopies(
+  accounts: SealFleetAccount[],
+  machine: SealFleetMachineReading,
+  pushed: readonly SealAccountKey[]
+): void {
+  for (const account of accounts) {
+    if (account.onHome && pushed.some((key) => sealAccountKeysMatch(key, account.key))) {
+      account.machines.push({
+        machineId: machine.id,
+        machineLabel: machine.label,
+        home: false,
+        health: OK,
+        active: false,
+        systemLogin: false,
+        sessions: 0,
+        reported: false
+      })
+    }
   }
 }
 
@@ -142,6 +172,12 @@ export function buildSealFleetOverview(
       }
     }
   }
+  const copies = ordered.find((machine) => machine.home)?.status?.fleetCopies ?? {}
+  for (const machine of ordered) {
+    if (machine.loginsOnly) {
+      addPushedCopies(accounts, machine, copies[machine.id] ?? [])
+    }
+  }
   const group = (name: SealAccountGroup): SealFleetAccount[] =>
     accounts.filter((account) => account.group === name).sort(byPriority)
   const tagged = <T>(pick: (status: SealAccountsStatus) => T[]) =>
@@ -160,7 +196,8 @@ export function buildSealFleetOverview(
       label: machine.label,
       home: machine.home,
       error: machine.error,
-      reachable: machine.status !== null
+      reachable: machine.loginsOnly ? machine.loginsOnly.connected : machine.status !== null,
+      runsSeal: !machine.loginsOnly
     })),
     groups: { claude: group('claude'), codex: group('codex'), apiKeys: group('apiKeys') },
     sessions: tagged((status) => status.sessions).sort((a, b) => b.at - a.at),

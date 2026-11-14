@@ -177,6 +177,7 @@ switch on its row picks the one Seal uses. See [machines.md](machines.md).
 - [ ] With a second machine paired, the summary reads "N accounts across 2 machines", Push to machine adds that machine's chip, and Sync to machines copies logins and rules.
 - [ ] Turn on auto-swap for Claude, push one account near its threshold, and watch a new session launch on another account; running sessions swap on polled 5h/7d usage and the move is listed under Swap history.
 - [ ] A Seal-launched agent tab shows its account badge; the badge menu moves the session (Claude live, Codex by resume) and the toast says which.
+- [ ] Push to machine lists every Seal server and every connected SSH machine. Pushing to an SSH machine installs the login there (Claude via the login Keychain on a Mac), adds its chip, and says swap rules only run where a Seal server runs.
 - [ ] Home → Accounts card lists the same accounts with compact usage, and Manage opens Settings → Accounts.
 - [ ] `seal account usage` prints one aligned table per provider; `seal account import|remove|order|token add|key add|key rm` change the same roster the page shows. `seal account current|swap|pick|alias|autoswap|policy|pin|sync|sessions --help` all print `seal account …` usage; `--environment <id>` targets the Linux server.
 - [ ] On the Linux server: `seal account usage --json` answers from its own vault.

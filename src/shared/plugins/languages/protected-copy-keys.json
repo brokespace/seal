@@ -938,6 +938,7 @@
     "seal.accounts.remove.confirm",
     "seal.accounts.remove.confirmLogout",
     "seal.accounts.remove.confirmSeal",
+    "seal.accounts.remove.leftBehind",
     "seal.accounts.remove.login",
     "seal.accounts.remove.remoteOnly",
     "seal.accounts.remove.secret",

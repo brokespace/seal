@@ -230,7 +230,17 @@ function scenario(home: SealAccountsStatus, remote: SealAccountsStatus | null) {
     overview: buildSealFleetOverview([
       { id: 'local', label: 'This computer', home: true, status: home, error: null },
       ...(remote
-        ? [{ id: 'env-build', label: 'build-box', home: false, status: remote, error: null }]
+        ? [
+            { id: 'env-build', label: 'build-box', home: false, status: remote, error: null },
+            {
+              id: 'machine:gpu',
+              label: 'gpu-box',
+              home: false,
+              status: null,
+              error: null,
+              loginsOnly: { connected: true }
+            }
+          ]
         : [])
     ])
   }
@@ -242,6 +252,7 @@ export function populatedScenario(): SealAccountsPageScenario {
     at: FIXTURE_NOW,
     merged: [{ provider: 'claude', label: 'work@acme.dev', removed: 2 }]
   }
+  home.fleetCopies = { 'machine:gpu': [WORK.key] }
   return scenario(home, buildBoxStatus())
 }
 

@@ -34,7 +34,9 @@ export function SealRemoveAccountDialog({
   const t = useTranslate()
   const { candidate } = account
   const cli = candidate.provider === 'claude' ? 'claude' : 'codex'
-  const others = account.machines.filter((machine) => !machine.home)
+  // A machine without a Seal server cannot be asked to drop a login.
+  const others = account.machines.filter((machine) => !machine.home && machine.reported)
+  const leftBehind = account.machines.filter((machine) => !machine.reported)
   const [machineIds, setMachineIds] = useState<string[]>(() =>
     others.map((machine) => machine.machineId)
   )
@@ -140,6 +142,15 @@ export function SealRemoveAccountDialog({
               </label>
             ))}
           </fieldset>
+        ) : null}
+        {leftBehind.length > 0 ? (
+          <p className="text-xs text-muted-foreground" data-slot="seal-remove-left-behind">
+            {t(
+              'seal.accounts.remove.leftBehind',
+              'The login pushed to {{value0}} stays there: that machine has no Seal server to remove it. Sign out there to remove it.',
+              { value0: leftBehind.map((machine) => machine.machineLabel).join(', ') }
+            )}
+          </p>
         ) : null}
         <DialogFooter>
           <Button variant="ghost" disabled={busy} onClick={() => onOpenChange(false)}>

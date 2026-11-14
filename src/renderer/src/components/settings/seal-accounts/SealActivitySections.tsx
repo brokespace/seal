@@ -77,7 +77,7 @@ export function SealSessionsSection({
 }: SealSessionsSectionProps): React.JSX.Element {
   const t = useTranslate()
   const open = overview.sessions.filter((session) => !session.endedAt).slice(0, MAX_SESSIONS)
-  const showMachine = overview.machines.length > 1
+  const showMachine = overview.machines.filter((machine) => machine.runsSeal).length > 1
   return (
     <SettingsGroup
       id="seal-accounts-sessions"
@@ -142,7 +142,7 @@ export function SealSwapHistorySection({
 }): React.JSX.Element {
   const t = useTranslate()
   const rows = buildSealSwapHistory(overview)
-  const showMachine = overview.machines.length > 1
+  const showMachine = overview.machines.filter((machine) => machine.runsSeal).length > 1
   return (
     <SettingsGroup
       id="seal-accounts-history"

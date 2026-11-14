@@ -9,6 +9,7 @@ import {
   type SealAccountProfile
 } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
 import { SealAccountsPageView, type SealAccountsPageActions } from './SealAccountsPageView'
 import { useSealFleet, type SealRemoteMachine } from './use-seal-fleet'
@@ -19,6 +20,7 @@ type SyncResult = {
     environmentId: string
     ok: boolean
     error: string | null
+    policyApplied?: boolean
     credentials: { account: string; ok: boolean; error: string | null }[]
   }[]
 }
@@ -30,6 +32,23 @@ type RemoveResult = {
 
 const NO_REMOTES: readonly SealRemoteMachine[] = []
 const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
+
+/** A paired Seal server manages its own accounts; a machine reached over SSH only takes logins. */
+function sealRemoteMachine(machine: MachineSummary): SealRemoteMachine[] {
+  if (machine.connection === 'server' && machine.runtimeEnvironmentId) {
+    return [{ id: machine.runtimeEnvironmentId, label: machine.label }]
+  }
+  if (machine.connection === 'ssh') {
+    return [
+      {
+        id: machine.id,
+        label: machine.label,
+        loginsOnly: { connected: machine.status === 'online' }
+      }
+    ]
+  }
+  return []
+}
 
 function isEmptyProfile(profile: SealAccountProfile): boolean {
   return Object.values(profile).every((value) => value === undefined)
@@ -56,19 +75,26 @@ function SealAccountsPageForHost({
       ? t('seal.accounts.machine.thisComputer', 'This computer')
       : t('seal.accounts.machine.thisServer', 'This server')
   const fleet = useSealFleet(target, homeLabel, remotes)
-  const { mutate, mutateOn, refresh, reloadMachines } = fleet
+  const { mutate, mutateOn, refresh } = fleet
   const signIn = useSealSignIn(target, () => void refresh(true))
   const failed = t('seal.accounts.error', 'Could not update accounts')
   const labelOfMachine = (id: string): string =>
     remotes.find((machine) => machine.id === id)?.label ?? id
 
-  const sync = async (environmentIds: string[], accounts?: string[]): Promise<SyncResult> =>
-    callRuntimeRpc<SyncResult>(
+  const sync = async (machineIds: string[], accounts?: string[]): Promise<SyncResult> => {
+    const loginsOnly = (id: string): boolean =>
+      remotes.some((machine) => machine.id === id && machine.loginsOnly)
+    return callRuntimeRpc<SyncResult>(
       target,
       'seal.accounts.syncFleet',
-      { environmentIds, ...(accounts ? { accounts } : {}) },
+      {
+        environmentIds: machineIds.filter((id) => !loginsOnly(id)),
+        machineIds: machineIds.filter(loginsOnly),
+        ...(accounts ? { accounts } : {})
+      },
       { timeoutMs: 120_000 }
     )
+  }
 
   const actions: SealAccountsPageActions = {
     refresh: () => void refresh(true),
@@ -159,12 +185,21 @@ function SealAccountsPageForHost({
           if (!result?.ok || !login?.ok) {
             throw new Error(result?.error ?? login?.error ?? '')
           }
-          await reloadMachines()
+          // Pushing to a machine without a Seal server shows up in this computer's own record.
+          await refresh(false)
           toast.success(
             t('seal.accounts.push.done', 'Pushed {{value0}} to {{value1}}', {
               value0: account.candidate.label,
               value1: machine
-            })
+            }),
+            result.policyApplied === false
+              ? {
+                  description: t(
+                    'seal.accounts.push.loginOnly',
+                    'Sessions there can use this login. Rules and auto-swap run only where a Seal server runs.'
+                  )
+                }
+              : undefined
           )
         })
         .catch((caught: unknown) =>
@@ -211,7 +246,9 @@ function SealAccountsPageForHost({
       ),
     syncRules: async () => {
       try {
-        const { results } = await sync(remotes.map((machine) => machine.id))
+        const { results } = await sync(
+          remotes.filter((machine) => !machine.loginsOnly).map((machine) => machine.id)
+        )
         const failures = results.filter((result) => !result.ok)
         return failures.length === 0
           ? t('seal.accounts.rules.synced', 'Rules and auto-swap settings pushed to {{value0}}.', {
@@ -258,21 +295,11 @@ function SealAccountsPageForFleet({
 }: Pick<SealAccountsPageProps, 'claudeOptions'>): React.JSX.Element {
   const { machines } = useMachinesInventory(getLocalExecutionHostLabel())
   // Keyed by content: the inventory rebuilds its list on every status tick.
-  const key = machines
-    .flatMap((machine) =>
-      machine.runtimeEnvironmentId ? [`${machine.runtimeEnvironmentId}\n${machine.label}`] : []
-    )
-    .join('\u0000')
-  const remotes = useMemo<readonly SealRemoteMachine[]>(
-    () =>
-      key
-        ? key.split('\u0000').map((entry) => {
-            const [id, label] = entry.split('\n')
-            return { id, label }
-          })
-        : NO_REMOTES,
-    [key]
-  )
+  const key = JSON.stringify(machines.flatMap(sealRemoteMachine))
+  const remotes = useMemo<readonly SealRemoteMachine[]>(() => {
+    const parsed: SealRemoteMachine[] = JSON.parse(key)
+    return parsed.length > 0 ? parsed : NO_REMOTES
+  }, [key])
   return (
     <SealAccountsPageForHost
       target={LOCAL_TARGET}

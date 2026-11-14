@@ -168,6 +168,7 @@ export class SealAccountManager {
       swapLog: state.swapLog,
       sessions: state.sessions,
       workspacePins: state.workspacePins,
+      fleetCopies: state.fleetCopies,
       systemLogins: sealSystemLoginStatus(this),
       migrationNotice: state.accountsMigration?.notice ?? null,
       secretStorage: {

@@ -191,7 +191,7 @@ export function SealAccountsPageView({
           <SealRulesSection
             status={status}
             accounts={allAccounts}
-            machines={overview.machines}
+            machines={overview.machines.filter((machine) => machine.runsSeal)}
             onSave={actions.saveRule}
             onRemove={actions.removeRule}
             onSync={actions.syncRules}

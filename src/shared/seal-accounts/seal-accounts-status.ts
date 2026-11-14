@@ -88,6 +88,8 @@ export type SealAccountsStatus = {
   swapLog: SealSwapEvent[]
   sessions: SealSessionAssignment[]
   workspacePins: SealWorkspacePins
+  /** Logins this machine pushed, by the machine now holding a copy. */
+  fleetCopies?: Record<string, SealAccountKey[]>
   systemLogins?: Record<SealProvider, SealSystemLogin | null>
   migrationNotice?: SealMigrationNotice | null
   secretStorage: { available: boolean; protectionGap: string | null }

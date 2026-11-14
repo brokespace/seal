@@ -14,6 +14,12 @@ const DOT_CLASS = {
 } as const
 
 function presenceDetail(presence: SealAccountPresence, t: Translate): string {
+  if (!presence.reported) {
+    return t(
+      'seal.accounts.machine.pushedThere',
+      'Login pushed from this computer. This machine has no Seal server, so its state is not shown.'
+    )
+  }
   return [
     sealHealthLabel(presence.health, t),
     presence.active ? t('seal.accounts.machine.activeThere', 'new sessions start on it') : null,
@@ -48,13 +54,15 @@ export function SealAccountMachines({ account }: { account: SealFleetAccount }):
           >
             <Icon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
             <span className="truncate">{presence.machineLabel}</span>
-            <span
-              className={cn(
-                'size-1.5 shrink-0 rounded-full',
-                DOT_CLASS[sealHealthTone(presence.health)]
-              )}
-              aria-hidden
-            />
+            {presence.reported ? (
+              <span
+                className={cn(
+                  'size-1.5 shrink-0 rounded-full',
+                  DOT_CLASS[sealHealthTone(presence.health)]
+                )}
+                aria-hidden
+              />
+            ) : null}
             <span className="sr-only">{presenceDetail(presence, t)}</span>
           </span>
         )
