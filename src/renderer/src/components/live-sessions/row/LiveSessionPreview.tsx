@@ -1,4 +1,5 @@
 import { Bot } from 'lucide-react'
+import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate } from '@/i18n/use-translate'
 import { runningSubagents } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
@@ -14,6 +15,7 @@ export function LiveSessionPreview({
   workspaceName: string | null
 }): React.JSX.Element {
   const t = useTranslate()
+  const machineName = useSessionMachineName()
   const running = runningSubagents(session.activity)
   const current = session.permission?.question ?? session.statusDetail
   return (
@@ -21,7 +23,7 @@ export function LiveSessionPreview({
       <div className="flex flex-col gap-0.5">
         <p className="text-sm font-semibold break-words">{liveSessionTitle(session)}</p>
         <p className="text-muted-foreground">
-          {[liveSessionProviderLabel(session), session.machine.label, workspaceName]
+          {[liveSessionProviderLabel(session), machineName(session.machine), workspaceName]
             .filter(Boolean)
             .join(' \u00b7 ')}
         </p>

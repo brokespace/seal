@@ -57,7 +57,7 @@ No surface may switch over raw statuses to pick a colour, a label or an order.
 
 ### One name and one count per machine
 
-A machine is called what the Machines tab calls it, everywhere. This computer is "This computer" (`useLocalMachineName`); a session group's heading comes from `useSessionMachineName`, with the host name as its tooltip. A machine's session count is its running sessions (`isActiveLiveSession`) matched by `liveSessionsOnMachine`, so the Machines list, Home and Active agents show the same number.
+A machine is called what the Machines tab calls it, everywhere. This computer is "This computer" (`useLocalMachineName`); wherever a session shows its machine (group headings, the session header, previews, the palette) the name comes from `useSessionMachineName` or `sessionMachineName`, and a group heading keeps the host name as its tooltip. A machine's session count is its running sessions (`isActiveLiveSession`) matched by `liveSessionsOnMachine`, so the Machines list, Home and Active agents show the same number.
 
 ## Canonical homes
 
