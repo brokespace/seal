@@ -23,6 +23,7 @@ export function AgentConfigFilesSection(): React.JSX.Element {
   // Edits made from the tree get the same checks and backups as the forms.
   const fileOps = useMemo<MachineExplorerFileOps>(
     () => ({
+      readText: async (path) => (await agentConfigApi().readDocument({ target, path })).content,
       write: async (path, content) => {
         await agentConfigApi().saveDocument({ target, path, content })
         reload()

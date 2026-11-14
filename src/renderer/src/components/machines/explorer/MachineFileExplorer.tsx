@@ -282,6 +282,7 @@ export function MachineFileExplorer({
             entry={preview.entry}
             onClose={() => setPreview(null)}
             onDownload={() => actions.download([preview.path])}
+            readText={fileOps?.readText}
             writeFile={fileOps?.write}
           />
         ) : null}

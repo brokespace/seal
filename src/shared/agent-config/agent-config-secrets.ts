@@ -120,17 +120,53 @@ const SECRET_SETTING_KEY =
   /(api[_-]?key|token|secret|password|passwd|credentials?|private[_-]?key|cookie|bearer)$/i
 const VARIABLE_TABLES = new Set(['env', 'environment', 'headers', 'http_headers'])
 
+function isSecretSetting(key: string, value: string, variables: boolean): boolean {
+  // Only tables of variables are judged by loose key names; `preferred_auth_method` is no secret.
+  return variables
+    ? isSecretValue(key, value)
+    : SENSITIVE_ENV_VALUE_PATTERN.test(value) ||
+        (value !== '' && SECRET_SETTING_KEY.test(key) && !SECRET_POINTER_KEY.test(key))
+}
+
+export type SecretLeaf = {
+  path: (string | number)[]
+  value: string
+  /** What stands in for it on screen: the mask, or a URL with only its credentials hidden. */
+  masked: string
+}
+
+/** Every string of a parsed config that must not be shown as written, by where it sits. */
+export function secretLeaves(root: unknown): SecretLeaf[] {
+  const leaves: SecretLeaf[] = []
+  const walk = (
+    value: unknown,
+    key: string,
+    path: (string | number)[],
+    variables: boolean
+  ): void => {
+    if (typeof value === 'string') {
+      const masked = isSecretSetting(key, value, variables) ? MASK : maskUrl(value)
+      if (masked !== value) {
+        leaves.push({ path, value, masked })
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach((item, index) => walk(item, key, [...path, index], variables))
+    } else if (isPlainObject(value)) {
+      for (const [name, item] of Object.entries(value)) {
+        walk(item, name, [...path, name], variables || VARIABLE_TABLES.has(key))
+      }
+    }
+  }
+  walk(root, '', [], false)
+  return leaves
+}
+
 /** Copies a parsed config with every secret-looking string replaced by the mask. */
 export function maskConfigValue(root: unknown): { value: unknown; maskedPaths: string[] } {
   const maskedPaths: string[] = []
   const walk = (value: unknown, key: string, path: string, variables: boolean): unknown => {
     if (typeof value === 'string') {
-      // Only tables of variables are judged by loose key names; `preferred_auth_method` is no secret.
-      const secret = variables
-        ? isSecretValue(key, value)
-        : SENSITIVE_ENV_VALUE_PATTERN.test(value) ||
-          (value !== '' && SECRET_SETTING_KEY.test(key) && !SECRET_POINTER_KEY.test(key))
-      if (secret) {
+      if (isSecretSetting(key, value, variables)) {
         maskedPaths.push(path)
         return MASK
       }

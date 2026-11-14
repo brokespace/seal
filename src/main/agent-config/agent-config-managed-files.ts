@@ -1,9 +1,15 @@
-import type {
-  AgentConfigBackup,
-  AgentConfigDocument,
-  AgentConfigTarget,
-  AgentConfigValidationKind,
-  AgentConfigWriteResult
+import {
+  maskRawConfigText,
+  rawConfigFormat,
+  unmaskRawConfigText
+} from '../../shared/agent-config/agent-config-raw-secrets'
+import {
+  AGENT_CONFIG_SECRET_MASK,
+  type AgentConfigBackup,
+  type AgentConfigDocument,
+  type AgentConfigTarget,
+  type AgentConfigValidationKind,
+  type AgentConfigWriteResult
 } from '../../shared/agent-config/agent-config-types'
 import { machinePathDirname } from '../../shared/machines/machine-paths'
 import type { MachineConnection } from '../machines/connection/machine-connection'
@@ -31,7 +37,9 @@ export async function readManagedDocument(
 ): Promise<AgentConfigDocument> {
   await managed(connection, target, [path])
   const { content, hash, exists } = await readConfigFile(connection, path)
-  return { path, content, hash, exists }
+  const format = rawConfigFormat(path)
+  // The hash stays that of the real file, so a save is still checked against what is on disk.
+  return { path, content: format ? maskRawConfigText(format, content) : content, hash, exists }
 }
 
 /** Saves any file of the agent's configuration: the raw editor and every markdown editor end here. */
@@ -48,7 +56,12 @@ export async function saveManagedDocument(
 ): Promise<AgentConfigWriteResult> {
   await managed(connection, target, [args.path])
   const { path, content, ...options } = args
-  return writeConfigFile(connection, path, content, options)
+  const format = rawConfigFormat(path)
+  const restored =
+    format && content.includes(AGENT_CONFIG_SECRET_MASK)
+      ? unmaskRawConfigText(format, content, (await readConfigFile(connection, path)).content)
+      : content
+  return writeConfigFile(connection, path, restored, options)
 }
 
 /** Deleting from the raw file browser also goes to the backups folder. */

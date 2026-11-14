@@ -264,7 +264,7 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
       const file = path.join(machine.home, '.claude/settings.json')
       const original = await text('.claude/settings.json')
       const opened = await readManagedDocument(machine.connection, target('claude'), file)
-      expect(opened.content).toBe(original)
+      expect(opened.content).toBe(original.replace('anthropic-secret-3', AGENT_CONFIG_SECRET_MASK))
 
       await expect(
         saveManagedDocument(machine.connection, target('claude'), {
@@ -299,6 +299,24 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
           path.join(machine.home, '.ssh/id_ed25519')
         )
       ).rejects.toThrow()
+    })
+
+    it('hides stored secrets in the raw editor and keeps them when the file is saved', async () => {
+      const file = path.join(machine.home, '.claude.json')
+      const original = await text('.claude.json')
+      const opened = await readManagedDocument(machine.connection, target('claude'), file)
+      expect(opened.content).toBe(
+        original
+          .replace('docs-secret-1', AGENT_CONFIG_SECRET_MASK)
+          .replace('Bearer sentry-secret-2', AGENT_CONFIG_SECRET_MASK)
+      )
+
+      await saveManagedDocument(machine.connection, target('claude'), {
+        path: file,
+        content: opened.content.replace('"REGION": "eu"', '"REGION": "us"'),
+        expectedHash: opened.hash
+      })
+      expect(await text('.claude.json')).toBe(original.replace('"REGION": "eu"', '"REGION": "us"'))
     })
 
     it('writes through a dotfiles symlink instead of replacing it', async () => {

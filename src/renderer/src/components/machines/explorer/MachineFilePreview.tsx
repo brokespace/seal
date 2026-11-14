@@ -39,6 +39,7 @@ export function MachineFilePreview({
   entry,
   onClose,
   onDownload,
+  readText,
   writeFile
 }: {
   machineId: MachineId
@@ -46,6 +47,8 @@ export function MachineFilePreview({
   entry: MachineFileEntry
   onClose: () => void
   onDownload: () => void
+  /** Replaces the text shown for a text file, for callers that hide stored secrets. */
+  readText?: (path: string) => Promise<string>
   /** Replaces the plain write, for callers that validate or back up first. */
   writeFile?: (path: string, content: string) => Promise<void>
 }): React.JSX.Element {
@@ -72,15 +75,16 @@ export function MachineFilePreview({
     }
     void api
       .readFile({ machineId, path })
-      .then((result) => {
+      .then(async (result) => {
+        const bytes = decodeBase64(result.contentBase64)
+        const binary = looksBinary(bytes)
+        const shown = !binary && !result.truncated && readText ? await readText(path) : null
         if (cancelled) {
           return
         }
-        const bytes = decodeBase64(result.contentBase64)
-        const binary = looksBinary(bytes)
         setFile({
           base64: result.contentBase64,
-          text: binary ? null : new TextDecoder().decode(bytes),
+          text: binary ? null : (shown ?? new TextDecoder().decode(bytes)),
           size: result.size,
           truncated: result.truncated
         })
@@ -93,7 +97,7 @@ export function MachineFilePreview({
     return () => {
       cancelled = true
     }
-  }, [machineId, path, tooLarge, t])
+  }, [machineId, path, tooLarge, t, readText])
 
   const save = useCallback(
     async (content: string) => {
