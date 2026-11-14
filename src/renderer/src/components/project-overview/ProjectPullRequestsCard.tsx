@@ -25,10 +25,16 @@ export function ProjectPullRequestsCard({
 }): React.JSX.Element {
   const t = useTranslate()
   const pulls = useProjectOverviewLoad(`${repo.id}\n${repo.path}`, async () => {
+    // A failed or superseded read must not read as "no pull requests".
     const items = await useAppStore
       .getState()
-      .fetchWorkItems(repo.id, repo.path, MAX_PULL_REQUESTS, 'is:pr is:open')
-    return (items ?? []).filter((item) => item.type === 'pr')
+      .fetchWorkItems(repo.id, repo.path, MAX_PULL_REQUESTS, 'is:pr is:open', {
+        requireComplete: true
+      })
+    if (!items) {
+      throw new Error('Pull requests were not read.')
+    }
+    return items.filter((item) => item.type === 'pr')
   })
   const workspaceOf = (item: GitHubWorkItem): Worktree | undefined =>
     worktrees.find(
