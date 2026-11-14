@@ -39,6 +39,24 @@ function changeParts(summary: GitChangeSummary, t: Translate): string[] {
   return parts
 }
 
+/** Where the changed files stand: only the kinds that need saying beyond "changed". */
+function breakdownParts(summary: GitChangeSummary, t: Translate): string[] {
+  const parts: string[] = []
+  if (summary.staged > 0) {
+    parts.push(
+      t('seal.projectOverview.changes.staged', '{{count}} staged', { count: summary.staged })
+    )
+  }
+  if (summary.untracked > 0) {
+    parts.push(
+      t('seal.projectOverview.changes.untracked', '{{count}} untracked', {
+        count: summary.untracked
+      })
+    )
+  }
+  return parts
+}
+
 function ChangeRow({
   worktree,
   summary
@@ -54,7 +72,11 @@ function ChangeRow({
     detail = t('seal.projectOverview.changes.unavailable', 'Status unavailable')
   } else if (isCleanGitChangeSummary(summary)) {
     detail = t('seal.projectOverview.changes.clean', 'Clean')
+  } else if (changeParts(summary, t).length === 0) {
+    // Only ahead of or behind its upstream, which the first line shows.
+    detail = t('seal.projectOverview.changes.nothingUncommitted', 'Nothing uncommitted')
   } else {
+    const breakdown = breakdownParts(summary, t)
     detail = (
       <>
         {changeParts(summary, t).join(' · ')}
@@ -64,6 +86,7 @@ function ChangeRow({
             <span className="text-[color:var(--git-decoration-deleted)]">−{summary.removed}</span>
           </span>
         ) : null}
+        {breakdown.length > 0 ? ` · ${breakdown.join(' · ')}` : null}
       </>
     )
   }

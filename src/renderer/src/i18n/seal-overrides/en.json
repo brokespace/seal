@@ -1987,7 +1987,10 @@
         "title": "Changes",
         "refresh": "Refresh changes",
         "empty": "No workspaces to check.",
-        "more": "Showing the {{shown}} most recent of {{total}} workspaces."
+        "more": "Showing the {{shown}} most recent of {{total}} workspaces.",
+        "staged": "{{count}} staged",
+        "untracked": "{{count}} untracked",
+        "nothingUncommitted": "Nothing uncommitted"
       },
       "commits": {
         "title": "Recent commits",
@@ -2024,7 +2027,8 @@
       },
       "readme": {
         "open": "Open",
-        "truncated": "Showing the beginning of a long file."
+        "truncated": "Showing the beginning of a long file.",
+        "title": "Readme"
       },
       "usage": {
         "none": "No usage",

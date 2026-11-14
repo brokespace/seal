@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { MarkdownPreview } from '@/components/editor/editor-lazy-views'
 import { openMachinePathInEditor } from '@/components/machines/editor/machine-editor-open'
-import { machinePathBasename } from '../../../../shared/machines/machine-paths'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
@@ -30,7 +29,7 @@ export function ProjectReadmeCard({
   const { path, text, truncated } = readme.data
   return (
     <PageCard
-      title={machinePathBasename(path)}
+      title={t('seal.projectOverview.readme.title', 'Readme')}
       action={
         <Button
           type="button"
