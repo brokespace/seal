@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import {
   ArrowLeft,
   ArrowLeftRight,
-  Code,
   EllipsisVertical,
+  KeyRound,
   Pencil,
   Plug,
   RefreshCw,
@@ -22,6 +22,7 @@ import {
 import { HostRemoveDialog } from '@/components/sidebar/HostRemoveDialog'
 import { resolveHostRemoval } from '@/components/sidebar/host-rename-remove'
 import { cn } from '@/lib/class-names'
+import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
 import { MachineFileExplorer, type MachineFolderRequest } from '../explorer/MachineFileExplorer'
@@ -34,9 +35,9 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
+import { MachineOpenInEditorButton } from './MachineOpenInEditorButton'
 import {
   connectMachine,
-  openMachineInEditor,
   openMachineTerminal,
   switchMachineConnection
 } from './machine-quick-actions'
@@ -47,7 +48,8 @@ export function MachineDetail({
   metricsError,
   sessions,
   onBack,
-  onChanged
+  onChanged,
+  onAddSshDetails
 }: {
   machine: MachineSummary
   metrics: MachineMetrics | null
@@ -55,6 +57,8 @@ export function MachineDetail({
   sessions: readonly LiveSession[]
   onBack: () => void
   onChanged: () => void
+  /** Stores SSH details on a server-only machine without switching its connection. */
+  onAddSshDetails: () => void
 }): React.JSX.Element {
   const t = useTranslate()
   const statusLabel = useMachineStatusLabel()
@@ -83,7 +87,12 @@ export function MachineDetail({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-machine-detail={machine.id}>
-      <header className="flex shrink-0 items-start gap-2 border-b border-border px-3 py-3 md:px-5">
+      <header
+        className={cn(
+          'flex shrink-0 flex-wrap items-start gap-2 border-b border-border py-3',
+          PAGE_GUTTER_X
+        )}
+      >
         <Button
           type="button"
           variant="ghost"
@@ -94,7 +103,8 @@ export function MachineDetail({
         >
           <ArrowLeft />
         </Button>
-        <div className="min-w-0 flex-1">
+        {/* The basis keeps the name readable: a narrow pane wraps the actions below it instead. */}
+        <div className="min-w-0 flex-1 basis-56">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="truncate text-sm font-semibold">{machine.label}</h2>
             <MachineStatusDot status={machine.status} />
@@ -117,7 +127,7 @@ export function MachineDetail({
             </p>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {canConnect && !online ? (
             <Button
               type="button"
@@ -143,18 +153,11 @@ export function MachineDetail({
               {t('auto.components.machines.detail.terminal', 'Terminal')}
             </span>
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!online || !homeDir}
-            onClick={() => homeDir && void openMachineInEditor(machine, homeDir)}
-          >
-            <Code />
-            <span className="hidden sm:inline">
-              {t('auto.components.machines.detail.editor', 'Open in editor')}
-            </span>
-          </Button>
+          <MachineOpenInEditorButton
+            machine={machine}
+            homeDir={homeDir}
+            onAddSshDetails={onAddSshDetails}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -197,11 +200,16 @@ export function MachineDetail({
                       )}
                 </DropdownMenuItem>
               ) : null}
-              {machine.sshTargetId || removal ? <DropdownMenuSeparator /> : null}
+              {machine.connection !== 'local' ? <DropdownMenuSeparator /> : null}
               {machine.sshTargetId ? (
                 <DropdownMenuItem onSelect={() => void editSshDetails()}>
                   <Pencil />
                   {t('auto.components.machines.detail.editSsh', 'Edit SSH details…')}
+                </DropdownMenuItem>
+              ) : machine.connection === 'server' ? (
+                <DropdownMenuItem onSelect={onAddSshDetails}>
+                  <KeyRound />
+                  {t('auto.components.machines.detail.addSsh', 'Add SSH details…')}
                 </DropdownMenuItem>
               ) : null}
               {removal ? (
@@ -215,7 +223,7 @@ export function MachineDetail({
         </div>
       </header>
       {online ? (
-        <section className="shrink-0 space-y-3 border-b border-border px-3 py-3 md:px-5">
+        <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
           <MachineVitalsStrip
             metrics={metrics}
             error={metricsError}
@@ -227,7 +235,7 @@ export function MachineDetail({
           <MachineSessionList sessions={sessions} />
         </section>
       ) : sessions.length > 0 ? (
-        <section className="shrink-0 border-b border-border px-3 py-3 md:px-5">
+        <section className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}>
           <MachineSessionList sessions={sessions} />
         </section>
       ) : null}

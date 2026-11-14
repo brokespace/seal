@@ -176,7 +176,8 @@ Settings → **Machines** replaces the old _SSH Hosts_ and _Remote Seal Servers_
 
 - An SSH machine has no resident Seal, so account auto-swap and fleet policy run only on Seal servers. Pushed logins still land in the CLI's own files.
 - On a Mac reached over SSH, installing the Claude login needs that Mac's login Keychain to be unlocked.
-- **Open in editor** uses VS Code Remote-SSH, so it needs stored SSH details. A server-only machine shows a notice instead.
+- **Open in editor** runs on this computer and reaches the machine over SSH (VS Code or Cursor Remote-SSH, or Zed), so it needs stored SSH details whichever transport Seal uses. A server-only machine offers **Add SSH details**, which stores them without leaving the server connection.
+- VS Code and Cursor take a custom SSH port only from a `Host` entry in `~/.ssh/config`. Seal uses a matching entry when one exists and otherwise offers to copy one.
 - Windows machines are not scanned for live sessions: there is no `ps`/tmux to read.
 - The assistant's supervised subagents (`spawn_subagent` in agent mode) need a machine connected over SSH or this computer. On a server-connected machine the assistant uses `start_session` instead.
 

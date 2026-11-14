@@ -33,7 +33,7 @@ function Thinking({ entry }: { entry: ThinkingEntry }): React.JSX.Element {
         <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
         {label}
       </button>
-      {open && <p className="mt-1 whitespace-pre-wrap pl-4.5">{entry.text}</p>}
+      {open && <p className={cn('mt-1 whitespace-pre-wrap pl-4.5', PROSE_MEASURE)}>{entry.text}</p>}
     </div>
   )
 }
@@ -53,7 +53,7 @@ function Entry({
       return (
         <div className="flex flex-col items-end gap-1">
           <div
-            className="max-w-[85%] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
+            className="max-w-[min(85%,72rem)] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
             data-home-chat-user
           >
             {entry.text}
@@ -66,7 +66,7 @@ function Entry({
     case 'assistant':
       return entry.text ? (
         <CommentMarkdown
-          className="text-sm text-foreground"
+          className={cn('text-sm text-foreground', MARKDOWN_PROSE_MEASURE)}
           content={entry.text}
           variant="document"
           growing={entry.streaming}
@@ -100,6 +100,10 @@ function Entry({
 }
 
 const STICK_TO_BOTTOM_PX = 48
+
+// Why: running text stays a readable measure on very wide panels; code, tables and tool cards keep the full width.
+const PROSE_MEASURE = 'max-w-[72rem]'
+const MARKDOWN_PROSE_MEASURE = '[&>:is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6)]:max-w-[72rem]'
 
 export function HomeChatConversation({
   entries,
@@ -142,7 +146,7 @@ export function HomeChatConversation({
         stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < STICK_TO_BOTTOM_PX
       }}
     >
-      <div className="mx-auto flex max-w-2xl flex-col gap-3">
+      <div className="flex flex-col gap-3" data-home-chat-messages>
         {entries.map((entry) => (
           <Entry key={entry.id} entry={entry} onRespond={onRespond} attachments={attachments} />
         ))}

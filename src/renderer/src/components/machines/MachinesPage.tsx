@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { AddMachineDialog, AddMachineMenu, type AddMachineRequest } from './add/AddMachineFlow'
 import { cn } from '@/lib/class-names'
+import { PageHeader, PageLayout, PagePanes } from '@/components/page-layout/PageLayout'
 import type { MachineId } from '../../../../shared/machines/machine-types'
 import { MachineDetail } from './detail/MachineDetail'
 import { MachineList } from './list/MachineList'
@@ -45,17 +46,11 @@ export default function MachinesPage(): React.JSX.Element {
   const selectedMetrics = selected ? metricsById.get(selected.id) : undefined
 
   return (
-    <main
-      className="relative flex h-full min-h-0 flex-col bg-background pt-5 text-foreground md:pt-6"
-      data-machines-page
-    >
-      <header className="flex shrink-0 items-center gap-2 px-3 pb-3 md:px-5">
-        <h1 className="min-w-0 flex-1 truncate text-base leading-8 font-semibold">
-          {t('auto.components.machines.page.title', 'Machines')}
-        </h1>
+    <PageLayout data-machines-page>
+      <PageHeader title={t('auto.components.machines.page.title', 'Machines')}>
         <AddMachineMenu onPick={(mode) => setAdding({ mode, machineId: null })} />
-      </header>
-      <div className="flex min-h-0 flex-1 border-t border-border">
+      </PageHeader>
+      <PagePanes>
         <aside
           className={cn(
             'scrollbar-sleek min-h-0 w-full shrink-0 overflow-y-auto border-r border-border md:block md:w-72',
@@ -85,10 +80,13 @@ export default function MachinesPage(): React.JSX.Element {
               sessions={sessionsByMachine.get(selected.id) ?? []}
               onBack={() => setShowDetailOnNarrow(false)}
               onChanged={reload}
+              onAddSshDetails={() =>
+                setAdding({ mode: 'ssh', machineId: selected.id, keepConnection: 'server' })
+              }
             />
           ) : null}
         </div>
-      </div>
+      </PagePanes>
       <MachineTransfersPanel transfers={transfers} onClearFinished={clearFinished} />
       <AddMachineDialog
         request={adding}
@@ -98,6 +96,6 @@ export default function MachinesPage(): React.JSX.Element {
         }}
         onAdopted={reload}
       />
-    </main>
+    </PageLayout>
   )
 }
