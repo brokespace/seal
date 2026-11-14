@@ -4,6 +4,7 @@ import {
   collectProcessHostSources,
   main as checkProcessHostImports
 } from './check-process-host-imports.mjs'
+import { main as checkCliMainEntryImports } from './check-cli-main-entry-imports.mjs'
 import { main as checkCompatBoundaryImports } from './check-compat-boundary-imports.mjs'
 import { collectModuleSpecifiers } from '../module-requests/static-module-specifiers.mjs'
 
@@ -22,7 +23,8 @@ export function main(
   }
   const processHost = checkProcessHostImports(root, sources, specifiersFor)
   const compatibility = checkCompatBoundaryImports(root, sources, specifiersFor)
-  return Math.max(processHost, compatibility)
+  const cliMainEntries = checkCliMainEntryImports(root, sources)
+  return Math.max(processHost, compatibility, cliMainEntries)
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
