@@ -3,8 +3,8 @@ import { MACHINE_IPC } from '../../../shared/machines/machine-types'
 import { isVmToolSshConfigTarget } from '../../../shared/ssh-target-source'
 import { getRuntimeSshAccess } from '../../../shared/remote-runtime/host-catalog/runtime-environments'
 import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store'
-import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/runtime-environment-request-connections'
-import { connectRuntimeEnvironmentOnRequest } from '../../ipc/runtime-environments/runtime-environment-connectivity-handlers'
+import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/connections/runtime-environment-request-connections'
+import { connectRuntimeEnvironmentOnRequest } from '../../ipc/runtime-environments/connectivity/runtime-environment-connectivity-handlers'
 import { setDirectSshConnectPolicy } from '../../ssh/host-server/ssh-direct-connect-policy'
 import {
   connectRegisteredSshTarget,

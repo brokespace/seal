@@ -1,11 +1,11 @@
 import {
   isRuntimeEnvironmentManuallyDisconnected,
   RUNTIME_MANUALLY_DISCONNECTED_MESSAGE
-} from '../../ipc/runtime-environments/runtime-environment-manual-disconnect'
+} from '../../ipc/runtime-environments/connectivity/runtime-environment-manual-disconnect'
 import {
   callRuntimeEnvironment,
   subscribeRuntimeEnvironment
-} from '../../ipc/runtime-environments/runtime-environment-transport-routing'
+} from '../../ipc/runtime-environments/requests/runtime-environment-transport-routing'
 import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import {
   parseMachineHostStreamEvent,

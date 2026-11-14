@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { isValidBase64 } from './clipboard-params'
+import { isValidBase64 } from './clipboard/clipboard-params'
 
 /** Per-request payload budget, matching clipboard uploads so relay frames stay small. */
 export const PHONE_TRANSFER_CHUNK_BASE64_CHARS = 512 * 1024
