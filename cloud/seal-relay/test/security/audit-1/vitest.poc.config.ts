@@ -3,7 +3,8 @@ import { defineConfig } from 'vitest/config'
 
 const repoRoot = resolve(import.meta.dirname, '../../../../..')
 
-// For the *.poc.ts suites, which import phone and host code the Worker's own tests do not:
+// For the *.poc.ts suites (loaded by phone-and-host-suites.test.ts), which import phone and host
+// code the Worker's own tests do not:
 // mobile/tsconfig.json extends an Expo base config that is not installed here, so esbuild gets an
 // inline one, and the host's workspace package and build-time constants are supplied directly.
 // Run from cloud/seal-relay:
@@ -36,11 +37,15 @@ export default defineConfig({
     ]
   },
   test: {
-    include: ['test/security/audit-1/**/*.poc.ts'],
+    include: ['test/security/audit-1/phone-and-host-suites.test.ts'],
     testTimeout: 60_000,
     hookTimeout: 120_000,
     pool: 'forks',
-    env: { ORCA_VITEST_RUNTIME: 'node', ORCA_WSL_HOSTS_GATE_STATE: '' },
+    env: {
+      SEAL_SECURITY_POC_CONFIG: 'phone-and-host',
+      ORCA_VITEST_RUNTIME: 'node',
+      ORCA_WSL_HOSTS_GATE_STATE: ''
+    },
     server: { deps: { inline: ['zod'] } }
   }
 })
