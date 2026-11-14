@@ -2,9 +2,9 @@ import type { ComponentType, ReactNode } from 'react'
 import type {
   HomeAutomation,
   HomeMachine,
-  HomeSession,
   HomeWorkspace
 } from '../../../../shared/home-overview/home-overview-types'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 
 export type {
   HomeAccount,
@@ -14,15 +14,12 @@ export type {
   HomeMachineKind,
   HomeMachineStatus,
   HomeReviewState,
-  HomeSession,
-  HomeSessionState,
-  HomeSessionTarget,
   HomeWorkspace
 } from '../../../../shared/home-overview/home-overview-types'
 
 /** Every Home click goes through one of these; each must navigate somewhere real. */
 export type HomeOverviewActions = {
-  openSession: (session: HomeSession) => void
+  openSession: (session: LiveSession) => void
   openMachine: (machine: HomeMachine) => void
   openMachines: () => void
   openAccountsSettings: () => void

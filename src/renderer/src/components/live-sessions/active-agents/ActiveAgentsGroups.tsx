@@ -1,6 +1,7 @@
 import { ChevronRight, TriangleAlert } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { cn } from '@/lib/class-names'
+import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate } from '@/i18n/use-translate'
 import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
@@ -66,6 +67,7 @@ function Rows({
 /** Sessions under their machines, then the ones that ended in the last day. */
 export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.Element {
   const t = useTranslate()
+  const machineName = useSessionMachineName()
   const { view, hostErrors } = props
   const listed = new Set(view.machines.map((machine) => machine.hostId))
   const orphanErrors = Object.entries(hostErrors).filter(([hostId]) => !listed.has(hostId))
@@ -84,7 +86,9 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
               className={HEADER}
             >
               <Chevron open={open} />
-              <span className="min-w-0 flex-1 truncate font-medium">{machine.label}</span>
+              <span className="min-w-0 flex-1 truncate font-medium" title={machine.label}>
+                {machineName(machine)}
+              </span>
               {error ? (
                 <span title={error} className="flex shrink-0">
                   <TriangleAlert className="size-3 text-agent-question-text" />

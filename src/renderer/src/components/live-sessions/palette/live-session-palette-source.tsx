@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
+import { sessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import {
   matchPaletteExtraFields,
   type PaletteExtraResult,
@@ -39,7 +40,9 @@ export function liveSessionPaletteResults(
   const typed = query.trim() !== ''
   return listed.flatMap((session, order) => {
     const title = liveSessionTitle(session)
-    const where = [session.machine.label, session.project].filter(Boolean).join(' \u00b7 ')
+    const where = [sessionMachineName(session.machine), session.project]
+      .filter(Boolean)
+      .join(' \u00b7 ')
     const match = typed
       ? matchPaletteExtraFields(
           session.id,

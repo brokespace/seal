@@ -1,4 +1,3 @@
-import type { AgentDotState } from '@/components/AgentStateDot'
 import { translate } from '@/i18n/i18n'
 import type {
   LiveMessage,
@@ -10,26 +9,7 @@ import {
   runningSubagents
 } from '../../../../shared/live-sessions/live-session-activity'
 
-export function liveSessionDotState(status: LiveSessionStatus): AgentDotState {
-  switch (status) {
-    case 'working':
-      return 'working'
-    case 'waiting-subagent':
-    case 'waiting-task':
-      // Still the agent's move: drawn in the working color, not as something for the user.
-      return 'monitoring'
-    case 'waiting-input':
-      return 'waiting'
-    case 'needs-permission':
-      return 'permission'
-    case 'idle':
-      return 'idle'
-    case 'errored':
-      return 'failed'
-    case 'done':
-      return 'done'
-  }
-}
+export { liveSessionDotState } from '../../../../shared/live-sessions/live-session-status'
 
 export function liveSessionStatusLabel(status: LiveSessionStatus): string {
   switch (status) {

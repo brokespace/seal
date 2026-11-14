@@ -1,6 +1,7 @@
 import type { CommandSpec } from '../discovery/command-spec'
 import { ACCOUNT_COMMAND_SPECS } from './account'
 import { SEAL_ACCOUNT_COMMAND_SPECS } from './seal-account'
+import { SEAL_SESSIONS_COMMAND_SPECS } from './seal-sessions'
 import { BROWSER_ADVANCED_COMMAND_SPECS } from './browser-advanced'
 import { BROWSER_BASIC_COMMAND_SPECS } from './browser-basic'
 import { AUTOMATION_COMMAND_SPECS } from './automations'
@@ -44,6 +45,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,
   ...SEAL_ACCOUNT_COMMAND_SPECS,
+  ...SEAL_SESSIONS_COMMAND_SPECS,
   ...PROJECT_COMMAND_SPECS,
   ...FILE_COMMAND_SPECS,
   ...AUTOMATION_COMMAND_SPECS,

@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQueryClient } from '@tanstack/react-query'
-import { groupHomeSessions } from '../../../../src/shared/home-overview/home-overview-derivations'
-import { homeSessionFromLive } from '../../../../src/shared/home-overview/home-live-session-mapping'
 import { LIST_LEADING_INSET, ListGroup, SectionHeader } from '../../components/list/ListGroup'
 import { MobileOfflineState } from '../../components/MobileStateView'
 import { useNow } from '../../hooks/use-now'
@@ -16,14 +14,10 @@ import { useHostClient } from '../../transport/connection/host-client-hooks'
 import { orderedSealCandidates, sealProviderLabel } from '../accounts/seal-account-presentation'
 import { SealAccountUsageCard } from '../accounts/SealAccountUsageCard'
 import { useSealAccounts } from '../accounts/use-seal-accounts'
-import {
-  liveSessionFinished,
-  liveSessionNeedsAttention,
-  liveSessionProviderLabel,
-  liveSessionTitle
-} from '../live-sessions/live-session-presentation'
+import { liveSessionsNeedingAttention } from '../../../../src/shared/live-sessions/live-session-summary'
+import { liveSessionFinished } from '../live-sessions/live-session-presentation'
 import type { LiveSession } from '../live-sessions/live-session-schemas'
-import { LiveSessionRow } from '../live-sessions/LiveSessionRow'
+import { LiveSessionGroups, LiveSessionRow } from '../live-sessions/LiveSessionRow'
 import { useLiveSessionsFeed } from '../live-sessions/live-sessions-feed'
 import { sealPageHref, sealSessionHref } from '../seal-route-hrefs'
 import { sealStyles } from '../seal-screen-styles'
@@ -59,16 +53,7 @@ export function SealOverviewScreen({ hostId }: { hostId: string }) {
 
   const open = (session: LiveSession) => router.push(sealSessionHref(hostId, session.id))
   const running = feed.sessions.filter((session) => !liveSessionFinished(session))
-  const attention = running.filter(liveSessionNeedsAttention)
-  const byId = new Map(running.map((session) => [session.id, session]))
-  const groups = groupHomeSessions(
-    running.map((session) =>
-      homeSessionFromLive(session, {
-        title: liveSessionTitle(session),
-        agentLabel: liveSessionProviderLabel(session)
-      })
-    )
-  )
+  const attention = liveSessionsNeedingAttention(running)
   const providers = Object.entries(accounts.status?.providers ?? {}).filter(
     ([, provider]) => provider.candidates.length > 0
   )
@@ -138,33 +123,12 @@ export function SealOverviewScreen({ hostId }: { hostId: string }) {
           <Text style={[sealStyles.hint, sealStyles.errorText]}>{feed.error}</Text>
         ) : !feed.loaded ? (
           <Text style={sealStyles.hint}>{t('seal.overview.loading', 'Loading…')}</Text>
-        ) : groups.length === 0 ? (
+        ) : running.length === 0 ? (
           <Text style={sealStyles.hint}>
             {t('seal.overview.noSessions', 'No agents running right now.')}
           </Text>
         ) : (
-          groups.map((machine) => (
-            <View key={machine.machineId}>
-              <Text style={sealStyles.groupLabel} numberOfLines={1}>
-                {machine.machineLabel}
-              </Text>
-              {machine.projects.map((project) => (
-                <View key={project.projectId} style={sealStyles.group}>
-                  <Text style={sealStyles.groupLabel} numberOfLines={1}>
-                    {project.projectName}
-                  </Text>
-                  <ListGroup separatorInset={LIST_LEADING_INSET}>
-                    {project.sessions.map((home) => {
-                      const session = byId.get(home.id)
-                      return session ? (
-                        <LiveSessionRow key={home.id} session={session} onPress={open} />
-                      ) : null
-                    })}
-                  </ListGroup>
-                </View>
-              ))}
-            </View>
-          ))
+          <LiveSessionGroups sessions={running} onOpen={open} />
         )}
 
         <SectionHeader title={t('seal.overview.machines', 'Machines')} />

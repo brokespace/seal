@@ -6,13 +6,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { getLastSelectedMachineId } from '@/components/machines/model/machine-selection'
+import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 
 const navigation = vi.hoisted(() => ({
-  reveal: vi.fn((): boolean => true),
   activate: vi.fn((): boolean => true)
-}))
-vi.mock('@/components/dashboard/reveal-dashboard-agent', () => ({
-  revealDashboardAgent: navigation.reveal
 }))
 vi.mock('@/lib/workspace/activation/worktree-activation', () => ({
   activateAndRevealWorkspace: navigation.activate
@@ -41,7 +38,6 @@ function panel(title: string): HTMLElement {
 beforeEach(() => {
   vi.stubGlobal('api', {})
   useAppStore.setState({ activeView: 'home', settingsNavigationTarget: null })
-  navigation.reveal.mockClear().mockReturnValue(true)
   navigation.activate.mockClear()
 })
 
@@ -53,17 +49,17 @@ afterEach(() => {
 
 it('every Home button navigates away or hands off to a real handler', () => {
   renderHome()
-  const buttons = screen.getAllByRole('button')
+  // A session row's own button opens its menu; the row itself is what navigates.
+  const buttons = [...screen.getAllByRole('button'), ...screen.getAllByRole('option')].filter(
+    (button) => !button.hasAttribute('data-live-session-actions')
+  )
   expect(buttons.length).toBeGreaterThan(15)
   for (const button of buttons) {
     useAppStore.setState({ activeView: 'home' })
-    navigation.reveal.mockClear()
     navigation.activate.mockClear()
     fireEvent.click(button)
     const handled =
-      useAppStore.getState().activeView !== 'home' ||
-      navigation.reveal.mock.calls.length > 0 ||
-      navigation.activate.mock.calls.length > 0
+      useAppStore.getState().activeView !== 'home' || navigation.activate.mock.calls.length > 0
     expect(handled, button.textContent ?? '').toBe(true)
   }
 })
@@ -95,9 +91,16 @@ it('a PR row opens its worktree on its machine', () => {
   expect(navigation.activate).toHaveBeenCalledWith('b', { executionHostId: 'local' })
 })
 
-it('a session whose pane cannot be revealed opens as an agent session tab', () => {
-  navigation.reveal.mockReturnValue(false)
+it('a session opens as its agent session tab, from its row and from the attention strip', () => {
   renderHome()
   fireEvent.click(within(panel('Sessions')).getByText('Nightly eval'))
   expect(useAppStore.getState().activeView).toBe('sessions')
+  expect(liveSessionTabsStore.getState().activeId).toBe('Nightly eval')
+
+  useAppStore.setState({ activeView: 'home' })
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Needs attention' })).getByText('Train tokenizer')
+  )
+  expect(useAppStore.getState().activeView).toBe('sessions')
+  expect(liveSessionTabsStore.getState().activeId).toBe('Train tokenizer')
 })

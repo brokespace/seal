@@ -1,11 +1,12 @@
 import { Fragment, useContext, useMemo } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
+import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
 import {
-  buildHomeAttentionItems,
-  countSessionsByState,
-  mergeSessionMachines
-} from '../../../../shared/home-overview/home-overview-derivations'
+  countLiveSessionGroups,
+  liveSessionsNeedingAttention
+} from '../../../../shared/live-sessions/live-session-summary'
+import { mergeSessionMachines } from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
   HomeActionsContext,
@@ -28,7 +29,8 @@ import { HomeWorkspacesPanel } from './HomeWorkspacesPanel'
 function HomeOverviewContent(): React.JSX.Element {
   const t = useTranslate()
   const now = useHomeNow()
-  const sessions = useContext(HomeSessionsContext)
+  const registrySessions = useContext(HomeSessionsContext)
+  const sessions = useMemo(() => registrySessions.filter(isActiveLiveSession), [registrySessions])
   const providedMachines = useContext(HomeMachinesContext)
   const accounts = useContext(HomeAccountsContext)
   const workspaces = useContext(HomeWorkspacesContext)
@@ -38,14 +40,12 @@ function HomeOverviewContent(): React.JSX.Element {
     () => mergeSessionMachines(providedMachines, sessions),
     [providedMachines, sessions]
   )
-  const attention = useMemo(() => buildHomeAttentionItems(sessions), [sessions])
-  const counts = countSessionsByState(sessions)
+  const attention = useMemo(() => liveSessionsNeedingAttention(sessions), [sessions])
+  const counts = countLiveSessionGroups(sessions)
   const summary = [
     t('home.overview.summary.working', '{{count}} working', { count: counts.working }),
-    t('home.overview.summary.waiting', '{{count}} waiting on you', {
-      count: counts.waiting + counts.permission
-    }),
-    t('home.overview.summary.done', '{{count}} done', { count: counts.done })
+    t('home.overview.summary.waiting', '{{count}} waiting on you', { count: counts.attention }),
+    t('home.overview.summary.idle', '{{count}} idle', { count: counts.idle })
   ].join(' · ')
 
   return (
@@ -55,9 +55,9 @@ function HomeOverviewContent(): React.JSX.Element {
       </PageHeader>
       <PageScrollContent className="gap-4">
         <HomeChatSlot />
-        <HomeAttentionStrip items={attention} actions={actions} />
+        <HomeAttentionStrip sessions={attention} onOpen={actions.openSession} />
         <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
-          <HomeSessionsPanel sessions={sessions} now={now} onOpen={actions.openSession} />
+          <HomeSessionsPanel sessions={sessions} now={now} />
           <div className="flex flex-col gap-4">
             <HomeMachinesPanel
               machines={machines}

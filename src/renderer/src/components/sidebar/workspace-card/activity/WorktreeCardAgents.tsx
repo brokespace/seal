@@ -9,7 +9,7 @@ import {
   selectSendTargetControlInputs,
   selectSendTargetInputs
 } from './worktree-card-send-target-inputs'
-import { useWorktreeAgentRows } from './useWorktreeAgentRows'
+import { useWorktreeCardAgentRows } from './use-worktree-card-agent-rows'
 import { useWorktreeAgentDisplay } from './use-worktree-agent-display'
 import { cn } from '@/lib/class-names'
 import type { DashboardAgentRow as DashboardAgentRowData } from '@/components/dashboard/useDashboardData'
@@ -44,7 +44,7 @@ const WorktreeCardAgents = React.memo(function WorktreeCardAgents({
   className
 }: Props) {
   useUiLanguageRevision()
-  const selectedAgents = useWorktreeAgentRows(worktreeId, precomputedAgents === undefined)
+  const selectedAgents = useWorktreeCardAgentRows(worktreeId, precomputedAgents === undefined)
   const agents = precomputedAgents ?? selectedAgents
   if (agents.length === 0) {
     return null

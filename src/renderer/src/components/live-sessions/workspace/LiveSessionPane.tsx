@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/class-names'
+import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate } from '@/i18n/use-translate'
 import {
   runningBackgroundTasks,
@@ -127,6 +128,7 @@ export type LiveSessionPaneViewProps = {
 /** One session's view without its data sources, so fixtures can render it. */
 export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.Element {
   const t = useTranslate()
+  const machineName = useSessionMachineName()
   const { session, transcript, panel, openSubagentId } = props
   const activity = session.activity
   const subagents = activity?.subagents ?? []
@@ -152,7 +154,9 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
           <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <LiveSessionStatusPill session={session} className="max-w-[60%] shrink-0" />
             <span className="min-w-0 truncate">
-              {['', liveSessionProviderLabel(session), session.machine.label].join(' \u00b7 ')}
+              {['', liveSessionProviderLabel(session), machineName(session.machine)].join(
+                ' \u00b7 '
+              )}
             </span>
             {session.cwd ? (
               <span className="hidden min-w-0 truncate font-mono @2xl:inline">{session.cwd}</span>

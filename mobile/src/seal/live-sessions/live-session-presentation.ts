@@ -1,27 +1,12 @@
-import type { AgentDotState } from '../../worktree/agent-row-display'
+import {
+  isActiveLiveSession,
+  liveSessionStatusGroup
+} from '../../../../src/shared/live-sessions/live-session-status'
+import { groupLiveSessionsByMachine } from '../../../../src/shared/live-sessions/live-session-summary'
 import { translate } from '../../i18n/mobile-i18n'
 import type { LiveMessage, LiveSession } from './live-session-schemas'
 
-export function liveSessionDotState(status: LiveSession['status']): AgentDotState {
-  switch (status) {
-    case 'working':
-      return 'working'
-    case 'waiting-subagent':
-    case 'waiting-task':
-      // Still the agent's move: drawn as busy, not as something for the person.
-      return 'monitoring'
-    case 'waiting-input':
-      return 'waiting'
-    case 'needs-permission':
-      return 'permission'
-    case 'idle':
-      return 'idle'
-    case 'errored':
-      return 'failed'
-    case 'done':
-      return 'done'
-  }
-}
+export { liveSessionDotState } from '../../../../src/shared/live-sessions/live-session-status'
 
 export function liveSessionStatusLabel(status: LiveSession['status']): string {
   switch (status) {
@@ -61,12 +46,7 @@ export function liveSessionProviderLabel(session: Pick<LiveSession, 'provider'>)
 
 /** Waiting on the person: a permission prompt, a question, or a failure to look at. */
 export function liveSessionNeedsAttention(session: LiveSession): boolean {
-  return (
-    session.permission !== null ||
-    session.status === 'needs-permission' ||
-    session.status === 'waiting-input' ||
-    session.status === 'errored'
-  )
+  return isActiveLiveSession(session) && liveSessionStatusGroup(session.status) === 'attention'
 }
 
 /** Copy for a message still on its way; never claims the agent read it before the transcript does. */
@@ -85,9 +65,9 @@ export function liveMessageStateLabel(message: LiveMessage): string {
   }
 }
 
-/** Ended and closed: the default lists leave these out, as desktop Home does. */
+/** No longer running: the default lists leave these out, as desktop's Active agents does. */
 export function liveSessionFinished(session: LiveSession): boolean {
-  return !session.alive && session.status === 'done'
+  return !isActiveLiveSession(session)
 }
 
 /** Seal can type into it: a pane, tmux, Codex's queue, or a headless resume. */
@@ -136,37 +116,26 @@ export type LiveMachineGroup = {
   projects: LiveProjectGroup[]
 }
 
-/** This machine first, then SSH hosts by name; projects by their newest session. */
+/** Machines and session order as desktop's Active agents; each machine's sessions under their project. */
 export function groupLiveSessions(sessions: readonly LiveSession[]): LiveMachineGroup[] {
-  const machines = new Map<string, LiveMachineGroup>()
-  for (const session of sessions) {
-    const machineKey = session.machine.machineId ?? session.machine.hostId
-    let machine = machines.get(machineKey)
-    if (!machine) {
-      machine = {
-        hostId: machineKey,
-        label: session.machine.label,
-        kind: session.machine.kind,
-        projects: []
+  return groupLiveSessionsByMachine(sessions).map((machine) => {
+    const projects: LiveProjectGroup[] = []
+    for (const session of machine.sessions) {
+      const key = session.cwd ?? session.project ?? ''
+      let project = projects.find((entry) => entry.key === key)
+      if (!project) {
+        project = {
+          key,
+          label:
+            session.project ??
+            session.cwd ??
+            translate('seal.liveSessions.noProject', 'No project folder'),
+          sessions: []
+        }
+        projects.push(project)
       }
-      machines.set(machineKey, machine)
+      project.sessions.push(session)
     }
-    const key = session.cwd ?? session.project ?? ''
-    let project = machine.projects.find((entry) => entry.key === key)
-    if (!project) {
-      project = {
-        key,
-        label:
-          session.project ??
-          session.cwd ??
-          translate('seal.liveSessions.noProject', 'No project folder'),
-        sessions: []
-      }
-      machine.projects.push(project)
-    }
-    project.sessions.push(session)
-  }
-  return [...machines.values()].sort((a, b) =>
-    a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'local' ? -1 : 1
-  )
+    return { hostId: machine.hostId, label: machine.label, kind: machine.kind, projects }
+  })
 }

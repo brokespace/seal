@@ -2161,12 +2161,6 @@
       }
     }
   },
-  "dashboard": {
-    "sidebar": {
-      "closeActivity": "Turn off activity view",
-      "openActivity": "View activity"
-    }
-  },
   "dashboardPopout": {
     "card": {
       "subagents_one": "{{count}} subagent",

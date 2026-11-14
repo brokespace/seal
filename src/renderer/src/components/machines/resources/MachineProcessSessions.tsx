@@ -3,6 +3,8 @@ import { Bot, PanelsTopLeft } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineProcessSnapshot } from '../../../../../shared/machines/machine-resource-types'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { liveSessionTitle } from '../../live-sessions/live-session-presentation'
 import { formatBytes } from '../model/machine-format'
 import { MACHINE_AGENT_NAMES } from './machine-agent-names'
 
@@ -39,10 +41,13 @@ function SessionChip({
 /** tmux panes and agent sessions with what they are using; picking one filters the process list. */
 export function MachineProcessSessions({
   snapshot,
+  sessionsByPid,
   filter,
   onFilter
 }: {
   snapshot: MachineProcessSnapshot
+  /** The registry's sessions on this machine: an agent process that is one takes its title. */
+  sessionsByPid: ReadonlyMap<number, LiveSession>
   filter: string
   onFilter: (filter: string) => void
 }): React.JSX.Element | null {
@@ -53,6 +58,10 @@ export function MachineProcessSessions({
   }
   const usage = (cpuPercent: number, rssBytes: number): string =>
     `${cpuPercent.toFixed(1)}% · ${formatBytes(rssBytes)}`
+  const sessionTitle = (pid: number): string | null => {
+    const session = sessionsByPid.get(pid)
+    return session ? liveSessionTitle(session) : null
+  }
   const pick = (value: string): void => onFilter(filter === value ? '' : value)
   return (
     <div className="space-y-1.5" data-machine-process-sessions>
@@ -65,7 +74,8 @@ export function MachineProcessSessions({
             key={`agent:${process.pid}`}
             icon={<Bot />}
             label={
-              process.tmuxPane
+              sessionTitle(process.pid) ??
+              (process.tmuxPane
                 ? t(
                     'auto.components.machines.processes.agentInPane',
                     '{{agent}} in tmux {{pane}}',
@@ -77,7 +87,7 @@ export function MachineProcessSessions({
                 : t('auto.components.machines.processes.agentPid', '{{agent}} · pid {{pid}}', {
                     agent: process.agent ? MACHINE_AGENT_NAMES[process.agent] : '',
                     pid: process.pid
-                  })
+                  }))
             }
             usage={usage(process.cpuPercent, process.rssBytes)}
             active={filter === String(process.pid)}
