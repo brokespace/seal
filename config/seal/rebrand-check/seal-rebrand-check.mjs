@@ -7,7 +7,8 @@
 //   - the files rebranded in place, which must have nothing left for the codemod to change
 //   - the hook points that put the brand pass into each bundler, and the identity constants
 // Attribution, internal ids and the `orca` command are allowed (seal-rebrand-allowlist.mjs).
-// `--built` makes a missing out/ a failure, for CI after a build. See docs/upstream-sync.md.
+// `--built` makes a missing out/ a failure, for CI after a build. `--source` leaves out/ unread, for
+// `pnpm lint`, which must not depend on what an earlier build left there. See docs/upstream-sync.md.
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { extname, join } from 'node:path'
@@ -36,6 +37,7 @@ import {
 
 const root = process.cwd()
 const requireBuilt = process.argv.includes('--built')
+const sourceOnly = process.argv.includes('--source')
 const require = createRequire(import.meta.url)
 const branding = require('../seal-branding.cjs')
 
@@ -266,6 +268,9 @@ function normalizeCopy(text) {
 
 /** Minifiers join and split literals, so a built string is matched against the allowed ones loosely. */
 function checkBuiltOutput(allowedSourceStrings) {
+  if (sourceOnly) {
+    return
+  }
   const dirs = BUILT_OUTPUT_DIRS.filter((dir) => existsSync(join(root, dir)))
   if (dirs.length === 0) {
     if (requireBuilt) {
@@ -312,11 +317,15 @@ for (const note of notes) {
   console.log(`note: ${note}`)
 }
 if (failures.length > 0) {
+  const staleBuildHint = failures.some((failure) => failure.startsWith('[built]'))
+    ? '\nout/ is read as it is on disk. If only [built] lines fail, it may predate this checkout: ' +
+      'rebuild (`pnpm build:cli`, `pnpm build:electron-vite`, `pnpm build:orcad`) and rerun.'
+    : ''
   console.error(
     `seal:rebrand-check found ${failures.length} user-visible "${branding.upstreamProductName}":\n` +
       `${failures.join('\n')}\n\n` +
       'Rebrand the copy (docs/upstream-sync.md), or allowlist an intentional mention in ' +
-      'config/seal/rebrand-check/seal-rebrand-allowlist.mjs.'
+      `config/seal/rebrand-check/seal-rebrand-allowlist.mjs.${staleBuildHint}`
   )
   process.exitCode = 1
 } else {

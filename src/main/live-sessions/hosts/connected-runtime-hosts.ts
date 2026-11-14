@@ -1,6 +1,6 @@
-import { isRuntimeEnvironmentManuallyDisconnected } from '../../ipc/runtime-environments/runtime-environment-manual-disconnect'
-import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/runtime-environment-request-connections'
-import { callRuntimeEnvironment } from '../../ipc/runtime-environments/runtime-environment-transport-routing'
+import { isRuntimeEnvironmentManuallyDisconnected } from '../../ipc/runtime-environments/connectivity/runtime-environment-manual-disconnect'
+import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/connections/runtime-environment-request-connections'
+import { callRuntimeEnvironment } from '../../ipc/runtime-environments/requests/runtime-environment-transport-routing'
 import type { LiveSessionHost } from './live-session-hosts'
 import { runtimeLiveSessionHost, type RuntimeEnvironmentCall } from './runtime-live-session-host'
 

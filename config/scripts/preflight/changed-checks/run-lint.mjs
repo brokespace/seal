@@ -21,6 +21,7 @@ export const LINT_STEPS = [
   'verify:startup-worktree-localization-coverage',
   'verify:mobile-localization',
   'verify:mobile-localization-coverage',
+  'seal:rebrand-check:source',
   'lint:ast-grep-gates',
   'check:main-sync-spawn-ratchet',
   'check:has-restyle-scope',

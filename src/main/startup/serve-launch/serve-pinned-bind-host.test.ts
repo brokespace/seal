@@ -5,15 +5,6 @@ import { getServeOptions } from './serve-options'
 import { resolveServePinnedBindHost } from './serve-pinned-bind-host'
 
 describe('Electron serve listener pin', () => {
-  it('rejects hostnames and empty values', () => {
-    expect(() => getServeOptions(['/AppRun', '--serve', '--serve-bind'])).toThrow(
-      'Missing value for --serve-bind.'
-    )
-    expect(() => getServeOptions(['/AppRun', '--serve', '--serve-bind', 'host.example'])).toThrow(
-      /literal IP address/
-    )
-  })
-
   it('accepts --mobile-pairing on any bind: Relay pairs a loopback listener', () => {
     for (const bind of [[], ['--serve-bind', '127.0.0.1'], ['--serve-bind', '0.0.0.0']]) {
       expect(

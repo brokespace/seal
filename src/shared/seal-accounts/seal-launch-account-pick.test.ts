@@ -19,16 +19,21 @@ function account(key: string, session: number | null, extra: Partial<SealAccount
     active: false,
     launchable: true,
     authFailure: false,
-    usage:
+    limits:
       session === null
         ? null
         : {
-            session: { usedPercent: session, resetsAt: null },
+            provider: 'codex',
+            session: {
+              usedPercent: session,
+              windowMinutes: 300,
+              resetsAt: null,
+              resetDescription: null
+            },
             weekly: null,
-            models: [],
-            planType: null,
             updatedAt: NOW,
-            error: null
+            error: null,
+            status: 'ok'
           },
     sessionThreshold: null,
     weeklyThreshold: null,

@@ -16,7 +16,6 @@
   },
   "seal": {
     "accounts": {
-      "resetsIn": "Resets in {{value0}}",
       "estimate": {
         "now": "Over its {{value0}} limit; swapping",
         "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
@@ -33,8 +32,6 @@
       "disabled": "Turned off for auto-swap",
       "active": "In use",
       "apiKey": "API key; no usage windows",
-      "window5h": "5h",
-      "windowWeekly": "Week",
       "autoSwap": "Auto-swap",
       "autoSwapHint": "Switch accounts before one runs out",
       "liveSessionSwap": "Move running sessions",
@@ -53,7 +50,9 @@
       "swapNow": "Pick the best account now",
       "sessions": "Running sessions",
       "noSessions": "No sessions Seal launched are open.",
-      "failedTitle": "Couldn’t change the account"
+      "failedTitle": "Couldn’t change the account",
+      "rateLimited": "Rate limited",
+      "rateLimitedUntil": "Rate limited · resets in {{value0}}"
     },
     "homeChat": {
       "attachment": {
@@ -380,6 +379,58 @@
       "directLabel": "Direct address",
       "replaceNotice": "This will replace your existing pairing with {{name}}.",
       "otherRelayNotice": "This code uses {{origin}} instead of the relay built into this app. Pair only if you trust whoever runs it."
+    },
+    "sessionRecap": {
+      "open": "Open recap",
+      "writing": "Reading the session…",
+      "badgeQuestions": "Questions for you: {{count}}",
+      "badgeActions": "Your action items: {{count}}",
+      "jump": "Shows it in the conversation",
+      "tick": "Done: {{item}}",
+      "new": "New",
+      "restore": "Bring back: {{item}}",
+      "dismiss": "Dismiss: {{item}}",
+      "openLink": "Open {{label}} in the browser",
+      "allSettled": "Nothing open.",
+      "settled": "{{count}} done or dismissed",
+      "hide": "Hide",
+      "show": "Show",
+      "goal": "Goal",
+      "standing": "Where it stands",
+      "news": "Since you last looked",
+      "questions": "Questions for you",
+      "actions": "Your action items",
+      "ignored": "Asked but not addressed",
+      "asked": "What you asked",
+      "did": "What the agent did",
+      "decisions": "Decisions",
+      "references": "Files, PRs and links",
+      "updating": "Updating…",
+      "updatedAt": "Updated {{time}}",
+      "title": "Recap",
+      "refreshShort": "Refresh",
+      "partialLong": "This recap covers the recent part of a long session.",
+      "kind": {
+        "question": "Question",
+        "action": "To do",
+        "decision": "Decision",
+        "ignored": "Not addressed",
+        "asked": "Asked",
+        "inProgress": "In progress",
+        "blocked": "Blocked",
+        "done": "Done"
+      },
+      "state": {
+        "paused": "Cloudflare’s free limit for today is used up. The recap resumes when it resets.",
+        "pausedUntil": "Cloudflare’s free limit for today is used up. The recap resumes at {{time}}.",
+        "overBudget": "Today’s share of the free Cloudflare allocation for recaps is used. It resets at midnight UTC.",
+        "failedWhy": "The last update failed: {{reason}}",
+        "failed": "The last update failed.",
+        "unavailable": "Recaps are off, or no Cloudflare Workers AI account is set up on the computer running Seal.",
+        "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
+        "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
+        "stale": "The session has moved on since this was written."
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   ArrowLeft,
   ArrowLeftRight,
@@ -25,7 +25,12 @@ import { cn } from '@/lib/class-names'
 import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
-import { MachineFileExplorer, type MachineFolderRequest } from '../explorer/MachineFileExplorer'
+import { MachineEditorButton } from '../editor/MachineEditorButton'
+import {
+  MachineFileExplorer,
+  type MachineFileExplorerHandle,
+  type MachineFolderRequest
+} from '../explorer/MachineFileExplorer'
 import { MachineResourcePanel } from '../resources/MachineResourcePanel'
 import type { MachineResourceKind } from '../resources/machine-resource-requests'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
@@ -35,7 +40,6 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
-import { MachineOpenInEditorButton } from './MachineOpenInEditorButton'
 import {
   connectMachine,
   openMachineTerminal,
@@ -64,6 +68,7 @@ export function MachineDetail({
   const statusLabel = useMachineStatusLabel()
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
+  const explorerRef = useRef<MachineFileExplorerHandle>(null)
   const [opened, setOpened] = useState<{ machineId: string; kind: MachineResourceKind } | null>(
     null
   )
@@ -153,9 +158,9 @@ export function MachineDetail({
               {t('auto.components.machines.detail.terminal', 'Terminal')}
             </span>
           </Button>
-          <MachineOpenInEditorButton
+          <MachineEditorButton
             machine={machine}
-            homeDir={homeDir}
+            onOpen={(choice) => explorerRef.current?.openCurrentFolderInEditor(choice)}
             onAddSshDetails={onAddSshDetails}
           />
           <DropdownMenu>
@@ -254,7 +259,10 @@ export function MachineDetail({
       ) : null}
       <MachineFileExplorer
         key={machine.id}
+        ref={explorerRef}
         machine={machine}
+        onAddSshDetails={onAddSshDetails}
+        onShown={() => setOpened(null)}
         homeDir={homeDir}
         hidden={resource !== null}
         folderRequest={folderRequest}

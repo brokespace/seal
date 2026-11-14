@@ -30,6 +30,9 @@
     "web": {
       "WebConnect": {
         "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "此 Seal 服务器不支持此 Web 客户端所需的加密方式，请更新服务器上的 Seal，然后重新加载此页面；如果服务器已是最新版本，则其身份密钥已更改，请重新配对此浏览器"
       }
     }
   },

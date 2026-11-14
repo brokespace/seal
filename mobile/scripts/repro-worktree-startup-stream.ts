@@ -58,7 +58,7 @@ function readJson<T>(path: string): T {
 }
 
 // The host stores only a hash of a signed-in device's token, so it comes from the pairing code.
-const token = process.env.ORCA_MOBILE_DEVICE_TOKEN
+const token = process.env.ORCA_MOBILE_DEVICE_TOKEN ?? ''
 const keypair = readJson<{ publicKeyB64: string }>(join(USER_DATA, 'orca-e2ee-keypair.json'))
 
 if (!token || !keypair.publicKeyB64) {

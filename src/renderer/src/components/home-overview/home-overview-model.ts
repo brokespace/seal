@@ -8,15 +8,12 @@ import type { LiveSession } from '../../../../shared/live-sessions/live-session-
 
 export type {
   HomeAccount,
-  HomeAccountStatus,
   HomeAutomation,
   HomeAutomationsResult,
   HomeMachine,
   HomeMachineKind,
   HomeMachineStatus,
   HomeReviewState,
-  HomeUsageWindow,
-  HomeUsageWindowKind,
   HomeWorkspace
 } from '../../../../shared/home-overview/home-overview-types'
 

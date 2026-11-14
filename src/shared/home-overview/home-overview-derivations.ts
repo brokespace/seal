@@ -1,40 +1,6 @@
 import { liveSessionMachineId } from '../live-sessions/live-session-machine-id'
 import type { LiveSession } from '../live-sessions/live-session-types'
-import type { HomeAccount, HomeMachine, HomeUsageWindow } from './home-overview-types'
-
-export const ACCOUNT_NEAR_LIMIT_PERCENT = 80
-
-export function peakUsageWindow(account: HomeAccount): HomeUsageWindow | null {
-  let peak: HomeUsageWindow | null = null
-  for (const window of account.windows) {
-    if (!peak || window.usedPercent > peak.usedPercent) {
-      peak = window
-    }
-  }
-  return peak
-}
-
-export function accountNearLimit(account: HomeAccount): boolean {
-  return (peakUsageWindow(account)?.usedPercent ?? 0) >= ACCOUNT_NEAR_LIMIT_PERCENT
-}
-
-/** Earliest future reset; for an account near its limit, the reset of the window that is close. */
-export function accountNextReset(account: HomeAccount, now: number): number | null {
-  const candidates = accountNearLimit(account)
-    ? account.windows.filter((window) => window.usedPercent >= ACCOUNT_NEAR_LIMIT_PERCENT)
-    : account.windows
-  let next: number | null = null
-  for (const window of candidates) {
-    if (
-      window.resetsAt !== null &&
-      window.resetsAt > now &&
-      (next === null || window.resetsAt < next)
-    ) {
-      next = window.resetsAt
-    }
-  }
-  return next
-}
+import type { HomeMachine } from './home-overview-types'
 
 /** Machines known to the machines provider plus any that only appear as a session's host. */
 export function mergeSessionMachines(

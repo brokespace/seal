@@ -3,6 +3,9 @@
     "web": {
       "WebConnect": {
         "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "Ce serveur Seal ne prend pas en charge le chiffrement requis par ce client web. Mettez Seal à jour sur le serveur, puis rechargez cette page. Si le serveur est déjà à jour, sa clé d’identité a changé : appairez à nouveau ce navigateur."
       }
     },
     "components": {

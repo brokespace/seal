@@ -104,6 +104,8 @@ const telemetrySetOptInApi: PreloadApi['telemetrySetOptIn'] = (optedIn) =>
   ipcRenderer.invoke('telemetry:setOptIn', optedIn)
 const telemetryAcknowledgeBannerApi: PreloadApi['telemetryAcknowledgeBanner'] = () =>
   ipcRenderer.invoke('telemetry:acknowledgeBanner')
+const telemetryAssignBrowserExtensionsBannerApi: PreloadApi['telemetryAssignBrowserExtensionsBanner'] =
+  () => ipcRenderer.invoke('telemetry:assignBrowserExtensionsBanner')
 const telemetryGetConsentStateApi: PreloadApi['telemetryGetConsentState'] = () =>
   ipcRenderer.invoke('telemetry:getConsentState')
 
@@ -143,6 +145,7 @@ const api = {
   telemetrySetOptIn: telemetrySetOptInApi,
   telemetryAcknowledgeBanner: telemetryAcknowledgeBannerApi,
   telemetryGetConsentState: telemetryGetConsentStateApi,
+  telemetryAssignBrowserExtensionsBanner: telemetryAssignBrowserExtensionsBannerApi,
   diagnostics: diagnosticsApi,
   settings: settingsApi,
   agentAwake: agentAwakeApi,

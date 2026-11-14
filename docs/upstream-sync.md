@@ -147,8 +147,11 @@ The skills, skill guides and the generated files built from them are agent-facin
 
 ```bash
 pnpm seal:rebrand-check            # source-level; scans out/ too when it is built
+pnpm seal:rebrand-check:source     # source-level only; a step of `pnpm lint`
 pnpm build:cli && pnpm build:electron-vite && pnpm seal:rebrand-check --built
 ```
+
+`out/` is read as it is on disk. A build left by an older checkout fails with `[built]` lines for copy the current source no longer ships: rebuild and rerun. `pnpm lint` runs the `--source` form so it does not depend on what is in `out/`.
 
 It fails on a user-visible "Orca" in:
 
@@ -168,7 +171,7 @@ Intentional mentions are allowlisted in `config/seal/rebrand-check/seal-rebrand-
 
 After `seal:sync:resolve`, what is left is where both sides changed behaviour. Keep upstream's fix and reapply Seal's feature on top of it:
 
-- Seal features to preserve: the rebrand, unified Machines (SSH and Seal server), multi-account auto-swap, live sessions and the Active agents sidebar, Home overview and home chat, the Machines tab, mobile and the Cloudflare relay.
+- Seal features to preserve: the rebrand, unified Machines (SSH and Seal server), multi-account auto-swap, live sessions and the Active agents sidebar, Home overview and home chat, the Machines tab, mobile and the Cloudflare relay, and the shared page layout (when upstream redesigns a page, put its frame, header and gutter back on `components/page-layout/`; see "Page layout" in `docs/STYLEGUIDE.md`).
 - Upstream deleted a file Seal changed: check whether the behaviour moved; if Seal's change was to a test upstream retired, delete it.
 - Upstream changed code Seal replaced (the accounts settings pane, for example): keep Seal's version and port the fix if it still applies.
 

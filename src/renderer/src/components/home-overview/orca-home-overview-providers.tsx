@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useAppStore } from '@/store'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
-import { useLiveDashboardSnapshot } from '@/components/dashboard/useLiveDashboardSnapshot'
+import { useLiveDashboardSnapshot } from '@/components/dashboard/snapshot/useLiveDashboardSnapshot'
 import { AUTOMATIONS_CHANGED_EVENT } from '@/components/automations/events/automations-changed-window-event'
 import { listAutomationsForTarget } from '@/components/automations/hosts/automation-host-client'
 import {

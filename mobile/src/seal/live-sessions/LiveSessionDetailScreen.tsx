@@ -27,6 +27,7 @@ import { sealAssignmentForLiveSession } from '../accounts/seal-account-presentat
 import { SealSessionAccountSheet } from '../accounts/SealSessionAccountSheet'
 import { useSealAccounts } from '../accounts/use-seal-accounts'
 import { sealStyles } from '../seal-screen-styles'
+import { SessionRecapOverview } from '../session-recap/SessionRecapOverview'
 import { SealScreenFrame, useSealHostName } from '../SealScreenFrame'
 import { answerLivePermission, takeOverLiveSession } from './live-session-operations'
 import {
@@ -45,6 +46,7 @@ import { LiveSessionComposer } from './LiveSessionComposer'
 import { LivePendingRow, LiveTranscriptRow } from './LiveTranscriptRow'
 import { useLiveSessionOutbox } from './use-live-session-outbox'
 import { useLiveTranscript } from './use-live-transcript'
+import { useLiveTranscriptJump } from './use-live-transcript-jump'
 
 type Row =
   | { kind: 'transcript'; key: string; message: LiveTranscriptMessage }
@@ -83,6 +85,7 @@ export function LiveSessionDetailScreen({
 
   const list = useRef<FlatList<Row>>(null)
   const atBottom = useRef(true)
+  const jump = useLiveTranscriptJump({ list, atBottom, transcript })
 
   const onSend = useCallback(() => {
     atBottom.current = true
@@ -249,6 +252,14 @@ export function LiveSessionDetailScreen({
 
   return (
     <SealScreenFrame hostId={hostId} title={title} subtitle={subtitle} trailing={trailing}>
+      {session ? (
+        <SessionRecapOverview
+          client={client}
+          sessionId={session.id}
+          brief={session.recap}
+          onJump={jump.jumpTo}
+        />
+      ) : null}
       <View style={styles.fill}>
         {body ?? (
           <FlatList
@@ -257,6 +268,7 @@ export function LiveSessionDetailScreen({
             keyExtractor={(row) => row.key}
             contentContainerStyle={styles.listContent}
             onScroll={onScroll}
+            onScrollToIndexFailed={jump.onScrollToIndexFailed}
             scrollEventThrottle={64}
             maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             onContentSizeChange={() => {

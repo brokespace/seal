@@ -100,7 +100,8 @@ export function SealEditAccountDialog({
               value={plan}
               maxLength={80}
               placeholder={
-                candidate.usage?.planType ?? t('seal.accounts.edit.planPlaceholder', 'e.g. Max 20x')
+                candidate.limits?.planType ??
+                t('seal.accounts.edit.planPlaceholder', 'e.g. Max 20x')
               }
               onChange={(event) => setPlan(event.target.value)}
             />

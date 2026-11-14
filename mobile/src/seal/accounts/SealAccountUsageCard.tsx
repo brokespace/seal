@@ -1,18 +1,14 @@
 import type { ReactNode } from 'react'
 import { Text, View } from 'react-native'
-import { UsageBar } from '../../accounts/usage/UsageBar'
+import { ProviderUsageWindows } from '../../accounts/ProviderUsageWindows'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, radii, spacing, typography } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
-import {
-  sealResetText,
-  sealSwapEstimateText,
-  sealWindowUsedPercent
-} from './seal-account-presentation'
+import { sealRateLimitText, sealSwapEstimateText } from './seal-account-presentation'
 import type { SealCandidate } from './seal-accounts-schemas'
 
-/** One account: its name, whether new sessions use it, 5-hour and weekly meters, and the next-swap estimate. */
+/** One account: its name, whether new sessions use it, the accounts tab's usage bars, and the next-swap estimate. */
 export function SealAccountUsageCard({
   candidate,
   now,
@@ -21,25 +17,24 @@ export function SealAccountUsageCard({
 }: {
   candidate: SealCandidate
   now: number
-  /** Leaves out per-model meters and the estimate, for the overview. */
+  /** Leaves out the estimate, for the overview. */
   compact?: boolean
   children?: ReactNode
 }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
-  const usage = candidate.usage
+  const limits = candidate.limits ?? null
   const name = candidate.label || candidate.email || candidate.key
   const meta = [
-    candidate.plan ?? usage?.planType,
+    candidate.plan,
     candidate.email && candidate.email !== name ? candidate.email : null
   ].filter(Boolean)
   const note = candidate.authFailure
     ? t('seal.accounts.authFailure', 'Signed out; sign in again on your computer.')
     : candidate.disabled
       ? t('seal.accounts.disabled', 'Turned off for auto-swap')
-      : usage?.error
+      : (sealRateLimitText(candidate, now) ?? limits?.error)
   const estimate = compact ? null : sealSwapEstimateText(candidate, now)
-  const unavailable = !usage
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -58,32 +53,12 @@ export function SealAccountUsageCard({
       {candidate.kind === 'api-key' ? (
         <Text style={styles.meta}>{t('seal.accounts.apiKey', 'API key; no usage windows')}</Text>
       ) : (
-        <View style={styles.bars}>
-          <UsageBar
-            label={t('seal.accounts.window5h', '5h')}
-            usedPercent={sealWindowUsedPercent(usage?.session, now)}
-            unavailable={unavailable || !usage?.session}
-            resetText={sealResetText(usage?.session, now)}
-          />
-          <UsageBar
-            label={t('seal.accounts.windowWeekly', 'Week')}
-            usedPercent={sealWindowUsedPercent(usage?.weekly, now)}
-            unavailable={unavailable || !usage?.weekly}
-            resetText={sealResetText(usage?.weekly, now)}
-          />
-          {compact
-            ? null
-            : (usage?.models ?? []).map((model) => (
-                <UsageBar
-                  key={model.name}
-                  label={model.name}
-                  wideLabel
-                  usedPercent={sealWindowUsedPercent(model, now)}
-                  unavailable={false}
-                  resetText={sealResetText(model, now)}
-                />
-              ))}
-        </View>
+        <ProviderUsageWindows
+          limits={limits}
+          now={now}
+          isFetching={candidate.usageFetching}
+          showEmptyWindows
+        />
       )}
       {note ? <Text style={styles.note}>{note}</Text> : null}
       {estimate ? <Text style={styles.meta}>{estimate}</Text> : null}
@@ -118,6 +93,5 @@ const styles = themedStyleSheet(() => ({
     overflow: 'hidden'
   },
   meta: { fontSize: typography.metaSize, color: colors.textSecondary },
-  note: { fontSize: typography.metaSize, color: colors.statusAmber },
-  bars: { gap: spacing.xs, marginTop: spacing.xs }
+  note: { fontSize: typography.metaSize, color: colors.statusAmber }
 }))

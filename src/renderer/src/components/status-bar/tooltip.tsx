@@ -360,7 +360,7 @@ export function ProviderPanel({
 
       {p.error ? (
         <ErrorMessage
-          message={p.error}
+          message={getProviderUsageErrorMessage(p, t)}
           stale={!!(p.session || p.weekly || p.fableWeekly || p.monthly)}
           inverted={inverted}
         />

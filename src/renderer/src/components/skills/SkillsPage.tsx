@@ -26,6 +26,7 @@ import {
   SkillsScanErrorBand
 } from './catalog/skills-page-states'
 import { SKILLS_PAGE_COLUMN } from './catalog/skills-page-column'
+import { PageLayout } from '@/components/page-layout/PageLayout'
 import { scannedSkillSourceCount, summarizeSkillSources } from './catalog/skill-source-inventory'
 import { useSkillDiscoveryHostLabel } from './catalog/use-skill-discovery-host-label'
 import { countSkillsBySource, filterSkills, type SkillsFilterState } from './catalog/skills-filter'
@@ -230,7 +231,7 @@ export default function SkillsPage(): React.JSX.Element {
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-background">
+    <PageLayout>
       {selectionMode ? (
         <SkillsSelectionHeader
           title={
@@ -240,13 +241,6 @@ export default function SkillsPage(): React.JSX.Element {
                   'Select skills to delete'
                 )
               : t('auto.components.skills.SkillsSelectionHeader.title', 'Select skills to share')
-          }
-          icon={
-            deleting ? (
-              <Trash2 className="size-4 shrink-0 text-muted-foreground" />
-            ) : (
-              <Share2 className="size-4 shrink-0 text-muted-foreground" />
-            )
           }
           actionIcon={deleting ? <Trash2 className="size-3.5" /> : <Share2 className="size-3.5" />}
           actionLabel={
@@ -402,6 +396,6 @@ export default function SkillsPage(): React.JSX.Element {
         }}
       />
       <SkillInstallManagementDialog open={managementOpen} onOpenChange={setManagementOpen} />
-    </main>
+    </PageLayout>
   )
 }

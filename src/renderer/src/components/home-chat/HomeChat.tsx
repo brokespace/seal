@@ -34,7 +34,7 @@ function HomeChatPanel({
   return (
     <section
       className={cn(
-        'flex min-h-0 flex-col bg-background',
+        'chat-wide-column flex min-h-0 flex-col bg-chat-pane',
         // Hidden, not unmounted: a running turn keeps streaming and the draft survives.
         minimized && '[&>*:not(header)]:hidden',
         className
