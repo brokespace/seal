@@ -20,7 +20,7 @@ export const ORCHESTRATION_PEER_RUN_METHODS = [
       if (orchestrationCaller?.kind !== 'peer') {
         throw new OrchestrationError(
           'forbidden',
-          'Only the paired Orca that coordinates a Run cancels it. No effects were applied.',
+          'Only the paired Seal that coordinates a Run cancels it. No effects were applied.',
           { effectsApplied: false }
         )
       }

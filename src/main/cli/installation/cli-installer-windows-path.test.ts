@@ -30,7 +30,7 @@ describe('CliInstaller', () => {
 
   it('bypasses cached status data before a Windows PATH mutation', async () => {
     const fixture = await makeFixture()
-    const installPath = join(fixture.root, 'Programs', 'Orca', 'bin', 'orca.cmd')
+    const installPath = join(fixture.root, 'Programs', 'Seal', 'bin', 'orca.cmd')
     const pathDirectory = dirname(installPath)
     let registryPath = 'C:\\Tools'
     const registryReader = new WindowsUserPathRegistryReader({
@@ -70,7 +70,7 @@ describe('CliInstaller', () => {
   it('does not overwrite the packaged Windows launcher while registering PATH', async () => {
     const fixture = await makeFixture()
     const localAppDataPath = join(fixture.root, 'AppData', 'Local')
-    const resourcesPath = join(fixture.root, 'D Custom Orca', 'resources')
+    const resourcesPath = join(fixture.root, 'D Custom Seal', 'resources')
     const bundledLauncher = join(resourcesPath, 'bin', 'orca.exe')
     const bundledContent = 'native launcher'
     await mkdir(dirname(bundledLauncher), { recursive: true })
@@ -83,7 +83,7 @@ describe('CliInstaller', () => {
       resourcesPath,
       localAppDataPath,
       userDataPath: fixture.userDataPath,
-      execPath: join(fixture.root, 'D Custom Orca', 'Orca.exe'),
+      execPath: join(fixture.root, 'D Custom Seal', 'Seal.exe'),
       appPath: fixture.appPath,
       userPathReader: async () => userPathRead(userPath),
       userPathWriter: async (value) => {

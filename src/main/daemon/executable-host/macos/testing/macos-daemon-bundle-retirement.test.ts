@@ -31,7 +31,7 @@ afterEach(async () => {
 
 async function copy(name: string): Promise<string> {
   const directory = join(root, name)
-  await mkdir(join(directory, 'app.noindex', 'Orca Terminal Host.app'), { recursive: true })
+  await mkdir(join(directory, 'app.noindex', 'Seal Terminal Host.app'), { recursive: true })
   return directory
 }
 

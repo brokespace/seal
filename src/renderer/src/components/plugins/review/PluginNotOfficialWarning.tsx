@@ -21,25 +21,25 @@ export function PluginNotOfficialWarning({
   if (notice === 'translations') {
     body = t(
       'auto.components.settings.PluginNotOfficialWarning.translations',
-      'Translations can change any text in Orca. Make sure you trust {{value0}}.',
+      'Translations can change any text in Seal. Make sure you trust {{value0}}.',
       { value0 }
     )
   } else if (moment === 'install') {
     body = t(
       'auto.components.settings.PluginNotOfficialWarning.install',
-      'Make sure you trust {{value0}} before installing. This plugin runs the publisher’s code inside Orca.',
+      'Make sure you trust {{value0}} before installing. This plugin runs the publisher’s code inside Seal.',
       { value0 }
     )
   } else if (moment === 'update') {
     body = t(
       'auto.components.settings.PluginNotOfficialWarning.update',
-      'Make sure you trust {{value0}} before updating. This plugin runs the publisher’s code inside Orca.',
+      'Make sure you trust {{value0}} before updating. This plugin runs the publisher’s code inside Seal.',
       { value0 }
     )
   } else {
     body = t(
       'auto.components.settings.PluginNotOfficialWarning.installed',
-      'Make sure you trust {{value0}}. This plugin runs the publisher’s code inside Orca.',
+      'Make sure you trust {{value0}}. This plugin runs the publisher’s code inside Seal.',
       { value0 }
     )
   }

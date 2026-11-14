@@ -110,7 +110,7 @@ export function RuntimeServersHeaderActions({
               label={t('auto.components.settings.serverList.pasteAccessLink', 'Paste access link')}
               description={t(
                 'auto.components.settings.serverList.pasteAccessLinkHelp',
-                'Pair with Orca already running on another machine.'
+                'Pair with Seal already running on another machine.'
               )}
               onSelect={() => setDialog('add')}
             />
@@ -119,11 +119,11 @@ export function RuntimeServersHeaderActions({
                 icon={<TerminalSquare />}
                 label={t(
                   'auto.components.settings.serverList.setUpOnSshHost',
-                  'Set up Orca on an SSH host'
+                  'Set up Seal on an SSH host'
                 )}
                 description={t(
                   'auto.components.settings.managedServers.description',
-                  'Orca installs itself on an empty SSH host and keeps itself up to date.'
+                  'Seal installs itself on an empty SSH host and keeps itself up to date.'
                 )}
                 onSelect={() => setDialog('install')}
               />

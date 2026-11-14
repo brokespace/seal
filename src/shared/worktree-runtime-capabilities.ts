@@ -69,7 +69,7 @@ export function assertCrossStoreLineageSupported(
 ): void {
   if (!supportsCrossStoreLineage(capabilities)) {
     throw new Error(
-      `Update Orca on ${hostLabel} to nest workspaces under a parent on another machine. Nothing was changed.`
+      `Update Seal on ${hostLabel} to nest workspaces under a parent on another machine. Nothing was changed.`
     )
   }
 }
@@ -89,7 +89,7 @@ export function assertFolderParentSetSupported(
 ): void {
   if (!supportsFolderParent(capabilities)) {
     throw new Error(
-      `Update Orca on ${hostLabel} to attach a worktree to a folder workspace. Nothing was changed.`
+      `Update Seal on ${hostLabel} to attach a worktree to a folder workspace. Nothing was changed.`
     )
   }
 }

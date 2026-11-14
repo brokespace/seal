@@ -47,16 +47,9 @@ const ORCA_BUILD_IDENTITY_LITERAL =
   orcaBuildIdentity === 'stable' || orcaBuildIdentity === 'rc'
     ? JSON.stringify(orcaBuildIdentity)
     : 'null'
-const orcaPostHogWriteKey = process.env.ORCA_POSTHOG_WRITE_KEY
-const ORCA_POSTHOG_WRITE_KEY_LITERAL =
-  typeof orcaPostHogWriteKey === 'string' && orcaPostHogWriteKey.length > 0
-    ? JSON.stringify(orcaPostHogWriteKey)
-    : 'null'
-const orcaDiagnosticsTokenUrl = process.env.ORCA_DIAGNOSTICS_TOKEN_URL
-const ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL =
-  typeof orcaDiagnosticsTokenUrl === 'string' && orcaDiagnosticsTokenUrl.length > 0
-    ? JSON.stringify(orcaDiagnosticsTokenUrl)
-    : 'null'
+// Seal never reports to upstream's PostHog project or diagnostics service, whatever the build env holds.
+const ORCA_POSTHOG_WRITE_KEY_LITERAL = 'null'
+const ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL = 'null'
 
 const darkBuildSwitches: {
   darkBuildDefines: () => Record<string, string>

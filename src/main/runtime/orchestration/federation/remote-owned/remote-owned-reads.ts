@@ -68,7 +68,7 @@ export function remoteWorkerShow(runtime: ReadsRuntime, record: RemoteDispatchRo
   const reachable = heard?.unreachableSince ? false : heard?.answeredAt ? true : undefined
   const closedBecause = link?.state === 'closed' ? link.last_error : null
   const owedStop = record.stop_owed
-    ? ` A stop is owed; this Orca sends it when ${server.name} answers.`
+    ? ` A stop is owed; this Seal sends it when ${server.name} answers.`
     : ''
   return {
     dispatch: {

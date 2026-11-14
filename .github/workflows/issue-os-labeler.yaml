@@ -37,12 +37,12 @@ jobs:
             // Metadata headings in accepted order; equal rank = current/legacy names of one field.
             const HEADING_RANKS = new Map([
               ["Summary", 1],
-              ["Where were you using Orca?", 2],
+              ["Where were you using Seal?", 2],
               ["Client", 2],
               ["Operating system", 3],
               ["Host operating system", 3],
               ["Remote host operating system", 4],
-              ["Orca version", 5],
+              ["Seal version", 5],
               ["Coding harness and version", 6],
               ["Details", 7],
               ["Reproduction steps", 7],
@@ -152,7 +152,7 @@ jobs:
             // Returns the managed labels the body asks for, or null to leave the issue untouched.
             function desiredLabelsFor(body) {
               const fields = readFormFields(body);
-              if (!fields || !fields.has("Orca version")) {
+              if (!fields || !fields.has("Seal version")) {
                 return null;
               }
               const osHeading = ["Operating system", "Host operating system"].find((name) =>
@@ -175,8 +175,8 @@ jobs:
               }
 
               // The current heading wins by presence, even when blank.
-              const whereChoices = fields.has("Where were you using Orca?")
-                ? [fields.get("Where were you using Orca?"), WHERE_IS_MOBILE]
+              const whereChoices = fields.has("Where were you using Seal?")
+                ? [fields.get("Where were you using Seal?"), WHERE_IS_MOBILE]
                 : fields.has("Client")
                   ? [fields.get("Client"), CLIENT_IS_MOBILE]
                   : null;

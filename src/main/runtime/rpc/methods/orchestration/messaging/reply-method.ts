@@ -134,7 +134,7 @@ export const ORCHESTRATION_REPLY_METHOD = defineOrchestrationMethod({
     if (params.on !== undefined) {
       throw new OrchestrationError(
         'invalid_argument',
-        `${params.id} did not come from another server, so its reply stays on this Orca. Drop --on. No reply was sent.`,
+        `${params.id} did not come from another server, so its reply stays on this Seal. Drop --on. No reply was sent.`,
         { effectsApplied: false }
       )
     }

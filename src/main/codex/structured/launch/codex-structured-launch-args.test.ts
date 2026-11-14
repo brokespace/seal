@@ -3,7 +3,7 @@ import { codexStructuredLaunchArgs } from './codex-structured-launch-args'
 import { StructuredAgentArgumentsError } from '../../../native-chat/agent-launch/structured-agent-arguments-error'
 
 describe('codexStructuredLaunchArgs', () => {
-  it('drops permission options and config overrides owned by Orca', () => {
+  it('drops permission options and config overrides owned by Seal', () => {
     expect(
       codexStructuredLaunchArgs([
         '--dangerously-bypass-approvals-and-sandbox',

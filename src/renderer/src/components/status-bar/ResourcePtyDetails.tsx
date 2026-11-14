@@ -31,9 +31,9 @@ export function ResourcePtyDetails({
   const copySessionId = async (): Promise<void> => {
     try {
       await window.api.ui.writeClipboardText(row.session.id)
-      toast.success(t('resourceManager.pty.idCopied', 'Orca session ID copied'))
+      toast.success(t('resourceManager.pty.idCopied', 'Seal session ID copied'))
     } catch {
-      toast.error(t('resourceManager.pty.copyFailed', 'Could not copy Orca session ID'))
+      toast.error(t('resourceManager.pty.copyFailed', 'Could not copy Seal session ID'))
     }
   }
   const unavailable = t('resourceManager.pty.unavailable', 'Unavailable')
@@ -44,7 +44,7 @@ export function ResourcePtyDetails({
         ? t('resourceManager.pty.ownerAbsent', 'Absent')
         : t('resourceManager.pty.ownerUnknown', 'Unknown')
   const fields = [
-    [t('resourceManager.pty.sessionId', 'Orca session ID'), row.session.id],
+    [t('resourceManager.pty.sessionId', 'Seal session ID'), row.session.id],
     [t('resourceManager.pty.incarnation', 'Incarnation'), row.session.incarnationId || unavailable],
     [t('resourceManager.pty.workspace', 'Workspace'), row.workspace || unavailable],
     [t('resourceManager.pty.cwd', 'Last-reported cwd'), row.session.cwd || unavailable],
@@ -68,7 +68,7 @@ export function ResourcePtyDetails({
       </dl>
       <Button variant="ghost" size="xs" className="mt-2" onClick={() => void copySessionId()}>
         <Copy className="size-3.5" />
-        {t('resourceManager.pty.copyId', 'Copy Orca session ID')}
+        {t('resourceManager.pty.copyId', 'Copy Seal session ID')}
       </Button>
     </div>
   )

@@ -112,7 +112,7 @@ describe('writeRuntimeFile disk precondition', () => {
         ok: false,
         error: {
           code: 'runtime_timeout',
-          message: 'Timed out waiting for the remote Orca runtime'
+          message: 'Timed out waiting for the remote Seal runtime'
         },
         _meta: { runtimeId: 'remote-runtime' }
       }

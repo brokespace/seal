@@ -29,7 +29,7 @@ export const PLUGIN_PROJECT_VISIBILITY_HANDLERS = {
     if (hidden !== params.hidden) {
       throw new PluginHostCallError(
         'action_failed',
-        "this project's host could not change it; it may need an Orca update"
+        "this project's host could not change it; it may need a Seal update"
       )
     }
     return { hostId: project.ownerHostId, hidden }

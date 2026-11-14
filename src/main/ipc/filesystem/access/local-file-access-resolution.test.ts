@@ -245,7 +245,7 @@ describe('project-folder-link listings', () => {
     ).resolves.toBe(join(outside, 'guides'))
   })
 
-  it('refuse links in Orca floating folder, which is not a project', async () => {
+  it('refuse links in Seal floating folder, which is not a project', async () => {
     const floatingLink = join(userData.path, 'floating-workspace', 'linked')
     await symlink(outside, floatingLink, 'dir')
 

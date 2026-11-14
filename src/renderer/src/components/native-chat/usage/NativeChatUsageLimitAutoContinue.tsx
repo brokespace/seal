@@ -47,7 +47,7 @@ export function NativeChatUsageLimitAutoContinue({
       <p className="ml-6 text-xs text-chat-foreground-faint">
         {t(
           'components.native-chat.usageLimitAutoContinue.cancelled',
-          "Orca won't continue this chat automatically."
+          "Seal won't continue this chat automatically."
         )}
       </p>
     )
@@ -56,7 +56,7 @@ export function NativeChatUsageLimitAutoContinue({
     <p className="ml-6 text-xs text-chat-foreground-faint">
       {t(
         'components.native-chat.usageLimitAutoContinue.scheduled',
-        'Orca will continue this chat at {{time}}.',
+        'Seal will continue this chat at {{time}}.',
         { time: formatUsageLimitResetClock(state.resetsAt) }
       )}
       <button

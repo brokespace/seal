@@ -73,7 +73,7 @@ function ambiguousHostFailure(
       displayName,
       message: translate(
         'auto.store.slices.workspace.cleanup.hostUnresolved',
-        'Orca cannot tell which host owns this workspace. Refresh projects and review it again.'
+        'Seal cannot tell which host owns this workspace. Refresh projects and review it again.'
       )
     }
   }

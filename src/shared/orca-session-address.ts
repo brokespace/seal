@@ -23,7 +23,7 @@ export function formatOrcaSessionAddress(orcaSessionId: OrcaSessionId): OrcaSess
   const address = `${ORCA_SESSION_ADDRESS_PREFIX}${orcaSessionId}`
   // Always true for a checked id; the check brands the address without a type assertion.
   if (!isOrcaSessionAddress(address)) {
-    throw new Error(`Not an Orca session id: ${orcaSessionId}`)
+    throw new Error(`Not a Seal session id: ${orcaSessionId}`)
   }
   return address
 }

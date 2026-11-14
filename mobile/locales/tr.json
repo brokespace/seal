@@ -1,9 +1,9 @@
 {
   "ios": {
-    "NSCameraUsageDescription": "Orca'nın QR kodlarını taramak için kamerayı kullanmasına izin verin.",
-    "NSLocalNetworkUsageDescription": "Orca, yerel ağınızdaki masaüstü uygulamasına bağlanır.",
-    "NSMicrophoneUsageDescription": "Orca’nın sesli dikte için mikrofonunuzu kullanmasına izin verin; konuşma bu telefonda veya eşlenmiş bilgisayarınızda yazıya dökülür.",
-    "NSPhotoLibraryAddUsageDescription": "Orca'nın oturumlarınızdaki görselleri Fotoğraflar'a kaydetmesine izin verin.",
-    "NSPhotoLibraryUsageDescription": "Orca'nın arşivinizdeki fotoğrafları eşleştirdiğiniz masaüstü bilgisayardaki bir terminal oturumuna eklemesine izin verin."
+    "NSCameraUsageDescription": "Seal'in QR kodlarını taramak için kamerayı kullanmasına izin verin.",
+    "NSLocalNetworkUsageDescription": "Seal, yerel ağınızdaki masaüstü uygulamasına bağlanır.",
+    "NSMicrophoneUsageDescription": "Seal’in sesli dikte için mikrofonunuzu kullanmasına izin verin; konuşma bu telefonda veya eşlenmiş bilgisayarınızda yazıya dökülür.",
+    "NSPhotoLibraryAddUsageDescription": "Seal'in oturumlarınızdaki görselleri Fotoğraflar'a kaydetmesine izin verin.",
+    "NSPhotoLibraryUsageDescription": "Seal'in arşivinizdeki fotoğrafları eşleştirdiğiniz masaüstü bilgisayardaki bir terminal oturumuna eklemesine izin verin."
   }
 }

@@ -30,8 +30,8 @@ describe('parkServeSupervisorsForInstall', () => {
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'orca-install-park-'))
-    const bundle = join(root, 'Orca.app')
-    executable = join(bundle, 'Contents', 'MacOS', 'Orca')
+    const bundle = join(root, 'Seal.app')
+    executable = join(bundle, 'Contents', 'MacOS', 'Seal')
     await mkdir(join(bundle, 'Contents', 'MacOS'), { recursive: true })
     await writeFile(join(bundle, 'Contents', 'Info.plist'), 'v1')
     dir = bundleCoordinationDir(realpathSync(bundle), join(root, 'data'))
@@ -51,7 +51,7 @@ describe('parkServeSupervisorsForInstall', () => {
         pid: process.pid,
         childPid,
         heartbeatAt,
-        label: 'com.stablyai.orca.serve.default'
+        label: 'com.brokespace.seal.serve.default'
       })
     )
   }

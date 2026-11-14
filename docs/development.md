@@ -1,4 +1,4 @@
-# Orca Development Environment
+# Seal Development Environment
 
 Setup details beyond [`CONTRIBUTING.md`](../.github/CONTRIBUTING.md).
 
@@ -36,7 +36,7 @@ Re-run `pnpm -C mobile install --frozen-lockfile` whenever `mobile/pnpm-lock.yam
 
 After a worktree is removed and no process still uses its profile, a later `pnpm dev` can automatically delete that profile and its saved state. Back up any state you need before removing the worktree; the `userData` field in `ORCA_DEV_INSTANCE` or `out/dev-instance.json` gives the profile directory.
 
-Seeding copies projects, workspaces, settings, SSH targets, and the Orca account session from another profile (default `orca-dev`, else the installed app's). Seed from `orca-dev` if you need to stay signed in: dev builds cannot decrypt secrets the installed app encrypted.
+Seeding copies projects, workspaces, settings, SSH targets, and the Seal account session from another profile (default `orca-dev`, else the installed app's). Seed from `orca-dev` if you need to stay signed in: dev builds cannot decrypt secrets the installed app encrypted.
 
 ```bash
 pnpm dev:seed-profile [--from=<profile dir>] [--to=<profile dir>] [--reset]

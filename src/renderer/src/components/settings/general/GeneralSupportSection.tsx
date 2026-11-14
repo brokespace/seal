@@ -124,7 +124,7 @@ function SupportSection({
       <div className="min-h-0 overflow-hidden">
         <div className={hasPrecedingSections ? 'pt-2' : undefined}>
           <SettingsGroup
-            title={t('auto.components.settings.GeneralSupportSection.55a87e5fd1', 'Support Orca')}
+            title={t('auto.components.settings.GeneralSupportSection.55a87e5fd1', 'Support Seal')}
           >
             {state === 'loading' ? <SupportRowSkeleton /> : null}
             {state !== 'loading' && state !== 'hidden' ? (
@@ -157,7 +157,7 @@ function SupportRow({
   // Keep the setting label stable; only its action changes to confirmation after starring.
   return (
     <SearchableSetting
-      title={t('auto.components.settings.GeneralSupportSection.6922c1fa2b', 'Star Orca on GitHub')}
+      title={t('auto.components.settings.GeneralSupportSection.6922c1fa2b', 'Star Seal on GitHub')}
       description={t(
         'auto.components.settings.GeneralSupportSection.511782265b',
         'Support the project with a GitHub star.'
@@ -166,7 +166,7 @@ function SupportRow({
       className="flex items-center justify-between gap-4 py-2"
     >
       <Label>
-        {t('auto.components.settings.GeneralSupportSection.6922c1fa2b', 'Star Orca on GitHub')}
+        {t('auto.components.settings.GeneralSupportSection.6922c1fa2b', 'Star Seal on GitHub')}
       </Label>
       {state === 'starred' ? (
         <SupportRowThanks />

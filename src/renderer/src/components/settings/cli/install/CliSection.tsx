@@ -49,19 +49,15 @@ function getRevealLabel(platform: string, t: Translate = translate): string {
 
 function getInstallDescription(platform: string): string {
   if (platform === 'darwin') {
-    return 'Register `orca` in /usr/local/bin.'
+    return 'Register `seal` in /usr/local/bin.'
   }
   if (platform === 'linux') {
-    return 'Register `orca-ide` in ~/.local/bin.'
+    return 'Register `seal` in ~/.local/bin.'
   }
   if (platform === 'win32') {
-    return 'Register `orca` in your user PATH.'
+    return 'Register `seal` in your user PATH.'
   }
   return 'CLI registration is not yet available on this platform.'
-}
-
-function getFallbackCommandName(platform: string): string {
-  return platform === 'linux' ? 'orca-ide' : 'orca'
 }
 
 export function CliSection({
@@ -110,7 +106,7 @@ export function CliSection({
   )
 
   const closeDialog = useCallback((): void => setDialogOpen(false), [])
-  const commandName = status?.commandName ?? getFallbackCommandName(currentPlatform)
+  const commandName = status?.commandName ?? 'seal'
   const { busyAction, installFailure, clearInstallFailure, install, remove } =
     useCliRegistrationActions({
       commandName,
@@ -188,7 +184,7 @@ export function CliSection({
                       getInstallDescription(currentPlatform)
                     : t(
                         'settings.general.cli.description',
-                        'Orca’s own terminals already have it.'
+                        'Seal’s own terminals already have it.'
                       )}
               </p>
             </div>
@@ -307,10 +303,10 @@ export function CliSection({
           <div id={GENERAL_SETTING_ANCHORS.cliSkill}>
             <AgentSkillSetupPanel
               variant="row"
-              title={t('settings.general.cli.skillTitle', 'Orca skill for agents')}
+              title={t('settings.general.cli.skillTitle', 'Seal skill for agents')}
               description={t(
                 'auto.components.settings.CliSection.e8012c03a1',
-                'Enables agents to use Orca workspace, terminal, and progress commands.'
+                'Enables agents to use Seal workspace, terminal, and progress commands.'
               )}
               skillNames={[ORCA_CLI_SKILL_NAME]}
               target={skillRuntime.bundledSkillTarget}

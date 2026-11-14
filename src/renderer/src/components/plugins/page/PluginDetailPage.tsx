@@ -59,7 +59,7 @@ type PluginDetailPageProps = {
 function sourceLabel(entry: PluginListEntry, t: Translate = translate): string | null {
   const source = entry.installed?.source
   if (entry.installed?.bundled || source?.kind === 'bundled') {
-    return t('auto.components.settings.PluginDetailPage.bundled', 'Bundled with Orca')
+    return t('auto.components.settings.PluginDetailPage.bundled', 'Bundled with Seal')
   }
   if (source?.kind === 'local-path') {
     return t('auto.components.settings.PluginDetailPage.localFolder', 'Local folder')
@@ -148,7 +148,7 @@ export function PluginDetailPage({
         title={t('auto.components.settings.PluginStatus.blocked', 'Blocked')}
         body={t(
           'auto.components.settings.PluginSettingsRow.killListMessage',
-          "Orca's safety list disabled this plugin: {{value0}}",
+          "Seal's safety list disabled this plugin: {{value0}}",
           { value0: plugin.blockedByKillList.reason }
         )}
       />
@@ -181,7 +181,7 @@ export function PluginDetailPage({
         tone="destructive"
         title={t(
           'auto.components.settings.PluginDetailPage.invalidTitle',
-          'Orca can’t load this plugin'
+          'Seal can’t load this plugin'
         )}
         body={typeof controls.description === 'string' ? controls.description : ''}
       />
@@ -193,7 +193,7 @@ export function PluginDetailPage({
         title={t('auto.components.settings.PluginStatus.blocked', 'Blocked')}
         body={t(
           'auto.components.settings.PluginMarketplaceListingRow.blocked',
-          "Blocked by Orca's safety list: {{value0}}",
+          "Blocked by Seal's safety list: {{value0}}",
           { value0: listing.blockedByKillList.reason }
         )}
       />
@@ -220,14 +220,14 @@ export function PluginDetailPage({
         tone="warning"
         title={t(
           'auto.components.settings.PluginDetailPage.needsOrcaTitle',
-          'Needs Orca {{value0}} or later',
+          'Needs Seal {{value0}} or later',
           {
             value0: entry.minimumOrca ?? ''
           }
         )}
         body={t(
           'auto.components.settings.PluginDetailPage.needsOrcaBody',
-          'You have Orca {{value0}}.',
+          'You have Seal {{value0}}.',
           {
             value0: orcaVersion ?? ''
           }

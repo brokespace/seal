@@ -75,7 +75,7 @@ export function BrowserUserAgentSetting({
       <span className="text-xs text-muted-foreground">
         {t(
           'settings.browser.userAgent.remoteUnsupported',
-          'Manage browser identity on the remote host with the Orca CLI.'
+          'Manage browser identity on the remote host with the Seal CLI.'
         )}
       </span>
     )
@@ -98,7 +98,7 @@ export function BrowserUserAgentSetting({
         <div className="text-[11px] text-muted-foreground">
           {t(
             'settings.browser.userAgent.resetRequiredCommand',
-            'Reset it from the command line: orca browser identity set --mode <mode> --reset'
+            'Reset it from the command line: seal browser identity set --mode <mode> --reset'
           )}
         </div>
       </div>
@@ -118,7 +118,7 @@ export function BrowserUserAgentSetting({
               label: t('settings.browser.userAgent.optionClean', 'Cleaned'),
               tooltip: t(
                 'settings.browser.userAgent.optionCleanTooltip',
-                'Removes Orca and Electron tokens to match imported Chrome sessions.'
+                'Removes Seal and Electron tokens to match imported Chrome sessions.'
               )
             },
             {

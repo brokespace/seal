@@ -1,6 +1,6 @@
-# Contributing to Orca
+# Contributing to Seal
 
-Thanks for contributing to Orca.
+Thanks for contributing to Seal.
 
 Found a security vulnerability? Do not open a public issue or PR; report it privately as described in [`SECURITY.md`](./SECURITY.md).
 
@@ -25,8 +25,8 @@ Use a clear, descriptive branch name that reflects the change, such as `fix/ctrl
 ## Code Guidelines
 
 - Keep changes scoped to a clear user-facing improvement, bug fix, or refactor.
-- Orca targets macOS, Linux, and Windows. Guard platform-specific code with runtime checks, use `CmdOrCtrl` in Electron menu accelerators, show `⌘`/`⇧` labels on macOS and `Ctrl+`/`Shift+` elsewhere, and build paths with `path.join`. See [cross-platform support](../docs/agents-md-refs/cross-platform-support.md).
-- Orca must work against local repositories, remote servers, and SSH worktrees. Do not assume a process, file, credential, shell, or network path exists only on the local machine.
+- Seal targets macOS, Linux, and Windows. Guard platform-specific code with runtime checks, use `CmdOrCtrl` in Electron menu accelerators, show `⌘`/`⇧` labels on macOS and `Ctrl+`/`Shift+` elsewhere, and build paths with `path.join`. See [cross-platform support](../docs/agents-md-refs/cross-platform-support.md).
+- Seal must work against local repositories, remote servers, and SSH worktrees. Do not assume a process, file, credential, shell, or network path exists only on the local machine.
 - Keep generic behavior provider-neutral across CLI agents, integrations, and git providers; guard integration-specific logic behind explicit checks.
 - Follow existing architecture, avoid unnecessary work in hot paths, clean up owned resources, and use concrete module names.
 - For UI work, follow [`docs/STYLEGUIDE.md`](../docs/STYLEGUIDE.md) and verify behavior across platforms, light/dark mode, and SSH latency.

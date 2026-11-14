@@ -168,7 +168,7 @@ function languageDetail(
     return {
       detail: t(
         'auto.components.settings.pluginContributions.languageIncomplete',
-        '{{value0}}% translated, too incomplete to use as Orca’s language',
+        '{{value0}}% translated, too incomplete to use as Seal’s language',
         { value0: coverage }
       ),
       tone: 'warning'

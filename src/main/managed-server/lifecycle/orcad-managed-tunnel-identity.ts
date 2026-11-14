@@ -46,8 +46,8 @@ export class OrcadManagedIdentityError extends Error {
   static foreignPort(remotePort: number, detail: string): OrcadManagedIdentityError {
     return new OrcadManagedIdentityError(
       'foreign-port',
-      `the server on remote port ${remotePort} is not this host’s Orca server ` +
-        '(another Orca may be using that port)',
+      `the server on remote port ${remotePort} is not this host’s Seal server ` +
+        '(another Seal may be using that port)',
       detail
     )
   }
@@ -62,10 +62,10 @@ export class OrcadManagedIdentityError extends Error {
     const selector = quotePosixShellUnlessPlain(environment.id)
     return new OrcadManagedIdentityError(
       'replaced-server',
-      `${environmentName} is not the Orca server this desktop paired with (Orca now connects ` +
+      `${environmentName} is not the Seal server this desktop paired with (Seal now connects ` +
         'to the host as a different SSH user, or the server was reinstalled), so reconnecting ' +
         `won’t restore access. To pair with the host’s current server, open the ⋯ menu on ` +
-        `${environmentName} in Settings › Remote Orca Servers and choose Forget… (or run ` +
+        `${environmentName} in Settings › Remote Seal Servers and choose Forget… (or run ` +
         `\`orca environment forget --environment ${selector} --yes\`), then click ` +
         'Connect on the SSH host',
       detail
@@ -87,7 +87,7 @@ export class OrcadManagedPairingRejectedError extends Error {
   readonly code = ORCAD_PAIRING_REJECTED_CODE
   constructor(detail: string) {
     super(
-      `${ORCAD_PAIRING_REJECTED_CODE}: this host’s Orca server no longer accepts ` +
+      `${ORCAD_PAIRING_REJECTED_CODE}: this host’s Seal server no longer accepts ` +
         `this desktop's pairing (its saved devices were reset, or this desktop was removed ` +
         `there), so reconnecting alone won't restore access: ${detail}`
     )
@@ -168,7 +168,7 @@ export function deployedOrcadTunnelChecks(
         ? verifyOrcadPairingIdentity(pairedRuntimeConnectionFromOffer(pairing), {
             runtimeId: readiness.runtimeId || null
           })
-        : { verdict: 'foreign', detail: 'This host’s Orca server published an invalid pairing.' }
+        : { verdict: 'foreign', detail: 'This host’s Seal server published an invalid pairing.' }
     }
   }
 }

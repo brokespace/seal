@@ -123,7 +123,8 @@ const devChannelRepo = isHourlyChannel
     : isAdhocChannel
       ? 'orca-adhoc'
       : null
-const appId = 'com.stablyai.orca'
+// Seal's own bundle identity so it installs and runs beside an upstream Orca.
+const appId = 'com.brokespace.seal'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -219,29 +220,29 @@ const windowsRuntimeResources = existsSync(
 // Shared with the terminal host helper so its purpose strings cannot drift from the app's.
 const macUsageDescriptions = {
   NSAppleEventsUsageDescription:
-    'Orca allows terminal-launched developer tools to automate local apps when you request it.',
+    'Seal allows terminal-launched developer tools to automate local apps when you request it.',
   NSBluetoothAlwaysUsageDescription:
-    'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
+    'Seal allows terminal-launched developer tools to access Bluetooth devices when you request it.',
   NSBluetoothPeripheralUsageDescription:
-    'Orca allows terminal-launched developer tools to access Bluetooth devices when you request it.',
+    'Seal allows terminal-launched developer tools to access Bluetooth devices when you request it.',
   NSCalendarsUsageDescription:
-    'Orca allows terminal-launched developer tools to access your calendars when you request it.',
+    'Seal allows terminal-launched developer tools to access your calendars when you request it.',
   NSCalendarsFullAccessUsageDescription:
-    'Orca allows terminal-launched developer tools to access your calendars when you request it.',
+    'Seal allows terminal-launched developer tools to access your calendars when you request it.',
   NSCameraUsageDescription: "Application requests access to the device's camera.",
   NSContactsUsageDescription:
-    'Orca allows terminal-launched developer tools to access your contacts when you request it.',
+    'Seal allows terminal-launched developer tools to access your contacts when you request it.',
   NSLocationUsageDescription:
-    'Orca allows terminal-launched developer tools to access location when you request it.',
+    'Seal allows terminal-launched developer tools to access location when you request it.',
   NSLocalNetworkUsageDescription:
-    'Orca allows terminal-launched developer tools to discover and connect to local development servers when you request it.',
+    'Seal allows terminal-launched developer tools to discover and connect to local development servers when you request it.',
   NSMicrophoneUsageDescription: "Application requests access to the device's microphone.",
   NSRemindersUsageDescription:
-    'Orca allows terminal-launched developer tools to access your reminders when you request it.',
+    'Seal allows terminal-launched developer tools to access your reminders when you request it.',
   NSRemindersFullAccessUsageDescription:
-    'Orca allows terminal-launched developer tools to access your reminders when you request it.',
+    'Seal allows terminal-launched developer tools to access your reminders when you request it.',
   NSAudioCaptureUsageDescription:
-    'Orca allows terminal-launched developer tools to capture desktop audio when you request it.',
+    'Seal allows terminal-launched developer tools to capture desktop audio when you request it.',
   NSBonjourServices: ['_http._tcp', '_https._tcp'],
   ...MACOS_FOLDER_USAGE_DESCRIPTIONS
 }
@@ -251,8 +252,8 @@ const ORCA_MAC_TEAM_ID = '6CX3WHS9HZ'
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId,
-  productName: 'Orca',
-  protocols: [{ name: 'Orca', schemes: ['orca'] }],
+  productName: 'Seal',
+  protocols: [{ name: 'Seal', schemes: ['orca'] }],
   toolsets: { appimage: '1.0.3' },
   ...(devChannelBuildVersion
     ? { extraMetadata: { version: devChannelBuildVersion } }
@@ -535,7 +536,7 @@ module.exports = {
     })
     chmodUnixCliLaunchers(resourcesDir, context.electronPlatformName)
     if (context.electronPlatformName === 'darwin') {
-      await signMacComputerUseHelper(join(resourcesDir, 'Orca Computer Use.app'), context.packager)
+      await signMacComputerUseHelper(join(resourcesDir, 'Seal Computer Use.app'), context.packager)
       await signMacStandaloneHelper(
         join(resourcesDir, '..', 'MacOS', 'orca-notification-status'),
         'orca-notification-status',
@@ -555,7 +556,7 @@ module.exports = {
     }
   },
   win: {
-    executableName: 'Orca',
+    executableName: 'Seal',
     // SignPath signs Windows installers after packaging, so set release publisherName explicitly.
     // Unsigned dev channels omit it or updater signature checks reject dev updates and return to stable.
     // Sign hook signs nothing: it relays transient NSIS uninstaller files to CI SignPath; unset relay env leaves local/dev builds inert.
@@ -570,6 +571,10 @@ module.exports = {
       {
         from: 'resources/win32/bin/orca.cmd',
         to: 'bin/orca.cmd'
+      },
+      {
+        from: 'resources/win32/bin/seal.cmd',
+        to: 'bin/seal.cmd'
       },
       {
         from: 'native/windows-cli-launcher/.build/orca.exe',
@@ -656,8 +661,8 @@ module.exports = {
         to: 'agent-browser-darwin-${arch}'
       },
       {
-        from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
-        to: 'Orca Computer Use.app'
+        from: 'native/computer-use-macos/.build/release/Seal Computer Use.app',
+        to: 'Seal Computer Use.app'
       },
       featureWallResources
     ],
@@ -697,15 +702,15 @@ module.exports = {
     // shared-mime-info already maps md/markdown: advertise handler only, leaving mimeapps.list defaults intact.
     // Omit mdx because Ubuntu 24.04 maps it to application/x-genesis-32x-rom; claiming it would need a glob override.
     mimeTypes: ['text/markdown', 'text/csv', 'text/tab-separated-values'],
-    // Avoid GNOME Orca’s orca package and /usr/bin/orca names.
-    executableName: 'orca-ide',
+    // Avoid GNOME Orca’s orca package and an installed Orca's orca-ide icons, mime and desktop files.
+    executableName: 'seal',
     // Use icns to generate hicolor sizes; some Linux docks ignore a lone 1024px PNG.
     icon: 'resources/build/icon.icns',
     desktop: {
       entry: {
-        // Why: Electron reports WM_CLASS=orca for the visible Linux window;
-        // GNOME docks need an exact match to group it with orca-ide.desktop.
-        StartupWMClass: 'orca'
+        // Why: Electron reports WM_CLASS=seal (lowercased app name) for the visible Linux window;
+        // GNOME docks need an exact match to group it with seal.desktop.
+        StartupWMClass: 'seal'
       }
     },
     extraResources: [
@@ -731,14 +736,14 @@ module.exports = {
     ],
     // Keep local artifacts aligned with the release pipeline.
     target: ['AppImage', 'deb', 'rpm'],
-    maintainer: 'stablyai',
+    maintainer: 'brokespace',
     category: 'Utility'
   },
   appImage: {
     artifactName: isLinuxArm64Release ? 'orca-linux-arm64.${ext}' : 'orca-linux.${ext}'
   },
   deb: {
-    packageName: 'orca-ide',
+    packageName: 'seal',
     artifactName: 'orca-ide_${version}_${arch}.${ext}',
     // Headless Chromium still needs display service; orca serve starts packaged Xvfb when available (ensure-virtual-display.ts).
     depends: [
@@ -758,7 +763,7 @@ module.exports = {
     fpm: appImageNodeRuntimeFpmArgs
   },
   rpm: {
-    packageName: 'orca-ide',
+    packageName: 'seal',
     artifactName: 'orca-ide-${version}.${arch}.${ext}',
     // Why: see deb depends. RPM distros ship Xvfb as xorg-x11-server-Xvfb (there
     // is no `xvfb` package), so the name differs from the deb here.
@@ -780,10 +785,11 @@ module.exports = {
   // Dual-arch builds need target node-pty rebuilds or Intel Macs get arm64 binaries and posix_spawnp failure.
   // beforeBuild performs targeted rebuild then returns false to skip optional cpu-features.
   npmRebuild: true,
+  // Never point at stablyai/orca: Seal must not publish to or update from upstream releases.
   publish: {
     provider: 'github',
-    owner: 'stablyai',
-    repo: devChannelRepo ?? 'orca',
+    owner: 'brokespace',
+    repo: devChannelRepo ? `seal-${devChannelRepo.replace(/^orca-/, '')}` : 'seal',
     // Keep main-repo releases draft until release-cut verifies all assets; early --publish always would expose missing Windows installers.
     releaseType: devChannelRepo ? 'prerelease' : 'draft'
   }
@@ -816,7 +822,7 @@ function chmodUnixCliLaunchers(resourcesDir, electronPlatformName) {
 async function signMacComputerUseHelper(helperAppPath, packager) {
   if (!existsSync(helperAppPath)) {
     if (isMacRelease) {
-      throw new Error(`Missing Orca Computer Use helper app at ${helperAppPath}`)
+      throw new Error(`Missing Seal Computer Use helper app at ${helperAppPath}`)
     }
     return
   }
@@ -830,7 +836,7 @@ async function signMacComputerUseHelper(helperAppPath, packager) {
     findInstalledMacSigningIdentity(codeSigningInfo?.keychainFile) ??
     (isMacRelease ? null : '-')
   if (!identity) {
-    throw new Error('Missing signing identity for Orca Computer Use helper app')
+    throw new Error('Missing signing identity for Seal Computer Use helper app')
   }
   // Why: TCC grants attach to this nested app's code identity. Sign it before
   // the outer Orca.app is sealed so production builds preserve that identity.

@@ -142,7 +142,7 @@ function describeNextStep(
     // A Task Orca put back to ready starts afresh; --retry-of takes only a failed or blocked one.
     const start = `orchestration worker-start --task ${taskId}${taskReady ? '' : ` --retry-of ${dispatchId}`}`
     return [
-      `Its Dispatch is closed as failed. Start it again with your Orca CLI's \`${start}\` and the same placement and agent, or tell the user.`
+      `Its Dispatch is closed as failed. Start it again with your Seal CLI's \`${start}\` and the same placement and agent, or tell the user.`
     ]
   }
   if (isWorkerGone(stop.reason)) {
@@ -166,10 +166,10 @@ function describeNextStep(
       ...given,
       `${
         chatCoordinator
-          ? `The user has been shown ${shown} in your chat in Orca.`
+          ? `The user has been shown ${shown} in your chat in Seal.`
           : where === 'chat'
-            ? `Your chat has no approval card for it; only the worker's own chat in Orca shows it. Tell the user that worker ${stop.from} is waiting for permission in its chat.`
-            : `No one has been shown this prompt in Orca. Tell the user that worker ${stop.from} is waiting for permission in its terminal.`
+            ? `Your chat has no approval card for it; only the worker's own chat in Seal shows it. Tell the user that worker ${stop.from} is waiting for permission in its chat.`
+            : `No one has been shown this prompt in Seal. Tell the user that worker ${stop.from} is waiting for permission in its terminal.`
       } Don't block on it: carry on with other work. You'll get a message when it's answered. Don't message this worker until then.`,
       allowedActions.includes('deny')
         ? `If this is holding up the task, deny it with a reason so the worker continues another way: \`orchestration deny --dispatch ${dispatchId} --prompt ${approvalId} --reason "<what to do instead>"\`.`
@@ -182,7 +182,7 @@ function describeNextStep(
     ]
   }
   return [
-    `The Dispatch is still open. Answer it with your Orca CLI's \`orchestration send --to dispatch:${dispatchId} --subject "<topic>" --body "<guidance>"\`, retry it, or stop the worker.`
+    `The Dispatch is still open. Answer it with your Seal CLI's \`orchestration send --to dispatch:${dispatchId} --subject "<topic>" --body "<guidance>"\`, retry it, or stop the worker.`
   ]
 }
 

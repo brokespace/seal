@@ -1,4 +1,4 @@
-// The signed `com.stablyai.orca` helper that runs the terminal daemon on the pinned Node.
+// The helper, signed with the app's own bundle id, that runs the terminal daemon on the pinned Node.
 const { spawnSync } = require('node:child_process')
 const {
   chmodSync,
@@ -15,7 +15,7 @@ const { builtinModules } = require('node:module')
 const { basename, dirname, join, relative, resolve, sep } = require('node:path')
 const { pathToFileURL } = require('node:url')
 
-const MAC_TERMINAL_HOST_NAME = 'Orca Terminal Host'
+const MAC_TERMINAL_HOST_NAME = 'Seal Terminal Host'
 const MAC_TERMINAL_HOST_EXECUTABLE = 'orca-terminal-host'
 const macTerminalHostSignIgnore = [`/Contents/Helpers/${MAC_TERMINAL_HOST_NAME}\\.app(/|$)`]
 const NODE_PTY_FILES = [
@@ -194,8 +194,8 @@ function buildMacTerminalHostInfo({ appInfo, usageDescriptions, minimumOs }) {
   return {
     ...usageDescriptions,
     CFBundleIdentifier: appInfo.CFBundleIdentifier,
-    CFBundleName: 'Orca',
-    CFBundleDisplayName: 'Orca',
+    CFBundleName: 'Seal',
+    CFBundleDisplayName: 'Seal',
     CFBundleExecutable: MAC_TERMINAL_HOST_EXECUTABLE,
     CFBundlePackageType: 'APPL',
     CFBundleInfoDictionaryVersion: '6.0',

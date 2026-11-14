@@ -123,11 +123,11 @@ export function activeAgentNotesSendFailureMessage(
       message = options.explicitTarget
         ? translate(
             'components.agentNotes.selectedSubmitFailed',
-            'The notes may already be pasted in the selected terminal, but Orca could not submit them.'
+            'The notes may already be pasted in the selected terminal, but Seal could not submit them.'
           )
         : translate(
             'components.agentNotes.activeSubmitFailed',
-            'The notes may already be pasted in the active terminal, but Orca could not submit them.'
+            'The notes may already be pasted in the active terminal, but Seal could not submit them.'
           )
       break
     case 'unconfirmed':

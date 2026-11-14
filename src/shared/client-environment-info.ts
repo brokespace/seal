@@ -9,11 +9,11 @@ export type ClientEnvironmentInfo = {
 }
 
 const FOOTER_MARKER = '---'
-const ORCA_LINE_PREFIX = 'Orca:'
+const ORCA_LINE_PREFIX = 'Seal:'
 
 // Strip the whole prefilled footer including optional Shell while retaining user-authored text above and below it.
 const CLIENT_ENVIRONMENT_FOOTER_BLOCK =
-  /(^|\r?\n)---\r?\nOrca:[^\r\n]*\r?\nOS:[^\r\n]*(?:\r?\nShell:[^\r\n]*)?/
+  /(^|\r?\n)---\r?\n(?:Seal|Orca):[^\r\n]*\r?\nOS:[^\r\n]*(?:\r?\nShell:[^\r\n]*)?/
 
 function normalizeEnvironmentValue(value: string): string {
   return value.trim().replace(/[\r\n]+/g, ' ')

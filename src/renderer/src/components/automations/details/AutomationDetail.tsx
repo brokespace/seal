@@ -308,7 +308,7 @@ export function AutomationDetail({
         <DetailNotice>
           {t(
             'auto.components.automations.AutomationDetail.dbef8dc110',
-            'This SSH automation runs only while Orca can reach the SSH host. If reconnect needs interactive credentials or the host is unavailable, the run is recorded as skipped.'
+            'This SSH automation runs only while Seal can reach the SSH host. If reconnect needs interactive credentials or the host is unavailable, the run is recorded as skipped.'
           )}
         </DetailNotice>
       ) : null}

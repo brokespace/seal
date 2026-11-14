@@ -1,4 +1,4 @@
-// Drive per-user oneClick NSIS /S install/update/uninstall. Discover Orca.exe under Programs with case tolerance; install directory casing varies.
+// Drive per-user oneClick NSIS /S install/update/uninstall. Discover Seal.exe under Programs with case tolerance; install directory casing varies.
 
 import { existsSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -7,8 +7,8 @@ import { spawnSync } from 'node:child_process'
 import { assertWin32 } from './platform-guard.mjs'
 import { runCommandSync } from './powershell-runner.mjs'
 
-const PRODUCT_NAME = 'Orca'
-const EXE_NAME = 'Orca.exe'
+const PRODUCT_NAME = 'Seal'
+const EXE_NAME = 'Seal.exe'
 
 /** Programs root that per-user oneClick NSIS installs into. */
 function programsRoot() {
@@ -112,7 +112,7 @@ function waitForInstalledExe(timeoutMs, installDir = null, expectedVersion = nul
   return null
 }
 
-// Use fixed isolated installDir/Orca.exe or case-tolerant per-user Programs discovery.
+// Use fixed isolated installDir/Seal.exe or case-tolerant per-user Programs discovery.
 export function locateInstalledExe(installDir = null) {
   if (installDir) {
     const exe = path.join(installDir, EXE_NAME)
@@ -158,7 +158,7 @@ export function silentUninstall(installDir, { allowDefaultLocation = false } = {
   if (!allowDefaultLocation && pathsEqual(resolved, path.join(programsRoot(), PRODUCT_NAME))) {
     throw new Error(
       `Refusing to uninstall the default install location "${resolved}" — this is where a ` +
-        `developer's REAL Orca lives. Isolated mode must target a separate --install-dir.`
+        `developer's REAL Seal lives. Isolated mode must target a separate --install-dir.`
     )
   }
   const exe = path.join(resolved, EXE_NAME)

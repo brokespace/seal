@@ -104,7 +104,7 @@ describe.skipIf(process.platform === 'win32')('resolveInstalledElectronExecutabl
   it('rejects a symlink to the bash CLI shim and picks the install-dir binary', async () => {
     const shim = join(root, 'share', 'orca-ide-shim')
     const link = join(root, 'bin', 'orca-ide')
-    const electron = join(root, 'opt', 'Orca', 'orca-ide')
+    const electron = join(root, 'opt', 'Seal', 'orca-ide')
     await writeExecutable(shim, '#!/usr/bin/env bash\nexec true\n')
     await mkdir(join(link, '..'), { recursive: true })
     await symlink(shim, link)

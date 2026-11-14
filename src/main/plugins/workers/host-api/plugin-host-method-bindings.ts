@@ -268,7 +268,7 @@ const HANDLERS: Record<PluginHostMethodName, BoundPluginHostMethod> = {
 
 function requireDesktop(services: PluginHostServices): PluginDesktopFrameServices {
   if (!services.desktop) {
-    throw new Error('this method is only available in the Orca desktop app')
+    throw new Error('this method is only available in the Seal desktop app')
   }
   return services.desktop
 }

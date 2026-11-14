@@ -28,6 +28,7 @@ import { installMainWindowShortcutRouting } from './main-window/main-window-shor
 import { installMainWindowStateLifecycle } from './main-window/main-window-state-lifecycle'
 import { installMainWindowActivityRelay } from './main-window/main-window-activity'
 import { stopHiddenWindowFramePumpOnShow } from './visibility/hidden-window-frame-pump'
+import { APP_PRODUCT_NAME } from '../../shared/app-identity'
 import { wslHostsWindowArguments } from '../wsl/host-lifecycle/wsl-host-gate'
 import {
   formatHiddenWindowFramePumpArgument,
@@ -124,7 +125,7 @@ export function createMainWindow(
     ...(savedBounds ? { x: savedBounds.x, y: savedBounds.y } : {}),
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
-    title: opts?.title ?? 'Orca',
+    title: opts?.title ?? APP_PRODUCT_NAME,
     show: false,
     // Deliver the app-activating click on macOS instead of requiring a second click.
     acceptFirstMouse: true,

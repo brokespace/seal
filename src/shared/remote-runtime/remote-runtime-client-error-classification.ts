@@ -15,7 +15,13 @@ export const RECOVERABLE_CODES: ReadonlySet<string> = new Set([
   'timeout'
 ])
 
+// Older hosts still name the runtime "Orca".
 export const RECOVERABLE_MESSAGE_FRAGMENTS: readonly string[] = [
+  'could not connect to the remote seal runtime',
+  'remote seal runtime closed the connection',
+  'remote seal runtime connection closed',
+  'remote seal runtime is not connected',
+  'timed out waiting for the remote seal runtime',
   'could not connect to the remote orca runtime',
   'remote orca runtime closed the connection',
   'remote orca runtime connection closed',
