@@ -156,6 +156,14 @@ export type InactiveAccountUsage = {
   isFetching: boolean
 }
 
+/** The machine's own login, read while another account is the host's selection. */
+export type SystemLoginUsage = {
+  /** The reader's name for the login it read; a reading never describes another identity. */
+  identity: string
+  rateLimits: ProviderRateLimits | null
+  isFetching: boolean
+}
+
 /** One saved Antigravity account's last verified reading on the runtime the meter reads. */
 export type AntigravityAccountUsage = {
   accountId: string
@@ -213,6 +221,7 @@ export type RateLimitState = {
   codexTarget: RateLimitRuntimeTarget
   inactiveClaudeAccounts: InactiveAccountUsage[]
   inactiveCodexAccounts: InactiveAccountUsage[]
+  systemLoginUsage?: Partial<Record<'claude' | 'codex', SystemLoginUsage>>
   /** Saved Antigravity accounts; agy has one shared login, so only the active one is ever read. */
   antigravityAccounts: AntigravityAccountUsage[]
 }

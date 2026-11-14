@@ -29,13 +29,14 @@ function claudeAccount(id: string, email: string): ClaudeManagedAccount {
 }
 
 describe('orcaHomeAccounts', () => {
-  it('lists configured providers with their windows and saved inactive accounts by email', () => {
+  it('lists configured providers with the popover reading and saved inactive accounts by email', () => {
+    const active = limits({
+      session: { usedPercent: 81, windowMinutes: 300, resetsAt: 7_000, resetDescription: null },
+      weekly: { usedPercent: 12, windowMinutes: 10080, resetsAt: 90_000, resetDescription: null }
+    })
     const state: RateLimitState = {
       ...createEmptyRateLimitState(),
-      claude: limits({
-        session: { usedPercent: 81, windowMinutes: 300, resetsAt: 7_000, resetDescription: null },
-        weekly: { usedPercent: 12, windowMinutes: 10080, resetsAt: 90_000, resetDescription: null }
-      }),
+      claude: active,
       gemini: limits({ provider: 'gemini', status: 'unavailable' }),
       inactiveClaudeAccounts: [{ accountId: 'b', rateLimits: null, updatedAt: 0, isFetching: true }]
     }
@@ -53,11 +54,8 @@ describe('orcaHomeAccounts', () => {
         providerLabel: 'Claude',
         label: 'work@example.com',
         active: true,
-        status: 'ok',
-        windows: [
-          { kind: 'session', usedPercent: 81, resetsAt: 7_000 },
-          { kind: 'weekly', usedPercent: 12, resetsAt: 90_000 }
-        ]
+        limits: active,
+        fetching: false
       },
       {
         id: 'claude:b',
@@ -65,8 +63,8 @@ describe('orcaHomeAccounts', () => {
         providerLabel: 'Claude',
         label: 'home@example.com',
         active: false,
-        status: 'loading',
-        windows: []
+        limits: null,
+        fetching: true
       }
     ])
   })

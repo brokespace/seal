@@ -2,23 +2,15 @@ import type {
   ClaudeRateLimitAccountsState,
   CodexRateLimitAccountsState
 } from '../managed-account-types'
-import type {
-  ProviderRateLimits,
-  RateLimitState,
-  UsageRateLimitFailureKind
-} from '../rate-limit-types'
+import type { ProviderRateLimits, RateLimitState } from '../rate-limit-types'
+import { isUsageSignInRequired } from '../usage-sign-in-required'
 import type {
   SealAccountKey,
   SealAccountProfile,
   SealAccountsConfig,
   SealProvider
 } from './seal-accounts-config'
-import {
-  DEFAULT_SEAL_ACCOUNT_PRIORITY,
-  type SealAccountCandidate,
-  type SealAccountUsage,
-  type SealModelWindow
-} from './seal-account-candidates'
+import { DEFAULT_SEAL_ACCOUNT_PRIORITY, type SealAccountCandidate } from './seal-account-candidates'
 import { apiKeyAccountKey, oauthAccountKey, sealAccountKeysMatch } from './seal-account-key'
 import {
   claudeSystemIdentity,
@@ -29,46 +21,9 @@ import {
 } from './seal-system-login-candidate'
 import { sealAccountHealth, type SealLoginExpiry } from './seal-account-health'
 
-const WEEK_MINUTES = 7 * 24 * 60
-
-const DEAD_LOGIN_FAILURES: ReadonlySet<UsageRateLimitFailureKind> = new Set([
-  'stale-token',
-  'missing-credentials',
-  'refreshable-credentials-without-token'
-])
-
-export function usageFromRateLimits(limits: ProviderRateLimits | null): SealAccountUsage | null {
-  if (!limits) {
-    return null
-  }
-  const models: SealModelWindow[] = []
-  if (limits.fableWeekly) {
-    models.push({
-      name: 'Fable',
-      usedPercent: limits.fableWeekly.usedPercent,
-      resetsAt: limits.fableWeekly.resetsAt
-    })
-  }
-  for (const bucket of limits.buckets ?? []) {
-    if (bucket.windowMinutes >= WEEK_MINUTES) {
-      models.push({ name: bucket.name, usedPercent: bucket.usedPercent, resetsAt: bucket.resetsAt })
-    }
-  }
-  const window = (value: ProviderRateLimits['session']) =>
-    value ? { usedPercent: value.usedPercent, resetsAt: value.resetsAt } : null
-  return {
-    session: window(limits.session),
-    weekly: window(limits.weekly),
-    models,
-    planType: limits.planType ?? null,
-    updatedAt: limits.updatedAt,
-    error: limits.error
-  }
-}
-
+/** The popover's own sign-in test, so a login is dead here exactly when it asks for a sign-in there. */
 function isDeadLogin(limits: ProviderRateLimits | null): boolean {
-  const kind = limits?.usageMetadata?.failureKind
-  return limits?.status === 'error' && kind !== undefined && DEAD_LOGIN_FAILURES.has(kind)
+  return limits?.status === 'error' && isUsageSignInRequired(limits)
 }
 
 export function findSealProfile(
@@ -92,7 +47,6 @@ function candidateBilling(seed: SealCandidateSeed): SealAccountCandidate['billin
 
 function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): SealAccountCandidate {
   const profile = findSealProfile(sources.config, seed.key)
-  const usage = usageFromRateLimits(seed.limits)
   const authFailure = isDeadLogin(seed.limits)
   const secret = seed.kind === 'api-key'
   return {
@@ -104,7 +58,7 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
     email: seed.email,
     orgName: seed.orgName,
     label: profile?.alias || seed.email || seed.fallbackLabel,
-    plan: profile?.plan || usage?.planType || null,
+    plan: profile?.plan || seed.limits?.planType || null,
     billing: candidateBilling(seed),
     systemLogin: seed.systemLogin,
     health: sealAccountHealth({
@@ -122,17 +76,25 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
     active: seed.active,
     launchable: seed.launchable,
     authFailure,
-    usage,
+    limits: seed.limits,
+    usageFetching: seed.fetching,
     sessionThreshold: profile?.sessionThreshold ?? null,
     weeklyThreshold: profile?.weeklyThreshold ?? null
   }
 }
 
-function inactiveLimits(
+function inactiveReading(
   entries: RateLimitState['inactiveClaudeAccounts'] | undefined,
   accountId: string
-): ProviderRateLimits | null {
-  return entries?.find((entry) => entry.accountId === accountId)?.rateLimits ?? null
+): Pick<SealCandidateSeed, 'limits' | 'fetching'> {
+  const entry = entries?.find((candidate) => candidate.accountId === accountId)
+  return { limits: entry?.rateLimits ?? null, fetching: entry?.isFetching === true }
+}
+
+function activeReading(
+  limits: ProviderRateLimits | null
+): Pick<SealCandidateSeed, 'limits' | 'fetching'> {
+  return { limits, fetching: limits?.status === 'fetching' }
 }
 
 export type SealCandidateSources = {
@@ -142,28 +104,12 @@ export type SealCandidateSources = {
   rateLimits: RateLimitState | null
   /** API-key vault ids whose secret this host can decrypt. */
   storedApiKeyIds: ReadonlySet<string>
-  /** Seal's own per-account usage readings, preferred when newer than the usage bar's. */
-  polled?: (key: SealAccountKey) => ProviderRateLimits | null
   /** The machine's own logins when the caller read them; otherwise the account services' view. */
   systemLogins?: Partial<Record<SealProvider, SealSystemIdentity | null>>
   /** System logins the user removed from Seal; they stay out until re-imported. */
   dismissedSystemLogins?: readonly SealAccountKey[]
   loginExpiry?: (key: SealAccountKey) => SealLoginExpiry | null
   now?: number
-}
-
-function freshest(
-  service: ProviderRateLimits | null,
-  polled: ProviderRateLimits | null | undefined
-): ProviderRateLimits | null {
-  if (!polled) {
-    return service
-  }
-  return !service || polled.updatedAt >= service.updatedAt ? polled : service
-}
-
-function withPolled(seed: SealCandidateSeed, sources: SealCandidateSources): SealCandidateSeed {
-  return { ...seed, limits: freshest(seed.limits, sources.polled?.(seed.key)) }
 }
 
 /** Two saved copies of one login read as one account: the selected copy, else the usable one. */
@@ -209,7 +155,9 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
       systemLogin: false,
       wslDistro: wsl ? (account.wslDistro ?? null) : null,
       addedAt: account.createdAt,
-      limits: active ? activeLimits : inactiveLimits(rateLimits?.inactiveClaudeAccounts, account.id)
+      ...(active
+        ? activeReading(activeLimits)
+        : inactiveReading(rateLimits?.inactiveClaudeAccounts, account.id))
     }
   })
   const seeds = withSystemLogin(
@@ -220,7 +168,7 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
     hostSelection,
     activeLimits
   )
-  return seeds.map((seed) => toCandidate(withPolled(seed, sources), sources))
+  return seeds.map((seed) => toCandidate(seed, sources))
 }
 
 function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] {
@@ -246,7 +194,9 @@ function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] 
       systemLogin: false,
       wslDistro: wsl ? (account.wslDistro ?? null) : null,
       addedAt: account.createdAt,
-      limits: active ? activeLimits : inactiveLimits(rateLimits?.inactiveCodexAccounts, account.id)
+      ...(active
+        ? activeReading(activeLimits)
+        : inactiveReading(rateLimits?.inactiveCodexAccounts, account.id))
     }
   })
   const seeds = withSystemLogin(
@@ -257,7 +207,7 @@ function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] 
     hostSelection,
     activeLimits
   )
-  return seeds.map((seed) => toCandidate(withPolled(seed, sources), sources))
+  return seeds.map((seed) => toCandidate(seed, sources))
 }
 
 function apiKeyCandidates(
@@ -283,7 +233,8 @@ function apiKeyCandidates(
           systemLogin: false,
           wslDistro: null,
           addedAt: entry.createdAt,
-          limits: null
+          limits: null,
+          fetching: false
         },
         sources
       )

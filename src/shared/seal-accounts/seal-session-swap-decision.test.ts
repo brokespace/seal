@@ -28,16 +28,21 @@ function account(
     active: false,
     launchable: true,
     authFailure: false,
-    usage:
+    limits:
       session === null
         ? null
         : {
-            session: { usedPercent: session, resetsAt: NOW + 3_600_000 },
+            provider: 'claude',
+            session: {
+              usedPercent: session,
+              windowMinutes: 300,
+              resetsAt: NOW + 3_600_000,
+              resetDescription: null
+            },
             weekly: null,
-            models: [],
-            planType: null,
             updatedAt: NOW,
-            error: null
+            error: null,
+            status: 'ok'
           },
     sessionThreshold: null,
     weeklyThreshold: null,
@@ -119,9 +124,14 @@ describe('decideSessionSwap', () => {
       [
         {
           ...weeklyFull,
-          usage: weeklyFull.usage && {
-            ...weeklyFull.usage,
-            weekly: { usedPercent: 92, resetsAt: NOW + 86_400_000 }
+          limits: weeklyFull.limits && {
+            ...weeklyFull.limits,
+            weekly: {
+              usedPercent: 92,
+              windowMinutes: 10_080,
+              resetsAt: NOW + 86_400_000,
+              resetDescription: null
+            }
           }
         },
         account('claude:b@x.io', 10)

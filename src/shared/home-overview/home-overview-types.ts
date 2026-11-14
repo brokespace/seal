@@ -1,4 +1,5 @@
 import type { LiveSessionMachineIdentity } from '../live-sessions/live-session-machine-id'
+import type { ProviderRateLimits } from '../rate-limit-types'
 
 export type HomeMachineKind = 'local' | 'ssh' | 'runtime'
 export type HomeMachineStatus = 'online' | 'connecting' | 'offline' | 'error'
@@ -13,16 +14,6 @@ export type HomeMachine = LiveSessionMachineIdentity & {
   error?: string
 }
 
-export type HomeUsageWindowKind = 'session' | 'weekly' | 'monthly'
-
-export type HomeUsageWindow = {
-  kind: HomeUsageWindowKind
-  usedPercent: number
-  resetsAt: number | null
-}
-
-export type HomeAccountStatus = 'ok' | 'loading' | 'error' | 'unavailable'
-
 export type HomeAccount = {
   id: string
   provider: string
@@ -31,9 +22,11 @@ export type HomeAccount = {
   label: string
   /** The account new sessions use for this provider. */
   active: boolean
-  status: HomeAccountStatus
-  windows: HomeUsageWindow[]
-  error?: string
+  /** The rate-limit service's reading: the object the status bar's usage popover shows. */
+  limits: ProviderRateLimits | null
+  fetching: boolean
+  /** The login stopped working; the row asks for a sign-in instead of showing usage. */
+  needsSignIn?: boolean
 }
 
 export type HomeReviewState = 'open' | 'draft' | 'merged' | 'closed'

@@ -1,4 +1,5 @@
 import type { Translate } from '@/i18n/use-translate'
+import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
 import type {
   SealAccountCandidate,
   SealAccountHealth
@@ -18,10 +19,13 @@ function formatDay(at: number): string {
   return new Date(at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-/** Short health text for an account, e.g. "Working", "Expires Mar 3, 2027", "Signed out". */
-export function sealHealthLabel(health: SealAccountHealth | undefined, t: Translate): string {
+/** Short text for a login that needs attention, e.g. "Expires Mar 3, 2027"; null while it is healthy. */
+export function sealHealthLabel(
+  health: SealAccountHealth | undefined,
+  t: Translate
+): string | null {
   if (!health || health.state === 'ok') {
-    return t('seal.accounts.health.ok', 'Working')
+    return null
   }
   if (health.state === 'expiring') {
     return t('seal.accounts.health.expiring', 'Expires {{value0}}', {
@@ -37,6 +41,41 @@ export function sealHealthLabel(health: SealAccountHealth | undefined, t: Transl
       return t('seal.accounts.health.expired', 'Expired')
     case 'missing-secret':
       return t('seal.accounts.health.missingSecret', 'Secret missing')
+  }
+}
+
+export type SealAccountNotice = {
+  label: string
+  tone: SealHealthTone
+  state: 'rate-limited' | 'expiring' | 'dead'
+}
+
+/**
+ * The one status an account card shows, or null when there is nothing to say. A healthy login
+ * shows nothing; "rate limited" appears only while the account is out of quota.
+ */
+export function sealAccountNotice(
+  candidate: Pick<SealAccountCandidate, 'health' | 'rateLimit'>,
+  now: number,
+  t: Translate
+): SealAccountNotice | null {
+  const label = sealHealthLabel(candidate.health, t)
+  if (label !== null && candidate.health && candidate.health.state !== 'ok') {
+    return { label, tone: sealHealthTone(candidate.health), state: candidate.health.state }
+  }
+  const limit = candidate.rateLimit
+  if (!limit) {
+    return null
+  }
+  return {
+    label:
+      limit.resetsAt !== null && limit.resetsAt > now
+        ? t('seal.accounts.health.rateLimitedUntil', 'Rate limited · resets in {{value0}}', {
+            value0: formatResetDuration(limit.resetsAt - now)
+          })
+        : t('seal.accounts.health.rateLimited', 'Rate limited'),
+    tone: 'warning',
+    state: 'rate-limited'
   }
 }
 
