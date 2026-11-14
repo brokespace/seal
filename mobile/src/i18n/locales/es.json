@@ -98,14 +98,13 @@
       "connecting": "Conectando…",
       "invalidPairingCode": "No es un código de emparejamiento válido; cópialo de tu ordenador y vuelve a pegarlo.",
       "invalidQrCode": "No es un código QR de Seal válido",
-      "downloadQrCode": "Ese es el código de descarga. Escanea el código de emparejamiento del paso 2 en tu ordenador.",
       "openDesktopStep": "Abre Seal en tu ordenador",
       "openMobileSettingsStep": "Ve a Ajustes → Móvil",
       "openSettings": "Abrir Ajustes",
       "pairingFailed": "Error de emparejamiento: {{error}}",
       "pairingLog": "Registro de emparejamiento",
       "pasteCodeMessage": "Copia el código que aparece debajo del QR en tu ordenador.",
-      "pasteCodePlaceholder": "orca://pair?code=... o pega el código",
+      "pasteCodePlaceholder": "seal://pair?code=... o pega el código",
       "pasteCodeTitle": "Pegar código de emparejamiento",
       "pasteInstead": "Pegar código en su lugar",
       "pastePairingCode": "O pegar código de emparejamiento",
@@ -979,9 +978,7 @@
       "backToHosts": "Volver a hosts",
       "desktopTooOldBody": "La aplicación del escritorio emparejado es demasiado antigua para tu versión actual de Seal Mobile. Actualiza Seal en tu equipo y vuelve a intentarlo con este host.",
       "getVersion": "Obtener Seal {{version}}",
-      "mobileTooOldAppStore": "Este escritorio necesita una versión más reciente de Seal Mobile. Actualiza Seal Mobile desde la App Store y vuelve a intentarlo con este host.",
       "mobileTooOldGitHubReleases": "Este escritorio necesita una versión más reciente de Seal Mobile. Actualiza Seal Mobile desde GitHub Releases y vuelve a intentarlo con este host.",
-      "openAppStore": "Abrir App Store",
       "openGitHubReleases": "Abrir GitHub Releases",
       "refreshRecoveryNote": "Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
       "refreshWorkspaceBody": "La versión en caché del espacio de trabajo de este host es anterior a la que espera el escritorio. Vuelve a conectarte a este host para descargar la versión actual.",
@@ -989,7 +986,6 @@
       "updateDesktopTitle": "Actualiza Seal en tu equipo",
       "updateMobileTitle": "Actualiza Seal Mobile",
       "updateRecoveryNote": "¿Ya has actualizado? Vuelve a Hosts y actualiza la conexión. Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
-      "workspaceNeedsUpdateAppStore": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Seal Mobile. Actualiza Seal Mobile desde la App Store y vuelve a intentarlo con este host.",
       "workspaceNeedsUpdateGitHubReleases": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Seal Mobile. Actualiza Seal Mobile desde GitHub Releases y vuelve a intentarlo con este host."
     },
     "richMarkdownEditor": {
@@ -2824,11 +2820,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "No se pudo abrir el enlace. Vuelve a intentarlo.",
-      "socialProfile": "Seal en X",
       "sourceCode": "Código fuente de Seal",
       "tagline": "IDE de código abierto con agentes para creadores 100x",
-      "title": "Acerca de",
-      "website": "Sitio web de Seal"
+      "title": "Acerca de"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "No se pudo comprobar",
@@ -2889,7 +2883,6 @@
       "voice": "Voz"
     },
     "menuScreen": {
-      "privacyPolicy": "Política de privacidad",
       "support": "Soporte"
     },
     "nativeChatSettingsScreen": {

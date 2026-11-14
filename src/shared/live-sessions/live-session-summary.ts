@@ -46,20 +46,26 @@ export function compareListedLiveSessions(
   return Number(b.pinned === true) - Number(a.pinned === true) || compareLiveSessions(a, b)
 }
 
-export type LiveSessionMachineGroup<T> = {
+/** What grouping reads; mobile's decoded sessions satisfy it too. */
+type GroupableLiveSession = Pick<LiveSession, 'status' | 'lastActivityAt'> & {
+  pinned?: boolean
+  machine: { hostId: string; label: string; kind: string }
+}
+
+export type LiveSessionMachineGroup<T extends GroupableLiveSession> = {
   hostId: string
   label: string
-  kind: LiveSession['machine']['kind']
+  kind: T['machine']['kind']
   sessions: T[]
 }
 
 /** Machines, this one first, each with its sessions in listed order. */
-export function groupLiveSessionsByMachine<
-  T extends Pick<LiveSession, 'machine' | 'pinned' | 'status' | 'lastActivityAt'>
->(sessions: readonly T[]): LiveSessionMachineGroup<T>[] {
+export function groupLiveSessionsByMachine<T extends GroupableLiveSession>(
+  sessions: readonly T[]
+): LiveSessionMachineGroup<T>[] {
   const machines = new Map<string, LiveSessionMachineGroup<T>>()
   for (const session of sessions) {
-    const machine = machines.get(session.machine.hostId) ?? {
+    const machine: LiveSessionMachineGroup<T> = machines.get(session.machine.hostId) ?? {
       hostId: session.machine.hostId,
       label: session.machine.label,
       kind: session.machine.kind,

@@ -4,6 +4,10 @@ import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-c
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { translate } from '@/i18n/i18n'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
+import {
+  machineLoad,
+  machineMemoryUsedPercent
+} from '../../../../shared/home-overview/home-machine-readings'
 import type {
   HomeAccount,
   HomeAccountStatus,
@@ -11,25 +15,13 @@ import type {
   HomeUsageWindow
 } from './home-overview-model'
 
-function percentOf(used: number, total: number): number {
-  return Math.max(0, Math.min(100, (used / total) * 100))
-}
-
 export function homeMachineFromSummary(
   summary: MachineSummary,
   metrics: MachineMetrics | null | undefined,
   localLabel: string
 ): HomeMachine {
-  let load: number | undefined
-  if (metrics?.loadAverage && metrics.cpuCount) {
-    load = metrics.loadAverage[0] / metrics.cpuCount
-  } else if (metrics?.cpuUsagePercent != null) {
-    load = metrics.cpuUsagePercent / 100
-  }
-  const memoryUsedPercent =
-    metrics?.memTotalBytes && metrics.memAvailableBytes != null
-      ? percentOf(metrics.memTotalBytes - metrics.memAvailableBytes, metrics.memTotalBytes)
-      : undefined
+  const load = machineLoad(metrics)
+  const memoryUsedPercent = machineMemoryUsedPercent(metrics)
   return {
     id: summary.id,
     executionHostId: summary.executionHostId,

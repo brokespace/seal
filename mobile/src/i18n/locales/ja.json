@@ -96,14 +96,13 @@
       "connecting": "接続中…",
       "invalidPairingCode": "ペアリングコードが無効です。コンピュータからコピーして、もう一度貼り付けてください。",
       "invalidQrCode": "Seal の有効な QR コードではありません",
-      "downloadQrCode": "これはダウンロード用のコードです。デスクトップのステップ2にあるペアリングコードをスキャンしてください。",
       "openDesktopStep": "コンピュータで Seal を開く",
       "openMobileSettingsStep": "「設定」→「モバイル」を開く",
       "openSettings": "設定を開く",
       "pairingFailed": "ペアリングに失敗しました：{{error}}",
       "pairingLog": "ペアリングログ",
       "pasteCodeMessage": "コンピュータの QR コードの下に表示されているコードをコピーしてください。",
-      "pasteCodePlaceholder": "orca://pair?code=... またはコードを貼り付け",
+      "pasteCodePlaceholder": "seal://pair?code=... またはコードを貼り付け",
       "pasteCodeTitle": "ペアリングコードを貼り付け",
       "pasteInstead": "代わりにコードを貼り付け",
       "pastePairingCode": "またはペアリングコードを貼り付け",
@@ -937,9 +936,7 @@
       "backToHosts": "ホストに戻る",
       "desktopTooOldBody": "ペアリング済みのデスクトップアプリは、現在の Seal Mobile に対応していない古いバージョンです。コンピュータの Seal を更新して、このホストへの接続を再試行してください。",
       "getVersion": "Seal {{version}} を入手",
-      "mobileTooOldAppStore": "このデスクトップには、より新しいバージョンの Seal Mobile が必要です。App Store から Seal Mobile を更新して、このホストへの接続を再試行してください。",
       "mobileTooOldGitHubReleases": "このデスクトップには、より新しいバージョンの Seal Mobile が必要です。GitHub Releases から Seal Mobile を更新して、このホストへの接続を再試行してください。",
-      "openAppStore": "App Store を開く",
       "openGitHubReleases": "GitHub Releases を開く",
       "refreshRecoveryNote": "このメッセージが表示され続ける場合は、このホストを削除して、再度ペアリングしてください。",
       "refreshWorkspaceBody": "このホスト用にキャッシュされたワークスペースは、デスクトップが必要とするバージョンより古くなっています。このホストに再接続して、最新のワークスペースをダウンロードしてください。",
@@ -947,7 +944,6 @@
       "updateDesktopTitle": "コンピュータの Seal を更新",
       "updateMobileTitle": "Seal Mobile を更新",
       "updateRecoveryNote": "すでに更新済みですか？「ホスト」に戻り、接続を更新してください。このメッセージが表示され続ける場合は、このホストを削除して、再度ペアリングしてください。",
-      "workspaceNeedsUpdateAppStore": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Seal Mobile が必要です。App Store から Seal Mobile を更新して、このホストへの接続を再試行してください。",
       "workspaceNeedsUpdateGitHubReleases": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Seal Mobile が必要です。GitHub Releases から Seal Mobile を更新して、このホストへの接続を再試行してください。"
     },
     "richMarkdownEditor": {
@@ -2750,11 +2746,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "リンクを開けませんでした。再試行してください。",
-      "socialProfile": "Seal の X アカウント",
       "sourceCode": "Seal のソースコード",
       "tagline": "100 倍の生産性を目指す開発者向けのオープンソース Agent IDE",
-      "title": "Seal について",
-      "website": "Seal のウェブサイト"
+      "title": "Seal について"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "確認できませんでした",
@@ -2812,7 +2806,6 @@
       "voice": "音声"
     },
     "menuScreen": {
-      "privacyPolicy": "プライバシーポリシー",
       "support": "サポート"
     },
     "nativeChatSettingsScreen": {

@@ -595,7 +595,6 @@
         "retainedTerminalPermissions": "Yeni terminaller hâlâ önceki izinleri kullanıyorsa Oturumları Yönet'i açıp Arka plan hizmetini yeniden başlat'ı seçin. Bu işlem yerel terminalleri ve içlerinde çalışan komutları kapatır.",
         "administratorRestartFailed": "Seal yeniden başlatılamadı. Tekrar deneyin veya manuel yönergeleri kullanın.",
         "manualAdministratorHelp": "Manuel yönergeler",
-        "administratorDocumentation": "Kılavuzu okuyun",
         "cancelAdministratorRestart": "İptal",
         "closeAdministratorHelp": "Kapat",
         "restartingAdministrator": "Yeniden başlatılıyor…",
@@ -1167,7 +1166,7 @@
         "b411ec0069": "Bağlan",
         "2cf9e5a294": "Kayıtlı sunucuyu temizle",
         "4a4c017be1": "Uç nokta:",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "Eşleştirme URL'si veya kodu",
         "cb4d287238": "Sunucu adı",
         "3affe7de3a": "Bu tarayıcının ulaşabildiği bir Seal sunucusundan eşleştirme URL'si yapıştırın.",
@@ -5548,7 +5547,6 @@
           "66270286ac": "· Güvenle yeniden deneyebilirsiniz.",
           "157de228b4": "Beceriyi incele",
           "69236de8d6": "Kontrol ediliyor…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal beceri bağlantısı",
           "releaseNotes": "Sürüm notları:",
           "targetHeader": "Yükleme Hedefi",
@@ -7036,7 +7034,7 @@
           "nameInOrca": "Seal'deki adı",
           "serverNamePlaceholder": "Geliştirme sunucusu",
           "accessLink": "Erişim bağlantısı",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config zaten senkronize.",
           "sshImportFailed": "SSH yapılandırması içe aktarılamadı.",
           "sshAlreadyExists": "Bu SSH sunucusu zaten Seal'de.",
@@ -8329,10 +8327,7 @@
           "5f539ff331": "Eşleştirilmiş Cihazlar"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "Seal Mobile'ı",
           "installOutro": " üzerinden yükleyin, ardından aşağıdan eşleştirin.",
-          "androidApkLabel": "Android APK",
           "e7a3ae8c4e": "Mobil",
           "174f4a3c6d": "Terminalleri ve ajanları telefonunuzdan kontrol edin.",
           "682293cadf": "Sol kenar çubuğunun üst kısmında Seal Mobile düğmesini gösterin.",
@@ -11725,15 +11720,10 @@
           "unavailable": "Kullanılamıyor",
           "pathGroup": "Telefonun bu bilgisayara ulaşma yolu",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "Telefon mobil veri veya herhangi bir Wi-Fi üzerinde olabilir. Yalnızca Relay için oturum açma gerekir.",
-          "relayUnavailable": "Seal Relay bu sürümde kullanılamıyor. LAN kullanın.",
-          "signIn": "Relay için oturum aç",
-          "signInAgain": "Relay için yeniden oturum aç",
           "localTitle": "LAN",
           "localDescription": "Telefon bu Wi-Fi'de olmalı veya Tailscale üzerinden bağlanmalıdır. Hesap gerekmez.",
           "retrying": "Yeniden deneniyor",
-          "relayCell": "Relay hücresi",
-          "relaySignInDetail": "Bu masaüstünde Seal oturumu açar ve telefonu Seal sunucuları üzerinden yönlendirir. LAN için hesap gerekmez."
+          "relayCell": "Relay hücresi"
         },
         "MobilePairingSetupSection": {
           "title": "Bir telefonu eşleştir",
@@ -12113,7 +12103,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux iş istasyonu",
           "accessLink": "Erişim bağlantısı",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal, bağlanmadan önce hedefi gösterir. Kimlik bilgileri gizli kalır.",
           "destination": "Bağlantı hedefi",
           "loopbackTitle": "Bu bağlantı bu cihaza geri işaret ediyor",
@@ -12232,7 +12222,6 @@
           "connected": "Bağlı",
           "reconnectRequired": "Oturumunuzun süresi doldu. Bulut özelliklerini kullanmak için tekrar oturum açın.",
           "unavailable": "Seal oturum açma bu sürümde kullanılamıyor.",
-          "signedOut": "Artifact'ler ve Seal Relay dahil bulut özellikleriyle Seal'i genişletmek için oturum açın.",
           "checking": "Hesap durumu kontrol ediliyor…",
           "account": "Seal hesabı",
           "signOut": "Oturumu kapat",
@@ -12240,12 +12229,9 @@
           "signIn": "Seal'de oturum aç",
           "title": "Seal Hesabı",
           "description": "Çalışmanızı anında paylaşın ve nerede olursanız olun Seal Mobile'dan masaüstünüze ulaşın.",
-          "searchDescription": "Artifact'ler ve Seal Relay tarafından kullanılan hesapta oturum açın veya kapatın.",
           "benefitsTitle": "Hesabınıza dahil",
           "artifactsTitle": "Artifact paylaşımı",
           "artifactsDescription": "HTML ve Markdown dosyalarını yayınlayın, ardından paylaşılan her bağlantıyı Seal'den yönetin.",
-          "relayTitle": "Seal Relay",
-          "relayDescription": "Seal Mobile'ı mobil veri veya herhangi bir Wi-Fi üzerinden bu masaüstüne bağlayın.",
           "skillsTitle": "Beceri paylaşımı",
           "skillsDescription": "Tek bir beceriyi veya bir beceri setinin tamamını listelenmeyen bir bağlantı üzerinden paylaşın ve kullandığınız her makineye yükleyin.",
           "keywordAccount": "hesap",
@@ -12253,7 +12239,6 @@
           "keywordLogout": "çıkış",
           "keywordSignIn": "oturum aç",
           "keywordSignOut": "oturumu kapat",
-          "keywordRelay": "relay",
           "keywordCloud": "bulut"
         },
         "automations": {
@@ -15226,12 +15211,8 @@
           "85067b9e06": "Ağ arabirimlerini yenile",
           "dfd2aa9d5d": "Ağ",
           "3960f5c339": "Adım 2/2",
-          "3241f3c26a": "Kurulum QR",
-          "aa97420ba4": "Kurulum bağlantısını kopyala",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Bu indirme QR kodunu telefonunuzun kamerasıyla tarayın. Seal Mobile zaten yüklü mü? Eşleştirme QR kodu için 2. adıma geçin.",
-          "0d9b33299e": "Uygulamayı indirin.",
           "92ddfdfa1f": "Adım 1/2",
           "ff48d9d520": "Başka bir cihaz eşleştir",
           "f9cbf4bb53": "Cihazı iptal et",
@@ -15250,8 +15231,6 @@
           "051978a785": "Telefonunuz eşleştirildi.",
           "pairingQrError": "Bu eşleştirme kodu QR koduna dönüştürülemedi. Bunun yerine kodu Seal Mobile'a kopyalayın.",
           "noRelayCode": "Kullanılabilir eşleştirme kodu yok",
-          "noPairingCode": "Kullanılabilir eşleştirme kodu yok",
-          "qrSignInRequired": "Relay eşleştirme kodu oluşturmak için oturum açın",
           "qrRenderFailed": "QR kodu oluşturulamadı, aşağıdaki kodu kopyalayın",
           "qrGeneratePrompt": "Devam etmek için bir eşleştirme kodu oluşturun",
           "pairingCodeReady": "Eşleştirme kodu hazır",
@@ -15260,15 +15239,13 @@
           "pairThisComputer": "Bu bilgisayarı eşleştirin.",
           "directAddressDisclosure": "Daha hızlı bir yerel yol da kullanın",
           "directAddressHint": "İsteğe bağlı. Telefonunuzun yakındayken kullanması gereken Wi-Fi veya Tailscale adresini seçin; genellikle Relay'den daha hızlıdır. Uzaktayken Relay yine çalışır.",
-          "androidHelp": {
-            "guide": "Kurulum kılavuzu"
-          },
-          "openAppAndScan": "Seal Mobile'ı açın, <strong>Masaüstünü Eşleştir</strong> seçeneğine dokunun ve kodu tarayın."
+          "openAppAndScan": "Seal Mobile'ı açın, <strong>Masaüstünü Eşleştir</strong> seçeneğine dokunun ve kodu tarayın.",
+          "installHeading": "Seal Mobile uygulamasını yükleyin.",
+          "installLead": "Seal Mobile, App Store'da veya Google Play'de yok. Seal deposundan derleyip yükleyin, ardından eşleştirme QR kodu için 2. adıma geçin.",
+          "installGuide": "Kurulum kılavuzunu aç"
         },
         "MobilePage": {
           "e17393c6a3": "Telefon önizlemesi",
-          "baea63c445": "Bağlantı kopyalanamadı",
-          "fad833de8d": "Kurulum bağlantısı kopyalandı",
           "6a66e38943": "Eşleştirme kodu kopyalanamadı",
           "3c1f7168bb": "Eşleştirme kodu kopyalandı",
           "4c8bd11c1a": "Eşleştirme kodu oluşturulamadı",
@@ -15290,14 +15267,6 @@
           "96d651cb87": "Terminal oturumu",
           "93217b41c1": "Worktree listesi",
           "89c7713645": "Seal Mobile ana ekranı"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "APK indir",
-              "openAppStore": "App Store'u aç"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -15397,9 +15366,6 @@
           "retrying": "Yeniden deneniyor…",
           "retry": "Relay'i yeniden dene",
           "copyDiagnostics": "Tanılama bilgilerini kopyala",
-          "reconnectTitle": "Seal hesap oturumunuzun süresi doldu.",
-          "reconnectBody": "Seal Relay'i kullanmak için tekrar oturum açın veya Tailscale ya da aynı Wi-Fi üzerinden eşleştirmek için Yerel Ağı kullanın.",
-          "notEntitledTitle": "Seal Relay bu Seal hesabına dahil değil.",
           "rateLimitedBody": "Seal Relay meşgul. Bir dakika bekleyip yeniden deneyin veya Tailscale ya da aynı Wi‑Fi üzerinden eşleştirmek için LAN kullanın."
         },
         "relayClockSkewMessage": {
@@ -18384,7 +18350,6 @@
           "signout": {
             "confirm": {
               "title": "Seal'den çıkış yapılsın mı?",
-              "description": "Yeniden oturum açana kadar Artifact'ler ve Seal Relay kullanılamayacak. Yerel projeleriniz ve worktree'leriniz etkilenmeyecek.",
               "cancel": "İptal",
               "action": "Çıkış yap"
             }
@@ -18720,8 +18685,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "Oturumunuz kapatıldı",
         "3e8f5c2a91": "Kapat",
-        "7b4d9e1f2a": "Artifact paylaşımını, Seal Relay'i ve beceri paylaşımını geri yüklemek için {{value0}} olarak yeniden oturum açın.",
-        "5a1c8d3e6f": "Artifact paylaşımını, Seal Relay'i ve beceri paylaşımını geri yüklemek için yeniden oturum açın.",
         "1f6b2c9d4e": "Geri kazandıklarınız",
         "8d2e4f7a1b": "Artifact paylaşımı",
         "2c9a5b6e8d": "HTML ve Markdown dosyalarını yayınlayın ve tüm paylaşılan bağlantıları Seal'den yönetin.",
@@ -22770,7 +22733,7 @@
       "serverReplaced": "Farklı sunucu"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Geçersiz eşleştirme kodu. orca://pair?... biçiminde bir URL veya salt eşleştirme verisi bekleniyor.",
+      "invalidPairingCode": "Geçersiz eşleştirme kodu. seal://pair?... biçiminde bir URL veya salt eşleştirme verisi bekleniyor.",
       "selfPairingCode": "Bu eşleştirme kodu bu Seal örneğinin kendisi içindir. Kodu diğer bilgisayarda oluşturun.",
       "managedDeployment": "Seal bu sunucuyu sizin için bir SSH sunucusunda çalıştırır; eşleştirmesi burada değiştirilemez veya kaldırılamaz. Hizmetten çıkarmak için `seal environment stop --environment <name> --yes` komutunu çalıştırın ya da Ayarlar > SSH sunucularınızda Seal bölümünü kullanın; SSH sunucusu artık yoksa `seal environment forget --environment <name> --yes` komutunu çalıştırın.",
       "sshAccessChangePending": "Bu sunucunun SSH erişimi değişikliği tamamlanamadı. Eşleştirmesini değiştirmeden veya sunucuyu kaldırmadan önce Ayarlar > Uzak Seal Sunucuları > Eşleştirilmiş sunucular için SSH erişimi bölümünden yeniden deneyin veya iptal edin.",

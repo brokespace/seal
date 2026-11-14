@@ -568,7 +568,6 @@
         "retainedTerminalPermissions": "如果新終端機仍使用先前的權限，請開啟「管理工作階段」並選擇「重新啟動常駐程式」。這會關閉本機終端機及其正在執行的命令。",
         "administratorRestartFailed": "Seal 無法重新啟動。請重試，或使用手動說明。",
         "manualAdministratorHelp": "手動說明",
-        "administratorDocumentation": "閱讀指南",
         "cancelAdministratorRestart": "取消",
         "closeAdministratorHelp": "關閉",
         "restartingAdministrator": "正在重新啟動…",
@@ -1139,7 +1138,7 @@
         "b411ec0069": "連線",
         "2cf9e5a294": "清除已儲存的伺服器",
         "4a4c017be1": "端點：",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "配對 URL 或配對碼",
         "cb4d287238": "伺服器名稱",
         "3affe7de3a": "貼上來自該瀏覽器可以存取的 Seal 伺服器的配對 URL。",
@@ -5446,7 +5445,6 @@
           "66270286ac": "· 您可以安全地重試。",
           "157de228b4": "檢驗技能",
           "69236de8d6": "檢查中…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal 技能連結",
           "releaseNotes": "發行說明：",
           "targetHeader": "安裝目標",
@@ -6885,7 +6883,7 @@
           "nameInOrca": "Seal 中的名稱",
           "serverNamePlaceholder": "開發機",
           "accessLink": "存取連結",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config 已同步。",
           "sshImportFailed": "匯入 SSH 設定檔失敗。",
           "sshAlreadyExists": "該 SSH 主機已在 Seal 中。",
@@ -8173,10 +8171,7 @@
           "5f539ff331": "配對裝置"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "安裝 Seal Mobile，請前往",
           "installOutro": "，然後在下方配對。",
-          "androidApkLabel": "Android APK",
           "e7a3ae8c4e": "行動版",
           "174f4a3c6d": "透過手機控制終端機和代理程式。",
           "682293cadf": "在左側邊欄頂部顯示 Seal Mobile 按鈕。",
@@ -11569,15 +11564,10 @@
           "unavailable": "不可用",
           "pathGroup": "手機存取此電腦的方式",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "手機可透過行動網路或任意 Wi‑Fi 連線。僅 Relay 需要登入。",
-          "relayUnavailable": "此版本不支援 Seal Relay。請使用區域網路。",
-          "signIn": "登入以使用 Relay",
-          "signInAgain": "重新登入以使用 Relay",
           "localTitle": "區域網路",
           "localDescription": "手機必須連線至此 Wi‑Fi 或透過 Tailscale 連線。無需帳戶。",
           "retrying": "重試",
-          "relayCell": "中繼單元",
-          "relaySignInDetail": "將這台電腦登入 Seal，並透過 Seal 的伺服器轉送手機連線。LAN 無需帳戶。"
+          "relayCell": "中繼單元"
         },
         "MobilePairingSetupSection": {
           "title": "配對手機",
@@ -11957,7 +11947,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux 工作站",
           "accessLink": "存取連結",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal 會在連線前顯示目標。憑證保持隱藏。",
           "destination": "連結目標",
           "loopbackTitle": "此連結指向此裝置",
@@ -12076,7 +12066,6 @@
           "connected": "已連線",
           "reconnectRequired": "您的工作階段已過期。重新登入即可使用雲端功能。",
           "unavailable": "Seal 登入在此版本中不可用。",
-          "signedOut": "登入以使用成品和 Seal Relay 等雲端功能。",
           "checking": "檢查帳戶狀態...",
           "account": "Seal 帳戶",
           "signOut": "登出",
@@ -12084,12 +12073,9 @@
           "signIn": "登入 Seal",
           "title": "Seal 帳戶",
           "description": "無論您身在何處，都可以立即分享工作並透過 Seal Mobile 存取您的桌面。",
-          "searchDescription": "登入或登出使用成品與 Seal Relay 的帳戶。",
           "benefitsTitle": "包含在您的帳戶中",
           "artifactsTitle": "成品分享",
           "artifactsDescription": "發布 HTML 和 Markdown 檔案，並管理 Seal 中的分享連結。",
-          "relayTitle": "Seal Relay",
-          "relayDescription": "透過行動網路或任何 Wi-Fi 將 Seal Mobile 連線到此桌面。",
           "skillsTitle": "技能分享",
           "skillsDescription": "透過未公開列出的連結分享單項或整套技能，並安裝到您使用的任何電腦上。",
           "keywordAccount": "帳戶",
@@ -12097,7 +12083,6 @@
           "keywordLogout": "登出",
           "keywordSignIn": "登入",
           "keywordSignOut": "登出",
-          "keywordRelay": "中繼",
           "keywordCloud": "雲"
         },
         "automations": {
@@ -15035,12 +15020,8 @@
           "85067b9e06": "重新整理網路介面",
           "dfd2aa9d5d": "網路",
           "3960f5c339": "第 2 步（共 2 步）",
-          "3241f3c26a": "安裝 QR Code",
-          "aa97420ba4": "複製安裝連結",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "用手機相機掃描此下載 QR 碼。已經安裝 Seal Mobile？繼續到第 2 步查看配對 QR 碼。",
-          "0d9b33299e": "下載 App。",
           "92ddfdfa1f": "第 1 步（共 2 步）",
           "ff48d9d520": "與另一台裝置配對",
           "f9cbf4bb53": "撤銷裝置",
@@ -15059,8 +15040,6 @@
           "051978a785": "您的手機已配對。",
           "pairingQrError": "無法將此配對碼呈現為 QR Code。請改為將其複製到 Seal Mobile。",
           "noRelayCode": "沒有可用的配對碼",
-          "noPairingCode": "沒有可用的配對碼",
-          "qrSignInRequired": "登入以建立 Relay 配對碼",
           "qrRenderFailed": "無法呈現 QR Code — 複製下面的配對碼",
           "qrGeneratePrompt": "產生配對碼以繼續",
           "pairingCodeReady": "配對碼已準備就緒",
@@ -15069,15 +15048,13 @@
           "pairThisComputer": "配對這台電腦。",
           "directAddressDisclosure": "也可使用更快的本機連線",
           "directAddressHint": "可選。選擇手機在附近（同一 Wi‑Fi 或 Tailscale）時使用的位址，通常比 Relay 更快。外出時仍走 Relay。",
-          "androidHelp": {
-            "guide": "安裝指南"
-          },
-          "openAppAndScan": "開啟 Seal Mobile，點選 <strong>配對電腦</strong>，然後掃描 QR 碼。"
+          "openAppAndScan": "開啟 Seal Mobile，點選 <strong>配對電腦</strong>，然後掃描 QR 碼。",
+          "installHeading": "安裝 Seal Mobile。",
+          "installLead": "Seal Mobile 未在 App Store 或 Google Play 上架。請從 Seal 存放庫建置並安裝，然後繼續第 2 步取得配對 QR 碼。",
+          "installGuide": "開啟安裝指南"
         },
         "MobilePage": {
           "e17393c6a3": "手機預覽",
-          "baea63c445": "複製連結失敗",
-          "fad833de8d": "安裝連結已複製",
           "6a66e38943": "複製配對碼失敗",
           "3c1f7168bb": "配對碼已複製",
           "4c8bd11c1a": "產生配對碼失敗",
@@ -15099,14 +15076,6 @@
           "96d651cb87": "終端機工作階段",
           "93217b41c1": "工作樹清單",
           "89c7713645": "Seal Mobile 主螢幕"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "下載 APK",
-              "openAppStore": "開啟 App Store"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -15206,9 +15175,6 @@
           "retrying": "正在重試...",
           "retry": "重試 Relay",
           "copyDiagnostics": "複製診斷",
-          "reconnectTitle": "您的 Seal 帳戶工作階段已過期。",
-          "reconnectBody": "再次登入使用 Seal Relay，或使用 LAN 透過 Tailscale 或相同 Wi-Fi 進行配對。",
-          "notEntitledTitle": "此 Seal 帳戶不包含 Seal Relay。",
           "rateLimitedBody": "Seal Relay 正忙。請等待一分鐘再重試，或使用 LAN 透過 Tailscale 或同一 Wi‑Fi 配對。"
         },
         "relayClockSkewMessage": {
@@ -18152,7 +18118,6 @@
           "signout": {
             "confirm": {
               "title": "登出 Seal？",
-              "description": "重新登入之前，成品和 Seal Relay 將無法使用。你的本機專案和工作樹不會受到影響。",
               "cancel": "取消",
               "action": "登出"
             }
@@ -18488,8 +18453,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "你已登出",
         "3e8f5c2a91": "關閉",
-        "7b4d9e1f2a": "重新以 {{value0}} 登入，以恢復成品分享、Seal Relay 和技能分享。",
-        "5a1c8d3e6f": "重新登入以恢復成品分享、Seal Relay 和技能分享。",
         "1f6b2c9d4e": "重新登入後可使用的功能",
         "8d2e4f7a1b": "成品分享",
         "2c9a5b6e8d": "發布 HTML 和 Markdown 檔案，並在 Seal 中管理所有分享連結。",
@@ -22465,7 +22428,7 @@
       "serverReplaced": "不同的伺服器"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "配對碼無效。需要 orca://pair?... URL 或原始配對資料。",
+      "invalidPairingCode": "配對碼無效。需要 seal://pair?... URL 或原始配對資料。",
       "selfPairingCode": "此配對碼是給目前這個 Seal 用的。請改在另一臺電腦上產生配對碼。",
       "managedDeployment": "Seal 會在 SSH 主機上為你執行此伺服器；無法在此取代或移除其配對。若要停用，請執行 `seal environment stop --environment <name> --yes`，或使用設定 > SSH 主機上的 Seal；若主機已不存在，請執行 `seal environment forget --environment <name> --yes`。",
       "sshAccessChangePending": "此伺服器的 SSH 存取變更未完成。取代配對或移除此伺服器前，請在設定 > 遠端 Seal 伺服器 > 已配對伺服器的 SSH 存取中重試或取消變更。",

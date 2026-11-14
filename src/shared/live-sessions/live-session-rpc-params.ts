@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 const SessionId = z.string().min(1).max(4096)
 const Cursor = z.number().int().nonnegative()

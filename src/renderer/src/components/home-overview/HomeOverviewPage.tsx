@@ -5,7 +5,7 @@ import {
   countLiveSessionGroups,
   liveSessionsNeedingAttention
 } from '../../../../shared/live-sessions/live-session-summary'
-import { mergeSessionMachines } from './home-overview-derivations'
+import { mergeSessionMachines } from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
   HomeActionsContext,
