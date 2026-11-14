@@ -65,9 +65,10 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   return (
     <PageLayout data-project-overview={repo.id}>
       <PageHeader
-        className="@container/project-header"
+        // The actions drop under the name once a narrow page leaves the name no room beside them.
+        className="@container/project-header flex-wrap gap-y-2"
         title={
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-40 flex-1 items-center gap-2">
             <RepoIconGlyph
               repoIcon={repo.repoIcon}
               color={repo.badgeColor}
