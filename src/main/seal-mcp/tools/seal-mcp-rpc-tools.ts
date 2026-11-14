@@ -120,7 +120,9 @@ async function stopSession(input: Rec, runtime: SealMcpToolRuntime): Promise<Hom
   const reply = await runtime.callRpc('liveSessions.remove', {
     sessionIds: [session.id],
     stop: true,
-    deleteTranscripts: false
+    deleteTranscripts: false,
+    // Only stop: the session stays listed, ended, so its transcript can still be read.
+    keep: true
   })
   const failed = records(isRec(reply) ? reply.failed : null)[0]
   if (failed) {
@@ -131,7 +133,7 @@ async function stopSession(input: Rec, runtime: SealMcpToolRuntime): Promise<Hom
     }
   }
   return {
-    text: `Stopped ${session.id} on ${session.machineLabel} and removed it from Seal's session list. Its transcript stays on the machine.`,
+    text: `Stopped ${session.id} on ${session.machineLabel}. It stays in Seal's session list, ended, with its transcript.`,
     isError: false,
     machine: session.machineLabel
   }

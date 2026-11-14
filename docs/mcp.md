@@ -187,19 +187,19 @@ A tool needs **every** scope it lists. A tool the token is not scoped for is not
 and calling it answers "This MCP client has no tool …", the same as a tool that does not exist.
 Anything not listed here is not reachable over MCP.
 
-| Tool                                                                 | Scopes                     | What it does                                                         |
-| -------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------- |
-| `list_machines`                                                      | `read`                     | Every machine Seal can reach, with its id and status                 |
-| `list_sessions`, `read_session`                                      | `read`                     | Agent sessions on any machine, and a session's transcript            |
-| `account_usage`                                                      | `read`                     | Claude and Codex accounts with their usage and limits                |
-| `list_projects`, `list_workspaces`                                   | `read`                     | Projects and workspaces (`repo.list`, `worktree.list`)               |
-| `list_skills`, `load_skill`                                          | `read`                     | Skills installed on a machine                                        |
-| `message_session`, `start_session`                                   | `sessions`                 | Send a message to a session; start a new agent session               |
-| `stop_session`                                                       | `sessions` + `destructive` | Stop a running session (`liveSessions.remove`); keeps its transcript |
-| `read_file`, `write_file`, `transfer_file`                           | `files`                    | Read, write, and copy files on and between machines                  |
-| `delete_path`                                                        | `files` + `destructive`    | Delete a file or folder                                              |
-| `run_command`, `job_status`, `job_output`, `job_kill`, `job_cleanup` | `commands`                 | Run a shell command (optionally in the background) and follow it     |
-| `switch_account`                                                     | `destructive`              | Change which account new sessions use                                |
+| Tool                                                                 | Scopes                     | What it does                                                     |
+| -------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
+| `list_machines`                                                      | `read`                     | Every machine Seal can reach, with its id and status             |
+| `list_sessions`, `read_session`                                      | `read`                     | Agent sessions on any machine, and a session's transcript        |
+| `account_usage`                                                      | `read`                     | Claude and Codex accounts with their usage and limits            |
+| `list_projects`, `list_workspaces`                                   | `read`                     | Projects and workspaces (`repo.list`, `worktree.list`)           |
+| `list_skills`, `load_skill`                                          | `read`                     | Skills installed on a machine                                    |
+| `message_session`, `start_session`                                   | `sessions`                 | Send a message to a session; start a new agent session           |
+| `stop_session`                                                       | `sessions` + `destructive` | Stop a running session; it stays listed with its transcript      |
+| `read_file`, `write_file`, `transfer_file`                           | `files`                    | Read, write, and copy files on and between machines              |
+| `delete_path`                                                        | `files` + `destructive`    | Delete a file or folder                                          |
+| `run_command`, `job_status`, `job_output`, `job_kill`, `job_cleanup` | `commands`                 | Run a shell command (optionally in the background) and follow it |
+| `switch_account`                                                     | `destructive`              | Change which account new sessions use                            |
 
 `run_command` also needs `destructive` when Seal's risk check flags the command (for example `rm`,
 `git push --force`, `git reset --hard`, `kill`, `shutdown`, `npm publish`, a `curl` that sends

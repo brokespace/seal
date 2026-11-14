@@ -462,7 +462,7 @@ describe('SealMcpService limits and RPC-backed tools', () => {
     })
   })
 
-  it('stops a session through liveSessions.remove once approved, keeping its transcript', async () => {
+  it('stops a session once approved and leaves it listed with its transcript', async () => {
     const { token } = host.createToken({ scopes: ['sessions', 'destructive'] })
     host.service.onEvent((event) => {
       if (event.type === 'approval-requested') {
@@ -476,7 +476,7 @@ describe('SealMcpService limits and RPC-backed tools', () => {
     expect(host.rpcCalls).toEqual([
       {
         method: 'liveSessions.remove',
-        params: { sessionIds: ['s-local'], stop: true, deleteTranscripts: false }
+        params: { sessionIds: ['s-local'], stop: true, deleteTranscripts: false, keep: true }
       }
     ])
   })
