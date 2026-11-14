@@ -8,7 +8,7 @@ import { Label } from '../../../ui/label'
 import { UnsealedCredentialNotice } from '../../../provider-accounts/UnsealedCredentialNotice'
 import { SearchableSetting } from '../../section-layout/SearchableSetting'
 import { CLOUDFLARE_AI_SEARCH_KEYWORDS } from './cloudflare-ai-search'
-import type { CloudflareAiSettingsModel } from './use-cloudflare-ai-settings'
+import type { UtilityModelAccountModel } from '../utility-model/use-utility-model-account'
 
 const ACCOUNT_ID_PATTERN = /^[0-9a-f]{32}$/i
 
@@ -17,7 +17,7 @@ export function CloudflareAiCredentialsSetting({
   model,
   editable
 }: {
-  model: CloudflareAiSettingsModel
+  model: UtilityModelAccountModel
   editable: boolean
 }): React.JSX.Element {
   const t = useTranslate()
@@ -36,7 +36,7 @@ export function CloudflareAiCredentialsSetting({
   const title = t('seal.cloudflareAi.credentials.title', 'Account ID and API token')
 
   const save = async (): Promise<void> => {
-    const ok = await model.save({
+    const ok = await model.change('utilityModel.setCloudflare', {
       ...(accountIdDraft ? { accountId: accountIdDraft } : {}),
       ...(apiTokenDraft ? { apiToken: apiTokenDraft } : {})
     })
@@ -110,7 +110,7 @@ export function CloudflareAiCredentialsSetting({
           <Button
             variant="ghost"
             size="xs"
-            onClick={() => void model.forget()}
+            onClick={() => void model.change('utilityModel.clearCloudflare')}
             disabled={busy || !editable}
             className="shrink-0 self-center"
           >

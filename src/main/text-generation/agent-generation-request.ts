@@ -15,11 +15,12 @@ import { runLocalPlanForAgent } from './execution/source-control-local-generatio
 import { runOpenCodeTextTask } from '../opencode/text-tasks/opencode-text-task'
 import { cleanAgentAnswer, emptyResultFailure } from './failures/source-control-agent-failure'
 import { runRemoteSourceControlPlan } from './execution/source-control-remote-generation'
-import type {
-  CommitMessageGenerationTarget,
-  InternalTextGenerationResult,
-  SpawnSourceControlAgent,
-  TextGenerationOperation
+import {
+  PROSE_TEXT_OPERATIONS,
+  type CommitMessageGenerationTarget,
+  type InternalTextGenerationResult,
+  type SpawnSourceControlAgent,
+  type TextGenerationOperation
 } from './source-control-text-generation-types'
 
 type GenerateParams = ResolvedSourceControlAiGenerationParams
@@ -42,7 +43,7 @@ export async function runGenerationRequest(input: {
   const params = {
     ...input.params,
     backslash: commandBackslashMode(input.target),
-    toolFree: input.operation === 'dictation-cleanup'
+    toolFree: PROSE_TEXT_OPERATIONS.has(input.operation)
   }
   const prompt =
     input.operation === 'conversation-name'

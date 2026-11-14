@@ -659,7 +659,10 @@ import {
   SessionRecapRefreshParams,
   SessionRecapSetEnabledParams
 } from './session-recap-params'
-import { SessionSummariesSetEnabledParams } from './session-summaries-params'
+import {
+  SessionSummariesSetEnabledParams,
+  SessionSummariesSetModelsParams
+} from './session-summaries-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs/session-tabs-params'
 import {
   ActivateTab,
@@ -852,7 +855,12 @@ import {
   TerminalUpdateViewport
 } from './terminal/terminal-viewport-schemas-params'
 import { UpdaterCheckParams } from './updater/updater-params'
-import { UtilityModelSetCloudflareParams } from './utility-model-params'
+import {
+  UtilityModelProviderParams,
+  UtilityModelSetCloudflareParams,
+  UtilityModelSetOpenRouterParams,
+  UtilityModelTestParams
+} from './utility-model-params'
 import {
   WorkspaceCleanupPreviewParams,
   WorkspaceCleanupReportUnsavedEditorsParams,
@@ -1760,6 +1768,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'sessionRecap.setEnabled': SessionRecapSetEnabledParams,
   'sessionSummaries.list': null,
   'sessionSummaries.setEnabled': SessionSummariesSetEnabledParams,
+  'sessionSummaries.setModels': SessionSummariesSetModelsParams,
   'sessionSummaries.status': null,
   'settings.get': null,
   'settings.getAgentLaunch': null,
@@ -1885,10 +1894,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'updater.getStatus': null,
   'updater.install': null,
   'utilityModel.clearCloudflare': null,
-  'utilityModel.listModels': null,
+  'utilityModel.clearOpenRouter': null,
+  'utilityModel.listModels': UtilityModelProviderParams,
+  'utilityModel.providers': UtilityModelProviderParams,
   'utilityModel.setCloudflare': UtilityModelSetCloudflareParams,
+  'utilityModel.setOpenRouter': UtilityModelSetOpenRouterParams,
   'utilityModel.status': null,
-  'utilityModel.test': null,
+  'utilityModel.test': UtilityModelTestParams,
   'workspaceCleanup.preview': WorkspaceCleanupPreviewParams,
   'workspaceCleanup.report': null,
   'workspaceCleanup.reportUnsavedEditors': WorkspaceCleanupReportUnsavedEditorsParams,

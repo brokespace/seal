@@ -10,18 +10,25 @@ import type {
 import type { LiveSessionService } from '../live-sessions/live-session-service'
 import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
 import { createLiveSessionRecaps } from '../session-recap/session-recap-install'
-import { getUtilityModelHost } from '../utility-model/utility-model-host'
-import type { UtilityModelService } from '../utility-model/utility-model-service'
-import { LiveSessionReplyAsks } from './live-session-reply-asks'
+import {
+  normalizeSessionSummaryModels,
+  utilityModelChoiceFor,
+  type SessionSummaryModels,
+  type UtilityModelTask
+} from '../../shared/utility-model/utility-model-selection'
+import { getUtilityModelHost, type UtilityModelClient } from '../utility-model/utility-model-host'
+import type { UtilityModelHostContext } from '../utility-model/utility-model-provider-sources'
+import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
 import { PaneSessionSummaries } from './pane-session-summaries'
-import { REPLY_ASK_TASK } from './reply-ask-task'
+import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
 import { SessionSummarizer } from './session-summarizer'
+import { unrefTimer } from './unref-timer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
 
 type SummarySettingsStore = {
-  getSettings(): SessionSummarySettings
+  getSettings(): SessionSummarySettings & ReturnType<UtilityModelHostContext['settings']>
   updateSettings(updates: SessionSummarySettings): unknown
   onSettingsChanged(listener: (updates: Partial<SessionSummarySettings>) => void): unknown
 }
@@ -32,6 +39,8 @@ type SummaryRuntime = {
     latestRow(paneKey: string): AgentStatusIpcPayload | null
     trackedPaneSeeds(): AgentPaneChange[]
   }
+  /** The accounts agent CLIs run on; without it only providers with a saved key can be used. */
+  getCommitMessageAgentEnvironmentResolvers?: UtilityModelHostContext['agentEnvironment']
 }
 
 export type SessionSummariesInstallOptions = {
@@ -47,51 +56,25 @@ export type SessionSummariesInstallOptions = {
   serverSummaries?: LiveSessionSummariesDeps['serverSummaries']
   /** A pane's summary changed: clients reading agent rows should read again. */
   onPaneSummaryChanged?: () => void
-  utilityModel?: UtilityModelService
+  /** One model for both summaries and recaps, in place of the providers Settings chose. */
+  utilityModel?: UtilityModelClient
 }
 
 const CONFIGURED_RECHECK_MS = 60_000
-const TRANSCRIPT_TAIL_MESSAGES = 30
-
-function unrefTimer(run: () => void, delayMs: number): { cancel: () => void } {
-  const timer = setTimeout(run, delayMs)
-  timer.unref?.()
-  return { cancel: () => clearTimeout(timer) }
-}
-
-/** The newest thing the agent itself said: assistant prose, never tool calls, tool output or reasoning. */
-async function lastAssistantText(
-  liveSessions: LiveSessionService,
-  sessionId: string
-): Promise<string | null> {
-  const page = await liveSessions.transcriptPage(sessionId, null, TRANSCRIPT_TAIL_MESSAGES)
-  for (let index = page.messages.length - 1; index >= 0; index--) {
-    const message = page.messages[index]
-    if (message.role !== 'assistant') {
-      continue
-    }
-    const text = message.blocks
-      .flatMap((block) => (block.type === 'text' ? [block.text] : []))
-      .join('\n')
-      .trim()
-    if (text) {
-      return text
-    }
-  }
-  return null
-}
 
 /** Session status summaries on this host: what makes them, and what clients read. */
 export class SessionSummariesHost {
-  private readonly utility: UtilityModelService
+  private readonly models: Record<UtilityModelTask, UtilityModelClient>
   private readonly summarizer: SessionSummarizer
   private readonly panes: PaneSessionSummaries
   private readonly live: LiveSessionSummaries | null
-  /** The fallback of session status detection; see docs/session-status.md. */
-  private readonly replyAsks: { classifier: SessionSummarizer; live: LiveSessionReplyAsks } | null
+  private readonly replyAsks: ReplyAskClassifier | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
-  private configured = false
+  private readonly configured: Record<UtilityModelTask, boolean> = {
+    summaries: false,
+    recaps: false
+  }
   private configuredCheckedAt = 0
   private available = false
   private recapReady = false
@@ -100,14 +83,18 @@ export class SessionSummariesHost {
   constructor(private readonly options: SessionSummariesInstallOptions) {
     const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
     const { liveSessions } = options
-    this.utility = options.utilityModel ?? getUtilityModelHost().service
+    this.models = {
+      summaries: options.utilityModel ?? this.chosenModel('summaries'),
+      recaps: options.utilityModel ?? this.chosenModel('recaps')
+    }
     const cache = new SessionSummaryCache(
       join(options.userDataPath, 'session-summaries', 'cache.json'),
       log
     )
     void cache.load()
     this.summarizer = new SessionSummarizer({
-      complete: async (request, signal) => (await this.utility.complete(request, signal)).text,
+      complete: async (request, signal) =>
+        (await this.models.summaries.complete(request, signal)).text,
       enabled: () => this.isAvailable(),
       cache,
       onChange: () => this.republishSoon(),
@@ -132,14 +119,21 @@ export class SessionSummariesHost {
         : null
     this.replyAsks =
       liveSessions && options.summarizeLive !== false
-        ? this.createReplyAsks(liveSessions, log)
+        ? createReplyAskClassifier({
+            liveSessions,
+            userDataPath: options.userDataPath,
+            model: () => this.model('summaries'),
+            enabled: () => this.isAvailable(),
+            onChange: () => this.republishSoon(),
+            log
+          })
         : null
     this.recap = liveSessions
       ? createLiveSessionRecaps({
           liveSessions,
-          utility: this.utility,
+          utility: this.models.recaps,
           userDataPath: options.userDataPath,
-          enabled: () => this.recapOn() && this.isConfigured(),
+          enabled: () => this.recapOn() && this.isConfigured('recaps'),
           eager: options.recapEagerly !== false,
           onChange: () => this.republishSoon(),
           setTimer: unrefTimer,
@@ -148,31 +142,12 @@ export class SessionSummariesHost {
       : null
   }
 
-  private createReplyAsks(
-    liveSessions: LiveSessionService,
-    log: (message: string, error?: unknown) => void
-  ): { classifier: SessionSummarizer; live: LiveSessionReplyAsks } {
-    const cache = new SessionSummaryCache(
-      join(this.options.userDataPath, 'session-summaries', 'reply-asks.json'),
-      log
-    )
-    void cache.load()
-    const classifier = new SessionSummarizer({
-      complete: async (request, signal) => (await this.utility.complete(request, signal)).text,
-      enabled: () => this.isAvailable(),
-      cache,
-      onChange: () => this.republishSoon(),
-      task: REPLY_ASK_TASK,
-      setTimer: unrefTimer
-    })
-    return {
-      classifier,
-      live: new LiveSessionReplyAsks({
-        classifier,
-        lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
-        log
-      })
-    }
+  /**
+   * The utility model a chore runs on, as Settings chose it. Other features on this host (a status
+   * classifier, say) call this instead of picking a provider of their own.
+   */
+  model(task: UtilityModelTask = 'summaries'): UtilityModelClient {
+    return this.models[task]
   }
 
   /** Session recaps on this host; null where there is no session registry. */
@@ -185,15 +160,22 @@ export class SessionSummariesHost {
     this.releases.push(
       runtime.agentTransitions.subscribe((change) => this.panes.observe(change)),
       // Deferred: health changes fire from inside the request that noticed them.
-      this.utility.subscribe(() => queueMicrotask(() => void this.refreshAvailability(true)))
+      this.models.summaries.subscribe(() =>
+        queueMicrotask(() => void this.refreshAvailability(true))
+      )
     )
     // Both hosts attach hook status before this starts; its panes were seeded with nobody listening.
     for (const seed of runtime.agentTransitions.trackedPaneSeeds()) {
       this.panes.observe(seed)
     }
     store.onSettingsChanged((updates) => {
-      if ('sessionSummariesEnabled' in updates || 'sessionRecapEnabled' in updates) {
-        void this.refreshAvailability(false)
+      const modelsChanged = 'sessionSummaryModels' in updates
+      if (
+        modelsChanged ||
+        'sessionSummariesEnabled' in updates ||
+        'sessionRecapEnabled' in updates
+      ) {
+        void this.refreshAvailability(modelsChanged)
         this.republishSoon()
       }
     })
@@ -202,10 +184,6 @@ export class SessionSummariesHost {
       liveSessions.registry.setDecorator((session) => this.decorate(session))
       if (live) {
         this.releases.push(liveSessions.subscribe((event) => live.observe(event)))
-      }
-      const replyAsks = this.replyAsks?.live
-      if (replyAsks) {
-        this.releases.push(liveSessions.subscribe((event) => replyAsks.observe(event)))
       }
     }
     void this.refreshAvailability(true)
@@ -218,8 +196,7 @@ export class SessionSummariesHost {
     this.options.liveSessions?.registry.setDecorator(null)
     this.panes.dispose()
     this.live?.dispose()
-    this.replyAsks?.live.dispose()
-    this.replyAsks?.classifier.dispose()
+    this.replyAsks?.dispose()
     this.recap?.dispose()
     this.summarizer.dispose()
   }
@@ -234,8 +211,11 @@ export class SessionSummariesHost {
     return {
       enabled: this.settingOn(),
       recapEnabled: this.recapOn(),
-      configured: this.configured,
-      pausedUntil: this.utility.health().pausedUntil
+      configured: this.configured.summaries,
+      pausedUntil: this.models.summaries.health().pausedUntil,
+      models: this.selection(),
+      recapConfigured: this.configured.recaps,
+      recapPausedUntil: this.models.recaps.health().pausedUntil
     }
   }
 
@@ -265,6 +245,19 @@ export class SessionSummariesHost {
     return await this.status()
   }
 
+  async setModels(models: SessionSummaryModels): Promise<SessionSummariesStatus> {
+    this.options.store.updateSettings({ sessionSummaryModels: models })
+    return await this.status()
+  }
+
+  private selection(): SessionSummaryModels {
+    return normalizeSessionSummaryModels(this.options.store.getSettings().sessionSummaryModels)
+  }
+
+  private chosenModel(task: UtilityModelTask): UtilityModelClient {
+    return getUtilityModelHost().client(() => utilityModelChoiceFor(this.selection(), task))
+  }
+
   private recapOn(): boolean {
     return this.options.store.getSettings().sessionRecapEnabled !== false
   }
@@ -275,38 +268,47 @@ export class SessionSummariesHost {
 
   private decorate(session: LiveSession): LiveSession {
     const on = this.settingOn()
-    const settled = on && this.replyAsks ? this.replyAsks.live.decorate(session) : session
+    const settled = on && this.replyAsks ? this.replyAsks.decorate(session) : session
     const summarized = on && this.live ? this.live.decorate(settled) : settled
     return this.recap ? this.recap.recaps.decorate(summarized) : summarized
   }
 
-  private isConfigured(): boolean {
+  private isConfigured(task: UtilityModelTask): boolean {
     if (Date.now() - this.configuredCheckedAt > CONFIGURED_RECHECK_MS) {
       // A config file dropped in later is found without a restart.
       void this.refreshAvailability(true)
     }
-    return this.configured
+    return this.configured[task]
+  }
+
+  private running(task: UtilityModelTask): boolean {
+    return this.configured[task] && this.models[task].health().pausedUntil === null
   }
 
   private isAvailable(): boolean {
-    return this.settingOn() && this.isConfigured() && this.utility.health().pausedUntil === null
+    return this.settingOn() && this.isConfigured('summaries') && this.running('summaries')
   }
 
   private async refreshAvailability(recheckConfigured: boolean): Promise<void> {
     if (recheckConfigured) {
       this.configuredCheckedAt = Date.now()
-      this.configured = await this.utility.isConfigured().catch(() => false)
+      const [summaries, recaps] = await Promise.all(
+        (['summaries', 'recaps'] as const).map((task) =>
+          this.models[task].isConfigured().catch(() => false)
+        )
+      )
+      this.configured.summaries = summaries
+      this.configured.recaps = recaps
     }
-    const available =
-      this.settingOn() && this.configured && this.utility.health().pausedUntil === null
+    const available = this.settingOn() && this.running('summaries')
     const cameBack = available && !this.available
     this.available = available
     if (cameBack) {
       this.summarizer.retryFailed()
-      this.replyAsks?.classifier.retryFailed()
+      this.replyAsks?.retryFailed()
     }
     // Recaps run with summaries switched off, so they watch the provider on their own terms.
-    const recapReady = this.configured && this.utility.health().pausedUntil === null
+    const recapReady = this.running('recaps')
     if (recapReady && !this.recapReady) {
       this.recap?.recaps.resume()
     }
@@ -331,6 +333,10 @@ export function installSessionSummaries(
   options: SessionSummariesInstallOptions
 ): SessionSummariesHost {
   getSessionSummariesHost()?.dispose()
+  getUtilityModelHost().connect({
+    agentEnvironment: () => options.runtime.getCommitMessageAgentEnvironmentResolvers?.(),
+    settings: () => options.store.getSettings()
+  })
   const host = new SessionSummariesHost(options)
   setSessionSummariesHost(host)
   host.start()

@@ -24,6 +24,8 @@ import { CursorAccountsSection } from './providers/CursorAccountsSection'
 import { ZcodePlanAccountsSection } from './usage/ZcodePlanAccountsSection'
 import { CloudflareAiAccountsSection } from './cloudflare-ai/CloudflareAiAccountsSection'
 import { getCloudflareAiSearchEntries } from './cloudflare-ai/cloudflare-ai-search'
+import { OpenRouterAccountsSection } from './openrouter/OpenRouterAccountsSection'
+import { getOpenRouterSearchEntries } from './openrouter/openrouter-search'
 import type { AccountsPaneProps, AccountsPaneSectionModel } from './accounts-pane-types'
 import { EMPTY_WSL_DISTROS, getSelectedAccountRuntime } from './scope/accounts-pane-runtime'
 import { getRuntimeSentenceLabel } from '../../../lib/provider-accounts/account-runtime-label'
@@ -197,6 +199,9 @@ export function AccountsPane({
         key={`cloudflare-ai:${accountOwnerKey}`}
         host={usageCredentialHost}
       />
+    ) : null,
+    matchesSettingsSearch(searchQuery, getOpenRouterSearchEntries()) ? (
+      <OpenRouterAccountsSection key={`openrouter:${accountOwnerKey}`} host={usageCredentialHost} />
     ) : null
   ]
 

@@ -1,4 +1,7 @@
-import { SessionSummariesSetEnabledParams } from '../../../../../shared/rpc-contract/session-summaries-params'
+import {
+  SessionSummariesSetEnabledParams,
+  SessionSummariesSetModelsParams
+} from '../../../../../shared/rpc-contract/session-summaries-params'
 import { SESSION_SUMMARIES_LIST_METHOD } from '../../../../../shared/session-summaries/session-summary-contracts'
 import { requireSessionSummariesHost } from '../../../../session-summaries/session-summaries-instance'
 import { defineMethod } from '../../core'
@@ -22,5 +25,11 @@ export const SESSION_SUMMARY_METHODS = [
     permission: 'settings-write',
     params: SessionSummariesSetEnabledParams,
     handler: async ({ enabled }) => requireSessionSummariesHost().setEnabled(enabled)
+  }),
+  defineMethod({
+    name: 'sessionSummaries.setModels',
+    permission: 'settings-write',
+    params: SessionSummariesSetModelsParams,
+    handler: async (models) => requireSessionSummariesHost().setModels(models)
   })
 ] as const

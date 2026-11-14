@@ -148,9 +148,10 @@ reply's last lines, ignoring code, links and quotes:
 
 Only an `unclear` reply reaches a model. `LiveSessionReplyAsks`
 (`src/main/session-summaries/live-session-reply-asks.ts`) sends the last 700 characters of the
-reply through the same `SessionSummarizer` and utility-model service that write session summaries,
-so it follows whatever provider and model summaries are set to (Cloudflare Workers AI by default,
-`glm-4.7-flash` with its fallback).
+reply through the same `SessionSummarizer` that writes session summaries, on
+`SessionSummariesHost.model('summaries')`: whichever provider and model Settings > Session
+summaries & recaps chose for summaries (Cloudflare Workers AI with `glm-4.7-flash` by default,
+OpenRouter or any other provider offered there). It never picks a provider of its own.
 
 - The answer is one word, ASKS or TELLS (`maxTokens: 8`): about 200 tokens in, about two neurons.
 - Cached by session and reply hash in `session-summaries/reply-asks.json`: a reply is classified
@@ -158,9 +159,9 @@ so it follows whatever provider and model summaries are set to (Cloudflare Worke
 - It can only raise `your-turn` to `waiting-input` (`statusSource: 'classifier'`). Until it
   answers, and whenever summaries are off, paused, over budget or unconfigured, the session stays
   `your-turn`.
-- It runs as background work on the shared utility-model service: after a rate limit (a spent
-  daily allocation) the service holds every request until the next day, so a spent budget costs
-  nothing more.
+- It runs as background work on the shared utility-model service: after a rate limit or a spent
+  allocation the service holds every request to that provider, so a spent budget costs nothing
+  more.
 
 ### 8. Hold
 
