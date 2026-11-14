@@ -120,7 +120,7 @@ wss.on('connection', (ws) => {
   })
 })
 
-console.log(`[mock] Orca mock server listening on ws://localhost:${PORT}`)
+console.log(`[mock] Seal mock server listening on ws://localhost:${PORT}`)
 console.log(`[mock] Auth token: ${AUTH_TOKEN}`)
 console.log(`[mock] Server public key (base64): ${serverPublicKeyB64}`)
 console.log(
