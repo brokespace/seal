@@ -52,6 +52,7 @@
 3 src/main/runtime/mobile-cloud-relay/control-channel/relay-control-liveness.ts
 1 src/main/runtime/rpc/methods/orchestration/messaging/check-run.ts
 1 src/main/runtime/rpc/mobile/mobile-socket-wiring.ts
+1 src/main/runtime/rpc/mobile/revocation-sweep.ts # The cadence bounds how long a socket outlives its device's revocation; stops with the server.
 1 src/main/runtime/rpc/transports/websocket/remote-runtime-server-heartbeat.ts
 1 src/main/runtime/rpc/server/runtime-metadata-ownership-watch.ts
 1 src/main/runtime/rpc/transports/unix-socket-transport.ts

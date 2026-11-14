@@ -69,6 +69,7 @@ function withRelay(): void {
         assignmentEpoch: 7,
         relayHostId: deriveRelayHostIdFromPublicKeyB64(server.getE2EEPublicKey() ?? '') ?? '',
         inviteToken: 'A'.repeat(43),
+        // ast-grep-ignore: test-no-wall-clock -- the real server checks the invite against its own clock
         inviteExpiresAt: Date.now() + 60_000,
         e2eeFraming: 2 as const
       },

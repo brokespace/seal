@@ -88,7 +88,7 @@ async function pairPhone() {
   registry.setPushRegistration(offer.deviceId, {
     registrationId: `registration-${offer.deviceId}`,
     filter: {},
-    expiresAt: Date.now() + 60_000
+    expiresAt: 4_102_444_800_000
   })
   return {
     deviceId: offer.deviceId,
@@ -129,7 +129,7 @@ describe('device revocation', () => {
     const path = join(userDataPath, DEVICE_REGISTRY_FILENAME)
     const rows: { deviceId: string }[] = JSON.parse(readFileSync(path, 'utf8'))
     writeFileSync(path, JSON.stringify(rows.filter((row) => row.deviceId !== phone.deviceId)))
-    server['mobileSocketWiring']!.sweepRevokedDevices(Date.now())
+    server['mobileSocketWiring']!.sweepRevokedDevices(0)
 
     await closed
     expect(queuedRelayRevokes()).toEqual([phone.deviceId])

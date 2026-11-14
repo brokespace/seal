@@ -35,7 +35,7 @@ function webRuntimeAuthFailureMessage(reason: WebRuntimeAuthFailureReason): stri
     case 'host-outdated':
       return translate(
         'auto.web.runtimeAuth.hostOutdated',
-        'This Orca server does not support the encryption this web client requires. Update Orca on the server, then reload this page. If the server is already up to date, its identity key has changed: pair this browser again.'
+        'This Seal server does not support the encryption this web client requires. Update Seal on the server, then reload this page. If the server is already up to date, its identity key has changed: pair this browser again.'
       )
     case 'device-downgraded':
       return translate(

@@ -347,6 +347,7 @@
 1 src/main/orcad/host-runtime/orcad-app-paths.ts
 1 src/main/orcad/artifact-slots/orcad-artifact-identity.ts
 2 src/main/orcad/artifact-slots/orcad-artifact-materializer.ts
+1 src/main/orcad/profile-state/paired-devices-under-lock.ts # One-shot: `devices list/revoke` from the CLI while no server runs.
 12 src/main/orcad/runtime-launch/orcad-bundled-runtime.ts
 2 src/main/orcad/serve-startup/orcad-cli-launcher.ts
 1 src/main/orcad/serve-startup/orcad-command-arguments.ts
