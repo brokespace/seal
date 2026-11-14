@@ -34,6 +34,7 @@ import {
   resolveCodexStatusAccountState
 } from './status-bar-codex-accounts'
 import { signInCodexAccount } from './codex-sign-in-action'
+import { useSealStatusSwitchView } from './seal-status-switch-view'
 
 export function useCodexSwitcherController(codex: ProviderRateLimits) {
   const t = useTranslate()
@@ -75,6 +76,7 @@ export function useCodexSwitcherController(codex: ProviderRateLimits) {
     runtimeTarget
   )
   const codexAccountSyncKey = useAppStore((s) => getCodexAccountSyncKey(s.settings))
+  const sealView = useSealStatusSwitchView(runtimeTarget, 'codex')
   const accountState = resolveCodexStatusAccountState(
     settings,
     accounts,
@@ -264,7 +266,8 @@ export function useCodexSwitcherController(codex: ProviderRateLimits) {
       includeFallbackWsl:
         wslHostDistro !== null ||
         (!hasActiveRuntimeEnvironment && shouldIncludeSettingsWslRuntime(settings)),
-      hostLabel: providerAccountHostLabel
+      hostLabel: providerAccountHostLabel,
+      seal: sealView
     }
   )
   const selectedGroup =

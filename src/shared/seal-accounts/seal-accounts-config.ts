@@ -96,7 +96,9 @@ export const SealApiKeyAccountSchema = z
     label: z.string().trim().min(1).max(80),
     /** Last four characters only; the key itself lives in the secret vault. */
     keyHint: z.string().max(8),
-    createdAt: z.number()
+    createdAt: z.number(),
+    /** Absent means a pay-as-you-go API key; a setup token is a long-lived subscription login. */
+    credential: z.enum(['api-key', 'setup-token']).optional()
   })
   .strict()
 export type SealApiKeyAccount = z.infer<typeof SealApiKeyAccountSchema>

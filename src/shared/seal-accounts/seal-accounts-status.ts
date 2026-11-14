@@ -65,6 +65,21 @@ export type SealProviderStatus = {
   lastDecision: { at: number; summary: string } | null
 }
 
+/** The machine's own CLI login, whether or not Seal lists it. */
+export type SealSystemLogin = {
+  key: SealAccountKey
+  email: string
+  orgName: string | null
+  /** `listed`: shown as an account. `dismissed`: removed from Seal until re-imported. */
+  state: 'listed' | 'dismissed'
+}
+
+/** What the one-time merge of Orca's saved accounts into the vault changed on this machine. */
+export type SealMigrationNotice = {
+  at: number
+  merged: { provider: SealProvider; label: string; removed: number }[]
+}
+
 export type SealAccountsStatus = {
   machineKey: string
   config: SealAccountsConfig
@@ -73,5 +88,7 @@ export type SealAccountsStatus = {
   swapLog: SealSwapEvent[]
   sessions: SealSessionAssignment[]
   workspacePins: SealWorkspacePins
+  systemLogins?: Record<SealProvider, SealSystemLogin | null>
+  migrationNotice?: SealMigrationNotice | null
   secretStorage: { available: boolean; protectionGap: string | null }
 }

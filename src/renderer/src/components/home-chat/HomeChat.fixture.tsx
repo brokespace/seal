@@ -166,8 +166,8 @@ function fakeHomeChatApi(chats: HomeChatRecord[]): HomeChatApi {
     getSettings: async () => settings,
     updateSettings: async () => settings,
     listAccounts: async () => [
-      { backend: 'claude-code', id: null, label: 'Default login' },
-      { backend: 'codex', id: null, label: 'Default login' }
+      { backend: 'claude-code', id: null, label: 'System login' },
+      { backend: 'codex', id: null, label: 'System login' }
     ],
     getMemory: async () => memory,
     updateMemory: async () => memory,

@@ -4,6 +4,10 @@ import { resolveLocalAccountRuntimeTarget } from '../../../../shared/local-accou
 import { getRendererAppPlatform } from '../../app-shell/platform/renderer-app-platform'
 import { translate } from '@/i18n/i18n'
 import { getHostRuntimeLabel } from '../../lib/provider-accounts/account-runtime-label'
+import {
+  showsSystemLoginRow,
+  type SealAccountSwitchView
+} from '../../../../shared/seal-accounts/seal-account-switch-view'
 
 export type CodexStatusRuntimeTarget = {
   runtime: 'host' | 'wsl'
@@ -51,6 +55,27 @@ export type StatusSwitchGroupOptions = {
   fallbackWslDistro?: string | null
   includeFallbackWsl?: boolean
   hostLabel?: string
+  /** Seal's names for the host's accounts; absent until the host has reported them. */
+  seal?: SealAccountSwitchView
+}
+
+/** Whether a runtime's group lists the machine's own login as a row of its own. */
+export function showsSystemLoginRowFor(
+  target: CodexStatusRuntimeTarget,
+  activeId: string | null,
+  seal: SealAccountSwitchView | undefined
+): boolean {
+  return target.runtime !== 'host' || showsSystemLoginRow(seal, activeId)
+}
+
+export function systemLoginRowLabel(
+  target: CodexStatusRuntimeTarget,
+  seal: SealAccountSwitchView | undefined
+): string {
+  return (
+    (target.runtime === 'host' ? seal?.systemLogin?.label : undefined) ??
+    translate('seal.accounts.badge.systemLogin', 'System login')
+  )
 }
 
 export function getCodexStatusWslKey(wslDistro: string | null | undefined): string {

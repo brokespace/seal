@@ -71,7 +71,7 @@ export class SealSessionWatch {
   }
 
   private async runTick(): Promise<void> {
-    this.manager.syncUsageViewer()
+    this.manager.usage.sync()
     const terminal = sealSessionTerminal()
     if (terminal) {
       await this.trackPanes(terminal.handleForPane.bind(terminal))

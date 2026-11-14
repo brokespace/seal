@@ -99,7 +99,9 @@ function isNewer(provider: 'claude' | 'codex', incoming: string, local: string |
 /** Saves a Claude login pushed from the managing desktop as a managed account on this host. */
 export async function importClaudeCredential(
   services: Pick<ProviderAccountServices, 'claudeAccounts' | 'claudeRuntimeAuth'>,
-  credential: ClaudeCredential
+  credential: ClaudeCredential,
+  /** `force`: a fresh sign-in always replaces the saved login, whatever its expiry says. */
+  options: { force?: boolean } = {}
 ): Promise<string> {
   const wanted = oauthAccountKey('claude', credential.email, credential.organizationUuid)
   const existing = services.claudeAccounts
@@ -121,6 +123,7 @@ export async function importClaudeCredential(
     const oauthAccount: unknown = JSON.parse(credential.oauthAccountJson)
     await withClaudeConfigLocks([existingHome], async () => {
       if (
+        !options.force &&
         !isNewer(
           'claude',
           credential.credentialsJson,

@@ -6,6 +6,7 @@ import {
   type SealProvider
 } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
+import { sealAccountKeysMatch } from '../../shared/seal-accounts/seal-account-key'
 import { usageFromRateLimits } from '../../shared/seal-accounts/seal-account-candidate-builder'
 import {
   accountLines,
@@ -24,6 +25,9 @@ import type { SealUsageSample } from '../../shared/seal-accounts/seal-swap-estim
 /** claude-swap's `cswap auto` loop interval: re-plan at least once a minute. */
 const MAX_SLEEP_MS = 60_000
 const MIN_SLEEP_MS = 1_000
+
+/** Asking for fresh numbers re-reads an account at most this often. */
+const MANUAL_REFRESH_FLOOR_MS = 30_000
 
 const DEAD_LOGIN_KINDS = new Set(['stale-token', 'missing-credentials'])
 
@@ -99,6 +103,15 @@ export class SealUsagePoller {
     return { latest: entry?.latest ?? null, previous: entry?.previous ?? null }
   }
 
+  /** A new login makes this account's last reading, dead-login result and backoff obsolete. */
+  forget(key: SealAccountKey): void {
+    for (const known of this.entries.keys()) {
+      if (sealAccountKeysMatch(known, key)) {
+        this.entries.delete(known)
+      }
+    }
+  }
+
   nextPollAt(key: SealAccountKey): number | null {
     return this.stopped ? null : (this.entries.get(key)?.nextPollAt ?? null)
   }
@@ -144,12 +157,58 @@ export class SealUsagePoller {
 
   /** One pass: in-use accounts that are due, plus one due candidate (all when a swap is near). */
   pollDue(): Promise<void> {
-    this.running ??= this.runPass()
-      .catch((error: unknown) => console.warn('[seal-accounts] Usage poll failed:', error))
+    return this.running ?? this.track(this.runPass(), 'poll')
+  }
+
+  /** Keeps passes from overlapping: `running` is cleared only by the pass that still owns it. */
+  private track(work: Promise<void>, what: string): Promise<void> {
+    const pass = work
+      .catch((error: unknown) => console.warn(`[seal-accounts] Usage ${what} failed:`, error))
       .finally(() => {
-        this.running = null
+        if (this.running === pass) {
+          this.running = null
+        }
       })
-    return this.running
+    this.running = pass
+    return pass
+  }
+
+  /** A person asked for fresh numbers: read every account now, except ones just read or rate limited. */
+  refreshNow(): Promise<void> {
+    if (this.stopped) {
+      return Promise.resolve()
+    }
+    return this.track(
+      (this.running ?? Promise.resolve()).then(() => this.runManualPass()),
+      'refresh'
+    )
+  }
+
+  private async runManualPass(): Promise<void> {
+    let polled = 0
+    for (const provider of SEAL_PROVIDERS) {
+      const settings = this.deps.settings(provider)
+      const inUse = this.deps.inUse(provider)
+      for (const candidate of this.deps.candidates(provider).filter(isPollable)) {
+        const entry = this.entries.get(candidate.key)
+        const now = this.deps.now()
+        const rateLimited = entry?.last429At != null && now < entry.nextPollAt
+        if (entry && (rateLimited || now - entry.fetchedAt < MANUAL_REFRESH_FLOOR_MS)) {
+          continue
+        }
+        await this.pollOne(candidate, settings, inUse.has(candidate.key))
+        polled += 1
+      }
+    }
+    this.notifyPolled(polled)
+  }
+
+  private notifyPolled(polled: number): void {
+    if (polled > 0) {
+      for (const listener of this.polledListeners) {
+        listener()
+      }
+    }
   }
 
   private async runPass(): Promise<void> {
@@ -157,11 +216,7 @@ export class SealUsagePoller {
     for (const provider of SEAL_PROVIDERS) {
       polled += await this.pollProvider(provider)
     }
-    if (polled > 0) {
-      for (const listener of this.polledListeners) {
-        listener()
-      }
-    }
+    this.notifyPolled(polled)
   }
 
   private async pollProvider(provider: SealProvider): Promise<number> {

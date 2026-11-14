@@ -12,6 +12,7 @@ import type { MachineMetrics } from '../../../../shared/machines/machine-types'
 import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
+import { translate } from '@/i18n/i18n'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import {
   liveSessionProviderLabel,
@@ -164,7 +165,7 @@ const SEAL_PROVIDER_LABELS: Record<(typeof SEAL_PROVIDERS)[number], string> = {
 }
 
 function sealCandidateStatus(candidate: SealAccountCandidate): HomeAccountStatus {
-  if (candidate.authFailure || candidate.usage?.error) {
+  if (candidate.health?.state === 'dead' || candidate.authFailure || candidate.usage?.error) {
     return 'error'
   }
   if (candidate.kind === 'api-key') {
@@ -194,7 +195,10 @@ export function homeAccountsFromSeal(status: SealAccountsStatus): HomeAccount[] 
       if (candidate.disabled) {
         continue
       }
-      const error = candidate.usage?.error ?? undefined
+      const error =
+        candidate.health?.state === 'dead'
+          ? translate('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')
+          : (candidate.usage?.error ?? undefined)
       accounts.push({
         id: `seal:${candidate.key}`,
         provider,
