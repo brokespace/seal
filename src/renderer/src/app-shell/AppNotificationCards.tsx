@@ -4,7 +4,9 @@ import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import { CodexSharedSettingsNoticeCard } from '../components/CodexSharedSettingsNoticeCard'
 import { NotificationCardStack } from '../components/NotificationCardStack'
 import { StarNagCard } from '../components/StarNagCard'
+import { SealMcpApprovalPrompt } from '../components/seal-mcp/SealMcpApprovalPrompt'
 import { OverlayBoundary } from './app-root-surface-boundaries'
+import { isWebClientLocation } from './platform/web-client-location'
 
 const ChatUiHereCornerCard = lazy(() =>
   import('../components/feature-tips/ChatUiHereCornerCard').then((module) => ({
@@ -34,6 +36,12 @@ export function AppNotificationCards({
 }): JSX.Element {
   return (
     <NotificationCardStack>
+      {/* First, so it sits nearest the corner and above the other cards. Desktop only: the web client has no local Seal server. */}
+      {isWebClientLocation() ? null : (
+        <OverlayBoundary boundaryId="overlay.seal-mcp-approval" resetKey={activeView}>
+          <SealMcpApprovalPrompt />
+        </OverlayBoundary>
+      )}
       {chatUiHereCornerCardOpen ? (
         <Suspense fallback={null}>
           <OverlayBoundary boundaryId="overlay.chat-ui-here-corner-card" resetKey={activeView}>
