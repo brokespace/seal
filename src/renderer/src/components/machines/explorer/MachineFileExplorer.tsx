@@ -20,6 +20,7 @@ import {
 import { MachineFilePreview } from './MachineFilePreview'
 import { MachinePromptDialog } from './MachinePromptDialog'
 import type { ExplorerRow } from './machine-explorer-rows'
+import type { MachineExplorerFileOps } from './machine-explorer-source'
 import { useMachineExplorerTree } from './use-machine-explorer-tree'
 import { useMachineFileActions } from './use-machine-file-actions'
 
@@ -31,14 +32,22 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
   return element?.getAttribute('data-machine-drop-dir') ?? null
 }
 
-export function MachineFileExplorer({ machine }: { machine: MachineSummary }): React.JSX.Element {
+export function MachineFileExplorer({
+  machine,
+  startAt,
+  fileOps
+}: {
+  machine: MachineSummary
+  startAt?: string
+  fileOps?: MachineExplorerFileOps
+}): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
   const isRemote = machine.connection !== 'local'
   const [showHidden, setShowHidden] = useState(false)
-  const tree = useMachineExplorerTree(machine.id, online, showHidden)
+  const tree = useMachineExplorerTree(machine.id, online, showHidden, startAt)
   const { navigate, toggle, refresh, loadMore } = tree
-  const actions = useMachineFileActions(machine.id, tree.refresh)
+  const actions = useMachineFileActions(machine.id, tree.refresh, fileOps)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [preview, setPreview] = useState<PreviewTarget | null>(null)
   const [menuRow, setMenuRow] = useState<EntryRow | null>(null)
@@ -273,6 +282,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
             entry={preview.entry}
             onClose={() => setPreview(null)}
             onDownload={() => actions.download([preview.path])}
+            writeFile={fileOps?.write}
           />
         ) : null}
       </div>
@@ -280,6 +290,7 @@ export function MachineFileExplorer({ machine }: { machine: MachineSummary }): R
       <MachineDeleteDialog
         paths={actions.pendingDelete}
         machineLabel={machine.label}
+        description={fileOps?.removeDescription}
         onConfirm={async (paths) => {
           await actions.confirmDelete(paths)
           setSelected(new Set())

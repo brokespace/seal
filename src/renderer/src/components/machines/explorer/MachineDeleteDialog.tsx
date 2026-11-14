@@ -15,11 +15,14 @@ import { machinePathBasename } from '../../../../../shared/machines/machine-path
 export function MachineDeleteDialog({
   paths,
   machineLabel,
+  description,
   onConfirm,
   onClose
 }: {
   paths: string[] | null
   machineLabel: string
+  /** For deletes that are not permanent. */
+  description?: string
   onConfirm: (paths: string[]) => Promise<void>
   onClose: () => void
 }): React.JSX.Element {
@@ -60,11 +63,12 @@ export function MachineDeleteDialog({
                 })}
           </DialogTitle>
           <DialogDescription>
-            {t(
-              'auto.components.machines.delete.description',
-              'This permanently deletes them from {{machine}}, including everything inside folders. It cannot be undone.',
-              { machine: machineLabel }
-            )}
+            {description ??
+              t(
+                'auto.components.machines.delete.description',
+                'This permanently deletes them from {{machine}}, including everything inside folders. It cannot be undone.',
+                { machine: machineLabel }
+              )}
           </DialogDescription>
         </DialogHeader>
         {error ? (

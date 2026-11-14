@@ -38,13 +38,16 @@ export function MachineFilePreview({
   path,
   entry,
   onClose,
-  onDownload
+  onDownload,
+  writeFile
 }: {
   machineId: MachineId
   path: string
   entry: MachineFileEntry
   onClose: () => void
   onDownload: () => void
+  /** Replaces the plain write, for callers that validate or back up first. */
+  writeFile?: (path: string, content: string) => Promise<void>
 }): React.JSX.Element {
   const t = useTranslate()
   const [file, setFile] = useState<LoadedFile | null>(null)
@@ -99,7 +102,10 @@ export function MachineFilePreview({
         return
       }
       setSaving(true)
-      const error = await api.writeFile({ machineId, path, content }).then(
+      const write = writeFile
+        ? writeFile(path, content)
+        : api.writeFile({ machineId, path, content })
+      const error = await write.then(
         () => null,
         (err: unknown) => (err instanceof Error ? err.message : String(err))
       )
@@ -114,7 +120,7 @@ export function MachineFilePreview({
         t('auto.components.machines.preview.saved', 'Saved {{name}}', { name: entry.name })
       )
     },
-    [machineId, path, entry.name, saving, t]
+    [machineId, path, entry.name, saving, t, writeFile]
   )
 
   const canEdit = file?.text !== null && file?.truncated === false
