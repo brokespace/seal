@@ -9,6 +9,7 @@ import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
 import { PageHeader, PageLayout } from '@/components/page-layout/PageLayout'
+import { isEscapeHandledAbovePage } from '@/lib/overlay-interaction/tooltip-escape'
 import { ArtifactCollection } from './ArtifactCollection'
 import { ArtifactDetailDrawer } from './ArtifactDetailDrawer'
 import { ArtifactsPageSkeleton } from './ArtifactsPageSkeleton'
@@ -66,7 +67,7 @@ export default function ArtifactsPage(): React.JSX.Element {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
-      if (event.key !== 'Escape' || event.defaultPrevented) {
+      if (event.key !== 'Escape' || isEscapeHandledAbovePage(event)) {
         return
       }
       const target = event.target

@@ -8,6 +8,7 @@ import { resolveAppearanceAccordionDeepLink } from '../appearance/appearance-usa
 import { registerWindowCloseGuard } from '../../window-close-request-coordinator'
 import { isIntentionalAppRestartInProgress } from '@/app-shell/updates/updater-beforeunload'
 import { getShortcutPlatform } from '@/lib/keyboard/shortcut-platform'
+import { isEscapeHandledAbovePage } from '@/lib/overlay-interaction/tooltip-escape'
 import { hasVisibleOverlay } from '@/lib/overlay-interaction/visible-overlay'
 import { translate } from '@/i18n/i18n'
 import {
@@ -91,7 +92,7 @@ export function useSettingsPageEffects(
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || event.defaultPrevented) {
+      if (event.key !== 'Escape' || isEscapeHandledAbovePage(event)) {
         return
       }
       // Nested overlays own Escape before page navigation.
