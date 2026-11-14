@@ -2567,8 +2567,6 @@
         "d91ae31fbd": "macOS Permissions",
         "95a1886d94": "Control terminals and agents from your phone.",
         "1cd25673df": "Mobile",
-        "31e57d1c70": "Use existing machines over SSH for files, terminals, Git, and workspaces.",
-        "94a5afe910": "SSH Hosts",
         "40d80bad8a": "Beta",
         "de0c2907a1": "Remote Seal Servers",
         "b351014180": "Seal stats plus Claude, Codex, OpenCode, Muse token analytics and Grok subscription usage.",
@@ -2637,7 +2635,9 @@
         "automationsDescription": "Schedule agent work and choose whether Automations appears in the sidebar.",
         "shareSkillsTitle": "Share Skills",
         "shareSkillsDescription": "Share your skills with an unlisted link. Anyone who has it can install them.",
-        "floatingWorkspaceWebDescription": "Global terminal and markdown tabs."
+        "floatingWorkspaceWebDescription": "Global terminal and markdown tabs.",
+        "machinesTitle": "Machines",
+        "machinesDescription": "Other computers Seal works on, over SSH or a Seal server."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "Paste is too large."
@@ -9679,7 +9679,11 @@
           "742ca66ea6": "Privacy & telemetry",
           "c2bb9fc528": "Floating workspace",
           "f1fddf7764": "Input & editing",
-          "d60b7f0e58": "Quick commands"
+          "d60b7f0e58": "Quick commands",
+          "machinesTitle": "Machines",
+          "machinesDescription": "Other computers Seal works on: files, terminals, agents, Git and workspaces.",
+          "machinesServers": "Seal servers",
+          "machinesSsh": "SSH connections"
         },
         "SettingsFormControls": {
           "42a4d15a30": "No matching fonts.",
@@ -11683,6 +11687,10 @@
             "893c8717f2": "Import from SSH config",
             "50416e3809": "Test connection",
             "004ef87a84": "Add SSH target"
+          },
+          "autoImported": {
+            "label": "Show auto-imported hosts",
+            "description": "{{count}} host(s) that Colima, Lima or OrbStack added to ~/.ssh/config for their own VMs."
           }
         },
         "tasks": {
@@ -14300,6 +14308,24 @@
           "cancel": "Cancel",
           "confirm": "Remove",
           "unknownHost": "Unknown host"
+        },
+        "machines": {
+          "add": "Add machine",
+          "addOverSsh": "Connect over SSH…",
+          "addViaServer": "Connect via Seal server (pairing link)…",
+          "name": "Machine name",
+          "sshLabel": "SSH",
+          "notSet": "Not set up",
+          "serverLabel": "Seal server",
+          "connectsVia": "Connects via",
+          "more": "More actions",
+          "rename": "Rename",
+          "addSsh": "Add SSH details…",
+          "pairServer": "Pair a Seal server…",
+          "separate": "These are different machines — split",
+          "summary": "Each machine connects over SSH or through a Seal server running on it. Every feature works the same either way.",
+          "empty": "No machines yet.",
+          "advanced": "SSH keys, port forwards and server pairing"
         }
       },
       "right": {
@@ -20067,7 +20093,6 @@
         "page": {
           "localName": "This computer",
           "title": "Machines",
-          "add": "Add machine",
           "list": "Machines"
         },
         "detail": {
@@ -20080,8 +20105,10 @@
           "editor": "Open in editor",
           "more": "More actions",
           "refreshStats": "Refresh stats",
-          "edit": "Edit machine…",
-          "remove": "Remove machine…"
+          "remove": "Remove machine…",
+          "useSsh": "Connect over SSH instead",
+          "useServer": "Connect via Seal server instead",
+          "editSsh": "Edit SSH details…"
         },
         "edit": {
           "saved": "Machine updated"
@@ -20101,7 +20128,6 @@
           "disk": "Disk"
         },
         "actions": {
-          "runtimeTerminal": "Open a workspace on this runtime to start a terminal there.",
           "editorAlias": "Add {{host}} to your SSH config to open it in an editor.",
           "editorFailed": "Could not open the editor ({{reason}}).",
           "nameLabel": "Name",
@@ -20115,7 +20141,8 @@
           "urlConfirm": "Download",
           "urlLabel": "URL",
           "urlInvalid": "Enter an http or https URL.",
-          "urlFileName": "File name (optional)"
+          "urlFileName": "File name (optional)",
+          "editorNeedsSsh": "Add SSH details to this machine to open it in VS Code. You can edit its files here under Files."
         },
         "delete": {
           "titleOne": "Delete {{name}}?",
@@ -20178,6 +20205,24 @@
           "running": "Transfers · {{count}} running",
           "title": "Transfers",
           "clear": "Clear finished"
+        },
+        "connection": {
+          "ssh": "SSH",
+          "server": "Seal server"
+        },
+        "work": {
+          "startAgent": "Start agent",
+          "title": "Agents & worktrees",
+          "repoPlaceholder": "Repository path, e.g. {{path}}",
+          "list": "Worktrees",
+          "terminalHere": "Terminal here",
+          "remove": "Remove worktree",
+          "branchPlaceholder": "New branch name",
+          "create": "New worktree"
+        },
+        "terminal": {
+          "agentTitle": "{{agent}} · {{host}}",
+          "title": "Terminal · {{host}}"
         }
       },
       "live-sessions": {
@@ -20196,8 +20241,8 @@
           "title": "Agent sessions",
           "refresh": "Scan again",
           "scanning": "Looking for sessions",
-          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.",
-          "pick": "Pick a session to open its chat"
+          "pick": "Pick a session to open its chat",
+          "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server."
         },
         "LiveSessionsSidebarEntry": {
           "label": "Agent sessions"
@@ -20247,6 +20292,33 @@
           "stillRunning": "The agent process didn’t stop.",
           "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
           "failed": "Could not take over the session. {{reason}}"
+        },
+        "remove": {
+          "select": "Select",
+          "selected": "{{count}} selected",
+          "selectNone": "Select none",
+          "selectAll": "Select all",
+          "removeSelected": "Remove",
+          "done": "Done",
+          "button": "Remove from Seal",
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.",
+          "titleOne": "Remove this session from Seal?",
+          "titleMany": "Remove {{count}} sessions from Seal?",
+          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
+          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
+          "deleteFiles": "Also delete transcript files",
+          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
+          "cancel": "Cancel",
+          "hideOnly": "Remove from Seal",
+          "stopAndRemove": "Stop and remove",
+          "removeAndDelete": "Remove and delete"
+        },
+        "idleReap": {
+          "minutes": "{{count}} min",
+          "hours": "{{count}} h",
+          "label": "End idle Seal sessions",
+          "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
+          "never": "Never"
         }
       }
     },
@@ -25645,8 +25717,6 @@
         "empty": "No account usage yet. Sign in to an agent to track limits."
       },
       "attention": {
-        "machineError": "Connection failed",
-        "accountUsage": "{{provider}} at {{percent}}% of limit",
         "title": "Needs attention",
         "empty": "Nothing is waiting on you."
       },
@@ -25717,7 +25787,7 @@
   "homeChat": {
     "account": {
       "default": "Default login",
-      "label": "Claude account"
+      "label": "Account"
     },
     "approval": {
       "approve": "Approve",
@@ -25725,15 +25795,15 @@
       "default": "This action needs your approval."
     },
     "backend": {
-      "claude": "Claude Code",
-      "label": "Backend",
-      "openai": "Model API"
+      "claude": "Claude",
+      "label": "Model source",
+      "openai": "Model API",
+      "codex": "Codex"
     },
-    "delete": "Delete this chat",
     "dismissError": "Dismiss",
     "empty": {
       "title": "Your machines, one chat",
-      "capabilities": "Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree."
+      "capabilities": "Ask Seal for anything on this computer or any connected machine: run a command, move files, check on an agent session, switch accounts, or hand coding work to an agent in a worktree."
     },
     "label": "Seal assistant",
     "messageLabel": "Message",
@@ -25741,8 +25811,8 @@
       "label": "Model",
       "placeholder": "Model"
     },
-    "new": "New chat",
-    "noChats": "No chats yet",
+    "new": "New thread",
+    "noChats": "No threads yet",
     "notSent": "Not sent",
     "placeholder": "Ask Seal to do something on any of your machines…",
     "send": "Send",
@@ -25756,7 +25826,9 @@
       "model": "Default model",
       "save": "Save",
       "title": "Model API",
-      "openAssistant": "Assistant settings"
+      "openAssistant": "Assistant settings",
+      "contextWindow": "Context window (tokens)",
+      "contextWindowHint": "Seal summarizes older messages for the model before this fills."
     },
     "stop": "Stop",
     "thinking": {
@@ -25764,7 +25836,7 @@
       "done": "Thought for {{duration}}",
       "live": "Thinking…"
     },
-    "title": "Assistant",
+    "title": "Seal assistant",
     "working": "Working…",
     "worker": "Worker",
     "attachment": {
@@ -25804,6 +25876,35 @@
       "searxngUrl": "SearXNG URL",
       "apiKey": "Search API key",
       "apiKeyRequired": "Required for this provider"
+    },
+    "compaction": {
+      "auto": "Earlier messages summarized for the model",
+      "manual": "Earlier messages summarized at your request"
+    },
+    "context": {
+      "thisComputer": "This computer",
+      "machine": "Machine: {{machine}}",
+      "online": "· {{online}} of {{total}} machines online",
+      "machinesTitle": "Machines the assistant can reach",
+      "usage": "{{used}} / {{window}}",
+      "label": "Context: {{usage}} tokens",
+      "title": "Context",
+      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
+      "compactions": "Summaries so far: {{count}}",
+      "compactNow": "Summarize older messages now"
+    },
+    "threads": {
+      "renameLabel": "Thread name",
+      "confirmDelete": "Delete \"{{title}}\"?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "rename": "Rename",
+      "open": "Threads",
+      "title": "Threads",
+      "close": "Close"
+    },
+    "open": {
+      "sessionGone": "That agent session is no longer running."
     }
   },
   "seal": {
@@ -25847,7 +25948,8 @@
         "empty": "Add an SSH host or remote server to share accounts and rules with it.",
         "hostDescription": "Runs agents with its own copy of your logins.",
         "pushRules": "Push rules",
-        "pushLogins": "Copy logins ({{value0}})"
+        "pushLogins": "Copy logins ({{value0}})",
+        "loginsOnly": "{{value0}} logins installed ({{value1}} failed). Swap rules run only where a Seal server runs."
       },
       "refresh": "Refresh usage",
       "title": "Accounts and auto-swap",

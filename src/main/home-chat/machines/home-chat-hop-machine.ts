@@ -43,6 +43,7 @@ export function hopMachineInfo(
     address: `${destination(note)}:${note.port ?? 22}`,
     via: note.via,
     connected: viaConnected,
+    status: viaConnected ? 'online' : 'offline',
     ...(note.os ? { platform: note.os } : {}),
     ...(note.notes ? { notes: note.notes } : {})
   }

@@ -1,7 +1,26 @@
-import type { ExecutionHostId } from '../execution-host'
+/** `local`, or `machine:<record id>` whichever transport the machine uses. */
+export type MachineId = 'local' | `machine:${string}`
 
-/** Machines are execution hosts: `local`, `ssh:<targetId>` or `runtime:<environmentId>`. */
-export type MachineId = ExecutionHostId
+export const LOCAL_MACHINE_ID = 'local'
+
+export function toMachineId(recordId: string): MachineId {
+  return `machine:${recordId}`
+}
+
+/** The record id behind a machine id, or null for this computer and unknown spellings. */
+export function machineRecordId(id: string): string | null {
+  return id.startsWith('machine:') && id.length > 'machine:'.length
+    ? id.slice('machine:'.length)
+    : null
+}
+
+export function parseMachineId(value: unknown): MachineId | null {
+  if (value === LOCAL_MACHINE_ID) {
+    return LOCAL_MACHINE_ID
+  }
+  const recordId = typeof value === 'string' ? machineRecordId(value) : null
+  return recordId ? toMachineId(recordId) : null
+}
 
 export type MachineOs = 'linux' | 'darwin' | 'win32'
 
@@ -102,8 +121,32 @@ export const MACHINE_IPC = {
   clearFinishedTransfers: 'machines:clearFinishedTransfers',
   startDrag: 'machines:startDrag',
   transferUpdated: 'machines:transferUpdated',
-  dirChanged: 'machines:dirChanged'
+  dirChanged: 'machines:dirChanged',
+  list: 'machines:list',
+  changed: 'machines:changed',
+  setConnection: 'machines:setConnection',
+  renameMachine: 'machines:renameMachine',
+  adopt: 'machines:adopt',
+  separate: 'machines:separate',
+  connect: 'machines:connect',
+  shellOpen: 'machines:shellOpen',
+  shellWrite: 'machines:shellWrite',
+  shellResize: 'machines:shellResize',
+  shellClose: 'machines:shellClose',
+  shellEvent: 'machines:shellEvent',
+  detectCommands: 'machines:detectCommands',
+  listWorktrees: 'machines:listWorktrees',
+  createWorktree: 'machines:createWorktree',
+  removeWorktree: 'machines:removeWorktree'
 } as const
+
+export type MachineShellEvent =
+  | { sessionId: string; kind: 'data'; data: string }
+  | { sessionId: string; kind: 'exit'; exitCode: number | null }
+
+export type MachineShellOpenResult =
+  | { ok: true; sessionId: string; transport: 'local' | 'ssh' | 'server' }
+  | { ok: false; message: string }
 
 /** Entries returned per listing page; folders past this load lazily. */
 export const MACHINE_DIR_PAGE_SIZE = 2000

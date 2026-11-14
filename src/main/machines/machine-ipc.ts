@@ -6,42 +6,29 @@ import {
   type IpcMainEvent,
   type IpcMainInvokeEvent
 } from 'electron'
-import { parseExecutionHostId } from '../../shared/execution-host'
 import {
+  LOCAL_MACHINE_ID,
   MACHINE_IPC,
   MACHINE_PREVIEW_MAX_BYTES,
   type MachineDirChangedEvent,
   type MachineFileRead,
   type MachineId
 } from '../../shared/machines/machine-types'
+import {
+  machineIdOf,
+  requireString,
+  requireStrings,
+  type MachineInvokeHandler
+} from './machine-ipc-args'
 import { machinePathDirname } from '../../shared/machines/machine-paths'
 import type { MachineFileSystem } from './filesystem/machine-filesystem'
-import { createLocalMachineFileSystem } from './filesystem/local-machine-filesystem'
-import { SshMachineFileSystem } from './filesystem/ssh-machine-filesystem'
 import { MachineDirectoryService } from './listing/machine-directory-service'
 import { MachineTransferManager } from './transfers/machine-transfer-manager'
 import { MachineDragOutStager } from './drag-out/machine-drag-out'
-import { collectMachineMetrics } from './metrics/machine-metrics'
-import { getSshTargetRegistryStore } from '../ssh/targets/ssh-target-registry'
-import { RuntimeMachineFileSystem } from './runtime/runtime-machine-filesystem'
-import { createRuntimeMachineChannel } from './runtime/runtime-machine-channel'
-
-const INVOKE_CHANNELS = [
-  MACHINE_IPC.getMetrics,
-  MACHINE_IPC.listDir,
-  MACHINE_IPC.watchDirs,
-  MACHINE_IPC.readFile,
-  MACHINE_IPC.writeFile,
-  MACHINE_IPC.createDir,
-  MACHINE_IPC.rename,
-  MACHINE_IPC.remove,
-  MACHINE_IPC.upload,
-  MACHINE_IPC.download,
-  MACHINE_IPC.downloadUrl,
-  MACHINE_IPC.cancelTransfer,
-  MACHINE_IPC.listTransfers,
-  MACHINE_IPC.clearFinishedTransfers
-] as const
+import { getMachineRegistry } from './registry/machine-registry-service'
+import { registerMachineRegistryHandlers } from './registry/machine-registry-ipc'
+import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
+import { registerMachineWorkHandlers } from './work/machine-work-ipc'
 
 type MachineServices = {
   directories: MachineDirectoryService
@@ -51,39 +38,9 @@ type MachineServices = {
 
 let services: MachineServices | null = null
 let currentGetMainWindow: () => BrowserWindow | null = () => null
-const fileSystems = new Map<MachineId, MachineFileSystem>()
-const runtimeFileSystems = new Map<string, RuntimeMachineFileSystem>()
-
-function resolveRuntimeFileSystem(environmentId: string): RuntimeMachineFileSystem {
-  let fs = runtimeFileSystems.get(environmentId)
-  if (!fs) {
-    fs = new RuntimeMachineFileSystem(
-      environmentId,
-      createRuntimeMachineChannel(app.getPath('userData'), environmentId)
-    )
-    runtimeFileSystems.set(environmentId, fs)
-  }
-  return fs
-}
 
 function resolveFileSystem(machineId: MachineId): MachineFileSystem {
-  const existing = fileSystems.get(machineId)
-  if (existing) {
-    return existing
-  }
-  const parsed = parseExecutionHostId(machineId)
-  let fs: MachineFileSystem
-  if (parsed?.kind === 'local') {
-    fs = createLocalMachineFileSystem()
-  } else if (parsed?.kind === 'ssh' && getSshTargetRegistryStore()?.getTarget(parsed.targetId)) {
-    fs = new SshMachineFileSystem(parsed.targetId)
-  } else if (parsed?.kind === 'runtime') {
-    fs = resolveRuntimeFileSystem(parsed.environmentId)
-  } else {
-    throw new Error('Unknown machine')
-  }
-  fileSystems.set(machineId, fs)
-  return fs
+  return getMachineRegistry().connection(machineId).files
 }
 
 function sendToRenderer(channel: string, payload: unknown): void {
@@ -131,32 +88,6 @@ function assertTrustedSender(event: IpcMainInvokeEvent | IpcMainEvent): void {
   }
 }
 
-function requireString(value: unknown, name: string): string {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`${name} is required`)
-  }
-  return value
-}
-
-function requireStrings(value: unknown, name: string): string[] {
-  if (
-    !Array.isArray(value) ||
-    value.length === 0 ||
-    !value.every((v): v is string => typeof v === 'string' && v !== '')
-  ) {
-    throw new Error(`${name} is required`)
-  }
-  return value
-}
-
-function machineIdOf(value: unknown): MachineId {
-  const parsed = parseExecutionHostId(requireString(value, 'machineId'))
-  if (!parsed) {
-    throw new Error('Unknown machine')
-  }
-  return parsed.id
-}
-
 function invalidateParent(machineId: MachineId, target: string): void {
   const parent = machinePathDirname(target)
   if (parent) {
@@ -164,29 +95,31 @@ function invalidateParent(machineId: MachineId, target: string): void {
   }
 }
 
-type Handler = (args: Record<string, unknown>) => unknown
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function handle(channel: string, handler: Handler): void {
+function handle(channel: string, handler: MachineInvokeHandler): void {
+  ipcMain.removeHandler(channel)
   ipcMain.handle(channel, (event, args: unknown) => {
     assertTrustedSender(event)
-    return handler(isRecord(args) ? args : {})
+    return handler(isRecord(args) ? args : {}, event)
   })
 }
 
 export function registerMachineHandlers(getMainWindow: () => BrowserWindow | null): void {
   currentGetMainWindow = getMainWindow
-  for (const channel of INVOKE_CHANNELS) {
-    ipcMain.removeHandler(channel)
-  }
   ipcMain.removeAllListeners(MACHINE_IPC.startDrag)
+  registerMachineRegistryHandlers(handle)
+  registerMachineShellHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
+  registerMachineWorkHandlers(handle)
 
-  handle(MACHINE_IPC.getMetrics, (args) =>
-    collectMachineMetrics(machineIdOf(args.machineId), resolveRuntimeFileSystem)
-  )
+  handle(MACHINE_IPC.getMetrics, async (args) => {
+    const machineId = machineIdOf(args.machineId)
+    const metrics = await getMachineRegistry().connection(machineId).metrics()
+    void getMachineRegistry().probeIdentity(machineId)
+    return metrics
+  })
 
   handle(MACHINE_IPC.listDir, async (args) => {
     const machineId = machineIdOf(args.machineId)
@@ -317,9 +250,7 @@ async function startDrag(event: IpcMainEvent, args: Record<string, unknown>): Pr
   const path = requireString(args.path, 'path')
   const size = typeof args.size === 'number' ? args.size : 0
   const local =
-    parseExecutionHostId(machineId)?.kind === 'local'
-      ? path
-      : await getServices().dragOut.stage(machineId, path, size)
+    machineId === LOCAL_MACHINE_ID ? path : await getServices().dragOut.stage(machineId, path, size)
   if (args.prepare === true || event.sender.isDestroyed()) {
     return
   }

@@ -83,11 +83,17 @@ export const SealAccountsRemoveApiKeyParams = z
 
 export const SealAccountsSyncFleetParams = z
   .object({
-    environmentIds: z.array(z.string().trim().min(1).max(512)).min(1).max(100),
+    /** Paired server ids; kept for older CLIs. */
+    environmentIds: z.array(z.string().trim().min(1).max(512)).max(100).optional(),
+    /** Machines to push to, however each one connects. */
+    machineIds: z.array(z.string().trim().min(1).max(512)).max(100).optional(),
     /** Logins to copy to those hosts; omitted pushes only the policy config. */
     accounts: z.array(AccountRef).max(100).optional()
   })
   .strict()
+  .refine((params) => (params.environmentIds?.length ?? 0) + (params.machineIds?.length ?? 0) > 0, {
+    message: 'Name at least one machine'
+  })
 
 export const SealAccountsImportCredentialParams = z.discriminatedUnion('provider', [
   z

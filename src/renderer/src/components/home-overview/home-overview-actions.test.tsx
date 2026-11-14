@@ -79,7 +79,7 @@ it('a machine row opens the Machines page on that machine', () => {
   renderHome()
   fireEvent.click(within(panel('Machines')).getByText('gpu-box'))
   expect(useAppStore.getState().activeView).toBe('machines')
-  expect(getLastSelectedMachineId()).toBe('ssh:gpu')
+  expect(getLastSelectedMachineId()).toBe('machine:gpu')
 })
 
 it('an automation row opens that automation', () => {

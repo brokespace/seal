@@ -1,6 +1,7 @@
 import { Laptop, Server } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
@@ -18,12 +19,17 @@ export function LiveSessionList({
   hostErrors,
   selectedId,
   onSelect,
+  checked,
+  onCheck,
   now
 }: {
   sessions: readonly LiveSession[]
   hostErrors: Readonly<Record<string, string>>
   selectedId: string | null
   onSelect: (sessionId: string) => void
+  /** Set while picking sessions to remove together; rows toggle instead of opening. */
+  checked: ReadonlySet<string> | null
+  onCheck: (sessionId: string) => void
   now: number
 }): React.JSX.Element {
   const t = useTranslate()
@@ -52,14 +58,25 @@ export function LiveSessionList({
               <button
                 key={session.id}
                 type="button"
-                onClick={() => onSelect(session.id)}
+                onClick={() => (checked ? onCheck(session.id) : onSelect(session.id))}
                 data-current={session.id === selectedId ? 'true' : undefined}
                 aria-current={session.id === selectedId ? 'true' : undefined}
+                aria-pressed={checked ? checked.has(session.id) : undefined}
                 className={cn(
                   'flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent',
                   session.id === selectedId && 'bg-accent'
                 )}
               >
+                {checked ? (
+                  <span className="flex h-5 shrink-0 items-center">
+                    <Checkbox
+                      checked={checked.has(session.id)}
+                      tabIndex={-1}
+                      aria-hidden
+                      className="pointer-events-none"
+                    />
+                  </span>
+                ) : null}
                 <span className="flex h-5 shrink-0 items-center">
                   <AgentStateDot
                     state={liveSessionDotState(session.status)}

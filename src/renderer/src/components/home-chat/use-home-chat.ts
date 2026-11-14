@@ -1,14 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-api'
-import { mergeHomeChatEntry } from '../../../../shared/home-chat/home-chat-entry-merge'
+import {
+  mergeHomeChatEntries,
+  mergeHomeChatEntry
+} from '../../../../shared/home-chat/home-chat-entry-merge'
 import type {
   HomeChat,
   HomeChatAccountOption,
+  HomeChatEntry,
+  HomeChatMachineOption,
   HomeChatSettings,
   HomeChatSettingsUpdate,
   HomeChatSummary,
   HomeChatUpdateArgs
 } from '../../../../shared/home-chat/home-chat-types'
+import { openHomeChatTarget } from './home-chat-open-target'
 
 function upsertSummary(list: HomeChatSummary[], chat: HomeChatSummary): HomeChatSummary[] {
   return [chat, ...list.filter((existing) => existing.id !== chat.id)].sort(
@@ -30,8 +36,12 @@ export function useHomeChat(api: HomeChatApi) {
   const [active, setActive] = useState<HomeChat | null>(null)
   const [settings, setSettings] = useState<HomeChatSettings | null>(null)
   const [accounts, setAccounts] = useState<HomeChatAccountOption[]>([])
+  const [machines, setMachines] = useState<HomeChatMachineOption[]>([])
   const [error, setError] = useState<string | null>(null)
   const [memoryVersion, setMemoryVersion] = useState(0)
+  const activeIdRef = useRef<string | null>(null)
+  // Entries streamed while the thread's snapshot is still loading; merged in when it lands.
+  const earlyEntries = useRef<HomeChatEntry[]>([])
 
   const guard = useCallback(async <T>(action: () => Promise<T>): Promise<T | undefined> => {
     setError(null)
@@ -43,22 +53,27 @@ export function useHomeChat(api: HomeChatApi) {
     }
   }, [])
 
+  const select = useCallback((chatId: string | null) => {
+    if (activeIdRef.current !== chatId) {
+      activeIdRef.current = chatId
+      earlyEntries.current = []
+      setActiveId(chatId)
+    }
+  }, [])
+
+  const refreshMachines = useCallback(
+    () => void api.listMachines().then(setMachines, () => undefined),
+    [api]
+  )
+
   useEffect(() => {
     let live = true
-    void Promise.all([api.list(), api.getSettings(), api.listAccounts()]).then(
-      ([list, loadedSettings, loadedAccounts]) => {
-        if (!live) {
-          return
-        }
-        setChats(list)
-        setSettings(loadedSettings)
-        setAccounts(loadedAccounts)
-        setActiveId((current) => current ?? list[0]?.id ?? null)
-      },
-      (caught: unknown) => live && setError(errorText(caught))
-    )
     const unsubscribe = api.onEvent((event) => {
       if (event.type === 'entry') {
+        if (event.chatId !== activeIdRef.current) {
+          return
+        }
+        earlyEntries.current = mergeHomeChatEntry(earlyEntries.current, event.entry)
         setActive((prev) =>
           prev?.id === event.chatId
             ? { ...prev, entries: mergeHomeChatEntry(prev.entries, event.entry) }
@@ -69,16 +84,36 @@ export function useHomeChat(api: HomeChatApi) {
         setActive((prev) => (prev?.id === event.chat.id ? { ...prev, ...event.chat } : prev))
       } else if (event.type === 'deleted') {
         setChats((list) => list.filter((chat) => chat.id !== event.chatId))
-        setActiveId((current) => (current === event.chatId ? null : current))
+        if (activeIdRef.current === event.chatId) {
+          select(null)
+        }
+      } else if (event.type === 'open') {
+        openHomeChatTarget(event.target, select)
       } else {
         setMemoryVersion((version) => version + 1)
       }
     })
+    void Promise.all([api.list(), api.getSettings(), api.listAccounts()]).then(
+      ([list, loadedSettings, loadedAccounts]) => {
+        if (!live) {
+          return
+        }
+        setChats(list)
+        setSettings(loadedSettings)
+        setAccounts(loadedAccounts)
+        if (activeIdRef.current === null) {
+          // Resume where the user left off: the thread they touched last, not a background worker.
+          select((list.find((chat) => !chat.parentChatId) ?? list[0])?.id ?? null)
+        }
+      },
+      (caught: unknown) => live && setError(errorText(caught))
+    )
+    refreshMachines()
     return () => {
       live = false
       unsubscribe()
     }
-  }, [api])
+  }, [api, select, refreshMachines])
 
   useEffect(() => {
     if (!activeId) {
@@ -86,11 +121,27 @@ export function useHomeChat(api: HomeChatApi) {
       return
     }
     let live = true
-    void api.get({ chatId: activeId }).then((chat) => live && setActive(chat))
+    setActive((prev) => (prev?.id === activeId ? prev : null))
+    void api.get({ chatId: activeId }).then((chat) => {
+      if (!live) {
+        return
+      }
+      setActive(
+        chat ? { ...chat, entries: mergeHomeChatEntries(chat.entries, earlyEntries.current) } : null
+      )
+      earlyEntries.current = []
+    })
     return () => {
       live = false
     }
   }, [api, activeId])
+
+  const adopt = useCallback((chat: HomeChat) => {
+    activeIdRef.current = chat.id
+    earlyEntries.current = []
+    setActive(chat)
+    setActiveId(chat.id)
+  }, [])
 
   const newChat = useCallback(async () => {
     const chat = await guard(() =>
@@ -99,11 +150,10 @@ export function useHomeChat(api: HomeChatApi) {
       )
     )
     if (chat) {
-      setActive(chat)
-      setActiveId(chat.id)
+      adopt(chat)
     }
     return chat
-  }, [api, guard, active])
+  }, [api, guard, active, adopt])
 
   const send = useCallback(
     async (text: string) => {
@@ -134,25 +184,26 @@ export function useHomeChat(api: HomeChatApi) {
     active,
     settings,
     accounts,
+    machines,
     error,
     dismissError: () => setError(null),
-    select: setActiveId,
+    select,
     newChat,
     send,
     stop: () => activeId && void guard(() => api.stop({ chatId: activeId })),
+    compact: () => activeId && void guard(() => api.compact({ chatId: activeId })),
     remove: (chatId: string) => void guard(() => api.delete({ chatId })),
+    rename: (chatId: string, title: string) => void guard(() => api.update({ chatId, title })),
     respondApproval: (entryId: string, approved: boolean) =>
       activeId && void guard(() => api.respondApproval({ chatId: activeId, entryId, approved })),
-    updateChat: async (patch: Omit<HomeChatUpdateArgs, 'chatId'>) => {
+    updateChat: async (patch: Omit<HomeChatUpdateArgs, 'chatId' | 'title'>) => {
       if (activeId) {
         await guard(() => api.update({ chatId: activeId, ...patch }))
         return
       }
-      const { title: _title, ...runtime } = patch
-      const chat = await guard(() => api.create(runtime))
+      const chat = await guard(() => api.create(patch))
       if (chat) {
-        setActive(chat)
-        setActiveId(chat.id)
+        adopt(chat)
       }
     },
     saveSettings: async (update: HomeChatSettingsUpdate) => {
@@ -162,6 +213,7 @@ export function useHomeChat(api: HomeChatApi) {
       }
       return next !== undefined
     },
-    refreshAccounts: () => void api.listAccounts().then(setAccounts, () => undefined)
+    refreshAccounts: () => void api.listAccounts().then(setAccounts, () => undefined),
+    refreshMachines
   }
 }

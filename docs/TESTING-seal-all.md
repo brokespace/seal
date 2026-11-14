@@ -105,12 +105,12 @@ grep 'Pairing URL' ~/seal-serve.log        # the access link for the Mac
   --port 6768 --bind "$TS_IP" --pairing-address "$TS_IP"
 loginctl enable-linger "$USER"             # keep it running after logout
 ~/.local/bin/seal serve service status
-journalctl --user -u seal-serve.service -f
+journalctl --user -u orca-serve.service -f
 ~/.local/bin/seal pair --address "$TS_IP"  # the service never logs a link; mint one here
 ```
 
-The unit is named `seal-serve.service`, so it can run next to an Orca server's
-`orca-serve.service` on the same account. Remove it with `seal serve service uninstall`.
+The unit is named `orca-serve.service` (upstream's name), so do not install it next to an
+Orca server on the same account. Remove it with `seal serve service uninstall`.
 
 If the server is bound to `127.0.0.1` (for SSH tunnelling), `seal pair` cannot expose it for
 pairing; use the `Pairing URL` printed at startup and connect through
@@ -118,12 +118,13 @@ pairing; use the `Pairing URL` printed at startup and connect through
 
 ### Connect the Mac
 
-In Seal on the Mac: Settings → **Remote Seal Servers** → **Add server**, name it, paste the
-pairing URL, **Add server**, then **Connect** if it shows Disconnected. Keep both machines on
-the same tailnet or LAN; never expose the port to the internet.
+In Seal on the Mac: Settings → **Machines** → **Add machine** → **Connect via Seal server
+(pairing link)**, name it, paste the pairing URL and add it. Keep both machines on the same
+tailnet or LAN; never expose the port to the internet.
 
-Alternatively add the Linux box as an SSH host (sidebar → Machines → **Add machine**); Seal
-then deploys and pairs its runtime over SSH itself.
+Or choose **Connect over SSH** and enter its SSH details: every feature works over SSH alone,
+and Seal installs nothing on the box. A machine can hold both; the **SSH / Seal server**
+switch on its row picks the one Seal uses. See [machines.md](machines.md).
 
 ## 3. Feature checklist
 
@@ -155,17 +156,22 @@ then deploys and pairs its runtime over SSH itself.
 
 ### Machines
 
-- [ ] Sidebar **Machines** lists this computer, SSH hosts and runtimes with status, OS, CPU/RAM/disk and running agents.
+- [ ] A host saved earlier as both an SSH host and a remote server shows up once, connected via Seal server, with its SSH details kept (Settings → Machines shows both).
+- [ ] Switching that machine to SSH and back changes only the badge: stats, files, terminal, agents, worktrees, live sessions and home-chat tools keep working.
+- [ ] Settings has one **Machines** section (no separate SSH Hosts / Remote Orca Servers); old links to either land there.
+- [ ] Sidebar **Machines** lists this computer and every machine with status, OS, CPU/RAM/disk and running agents.
+- [ ] Worktrees on a machine: enter a repo path, create a worktree, open a terminal or agent in it, remove it.
 - [ ] Quick actions: terminal, open in editor, connect/reconnect, edit, remove.
 - [ ] File explorer on local, SSH and paired-runtime machines: browse, upload (drag in), download/drag out, URL download, rename, delete, new folder, previews (image, PDF, markdown, code); transfers panel shows progress.
 - [ ] A Windows SSH host reports stats and supports URL download.
-- [ ] Plain SSH terminal opens for any host.
+- [ ] A terminal opens on every machine, over SSH or the Seal server.
 
 ### Multi-account
 
 - [ ] Settings → Accounts shows the Seal accounts dashboard above the provider accounts: live usage, auto-swap rules, policies, API keys, fleet sync, activity.
 - [ ] Turn on auto-swap for Claude, push one account near its threshold, and watch a new session launch on another account; running sessions swap on polled 5h/7d usage.
 - [ ] A Seal-launched agent tab shows its account badge; the badge menu moves the session (Claude live, Codex by resume) and the toast says which.
+- [ ] Fleet sync lists every machine; syncing an SSH-connected machine installs the logins there (Claude via the login Keychain on a Mac) and says swap rules only run where a Seal server runs.
 - [ ] `seal account usage|current|swap|pick|alias|autoswap|policy|pin|key|sync|sessions --help` all print `seal account …` usage; `--environment <id>` targets the Linux server.
 - [ ] On the Linux server: `seal account usage --json` answers from its own vault.
 

@@ -1,18 +1,29 @@
-// The assistant's view of a machine. seal/machines can replace the default provider without touching tools.
+// The assistant's view of a machine: the same machines the Machines page lists, plus hops it defined itself.
+import type { HomeChatMachineStatus } from '../../../shared/home-chat/home-chat-types'
 
 /** How scripts run on the machine: a POSIX shell, or PowerShell on Windows. */
 export type HomeChatShellDialect = 'posix' | 'powershell'
 
 export type HomeChatMachineInfo = {
-  /** `local`, `ssh:<target-id>` (the spelling `orca --host` takes), or `hop:<name>`. */
+  /** `local`, `machine:<id>`, or `hop:<name>`. */
   id: string
   label: string
-  kind: 'local' | 'ssh' | 'hop'
+  kind: 'local' | 'remote' | 'hop'
+  /** Older spellings (`ssh:<target-id>`) that saved notes and hops may still use. */
+  aliases?: string[]
+  /** The `--host` value agents on this machine launch with: the transport it uses now. */
+  executionHostId?: string
   /** user@host:port for SSH machines. */
   address?: string
   /** How Seal reaches it when not directly: a ProxyJump/ProxyCommand or another machine's id. */
   via?: string
+  /** Ready to run commands right now; an offline SSH machine still connects on demand. */
   connected: boolean
+  status: HomeChatMachineStatus
+  /** Why it is in an error state. */
+  statusDetail?: string
+  /** A Seal server is paired on this machine. */
+  sealServer?: boolean
   platform?: string
   /** The user's or assistant's notes about this machine (user, shell quirks, what runs there). */
   notes?: string
@@ -55,7 +66,7 @@ export type HomeChatMachine = {
 
 export type HomeChatMachineProvider = {
   list: () => Promise<HomeChatMachineInfo[]>
-  /** Resolve by id, `ssh:` id, or label (case-insensitive); connects SSH machines on demand. */
+  /** Resolve by id, legacy `ssh:` id, or label (case-insensitive); connects machines on demand. */
   open: (machine: string) => Promise<HomeChatMachine>
 }
 

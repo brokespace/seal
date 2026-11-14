@@ -69,7 +69,7 @@ const SESSIONS: HomeSession[] = [
     lastMessage: { role: 'agent', text: 'Opened PR #12 with the account picker and tests.' }
   }),
   session('Train tokenizer', {
-    machineId: 'ssh:gpu',
+    machineId: 'machine:gpu',
     machineLabel: 'gpu-box',
     projectId: 'ml',
     projectName: 'ml-experiments',
@@ -80,7 +80,7 @@ const SESSIONS: HomeSession[] = [
     startedAt: NOW - 3 * 60 * MIN
   }),
   session('Nightly eval', {
-    machineId: 'ssh:gpu',
+    machineId: 'machine:gpu',
     machineLabel: 'gpu-box',
     projectId: 'ml',
     projectName: 'ml-experiments',
@@ -90,6 +90,7 @@ const SESSIONS: HomeSession[] = [
     agentType: 'codex',
     agentLabel: 'Codex',
     finishedAt: NOW - 40 * MIN,
+    errorSummary: 'CUDA out of memory',
     lastMessage: { role: 'agent', text: 'CUDA out of memory while loading checkpoint.' }
   })
 ]
@@ -103,10 +104,10 @@ const MACHINES: HomeMachine[] = [
     load: 0.32,
     memoryUsedPercent: 61
   },
-  { id: 'ssh:gpu', label: 'gpu-box', kind: 'ssh', status: 'online' },
-  { id: 'ssh:pi', label: 'raspberry-pi', kind: 'ssh', status: 'offline' },
+  { id: 'machine:gpu', label: 'gpu-box', kind: 'ssh', status: 'online' },
+  { id: 'machine:pi', label: 'raspberry-pi', kind: 'ssh', status: 'offline' },
   {
-    id: 'ssh:old',
+    id: 'machine:old',
     label: 'old-server',
     kind: 'ssh',
     status: 'error',

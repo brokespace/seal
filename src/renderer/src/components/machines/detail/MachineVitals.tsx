@@ -3,7 +3,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineMetrics, MachineOs } from '../../../../../shared/machines/machine-types'
 import { cpuLoadPercent, formatBytes, formatUptime, usedPercent } from '../model/machine-format'
-import type { MachineStatus } from '../model/machine-summaries'
+import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
 
 function statusDotClass(status: MachineStatus): string {
   switch (status) {

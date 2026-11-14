@@ -2,36 +2,43 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mergeHomeChatEntry } from '../../../shared/home-chat/home-chat-entry-merge'
 import type { HomeChatEntry } from '../../../shared/home-chat/home-chat-types'
+import { RepeatGuard } from '../engine/home-chat-repeat-guard'
+import { HomeChatTurnRecorder } from '../engine/home-chat-turn-recorder'
 import { HomeChatApprovals } from '../home-chat-approvals'
-import { HomeChatEntryWriter } from '../home-chat-entry-writer'
 import { createLocalMachine } from '../machines/home-chat-local-machine'
 import { createTestHomeChatRuntime } from '../testing/home-chat-runtime.test-support'
+import type { HomeChatThread } from '../thread/home-chat-thread'
+import { HomeChatThreadStore } from '../thread/home-chat-thread-store'
 import { runHomeChatToolCall, type HomeChatToolRunContext } from './home-chat-tool-runner'
 
 let dir: string
-let entries: HomeChatEntry[]
+let thread: HomeChatThread
 
-function context(approvals: HomeChatApprovals): HomeChatToolRunContext {
+async function context(approvals = new HomeChatApprovals()): Promise<HomeChatToolRunContext> {
   const local = createLocalMachine()
   const machines = { list: () => Promise.resolve([local.info]), open: () => Promise.resolve(local) }
+  const threads = await HomeChatThreadStore.open(join(dir, 'state'))
+  thread = threads.create({ backend: 'openai-compatible', accountId: null, model: null })
   return {
-    chatId: 'c1',
+    chatId: thread.id,
     approvals,
-    writer: new HomeChatEntryWriter((entry) => {
-      entries = mergeHomeChatEntry(entries, entry)
-    }),
+    recorder: new HomeChatTurnRecorder(thread, () => undefined),
+    guard: new RepeatGuard(),
     machines,
     runOrcaCli: () => Promise.reject(new Error('unused')),
     services: createTestHomeChatRuntime(join(dir, 'runtime'), machines).runtime.services
   }
 }
 
+function toolEntry(): Extract<HomeChatEntry, { kind: 'tool' }> | undefined {
+  return thread?.entries.find((entry) => entry.kind === 'tool')
+}
+
 async function pendingToolEntry(): Promise<Extract<HomeChatEntry, { kind: 'tool' }>> {
-  await expect.poll(() => entries.find((e) => e.kind === 'tool')?.kind).toBe('tool')
-  const entry = entries.find((e) => e.kind === 'tool')
-  if (entry?.kind !== 'tool') {
+  await expect.poll(() => toolEntry()?.status).toBe('awaiting-approval')
+  const entry = toolEntry()
+  if (!entry) {
     throw new Error('no tool entry')
   }
   return entry
@@ -39,7 +46,6 @@ async function pendingToolEntry(): Promise<Extract<HomeChatEntry, { kind: 'tool'
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'home-chat-runner-'))
-  entries = []
 })
 
 afterEach(() => {
@@ -51,45 +57,68 @@ describe.skipIf(process.platform === 'win32')('runHomeChatToolCall', () => {
     const target = join(dir, 'keep.txt')
     writeFileSync(target, 'data')
     const approvals = new HomeChatApprovals()
+    const ctx = await context(approvals)
     const result = runHomeChatToolCall(
-      'delete_path',
-      { machine: 'local', path: target },
-      context(approvals)
+      { callId: 'c1', tool: 'delete_path', input: { machine: 'local', path: target } },
+      ctx
     )
 
     const pending = await pendingToolEntry()
-    expect(pending.status).toBe('awaiting-approval')
-    expect(approvals.respond('c1', pending.id, false)).toBe(true)
+    expect(approvals.respond(thread.id, pending.id, false)).toBe(true)
 
-    expect(await result).toMatchObject({ isError: true })
+    expect(await result).toMatchObject({ outcome: 'denied' })
     expect(existsSync(target)).toBe(true)
-    expect(entries.find((e) => e.id === pending.id)).toMatchObject({ status: 'denied' })
+    expect(toolEntry()).toMatchObject({ status: 'denied' })
   })
 
   it('runs the action once approved', async () => {
     const target = join(dir, 'gone.txt')
     writeFileSync(target, 'data')
     const approvals = new HomeChatApprovals()
+    const ctx = await context(approvals)
     const result = runHomeChatToolCall(
-      'delete_path',
-      { machine: 'local', path: target },
-      context(approvals)
+      { callId: 'c1', tool: 'delete_path', input: { machine: 'local', path: target } },
+      ctx
     )
 
-    approvals.respond('c1', (await pendingToolEntry()).id, true)
+    approvals.respond(thread.id, (await pendingToolEntry()).id, true)
 
-    expect(await result).toMatchObject({ isError: false })
+    expect(await result).toMatchObject({ outcome: 'ok' })
     expect(existsSync(target)).toBe(false)
   })
 
-  it('rejects arguments that do not match the tool schema without rendering a call', async () => {
-    const result = await runHomeChatToolCall(
-      'run_command',
-      { machine: 'local' },
-      context(new HomeChatApprovals())
+  it('answers a call it cannot run with what to fix instead of throwing', async () => {
+    const ctx = await context()
+    const invalid = await runHomeChatToolCall(
+      { callId: 'c1', tool: 'run_command', input: { machine: 'local' } },
+      ctx
     )
-    expect(result.isError).toBe(true)
-    expect(result.text).toMatch(/^Invalid arguments for run_command/)
-    expect(entries).toEqual([])
+    expect(invalid.outcome).toBe('refusal')
+    expect(invalid.text).toContain('run_command was not run: its arguments are invalid.')
+    expect(invalid.text).toContain('- command:')
+
+    const unknown = await runHomeChatToolCall(
+      { callId: 'c2', tool: 'mcp__seal__run_comand', input: {} },
+      ctx
+    )
+    expect(unknown.text).toBe(
+      'There is no tool named "mcp__seal__run_comand", so nothing ran. Did you mean run_command?'
+    )
+  })
+
+  it('stops running an identical call that keeps failing', async () => {
+    const ctx = await context()
+    const call = (callId: string) =>
+      runHomeChatToolCall(
+        { callId, tool: 'read_file', input: { machine: 'local', path: join(dir, 'missing.txt') } },
+        ctx
+      )
+    expect((await call('c1')).outcome).toBe('error')
+    expect((await call('c2')).text).toContain('Repeating it will not help')
+    expect((await call('c3')).text).toContain('It will not be run again this turn')
+    expect(await call('c4')).toMatchObject({
+      outcome: 'refusal',
+      text: 'read_file was not run: the identical call already failed repeatedly this turn. Take a different approach, or tell the user what is blocking you.'
+    })
   })
 })

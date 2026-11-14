@@ -1,5 +1,6 @@
 import {
   isHomeChatMachineToolName,
+  isHomeChatSealToolName,
   type HomeChatMachineToolName,
   type HomeChatToolName
 } from './home-chat-tool-definitions'
@@ -13,6 +14,7 @@ import {
 } from './home-chat-tool-context'
 import { quoteForDialect } from '../machines/home-chat-machine-scripts'
 import { executeAssistantTool } from './home-chat-assistant-tool-handlers'
+import { executeSealTool } from './home-chat-seal-tool-handlers'
 import { transferBetweenMachines } from './home-chat-transfer'
 
 export type { HomeChatToolContext, HomeChatToolResult } from './home-chat-tool-context'
@@ -210,7 +212,10 @@ export async function executeHomeChatTool(
   input: Record<string, unknown>,
   ctx: HomeChatToolContext
 ): Promise<HomeChatToolResult> {
-  return isHomeChatMachineToolName(tool)
-    ? executeMachineTool(tool, input, ctx)
+  if (isHomeChatMachineToolName(tool)) {
+    return executeMachineTool(tool, input, ctx)
+  }
+  return isHomeChatSealToolName(tool)
+    ? executeSealTool(tool, input, ctx)
     : executeAssistantTool(tool, input, ctx)
 }

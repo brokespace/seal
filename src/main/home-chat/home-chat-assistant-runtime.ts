@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { HomeChatMachineNote } from '../../shared/home-chat/home-chat-memory-types'
 import type { HomeChatNoticeSource } from '../../shared/home-chat/home-chat-types'
 import type { Repo } from '../../shared/repo-types'
-import type { HomeChatAssistantServices } from './home-chat-assistant-services'
+import type { HomeChatAssistantServices, HomeChatSealAccess } from './home-chat-assistant-services'
 import { HomeChatAttachments } from './attachments/home-chat-attachments'
 import { HomeChatSubagents, type HomeChatWorkerHost } from './delegation/home-chat-subagents'
 import { HomeChatJobRegistry, type HomeChatJob } from './jobs/home-chat-job-registry'
@@ -23,6 +23,7 @@ export type HomeChatRuntimeDeps = {
   wake: (chatId: string, source: HomeChatNoticeSource, text: string) => void
   memoryChanged: () => void
   workers: HomeChatWorkerHost
+  seal: HomeChatSealAccess
 }
 
 export type HomeChatAssistantRuntime = {
@@ -80,6 +81,7 @@ export function createHomeChatAssistantRuntime(
     subagents,
     routines,
     attachments: new HomeChatAttachments(deps.rootDir),
+    seal: deps.seal,
     webConfig: deps.webConfig
   }
   return {

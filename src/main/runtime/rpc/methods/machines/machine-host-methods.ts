@@ -3,14 +3,25 @@ import {
   MachineHostCancel,
   MachineHostCreateFile,
   MachineHostDownloadUrl,
+  MachineHostExec,
   MachineHostListDir,
   MachineHostPath,
   MachineHostReadChunk,
   MachineHostRename,
+  MachineHostShell,
+  MachineHostShellInput,
+  MachineHostShellResize,
   MachineHostWatch,
   MachineHostWriteChunk
 } from '../../../../../shared/rpc-contract/machine-host-params'
+import { MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES } from '../../../../../shared/machines/machine-host-limits'
+import { runLocalShellScript } from '../../../../machines/exec/local-shell-exec'
 import { collectLocalMachineMetrics } from '../../../../machines/metrics/local-machine-metrics'
+import {
+  resizeMachineHostShell,
+  runMachineHostShell,
+  writeMachineHostShell
+} from './machine-host-shell'
 import {
   createHostFile,
   listHostDirPage,
@@ -115,6 +126,44 @@ export const MACHINE_HOST_METHODS = [
     params: MachineHostDownloadUrl,
     handler: async (params, ctx, emit) =>
       runMachineHostUrlDownload(params.url, params.destination, ctx, emit)
+  }),
+  defineMethod({
+    name: 'machineHost.exec',
+    permission: 'workspace',
+    params: MachineHostExec,
+    handler: async (params) =>
+      runLocalShellScript(params.script, {
+        timeoutMs: params.timeoutMs,
+        maxOutputBytes: MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES,
+        ...(params.cwd ? { cwd: requireHostPath(params.cwd) } : {}),
+        ...(params.stdinBase64 !== undefined
+          ? { stdin: Buffer.from(params.stdinBase64, 'base64') }
+          : {})
+      })
+  }),
+  defineStreamingMethod({
+    name: 'machineHost.shell',
+    permission: 'workspace',
+    params: MachineHostShell,
+    handler: async (params, ctx, emit) =>
+      runMachineHostShell(
+        { ...params, ...(params.cwd ? { cwd: requireHostPath(params.cwd) } : {}) },
+        ctx,
+        emit
+      )
+  }),
+  defineMethod({
+    name: 'machineHost.shellInput',
+    permission: 'workspace',
+    params: MachineHostShellInput,
+    handler: async (params) => writeMachineHostShell(params.subscriptionId, params.dataBase64)
+  }),
+  defineMethod({
+    name: 'machineHost.shellResize',
+    permission: 'workspace',
+    params: MachineHostShellResize,
+    handler: async (params) =>
+      resizeMachineHostShell(params.subscriptionId, params.cols, params.rows)
   }),
   defineMethod({
     name: 'machineHost.cancel',

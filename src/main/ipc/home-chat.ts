@@ -1,6 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
-import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
+import type {
+  ClaudeRateLimitAccountsState,
+  CodexManagedAccount
+} from '../../shared/managed-account-types'
 import type {
   HomeChatCreateArgs,
   HomeChatEvent,
@@ -9,13 +12,34 @@ import type {
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { Repo } from '../../shared/repo-types'
-import { createClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
+import { createHomeChatAccountProvider } from '../home-chat/home-chat-accounts'
 import { HomeChatService } from '../home-chat/home-chat-service'
-import { HomeChatStore } from '../home-chat/home-chat-store'
+import { HomeChatSettingsStore } from '../home-chat/home-chat-settings-store'
 import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
+import { createHomeChatAccountAccess } from '../home-chat/seal/home-chat-account-access'
+import { createHomeChatSessionAccess } from '../home-chat/seal/home-chat-session-access'
+import { HomeChatThreadStore } from '../home-chat/thread/home-chat-thread-store'
+import { getMachineRegistry } from '../machines/registry/machine-registry-service'
+import type { MachineView } from '../../shared/machines/machine-view'
+import { summarizeMachine, type MachineSummary } from '../../shared/machines/machine-summaries'
+import { getRegisteredSshState } from '../ssh/targets/ssh-target-registry'
+import { getRuntimeEnvironmentStatusSnapshot } from './runtime-environments/runtime-environment-request-connections'
 import { runOrcaCli } from '../home-chat/tools/home-chat-orca-cli'
+import { getLiveSessionService } from '../live-sessions/live-session-service-instance'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
+
+function summarizeForAssistant(view: MachineView): MachineSummary {
+  const sshState = view.ssh ? getRegisteredSshState(view.ssh.targetId) : undefined
+  const snapshot = view.server
+    ? getRuntimeEnvironmentStatusSnapshot(view.server.environmentId)
+    : null
+  return summarizeMachine(view, {
+    sshStates: new Map(view.ssh && sshState ? [[view.ssh.targetId, sshState]] : []),
+    runtimeStatuses: new Map(view.server && snapshot ? [[view.server.environmentId, snapshot]] : [])
+  })
+}
 
 function broadcast(event: HomeChatEvent): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -32,19 +56,38 @@ function broadcast(event: HomeChatEvent): void {
 
 type AttachmentArgs = { chatId: string; attachmentId: string }
 
-export function registerHomeChatHandlers(
-  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
+export type HomeChatHandlerSources = {
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
+  codexAccounts: () => readonly CodexManagedAccount[]
   repos: () => Repo[]
-): void {
+}
+
+export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void {
   const rootDir = join(app.getPath('userData'), 'home-chat')
-  const ready = HomeChatStore.open(rootDir).then(async (store) => {
+  const ready = Promise.all([
+    HomeChatThreadStore.open(rootDir),
+    HomeChatSettingsStore.open(rootDir)
+  ]).then(async ([threads, settings]) => {
     const service = new HomeChatService({
       rootDir,
-      store,
-      accounts: createClaudeAccountsProvider(claudeAccounts),
-      createMachines: createDefaultHomeChatMachineProvider,
+      threads,
+      settings,
+      accounts: createHomeChatAccountProvider({
+        listClaudeAccounts: () => sources.claudeAccounts.listAccounts(),
+        listCodexAccounts: sources.codexAccounts
+      }),
+      createMachines: (machineNotes) =>
+        createDefaultHomeChatMachineProvider(machineNotes, {
+          list: () => getMachineRegistry().list(),
+          summarize: summarizeForAssistant,
+          connection: (machineId) => getMachineRegistry().connection(machineId)
+        }),
       runOrcaCli,
-      repos,
+      repos: sources.repos,
+      seal: {
+        sessions: createHomeChatSessionAccess({ live: getLiveSessionService }),
+        accounts: createHomeChatAccountAccess(getSealAccountManager)
+      },
       emit: broadcast
     })
     await service.start()
@@ -69,6 +112,8 @@ export function registerHomeChatHandlers(
     service.send(args.chatId, args.text)
   )
   handle('homeChat:stop', (service, args: { chatId: string }) => service.stop(args.chatId))
+  handle('homeChat:compact', (service, args: { chatId: string }) => service.compact(args.chatId))
+  handle('homeChat:listMachines', (service) => service.listMachines())
   handle(
     'homeChat:respondApproval',
     (service, args: { chatId: string; entryId: string; approved: boolean }) =>

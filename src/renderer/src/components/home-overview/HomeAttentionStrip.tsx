@@ -1,4 +1,3 @@
-import { Gauge, ServerCrash } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { useTranslate } from '@/i18n/use-translate'
 import type { HomeAttentionItem } from './home-overview-derivations'
@@ -16,54 +15,24 @@ function AttentionChip({
   actions: HomeOverviewActions
 }): React.JSX.Element {
   const t = useTranslate()
-  switch (item.kind) {
-    case 'session': {
-      const { session } = item
-      const label = homeSessionStateLabel(session.state, t)
-      return (
-        <button type="button" className={CHIP_CLASS} onClick={() => actions.openSession(session)}>
-          <AgentStateDot state={homeSessionDotState(session.state)} title={null} />
-          <span className="min-w-0">
-            <span className="block truncate font-medium text-foreground">{session.title}</span>
-            <span className="block truncate text-2xs text-muted-foreground">
-              {label} · {session.machineLabel}
-            </span>
-          </span>
-        </button>
-      )
-    }
-    case 'machine':
-      return (
-        <button
-          type="button"
-          className={CHIP_CLASS}
-          onClick={() => actions.openMachine(item.machine)}
-        >
-          <ServerCrash className="size-4 shrink-0 text-destructive" />
-          <span className="min-w-0">
-            <span className="block truncate font-medium text-foreground">{item.machine.label}</span>
-            <span className="block truncate text-2xs text-muted-foreground">
-              {item.machine.error ?? t('home.overview.attention.machineError', 'Connection failed')}
-            </span>
-          </span>
-        </button>
-      )
-    case 'account':
-      return (
-        <button type="button" className={CHIP_CLASS} onClick={actions.openAccountsSettings}>
-          <Gauge className="size-4 shrink-0 text-muted-foreground" />
-          <span className="min-w-0">
-            <span className="block truncate font-medium text-foreground">{item.account.label}</span>
-            <span className="block truncate text-2xs text-muted-foreground tabular-nums">
-              {t('home.overview.attention.accountUsage', '{{provider}} at {{percent}}% of limit', {
-                provider: item.account.providerLabel,
-                percent: Math.round(item.usedPercent)
-              })}
-            </span>
-          </span>
-        </button>
-      )
-  }
+  const { session, reason } = item
+  const label = homeSessionStateLabel(session.state, t)
+  return (
+    <button
+      type="button"
+      className={CHIP_CLASS}
+      title={reason ?? undefined}
+      onClick={() => actions.openSession(session)}
+    >
+      <AgentStateDot state={homeSessionDotState(session.state)} title={null} />
+      <span className="min-w-0">
+        <span className="block truncate font-medium text-foreground">{session.title}</span>
+        <span className="block truncate text-2xs text-muted-foreground">
+          {reason ? `${label}: ${reason}` : label} · {session.machineLabel}
+        </span>
+      </span>
+    </button>
+  )
 }
 
 export function HomeAttentionStrip({

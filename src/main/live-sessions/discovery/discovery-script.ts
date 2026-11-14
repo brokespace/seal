@@ -2,7 +2,7 @@
 // Output is line-framed: `@@<SECTION> fields…`, binary-ish payloads base64 on a single line.
 
 export type DiscoveryScriptOptions = {
-  /** Transcripts untouched for longer than this are not live. */
+  /** Transcripts untouched for longer than this are not live, unless a running agent owns them. */
   maxAgeMinutes: number
   maxFiles: number
   /** Transcripts whose bytes are sent per scan; the rest wait for the next one (SSH output is capped). */
@@ -33,7 +33,14 @@ echo "@@UNAME $(uname -s)"
 KNOWN=${shQuote(known)}
 HEADKNOWN=${shQuote(headKnown)}
 TTYS='|'
-ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
+PINS="\${TMPDIR:-/tmp}/.seal-live-pins.$$"
+: > "$PINS"
+pin() { [ -f "$4" ] && echo "$1 $2 $3 $4" >> "$PINS"; }
+CLAUDE_ROOTS="$HOME/.claude
+\${CLAUDE_CONFIG_DIR:-}"
+CODEX_ROOTS="$HOME/.codex
+\${CODEX_HOME:-}"
+ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 while read -r pid ppid tty args; do
   echo "@@PROC $pid $ppid $tty $args"
   cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
@@ -42,6 +49,7 @@ while read -r pid ppid tty args; do
   fi
   [ -n "$cwd" ] && echo "@@CWD $pid $cwd"
   case "$tty" in ''|'?'|'??') ;; *) TTYS="$TTYS$tty|" ;; esac
+${pinSection()}
 done < "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 rm -f "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 if command -v tmux >/dev/null 2>&1; then
@@ -72,29 +80,91 @@ for d in "$HOME/.claude/sessions" "\${CLAUDE_CONFIG_DIR:-}/sessions"; do
     printf '@@CLAUDESESSION %s ' "$f"; head -c 8192 "$f" | b64; echo
   done
 done
+# SISomewhere's hooks record each session's harness pid and transcript; read them, never write them.
 for f in "$HOME"/.config/sisomewhere/agents/*.json; do
   [ -f "$f" ] || continue
   printf '@@HOOK %s ' "$f"; b64 < "$f"; echo
+  hp=$(sed -n 's/.*"pid"[[:space:]]*:[[:space:]]*\\([0-9][0-9]*\\).*/\\1/p' "$f" | head -n 1)
+  ht=$(sed -n 's/.*"transcript"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' "$f" | head -n 1)
+  [ -n "$hp" ] && [ -n "$ht" ] && kill -0 "$hp" 2>/dev/null && pin "$hp" hook claude "$ht"
 done
-${transcriptSection(options)}echo "@@DONE"
+sort -u "$PINS" | sed 's/^/@@PIN /'
+${transcriptSection(options)}rm -f "$PINS"
+echo "@@DONE"
 `
+}
+
+/**
+ * Transcripts a running agent writes, however long ago it last wrote: the file it holds open,
+ * the session its registry entry or command line names, else (Claude) its folder's newest.
+ */
+function pinSection(): string {
+  return `  pinned=
+  for fd in /proc/$pid/fd/*; do
+    t=$(readlink "$fd" 2>/dev/null)
+    case "$t" in
+      */sessions/*/rollout-*.jsonl) pin "$pid" open codex "$t"; pinned=1 ;;
+      */projects/*/*.jsonl) pin "$pid" open claude "$t"; pinned=1 ;;
+    esac
+  done
+  if [ -z "$pinned" ] && [ ! -d "/proc/$pid" ] && command -v lsof >/dev/null 2>&1; then
+    case "$args" in *codex*)
+      for t in $(lsof -p "$pid" -Fn 2>/dev/null | sed -n 's/^n\\(.*\\/rollout-[^ ]*\\.jsonl\\)$/\\1/p'); do
+        pin "$pid" open codex "$t"; pinned=1
+      done ;;
+    esac
+  fi
+  [ -n "$pinned" ] && continue
+  ids=
+  for d in $CLAUDE_ROOTS; do
+    [ -f "$d/sessions/$pid.json" ] && ids="$ids $(sed -n 's/.*"sessionId"[[:space:]]*:[[:space:]]*"\\([0-9a-fA-F-]*\\)".*/\\1/p' "$d/sessions/$pid.json" | head -n 1)"
+  done
+  set -f
+  prev=
+  for w in $args; do
+    case "$prev" in --resume|-r|--session-id|resume)
+      case "$w" in *[!0-9a-fA-F-]*|'') ;; *) ids="$ids $w" ;; esac ;;
+    esac
+    prev=$w
+  done
+  set +f
+  for id in $ids; do
+    for d in $CLAUDE_ROOTS; do
+      for t in "$d"/projects/*/"$id".jsonl; do pin "$pid" id claude "$t" && pinned=1; done
+    done
+    case "$args" in *codex*)
+      for d in $CODEX_ROOTS; do
+        [ -d "$d/sessions" ] || continue
+        for t in $(find "$d/sessions" -type f -name "rollout-*-$id.jsonl" 2>/dev/null); do pin "$pid" id codex "$t" && pinned=1; done
+      done ;;
+    esac
+  done
+  [ -n "$pinned" ] || [ -z "$cwd" ] && continue
+  case "$args" in *codex*) continue ;; esac
+  enc=$(printf '%s' "$cwd" | sed 's/[^A-Za-z0-9]/-/g')
+  for d in $CLAUDE_ROOTS; do
+    t=$(ls -t "$d/projects/$enc"/*.jsonl 2>/dev/null | head -n 1)
+    [ -n "$t" ] && pin "$pid" cwd claude "$t"
+  done`
 }
 
 function transcriptSection(options: DiscoveryScriptOptions): string {
   if (!options.transcripts) {
     return ''
   }
+  // Pinned files sort first, so the file and read limits never drop a running agent's transcript.
   return `{
   for root in "$HOME/.claude/projects" "\${CLAUDE_CONFIG_DIR:+$CLAUDE_CONFIG_DIR/projects}"; do
-    [ -n "$root" ] && [ -d "$root" ] && find "$root" -mindepth 2 -maxdepth 2 -type f -name '*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/claude /'
+    [ -n "$root" ] && [ -d "$root" ] && find "$root" -mindepth 2 -maxdepth 2 -type f -name '*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/0 claude /'
   done
   for root in "$HOME/.codex/sessions" "\${CODEX_HOME:+$CODEX_HOME/sessions}"; do
-    [ -n "$root" ] && [ -d "$root" ] && find "$root" -type f -name 'rollout-*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/codex /'
+    [ -n "$root" ] && [ -d "$root" ] && find "$root" -type f -name 'rollout-*.jsonl' -mmin -${options.maxAgeMinutes} 2>/dev/null | sed 's/^/0 codex /'
   done
-} | sort -u -k2 | while read -r provider f; do
+  awk '{ print "1", $3, substr($0, index($0, $4)) }' "$PINS"
+} | awk '{ f = $0; sub(/^[^ ]+ [^ ]+ /, "", f); if (!(f in pri) || $1 > pri[f]) { pri[f] = $1; prov[f] = $2 } } END { for (f in pri) print pri[f], prov[f], f }' | while read -r pri provider f; do
   set -- $(fsize "$f")
-  [ -n "$2" ] && echo "$2 $1 $provider $f"
-done | sort -rn | head -n ${options.maxFiles} | { reads=0; while read -r mtime size provider f; do
+  [ -n "$2" ] && echo "$pri $2 $1 $provider $f"
+done | sort -k1,1nr -k2,2nr | head -n ${options.maxFiles} | { reads=0; while read -r pri mtime size provider f; do
   echo "@@FILE $provider $size $mtime $f"
   if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; then continue; fi
   [ "$reads" -ge ${options.maxReads} ] && continue
