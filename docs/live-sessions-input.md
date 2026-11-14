@@ -162,7 +162,7 @@ every 10 minutes, and only after a scan found an agent there to check:
 It never stops an agent the user runs in their own terminal or tmux, a Seal pane tab that is open,
 or a session only discovered by the scan.
 
-**Remove from Seal.** The Agent sessions page hides a session for good (`<userData>/live-sessions/removed.json`).
+**Remove from Seal.** A session's menu in Active agents hides it for good (`<userData>/live-sessions/removed.json`).
 For a running session, **Stop and remove** sends the agent SIGTERM (SIGKILL after 5 seconds), closes its
 `tmux -L seal` pane, and only then hides it. **Also delete transcript files** deletes the transcript and,
 for Claude, the session's folder beside it, after a confirmation listing each path.

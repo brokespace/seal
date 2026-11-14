@@ -140,7 +140,7 @@ Specs are zod shapes in `tools/home-chat-*-tool-specs.ts`. All three drivers exp
 | Web                  | `web_search`, `web_fetch`                                                                                      |
 | Thread               | `report_progress`, `attach_file`                                                                               |
 
-The session tools read Seal's live-session service, the one behind the Agent sessions page. They
+The session tools read Seal's live-session service, the one behind Active agents in the sidebar. They
 cover the same sessions: on this computer, SSH hosts and paired Seal servers.
 
 Approval is decided in `tools/home-chat-tool-risk.ts`. These always ask: `delete_path`,
