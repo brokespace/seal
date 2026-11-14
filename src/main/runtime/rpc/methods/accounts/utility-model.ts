@@ -45,8 +45,12 @@ export const UTILITY_MODEL_METHODS = [
   defineMethod({
     name: 'utilityModel.providers',
     permission: 'workspace',
-    params: null,
-    handler: async () => getUtilityModelHost().providers()
+    params: UtilityModelProviderParams,
+    // One provider when named, else all: listing probes for every agent CLI.
+    handler: async ({ provider }) => {
+      const host = getUtilityModelHost()
+      return provider ? [await host.providerStatus(provider)] : await host.providers()
+    }
   }),
   defineMethod({
     name: 'utilityModel.setOpenRouter',

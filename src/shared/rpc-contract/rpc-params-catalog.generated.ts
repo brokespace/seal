@@ -1896,7 +1896,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'utilityModel.clearCloudflare': null,
   'utilityModel.clearOpenRouter': null,
   'utilityModel.listModels': UtilityModelProviderParams,
-  'utilityModel.providers': null,
+  'utilityModel.providers': UtilityModelProviderParams,
   'utilityModel.setCloudflare': UtilityModelSetCloudflareParams,
   'utilityModel.setOpenRouter': UtilityModelSetOpenRouterParams,
   'utilityModel.status': null,

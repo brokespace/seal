@@ -27,7 +27,7 @@ const ProviderId = z.enum(UTILITY_MODEL_PROVIDER_IDS)
 /** Every provider names models its own way (`haiku`, `openrouter/free`, `@cf/…`): only spaces are ruled out. */
 const ChosenModelId = z.string().trim().min(1).max(200).regex(/^\S+$/, 'A model id has no spaces')
 
-/** No provider means Cloudflare Workers AI, the only one older clients know. */
+/** Listing models or testing with no provider means Cloudflare Workers AI, the only one older clients know. */
 export const UtilityModelProviderParams = z.object({ provider: ProviderId.optional() }).strict()
 
 export const UtilityModelTestParams = z
