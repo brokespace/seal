@@ -57,6 +57,7 @@ import {
 } from './hooks/hook-settings'
 import { claudeAcceptsExecFormHooks } from './cli-capabilities/claude-hook-event-versions'
 import { getManagedEventHook } from './hooks/claude-managed-event-hook'
+import { withClaudeThinkingSummaries } from './configuration/claude-thinking-summaries'
 import {
   getClaudeManagedHookPlan,
   OPENCLAUDE_MANAGED_HOOK_PLAN,
@@ -205,7 +206,7 @@ export class ClaudeHookService {
     const exePath = this.usesWindowsEntry ? installWindowsClaudeHookExecutable(scriptPath) : null
     const execForm = claudeAcceptsExecFormHooks(options.claudeVersion)
     let nextConfig = applyManagedHooks(
-      config,
+      withClaudeThinkingSummaries(config, this.options.agent, options.claudeVersion),
       (eventName) =>
         getManagedEventHook(eventName, scriptPath, this.options.settings, exePath, { execForm }),
       getManagedScriptFileName(this.options.settings),
@@ -251,7 +252,7 @@ export class ClaudeHookService {
 
       // Settings resolve HOME at runtime; SFTP writes to the discovered remote home.
       const nextConfig = applyManagedHooks(
-        config,
+        withClaudeThinkingSummaries(config, this.options.agent, options.claudeVersion),
         (eventName) =>
           buildManagedCommandHook(getRemoteManagedEventCommand(eventName, remoteScriptPath)),
         remoteScriptFileName,

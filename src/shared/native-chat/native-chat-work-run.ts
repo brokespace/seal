@@ -23,7 +23,7 @@ export function nativeChatWorkRunMember(
   }
   if (message.role === 'reasoning') {
     // Live thinking stays separate; ended thoughts join runs, including textless thoughts that render nothing.
-    return scopeIsWorking && message.state === 'running' ? null : 'thought'
+    return message.shownInline || (scopeIsWorking && message.state === 'running') ? null : 'thought'
   }
   if (memberFacts.has(message)) {
     return memberFacts.get(message)!

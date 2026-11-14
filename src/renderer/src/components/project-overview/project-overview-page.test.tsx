@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
-import { activeAgentsFilterStore } from '@/components/live-sessions/active-agents/active-agents-filter-store'
+import { activeAgentsScopeStore } from '@/components/live-sessions/active-agents/active-agents-scope-store'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 import { makeRepo } from '../worktree-jump/worktree-jump-palette-test-fixtures'
 import { ProjectAgentsCard } from './ProjectAgentsCard'
@@ -73,7 +73,7 @@ it("Show in Active agents narrows the sidebar's list to this project and stays o
   renderInApp(<ProjectAgentsCard repo={repo} sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByRole('button', { name: 'Show in Active agents' }))
   expect(useAppStore.getState().activeView).toBe('project')
-  expect(activeAgentsFilterStore.getState().scope).toEqual({
+  expect(activeAgentsScopeStore.getState()).toEqual({
     kind: 'project',
     id: 'repo-1',
     label: 'Repo 1'

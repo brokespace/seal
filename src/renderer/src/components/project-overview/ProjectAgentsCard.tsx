@@ -4,10 +4,7 @@ import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
-import {
-  buildActiveAgents,
-  NO_ACTIVE_AGENTS_FILTER
-} from '@/components/live-sessions/active-agents/active-agents-model'
+import { buildActiveAgents } from '@/components/live-sessions/active-agents/active-agents-model'
 import { useLiveSessionLinks } from '@/components/live-sessions/links/use-live-session-links'
 import { showScopeInActiveAgents } from '@/components/live-sessions/links/show-scope-in-active-agents'
 import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
@@ -28,10 +25,7 @@ export function ProjectAgentsCard({
 }): React.JSX.Element {
   const t = useTranslate()
   const { links } = useLiveSessionLinks()
-  const view = useMemo(
-    () => buildActiveAgents(sessions, NO_ACTIVE_AGENTS_FILTER, links, now),
-    [sessions, links, now]
-  )
+  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
   const finishedLabel = t('auto.components.live-sessions.sidebar.finished', 'Recently finished')
   const empty = view.machines.length === 0 && view.finished.length === 0
   return (

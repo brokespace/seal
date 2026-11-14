@@ -158,17 +158,22 @@ function Sidebar({
               <LocalGitToolchainScanBanner />
               <StartupWorktreeRefreshStatus />
               <WorktreeCardsUpdateNotice />
-              <WorktreeList
-                scrollOffsetRef={worktreeScrollOffsetRef}
-                scrollAnchorRef={worktreeScrollAnchorRef}
-                workspaceBoardOpen={workspaceBoardOpen}
-                onWorktreeCardClick={closeWorkspaceBoard}
-                onWorkspaceBoardDragPreviewStart={previewWorkspaceBoardFromDrag}
-                onWorkspaceBoardDragPreviewCommit={solidifyWorkspaceBoardFromDrag}
-                onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
-                projectsCollapseTarget={projectsCollapseTarget}
-              />
-              <ActiveAgentsSection />
+              {/* Projects and Active agents split this height: each gets what it needs up to half, and the rest goes to the other. */}
+              <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_fit-content(100%)]">
+                <div className="flex min-h-0 flex-col">
+                  <WorktreeList
+                    scrollOffsetRef={worktreeScrollOffsetRef}
+                    scrollAnchorRef={worktreeScrollAnchorRef}
+                    workspaceBoardOpen={workspaceBoardOpen}
+                    onWorktreeCardClick={closeWorkspaceBoard}
+                    onWorkspaceBoardDragPreviewStart={previewWorkspaceBoardFromDrag}
+                    onWorkspaceBoardDragPreviewCommit={solidifyWorkspaceBoardFromDrag}
+                    onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
+                    projectsCollapseTarget={projectsCollapseTarget}
+                  />
+                </div>
+                <ActiveAgentsSection />
+              </div>
               <WslMovedProjectsSection />
               <HiddenProjectsSection />
 

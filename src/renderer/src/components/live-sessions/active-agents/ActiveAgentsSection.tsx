@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { ChevronRight, Ellipsis, Loader2 } from 'lucide-react'
+import { Ellipsis, Loader2 } from 'lucide-react'
 import { useAppStore } from '@/store/index'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
+import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
+import { ProjectsCollapseAllButton } from '@/components/sidebar/worktree-list/controls/ProjectsCollapseAllButton'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
 import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
@@ -23,7 +24,7 @@ import {
   buildActiveAgents,
   visibleSessionIds
 } from './active-agents-model'
-import { activeAgentsFilterStore, useActiveAgentsFilter } from './active-agents-filter-store'
+import { activeAgentsScopeStore, useActiveAgentsScope } from './active-agents-scope-store'
 import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
@@ -42,7 +43,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const registry = useLiveSessions()
   const { links } = useLiveSessionLinks()
   const sharedRowState = useLiveSessionRowState()
-  const filter = useActiveAgentsFilter()
+  const scope = useActiveAgentsScope()
   const marks = useLiveSessionMarks()
   const tabs = useLiveSessionTabs()
   const now = useLiveSessionClock()
@@ -63,8 +64,8 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     [collapsedGroups]
   )
   const view = useMemo(
-    () => buildActiveAgents(registry.sessions, filter, links, now),
-    [registry.sessions, filter, links, now]
+    () => buildActiveAgents(registry.sessions, scope, links, now),
+    [registry.sessions, scope, links, now]
   )
   const order = useMemo(
     () => visibleSessionIds(view, { machines: collapsedMachines, finished: !finishedOpen }),
@@ -160,7 +161,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const pickedSessions = marks.picked
     ? [...marks.picked].flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
     : []
-  const filtering = filter.query !== '' || filter.chips.size > 0 || filter.scope !== null
+  const title = t('auto.components.live-sessions.sidebar.title', 'Active agents')
   const empty = view.machines.length === 0 && view.finished.length === 0
   const openAgentSettings = (): void => {
     const store = useAppStore.getState()
@@ -175,94 +176,95 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   return (
     <section
       data-testid="active-agents"
-      aria-label={t('auto.components.live-sessions.sidebar.title', 'Active agents')}
-      className={cn(
-        'flex shrink-0 flex-col border-t border-worktree-sidebar-border px-2 py-1',
-        open && 'max-h-[50%] min-h-24'
-      )}
+      data-open={open}
+      aria-label={title}
+      className="flex min-h-0 flex-col border-t border-worktree-sidebar-border"
     >
-      <div className="flex h-7 shrink-0 items-center gap-1">
-        <button
-          type="button"
-          aria-expanded={open}
-          data-active-agents-toggle
-          onClick={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
-          className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-xs font-semibold text-muted-foreground/80 transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none focus-visible:ring-inset"
-        >
-          <ChevronRight
-            className={cn('size-3 shrink-0 transition-transform', open && 'rotate-90')}
-            aria-hidden="true"
-          />
-          <span className="min-w-0 truncate">
-            {t('auto.components.live-sessions.sidebar.title', 'Active agents')}
-          </span>
-          <span className="shrink-0 font-normal tabular-nums">{view.activeCount}</span>
-          {!registry.loaded ? <Loader2 className="size-3 shrink-0 animate-spin" /> : null}
-        </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              data-active-agents-menu
-              aria-label={t(
-                'auto.components.live-sessions.sidebar.options',
-                'Active agents options'
-              )}
-            >
-              <Ellipsis className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => void window.api.liveSessions?.refresh()}>
-              {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
-            >
-              {marks.picked
-                ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
-                : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
-            </DropdownMenuItem>
-            {filtering ? (
-              <DropdownMenuItem onSelect={() => activeAgentsFilterStore.clear()}>
-                {t('auto.components.live-sessions.sidebar.clearFilters', 'Clear filters')}
-              </DropdownMenuItem>
+      <SidebarSectionHeader
+        className="mt-1"
+        title={title}
+        section="active-agents"
+        toggle={
+          <>
+            <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
+              {view.activeCount}
+            </span>
+            {!registry.loaded ? (
+              <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
             ) : null}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={openAgentSettings}>
-              {t(
-                'auto.components.live-sessions.sidebar.settings',
-                'Idle sessions and notifications…'
-              )}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            <span data-active-agents-toggle className="flex shrink-0">
+              <ProjectsCollapseAllButton
+                allCollapsed={!open}
+                onToggle={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
+                label={
+                  open
+                    ? t('auto.components.live-sessions.sidebar.collapse', 'Collapse active agents')
+                    : t('auto.components.live-sessions.sidebar.expand', 'Expand active agents')
+                }
+                pinned={!open}
+              />
+            </span>
+          </>
+        }
+        actions={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                data-active-agents-menu
+                aria-label={t(
+                  'auto.components.live-sessions.sidebar.options',
+                  'Active agents options'
+                )}
+              >
+                <Ellipsis className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => void window.api.liveSessions?.refresh()}>
+                {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
+              >
+                {marks.picked
+                  ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
+                  : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={openAgentSettings}>
+                {t(
+                  'auto.components.live-sessions.sidebar.settings',
+                  'Idle sessions and notifications…'
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
       {open ? (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-1">
           <ActiveAgentsToolbar
-            ui={{ ...filter, picked: marks.picked }}
+            scope={scope}
+            picked={marks.picked}
             pickedSessions={pickedSessions}
-            onQuery={(query) => activeAgentsFilterStore.setQuery(query)}
-            onChip={(chip) => activeAgentsFilterStore.toggleChip(chip)}
-            onClearScope={() => activeAgentsFilterStore.setScope(null)}
+            onClearScope={() => activeAgentsScopeStore.setScope(null)}
             onBulk={(danger, sessions) => liveSessionMenuEffects.confirm(danger, sessions)}
             onStopPicking={() => liveSessionMarksStore.setPicked(null)}
-            onEnterList={() => focusRow(tabStop)}
           />
           <div
             ref={list}
             role="listbox"
             aria-multiselectable={marks.picked !== null}
-            aria-label={t('auto.components.live-sessions.sidebar.title', 'Active agents')}
+            aria-label={title}
             onKeyDown={onListKeyDown}
             className="scrollbar-sleek flex min-h-0 flex-1 flex-col overflow-y-auto pb-1 outline-none"
           >
             {empty ? (
               <p className="px-1.5 py-1 text-2xs text-muted-foreground">
-                {filtering
+                {scope
                   ? t('auto.components.live-sessions.sidebar.noMatch', 'No sessions match.')
                   : registry.loaded
                     ? t(
@@ -285,7 +287,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
               onPick={onPick}
             />
           </div>
-        </>
+        </div>
       ) : null}
     </section>
   )

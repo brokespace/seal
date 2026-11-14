@@ -1,4 +1,4 @@
-import { activeAgentsFilterStore } from '../active-agents/active-agents-filter-store'
+import { activeAgentsScopeStore } from '../active-agents/active-agents-scope-store'
 import type { ActiveAgentsScope } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 
@@ -10,7 +10,7 @@ export function showScopeInActiveAgents(
   scope: ActiveAgentsScope,
   firstSessionId: string | undefined
 ): void {
-  activeAgentsFilterStore.setScope(scope)
+  activeAgentsScopeStore.setScope(scope)
   if (firstSessionId) {
     liveSessionMarksStore.reveal(firstSessionId)
   }
