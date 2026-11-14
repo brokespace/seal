@@ -7,13 +7,18 @@ import type { LiveSession } from '../../../../shared/live-sessions/live-session-
 import { getRepoHostIdentity } from '../../../../shared/repo-host-identity'
 import type { Repo } from '../../../../shared/repo-types'
 import { createHostScopedRepoOf } from '../../../../shared/sidebar-list/feed/sidebar-feed-index'
+import { getSidebarLineageChildren } from '../../../../shared/sidebar-list/lineage/pinned-section-worktrees'
+import type { SidebarLineageParentIdentities } from '../../../../shared/sidebar-list/lineage/worktree-lineage-projection'
 import { orderMainWorktreeFirst } from '../../../../shared/sidebar-list/sections/section-order'
 import {
   rankWorktreesForSort,
   type SmartSortSources
 } from '../../../../shared/sidebar-list/sorting/smart-sort'
 import type { WorkspaceSortBy } from '../../../../shared/workspace-view/workspace-row-sort'
+import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
+import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'
+import { buildWorktreeOccurrencePlan } from '../../../../shared/worktree-occurrence-plan'
 import type { LiveSessionLink } from '../live-sessions/links/live-session-links'
 
 type ProjectTarget = { repoId: string; hostId: string }
@@ -39,17 +44,60 @@ export function projectRegistrations(repos: readonly Repo[], repoId: string): Re
   return repos.filter((repo) => repo.id === repoId)
 }
 
+function registrationWorktrees(
+  worktrees: readonly Worktree[] | undefined,
+  repo: Repo,
+  repos: readonly Repo[],
+  repoMap: Map<string, Repo>
+): Worktree[] {
+  const repoOf = createHostScopedRepoOf(repos, repoMap)
+  const identity = getRepoHostIdentity(repo)
+  return (worktrees ?? []).filter((worktree) => {
+    const owner = repoOf(worktree)
+    return !worktree.isArchived && owner !== undefined && getRepoHostIdentity(owner) === identity
+  })
+}
+
 /** How the sidebar ranks workspaces right now: its sort mode and what Smart reads. */
-export type ProjectWorktreeOrder = {
+export type ProjectWorktreeRanking = {
   sortBy: WorkspaceSortBy
   sources: SmartSortSources
   now: number
 }
 
+/** The sidebar's ranking of a registration's workspaces, by host identity. */
+export function rankProjectWorktrees(
+  worktrees: readonly Worktree[] | undefined,
+  repo: Repo,
+  repos: readonly Repo[],
+  ranking: ProjectWorktreeRanking
+): string[] {
+  const repoMap = new Map(repos.map((item) => [item.id, item]))
+  return rankWorktreesForSort({
+    worktrees: registrationWorktrees(worktrees, repo, repos, repoMap),
+    sortBy: ranking.sortBy,
+    latched: false,
+    repoMap,
+    now: ranking.now,
+    sources: ranking.sources
+  }).sorted.map(getWorktreeHostIdentity)
+}
+
+export type ProjectWorktreeOrder = {
+  sortBy: WorkspaceSortBy
+  /** `rankProjectWorktrees`, kept until the sidebar ranks again so both lists move together. */
+  ranked: readonly string[]
+  lineageById: Readonly<Record<string, WorktreeLineage>>
+  lineageParents?: SidebarLineageParentIdentities
+}
+
+const PROJECT_SECTION = 'project'
+
 /**
- * A registration's workspaces, in the sidebar's order for its project: the same ranking, and the
- * main checkout first unless the order is manual. A project on two machines keeps both machines'
- * rows in one list, so each row goes to the registration the sidebar files it under.
+ * A registration's workspaces, in the sidebar's order for its project: ranked the same, the main
+ * checkout first unless the order is manual, a child after its parent, an unranked row last. A
+ * project on two machines keeps both machines' rows in one list, so each row goes to the
+ * registration the sidebar files it under.
  */
 export function projectWorktrees(
   worktrees: readonly Worktree[] | undefined,
@@ -57,21 +105,35 @@ export function projectWorktrees(
   repos: readonly Repo[],
   order: ProjectWorktreeOrder
 ): Worktree[] {
-  const repoMap = new Map(repos.map((item) => [item.id, item]))
-  const repoOf = createHostScopedRepoOf(repos, repoMap)
-  const identity = getRepoHostIdentity(repo)
-  const { sorted } = rankWorktreesForSort({
-    worktrees: (worktrees ?? []).filter((worktree) => {
-      const owner = repoOf(worktree)
-      return !worktree.isArchived && owner !== undefined && getRepoHostIdentity(owner) === identity
-    }),
-    sortBy: order.sortBy,
-    latched: false,
-    repoMap,
-    now: order.now,
-    sources: order.sources
+  const rank = new Map(order.ranked.map((identity, index) => [identity, index]))
+  const rankOf = (worktree: Worktree): number =>
+    rank.get(getWorktreeHostIdentity(worktree)) ?? order.ranked.length
+  const rows = orderMainWorktreeFirst(
+    registrationWorktrees(
+      worktrees,
+      repo,
+      repos,
+      new Map(repos.map((item) => [item.id, item]))
+    ).sort((a, b) => rankOf(a) - rankOf(b)),
+    order.sortBy
+  )
+  const plan = buildWorktreeOccurrencePlan({
+    rows,
+    identityOf: getWorktreeHostIdentity,
+    childrenByParentIdentity: getSidebarLineageChildren(
+      rows,
+      order.lineageById,
+      // Every machine's rows, as in the sidebar: a twin elsewhere can make a parent ambiguous.
+      new Map((worktrees ?? []).map((worktree) => [getWorktreeHostIdentity(worktree), worktree])),
+      [],
+      order.lineageParents
+    ),
+    // The page has no Pinned section: a pinned workspace stays in its place.
+    isPinned: () => false,
+    duplicatePinned: false,
+    sectionsOf: ({ natural }) => [{ key: PROJECT_SECTION, items: natural }]
   })
-  return orderMainWorktreeFirst(sorted, order.sortBy)
+  return (plan.bySection.get(PROJECT_SECTION) ?? []).map((occurrence) => occurrence.row)
 }
 
 /** The sessions Seal links to one of the project's workspaces, on any machine. */

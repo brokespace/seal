@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { FolderSearch } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { selectWorktreesByRepo } from '@/store/workspaces/catalog/workspace-record-fields'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
@@ -28,7 +27,6 @@ import type { Repo } from '../../../../shared/repo-types'
 import {
   projectLiveSessions,
   projectRegistrations,
-  projectWorktrees,
   resolveProjectOverviewRepo
 } from './project-overview-model'
 import { ProjectAgentConfigCard } from './ProjectAgentConfigCard'
@@ -41,11 +39,11 @@ import { ProjectPullRequestsCard } from './ProjectPullRequestsCard'
 import { ProjectReadmeCard } from './ProjectReadmeCard'
 import { ProjectUsageCard } from './ProjectUsageCard'
 import { ProjectWorkspacesCard } from './ProjectWorkspacesCard'
+import { useProjectWorktrees } from './use-project-worktrees'
 
 function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   const now = useHomeNow()
   const repos = useAppStore((s) => s.repos)
-  const repoWorktrees = useAppStore((s) => selectWorktreesByRepo(s)[repo.id])
   const { sessions: allSessions } = useLiveSessions()
   const { links } = useLiveSessionLinks()
   const { machines } = useMachinesInventory(useLocalMachineName())
@@ -53,20 +51,7 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   const hostId = getRepoExecutionHostId(repo)
   const machine = machines.find((item) => item.executionHostId === hostId) ?? null
   const registrations = useMemo(() => projectRegistrations(repos, repo.id), [repos, repo.id])
-  const sortBy = useAppStore((s) => s.sortBy)
-  // The sidebar re-ranks on these two, so ranking on them too keeps both lists in step.
-  const settledSortEpoch = useAppStore((s) => s.settledSortEpoch)
-  const sortOrderEpoch = useAppStore((s) => s.sortOrderEpoch)
-  const worktrees = useMemo(
-    () =>
-      projectWorktrees(repoWorktrees, repo, repos, {
-        sortBy,
-        sources: useAppStore.getState(),
-        now: Date.now()
-      }),
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- the epochs are triggers, not inputs.
-    [repoWorktrees, repo, repos, sortBy, settledSortEpoch, sortOrderEpoch]
-  )
+  const worktrees = useProjectWorktrees(repo)
   const mainWorktree = worktrees.find((worktree) => worktree.isMainWorktree) ?? worktrees[0] ?? null
   const sessions = useMemo(
     () => projectLiveSessions(allSessions, links, repo.id),

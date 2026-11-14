@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { GitStatusResult } from '../../../../shared/git/status/git-status-types'
 import type { Repo } from '../../../../shared/repo-types'
 import { NO_LIVE_SMART_SORT_SOURCES } from '../../../../shared/sidebar-list/sorting/smart-sort'
+import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 import { makeRepo, makeWorktree } from '../worktree-jump/worktree-jump-palette-test-fixtures'
@@ -10,6 +11,7 @@ import {
   isCleanGitChangeSummary,
   projectLiveSessions,
   projectWorktrees,
+  rankProjectWorktrees,
   resolveProjectOverviewRepo,
   sumProjectUsage,
   summarizeGitChanges
@@ -36,12 +38,29 @@ describe('resolveProjectOverviewRepo', () => {
 })
 
 describe('projectWorktrees', () => {
-  const order = (sortBy: 'recent' | 'name' | 'manual') => ({
-    sortBy,
-    sources: NO_LIVE_SMART_SORT_SOURCES,
-    now: 1_000_000
-  })
-  const ids = (worktrees: Worktree[]): string[] => worktrees.map((worktree) => worktree.id)
+  const ranked = (
+    worktrees: Worktree[] | undefined,
+    repo: Repo,
+    repos: Repo[],
+    sortBy: 'recent' | 'name' | 'manual'
+  ): string[] =>
+    rankProjectWorktrees(worktrees, repo, repos, {
+      sortBy,
+      sources: NO_LIVE_SMART_SORT_SOURCES,
+      now: 1_000_000
+    })
+  const listed = (
+    worktrees: Worktree[] | undefined,
+    repo: Repo,
+    repos: Repo[],
+    sortBy: 'recent' | 'name' | 'manual',
+    lineageById: Record<string, WorktreeLineage> = {}
+  ): string[] =>
+    projectWorktrees(worktrees, repo, repos, {
+      sortBy,
+      ranked: ranked(worktrees, repo, repos, sortBy),
+      lineageById
+    }).map((worktree) => worktree.id)
 
   it("lists a registration's own live workspaces", () => {
     const worktrees = [
@@ -52,20 +71,11 @@ describe('projectWorktrees', () => {
       makeWorktree('main', 'main', { isMainWorktree: true, lastActivityAt: 1 })
     ]
     const repos = [local, onGpu]
-    expect(ids(projectWorktrees(worktrees, local, repos, order('recent')))).toEqual([
-      'main',
-      'recent',
-      'old'
-    ])
-    expect(ids(projectWorktrees(worktrees, onGpu, repos, order('recent')))).toEqual(['on-gpu'])
+    expect(listed(worktrees, local, repos, 'recent')).toEqual(['main', 'recent', 'old'])
+    expect(listed(worktrees, onGpu, repos, 'recent')).toEqual(['on-gpu'])
     // A project that lives only on a remote machine owns the rows that name no machine.
-    expect(ids(projectWorktrees(worktrees, onGpu, [onGpu], order('recent')))).toEqual([
-      'main',
-      'on-gpu',
-      'recent',
-      'old'
-    ])
-    expect(projectWorktrees(undefined, local, repos, order('recent'))).toEqual([])
+    expect(listed(worktrees, onGpu, [onGpu], 'recent')).toEqual(['main', 'on-gpu', 'recent', 'old'])
+    expect(listed(undefined, local, repos, 'recent')).toEqual([])
   })
 
   it("follows the sidebar's sort mode instead of always ranking by recency", () => {
@@ -74,17 +84,49 @@ describe('projectWorktrees', () => {
       makeWorktree('ws-2', 'ws-2', { lastActivityAt: 10, manualOrder: 3 }),
       makeWorktree('main', 'main', { isMainWorktree: true, lastActivityAt: 1, manualOrder: 2 })
     ]
-    expect(ids(projectWorktrees(worktrees, local, [local], order('name')))).toEqual([
-      'main',
-      'ws-2',
-      'ws-10'
-    ])
+    expect(listed(worktrees, local, [local], 'name')).toEqual(['main', 'ws-2', 'ws-10'])
     // A hand-made order keeps the main checkout where the user put it.
-    expect(ids(projectWorktrees(worktrees, local, [local], order('manual')))).toEqual([
-      'ws-2',
-      'main',
-      'ws-10'
+    expect(listed(worktrees, local, [local], 'manual')).toEqual(['ws-2', 'main', 'ws-10'])
+  })
+
+  it('lists a child workspace right after its parent, where the sidebar nests it', () => {
+    const worktrees = [
+      makeWorktree('alpha', 'alpha'),
+      makeWorktree('bravo', 'bravo', { instanceId: 'bravo-1' }),
+      makeWorktree('charlie', 'charlie'),
+      makeWorktree('delta', 'delta', { instanceId: 'delta-1' })
+    ]
+    const childOfDelta: WorktreeLineage = {
+      worktreeId: 'bravo',
+      worktreeInstanceId: 'bravo-1',
+      parentWorktreeId: 'delta',
+      parentWorktreeInstanceId: 'delta-1',
+      origin: 'manual',
+      capture: { source: 'manual-action', confidence: 'explicit' },
+      createdAt: 1
+    }
+    expect(listed(worktrees, local, [local], 'name', { bravo: childOfDelta })).toEqual([
+      'alpha',
+      'charlie',
+      'delta',
+      'bravo'
     ])
+  })
+
+  it('keeps its order through a rename until the sidebar ranks again, a new workspace last', () => {
+    const before = [makeWorktree('a', 'alpha'), makeWorktree('b', 'bravo')]
+    const after = [
+      makeWorktree('new', 'aardvark'),
+      makeWorktree('a', 'zulu'),
+      makeWorktree('b', 'bravo')
+    ]
+    const held = projectWorktrees(after, local, [local], {
+      sortBy: 'name',
+      ranked: ranked(before, local, [local], 'name'),
+      lineageById: {}
+    })
+    expect(held.map((worktree) => worktree.id)).toEqual(['a', 'b', 'new'])
+    expect(listed(after, local, [local], 'name')).toEqual(['new', 'b', 'a'])
   })
 })
 
