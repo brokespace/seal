@@ -29,6 +29,7 @@ function folderMachine(id: string, fsRoot: string): HomeChatMachine {
     info,
     dialect: 'posix',
     exec: unsupported,
+    homeDir: unsupported,
     readTextFile: unsupported,
     writeTextFile: unsupported,
     probeLoad: unsupported,
@@ -58,15 +59,15 @@ describe('executeHomeChatTool transfer_file', () => {
       'transfer_file',
       {
         from_machine: 'ssh:a',
-        from_path: 'data/model.bin',
+        from_path: '/data/model.bin',
         to_machine: 'ssh:b',
-        to_path: 'in/model.bin'
+        to_path: '/in/model.bin'
       },
       ctx
     )
 
     expect(result).toEqual({
-      text: 'Copied data/model.bin to in/model.bin (ssh:a → ssh:b).',
+      text: 'Copied /data/model.bin to /in/model.bin (ssh:a → ssh:b).',
       isError: false,
       machine: 'ssh:a → ssh:b'
     })

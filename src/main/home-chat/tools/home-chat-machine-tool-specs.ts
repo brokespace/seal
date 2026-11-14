@@ -56,7 +56,8 @@ export const HOME_CHAT_MACHINE_TOOLS = {
     shape: { job_id: jobId }
   },
   read_file: {
-    description: 'Read a UTF-8 text file from a machine.',
+    description:
+      'Read a UTF-8 text file from a machine. Paths may be absolute, start with ~, or be relative to the home directory; the same holds for every file tool.',
     shape: {
       machine,
       path: z.string().min(1),
@@ -75,7 +76,7 @@ export const HOME_CHAT_MACHINE_TOOLS = {
   },
   transfer_file: {
     description:
-      'Copy a file (or, with recursive, a directory) from one machine to another; either may be "local". Files stream rather than load into memory. method "auto" (default) has the source machine push straight to the destination with rsync/scp when it can log in there, otherwise relays through this computer. "direct" requires the push, "relay" always goes through this computer (files only).',
+      'Copy a file (or, with recursive, a directory) from one machine to another; either may be "local". to_path is the full path of the copy (the file itself, or the directory that becomes the copy); missing parent directories are created. Files stream rather than load into memory. method "auto" (default) has the source machine push straight to the destination with rsync/scp when it can log in there, otherwise relays through this computer. "direct" requires the push, "relay" always goes through this computer (files only).',
     shape: {
       from_machine: machine,
       from_path: z.string().min(1),

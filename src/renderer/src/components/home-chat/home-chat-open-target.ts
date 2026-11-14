@@ -16,15 +16,47 @@ async function takeOver(sessionId: string): Promise<void> {
   await takeOverLiveSession(session)
 }
 
+type ThreadSelector = (chatId: string) => void
+
+let selectThread: ThreadSelector | null = null
+let pendingThread: string | null = null
+
+/** The assistant panel shows a requested thread; one asked for while it is closed waits for it. */
+export function registerHomeChatThreadSelector(select: ThreadSelector): () => void {
+  selectThread = select
+  if (pendingThread) {
+    select(pendingThread)
+    pendingThread = null
+  }
+  return () => {
+    if (selectThread === select) {
+      selectThread = null
+    }
+  }
+}
+
+/** Listens on every page: the assistant also runs while its panel is not on screen. */
+export function subscribeHomeChatOpenRequests(): () => void {
+  return (
+    window.api.homeChat?.onEvent((event) => {
+      if (event.type === 'open') {
+        openHomeChatTarget(event.target)
+      }
+    }) ?? (() => {})
+  )
+}
+
 /** Carries out what the assistant asked Seal's window to show. */
-export function openHomeChatTarget(
-  target: HomeChatOpenTarget,
-  selectThread: (chatId: string) => void
-): void {
+export function openHomeChatTarget(target: HomeChatOpenTarget): void {
   const store = useAppStore.getState()
   switch (target.kind) {
     case 'thread':
-      selectThread(target.chatId)
+      store.setActiveView('home')
+      if (selectThread) {
+        selectThread(target.chatId)
+      } else {
+        pendingThread = target.chatId
+      }
       return
     case 'machine': {
       const machineId = parseMachineId(target.machineId)

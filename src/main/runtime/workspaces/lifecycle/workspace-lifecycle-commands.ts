@@ -31,7 +31,12 @@ import type {
 } from './workspace-lifecycle-command'
 import type { WorkspaceLifecycleQueue } from './workspace-lifecycle-queue'
 
-type RemovalFlag = 'force' | 'runHooks' | 'allowUnverifiedPtyStop' | 'allowFailedArchiveHook'
+type RemovalFlag =
+  | 'force'
+  | 'runHooks'
+  | 'allowUnverifiedPtyStop'
+  | 'allowFailedArchiveHook'
+  | 'unlockLockedWorktree'
 
 export function workspaceLifecycleKey(hostId: ExecutionHostId, worktreeId: string): string {
   return hostSleepKey(hostId, worktreeId)
@@ -180,7 +185,8 @@ export function queueWorkspaceDelete<T>(
     force: requested.force === true,
     runHooks: requested.runHooks === true,
     allowUnverifiedPtyStop: requested.allowUnverifiedPtyStop === true,
-    allowFailedArchiveHook: requested.allowFailedArchiveHook === true
+    allowFailedArchiveHook: requested.allowFailedArchiveHook === true,
+    unlockLockedWorktree: requested.unlockLockedWorktree === true
   }
   const options: LifecycleDeleteOptions = {
     // A reviewed nested delete must not share a plain delete's reply, which refuses the nesting.

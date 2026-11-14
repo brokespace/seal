@@ -20,6 +20,7 @@ import {
   removeMachineWorktree
 } from '../work/machine-worktrees'
 import { runLocalShellScript } from '../exec/local-shell-exec'
+import { classifyMachineWorktreeRemovalRefusal } from '../../../shared/machines/machine-worktree-removal-refusal'
 import type { MachineConnection } from './machine-connection'
 
 // Both transports reach this host, so one expectation must hold for each of them.
@@ -207,6 +208,49 @@ describe.skipIf(process.platform !== 'linux').each([
     ])
     expect(removed.map((entry) => entry.path)).toEqual([repo])
     expect(await listMachineWorktrees(machine, repo)).toEqual(removed)
+  })
+
+  it('removes dirty and locked worktrees only with the matching waiver', async () => {
+    const repo = await scratch()
+    const git = `git -c user.email=seal@example.com -c user.name=Seal`
+    await runLocalShellScript(`git init -q -b main && ${git} commit -q --allow-empty -m init`, {
+      timeoutMs: 15_000,
+      cwd: repo
+    })
+    const at = (name: string): string =>
+      path.join(path.dirname(repo), `${path.basename(repo)}-${name}`)
+    for (const name of ['dirty', 'locked', 'gone']) {
+      await createMachineWorktree(machine, { repoPath: repo, path: at(name), branch: name })
+    }
+    await writeFile(path.join(at('dirty'), 'scratch.txt'), 'uncommitted')
+    await runLocalShellScript(`git worktree lock --reason 'agent running' '${at('locked')}'`, {
+      timeoutMs: 15_000,
+      cwd: repo
+    })
+    await rm(at('gone'), { recursive: true, force: true })
+    const refusal = async (args: { path: string; force?: boolean }): Promise<unknown> =>
+      classifyMachineWorktreeRemovalRefusal(
+        await removeMachineWorktree(machine, { repoPath: repo, ...args }).then(
+          () => 'removed',
+          (error: Error) => error.message
+        )
+      )
+
+    expect(await refusal({ path: at('dirty') })).toEqual({ kind: 'changes' })
+    expect(await refusal({ path: at('locked'), force: true })).toEqual({
+      kind: 'locked',
+      reason: 'agent running'
+    })
+    await removeMachineWorktree(machine, { repoPath: repo, path: at('dirty'), force: true })
+    await removeMachineWorktree(machine, { repoPath: repo, path: at('gone') })
+    const left = await removeMachineWorktree(machine, {
+      repoPath: repo,
+      path: at('locked'),
+      force: true,
+      unlock: true
+    })
+
+    expect(left.map((entry) => entry.path)).toEqual([repo])
   })
 
   it('serves live-session scans and home-chat file tools', async () => {

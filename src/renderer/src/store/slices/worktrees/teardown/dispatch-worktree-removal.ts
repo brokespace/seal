@@ -68,6 +68,7 @@ async function requestWorktreeRemoval(
         : {}),
       allowUnverifiedPtyStop: options?.allowUnverifiedPtyStop === true,
       allowFailedArchiveHook: options?.allowFailedArchiveHook === true,
+      ...(options?.unlockLockedWorktree === true ? { unlockLockedWorktree: true } : {}),
       skipArchive,
       ...snapshotPruneBatch
     })
@@ -84,6 +85,7 @@ async function requestWorktreeRemoval(
       allowUnverifiedPtyStop: options?.allowUnverifiedPtyStop === true,
       // Send waiver only when true; older hosts silently strip unknown params at this version boundary.
       ...(options?.allowFailedArchiveHook === true ? { allowFailedArchiveHook: true } : {}),
+      ...(options?.unlockLockedWorktree === true ? { unlockLockedWorktree: true } : {}),
       ...(options?.approvedNestedWorktrees
         ? { approvedNestedWorktrees: options.approvedNestedWorktrees }
         : {}),

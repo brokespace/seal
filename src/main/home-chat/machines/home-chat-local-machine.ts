@@ -1,5 +1,5 @@
 import { appendFile, copyFile, mkdir, open, writeFile } from 'node:fs/promises'
-import { cpus, hostname, loadavg } from 'node:os'
+import { cpus, homedir, hostname, loadavg } from 'node:os'
 import { dirname } from 'node:path'
 import { runLocalShellScript } from '../../machines/exec/local-shell-exec'
 import { LOCAL_MACHINE_ID, type HomeChatMachine } from './home-chat-machine-types'
@@ -37,6 +37,7 @@ export function createLocalMachine(): HomeChatMachine {
     },
     dialect: process.platform === 'win32' ? 'powershell' : 'posix',
     exec: runLocalShellScript,
+    homeDir: () => Promise.resolve(homedir()),
     readTextFile: readLocalText,
     writeTextFile: async (path, content, { append }) => {
       await mkdir(dirname(path), { recursive: true })

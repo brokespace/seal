@@ -113,6 +113,7 @@ export type MachinesApi = {
     repoPath: string
     path: string
     force?: boolean
+    unlock?: boolean
   }) => Promise<MachineWorktree[]>
   /** The busiest processes by CPU and memory; Linux and macOS machines only. */
   listProcesses: (args: { machineId: MachineId }) => Promise<MachineProcessSnapshot>

@@ -105,6 +105,35 @@ export function sealGroupDescription(group: SealAccountGroup, t: Translate): str
   }
 }
 
+/** How a login is billed, where its plan badge does not already say: null for keys and named plans. */
+export function sealLoginBillingBadge(
+  candidate: SealAccountCandidate,
+  t: Translate
+): { label: string; hint: string } | null {
+  if (candidate.kind === 'api-key') {
+    return null
+  }
+  if (candidate.billing === 'api') {
+    return {
+      label: t('seal.accounts.badge.apiBilling', 'API billing'),
+      hint: t(
+        'seal.accounts.badge.apiBillingHint',
+        'This login belongs to a Console organization that pays per token.'
+      )
+    }
+  }
+  if (candidate.billing === 'subscription' && !candidate.plan) {
+    return {
+      label: t('seal.accounts.badge.subscription', 'Subscription'),
+      hint: t(
+        'seal.accounts.badge.subscriptionHint',
+        'This login runs on a plan seat, not on API usage.'
+      )
+    }
+  }
+  return null
+}
+
 /** The line under the account name: who it signs in as and where. */
 export function sealAccountIdentity(candidate: SealAccountCandidate, t: Translate): string {
   if (candidate.credential === 'setup-token') {

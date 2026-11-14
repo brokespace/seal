@@ -8,6 +8,7 @@ import {
   type HomeChatToolResult
 } from './home-chat-tool-context'
 import { describeSubagent } from '../delegation/home-chat-subagents'
+import { resolveHomeChatMachineId } from '../machines/home-chat-machine-provider'
 import { describeRoutine } from '../routines/home-chat-routines'
 import { webFetch, webSearch } from '../web/home-chat-web'
 
@@ -114,6 +115,52 @@ function routines(input: Record<string, unknown>, ctx: HomeChatToolContext): Hom
   }
 }
 
+/** Notes and routes are keyed by machine id, so a name the model used is resolved first. */
+async function machineIdNamed(ctx: HomeChatToolContext, name: string): Promise<string> {
+  return name.startsWith('hop:') ? name : resolveHomeChatMachineId(name, await ctx.machines.list())
+}
+
+async function configureMachine(
+  input: Record<string, unknown>,
+  ctx: HomeChatToolContext
+): Promise<HomeChatToolResult> {
+  const { memory } = ctx.services
+  const named = str(input.machine).trim()
+  const remove = input.remove === true
+  // Notes for a machine that is gone can still be removed by the name they were saved under.
+  const machine = await machineIdNamed(ctx, named).catch((error: unknown) => {
+    if (remove) {
+      return named
+    }
+    throw error
+  })
+  const via = optionalStr(input.via)
+  if (
+    machine.startsWith('hop:') &&
+    !remove &&
+    !via &&
+    !memory.machineNotes().some((n) => n.machine === machine && n.via)
+  ) {
+    return {
+      text: 'A hop: machine needs via (the machine that runs ssh) and host.',
+      isError: true
+    }
+  }
+  const note = memory.configureMachine({
+    machine,
+    ...(typeof input.notes === 'string' ? { notes: input.notes } : {}),
+    ...(optionalStr(input.os)
+      ? { os: input.os === 'windows' ? 'windows' : input.os === 'macos' ? 'macos' : 'linux' }
+      : {}),
+    ...(via ? { via: await machineIdNamed(ctx, via) } : {}),
+    ...(optionalStr(input.host) ? { host: str(input.host) } : {}),
+    ...(optionalStr(input.user) ? { user: str(input.user) } : {}),
+    ...(typeof input.port === 'number' ? { port: input.port } : {}),
+    remove
+  })
+  return ok(note ? `Saved ${JSON.stringify(note)}` : `Removed notes for ${machine}.`)
+}
+
 export async function executeAssistantTool(
   tool: HomeChatAssistantToolName,
   input: Record<string, unknown>,
@@ -138,33 +185,8 @@ export async function executeAssistantTool(
     }
     case 'forget':
       return ok(`Forgot: ${services.memory.forget(str(input.query)).text}`)
-    case 'configure_machine': {
-      const machine = str(input.machine).trim()
-      if (
-        machine.startsWith('hop:') &&
-        input.remove !== true &&
-        !optionalStr(input.via) &&
-        !services.memory.machineNotes().some((n) => n.machine === machine && n.via)
-      ) {
-        return {
-          text: 'A hop: machine needs via (the machine that runs ssh) and host.',
-          isError: true
-        }
-      }
-      const note = services.memory.configureMachine({
-        machine,
-        ...(typeof input.notes === 'string' ? { notes: input.notes } : {}),
-        ...(optionalStr(input.os)
-          ? { os: input.os === 'windows' ? 'windows' : input.os === 'macos' ? 'macos' : 'linux' }
-          : {}),
-        ...(optionalStr(input.via) ? { via: str(input.via) } : {}),
-        ...(optionalStr(input.host) ? { host: str(input.host) } : {}),
-        ...(optionalStr(input.user) ? { user: str(input.user) } : {}),
-        ...(typeof input.port === 'number' ? { port: input.port } : {}),
-        remove: input.remove === true
-      })
-      return ok(note ? `Saved ${JSON.stringify(note)}` : `Removed notes for ${machine}.`)
-    }
+    case 'configure_machine':
+      return configureMachine(input, ctx)
     case 'spawn_subagent':
       return spawnSubagent(input, ctx)
     case 'check_subagent': {

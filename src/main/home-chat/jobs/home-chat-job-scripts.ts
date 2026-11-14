@@ -1,5 +1,5 @@
 import { encodePowerShellCommand } from '../../../shared/powershell-command-encoding'
-import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import { posixPathWord } from '../machines/home-chat-machine-paths'
 import { powerShellLiteral } from '../machines/home-chat-machine-scripts'
 import type { HomeChatShellDialect } from '../machines/home-chat-machine-types'
 
@@ -14,7 +14,7 @@ export type JobLaunch = {
   /** Seconds to wait for the job to finish before reporting it as running; 0 returns at once. */
   waitSeconds: number
   tailBytes: number
-  /** Delete the job folder when it finishes inside the wait. */
+  /** Delete the job folder when it finishes inside the wait and its whole log fit in the reply. */
   removeWhenFinished: boolean
 }
 
@@ -63,29 +63,59 @@ function powerShellReport(tailBytes: number): string {
   ].join('\n')
 }
 
+// Runs the command under bash (or sh) with the environment of the user's login shell profile.
+const POSIX_RUNNER = [
+  'd=$1',
+  'SEAL_JOB_CMD="$d/cmd"; export SEAL_JOB_CMD',
+  'if command -v bash >/dev/null 2>&1; then SEAL_JOB_SH=bash; else SEAL_JOB_SH=/bin/sh; fi',
+  'export SEAL_JOB_SH',
+  'login=',
+  // Only shells known to accept `-l -c`; all of them read this one line the same way.
+  'case "${SHELL##*/}" in sh|dash|bash|zsh|fish|ksh|mksh) [ -x "$SHELL" ] && login=1 ;; esac',
+  'if [ -n "$login" ]; then',
+  '  "$SHELL" -l -c \'exec "$SEAL_JOB_SH" "$SEAL_JOB_CMD"\' > "$d/out.log" 2>&1 < /dev/null',
+  'elif [ "$SEAL_JOB_SH" = bash ]; then',
+  '  bash -l "$d/cmd" > "$d/out.log" 2>&1 < /dev/null',
+  'else',
+  '  /bin/sh "$d/cmd" > "$d/out.log" 2>&1 < /dev/null',
+  'fi',
+  'echo $? > "$d/exit.tmp"; mv "$d/exit.tmp" "$d/exit"'
+].join('\n')
+
+/** A quoted here-document copies text verbatim, so nothing has to be decoded on the machine. */
+function posixWriteFile(target: string, content: string, jobId: string): string {
+  let delimiter = `SEAL_EOF_${safeId(jobId)}`
+  while (content.includes(delimiter)) {
+    delimiter += 'X'
+  }
+  return `cat > ${target} <<'${delimiter}' || exit 1\n${content}\n${delimiter}`
+}
+
 function posixLaunch(job: JobLaunch): string {
-  const encoded = Buffer.from(job.command, 'utf8').toString('base64')
   return [
     posixPrelude(job.jobId),
     // The detached job inherits this directory.
-    job.cwd ? `cd ${quotePosixShell(job.cwd)} || exit 1` : '',
+    job.cwd ? `cd ${posixPathWord(job.cwd)} || exit 1` : '',
     'mkdir -p "$d" || exit 1',
     `find "$HOME/.seal/jobs" -mindepth 1 -maxdepth 1 -type d -mtime +${PRUNE_DAYS} -exec rm -rf {} + 2>/dev/null`,
-    // macOS before 13 only knows base64 -D.
-    "if printf 'YQ==' | base64 -d >/dev/null 2>&1; then b64='base64 -d'; else b64='base64 -D'; fi",
-    `printf '%s' '${encoded}' | $b64 > "$d/cmd" || exit 1`,
-    'if command -v bash >/dev/null 2>&1; then sh_bin=bash; sh_flag=-l; else sh_bin=/bin/sh; sh_flag=; fi',
+    posixWriteFile('"$d/cmd"', job.command, job.jobId),
+    posixWriteFile('"$d/run"', POSIX_RUNNER, job.jobId),
     // A new session survives the SSH channel closing and lets job_kill signal the whole tree.
-    'if command -v setsid >/dev/null 2>&1; then detach=setsid',
-    "elif command -v perl >/dev/null 2>&1; then detach='perl -MPOSIX=setsid -e setsid();exec(@ARGV)'",
-    'else detach=nohup; fi',
-    `$detach /bin/sh -c '"$1" $2 "$3/cmd" > "$3/out.log" 2>&1 < /dev/null; echo $? > "$3/exit.tmp"; mv "$3/exit.tmp" "$3/exit"' seal-job "$sh_bin" "$sh_flag" "$d" > /dev/null 2>&1 &`,
+    'if command -v setsid >/dev/null 2>&1; then',
+    '  setsid /bin/sh "$d/run" "$d" > /dev/null 2>&1 < /dev/null &',
+    'elif command -v perl >/dev/null 2>&1; then',
+    '  perl -MPOSIX=setsid -e \'setsid(); exec @ARGV\' /bin/sh "$d/run" "$d" > /dev/null 2>&1 < /dev/null &',
+    'else',
+    '  nohup /bin/sh "$d/run" "$d" > /dev/null 2>&1 < /dev/null &',
+    'fi',
     'echo $! > "$d/pid"',
     'if sleep 0.2 2>/dev/null; then step=0.2; per=5; else step=1; per=1; fi',
     `i=0; n=$((${Math.max(0, Math.floor(job.waitSeconds))} * per))`,
     'while [ ! -f "$d/exit" ] && [ "$i" -lt "$n" ]; do sleep "$step"; i=$((i + 1)); done',
     posixReport(job.tailBytes),
-    job.removeWhenFinished ? '[ -f "$d/exit" ] && rm -rf "$d"' : '',
+    job.removeWhenFinished
+      ? `[ -f "$d/exit" ] && [ "$size" -le ${job.tailBytes} ] && rm -rf "$d"`
+      : '',
     'exit 0'
   ].join('\n')
 }
@@ -115,7 +145,7 @@ function powerShellLaunch(job: JobLaunch): string {
     'while (-not (Test-Path -LiteralPath (Join-Path $d "exit")) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 200 }',
     powerShellReport(job.tailBytes),
     job.removeWhenFinished
-      ? 'if (Test-Path -LiteralPath (Join-Path $d "exit")) { Remove-Item -LiteralPath $d -Recurse -Force }'
+      ? `if ((Test-Path -LiteralPath (Join-Path $d "exit")) -and $size -le ${job.tailBytes}) { Remove-Item -LiteralPath $d -Recurse -Force }`
       : ''
   ].join('\n')
 }

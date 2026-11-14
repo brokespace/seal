@@ -1,5 +1,6 @@
 import { summarizeSkillMarkdown } from '../../../shared/skill-metadata'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import { posixPathWord } from '../machines/home-chat-machine-paths'
 import { powerShellLiteral } from '../machines/home-chat-machine-scripts'
 import type { HomeChatMachine, HomeChatShellDialect } from '../machines/home-chat-machine-types'
 
@@ -31,7 +32,7 @@ const PROJECT_INSTRUCTIONS = ['CLAUDE.md', 'AGENTS.md']
 
 function posixScript(projectPath: string | undefined): string {
   const home = (path: string): string => `"$HOME/${path}"`
-  const project = (path: string): string => quotePosixShell(`${projectPath}/${path}`)
+  const project = (path: string): string => posixPathWord(`${projectPath}/${path}`)
   const skillRoots = [
     ...HOME_SKILL_ROOTS.map(home),
     ...(projectPath ? PROJECT_SKILL_ROOTS.map(project) : [])

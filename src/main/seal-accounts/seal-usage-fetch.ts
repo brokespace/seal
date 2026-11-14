@@ -24,12 +24,23 @@ export function sealUsageFetcher(
       if (!settings.claudeOAuthUsageEnabled) {
         return claudeOAuthUsageDisabledResult()
       }
-      return candidate.localId
-        ? fetchInactiveClaudeAccountUsage(
-            { id: candidate.localId },
-            { networkProxySettings: settings, signal }
-          )
-        : fetchActiveClaudeRateLimits({ networkProxySettings: settings, signal })
+      if (candidate.localId) {
+        return fetchInactiveClaudeAccountUsage(
+          { id: candidate.localId },
+          { networkProxySettings: settings, signal }
+        )
+      }
+      // The machine's own login: read its token from the folder its identity was read from.
+      const router = manager.deps.services.claudeRuntimeAuth.router
+      return fetchActiveClaudeRateLimits({
+        networkProxySettings: settings,
+        signal,
+        authPreparation: {
+          configDir: router.systemDefaultHome(),
+          envPatch: {},
+          provenance: 'system'
+        }
+      })
     }
     const home = candidate.localId ? manager.codexHome(candidate.localId) : undefined
     if (home === null) {

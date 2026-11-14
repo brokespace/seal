@@ -17,7 +17,8 @@ import {
   sealAccountIdentity,
   sealHealthAdvice,
   sealHealthLabel,
-  sealHealthTone
+  sealHealthTone,
+  sealLoginBillingBadge
 } from './seal-account-presentation'
 import { SealUsageMeter } from './SealUsageMeter'
 
@@ -84,6 +85,7 @@ export function SealAccountCard({
   const isLogin = candidate.kind !== 'api-key'
   const identity = sealAccountIdentity(candidate, t)
   const advice = sealHealthAdvice(candidate, t)
+  const billingBadge = sealLoginBillingBadge(candidate, t)
   const paused = quarantine && quarantine.until > now ? quarantine : null
   const canUse =
     account.onHome && isLogin && candidate.launchable && !candidate.active && tone !== 'dead'
@@ -136,7 +138,16 @@ export function SealAccountCard({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className="truncate text-sm font-medium">{candidate.label}</span>
-              {candidate.plan ? <Badge variant="outline">{candidate.plan}</Badge> : null}
+              {candidate.plan ? (
+                <Badge variant="outline" data-slot="seal-account-plan">
+                  {candidate.plan}
+                </Badge>
+              ) : null}
+              {billingBadge ? (
+                <Badge variant="outline" title={billingBadge.hint} data-slot="seal-account-billing">
+                  {billingBadge.label}
+                </Badge>
+              ) : null}
               {candidate.systemLogin ? (
                 <Badge
                   variant="outline"

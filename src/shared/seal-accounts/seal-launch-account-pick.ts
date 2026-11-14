@@ -16,11 +16,13 @@ import {
 export type SealLaunchOverride = {
   /** An account key, alias, email or this host's account id. */
   ref: string
-  source: 'env' | 'workspace-pin'
+  /** `session-choice` is the account picked in the New agent session dialog, for that launch only. */
+  source: 'env' | 'session-choice' | 'workspace-pin'
 }
 
 export type SealLaunchPickReason =
   | 'env'
+  | 'session-choice'
   | 'workspace-pin'
   | 'project-default'
   | 'machine-default'

@@ -4,6 +4,7 @@ import type { OrcadFeature } from '../../startup/orcad-readiness'
 import {
   SealAccountsAddApiKeyParams,
   SealAccountsApplyFleetConfigParams,
+  SealAccountsChooseNextLaunchParams,
   SealAccountsImportCredentialParams,
   SealAccountsPickParams,
   SealAccountsPinWorkspaceParams,
@@ -34,6 +35,7 @@ import {
   swapSealSessionTo
 } from '../../../../seal-accounts/seal-session-swap'
 import { pickSealLaunch } from '../../../../seal-accounts/seal-launch-pick-context'
+import { sealNextLaunchAccounts } from '../../../../seal-accounts/seal-next-launch-account'
 import { refreshSealSystemLogins } from '../../../../seal-accounts/seal-system-login'
 import { SEAL_ACCOUNT_ROSTER_METHODS } from './seal-account-roster'
 import {
@@ -154,6 +156,20 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
     handler: async (params) => {
       accounts().pinWorkspace(params.worktreeId, params.provider, params.account)
       return accounts().status()
+    }
+  }),
+  defineMethod({
+    name: 'seal.accounts.chooseNextLaunch',
+    permission: 'accounts-admin',
+    params: SealAccountsChooseNextLaunchParams,
+    handler: async (params) => {
+      const manager = accounts()
+      sealNextLaunchAccounts(manager).set(
+        params.repoId,
+        params.provider,
+        params.account === null ? null : manager.resolveKey(params.account, params.provider)
+      )
+      return {}
     }
   }),
   defineMethod({

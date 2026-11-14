@@ -9,6 +9,9 @@ import type {
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 
 const MAX_MESSAGE_CHARS = 1_500
+/** How long a send waits to learn whether the message reached the session or failed. */
+const SEND_SETTLE_MS = 20_000
+const SEND_POLL_MS = 200
 
 export type HomeChatSessionSummary = {
   id: string
@@ -47,6 +50,7 @@ export type HomeChatLiveSessions = {
   refresh: () => Promise<void>
   transcriptPage: (sessionId: string, before: null, limit?: number) => Promise<LiveTranscriptPage>
   send: (request: { sessionId: string; messageId: string; text: string }) => Promise<LiveMessage>
+  messages: (sessionId?: string) => LiveMessage[]
 }
 
 function summarize(session: LiveSession): HomeChatSessionSummary {
@@ -121,7 +125,17 @@ export function createHomeChatSessionAccess(deps: {
       renderSessionTranscript(
         (await requireLive().transcriptPage(sessionId, null, limit)).messages
       ),
-    send: async (sessionId, text) =>
-      delivery(await requireLive().send({ sessionId, messageId: randomUUID(), text }))
+    send: async (sessionId, text) => {
+      const live = requireLive()
+      let message = await live.send({ sessionId, messageId: randomUUID(), text })
+      // The outbox answers before it has tried: wait for the attempt, so a failure is reported as one.
+      const deadline = Date.now() + SEND_SETTLE_MS
+      while ((message.state === 'queued' || message.state === 'sending') && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, SEND_POLL_MS))
+        message =
+          live.messages().find((candidate) => candidate.messageId === message.messageId) ?? message
+      }
+      return delivery(message)
+    }
   }
 }
