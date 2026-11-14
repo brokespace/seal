@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { PageLayout } from '@/components/page-layout/PageLayout'
 import { AutomationEditorDialog } from './authoring/AutomationEditorDialog'
 import { AutomationsDetailPane } from './details/AutomationsDetailPane'
 import { AutomationsPageSkeleton } from './AutomationsPageSkeleton'
@@ -129,7 +130,7 @@ export function AutomationsPageSurface({
     setActivePaneTab('runs')
   }
   return (
-    <main className="relative flex h-full min-h-0 flex-col bg-background pt-5 text-foreground md:pt-6">
+    <PageLayout>
       <AutomationsPageTopBar
         pageView={pageView}
         isDetailOpen={isDetailOpen}
@@ -321,6 +322,6 @@ export function AutomationsPageSurface({
           onOpenDetail={() => setIsDetailOpen(true)}
         />
       )}
-    </main>
+    </PageLayout>
   )
 }
