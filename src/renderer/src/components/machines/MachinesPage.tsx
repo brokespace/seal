@@ -7,8 +7,8 @@ import { MachineDetail } from './detail/MachineDetail'
 import { MachineList } from './list/MachineList'
 import { useMachineMetricsEntries, useMachineMetricsPolling } from './model/machine-metrics-store'
 import { getLastSelectedMachineId, rememberMachineSelection } from './model/machine-selection'
-import { useMachineAgentSessions } from './model/use-machine-agent-sessions'
-import { groupSessionsByMachine } from './model/machine-agent-sessions'
+import { useLiveSessions } from '../live-sessions/live-session-registry-store'
+import { activeLiveSessionsByMachine } from './model/machine-live-sessions'
 import { useMachinesInventory } from './model/use-machines-inventory'
 import { MachineTransfersPanel } from './transfers/MachineTransfersPanel'
 import { useMachineTransfers } from './transfers/use-machine-transfers'
@@ -20,10 +20,10 @@ export default function MachinesPage(): React.JSX.Element {
   )
   const metricsById = useMachineMetricsEntries()
   useMachineMetricsPolling(machines)
-  const sessionsByHost = useMachineAgentSessions()
+  const { sessions } = useLiveSessions()
   const sessionsByMachine = useMemo(
-    () => groupSessionsByMachine(machines, sessionsByHost),
-    [machines, sessionsByHost]
+    () => activeLiveSessionsByMachine(machines, sessions),
+    [machines, sessions]
   )
   const { transfers, clearFinished } = useMachineTransfers()
   const [selectedId, setSelectedId] = useState<MachineId | null>(getLastSelectedMachineId)

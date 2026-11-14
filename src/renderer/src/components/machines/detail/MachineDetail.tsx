@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {
   ArrowLeft,
-  Bot,
   ArrowLeftRight,
   Code,
   EllipsisVertical,
@@ -22,17 +21,17 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { HostRemoveDialog } from '@/components/sidebar/HostRemoveDialog'
 import { resolveHostRemoval } from '@/components/sidebar/host-rename-remove'
-import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { cn } from '@/lib/class-names'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
 import { MachineFileExplorer } from '../explorer/MachineFileExplorer'
 import { MachineWorkSection } from '../work/MachineWorkSection'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
-import type { MachineAgentSession } from '../model/machine-agent-sessions'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { MachineEditDialog } from './MachineEditDialog'
+import { MachineSessionList } from './MachineSessionList'
 import { MachineStatusDot, MachineVitalsStrip, useMachineStatusLabel } from './MachineVitals'
 import {
   connectMachine,
@@ -40,50 +39,6 @@ import {
   openMachineTerminal,
   switchMachineConnection
 } from './machine-quick-actions'
-
-function AgentSessionList({
-  sessions
-}: {
-  sessions: readonly MachineAgentSession[]
-}): React.JSX.Element {
-  const t = useTranslate()
-  if (sessions.length === 0) {
-    return (
-      <p className="text-2xs text-muted-foreground">
-        {t('auto.components.machines.detail.noSessions', 'No agents running on this machine.')}
-      </p>
-    )
-  }
-  return (
-    <ul className="space-y-0.5">
-      {sessions.map((session) => (
-        <li key={session.paneKey}>
-          <button
-            type="button"
-            className="flex w-full min-w-0 items-center gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-accent/50"
-            onClick={() => activateAndRevealWorktree(session.worktreeId)}
-          >
-            <Bot className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="shrink-0 font-medium">
-              {session.agentType ?? t('auto.components.machines.detail.agent', 'Agent')}
-            </span>
-            <span
-              className={cn(
-                'shrink-0 text-2xs',
-                session.state === 'blocked' || session.state === 'waiting'
-                  ? 'text-status-warning-text'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {session.state}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-muted-foreground">{session.prompt}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  )
-}
 
 export function MachineDetail({
   machine,
@@ -96,7 +51,7 @@ export function MachineDetail({
   machine: MachineSummary
   metrics: MachineMetrics | null
   metricsError: string | null
-  sessions: readonly MachineAgentSession[]
+  sessions: readonly LiveSession[]
   onBack: () => void
   onChanged: () => void
 }): React.JSX.Element {
@@ -255,12 +210,12 @@ export function MachineDetail({
       {online ? (
         <section className="shrink-0 space-y-3 border-b border-border px-3 py-3 md:px-5">
           <MachineVitalsStrip metrics={metrics} error={metricsError} />
-          <AgentSessionList sessions={sessions} />
+          <MachineSessionList sessions={sessions} />
           <MachineWorkSection machine={machine} online={online} homeDir={homeDir} />
         </section>
       ) : sessions.length > 0 ? (
         <section className="shrink-0 border-b border-border px-3 py-3 md:px-5">
-          <AgentSessionList sessions={sessions} />
+          <MachineSessionList sessions={sessions} />
         </section>
       ) : null}
       <MachineFileExplorer key={machine.id} machine={machine} />

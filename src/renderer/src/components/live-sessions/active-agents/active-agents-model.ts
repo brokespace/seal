@@ -90,7 +90,8 @@ function passes(
   return matchesQuery(session, link, words)
 }
 
-function order(a: LiveSession, b: LiveSession): number {
+/** Pinned first, then by urgency: the order every list of running sessions uses. */
+export function compareActiveAgents(a: LiveSession, b: LiveSession): number {
   return Number(b.pinned === true) - Number(a.pinned === true) || compareLiveSessions(a, b)
 }
 
@@ -129,7 +130,7 @@ export function buildActiveAgents(
     machines.set(session.machine.hostId, machine)
   }
   for (const machine of machines.values()) {
-    machine.sessions.sort(order)
+    machine.sessions.sort(compareActiveAgents)
   }
   return {
     machines: [...machines.values()].sort((a, b) =>
