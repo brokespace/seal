@@ -32,8 +32,6 @@ export const MAIN_BUILD_ENTRY_POINTS: Record<string, string> = {
   'session-scanner-service-entry': resolve(
     'src/main/ai-vault/scan-service/session-scanner-service-entry.ts'
   ),
-  // Copied to SSH machines as one file, so nothing else in the main build may import its modules.
-  'disk-usage-index-entry': resolve('src/main/machines/disk-index/disk-usage-index-entry.ts'),
   'wsl-transcript-fs-process-entry': resolve(
     'src/main/native-chat/transcript-filesystem/process/wsl-transcript-fs-process-entry.ts'
   ),
