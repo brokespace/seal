@@ -256,7 +256,7 @@ export function AgentConfigMcpSheet({
                   id="agent-config-mcp-command"
                   value={form.command}
                   className="font-mono text-xs"
-                  placeholder="npx"
+                  placeholder={t('auto.components.agentConfig.example.command', 'npx')}
                   onChange={(event) => set({ command: event.target.value })}
                 />
               )}
@@ -268,7 +268,7 @@ export function AgentConfigMcpSheet({
                   value={form.args}
                   rows={3}
                   className="font-mono text-xs"
-                  placeholder={'-y\n@scope/server'}
+                  placeholder={t('auto.components.agentConfig.example.args', '-y\n@scope/server')}
                   onChange={(event) => set({ args: event.target.value })}
                 />,
                 t('auto.components.agentConfig.mcp.argsHint', 'One per line.')
@@ -294,7 +294,10 @@ export function AgentConfigMcpSheet({
                   id="agent-config-mcp-url"
                   value={form.url}
                   className="font-mono text-xs"
-                  placeholder="https://example.com/mcp"
+                  placeholder={t(
+                    'auto.components.agentConfig.example.url',
+                    'https://example.com/mcp'
+                  )}
                   onChange={(event) => set({ url: event.target.value })}
                 />
               )}

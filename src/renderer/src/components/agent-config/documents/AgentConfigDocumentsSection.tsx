@@ -190,7 +190,7 @@ export function AgentConfigDocumentsSection(): React.JSX.Element {
         {
           id: 'agent-config-nested-folder',
           label: t('auto.components.agentConfig.nestedFolder', 'Folder, from the project root'),
-          placeholder: 'packages/api',
+          placeholder: t('auto.components.agentConfig.example.subfolder', 'packages/api'),
           initialValue: '',
           validate: (value) =>
             /^[^/\\][^\\]*$/.test(value) && !value.split('/').includes('..')

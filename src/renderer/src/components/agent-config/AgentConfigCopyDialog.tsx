@@ -222,7 +222,7 @@ export function AgentConfigCopyDialog({
                 autoFocus
                 value={otherPath}
                 className="font-mono text-xs"
-                placeholder="/home/me/project"
+                placeholder={t('auto.components.agentConfig.example.folder', '/home/me/project')}
                 aria-label={t('auto.components.agentConfig.copy.folder', 'Project folder')}
                 onChange={(event) => setOtherPath(event.target.value)}
               />

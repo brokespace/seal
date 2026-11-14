@@ -268,7 +268,7 @@ export function AgentConfigPluginsSection(): React.JSX.Element | null {
                   {
                     id: 'agent-config-marketplace-source',
                     label: t('auto.components.agentConfig.plugins.source', 'Source'),
-                    placeholder: 'owner/repo',
+                    placeholder: t('auto.components.agentConfig.example.marketplace', 'owner/repo'),
                     initialValue: '',
                     validate: (value) =>
                       value === ''

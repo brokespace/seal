@@ -59,7 +59,7 @@ export function AgentConfigEnvField({ value, patch }: SettingsFormProps): React.
       <div className="flex items-center gap-2">
         <Input
           value={name}
-          placeholder="NAME"
+          placeholder={t('auto.components.agentConfig.example.variable', 'NAME')}
           aria-label={t('auto.components.agentConfig.settings.envName', 'New variable name')}
           className="h-7 w-2/5 font-mono text-xs"
           onChange={(event) => setName(event.target.value)}

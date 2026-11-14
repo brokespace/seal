@@ -31,7 +31,7 @@ export function AgentConfigClaudeSettingsForm({
       <AgentConfigStringListField
         label={label}
         items={listAt(value, 'permissions', key)}
-        placeholder="Bash(npm run test:*)"
+        placeholder={t('auto.components.agentConfig.example.rule', 'Bash(npm run test:*)')}
         onChange={(items) => patch([listEdit(['permissions', key], items)])}
       />
     </AgentConfigStackedRow>
@@ -127,7 +127,7 @@ export function AgentConfigClaudeSettingsForm({
           <AgentConfigStringListField
             label={t('auto.components.agentConfig.settings.directories', 'Additional folders')}
             items={listAt(value, 'permissions', 'additionalDirectories')}
-            placeholder="~/notes"
+            placeholder={t('auto.components.agentConfig.example.extraFolder', '~/notes')}
             onChange={(items) => patch([listEdit(['permissions', 'additionalDirectories'], items)])}
           />
         </AgentConfigStackedRow>

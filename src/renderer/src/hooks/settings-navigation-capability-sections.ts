@@ -1,5 +1,6 @@
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import { getAccountsPaneSearchEntries } from '@/components/settings/accounts/accounts-search'
+import { getAgentConfigSearchEntries } from '@/components/settings/agent-config/agent-config-search'
 import { getAgentsPaneSearchEntries } from '@/components/settings/agents/agents-search'
 import { getComputerUsePaneSearchEntries } from '@/components/settings/computer-use/computer-use-search'
 import { getGeneralPaneSearchEntries } from '@/components/settings/general/general-search'
@@ -17,6 +18,7 @@ import {
   Blocks,
   Bot,
   CircleUserRound,
+  FileCog,
   Mic,
   MousePointerClick,
   Network,
@@ -49,6 +51,22 @@ export function buildCapabilitySettingsSections(
       }),
       group: 'capabilities'
     },
+    // The files live on machines Seal reaches from the desktop; a browser client has no way to them.
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'agent-config',
+            title: t('auto.components.agentConfig.search.title', 'Agent configuration'),
+            description: t(
+              'auto.components.agentConfig.search.description',
+              'Instructions, skills, MCP servers, plugins and settings for Claude Code, Codex and other agents.'
+            ),
+            icon: FileCog,
+            searchEntries: getAgentConfigSearchEntries(undefined, t),
+            group: 'capabilities'
+          }
+        ]
+      : []),
     {
       id: 'accounts',
       title: t('seal.accounts.section.title', 'Accounts'),
