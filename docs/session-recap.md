@@ -5,6 +5,11 @@ you come back to it. It runs on the same utility model, summarizer host, cache f
 sync as the one-line status summaries ([AI session summaries](./TESTING-seal-all.md)); there is no
 second pipeline.
 
+The model that writes it is chosen in Settings > Session summaries & recaps: any provider Seal has
+an account for, by default the one the summaries use. See
+[Model providers for session summaries and recaps](./summaries-providers.md). The figures below are
+for the default, Cloudflare Workers AI.
+
 ## The problem
 
 Brian runs many agent sessions across machines and returns to each one hours or days later. By
@@ -147,13 +152,13 @@ a new title once; one that keeps working on the same thing keeps its title.
 Always incrementally: the previous recap, compacted, plus the messages since `coveredTo`. The
 transcript is never re-read from the start.
 
-| Trigger                                                                         | Rule                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The session stops (`waiting-input`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one stop pass per session every 4 minutes; a stop inside that window is picked up when it ends. A pass made while it worked never delays this one.                                                                                              |
-| The session is working (`working`)                                              | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its stop pass. |
-| He opens the session, or comes back to the window or app                        | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                                                                                                                                                                                 |
-| Refresh recap                                                                   | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                                                                                                                                                                       |
-| The transcript shrank (rewritten)                                               | Start over from the recent history.                                                                                                                                                                                                                                                              |
+| Trigger                                                                                      | Rule                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The session stops (`waiting-input`, `your-turn`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one stop pass per session every 4 minutes; a stop inside that window is picked up when it ends. A pass made while it worked never delays this one.                                                                                              |
+| The session is working (`working`, `running-shell`)                                          | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its stop pass. |
+| He opens the session, or comes back to the window or app                                     | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                                                                                                                                                                                 |
+| Refresh recap                                                                                | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                                                                                                                                                                       |
+| The transcript shrank (rewritten)                                                            | Start over from the recent history.                                                                                                                                                                                                                                                              |
 
 A pass on a working session reads the turn before it has ended, so its request says so: the
 agent's last message is unfinished, work in it is recorded as in progress, never done, and
@@ -207,11 +212,14 @@ for the next:
 - **Passes on stops stop at 6,000 neurons**. Rows keep their last recap and the panel says
   updates resume tomorrow.
 - **Passes he asks for** (open, Refresh) run until 9,000.
-- A 429 or a spent allocation pauses every utility request through `UtilityModelService`, as it
-  does for summaries; the recap shows the same "paused until" note.
+- A 429 or a spent allocation pauses every utility request to that provider through its
+  `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note.
+- The tally counts every provider. A model with no Workers AI rate is counted at the dearest one
+  (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps hold on OpenRouter, MiniMax
+  or an agent CLI too.
 
-Recaps can be turned off on their own (Settings > Accounts > Cloudflare Workers AI) without
-losing the one-line summaries.
+Recaps can be turned off on their own (Settings > Session summaries & recaps) without losing the
+one-line summaries, and can run on a different provider or model than the summaries.
 
 ## Structured output
 
@@ -251,9 +259,9 @@ panel shows why, and the next trigger tries again.
 
 ## Where it runs and how it syncs
 
-- `SessionSummariesHost` owns it, next to the status summaries: same `UtilityModelService`
-  (fallback model, pause on 429), same availability check, same settings store, same registry
-  decorator and `republish`.
+- `SessionSummariesHost` owns it, next to the status summaries: the same provider abstraction
+  (`UtilityModelClient`: fallback model, pause on 429), same availability check, same settings
+  store, same registry decorator and `republish`.
 - State lives in `<userData>/session-recaps/` through `LiveSessionJsonStore` (atomic, mode 600),
   the store annotations use. It follows a session through a resume (`replacedBy`), as
   annotations do.

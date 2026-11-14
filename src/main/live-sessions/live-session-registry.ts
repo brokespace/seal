@@ -7,6 +7,7 @@ import type {
 import type { LiveSessionHost } from './hosts/live-session-hosts'
 import { HostSessionScanner, scanLimitsFor } from './discovery/host-session-scanner'
 import { mergeSealPanes, type SealPane } from './seal-panes/seal-pane-sessions'
+import { LiveSessionStatusHold } from './live-session-status-hold'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
@@ -33,6 +34,8 @@ type HostState = {
   scanning: boolean
   /** Scans in a row that found nothing new; each stretches the wait, up to MAX_IDLE_STRETCH. */
   idleScans: number
+  /** Scans that returned, for the status hold: a session leaves "working" on the second that says so. */
+  scans: number
   failures: number
 }
 
@@ -57,6 +60,7 @@ export class LiveSessionRegistry {
   private running = false
   private releaseSealPanes: (() => void) | null = null
   private decorator: ((session: LiveSession) => LiveSession) | null = null
+  private readonly statusHold = new LiveSessionStatusHold()
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }
 
@@ -189,6 +193,7 @@ export class LiveSessionRegistry {
           nextScanAt: 0,
           scanning: false,
           idleScans: 0,
+          scans: 0,
           failures: 0
         })
       }
@@ -214,6 +219,7 @@ export class LiveSessionRegistry {
         state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
       }
+      state.scans++
       state.failures = 0
       this.deps.onHostScanned?.(state.host, state.sessions)
       this.setHostError(hostId, result.complete ? null : 'The scan was cut short')
@@ -259,8 +265,12 @@ export class LiveSessionRegistry {
   private publish(): void {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
     const decorate = this.decorator
+    const now = this.now()
     const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
       .filter((session) => !this.deps.isRemoved?.(session))
+      .map((session) =>
+        this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)
+      )
       .map((session) => this.deps.annotate?.(session) ?? session)
       .map((session) => (decorate ? decorate(session) : session))
     const seen = new Set<string>()
@@ -276,6 +286,7 @@ export class LiveSessionRegistry {
       this.published.set(session.id, { session, json })
       this.emit({ type: 'upsert', revision: ++this.revision, session })
     }
+    this.statusHold.keep(seen)
     for (const [sessionId, { session: gone }] of this.published) {
       if (seen.has(sessionId)) {
         continue

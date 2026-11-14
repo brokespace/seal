@@ -353,11 +353,7 @@ export function LiveSessionPane({
       onOpenSettings: () => {
         const store = useAppStore.getState()
         store.openSettingsPage()
-        store.openSettingsTarget({
-          pane: 'accounts',
-          repoId: null,
-          sectionId: 'accounts-cloudflare-ai'
-        })
+        store.openSettingsTarget({ pane: 'session-summaries', repoId: null })
       }
     }),
     [recap]

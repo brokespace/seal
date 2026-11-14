@@ -56,6 +56,7 @@ export function HomeSessionsPanel({
                   sessions={machine.sessions}
                   label={machineName(machine)}
                   now={now}
+                  layout="card"
                 />
               </div>
             )

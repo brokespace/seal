@@ -27,7 +27,7 @@ function lastWriteOf(text: string): number {
 
 function fixtureFile(name: string): DiscoveredFile {
   const text = readFileSync(join(FIXTURES, `${name}.jsonl`), 'utf8')
-  const provider = name.startsWith('codex') ? 'codex' : 'claude'
+  const provider = /^(live-)?codex/.test(name) ? 'codex' : 'claude'
   const id = /"payload":\{"id":"([^"]+)"/.exec(text)?.[1]
   const file: DiscoveredFile = {
     provider,
@@ -67,6 +67,10 @@ type ScanOptions = {
   screen?: string
   /** Other transcripts on the host (Codex helper threads). */
   beside?: string[]
+  /** What `ps` lists under the agents, as `pid ppid etime kind command`; absent when the host lists nothing. */
+  children?: string[]
+  /** Other agent processes on the host, as `pid ppid tty args`. */
+  processes?: string[]
 }
 
 function fixtureHost(
@@ -84,6 +88,12 @@ function fixtureHost(
       '@@CWD 4100 /srv/shop',
       `@@PIN 4100 open ${main.provider} ${main.path}`
     )
+  }
+  for (const process of options.processes ?? []) {
+    lines.push(`@@PROC ${process}`)
+  }
+  if (options.children) {
+    lines.push('@@CHILDREN', ...options.children.map((child) => `@@CHILD ${child}`))
   }
   if (options.screen) {
     lines.push(
@@ -111,6 +121,28 @@ async function statusOf(name: string, options: ScanOptions = {}) {
   const [session] = await scan(name, options)
   return [session.status, session.statusDetail]
 }
+
+async function sourcedStatusOf(name: string, options: ScanOptions = {}) {
+  const [session] = await scan(name, options)
+  return [session.status, session.statusSource, session.statusDetail]
+}
+
+const screenOf = (name: string) => readFileSync(join(FIXTURES, `${name}.screen`), 'utf8')
+
+/** Claude Code's Bash tool: a shell that sources the session's snapshot, then the command. */
+const CLAUDE_SHELL = (etime: string) => [
+  `4200 4100 ${etime} snapshot bash`,
+  '4201 4200 00:01 other sleep'
+]
+/** Codex 0.169 runs commands from its shared app-server, inside its sandbox. */
+const CODEX_APP_SERVER =
+  '4300 4100 ? /home/dev/.codex/packages/app-server-daemon/releases/0.169.0/codex app-server --listen unix://'
+const CODEX_SHELL = (etime: string) => [
+  '4301 4300 20:00 other codex-code-mode-host',
+  `4310 4300 ${etime} sandbox codex-linux-sandbox`,
+  `4311 4310 ${etime} sandbox bwrap`,
+  `4313 4311 ${etime} shell sh`
+]
 
 describe('status of a Claude Code session, from its transcript, process and screen', () => {
   it('working: a tool call has no result yet', async () => {
@@ -151,9 +183,9 @@ describe('status of a Claude Code session, from its transcript, process and scre
     ])
   })
 
-  it('idle once its background subagents reported back', async () => {
+  it('waiting on the user once its background subagents reported back', async () => {
     const [session] = await scan('claude-background-subagents-finished')
-    expect([session.status, session.statusDetail]).toEqual(['idle', null])
+    expect([session.status, session.statusDetail]).toEqual(['your-turn', null])
     expect(session.activity?.subagents.map((s) => s.status)).toEqual(['completed', 'completed'])
   })
 
@@ -174,9 +206,9 @@ describe('status of a Claude Code session, from its transcript, process and scre
     ])
   })
 
-  it('idle once the background command ended, keeping how it ended', async () => {
+  it('waiting on the user once the background command ended, keeping how it ended', async () => {
     const [session] = await scan('claude-background-task-failed')
-    expect(session.status).toBe('idle')
+    expect(session.status).toBe('your-turn')
     expect(session.activity?.tasks.map((t) => [t.status, t.summary])).toEqual([
       ['failed', 'Background command "Start the dev server" failed with exit code 1']
     ])
@@ -184,8 +216,9 @@ describe('status of a Claude Code session, from its transcript, process and scre
 
   it('needs permission: the pane shows a permission dialog', async () => {
     const [session] = await scan('claude-working', { screen: PERMISSION_SCREEN })
-    expect([session.status, session.statusDetail]).toEqual([
+    expect([session.status, session.statusDetail, session.permission?.question]).toEqual([
       'needs-permission',
+      'Allow Bash: Run the checkout tests?',
       'Do you want to proceed?'
     ])
     expect(session.permission?.options.map((o) => o.label)).toEqual([
@@ -195,16 +228,19 @@ describe('status of a Claude Code session, from its transcript, process and scre
   })
 
   it('waiting for input: it asked through its question tool', async () => {
-    expect(await statusOf('claude-asks-question')).toEqual(['waiting-input', 'Question for you'])
+    expect(await statusOf('claude-asks-question')).toEqual([
+      'waiting-input',
+      'Which limit should apply to anonymous clients?'
+    ])
   })
 
   it('waiting for input: its reply ends in a question', async () => {
     expect(await statusOf('claude-reply-ends-in-question')).toEqual(['waiting-input', null])
   })
 
-  it('idle: the turn ended on a statement and the agent sits at its prompt', async () => {
+  it('waiting on the user: the turn ended on a statement and the agent sits at its prompt', async () => {
     const [session] = await scan('claude-idle')
-    expect([session.status, session.statusDetail]).toEqual(['idle', null])
+    expect([session.status, session.statusDetail]).toEqual(['your-turn', null])
     expect(session.lastMessage).toBe(
       'Renamed OrderSummary to OrderReceipt in 23 files. Typecheck and tests pass.'
     )
@@ -274,8 +310,8 @@ describe('status of a Codex session, from its rollout and process', () => {
     ])
   })
 
-  it('idle: the turn completed on a statement', async () => {
-    expect(await statusOf('codex-idle')).toEqual(['idle', null])
+  it('waiting on the user: the turn completed on a statement', async () => {
+    expect(await statusOf('codex-idle')).toEqual(['your-turn', null])
   })
 
   it('waiting for input: the turn completed on a question', async () => {
@@ -312,6 +348,151 @@ describe('status of a Codex session, from its rollout and process', () => {
     expect(sessions[0].activity?.subagents.map((s) => [s.title, s.agentType, s.status])).toEqual([
       ['auth_reviewer', 'explorer', 'running'],
       ['billing_reviewer', 'explorer', 'completed']
+    ])
+  })
+})
+
+// Transcripts, screens and process trees recorded from real Claude Code 2.1.325 and Codex 0.169.0
+// sessions (see docs/session-status.md); only paths and prompts were rewritten.
+describe('status of recorded Claude Code sessions, where the transcript alone cannot tell', () => {
+  it('running shell: the Bash call has no result and the shell it started still runs', async () => {
+    expect(
+      await sourcedStatusOf('live-claude-shell-pending', {
+        quietMs: 60_000,
+        children: CLAUDE_SHELL('01:00')
+      })
+    ).toEqual(['running-shell', 'process', 'Bash: Run the long script'])
+  })
+
+  it('working: the command started a moment ago', async () => {
+    expect(
+      await sourcedStatusOf('live-claude-shell-pending', {
+        quietMs: 2_000,
+        children: CLAUDE_SHELL('00:02')
+      })
+    ).toEqual(['working', 'transcript', 'Bash: Run the long script'])
+  })
+
+  it('working: the host lists no processes, so a quiet Bash call proves nothing', async () => {
+    expect(await sourcedStatusOf('live-claude-shell-pending', { quietMs: 60_000 })).toEqual([
+      'working',
+      'transcript',
+      'Bash: Run the long script'
+    ])
+  })
+
+  it('waiting for approval: the same Bash call with no command under the agent and no pane to read', async () => {
+    expect(
+      await sourcedStatusOf('live-claude-approval-pending', { quietMs: 6_000, children: [] })
+    ).toEqual(['needs-permission', 'process', 'Allow Bash: Remove the build output?'])
+  })
+
+  it("working: a shell older than the call (the user's own) is not its command, and 2 s is too soon to call it a prompt", async () => {
+    expect(
+      await sourcedStatusOf('live-claude-approval-pending', {
+        quietMs: 2_000,
+        children: ['4150 4100 12:00 shell bash']
+      })
+    ).toEqual(['working', 'transcript', 'Bash: Remove the build output'])
+  })
+
+  it('auto mode reviews a call before it runs or asks: 10 s is still working, 25 s is a prompt', async () => {
+    const at = async (quietMs: number) =>
+      (await sourcedStatusOf('live-claude-shell-pending', { quietMs, children: [] })).slice(0, 2)
+    expect(await at(10_000)).toEqual(['working', 'transcript'])
+    expect(await at(25_000)).toEqual(['needs-permission', 'process'])
+  })
+
+  it('waiting for approval: the pane shows a prompt whose options carry no numbers', async () => {
+    const [session] = await scan('live-claude-shell-pending', {
+      quietMs: 4_000,
+      children: [],
+      screen: screenOf('live-claude-approval-unnumbered')
+    })
+    expect([session.status, session.statusSource, session.statusDetail]).toEqual([
+      'needs-permission',
+      'screen',
+      'Allow Bash: Run the long script?'
+    ])
+    // Nothing to answer by number, so no answer buttons are offered.
+    expect(session.permission).toBeNull()
+  })
+
+  it('waiting for approval: a dialog stands over the turn', async () => {
+    expect(
+      await sourcedStatusOf('live-claude-shell-pending', {
+        quietMs: 4_000,
+        children: [],
+        screen: screenOf('live-claude-auto-mode-dialog')
+      })
+    ).toEqual(['needs-permission', 'screen', "Auto mode can't check actions in this session"])
+  })
+
+  it('working: the pane still says "esc to interrupt" though the transcript reads as finished', async () => {
+    expect(
+      (await sourcedStatusOf('claude-idle', { screen: screenOf('live-claude-shell-busy') })).slice(
+        0,
+        2
+      )
+    ).toEqual(['working', 'screen'])
+  })
+
+  it('errored: the API refused the turn, which then closed like any other', async () => {
+    const [status, , detail] = await sourcedStatusOf('live-claude-api-error')
+    expect(status).toBe('errored')
+    expect(detail).toContain('API Error: Repeated 529 Overloaded errors.')
+  })
+
+  it('waiting on the user: a reply that may or may not ask is not called a question without the model', async () => {
+    const [session] = await scan('live-claude-unclear-reply')
+    expect(session.lastMessage).toBe(
+      'The deploy script can target staging or production. Should I go ahead with staging? I have not changed anything yet.'
+    )
+    expect([session.status, session.statusSource]).toEqual(['your-turn', 'transcript'])
+  })
+})
+
+describe('status of recorded Codex sessions', () => {
+  it('running shell: an exec cell has no output and its command runs under the app-server', async () => {
+    expect(
+      await sourcedStatusOf('live-codex-exec-pending', {
+        quietMs: 12_000,
+        processes: [CODEX_APP_SERVER],
+        children: CODEX_SHELL('00:12')
+      })
+    ).toEqual(['running-shell', 'process', 'Bash: ./long.sh 70'])
+  })
+
+  it('running shell: the command outlived its exec call and the agent polls it', async () => {
+    expect(
+      await sourcedStatusOf('live-codex-poll-pending', {
+        quietMs: 10_000,
+        processes: [CODEX_APP_SERVER],
+        children: CODEX_SHELL('00:40')
+      })
+    ).toEqual(['running-shell', 'process', 'Bash: ./long.sh 70'])
+  })
+
+  it('waiting for approval: an exec cell has no output and nothing runs under the app-server', async () => {
+    expect(
+      await sourcedStatusOf('live-codex-exec-pending', {
+        quietMs: 6_000,
+        processes: [CODEX_APP_SERVER],
+        children: ['4301 4300 20:00 other codex-code-mode-host']
+      })
+    ).toEqual(['needs-permission', 'process', 'Allow Bash: ./long.sh 70?'])
+  })
+
+  it('asking a question: its question tool has no answer, whatever the footer says', async () => {
+    expect(
+      await sourcedStatusOf('live-codex-ask-pending', { screen: screenOf('live-codex-question') })
+    ).toEqual(['waiting-input', 'transcript', 'Which database should the migration target?'])
+  })
+
+  it('errored: the turn completed with an error', async () => {
+    expect(await statusOf('live-codex-failed-turn')).toEqual([
+      'errored',
+      'Missing environment variable: `OPENAI_API_KEY`.'
     ])
   })
 })

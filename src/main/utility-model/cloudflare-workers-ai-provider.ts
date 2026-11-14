@@ -2,25 +2,20 @@ import type {
   UtilityModelCatalogEntry,
   UtilityModelRequest
 } from '../../shared/utility-model/utility-model-types'
-import { isRecord } from '../home-chat/home-chat-record-guard'
-import { getMainHttpClient } from '../network/http-client'
 import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
+import {
+  clipProviderText,
+  jsonRecord as record,
+  jsonText as text,
+  requestUtilityModelJson,
+  retryAfterMs,
+  utilityModelFetch,
+  type UtilityModelFetch
+} from './utility-model-http-request'
 
 export type CloudflareAiCredentials = { accountId: string; apiToken: string }
 
-type FetchLike = (input: string, init: RequestInit) => Promise<Response>
-
 const API_ROOT = 'https://api.cloudflare.com/client/v4/accounts'
-const REQUEST_TIMEOUT_MS = 20_000
-const MAX_ERROR_TEXT = 300
-
-function record(value: unknown): Record<string, unknown> | null {
-  return isRecord(value) ? value : null
-}
-
-function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() ? value.trim() : null
-}
 
 /** Cloudflare's `errors[].message`, joined; the body never echoes the request's token. */
 function errorText(body: unknown, status: number): string {
@@ -28,13 +23,7 @@ function errorText(body: unknown, status: number): string {
   const messages = (Array.isArray(errors) ? errors : [])
     .map((entry) => text(record(entry)?.message))
     .filter((message): message is string => message !== null)
-  const joined = messages.join('; ') || `Cloudflare answered HTTP ${status}`
-  return joined.length > MAX_ERROR_TEXT ? `${joined.slice(0, MAX_ERROR_TEXT - 1)}…` : joined
-}
-
-function retryAfterMs(response: Response): number | undefined {
-  const seconds = Number(response.headers.get('retry-after'))
-  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined
+  return clipProviderText(messages.join('; ') || `Cloudflare answered HTTP ${status}`)
 }
 
 function failureOf(response: Response, body: unknown, model?: string): UtilityModelError {
@@ -74,8 +63,7 @@ function replyText(body: unknown): string | null {
 
 export function createCloudflareWorkersAiProvider(
   credentials: CloudflareAiCredentials,
-  // The app's client carries the desktop's proxy settings.
-  fetchImpl: FetchLike = (url, init) => getMainHttpClient().fetch(url, init)
+  fetchImpl: UtilityModelFetch = utilityModelFetch
 ): UtilityModelProvider {
   const base = `${API_ROOT}/${encodeURIComponent(credentials.accountId)}/ai`
 
@@ -84,35 +72,18 @@ export function createCloudflareWorkersAiProvider(
     init: RequestInit,
     signal: AbortSignal | undefined,
     model?: string,
-    timeoutMs = REQUEST_TIMEOUT_MS
+    timeoutMs?: number
   ): Promise<unknown> => {
-    const timeout = AbortSignal.timeout(timeoutMs)
-    let response: Response
-    try {
-      response = await fetchImpl(`${base}${path}`, {
-        ...init,
-        headers: {
-          authorization: `Bearer ${credentials.apiToken}`,
-          'content-type': 'application/json'
-        },
-        signal: signal ? AbortSignal.any([signal, timeout]) : timeout
-      })
-    } catch (error) {
-      if (signal?.aborted) {
-        throw error
-      }
-      // The cause can carry the request URL; only its class of failure is reported.
-      throw new UtilityModelError(
-        'network',
-        timeout.aborted ? 'Cloudflare did not answer in time' : 'Could not reach Cloudflare',
-        model ? { model } : {}
-      )
-    }
-    // Always read the body: an unread one can crash the process (see http-client).
-    const body: unknown = await response
-      .text()
-      .then((raw): unknown => JSON.parse(raw))
-      .catch(() => null)
+    const { response, body } = await requestUtilityModelJson({
+      fetchImpl,
+      provider: 'Cloudflare',
+      url: `${base}${path}`,
+      init,
+      apiKey: credentials.apiToken,
+      signal,
+      model,
+      timeoutMs
+    })
     if (!response.ok || record(body)?.success === false) {
       throw failureOf(response, body, model)
     }

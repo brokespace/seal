@@ -9,9 +9,15 @@ const CURSOR = /^(?:\u276f|\u203a|>)\s*/
 const OPTION = /^(\d)\.\s+(.+?)\s*$/
 const QUESTION =
   /(Do you want to [^?]*\?|Would you like to [^?]*\?|Allow [^?]*\?|Approve [^?]*\?|Proceed\?)/
+/** The key hints a dialog draws under its choices. */
+const DIALOG_HINT = /\b(esc to cancel|enter to (confirm|select|continue))\b/i
+const BUSY_HINT = /\besc to interrupt\b/i
+const FOOTER_LINES = 10
+const DIALOG_LINES = 40
 
 export type AgentScreenApproval = {
   question: string
+  /** Empty when the dialog lists its choices without digits: it is answered in the terminal. */
   options: { id: string; label: string; keys: string }[]
 }
 
@@ -21,6 +27,10 @@ export type AgentScreen = {
   /** Text typed in the box but not sent. */
   draft: string
   approval: AgentScreenApproval | null
+  /** A dialog other than a recognized approval holds the terminal; its first line. */
+  dialog: string | null
+  /** The agent shows its interrupt hint: a turn is running. */
+  busy: boolean
 }
 
 /** Strip escapes: `shown` is the visible text, `typed` the same without dim (hint) text. */
@@ -86,10 +96,30 @@ function readApproval(lines: string[]): AgentScreenApproval | null {
       break
     }
   }
-  if (options.length < 2) {
+  const question = QUESTION.exec(inner(region[questionAt]))![1]
+  if (options.length >= 2) {
+    return { question, options }
+  }
+  // Choices without digits ("❯ No" / "Yes") are picked with the arrow keys.
+  const choices = region.slice(questionAt + 1).map(inner)
+  const end = choices.findIndex((line) => line.trim() === '' || DIALOG_HINT.test(line))
+  const listed = (end === -1 ? choices : choices.slice(0, end)).filter((line) => line.trim())
+  return listed.length >= 2 && listed.some((line) => CURSOR.test(line))
+    ? { question, options: [] }
+    : null
+}
+
+/** The first line of a dialog that holds the terminal: what stands under the rule it opens with. */
+function readDialog(shown: string[]): string | null {
+  if (!shown.slice(-FOOTER_LINES).some((line) => DIALOG_HINT.test(line))) {
     return null
   }
-  return { question: QUESTION.exec(inner(region[questionAt]))![1], options }
+  const region = shown.slice(-DIALOG_LINES)
+  const title = region
+    .slice(region.findIndex(isRule) + 1)
+    .map((line) => inner(line).trim())
+    .find((line) => line.length > 0 && !isRule(line) && !DIALOG_HINT.test(line))
+  return title ?? 'A dialog is open in the terminal'
 }
 
 /** The bottom-most prompt box: a rule, lines starting with the prompt mark, a rule. */
@@ -145,10 +175,13 @@ export function parseAgentScreen(text: string): AgentScreen {
   const approval = readApproval(shown)
   const prompt = readPromptBox(shown, typed)
   const composer = prompt.box ? prompt : readBareComposer(shown, typed)
+  const promptBox = composer.box && approval === null
   return {
-    promptBox: composer.box && approval === null,
+    promptBox,
     draft: composer.box ? composer.draft : '',
-    approval
+    approval,
+    dialog: promptBox || approval !== null ? null : readDialog(shown),
+    busy: shown.slice(-FOOTER_LINES).some((line) => BUSY_HINT.test(line))
   }
 }
 

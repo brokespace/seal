@@ -33,7 +33,8 @@ function transcript(
       continues: [],
       parentSessionId: null,
       agentName: null,
-      agentType: null
+      agentType: null,
+      approvalMode: null
     }
   }
 }
@@ -156,7 +157,7 @@ describe('assembleHostSessions', () => {
     expect(live.inputRoutes).toEqual([
       { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
     ])
-    expect(live.status).toBe('idle')
+    expect(live.status).toBe('your-turn')
   })
 
   it("names a fresh Claude from Claude's session registry and skips daemons and tool commands", () => {

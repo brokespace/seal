@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
-import type { UtilityModelService } from '../utility-model/utility-model-service'
+import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
 import { SessionRecapBudget } from './session-recap-budget'
 import { SessionRecapEngine } from './session-recap-engine'
@@ -8,7 +8,7 @@ import { SessionRecapStore } from './session-recap-store'
 
 export type SessionRecapInstallOptions = {
   liveSessions: LiveSessionService
-  utility: UtilityModelService
+  utility: UtilityModelClient
   userDataPath: string
   enabled: () => boolean
   eager: boolean
