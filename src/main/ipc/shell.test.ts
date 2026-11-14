@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
+  getApplicationNameForProtocolMock,
   getSpawnArgsForWindowsMock,
   handleMock,
+  openExternalMock,
   inspectLinkedFileMock,
   openPathMock,
   resolveCliCommandMock,
@@ -11,8 +13,10 @@ const {
   spawnMock,
   statMock
 } = vi.hoisted(() => ({
+  getApplicationNameForProtocolMock: vi.fn(),
   getSpawnArgsForWindowsMock: vi.fn(),
   handleMock: vi.fn(),
+  openExternalMock: vi.fn(),
   inspectLinkedFileMock: vi.fn(),
   openPathMock: vi.fn(),
   resolveCliCommandMock: vi.fn(),
@@ -23,12 +27,15 @@ const {
 }))
 
 vi.mock('electron', () => ({
+  app: {
+    getApplicationNameForProtocol: getApplicationNameForProtocolMock
+  },
   ipcMain: {
     handle: handleMock
   },
   shell: {
     showItemInFolder: showItemInFolderMock,
-    openExternal: vi.fn(),
+    openExternal: openExternalMock,
     openPath: openPathMock
   },
   dialog: {
@@ -113,6 +120,8 @@ describe('registerShellHandlers', () => {
 
   beforeEach(() => {
     handleMock.mockReset()
+    getApplicationNameForProtocolMock.mockReset()
+    openExternalMock.mockReset()
     getSpawnArgsForWindowsMock.mockReset()
     openPathMock.mockReset()
     resolveCliCommandMock.mockReset()
@@ -208,6 +217,30 @@ describe('registerShellHandlers', () => {
         )
       ).resolves.toEqual({ ok: false, reason: 'remote-runtime-unsupported' })
       expect(spawnMock).not.toHaveBeenCalled()
+    })
+
+    it('opens the editor through its registered link when its launcher cannot be spawned', async () => {
+      resolveCliCommandMock.mockImplementation((command: string) => command)
+      spawnMock.mockReturnValue(createSpawnedProcess('error'))
+      sshTargets.set('ssh-1', createSshTarget())
+      const handler = getHandler('shell:openInExternalEditor')
+      const request = {
+        path: '/srv/my project',
+        builtInEditorId: 'cursor',
+        connectionId: 'ssh-1',
+        ownerHostId: 'ssh:ssh-1'
+      }
+
+      getApplicationNameForProtocolMock.mockReturnValue('Cursor')
+      await expect(handler({}, request)).resolves.toEqual({ ok: true })
+      expect(openExternalMock).toHaveBeenCalledWith(
+        'cursor://vscode-remote/ssh-remote+builder/srv/my%20project'
+      )
+
+      openExternalMock.mockClear()
+      getApplicationNameForProtocolMock.mockReturnValue('')
+      await expect(handler({}, request)).resolves.toEqual({ ok: false, reason: 'launch-failed' })
+      expect(openExternalMock).not.toHaveBeenCalled()
     })
   })
 

@@ -53,8 +53,33 @@ describe('resolveRemoteSshEditorLaunchSpec', () => {
   it('still requires an SSH config alias for a VS Code custom port', () => {
     const manualTarget: SshTarget = { ...BUILDER_ALIAS, source: 'manual', configHost: undefined }
     expect(
-      resolveRemoteSshEditorLaunchSpec('code', '/srv/project', manualTarget, { platform: 'linux' })
+      resolveRemoteSshEditorLaunchSpec('code', '/srv/project', manualTarget, {
+        platform: 'linux',
+        loadSshConfigHosts: () => [{ host: 'spare', hostname: 'builder.example.com', port: 22 }]
+      })
     ).toEqual({ ok: false, reason: 'ssh-alias-required', host: 'builder.example.com', port: 2222 })
+  })
+
+  it('reaches a custom port through the alias the user already has in their SSH config', () => {
+    const manualTarget: SshTarget = { ...BUILDER_ALIAS, source: 'manual', configHost: undefined }
+    expect(
+      resolveRemoteSshEditorLaunchSpec('cursor', '/srv/my project', manualTarget, {
+        platform: 'linux',
+        loadSshConfigHosts: () => [
+          { host: 'other-user', hostname: 'builder.example.com', port: 2222, user: 'root' },
+          { host: 'gpu', hostname: 'Builder.example.com', port: 2222 }
+        ]
+      })
+    ).toEqual({
+      ok: true,
+      launchSpec: {
+        kind: 'executable',
+        hideWindowsConsole: true,
+        spawnCmd: 'cursor',
+        spawnArgs: ['--new-window', '--remote', 'ssh-remote+ada@gpu', '/srv/my project']
+      },
+      protocolUrl: 'cursor://vscode-remote/ssh-remote+ada@gpu/srv/my%20project'
+    })
   })
 
   it.each(['subl', 'code --reuse-window', 'open -a "Visual Studio Code"'])(

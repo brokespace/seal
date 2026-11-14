@@ -17,9 +17,12 @@ import {
 import type { Store } from '../persistence/loading-store/store'
 import {
   EXTERNAL_EDITOR_CLI_COMMAND,
-  launchExternalEditor,
-  resolveExternalEditorLaunchSpec
+  resolveExternalEditorExecutable,
+  resolveExternalEditorLaunchSpec,
+  type ExternalEditorLaunchSpec
 } from '../external-editors/external-editor-launch'
+import { launchEditorOrProtocolUrl } from '../external-editors/editor-launch-with-protocol-fallback'
+import { resolveEditorProtocolUrl } from '../external-editors/editor-protocol-url'
 import { resolveRemoteSshEditorLaunchSpec } from '../external-editors/remote-ssh-editor-launch'
 import { resolveOpenInEditorCommand } from '../external-editors/open-in-editor-command'
 import { toSshExecutionHostId } from '../../shared/execution-host'
@@ -93,25 +96,24 @@ async function openInExternalEditor(
     if (!remoteLaunch.ok) {
       return remoteLaunch
     }
-    try {
-      await launchExternalEditor(remoteLaunch.launchSpec)
-      return { ok: true }
-    } catch {
-      return { ok: false, reason: 'launch-failed' }
-    }
+    return launchEditorOrProtocolUrl(remoteLaunch.launchSpec, remoteLaunch.protocolUrl)
   }
 
   const target = await resolveOwnedPathTarget(request.path, request.ownerHostId)
   if (!target.ok) {
     return target
   }
+  let launchSpec: ExternalEditorLaunchSpec
+  let protocolUrl: string | null
   try {
     // VS Code and Cursor derive --remote wsl+<distro> from UNC paths.
-    await launchExternalEditor(resolveExternalEditorLaunchSpec(command, target.path))
-    return { ok: true }
+    launchSpec = resolveExternalEditorLaunchSpec(command, target.path)
+    const executable = resolveExternalEditorExecutable(command)
+    protocolUrl = executable ? resolveEditorProtocolUrl(executable, target.path) : null
   } catch {
     return { ok: false, reason: 'launch-failed' }
   }
+  return launchEditorOrProtocolUrl(launchSpec, protocolUrl)
 }
 
 /**
