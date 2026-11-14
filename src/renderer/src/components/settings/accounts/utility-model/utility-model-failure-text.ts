@@ -30,7 +30,7 @@ export function utilityModelFailureText(
           )
         : t(
             'seal.utilityModel.failure.keyMissing',
-            'Save a {{provider}} API key in Settings > Accounts first.',
+            'Save an API key for {{provider}} in Settings > Accounts first.',
             { provider }
           )
     case 'unauthorized':

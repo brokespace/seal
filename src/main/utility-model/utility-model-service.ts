@@ -3,6 +3,7 @@ import {
   type UtilityModelChoice
 } from '../../shared/utility-model/utility-model-selection'
 import type {
+  UtilityModelCatalogEntry,
   UtilityModelCatalogResult,
   UtilityModelFailure,
   UtilityModelProviderId,
@@ -38,6 +39,8 @@ export type UtilityModelReply = {
 export type UtilityModelServiceDeps = {
   /** Null when no provider is configured on this host. */
   backend: () => Promise<UtilityModelBackend | null>
+  /** A model list the provider gives anyone, read while it has no account here. */
+  publicCatalog?: () => Promise<(() => Promise<UtilityModelCatalogEntry[]>) | undefined>
   now?: () => number
 }
 
@@ -141,6 +144,12 @@ export class UtilityModelService {
 
   async listModels(): Promise<UtilityModelCatalogResult> {
     try {
+      const publicCatalog = (await this.deps.backend())
+        ? undefined
+        : await this.deps.publicCatalog?.()
+      if (publicCatalog) {
+        return { ok: true, models: await publicCatalog() }
+      }
       const backend = await this.requireBackend()
       return { ok: true, models: await backend.provider.listModels() }
     } catch (error) {

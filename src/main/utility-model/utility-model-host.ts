@@ -72,7 +72,8 @@ export class UtilityModelHost {
           return account.provider
             ? { provider: account.provider, models: account.defaultModels }
             : null
-        }
+        },
+        publicCatalog: async () => (await this.sources[id]()).publicCatalog
       })
       service.subscribe(() => this.emit())
       this.services.set(id, service)
@@ -101,7 +102,7 @@ export class UtilityModelHost {
   }
 
   async providerStatus(id: UtilityModelProviderId): Promise<UtilityModelProviderStatus> {
-    const { provider: _provider, ...account } = await this.sources[id]()
+    const { provider: _provider, publicCatalog: _catalog, ...account } = await this.sources[id]()
     return { provider: id, ...account, ...this.provider(id).health() }
   }
 

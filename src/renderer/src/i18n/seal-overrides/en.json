@@ -1890,7 +1890,7 @@
       },
       "failure": {
         "cliMissing": "The {{provider}} CLI was not found on this host.",
-        "keyMissing": "Save a {{provider}} API key in Settings > Accounts first.",
+        "keyMissing": "Save an API key for {{provider}} in Settings > Accounts first.",
         "cliSignedOut": "{{provider}} is not signed in on this host: {{message}}",
         "unauthorized": "{{provider}} rejected the API key.",
         "planUnavailable": "{{model}} needs credits this {{provider}} account does not have.",

@@ -2,6 +2,7 @@ import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import type { MiniMaxEndpoint } from '../../shared/global-settings-types'
 import { utilityModelProvider } from '../../shared/utility-model/utility-model-provider-catalog'
 import type {
+  UtilityModelCatalogEntry,
   UtilityModelProviderId,
   UtilityModelProviderStatus
 } from '../../shared/utility-model/utility-model-types'
@@ -17,6 +18,7 @@ import { createCloudflareWorkersAiProvider } from './cloudflare-workers-ai-provi
 import { createOpenAiCompatibleProvider } from './openai-compatible-utility-provider'
 import {
   createOpenRouterProvider,
+  listOpenRouterModels,
   type OpenRouterAccountStore
 } from './openrouter-utility-provider'
 import type { UtilityModelProvider } from './utility-model-provider'
@@ -34,7 +36,11 @@ export type UtilityModelHostContext = {
 export type UtilityModelProviderAccount = Pick<
   UtilityModelProviderStatus,
   'configured' | 'source' | 'accountHint' | 'tokenProtection' | 'defaultModels'
-> & { provider: UtilityModelProvider | null }
+> & {
+  provider: UtilityModelProvider | null
+  /** The provider's model list when it is public, so a picker can fill before an account is saved. */
+  publicCatalog?: () => Promise<UtilityModelCatalogEntry[]>
+}
 
 export type UtilityModelProviderSource = () => Promise<UtilityModelProviderAccount>
 
@@ -118,7 +124,8 @@ export function createUtilityModelProviderSources(deps: {
         accountHint: account.hint,
         tokenProtection: account.protection,
         defaultModels: catalogDefaults('openrouter'),
-        provider: account.apiKey ? createOpenRouterProvider(account.apiKey) : null
+        provider: account.apiKey ? createOpenRouterProvider(account.apiKey) : null,
+        publicCatalog: () => listOpenRouterModels()
       }
     },
     minimax: async () => {

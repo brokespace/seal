@@ -99,6 +99,38 @@ describe('UtilityModelHost', () => {
     expect((await host.providerStatus('openrouter')).pausedUntil).not.toBeNull()
   })
 
+  it('lists a public catalog for a provider that has no account yet', async () => {
+    const host = new UtilityModelHost({
+      sources: {
+        openrouter: async () => ({
+          configured: false,
+          source: null,
+          accountHint: null,
+          tokenProtection: null,
+          defaultModels: ['openrouter/free'],
+          provider: null,
+          publicCatalog: async () => [{ id: 'some/model:free', description: null, free: true }]
+        })
+      }
+    })
+
+    expect(await host.provider('openrouter').listModels()).toEqual({
+      ok: true,
+      models: [{ id: 'some/model:free', description: null, free: true }]
+    })
+    expect(await host.providerStatus('openrouter')).toEqual({
+      provider: 'openrouter',
+      configured: false,
+      source: null,
+      accountHint: null,
+      tokenProtection: null,
+      defaultModels: ['openrouter/free'],
+      unavailableModels: [],
+      pausedUntil: null,
+      lastFailure: null
+    })
+  })
+
   it('saves an OpenRouter key and reports only that one is there', async () => {
     const host = new UtilityModelHost({ openRouter: memoryOpenRouter() })
 
