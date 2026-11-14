@@ -46,6 +46,7 @@ function matchesQuery(session: LiveSession, link: LiveSessionLink | undefined, w
   const haystack = [
     session.customTitle,
     session.title,
+    session.recap?.title,
     session.project,
     session.cwd,
     link?.name,

@@ -337,7 +337,8 @@ export function NativeChatMessageList({
     scrollToBottom,
     onSent: newRows.dismiss,
     revealFindMatch: readerInput.revealFindMatch,
-    slots: allSlots
+    slots: allSlots,
+    revealMessage: navigation.revealMessage
   })
 
   const rowContext = useNativeChatTranscriptRowContext({

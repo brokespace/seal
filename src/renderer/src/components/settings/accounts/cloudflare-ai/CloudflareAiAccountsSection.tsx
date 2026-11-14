@@ -59,6 +59,7 @@ export function CloudflareAiAccountsSection({
   const accessNotice = usageCredentialAccessNotice(host, access, t)
   const configured = status?.configured === true
   const summariesTitle = t('seal.sessionSummaries.setting.title', 'Session summaries')
+  const recapTitle = t('seal.sessionRecap.setting.title', 'Session recaps')
 
   return (
     <div id={CLOUDFLARE_AI_SECTION_ID} className="scroll-mt-6">
@@ -71,7 +72,7 @@ export function CloudflareAiAccountsSection({
         }
         description={t(
           'seal.cloudflareAi.subtitle',
-          'A small Workers AI model writes the one-line summary on each agent session. The free plan is enough.'
+          'A small Workers AI model writes the one-line summary and the recap on each agent session. The free plan is enough.'
         )}
         action={
           <a
@@ -197,6 +198,32 @@ export function CloudflareAiAccountsSection({
             checked={summaries?.enabled ?? true}
             disabled={summaries === null}
             onChange={() => void model.setSummariesEnabled(!(summaries?.enabled ?? true))}
+          />
+        </SearchableSetting>
+        <SearchableSetting
+          title={recapTitle}
+          description={t(
+            'seal.sessionRecap.setting.searchDescription',
+            'Keep a recap of each agent session: goal, open questions, action items.'
+          )}
+          keywords={CLOUDFLARE_AI_SEARCH_KEYWORDS}
+        >
+          <SettingsSwitchRow
+            label={recapTitle}
+            description={
+              configured
+                ? t(
+                    'seal.sessionRecap.setting.description',
+                    'Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Only your messages and the agent’s replies are sent, never tool output.'
+                  )
+                : t(
+                    'seal.sessionSummaries.setting.needsProvider',
+                    'Starts once a Cloudflare account is linked above.'
+                  )
+            }
+            checked={summaries?.recapEnabled ?? true}
+            disabled={summaries === null}
+            onChange={() => void model.setRecapEnabled(!(summaries?.recapEnabled ?? true))}
           />
         </SearchableSetting>
       </SettingsGroup>

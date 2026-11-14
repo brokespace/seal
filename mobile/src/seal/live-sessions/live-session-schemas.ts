@@ -3,6 +3,7 @@ import {
   LIVE_MESSAGE_STATES,
   LIVE_SESSION_STATUSES
 } from '../../../../src/shared/live-sessions/live-session-types'
+import { liveSessionRecapBriefSchema } from '../../../../src/shared/session-recap/session-recap-schemas'
 import { salvagingArray } from '../../../../src/shared/zod-salvage'
 
 const Timestamp = z.number().finite()
@@ -44,7 +45,11 @@ export const liveSessionSchema = z.looseObject({
   permission: permissionSchema.nullable(),
   // The host's one-sentence summary; absent on hosts without a utility model.
   summary: z.string().optional().catch(undefined),
-  summaryPending: z.boolean().optional().catch(undefined)
+  summaryPending: z.boolean().optional().catch(undefined),
+  // The name set in Seal, and whether `title` is one set in the agent: both outrank the recap's title.
+  customTitle: z.string().nullish().catch(undefined),
+  titleNamed: z.boolean().optional().catch(undefined),
+  recap: liveSessionRecapBriefSchema.optional().catch(undefined)
 })
 
 export const liveSessionSnapshotSchema = z.looseObject({

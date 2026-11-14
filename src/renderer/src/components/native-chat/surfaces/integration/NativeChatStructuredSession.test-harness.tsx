@@ -315,7 +315,8 @@ export function createStructuredSessionMocks() {
           revealLatest: mocks.revealLatest,
           readerAtEnd: () => true,
           revealFindMatch: () => {},
-          messageCopyText: () => null
+          messageCopyText: () => null,
+          revealMessage: () => {}
         }))
         return <DeliveryNoticesMock notices={props?.deliveryNotices} />
       }

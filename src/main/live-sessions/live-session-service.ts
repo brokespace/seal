@@ -143,6 +143,14 @@ export class LiveSessionService {
     return this.streams.page(sessionId, before, limit)
   }
 
+  /** What a transcript gained after `cursor`; `shrank` when it was rewritten shorter. */
+  transcriptSince(
+    sessionId: string,
+    cursor: LiveTranscriptCursor
+  ): ReturnType<LiveTranscriptStreams['since']> {
+    return this.streams.since(sessionId, cursor)
+  }
+
   watchTranscript(
     sessionId: string,
     fromCursor: LiveTranscriptCursor | null,

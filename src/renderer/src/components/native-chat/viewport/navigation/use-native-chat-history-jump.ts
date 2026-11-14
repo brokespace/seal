@@ -7,9 +7,10 @@ import type { NativeChatOlderPageResult } from '../history/native-chat-paginatio
 /** Bound runaway paging beyond any expected session size. */
 export const NATIVE_CHAT_HISTORY_JUMP_MAX_PAGES = 1000
 
-/** A rail pick, or the subagent a view shows, whose spawn may sit in older history. */
+/** A rail pick, a message named from outside the transcript (a recap), or the subagent a view shows, whose spawn may sit in older history. */
 export type NativeChatHistoryJumpTarget =
   | { kind: 'rail'; id: string }
+  | { kind: 'message'; id: string }
   | { kind: 'subagent'; agentId: string }
 
 /** What the committed transcript can do for a target now: it landed, it needs older history, or it cannot be reached. */

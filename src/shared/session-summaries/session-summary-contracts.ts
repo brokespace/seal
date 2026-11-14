@@ -3,11 +3,15 @@
 export type SessionSummarySettings = {
   /** Off stops new summaries on this host; absent means on whenever a utility model is configured. */
   sessionSummariesEnabled?: boolean
+  /** Off stops session recaps on this host, leaving the one-line summaries; absent means on. */
+  sessionRecapEnabled?: boolean
 }
 
 /** Why a host is not summarizing right now. */
 export type SessionSummariesStatus = {
   enabled: boolean
+  /** Session recaps are on; absent from a host that predates them. */
+  recapEnabled?: boolean
   /** A utility model provider is configured on this host. */
   configured: boolean
   /** Held after a rate limit until this time; null when running. */
