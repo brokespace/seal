@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { GitStatusResult } from '../../../../shared/git/status/git-status-types'
 import type { Repo } from '../../../../shared/repo-types'
+import { NO_LIVE_SMART_SORT_SOURCES } from '../../../../shared/sidebar-list/sorting/smart-sort'
+import type { Worktree } from '../../../../shared/worktree/types'
 import { sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 import { makeRepo, makeWorktree } from '../worktree-jump/worktree-jump-palette-test-fixtures'
 import {
@@ -34,7 +36,14 @@ describe('resolveProjectOverviewRepo', () => {
 })
 
 describe('projectWorktrees', () => {
-  it("lists a registration's own live workspaces, main checkout first, then most recently active", () => {
+  const order = (sortBy: 'recent' | 'name' | 'manual') => ({
+    sortBy,
+    sources: NO_LIVE_SMART_SORT_SOURCES,
+    now: 1_000_000
+  })
+  const ids = (worktrees: Worktree[]): string[] => worktrees.map((worktree) => worktree.id)
+
+  it("lists a registration's own live workspaces", () => {
     const worktrees = [
       makeWorktree('old', 'old', { lastActivityAt: 10 }),
       makeWorktree('archived', 'archived', { isArchived: true, lastActivityAt: 99 }),
@@ -43,22 +52,39 @@ describe('projectWorktrees', () => {
       makeWorktree('main', 'main', { isMainWorktree: true, lastActivityAt: 1 })
     ]
     const repos = [local, onGpu]
-    expect(projectWorktrees(worktrees, local, repos).map((worktree) => worktree.id)).toEqual([
+    expect(ids(projectWorktrees(worktrees, local, repos, order('recent')))).toEqual([
       'main',
       'recent',
       'old'
     ])
-    expect(projectWorktrees(worktrees, onGpu, repos).map((worktree) => worktree.id)).toEqual([
-      'on-gpu'
-    ])
+    expect(ids(projectWorktrees(worktrees, onGpu, repos, order('recent')))).toEqual(['on-gpu'])
     // A project that lives only on a remote machine owns the rows that name no machine.
-    expect(projectWorktrees(worktrees, onGpu, [onGpu]).map((worktree) => worktree.id)).toEqual([
+    expect(ids(projectWorktrees(worktrees, onGpu, [onGpu], order('recent')))).toEqual([
       'main',
       'on-gpu',
       'recent',
       'old'
     ])
-    expect(projectWorktrees(undefined, local, repos)).toEqual([])
+    expect(projectWorktrees(undefined, local, repos, order('recent'))).toEqual([])
+  })
+
+  it("follows the sidebar's sort mode instead of always ranking by recency", () => {
+    const worktrees = [
+      makeWorktree('ws-10', 'ws-10', { lastActivityAt: 90, manualOrder: 1 }),
+      makeWorktree('ws-2', 'ws-2', { lastActivityAt: 10, manualOrder: 3 }),
+      makeWorktree('main', 'main', { isMainWorktree: true, lastActivityAt: 1, manualOrder: 2 })
+    ]
+    expect(ids(projectWorktrees(worktrees, local, [local], order('name')))).toEqual([
+      'main',
+      'ws-2',
+      'ws-10'
+    ])
+    // A hand-made order keeps the main checkout where the user put it.
+    expect(ids(projectWorktrees(worktrees, local, [local], order('manual')))).toEqual([
+      'ws-2',
+      'main',
+      'ws-10'
+    ])
   })
 })
 

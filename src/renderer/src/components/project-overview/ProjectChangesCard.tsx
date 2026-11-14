@@ -166,7 +166,7 @@ export function ProjectChangesCard({
         <p className="border-t border-border px-3 py-2 text-2xs text-muted-foreground">
           {t(
             'seal.projectOverview.changes.more',
-            'Showing the {{shown}} most recent of {{total}} workspaces.',
+            'Showing the first {{shown}} of {{total}} workspaces.',
             { shown: shown.length, total: worktrees.length }
           )}
         </p>

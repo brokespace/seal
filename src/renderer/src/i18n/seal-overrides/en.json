@@ -2030,7 +2030,7 @@
         "title": "Changes",
         "refresh": "Refresh changes",
         "empty": "No workspaces to check.",
-        "more": "Showing the {{shown}} most recent of {{total}} workspaces.",
+        "more": "Showing the first {{shown}} of {{total}} workspaces.",
         "staged": "{{count}} staged",
         "untracked": "{{count}} untracked",
         "nothingUncommitted": "Nothing uncommitted"

@@ -53,9 +53,19 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   const hostId = getRepoExecutionHostId(repo)
   const machine = machines.find((item) => item.executionHostId === hostId) ?? null
   const registrations = useMemo(() => projectRegistrations(repos, repo.id), [repos, repo.id])
+  const sortBy = useAppStore((s) => s.sortBy)
+  // The sidebar re-ranks on these two, so ranking on them too keeps both lists in step.
+  const settledSortEpoch = useAppStore((s) => s.settledSortEpoch)
+  const sortOrderEpoch = useAppStore((s) => s.sortOrderEpoch)
   const worktrees = useMemo(
-    () => projectWorktrees(repoWorktrees, repo, repos),
-    [repoWorktrees, repo, repos]
+    () =>
+      projectWorktrees(repoWorktrees, repo, repos, {
+        sortBy,
+        sources: useAppStore.getState(),
+        now: Date.now()
+      }),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- the epochs are triggers, not inputs.
+    [repoWorktrees, repo, repos, sortBy, settledSortEpoch, sortOrderEpoch]
   )
   const mainWorktree = worktrees.find((worktree) => worktree.isMainWorktree) ?? worktrees[0] ?? null
   const sessions = useMemo(

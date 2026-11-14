@@ -7,6 +7,12 @@ import type { LiveSession } from '../../../../shared/live-sessions/live-session-
 import { getRepoHostIdentity } from '../../../../shared/repo-host-identity'
 import type { Repo } from '../../../../shared/repo-types'
 import { createHostScopedRepoOf } from '../../../../shared/sidebar-list/feed/sidebar-feed-index'
+import { orderMainWorktreeFirst } from '../../../../shared/sidebar-list/sections/section-order'
+import {
+  rankWorktreesForSort,
+  type SmartSortSources
+} from '../../../../shared/sidebar-list/sorting/smart-sort'
+import type { WorkspaceSortBy } from '../../../../shared/workspace-view/workspace-row-sort'
 import type { Worktree } from '../../../../shared/worktree/types'
 import type { LiveSessionLink } from '../live-sessions/links/live-session-links'
 
@@ -33,27 +39,39 @@ export function projectRegistrations(repos: readonly Repo[], repoId: string): Re
   return repos.filter((repo) => repo.id === repoId)
 }
 
+/** How the sidebar ranks workspaces right now: its sort mode and what Smart reads. */
+export type ProjectWorktreeOrder = {
+  sortBy: WorkspaceSortBy
+  sources: SmartSortSources
+  now: number
+}
+
 /**
- * A registration's workspaces: the main checkout first, then the most recently active. A project
- * on two machines keeps both machines' rows in one list, so each row goes to the registration the
- * sidebar files it under.
+ * A registration's workspaces, in the sidebar's order for its project: the same ranking, and the
+ * main checkout first unless the order is manual. A project on two machines keeps both machines'
+ * rows in one list, so each row goes to the registration the sidebar files it under.
  */
 export function projectWorktrees(
   worktrees: readonly Worktree[] | undefined,
   repo: Repo,
-  repos: readonly Repo[]
+  repos: readonly Repo[],
+  order: ProjectWorktreeOrder
 ): Worktree[] {
-  const repoOf = createHostScopedRepoOf(repos, new Map(repos.map((item) => [item.id, item])))
+  const repoMap = new Map(repos.map((item) => [item.id, item]))
+  const repoOf = createHostScopedRepoOf(repos, repoMap)
   const identity = getRepoHostIdentity(repo)
-  return (worktrees ?? [])
-    .filter((worktree) => {
+  const { sorted } = rankWorktreesForSort({
+    worktrees: (worktrees ?? []).filter((worktree) => {
       const owner = repoOf(worktree)
       return !worktree.isArchived && owner !== undefined && getRepoHostIdentity(owner) === identity
-    })
-    .sort(
-      (a, b) =>
-        Number(b.isMainWorktree) - Number(a.isMainWorktree) || b.lastActivityAt - a.lastActivityAt
-    )
+    }),
+    sortBy: order.sortBy,
+    latched: false,
+    repoMap,
+    now: order.now,
+    sources: order.sources
+  })
+  return orderMainWorktreeFirst(sorted, order.sortBy)
 }
 
 /** The sessions Seal links to one of the project's workspaces, on any machine. */
