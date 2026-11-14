@@ -37,8 +37,16 @@ export const BRAND_PASS_HOOKS = [
   ['config/build-plugins/sandboxed-script-bundles.ts', 'sealBrandCopy()'],
   ['config/scripts/build/mobile-web-app/build-mobile-web-app-bundle.mjs', 'sealBrandCopyEsbuild()'],
   [
+    'config/scripts/build/mobile-web-app/build-mobile-web-app-bundle.mjs',
+    'await readShippedCatalogText('
+  ],
+  [
     'config/scripts/orcad-distribution/server-bundle/orcad-entry-build.mjs',
-    'sealBrandCopyEsbuild()'
+    'jsoncParserEsm, externalNativeAddons, sealBrandCopyEsbuild()]'
+  ],
+  [
+    'config/scripts/orcad-distribution/server-bundle/orcad-entry-build.mjs',
+    'plugins: [sealBrandCopyEsbuild()]'
   ],
   ['config/scripts/remote-host-build/wsl-guest/build-wsl-guest.mjs', 'sealBrandCopyEsbuild()'],
   ['package.json', 'config/seal/brand-copy/build-seal-cli.mjs'],
