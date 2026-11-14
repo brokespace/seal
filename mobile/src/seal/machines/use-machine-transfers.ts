@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { HOST_LIST_TARGET, NO_HOST_LIST_INPUT } from '../../host-screen/catalog/host-list-queries'
 import { useHostQuery } from '../../query/host-query'
 import { hostQueryKey } from '../../query/host-query-key'
@@ -14,7 +13,7 @@ const POLL_MS = 1_000
 export function useMachineTransfers(args: {
   hostId: string
   client: RpcClient | null
-  machineId: ExecutionHostId
+  machineId: string
   onFinished: (transfer: MobileMachineTransfer) => void
 }) {
   const { hostId, client, machineId, onFinished } = args

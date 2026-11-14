@@ -310,7 +310,7 @@ describe('runEphemeralVmRecipeSuspend and runEphemeralVmRecipeResume', () => {
         errorCode: 'recipeTimedOut',
         errorParams: { mode: 'suspend', timeout: '1s', timeoutSeconds: 1 },
         error:
-          'The recipe suspend step did not finish within 1s, so Orca stopped it. Check the recipe output, or raise timeoutSeconds in orca.yaml if it needs longer.'
+          'The recipe suspend step did not finish within 1s, so Seal stopped it. Check the recipe output, or raise timeoutSeconds in orca.yaml if it needs longer.'
       })
     }
   )

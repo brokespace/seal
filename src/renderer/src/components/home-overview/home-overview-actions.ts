@@ -5,6 +5,7 @@ import { rememberLiveSessionSelection } from '@/components/live-sessions/live-se
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { normalizeExecutionHostId } from '../../../../shared/execution-host'
+import { parseMachineId } from '../../../../shared/machines/machine-types'
 import type { SettingsNavigationTarget } from '../settings/navigation/settings-navigation-types'
 import type { HomeOverviewActions, HomeSession } from './home-overview-model'
 
@@ -15,7 +16,7 @@ function openSettingsPane(target: SettingsNavigationTarget): void {
   state.openSettingsPage()
 }
 
-/** Settings > AI provider accounts, where Seal's account vault lives. */
+/** Settings > Accounts, where Seal's account vault lives. */
 function openAccountsSettings(): void {
   openSettingsPane({ pane: 'accounts', repoId: null })
 }
@@ -77,7 +78,7 @@ export const sealHomeOverviewActions: HomeOverviewActions = {
     openLiveSession(session)
   },
   openMachine: (machine) => {
-    const machineId = normalizeExecutionHostId(machine.id)
+    const machineId = parseMachineId(machine.id)
     if (machineId) {
       rememberMachineSelection(machineId)
     }

@@ -36,7 +36,7 @@ describe('verify-localization-catalog', () => {
   it('bootstraps English entries without fabricating target translations', async () => {
     const { root, localesDir } = makeProject({
       sourceText:
-        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Orca' })\n"
+        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Seal' })\n"
     })
 
     await expect(verifyLocalizationCatalog(root, { fix: false })).resolves.toBe(1)
@@ -75,7 +75,7 @@ describe('verify-localization-catalog', () => {
   it('never overwrites mismatched translations or removes target-only entries', async () => {
     const { root, localesDir } = makeProject({
       sourceText:
-        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Orca' })\n",
+        "import { translate } from '@/i18n/i18n'\nexport const label = translate('auto.example.greeting', 'Hello {{name}}', { name: 'Seal' })\n",
       enCatalog: { auto: { example: { greeting: 'Hello {{name}}' } } },
       esCatalog: {
         auto: {

@@ -6,6 +6,7 @@ import { RuntimeServersPageProvider } from '../runtime-environments/runtime-serv
 import { SshPane } from '../ssh/SshPane'
 import { SshHostsHeaderSlot, SshHostsHeaderSlotProvider } from '../ssh/ssh-hosts-header-slot'
 import { SettingsSection } from '../section-layout/SettingsSection'
+import { MachinesSettingsPane } from '../machines/MachinesSettingsPane'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsRenderContext } from './settings-render-context'
@@ -20,16 +21,16 @@ export function renderServersSettingsSection(
     <RuntimeServersPageProvider>
       <SettingsSection
         id="servers"
-        title={t('auto.components.settings.Settings.022effa46f', 'Remote Orca servers')}
+        title={t('auto.components.settings.Settings.022effa46f', 'Remote Seal servers')}
         description={
           model.isWebClient
             ? t(
                 'auto.components.settings.Settings.7686cb5c36',
-                'Connect this browser to a saved Orca server.'
+                'Connect this browser to a saved Seal server.'
               )
             : t(
                 'auto.components.settings.Settings.remoteServersDescription',
-                'Run Orca on another machine and work on it from here.'
+                'Run Seal on another machine and work on it from here.'
               )
         }
         searchEntries={navigation.getSectionSearchEntries('servers')}
@@ -75,6 +76,70 @@ export function renderSshSettingsSection(
       </SettingsSection>
     </SshHostsHeaderSlotProvider>
   ) : null
+}
+
+/** Desktop: one section for every machine; the web client can only reach Seal servers. */
+export function renderMachinesSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element {
+  const { model, navigation, view } = context
+  if (!model.showDesktopOnlySettings) {
+    return renderServersSettingsSection(context, t)
+  }
+  const mounted = view.isSectionMounted('machines')
+  return (
+    <SettingsSection
+      id="machines"
+      title={t('auto.components.settings.Settings.machinesTitle', 'Machines')}
+      description={t(
+        'auto.components.settings.Settings.machinesDescription',
+        'Other computers Seal works on: files, terminals, agents, Git and workspaces.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('machines')}
+    >
+      {mounted ? (
+        <MachinesSettingsPane
+          sshAddSignal={model.sshHostAddIntentSignal}
+          serverAddSignal={model.remoteServerAddIntentSignal}
+          advanced={
+            <>
+              <RuntimeServersPageProvider>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-medium">
+                      {t('auto.components.settings.Settings.machinesServers', 'Seal servers')}
+                    </h3>
+                    <RuntimeServersHeaderActions canGeneratePairingUrl />
+                  </div>
+                  <RuntimeEnvironmentsPane
+                    settings={model.settings}
+                    setActiveRuntimeEnvironmentPreference={
+                      model.setActiveRuntimeEnvironmentPreference
+                    }
+                    canGeneratePairingUrl
+                    allowLocalRuntime
+                    addServerIntentSignal={0}
+                  />
+                </div>
+              </RuntimeServersPageProvider>
+              <SshHostsHeaderSlotProvider>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-medium">
+                      {t('auto.components.settings.Settings.machinesSsh', 'SSH connections')}
+                    </h3>
+                    <SshHostsHeaderSlot />
+                  </div>
+                  <SshPane addTargetIntentSignal={0} />
+                </div>
+              </SshHostsHeaderSlotProvider>
+            </>
+          }
+        />
+      ) : null}
+    </SettingsSection>
+  )
 }
 
 export function renderDeveloperPermissionsSettingsSection(

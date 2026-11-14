@@ -5,7 +5,7 @@ import {
   runLabelerScript
 } from './issue-os-labeler-script-runner.mjs'
 
-const WHERE = 'Where were you using Orca?'
+const WHERE = 'Where were you using Seal?'
 const OS = 'Operating system'
 const MOBILE = renderBugBody({ [WHERE]: 'Mobile app', [OS]: 'iOS' })
 const DESKTOP = renderBugBody({ [WHERE]: 'Desktop only', [OS]: 'macOS' })

@@ -1,20 +1,19 @@
-import { parseExecutionHostId } from '../../shared/execution-host'
-import type {
-  MachineDirChangedEvent,
-  MachineId,
-  MachineTransfer
+import {
+  LOCAL_MACHINE_ID,
+  type MachineDirChangedEvent,
+  type MachineId,
+  type MachineTransfer
 } from '../../shared/machines/machine-types'
+import type { MachineView } from '../../shared/machines/machine-view'
 import { machinePathDirname } from '../../shared/machines/machine-paths'
 import { getAppEnvironment } from '../../shared/app-environment'
+import type { MachineConnection } from './connection/machine-connection'
+import type { LiveSessionMachineSource } from '../live-sessions/hosts/live-session-hosts'
+import { createLocalMachineConnection } from './connection/local-machine-connection'
 import type { MachineFileSystem } from './filesystem/machine-filesystem'
-import { createLocalMachineFileSystem } from './filesystem/local-machine-filesystem'
-import { SshMachineFileSystem } from './filesystem/ssh-machine-filesystem'
 import { MachineDirectoryService } from './listing/machine-directory-service'
 import { MachineTransferManager } from './transfers/machine-transfer-manager'
 import { MachineDragOutStager } from './drag-out/machine-drag-out'
-import { getSshTargetRegistryStore } from '../ssh/targets/ssh-target-registry'
-import { RuntimeMachineFileSystem } from './runtime/runtime-machine-filesystem'
-import { createRuntimeMachineChannel } from './runtime/runtime-machine-channel'
 
 export type MachineServices = {
   directories: MachineDirectoryService
@@ -22,42 +21,50 @@ export type MachineServices = {
   dragOut: MachineDragOutStager
 }
 
+/** How this host reaches machines: the desktop's registry, or this machine alone when headless. */
+export type MachineAccess = {
+  views: () => readonly MachineView[]
+  connection: (machineId: MachineId) => MachineConnection
+  liveSessionSources: () => readonly MachineScanSource[]
+}
+
+/** `environmentId` is set when the machine connects via its Seal server. */
+export type MachineScanSource = LiveSessionMachineSource & { environmentId: string | null }
+
 let services: MachineServices | null = null
-const fileSystems = new Map<MachineId, MachineFileSystem>()
-const runtimeFileSystems = new Map<string, RuntimeMachineFileSystem>()
+let localConnection: MachineConnection | null = null
 const dirChangedListeners = new Set<(event: MachineDirChangedEvent) => void>()
 const transferListeners = new Set<(transfer: MachineTransfer) => void>()
 
-export function resolveRuntimeMachineFileSystem(environmentId: string): RuntimeMachineFileSystem {
-  let fs = runtimeFileSystems.get(environmentId)
-  if (!fs) {
-    fs = new RuntimeMachineFileSystem(
-      environmentId,
-      createRuntimeMachineChannel(getAppEnvironment().getPath('userData'), environmentId)
-    )
-    runtimeFileSystems.set(environmentId, fs)
+let access: MachineAccess = {
+  views: () => [],
+  liveSessionSources: () => [],
+  connection: (machineId) => {
+    if (machineId !== LOCAL_MACHINE_ID) {
+      throw new Error('Unknown machine')
+    }
+    return (localConnection ??= createLocalMachineConnection())
   }
-  return fs
+}
+
+export function setMachineAccess(next: MachineAccess): void {
+  access = next
+}
+
+export function listMachineViews(): readonly MachineView[] {
+  return access.views()
+}
+
+export function listLiveSessionMachineSources(): readonly MachineScanSource[] {
+  return access.liveSessionSources()
+}
+
+export function resolveMachineConnection(machineId: MachineId): MachineConnection {
+  return access.connection(machineId)
 }
 
 export function resolveMachineFileSystem(machineId: MachineId): MachineFileSystem {
-  const existing = fileSystems.get(machineId)
-  if (existing) {
-    return existing
-  }
-  const parsed = parseExecutionHostId(machineId)
-  let fs: MachineFileSystem
-  if (parsed?.kind === 'local') {
-    fs = createLocalMachineFileSystem()
-  } else if (parsed?.kind === 'ssh' && getSshTargetRegistryStore()?.getTarget(parsed.targetId)) {
-    fs = new SshMachineFileSystem(parsed.targetId)
-  } else if (parsed?.kind === 'runtime') {
-    fs = resolveRuntimeMachineFileSystem(parsed.environmentId)
-  } else {
-    throw new Error('Unknown machine')
-  }
-  fileSystems.set(machineId, fs)
-  return fs
+  return access.connection(machineId).files
 }
 
 export function onMachineDirChanged(listener: (event: MachineDirChangedEvent) => void): () => void {

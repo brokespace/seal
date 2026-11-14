@@ -144,7 +144,7 @@ test('real packaged old build reads the latest explicit JSON rollback before can
   const executablePath = process.env[PACKAGED_OLD_EXECUTABLE_ENV]
   test.skip(
     !executablePath || !existsSync(executablePath),
-    `${PACKAGED_OLD_EXECUTABLE_ENV} must point at an older packaged Orca executable`
+    `${PACKAGED_OLD_EXECUTABLE_ENV} must point at an older packaged Seal executable`
   )
 
   const session = createRestartSession(testInfo)
@@ -232,7 +232,7 @@ test('fails closed when a packaged old build mutates JSON outside an explicit ro
   const executablePath = process.env[PACKAGED_OLD_EXECUTABLE_ENV]
   test.skip(
     !executablePath || !existsSync(executablePath),
-    `${PACKAGED_OLD_EXECUTABLE_ENV} must point at an older packaged Orca executable`
+    `${PACKAGED_OLD_EXECUTABLE_ENV} must point at an older packaged Seal executable`
   )
 
   const session = createRestartSession(testInfo)

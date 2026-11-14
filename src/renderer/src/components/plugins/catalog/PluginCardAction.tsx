@@ -89,7 +89,7 @@ export function PluginCardAction({
   if (needsOrca) {
     return (
       <span className="text-xs whitespace-nowrap text-status-warning-text">
-        {t('auto.components.settings.PluginManagerRows.needsOrca', 'Needs Orca {{value0}}', {
+        {t('auto.components.settings.PluginManagerRows.needsOrca', 'Needs Seal {{value0}}', {
           value0: needsOrca
         })}
       </span>

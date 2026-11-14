@@ -15,7 +15,7 @@ export function resolvePinnedFederatedServer(
     if (error instanceof RuntimeEnvironmentStoreError && error.code === 'invalid_argument') {
       throw new OrchestrationError(
         'peer_changed',
-        `Saved environment ${federated.environment_name} is no longer a paired server here, so this Orca cannot reach this worker. Re-pairing adds the server as a new environment.`
+        `Saved environment ${federated.environment_name} is no longer a paired server here, so this Seal cannot reach this worker. Re-pairing adds the server as a new environment.`
       )
     }
     throw error
@@ -23,7 +23,7 @@ export function resolvePinnedFederatedServer(
   if (server.peerFingerprint !== federated.peer_fingerprint) {
     throw new OrchestrationError(
       'peer_changed',
-      `Saved environment ${federated.environment_name} now identifies a different Orca server.`
+      `Saved environment ${federated.environment_name} now identifies a different Seal server.`
     )
   }
   return server

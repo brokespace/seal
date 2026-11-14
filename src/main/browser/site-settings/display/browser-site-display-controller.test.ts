@@ -112,7 +112,7 @@ describe('BrowserSiteDisplayController zoom', () => {
     expect([github, githubOtherPort, docs].map(percent)).toEqual([110, 110, 110])
   })
 
-  it("restores the site's zoom after Orca's UI zoom is copied onto the page", () => {
+  it("restores the site's zoom after Seal's UI zoom is copied onto the page", () => {
     const controller = new BrowserSiteDisplayController()
     const ui = uiStore()
     controller.followZoomSettings(ui)

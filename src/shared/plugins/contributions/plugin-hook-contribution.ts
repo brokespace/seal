@@ -48,7 +48,7 @@ export const pluginHookContributionSchema = z
       .optional()
       .meta(
         pluginFieldDoc(
-          "What Orca does when this plugin's hook throws, times out, crashes or does not start: `pass` (the default) carries on as if it passed; `deny` refuses the action, naming the plugin, so a guard fails closed. Ignored for hooks that only observe.",
+          "What Seal does when this plugin's hook throws, times out, crashes or does not start: `pass` (the default) carries on as if it passed; `deny` refuses the action, naming the plugin, so a guard fails closed. Ignored for hooks that only observe.",
           PLUGIN_HOOKS_SINCE
         )
       )
@@ -57,7 +57,7 @@ export const pluginHookContributionSchema = z
   .meta({
     id: 'HookContribution',
     description:
-      'A hook Orca runs through the worker before (or after) it acts. Requires `main` and the `trusted-worker` execution profile.'
+      'A hook Seal runs through the worker before (or after) it acts. Requires `main` and the `trusted-worker` execution profile.'
   })
 
 export type PluginHookContribution = z.infer<typeof pluginHookContributionSchema>

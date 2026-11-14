@@ -1,7 +1,10 @@
 import { mkdir, open } from 'node:fs/promises'
 import path from 'node:path'
-import { toRuntimeExecutionHostId } from '../../../shared/execution-host'
-import type { MachineFileEntry, MachineMetrics } from '../../../shared/machines/machine-types'
+import type {
+  MachineFileEntry,
+  MachineId,
+  MachineMetrics
+} from '../../../shared/machines/machine-types'
 import {
   MACHINE_HOST_LIST_PAGE_MAX,
   MACHINE_HOST_READ_CHUNK_MAX_BYTES,
@@ -39,16 +42,13 @@ function homePath(value: unknown): string {
 
 /** A paired Seal runtime's whole disk, over its RPC socket; transfers move in pipelined base64 slices. */
 export class RuntimeMachineFileSystem implements MachineFileSystem {
-  readonly machineId
   private home: Promise<string> | null = null
   private watchUnsupported = false
 
   constructor(
-    environmentId: string,
+    readonly machineId: MachineId,
     private readonly channel: RuntimeMachineChannel
-  ) {
-    this.machineId = toRuntimeExecutionHostId(environmentId)
-  }
+  ) {}
 
   private call(method: string, params: unknown = undefined, timeoutMs = CALL_TIMEOUT_MS) {
     return this.channel.call(method, params, timeoutMs)

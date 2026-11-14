@@ -4,7 +4,6 @@
       "agentLogin": "Ajanın kendi oturum açma bilgilerini kullan",
       "connecting": "Sunucuya bağlanılıyor…",
       "connectingTo": "{{name}} ile bağlantı kuruluyor…",
-      "default": "Sistem varsayılanı",
       "fableWindow": "Fable",
       "hostNotFound": "Sunucu bulunamadı",
       "invalidSnapshot": "Sunucudan gelen hesap anlık görüntüsü geçersiz",
@@ -587,7 +586,7 @@
       "incompleteReply": "Ek değişti veya yanıtı eksikti. Kapatıp tekrar deneyin.",
       "notText": "Bu dosya metin olarak önizlenemez. Başka bir uygulamada açmak için kaydedin.",
       "openFailed": "Ek açılamadı. Tekrar deneyin.",
-      "hostUpdate": "Bu ana makine henüz metin eklerini açamıyor. O ana makinede Seal’yı güncelleyip tekrar deneyin.",
+      "hostUpdate": "Bu ana makine henüz metin eklerini açamıyor. O ana makinede Seal’i güncelleyip tekrar deneyin.",
       "copyTooLarge": "Bu dosya kopyalanamayacak kadar büyük. Bunun yerine kaydedin.",
       "connectionChanged": "Bağlantı değişti. Eki yeniden açmayı deneyin.",
       "hostChanged": "Ekin ana makinesi değişti. Eki kapatıp yeniden açın.",
@@ -646,7 +645,7 @@
       "busy": "Başka bir sohbet veya terminal açılıyor. Bekleyin, ardından {{agent}} sohbetini yeniden çatallayın.",
       "unconfirmed": "{{agent}} çatallamayı doğrulayamadı. Yine de açılmış olabilir; yeniden çatallamadan önce Oturum Geçmişini kontrol edin.",
       "failed": "{{agent}} bu sohbeti çatallayamadı. {{detail}}",
-      "unsupported": "Bu ana makinede eski bir Seal sürümü çalışıyor. Ana makinedeki Seal’yı güncelleyip tekrar deneyin."
+      "unsupported": "Bu ana makinede eski bir Seal sürümü çalışıyor. Ana makinedeki Seal’i güncelleyip tekrar deneyin."
     }
   },
   "common": {
@@ -3344,7 +3343,7 @@
       "waitingForDesktop": "Masaüstü bekleniyor…"
     },
     "conflictActions": {
-      "needsNewerHost": "Birleştirme çakışmalarını telefonunuzdan çözmek için bu çalışma alanının çalıştığı bilgisayarda Seal’yı güncelleyin.",
+      "needsNewerHost": "Birleştirme çakışmalarını telefonunuzdan çözmek için bu çalışma alanının çalıştığı bilgisayarda Seal’i güncelleyin.",
       "markResolved": "Çözüldü olarak işaretle",
       "keepFile": "Dosyayı koru",
       "keepDeletion": "Silmeyi koru",
@@ -4144,7 +4143,7 @@
       "invalidDestination": "Bu yetkili sunucuda o ana makine artık kullanılamıyor. Bir ana makine seçip tekrar deneyin.",
       "agentDiscoveryUnavailable": "Bu proje ana makinesinde aracı keşfi kullanılamıyor. Kaydedilen aracı seçimleri korunur.",
       "agentVerificationUnavailable": "Bu ana makine projenin aracılarını doğrulayamıyor. Ana makineyi güncelleyip tekrar deneyin.",
-      "hostUnavailable": "Bu ana makinede otomasyonlar kullanılamıyor. Ana makinedeki Seal’yı güncelleyip yeniden bağlanın.",
+      "hostUnavailable": "Bu ana makinede otomasyonlar kullanılamıyor. Ana makinedeki Seal’i güncelleyip yeniden bağlanın.",
       "hostUnreachable": "Bu ana makineye ulaşılamadı. Yeniden bağlanıp mevcut durumunu kontrol etmek için yenileyin.",
       "actionFailed": "Bu işlem ana makinede tamamlanamadı. Yenileyip tekrar deneyin.",
       "dispatched": "Gönderildi",

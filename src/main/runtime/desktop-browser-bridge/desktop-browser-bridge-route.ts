@@ -72,7 +72,7 @@ export async function routeDesktopBrowserBridgeRpc(options: {
   if (params.expectUrl !== undefined && !options.registry.newestAttachmentEnforcesExpectUrl()) {
     throw new BrowserError(
       BROWSER_EXPECT_URL_UNSUPPORTED_CODE,
-      'The Orca desktop sharing its browser cannot check --expect-url. Update Orca on that desktop or drop the flag.'
+      'The Seal desktop sharing its browser cannot check --expect-url. Update Seal on that desktop or drop the flag.'
     )
   }
   if (
@@ -81,7 +81,7 @@ export async function routeDesktopBrowserBridgeRpc(options: {
   ) {
     throw new BrowserError(
       DESKTOP_BROWSER_BRIDGE_NOT_FORWARDED_CODE,
-      'The Orca desktop sharing its browser cannot read tab notes. Update Orca on that desktop.'
+      'The Seal desktop sharing its browser cannot read tab notes. Update Seal on that desktop.'
     )
   }
   const result = await options.registry.forward(

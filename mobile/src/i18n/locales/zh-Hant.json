@@ -4,7 +4,6 @@
       "agentLogin": "使用代理程式本身的登入資訊",
       "connecting": "正在連線至主機…",
       "connectingTo": "正在連線至 {{name}}…",
-      "default": "系統預設",
       "fableWindow": "Fable",
       "hostNotFound": "找不到主機",
       "invalidSnapshot": "主機傳回的帳戶快照無效",

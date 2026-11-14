@@ -190,17 +190,21 @@ export class HomeChatSkills {
     return projects.filter((project) => project.files.length > 0)
   }
 
-  /** Discover what a machine has; answers from a recent result unless a project is named. */
+  /**
+   * Discover what a machine has. The system prompt takes a recent result; a tool call asks with
+   * `fresh`, so a skill installed a minute ago is found.
+   */
   async machineCatalog(
     machine: HomeChatMachine,
-    projectPath?: string
+    projectPath?: string,
+    fresh = false
   ): Promise<HomeChatMachineCatalog> {
     if (projectPath) {
       return discoverMachineCatalog(machine, projectPath)
     }
     const id = machine.info.id
     const cached = this.remote.get(id)
-    if (cached && Date.now() - cached.at < REMOTE_CACHE_MS) {
+    if (!fresh && cached && Date.now() - cached.at < REMOTE_CACHE_MS) {
       return cached
     }
     let pending = this.discovering.get(id)
@@ -239,9 +243,19 @@ export class HomeChatSkills {
 
   /** The skill's instructions plus the files beside it, for the model to follow. */
   async load(name: string, machine?: HomeChatMachine): Promise<string> {
-    return machine && machine.info.id !== LOCAL_MACHINE_ID
-      ? this.loadRemote(name, machine)
-      : this.loadLocal(name)
+    if (machine && machine.info.id !== LOCAL_MACHINE_ID) {
+      return this.loadRemote(name, machine)
+    }
+    try {
+      return await this.loadLocal(name)
+    } catch (error) {
+      // list_skills also offers this computer's agent definitions and prompts.
+      const found = machine ? await this.loadRemote(name, machine).catch(() => null) : null
+      if (found === null) {
+        throw error
+      }
+      return found
+    }
   }
 
   invalidate(): void {
@@ -251,8 +265,15 @@ export class HomeChatSkills {
 
   private async loadLocal(name: string): Promise<string> {
     const wanted = name.trim().toLowerCase()
-    const skills = await this.list()
-    const skill = skills.find((s) => s.name.toLowerCase() === wanted)
+    const named = (s: HomeChatSkill): boolean => s.name.toLowerCase() === wanted
+    let skills = await this.list()
+    let skill = skills.find(named)
+    if (!skill) {
+      // The list is a minute old at most; look again before saying a new skill does not exist.
+      this.cache = null
+      skills = await this.list()
+      skill = skills.find(named)
+    }
     if (!skill) {
       const known = skills.map((s) => s.name).join(', ')
       throw new Error(
@@ -268,9 +289,15 @@ export class HomeChatSkills {
 
   private async loadRemote(name: string, machine: HomeChatMachine): Promise<string> {
     const wanted = name.trim().toLowerCase()
-    const catalog = await this.machineCatalog(machine)
+    const named = (e: HomeChatCatalogEntry): boolean =>
+      e.kind !== 'instructions' && e.name.toLowerCase() === wanted
     const loadable = (entry: HomeChatCatalogEntry): boolean => entry.kind !== 'instructions'
-    const entry = catalog.entries.find((e) => loadable(e) && e.name.toLowerCase() === wanted)
+    let catalog = await this.machineCatalog(machine)
+    let entry = catalog.entries.find(named)
+    if (!entry) {
+      catalog = await this.machineCatalog(machine, undefined, true)
+      entry = catalog.entries.find(named)
+    }
     if (!entry) {
       const known = catalog.entries.filter(loadable).map((e) => e.name)
       throw new Error(

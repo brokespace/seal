@@ -22,7 +22,7 @@ const projectSetHiddenResult = z.object({
 export const PLUGIN_PROJECT_VISIBILITY_API = {
   'project.setHidden': spec({
     summary:
-      "Hides a project from Orca's sidebar, or shows it again, as Hide Project in its menu does. View-only: its workspaces, terminals, agents and automations keep running, `workspace.list` still lists its workspaces, `project.list` marks it `hidden`, and Orca's Hidden projects list can show it again. It changes one host's copy of the project; on a paired Orca server it hides the project for everyone connected.",
+      "Hides a project from Seal's sidebar, or shows it again, as Hide Project in its menu does. View-only: its workspaces, terminals, agents and automations keep running, `workspace.list` still lists its workspaces, `project.list` marks it `hidden`, and Seal's Hidden projects list can show it again. It changes one host's copy of the project; on a paired Seal server it hides the project for everyone connected.",
     since: 9,
     scope: 'any-workspace',
     capability: 'workspace:write',

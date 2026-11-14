@@ -9,6 +9,7 @@ import {
   type SealProvider
 } from '../../shared/seal-accounts/seal-accounts-config'
 import type {
+  SealMigrationNotice,
   SealQuarantineEntry,
   SealSessionAssignment,
   SealSwapEvent,
@@ -28,6 +29,10 @@ export type SealAccountsLocalState = {
   workspacePins: SealWorkspacePins
   /** Logins that also live on other machines: environment id (or `desktop`) → account keys. */
   fleetCopies: Record<string, SealAccountKey[]>
+  /** The machine's own CLI logins the user removed from Seal; hidden until re-imported. */
+  dismissedSystemLogins: SealAccountKey[]
+  /** Set once saved accounts were merged into one list; the notice shows what was merged. */
+  accountsMigration: { version: number; notice: SealMigrationNotice | null } | null
 }
 
 const LocalStateSchema = z.object({
@@ -37,7 +42,12 @@ const LocalStateSchema = z.object({
   swapLog: z.array(z.any()).catch([]),
   sessions: z.array(z.any()).catch([]),
   workspacePins: z.record(z.string(), z.record(z.string(), z.string())).catch({}),
-  fleetCopies: z.record(z.string(), z.array(z.string())).catch({})
+  fleetCopies: z.record(z.string(), z.array(z.string())).catch({}),
+  dismissedSystemLogins: z.array(z.string()).catch([]),
+  accountsMigration: z
+    .object({ version: z.number(), notice: z.any().nullable().catch(null) })
+    .nullable()
+    .catch(null)
 })
 
 function emptyLocalState(): SealAccountsLocalState {
@@ -48,7 +58,9 @@ function emptyLocalState(): SealAccountsLocalState {
     swapLog: [],
     sessions: [],
     workspacePins: {},
-    fleetCopies: {}
+    fleetCopies: {},
+    dismissedSystemLogins: [],
+    accountsMigration: null
   }
 }
 

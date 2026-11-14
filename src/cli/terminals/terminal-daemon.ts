@@ -42,7 +42,7 @@ function describeSessions(count: number | null): string {
 function formatDaemonLiveness(daemon: DaemonLiveness | undefined): string[] {
   if (!daemon) {
     return [
-      'Terminal daemon: unverifiable — this Orca server does not report whether it is running.'
+      'Terminal daemon: unverifiable — this Seal server does not report whether it is running.'
     ]
   }
   const lines = [

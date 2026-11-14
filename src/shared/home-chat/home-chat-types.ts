@@ -109,7 +109,7 @@ export type HomeChatMachineStatus = 'online' | 'connecting' | 'offline' | 'error
 export type HomeChatMachineOption = {
   id: string
   label: string
-  kind: 'local' | 'ssh' | 'runtime' | 'hop'
+  kind: 'local' | 'remote' | 'hop'
   status: HomeChatMachineStatus
   address?: string
 }

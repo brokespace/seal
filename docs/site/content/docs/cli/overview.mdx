@@ -1,69 +1,69 @@
 ---
-title: Orca CLI overview
-description: Use the Orca CLI to script Orca from a terminal, manage worktrees, control agent terminals, automate the built-in browser, and install agent skills.
+title: Seal CLI overview
+description: Use the Seal CLI to script Seal from a terminal, manage worktrees, control agent terminals, automate the built-in browser, and install agent skills.
 keywords:
-  - orca cli
-  - Orca CLI
-  - orca command line
-  - Orca skills
+  - seal cli
+  - Seal CLI
+  - seal command line
+  - Seal skills
   - npx skills add
   - agent CLI
 ---
 
 import { Callout } from '@/components/docs/prose'
 
-The Orca CLI is the `orca` command-line interface for scripting a running Orca editor from any shell. Use it to create and inspect worktrees, drive agent terminals, open files and diffs, automate the built-in browser, run scheduled automations, share HTML/Markdown artifacts, and control Orca-native tools from scripts or AI agents.
+The Seal CLI is the `seal` command-line interface for scripting a running Seal editor from any shell. Use it to create and inspect worktrees, drive agent terminals, open files and diffs, automate the built-in browser, run scheduled automations, share HTML/Markdown artifacts, and control Seal-native tools from scripts or AI agents.
 
-It ships with the desktop app; register it under [Settings → General → Orca CLI](/docs/settings). On Linux the command is `orca-ide`, because GNOME Orca's screen reader already owns `/usr/bin/orca` — see [Install → Linux](/docs/install#linux).
+It ships with the desktop app; register it under [Settings → General → Seal CLI](/docs/settings). On Linux the command is `orca-ide`, because GNOME Orca's screen reader already owns `/usr/bin/orca` — see [Install → Linux](/docs/install#linux).
 
-Agents can install the matching Orca CLI skill with:
+Agents can install the matching Seal CLI skill with:
 
 ```bash
 npx skills add https://github.com/stablyai/orca --skill orca-cli
 # headless / no Settings UI:
-orca skills install --skill orca-cli
+seal skills install --skill orca-cli
 ```
 
-See [Skills registry & MCP](/docs/cli/skills) for every installable Orca skill, including `orca skills install` / `orca skills update`.
+See [Skills registry & MCP](/docs/cli/skills) for every installable Seal skill, including `seal skills install` / `seal skills update`.
 
 ## Install & verify
 
 ```
 command -v orca
-orca status --json
+seal status --json
 ```
 
 ## Worktree commands
 
 ```
-orca worktree ps --json
-orca worktree create --repo id:<repoId> --name my-task --issue 123 --json
-orca worktree create --repo id:<repoId> --name review-pr-123 --pr 123 --json
-orca worktree current --json
-orca worktree set --worktree active --comment "reproduced bug" --json
-orca worktree set --worktree active --gitlab-issue 42 --gitlab-mr 77 --json
-orca worktree set --worktree active --pr null --json
-orca worktree rm --worktree id:<id> --force --json
+seal worktree ps --json
+seal worktree create --repo id:<repoId> --name my-task --issue 123 --json
+seal worktree create --repo id:<repoId> --name review-pr-123 --pr 123 --json
+seal worktree current --json
+seal worktree set --worktree active --comment "reproduced bug" --json
+seal worktree set --worktree active --gitlab-issue 42 --gitlab-mr 77 --json
+seal worktree set --worktree active --pr null --json
+seal worktree rm --worktree id:<id> --force --json
 ```
 
-For selectors, setup flags, parent/child worktrees, and the broader command map, see [Orca CLI reference](/docs/cli/reference).
+For selectors, setup flags, parent/child worktrees, and the broader command map, see [Seal CLI reference](/docs/cli/reference).
 
 ## Terminal commands
 
 ```
-orca terminal list --json
-orca terminal read --json
-orca terminal send --text "continue" --enter --json
-orca terminal wait --for tui-idle --timeout-ms 30000 --json
-orca terminal create --worktree path:/projects/app --command "npm test" --json
-orca terminal split --direction vertical --command "npm run dev" --json
+seal terminal list --json
+seal terminal read --json
+seal terminal send --text "continue" --enter --json
+seal terminal wait --for tui-idle --timeout-ms 30000 --json
+seal terminal create --worktree path:/projects/app --command "npm test" --json
+seal terminal split --direction vertical --command "npm run dev" --json
 ```
 
 For tracked multi-agent work, use [Orchestration](/docs/cli/orchestration) instead of plain terminal prompts.
 
 ## File commands
 
-Open files and diffs as tabs in their Orca worktree from a shell. They open without changing what you are looking at; add `--focus` to be brought to the file:
+Open files and diffs as tabs in their Seal worktree from a shell. They open without changing what you are looking at; add `--focus` to be brought to the file:
 
 ```
 orca file open src/App.tsx
@@ -75,15 +75,15 @@ Use `--worktree <selector>` when the shell's current directory is not inside the
 
 ## Browser profiles
 
-Browser profiles isolate tab session state, so a script or agent can test with different cookies, local storage, and logged-in identities. The CLI exposes profile commands under `orca tab profile`; start with `orca tab profile list --json`, then use `create`, `set`, `clone`, or `use-default` as needed.
+Browser profiles isolate tab session state, so a script or agent can test with different cookies, local storage, and logged-in identities. The CLI exposes profile commands under `seal tab profile`; start with `seal tab profile list --json`, then use `create`, `set`, `clone`, or `use-default` as needed.
 
 ## Scheduled automations
 
-Use `orca automations` to create, inspect, run, and remove scheduled Orca tasks from a shell. Start with [Scheduled automations](/docs/cli/automations) when you want a recurring prompt to run against a repo or an existing worktree.
+Use `orca automations` to create, inspect, run, and remove scheduled Seal tasks from a shell. Start with [Scheduled automations](/docs/cli/automations) when you want a recurring prompt to run against a repo or an existing worktree.
 
 ## Artifacts
 
-Share HTML or Markdown as public view links through the signed-in Orca account (`orca artifacts share|update|list|delete`). Publishing is **opt-in** under Settings → Artifacts. Command details: [CLI reference → Artifacts](/docs/cli/reference#artifacts).
+Share HTML or Markdown as public view links through the signed-in Seal account (`orca artifacts share|update|list|delete`). Publishing is **opt-in** under Settings → Artifacts. Command details: [CLI reference → Artifacts](/docs/cli/reference#artifacts).
 
 ## Browser automation
 
@@ -106,22 +106,22 @@ orca screenshot --json
 
 ## Mobile emulator
 
-The CLI can also drive an iOS Simulator through Orca's mobile emulator bridge. It is scoped to the active worktree, so agents and scripts can attach a simulator, list the worktree's attached devices with `orca emulator list`, tap normalized coordinates, type text, send gestures, rotate the device, and shut it down without leaving Orca.
+The CLI can also drive an iOS Simulator through Seal's mobile emulator bridge. It is scoped to the active worktree, so agents and scripts can attach a simulator, list the worktree's attached devices with `seal emulator list`, tap normalized coordinates, type text, send gestures, rotate the device, and shut it down without leaving Seal.
 
 ```
-orca emulator list --json
-orca emulator attach "<device-name-or-udid>" --json
-orca emulator tap 0.5 0.7 --json
-orca emulator type "hello" --json
-orca emulator gesture '[{"type":"begin","x":0.5,"y":0.8},{"type":"move","x":0.5,"y":0.4},{"type":"end","x":0.5,"y":0.2}]' --json
-orca emulator rotate landscape_left --json
-orca emulator kill --json
+seal emulator list --json
+seal emulator attach "<device-name-or-udid>" --json
+seal emulator tap 0.5 0.7 --json
+seal emulator type "hello" --json
+seal emulator gesture '[{"type":"begin","x":0.5,"y":0.8},{"type":"move","x":0.5,"y":0.4},{"type":"end","x":0.5,"y":0.2}]' --json
+seal emulator rotate landscape_left --json
+seal emulator kill --json
 ```
 
 Use `--worktree <selector>`, `--device <udid-or-name>`, or `--emulator <id>` when a script needs an explicit target.
 
 <Callout>
-  For the full command surface including tabs, waits, cookies, and frames, see [Orca CLI
-  reference](/docs/cli/reference), then install the Orca CLI skill (see [Skills
+  For the full command surface including tabs, waits, cookies, and frames, see [Seal CLI
+  reference](/docs/cli/reference), then install the Seal CLI skill (see [Skills
   registry](/docs/cli/skills)) and point your agent at it.
 </Callout>

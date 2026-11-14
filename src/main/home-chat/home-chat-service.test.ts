@@ -30,13 +30,13 @@ let originalHome: string | undefined
 let model: FakeChatCompletionsServer
 let services: HomeChatService[]
 
-/** This computer's shell, listed as an SSH host named kessel-ml. */
+/** This computer's shell, listed as a machine named kessel-ml. */
 function machines() {
   const local = createLocalMachine()
   const kessel: HomeChatMachineInfo = {
-    id: 'ssh:kessel',
+    id: 'machine:kessel',
     label: 'kessel-ml',
-    kind: 'ssh',
+    kind: 'remote',
     address: 'brian@kessel-ml.lan:22',
     connected: false,
     status: 'offline'

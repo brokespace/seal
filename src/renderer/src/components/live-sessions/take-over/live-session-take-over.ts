@@ -9,7 +9,7 @@ import { buildAiVaultResumeStartupForWorktree } from '@/lib/agent-session/resume
 import { launchAiVaultSessionAndReveal } from '@/lib/agent-session/resume/history/launch-ai-vault-session-and-reveal'
 import {
   LOCAL_EXECUTION_HOST_ID,
-  normalizeExecutionHostId,
+  parseExecutionHostId,
   toSshExecutionHostId,
   type ExecutionHostId
 } from '../../../../../shared/execution-host'
@@ -23,15 +23,13 @@ export function canTakeOver(session: LiveSession): boolean {
   return session.origin === 'external' && !session.providerSessionId.startsWith('pid-')
 }
 
+/** Take-over opens on the transport the machine uses now, SSH or Seal server alike. */
 function executionHostOf(machine: LiveSessionMachine): ExecutionHostId {
-  switch (machine.kind) {
-    case 'local':
-      return LOCAL_EXECUTION_HOST_ID
-    case 'ssh':
-      return toSshExecutionHostId(machine.hostId)
-    case 'runtime':
-      return normalizeExecutionHostId(machine.hostId) ?? LOCAL_EXECUTION_HOST_ID
+  const current = machine.executionHostId ? parseExecutionHostId(machine.executionHostId) : null
+  if (current) {
+    return current.id
   }
+  return machine.kind === 'remote' ? toSshExecutionHostId(machine.hostId) : LOCAL_EXECUTION_HOST_ID
 }
 
 /** The workspace the session's folder belongs to on its host, else the active one there. */

@@ -6,8 +6,8 @@
 import { ORCHESTRATION_ASK_MAX_TIMEOUT_MS } from '../../../../shared/orchestration/mailbox/orchestration-ask-timeout'
 import { isDurableMutation } from '../../../../shared/orchestration/orchestration-rpc-contract'
 import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
-import { ALL_RPC_METHODS } from '../../../runtime/rpc/methods/rpc-method-registry'
 import type { RpcAnyMethodDeclaration } from '../../../runtime/rpc/core'
+import { ALL_RPC_METHODS } from '../../../runtime/rpc/methods/rpc-method-registry'
 import {
   hashCanonical,
   readPromptBasePayloadHash,
@@ -86,6 +86,7 @@ export function isExactLegacyRelayCliReplay(
   call: LegacyRelayCliCall
 ): boolean {
   const receipt = runtime.getOrchestrationDb().getMutationReceipt(fingerprint, requestId)
+  // Annotated: inferring the union of every method's schema exceeds TypeScript's union limit.
   const method: RpcAnyMethodDeclaration | undefined = ALL_RPC_METHODS.find(
     (entry) => entry.name === call.method
   )

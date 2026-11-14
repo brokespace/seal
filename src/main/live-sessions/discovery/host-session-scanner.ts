@@ -30,15 +30,11 @@ export const SSH_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxFiles:
 // A runtime answers up to 4 MB of JSON; the server caps the script's output below that.
 export const RUNTIME_SCAN_LIMITS: HostScanLimits = { ...LOCAL_SCAN_LIMITS, maxReads: 16 }
 
-export function scanLimitsFor(kind: LiveSessionMachine['kind']): HostScanLimits {
-  switch (kind) {
-    case 'local':
-      return LOCAL_SCAN_LIMITS
-    case 'ssh':
-      return SSH_SCAN_LIMITS
-    case 'runtime':
-      return RUNTIME_SCAN_LIMITS
+export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
+  if (machine.kind === 'local') {
+    return LOCAL_SCAN_LIMITS
   }
+  return machine.connection === 'server' ? RUNTIME_SCAN_LIMITS : SSH_SCAN_LIMITS
 }
 
 type CachedTranscript = SummarizedTranscript & { head: string | null }

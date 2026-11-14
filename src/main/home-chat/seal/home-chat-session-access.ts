@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../../../shared/execution-host'
+import { liveSessionMachineId } from '../../../shared/live-sessions/live-session-machine-id'
 import type {
   LiveMessage,
   LiveSession,
@@ -9,11 +9,14 @@ import type {
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 
 const MAX_MESSAGE_CHARS = 1_500
+/** How long a send waits to learn whether the message reached the session or failed. */
+const SEND_SETTLE_MS = 20_000
+const SEND_POLL_MS = 200
 
 export type HomeChatSessionSummary = {
   id: string
   agent: string
-  /** Seal machine id: `local`, `ssh:<id>` or `runtime:<id>`. */
+  /** Seal machine id: `local` or `machine:<id>`. */
   machineId: string
   machineLabel: string
   /** Runs in a Seal pane, or was found running outside Seal. */
@@ -47,25 +50,14 @@ export type HomeChatLiveSessions = {
   refresh: () => Promise<void>
   transcriptPage: (sessionId: string, before: null, limit?: number) => Promise<LiveTranscriptPage>
   send: (request: { sessionId: string; messageId: string; text: string }) => Promise<LiveMessage>
-}
-
-/** The Seal machine id of a session's host: a paired server's host id already is one. */
-function machineIdOf(machine: LiveSession['machine']): string {
-  switch (machine.kind) {
-    case 'local':
-      return LOCAL_EXECUTION_HOST_ID
-    case 'ssh':
-      return toSshExecutionHostId(machine.hostId)
-    case 'runtime':
-      return machine.hostId
-  }
+  messages: (sessionId?: string) => LiveMessage[]
 }
 
 function summarize(session: LiveSession): HomeChatSessionSummary {
   return {
     id: session.id,
     agent: session.provider,
-    machineId: machineIdOf(session.machine),
+    machineId: liveSessionMachineId(session.machine),
     machineLabel: session.machine.label,
     origin: session.origin,
     project: session.project,
@@ -133,7 +125,17 @@ export function createHomeChatSessionAccess(deps: {
       renderSessionTranscript(
         (await requireLive().transcriptPage(sessionId, null, limit)).messages
       ),
-    send: async (sessionId, text) =>
-      delivery(await requireLive().send({ sessionId, messageId: randomUUID(), text }))
+    send: async (sessionId, text) => {
+      const live = requireLive()
+      let message = await live.send({ sessionId, messageId: randomUUID(), text })
+      // The outbox answers before it has tried: wait for the attempt, so a failure is reported as one.
+      const deadline = Date.now() + SEND_SETTLE_MS
+      while ((message.state === 'queued' || message.state === 'sending') && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, SEND_POLL_MS))
+        message =
+          live.messages().find((candidate) => candidate.messageId === message.messageId) ?? message
+      }
+      return delivery(message)
+    }
   }
 }

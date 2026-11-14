@@ -46,7 +46,7 @@ describe('plugin install trust', () => {
     plugin: { url: plugin, ref: 'main' }
   })
   const refused = (key: string): string =>
-    `${key} uses a name reserved for official Orca plugins; Orca installs it only from its official catalog`
+    `${key} uses a name reserved for official Seal plugins; Seal installs it only from its official catalog`
 
   it.each<[string, PluginInstallSource, boolean]>([
     [
@@ -129,7 +129,7 @@ describe('plugin install trust', () => {
       })
     ).resolves.toEqual({
       ok: false,
-      error: "plugin is blocked by Orca's safety list: Security incident"
+      error: "plugin is blocked by Seal's safety list: Security incident"
     })
   })
 })

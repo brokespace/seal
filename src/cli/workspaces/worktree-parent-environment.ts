@@ -87,7 +87,7 @@ export function resolveParentEnvironment(
   if (isCallerRelative(parentSelector) && named && named.route !== LOCAL_ENVIRONMENT) {
     throw new RuntimeClientError(
       'invalid_argument',
-      `--parent-worktree ${parentSelector} names the workspace containing this terminal or cwd, which is on this machine's own Orca, not ${named.name}.`,
+      `--parent-worktree ${parentSelector} names the workspace containing this terminal or cwd, which is on this machine's own Seal, not ${named.name}.`,
       {
         nextSteps: [
           `Drop --parent-environment, or pass --parent-environment local.`,
@@ -123,7 +123,7 @@ async function assertChildSavesCrossStoreParents(client: RuntimeClient): Promise
   const environment = describeClientEnvironment(client)
   throw new RuntimeClientError(
     'incompatible_runtime',
-    `Update Orca in ${environmentLabel(environment)} to nest workspaces under a parent in another environment. Nothing was changed.`,
+    `Update Seal in ${environmentLabel(environment)} to nest workspaces under a parent in another environment. Nothing was changed.`,
     { environment: environment.id, requires: WORKTREE_CROSS_STORE_LINEAGE_RUNTIME_CAPABILITY }
   )
 }
@@ -233,7 +233,7 @@ export async function resolveCrossEnvironmentParent(
     if (!installationId) {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        `Update Orca in ${environment.name} so workspaces in other environments can name it as a parent. Nothing was changed.`,
+        `Update Seal in ${environment.name} so workspaces in other environments can name it as a parent. Nothing was changed.`,
         {
           environment: environment.route,
           requires: WORKTREE_CROSS_STORE_LINEAGE_RUNTIME_CAPABILITY
@@ -243,7 +243,7 @@ export async function resolveCrossEnvironmentParent(
     if (!ref) {
       throw new RuntimeClientError(
         'invalid_argument',
-        "Couldn't confirm the parent's workspace identity. Refresh it in the Orca app and try again."
+        "Couldn't confirm the parent's workspace identity. Refresh it in the Seal app and try again."
       )
     }
     return ref

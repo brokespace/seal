@@ -4,7 +4,6 @@
       "agentLogin": "Utiliser l'authentification de l'agent",
       "connecting": "Connexion à l'hôte…",
       "connectingTo": "Connexion à {{name}}…",
-      "default": "Valeur par défaut du système",
       "fableWindow": "Fable",
       "hostNotFound": "Hôte introuvable",
       "invalidSnapshot": "État des comptes invalide reçu de l'hôte",
@@ -75,7 +74,7 @@
       "stepProgress": "Étape {{step}} sur {{total}}"
     },
     "notifications": {
-      "description": "Recevez les alertes des agents même lorsque l'application est fermée. Elles passent par le service de notifications push d'Seal et par Apple ou Google."
+      "description": "Recevez les alertes des agents même lorsque l'application est fermée. Elles passent par le service de notifications push de Seal et par Apple ou Google."
     },
     "pair": {
       "backToHome": "Retour à l'accueil",
@@ -333,7 +332,7 @@
     },
     "permission": {
       "needsAccessTo": "Accès nécessaire à : ",
-      "newerVersionRequired": "Cette demande nécessite une version plus récente d'Seal.",
+      "newerVersionRequired": "Cette demande nécessite une version plus récente de Seal.",
       "planFile": "Fichier du plan : {{filePath}}",
       "reason": "Motif : "
     },
@@ -366,7 +365,7 @@
       "waitingFor": "Sera envoyé au retour de {{host}}",
       "waiting": "Sera envoyé au retour de l'ordinateur",
       "behind": "En attente — un message précédent requiert votre attention",
-      "closed": "Non envoyé avant la fermeture d'Seal"
+      "closed": "Non envoyé avant la fermeture de Seal"
     },
     "receipt": {
       "cancelled": "Annulé",
@@ -681,7 +680,7 @@
       "busy": "Une autre conversation ou un terminal s’ouvre. Patientez, puis créez à nouveau une branche de la conversation {{agent}}.",
       "unconfirmed": "{{agent}} n’a pas pu confirmer la création de la branche. Elle s’est peut-être ouverte malgré tout ; consultez l’historique des sessions avant de réessayer.",
       "failed": "{{agent}} n’a pas pu créer de branche de cette conversation. {{detail}}",
-      "unsupported": "Cet hôte utilise une ancienne version d’Seal. Mettez Seal à jour sur l’hôte, puis réessayez."
+      "unsupported": "Cet hôte utilise une ancienne version de Seal. Mettez Seal à jour sur l’hôte, puis réessayez."
     }
   },
   "common": {
@@ -977,9 +976,9 @@
     },
     "protocolBlockScreen": {
       "backToHosts": "Retour aux hôtes",
-      "desktopTooOldBody": "La version d'Seal sur cet ordinateur appairé est trop ancienne pour votre version actuelle d'Seal Mobile. Mettez Seal à jour sur votre ordinateur, puis réessayez de vous connecter à cet hôte.",
+      "desktopTooOldBody": "La version de Seal sur cet ordinateur appairé est trop ancienne pour votre version actuelle de Seal Mobile. Mettez Seal à jour sur votre ordinateur, puis réessayez de vous connecter à cet hôte.",
       "getVersion": "Obtenir Seal {{version}}",
-      "mobileTooOldGitHubReleases": "Cet ordinateur nécessite une version plus récente d'Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte.",
+      "mobileTooOldGitHubReleases": "Cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte.",
       "openGitHubReleases": "Ouvrir GitHub Releases",
       "refreshRecoveryNote": "Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
       "refreshWorkspaceBody": "La version de l'espace de travail en cache pour cet hôte est antérieure à celle attendue par l'ordinateur. Reconnectez-vous à cet hôte pour télécharger la version actuelle.",
@@ -987,7 +986,7 @@
       "updateDesktopTitle": "Mettre à jour Seal sur votre ordinateur",
       "updateMobileTitle": "Mettre à jour Seal Mobile",
       "updateRecoveryNote": "Déjà à jour ? Revenez à l'écran Hôtes et actualisez la connexion. Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
-      "workspaceNeedsUpdateGitHubReleases": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte."
+      "workspaceNeedsUpdateGitHubReleases": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL de l'image",
@@ -1149,7 +1148,7 @@
       "disconnected": "Déconnecté",
       "hostFallback": "Hôte",
       "hostOffline": "{{host}} est hors ligne",
-      "hostOfflineDetail": "Vérifiez que l'ordinateur n'est pas en veille, qu'Seal est en cours d'exécution et que vous êtes connecté",
+      "hostOfflineDetail": "Vérifiez que l'ordinateur n'est pas en veille, que Seal est en cours d'exécution et que vous êtes connecté",
       "labelWithHint": "{{label}} — {{hint}}",
       "pairingInvalid": "Appairage invalide — refaites l'appairage avec votre ordinateur",
       "rePairDetail": "Refaites l'appairage avec votre ordinateur",
@@ -1628,8 +1627,8 @@
     },
     "hostScreenOverlays": {
       "deleteConfirmMessage": "Supprimer « {{name}} » ({{branch}}) ?",
-      "deleteDestroysEnvironment": "Cela détruit aussi l’environnement « {{environment}} » qu’Seal a créé pour lui, avec les modifications non validées et les terminaux en cours qui s’y trouvent.",
-      "deleteKeepsEnvironment": "L’environnement « {{environment}} » qu’Seal a créé pour lui continue de tourner : sa recette n’a pas d’étape de destruction.",
+      "deleteDestroysEnvironment": "Cela détruit aussi l’environnement « {{environment}} » que Seal a créé pour lui, avec les modifications non validées et les terminaux en cours qui s’y trouvent.",
+      "deleteKeepsEnvironment": "L’environnement « {{environment}} » que Seal a créé pour lui continue de tourner : sa recette n’a pas d’étape de destruction.",
       "pin": "Épingler",
       "primaryWorktreeDeleteHint": "Worktree principal — impossible à supprimer. Retirez plutôt le projet.",
       "removeHost": "Supprimer l'hôte",
@@ -1779,7 +1778,7 @@
       "keepTerminal": "Conserver le terminal",
       "notNow": "Pas maintenant",
       "notificationsDescription": "Recevez une notification sur ce téléphone lorsqu'un agent a terminé ou est en attente, même si vous n'utilisez pas l'application.",
-      "notificationsDisclosure": "Envoyées via le service de notifications push d'Seal après 3 minutes d'inactivité de votre ordinateur. Modifiez ce réglage à tout moment dans les paramètres.",
+      "notificationsDisclosure": "Envoyées via le service de notifications push de Seal après 3 minutes d'inactivité de votre ordinateur. Modifiez ce réglage à tout moment dans les paramètres.",
       "notificationsTitle": "Soyez averti quand un agent a besoin de vous",
       "openInChatUi": "Ouvrir les sessions dans l'interface de chat",
       "openInTerminal": "Ouvrir les sessions dans le terminal",
@@ -2143,7 +2142,7 @@
     },
     "failure": {
       "accountSwitchInProgress": "La configuration de {{agent}} est en cours de modification sur cet hôte. Réessayez une fois l'opération terminée.",
-      "agentCommandNotRunnable": "{{agent}} : la Commande dans Paramètres → Agents doit être le chemin ou le nom d'un programme qu'Seal peut trouver, sans arguments ni variables. Modifiez-la ou réinitialisez-la.",
+      "agentCommandNotRunnable": "{{agent}} : la Commande dans Paramètres → Agents doit être le chemin ou le nom d'un programme que Seal peut trouver, sans arguments ni variables. Modifiez-la ou réinitialisez-la.",
       "agentCommandNotSignedIn": "Connectez-vous à {{agent}} avec `{{loginCommand}}` sur l’ordinateur qui exécute ce chat.",
       "agentNotSignedIn": "Connectez-vous à {{agent}}.",
       "agentStarting": "L'agent est encore en cours de démarrage.",
@@ -2243,7 +2242,7 @@
       "quitTerminalAgent": "Quittez cet agent pour continuer le chat ici.",
       "runCommandAgain": "Relancez /{{command}}.",
       "runCommandWhenDone": "Lancez /{{command}} quand il aura terminé.",
-      "runtimeNotInstalled": "{{agent}} n'est pas installé sur l'ordinateur qui exécute ce chat. Installez-le depuis le chat dans une version récente d'Seal.",
+      "runtimeNotInstalled": "{{agent}} n'est pas installé sur l'ordinateur qui exécute ce chat. Installez-le depuis le chat dans une version récente de Seal.",
       "sendAgainToTryOnceMore": "Renvoyez votre message pour réessayer.",
       "sendToTryAgain": "Envoyez votre message pour réessayer.",
       "sessionNotRestored": "{{agent}} n'a pas pu rouvrir sa session précédente, cette discussion continue donc dans une nouvelle. {{agent}} ne se souvient pas des messages précédents.",
@@ -2564,7 +2563,7 @@
       "browserCommandFailed": "Échec de la commande du navigateur",
       "browserCreateFailed": "Échec de la création du navigateur",
       "browserUnavailable": "La page du navigateur n'est pas encore disponible.",
-      "browserUpdateRequired": "Mise à jour d'Seal sur l'ordinateur requise pour diffuser le navigateur sur mobile",
+      "browserUpdateRequired": "Mise à jour de Seal sur l'ordinateur requise pour diffuser le navigateur sur mobile",
       "invalidUrl": "Saisissez une URL valide",
       "noteCreateFailed": "Échec de la création de la note Markdown",
       "untitledNoteCreateFailed": "Impossible de créer une note Markdown sans titre"
@@ -2704,7 +2703,7 @@
       "cannotRunHere": "Seal ne peut pas exécuter cet agent dans un chat ici.",
       "capacity": "Seal sur l'ordinateur qui exécute ce chat a atteint une limite de requêtes. Mettez à jour Seal sur cet ordinateur, puis réessayez.",
       "chatNotFound": "Seal ne trouve pas ce chat.",
-      "chatSavedByNewerOrca": "Ce chat a été enregistré par une version plus récente d'Seal.",
+      "chatSavedByNewerOrca": "Ce chat a été enregistré par une version plus récente de Seal.",
       "clearAfterAnswer": "Répondez à la question ou à la demande d'approbation de l'agent, puis lancez /clear.",
       "clearAfterRetry": "Réessayez votre message précédent, puis lancez /clear.",
       "clearAfterSending": "Votre message précédent est encore en cours d'envoi. Lancez /clear une fois qu'il est parti.",
@@ -2751,7 +2750,7 @@
       "restartFailed": "L'agent n'a pas pu redémarrer.",
       "runClearWhenDone": "Lancez /clear quand il aura terminé.",
       "runCompactWhenDone": "Lancez /compact quand il aura terminé.",
-      "savedByNewerOrca": "Les chats ont été enregistrés par une version plus récente d'Seal.",
+      "savedByNewerOrca": "Les chats ont été enregistrés par une version plus récente de Seal.",
       "sendOutcomeLost": "Seal n'a pas pu confirmer que votre message est parvenu à l'agent. Vérifiez le chat, puis renvoyez-le si nécessaire.",
       "settleEarlierMessage": "Attendez que votre message précédent soit transmis, ou renvoyez-le.",
       "shortenMessage": "Raccourcissez-le ou divisez-le, puis renvoyez-le.",
@@ -2762,7 +2761,7 @@
       "tryAgainComposerSend": "Renvoyez-le.",
       "turnActive": "L'agent est encore en train de répondre.",
       "unreachable": "Seal n'a pas pu joindre l'agent.",
-      "unsupported": "Cela nécessite une version plus récente d'Seal sur l'ordinateur qui exécute ce chat. Mettez Seal à jour sur cet ordinateur, puis réessayez.",
+      "unsupported": "Cela nécessite une version plus récente de Seal sur l'ordinateur qui exécute ce chat. Mettez Seal à jour sur cet ordinateur, puis réessayez.",
       "updateOrcaToKeepUsing": "Mettez à jour Seal pour continuer à les utiliser.",
       "updateOrcaToOpenChat": "Mettez à jour Seal pour l'ouvrir.",
       "waitForBackgroundTasks": "Attendez la fin des tâches en arrière-plan.",
@@ -2821,7 +2820,7 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Impossible d'ouvrir le lien. Réessayez.",
-      "sourceCode": "Code source d'Seal",
+      "sourceCode": "Code source de Seal",
       "tagline": "IDE open source avec agents pour les développeurs 100x",
       "title": "À propos"
     },
@@ -2900,13 +2899,13 @@
       "updateDesktopHint": "Appairez un ordinateur sur lequel Seal est à jour pour recevoir des notifications sur ce téléphone."
     },
     "notificationDisplayTest": {
-      "accepted": "Test accepté par le service de notifications push d'Seal. Vérifiez si vous avez reçu la notification.",
+      "accepted": "Test accepté par le service de notifications push de Seal. Vérifiez si vous avez reçu la notification.",
       "connectDesktop": "Connectez-vous à un ordinateur, puis réessayez.",
       "description": "Testez la réception push, ou une notification locale si le push est indisponible.",
       "desktopUnreachable": "Impossible de joindre l'ordinateur. Réessayez.",
       "loadFailed": "Impossible de charger les ordinateurs appairés.",
       "pairDesktop": "Appairez un ordinateur, puis réessayez.",
-      "pushServiceFailed": "Impossible d'envoyer le test via le service de notifications push d'Seal. Réessayez.",
+      "pushServiceFailed": "Impossible d'envoyer le test via le service de notifications push de Seal. Réessayez.",
       "rateLimited": "Trop de notifications. Réessayez plus tard.",
       "sendButton": "Envoyer une notification de test",
       "sendFailed": "Impossible d'envoyer la notification push de test.",
@@ -2921,7 +2920,7 @@
       "noToken": "Aucun jeton push n’est disponible sur ce téléphone.",
       "unsupportedHost": "Cet ordinateur ne prend pas en charge les notifications push. Mettez-le à jour pour les recevoir.",
       "registrationPending": "L’inscription push n’est pas encore prête sur cet ordinateur. Réessayez dans un instant.",
-      "liveFallbackScheduled": "{{reason}} Test local programmé. Vérifiez la notification. Les alertes en direct sont disponibles tant qu’Seal est en cours d’exécution et connecté."
+      "liveFallbackScheduled": "{{reason}} Test local programmé. Vérifiez la notification. Les alertes en direct sont disponibles tant que Seal est en cours d’exécution et connecté."
     },
     "notificationSettingsScreen": {
       "description": "Recevez une notification sur cet appareil lorsqu'un agent a besoin de votre intervention ou termine une tâche.",
@@ -3398,7 +3397,7 @@
       "kimiSessionNotFound": "Kimi n’a pas trouvé la session demandée. Utilisez une session existante ou démarrez-en une nouvelle.",
       "kimiSessionOccupied": "Kimi n’a pas pu utiliser cette session car elle est active dans un autre client. Arrêtez la session dans ce client ou quittez-le, puis réessayez.",
       "kimiSessionOtherDirectory": "Cette session Kimi appartient à un autre répertoire. Reprenez-la dans ce répertoire ou utilisez une session créée pour cet espace de travail.",
-      "kimiUnreadableOutput": "Kimi a renvoyé une sortie qu’Seal n’a pas pu lire. Réessayez.",
+      "kimiUnreadableOutput": "Kimi a renvoyé une sortie que Seal n’a pas pu lire. Réessayez.",
       "noBranchChanges": "Aucune modification à résumer sur cette branche.",
       "noModelForAgent": "Aucun modèle n’est disponible pour {{label}}.",
       "noStagedChanges": "Aucune modification stagée à résumer.",
@@ -3416,7 +3415,7 @@
       "sourceControlCustomCommandEmpty": "La commande personnalisée est vide. Ajoutez-en une dans Paramètres -> Git -> IA du contrôle de code source.",
       "stagedChangesReadFailed": "Impossible de lire les modifications stagées.",
       "timedOut": "La génération a dépassé le délai de {{seconds}} s.",
-      "windowsBatchUnsafeArguments": "{{label}} s’exécute via un script batch Windows qui ne peut pas recevoir le prompt multiligne en argument. Dans les Paramètres, indiquez l’exécutable de l’agent, ou utilisez une commande personnalisée sans {prompt} pour qu’Seal envoie le prompt sur stdin."
+      "windowsBatchUnsafeArguments": "{{label}} s’exécute via un script batch Windows qui ne peut pas recevoir le prompt multiligne en argument. Dans les Paramètres, indiquez l’exécutable de l’agent, ou utilisez une commande personnalisée sans {prompt} pour que Seal envoie le prompt sur stdin."
     },
     "useMobileCommitFailureRecovery": {
       "launchFailed": "Échec du lancement de l'agent",
@@ -3634,7 +3633,7 @@
       "connectLinearMessage": "Parcourez les issues Linear qui vous sont assignées et commencez à y travailler directement depuis Tâches.",
       "connectLinearTitle": "Connectez votre compte Linear",
       "jiraStatusFailed": "Impossible de lire le statut Jira",
-      "updateDesktopMessage": "Cette vue Tâches sur mobile nécessite une version plus récente d'Seal Desktop.",
+      "updateDesktopMessage": "Cette vue Tâches sur mobile nécessite une version plus récente de Seal Desktop.",
       "updateDesktopTitle": "Mettre à jour Seal Desktop"
     },
     "options": {
@@ -3754,7 +3753,7 @@
       "projectSubtitle": "Projet GitHub · {{repository}}{{itemNumber}}",
       "pullRequest": "Pull request",
       "reopenItem": "Rouvrir l'élément",
-      "repositoryNotInOrca": "Dépôt absent d'Seal",
+      "repositoryNotInOrca": "Dépôt absent de Seal",
       "status": "Statut",
       "type": "Type",
       "workspaceCreationRequirement": "Les espaces de travail ne peuvent être créés qu'à partir d'issues et de pull requests GitHub."
@@ -4086,7 +4085,7 @@
       "working": "En activité"
     },
     "hostWorkspaceListStates": {
-      "checkHost": "Vérifiez que votre ordinateur n'est pas en veille et qu'Seal est en cours d'exécution",
+      "checkHost": "Vérifiez que votre ordinateur n'est pas en veille et que Seal est en cours d'exécution",
       "empty": "Aucun espace de travail",
       "loadFailed": "Impossible de charger les espaces de travail de cet hôte",
       "noFilterMatches": "Aucun espace de travail ne correspond aux filtres",
@@ -4283,7 +4282,7 @@
       "targetMissing": "L’hôte de l’automatisation n’est plus enregistré. Cette automatisation n’a donc plus d’hôte sur lequel s’exécuter.",
       "targetReplaced": "L’hôte de l’automatisation a été supprimé puis réenregistré. Cette automatisation doit donc être rattachée à nouveau avant de pouvoir s’exécuter.",
       "workspaceHostAmbiguous": "L’espace de travail de l’automatisation s’étend sur plusieurs hôtes. Seal ne peut donc pas déterminer sur lequel l’exécuter.",
-      "legacyTwinHosts": "Cette automatisation a été enregistrée avant qu’Seal ne suive son hôte d’exécution, et son projet se trouve sur plusieurs hôtes. Ouvrez l’automatisation et choisissez l’hôte sur lequel elle doit s’exécuter.",
+      "legacyTwinHosts": "Cette automatisation a été enregistrée avant que Seal ne suive son hôte d’exécution, et son projet se trouve sur plusieurs hôtes. Ouvrez l’automatisation et choisissez l’hôte sur lequel elle doit s’exécuter.",
       "targetUnavailable": "La cible d’exécution de l’automatisation n’est plus disponible.",
       "remoteSchedulingUnavailable": "La planification des automatisations sur serveur distant n’est pas encore disponible depuis ce client Seal. Exécutez cette automatisation sur le serveur distant ou mettez Seal à jour lorsque la planification distante persistante sera disponible.",
       "projectSetupMissing": "Le projet n’est plus configuré sur l’hôte sélectionné pour l’automatisation.",

@@ -206,7 +206,7 @@ function seedGitRepo() {
   }
   git('init', '-b', 'main')
   git('config', 'user.email', 'smoke@orca.test')
-  git('config', 'user.name', 'Orca Smoke')
+  git('config', 'user.name', 'Seal Smoke')
   git('add', '-A')
   git('commit', '-m', 'seed')
   return dir

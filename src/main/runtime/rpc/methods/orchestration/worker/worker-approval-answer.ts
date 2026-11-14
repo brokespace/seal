@@ -70,7 +70,7 @@ export async function answerWorkerApproval(
   if (custody === 'unverifiable' && !runtime.terminalWorkerApprovals.isHeld(params.prompt)) {
     throw new OrchestrationError(
       'approval_refused',
-      `Orca could not read the worker's chat, so ${params.prompt} was not answered. Try again.`,
+      `Seal could not read the worker's chat, so ${params.prompt} was not answered. Try again.`,
       { effectsApplied: false }
     )
   }

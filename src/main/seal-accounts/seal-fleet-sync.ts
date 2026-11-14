@@ -6,17 +6,20 @@ import { exportClaudeCredential, exportCodexCredential } from './seal-credential
 import { reconcileClaudeLogin, reconcileCodexLogin } from './seal-login-copies'
 import { recordFleetCopies } from './seal-fleet-copies'
 
-/** Desktop main sets this to reach paired remote runtimes; orcad leaves it unset. */
+/** Desktop main sets this to reach other machines; orcad leaves it unset. */
 export type SealFleetTransport = (
-  environmentId: string,
+  target: string,
   method: string,
   params: unknown
 ) => Promise<unknown>
 
 export type SealFleetSyncResult = {
+  /** The machine (or server) id the push went to. */
   environmentId: string
   ok: boolean
   error: string | null
+  /** False on machines without a resident Seal: logins land, but nothing there swaps on its own. */
+  policyApplied: boolean
   credentials: { account: string; ok: boolean; error: string | null }[]
 }
 
@@ -63,19 +66,20 @@ export async function exportSealCredential(
 }
 
 /**
- * Pushes this desktop's policy, and any logins asked for, to paired remote runtimes. Each host
- * then swaps on its own. Refresh tokens rotate, so a host that later loses a login needs a re-push.
+ * Pushes this desktop's policy, and any logins asked for, to other machines. Seal servers then swap
+ * on their own. Refresh tokens rotate, so a host that later loses a login needs a re-push.
  */
 export async function syncSealFleet(
   manager: SealAccountManager,
-  environmentIds: string[],
+  targets: string[],
   accounts: string[] = []
 ): Promise<SealFleetSyncResult[]> {
   const call = transport
   if (!call) {
     throw new Error('Only the Seal desktop app can push accounts to other machines.')
   }
-  const config = manager.getConfig()
+  // Keys stay sealed in the keychain of the machine they were added on; hosts keep their own.
+  const config = { ...manager.getConfig(), apiKeys: [] }
   const credentials = await Promise.all(
     accounts.map(async (account) => {
       try {
@@ -86,14 +90,27 @@ export async function syncSealFleet(
     })
   )
   return Promise.all(
-    environmentIds.map(async (environmentId): Promise<SealFleetSyncResult> => {
+    targets.map(async (environmentId): Promise<SealFleetSyncResult> => {
+      let policyApplied = true
       try {
-        await call(environmentId, 'seal.accounts.applyFleetConfig', {
+        const applied = await call(environmentId, 'seal.accounts.applyFleetConfig', {
           config,
           machineKey: `runtime:${environmentId}`
         })
+        policyApplied = !(
+          applied &&
+          typeof applied === 'object' &&
+          'policyApplied' in applied &&
+          applied.policyApplied === false
+        )
       } catch (error) {
-        return { environmentId, ok: false, error: errorMessage(error), credentials: [] }
+        return {
+          environmentId,
+          ok: false,
+          error: errorMessage(error),
+          policyApplied: false,
+          credentials: []
+        }
       }
       const results: SealFleetSyncResult['credentials'] = []
       for (const entry of credentials) {
@@ -109,7 +126,7 @@ export async function syncSealFleet(
           results.push({ account: entry.account, ok: false, error: errorMessage(error) })
         }
       }
-      return { environmentId, ok: true, error: null, credentials: results }
+      return { environmentId, ok: true, error: null, policyApplied, credentials: results }
     })
   )
 }

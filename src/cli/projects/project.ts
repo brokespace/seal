@@ -52,7 +52,7 @@ async function callProjectHostSetup<TResult>(
     if (error instanceof RuntimeClientError && error.code === 'method_not_found') {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'This Orca server does not support project host setup yet. Update Orca on the server and try again.'
+        'This Seal server does not support project host setup yet. Update Seal on the server and try again.'
       )
     }
     throw error
@@ -102,7 +102,7 @@ async function getOptionalSetupHostId(
   if (!status.result.capabilities?.includes(PROJECT_HOST_SETUP_HOST_TARGET_RUNTIME_CAPABILITY)) {
     throw new RuntimeClientError(
       'incompatible_runtime',
-      'This Orca server cannot pick a project setup by host yet. Update Orca on the server and try again.'
+      'This Seal server cannot pick a project setup by host yet. Update Seal on the server and try again.'
     )
   }
   // Unresolved, like the setup paths: a removed SSH target's stale setup must stay deletable.

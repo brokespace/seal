@@ -63,7 +63,7 @@ it('decides a known chat from the chat store alone and refuses a cold terminal i
     code: 'session_caller_terminal_agent'
   })
   if (!isOrcaSessionId(TERMINAL)) {
-    throw new Error('expected an Orca session id')
+    throw new Error('expected a Seal session id')
   }
   const recipient = { sessionId: TERMINAL, address: formatOrcaSessionAddress(TERMINAL) }
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a terminal refusal returns before any database read.

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { machinePathBasename } from '../../../../src/shared/machines/machine-paths'
 import { translate } from '../../i18n/mobile-i18n'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
@@ -20,7 +19,7 @@ function errorText(error: unknown): string {
 /** Copies one machine file into the phone's cache, then shares it, saves it to Photos or opens it. */
 export function useMachineFileExport(args: {
   client: RpcClient | null
-  machineId: ExecutionHostId
+  machineId: string
   onError: (message: string) => void
   onSaved: (message: string) => void
 }) {

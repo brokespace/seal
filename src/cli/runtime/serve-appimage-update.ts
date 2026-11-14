@@ -83,7 +83,7 @@ export async function restartFromNewAppImage(
   watch: AppImageBuildWatch,
   deps: AppImageRestartDeps
 ): Promise<string> {
-  deps.log(`[serve] ${watch.appImagePath} holds a new Orca build; restarting from it.`)
+  deps.log(`[serve] ${watch.appImagePath} holds a new Seal build; restarting from it.`)
   const env = appImageEnv(deps.env)
   // Probe FUSE support first to keep mount failures from causing a service restart loop.
   const refusal = await (deps.probe ?? probeAppImage)(watch.appImagePath, env)

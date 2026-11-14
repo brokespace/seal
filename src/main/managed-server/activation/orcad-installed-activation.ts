@@ -213,7 +213,7 @@ export async function activateInstalledOrcad(
         notActivated(
           'orcad_update_terminal_census_unavailable',
           'The terminal count went stale before the current server could be stopped, so nothing ' +
-            'was stopped. Orca will try the update again.'
+            'was stopped. Seal will try the update again.'
         ),
       stop: () => {
         beginMutating()
@@ -227,7 +227,7 @@ export async function activateInstalledOrcad(
     if (fenced.stopped) {
       return notActivated(
         'orcad_outgoing_stop_incomplete',
-        `${fenced.stopped.reason} No snapshot was taken and the candidate was not started. Orca ` +
+        `${fenced.stopped.reason} No snapshot was taken and the candidate was not started. Seal ` +
           'requires matching runtime readiness before signaling an incumbent and confirmed exit ' +
           'before snapshotting.'
       )
@@ -263,7 +263,7 @@ export async function activateInstalledOrcad(
       : ''
     throw new Error(
       `Could not snapshot ${options.userDataDir} before activating ${fullVersion}` +
-        `${reason ? `: ${reason}` : ''}. Orca's persisted state carries no schema version, so ` +
+        `${reason ? `: ${reason}` : ''}. Seal's persisted state carries no schema version, so ` +
         'without a snapshot a rollback has no way back. Refusing to activate. Fix what stops ' +
         `the copy (often a full disk or quota on ${orcadRemoteBaseDir(options.host, options.remoteHome)}), ` +
         `then reconnect.${restarted}`

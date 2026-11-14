@@ -22,7 +22,7 @@ export function MachineExplorerMenu({
   menuRow: EntryRow | null
   menuDir: string | null
   selectedPaths: string[]
-  machineKind: MachineSummary['kind']
+  machineKind: MachineSummary['connection']
   onOpen: (row: EntryRow) => void
   actions: MachineFileActions
 }): React.JSX.Element {

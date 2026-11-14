@@ -6,8 +6,12 @@ import {
   type MachineFileRead,
   type MachineId,
   type MachineMetrics,
+  type MachineShellEvent,
+  type MachineShellOpenResult,
   type MachineTransfer
 } from '../../../shared/machines/machine-types'
+import type { MachineConnectionType } from '../../../shared/machines/machine-record'
+import type { MachineView, MachineWorktree } from '../../../shared/machines/machine-view'
 
 export type MachinesApi = {
   getMetrics: (args: { machineId: MachineId }) => Promise<MachineMetrics>
@@ -48,6 +52,54 @@ export type MachinesApi = {
   startDrag: (args: { machineId: MachineId; path: string; size: number; prepare?: boolean }) => void
   onTransferUpdated: (callback: (transfer: MachineTransfer) => void) => () => void
   onDirChanged: (callback: (event: MachineDirChangedEvent) => void) => () => void
+  list: () => Promise<MachineView[]>
+  onChanged: (callback: () => void) => () => void
+  /** Switches the transport; the other transport's details stay stored. */
+  setConnection: (args: {
+    machineId: MachineId
+    connection: MachineConnectionType
+  }) => Promise<MachineView>
+  renameMachine: (args: { machineId: MachineId; name: string }) => Promise<MachineView>
+  /** Binds just-saved SSH details or a paired server to a new or existing machine. */
+  adopt: (args: {
+    sshTargetId?: string
+    environmentId?: string
+    connection: MachineConnectionType
+    name?: string
+    machineId?: MachineId
+  }) => Promise<MachineView>
+  separate: (args: { machineId: MachineId }) => Promise<MachineView[]>
+  connect: (args: { machineId: MachineId }) => Promise<void>
+  /** `agent` starts that agent (with `prompt`) instead of a plain shell. */
+  shellOpen: (args: {
+    machineId: MachineId
+    cols: number
+    rows: number
+    cwd?: string
+    command?: string
+    agent?: string
+    prompt?: string
+  }) => Promise<MachineShellOpenResult>
+  shellWrite: (args: { sessionId: string; data: string }) => Promise<void>
+  shellResize: (args: { sessionId: string; cols: number; rows: number }) => Promise<void>
+  shellClose: (args: { sessionId: string }) => Promise<void>
+  onShellEvent: (callback: (event: MachineShellEvent) => void) => () => void
+  /** The subset of `commands` found on the machine's PATH. */
+  detectCommands: (args: { machineId: MachineId; commands: string[] }) => Promise<string[]>
+  listWorktrees: (args: { machineId: MachineId; repoPath: string }) => Promise<MachineWorktree[]>
+  createWorktree: (args: {
+    machineId: MachineId
+    repoPath: string
+    path: string
+    branch: string
+    base?: string
+  }) => Promise<MachineWorktree[]>
+  removeWorktree: (args: {
+    machineId: MachineId
+    repoPath: string
+    path: string
+    force?: boolean
+  }) => Promise<MachineWorktree[]>
 }
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -73,5 +125,21 @@ export const machinesApi: MachinesApi = {
   clearFinishedTransfers: () => ipcRenderer.invoke(MACHINE_IPC.clearFinishedTransfers),
   startDrag: (args) => ipcRenderer.send(MACHINE_IPC.startDrag, args),
   onTransferUpdated: (callback) => subscribe(MACHINE_IPC.transferUpdated, callback),
-  onDirChanged: (callback) => subscribe(MACHINE_IPC.dirChanged, callback)
+  onDirChanged: (callback) => subscribe(MACHINE_IPC.dirChanged, callback),
+  list: () => ipcRenderer.invoke(MACHINE_IPC.list),
+  onChanged: (callback) => subscribe(MACHINE_IPC.changed, () => callback()),
+  setConnection: (args) => ipcRenderer.invoke(MACHINE_IPC.setConnection, args),
+  renameMachine: (args) => ipcRenderer.invoke(MACHINE_IPC.renameMachine, args),
+  adopt: (args) => ipcRenderer.invoke(MACHINE_IPC.adopt, args),
+  separate: (args) => ipcRenderer.invoke(MACHINE_IPC.separate, args),
+  connect: (args) => ipcRenderer.invoke(MACHINE_IPC.connect, args),
+  shellOpen: (args) => ipcRenderer.invoke(MACHINE_IPC.shellOpen, args),
+  shellWrite: (args) => ipcRenderer.invoke(MACHINE_IPC.shellWrite, args),
+  shellResize: (args) => ipcRenderer.invoke(MACHINE_IPC.shellResize, args),
+  shellClose: (args) => ipcRenderer.invoke(MACHINE_IPC.shellClose, args),
+  onShellEvent: (callback) => subscribe(MACHINE_IPC.shellEvent, callback),
+  detectCommands: (args) => ipcRenderer.invoke(MACHINE_IPC.detectCommands, args),
+  listWorktrees: (args) => ipcRenderer.invoke(MACHINE_IPC.listWorktrees, args),
+  createWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.createWorktree, args),
+  removeWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.removeWorktree, args)
 }

@@ -90,7 +90,7 @@ export async function createGleamCatalogFixture(root: string) {
     join(catalog, 'orca-catalog.json'),
     JSON.stringify({
       catalogVersion: 2,
-      name: 'Orca Plugins',
+      name: 'Seal Plugins',
       owner: 'stablyai',
       plugins: [
         {

@@ -131,7 +131,7 @@ export class RuntimeWorktreeLineageController {
       return {
         reason: conflict
           ? "this terminal's contexts name different workspaces."
-          : "Orca couldn't find this terminal's workspace."
+          : "Seal couldn't find this terminal's workspace."
       }
     }
     const { parent, capture } = resolution
@@ -140,10 +140,10 @@ export class RuntimeWorktreeLineageController {
       parent.type === 'folder' ? { id: parent.workspaceKey } : parent.worktree
     )
     if (!ref) {
-      return { reason: "Orca couldn't confirm this workspace's identity." }
+      return { reason: "Seal couldn't confirm this workspace's identity." }
     }
     if (!isCrossStoreInferredSource(capture.source)) {
-      return { reason: "Orca couldn't tell which workspace this command runs in." }
+      return { reason: "Seal couldn't tell which workspace this command runs in." }
     }
     return { parent: ref, source: capture.source }
   }

@@ -76,7 +76,7 @@ for (const { panel, entry, url, fixture } of panels) {
       if (drawnTree) result.drawnTree = mounted.drawnTree()
       result.issues.push(...mounted.errors)
       result.warnings.push(...mounted.warnings)
-      // Refused even when the code caught it: in Orca the call fails the same way.
+      // Refused even when the code caught it: in Seal the call fails the same way.
       result.warnings.push(...refused(mounted.refusals))
       await mounted.unmount()
     } catch (error) {

@@ -50,7 +50,7 @@ export function describeOversizedOrcadMigrationPayload(
     .slice(0, 3)
   const { trim } = largest[0]
   return (
-    `This SSH host's saved state is too large to move to its Orca server (limit ` +
+    `This SSH host's saved state is too large to move to its Seal server (limit ` +
     `${formatKib(limitBytes)}). Largest parts: ` +
     `${largest.map(({ words, bytes }) => `${words} (${formatKib(bytes)})`).join(', ')}. ` +
     `${trim.charAt(0).toUpperCase()}${trim.slice(1)}, then reconnect. ` +

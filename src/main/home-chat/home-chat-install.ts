@@ -13,9 +13,8 @@ import { HomeChatService } from './home-chat-service'
 import { HomeChatSettingsStore } from './home-chat-settings-store'
 import {
   createDefaultHomeChatMachineProvider,
-  SSH_MACHINE_SOURCES
+  type HomeChatMachineSource
 } from './machines/home-chat-machine-provider'
-import { createPairedRuntimeSource } from './machines/home-chat-runtime-source'
 import { createHomeChatAccountAccess } from './seal/home-chat-account-access'
 import { createHomeChatSessionAccess } from './seal/home-chat-session-access'
 import { HomeChatThreadStore } from './thread/home-chat-thread-store'
@@ -25,6 +24,7 @@ export type HomeChatInstallDeps = {
   claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
   codexAccounts: () => readonly CodexManagedAccount[]
   repos: () => Repo[]
+  machines: HomeChatMachineSource
 }
 
 let ready: Promise<HomeChatService> | null = null
@@ -40,7 +40,6 @@ export function installHomeChat(deps: HomeChatInstallDeps): Promise<HomeChatServ
     return ready
   }
   const rootDir = homeChatRootDir()
-  const runtimes = createPairedRuntimeSource()
   ready = Promise.all([
     HomeChatThreadStore.open(rootDir),
     HomeChatSettingsStore.open(rootDir)
@@ -50,11 +49,12 @@ export function installHomeChat(deps: HomeChatInstallDeps): Promise<HomeChatServ
       threads,
       settings,
       accounts: createHomeChatAccountProvider({
+        sealCandidates: (provider) => getSealAccountManager()?.candidates(provider) ?? null,
         listClaudeAccounts: () => deps.claudeAccounts.listAccounts(),
         listCodexAccounts: deps.codexAccounts
       }),
       createMachines: (machineNotes) =>
-        createDefaultHomeChatMachineProvider(machineNotes, { ...SSH_MACHINE_SOURCES, runtimes }),
+        createDefaultHomeChatMachineProvider(machineNotes, deps.machines),
       runOrcaCli,
       repos: deps.repos,
       seal: {

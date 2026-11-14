@@ -1,10 +1,15 @@
-import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
+import {
+  LOCAL_EXECUTION_HOST_ID,
+  toRuntimeExecutionHostId,
+  toSshExecutionHostId
+} from '../../../../shared/execution-host'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { homeSessionFromLive as homeSessionFromLiveFields } from '../../../../shared/home-overview/home-live-session-mapping'
 import type { MachineMetrics } from '../../../../shared/machines/machine-types'
 import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
+import { translate } from '@/i18n/i18n'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import {
   machineLoad,
@@ -22,6 +27,35 @@ import type {
   HomeSession,
   HomeUsageWindow
 } from './home-overview-model'
+
+/** Pane sessions name the execution host they run on; home groups by machine, whichever transport. */
+export function unifySessionMachines(
+  sessions: readonly HomeSession[],
+  machines: readonly MachineSummary[]
+): HomeSession[] {
+  const byHost = new Map<string, MachineSummary>()
+  for (const machine of machines) {
+    byHost.set(machine.id, machine)
+    byHost.set(machine.executionHostId, machine)
+    if (machine.sshTargetId) {
+      byHost.set(toSshExecutionHostId(machine.sshTargetId), machine)
+    }
+    if (machine.runtimeEnvironmentId) {
+      byHost.set(toRuntimeExecutionHostId(machine.runtimeEnvironmentId), machine)
+    }
+  }
+  return sessions.map((session) => {
+    const machine = byHost.get(session.machineId)
+    if (!machine || machine.id === session.machineId) {
+      return session
+    }
+    return {
+      ...session,
+      machineId: machine.id,
+      machineLabel: machine.connection === 'local' ? session.machineLabel : machine.label
+    }
+  })
+}
 
 export function homeSessionFromLive(session: LiveSession): HomeSession {
   return homeSessionFromLiveFields(session, {
@@ -63,8 +97,8 @@ export function homeMachineFromSummary(
   const memoryUsedPercent = machineMemoryUsedPercent(metrics)
   return {
     id: summary.id,
-    label: summary.kind === 'local' ? localLabel : summary.label,
-    kind: summary.kind,
+    label: summary.connection === 'local' ? localLabel : summary.label,
+    kind: summary.connection === 'server' ? 'runtime' : summary.connection,
     status: summary.status,
     ...(load !== undefined ? { load } : {}),
     ...(memoryUsedPercent !== undefined ? { memoryUsedPercent } : {}),
@@ -78,7 +112,7 @@ const SEAL_PROVIDER_LABELS: Record<(typeof SEAL_PROVIDERS)[number], string> = {
 }
 
 function sealCandidateStatus(candidate: SealAccountCandidate): HomeAccountStatus {
-  if (candidate.authFailure || candidate.usage?.error) {
+  if (candidate.health?.state === 'dead' || candidate.authFailure || candidate.usage?.error) {
     return 'error'
   }
   if (candidate.kind === 'api-key') {
@@ -108,7 +142,10 @@ export function homeAccountsFromSeal(status: SealAccountsStatus): HomeAccount[] 
       if (candidate.disabled) {
         continue
       }
-      const error = candidate.usage?.error ?? undefined
+      const error =
+        candidate.health?.state === 'dead'
+          ? translate('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')
+          : (candidate.usage?.error ?? undefined)
       accounts.push({
         id: `seal:${candidate.key}`,
         provider,

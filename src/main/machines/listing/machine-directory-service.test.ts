@@ -3,7 +3,7 @@ import type { MachineFileEntry, MachineId } from '../../../shared/machines/machi
 import type { MachineFileSystem } from '../filesystem/machine-filesystem'
 import { MachineDirectoryService } from './machine-directory-service'
 
-const MACHINE: MachineId = 'ssh:box'
+const MACHINE: MachineId = 'machine:box'
 
 function file(name: string, size = 1): MachineFileEntry {
   return { name, kind: 'file', isDirectoryLike: false, size, mtimeMs: 0 }

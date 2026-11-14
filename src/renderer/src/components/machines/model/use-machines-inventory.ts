@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '@/store/index'
 import type { MachineOs } from '../../../../../shared/machines/machine-types'
-import type { SshTarget } from '../../../../../shared/ssh-types'
-import type { PublicKnownRuntimeEnvironment } from '../../../../../shared/remote-runtime/host-catalog/runtime-environments'
+import type { MachineView } from '../../../../../shared/machines/machine-view'
 import type { RuntimeHostStatusSnapshot } from '../../../../../shared/remote-runtime/host-status/runtime-host-status'
 import {
   buildMachineSummaries,
@@ -16,18 +15,15 @@ function localOs(): MachineOs | null {
 
 export type MachinesInventory = {
   machines: MachineSummary[]
-  sshTargets: readonly SshTarget[]
+  views: readonly MachineView[]
   reload: () => void
 }
 
+/** Live machine list; any SSH host or server change anywhere in the app refreshes it. */
 export function useMachinesInventory(localName: string): MachinesInventory {
   const sshStates = useAppStore((s) => s.sshConnectionStates)
-  // Labels change whenever a host is added, renamed or removed anywhere in the app.
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
-  const [sshTargets, setSshTargets] = useState<readonly SshTarget[]>([])
-  const [runtimeEnvironments, setRuntimeEnvironments] = useState<
-    readonly PublicKnownRuntimeEnvironment[]
-  >([])
+  const [views, setViews] = useState<readonly MachineView[]>([])
   const [runtimeStatuses, setRuntimeStatuses] = useState<Map<string, RuntimeHostStatusSnapshot>>(
     () => new Map()
   )
@@ -36,24 +32,15 @@ export function useMachinesInventory(localName: string): MachinesInventory {
 
   useEffect(() => {
     let cancelled = false
-    void window.api.ssh
-      .listTargets()
-      .then((targets) => {
-        if (!cancelled) {
-          setSshTargets(targets)
-        }
-      })
-      .catch(() => {})
-    const runtime = window.api.runtimeEnvironments
-    void runtime
+    void window.api.machines
       ?.list()
-      .then((environments) => {
+      .then((machines) => {
         if (!cancelled) {
-          setRuntimeEnvironments(environments)
+          setViews(machines)
         }
       })
       .catch(() => {})
-    void runtime
+    void window.api.runtimeEnvironments
       ?.getStatusSnapshots()
       .then((snapshots) => {
         if (!cancelled) {
@@ -68,6 +55,7 @@ export function useMachinesInventory(localName: string): MachinesInventory {
 
   useEffect(() => {
     const unsubscribers = [
+      window.api.machines?.onChanged(() => reload()),
       window.api.ssh.onTargetRemoved?.(() => reload()),
       window.api.runtimeEnvironments?.onCatalogChanged?.(() => reload()),
       window.api.runtimeEnvironments?.onStatusChanged((snapshot) =>
@@ -86,12 +74,11 @@ export function useMachinesInventory(localName: string): MachinesInventory {
       buildMachineSummaries({
         localName,
         localOs: localOs(),
-        sshTargets,
+        machines: views,
         sshStates,
-        runtimeEnvironments,
         runtimeStatuses
       }),
-    [localName, sshTargets, sshStates, runtimeEnvironments, runtimeStatuses]
+    [localName, views, sshStates, runtimeStatuses]
   )
-  return { machines, sshTargets, reload }
+  return { machines, views, reload }
 }

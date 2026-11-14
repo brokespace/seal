@@ -40,7 +40,7 @@ export class BackendPortRpc {
 
   call(method: string, params?: unknown): Promise<unknown> {
     if (this.closed) {
-      return Promise.reject(new Error('Orca disconnected. Try again after it reconnects.'))
+      return Promise.reject(new Error('Seal disconnected. Try again after it reconnects.'))
     }
     if (this.pending.size >= MAX_REQUESTS) {
       return Promise.reject(
@@ -71,7 +71,7 @@ export class BackendPortRpc {
     }
     this.port.close()
     for (const call of this.pending.values()) {
-      call.reject(new Error('Orca disconnected. Try again after it reconnects.'))
+      call.reject(new Error('Seal disconnected. Try again after it reconnects.'))
     }
     this.pending.clear()
     this.admitted.clear()

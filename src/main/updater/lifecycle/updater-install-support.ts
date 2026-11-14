@@ -62,7 +62,7 @@ export abstract class UpdaterInstallSupport extends UpdaterCheckState {
       )
     }
     this.sendErrorStatus(
-      'This orca serve process was not started by an update-capable supervisor. Keep it running and update Orca through its service manager.',
+      'This orca serve process was not started by an update-capable supervisor. Keep it running and update Seal through its service manager.',
       true
     )
     return true
@@ -93,8 +93,8 @@ export abstract class UpdaterInstallSupport extends UpdaterCheckState {
   /** macOS quitting re-stages a Squirrel-rejected update; elsewhere restart is not known to help. */
   protected getPreCommitInstallFailureMessage(): string {
     return process.platform === 'darwin'
-      ? 'Could not restart to install the update. Quit and reopen Orca, then try again.'
-      : 'Could not start the update installer. Orca remains open.'
+      ? 'Could not restart to install the update. Quit and reopen Seal, then try again.'
+      : 'Could not start the update installer. Seal remains open.'
   }
 
   /** Force repeated failures through the preload abort relay or identical retries leave the renderer stuck at its restart checkpoint. */

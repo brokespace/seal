@@ -25,7 +25,16 @@ import type {
   SealAccountsStatus,
   SealSwapEvent
 } from '../../shared/seal-accounts/seal-accounts-status'
-import { withWorkspacePin } from '../../shared/seal-accounts/seal-accounts-config-edits'
+import {
+  withAccountOrder,
+  withWorkspacePin
+} from '../../shared/seal-accounts/seal-accounts-config-edits'
+import { runSealAccountsMigration } from './seal-account-migration'
+import { SealLoginExpiryCache } from './seal-login-expiry'
+import { readSealSystemLogins } from './seal-system-login'
+import { sealSystemLoginStatus } from './seal-system-login-listing'
+import { recordSealHostSwap, type SealSwapQuarantineUpdate } from './seal-host-swap'
+import { createSealSignInFlows, type SealSignInFlows } from './seal-account-sign-in'
 import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
 import type { SealUsageFetch, SealUsagePoller } from './seal-usage-poller'
@@ -57,6 +66,10 @@ export class SealAccountManager {
   readonly usage: SealUsagePoller
   private evaluateTimer: ReturnType<typeof setTimeout> | null = null
   private evaluating: Promise<unknown> = Promise.resolve()
+  readonly loginExpiry = new SealLoginExpiryCache()
+  /** Resolves once saved accounts were merged into one list on this start. */
+  migrated: Promise<void> = Promise.resolve()
+  private signInFlows: SealSignInFlows | null = null
 
   constructor(readonly deps: SealAccountManagerDeps) {
     this.dataRoot = deps.dataRoot ?? getAppEnvironment().getPath('userData')
@@ -74,7 +87,10 @@ export class SealAccountManager {
 
   start(): void {
     this.unsubscribeUsage = this.services.rateLimits.onStateChange(() => this.scheduleEvaluation())
-    this.syncUsageViewer()
+    this.usage.sync()
+    this.migrated = runSealAccountsMigration(this).catch((error: unknown) => {
+      console.warn('[seal-accounts] Could not merge duplicate accounts:', error)
+    })
   }
 
   dispose(): void {
@@ -85,6 +101,11 @@ export class SealAccountManager {
 
   getConfig(): SealAccountsConfig {
     return this.store.getConfig()
+  }
+
+  get signIns(): SealSignInFlows {
+    this.signInFlows ??= createSealSignInFlows(this)
+    return this.signInFlows
   }
 
   get machineKey(): string {
@@ -100,7 +121,11 @@ export class SealAccountManager {
         codex: this.services.codexAccounts.listAccounts(),
         rateLimits: this.services.rateLimits.getState(),
         storedApiKeyIds: this.vault.storedIds(),
-        polled: (key) => this.usage.limitsFor(key)
+        polled: (key) => this.usage.limitsFor(key),
+        systemLogins: readSealSystemLogins(this.services),
+        dismissedSystemLogins: this.store.getState().dismissedSystemLogins,
+        loginExpiry: (key) => this.loginExpiry.get(key),
+        now: this.now()
       },
       provider
     )
@@ -143,6 +168,9 @@ export class SealAccountManager {
       swapLog: state.swapLog,
       sessions: state.sessions,
       workspacePins: state.workspacePins,
+      fleetCopies: state.fleetCopies,
+      systemLogins: sealSystemLoginStatus(this),
+      migrationNotice: state.accountsMigration?.notice ?? null,
       secretStorage: {
         available: this.vault.isAvailable(),
         protectionGap: this.vault.protectionGap()
@@ -150,21 +178,25 @@ export class SealAccountManager {
     }
   }
 
+  /** Sets priorities from a drag order: the first account is preferred. */
+  reorder(provider: SealProvider, refs: readonly string[]): void {
+    const keys = refs.map((ref) => this.resolveKey(ref, provider))
+    this.saveConfig(withAccountOrder(this.getConfig(), keys))
+  }
+
   async refreshUsage(): Promise<void> {
     const { rateLimits } = this.services
     await Promise.allSettled([
       rateLimits.refreshIfStale(),
       rateLimits.fetchInactiveClaudeAccountsOnOpen(),
-      rateLimits.fetchInactiveCodexAccountsOnOpen()
+      rateLimits.fetchInactiveCodexAccountsOnOpen(),
+      this.loginExpiry.refresh(this),
+      this.usage.refreshNow()
     ])
   }
 
   private anyAutoSwapEnabled(): boolean {
     return SEAL_PROVIDERS.some((provider) => this.getConfig().autoSwap[provider].enabled)
-  }
-
-  syncUsageViewer(): void {
-    this.usage.sync()
   }
 
   private scheduleEvaluation(): void {
@@ -223,37 +255,13 @@ export class SealAccountManager {
     })
   }
 
-  private async recordSwap(
+  private recordSwap(
     provider: SealProvider,
     to: SealAccountCandidate,
     reason: SealSwapEvent['reason'],
-    updateQuarantine: (
-      state: { quarantine: Record<string, { until: number; reason: string }> },
-      at: number
-    ) => void
+    updateQuarantine: SealSwapQuarantineUpdate
   ): Promise<SealSwapEvent> {
-    if (to.kind === 'api-key') {
-      throw new Error('API keys run per session or workspace, not as the machine’s selected login.')
-    }
-    const from = this.candidates(provider).find((entry) => entry.active)?.key ?? null
-    await (provider === 'claude'
-      ? this.services.claudeAccounts.selectAccount(to.localId)
-      : this.services.codexAccounts.selectAccount(to.localId))
-    const event: SealSwapEvent = {
-      at: this.now(),
-      provider,
-      from,
-      to: to.key,
-      toLabel: to.label,
-      reason
-    }
-    this.store.updateState((next) => {
-      updateQuarantine(next, event.at)
-      next.lastSwapAt[provider] = event.at
-      next.swapLog.push(event)
-    })
-    console.log(`[seal-accounts] ${provider}: switched to ${to.label} (${reason})`)
-    return event
+    return recordSealHostSwap(this, provider, to, reason, updateQuarantine)
   }
 
   requireCandidate(provider: SealProvider, ref: string): SealAccountCandidate {
@@ -281,7 +289,7 @@ export class SealAccountManager {
 
   saveConfig(config: SealAccountsConfig): void {
     this.store.saveConfig({ ...config, updatedAt: this.now() })
-    this.syncUsageViewer()
+    this.usage.sync()
     this.scheduleEvaluation()
   }
 
@@ -291,7 +299,7 @@ export class SealAccountManager {
     this.store.updateState((next) => {
       next.machineKey = machineKey
     })
-    this.syncUsageViewer()
+    this.usage.sync()
     this.scheduleEvaluation()
   }
 

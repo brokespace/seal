@@ -58,7 +58,7 @@ describe('ModelManager Windows model path handling', () => {
     try {
       setPlatform('win32')
       const programDataDir = join(dir, 'ProgramData')
-      const userDataDir = join(dir, '用户', 'Orca')
+      const userDataDir = join(dir, '用户', 'Seal')
       process.env.PROGRAMDATA = programDataDir
       appGetPathMock.mockImplementation((name: string) =>
         name === 'userData' ? userDataDir : join(dir, name)
@@ -97,7 +97,7 @@ describe('ModelManager Windows model path handling', () => {
     try {
       setPlatform('win32')
       const programDataDir = join(dir, 'ProgramData')
-      const userDataDir = join(dir, '用户', 'Orca')
+      const userDataDir = join(dir, '用户', 'Seal')
       process.env.PROGRAMDATA = programDataDir
       appGetPathMock.mockImplementation((name: string) =>
         name === 'userData' ? userDataDir : join(dir, name)

@@ -89,7 +89,7 @@ async function watch(
 }
 
 describe('plugin dev watch --check', () => {
-  it('fails a check that renders while Orca does not run the plugin', async () => {
+  it('fails a check that renders while Seal does not run the plugin', async () => {
     const pending = entry(1, 'pending')
     const events = await watch(vi.fn().mockResolvedValue(passed), [[entry(0)], [pending]])
     const checks = events.filter((event) => event.type === 'check')
@@ -98,7 +98,7 @@ describe('plugin dev watch --check', () => {
       [false, true, 'pending']
     ])
     expect(formatPluginDevWatchEvent(checks[1]).split('\n')[0]).toBe(
-      '✗ check passed, but in Orca acme.todos is pending approval'
+      '✗ check passed, but in Seal acme.todos is pending approval'
     )
   })
 })

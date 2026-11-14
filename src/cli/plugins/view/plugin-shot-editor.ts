@@ -104,7 +104,7 @@ export function formatPluginEditorShot(shot: PluginEditorShotSaved, requested?: 
   return [
     `Saved ${shot.path} (${shot.width}x${shot.height}, ${shot.theme} theme, ${shot.title} on ${shot.filePath})`,
     ...(requested && !shot.themeApplied
-      ? [`  note: ${requested} was not applied (${shot.themeReason ?? 'Orca could not paint it'}).`]
+      ? [`  note: ${requested} was not applied (${shot.themeReason ?? 'Seal could not paint it'}).`]
       : []),
     ...(shot.acted
       ? [

@@ -28,11 +28,20 @@ function live(id: string, overrides: Partial<LiveSession> = {}): LiveSession {
 }
 
 describe('homeSessionFromLive', () => {
-  it('puts a paired server session on that server', () => {
+  it('puts a session on its machine, whichever transport scanned it', () => {
     const session = homeSessionFromLive(
-      live('a', { machine: { hostId: 'runtime:env-1', label: 'kessel-ml', kind: 'runtime' } })
+      live('a', {
+        machine: {
+          hostId: 'kessel-ssh',
+          label: 'kessel-ml',
+          kind: 'remote',
+          machineId: 'machine:kessel-ssh',
+          executionHostId: 'runtime:env-1',
+          connection: 'server'
+        }
+      })
     )
-    expect(session.machineId).toBe('runtime:env-1')
+    expect(session.machineId).toBe('machine:kessel-ssh')
   })
 
   it('asks for attention only for running agents that wait or errored', () => {

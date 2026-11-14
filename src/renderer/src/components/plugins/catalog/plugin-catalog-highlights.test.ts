@@ -14,7 +14,7 @@ function entry(
 ): PluginListEntry {
   const listing: PluginMarketplaceHostListing = {
     marketplaceSourceId: 'community',
-    marketplaceName: 'Orca Community Plugins',
+    marketplaceName: 'Seal Community Plugins',
     marketplaceOwner: 'stablyai',
     marketplaceCommit: 'a'.repeat(40),
     pluginKey,

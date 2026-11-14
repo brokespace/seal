@@ -3,7 +3,7 @@ import type { LiveSessionMachine } from '../../../shared/live-sessions/live-sess
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
 import type { DiscoveredPane, DiscoveredProcess } from './discovery-output'
 
-const machine: LiveSessionMachine = { hostId: 'ssh-1', label: 'build-box', kind: 'ssh' }
+const machine: LiveSessionMachine = { hostId: 'ssh-1', label: 'build-box', kind: 'remote' }
 const NOW = Date.parse('2026-11-13T12:00:00Z')
 const RULE = '\u2500'.repeat(30)
 

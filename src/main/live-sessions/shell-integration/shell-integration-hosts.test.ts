@@ -6,7 +6,7 @@ const STATUS = '@@SEAL installed=1 enabled=0 tmux=tmux_3.4 rc=/h/.zshrc\n'
 
 function host(hostId: string, ran: string[]): LiveSessionHost {
   return {
-    machine: { hostId, label: hostId, kind: 'ssh' },
+    machine: { hostId, label: hostId, kind: 'remote' },
     run: async (script) => {
       ran.push(`${hostId}:${script.includes(': >"$dir/shell/disabled"') ? 'disable' : 'enable'}`)
       return STATUS

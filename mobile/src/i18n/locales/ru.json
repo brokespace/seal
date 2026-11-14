@@ -4,7 +4,6 @@
       "agentLogin": "Использовать учётную запись самого агента",
       "connecting": "Подключение к серверу…",
       "connectingTo": "Подключение к {{name}}…",
-      "default": "Как в системе",
       "fableWindow": "Fable",
       "hostNotFound": "Сервер не найден",
       "invalidSnapshot": "Некорректные данные учётных записей от сервера",

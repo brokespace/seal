@@ -72,7 +72,7 @@ describe('recoverFromDegradedStartup', () => {
         abortSignal: pass.signal ?? new AbortController().signal,
         isCancelled: pass.isCancelled ?? (() => false),
         reconnectPersistedTerminals: async () => {
-          throw new Error('Could not connect to the remote Orca runtime.')
+          throw new Error('Could not connect to the remote Seal runtime.')
         }
       })
     }
@@ -110,7 +110,7 @@ describe('recoverFromDegradedStartup', () => {
 
     it('stops waiting to reload once its startup pass is torn down', async () => {
       const pass = new AbortController()
-      await recoverFrom(new Error('Could not connect to the remote Orca runtime.'), {
+      await recoverFrom(new Error('Could not connect to the remote Seal runtime.'), {
         signal: pass.signal
       })
       pass.abort()
@@ -126,7 +126,7 @@ describe('recoverFromDegradedStartup', () => {
         cancelled = true
         return getStatusSnapshots()
       }
-      await recoverFrom(new Error('Could not connect to the remote Orca runtime.'), {
+      await recoverFrom(new Error('Could not connect to the remote Seal runtime.'), {
         isCancelled: () => cancelled
       })
 

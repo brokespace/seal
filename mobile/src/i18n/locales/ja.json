@@ -4,7 +4,6 @@
       "agentLogin": "Agent 自体のログイン情報を使用",
       "connecting": "ホストに接続中…",
       "connectingTo": "「{{name}}」に接続中…",
-      "default": "システムのデフォルト",
       "fableWindow": "Fable",
       "hostNotFound": "ホストが見つかりません",
       "invalidSnapshot": "ホストからのアカウントスナップショットが無効です",

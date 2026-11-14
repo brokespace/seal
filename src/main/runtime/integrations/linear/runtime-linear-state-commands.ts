@@ -70,7 +70,7 @@ export class RuntimeLinearStateCommands extends RuntimeLinearSaveCommands {
       ({ target }, cause) =>
         linearError(
           'linear_write_unconfirmed',
-          'Linear may have applied the state change, but Orca could not confirm it.',
+          'Linear may have applied the state change, but Seal could not confirm it.',
           {
             nextSteps: [
               `Run \`orca linear issue ${target.issue.identifier} --workspace ${target.workspaceId} --json\` and check the current state before retrying.`
@@ -127,7 +127,7 @@ export class RuntimeLinearStateCommands extends RuntimeLinearSaveCommands {
       ({ target }, cause) =>
         linearError(
           'linear_write_unconfirmed',
-          'Linear may have applied the relation change, but Orca could not confirm it.',
+          'Linear may have applied the relation change, but Seal could not confirm it.',
           {
             nextSteps: [
               `Run \`orca linear issue ${target.issue.identifier} --relations --workspace ${target.workspaceId} --json\` before retrying.`

@@ -1,14 +1,30 @@
 import * as z from 'zod'
-import { parseExecutionHostId, type ExecutionHostId } from '../../../../src/shared/execution-host'
+import { parseExecutionHostId } from '../../../../src/shared/execution-host'
+import { parseMachineId } from '../../../../src/shared/machines/machine-types'
 
 const nullableNumber = z.number().finite().nullable().catch(null)
 const nullableString = z.string().nullable().catch(null)
 const machineOs = z.enum(['linux', 'darwin', 'win32']).nullable().catch(null)
-const machineId = z.custom<ExecutionHostId>(
-  (value) => typeof value === 'string' && parseExecutionHostId(value) !== null
-)
+const machineId = z.custom<string>((value) => parseMobileMachineId(value) !== null)
 
-export const machineSummarySchema = z.looseObject({
+/** Older hosts name machines by execution host id; unified hosts use `local` / `machine:<id>`. */
+export function parseMobileMachineId(value: unknown): string | null {
+  return (
+    parseMachineId(value) ??
+    (typeof value === 'string' ? (parseExecutionHostId(value)?.id ?? null) : null)
+  )
+}
+
+/** Unified hosts send `connection` instead of the older `kind`. */
+export function withMachineKind(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null || 'kind' in value || !('connection' in value)) {
+    return value
+  }
+  const kind = value.connection === 'server' ? 'runtime' : value.connection
+  return { ...value, kind }
+}
+
+const machineSummaryFields = z.looseObject({
   id: machineId,
   kind: z.enum(['local', 'ssh', 'runtime']),
   label: z.string(),
@@ -17,6 +33,8 @@ export const machineSummarySchema = z.looseObject({
   statusDetail: nullableString,
   os: machineOs
 })
+
+export const machineSummarySchema = z.preprocess(withMachineKind, machineSummaryFields)
 
 export type MobileMachineSummary = z.output<typeof machineSummarySchema>
 

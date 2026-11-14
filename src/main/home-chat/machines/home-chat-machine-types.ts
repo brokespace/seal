@@ -5,10 +5,14 @@ import type { HomeChatMachineStatus } from '../../../shared/home-chat/home-chat-
 export type HomeChatShellDialect = 'posix' | 'powershell'
 
 export type HomeChatMachineInfo = {
-  /** `local`, `ssh:<target-id>`, `runtime:<environment-id>` (Seal's machine ids), or `hop:<name>`. */
+  /** `local`, `machine:<id>`, or `hop:<name>`. */
   id: string
   label: string
-  kind: 'local' | 'ssh' | 'runtime' | 'hop'
+  kind: 'local' | 'remote' | 'hop'
+  /** Older spellings (`ssh:<target-id>`) that saved notes and hops may still use. */
+  aliases?: string[]
+  /** The `--host` value agents on this machine launch with: the transport it uses now. */
+  executionHostId?: string
   /** user@host:port for SSH machines. */
   address?: string
   /** How Seal reaches it when not directly: a ProxyJump/ProxyCommand or another machine's id. */
@@ -51,6 +55,8 @@ export type HomeChatMachine = {
   readonly dialect: HomeChatShellDialect
   /** Run a script; quoting is the machine's job, so any text is safe to pass. */
   exec: (script: string, options: HomeChatExecOptions) => Promise<HomeChatExecResult>
+  /** The account's home folder, where commands start and relative paths are rooted. */
+  homeDir: () => Promise<string>
   readTextFile: (path: string, maxBytes: number) => Promise<{ text: string; truncated: boolean }>
   writeTextFile: (path: string, content: string, options: { append: boolean }) => Promise<void>
   /** Stream a file on this machine to a path on the local machine. */
@@ -62,7 +68,7 @@ export type HomeChatMachine = {
 
 export type HomeChatMachineProvider = {
   list: () => Promise<HomeChatMachineInfo[]>
-  /** Resolve by id, label or host name (case-insensitive); connects SSH machines on demand. */
+  /** Resolve by id, legacy `ssh:` id, or label (case-insensitive); connects machines on demand. */
   open: (machine: string) => Promise<HomeChatMachine>
 }
 

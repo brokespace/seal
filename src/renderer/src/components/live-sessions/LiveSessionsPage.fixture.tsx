@@ -7,7 +7,7 @@ import { pendingRows } from './live-session-pending-rows'
 
 const NOW = 1_800_000_000_000
 const local = { hostId: 'local', label: 'brian-mbp', kind: 'local' } as const
-const box = { hostId: 'ssh-build', label: 'build-box', kind: 'ssh' } as const
+const box = { hostId: 'ssh-build', label: 'build-box', kind: 'remote' } as const
 
 function session(overrides: Partial<LiveSession> & Pick<LiveSession, 'id'>): LiveSession {
   return {
@@ -262,7 +262,13 @@ export const takeOver = defineFixture({
       ?.click()
 })
 
-const server = { hostId: 'runtime:kessel', label: 'kessel-ml', kind: 'runtime' } as const
+const server = {
+  hostId: 'runtime:kessel',
+  label: 'kessel-ml',
+  kind: 'remote',
+  executionHostId: 'runtime:kessel',
+  connection: 'server'
+} as const
 const serverSessions: LiveSession[] = [
   ...sessions.slice(0, 2),
   session({

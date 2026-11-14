@@ -77,7 +77,7 @@ describe('runWslHolderUninstallPreflight', () => {
   })
 
   it('leaves the servers alone unless the uninstaller says this is the last install', async () => {
-    expect(runWslHolderUninstallPreflight(['Orca.exe', WSL_HOLDER_UNINSTALL_FLAG])).toBe(true)
+    expect(runWslHolderUninstallPreflight(['Seal.exe', WSL_HOLDER_UNINSTALL_FLAG])).toBe(true)
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0))
 
     expect(stopServers).not.toHaveBeenCalled()

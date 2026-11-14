@@ -110,6 +110,7 @@ export function liveTakeOverFailureText(reason: string | undefined, error: strin
       )
     case 'still_running':
       return translate('seal.liveSessions.takeOver.stillRunning', 'The agent process didn’t stop.')
+    case undefined:
     default:
       return error ?? translate('seal.liveSessions.takeOver.failed', 'Something went wrong.')
   }
@@ -127,15 +128,16 @@ export type LiveMachineGroup = {
 export function groupLiveSessions(sessions: readonly LiveSession[]): LiveMachineGroup[] {
   const machines = new Map<string, LiveMachineGroup>()
   for (const session of sessions) {
-    let machine = machines.get(session.machine.hostId)
+    const machineKey = session.machine.machineId ?? session.machine.hostId
+    let machine = machines.get(machineKey)
     if (!machine) {
       machine = {
-        hostId: session.machine.hostId,
+        hostId: machineKey,
         label: session.machine.label,
         kind: session.machine.kind,
         projects: []
       }
-      machines.set(session.machine.hostId, machine)
+      machines.set(machineKey, machine)
     }
     const key = session.cwd ?? session.project ?? ''
     let project = machine.projects.find((entry) => entry.key === key)

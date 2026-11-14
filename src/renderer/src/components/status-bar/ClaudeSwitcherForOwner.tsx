@@ -43,6 +43,7 @@ import { AccountSwitchSection, AccountSwitchSignedOutHeading } from './AccountSw
 import { AccountSwitchRowItem } from './AccountSwitchRowItem'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
 import { signInToClaudeAccount } from '@/lib/provider-accounts/claude-account-sign-in'
+import { useSealStatusSwitchView } from './seal-status-switch-view'
 
 // Retain account switch/reset drill-in even though the footer now opens UsageRosterPanel.
 export function ClaudeSwitcherForOwner({
@@ -94,6 +95,7 @@ export function ClaudeSwitcherForOwner({
       emptyClaudeAccountsState(),
       !!chatAction
     )
+  const sealView = useSealStatusSwitchView(runtimeTarget, 'claude')
   const accountState = resolveClaudeStatusAccountState(
     accountSettings,
     accounts,
@@ -219,7 +221,8 @@ export function ClaudeSwitcherForOwner({
       includeFallbackWsl:
         wslHostDistro !== null ||
         (!hasActiveRuntimeEnvironment && shouldIncludeSettingsWslRuntime(settings)),
-      hostLabel: providerAccountHostLabel
+      hostLabel: providerAccountHostLabel,
+      seal: sealView
     }
   )
   const selectedGroup = chatAction

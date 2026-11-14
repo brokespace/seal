@@ -4,7 +4,7 @@ import { RuntimeClientError } from '../runtime/types'
 import type { RuntimeRpcSuccess } from '../../shared/runtime-rpc-envelope'
 
 const NO_APP_WINDOW_MESSAGE =
-  'This Orca server has no app window, so it cannot open files as tabs. Nothing was opened.'
+  'This Seal server has no app window, so it cannot open files as tabs. Nothing was opened.'
 
 function isRendererUnavailable(error: unknown): boolean {
   return (
@@ -28,7 +28,7 @@ export async function callFileOpen(
     }
     throw new RuntimeClientError('renderer_unavailable', NO_APP_WINDOW_MESSAGE, {
       nextSteps: [
-        'Open the file from the file explorer of an Orca app or mobile app connected to this server.',
+        'Open the file from the file explorer of a Seal app or mobile app connected to this server.',
         'To point a user at the file, give its path in your reply instead of opening a tab.'
       ]
     })
