@@ -2022,6 +2022,94 @@
       },
       "saveFailed": "The provider and model were not saved.",
       "testFailed": "Could not run the test."
+    },
+    "projectOverview": {
+      "config": {
+        "editInSettings": "Edit in settings"
+      },
+      "agents": {
+        "title": "Agents",
+        "showInActiveAgents": "Show in Active agents",
+        "empty": "No agents are running in this project. Start one with New agent."
+      },
+      "changes": {
+        "inProgress": "{{operation}} in progress",
+        "conflicted": "{{count}} conflicted",
+        "files_one": "{{count}} file changed",
+        "files_other": "{{count}} files changed",
+        "reading": "Reading…",
+        "unavailable": "Status unavailable",
+        "clean": "Clean",
+        "aheadBehind": "{{ahead}} ahead of and {{behind}} behind {{upstream}}",
+        "upstream": "upstream",
+        "title": "Changes",
+        "refresh": "Refresh changes",
+        "empty": "No workspaces to check.",
+        "more": "Showing the {{shown}} most recent of {{total}} workspaces.",
+        "staged": "{{count}} staged",
+        "untracked": "{{count}} untracked",
+        "nothingUncommitted": "Nothing uncommitted"
+      },
+      "commits": {
+        "title": "Recent commits",
+        "noCheckout": "No checkout to read commits from.",
+        "loading": "Loading commits…",
+        "unavailable": "Commits could not be read. The project’s machine may not be connected.",
+        "empty": "No commits yet."
+      },
+      "location": {
+        "title": "Location",
+        "notConnected": "Not connected",
+        "kind": "Kind",
+        "kindFolder": "Folder",
+        "kindGit": "Git repository",
+        "branch": "Branch",
+        "baseBranch": "New workspaces from",
+        "forkOf": "Fork of"
+      },
+      "copyPath": "Copy path",
+      "newAgent": "New agent",
+      "moreActions": "More project actions",
+      "openMainWorkspace": "Open main workspace",
+      "openTerminalOn": "Open terminal on {{machine}}",
+      "projectSettings": "Project settings",
+      "title": "Project overview",
+      "missing": "This project is no longer in Seal. Pick a project in the sidebar to see its overview.",
+      "back": "Go back",
+      "pulls": {
+        "title": "Pull requests",
+        "loading": "Loading pull requests…",
+        "unavailable": "Pull requests could not be loaded for this repository.",
+        "empty": "No open pull requests.",
+        "draft": "Draft"
+      },
+      "readme": {
+        "open": "Open",
+        "truncated": "Showing the beginning of a long file.",
+        "title": "Readme"
+      },
+      "usage": {
+        "none": "No usage",
+        "sessions_one": "{{count}} session",
+        "sessions_other": "{{count}} sessions",
+        "tokens": "{{input}} in / {{output}} out",
+        "title": "Usage · 30 days",
+        "details": "Details",
+        "remote": "Usage is read from this computer’s logs, so it is not available for a project on another machine.",
+        "loading": "Loading usage…",
+        "unavailable": "Usage could not be read.",
+        "off": "Usage tracking is off. Turn it on in Stats to see what this project costs."
+      },
+      "workspaces": {
+        "title": "Workspaces",
+        "empty": "No workspaces yet. New agent creates one for its work."
+      },
+      "pathCopied": "Path copied",
+      "sidebar": {
+        "expand": "Expand {{project}}",
+        "collapse": "Collapse {{project}}",
+        "open": "Project Overview"
+      }
     }
   },
   "components": {

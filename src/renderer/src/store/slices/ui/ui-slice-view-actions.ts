@@ -2,6 +2,7 @@ import type { UISlice, UISliceGet, UISliceSet } from './ui-slice-contract'
 import { rewindHistoryIndexPastView } from './workspace-navigation-history'
 import { isAutomationsHistoryEntry } from './automations-page-location'
 import { appendAutomationsPageEntry } from './automations-page-history'
+import { projectOverviewTargetFor, saveProjectOverviewTarget } from './project-overview-target'
 
 export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<UISlice> {
   return {
@@ -154,6 +155,20 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
     closeAgentSessionTabs: () =>
       set((state) => ({
         activeView: state.previousViewBeforeSessions
+      })),
+    openProjectOverview: (repo) => {
+      const target = projectOverviewTargetFor(repo)
+      saveProjectOverviewTarget(target)
+      set((state) => ({
+        activeView: 'project',
+        projectOverviewTarget: target,
+        previousViewBeforeProject:
+          state.activeView === 'project' ? state.previousViewBeforeProject : state.activeView
+      }))
+    },
+    closeProjectOverview: () =>
+      set((state) => ({
+        activeView: state.previousViewBeforeProject
       })),
     setNewWorkspaceDraft: (draft) => set({ newWorkspaceDraft: draft }),
     clearNewWorkspaceDraft: () => set({ newWorkspaceDraft: null })

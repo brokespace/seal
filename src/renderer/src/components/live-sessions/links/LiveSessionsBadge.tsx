@@ -4,9 +4,9 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
-import { activeAgentsScopeStore } from '../active-agents/active-agents-scope-store'
 import type { ActiveAgentsScope } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
+import { showScopeInActiveAgents } from './show-scope-in-active-agents'
 import { useLiveSessionLinks } from './use-live-session-links'
 
 /**
@@ -49,8 +49,7 @@ export function LiveSessionsBadge({
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        activeAgentsScopeStore.setScope(scope)
-        liveSessionMarksStore.reveal(badge.sessionIds[0])
+        showScopeInActiveAgents(scope, badge.sessionIds[0])
       }}
       className={cn(
         'flex h-4 shrink-0 items-center gap-1 rounded-full border border-worktree-sidebar-border px-1 text-2xs leading-none text-muted-foreground tabular-nums transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none',
