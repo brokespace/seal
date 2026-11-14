@@ -11,6 +11,7 @@ import {
   createSandboxedScriptBundlesPlugin,
   ONE_BYTE_UNMINIFIED_OUTPUT
 } from './config/build-plugins/sandboxed-script-bundles'
+import { createDiskUsageIndexBundlePlugin } from './config/build-plugins/disk-usage-index-bundle'
 import { createMainLocaleSubsetPlugin } from './config/build-plugins/main-locale-subset'
 import { createSucraseUnusedTransformersPlugin } from './config/build-plugins/sucrase-unused-transformers'
 import { createPdfjsViewerAssetsPlugin } from './config/build-plugins/pdfjs-viewer-assets'
@@ -237,6 +238,7 @@ export const electronViteConfig: UserConfig = {
           createProcessHostDevRebuildPlugin(),
           createDarkBuildMarkerPlugin(),
           createSandboxedScriptBundlesPlugin(),
+          createDiskUsageIndexBundlePlugin(),
           createMainLocaleSubsetPlugin()
         ]
       }

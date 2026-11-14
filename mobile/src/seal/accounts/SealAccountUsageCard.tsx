@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Text, View } from 'react-native'
 import { ProviderUsageWindows } from '../../accounts/ProviderUsageWindows'
+import { keptUsageReadAt, usageUpdatedLabel } from '../../accounts/usage/usage-updated-label'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, radii, spacing, typography } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'
@@ -29,11 +30,13 @@ export function SealAccountUsageCard({
     candidate.plan,
     candidate.email && candidate.email !== name ? candidate.email : null
   ].filter(Boolean)
+  // A failed check that kept the last good figures is named by their age, not by the failure.
+  const keptAt = keptUsageReadAt(limits)
   const note = candidate.authFailure
     ? t('seal.accounts.authFailure', 'Signed out; sign in again on your computer.')
     : candidate.disabled
       ? t('seal.accounts.disabled', 'Turned off for auto-swap')
-      : (sealRateLimitText(candidate, now) ?? limits?.error)
+      : (sealRateLimitText(candidate, now) ?? (keptAt === null ? limits?.error : null))
   const estimate = compact ? null : sealSwapEstimateText(candidate, now)
   return (
     <View style={styles.card}>
@@ -61,6 +64,9 @@ export function SealAccountUsageCard({
         />
       )}
       {note ? <Text style={styles.note}>{note}</Text> : null}
+      {keptAt !== null && candidate.kind !== 'api-key' ? (
+        <Text style={styles.meta}>{usageUpdatedLabel(keptAt, now, t)}</Text>
+      ) : null}
       {estimate ? <Text style={styles.meta}>{estimate}</Text> : null}
       {children}
     </View>

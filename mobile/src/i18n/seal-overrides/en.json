@@ -318,6 +318,30 @@
       "export": {
         "failed": "Unable to download the file",
         "savedToPhotos": "Saved to Photos"
+      },
+      "disk": {
+        "mountSkipped": "Not indexed",
+        "mountWaiting": "First scan in progress",
+        "mountAge": "Indexed {{age}} ago",
+        "rescanning": "Checking {{mount}} for changes: {{percent}}%",
+        "scanning": "Scanning {{mount}}: {{size}} so far",
+        "live": "This machine has no background index, so folders are measured when you open them.",
+        "pending": "not measured yet",
+        "unreadable": "no access",
+        "notIndexed": "not indexed",
+        "omitted": "{{count}} smaller items ({{size}}) are not listed.",
+        "incomplete": "Some folders could not be read, so the real total is larger.",
+        "age": "Sizes are from the index, {{age}} old.",
+        "view": {
+          "folders": "Folders",
+          "files": "Largest files",
+          "largestFolders": "Largest folders"
+        },
+        "loadFailed": "Unable to read disk usage",
+        "loading": "Reading disk usage…",
+        "noIndex": "Nothing has been indexed here yet",
+        "title": "Disk usage",
+        "showInFiles": "Show in files"
       }
     },
     "transfers": {

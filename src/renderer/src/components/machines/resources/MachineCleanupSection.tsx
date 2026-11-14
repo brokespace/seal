@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { Loader2, RefreshCw } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
-import {
-  MACHINE_CLEANUP_TARGETS,
-  type MachineCleanupScan,
-  type MachineCleanupTargetId
+import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
+import type {
+  MachineCleanupScan,
+  MachineCleanupTargetId
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { formatBytes } from '../model/machine-format'
@@ -13,17 +13,25 @@ import { MachineCleanupDialog } from './MachineCleanupDialog'
 import { machineResourceApi, resourceErrorText } from './machine-resource-requests'
 import { useMachineCleanupCopy } from './use-machine-cleanup-copy'
 
+/** Each round sizes caches on the machine, so the list follows it without keeping it busy. */
+const CLEANUP_REFRESH_MS = 60_000
+
 type TargetState =
   | { status: 'scanning' }
   | { status: 'ready'; scan: MachineCleanupScan }
   | { status: 'failed'; message: string }
 
-/** Common space hogs with their sizes. Scanning only reads; removal goes through the review dialog. */
+/**
+ * Space that can be freed, with sizes that keep themselves current. Scanning only reads; removal
+ * goes through the review dialog.
+ */
 export function MachineCleanupSection({
   machine,
+  targets: wanted,
   onCleaned
 }: {
   machine: MachineSummary
+  targets: readonly MachineCleanupTargetId[]
   onCleaned: () => void
 }): React.JSX.Element {
   const t = useTranslate()
@@ -31,11 +39,13 @@ export function MachineCleanupSection({
   const machineId = machine.id
   const [targets, setTargets] = useState<Partial<Record<MachineCleanupTargetId, TargetState>>>({})
   const [reviewing, setReviewing] = useState<MachineCleanupScan | null>(null)
-  const [scanRound, setScanRound] = useState(0)
+  const reviewingRef = useRef(false)
+  useEffect(() => {
+    reviewingRef.current = reviewing !== null
+  }, [reviewing])
 
   const scanTarget = useCallback(
     async (target: MachineCleanupTargetId, isCurrent: () => boolean): Promise<void> => {
-      setTargets((previous) => ({ ...previous, [target]: { status: 'scanning' } }))
       let next: TargetState
       try {
         next = {
@@ -54,57 +64,56 @@ export function MachineCleanupSection({
 
   useEffect(() => {
     let cancelled = false
-    // One at a time: each scan walks the disk, and a machine being cleaned up is already busy.
-    void (async () => {
-      for (const target of MACHINE_CLEANUP_TARGETS) {
-        if (cancelled) {
+    let running = false
+    const stop = installWindowVisibilityInterval({
+      run: () => {
+        // A list under review must not change beneath the person ticking it.
+        if (running || reviewingRef.current) {
           return
         }
-        await scanTarget(target, () => !cancelled)
-      }
-    })()
+        running = true
+        // One at a time: each scan walks the disk, and a machine being cleaned up is already busy.
+        void (async () => {
+          for (const target of wanted) {
+            if (cancelled) {
+              return
+            }
+            await scanTarget(target, () => !cancelled)
+          }
+          running = false
+        })()
+      },
+      intervalMs: CLEANUP_REFRESH_MS
+    })
     return () => {
       cancelled = true
+      stop()
     }
-  }, [scanTarget, scanRound])
+  }, [scanTarget, wanted])
 
-  const scanning = MACHINE_CLEANUP_TARGETS.some(
-    (target) => (targets[target]?.status ?? 'scanning') === 'scanning'
-  )
-  const reclaimable = MACHINE_CLEANUP_TARGETS.reduce((sum, target) => {
+  const scanning = wanted.some((target) => (targets[target]?.status ?? 'scanning') === 'scanning')
+  const reclaimable = wanted.reduce((sum, target) => {
     const state = targets[target]
     return sum + (state?.status === 'ready' ? state.scan.totalBytes : 0)
   }, 0)
 
   return (
     <div data-machine-cleanup={scanning ? 'scanning' : 'ready'}>
-      <div className="flex items-center gap-2 border-b border-border pb-1.5 text-2xs text-muted-foreground">
-        <span className="min-w-0 flex-1">
-          {t(
-            'auto.components.machines.cleanup.intro',
-            'Nothing is removed until you review a list and confirm it. Up to {{size}} found so far.',
-            { size: formatBytes(reclaimable) }
-          )}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          disabled={scanning}
-          onClick={() => setScanRound((round) => round + 1)}
-        >
-          <RefreshCw />
-          {t('auto.components.machines.cleanup.rescan', 'Scan again')}
-        </Button>
-      </div>
+      <p className="border-b border-border px-3 py-2 text-2xs text-muted-foreground">
+        {t(
+          'auto.components.machines.cleanup.intro',
+          'Nothing is removed until you review a list and confirm it. Up to {{size}} found so far.',
+          { size: formatBytes(reclaimable) }
+        )}
+      </p>
       <ul>
-        {MACHINE_CLEANUP_TARGETS.map((target) => {
+        {wanted.map((target) => {
           const state = targets[target] ?? { status: 'scanning' }
           const scan = state.status === 'ready' ? state.scan : null
           return (
             <li
               key={target}
-              className="flex items-center gap-3 border-b border-border/60 px-2 py-2 text-xs"
+              className="flex items-center gap-3 border-b border-border/60 px-3 py-2 text-xs last:border-b-0"
               data-machine-cleanup-target={target}
             >
               <div className="min-w-0 flex-1">
