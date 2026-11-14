@@ -96,14 +96,13 @@
       "connecting": "Bağlanılıyor…",
       "invalidPairingCode": "Geçerli bir eşleştirme kodu değil — bilgisayarınızdan kopyalayıp yeniden yapıştırın",
       "invalidQrCode": "Geçerli bir Seal QR kodu değil",
-      "downloadQrCode": "Bu indirme kodu. Bilgisayarınızdaki 2. adımda bulunan eşleştirme kodunu tarayın.",
       "openDesktopStep": "Bilgisayarınızda Seal'i açın",
       "openMobileSettingsStep": "Ayarlar → Mobil bölümüne gidin",
       "openSettings": "Ayarları Aç",
       "pairingFailed": "Eşleştirme yapılamadı: {{error}}",
       "pairingLog": "Eşleştirme günlüğü",
       "pasteCodeMessage": "Bilgisayarınızda QR kodunun altında gösterilen kodu kopyalayın.",
-      "pasteCodePlaceholder": "orca://pair?code=... veya kodu yapıştırın",
+      "pasteCodePlaceholder": "seal://pair?code=... veya kodu yapıştırın",
       "pasteCodeTitle": "Eşleştirme kodunu yapıştır",
       "pasteInstead": "Bunun yerine kod yapıştır",
       "pastePairingCode": "Veya eşleştirme kodunu yapıştır",
@@ -941,9 +940,7 @@
       "backToHosts": "Sunucular bölümüne dön",
       "desktopTooOldBody": "Eşleştirilmiş bu masaüstü uygulaması, mevcut Seal Mobile sürümünüz için çok eski. Bilgisayarınızdaki Seal'i güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
       "getVersion": "Seal {{version}} Sürümünü İndir",
-      "mobileTooOldAppStore": "Bu masaüstü uygulaması, Seal Mobile'ın daha yeni bir sürümünü gerektiriyor. Seal Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
       "mobileTooOldGitHubReleases": "Bu masaüstü uygulaması, Seal Mobile'ın daha yeni bir sürümünü gerektiriyor. Seal Mobile'ı GitHub Releases üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
-      "openAppStore": "App Store'u Aç",
       "openGitHubReleases": "GitHub Releases Sayfasını Aç",
       "refreshRecoveryNote": "Bu mesaj görünmeye devam ederse bu sunucuyu kaldırıp yeniden eşleştirin.",
       "refreshWorkspaceBody": "Bu sunucu için önbelleğe alınan çalışma alanı, masaüstü uygulamasının beklediğinden daha eski. Güncel sürümü indirmek için bu sunucuya yeniden bağlanın.",
@@ -951,7 +948,6 @@
       "updateDesktopTitle": "Bilgisayarınızdaki Seal'i güncelleyin",
       "updateMobileTitle": "Seal Mobile'ı güncelleyin",
       "updateRecoveryNote": "Zaten güncellediniz mi? Sunucular bölümüne dönüp bağlantıyı yenileyin. Bu mesaj görünmeye devam ederse bu sunucuyu kaldırıp yeniden eşleştirin.",
-      "workspaceNeedsUpdateAppStore": "Bu masaüstü uygulamasının mobil çalışma alanı, Seal Mobile'ın daha yeni bir sürümünü gerektiriyor. Seal Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
       "workspaceNeedsUpdateGitHubReleases": "Bu masaüstü uygulamasının mobil çalışma alanı, Seal Mobile'ın daha yeni bir sürümünü gerektiriyor. Seal Mobile'ı GitHub Releases üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin."
     },
     "richMarkdownEditor": {
@@ -2754,11 +2750,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Bağlantı açılamadı. Yeniden deneyin.",
-      "socialProfile": "X'te Seal",
       "sourceCode": "Seal kaynak kodu",
       "tagline": "100 kat daha üretken geliştiriciler için açık kaynaklı ajan IDE'si",
-      "title": "Hakkında",
-      "website": "Seal web sitesi"
+      "title": "Hakkında"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "Kontrol edilemedi",
@@ -2816,7 +2810,6 @@
       "voice": "Ses"
     },
     "menuScreen": {
-      "privacyPolicy": "Gizlilik Politikası",
       "support": "Destek"
     },
     "nativeChatSettingsScreen": {

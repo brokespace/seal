@@ -1,7 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { ACCOUNT_NEAR_LIMIT_PERCENT, accountNextReset } from './home-overview-derivations'
+import {
+  ACCOUNT_NEAR_LIMIT_PERCENT,
+  accountNextReset
+} from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeAccount } from './home-overview-model'
 import { formatHomeCountdown, homeUsageWindowLabel } from './home-overview-presentation'
 import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'

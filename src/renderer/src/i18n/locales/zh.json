@@ -86,7 +86,6 @@
       "windows": {
         "administratorApproval": "Windows 将请求批准，请使用您常用的账户",
         "administratorDialogScope": "这会更改整个应用的权限，SSH 和 WSL 保留各自的权限",
-        "administratorDocumentation": "阅读指南",
         "administratorLabel": "管理员模式",
         "administratorPromptCancellation": "取消 Windows 的提示后，Seal 会带着保留的终端重新打开，SSH 和 WSL 的权限仍由其主机控制",
         "administratorRestartConsequences": "请先保存您的工作，批准后，当前本地终端主机上的终端和代理会关闭，已恢复的标签页会打开新的管理员 shell",
@@ -754,7 +753,7 @@
         "b411ec0069": "连接",
         "2cf9e5a294": "清除已保存的服务器",
         "4a4c017be1": "端点：",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "配对 URL 或代码",
         "cb4d287238": "服务器名称",
         "3affe7de3a": "粘贴来自该浏览器可以访问的 Seal 服务器的配对 URL",
@@ -5260,7 +5259,6 @@
           "66270286ac": "· 可以安全重试",
           "157de228b4": "查看技能",
           "69236de8d6": "正在检查…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal 技能链接",
           "releaseNotes": "发行说明：",
           "targetHeader": "安装目标",
@@ -6629,7 +6627,7 @@
           "nameInOrca": "在 Seal 中的名称",
           "serverNamePlaceholder": "开发机",
           "accessLink": "访问链接",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config 已同步",
           "sshImportFailed": "导入 SSH 配置失败",
           "advanced": "高级",
@@ -7848,14 +7846,11 @@
           "5f539ff331": "配对设备"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "Apple Store",
           "e7a3ae8c4e": "移动端",
           "174f4a3c6d": "用手机控制终端和代理",
           "682293cadf": "在左侧边栏顶部显示 Seal 手机端按钮",
           "d4f2b65f30": "在边栏中显示 Seal 手机端 快捷入口",
-          "installIntro": "从",
           "installOutro": " 安装 Seal Mobile，然后在下方配对",
-          "androidApkLabel": "Android APK",
           "49089c92b3": "显示 Seal 手机端按钮"
         },
         "NotificationsPane": {
@@ -11327,17 +11322,12 @@
           "available": "可用",
           "reconnecting": "正在重新连接",
           "unavailable": "不可用",
-          "signIn": "登录以使用 Relay",
           "localDescription": "手机必须连接此 Wi‑Fi 或通过 Tailscale，无需账号",
           "pathGroup": "手机访问此电脑的方式",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "手机可通过蜂窝网络或任意 Wi‑Fi 连接，仅 Relay 需要登录",
-          "relayUnavailable": "此版本不支持 Seal Relay，请使用局域网",
-          "signInAgain": "重新登录以使用 Relay",
           "localTitle": "局域网",
           "retrying": "正在重试",
-          "relayCell": "中继单元",
-          "relaySignInDetail": "将此桌面登录到 Seal，并通过 Seal 的服务器路由手机，LAN 无需账户"
+          "relayCell": "中继单元"
         },
         "MobilePairingSetupSection": {
           "title": "配对手机",
@@ -11761,7 +11751,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux 工作站",
           "accessLink": "访问链接",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal 会在连接前显示目标，凭据保持隐藏",
           "destination": "链接目标",
           "loopbackTitle": "此链接指向此设备",
@@ -11902,7 +11892,6 @@
           "connected": "已连接",
           "reconnectRequired": "会话已过期，请重新登录以使用云功能",
           "unavailable": "此构建不支持 Seal 登录",
-          "signedOut": "登录以启用 Seal 云功能，包括产物和 Seal Relay",
           "checking": "正在检查账户状态…",
           "account": "Seal 账户",
           "signOut": "退出登录",
@@ -11910,12 +11899,9 @@
           "signIn": "登录 Seal",
           "title": "Seal 账户",
           "description": "即时分享工作，并随时通过 Seal Mobile 访问桌面",
-          "searchDescription": "登录或退出产物和 Seal Relay 使用的账户",
           "benefitsTitle": "账户已包含",
           "artifactsTitle": "产物分享",
           "artifactsDescription": "发布 HTML 和 Markdown 文件，然后在 Seal 中管理所有分享链接",
-          "relayTitle": "Seal Relay",
-          "relayDescription": "通过蜂窝网络或任意 Wi-Fi 将 Seal Mobile 连接到此桌面",
           "skillsTitle": "技能分享",
           "skillsDescription": "通过非公开链接分享单个技能或整套技能，并在你使用的任何设备上安装",
           "keywordAccount": "账户",
@@ -11923,7 +11909,6 @@
           "keywordLogout": "退出登录",
           "keywordSignIn": "登录",
           "keywordSignOut": "退出登录",
-          "keywordRelay": "中继",
           "keywordCloud": "云"
         },
         "automations": {
@@ -14821,12 +14806,8 @@
           "85067b9e06": "刷新网络接口",
           "dfd2aa9d5d": "网络",
           "3960f5c339": "第 2 步(共 2 步)",
-          "3241f3c26a": "安装二维码",
-          "aa97420ba4": "复制安装链接",
           "ac1eb64952": "安卓",
           "711e6f4b47": "iOS系统",
-          "e75647ace0": "用手机相机扫描此下载二维码。已经安装 Seal Mobile？继续到第 2 步查看配对二维码",
-          "0d9b33299e": "下载应用",
           "92ddfdfa1f": "第 1 步(共 2 步)",
           "ff48d9d520": "与另一台设备配对",
           "f9cbf4bb53": "撤销设备",
@@ -14847,23 +14828,19 @@
           "directAddressDisclosure": "也可使用更快的本地连接",
           "directAddressHint": "选择手机在附近(同一 Wi‑Fi 或 Tailscale)时使用的地址，通常比 Relay 更快，外出时仍走 Relay",
           "noRelayCode": "没有可用的配对码",
-          "noPairingCode": "没有可用的配对码",
-          "qrSignInRequired": "登录以创建 Relay 配对码",
           "qrRenderFailed": "无法渲染二维码 — 请复制下方代码",
           "qrGeneratePrompt": "生成配对码以继续",
           "pairingCodeReady": "配对码已就绪",
           "pairThisMac": "配对此 Mac",
           "pairThisPc": "配对此 PC",
           "pairThisComputer": "配对此电脑",
-          "androidHelp": {
-            "guide": "安装指南"
-          },
-          "openAppAndScan": "打开 Seal Mobile，点按 <strong>配对桌面</strong>，然后扫描二维码"
+          "openAppAndScan": "打开 Seal Mobile，点按 <strong>配对桌面</strong>，然后扫描二维码",
+          "installHeading": "安装 Seal Mobile。",
+          "installLead": "Seal Mobile 未在 App Store 或 Google Play 上架。请从 Seal 仓库构建并安装，然后继续第 2 步获取配对二维码。",
+          "installGuide": "打开安装指南"
         },
         "MobilePage": {
           "e17393c6a3": "手机预览",
-          "baea63c445": "复制链接失败",
-          "fad833de8d": "安装链接已复制",
           "6a66e38943": "复制配对码失败",
           "3c1f7168bb": "配对码已复制",
           "4c8bd11c1a": "生成配对码失败",
@@ -14885,14 +14862,6 @@
           "96d651cb87": "终端会话",
           "93217b41c1": "工作树列表",
           "89c7713645": "Seal 手机主屏幕"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "下载 APK",
-              "openAppStore": "打开 App Store"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -14992,9 +14961,6 @@
           "retrying": "正在重试…",
           "retry": "重试 Relay",
           "copyDiagnostics": "复制诊断信息",
-          "reconnectTitle": "你的 Seal 账户会话已过期",
-          "reconnectBody": "请重新登录以使用 Seal Relay，或通过 Tailscale 或同一 Wi‑Fi 使用局域网配对",
-          "notEntitledTitle": "此 Seal 账户不包含 Seal Relay",
           "rateLimitedBody": "Seal Relay 正忙，请等待一分钟再重试，或使用 LAN 通过 Tailscale 或同一 Wi‑Fi 配对"
         },
         "relayClockSkewMessage": {
@@ -17971,7 +17937,6 @@
           "signout": {
             "confirm": {
               "title": "退出 Seal？",
-              "description": "重新登录前，产物和 Seal Relay 将不可用，本地项目和工作树不会受到影响",
               "cancel": "取消",
               "action": "退出登录"
             }
@@ -18356,8 +18321,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "你已退出登录",
         "3e8f5c2a91": "关闭",
-        "7b4d9e1f2a": "以 {{value0}} 重新登录以恢复产物分享、Seal Relay 和技能分享",
-        "5a1c8d3e6f": "重新登录以恢复产物分享、Seal Relay 和技能分享",
         "1f6b2c9d4e": "重新登录后可用",
         "8d2e4f7a1b": "产物分享",
         "2c9a5b6e8d": "发布 HTML 和 Markdown 文件，并在 Seal 中管理所有共享链接",
@@ -22870,7 +22833,7 @@
       "serverTooOld": "所选 Seal 服务器版本过旧，无法与此客户端兼容。请更新服务器上的 Seal。服务器协议版本为 {{serverProtocol}}，客户端要求的服务器协议版本为 {{requiredProtocol}}"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "配对码无效。需要 orca://pair?... URL 或原始配对数据",
+      "invalidPairingCode": "配对码无效。需要 seal://pair?... URL 或原始配对数据",
       "selfPairingCode": "这是当前 Seal 的配对码。请改在另一台计算机上生成配对码",
       "managedDeployment": "Seal 为你在 SSH 主机上运行此服务器；无法在此替换或移除其配对。要停用它，请运行 `seal environment stop --environment <name> --yes`，或前往设置 > SSH 主机上的 Seal；如果主机已不存在，请运行 `seal environment forget --environment <name> --yes`",
       "sshAccessChangePending": "此服务器的 SSH 访问更改未完成。替换配对或移除此服务器之前，请在设置 > 远程 Seal 服务器 > 已配对服务器的 SSH 访问下重试或取消更改",

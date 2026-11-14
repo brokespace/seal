@@ -4,13 +4,13 @@
   "family": "speech.setup-sheet",
   "namedDeltas": [],
   "values": {
-    "100447f8b483": {
+    "1eedaf6c1fea": {
       "status": "rejected",
       "startedAt": 0,
       "settledAt": 0,
       "error": {
         "category": "Error",
-        "message": "Update the paired desktop Orca app to use mobile voice settings.",
+        "message": "Update the paired desktop Seal app to use mobile voice settings.",
         "isRpcDeliveryUnknown": false
       }
     },
@@ -65,7 +65,7 @@
           "sender": ["9b9e5dcda8ac"],
           "payloads": ["4f793e38be31"],
           "settlements": {
-            "list": "100447f8b483"
+            "list": "1eedaf6c1fea"
           },
           "state": "44136fa355b3",
           "effects": []

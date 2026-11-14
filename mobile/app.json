@@ -1,12 +1,12 @@
 {
   "expo": {
     "name": "Seal",
-    "slug": "orca-mobile",
+    "slug": "seal-mobile",
     "version": "0.0.64",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "orca",
+    "scheme": ["seal", "orca"],
     "newArchEnabled": true,
     "locales": {
       "en": "./locales/en.json",
@@ -28,7 +28,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stably.orca.mobile",
+      "bundleIdentifier": "com.brokespace.seal.mobile",
       "buildNumber": "1",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
@@ -90,7 +90,7 @@
       "allowBackup": false,
       "permissions": ["RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS"],
       "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"],
-      "package": "com.stably.orca.mobile",
+      "package": "com.brokespace.seal.mobile",
       "versionCode": 28,
       "googleServicesFile": "./google-services.json"
     },

@@ -4,6 +4,7 @@ import {
   type FeatureWallMediaTile,
   type FeatureWallMediaTileId
 } from './feature-wall-tiles'
+import { SEAL_REPOSITORY_URL } from './seal-project-links'
 
 export type FeatureWallWorkflowId =
   | 'tasks'
@@ -30,7 +31,7 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
     lede: 'Seal splits each task into an isolated workspace so agents can run in parallel.',
     primaryTileId: 'tile-01',
     relatedTileIds: ['tile-10'],
-    docsUrl: 'https://orca.dev/docs/model/worktrees'
+    docsUrl: SEAL_REPOSITORY_URL
   },
   {
     id: 'tasks',
@@ -39,7 +40,7 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
     lede: 'Start work directly from GitHub or Linear.',
     primaryTileId: 'tile-03',
     relatedTileIds: [],
-    docsUrl: 'https://orca.dev/docs/review/linear'
+    docsUrl: SEAL_REPOSITORY_URL
   },
   {
     id: 'agents-orchestration',
@@ -48,7 +49,7 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
     lede: 'Run several agents at once, track their progress, and let automation drive Seal when it helps.',
     primaryTileId: 'tile-04',
     relatedTileIds: ['tile-11', 'tile-09'],
-    docsUrl: 'https://orca.dev/docs/agents/supported'
+    docsUrl: SEAL_REPOSITORY_URL
   },
   {
     id: 'workbench',
@@ -57,7 +58,7 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
     lede: 'Bring your terminal setup into Seal, then split panes to keep servers, tests, logs, and agents running side by side.',
     primaryTileId: 'tile-02',
     relatedTileIds: ['tile-07', 'tile-05', 'tile-12'],
-    docsUrl: 'https://orca.dev/docs/terminal'
+    docsUrl: SEAL_REPOSITORY_URL
   },
   {
     id: 'review',
@@ -66,7 +67,7 @@ export const FEATURE_WALL_WORKFLOWS: readonly FeatureWallWorkflow[] = [
     lede: 'Review what changed, leave focused feedback, and send it back to the agent.',
     primaryTileId: 'tile-08',
     relatedTileIds: [],
-    docsUrl: 'https://orca.dev/docs/review/annotate-ai-diff'
+    docsUrl: SEAL_REPOSITORY_URL
   }
 ] as const
 

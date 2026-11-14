@@ -2335,7 +2335,7 @@
       "alreadyPairedWslHost": "This server is already paired as \"{{name}}\". Seal manages it as a WSL host, so its pairing cannot be replaced here.",
       "hostSaveFailed": "Seal verified the host but could not save it. Check local settings storage and try again.",
       "idNeedsNewerOrca": "A server with this id already exists in a format that needs a newer version of Seal.",
-      "invalidPairingCode": "Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.",
+      "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload.",
       "managedDeployment": "Seal runs this server on an SSH host for you; its pairing cannot be replaced or removed here. To decommission it, run `seal environment stop --environment <name> --yes` or use Settings > Seal on your SSH hosts; for a host that is gone, run `seal environment forget --environment <name> --yes`.",
       "nameTaken": "A server named \"{{name}}\" already exists.",
       "repairCloudWorkspace": "This server belongs to a cloud workspace, which pairs it again when it resumes.",

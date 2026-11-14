@@ -1,6 +1,8 @@
 import { clampUtf8TextPrefix } from '../../../src/shared/utf8-byte-limits'
 
-const CONNECTION_DIAGNOSTICS_ENDPOINT = 'https://orca.dev/v1/feedback'
+// Seal has no feedback service yet; the report stays copy-only until one exists.
+const CONNECTION_DIAGNOSTICS_ENDPOINT: string | null = null
+export const CONNECTION_DIAGNOSTICS_UPLOAD_ENABLED = CONNECTION_DIAGNOSTICS_ENDPOINT !== null
 const SUBMISSION_TIMEOUT_MS = 10_000
 const MAX_SUBMISSION_BYTES = 64 * 1024
 
@@ -17,6 +19,9 @@ export async function submitConnectionDiagnostics(
   submission: ConnectionDiagnosticsSubmission,
   fetchImpl: (url: string, init: RequestInit) => Promise<Response> = fetch
 ): Promise<ConnectionDiagnosticsSubmissionResult> {
+  if (CONNECTION_DIAGNOSTICS_ENDPOINT === null) {
+    return { ok: false, error: 'diagnostics upload is not available' }
+  }
   const report = boundConnectionDiagnosticsReport(submission.report)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), SUBMISSION_TIMEOUT_MS)
