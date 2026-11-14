@@ -20,7 +20,9 @@ export type SealCandidateSeed = {
   systemLogin: boolean
   wslDistro: string | null
   addedAt: number | null
+  /** The rate-limit service's reading for this account; null when it holds none. */
   limits: ProviderRateLimits | null
+  fetching: boolean
 }
 
 /** The identity the machine's own `claude` or `codex` CLI is signed in to. */
@@ -76,7 +78,9 @@ export function withSystemLogin(
       systemLogin: true,
       wslDistro: null,
       addedAt: null,
-      limits: hostSelection === null ? activeLimits : null
+      // The service reads a login in place only while it is the host's selection.
+      limits: hostSelection === null ? activeLimits : null,
+      fetching: hostSelection === null && activeLimits?.status === 'fetching'
     }
   ]
 }

@@ -1,22 +1,16 @@
 import type { SealAutoSwapSettings, SealSwapStrategy } from './seal-accounts-config'
-import type { SealAccountCandidate, SealUsageWindow } from './seal-account-candidates'
-import { accountLines, bindingWindow, relevantWindows } from './seal-usage-lines'
+import type { SealAccountCandidate } from './seal-account-candidates'
+import {
+  accountLines,
+  bindingWindow,
+  relevantWindows,
+  SESSION_WINDOW_LABEL
+} from './seal-usage-lines'
 
 export type SealThresholdSettings = Pick<
   SealAutoSwapSettings,
   'sessionThreshold' | 'weeklyThreshold' | 'respectModelLimits'
 >
-
-/** A window whose reset time has passed is empty again, whatever the last reading said. */
-export function effectiveUsedPercent(window: SealUsageWindow | null, now: number): number | null {
-  if (!window) {
-    return null
-  }
-  if (window.resetsAt !== null && window.resetsAt <= now) {
-    return 0
-  }
-  return Math.max(0, Math.min(100, window.usedPercent))
-}
 
 export type SealAccountPressure = {
   session: number | null
@@ -33,20 +27,15 @@ export function accountPressure(
   settings: SealThresholdSettings,
   now: number
 ): SealAccountPressure {
-  const usage = candidate.usage
-  const sessionThreshold = candidate.sessionThreshold ?? settings.sessionThreshold
-  const weeklyThreshold = candidate.weeklyThreshold ?? settings.weeklyThreshold
-  const session = effectiveUsedPercent(usage?.session ?? null, now)
-  const weeklyWindows = [
-    usage?.weekly ?? null,
-    ...(settings.respectModelLimits ? (usage?.models ?? []) : [])
-  ].filter((window): window is SealUsageWindow => window !== null)
+  const windows = relevantWindows(candidate, settings, now)
+  let session: number | null = null
   let weekly: number | null = null
   let weeklyResetsAt: number | null = null
-  for (const window of weeklyWindows) {
-    const used = effectiveUsedPercent(window, now)
-    if (used !== null && (weekly === null || used > weekly)) {
-      weekly = used
+  for (const window of windows) {
+    if (window.label === SESSION_WINDOW_LABEL) {
+      session = window.pct
+    } else if (weekly === null || window.pct > weekly) {
+      weekly = window.pct
       weeklyResetsAt = window.resetsAt
     }
   }
@@ -54,8 +43,8 @@ export function accountPressure(
     session,
     weekly,
     weeklyResetsAt,
-    sessionThreshold,
-    weeklyThreshold,
+    sessionThreshold: candidate.sessionThreshold ?? settings.sessionThreshold,
+    weeklyThreshold: candidate.weeklyThreshold ?? settings.weeklyThreshold,
     known: session !== null || weekly !== null
   }
 }

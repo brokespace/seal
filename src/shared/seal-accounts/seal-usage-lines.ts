@@ -1,9 +1,11 @@
 // Adapted from claude-swap (MIT, https://github.com/realiti4/claude-swap), src/claude_swap/lines.py.
 import type { SealAutoSwapSettings } from './seal-accounts-config'
-import type { SealAccountCandidate, SealUsageWindow } from './seal-account-candidates'
+import type { RateLimitWindow } from '../rate-limit-types'
+import type { SealAccountCandidate } from './seal-account-candidates'
 
 export const SESSION_WINDOW_LABEL = '5h'
 export const WEEKLY_WINDOW_LABEL = '7d'
+const WEEK_MINUTES = 7 * 24 * 60
 
 export type SealUsageLineSettings = Pick<
   SealAutoSwapSettings,
@@ -13,34 +15,40 @@ export type SealUsageLineSettings = Pick<
 export type SealWindowReading = { label: string; pct: number; resetsAt: number | null }
 
 /** A window whose reset has passed is empty again, whatever the last reading said. */
-export function windowPct(window: SealUsageWindow, now: number): number {
+export function windowPct(
+  window: Pick<RateLimitWindow, 'usedPercent' | 'resetsAt'>,
+  now: number
+): number {
   if (window.resetsAt !== null && window.resetsAt <= now) {
     return 0
   }
   return Math.max(0, Math.min(100, window.usedPercent))
 }
 
-/** The 5h, 7d and (when they count) per-model windows an account reports. */
+/** The 5h, 7d and (when they count) per-model weekly windows of an account's usage reading. */
 export function relevantWindows(
-  candidate: Pick<SealAccountCandidate, 'usage'>,
+  candidate: Pick<SealAccountCandidate, 'limits'>,
   settings: Pick<SealUsageLineSettings, 'respectModelLimits'>,
   now: number
 ): SealWindowReading[] {
-  const usage = candidate.usage
-  if (!usage) {
+  const limits = candidate.limits
+  if (!limits) {
     return []
   }
   const windows: SealWindowReading[] = []
-  const push = (label: string, window: SealUsageWindow | null) => {
+  const push = (label: string, window: RateLimitWindow | null | undefined) => {
     if (window) {
       windows.push({ label, pct: windowPct(window, now), resetsAt: window.resetsAt })
     }
   }
-  push(SESSION_WINDOW_LABEL, usage.session)
-  push(WEEKLY_WINDOW_LABEL, usage.weekly)
+  push(SESSION_WINDOW_LABEL, limits.session)
+  push(WEEKLY_WINDOW_LABEL, limits.weekly)
   if (settings.respectModelLimits) {
-    for (const model of usage.models) {
-      push(model.name, model)
+    push('Fable', limits.fableWeekly)
+    for (const bucket of limits.buckets ?? []) {
+      if (bucket.windowMinutes >= WEEK_MINUTES) {
+        push(bucket.name, bucket)
+      }
     }
   }
   return windows

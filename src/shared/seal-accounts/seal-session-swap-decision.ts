@@ -4,6 +4,7 @@ import type { ResolvedSealPolicy } from './seal-account-policy'
 import { sealAccountKeysMatch } from './seal-account-key'
 import { decideAutoSwap, type SealQuarantine, type SealSwapReason } from './seal-auto-swap-decision'
 import type { SealSessionLiveSwapMode, SealSessionSwapDelivery } from './seal-accounts-status'
+import { LIMIT_STOP_HOLD_MS } from './seal-account-rate-limit'
 
 /** What a running session can take: its own login rewritten in place, and/or a resume. */
 export type SealSessionCapability = {
@@ -137,16 +138,21 @@ export function decideSessionSwap(input: SealSessionSwapInput): SealSessionSwapD
 }
 
 function withFullSessionWindow(candidate: SealAccountCandidate, now: number): SealAccountCandidate {
-  const full = { usedPercent: 100, resetsAt: now + 60 * 60_000 }
   return {
     ...candidate,
-    usage: {
-      session: full,
-      weekly: candidate.usage?.weekly ?? null,
-      models: candidate.usage?.models ?? [],
-      planType: candidate.usage?.planType ?? null,
-      updatedAt: now,
-      error: candidate.usage?.error ?? null
+    limits: {
+      provider: candidate.provider,
+      weekly: null,
+      error: null,
+      ...candidate.limits,
+      session: {
+        usedPercent: 100,
+        windowMinutes: 300,
+        resetsAt: now + LIMIT_STOP_HOLD_MS,
+        resetDescription: null
+      },
+      status: 'ok',
+      updatedAt: now
     }
   }
 }

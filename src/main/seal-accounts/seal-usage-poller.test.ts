@@ -20,7 +20,7 @@ function account(email: string): SealAccountCandidate {
     active: false,
     launchable: true,
     authFailure: false,
-    usage: null,
+    limits: null,
     sessionThreshold: null,
     weeklyThreshold: null
   }
@@ -108,18 +108,15 @@ describe('SealUsagePoller.refreshNow', () => {
         : reading(now, 20)
     )
     await poller.refreshNow()
-    expect(poller.limitsFor('claude:side@example.com')?.error).toBe('token revoked')
 
     rejected = false
     clock.now = START + 5_000
     poller.forget('claude:side@example.com')
-    expect(poller.limitsFor('claude:side@example.com')).toBeNull()
     await poller.refreshNow()
     expect(reads).toEqual(['work@acme.dev', 'side@example.com', 'side@example.com'])
-    expect(poller.limitsFor('claude:side@example.com')?.session?.usedPercent).toBe(20)
   })
 
-  it('leaves an account alone while the provider is rate limiting it', async () => {
+  it('leaves an account alone while the provider throttles its usage checks', async () => {
     const { clock, reads, poller } = setup((email, now) =>
       email === 'side@example.com'
         ? {

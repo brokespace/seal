@@ -7,7 +7,6 @@ import {
 } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import { sealAccountKeysMatch } from '../../shared/seal-accounts/seal-account-key'
-import { usageFromRateLimits } from '../../shared/seal-accounts/seal-account-candidate-builder'
 import {
   accountLines,
   relevantWindows,
@@ -29,10 +28,7 @@ const MIN_SLEEP_MS = 1_000
 /** Asking for fresh numbers re-reads an account at most this often. */
 const MANUAL_REFRESH_FLOOR_MS = 30_000
 
-const DEAD_LOGIN_KINDS = new Set(['stale-token', 'missing-credentials'])
-
 type Entry = {
-  limits: ProviderRateLimits | null
   latest: SealUsageSample | null
   previous: SealUsageSample | null
   nextPollAt: number
@@ -42,11 +38,14 @@ type Entry = {
   fetchedAt: number
 }
 
-export type SealUsageFetch = (candidate: SealAccountCandidate) => Promise<ProviderRateLimits>
+/**
+ * Reads one account through the rate-limit service, which stays the only holder of usage: null
+ * when the service has no slot for the account or did not read it.
+ */
+export type SealUsageFetch = (candidate: SealAccountCandidate) => Promise<ProviderRateLimits | null>
 
 export type SealUsagePollerDeps = {
   now: () => number
-  /** Candidates as built from the rate-limit service alone (no poller input). */
   candidates: (provider: SealProvider) => SealAccountCandidate[]
   settings: (provider: SealProvider) => SealAutoSwapSettings
   /** The host selection plus every account a live session runs on. */
@@ -62,7 +61,7 @@ function readingsOf(
   settings: SealAutoSwapSettings,
   now: number
 ): SealWindowReading[] {
-  return relevantWindows({ ...candidate, usage: usageFromRateLimits(limits) }, settings, now)
+  return relevantWindows({ ...candidate, limits }, settings, now)
 }
 
 function isPollable(candidate: SealAccountCandidate): boolean {
@@ -70,10 +69,11 @@ function isPollable(candidate: SealAccountCandidate): boolean {
 }
 
 /**
- * Polls each account's real 5h/7d usage on claude-swap's adaptive schedule: in-use accounts every
+ * Decides when each account's 5h/7d usage is read, on claude-swap's adaptive schedule: in-use accounts every
  * 3-5 minutes, every minute while a window climbs within 15 points of its line, idle candidates
  * every 5-10 minutes (all of them once a swap is near), exhausted ones every 10 minutes, and
- * backing off after failures and 429s. Each fresh reading triggers a swap evaluation at once.
+ * backing off after failures and 429s. It holds no usage itself: every read goes through the
+ * rate-limit service, and each fresh reading triggers a swap evaluation at once.
  */
 export class SealUsagePoller {
   private readonly entries = new Map<SealAccountKey, Entry>()
@@ -90,11 +90,6 @@ export class SealUsagePoller {
     return () => this.polledListeners.delete(listener)
   }
 
-  /** The newest good reading (or dead-login result) for an account, if the poller has one. */
-  limitsFor(key: SealAccountKey): ProviderRateLimits | null {
-    return this.entries.get(key)?.limits ?? null
-  }
-
   samplesFor(key: SealAccountKey): {
     latest: SealUsageSample | null
     previous: SealUsageSample | null
@@ -103,7 +98,7 @@ export class SealUsagePoller {
     return { latest: entry?.latest ?? null, previous: entry?.previous ?? null }
   }
 
-  /** A new login makes this account's last reading, dead-login result and backoff obsolete. */
+  /** A new login makes this account's samples and backoff obsolete. */
   forget(key: SealAccountKey): void {
     for (const known of this.entries.keys()) {
       if (sealAccountKeysMatch(known, key)) {
@@ -256,7 +251,6 @@ export class SealUsagePoller {
     inUse: boolean
   ): Promise<void> {
     const entry: Entry = this.entries.get(candidate.key) ?? {
-      limits: null,
       latest: null,
       previous: null,
       nextPollAt: 0,
@@ -275,9 +269,6 @@ export class SealUsagePoller {
       const rateLimited = kind === 'rate-limited'
       if (rateLimited) {
         entry.last429At = now
-      }
-      if (kind && DEAD_LOGIN_KINDS.has(kind)) {
-        entry.limits = limits
       }
       entry.failures += 1
       const retryAt = limits?.usageMetadata?.retryAtMs
@@ -300,9 +291,11 @@ export class SealUsagePoller {
       now
     })
     entry.failures = 0
-    entry.limits = limits
-    entry.previous = entry.latest
-    entry.latest = { at: now, readings }
+    // The service may serve the reading it already holds; that is not a second sample.
+    if (entry.latest?.at !== limits.updatedAt) {
+      entry.previous = entry.latest
+      entry.latest = { at: limits.updatedAt, readings }
+    }
     entry.intervalMs = plan.intervalMs
     entry.nextPollAt = plan.nextPollAt
   }

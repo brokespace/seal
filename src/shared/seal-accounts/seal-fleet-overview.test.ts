@@ -20,7 +20,7 @@ function login(key: string): SealAccountCandidate {
     active: false,
     launchable: true,
     authFailure: false,
-    usage: null,
+    limits: null,
     sessionThreshold: null,
     weeklyThreshold: null
   }
