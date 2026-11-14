@@ -1,6 +1,5 @@
 import React from 'react'
 import { Bot, Ellipsis, Pin } from 'lucide-react'
-import { AgentStateDot } from '@/components/AgentStateDot'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
@@ -16,20 +15,17 @@ import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import { runningSubagents } from '../../../../../shared/live-sessions/live-session-activity'
 import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import {
-  liveSessionDotState,
-  liveSessionProviderLabel,
-  liveSessionStatusText,
-  liveSessionTitle
-} from '../live-session-presentation'
+import { liveSessionTitle } from '../live-session-presentation'
 import {
   CONTEXT_MENU_KIT,
   DROPDOWN_MENU_KIT,
   LiveSessionMenuItems,
   type LiveSessionMenuKit
 } from '../menu/LiveSessionMenuItems'
+import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
+import { LiveSessionPreview } from './LiveSessionPreview'
 
-export type ActiveAgentRowProps = {
+export type LiveSessionRowProps = {
   session: LiveSession
   /** The project or worktree it runs in, when Seal knows one. */
   workspaceName: string | null
@@ -46,6 +42,8 @@ export type ActiveAgentRowProps = {
   now: number
   onOpen: (session: LiveSession, event: React.MouseEvent | React.KeyboardEvent) => void
   onPick: (session: LiveSession, range: boolean) => void
+  /** The sidebar's colors, or those of a page or panel. */
+  tone?: keyof typeof TONES
   /** Fixtures and tests pass their own menu; the default runs the real handlers. */
   menu?: (session: LiveSession, kit: LiveSessionMenuKit) => React.ReactNode
 }
@@ -54,60 +52,34 @@ function defaultMenu(session: LiveSession, kit: LiveSessionMenuKit): React.React
   return <LiveSessionMenuItems session={session} kit={kit} />
 }
 
-function Preview({
-  session,
-  workspaceName
-}: Pick<ActiveAgentRowProps, 'session' | 'workspaceName'>): React.JSX.Element {
-  const t = useTranslate()
-  const running = runningSubagents(session.activity)
-  const current = session.permission?.question ?? session.statusDetail
-  return (
-    <div data-active-agent-preview={session.id} className="flex flex-col gap-2 text-xs">
-      <div className="flex flex-col gap-0.5">
-        <p className="text-sm font-semibold break-words">{liveSessionTitle(session)}</p>
-        <p className="text-muted-foreground">
-          {[liveSessionProviderLabel(session), session.machine.label, workspaceName]
-            .filter(Boolean)
-            .join(' \u00b7 ')}
-        </p>
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <p className="font-medium">{liveSessionStatusText(session)}</p>
-        {current ? (
-          <p className="line-clamp-2 font-mono text-2xs break-all text-muted-foreground">
-            {current}
-          </p>
-        ) : null}
-        {running.slice(0, 3).map((subagent) => (
-          <p key={subagent.id} className="truncate text-muted-foreground">
-            <Bot className="mr-1 inline size-3" />
-            {subagent.title}
-            {subagent.activity ? ` \u2014 ${subagent.activity}` : ''}
-          </p>
-        ))}
-      </div>
-      {session.lastMessage ? (
-        <div className="flex flex-col gap-0.5">
-          <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-            {t('auto.components.live-sessions.sidebar.lastMessage', 'Last message')}
-          </p>
-          <p className="line-clamp-4 break-words">{session.lastMessage}</p>
-        </div>
-      ) : null}
-      {session.cwd ? (
-        <p className="truncate font-mono text-2xs text-muted-foreground">{session.cwd}</p>
-      ) : null}
-    </div>
-  )
-}
+const TONES = {
+  sidebar: {
+    row: 'hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-worktree-sidebar-ring',
+    current: 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground',
+    actions: 'bg-worktree-sidebar-accent focus-visible:ring-worktree-sidebar-ring',
+    unread: 'ring-worktree-sidebar',
+    account: 'border-worktree-sidebar-border'
+  },
+  surface: {
+    row: 'hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring',
+    current: 'bg-accent text-accent-foreground',
+    actions: 'bg-accent focus-visible:ring-ring',
+    unread: 'ring-background',
+    account: 'border-border'
+  }
+} as const
 
-/** One session in Active agents: who it is, where, what it is doing, with every action a click away. */
-export const ActiveAgentRow = React.memo(function ActiveAgentRow(
-  props: ActiveAgentRowProps
+/**
+ * One live session wherever sessions are listed: who it is, where, what it is doing, with the full
+ * session menu on right-click and a preview on hover.
+ */
+export const LiveSessionRow = React.memo(function LiveSessionRow(
+  props: LiveSessionRowProps
 ): React.JSX.Element {
   const t = useTranslate()
   const { session, picked, now } = props
   const menu = props.menu ?? defaultMenu
+  const tone = TONES[props.tone ?? 'sidebar']
   const [preview, setPreview] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
   const group = liveSessionStatusGroup(session.status)
@@ -116,9 +88,7 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
   // A busy session shows how long it has run; a quiet one, how long it has been quiet.
   const since =
     group === 'working' ? (session.startedAt ?? session.lastActivityAt) : session.lastActivityAt
-  const secondary = [liveSessionStatusText(session), props.workspaceName ?? session.project]
-    .filter(Boolean)
-    .join(' \u00b7 ')
+  const place = props.workspaceName ?? session.project
 
   return (
     <ContextMenu onOpenChange={setMenuOpen}>
@@ -135,7 +105,7 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
               role="option"
               tabIndex={props.tabStop ? 0 : -1}
               aria-selected={picked ?? props.current}
-              data-active-agent-row={session.id}
+              data-live-session-row={session.id}
               data-status={session.status}
               data-status-group={group}
               data-current={props.current ? 'true' : undefined}
@@ -162,9 +132,9 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
               }}
               className={cn(
                 'group/agent relative flex min-w-0 cursor-pointer items-start gap-1.5 rounded-md py-1 pr-1 pl-1.5 outline-none',
-                'hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:ring-inset',
-                props.current &&
-                  'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground',
+                'focus-visible:ring-2 focus-visible:ring-inset',
+                tone.row,
+                props.current && tone.current,
                 props.highlighted && 'ring-1 ring-agent-working/60 ring-inset'
               )}
             >
@@ -184,9 +154,12 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
                 <AgentIcon agent={session.provider} size={14} />
                 {props.unread ? (
                   <span
-                    data-active-agent-unread
+                    data-live-session-unread
                     aria-label={t('auto.components.live-sessions.sidebar.unread', 'New output')}
-                    className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-chat-unread ring-1 ring-worktree-sidebar"
+                    className={cn(
+                      'absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-chat-unread ring-1',
+                      tone.unread
+                    )}
                   />
                 ) : null}
               </span>
@@ -218,19 +191,13 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
                   </span>
                 </span>
                 <span className="flex min-w-0 items-center gap-1 text-2xs leading-4 text-muted-foreground">
-                  <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
-                  <span
-                    className={cn(
-                      'min-w-0 flex-1 truncate',
-                      group === 'working' && 'text-agent-working',
-                      group === 'attention' && 'text-agent-question-text'
-                    )}
-                  >
-                    {secondary}
+                  <LiveSessionStatusPill session={session} className="shrink-0 max-w-[70%]" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {place ? `\u00b7 ${place}` : null}
                   </span>
                   {subagents > 0 ? (
                     <span
-                      data-active-agent-subagents={subagents}
+                      data-live-session-subagents={subagents}
                       className={cn(
                         'flex shrink-0 items-center gap-0.5 tabular-nums',
                         runningCount > 0 && 'text-agent-working'
@@ -247,8 +214,11 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
                   ) : null}
                   {props.account ? (
                     <span
-                      data-active-agent-account
-                      className="max-w-16 shrink-0 truncate rounded-sm border border-worktree-sidebar-border px-1 leading-[14px]"
+                      data-live-session-account
+                      className={cn(
+                        'max-w-16 shrink-0 truncate rounded-sm border px-1 leading-[14px]',
+                        tone.account
+                      )}
                       title={t('auto.components.live-sessions.sidebar.account', 'Account')}
                     >
                       {props.account}
@@ -261,14 +231,17 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
                   <button
                     type="button"
                     tabIndex={-1}
-                    data-active-agent-actions
+                    data-live-session-actions
                     aria-label={t(
                       'auto.components.live-sessions.workspace.actions',
                       'Session actions'
                     )}
                     onClick={(event) => event.stopPropagation()}
                     onDoubleClick={(event) => event.stopPropagation()}
-                    className="absolute top-1 right-1 hidden size-5 items-center justify-center rounded-sm bg-worktree-sidebar-accent text-muted-foreground group-hover/agent:flex hover:text-foreground focus-visible:flex focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none data-[state=open]:flex"
+                    className={cn(
+                      'absolute top-1 right-1 hidden size-5 items-center justify-center rounded-sm text-muted-foreground group-hover/agent:flex hover:text-foreground focus-visible:flex focus-visible:ring-2 focus-visible:outline-none data-[state=open]:flex',
+                      tone.actions
+                    )}
                   >
                     <Ellipsis className="size-3.5" />
                   </button>
@@ -281,7 +254,7 @@ export const ActiveAgentRow = React.memo(function ActiveAgentRow(
           </HoverCardTrigger>
         </ContextMenuTrigger>
         <HoverCardContent side="right" align="start" className="w-72">
-          <Preview session={session} workspaceName={props.workspaceName} />
+          <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
         </HoverCardContent>
       </HoverCard>
       <ContextMenuContent>{menu(session, CONTEXT_MENU_KIT)}</ContextMenuContent>

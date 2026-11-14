@@ -34,7 +34,7 @@ import {
   isFolderWorkspaceCreateDisabled
 } from './FolderPathStatusIndicator'
 import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
-import { LiveSessionsBadge } from '@/components/live-sessions/sidebar/LiveSessionsBadge'
+import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 import {
   ProjectGroupCreateWorkspaceButton,
   ProjectGroupHeaderMenu

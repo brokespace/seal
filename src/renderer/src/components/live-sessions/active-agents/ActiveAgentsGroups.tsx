@@ -5,11 +5,11 @@ import { useTranslate } from '@/i18n/use-translate'
 import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
-import { ActiveAgentRow, type ActiveAgentRowProps } from './ActiveAgentRow'
+import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
 import type { ActiveAgentsView } from './active-agents-model'
 
 export type ActiveAgentsRowState = Pick<
-  ActiveAgentRowProps,
+  LiveSessionRowProps,
   'workspaceName' | 'account' | 'unread' | 'current' | 'highlighted' | 'picked' | 'tabStop'
 >
 
@@ -22,9 +22,9 @@ export type ActiveAgentsGroupsProps = {
   now: number
   onToggleMachine: (hostId: string) => void
   onToggleFinished: () => void
-  onOpen: ActiveAgentRowProps['onOpen']
-  onPick: ActiveAgentRowProps['onPick']
-  menu?: ActiveAgentRowProps['menu']
+  onOpen: LiveSessionRowProps['onOpen']
+  onPick: LiveSessionRowProps['onPick']
+  menu?: LiveSessionRowProps['menu']
 }
 
 const HEADER =
@@ -49,7 +49,7 @@ function Rows({
   return (
     <div className="flex flex-col pl-2">
       {sessions.map((session) => (
-        <ActiveAgentRow
+        <LiveSessionRow
           key={session.id}
           session={session}
           {...props.rowState(session)}

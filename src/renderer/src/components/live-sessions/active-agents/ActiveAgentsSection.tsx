@@ -13,7 +13,7 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
-import { useLiveSessions } from '../live-session-registry-store'
+import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
 import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
 import { liveSessionMenuEffects, openLiveSessionView } from '../menu/live-session-menu-effects'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
@@ -24,15 +24,20 @@ import {
   buildActiveAgents,
   visibleSessionIds
 } from './active-agents-model'
-import { activeAgentsUiStore, isUnread, useActiveAgentsUi } from './active-agents-ui-store'
-import { useLiveSessionLinks } from './use-live-session-links'
+import { activeAgentsFilterStore, useActiveAgentsFilter } from './active-agents-filter-store'
+import {
+  isLiveSessionUnread,
+  liveSessionMarksStore,
+  useLiveSessionMarks
+} from '../live-session-marks-store'
+import { useLiveSessionLinks } from '../links/use-live-session-links'
 
 const MACHINE_KEY = 'active-agents:machine:'
 /** Present while the group is open: ended sessions start folded away. */
 const FINISHED_OPEN_KEY = 'active-agents:finished-open'
 
 function rowIn(list: HTMLElement | null, sessionId: string): HTMLElement | null {
-  return list?.querySelector(`[data-active-agent-row="${CSS.escape(sessionId)}"]`) ?? null
+  return list?.querySelector(`[data-live-session-row="${CSS.escape(sessionId)}"]`) ?? null
 }
 
 /** Every agent session on every machine, below Projects: the one place session rows live. */
@@ -41,7 +46,8 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const registry = useLiveSessions()
   const { links } = useLiveSessionLinks()
   const accounts = useLocalSealAccounts()
-  const ui = useActiveAgentsUi()
+  const filter = useActiveAgentsFilter()
+  const marks = useLiveSessionMarks()
   const tabs = useLiveSessionTabs()
   const now = useLiveSessionClock()
   const collapsedGroups = useAppStore((state) => state.collapsedGroups)
@@ -65,8 +71,8 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     [collapsedGroups]
   )
   const view = useMemo(
-    () => buildActiveAgents(registry.sessions, ui, links, now),
-    [registry.sessions, ui, links, now]
+    () => buildActiveAgents(registry.sessions, filter, links, now),
+    [registry.sessions, filter, links, now]
   )
   const order = useMemo(
     () => visibleSessionIds(view, { machines: collapsedMachines, finished: !finishedOpen }),
@@ -78,9 +84,12 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   )
 
   // A row asked for from elsewhere (a Projects badge, a fresh launch, the palette) is unfolded and shown.
-  const reveal = ui.reveal
+  const reveal = marks.reveal
   useEffect(() => {
-    const session = reveal ? byId.get(reveal.sessionId) : null
+    // Read at the moment of the request: later session updates must not move the list again.
+    const session = reveal
+      ? liveSessionRegistryStore.getState().sessions.find((s) => s.id === reveal.sessionId)
+      : null
     if (!reveal || !session) {
       return
     }
@@ -93,14 +102,12 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     const frame = requestAnimationFrame(() =>
       rowIn(list.current, reveal.sessionId)?.scrollIntoView({ block: 'nearest' })
     )
-    const fade = setTimeout(() => activeAgentsUiStore.highlight([]), 4000)
+    const fade = setTimeout(() => liveSessionMarksStore.highlight([]), 4000)
     return () => {
       cancelAnimationFrame(frame)
       clearTimeout(fade)
     }
-    // Only a new request moves the list; later session updates must not.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reveal?.nonce])
+  }, [reveal])
 
   const onOpen = useCallback(
     (session: LiveSession, event: React.MouseEvent | React.KeyboardEvent) => {
@@ -113,15 +120,15 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       const from = range && anchor.current ? order.indexOf(anchor.current) : -1
       const to = order.indexOf(session.id)
       if (from !== -1 && to !== -1) {
-        const picked = new Set(activeAgentsUiStore.getState().picked)
+        const picked = new Set(liveSessionMarksStore.getState().picked)
         for (const id of order.slice(Math.min(from, to), Math.max(from, to) + 1)) {
           picked.add(id)
         }
-        activeAgentsUiStore.setPicked(picked)
+        liveSessionMarksStore.setPicked(picked)
         return
       }
       anchor.current = session.id
-      activeAgentsUiStore.togglePicked(session.id)
+      liveSessionMarksStore.togglePicked(session.id)
     },
     [order]
   )
@@ -132,21 +139,21 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       return {
         workspaceName: link?.name ?? null,
         account: liveSessionAccountLabel(session, accounts),
-        unread: isUnread(session, ui.seenAt),
+        unread: isLiveSessionUnread(session, marks.seenAt),
         current: showingSessions && (session.id === tabs.activeId || session.id === tabs.splitId),
         highlighted:
-          ui.highlighted.has(session.id) ||
+          marks.highlighted.has(session.id) ||
           (activeWorktreeId !== null && link?.worktreeId === activeWorktreeId),
-        picked: ui.picked ? ui.picked.has(session.id) : null,
+        picked: marks.picked ? marks.picked.has(session.id) : null,
         tabStop: session.id === tabStop
       }
     },
     [
       links,
       accounts,
-      ui.seenAt,
-      ui.highlighted,
-      ui.picked,
+      marks.seenAt,
+      marks.highlighted,
+      marks.picked,
       showingSessions,
       tabs,
       activeWorktreeId,
@@ -160,8 +167,11 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     }
   }
   const onListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
-    const row = (event.target as HTMLElement).closest<HTMLElement>('[data-active-agent-row]')
-    const at = row ? order.indexOf(row.dataset.activeAgentRow ?? '') : -1
+    const row =
+      event.target instanceof HTMLElement
+        ? event.target.closest<HTMLElement>('[data-live-session-row]')
+        : null
+    const at = row ? order.indexOf(row.dataset.liveSessionRow ?? '') : -1
     if (event.key === 'ArrowDown') {
       event.preventDefault()
       focusRow(order[Math.min(at + 1, order.length - 1)])
@@ -174,16 +184,16 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     } else if (event.key === 'End') {
       event.preventDefault()
       focusRow(order.at(-1))
-    } else if (event.key === 'Escape' && ui.picked) {
+    } else if (event.key === 'Escape' && marks.picked) {
       event.preventDefault()
-      activeAgentsUiStore.setPicked(null)
+      liveSessionMarksStore.setPicked(null)
     }
   }
 
-  const pickedSessions = ui.picked
-    ? [...ui.picked].flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
+  const pickedSessions = marks.picked
+    ? [...marks.picked].flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
     : []
-  const filtering = ui.query !== '' || ui.chips.size > 0 || ui.scope !== null
+  const filtering = filter.query !== '' || filter.chips.size > 0 || filter.scope !== null
   const empty = view.machines.length === 0 && view.finished.length === 0
   const openAgentSettings = (): void => {
     const store = useAppStore.getState()
@@ -228,7 +238,6 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
               type="button"
               variant="ghost"
               size="icon-xs"
-              className="text-muted-foreground"
               data-active-agents-menu
               aria-label={t(
                 'auto.components.live-sessions.sidebar.options',
@@ -243,14 +252,14 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
               {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => activeAgentsUiStore.setPicked(ui.picked ? null : new Set())}
+              onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
             >
-              {ui.picked
+              {marks.picked
                 ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
                 : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
             </DropdownMenuItem>
             {filtering ? (
-              <DropdownMenuItem onSelect={() => activeAgentsUiStore.clearFilters()}>
+              <DropdownMenuItem onSelect={() => activeAgentsFilterStore.clear()}>
                 {t('auto.components.live-sessions.sidebar.clearFilters', 'Clear filters')}
               </DropdownMenuItem>
             ) : null}
@@ -267,19 +276,19 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       {open ? (
         <>
           <ActiveAgentsToolbar
-            ui={ui}
+            ui={{ ...filter, picked: marks.picked }}
             pickedSessions={pickedSessions}
-            onQuery={(query) => activeAgentsUiStore.setQuery(query)}
-            onChip={(chip) => activeAgentsUiStore.toggleChip(chip)}
-            onClearScope={() => activeAgentsUiStore.setScope(null)}
+            onQuery={(query) => activeAgentsFilterStore.setQuery(query)}
+            onChip={(chip) => activeAgentsFilterStore.toggleChip(chip)}
+            onClearScope={() => activeAgentsFilterStore.setScope(null)}
             onBulk={(danger, sessions) => liveSessionMenuEffects.confirm(danger, sessions)}
-            onStopPicking={() => activeAgentsUiStore.setPicked(null)}
+            onStopPicking={() => liveSessionMarksStore.setPicked(null)}
             onEnterList={() => focusRow(tabStop)}
           />
           <div
             ref={list}
             role="listbox"
-            aria-multiselectable={ui.picked !== null}
+            aria-multiselectable={marks.picked !== null}
             aria-label={t('auto.components.live-sessions.sidebar.title', 'Active agents')}
             onKeyDown={onListKeyDown}
             className="scrollbar-sleek flex min-h-0 flex-1 flex-col overflow-y-auto pb-1 outline-none"

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AgentStateDot } from '@/components/AgentStateDot'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import {
   matchPaletteExtraFields,
@@ -12,14 +11,14 @@ import {
 } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import {
-  liveSessionDotState,
   liveSessionProviderLabel,
   liveSessionStatusText,
   liveSessionTitle
 } from '../live-session-presentation'
 import { useLiveSessions } from '../live-session-registry-store'
+import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { openLiveSessionView } from '../menu/live-session-menu-effects'
-import { RECENTLY_FINISHED_MS } from '../sidebar/active-agents-model'
+import { RECENTLY_FINISHED_MS } from '../active-agents/active-agents-model'
 
 /** The palette's rows for sessions: running ones first, then those that ended in the last day. */
 export function liveSessionPaletteResults(
@@ -67,12 +66,7 @@ export function liveSessionPaletteResults(
         order,
         dimmed: !isActiveLiveSession(session),
         leading: <AgentIcon agent={session.provider} size={14} />,
-        line: (
-          <span className="flex min-w-0 items-center gap-1.5">
-            <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
-            <span className="min-w-0 truncate">{liveSessionStatusText(session)}</span>
-          </span>
-        ),
+        line: <LiveSessionStatusPill session={session} />,
         trailing: where ? (
           <span className="truncate text-xs text-muted-foreground">{where}</span>
         ) : null,

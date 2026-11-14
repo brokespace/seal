@@ -41,7 +41,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { useLiveSessionLinks } from '../sidebar/use-live-session-links'
+import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { canTakeOver } from '../take-over/live-session-take-over'
 import { liveSessionSwapTargets, useLocalSealAccounts } from './live-session-accounts'
 import {
@@ -160,7 +160,7 @@ export function useLiveSessionMenuContext(session: LiveSession): LiveSessionMenu
   const accounts = useLocalSealAccounts()
   return {
     worktreeId: links.get(session.id)?.worktreeId ?? null,
-    swapTargets: liveSessionSwapTargets(session, accounts),
+    swapAccounts: liveSessionSwapTargets(session, accounts),
     canTakeOver: canTakeOver(session)
   }
 }
@@ -199,7 +199,7 @@ export function LiveSessionMenuItemsView({
                   {label}
                 </SubTrigger>
                 <SubContent>
-                  {context.swapTargets.map((target) => (
+                  {context.swapAccounts.map((target) => (
                     <Item
                       key={target.key}
                       data-live-session-account={target.key}

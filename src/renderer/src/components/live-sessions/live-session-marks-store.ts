@@ -1,15 +1,11 @@
 import { useSyncExternalStore } from 'react'
-import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
-import type { ActiveAgentsChip, ActiveAgentsScope } from './active-agents-model'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
 
-export type ActiveAgentsUiState = {
-  query: string
-  chips: ReadonlySet<ActiveAgentsChip>
-  scope: ActiveAgentsScope | null
+export type LiveSessionMarksState = {
   /** Rows picked for a bulk stop or remove; null when not picking. */
   picked: ReadonlySet<string> | null
-  /** Rows a Projects badge or a fresh launch points at, until the pointer moves on. */
+  /** Rows another surface points at (a Projects badge, a fresh launch), until the pointer moves on. */
   highlighted: ReadonlySet<string>
   /** A row to scroll into view; `nonce` tells repeats apart. */
   reveal: { sessionId: string; nonce: number } | null
@@ -35,22 +31,17 @@ function restoreSeen(): Record<string, number> {
   }
 }
 
-/** What the Active agents section shows and remembers: its filters, picks, highlights and read marks. */
-export class ActiveAgentsUiStore {
-  private state: ActiveAgentsUiState
+/**
+ * What the user has marked on live sessions, whichever surface lists them: read marks, picks for
+ * bulk actions, and the rows another surface points at.
+ */
+export class LiveSessionMarksStore {
+  private state: LiveSessionMarksState
   private readonly listeners = new Set<() => void>()
   private nonce = 0
 
   constructor(seenAt: Record<string, number> = restoreSeen()) {
-    this.state = {
-      query: '',
-      chips: new Set(),
-      scope: null,
-      picked: null,
-      highlighted: new Set(),
-      reveal: null,
-      seenAt
-    }
+    this.state = { picked: null, highlighted: new Set(), reveal: null, seenAt }
   }
 
   readonly subscribe = (listener: () => void): (() => void) => {
@@ -58,27 +49,7 @@ export class ActiveAgentsUiStore {
     return () => this.listeners.delete(listener)
   }
 
-  readonly getState = (): ActiveAgentsUiState => this.state
-
-  setQuery(query: string): void {
-    this.set({ query })
-  }
-
-  toggleChip(chip: ActiveAgentsChip): void {
-    const chips = new Set(this.state.chips)
-    if (!chips.delete(chip)) {
-      chips.add(chip)
-    }
-    this.set({ chips })
-  }
-
-  setScope(scope: ActiveAgentsScope | null): void {
-    this.set({ scope })
-  }
-
-  clearFilters(): void {
-    this.set({ query: '', chips: new Set(), scope: null })
-  }
+  readonly getState = (): LiveSessionMarksState => this.state
 
   setPicked(picked: ReadonlySet<string> | null): void {
     this.set({ picked })
@@ -147,7 +118,7 @@ export class ActiveAgentsUiStore {
     }
   }
 
-  private set(patch: Partial<ActiveAgentsUiState>): void {
+  private set(patch: Partial<LiveSessionMarksState>): void {
     this.state = { ...this.state, ...patch }
     for (const listener of this.listeners) {
       listener()
@@ -155,17 +126,17 @@ export class ActiveAgentsUiStore {
   }
 }
 
-export const activeAgentsUiStore = new ActiveAgentsUiStore()
+export const liveSessionMarksStore = new LiveSessionMarksStore()
 
-export function useActiveAgentsUi(): ActiveAgentsUiState {
-  return useSyncExternalStore(activeAgentsUiStore.subscribe, activeAgentsUiStore.getState)
+export function useLiveSessionMarks(): LiveSessionMarksState {
+  return useSyncExternalStore(liveSessionMarksStore.subscribe, liveSessionMarksStore.getState)
 }
 
 /**
  * A session wrote something since the user last looked at it. While it is still working its
  * spinner says so; the mark is for output that now waits to be read.
  */
-export function isUnread(
+export function isLiveSessionUnread(
   session: Pick<LiveSession, 'id' | 'lastActivityAt' | 'status'>,
   seenAt: Readonly<Record<string, number>>
 ): boolean {

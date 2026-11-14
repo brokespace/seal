@@ -14,8 +14,8 @@ import { parseMachineId } from '../../../../../shared/machines/machine-types'
 import { rememberMachineSelection } from '../../machines/model/machine-selection'
 import { mutateSealHost } from '../../seal-session/seal-session-status-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
-import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../sidebar/active-agents-model'
-import { activeAgentsUiStore } from '../sidebar/active-agents-ui-store'
+import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
+import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
 import {
   liveSessionTabsStore,
@@ -34,7 +34,7 @@ export function openLiveSessionView(
   const id = liveSessionRegistryStore.currentId(sessionId)
   liveSessionTabsStore.open(id, mode)
   useAppStore.getState().openAgentSessionTabs()
-  activeAgentsUiStore.reveal(id)
+  liveSessionMarksStore.reveal(id)
 }
 
 /**

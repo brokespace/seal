@@ -17,7 +17,7 @@ import {
   type LinkableWorktree,
   type LiveSessionLink,
   type LiveSessionsBadge
-} from './active-agents-model'
+} from './live-session-links'
 
 export type LiveSessionLinks = {
   links: ReadonlyMap<string, LiveSessionLink>
@@ -57,8 +57,8 @@ function linkableWorktrees(state: AppState): LinkableWorktree[] {
 type Inputs = readonly [
   readonly LiveSession[],
   AppState['repos'],
-  AppState['worktreesByRepo'],
-  AppState['folderWorkspaces'],
+  ReturnType<typeof selectWorktreesByRepo>,
+  ReturnType<typeof selectFolderWorkspaces>,
   AppState['tabsByWorktree'],
   AppState['unifiedTabsByWorktree']
 ]
@@ -66,10 +66,11 @@ type Inputs = readonly [
 let memo: { inputs: Inputs; value: LiveSessionLinks } | null = null
 
 /** Many rows and badges ask in one render; the answer is worked out once per change. */
-function linksFor(inputs: Inputs, state: AppState): LiveSessionLinks {
+function linksFor(inputs: Inputs): LiveSessionLinks {
   if (memo && memo.inputs.every((input, index) => input === inputs[index])) {
     return memo.value
   }
+  const state = useAppStore.getState()
   const [sessions, , , , tabsByWorktree, unifiedTabsByWorktree] = inputs
   const links = linkLiveSessions(
     sessions,
@@ -85,12 +86,16 @@ function linksFor(inputs: Inputs, state: AppState): LiveSessionLinks {
 export function useLiveSessionLinks(): LiveSessionLinks {
   const { sessions } = useLiveSessions()
   const repos = useAppStore((state) => state.repos)
-  const worktreesByRepo = useAppStore((state) => state.worktreesByRepo)
-  const folderWorkspaces = useAppStore((state) => state.folderWorkspaces)
+  const worktreesByRepo = useAppStore(selectWorktreesByRepo)
+  const folderWorkspaces = useAppStore(selectFolderWorkspaces)
   const tabsByWorktree = useAppStore((state) => state.tabsByWorktree)
   const unifiedTabsByWorktree = useAppStore((state) => state.unifiedTabsByWorktree)
-  return linksFor(
-    [sessions, repos, worktreesByRepo, folderWorkspaces, tabsByWorktree, unifiedTabsByWorktree],
-    useAppStore.getState()
-  )
+  return linksFor([
+    sessions,
+    repos,
+    worktreesByRepo,
+    folderWorkspaces,
+    tabsByWorktree,
+    unifiedTabsByWorktree
+  ])
 }

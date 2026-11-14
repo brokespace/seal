@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useLiveSessions, liveSessionRegistryStore } from './live-session-registry-store'
 import { LiveSessionDialogs } from './menu/LiveSessionDialogs'
 import { openLiveSessionView } from './menu/live-session-menu-effects'
-import { activeAgentsUiStore } from './sidebar/active-agents-ui-store'
+import { liveSessionMarksStore } from './live-session-marks-store'
 import { liveSessionTabsStore } from './workspace/live-session-tabs-store'
 
 /** A session Seal launched moments ago: shown in Active agents the first time it is listed. */
@@ -18,7 +18,7 @@ export function LiveSessionAppSurface(): React.JSX.Element | null {
       liveSessionRegistryStore.onRename((from, to) => {
         known.current?.add(to)
         liveSessionTabsStore.rename(from, to)
-        activeAgentsUiStore.rename(from, to)
+        liveSessionMarksStore.rename(from, to)
       }),
     []
   )
@@ -32,7 +32,7 @@ export function LiveSessionAppSurface(): React.JSX.Element | null {
     if (!loaded) {
       return
     }
-    activeAgentsUiStore.baseline(sessions)
+    liveSessionMarksStore.baseline(sessions)
     const seen = known.current
     known.current = new Set([...(seen ?? []), ...sessions.map((session) => session.id)])
     if (!seen) {
@@ -45,7 +45,7 @@ export function LiveSessionAppSurface(): React.JSX.Element | null {
         Date.now() - (session.startedAt ?? session.lastActivityAt) < FRESH_LAUNCH_MS
     )
     if (launched) {
-      activeAgentsUiStore.reveal(launched.id)
+      liveSessionMarksStore.reveal(launched.id)
     }
   }, [sessions, loaded])
 

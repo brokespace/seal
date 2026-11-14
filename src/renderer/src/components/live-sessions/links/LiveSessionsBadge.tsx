@@ -4,8 +4,9 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
-import type { ActiveAgentsScope } from './active-agents-model'
-import { activeAgentsUiStore } from './active-agents-ui-store'
+import { activeAgentsFilterStore } from '../active-agents/active-agents-filter-store'
+import type { ActiveAgentsScope } from '../active-agents/active-agents-model'
+import { liveSessionMarksStore } from '../live-session-marks-store'
 import { useLiveSessionLinks } from './use-live-session-links'
 
 /**
@@ -42,14 +43,14 @@ export function LiveSessionsBadge({
               status
             })
       }
-      onPointerEnter={() => activeAgentsUiStore.highlight(badge.sessionIds)}
-      onPointerLeave={() => activeAgentsUiStore.highlight([])}
+      onPointerEnter={() => liveSessionMarksStore.highlight(badge.sessionIds)}
+      onPointerLeave={() => liveSessionMarksStore.highlight([])}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        activeAgentsUiStore.setScope(scope)
-        activeAgentsUiStore.reveal(badge.sessionIds[0])
+        activeAgentsFilterStore.setScope(scope)
+        liveSessionMarksStore.reveal(badge.sessionIds[0])
       }}
       className={cn(
         'flex h-4 shrink-0 items-center gap-1 rounded-full border border-worktree-sidebar-border px-1 text-2xs leading-none text-muted-foreground tabular-nums transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none',

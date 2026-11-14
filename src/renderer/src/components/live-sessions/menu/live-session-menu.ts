@@ -1,5 +1,7 @@
-import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import type { LiveRemoveRequest } from '../../../../../shared/live-sessions/live-session-types'
+import type {
+  LiveRemoveRequest,
+  LiveSession
+} from '../../../../../shared/live-sessions/live-session-types'
 import type {
   LiveSessionFocusTarget,
   LiveSessionOpenMode
@@ -43,7 +45,7 @@ export type LiveSessionMenuContext = {
   /** The workspace it runs in, when Seal knows one. */
   worktreeId: string | null
   /** Accounts it can move to; empty when Seal did not launch it or has no other login. */
-  swapTargets: readonly { key: string; label: string; current: boolean }[]
+  swapAccounts: readonly { key: string; label: string; current: boolean }[]
   canTakeOver: boolean
 }
 
@@ -119,7 +121,7 @@ function isDisabled(
     case 'copy-resume-command':
       return session.providerSessionId.startsWith('pid-')
     case 'swap-account':
-      return context.swapTargets.length === 0
+      return context.swapAccounts.length === 0
     case 'take-over':
       return !context.canTakeOver
     case 'open-worktree':

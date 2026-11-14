@@ -1,17 +1,16 @@
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionDangerKind } from '../menu/live-session-menu'
-import type { ActiveAgentsChip } from './active-agents-model'
-import type { ActiveAgentsUiState } from './active-agents-ui-store'
+import type { ActiveAgentsChip, ActiveAgentsFilter } from './active-agents-model'
 
 const CHIPS: readonly ActiveAgentsChip[] = ['attention', 'working', 'mine']
 
 export type ActiveAgentsToolbarProps = {
-  ui: Pick<ActiveAgentsUiState, 'query' | 'chips' | 'scope' | 'picked'>
+  ui: ActiveAgentsFilter & { picked: ReadonlySet<string> | null }
   /** The picked sessions still listed. */
   pickedSessions: readonly LiveSession[]
   onQuery: (query: string) => void
@@ -38,7 +37,6 @@ export function ActiveAgentsToolbar(props: ActiveAgentsToolbarProps): React.JSX.
   return (
     <div className="flex flex-col gap-1 px-1 pb-1">
       <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="search"
           density="compact"
@@ -60,7 +58,6 @@ export function ActiveAgentsToolbar(props: ActiveAgentsToolbarProps): React.JSX.
             'Filter by name, project, machine, agent, status'
           )}
           aria-label={t('auto.components.live-sessions.sidebar.searchLabel', 'Filter sessions')}
-          className="pl-6"
         />
         {ui.query ? (
           <button

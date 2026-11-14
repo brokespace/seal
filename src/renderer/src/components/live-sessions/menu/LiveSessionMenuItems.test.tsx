@@ -61,7 +61,7 @@ const session: LiveSession = {
 
 const context: LiveSessionMenuContext = {
   worktreeId: 'repo-1::/srv/shop',
-  swapTargets: [
+  swapAccounts: [
     { key: 'claude:personal', label: 'personal', current: true },
     { key: 'claude:work', label: 'work', current: false }
   ],
@@ -97,14 +97,14 @@ const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...
   'delete-with-transcripts': ['confirm', 'delete-with-transcripts', [session]]
 }
 
-function openMenu() {
-  const calls: unknown[][] = []
+/** Effects that only note what was asked of them. */
+function recordingEffects(calls: unknown[][] = []): LiveSessionMenuEffects {
   const record =
     (name: keyof LiveSessionMenuEffects) =>
     (...args: unknown[]) => {
       calls.push([name, ...args])
     }
-  const effects: LiveSessionMenuEffects = {
+  return {
     open: record('open'),
     focus: record('focus'),
     askRename: record('askRename'),
@@ -118,6 +118,11 @@ function openMenu() {
     revealTranscript: record('revealTranscript'),
     confirm: record('confirm')
   }
+}
+
+function openMenu() {
+  const calls: unknown[][] = []
+  const effects = recordingEffects(calls)
   render(
     <DropdownMenu open modal={false}>
       <DropdownMenuTrigger>Session</DropdownMenuTrigger>
@@ -169,9 +174,9 @@ describe('session menu', () => {
         <DropdownMenuContent>
           <LiveSessionMenuItemsView
             session={quiet}
-            context={{ worktreeId: null, swapTargets: [], canTakeOver: false }}
+            context={{ worktreeId: null, swapAccounts: [], canTakeOver: false }}
             kit={DROPDOWN_MENU_KIT}
-            effects={{} as LiveSessionMenuEffects}
+            effects={recordingEffects()}
           />
         </DropdownMenuContent>
       </DropdownMenu>

@@ -24,7 +24,7 @@ import { WorktreeCardSshHostControl } from '../host/WorktreeCardSshHostControl'
 import { WorktreeHostContextBadge } from '../host/WorktreeHostContextBadge'
 import { WorktreeTitleInlineRename } from '../identity/WorktreeTitleInlineRename'
 import { cardElement } from './card-template-compiler'
-import { LiveSessionsBadge } from '@/components/live-sessions/sidebar/LiveSessionsBadge'
+import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 
 type Card = WorktreeCardController
 const part = cardElement<Card>

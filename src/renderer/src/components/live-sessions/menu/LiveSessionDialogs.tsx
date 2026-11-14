@@ -16,7 +16,7 @@ import { liveSessionTranscriptFiles } from '../../../../../shared/live-sessions/
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionTitle } from '../live-session-presentation'
 import { sendLiveMessage } from '../live-session-send'
-import { activeAgentsUiStore } from '../sidebar/active-agents-ui-store'
+import { liveSessionMarksStore } from '../live-session-marks-store'
 import {
   liveSessionDialogStore,
   useLiveSessionDialog,
@@ -222,7 +222,7 @@ function DangerDialog({
     }
     setBusy(false)
     // A bulk action is over once it ran.
-    activeAgentsUiStore.setPicked(null)
+    liveSessionMarksStore.setPicked(null)
     close()
   }
   return (

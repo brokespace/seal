@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Bot, Brain, Ellipsis, ListTodo, X } from 'lucide-react'
-import { AgentStateDot } from '@/components/AgentStateDot'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,16 +22,12 @@ import { NativeChatMessageList } from '../../native-chat/NativeChatMessageList'
 import type { NativeChatLiveSession } from '../../native-chat/session/terminal/read/native-chat-live-session-contract'
 import { LiveSessionChat } from '../LiveSessionChat'
 import { pendingRows } from '../live-session-pending-rows'
-import {
-  liveSessionDotState,
-  liveSessionProviderLabel,
-  liveSessionStatusText,
-  liveSessionTitle
-} from '../live-session-presentation'
+import { liveSessionProviderLabel, liveSessionTitle } from '../live-session-presentation'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import { sendLiveMessage } from '../live-session-send'
 import { DROPDOWN_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
-import { activeAgentsUiStore } from '../sidebar/active-agents-ui-store'
+import { liveSessionMarksStore } from '../live-session-marks-store'
+import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { useLiveTranscript, type LiveTranscriptState } from '../use-live-transcript'
 import { LiveSessionActivityPanel } from './LiveSessionActivityPanel'
 import type { LiveSessionPanel, LiveSessionTabsState } from './live-session-tabs-store'
@@ -155,13 +150,9 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
         <div className="flex min-w-0 flex-1 flex-col">
           <h2 className="truncate text-sm font-semibold">{liveSessionTitle(session)}</h2>
           <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
-            <span className="min-w-0 truncate" data-live-session-status={session.status}>
-              {[
-                liveSessionStatusText(session),
-                liveSessionProviderLabel(session),
-                session.machine.label
-              ].join(' \u00b7 ')}
+            <LiveSessionStatusPill session={session} className="max-w-[60%] shrink-0" />
+            <span className="min-w-0 truncate">
+              {[liveSessionProviderLabel(session), session.machine.label].join(' \u00b7 ')}
             </span>
             {session.cwd ? (
               <span className="hidden min-w-0 truncate font-mono @2xl:inline">{session.cwd}</span>
@@ -304,7 +295,7 @@ export function LiveSessionPane({
   const transcript = useLiveTranscript(session.id)
   const [panel, setPanel] = useState<LiveSessionPanel | null>(null)
   const [openSubagentId, setOpenSubagentId] = useState<string | null>(null)
-  const [composerFocus, setComposerFocus] = useState(0)
+  const [handledFocus, setHandledFocus] = useState(0)
   const [answering, setAnswering] = useState<string | null>(null)
   const subagentTranscript = useLiveTranscript(
     openSubagentId ? subagentTranscriptId(session.id, openSubagentId) : null
@@ -317,22 +308,19 @@ export function LiveSessionPane({
   // A menu elsewhere asked this view to show something.
   const focusNonce = focus?.sessionId === session.id ? focus.nonce : 0
   const focusTarget = focus?.sessionId === session.id ? focus.target : null
-  useEffect(() => {
-    if (!focusNonce || !focusTarget) {
-      return
-    }
-    if (focusTarget === 'composer') {
-      setComposerFocus(focusNonce)
-    } else if (focusTarget === 'permission') {
+  if (focusNonce !== handledFocus) {
+    setHandledFocus(focusNonce)
+    if (focusTarget === 'permission') {
       setOpenSubagentId(null)
-    } else {
+    } else if (focusTarget && focusTarget !== 'composer') {
       setPanel(focusTarget)
     }
-  }, [focusNonce, focusTarget])
+  }
+  const composerFocus = focusTarget === 'composer' ? focusNonce : 0
 
   // What is on screen has been seen.
   useEffect(() => {
-    activeAgentsUiStore.markSeen(session.id, session.lastActivityAt)
+    liveSessionMarksStore.markSeen(session.id, session.lastActivityAt)
   }, [session.id, session.lastActivityAt])
 
   const permission = session.permission
