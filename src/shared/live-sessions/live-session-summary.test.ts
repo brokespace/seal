@@ -24,6 +24,15 @@ describe('liveSessionsNeedingAttention', () => {
       'failed'
     ])
   })
+
+  it('keeps a prompt or a question whose process the host could not list', () => {
+    const sessions = [
+      session('prompt', 'needs-permission', false),
+      session('question', 'waiting-input', false),
+      session('ended', 'done', false)
+    ]
+    expect(liveSessionsNeedingAttention(sessions).map((s) => s.id)).toEqual(['prompt', 'question'])
+  })
 })
 
 describe('countLiveSessionGroups', () => {

@@ -46,6 +46,14 @@ Groups (`liveSessionStatusGroup`) are unchanged in number: `attention` (approval
 `working` (working, running shell, both waits), `idle` (`your-turn`, `idle`), `finished` (`done`).
 The Home header counts them as "N working · N blocked on you · N waiting on you · N idle".
 
+A session is running or finished by `isActiveLiveSession`, which every list, badge and count
+shares. It is running while its process is seen, and also while its status is one only a running
+agent has: the `working` group, `needs-permission` and `waiting-input`. So a prompt or a question
+is never listed under "Recently finished", even on a host whose `ps` cannot list processes or in
+the scan that misses the process. `errored` outlasts its agent: with the process gone it is a
+finished session that ended in an error. `your-turn` and `idle` with no process are an agent that
+just quit, and read as finished.
+
 `statusDetail` says what the status is about: the command or file (`Bash: pnpm test`), the call a
 prompt holds (`Allow Bash: rm -rf build?`), the question asked, the error. `statusSource` says
 which signal decided: `seal-hooks`, `agent-hooks`, `screen`, `process`, `transcript`,
