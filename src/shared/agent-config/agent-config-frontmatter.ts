@@ -51,6 +51,7 @@ export function setFrontmatterFields(
     throw new Error('The front matter is not valid YAML; fix it in the editor first')
   }
   if (!isMap(document.contents)) {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: an empty map node is valid contents; the library types contents by the parsed input.
     document.contents = document.createNode({}) as unknown as typeof document.contents
   }
   for (const [key, value] of Object.entries(fields)) {

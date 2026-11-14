@@ -129,6 +129,7 @@ export type AgentConfigApi = {
   renamePath: (args: { target: AgentConfigTarget; from: string; to: string }) => Promise<void>
 }
 
+// oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the channel map and the API type list the same names, and each channel takes that method's arguments.
 export const agentConfigApi = Object.fromEntries(
   Object.entries(AGENT_CONFIG_IPC).map(([name, channel]) => [
     name,

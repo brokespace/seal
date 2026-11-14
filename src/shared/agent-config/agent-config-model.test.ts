@@ -48,7 +48,7 @@ function draftOf(server: ReturnType<typeof listMcpServers>[number]): AgentConfig
 }
 
 describe('MCP servers', () => {
-  const config = JSON.parse(CLAUDE_JSON) as unknown
+  const config: { mcpServers: object } = JSON.parse(CLAUDE_JSON)
 
   it('lists servers with every secret masked and says which fields are', () => {
     const [docs, sentry] = listMcpServers(config, USER)
@@ -80,15 +80,15 @@ describe('MCP servers', () => {
       { ...draftOf(docs), env: { ...docs.env, REGION: 'us' } },
       'docs'
     )
-    const saved = JSON.parse(editJsonText(CLAUDE_JSON, edits)) as typeof config
+    const saved: unknown = JSON.parse(editJsonText(CLAUDE_JSON, edits))
 
     expect(edits).toEqual([
       { path: ['mcpServers', 'docs', 'env'], value: { DOCS_TOKEN: 'abc', REGION: 'us' } }
     ])
     expect(saved).toEqual({
-      ...(config as object),
+      ...config,
       mcpServers: {
-        ...(config as { mcpServers: object }).mcpServers,
+        ...config.mcpServers,
         docs: {
           type: 'stdio',
           command: 'npx',
@@ -160,6 +160,7 @@ describe('MCP servers', () => {
       'old'
     )
 
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a server draft holds only strings, booleans, lists and maps of strings.
     expect(editTomlText(toml, edits as Parameters<typeof editTomlText>[1])).toBe(
       'model = "gpt-5"\n\n[mcp_servers.old]\ntool_timeout_sec = 30\nurl = "https://c.example/mcp"\nhttp_headers = { X-Key = "k" }\nenabled = false\n'
     )

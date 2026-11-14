@@ -275,6 +275,7 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
         )
       })
       await new Promise<void>((resolve) => http?.listen(0, '127.0.0.1', resolve))
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a server listening on TCP reports an AddressInfo.
       const url = `http://127.0.0.1:${(http.address() as AddressInfo).port}/mcp`
       const save = (token: string) =>
         saveMcpServer(machine.connection, {

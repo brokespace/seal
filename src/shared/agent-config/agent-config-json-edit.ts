@@ -46,33 +46,49 @@ function formattingOf(text: string): FormattingOptions {
   }
 }
 
+type Container = Record<string, unknown> | unknown[]
+
+function childOf(node: Container, segment: string | number): unknown {
+  if (Array.isArray(node)) {
+    return typeof segment === 'number' ? node[segment] : undefined
+  }
+  return node[String(segment)]
+}
+
+function setChild(node: Container, segment: string | number, value: unknown): void {
+  if (!Array.isArray(node)) {
+    node[String(segment)] = value
+  } else if (typeof segment === 'number') {
+    node[segment] = value
+  }
+}
+
 function applyToValue(root: Record<string, unknown>, edit: AgentConfigJsonEdit): void {
-  let node: Record<string, unknown> | unknown[] = root
+  let node: Container = root
   for (const [index, segment] of edit.path.slice(0, -1).entries()) {
-    const container = node as Record<string | number, unknown>
-    let next = container[segment]
-    if (!isPlainObject(next) && !Array.isArray(next)) {
-      if ('remove' in edit) {
-        return
-      }
-      next = typeof edit.path[index + 1] === 'number' ? [] : {}
-      container[segment] = next
+    const existing = childOf(node, segment)
+    if (isPlainObject(existing) || Array.isArray(existing)) {
+      node = existing
+      continue
     }
-    node = next as Record<string, unknown> | unknown[]
+    if ('remove' in edit) {
+      return
+    }
+    const created: Container = typeof edit.path[index + 1] === 'number' ? [] : {}
+    setChild(node, segment, created)
+    node = created
   }
   const last = edit.path.at(-1)
   if (last === undefined) {
     throw new Error('An edit needs a path')
   }
-  if ('remove' in edit) {
-    if (Array.isArray(node) && typeof last === 'number') {
-      node.splice(last, 1)
-    } else {
-      delete (node as Record<string | number, unknown>)[last]
-    }
-    return
+  if (!('remove' in edit)) {
+    setChild(node, last, edit.value)
+  } else if (!Array.isArray(node)) {
+    delete node[String(last)]
+  } else if (typeof last === 'number') {
+    node.splice(last, 1)
   }
-  ;(node as Record<string | number, unknown>)[last] = edit.value
 }
 
 /**

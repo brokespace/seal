@@ -40,6 +40,7 @@ function isFlat(value: AgentConfigTomlValue): boolean {
 }
 
 function nest(path: readonly string[], value: AgentConfigTomlValue): Record<string, unknown> {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: an edit's path is never empty, so the outermost value is a table.
   return path.reduceRight<AgentConfigTomlValue>(
     (inner, key) => ({ [key]: inner }),
     value
@@ -69,23 +70,30 @@ function statements(sections: readonly TomlSection[]): Located[] {
 function setInValue(root: Record<string, unknown>, path: readonly string[], value: unknown): void {
   let node = root
   for (const key of path.slice(0, -1)) {
-    if (!isPlainObject(node[key])) {
-      node[key] = {}
-    }
-    node = node[key] as Record<string, unknown>
+    const existing = node[key]
+    const next: Record<string, unknown> = isPlainObject(existing) ? existing : {}
+    node[key] = next
+    node = next
   }
-  node[path.at(-1) as string] = value
+  const leaf = path.at(-1)
+  if (leaf !== undefined) {
+    node[leaf] = value
+  }
 }
 
 function removeInValue(root: Record<string, unknown>, path: readonly string[]): void {
   let node = root
   for (const key of path.slice(0, -1)) {
-    if (!isPlainObject(node[key])) {
+    const next = node[key]
+    if (!isPlainObject(next)) {
       return
     }
-    node = node[key] as Record<string, unknown>
+    node = next
   }
-  delete node[path.at(-1) as string]
+  const leaf = path.at(-1)
+  if (leaf !== undefined) {
+    delete node[leaf]
+  }
 }
 
 function valueAt(root: Record<string, unknown>, path: readonly string[]): unknown {
@@ -150,6 +158,7 @@ function applyEdit(
 
   if (enclosing) {
     // The value lives inside an inline table or dotted key: reprint that one statement.
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: `expected` is a parsed TOML document, so everything in it is a TOML value.
     const parent = valueAt(expected, enclosing.full) as AgentConfigTomlValue | undefined
     if (parent === undefined) {
       removeLines(lines, enclosing.statement.start, enclosing.statement.end)
@@ -173,13 +182,14 @@ function applyEdit(
   } else if (value !== undefined) {
     const parentPath = path.slice(0, -1)
     const parent = sections.find((section) => !section.array && samePath(section.path, parentPath))
-    const key = tomlKeyText(path.at(-1) as string)
+    const leaf = path.at(-1) ?? ''
+    const key = tomlKeyText(leaf)
     if (parent && (!isPlainObject(value) || isFlat(value))) {
       lines.splice(parent.end, 0, `${key} = ${inline(value)}`)
     } else {
       const block = isPlainObject(value)
         ? blockLines(path, value)
-        : blockLines(parentPath, { [path.at(-1) as string]: value })
+        : blockLines(parentPath, { [leaf]: value })
       while (lines.length > 0 && lines.at(-1)?.trim() === '') {
         lines.pop()
       }

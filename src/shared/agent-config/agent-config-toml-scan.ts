@@ -41,7 +41,7 @@ function readKeyPath(text: string, stop: string): { path: string[]; rest: string
       }
       const raw = text.slice(index, close + 1)
       try {
-        path.push(quote === '"' ? (JSON.parse(raw) as string) : raw.slice(1, -1))
+        path.push(quote === '"' ? String(JSON.parse(raw)) : raw.slice(1, -1))
       } catch {
         return null
       }

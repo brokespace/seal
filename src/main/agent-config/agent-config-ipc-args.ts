@@ -2,9 +2,11 @@ import { isAgentConfigAgentId } from '../../shared/agent-config/agent-config-cat
 import type {
   AgentConfigDocKind,
   AgentConfigMcpDraft,
+  AgentConfigPluginCommand,
   AgentConfigScope,
   AgentConfigSettingsEdit,
-  AgentConfigTarget
+  AgentConfigTarget,
+  AgentConfigValidationKind
 } from '../../shared/agent-config/agent-config-types'
 import {
   isPlainObject,
@@ -43,6 +45,41 @@ export function scopeOf(value: unknown): AgentConfigScope {
     throw new Error('Unknown scope')
   }
   return scope
+}
+
+const VALIDATION_KINDS: readonly AgentConfigValidationKind[] = [
+  ...DOC_KINDS,
+  'json',
+  'jsonc',
+  'claude-settings',
+  'mcp-json',
+  'toml',
+  'codex-config',
+  'text'
+]
+
+/** The check the editor asked for; anything else leaves the choice to the file's path. */
+export function validationKindOf(value: unknown): AgentConfigValidationKind | undefined {
+  return VALIDATION_KINDS.find((candidate) => candidate === value)
+}
+
+export function pluginCommandOf(value: unknown): AgentConfigPluginCommand {
+  if (isPlainObject(value)) {
+    const { kind } = value
+    if (kind === 'install' || kind === 'uninstall' || kind === 'update') {
+      return { kind, plugin: requireString(value.plugin, 'plugin'), scope: scopeOf(value.scope) }
+    }
+    if (kind === 'marketplace-add') {
+      return { kind, source: requireString(value.source, 'source') }
+    }
+    if (kind === 'marketplace-remove') {
+      return { kind, name: requireString(value.name, 'name') }
+    }
+    if (kind === 'marketplace-update') {
+      return { kind, name: typeof value.name === 'string' ? value.name : null }
+    }
+  }
+  throw new Error('Unknown plugin command')
 }
 
 export function refOf(value: unknown): DocumentRef {

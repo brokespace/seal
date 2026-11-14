@@ -78,8 +78,6 @@ export function pluginCommandArgs(command: AgentConfigPluginCommand): string[] {
         throw new Error('That is not a marketplace name')
       }
       return ['plugin', 'marketplace', 'update', ...(command.name ? [command.name] : [])]
-    default:
-      throw new Error('Unknown plugin command')
   }
 }
 

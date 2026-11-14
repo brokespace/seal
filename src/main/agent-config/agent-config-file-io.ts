@@ -53,11 +53,17 @@ export async function pathStates(
     headBytes: 0
   })
   const states = new Map<string, PathState>(paths.map((path) => [path, 'missing']))
+  const found = (tag: string, state: PathState): void => {
+    const path = paths[Number(tag)]
+    if (path !== undefined) {
+      states.set(path, state)
+    }
+  }
   for (const record of scan.records) {
-    states.set(paths[Number(record.tag)] as string, 'file')
+    found(record.tag, 'file')
   }
   for (const dir of scan.dirs) {
-    states.set(paths[Number(dir.tag)] as string, 'directory')
+    found(dir.tag, 'directory')
   }
   return { home: scan.home, states }
 }

@@ -194,7 +194,7 @@ export async function buildAgentConfigSnapshot(
           format: primary.spec.format === 'toml' ? 'toml' : 'json',
           exists: parsed.exists,
           ...(parsed.error ? { error: parsed.error } : {}),
-          value: masked ? (masked.value as Record<string, unknown>) : null,
+          value: masked && isPlainObject(masked.value) ? masked.value : null,
           maskedPaths: masked?.maskedPaths ?? []
         }
       })

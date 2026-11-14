@@ -9,9 +9,11 @@ function isDate(value: unknown): value is Date {
 /** Deep copy that keeps TOML dates as they are; `structuredClone` would turn them into plain dates. */
 export function cloneValue<T>(value: T): T {
   if (Array.isArray(value)) {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a copy of an array has the array's own element types.
     return value.map(cloneValue) as T
   }
   if (isPlainObject(value)) {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a copy of an object has the object's own keys and value types.
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [key, cloneValue(item)])
     ) as T

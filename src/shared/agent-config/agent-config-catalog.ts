@@ -301,7 +301,7 @@ export const AGENT_CONFIG_LAYOUTS: readonly AgentConfigLayout[] = [
 const LAYOUT_BY_ID = new Map(AGENT_CONFIG_LAYOUTS.map((layout) => [layout.id, layout]))
 
 export function isAgentConfigAgentId(value: unknown): value is AgentConfigAgentId {
-  return typeof value === 'string' && LAYOUT_BY_ID.has(value as AgentConfigAgentId)
+  return AGENT_CONFIG_LAYOUTS.some((layout) => layout.id === value)
 }
 
 export function agentConfigLayout(agent: AgentConfigAgentId): AgentConfigLayout {

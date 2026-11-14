@@ -1,4 +1,5 @@
 import type { AgentConfigBackup } from '../../shared/agent-config/agent-config-types'
+import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 import { joinMachinePath, machinePathDirname } from '../../shared/machines/machine-paths'
 import { quotePosixShell } from '../../shared/shell/launch/shell-argument-quoting'
 import type { MachineConnection } from '../machines/connection/machine-connection'
@@ -48,8 +49,10 @@ async function readIndex(
     .split('\n')
     .flatMap((line): AgentConfigBackup[] => {
       try {
-        const entry = JSON.parse(line) as Partial<AgentConfigBackup>
-        return typeof entry.backupPath === 'string' && typeof entry.originalPath === 'string'
+        const entry: unknown = JSON.parse(line)
+        return isPlainObject(entry) &&
+          typeof entry.backupPath === 'string' &&
+          typeof entry.originalPath === 'string'
           ? [
               {
                 backupPath: entry.backupPath,

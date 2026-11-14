@@ -25,7 +25,9 @@ function strictJson(content: string): {
       ? { value, issues: [] }
       : { issues: [error('The file must hold a JSON object')] }
   } catch (cause) {
-    return { issues: [error(`Not valid JSON: ${cause instanceof Error ? cause.message : cause}`)] }
+    return {
+      issues: [error(`Not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`)]
+    }
   }
 }
 
@@ -209,7 +211,12 @@ export function validateAgentConfigContent(
     }
     case 'text':
       return []
-    default:
+    case 'instructions':
+    case 'skill':
+    case 'subagent':
+    case 'command':
+    case 'prompt':
+    case 'rule':
       return validateMarkdownDocument(kind, content, expectedName)
   }
 }

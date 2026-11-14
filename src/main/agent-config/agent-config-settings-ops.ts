@@ -58,7 +58,11 @@ async function editFile(
   const changes = edits(parse(format, path, file.content))
   const next =
     format === 'toml'
-      ? editTomlText(file.content, changes as AgentConfigTomlEdit[])
+      ? editTomlText(
+          file.content,
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: server edits hold strings, booleans, string lists and string maps, all of which TOML can hold.
+          changes as AgentConfigTomlEdit[]
+        )
       : editJsonText(file.content, changes)
   return writeConfigFile(connection, path, next, {
     expectedHash: file.hash,

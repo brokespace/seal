@@ -40,6 +40,7 @@ export function effectiveConfig(
   return [...byKey.entries()]
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([key, definitions]): AgentConfigEffectiveEntry => {
+      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a key is only listed once a scope defines it.
       const winner = definitions.at(-1) as { source: AgentConfigScope; value: unknown }
       if (
         options.mergeLists &&
@@ -47,7 +48,7 @@ export function effectiveConfig(
       ) {
         const seen = new Set<string>()
         const items = definitions.flatMap((definition) =>
-          (definition.value as unknown[]).flatMap((item) => {
+          (Array.isArray(definition.value) ? definition.value : []).flatMap((item: unknown) => {
             const text = JSON.stringify(item)
             if (seen.has(text)) {
               return []

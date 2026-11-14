@@ -109,7 +109,10 @@ function serverInfo(body: string): { name?: string; version?: string; error?: st
       continue
     }
     try {
-      const message = JSON.parse(text) as { result?: unknown; error?: unknown }
+      const message: unknown = JSON.parse(text)
+      if (!isPlainObject(message)) {
+        continue
+      }
       if (isPlainObject(message.error)) {
         return { error: String(message.error.message ?? 'The server refused the handshake') }
       }

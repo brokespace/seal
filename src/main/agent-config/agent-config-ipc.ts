@@ -1,9 +1,7 @@
 import {
   AGENT_CONFIG_IPC,
   type AgentConfigMcpActivation,
-  type AgentConfigPluginCommand,
-  type AgentConfigTarget,
-  type AgentConfigValidationKind
+  type AgentConfigTarget
 } from '../../shared/agent-config/agent-config-types'
 import { isPlainObject } from '../../shared/agent-config/agent-config-values'
 import type { MachineConnection } from '../machines/connection/machine-connection'
@@ -21,7 +19,16 @@ import {
   duplicateDocument,
   renameDocument
 } from './agent-config-documents'
-import { DOC_KINDS, draftOf, editsOf, refOf, scopeOf, targetOf } from './agent-config-ipc-args'
+import {
+  DOC_KINDS,
+  draftOf,
+  editsOf,
+  pluginCommandOf,
+  refOf,
+  scopeOf,
+  targetOf,
+  validationKindOf
+} from './agent-config-ipc-args'
 import { testMcpServer } from './agent-config-mcp-probe'
 import {
   listMachineBackups,
@@ -94,13 +101,12 @@ export function registerAgentConfigHandlers(
   })
   changing(AGENT_CONFIG_IPC.saveDocument, async (args) => {
     const { connection, target } = await forTarget(args.target)
+    const validation = validationKindOf(args.validation)
     const result = await saveManagedDocument(connection, target, {
       path: requireString(args.path, 'path'),
       content: typeof args.content === 'string' ? args.content : '',
       ...(typeof args.expectedHash === 'string' ? { expectedHash: args.expectedHash } : {}),
-      ...(typeof args.validation === 'string'
-        ? { validation: args.validation as AgentConfigValidationKind }
-        : {}),
+      ...(validation ? { validation } : {}),
       ...(typeof args.expectedName === 'string' ? { expectedName: args.expectedName } : {})
     })
     return { machineId: target.machineId, result }
@@ -241,13 +247,7 @@ export function registerAgentConfigHandlers(
   })
   handle(AGENT_CONFIG_IPC.runPluginCommand, async (args) => {
     const { connection, target } = await forTarget(args.target)
-    if (!isPlainObject(args.command) || typeof args.command.kind !== 'string') {
-      throw new Error('Unknown plugin command')
-    }
-    return runPluginCommand(connection, {
-      target,
-      command: args.command as AgentConfigPluginCommand
-    })
+    return runPluginCommand(connection, { target, command: pluginCommandOf(args.command) })
   })
   handle(AGENT_CONFIG_IPC.listBackups, async (args) =>
     listMachineBackups(await connected(args.machineId))
