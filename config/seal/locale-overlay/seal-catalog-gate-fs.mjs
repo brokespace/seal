@@ -1,8 +1,9 @@
 // `node:fs/promises` for upstream's localization gates. Upstream's catalogs stay untouched on disk
 // and Seal's strings live in an overlay, so the gates read each catalog as Seal declares it:
-// without the upstream keys Seal's UI dropped, with Seal's own keys laid in. What `--fix` writes
-// back is split again, upstream's keys to upstream's file and Seal's to the overlay. A tree with
-// no overlay (upstream's tests, plugin catalogs) reads and writes as usual.
+// without the upstream keys Seal's UI dropped, with the overlay laid over the rest. What `--fix`
+// writes back is split again: upstream's own keys to upstream's file, Seal's keys and rewordings
+// to the overlay. A tree with no overlay (upstream's tests, plugin catalogs) reads and writes as
+// usual.
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
@@ -80,37 +81,37 @@ function formatCatalog(catalog) {
   return `${JSON.stringify(catalog, null, 2)}\n`
 }
 
-/** Whether upstream's English declares `key` under `english`, in any plural form. */
-function upstreamDeclares(english, key) {
-  if (!isPlainObject(english)) {
+/** Whether `reference` declares `key`, in any plural form. */
+function declares(reference, key) {
+  if (!isPlainObject(reference)) {
     return false
   }
   const base = key.replace(PLURAL_SUFFIX, '')
-  return Object.keys(english).some(
+  return Object.keys(reference).some(
     (name) => name === key || name.replace(PLURAL_SUFFIX, '') === base
   )
 }
 
-/** Splits a catalog into the keys upstream's English declares and the ones only Seal has. */
-function splitByOwner(catalog, english) {
-  const upstream = {}
-  const seal = {}
+/** Splits a catalog into the keys `reference` declares and the ones it does not. */
+function splitByDeclared(catalog, reference) {
+  const declared = {}
+  const undeclared = {}
   for (const [key, value] of Object.entries(catalog)) {
     if (isPlainObject(value)) {
-      const child = splitByOwner(value, isPlainObject(english) ? english[key] : undefined)
-      if (Object.keys(child.upstream).length > 0) {
-        upstream[key] = child.upstream
+      const child = splitByDeclared(value, isPlainObject(reference) ? reference[key] : undefined)
+      if (Object.keys(child.declared).length > 0) {
+        declared[key] = child.declared
       }
-      if (Object.keys(child.seal).length > 0) {
-        seal[key] = child.seal
+      if (Object.keys(child.undeclared).length > 0) {
+        undeclared[key] = child.undeclared
       }
-    } else if (upstreamDeclares(english, key)) {
-      upstream[key] = value
+    } else if (declares(reference, key)) {
+      declared[key] = value
     } else {
-      seal[key] = value
+      undeclared[key] = value
     }
   }
-  return { upstream, seal }
+  return { declared, undeclared }
 }
 
 async function readFile(file, options) {
@@ -119,11 +120,8 @@ async function readFile(file, options) {
   if (!view) {
     return text
   }
-  // Only Seal's own keys: where the overlay rewords an upstream key, the gates keep comparing
-  // upstream's value with upstream's source.
-  const laidIn = splitByOwner(view.overlay, view.english).seal
   return formatCatalog(
-    mergeCatalogOverlay(withoutRemovedKeys(JSON.parse(text), view.removedKeys), laidIn)
+    mergeCatalogOverlay(withoutRemovedKeys(JSON.parse(text), view.removedKeys), view.overlay)
   )
 }
 
@@ -133,19 +131,31 @@ async function writeFile(file, data, options) {
   if (!view) {
     return fs.writeFile(file, data, options)
   }
-  const next = splitByOwner(JSON.parse(data), view.english)
+  const byOwner = splitByDeclared(JSON.parse(data), view.english)
+  // An upstream key the overlay rewords is Seal's value; upstream's own stays in its file.
+  const upstreamKeys = splitByDeclared(byOwner.declared, view.overlay)
   if (!target.runtimeRequired) {
-    const nextOverlay = mergeCatalogOverlay(view.overlay, next.seal)
+    const nextOverlay = mergeCatalogOverlay(
+      view.overlay,
+      mergeCatalogOverlay(byOwner.undeclared, upstreamKeys.declared)
+    )
     if (JSON.stringify(nextOverlay) !== JSON.stringify(view.overlay)) {
       await fs.writeFile(target.overlayPath, formatCatalog(nextOverlay))
     }
   }
-  // Upstream's file changes only when its own keys did; the keys Seal hides stay in it.
+  // Upstream's file changes only when its own keys did; the keys Seal hides or rewords stay in it.
   const onDisk = (await readJsonIfPresent(file)) ?? {}
-  const shown = withoutRemovedKeys(onDisk, view.removedKeys)
-  if (JSON.stringify(next.upstream) !== JSON.stringify(shown)) {
-    const hidden = splitByOwner(onDisk, shown).seal
-    await fs.writeFile(file, formatCatalog(mergeCatalogOverlay(next.upstream, hidden)), options)
+  const shown = splitByDeclared(
+    withoutRemovedKeys(onDisk, view.removedKeys),
+    view.overlay
+  ).undeclared
+  if (JSON.stringify(upstreamKeys.undeclared) !== JSON.stringify(shown)) {
+    const kept = splitByDeclared(onDisk, shown).undeclared
+    await fs.writeFile(
+      file,
+      formatCatalog(mergeCatalogOverlay(upstreamKeys.undeclared, kept)),
+      options
+    )
   }
   return undefined
 }

@@ -52,7 +52,7 @@ export const ENVIRONMENT_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Save a remote Orca runtime environment from a pairing code',
     usage: 'orca environment add --name <name> --pairing-code <code> [--json]',
     allowedFlags: [...LOCAL_COMMAND_FLAGS, 'pairing-code', 'name'],
-    examples: ['orca environment add --name work-laptop --pairing-code orca://pair?code=...']
+    examples: ['seal environment add --name work-laptop --pairing-code seal://pair?code=...']
   },
   {
     path: ['environment', 'list'],

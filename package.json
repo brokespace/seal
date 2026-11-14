@@ -228,6 +228,7 @@
     "seal:rebrand-apply": "node config/seal/brand-copy/apply-seal-brand-copy.mjs",
     "seal:regenerate": "node config/seal/upstream-sync/regenerate-generated-files.mjs",
     "seal:sync:resolve": "node config/seal/upstream-sync/resolve-brand-conflicts.mjs",
+    "seal:sync:resolve-branch": "node config/seal/upstream-sync/resolve-seal-branch-conflicts.mjs",
     "seal:sync:restore": "node config/seal/upstream-sync/restore-upstream-brand-copy.mjs",
     "sync:anti-slop-plugin": "node config/scripts/static-analysis/oxlint-contracts/sync-anti-slop-plugin.mjs",
     "build:packages": "node config/scripts/workspace-package-build/build-workspace-packages.mjs",

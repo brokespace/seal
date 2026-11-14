@@ -31,7 +31,7 @@ export function HomeSlide({ tapping }: { tapping: boolean }): React.JSX.Element 
     <div className="mp-device-screen">
       <div className="mp-app-topbar">
         <div className="mp-app-brand">
-          <OrcaLogo />
+          <SealLogo />
           <span className="mp-app-brand-name">
             {t('auto.components.mobile.slides.HomeSlide.5d94e8ddcc', 'Orca')}
           </span>
@@ -196,9 +196,9 @@ function HomeSectionRow({
   )
 }
 
-function OrcaLogo(): React.JSX.Element {
+function SealLogo(): React.JSX.Element {
   return (
-    <svg className="mp-orca-logo" viewBox="8 40 240 160" fill="currentColor" aria-hidden>
+    <svg className="mp-seal-logo" viewBox="0 0 256 256" fill="currentColor" aria-hidden>
       <path
         fillRule="evenodd"
         d="M28 136 a100 92 0 1 0 200 0 a100 92 0 1 0 -200 0 Z M81 116 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M149 116 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M113 141 Q128 133 143 141 Q137 157 128 160 Q119 157 113 141 Z"

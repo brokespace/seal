@@ -139,7 +139,7 @@ function collectCopyNodes(node, parent, key, out) {
     node.type === 'JSXText'
   ) {
     if (!isSkippedLiteral(node, parent, key)) {
-      out.push(node)
+      out.push({ node, parent })
     }
     return
   }
@@ -156,8 +156,9 @@ export function mayContainBrandCopy(code) {
 }
 
 /**
- * Rewrites the literals of one module with `rewrite(raw, node)`; a literal it returns unchanged
- * (or undefined for) stays. Returns null when nothing changed, `{ error }` when unparseable.
+ * Rewrites the literals of one module with `rewrite(raw, node, parent)`; a literal it returns
+ * unchanged (or undefined for) stays. Returns null when nothing changed, `{ error }` when
+ * unparseable.
  */
 function rewriteCopyLiterals(code, parsePath, rewrite) {
   const parsed = parseSync(parsePath, code)
@@ -169,9 +170,9 @@ function rewriteCopyLiterals(code, parsePath, rewrite) {
   const changes = []
   let result = ''
   let cursor = 0
-  for (const node of nodes.sort((a, b) => a.start - b.start)) {
+  for (const { node, parent } of nodes.sort((a, b) => a.node.start - b.node.start)) {
     const raw = code.slice(node.start, node.end)
-    const next = rewrite(raw, node)
+    const next = rewrite(raw, node, parent)
     if (next === undefined || next === raw) {
       continue
     }
@@ -212,18 +213,48 @@ export function rebrandSourceText(
   })
 }
 
+/** Upstream's default for `t(key, default)` when `node` is Seal's rebrand of it, as a literal. */
+function upstreamCatalogDefault(raw, node, parent, upstreamEnglish) {
+  if (
+    node.type !== 'Literal' ||
+    parent?.type !== 'CallExpression' ||
+    parent.arguments[1] !== node ||
+    parent.arguments[0]?.type !== 'Literal'
+  ) {
+    return undefined
+  }
+  const upstream = upstreamEnglish.get(parent.arguments[0].value)
+  const quote = raw[0]
+  if (
+    typeof upstream !== 'string' ||
+    upstream === node.value ||
+    rebrandCopy(upstream, { commands: true }) !== node.value ||
+    /[\\\n]/.test(upstream) ||
+    upstream.includes(quote)
+  ) {
+    return undefined
+  }
+  return `${quote}${upstream}${quote}`
+}
+
 /**
  * The reverse, for a file edited in place: every literal that is the rebrand of one of upstream's
- * literals goes back to upstream's text. Returns the module text, unchanged when nothing matches.
+ * literals goes back to upstream's text, and so does a catalog default Seal wrote for one of
+ * upstream's keys (`upstreamEnglish`: key to upstream's English value). Returns the module text,
+ * unchanged when nothing matches.
  */
 export function restoreUpstreamLiterals(code, upstreamCode, relativePath, options = {}) {
   const rebranded = rebrandSourceText(upstreamCode, relativePath, options)
-  if (!rebranded || rebranded.error) {
+  if (rebranded?.error) {
     return code
   }
-  const upstreamByRebrand = new Map(rebranded.changes.map(([raw, next]) => [next, raw]))
-  const restored = rewriteCopyLiterals(code, options.parsePath ?? relativePath, (raw) =>
-    upstreamByRebrand.get(raw)
+  const upstreamByRebrand = new Map((rebranded?.changes ?? []).map(([raw, next]) => [next, raw]))
+  const upstreamEnglish = options.upstreamEnglish ?? new Map()
+  const restored = rewriteCopyLiterals(
+    code,
+    options.parsePath ?? relativePath,
+    (raw, node, parent) =>
+      upstreamByRebrand.get(raw) ?? upstreamCatalogDefault(raw, node, parent, upstreamEnglish)
   )
   return restored && !restored.error ? restored.code : code
 }

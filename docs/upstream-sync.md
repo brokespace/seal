@@ -49,7 +49,7 @@ What each step does:
 | `pnpm seal:regenerate`                    | Runs `pnpm seal:rebrand-apply`, then every generator in `config/seal/upstream-sync/generated-files.mjs`. Safe to rerun.                                                                                                                                                                                                                                                             |
 | `pnpm seal:rebrand-apply`                 | Rewrites "Orca" to "Seal" in the files no build produces (below). `--dry-run --list` shows what it would change.                                                                                                                                                                                                                                                                    |
 | `pnpm seal:rebrand-check`                 | See [Rebrand check](#rebrand-check).                                                                                                                                                                                                                                                                                                                                                |
-| `pnpm seal:sync:restore --upstream=<ref>` | Puts bundled source and catalogs back to upstream's text wherever Seal's copy is only the rebrand, moving Seal's strings to the overlays. Run it after merging a Seal branch that was written before the overlay existed. `<ref>` is the upstream commit the branch contains, usually `$(git merge-base upstream/main HEAD)`.                                                       |
+| `pnpm seal:sync:restore --upstream=<ref>` | Puts bundled source and catalogs back to upstream's text wherever Seal's copy is only the rebrand, moving Seal's strings to the overlays. Run it after [merging a Seal branch that was written before the overlay existed](#merging-a-seal-branch-written-before-the-overlay). `<ref>` is the upstream commit the branch contains, usually `$(git merge-base upstream/main HEAD)`.  |
 
 If upstream adds a new outbound service (update feed, analytics, crash or feedback endpoint), gate it in `src/main/upstream-service-policy.ts` before merging.
 
@@ -86,7 +86,20 @@ The shipped catalog is upstream's catalog, rebranded, minus `removed-keys.json`,
 
 Upstream's localization gates (`pnpm verify:localization-*`) read catalogs through `config/seal/locale-overlay/seal-catalog-gate-fs.mjs`, a stand-in for `node:fs/promises` that shows them the merged view and splits `--fix` writes back between upstream's file and the overlay. That one-line import swap is Seal's only change to those scripts.
 
-A Seal branch written before the overlay edits upstream's catalogs in place. When one is merged, take the branch's side of any catalog that conflicts (`git checkout --theirs <file>`), then run `pnpm seal:sync:restore --upstream=$(git merge-base HEAD upstream/main)` and `pnpm seal:regenerate`. The restore moves the branch's strings to the overlay, records keys it deleted in `removed-keys.json`, and puts the catalogs back to upstream's text. `pnpm seal:rebrand-check` fails while a catalog under `locales/` still holds Seal's name.
+### Merging a Seal branch written before the overlay
+
+Such a branch has Seal's name in bundled source and edits upstream's catalogs in place, so every line naming the product conflicts with `seal/all`:
+
+```bash
+git merge origin/<branch>              # expect conflicts
+pnpm seal:sync:resolve-branch          # rebrands all three sides of bundled source and redoes the merge; takes the Seal-worded side of catalogs
+# resolve what it lists as left, then `git add` those files
+pnpm seal:sync:restore --upstream=$(git merge-base HEAD upstream/main)
+pnpm seal:regenerate
+git add -A && git commit
+```
+
+The restore moves the branch's strings to the overlay, records keys it deleted in `removed-keys.json`, and puts source and catalogs back to upstream's text. `pnpm seal:rebrand-check` fails while a catalog under `locales/` still holds Seal's name.
 
 ## Seal-owned files
 

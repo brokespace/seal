@@ -248,6 +248,10 @@
     {
       "file": "src/platform/accessibility/accessibility-announcer.web.ts",
       "reason": "React Native Web's announceForAccessibility is a no-op and VoiceOver in the shell's WebView doesn't read the page's live regions, so the page asks the shell to announce through native.a11y.announce; without it, the caller keeps its live region."
+    },
+    {
+      "file": "src/seal/transfers/phone-file-device.web.ts",
+      "reason": "Every app/h route lands in the host page bundle, but the image/document pickers and the shell's share, Quick Look, and Photos modules throw at import in a browser. The page stub keeps the Seal machines routes importable and throws a translated message if called; the native screens are the only callers."
     }
   ]
 }

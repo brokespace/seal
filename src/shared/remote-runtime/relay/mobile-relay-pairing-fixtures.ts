@@ -1,4 +1,5 @@
 import type { PairingOffer } from '../pairing/mobile-relay-pairing-offer'
+import { PAIRING_URL_PREFIX } from '../pairing/pairing-url-scheme'
 
 const PUBLIC_KEY_B64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 const INVITE_TOKEN = 'abcdefghijklmnopqrstuvwxyzABCDEFGH012345678'
@@ -136,5 +137,5 @@ export function createMobileRelayPairingFixtures(now: number): PairingFixture[] 
 export function encodePairingFixturePayload(payload: unknown): string {
   const json = JSON.stringify(payload)
   const code = Buffer.from(json, 'utf8').toString('base64url')
-  return `orca://pair?code=${code}`
+  return `${PAIRING_URL_PREFIX}?code=${code}`
 }

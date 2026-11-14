@@ -16,7 +16,8 @@ import {
   mergeCatalogOverlay,
   readRemovedKeys,
   rebrandCatalog,
-  removedKeyNames
+  removedKeyNames,
+  withoutRemovedKeys
 } from '../brand-copy/seal-brand-catalog.mjs'
 import {
   CODE_EXTENSIONS,
@@ -40,7 +41,7 @@ function git(gitArgs, options = {}) {
 
 function showUpstream(path) {
   try {
-    return git(['show', `${upstreamRef}:${path}`])
+    return git(['show', `${upstreamRef}:${path}`], { stdio: ['ignore', 'pipe', 'ignore'] })
   } catch {
     return null
   }
@@ -58,6 +59,25 @@ function restoreCatalogs() {
       continue
     }
     const commandKeys = englishCommandKeys(JSON.parse(upstreamEnglish))
+    const knownRemoved = readRemovedKeys(root, surface)
+    // Upstream keys the English file dropped stay out of what ships, whatever an overlay says.
+    const removed = new Set([
+      ...knownRemoved,
+      ...removedKeyNames(
+        JSON.parse(upstreamEnglish),
+        JSON.parse(readFileSync(join(root, surface.dir, 'en.json'), 'utf8'))
+      )
+    ])
+    if (removed.size > knownRemoved.size) {
+      console.log(`catalog: ${removed.size} removed upstream keys for ${surface.name}`)
+      if (!dryRun) {
+        mkdirSync(join(root, surface.overlayDir), { recursive: true })
+        writeFileSync(
+          join(root, surface.overlayDir, REMOVED_KEYS_FILE),
+          formatCatalog([...removed].toSorted())
+        )
+      }
+    }
     const files = git(['ls-files', '--', surface.dir, surface.runtimeRequiredPath])
       .split('\n')
       .filter((path) => path.endsWith('.json'))
@@ -84,28 +104,16 @@ function restoreCatalogs() {
       const editedInPlace = catalogDifference(rebranded, current)
       const shippedNow = mergeCatalogOverlay(mergeCatalogOverlay(current, overlay), editedInPlace)
       // The boot bundle carries the whole English overlay, so its own differences fold into it.
-      const nextOverlay = mergeCatalogOverlay(overlay, catalogDifference(rebranded, shippedNow))
+      const nextOverlay = withoutRemovedKeys(
+        mergeCatalogOverlay(overlay, catalogDifference(rebranded, shippedNow)),
+        removed
+      )
       if (runtimeRequired && JSON.stringify(nextOverlay) === JSON.stringify(overlay)) {
         // Generated from Seal's source, so it may lack upstream keys; seal:regenerate owns it.
         continue
       }
       restored += 1
       console.log(`catalog: ${path} -> upstream (+ ${surface.overlayDir}/${locale}.json)`)
-      if (locale === 'en' && !runtimeRequired) {
-        // Keys this branch deleted from upstream's English file stay deleted in what ships.
-        const removed = new Set([
-          ...readRemovedKeys(root, surface),
-          ...removedKeyNames(JSON.parse(upstreamText), shippedNow)
-        ])
-        console.log(`catalog: ${removed.size} removed upstream keys for ${surface.name}`)
-        if (!dryRun && removed.size > 0) {
-          mkdirSync(join(root, surface.overlayDir), { recursive: true })
-          writeFileSync(
-            join(root, surface.overlayDir, REMOVED_KEYS_FILE),
-            formatCatalog([...removed].toSorted())
-          )
-        }
-      }
       if (!dryRun) {
         if (Object.keys(nextOverlay).length > 0) {
           mkdirSync(dirname(overlayPath), { recursive: true })
@@ -142,25 +150,55 @@ function rebrand(code, path, englishChanges) {
   return result?.code ?? code
 }
 
+function flattenCatalog(catalog, prefix = '', leaves = new Map()) {
+  for (const [key, value] of Object.entries(catalog)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (value !== null && typeof value === 'object') {
+      flattenCatalog(value, path, leaves)
+    } else {
+      leaves.set(path, value)
+    }
+  }
+  return leaves
+}
+
+/** Upstream's English values by key, for the surface a source file belongs to. */
+function upstreamEnglishBySurface() {
+  return LOCALE_SURFACES.map((surface) => {
+    const text = showUpstream(`${surface.dir}/en.json`)
+    return {
+      sourceRoot: `${surface.dir.split('/')[0]}/`,
+      english: text === null ? new Map() : flattenCatalog(JSON.parse(text))
+    }
+  })
+}
+
 function restoreSources() {
   const englishChanges = englishChangesAtUpstream()
+  const surfaces = upstreamEnglishBySurface()
   const counts = { upstream: 0, reduced: 0 }
-  const changed = git(['diff', '--name-only', '--diff-filter=M', upstreamRef, '--'])
+  const changed = git(['diff', '--name-only', '--diff-filter=AM', upstreamRef, '--'])
     .split('\n')
     .filter((path) => CODE_EXTENSIONS.has(extname(path)) && isBuildPassSource(path))
   for (const path of changed) {
     const upstream = showUpstream(path)
     const current = readFileSync(join(root, path), 'utf8')
     const shipped = rebrand(current, path, englishChanges)
-    if (upstream === null || shipped === null) {
+    if (shipped === null) {
       continue
     }
     let next = null
-    if (rebrand(upstream, path, englishChanges) === shipped) {
+    if (upstream !== null && rebrand(upstream, path, englishChanges) === shipped) {
       next = upstream
       counts.upstream += 1
     } else {
-      const candidate = restoreUpstreamLiterals(current, upstream, path, { englishChanges })
+      // A file Seal added has no upstream text, only defaults it wrote for upstream's keys.
+      const candidate = restoreUpstreamLiterals(current, upstream ?? '', path, {
+        englishChanges,
+        upstreamEnglish:
+          surfaces.find(({ sourceRoot }) => path.startsWith(sourceRoot))?.english ??
+          surfaces[0].english
+      })
       if (candidate !== current && rebrand(candidate, path, englishChanges) === shipped) {
         next = candidate
         counts.reduced += 1

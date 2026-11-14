@@ -18,7 +18,7 @@ export const FLAG_HELP_TEXT: Record<string, string> = {
   environment:
     "--environment <selector> Run against a saved paired Orca server (id or name), or `local` for this machine's own Orca over ORCA_ENVIRONMENT/ORCA_PAIRING_CODE; terminal handles belong to the server that issued them",
   'pairing-code':
-    '--pairing-code <code>  Run against a remote Orca server using an orca://pair?... code',
+    '--pairing-code <code>  Run against a remote Seal server using a seal://pair?... code',
   'element-index': '--element-index <n>   Element index from get-app-state',
   title: '--title <text>         Custom title for the terminal tab (omit to reset)',
   enter: '--enter                Append Enter after sending text',

@@ -18,6 +18,9 @@
               "lockedUnlockable": "Git has this workspace locked, so nothing was deleted. Unlock & Delete releases the lock and deletes it."
             }
           }
+        },
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
         }
       },
       "settings": {
@@ -50,6 +53,20 @@
           "summary": "Each machine connects over SSH or through a Seal server running on it. Every feature works the same either way.",
           "empty": "No machines yet.",
           "advanced": "SSH keys, port forwards and server pairing"
+        },
+        "MobileSettingsPane": {
+          "installIntroSeal": "Install Seal Mobile using the",
+          "installGuideLabel": "install guide"
+        },
+        "MobilePairingConnectionOptions": {
+          "anywhereDescriptionNoAccount": "Phone can be on cellular or any Wi‑Fi, through the Seal relay. No account needed."
+        },
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        },
+        "orcaAccount": {
+          "signedOutNoRelay": "Sign in to extend Seal with cloud features, including Artifacts.",
+          "searchDescriptionNoRelay": "Sign in or out of the account used by Artifacts and skill sharing."
         }
       },
       "machines": {
@@ -293,6 +310,36 @@
           "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
           "never": "Never"
         }
+      },
+      "skills": {
+        "SkillInstallReviewContent": {
+          "protocolPlaceholder": "orca://skills/share/…"
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Install Seal Mobile.",
+          "installLead": "Seal Mobile is not on the App Store or Google Play. Build and install it from the Seal repository, then continue to step 2 for the pairing QR.",
+          "installGuide": "Open install guide"
+        }
+      },
+      "orca": {
+        "profiles": {
+          "signout": {
+            "confirm": {
+              "descriptionNoRelay": "Artifact and skill sharing will be unavailable until you sign in again. Seal Relay, your local projects and worktrees won't be affected."
+            }
+          }
+        }
+      },
+      "UnexpectedSignoutCard": {
+        "restoreSharingAs": "Sign in again as {{value0}} to restore Artifact sharing and skill sharing.",
+        "restoreSharing": "Sign in again to restore Artifact sharing and skill sharing."
+      }
+    },
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
       }
     }
   },
@@ -941,5 +988,10 @@
     "unlockConfirmBody": "Git locked this workspace so it would not be removed. Seal will release that lock, then permanently delete the workspace and every file in it, including uncommitted changes.",
     "unlockConfirmReason": "Lock reason",
     "unlockConfirmCancel": "Cancel"
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload."
+    }
   }
 }

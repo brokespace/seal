@@ -19,10 +19,7 @@ import { MobileRelayMintFailureNotice } from '../../mobile/mobile-relay-mint-fai
 import { WindowsFirewallNotice } from '../../mobile/WindowsFirewallNotice'
 import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
-import {
-  canMintMobilePairingOffer,
-  type MobilePairingConnectionMode
-} from '../../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
+import type { MobilePairingConnectionMode } from '../../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import type { MobileRelayMintFailure } from '../../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
 import { useMobilePairingConnectionMode } from '../../mobile/use-mobile-pairing-connection-mode'
 import { useMobilePairingAddressPreference } from '../../mobile/use-mobile-pairing-address-preference'
@@ -46,13 +43,11 @@ export function MobilePane(): React.JSX.Element {
   const [refreshingNetworkInterfaces, setRefreshingNetworkInterfaces] = useState(false)
   const [codeCopied, setCodeCopied] = useState(false)
   const [deviceCountAtQr, setDeviceCountAtQr] = useState<number | null>(null)
-  const signedIn = useAppStore((state) => state.orcaProfileAuthStatus?.state === 'connected')
   const settingsSearchQuery = useAppStore((state) => state.settingsSearchQuery)
   const [connectionMode, setConnectionMode] = useMobilePairingConnectionMode()
   const [rotateNextQr, setRotateNextQr] = useState(false)
   const codeCopiedResetTimerRef = useRef<number | null>(null)
-  const wasSignedInRef = useRef(signedIn)
-  // Invalidate late pairing responses after sign-out, mode or address changes.
+  // Invalidate late pairing responses after mode or address changes.
   const pairingRequestIdRef = useRef(0)
   // Distinguish cross-window mode sync from this window’s own changes.
   const handledModeRef = useRef(connectionMode)
@@ -107,15 +102,6 @@ export function MobilePane(): React.JSX.Element {
     onSelectionInvalidated: invalidatePairingAddress
   })
 
-  // Invalidate displayed/pending Relay codes after sign-out while retaining Anywhere selection.
-  useEffect(() => {
-    const wasSignedIn = wasSignedInRef.current
-    wasSignedInRef.current = signedIn
-    if (wasSignedIn && !signedIn && connectionMode === 'automatic') {
-      invalidatePairing()
-    }
-  }, [signedIn, connectionMode, invalidatePairing])
-
   const clearCodeCopiedResetTimer = useCallback((): void => {
     if (codeCopiedResetTimerRef.current !== null) {
       window.clearTimeout(codeCopiedResetTimerRef.current)
@@ -166,10 +152,6 @@ export function MobilePane(): React.JSX.Element {
       } = {}
     ) => {
       const preferredMode = opts.connectionModeOverride ?? connectionMode
-      // Refuse signed-out Anywhere; never disguise a LAN-only QR under the Relay label.
-      if (!canMintMobilePairingOffer({ connectionMode: preferredMode, signedIn })) {
-        return
-      }
       const requestId = ++pairingRequestIdRef.current
       setLoading(true)
       setQrError(false)
@@ -207,8 +189,6 @@ export function MobilePane(): React.JSX.Element {
           setEndpoint(null)
           if (result.reason === 'relay_mint_failed' && result.relayFailure) {
             setRelayMintFailure(result.relayFailure)
-            // Reread likely revoked auth so guidance can offer sign-in rather than futile retries.
-            void useAppStore.getState().fetchOrcaProfileAuthStatus()
           } else {
             setRelayMintFailure(null)
             // Prefer host-provided guidance across all unavailable paths.
@@ -243,8 +223,7 @@ export function MobilePane(): React.JSX.Element {
       loadDevices,
       mountedRef,
       rotateNextQr,
-      selectedAddress,
-      signedIn
+      selectedAddress
     ]
   )
 
@@ -260,10 +239,7 @@ export function MobilePane(): React.JSX.Element {
       const shouldRecoverWithLan = relayMintFailure != null && nextMode === 'local-only'
       // Main rotates old-policy codes on mode mismatch; avoid arming a duplicate rotate.
       invalidatePairing({ armRotate: false })
-      if (
-        shouldRecoverWithLan &&
-        canMintMobilePairingOffer({ connectionMode: nextMode, signedIn })
-      ) {
+      if (shouldRecoverWithLan) {
         void generateQR({ rotate: false, connectionModeOverride: 'local-only' })
       }
     },
@@ -272,7 +248,6 @@ export function MobilePane(): React.JSX.Element {
       generateQR,
       invalidatePairing,
       relayMintFailure,
-      signedIn,
       updateSettings,
       setConnectionMode
     ]
@@ -352,7 +327,6 @@ export function MobilePane(): React.JSX.Element {
       <div id={MOBILE_SETTING_ANCHORS.pairing} data-settings-row="" className="space-y-6 py-4">
         <MobilePairingSetupSection
           connectionMode={connectionMode}
-          canGenerate={canMintMobilePairingOffer({ connectionMode, signedIn })}
           addressDisclosureForcedOpen={shouldOpenMobilePairingAddress(settingsSearchQuery)}
           connectionPathControl={
             <MobilePairingConnectionOptions

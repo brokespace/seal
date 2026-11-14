@@ -2,7 +2,7 @@ import { QrCode } from 'lucide-react-native'
 import { Fragment, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import Animated from 'react-native-reanimated'
-import { OrcaLogo } from '../components/OrcaLogo'
+import { SealLogo } from '../components/SealLogo'
 import type { Translate } from '../i18n/mobile-i18n'
 import { useMobileTranslation } from '../i18n/use-mobile-translation'
 import { colors, radii, spacing } from '../theme/mobile-theme'
@@ -60,7 +60,7 @@ export function MobileHomeEmptyState(props: {
       ]}
     >
       <View style={styles.hero}>
-        <OrcaLogo size={44} />
+        <SealLogo size={44} />
         <Text style={styles.title} accessibilityRole="header">
           {t('home.emptyState.title', 'Connect your desktop')}
         </Text>

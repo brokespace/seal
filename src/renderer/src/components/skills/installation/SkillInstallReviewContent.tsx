@@ -43,8 +43,8 @@ export function SkillShareLinkInputForm({
         value={link}
         onChange={(event) => onLinkChange(event.target.value)}
         placeholder={t(
-          'auto.components.skills.SkillInstallReviewContent.66cff7a804',
-          'https://app.orca.dev/skills/share/…'
+          'auto.components.skills.SkillInstallReviewContent.protocolPlaceholder',
+          'orca://skills/share/…'
         )}
         className="font-mono text-xs"
         autoFocus
