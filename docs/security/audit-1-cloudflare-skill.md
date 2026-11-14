@@ -263,9 +263,10 @@ second verifier. Severity is the skill's likelihood × impact rating.
 
 Five of the eight confirmed findings have a PoC committed under
 `cloud/seal-relay/test/security/audit-1/`. Each one passes while the weakness exists, so a fix makes
-it fail by design. They are therefore skipped unless `SEAL_SECURITY_POC=1` is set, and CI
-(`pnpm test` in `cloud/seal-relay`) reports the three `*.test.ts` suites as skipped and never
-collects the two `*.poc.ts` suites.
+it fail by design. They are therefore skipped unless `SEAL_SECURITY_POC=1` is set: CI (`pnpm test`
+in `cloud/seal-relay`) collects the four `*.test.ts` files and reports them as skipped. The two
+`*.poc.ts` suites import phone and host code that the Worker's test config cannot load, so they are
+loaded by `phone-and-host-suites.test.ts` and only under their own config.
 
 | Finding | File                                   | What it shows                                                                                                                                   |
 | ------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -285,9 +286,9 @@ SEAL_SECURITY_POC=1 pnpm test test/security/audit-1
 SEAL_SECURITY_POC=1 pnpm exec vitest run --config test/security/audit-1/vitest.poc.config.ts
 ```
 
-Last run from the committed sources at `95dd0be`, in the audit sandbox and again in this branch's
-checkout: 4 of 4 and 3 of 3 tests passed with the variable set; without it, 4 skipped and the
-Worker's existing 6 tests passed. They have not been run against `291fb3ac`.
+Last run from the committed sources at `95dd0be`, in this branch's checkout: 4 of 4 and 3 of 3 tests
+passed with the variable set; without it, 5 skipped and the Worker's existing 6 tests passed. They
+have not been run against `291fb3ac`.
 
 A1-06, A1-07 and A1-08 were reproduced in the audit sandbox only. Each needs a fault-injection
 harness between the host and the Worker (a failed revoke response, a delayed first frame, a relay
