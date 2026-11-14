@@ -23,9 +23,10 @@ import { switchMachineConnection } from '../../machines/detail/machine-quick-act
 import { MachineConnectionBadge } from '../../machines/list/MachineConnectionBadge'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return readIpcErrorMessage(error) ?? String(error)
 }
 
 function sshDetails(view: MachineView): string | null {
