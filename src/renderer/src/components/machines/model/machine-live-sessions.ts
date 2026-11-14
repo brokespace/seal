@@ -20,3 +20,17 @@ export function activeLiveSessionsByMachine(
   }
   return result
 }
+
+/** A machine's running sessions by process id, so a process row can name the session it is. */
+export function liveSessionsByPid(
+  machine: MachineSummary,
+  sessions: readonly LiveSession[]
+): Map<number, LiveSession> {
+  const result = new Map<number, LiveSession>()
+  for (const session of liveSessionsOnMachine(sessions.filter(isActiveLiveSession), machine)) {
+    if (session.pid != null) {
+      result.set(session.pid, session)
+    }
+  }
+  return result
+}
