@@ -169,9 +169,9 @@ export async function queryMachineDiskIndex(
   return answerDiskRequestLive(connection, request, answer, signal)
 }
 
-type Ensured = { nextAt: number; failures: number; asking: boolean }
+type Kept = { nextAt: number; failures: number; asking: Promise<number> | null }
 
-const ensured = new Map<MachineId, Ensured>()
+const kept = new Map<MachineId, Kept>()
 
 async function startIndex(connection: MachineConnection): Promise<boolean> {
   if ((await connection.dialect()) !== 'posix') {
@@ -189,18 +189,20 @@ async function startIndex(connection: MachineConnection): Promise<boolean> {
 
 /**
  * Starts a machine's index daemon without anyone opening the disk panel, so the index is already
- * there when they do. Safe to call often: a machine is only asked when it is due, and one that
- * fails is retried with growing pauses.
+ * there when they do, and resolves with when the machine is due again. Safe to call often: a
+ * machine is only asked when it is due, and one that fails is retried with growing pauses.
  */
-export function ensureMachineDiskIndex(connection: MachineConnection): void {
+export function keepMachineDiskIndex(connection: MachineConnection): Promise<number> {
   const machineId = connection.machineId
-  const state = ensured.get(machineId) ?? { nextAt: 0, failures: 0, asking: false }
-  ensured.set(machineId, state)
-  if (state.asking || Date.now() < state.nextAt) {
-    return
+  const state = kept.get(machineId) ?? { nextAt: 0, failures: 0, asking: null }
+  kept.set(machineId, state)
+  if (state.asking) {
+    return state.asking
   }
-  state.asking = true
-  void startIndex(connection)
+  if (Date.now() < state.nextAt) {
+    return Promise.resolve(state.nextAt)
+  }
+  state.asking = startIndex(connection)
     .catch((error: unknown) => {
       logDiskIndexStart(connection, {
         outcome: 'failed',
@@ -210,12 +212,19 @@ export function ensureMachineDiskIndex(connection: MachineConnection): void {
       return false
     })
     .then((answering) => {
-      state.asking = false
+      state.asking = null
       state.failures = answering ? 0 : state.failures + 1
       state.nextAt =
         Date.now() +
         (answering
           ? ENSURE_HEALTHY_EVERY_MS
           : ENSURE_RETRY_AFTER_MS[Math.min(state.failures, ENSURE_RETRY_AFTER_MS.length) - 1])
+      return state.nextAt
     })
+  return state.asking
+}
+
+/** `keepMachineDiskIndex` for callers that only pass by, such as a vitals read. */
+export function ensureMachineDiskIndex(connection: MachineConnection): void {
+  void keepMachineDiskIndex(connection)
 }

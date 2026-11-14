@@ -4,11 +4,14 @@ import type { MachineView } from '../../../shared/machines/machine-view'
 import { createLocalMachineConnection } from '../connection/local-machine-connection'
 import type { MachineConnection } from '../connection/machine-connection'
 
+const MINUTE_MS = 60_000
 const ensured: MachineId[] = []
+let dueAfterMs = MINUTE_MS
 
 vi.mock('./machine-disk-index', () => ({
-  ensureMachineDiskIndex: (connection: MachineConnection) => {
+  keepMachineDiskIndex: async (connection: MachineConnection) => {
     ensured.push(connection.machineId)
+    return Date.now() + dueAfterMs
   }
 }))
 
@@ -34,6 +37,7 @@ async function loadKeeper(): Promise<(skipReason: string | null) => void> {
 describe('the disk index keeper', () => {
   beforeEach(() => {
     ensured.length = 0
+    dueAfterMs = MINUTE_MS
     vi.useFakeTimers()
     vi.spyOn(console, 'info').mockImplementation(() => {})
   })
@@ -49,7 +53,7 @@ describe('the disk index keeper', () => {
     const startMachineDiskIndexKeeper = await loadKeeper()
 
     startMachineDiskIndexKeeper(null)
-    vi.advanceTimersByTime(30_000)
+    await vi.advanceTimersByTimeAsync(30_000)
 
     expect(ensured).toEqual(['local'])
   })
@@ -69,16 +73,28 @@ describe('the disk index keeper', () => {
     })
 
     startMachineDiskIndexKeeper(null)
-    vi.advanceTimersByTime(30_000 + 60_000)
+    await vi.advanceTimersByTimeAsync(30_000 + MINUTE_MS)
 
     expect(ensured).toEqual(['local', 'machine:up', 'local', 'machine:up'])
+  })
+
+  it('sleeps until a machine is due again', async () => {
+    dueAfterMs = 30 * MINUTE_MS
+    const startMachineDiskIndexKeeper = await loadKeeper()
+
+    startMachineDiskIndexKeeper(null)
+    await vi.advanceTimersByTimeAsync(30_000 + 29 * MINUTE_MS)
+    expect(ensured).toEqual(['local'])
+
+    await vi.advanceTimersByTimeAsync(MINUTE_MS)
+    expect(ensured).toEqual(['local', 'local'])
   })
 
   it('leaves the disk alone in a run that says why, and writes the reason down', async () => {
     const startMachineDiskIndexKeeper = await loadKeeper()
 
     startMachineDiskIndexKeeper('this is an end-to-end test run')
-    vi.advanceTimersByTime(10 * 60_000)
+    await vi.advanceTimersByTimeAsync(60 * MINUTE_MS)
 
     expect(ensured).toEqual([])
     expect(console.info).toHaveBeenCalledWith(

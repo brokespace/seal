@@ -16,7 +16,6 @@ vi.mock('../../startup/shell-environment/login-shell-environment', () => ({
   resolveLoginShellEnvironment: async () => process.env
 }))
 
-const TEST_TIMEOUT_MS = 60_000
 let root = ''
 let programCode = ''
 
@@ -87,7 +86,7 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
     // Short, because the daemon's socket path has to fit the system's limit.
     root = mkdtempSync('/tmp/sdi-')
     programCode = (await bundleDiskUsageIndexProgram()).code
-  }, TEST_TIMEOUT_MS)
+  })
 
   beforeEach(() => {
     vi.spyOn(console, 'info').mockImplementation(() => {})
@@ -108,123 +107,93 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
     rmSync(root, { recursive: true, force: true })
   })
 
-  it(
-    'copies the program out of the app and answers from a running daemon',
-    async () => {
-      const resources = packagedResources('Seal.app', programCode)
-      const home = await emptyHome('h1')
-      const { connection, query } = await sealInstalledAt(resources, home, 'local')
+  it('copies the program out of the app and answers from a running daemon', async () => {
+    const resources = packagedResources('Seal.app', programCode)
+    const home = await emptyHome('h1')
+    const { connection, query } = await sealInstalledAt(resources, home, 'local')
 
-      const reply = await query(connection, { op: 'status' })
+    const reply = await query(connection, { op: 'status' })
 
-      expect(reply).toMatchObject({
-        ok: true,
-        status: { source: 'index', unavailableReason: null }
-      })
-      const installed = installedPrograms(home)
-      expect(installed).toHaveLength(1)
-      expect(readFileSync(join(home, '.seal', 'disk-index', installed[0]), 'utf8')).toBe(
-        programCode
+    expect(reply).toMatchObject({
+      ok: true,
+      status: { source: 'index', unavailableReason: null }
+    })
+    const installed = installedPrograms(home)
+    expect(installed).toHaveLength(1)
+    expect(readFileSync(join(home, '.seal', 'disk-index', installed[0]), 'utf8')).toBe(programCode)
+    expect(daemonPids(home)).toHaveLength(1)
+    expect(console.info).toHaveBeenCalledWith(
+      '[disk-index] local machine local: the disk index is answering'
+    )
+  })
+
+  it('lets a second Seal build use the daemon the first one started', async () => {
+    const home = await emptyHome('h2')
+    const first = await sealInstalledAt(packagedResources('First.app', programCode), home, 'local')
+    await first.query(first.connection, { op: 'status' })
+    const running = daemonPids(home)
+
+    const otherBuild = `${programCode}\n// another build\n`
+    const second = await sealInstalledAt(packagedResources('Second.app', otherBuild), home, 'local')
+    const reply = await second.query(second.connection, { op: 'status' })
+
+    expect(reply).toMatchObject({ ok: true, status: { source: 'index' } })
+    expect(running).toHaveLength(1)
+    expect(daemonPids(home)).toEqual(running)
+    expect(installedPrograms(home)).toHaveLength(2)
+  })
+
+  it('says that the program could not be copied, and why', async () => {
+    const resources = packagedResources('Seal.app', programCode)
+    const home = join(root, 'h3')
+    mkdirSync(home)
+    writeFileSync(join(home, '.seal'), 'not a folder')
+    const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-folder')
+
+    const reply = await query(connection, { op: 'status' })
+
+    expect(reply).toMatchObject({
+      ok: true,
+      status: { source: 'live', unavailableReason: 'install-failed' }
+    })
+    const detail = 'status' in reply ? reply.status.unavailableDetail : null
+    expect(detail).toMatch(/ENOTDIR|EEXIST/)
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^\[disk-index\] local machine machine:no-folder: the disk index is not available \(install-failed\): E/
       )
-      expect(daemonPids(home)).toHaveLength(1)
-      expect(console.info).toHaveBeenCalledWith(
-        '[disk-index] local machine local: the disk index is answering'
-      )
-    },
-    TEST_TIMEOUT_MS
-  )
+    )
+  })
 
-  it(
-    'lets a second Seal build use the daemon the first one started',
-    async () => {
-      const home = await emptyHome('h2')
-      const first = await sealInstalledAt(
-        packagedResources('First.app', programCode),
-        home,
-        'local'
-      )
-      await first.query(first.connection, { op: 'status' })
-      const running = daemonPids(home)
+  it('says what the daemon wrote when it does not come up', async () => {
+    const resources = packagedResources('Seal.app', programCode)
+    const home = await emptyHome('h4')
+    // A folder where the socket belongs: the daemon can neither bind it nor clear it away.
+    mkdirSync(join(home, '.seal', 'disk-index', 'daemon.sock', 'in-the-way'), { recursive: true })
+    const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-socket')
 
-      const otherBuild = `${programCode}\n// another build\n`
-      const second = await sealInstalledAt(
-        packagedResources('Second.app', otherBuild),
-        home,
-        'local'
-      )
-      const reply = await second.query(second.connection, { op: 'status' })
+    const reply = await query(connection, { op: 'status' })
 
-      expect(reply).toMatchObject({ ok: true, status: { source: 'index' } })
-      expect(running).toHaveLength(1)
-      expect(daemonPids(home)).toEqual(running)
-      expect(installedPrograms(home)).toHaveLength(2)
-    },
-    TEST_TIMEOUT_MS
-  )
+    expect(reply).toMatchObject({
+      ok: true,
+      status: { source: 'live', unavailableReason: 'daemon-failed' }
+    })
+    const detail = 'status' in reply ? reply.status.unavailableDetail : null
+    expect(detail).toContain('daemon.sock')
+    expect(daemonPids(home)).toEqual([])
+  })
 
-  it(
-    'says that the program could not be copied, and why',
-    async () => {
-      const resources = packagedResources('Seal.app', programCode)
-      const home = join(root, 'h3')
-      mkdirSync(home)
-      writeFileSync(join(home, '.seal'), 'not a folder')
-      const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-folder')
+  it('says so when this copy of Seal has no program to run', async () => {
+    const resources = join(root, 'Empty.app', 'Contents', 'Resources')
+    const home = await emptyHome('h5')
+    const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-program')
 
-      const reply = await query(connection, { op: 'status' })
+    const reply = await query(connection, { op: 'status' })
 
-      expect(reply).toMatchObject({
-        ok: true,
-        status: { source: 'live', unavailableReason: 'install-failed' }
-      })
-      const detail = 'status' in reply ? reply.status.unavailableDetail : null
-      expect(detail).toMatch(/ENOTDIR|EEXIST/)
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^\[disk-index\] local machine machine:no-folder: the disk index is not available \(install-failed\): E/
-        )
-      )
-    },
-    TEST_TIMEOUT_MS
-  )
-
-  it(
-    'says what the daemon wrote when it does not come up',
-    async () => {
-      const resources = packagedResources('Seal.app', programCode)
-      const home = await emptyHome('h4')
-      // A folder where the socket belongs: the daemon can neither bind it nor clear it away.
-      mkdirSync(join(home, '.seal', 'disk-index', 'daemon.sock', 'in-the-way'), { recursive: true })
-      const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-socket')
-
-      const reply = await query(connection, { op: 'status' })
-
-      expect(reply).toMatchObject({
-        ok: true,
-        status: { source: 'live', unavailableReason: 'daemon-failed' }
-      })
-      const detail = 'status' in reply ? reply.status.unavailableDetail : null
-      expect(detail).toContain('daemon.sock')
-      expect(daemonPids(home)).toEqual([])
-    },
-    TEST_TIMEOUT_MS
-  )
-
-  it(
-    'says so when this copy of Seal has no program to run',
-    async () => {
-      const resources = join(root, 'Empty.app', 'Contents', 'Resources')
-      const home = await emptyHome('h5')
-      const { connection, query } = await sealInstalledAt(resources, home, 'machine:no-program')
-
-      const reply = await query(connection, { op: 'status' })
-
-      expect(reply).toMatchObject({
-        ok: true,
-        status: { source: 'live', unavailableReason: 'no-program' }
-      })
-      expect(installedPrograms(home)).toEqual([])
-    },
-    TEST_TIMEOUT_MS
-  )
+    expect(reply).toMatchObject({
+      ok: true,
+      status: { source: 'live', unavailableReason: 'no-program' }
+    })
+    expect(installedPrograms(home)).toEqual([])
+  })
 })
