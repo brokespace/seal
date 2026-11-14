@@ -47,7 +47,7 @@ describe('liveSessionsOnMachine', () => {
     executionHostId: 'runtime:env-1',
     sshTargetId: 'ssh-gpu',
     runtimeEnvironmentId: 'env-1'
-  }
+  } as const
   const on = (id: string, host: LiveSessionMachine) => ({ id, machine: host })
 
   it('finds a merged machine sessions over SSH, over its server, and from before unification', () => {
