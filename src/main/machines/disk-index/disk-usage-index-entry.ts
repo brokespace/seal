@@ -9,7 +9,7 @@
 import { lstatSync, readdirSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { availableParallelism, constants, homedir, setPriority } from 'node:os'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import { isMainThread, parentPort, Worker, workerData } from 'node:worker_threads'
 import type { MachineDiskIndexRequest } from '../../../shared/machines/machine-disk-index-types'
 import { DiskIndexDaemon } from './disk-index-daemon'
@@ -28,8 +28,6 @@ import {
 import type { WalkerInit, WalkerMessage } from './disk-index-walk-protocol'
 import { DiskWalker } from './disk-index-walker'
 
-/** The program file's name carries a hash of its contents. */
-const BUILD = basename(__filename)
 const NO_DAEMON_EXIT_CODE = 3
 const QUERY_TIMEOUT_MS = 60_000
 const MINUTE_MS = 60_000
@@ -154,7 +152,6 @@ async function runDaemon(args: string[]): Promise<void> {
   let daemon: DiskIndexDaemon | null = null
   const listener = await listenForDiskIndexRequests(
     diskIndexSocketPath(dataDir()),
-    BUILD,
     async (envelope) => {
       await ready
       return daemon!.handle(envelope)
@@ -165,7 +162,6 @@ async function runDaemon(args: string[]): Promise<void> {
   }
   daemon = new DiskIndexDaemon({
     dataDir: dataDir(),
-    build: BUILD,
     stillOwnsSocket: listener.stillOwnsSocket,
     ownerPid: flagValue(args, '--owner-pid'),
     idleExitMs: idleExitHours === null ? null : idleExitHours * HOUR_MS,
@@ -187,7 +183,6 @@ async function runQuery(encoded: string): Promise<void> {
   )
   const reply = await requestDiskIndexDaemon(
     diskIndexSocketPath(dataDir()),
-    BUILD,
     request,
     QUERY_TIMEOUT_MS
   ).catch(() => null)
