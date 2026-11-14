@@ -5,10 +5,12 @@ import type {
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import { parseSubagentTranscriptId } from '../../../shared/live-sessions/live-session-activity'
 import {
   readTranscriptForward,
   readTranscriptPage,
   transcriptSourceFor,
+  type TranscriptDecodeOptions,
   type TranscriptSource
 } from './live-transcript-reader'
 
@@ -38,13 +40,27 @@ export class LiveTranscriptStreams {
     this.log = options?.log
   }
 
-  source(sessionId: string): { source: TranscriptSource; session: LiveSession } | null {
+  /** `transcriptId` is a session id, or a subagent's (`subagentTranscriptId`): its own transcript. */
+  source(
+    transcriptId: string
+  ): { source: TranscriptSource; session: LiveSession; decode: TranscriptDecodeOptions } | null {
+    const { sessionId, subagentId } = parseSubagentTranscriptId(transcriptId)
     const session = this.sessions.get(sessionId)
     const host = session ? this.sessions.host(session.machine.hostId) : null
-    if (!session?.transcriptPath || !host) {
+    // Only paths the scan itself found are read, never one a caller names.
+    const path =
+      subagentId === null
+        ? session?.transcriptPath
+        : session?.activity?.subagents.find((subagent) => subagent.id === subagentId)
+            ?.transcriptPath
+    if (!session || !path || !host) {
       return null
     }
-    return { session, source: transcriptSourceFor(host, session.transcriptPath) }
+    return {
+      session,
+      source: transcriptSourceFor(host, path),
+      decode: { subagent: subagentId !== null }
+    }
   }
 
   async page(
@@ -56,7 +72,14 @@ export class LiveTranscriptStreams {
     if (!found) {
       return { sessionId, messages: [], cursor: 0, start: 0, more: false }
     }
-    return readTranscriptPage(found.source, found.session.provider, sessionId, before, limit)
+    return readTranscriptPage(
+      found.source,
+      found.session.provider,
+      sessionId,
+      before,
+      limit,
+      found.decode
+    )
   }
 
   subscribe(
@@ -76,7 +99,12 @@ export class LiveTranscriptStreams {
       const found = this.source(sessionId)
       if (found) {
         try {
-          const read = await readTranscriptForward(found.source, found.session.provider, cursor)
+          const read = await readTranscriptForward(
+            found.source,
+            found.session.provider,
+            cursor,
+            found.decode
+          )
           if (stopped) {
             return
           }

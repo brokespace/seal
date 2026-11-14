@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/index'
 import type { HomeChatOpenTarget } from '../../../../shared/home-chat/home-chat-types'
 import { parseMachineId } from '../../../../shared/machines/machine-types'
 import { takeOverLiveSession } from '../live-sessions/take-over/live-session-take-over'
+import { showActiveAgents } from '../live-sessions/menu/live-session-menu-effects'
 import { rememberMachineSelection } from '../machines/model/machine-selection'
 
 async function takeOver(sessionId: string): Promise<void> {
@@ -78,7 +79,7 @@ export function openHomeChatTarget(target: HomeChatOpenTarget): void {
           store.openMachinesPage()
           return
         case 'sessions':
-          store.openSessionsPage()
+          showActiveAgents()
           return
         case 'tasks':
           store.openTaskPage()

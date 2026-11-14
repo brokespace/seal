@@ -1,13 +1,19 @@
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import type { SummarizedTranscript } from './session-assembly'
 
+export type Conversation = {
+  transcript: SummarizedTranscript
+  /** Provider session ids of the earlier files this one carries on (a resume after an error). */
+  earlier: string[]
+}
+
+const MAX_CHAIN = 16
+
 /**
  * One file per conversation: the newest copy of a session id, the newest file of a resume chain.
  * Headless runs are dropped: the program that drives them owns the conversation.
  */
-export function conversationTranscripts(
-  transcripts: readonly SummarizedTranscript[]
-): SummarizedTranscript[] {
+export function conversations(transcripts: readonly SummarizedTranscript[]): Conversation[] {
   const newest = new Map<string, SummarizedTranscript>()
   for (const t of transcripts) {
     const key = `${t.summary.provider}:${t.summary.providerSessionId}`
@@ -23,17 +29,43 @@ export function conversationTranscripts(
       holders.set(id, [...(holders.get(id) ?? []), t])
     }
   }
-  const continued = new Set<SummarizedTranscript>()
+  const continuedBy = new Map<SummarizedTranscript, SummarizedTranscript>()
   for (const t of files) {
     // A resume either points at the record it continues or opens with a copy of the history.
     const links = [...t.summary.continues, ...t.summary.recordIds.slice(0, 1)]
-    for (const earlier of links.flatMap((id) => holders.get(id) ?? [])) {
-      if (earlier !== t && earlier.summary.provider === t.summary.provider) {
-        continued.add(earlier.mtimeMs <= t.mtimeMs ? earlier : t)
+    for (const other of links.flatMap((id) => holders.get(id) ?? [])) {
+      if (other === t || other.summary.provider !== t.summary.provider) {
+        continue
+      }
+      // Files saved in the same instant still need one order, or each folds into the other.
+      const otherIsOlder =
+        other.mtimeMs < t.mtimeMs || (other.mtimeMs === t.mtimeMs && other.path < t.path)
+      const [older, newer] = otherIsOlder ? [other, t] : [t, other]
+      const known = continuedBy.get(older)
+      if (!known || newer.mtimeMs > known.mtimeMs) {
+        continuedBy.set(older, newer)
       }
     }
   }
-  return files.filter((t) => !continued.has(t))
+  const earlier = new Map<SummarizedTranscript, string[]>()
+  for (const t of continuedBy.keys()) {
+    let last = t
+    for (let hops = 0; hops < MAX_CHAIN && continuedBy.has(last); hops++) {
+      last = continuedBy.get(last)!
+    }
+    if (last !== t && !continuedBy.has(last)) {
+      earlier.set(last, [...(earlier.get(last) ?? []), t.summary.providerSessionId])
+    }
+  }
+  return files
+    .filter((t) => !continuedBy.has(t))
+    .map((transcript) => ({ transcript, earlier: earlier.get(transcript) ?? [] }))
+}
+
+export function conversationTranscripts(
+  transcripts: readonly SummarizedTranscript[]
+): SummarizedTranscript[] {
+  return conversations(transcripts).map((conversation) => conversation.transcript)
 }
 
 function rank(session: LiveSession): number {

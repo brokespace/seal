@@ -9,16 +9,27 @@ import type {
 } from '../../../shared/live-sessions/live-session-types'
 import type { DiscoveredPane, DiscoveredProcess, DiscoveryOutput } from './discovery-output'
 import { parseAgentScreen, type AgentScreen } from './agent-screen'
-import type { TranscriptPhase, TranscriptSummary } from './transcript-summary'
+import type { TranscriptSummary } from './transcript-summary'
+import type { LiveTodo } from '../../../shared/live-sessions/live-session-activity'
+import type { ClaudeActivityState } from './claude-transcript-activity'
+import type { SubagentFileSummary } from './claude-subagent-files'
+import { restingStatus, turnStatus, withBackgroundWait } from './session-status'
+import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import { agentProcesses, codexHomeOf, processBinary, sessionIdFromArgs } from './agent-processes'
-import { conversationTranscripts, distinctSessions } from './session-identity'
+import { conversations, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
   path: string
   size: number
   mtimeMs: number
   summary: TranscriptSummary
+  /** Claude: what the transcript launched, folded scan after scan. */
+  claudeActivity?: ClaudeActivityState
+  /** Claude: the session's subagent transcripts. */
+  subagents?: SubagentFileSummary[]
+  /** Codex: the newest `update_plan`. */
+  codexPlan?: LiveTodo[] | null
 }
 
 /** A SISomewhere-format hook state file (`~/.config/sisomewhere/agents/<id>.json`). */
@@ -78,26 +89,11 @@ export function parseHookStates(files: { path: string; text: string }[]): HookSt
   })
 }
 
-function phaseStatus(phase: TranscriptPhase, running: boolean): LiveSessionStatus {
-  if (phase === 'errored') {
-    return 'errored'
-  }
-  if (!running) {
-    return 'done'
-  }
-  switch (phase) {
-    case 'working':
-    case 'tool-pending':
-      return 'working'
-    case 'approval-requested':
-      return 'needs-permission'
-    case 'turn-ended':
-    case 'unknown':
-      return 'waiting-input'
-  }
-}
-
-function hookStatus(state: string, running: boolean): LiveSessionStatus | null {
+function hookStatus(
+  state: string,
+  running: boolean,
+  summary: TranscriptSummary | undefined
+): LiveSessionStatus | null {
   switch (state) {
     case 'working':
       return 'working'
@@ -105,10 +101,16 @@ function hookStatus(state: string, running: boolean): LiveSessionStatus | null {
       return 'needs-permission'
     case 'done':
     case 'idle':
-      return running ? 'waiting-input' : 'done'
+      return running ? restingStatus(summary) : 'done'
     default:
       return null
   }
+}
+
+/** The provider config folder a transcript lives under: `<dir>/projects/…` or `<dir>/sessions/…`. */
+export function configDirOf(provider: LiveSessionProvider, path: string | null): string | null {
+  const at = path?.lastIndexOf(provider === 'claude' ? '/projects/' : '/sessions/') ?? -1
+  return at > 0 ? path!.slice(0, at) : null
 }
 
 export function permissionPromptId(paneId: string, screen: AgentScreen): string {
@@ -206,9 +208,13 @@ export function assembleHostSessions(input: {
     }
   }
   const sessions: LiveSession[] = []
+  // A Codex helper thread writes its own rollout, but it is its session's subagent, not a session.
+  const helpers = codexHelperThreads(input.transcripts)
+  const found = conversations(input.transcripts.filter((t) => !t.summary.parentSessionId))
+  const earlierOf = new Map(found.map((c) => [c.transcript, c.earlier]))
   for (const { process, transcript } of pairProcesses(
     agentProcesses(output.processes),
-    conversationTranscripts(input.transcripts),
+    found.map((c) => c.transcript),
     claudeSessionByPid,
     ownedPaths,
     now - FRESH_WRITE_MS
@@ -220,22 +226,37 @@ export function assembleHostSessions(input: {
       summary?.providerSessionId ??
       (provider === 'claude' ? claudeSessionByPid.get(process!.pid) : undefined) ??
       `pid-${process!.pid}`
-    const lastWrite = Math.max(transcript?.mtimeMs ?? 0, summary?.lastAt ?? 0)
+    const helperThreads = helpers.get(providerSessionId) ?? []
+    // Subagents write to their own files while their session's stands still.
+    const lastWrite = Math.max(
+      transcript?.mtimeMs ?? 0,
+      summary?.lastAt ?? 0,
+      ...(transcript?.subagents ?? []).map((sub) => sub.mtimeMs),
+      ...helperThreads.map((helper) => helper.mtimeMs)
+    )
     const running = process !== null || now - lastWrite < FRESH_WRITE_MS
     const pane = process?.tty ? panesByTty.get(process.tty) : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
     const hook = hooks.get(`${provider}:${providerSessionId}`)
 
-    let status: LiveSessionStatus = summary ? phaseStatus(summary.phase, running) : 'waiting-input'
+    let status: LiveSessionStatus = turnStatus(summary, running, now - lastWrite)
     let statusSource: LiveSessionStatusSource = 'transcript'
     let statusDetail = summary?.detail ?? null
     const hookFresh = hook && hook.updatedMs >= lastWrite - HOOK_STALE_MS
-    const fromHook = hookFresh ? hookStatus(hook.state, running) : null
+    const fromHook = hookFresh ? hookStatus(hook.state, running, summary) : null
     if (fromHook) {
       status = fromHook
       statusSource = 'agent-hooks'
       statusDetail = hook!.detail ?? statusDetail
     }
+    const activity = sessionActivityOf({
+      transcript,
+      helperThreads,
+      running,
+      turnOpen: status === 'working',
+      nowMs: now
+    })
+    ;({ status, statusDetail } = withBackgroundWait({ status, statusDetail }, summary, activity))
     let permission: LiveSession['permission'] = null
     if (screen?.approval && pane && running) {
       status = 'needs-permission'
@@ -254,6 +275,9 @@ export function assembleHostSessions(input: {
     if (status !== 'working' && status !== 'needs-permission' && statusDetail === 'Thinking') {
       statusDetail = null
     }
+    if (status === 'idle' || status === 'done') {
+      statusDetail = summary?.detail === 'Interrupted' ? 'Interrupted' : null
+    }
     const inputRoutes: LiveSessionInputRoute[] = []
     if (provider === 'codex' && process && summary) {
       inputRoutes.push({
@@ -271,6 +295,9 @@ export function assembleHostSessions(input: {
       inputRoutes.push({ kind: 'resume' })
     }
     const cwd = summary?.cwd ?? process?.cwd ?? null
+    const continues = (transcript ? (earlierOf.get(transcript) ?? []) : []).map((id) =>
+      liveSessionId(machine.hostId, provider, id)
+    )
     sessions.push({
       id: liveSessionId(machine.hostId, provider, providerSessionId),
       provider,
@@ -290,7 +317,11 @@ export function assembleHostSessions(input: {
       pid: process?.pid ?? null,
       transcriptPath: transcript?.path ?? null,
       inputRoutes,
-      permission
+      permission,
+      activity,
+      lastMessage: summary?.lastMessage ?? null,
+      configDir: configDirOf(provider, transcript?.path ?? null),
+      ...(continues.length > 0 ? { continues } : {})
     })
   }
   return distinctSessions(sessions)

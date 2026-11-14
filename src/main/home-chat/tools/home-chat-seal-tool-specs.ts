@@ -7,7 +7,7 @@ const provider = z.enum(['claude', 'codex'])
 export const HOME_CHAT_SEAL_TOOLS = {
   list_sessions: {
     description:
-      'List the Claude Code and Codex agent sessions Seal can see on every machine (or one machine): id, agent, machine, project folder, title, status (working, waiting-input, needs-permission, done, errored), what it is doing, last activity, and whether it runs in a Seal pane or was found running outside Seal. Use it before messaging or taking over a session.',
+      'List the Claude Code and Codex agent sessions Seal can see on every machine (or one machine): id, agent, machine, project folder, title, status (working, waiting-subagent, waiting-task, waiting-input, needs-permission, idle, done, errored), what it is doing, last activity, and whether it runs in a Seal pane or was found running outside Seal. Use it before messaging or taking over a session.',
     shape: {
       machine: z.string().optional().describe('Only this machine (id or label)'),
       include_done: z.boolean().optional().describe('Also list finished sessions (default false)')

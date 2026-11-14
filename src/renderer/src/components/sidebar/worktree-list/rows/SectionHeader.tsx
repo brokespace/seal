@@ -34,6 +34,7 @@ import {
   isFolderWorkspaceCreateDisabled
 } from './FolderPathStatusIndicator'
 import { RepoScanUnavailableIndicator } from './RepoScanUnavailableIndicator'
+import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 import {
   ProjectGroupCreateWorkspaceButton,
   ProjectGroupHeaderMenu
@@ -80,6 +81,8 @@ export function renderWorktreeSectionHeaderRow(
     isProjectGroupHeader && !row.repo && typeof row.projectGroup?.id === 'string'
       ? row.projectGroup.id
       : undefined
+  const liveSessionsProjectId =
+    ctx.groupBy === 'repo' ? (row.repo?.id ?? projectGroupIdForHeader) : null
   const projectGroupDragIdForHeader =
     row.repeated && !usesRootProjectDrag ? undefined : projectGroupIdForHeader
   // Why: rename/delete must route to the host that owns this row, not to whichever host has focus.
@@ -334,6 +337,11 @@ export function renderWorktreeSectionHeaderRow(
                 <RepoForkIndicator upstream={row.repo?.upstream} />
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />
                 {isRepoHeader ? <RepoScanUnavailableIndicator repo={row.repo!} /> : null}
+                {liveSessionsProjectId ? (
+                  <LiveSessionsBadge
+                    scope={{ kind: 'project', id: liveSessionsProjectId, label }}
+                  />
+                ) : null}
               </div>
             </div>
           </div>

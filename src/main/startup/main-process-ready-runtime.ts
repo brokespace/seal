@@ -52,6 +52,7 @@ import { startClaudeCodeThemeSync } from '../claude/theme-sync/claude-code-theme
 import { startWorkspaceCleanupRunner } from '../workspaces/cleanup/workspace-cleanup-runner-startup'
 import { installLiveSessions } from '../live-sessions/live-sessions-install'
 import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
+import { installLiveSessionDesktopNotifications } from '../live-sessions/live-session-desktop-notifications'
 
 // Headless serve has no first window; timer fallback must still sweep trash.
 const WORKTREE_TRASH_SWEEP_FALLBACK_MS = 15_000
@@ -74,6 +75,7 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   const liveSessions = installLiveSessions(runtime, store)
   if (liveSessions) {
     registerLiveSessionIpc(liveSessions.service, liveSessions.shellIntegration)
+    installLiveSessionDesktopNotifications(liveSessions.service, store)
   }
   installFirstWorkRenameHookSubscription()
   await initializeMainProcessPlugins(runtime)

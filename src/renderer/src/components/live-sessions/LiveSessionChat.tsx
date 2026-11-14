@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { AgentStateDot } from '@/components/AgentStateDot'
 import { useTranslate } from '@/i18n/use-translate'
 import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
 import { NativeChatApprovalCard } from '../native-chat/prompts/NativeChatApprovalCard'
@@ -10,15 +9,8 @@ import type { LiveSession } from '../../../../shared/live-sessions/live-session-
 import type { LiveTranscriptState } from './use-live-transcript'
 import type { PendingRow } from './live-session-pending-rows'
 import { LiveSessionComposer } from './LiveSessionComposer'
-import { LiveSessionTakeOverButton } from './take-over/LiveSessionTakeOverButton'
-import { LiveSessionRemoveButton } from './remove/LiveSessionRemoveButton'
-import {
-  liveMessageStateLabel,
-  liveSessionDotState,
-  liveSessionProviderLabel,
-  liveSessionStatusLabel,
-  liveSessionTitle
-} from './live-session-presentation'
+import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
+import { liveMessageStateLabel } from './live-session-presentation'
 
 export type LiveSessionChatProps = {
   session: LiveSession
@@ -29,6 +21,8 @@ export type LiveSessionChatProps = {
   onAnswer: (optionId: string) => void
   /** The option whose answer is on its way. */
   answering: string | null
+  /** Changes when a menu asked to type here; the field takes focus. */
+  composerFocus?: number
 }
 
 export function LiveSessionChat({
@@ -38,9 +32,12 @@ export function LiveSessionChat({
   onSend,
   onRetry,
   onAnswer,
-  answering
+  answering,
+  composerFocus
 }: LiveSessionChatProps): React.JSX.Element {
   const t = useTranslate()
+  // Waiting on its own subagents or background tasks is still the agent's turn.
+  const working = liveSessionStatusGroup(session.status) === 'working'
   const chat = useMemo<NativeChatLiveSession>(
     () => ({
       messages: [...transcript.messages, ...pending.map((p) => p.row)],
@@ -51,7 +48,7 @@ export function LiveSessionChat({
           ? 'error'
           : transcript.phase === 'loading'
             ? 'loading'
-            : session.status === 'working'
+            : working
               ? 'working'
               : transcript.messages.length || pending.length
                 ? 'ready'
@@ -68,7 +65,7 @@ export function LiveSessionChat({
       olderHistoryGeneration: 0,
       loadEarlier: transcript.loadEarlier
     }),
-    [session.provider, session.providerSessionId, session.status, transcript, pending]
+    [session.provider, session.providerSessionId, working, transcript, pending]
   )
   const notices = useMemo(() => {
     const map = new Map<string, NativeChatDeliveryNotice>()
@@ -94,29 +91,11 @@ export function LiveSessionChat({
         )
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-chat-pane">
-      <header className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2">
-        <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <h2 className="truncate text-sm font-semibold">{liveSessionTitle(session)}</h2>
-          <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="shrink-0">
-              {[
-                liveSessionProviderLabel(session),
-                session.machine.label,
-                liveSessionStatusLabel(session.status)
-              ].join(' \u00b7 ')}
-            </span>
-            {session.cwd ? <span className="min-w-0 truncate font-mono">{session.cwd}</span> : null}
-          </p>
-        </div>
-        <LiveSessionTakeOverButton session={session} />
-        <LiveSessionRemoveButton session={session} />
-      </header>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <NativeChatMessageList
           session={chat}
-          isWorking={session.status === 'working'}
+          isWorking={working}
           expandSignal={false}
           deliveryNotices={notices}
         />
@@ -136,8 +115,12 @@ export function LiveSessionChat({
           placement="stacked"
         />
       ) : (
-        <LiveSessionComposer onSend={onSend} unavailableHint={unavailableHint} />
+        <LiveSessionComposer
+          onSend={onSend}
+          unavailableHint={unavailableHint}
+          focusSignal={composerFocus}
+        />
       )}
-    </section>
+    </div>
   )
 }

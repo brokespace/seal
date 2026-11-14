@@ -30,6 +30,7 @@ class LiveSessionRegistryStore {
   private readonly listeners = new Set<() => void>()
   private teardown: (() => void) | null = null
   private readonly renamed = new Map<string, string>()
+  private readonly renameListeners = new Set<(from: string, to: string) => void>()
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
@@ -46,6 +47,12 @@ class LiveSessionRegistryStore {
   }
 
   readonly getState = (): LiveSessionsState => this.state
+
+  /** Views holding a session id (tabs, picks, read marks) follow it to its new id. */
+  onRename(listener: (fromSessionId: string, toSessionId: string) => void): () => void {
+    this.renameListeners.add(listener)
+    return () => this.renameListeners.delete(listener)
+  }
 
   /** The id a session goes by now: a fresh agent's id changes when its first prompt names it. */
   currentId(sessionId: string): string {
@@ -113,6 +120,9 @@ class LiveSessionRegistryStore {
     } else if (event.type === 'remove') {
       if (event.replacedBy) {
         this.renamed.set(event.sessionId, event.replacedBy)
+        for (const listener of this.renameListeners) {
+          listener(event.sessionId, event.replacedBy)
+        }
       }
       this.set({
         ...this.state,

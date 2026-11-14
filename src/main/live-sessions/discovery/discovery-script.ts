@@ -9,9 +9,13 @@ export type DiscoveryScriptOptions = {
   maxReads: number
   headBytes: number
   tailBytes: number
+  /** Subagent transcripts listed per session, and how many are read per scan across the host. */
+  maxSubagents: number
+  maxSubagentReads: number
+  subagentTailBytes: number
   /** False when the host finds transcripts another way (this machine uses AI Vault discovery). */
   transcripts: boolean
-  /** `path|size` of transcripts already read at that size: their bytes are skipped. */
+  /** `path|size` of transcripts and subagent transcripts already read at that size: their bytes are skipped. */
   known: { path: string; size: number }[]
   /** Paths whose head was already read: only their tail is sent when they grow. */
   headKnown: string[]
@@ -35,6 +39,8 @@ HEADKNOWN=${shQuote(headKnown)}
 TTYS='|'
 PINS="\${TMPDIR:-/tmp}/.seal-live-pins.$$"
 : > "$PINS"
+SUBREADS="\${TMPDIR:-/tmp}/.seal-live-subs.$$"
+: > "$SUBREADS"
 pin() { [ -f "$4" ] && echo "$1 $2 $3 $4" >> "$PINS"; }
 CLAUDE_ROOTS="$HOME/.claude
 \${CLAUDE_CONFIG_DIR:-}"
@@ -89,7 +95,7 @@ for f in "$HOME"/.config/sisomewhere/agents/*.json; do
   [ -n "$hp" ] && [ -n "$ht" ] && kill -0 "$hp" 2>/dev/null && pin "$hp" hook claude "$ht"
 done
 sort -u "$PINS" | sed 's/^/@@PIN /'
-${transcriptSection(options)}rm -f "$PINS"
+${transcriptSection(options)}rm -f "$PINS" "$SUBREADS"
 echo "@@DONE"
 `
 }
@@ -148,6 +154,32 @@ function pinSection(): string {
   done`
 }
 
+/**
+ * A Claude session's subagents write `<session>/subagents/agent-<id>.jsonl`. They are listed with
+ * every scan (a subagent works while its session's own file stands still); bytes follow the read budget.
+ */
+function subagentSection(options: DiscoveryScriptOptions): string {
+  return `  sd="\${f%.jsonl}/subagents"
+  if [ "$provider" = claude ] && [ -d "$sd" ]; then
+    ls -t "$sd"/agent-*.jsonl 2>/dev/null | head -n ${options.maxSubagents} | while read -r sf; do
+      set -- $(fsize "$sf")
+      [ -n "$2" ] || continue
+      echo "@@SUB $1 $2 $sf"
+      mf="\${sf%.jsonl}.meta.json"
+      fresh=; [ $(( $(date +%s) - $2 )) -lt 600 ] && fresh=1
+      seen=; printf '%s\\n' "$KNOWN" | grep -Fxq "$sf|$1" && seen=1
+      if [ -f "$mf" ] && { [ -n "$fresh" ] || [ -z "$seen" ]; }; then
+        printf '@@SUBMETA %s ' "$sf"; head -c 4096 "$mf" | b64; echo
+      fi
+      [ -n "$seen" ] && continue
+      [ "$(wc -l < "$SUBREADS")" -ge ${options.maxSubagentReads} ] && continue
+      echo x >> "$SUBREADS"
+      printf '@@SUBTAIL %s ' "$sf"; tail -c ${options.subagentTailBytes} "$sf" | b64; echo
+    done
+  fi
+`
+}
+
 function transcriptSection(options: DiscoveryScriptOptions): string {
   if (!options.transcripts) {
     return ''
@@ -166,7 +198,7 @@ function transcriptSection(options: DiscoveryScriptOptions): string {
   [ -n "$2" ] && echo "$pri $2 $1 $provider $f"
 done | sort -k1,1nr -k2,2nr | head -n ${options.maxFiles} | { reads=0; while read -r pri mtime size provider f; do
   echo "@@FILE $provider $size $mtime $f"
-  if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; then continue; fi
+${subagentSection(options)}  if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; then continue; fi
   [ "$reads" -ge ${options.maxReads} ] && continue
   reads=$((reads + 1))
   if ! printf '%s\\n' "$HEADKNOWN" | grep -Fxq "$f"; then

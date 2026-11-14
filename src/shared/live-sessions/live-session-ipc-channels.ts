@@ -10,9 +10,12 @@ export const LIVE_SESSION_IPC = {
   answer: 'liveSessions:answer',
   takeOver: 'liveSessions:takeOver',
   remove: 'liveSessions:remove',
+  annotate: 'liveSessions:annotate',
   shellIntegration: 'liveSessions:shellIntegration',
   /** main → renderer: LiveSessionRegistryEvent */
   event: 'liveSessions:event',
+  /** main → renderer: { sessionId }, the session whose notification was clicked */
+  open: 'liveSessions:open',
   /** main → renderer: LiveMessage */
   message: 'liveSessions:message',
   /** main → renderer: { watchId, delta: LiveTranscriptDelta } */

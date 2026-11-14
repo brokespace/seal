@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSessionMachine } from '../../../shared/live-sessions/live-session-types'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
+import { UNKNOWN_TURN } from './transcript-summary'
 import type { DiscoveredPane, DiscoveredProcess } from './discovery-output'
 
 const machine: LiveSessionMachine = { hostId: 'ssh-1', label: 'build-box', kind: 'remote' }
@@ -18,17 +19,21 @@ function transcript(
     size: 100,
     mtimeMs: NOW - ageMs,
     summary: {
+      ...UNKNOWN_TURN,
+      settled: true,
       provider: 'claude',
       providerSessionId: id,
       cwd,
       title: `title ${id}`,
       phase,
-      detail: null,
       firstAt: NOW - 3_600_000,
       lastAt: NOW - ageMs,
       headless: false,
       recordIds: [],
-      continues: []
+      continues: [],
+      parentSessionId: null,
+      agentName: null,
+      agentType: null
     }
   }
 }
@@ -128,7 +133,7 @@ describe('assembleHostSessions', () => {
       []
     )
     expect(sessions.map((s) => [s.providerSessionId, s.status, s.alive])).toEqual([
-      ['pid-100', 'waiting-input', true]
+      ['pid-100', 'idle', true]
     ])
   })
 
@@ -151,7 +156,7 @@ describe('assembleHostSessions', () => {
     expect(live.inputRoutes).toEqual([
       { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
     ])
-    expect(live.status).toBe('waiting-input')
+    expect(live.status).toBe('idle')
   })
 
   it("names a fresh Claude from Claude's session registry and skips daemons and tool commands", () => {
