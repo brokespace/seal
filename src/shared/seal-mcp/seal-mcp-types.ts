@@ -43,6 +43,9 @@ export type SealMcpClientCreateArgs = {
   callsPerMinute?: number
 }
 
+/** A machine a client can be limited to, as the `list_machines` tool names it. */
+export type SealMcpMachine = { id: string; label: string }
+
 /** The only moment the full token exists outside the client that holds it. */
 export type SealMcpClientCreated = { client: SealMcpClient; token: string }
 

@@ -1661,6 +1661,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'sealMcp.createClient': SealMcpClientCreateParams,
   'sealMcp.listApprovals': null,
   'sealMcp.listAudit': SealMcpAuditListParams,
+  'sealMcp.listMachines': null,
   'sealMcp.message': SealMcpMessageParams,
   'sealMcp.removeClient': SealMcpClientIdParams,
   'sealMcp.respondApproval': SealMcpApprovalRespondParams,

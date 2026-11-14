@@ -6,6 +6,7 @@ import type {
   SealMcpClientCreateArgs,
   SealMcpClientCreated,
   SealMcpEvent,
+  SealMcpMachine,
   SealMcpSettings,
   SealMcpStatus
 } from '../../shared/seal-mcp/seal-mcp-types'
@@ -157,6 +158,12 @@ export class SealMcpService {
     const removed = this.clients.remove(id)
     this.dropClientWork(id)
     return removed
+  }
+
+  /** The machines a client's allowlist can name. */
+  async listMachines(): Promise<SealMcpMachine[]> {
+    const machines = await (await this.options.runtime()).machines.list()
+    return machines.map(({ id, label }) => ({ id, label }))
   }
 
   listAudit(query?: SealMcpAuditQuery): SealMcpAuditEntry[] {

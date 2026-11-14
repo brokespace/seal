@@ -57,6 +57,12 @@ export const SEAL_MCP_METHODS = [
     handler: ({ clientId }) => ({ removed: mcp().removeClient(clientId) })
   }),
   defineMethod({
+    name: 'sealMcp.listMachines',
+    permission: 'host-admin',
+    params: null,
+    handler: async () => ({ machines: await mcp().listMachines() })
+  }),
+  defineMethod({
     name: 'sealMcp.listAudit',
     permission: 'host-admin',
     params: SealMcpAuditListParams,
