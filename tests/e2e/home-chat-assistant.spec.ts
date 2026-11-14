@@ -90,6 +90,11 @@ async function activeChat(page: Page): Promise<{ id: string; usedTokens: number 
   }, FIRST_ASK)
 }
 
+/** A user row holds the message, then the time it was sent. */
+function userRowSaying(text: string): RegExp {
+  return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+}
+
 function toolCard(page: Page, tool: string): Locator {
   return chatPanel(page).locator(`[data-tool-name="${tool}"]`)
 }
@@ -233,20 +238,24 @@ test('the Home assistant works on a paired machine, loads skills, compacts and s
       'Training logs'
     )
     await expect(chatPanel(page).locator('[data-home-chat-compaction]')).toHaveCount(1)
-    await expect(chatPanel(page).locator('[data-home-chat-user]')).toHaveText([
-      ...[1, 2, 3, 4, 5].map((part) => `Read part ${part} of the training log on kessel-ml.`),
-      'Which parts have we covered so far?'
-    ])
+    await expect(chatPanel(page).locator('[data-home-chat-user]')).toHaveText(
+      [
+        ...[1, 2, 3, 4, 5].map((part) => `Read part ${part} of the training log on kessel-ml.`),
+        'Which parts have we covered so far?'
+      ].map(userRowSaying)
+    )
     await expectNoInternalMarkup(page)
     await shot(page, testInfo, '08-after-restart-compacted-thread', chatPanel(page))
 
     await chatPanel(page).getByRole('button', { name: 'Threads' }).click()
     await page.locator('[data-home-chat-thread]').filter({ hasText: 'Reach out' }).click()
-    await expect(chatPanel(page).locator('[data-home-chat-user]')).toHaveText([
-      FIRST_ASK,
-      'Check the GPUs on kessel-ml the way its skill says.',
-      'Remove the scratch folder on kessel-ml.'
-    ])
+    await expect(chatPanel(page).locator('[data-home-chat-user]')).toHaveText(
+      [
+        FIRST_ASK,
+        'Check the GPUs on kessel-ml the way its skill says.',
+        'Remove the scratch folder on kessel-ml.'
+      ].map(userRowSaying)
+    )
     await expect(chatPanel(page).locator('[data-tool-name]')).toHaveCount(6)
     expect(
       await chatPanel(page)

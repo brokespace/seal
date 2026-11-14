@@ -94,7 +94,7 @@ export function LiveSessionChat({
         )
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-chat-pane">
+    <section className="chat-wide-column flex min-h-0 min-w-0 flex-1 flex-col bg-chat-pane">
       <header className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2">
         <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
         <div className="flex min-w-0 flex-1 flex-col">

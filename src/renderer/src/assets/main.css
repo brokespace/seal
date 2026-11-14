@@ -582,6 +582,12 @@
   --page-card-min-width: 17rem;
 }
 
+/* A chat given a page-wide pane: prose keeps the standard chat measure; code, tables and tools use the column. */
+.chat-wide-column {
+  --chat-content-max-width: 76rem;
+  --chat-prose-max-width: 46rem;
+}
+
 @media (min-width: 48rem) {
   :root {
     --page-gutter: 1.25rem;
