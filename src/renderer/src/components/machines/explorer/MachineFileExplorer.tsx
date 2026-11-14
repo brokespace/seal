@@ -270,7 +270,7 @@ export function MachineFileExplorer({
               role="tree"
               aria-multiselectable
               className={cn(
-                'scrollbar-sleek relative min-h-0 min-w-0 overflow-auto outline-none',
+                'scrollbar-sleek @container/tree relative min-h-0 min-w-0 overflow-auto outline-none',
                 preview ? 'w-[min(26rem,45%)] shrink-0 border-r border-border' : 'flex-1',
                 dropDir !== null && dropDir === root && 'bg-accent/40'
               )}

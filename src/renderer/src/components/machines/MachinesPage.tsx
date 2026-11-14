@@ -50,10 +50,10 @@ export default function MachinesPage(): React.JSX.Element {
       <PageHeader title={t('auto.components.machines.page.title', 'Machines')}>
         <AddMachineMenu onPick={(mode) => setAdding({ mode, machineId: null })} />
       </PageHeader>
-      <PagePanes>
+      <PagePanes className="@container/machines">
         <aside
           className={cn(
-            'scrollbar-sleek min-h-0 w-full shrink-0 overflow-y-auto border-r border-border md:block md:w-72',
+            'scrollbar-sleek min-h-0 w-full shrink-0 overflow-y-auto border-r border-border @2xl/machines:block @2xl/machines:w-72',
             showDetailOnNarrow && selected ? 'hidden' : 'block'
           )}
           aria-label={t('auto.components.machines.page.list', 'Machines')}
@@ -68,7 +68,7 @@ export default function MachinesPage(): React.JSX.Element {
         </aside>
         <div
           className={cn(
-            'min-h-0 min-w-0 flex-1 flex-col md:flex',
+            'min-h-0 min-w-0 flex-1 flex-col @2xl/machines:flex',
             showDetailOnNarrow && selected ? 'flex' : 'hidden'
           )}
         >
