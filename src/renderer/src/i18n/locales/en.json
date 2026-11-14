@@ -25794,11 +25794,6 @@
       "contextWindowHint": "Seal summarizes older messages for the model before this fills."
     },
     "stop": "Stop",
-    "thinking": {
-      "brief": "Thought briefly",
-      "done": "Thought for {{duration}}",
-      "live": "Thinking…"
-    },
     "title": "Seal assistant",
     "working": "Working…",
     "worker": "Worker",
