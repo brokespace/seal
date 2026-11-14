@@ -43,7 +43,7 @@ function reading(now: number, usedPercent: number): ProviderRateLimits {
   }
 }
 
-describe('SealUsagePoller.refreshNow', () => {
+describe('SealUsagePoller.readAll', () => {
   const pollers: SealUsagePoller[] = []
   afterEach(() => {
     for (const poller of pollers.splice(0)) {
@@ -51,88 +51,37 @@ describe('SealUsagePoller.refreshNow', () => {
     }
   })
 
-  function setup(answer: (email: string, now: number) => ProviderRateLimits) {
-    const clock = { now: START }
+  function setup(options: { wanted: boolean; accounts: SealAccountCandidate[] }) {
     const reads: string[] = []
-    const accounts = [account('work@acme.dev'), account('side@example.com')]
     const poller = new SealUsagePoller({
-      now: () => clock.now,
-      candidates: (provider) => (provider === 'claude' ? accounts : []),
+      now: () => START,
+      candidates: (provider) => (provider === 'claude' ? options.accounts : []),
       settings: defaultSealAutoSwapSettings,
       inUse: (provider) => new Set(provider === 'claude' ? ['claude:work@acme.dev'] : []),
-      wanted: () => true,
+      wanted: () => options.wanted,
       fetch: async (candidate) => {
         reads.push(candidate.email ?? '')
-        return answer(candidate.email ?? '', clock.now)
+        return reading(START, 20)
       }
     })
     pollers.push(poller)
     poller.sync()
-    return { clock, reads, poller }
+    return { reads, poller }
   }
 
-  it('re-reads every account ahead of its schedule, but not one read seconds ago', async () => {
-    const { clock, reads, poller } = setup((_email, now) => reading(now, 20))
-    await poller.refreshNow()
+  it('asks for every account with a login, switched-off ones included, even while polling is off', async () => {
+    const { reads, poller } = setup({
+      wanted: false,
+      accounts: [
+        account('work@acme.dev'),
+        { ...account('side@example.com'), disabled: true },
+        { ...account('signed-out@example.com'), launchable: false }
+      ]
+    })
+
+    await poller.readAll()
+
     expect(reads).toEqual(['work@acme.dev', 'side@example.com'])
-
-    clock.now = START + 10_000
-    await poller.refreshNow()
-    expect(reads).toEqual(['work@acme.dev', 'side@example.com'])
-
-    // Both accounts are still minutes away from their scheduled poll.
-    clock.now = START + 45_000
-    expect(poller.nextPollAt('claude:side@example.com')).toBeGreaterThan(clock.now)
-    await poller.refreshNow()
-    expect(reads).toEqual([
-      'work@acme.dev',
-      'side@example.com',
-      'work@acme.dev',
-      'side@example.com'
-    ])
-  })
-
-  it('reads an account at once after a new sign-in replaced its rejected login', async () => {
-    let rejected = true
-    const { clock, reads, poller } = setup((email, now) =>
-      email === 'side@example.com' && rejected
-        ? {
-            provider: 'claude',
-            session: null,
-            weekly: null,
-            updatedAt: now,
-            error: 'token revoked',
-            status: 'error',
-            usageMetadata: { failureKind: 'stale-token' }
-          }
-        : reading(now, 20)
-    )
-    await poller.refreshNow()
-
-    rejected = false
-    clock.now = START + 5_000
-    poller.forget('claude:side@example.com')
-    await poller.refreshNow()
-    expect(reads).toEqual(['work@acme.dev', 'side@example.com', 'side@example.com'])
-  })
-
-  it('leaves an account alone while the provider throttles its usage checks', async () => {
-    const { clock, reads, poller } = setup((email, now) =>
-      email === 'side@example.com'
-        ? {
-            provider: 'claude',
-            session: null,
-            weekly: null,
-            updatedAt: now,
-            error: 'rate limited',
-            status: 'error',
-            usageMetadata: { failureKind: 'rate-limited', retryAtMs: now + 600_000 }
-          }
-        : reading(now, 20)
-    )
-    await poller.refreshNow()
-    clock.now = START + 120_000
-    await poller.refreshNow()
-    expect(reads).toEqual(['work@acme.dev', 'side@example.com', 'work@acme.dev'])
+    expect(poller.samplesFor('claude:side@example.com').latest?.at).toBe(START)
   })
 })

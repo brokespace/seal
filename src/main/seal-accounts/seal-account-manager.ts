@@ -39,6 +39,7 @@ import { SealAccountsStore } from './seal-accounts-store'
 import { SealApiKeyVault } from './seal-api-key-vault'
 import type { SealUsageFetch, SealUsagePoller } from './seal-usage-poller'
 import { sealUsageFetcher } from './seal-usage-fetch'
+import { installSealLiveUsageOwner } from './seal-live-usage-owner'
 import { createSealUsagePoller, sealAccountsInUse, withUsageSchedule } from './seal-usage-schedule'
 import { startSealSessionWatch } from './seal-session-watch'
 
@@ -186,16 +187,13 @@ export class SealAccountManager {
     this.saveConfig(withAccountOrder(this.getConfig(), keys))
   }
 
+  /** Asks the rate-limit service for every account's usage; its budget keeps repeats off the wire. */
   async refreshUsage(): Promise<void> {
-    const { rateLimits } = this.services
     await Promise.allSettled([
-      rateLimits.refreshIfStale(),
-      rateLimits.fetchInactiveClaudeAccountsOnOpen(),
-      rateLimits.fetchInactiveCodexAccountsOnOpen(),
+      this.services.rateLimits.refreshIfStale(),
       this.loginExpiry.refresh(this)
     ])
-    // After the service's own pass, so an account it just read is not requested twice.
-    await this.usage.refreshNow()
+    await this.usage.readAll()
   }
 
   private anyAutoSwapEnabled(): boolean {
@@ -326,6 +324,7 @@ export function installSealAccountManager(deps: SealAccountManagerDeps): SealAcc
   installed?.dispose()
   installed = new SealAccountManager(deps)
   installed.start()
+  installSealLiveUsageOwner(installed)
   startSealSessionWatch(installed)
   return installed
 }

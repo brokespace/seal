@@ -83,6 +83,15 @@ export const ACTIVE_FAILURE_REFETCH_MS = MIN_POLL_MS
 // Back off persistent failures up to poll cadence instead of repeatedly hitting the 30s floor.
 export const MAX_ACTIVE_FAILURE_REFETCH_MS = DEFAULT_POLL_MS
 export const MAX_ACTIVE_FAILURE_STREAK = 8
+// One usage request per account this often, whoever asks: a switcher, Seal's poller, a refresh.
+export const ACCOUNT_READ_FLOOR_MS = MIN_POLL_MS
+
+export function failureBackoffMs(failureStreak: number): number {
+  return Math.min(
+    ACTIVE_FAILURE_REFETCH_MS * 2 ** Math.max(0, failureStreak - 1),
+    MAX_ACTIVE_FAILURE_REFETCH_MS
+  )
+}
 // Dedicated cycles retry only the failing provider; other providers need fetchAll.
 export const INDIVIDUALLY_REFRESHABLE_PROVIDERS: ReadonlySet<ActiveRateLimitProvider> = new Set([
   'claude',

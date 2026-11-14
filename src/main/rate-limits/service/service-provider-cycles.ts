@@ -79,7 +79,9 @@ export abstract class RateLimitServiceProviderCycles extends RateLimitServiceFul
     }
     this.updateState({
       ...this.state,
-      codex: shouldApplyCodex ? this.applyStalePolicy(codex, previousState.codex) : this.state.codex
+      codex: shouldApplyCodex
+        ? this.applyAccountReading(`codex:${codexProvenance}`, codex, previousState.codex)
+        : this.state.codex
     })
   }
 
@@ -152,7 +154,7 @@ export abstract class RateLimitServiceProviderCycles extends RateLimitServiceFul
     this.updateState({
       ...this.state,
       claude: shouldApplyClaude
-        ? this.resolveClaudeFetchApply(claude, previousState.claude)
+        ? this.resolveClaudeFetchApply(claude, previousState.claude, claudeProvenance)
         : this.state.claude
     })
   }
