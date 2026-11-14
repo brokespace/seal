@@ -4,6 +4,7 @@ import type { RuntimePairingReach } from '../../../../../shared/runtime-pairing-
 import type { TokenDeviceEntry } from './device-entry'
 import { validGrants } from './device-registry-row-validation'
 import type { RuntimeDeviceGrant } from '../../callers/rpc-method-permission'
+import { pairingOfferTtlMs } from './pairing-offer-expiry'
 
 export function mintDeviceCredential(): { deviceId: string; token: string } {
   return { deviceId: randomUUID(), token: randomBytes(24).toString('hex') }
@@ -29,6 +30,6 @@ export function mintTokenDevice(
     ticket: true,
     pairingReach,
     ...(validatedGrants ? { grants: validatedGrants } : {}),
-    ...(offerTtlMs !== undefined ? { offerExpiresAt: pairedAt + offerTtlMs } : {})
+    offerExpiresAt: pairedAt + pairingOfferTtlMs(scope, offerTtlMs)
   }
 }

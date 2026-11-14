@@ -1,13 +1,11 @@
-import {
-  isMobileRelayCloseCode,
-  mobileRelayRecoveryFor
-} from '../../../../src/shared/remote-runtime/relay/mobile-relay-close-codes'
 import type { MobileRelayRpcSession } from './mobile-relay-rpc-session-contract'
 import { MobileE2EEAuthenticationError } from '../encryption/mobile-e2ee-v2-physical-channel'
-import { RelayOuterError } from '../encryption/mobile-relay-e2ee-link'
 import { RELAY_STABLE_CONNECTION_MS, RelayRetryDelays } from './mobile-relay-retry-delays'
 import { relayDirectorRetryAfterMs } from './mobile-relay-resume-director'
-import { RelayCredentialEligibility } from './relay-credential-eligibility'
+import {
+  RelayCredentialEligibility,
+  relayResumeFailureRecovery
+} from './relay-credential-eligibility'
 import type { RelayHostReachability } from './relay-host-reachability'
 import { RelayRecoveryEvidence, type RelayRecoveryReporter } from './relay-recovery-evidence'
 import { RelayRecoveryFailureCount } from './relay-recovery-failure-count'
@@ -238,10 +236,7 @@ export class RelayReconnectController {
     if (!this.activeSession) {
       this.evidence.record(error)
     }
-    const recovery =
-      error instanceof RelayOuterError && isMobileRelayCloseCode(error.code)
-        ? mobileRelayRecoveryFor(error.code, 'phone-resume')
-        : null
+    const recovery = relayResumeFailureRecovery(error)
     if (
       this.recoveryGate === 'fresh-credential' ||
       (this.recoveryGate === 'external-signal' && recovery?.kind !== 'disable-relay-credential')

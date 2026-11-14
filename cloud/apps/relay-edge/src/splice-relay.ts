@@ -11,10 +11,20 @@ import { RELAY_PROTOCOL_LIMITS } from '../../../packages/relay-contract/src/prot
 import { MESSAGE_TOO_BIG, frameOver, timingSafeEqualStr } from './bytes'
 import type { Env } from './env'
 import { metric } from './metrics'
+import { FIRST_FRAME_TIMEOUT_REASON } from './preauth'
 import { parseConnId } from './splice-slot'
 import { KEY_PREFIX, NO_DEADLINE, type GuardAttachment, type SocketKind, type State } from './splice-state'
 
+// Phones that have not sent a credential yet, per slot object. Each lives 2 s at most.
+const MAX_UNAUTHENTICATED_PHONES = 16
+// A relay-auth frame is one credential; nothing legitimate comes near this.
+const RELAY_AUTH_MAX_FRAME_BYTES = 4096
+const WEBSOCKET_OPEN = 1
+
 export class SpliceRelay extends DurableObject<Env> {
+  // In memory on purpose: an unauthenticated phone must not cost an alarm or a storage write.
+  private authTimer: ReturnType<typeof setTimeout> | null = null
+
   async fetch(request: Request): Promise<Response> {
     const kind = request.headers.get('x-edge-kind')
     if (kind === 'abort' && this.env.SPIKE_ADMIN === '1') { this.ctx.abort('spike reset') }
@@ -25,18 +35,24 @@ export class SpliceRelay extends DurableObject<Env> {
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
     const now = Date.now()
     if (kind === 'phone') {
-      if ((await this.state(connId)) !== undefined) { return new Response(null, { status: 409 }) }
+      if (this.ctx.getWebSockets(connId).length > 0 || (await this.state(connId)) !== undefined) {
+        return new Response(null, { status: 409 })
+      }
+      this.expireUnauthenticated(now)
+      if (this.unauthenticated().length >= MAX_UNAUTHENTICATED_PHONES) { return new Response(null, { status: 429 }) }
       await this.sweepOrphans()
       this.ctx.acceptWebSocket(server, ['phone', connId])
       const place = request.headers.get('x-edge-place') ?? undefined
       metric(this.env, 'phone_open', 1, '', [], '', place)
-      server.serializeAttachment({ silentBytes: 0, windowStart: now, place } satisfies GuardAttachment)
-      await this.save({
-        connId,
-        relayHostId: parsed.relayHostId,
-        phase: 'auth',
-        deadline: now + RELAY_PROTOCOL_LIMITS.firstFrameDeadlineMs
-      })
+      server.serializeAttachment({
+        silentBytes: 0,
+        windowStart: now,
+        place,
+        authDeadline: now + RELAY_PROTOCOL_LIMITS.firstFrameDeadlineMs
+      } satisfies GuardAttachment)
+      this.armAuthTimer()
+      // Nothing is stored and no alarm is set until the phone's credential has been accepted.
+      return new Response(null, { status: 101, webSocket: client })
     } else if (kind === 'data') {
       const state = await this.state(connId)
       if (!state || state.phase !== 'pending' || this.socket(connId, 'data')) {
@@ -58,12 +74,13 @@ export class SpliceRelay extends DurableObject<Env> {
     const id = this.identify(ws)
     if (!id) { return }
     const state = await this.state(id.connId)
-    if (!state) { return }
-    if (state.phase === 'spliced') { return this.forward(ws, id.connId, id.kind, message) }
-    if (id.kind === 'phone') {
-      if (state.phase === 'auth') { await this.onRelayAuth(ws, state, message) }
-      return // pending: the phone waits for relay-hello before sending E2EE frames
+    if (!state) {
+      if (id.kind === 'phone') { await this.onRelayAuth(ws, id.connId, message) }
+      return
     }
+    if (state.phase === 'spliced') { return this.forward(ws, id.connId, id.kind, message) }
+    // pending: the phone waits for relay-hello before sending E2EE frames
+    if (id.kind === 'phone') { return }
     await this.onHostDataAuth(ws, state, message)
   }
 
@@ -84,8 +101,9 @@ export class SpliceRelay extends DurableObject<Env> {
   }
 
   async isAlive(connId: string): Promise<boolean> {
-    if ((await this.state(connId)) === undefined) { return false }
+    // A phone the host has just authorized may not have its state stored yet.
     if (this.socket(connId, 'phone') !== null) { return true }
+    if ((await this.state(connId)) === undefined) { return false }
     await this.forget(connId) // its sockets died in a reset; drop the leftover state
     await this.reschedule()
     return false
@@ -93,9 +111,22 @@ export class SpliceRelay extends DurableObject<Env> {
 
   // ---------------- phone auth ----------------
 
-  private async onRelayAuth(ws: WebSocket, state: State, message: string | ArrayBuffer): Promise<void> {
+  private async onRelayAuth(ws: WebSocket, connId: string, message: string | ArrayBuffer): Promise<void> {
+    const { authDeadline, ...guard } = ws.deserializeAttachment() as GuardAttachment
+    // One credential per socket, so one admitted upgrade is one guess: later frames are not read.
+    if (authDeadline === undefined) { return }
+    ws.serializeAttachment(guard satisfies GuardAttachment)
+    const relayHostId = parseConnId(connId)?.relayHostId
+    if (!relayHostId || Date.now() >= authDeadline) {
+      this.close(ws, RELAY_CLOSE_CODE.PEER_DROPPED, FIRST_FRAME_TIMEOUT_REASON)
+      return
+    }
     if (typeof message !== 'string') {
       this.close(ws, RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, 'binary relay-auth')
+      return
+    }
+    if (frameOver(message, RELAY_AUTH_MAX_FRAME_BYTES)) {
+      this.close(ws, MESSAGE_TOO_BIG, 'frame too large')
       return
     }
     let credential: string
@@ -109,10 +140,10 @@ export class SpliceRelay extends DurableObject<Env> {
       return
     }
     const started = Date.now()
-    const host = this.host(state.relayHostId)
+    const host = this.host(relayHostId)
     let result: Awaited<ReturnType<typeof host.authorizePhone>>
     try {
-      result = await host.authorizePhone(state.connId, credential)
+      result = await host.authorizePhone(connId, credential)
     } catch {
       // Transient edge failure must never look like a bad credential (4401 disables phones).
       this.phoneFail(ws, RELAY_CLOSE_CODE.DRAINING)
@@ -123,8 +154,14 @@ export class SpliceRelay extends DurableObject<Env> {
       this.phoneFail(ws, result.code, result.reason)
       return
     }
+    if (ws.readyState !== WEBSOCKET_OPEN) {
+      // The phone left while the host was deciding: give its seat back.
+      await host.spliceClosed(connId).catch(() => {})
+      return
+    }
     await this.save({
-      ...state,
+      connId,
+      relayHostId,
       phase: 'pending',
       connTicket: result.connTicket,
       generation: result.generation,
@@ -171,7 +208,11 @@ export class SpliceRelay extends DurableObject<Env> {
       }
       return
     }
-    await this.save({ ...state, phase: 'spliced', connTicket: undefined, deadline: NO_DEADLINE })
+    const now = Date.now()
+    for (const socket of [phone, ws]) {
+      socket.serializeAttachment({ ...(socket.deserializeAttachment() as GuardAttachment), lastFrameAt: now })
+    }
+    await this.save({ ...state, phase: 'spliced', connTicket: undefined, deadline: now + this.idleTimeoutMs() })
     this.send(phone, { type: 'relay-hello', ...confirmed.hello })
     await this.reschedule()
   }
@@ -192,7 +233,8 @@ export class SpliceRelay extends DurableObject<Env> {
       ...fromGuard,
       ...(fromGuard.silentBytes !== 0 ? { silentBytes: 0, windowStart: Date.now() } : {}),
       sentBytes: (fromGuard.sentBytes ?? 0) + size,
-      sentFrames: (fromGuard.sentFrames ?? 0) + 1
+      sentFrames: (fromGuard.sentFrames ?? 0) + 1,
+      lastFrameAt: Date.now()
     })
     const budget = Number(this.env.SPLICE_SILENT_BYTES_MAX ?? '0')
     if (budget > 0) {
@@ -247,18 +289,67 @@ export class SpliceRelay extends DurableObject<Env> {
     for (const state of await this.states()) {
       if (now < state.deadline) { continue }
       const phone = this.socket(state.connId, 'phone')
-      if (state.phase === 'pending') {
+      const data = this.socket(state.connId, 'data')
+      if (state.phase === 'spliced') {
+        // Frames only touch the socket attachments, so the stored deadline is caught up here.
+        const idleAt = Math.max(this.lastFrameAt(phone), this.lastFrameAt(data)) + this.idleTimeoutMs()
+        if (phone && data && now < idleAt) {
+          await this.save({ ...state, deadline: idleAt })
+          continue
+        }
+        for (const ws of [phone, data]) {
+          if (ws) { this.close(ws, RELAY_CLOSE_CODE.PEER_DROPPED, 'idle timeout') }
+        }
+      } else {
         // OTA phones redial this edge once, quickly: the control is still seated here.
         if (phone) { this.phoneFail(phone, RELAY_CLOSE_CODE.HOST_OFFLINE, 'attach-timeout') }
-      } else if (phone) {
-        this.close(phone, RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, 'first frame timeout')
+        if (data) { this.close(data, RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, FIRST_FRAME_TIMEOUT_REASON) }
       }
-      const data = this.socket(state.connId, 'data')
-      if (data) { this.close(data, RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, 'first frame timeout') }
       await this.forget(state.connId)
       await this.host(state.relayHostId).spliceClosed(state.connId).catch(() => {})
     }
+    this.expireUnauthenticated(now)
     await this.reschedule()
+  }
+
+  // ---------------- unauthenticated phones ----------------
+
+  private unauthenticated(): { ws: WebSocket; guard: GuardAttachment; deadline: number }[] {
+    return this.ctx.getWebSockets('phone').flatMap((ws) => {
+      const guard = ws.deserializeAttachment() as GuardAttachment | null
+      return guard?.authDeadline === undefined ? [] : [{ ws, guard, deadline: guard.authDeadline }]
+    })
+  }
+
+  // Not 4401: a phone that sent nothing has shown no credential to refuse.
+  private expireUnauthenticated(now = Date.now()): void {
+    for (const { ws, guard, deadline } of this.unauthenticated()) {
+      if (now < deadline) { continue }
+      const { authDeadline: _expired, ...rest } = guard
+      ws.serializeAttachment(rest satisfies GuardAttachment)
+      this.close(ws, RELAY_CLOSE_CODE.PEER_DROPPED, FIRST_FRAME_TIMEOUT_REASON)
+    }
+  }
+
+  private armAuthTimer(): void {
+    if (this.authTimer !== null) { return }
+    const waiting = this.unauthenticated()
+    if (waiting.length === 0) { return }
+    const next = Math.min(...waiting.map((phone) => phone.deadline))
+    this.authTimer = setTimeout(() => {
+      this.authTimer = null
+      this.expireUnauthenticated()
+      this.armAuthTimer()
+    }, Math.max(0, next - Date.now()) + 1)
+  }
+
+  private lastFrameAt(ws: WebSocket | null): number {
+    return (ws?.deserializeAttachment() as GuardAttachment | null)?.lastFrameAt ?? 0
+  }
+
+  private idleTimeoutMs(): number {
+    const configured = Number(this.env.SPLICE_IDLE_TIMEOUT_MS)
+    return Number.isSafeInteger(configured) && configured > 0 ? configured : RELAY_PROTOCOL_LIMITS.idleTimeoutMs
   }
 
   private async reschedule(): Promise<void> {

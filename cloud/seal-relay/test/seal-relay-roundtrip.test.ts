@@ -14,35 +14,29 @@ import {
   requestRelayAssignment
 } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-http-client'
 import { RelayAssignRateGate } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-assign-rate-gate'
-import type { E2EEKeypair } from '../../../src/main/runtime/rpc/server/pairing/e2ee-keypair'
 import { CloudRelayTransport } from '../../../src/main/runtime/rpc/transports/relay-transport'
 import { PushGatewayClient } from '../../../src/main/runtime/push/push-gateway-client'
 import {
   generateTestSecrets,
+  newHostKeypair,
   startFakeProviders,
   startSealRelay,
-  waitFor
+  waitFor,
+  type HostKeypair as Keypair
 } from './seal-relay-harness'
-
-type Keypair = E2EEKeypair
-
-function newHostKeypair(): Keypair {
-  const box = nacl.box.keyPair()
-  return { ...box, publicKeyB64: Buffer.from(box.publicKey).toString('base64') }
-}
 
 let relay: Awaited<ReturnType<typeof startSealRelay>>
 let providers: Awaited<ReturnType<typeof startFakeProviders>>
 let apnsPublicKey: webcrypto.CryptoKey
+// The relay's allowlist; each test takes its own so they do not share state.
+const enrolled = Array.from({ length: 8 }, newHostKeypair)
+const enrolledHost = (): Keypair => enrolled.pop()!
 
 beforeAll(async () => {
   providers = await startFakeProviders()
   const generated = await generateTestSecrets()
   apnsPublicKey = generated.apnsPublicKey
-  relay = await startSealRelay({
-    ...generated.secrets,
-    PUSH_PROVIDER_ORIGIN_OVERRIDE: providers.origin
-  })
+  relay = await startSealRelay(generated.secrets, { enrolled, providerOrigin: providers.origin })
 })
 
 afterAll(async () => {
@@ -99,7 +93,7 @@ async function goLive(keypair: Keypair) {
 
 describe('Seal relay', () => {
   it('carries end-to-end encrypted frames between a desktop and a phone paired by invite', async () => {
-    const hostKeys = newHostKeypair()
+    const hostKeys = enrolledHost()
     const first = await goLive(hostKeys)
     expect(first.assignment.cellUrl).toBe(relay.origin)
     first.client.closeNow()
@@ -127,16 +121,6 @@ describe('Seal relay', () => {
       reply(Buffer.concat([answerNonce, answer]))
     })
     const invite = await live.client.createInvite('phone-1')
-    const resolved = await fetch(`${relay.origin}/v1/resolve`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ v: 1, relayHostId: live.relayHostId, resumeToken: 'opaque' })
-    })
-    expect(await resolved.json()).toMatchObject({
-      v: 1,
-      cellUrl: relay.origin,
-      assignmentEpoch: live.assignment.assignmentEpoch
-    })
 
     const phoneKeys = nacl.box.keyPair()
     const phone = new WebSocket(
@@ -189,12 +173,12 @@ describe('Seal relay', () => {
   })
 
   it('mints relay tokens only for the key the host session proved', async () => {
-    const owner = newHostKeypair()
+    const owner = enrolledHost()
     const context = await createSealRelayContextReader({
       relayOrigin: relay.origin,
       keypair: owner
     })()
-    const other = newHostKeypair()
+    const other = enrolledHost()
     const response = await fetch(`${relay.origin}/v1/host/relay-token`, {
       method: 'POST',
       headers: {
@@ -221,8 +205,7 @@ function base64UrlDecode(value: string): Uint8Array {
 
 describe('Seal push', () => {
   it('delivers to APNs with the Seal topic and a provider token signed by the .p8 key, and retires dead tokens', async () => {
-    const host = newHostKeypair()
-    const push = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: host })
+    const push = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: enrolledHost() })
     const token = randomBytes(32).toString('hex')
     const registered = await push.registerDevice({
       deviceId: 'iphone-1',
@@ -290,10 +273,7 @@ describe('Seal push', () => {
   })
 
   it('delivers to FCM with a service-account access token', async () => {
-    const push = new PushGatewayClient({
-      gatewayUrl: relay.origin,
-      keypair: newHostKeypair()
-    })
+    const push = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: enrolledHost() })
     const token = `fcm:${randomBytes(24).toString('base64url')}`
     const registered = await push.registerDevice({
       deviceId: 'pixel-1',
@@ -333,10 +313,7 @@ describe('Seal push', () => {
   })
 
   it('scopes devices to the host key that registered them', async () => {
-    const owner = new PushGatewayClient({
-      gatewayUrl: relay.origin,
-      keypair: newHostKeypair()
-    })
+    const owner = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: enrolledHost() })
     const registered = await owner.registerDevice({
       deviceId: 'iphone-2',
       platform: 'ios',
@@ -346,10 +323,7 @@ describe('Seal push', () => {
     if (!registered.ok) {
       throw new Error('register failed')
     }
-    const stranger = new PushGatewayClient({
-      gatewayUrl: relay.origin,
-      keypair: newHostKeypair()
-    })
+    const stranger = new PushGatewayClient({ gatewayUrl: relay.origin, keypair: enrolledHost() })
     const before = providers.requests.length
     const result = await stranger.send({
       registrationIds: [registered.registrationId],

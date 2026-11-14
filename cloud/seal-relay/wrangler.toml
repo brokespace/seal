@@ -53,7 +53,8 @@ new_sqlite_classes = ["SealHostRelay", "SpliceRelay", "SealPushHost"]
 tag = "v2"
 new_sqlite_classes = ["SealMcpTunnel"]
 
-# Unauthenticated phone/data upgrades and host-auth handshakes, per source IP per colo.
+# Unauthenticated phone/data upgrades and host-auth handshakes, per source (IPv6 /64) per colo.
+# Every limiter is required: a request whose limiter binding is missing is refused.
 [[ratelimits]]
 name = "PREAUTH_LIMITER"
 namespace_id = "7301"
@@ -64,7 +65,13 @@ name = "HOST_AUTH_LIMITER"
 namespace_id = "7302"
 simple = { limit = 30, period = 60 }
 
-# Public MCP requests, per source IP per host per colo. The host applies its own per-client limits.
+# Requests carrying a host's own session or relay token, per host per colo.
+[[ratelimits]]
+name = "HOST_API_LIMITER"
+namespace_id = "7304"
+simple = { limit = 600, period = 60 }
+
+# Public MCP requests, per source (IPv6 /64) per host per colo. The host applies its own per-client limits.
 [[ratelimits]]
 name = "MCP_LIMITER"
 namespace_id = "7303"
@@ -82,10 +89,13 @@ ORPHAN_GRACE_MS = "30000"
 APNS_TOPIC = "com.brokespace.seal.mobile"
 ANDROID_CHANNEL_ID = "orca-desktop"
 
-# Secrets (wrangler secret bulk .secrets.json; see deploy.md):
+# Secrets (wrangler secret bulk .secrets.json; see deploy.md and docs/security/relay-deploy.md):
 #   RELAY_JWT_PRIVATE_JWK  ES256 private JWK that signs relay tokens
 #   RELAY_JWKS             public JWK set for RELAY_JWT_PRIVATE_JWK
-#   HOST_SESSION_SECRET    HMAC key for host session tokens
+#   HOST_SESSION_SECRET    HMAC key for host session tokens: 32+ random characters, or the Worker
+#                          answers 503 to everything
+#   HOST_ALLOWLIST         the host fingerprints (`seal relay host-id`) allowed to use this relay,
+#                          comma or space separated; unset means no host can
 #   ADMIN_SIGNING_KEY      required by the shared edge config; unused (admin routes are off)
 #   APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY   Apple push (token-based .p8 auth)
 #   FCM_SERVICE_ACCOUNT_JSON                      optional Android push

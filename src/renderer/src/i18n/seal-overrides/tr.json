@@ -3,6 +3,9 @@
     "web": {
       "WebConnect": {
         "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "Bu Seal sunucusu, bu web istemcisinin gerektirdiği şifrelemeyi desteklemiyor. Sunucudaki Seal’i güncelleyin, ardından bu sayfayı yeniden yükleyin. Sunucu zaten güncelse kimlik anahtarı değişmiştir: bu tarayıcıyı tekrar eşleştirin."
       }
     },
     "components": {

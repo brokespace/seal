@@ -1,5 +1,4 @@
 import type { DesktopMobileE2EEV2Session } from './mobile-e2ee-v2-desktop-session'
-import { publicKeyFromBase64 } from '../../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
 import { parseRemoteRuntimeJsonText } from '../../../../../shared/remote-runtime/requests/remote-runtime-request-frames'
 import {
   isDeviceProofB64,
@@ -17,7 +16,7 @@ const V2_DEVICE_KEY_KEYS = new Set(['clientCapabilities', 'deviceId', 'devicePro
 /** The one parser for e2ee_auth: every accepted shape, nothing mixed. */
 export function classifyE2EEAuth(
   plaintext: string,
-  v2Session: DesktopMobileE2EEV2Session | null,
+  v2Session: DesktopMobileE2EEV2Session,
   // Direct sockets only: Relay token auth stays the exact mobile shape.
   v2TokenCapabilities = false
 ): ClassifiedE2EEAuth {
@@ -34,26 +33,11 @@ export function classifyE2EEAuth(
   if (auth.type !== 'e2ee_auth') {
     return { kind: 'invalid' }
   }
-  if (!v2Session) {
-    // Why: legacy framing keeps today's token shape; key auth exists only inside a v2 transcript.
-    return typeof auth.deviceToken === 'string' &&
-      auth.deviceToken &&
-      auth.v === undefined &&
-      auth.transcriptHashB64 === undefined &&
-      auth.deviceId === undefined &&
-      auth.deviceProofB64 === undefined
-      ? {
-          kind: 'token',
-          deviceToken: auth.deviceToken,
-          clientCapabilities: auth.clientCapabilities
-        }
-      : { kind: 'invalid' }
-  }
   if (auth.v !== 2 || auth.transcriptHashB64 !== v2Session.transcriptHashB64) {
     return { kind: 'invalid' }
   }
   const keys = Object.keys(auth).sort()
-  // Why: runtime clients (desktop, CLI, web) carry capabilities on v2 token auth as on legacy.
+  // Why: runtime clients (desktop, CLI, web) carry capabilities on direct token auth.
   const tokenKeys = keys
     .filter((key) => !(v2TokenCapabilities && key === 'clientCapabilities'))
     .join(',')
@@ -99,7 +83,7 @@ export type DeviceKeyResolution<TDevice> =
 
 export function authenticateMobileE2EE<TDevice extends { deviceToken?: string }>(args: {
   plaintext: string
-  v2Session: DesktopMobileE2EEV2Session | null
+  v2Session: DesktopMobileE2EEV2Session
   v2TokenCapabilities?: boolean
   resolveDevice: (token: string) => TDevice | null
   // Absent on a host that does not accept device keys: key auth is then bad_auth, as before.
@@ -115,7 +99,7 @@ export function authenticateMobileE2EE<TDevice extends { deviceToken?: string }>
       ? { ok: true, device, clientCapabilities: auth.clientCapabilities }
       : { ok: false, code: 'unauthorized' }
   }
-  if (auth.kind === 'invalid' || !args.resolveDeviceKey || !args.v2Session) {
+  if (auth.kind === 'invalid' || !args.resolveDeviceKey) {
     return { ok: false, code: 'bad_auth' }
   }
   const resolution = args.resolveDeviceKey(auth.deviceId)
@@ -159,13 +143,5 @@ export function describeMobileE2EEAuthFailure(failure: {
       error: { code: failure.code, ...(failure.deviceId ? { deviceId: failure.deviceId } : {}) }
     },
     closeReason
-  }
-}
-
-export function decodeMobileE2EEPublicKey(value: string): Uint8Array | null {
-  try {
-    return publicKeyFromBase64(value)
-  } catch {
-    return null
   }
 }

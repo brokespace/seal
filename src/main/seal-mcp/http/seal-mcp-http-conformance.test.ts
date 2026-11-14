@@ -1,4 +1,4 @@
-import { createServer, type Server } from 'node:http'
+import { createServer, request, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -144,6 +144,33 @@ describe('Seal MCP over Streamable HTTP', () => {
     })
     expect(garbage.status).toBe(400)
     expect(await garbage.json()).toMatchObject({ error: { code: -32700 } })
+  })
+
+  it('answers 413 to an upload that never ends and drops the connection', async () => {
+    const { token } = host.createToken()
+    const upload = request(url, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }
+    })
+    const megabyte = Buffer.alloc(1024 * 1024, 0x20)
+    const feed = (): void => {
+      if (!upload.destroyed && upload.write(megabyte)) {
+        setImmediate(feed)
+      }
+    }
+    upload.on('drain', feed)
+    const dropped = new Promise<void>((resolve) => upload.on('close', resolve))
+    upload.on('error', () => {})
+    const status = new Promise<number | undefined>((resolve) =>
+      upload.on('response', (reply) => {
+        reply.resume()
+        resolve(reply.statusCode)
+      })
+    )
+    feed()
+
+    expect(await status).toBe(413)
+    await dropped
   })
 
   it('leaves every other path to the server it shares a port with', async () => {

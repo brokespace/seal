@@ -8,7 +8,7 @@
     "deploy": "wrangler deploy",
     "secrets:generate": "node scripts/generate-relay-secrets.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run && vitest run --config test/security/audit-1/vitest.poc.config.ts"
   },
   "dependencies": {
     "jose": "6.2.3",

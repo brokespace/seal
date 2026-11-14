@@ -48,7 +48,7 @@ describe('relay recovery deferral log', () => {
       () => {}
     )
     expect(controller.deferral()).toBeNull()
-    controller.registerFailure(new RelayOuterError(4401))
+    controller.registerFailure(new RelayOuterError(4401, true))
     vi.advanceTimersByTime(20_000)
     expect(controller.deferral()).toEqual({ reason: 'fresh-credential', remainingMs: 40_000 })
   })

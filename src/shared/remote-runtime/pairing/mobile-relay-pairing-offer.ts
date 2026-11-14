@@ -6,14 +6,15 @@ import {
   PAIRING_RELAY_URL_MAX_CHARACTERS
 } from './mobile-pairing-protocol-limits'
 import { RuntimeHostDescriptorSchema } from '../host-status/runtime-host-descriptor'
+import { isLowOrderX25519PublicKey } from '../e2ee/x25519-low-order-points'
+import { isCanonicalRelayOrigin } from '../relay/relay-cell-origin-pin'
+import { deriveRelayHostId } from '../relay/relay-host-id'
+import { isLiveRelayInviteExpiry } from './mobile-relay-invite-expiry'
 
 export const PAIRING_OFFER_VERSION = 2
 const PairingScopeSchema = z.enum(['mobile', 'runtime'])
 const BASE64URL_16_PATTERN = /^[A-Za-z0-9_-]{16}$/
 const BASE64URL_43_PATTERN = /^[A-Za-z0-9_-]{43}$/
-const MAX_INVITE_TTL_MS = 10 * 60 * 1000
-// Cell-stamped expiry needs skew leeway or an ahead cell clock invalidates every invite (as with host-proof freshness).
-const INVITE_EXPIRY_CLOCK_SKEW_MS = 30 * 1000
 
 function isCanonicalHttpsOrigin(value: string): boolean {
   if (
@@ -22,23 +23,21 @@ function isCanonicalHttpsOrigin(value: string): boolean {
   ) {
     return false
   }
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === 'https:' && value === parsed.origin
-  } catch {
-    return false
-  }
+  return isCanonicalRelayOrigin(value)
 }
 
-function isCanonicalBase64Key(value: string): boolean {
+function decodeCanonicalBase64Key(value: string): Uint8Array | null {
   if (!/^[A-Za-z0-9+/]{43}=$/.test(value)) {
-    return false
+    return null
   }
   try {
     const decoded = atob(value)
-    return decoded.length === 32 && btoa(decoded) === value
+    if (decoded.length !== 32 || btoa(decoded) !== value) {
+      return null
+    }
+    return Uint8Array.from(decoded, (character) => character.charCodeAt(0))
   } catch {
-    return false
+    return null
   }
 }
 
@@ -56,13 +55,10 @@ export function createPairingOfferSchema(now: () => number = () => Date.now()) {
     inviteExpiresAt: z
       .number()
       .int()
-      .refine((value) => {
-        const currentTime = now()
-        return (
-          value > currentTime &&
-          value <= currentTime + MAX_INVITE_TTL_MS + INVITE_EXPIRY_CLOCK_SKEW_MS
-        )
-      }, 'Expected a future invite expiry no more than 10 minutes away'),
+      .refine(
+        (value) => isLiveRelayInviteExpiry(value, now()),
+        'Expected a future invite expiry no more than 10 minutes away'
+      ),
     e2eeFraming: z.literal(2)
   })
 
@@ -71,7 +67,6 @@ export function createPairingOfferSchema(now: () => number = () => Date.now()) {
       v: z.literal(PAIRING_OFFER_VERSION),
       endpoint: z.string().min(1).max(PAIRING_ENDPOINT_MAX_CHARACTERS),
       deviceToken: z.string().min(1).max(PAIRING_DEVICE_TOKEN_MAX_CHARACTERS),
-      // Pairing pins the Curve25519 key; verify relayHostId from its decoded bytes later.
       publicKeyB64: z.string().min(1).max(PAIRING_PUBLIC_KEY_MAX_CHARACTERS),
       pairedDeviceId: z.string().min(1).max(128).optional(),
       scope: PairingScopeSchema.optional(),
@@ -88,12 +83,25 @@ export function createPairingOfferSchema(now: () => number = () => Date.now()) {
           message: 'Relay is invalid for runtime scope'
         })
       }
-      if (offer.relay && !isCanonicalBase64Key(offer.publicKeyB64)) {
-        // relayHostId derives from decoded bytes; refuse permissive legacy base64 aliases here.
+      if (!offer.relay) {
+        return
+      }
+      // relayHostId derives from decoded bytes; refuse permissive legacy base64 aliases here.
+      const publicKey = decodeCanonicalBase64Key(offer.publicKeyB64)
+      if (!publicKey || isLowOrderX25519PublicKey(publicKey)) {
         ctx.addIssue({
           code: 'custom',
           path: ['publicKeyB64'],
           message: 'Relay offers require a canonical 32-byte public key'
+        })
+        return
+      }
+      if (offer.relay.relayHostId !== deriveRelayHostId(publicKey)) {
+        // A known host's public key with another relay identity would alias that host onto a foreign relay.
+        ctx.addIssue({
+          code: 'custom',
+          path: ['relay', 'relayHostId'],
+          message: 'Relay host id must derive from the offered public key'
         })
       }
     })

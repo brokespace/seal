@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... или вставьте код"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Компьютер",
+      "newComputer": "Ещё не сопряжён с этим телефоном",
+      "fingerprintLabel": "Отпечаток ключа",
+      "relayLabel": "Ретранслятор",
+      "directLabel": "Прямой адрес",
+      "replaceNotice": "Существующее сопряжение с {{name}} будет заменено.",
+      "otherRelayNotice": "Этот код использует {{origin}} вместо ретранслятора, встроенного в приложение. Выполняйте сопряжение, только если доверяете его владельцу."
+    }
   }
 }

@@ -1,4 +1,5 @@
 import nacl from 'tweetnacl'
+import { isLowOrderEd25519PublicKey } from '../e2ee/ed25519-low-order-points'
 
 export type DeviceProofPurpose = 'auth' | 'redeem' | 'register'
 
@@ -42,7 +43,13 @@ export function decodeCanonicalBase64(value: unknown, byteLength: number): Uint8
 }
 
 export function isDevicePublicKeyB64(value: unknown): value is string {
-  return decodeCanonicalBase64(value, PUBLIC_KEY_BYTES) !== null
+  return decodeDevicePublicKey(value) !== null
+}
+
+// Why low-order keys are refused: anyone can forge a proof under one, so it would sign in without a secret.
+function decodeDevicePublicKey(value: unknown): Uint8Array | null {
+  const publicKey = decodeCanonicalBase64(value, PUBLIC_KEY_BYTES)
+  return publicKey && !isLowOrderEd25519PublicKey(publicKey) ? publicKey : null
 }
 
 export function isDeviceProofB64(value: unknown): value is string {
@@ -55,7 +62,7 @@ export function verifyDeviceProof(args: {
   purpose: DeviceProofPurpose
   transcriptHashB64: string
 }): boolean {
-  const publicKey = decodeCanonicalBase64(args.devicePublicKeyB64, PUBLIC_KEY_BYTES)
+  const publicKey = decodeDevicePublicKey(args.devicePublicKeyB64)
   const signature = decodeCanonicalBase64(args.deviceProofB64, SIGNATURE_BYTES)
   const transcriptHash = decodeCanonicalBase64(args.transcriptHashB64, TRANSCRIPT_HASH_BYTES)
   if (!publicKey || !signature || !transcriptHash) {

@@ -7,7 +7,7 @@ const nacl = createRequire(import.meta.url)('tweetnacl')
 
 const TRANSCRIPT_DOMAIN = 'orca-mobile-e2ee/v2/transcript'
 const SALT_LABEL = utf8('orca-mobile-e2ee/v2/salt\0')
-const INFO_LABEL = utf8('orca-mobile-e2ee/v2/session\0')
+const INFO_LABEL = utf8('orca-mobile-e2ee/v2/forward-secret-session\0')
 const NONCE_LENGTH = 24
 const SESSION_ID_LENGTH = 32
 const HEADER_LENGTH = SESSION_ID_LENGTH + 1 + 1 + 8
@@ -65,7 +65,7 @@ export class PhoneE2EE {
       v: 2,
       clientPublicKeyB64: b64(this.keys.publicKey),
       clientNonceB64: b64(this.clientNonce),
-      capabilities: { framing: [2], payloadKinds: ['text', 'binary'] },
+      capabilities: { framing: [2], payloadKinds: ['text', 'binary'], forwardSecrecy: true },
       context: {
         protocol: 'orca-mobile-e2ee',
         initiator: 'mobile',
@@ -86,6 +86,10 @@ export class PhoneE2EE {
     if (!nacl.verify(desktopPublicKey, this.desktopPublicKey)) {
       throw new Error('desktop key mismatch')
     }
+    if (ready.selection?.forwardSecrecy !== true) {
+      throw new Error('desktop did not select forward secrecy')
+    }
+    const desktopEphemeralPublicKey = unb64(ready.desktopEphemeralPublicKeyB64)
     const desktopNonce = unb64(ready.desktopNonceB64)
     const hello = this.hello
     const fields = [
@@ -99,6 +103,7 @@ export class PhoneE2EE {
         'mobile-to-desktop.capabilities.payload-kinds',
         encodeStringList(hello.capabilities.payloadKinds.map(utf8))
       ],
+      ['mobile-to-desktop.capabilities.forward-secrecy', uint32(1)],
       ['mobile-to-desktop.context.protocol', utf8(hello.context.protocol)],
       ['mobile-to-desktop.context.initiator', utf8(hello.context.initiator)],
       ['mobile-to-desktop.context.responder', utf8(hello.context.responder)],
@@ -107,6 +112,7 @@ export class PhoneE2EE {
       ['desktop-to-mobile.type', utf8(ready.type)],
       ['desktop-to-mobile.version', uint32(ready.v)],
       ['desktop-to-mobile.desktop-public-key', desktopPublicKey],
+      ['desktop-to-mobile.desktop-ephemeral-public-key', desktopEphemeralPublicKey],
       ['desktop-to-mobile.client-nonce-echo', this.clientNonce],
       ['desktop-to-mobile.desktop-nonce', desktopNonce],
       ['desktop-to-mobile.selection.framing', uint32(ready.selection.framing)],
@@ -114,6 +120,7 @@ export class PhoneE2EE {
         'desktop-to-mobile.selection.payload-kinds',
         encodeStringList(ready.selection.payloadKinds.map(utf8))
       ],
+      ['desktop-to-mobile.selection.forward-secrecy', uint32(1)],
       ['desktop-to-mobile.context.protocol', utf8(ready.context.protocol)],
       ['desktop-to-mobile.context.initiator', utf8(ready.context.initiator)],
       ['desktop-to-mobile.context.responder', utf8(ready.context.responder)],
@@ -125,7 +132,16 @@ export class PhoneE2EE {
         concat([uint32(utf8(name).length), utf8(name), uint32(value.length), value])
       )
     )
-    const shared = nacl.box.before(this.desktopPublicKey, this.keys.secretKey)
+    // Static binds the pinned desktop; ephemeral is the per-session key that gives forward secrecy.
+    const shared = concat([
+      nacl.scalarMult(this.keys.secretKey, this.desktopPublicKey),
+      nacl.scalarMult(this.keys.secretKey, desktopEphemeralPublicKey)
+    ])
+    if (
+      [0, 32].some((offset) => shared.subarray(offset, offset + 32).every((byte) => byte === 0))
+    ) {
+      throw new Error('desktop sent a low-order key')
+    }
     const transcriptHash = sha256(transcript)
     const salt = sha256(concat([SALT_LABEL, this.clientNonce, desktopNonce]))
     const info = concat([INFO_LABEL, transcriptHash])

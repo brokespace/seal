@@ -347,6 +347,7 @@
 1 src/main/orcad/host-runtime/orcad-app-paths.ts
 1 src/main/orcad/artifact-slots/orcad-artifact-identity.ts
 2 src/main/orcad/artifact-slots/orcad-artifact-materializer.ts
+1 src/main/orcad/profile-state/paired-devices-under-lock.ts # One-shot: `devices list/revoke` from the CLI while no server runs.
 12 src/main/orcad/runtime-launch/orcad-bundled-runtime.ts
 2 src/main/orcad/serve-startup/orcad-cli-launcher.ts
 1 src/main/orcad/serve-startup/orcad-command-arguments.ts
@@ -598,7 +599,6 @@
 2 src/shared/orcad-build-identity.ts
 1 src/shared/plugins/declarative/testing/orca-testing.ts
 2 src/shared/real-path-sync.ts
-1 src/shared/remote-runtime/e2ee/node/remote-runtime-e2ee-v2-host-latch.ts
 1 src/shared/remote-runtime/host-store/runtime-e2ee-keypair-file.ts
 1 src/shared/remote-runtime/host-store/runtime-environment-sidecar.ts
 2 src/shared/remote-runtime/host-store/runtime-environment-store-read-cache.ts

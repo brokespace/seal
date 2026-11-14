@@ -50,6 +50,10 @@ export function pairingJournalMountAdapters(
               effect('bundle-written', { version: written.current.version })
             },
             loadHosts: async () => [],
+            resolveHostIdentity: async (_publicKeyB64: string, id: string) => ({
+              id,
+              name: 'Fixture host'
+            }),
             savePairedHost: async () => {
               effect('host-saved', HOST_ID)
             },

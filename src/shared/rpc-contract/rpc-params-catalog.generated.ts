@@ -60,6 +60,10 @@ import {
   WorkerApprovalsSubscribeParams
 } from '../orchestration/orchestration-crew'
 import { PeerRunCancelParams } from '../orchestration/remote-owned-wire'
+import {
+  PairedDevicesListParamsSchema,
+  PairedDevicesRevokeParamsSchema
+} from '../paired-device-admin-contract'
 import { RegisterDeviceKeyParamsSchema } from '../remote-runtime/pairing/device-key-registration-contract'
 import { PairingCreateOfferParamsSchema } from '../remote-runtime/pairing/pairing-create-offer-contract'
 import { ExchangePairingTicketParamsSchema } from '../remote-runtime/pairing/ticket-exchange-contract'
@@ -1594,8 +1598,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'pairing.delegatedMobileDevice.sync': DelegatedMobileDeviceSyncParamsSchema,
   'pairing.exchangeTicket': ExchangePairingTicketParamsSchema,
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
+  'pairing.listDevices': PairedDevicesListParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
   'pairing.registerDeviceKey': RegisterDeviceKeyParamsSchema,
+  'pairing.revokeDevices': PairedDevicesRevokeParamsSchema,
   'phoneTransfer.abortUpload': PhoneUploadIdParams,
   'phoneTransfer.appendUpload': PhoneUploadAppendParams,
   'phoneTransfer.beginUpload': PhoneUploadBeginParams,

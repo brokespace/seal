@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... またはコードを貼り付け"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "コンピュータ",
+      "newComputer": "このスマートフォンとはまだペアリングされていません",
+      "fingerprintLabel": "鍵のフィンガープリント",
+      "relayLabel": "リレー",
+      "directLabel": "直接接続アドレス",
+      "replaceNotice": "{{name}} との既存のペアリングが置き換えられます。",
+      "otherRelayNotice": "このコードは、このアプリに組み込まれたリレーではなく {{origin}} を使用します。運営者を信頼できる場合にのみペアリングしてください。"
+    }
   }
 }

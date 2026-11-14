@@ -8,7 +8,7 @@ import { resolveUserDataPath } from './orcad-app-paths'
 import { prepareOrcadCliLauncher } from '../serve-startup/orcad-cli-launcher'
 import { installOrcadHostAdapters, runOrcadQuitHandlers } from './orcad-host-adapters'
 import { prepareOrcadSecretStoreAndMigrate } from '../credentials/orcad-secret-store-startup'
-import { describeOrcadBindExposure, resolveOrcadBindHost } from '../../../shared/orcad-bind-address'
+import { orcadBindNotices, resolveOrcadBindHost } from '../../../shared/orcad-bind-address'
 import {
   startOrcadWithHost,
   stopOrcadStructuredAgentSessions
@@ -317,7 +317,9 @@ async function activateOrcadRuntime(
   startOrcadSchedulers(runtime, profileStore, registerCleanup)
   const { startOrcadSealCloudServices } = await import('./orcad-seal-cloud-services')
   startOrcadSealCloudServices({ runtime, rpc, userDataPath: runtimeUserDataPath, registerCleanup })
-  console.error(`[orcad] ${describeOrcadBindExposure(bindHost)}`)
+  for (const notice of orcadBindNotices(bindHost, options.pairingAddress)) {
+    console.error(`[orcad] ${notice}`)
+  }
 
   const readiness = await buildOrcadServeReadiness({
     options,

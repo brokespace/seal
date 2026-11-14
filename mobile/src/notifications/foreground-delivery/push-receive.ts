@@ -2,8 +2,8 @@ import { wasPushDismissed } from '../dismissal/push-dismissal-watermarks'
 import { dismissPresentedPushNotification } from '../dismissal/push-tray-dismissal'
 import { shouldSuppressNotificationWhileViewing } from '../delivery-policy/notification-viewing-policy'
 import { loadPushNotificationsEnabled } from '../../storage/preferences'
-import { loadHostCatalog } from '../../host-catalog/host-store'
 import { resolveHostIdForFingerprint } from '../payload-identity/push-host-fingerprint'
+import { resolvePairedPushHostId } from '../payload-identity/paired-push-host'
 import { readOrcaPushPayload, type OrcaPushPayload } from '../payload-identity/push-payload'
 import type { NotificationBehavior } from 'expo-notifications'
 import { readNativeNotificationData } from '../payload-identity/native-notification-data'
@@ -73,17 +73,17 @@ export async function canPresentForegroundPush(payload: OrcaPushPayload): Promis
   return !(await shouldSuppressForegroundPush(payload, preferences))
 }
 
-async function resolvePushHostId(payload: OrcaPushPayload): Promise<string | null> {
-  const hosts = await loadHostCatalog().catch(() => [])
-  return resolveHostIdForFingerprint(payload.hostFingerprint, hosts)
-}
-
 async function shouldSuppressForegroundPush(
   payload: OrcaPushPayload | null,
   preferences: NotificationDeliveryPreferences
 ): Promise<boolean> {
   if (!payload) {
     return false
+  }
+  const hostId = await resolvePairedPushHostId(payload)
+  // First, before a dismissal is recorded: a removed host still holds this phone's push token, and its pushes can neither route a tap nor be disabled per host.
+  if (!hostId) {
+    return true
   }
   if (payload.kind === 'dismiss') {
     if (payload.notificationId) {
@@ -97,11 +97,6 @@ async function shouldSuppressForegroundPush(
   }
   // An older host ignores this registration filter, so its pushes are filtered here too.
   if (!allowsMobilePushAlertKind(preferences, payload.source, payload.agentState)) {
-    return true
-  }
-  const hostId = await resolvePushHostId(payload)
-  // Suppress removed-host pushes: stale gateway registrations cannot route a useful tap and the phone can no longer disable them per host.
-  if (!hostId) {
     return true
   }
   if (!(await loadPushNotificationsEnabled())) {

@@ -8,9 +8,15 @@ import {
 import type { DeviceScope } from '../../../../../shared/runtime-session-contracts'
 import type { RuntimeDeviceGrant } from '../../callers/rpc-method-permission'
 
-// Desktop UI offers only; headless serve passes no TTL so its offers never expire.
 export const MOBILE_PAIRING_OFFER_TTL_MS = 10 * 60_000
 export const RUNTIME_PAIRING_OFFER_TTL_MS = 60 * 60_000
+
+/** Every offer expires; desktop UI and headless `serve`/`pair` share these lifetimes. */
+export function pairingOfferTtlMs(scope: DeviceScope, offerTtlMs?: number): number {
+  return (
+    offerTtlMs ?? (scope === 'mobile' ? MOBILE_PAIRING_OFFER_TTL_MS : RUNTIME_PAIRING_OFFER_TTL_MS)
+  )
+}
 // A phone mid-scan keeps the old offer while re-advertisement mints a fresh one.
 export const PAIRING_OFFER_REUSE_MARGIN_MS = 60_000
 
@@ -25,21 +31,18 @@ export function pendingPairingOffers(
   )
 }
 
-/** Without a TTL only never-expiring offers are reused, so headless output never expires. */
+/** An offer about to lapse is not handed out again; the caller mints a fresh one. */
 export function reusablePairingOffer(
   offers: readonly TokenDeviceEntry[],
   grants: readonly RuntimeDeviceGrant[],
-  offerTtlMs: number | undefined,
   now = Date.now()
 ): TokenDeviceEntry | null {
   return (
     offers.find(
       (d) =>
         sameGrants(d, grants) &&
-        (offerTtlMs === undefined
-          ? d.offerExpiresAt === undefined
-          : d.offerExpiresAt !== undefined &&
-            d.offerExpiresAt - now > PAIRING_OFFER_REUSE_MARGIN_MS)
+        d.offerExpiresAt !== undefined &&
+        d.offerExpiresAt - now > PAIRING_OFFER_REUSE_MARGIN_MS
     ) ?? null
   )
 }

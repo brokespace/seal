@@ -3,6 +3,9 @@
     "web": {
       "WebConnect": {
         "27393856e4": "seal://pair?code=..."
+      },
+      "runtimeAuth": {
+        "hostOutdated": "此 Seal 伺服器不支援此 Web 用戶端所需的加密方式。請更新伺服器上的 Seal，然後重新載入此頁面。如果伺服器已是最新版本，則其身分金鑰已變更：請重新配對此瀏覽器。"
       }
     },
     "components": {

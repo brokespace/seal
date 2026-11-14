@@ -48,7 +48,7 @@ describe('mobile endpoint supervisor on persistent host-offline', () => {
   })
 
   it('asks the director on the second 4404 and adopts the cell it names', async () => {
-    const moved = { ...relay, cellUrl: 'https://relay-hk.onorca.dev' }
+    const moved = { ...relay, cellUrl: 'https://relay.seal.wotarmelon.com' }
     const openRelay = vi
       .fn()
       .mockImplementationOnce(hostOfflineSession)

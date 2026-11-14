@@ -3,6 +3,7 @@ import type { PairedRuntimeConnection } from '../pairing/paired-runtime-connecti
 import type { PairedE2EEClientHandshake } from '../e2ee/paired-e2ee-client-handshake'
 import { createRemoteRuntimeClientHandshake } from '../remote-runtime-client-framing'
 import { RemoteRuntimeClientError } from '../remote-runtime-client-error'
+import { formatRemoteRuntimeCloseMessage } from '../remote-runtime-client-handshake'
 import {
   remoteRuntimeConnectFailureMessage,
   remoteRuntimeConnectOptions
@@ -20,7 +21,8 @@ export type RemoteRuntimeWebSocket = {
 export type RemoteRuntimeWebSocketCallbacks = {
   /** The opening handshake completed and the E2EE hello was sent. */
   onOpen?: (ws: WebSocket) => void
-  onClose: (ws: WebSocket, code: number, reason: Buffer) => void
+  /** `message` says why, naming a host that refused the hello. */
+  onClose: (ws: WebSocket, code: number, reason: Buffer, message: string) => void
   onError: (ws: WebSocket, error: RemoteRuntimeClientError) => void
   // Binary frames may carry compressed text, so readers open both kinds the same way.
   onFrame: (ws: WebSocket, frame: RemoteRuntimeSealedFrame) => void
@@ -52,7 +54,8 @@ export function openRemoteRuntimeWebSocket(
       remoteRuntimeUnavailableError(remoteRuntimeConnectFailureMessage(error, connection.endpoint))
     )
   }
-  const onClose = (code: number, reason: Buffer): void => callbacks.onClose(ws, code, reason)
+  const onClose = (code: number, reason: Buffer): void =>
+    callbacks.onClose(ws, code, reason, formatRemoteRuntimeCloseMessage(code, reason, handshake))
   const onMessage = (data: WebSocket.RawData, isBinary: boolean): void => {
     callbacks.onFrame(ws, readSealedFrame(data, isBinary))
   }

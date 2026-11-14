@@ -1,7 +1,6 @@
 import type { RelayControlClientOptions } from './relay-control-client-options'
 import { randomUUID } from 'node:crypto'
 import WebSocket, { type RawData } from 'ws'
-import { MOBILE_RELAY_CLOSE_CODE } from '../../../../shared/remote-runtime/relay/mobile-relay-close-codes'
 import type { RelayHostCloseReason } from '../../../../shared/relay-host-close-reason'
 import {
   RelayConnectionOpenMessageSchema,
@@ -20,7 +19,7 @@ import type { DeviceCredentialInstallAuthorization } from './relay-control-reque
 
 import { answerRelayHostChallenge } from './relay-host-proof'
 import { RelayControlLiveness } from './relay-control-liveness'
-import { closeRelayControlSocket } from './relay-control-socket-close'
+import { closeRelayControlSocket, failRelayControlSocket } from './relay-control-socket-close'
 import { controlWebSocketUrl } from './relay-control-url'
 
 type RelayControlState = 'idle' | 'opening' | 'proving' | 'active' | 'draining' | 'closed'
@@ -75,12 +74,13 @@ export class RelayControlClient {
     socket.once('open', () => this.sendHostHello())
     socket.on('pong', () => this.liveness.notePong())
     socket.on('message', (raw, isBinary) => {
-      this.liveness.noteInbound()
-      if (isBinary) {
-        this.failProtocol('binary control message')
-        return
+      // A throw here is an uncaught exception, which stops a headless host; fail this socket instead.
+      try {
+        this.liveness.noteInbound()
+        this.handleMessage(raw, isBinary)
+      } catch (error) {
+        this.failProtocol(error instanceof Error ? error : new Error(String(error)))
       }
-      this.handleMessage(raw)
     })
     socket.once('error', (error) => {
       if (this.state === 'opening' || this.state === 'proving') {
@@ -182,10 +182,10 @@ export class RelayControlClient {
     )
   }
 
-  private handleMessage(raw: RawData): void {
-    const message = parseRelayControlMessage(raw)
+  private handleMessage(raw: RawData, isBinary: boolean): void {
+    const message = isBinary ? null : parseRelayControlMessage(raw)
     if (!message) {
-      this.failProtocol('invalid control JSON')
+      this.failProtocol(isBinary ? 'binary control message' : 'invalid control JSON')
       return
     }
     const controlError = RelayControlErrorMessageSchema.safeParse(message)
@@ -287,7 +287,7 @@ export class RelayControlClient {
   private failProtocol(reason: string | Error): void {
     this.connectReject?.(reason instanceof Error ? reason : new Error(reason))
     this.clearConnectPromise()
-    this.socket?.close(MOBILE_RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, String(reason))
+    failRelayControlSocket(this.socket, String(reason))
   }
 
   private handleClose(code: number): void {

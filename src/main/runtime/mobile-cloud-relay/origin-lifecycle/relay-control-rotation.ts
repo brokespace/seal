@@ -1,6 +1,7 @@
 import type { RelayControlOrigin } from './relay-control-origin'
 import type { RelayAssignment } from '../director/relay-http-client'
 import { relayRenewalDelayMs } from '../session-lifecycle/relay-renewal-jitter'
+import { clampTimerDelayMs } from '../../../../shared/timer-delay'
 
 type RotationOptions = {
   current: () => RelayControlOrigin | null
@@ -31,7 +32,7 @@ export class RelayControlRotation {
       (this.options.now ?? Date.now)(),
       this.options.random ?? Math.random
     )
-    this.timer = setTimeout(() => void this.rebind(origin), delay)
+    this.timer = setTimeout(() => void this.rebind(origin), clampTimerDelayMs(delay))
   }
   private async rebind(origin: RelayControlOrigin): Promise<void> {
     this.timer = null

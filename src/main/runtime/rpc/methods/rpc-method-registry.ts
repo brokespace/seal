@@ -95,7 +95,7 @@ import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switc
 import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../../../shared/sidebar-inputs-switch'
 
 // Keep registration order and the full RPC/security surface visible in one manifest.
-export const ALL_RPC_METHODS = [
+const ORCA_RPC_METHODS = [
   ...STATUS_METHODS,
   ...DESKTOP_WINDOW_METHODS,
   ...ORCAD_TERMINAL_CENSUS_METHODS,
@@ -103,7 +103,6 @@ export const ALL_RPC_METHODS = [
   ...SESSION_TERMINAL_SCROLLBACK_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
-  ...LIVE_SESSION_METHODS,
   ...ARTIFACT_METHODS,
   ...AUTOMATION_METHODS,
   ...REPO_METHODS,
@@ -137,11 +136,7 @@ export const ALL_RPC_METHODS = [
   ...TERMINAL_DAEMON_METHODS,
   ...ACCOUNT_METHODS,
   ...ANTIGRAVITY_ACCOUNT_METHODS,
-  ...SEAL_ACCOUNT_METHODS,
   ...USAGE_CREDENTIAL_METHODS,
-  ...UTILITY_MODEL_METHODS,
-  ...SESSION_SUMMARY_METHODS,
-  ...SESSION_RECAP_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,
   ...SESSION_TAB_METHODS,
@@ -150,10 +145,6 @@ export const ALL_RPC_METHODS = [
   ...(ORCA_LAYOUT_OWNER_IS_MAIN ? [...LAYOUT_APPLY_METHODS, ...LAYOUT_VIEW_REPORT_METHODS] : []),
   ...NATIVE_CHAT_METHODS,
   ...FILE_METHODS,
-  ...MACHINE_HOST_METHODS,
-  ...SEAL_MACHINE_METHODS,
-  ...HOME_CHAT_METHODS,
-  ...SEAL_MCP_METHODS,
   ...GIT_METHODS,
   ...GITHUB_METHODS,
   ...GITLAB_METHODS,
@@ -189,3 +180,22 @@ export const ALL_RPC_METHODS = [
   ...UPDATER_METHODS,
   ...AUTOMATIC_WORK_METHODS
 ]
+
+const SEAL_RPC_METHODS = [
+  ...LIVE_SESSION_METHODS,
+  ...SEAL_ACCOUNT_METHODS,
+  ...UTILITY_MODEL_METHODS,
+  ...SESSION_SUMMARY_METHODS,
+  ...SESSION_RECAP_METHODS,
+  ...MACHINE_HOST_METHODS,
+  ...SEAL_MACHINE_METHODS,
+  ...HOME_CHAT_METHODS,
+  ...SEAL_MCP_METHODS
+]
+
+// Two literals: TypeScript refuses to reduce the union of every method type in a single one.
+function joinRpcMethodGroups<A, B>(first: readonly A[], second: readonly B[]): readonly (A | B)[] {
+  return [...first, ...second]
+}
+
+export const ALL_RPC_METHODS = joinRpcMethodGroups(ORCA_RPC_METHODS, SEAL_RPC_METHODS)

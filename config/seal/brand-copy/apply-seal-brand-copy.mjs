@@ -27,12 +27,16 @@ const SKIPPED_PATHS = [
   'config/scripts/development/',
   'config/scripts/skills/'
 ]
-// Upstream-sync instructions and side-by-side guides name an installed Orca on purpose.
+// Upstream-sync instructions, side-by-side guides and the security audit reports name upstream's
+// Orca on purpose.
 const SKIPPED_DOCS = new Set([
   'docs/upstream-sync.md',
   'docs/TESTING-seal-all.md',
   'docs/live-sessions-input.md',
-  'docs/live-sessions-shell-integration.md'
+  'docs/live-sessions-shell-integration.md',
+  'docs/security/audit-1-cloudflare-skill.md',
+  'docs/security/audit-2-tob-semgrep.md',
+  'docs/security/audit-3-pentest.md'
 ])
 
 function walkFiles(root, dir, extensions, files = []) {

@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... veya kodu yapıştırın"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Bilgisayar",
+      "newComputer": "Bu telefonla henüz eşleştirilmedi",
+      "fingerprintLabel": "Anahtar parmak izi",
+      "relayLabel": "Aktarıcı",
+      "directLabel": "Doğrudan adres",
+      "replaceNotice": "Bu işlem {{name}} ile mevcut eşleştirmenin yerini alır.",
+      "otherRelayNotice": "Bu kod, uygulamaya yerleşik aktarıcı yerine {{origin}} adresini kullanıyor. Yalnızca işletene güveniyorsanız eşleştirin."
+    }
   }
 }

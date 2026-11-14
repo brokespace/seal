@@ -21,11 +21,16 @@ import {
   sendUnregister
 } from './push-registration/mobile-push-registration-operations'
 import {
-  loadPushNotificationsEnabled,
-  loadRemotePushHostRegistrations,
-  savePushNotificationsEnabled,
-  saveRemotePushHostRegistrations
-} from '../storage/preferences'
+  flushRemovedHostPushUnregisters,
+  queueRemovedHostPushUnregister,
+  settleRemovedHostPushUnregister
+} from './push-registration/removed-host-push-unregister-delivery'
+import { loadPushNotificationsEnabled, savePushNotificationsEnabled } from '../storage/preferences'
+import {
+  mutateHostPushRegistrationRecords as mutateRecords,
+  readHostPushRegistrationRecords as readRecords,
+  resetHostPushRegistrationRecordsForTests
+} from './push-registration/host-push-registration-records'
 import {
   addPushTokenListener,
   getDevicePushToken,
@@ -35,8 +40,6 @@ import {
 const REQUEST_TIMEOUT_MS = 5_000
 const REMOVAL_TIMEOUT_MS = 2_000
 const TOKEN_TIMEOUT_MS = 2_000
-
-type RegistrationRecords = { registered: Set<string>; pending: Set<string> }
 
 const hostsById = new Map<string, HostPushState>()
 
@@ -50,7 +53,6 @@ export function getHostPushSupportCompletion(
   const connection = hostsById.get(hostId)?.connection
   return connection?.client === client ? connection.support : null
 }
-let registrationRecords: RegistrationRecords | null = null
 let tokenPromise: Promise<MobilePushToken | null> | null = null
 // A late registration must not overwrite a newer preference or consent choice.
 let consentGeneration = 0
@@ -62,26 +64,6 @@ function hostState(hostId: string): HostPushState {
     hostsById.set(hostId, state)
   }
   return state
-}
-
-async function readRecords(): Promise<RegistrationRecords> {
-  if (!registrationRecords) {
-    const stored = await loadRemotePushHostRegistrations()
-    registrationRecords ??= {
-      registered: new Set(stored.registeredHostIds),
-      pending: new Set(stored.pendingUnregisterHostIds)
-    }
-  }
-  return registrationRecords
-}
-
-async function mutateRecords(mutate: (value: RegistrationRecords) => void): Promise<void> {
-  const value = await readRecords()
-  mutate(value)
-  await saveRemotePushHostRegistrations({
-    registeredHostIds: [...value.registered],
-    pendingUnregisterHostIds: [...value.pending]
-  })
 }
 
 // A missing token is retried: APNs registration may still be in flight.
@@ -255,8 +237,17 @@ export async function setNotificationDeliveryPreferences(
   await reconcileAllHosts()
 }
 
-// Offline hosts retain the registration until unpaired or its mobile-use lease expires.
-export async function unregisterPushForRemovedHost(hostId: string): Promise<() => void> {
+export type RemovedHostPushRegistration = {
+  /** The host is gone from the catalog. */
+  commit(): void
+  /** The host stayed paired: resume registering with it. */
+  restore(): void
+}
+
+// Call before the host's credentials are removed: an unreachable host is asked again with them later.
+export async function unregisterPushForRemovedHost(
+  hostId: string
+): Promise<RemovedHostPushRegistration> {
   const state = hostsById.get(hostId)
   // Retire ownership before waiting for earlier RPCs to settle.
   hostsById.delete(hostId)
@@ -266,26 +257,48 @@ export async function unregisterPushForRemovedHost(hostId: string): Promise<() =
     state.capabilityProbeStop = null
   }
   await state?.chain
-  if (state?.connection.client && state.supported !== false) {
-    await sendUnregister(state.connection.client, REMOVAL_TIMEOUT_MS)
+  const unregistered =
+    state?.supported === false ||
+    (state?.connection.client != null &&
+      (await sendUnregister(state.connection.client, REMOVAL_TIMEOUT_MS)))
+  // Unreadable records count as registered: the host may hold this phone's push token.
+  const records = await readRecords().catch(() => null)
+  if (
+    !unregistered &&
+    (!records || records.registered.has(hostId) || records.pending.has(hostId))
+  ) {
+    await queueRemovedHostPushUnregister(hostId).catch(() => {
+      console.warn('[push] Failed to queue the unregister for a removed host')
+    })
   }
   await mutateRecords((current) => {
     current.registered.delete(hostId)
     current.pending.delete(hostId)
   }).catch(() => {})
-  return () => {
-    if (state && !hostsById.has(hostId)) {
-      // Preserve disconnect ownership without reviving stale registration work.
-      state.connection.support = state.connection.client ? createHostPushSupportCompletion() : null
-      hostsById.set(hostId, { ...state, supported: null, capabilityProbeStop: null })
-      void enqueueReconcile(hostId)
+  return {
+    commit: () => void settleRemovedHostPushUnregister(hostId, true).catch(() => {}),
+    restore: () => {
+      void settleRemovedHostPushUnregister(hostId, false).catch(() => {})
+      if (state && !hostsById.has(hostId)) {
+        // Preserve disconnect ownership without reviving stale registration work.
+        state.connection.support = state.connection.client
+          ? createHostPushSupportCompletion()
+          : null
+        hostsById.set(hostId, { ...state, supported: null, capabilityProbeStop: null })
+        void enqueueReconcile(hostId)
+      }
     }
   }
 }
 
 // Provider token rollover invalidates delivery, so refresh every connected host immediately.
 export function startPushTokenSync(): () => void {
-  const stopLease = startMobilePushLeaseRenewal(reconcileAllHosts)
+  const flushRemovedHosts = () => flushRemovedHostPushUnregisters().catch(() => {})
+  void flushRemovedHosts()
+  const stopLease = startMobilePushLeaseRenewal(async () => {
+    await reconcileAllHosts()
+    await flushRemovedHosts()
+  })
   const stopToken = addPushTokenListener((token) => {
     tokenPromise = Promise.resolve(token)
     void reconcileAllHosts()
@@ -301,7 +314,7 @@ export function resetPushRegistrationForTests(): void {
     state.connection.support?.retire()
   }
   hostsById.clear()
-  registrationRecords = null
+  resetHostPushRegistrationRecordsForTests()
   tokenPromise = null
   consentGeneration = 0
 }

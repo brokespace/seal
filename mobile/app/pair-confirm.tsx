@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
-import { View, Text, Pressable, BackHandler, type HostInstance } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { View, Text, Pressable, BackHandler, ScrollView, type HostInstance } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft } from 'lucide-react-native'
@@ -13,7 +13,14 @@ import {
 } from '../src/pairing/pre-profile-pairing-coordinator'
 import type { ConnectionLogEntry } from '../src/diagnostics/connection/connection-log-types'
 import { useRefreshHostClient } from '../src/transport/connection/host-client-hooks'
-import { colors, spacing, radii, typography, pressedStyle } from '../src/theme/mobile-theme'
+import {
+  colors,
+  spacing,
+  radii,
+  typography,
+  pressedStyle,
+  feedback
+} from '../src/theme/mobile-theme'
 import { themedStyleSheet } from '../src/theme/themed-styles'
 import { useMobileColorScheme } from '../src/theme/use-mobile-color-scheme'
 import { useMobileTranslation } from '../src/i18n/use-mobile-translation'
@@ -29,6 +36,10 @@ import {
 } from '../src/pairing/pairing-visuals'
 import { triggerSuccess } from '../src/platform/haptics/haptics'
 import { getPairingFailureMessage } from '../src/pairing/pairing-failure-message'
+import { describePairingOfferIdentity } from '../src/pairing/pairing-offer-identity'
+import { PairConfirmHostIdentity } from '../src/pairing/PairConfirmHostIdentity'
+import { loadHosts } from '../src/host-catalog/host-store'
+import type { HostProfile } from '../src/host-catalog/host-profile'
 
 type Status = 'awaiting-confirm' | 'connecting' | 'error'
 
@@ -62,6 +73,22 @@ function PairConfirmContent({ routeState }: { routeState: PairConfirmRouteState 
   const activePairingAttemptRef = useRef<PreProfilePairingAttempt | null>(null)
 
   const offer = routeState.offer
+  // Null until read: confirming before then could hide that the code replaces a paired computer.
+  const [pairedHosts, setPairedHosts] = useState<HostProfile[] | null>(null)
+  useEffect(() => {
+    let current = true
+    void loadHosts().then(
+      (hosts) => current && setPairedHosts(hosts),
+      () => current && setPairedHosts([])
+    )
+    return () => {
+      current = false
+    }
+  }, [])
+  const identity = useMemo(
+    () => (offer && pairedHosts ? describePairingOfferIdentity(offer, pairedHosts) : null),
+    [offer, pairedHosts]
+  )
   const resolvedStatus =
     status === 'awaiting-confirm' && routeState.kind === 'error' ? 'error' : status
   const resolvedErrorMessage =
@@ -182,7 +209,10 @@ function PairConfirmContent({ routeState }: { routeState: PairConfirmRouteState 
 
       <View style={styles.content}>
         {offer && resolvedStatus === 'awaiting-confirm' && (
-          <>
+          <ScrollView
+            contentContainerStyle={styles.confirmScroll}
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.title}>
               {t('app.pairConfirm.title', 'Pair with this desktop?')}
             </Text>
@@ -192,9 +222,15 @@ function PairConfirmContent({ routeState }: { routeState: PairConfirmRouteState 
                 'You opened a pairing link from your desktop. Confirm to add it to your hosts.'
               )}
             </Text>
+            {identity ? <PairConfirmHostIdentity identity={identity} /> : null}
             <View style={styles.actionStack}>
               <Pressable
-                style={({ pressed }) => [styles.primaryButton, pressed && pressedStyle]}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && pressedStyle,
+                  !identity && styles.disabledButton
+                ]}
+                disabled={!identity}
                 onPress={() => void confirm()}
               >
                 <Text style={styles.primaryButtonText}>
@@ -208,7 +244,7 @@ function PairConfirmContent({ routeState }: { routeState: PairConfirmRouteState 
                 <Text style={styles.secondaryButtonText}>{t('common.cancel', 'Cancel')}</Text>
               </Pressable>
             </View>
-          </>
+          </ScrollView>
         )}
 
         {resolvedStatus === 'connecting' && (
@@ -276,6 +312,11 @@ const styles = themedStyleSheet(() => ({
     // Offset above geometric center to balance home-indicator/nav-bar space.
     paddingBottom: spacing.xl * 2
   },
+  // Centered while it fits; the identity card and notices scroll on a short screen.
+  confirmScroll: {
+    flexGrow: 1,
+    justifyContent: 'center'
+  },
   title: {
     fontSize: typography.titleSize,
     fontWeight: '600',
@@ -305,6 +346,9 @@ const styles = themedStyleSheet(() => ({
     borderRadius: radii.control,
     alignItems: 'center',
     marginBottom: spacing.sm
+  },
+  disabledButton: {
+    opacity: feedback.disabledOpacity
   },
   primaryButtonText: {
     color: colors.bgBase,

@@ -107,8 +107,8 @@ function installRuntimeRpc(
     // Pairing must use pre-setName canonical userData or restarts can lose devices.
     userDataPath: getCanonicalUserDataPath(),
     enableWebSocket: true,
-    // STA-2370: desktop stays loopback until pairing; serve explicitly opts into remote access and E2E needs harness-wide bind.
-    exposeNetworkByDefault: Boolean(serveOptions) || isE2E,
+    // STA-2370: desktop stays loopback until pairing and serve until --bind; only E2E needs a harness-wide bind.
+    exposeNetworkByDefault: isE2E,
     ...(pinnedBindHost !== undefined ? { pinnedBindHost } : {}),
     ...(serveOptions
       ? {

@@ -214,11 +214,7 @@ describe.skipIf(skip)('orca serve on orcad', () => {
     const appRoot = profile()
     mkdirSync(join(appRoot, 'out', 'web'), { recursive: true })
     writeFileSync(join(appRoot, 'out', 'web', WEB_CLIENT_INDEX_FILENAME), '<title>orca web</title>')
-    const args = orcadServeArgs(
-      { json: true, port: '0' },
-      findBundledWebClientRoot(appRoot),
-      '127.0.0.1'
-    )
+    const args = orcadServeArgs({ json: true, port: '0' }, findBundledWebClientRoot(appRoot))
     try {
       const { readiness } = await serveOnce(userData, args)
       const webClientUrl: unknown = readiness.pairing?.webClientUrl

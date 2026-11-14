@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... ou cole o código"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Computador",
+      "newComputer": "Ainda não pareado com este telefone",
+      "fingerprintLabel": "Impressão digital da chave",
+      "relayLabel": "Relay",
+      "directLabel": "Endereço direto",
+      "replaceNotice": "Isso substituirá o pareamento existente com {{name}}.",
+      "otherRelayNotice": "Este código usa {{origin}} em vez do relay integrado a este app. Pareie somente se confiar em quem o opera."
+    }
   }
 }

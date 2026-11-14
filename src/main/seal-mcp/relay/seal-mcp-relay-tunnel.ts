@@ -4,6 +4,8 @@ import {
   SEAL_MCP_RELAY_CHUNK_CHARS,
   SEAL_MCP_RELAY_HOST_PATH,
   SEAL_MCP_RELAY_MAX_BODY_BYTES,
+  SEAL_MCP_RELAY_MAX_FRAME_BYTES,
+  SEAL_MCP_RELAY_MAX_IN_FLIGHT,
   SEAL_MCP_RELAY_PING,
   SEAL_MCP_RELAY_PUBLIC_PREFIX,
   type SealMcpHostToRelayFrame,
@@ -48,6 +50,7 @@ export class SealMcpRelayTunnel {
   private pingTimer: ReturnType<typeof setInterval> | null = null
   private retryMs: number
   private lastHeardAt = 0
+  private sentSession: string | null = null
   private readonly inFlight = new Map<string, AbortController>()
   private readonly offSettings: () => void
 
@@ -122,8 +125,13 @@ export class SealMcpRelayTunnel {
       return
     }
     const url = `${this.options.relayOrigin.replace(/^http/, 'ws')}${SEAL_MCP_RELAY_HOST_PATH}`
-    const socket = new WebSocket(url, { headers: { authorization: `Bearer ${token}` } })
+    const socket = new WebSocket(url, {
+      headers: { authorization: `Bearer ${token}` },
+      // The relay is not trusted with this server's memory either.
+      maxPayload: SEAL_MCP_RELAY_MAX_FRAME_BYTES
+    })
     this.socket = socket
+    this.sentSession = token
     socket.on('open', () => {
       this.open = true
       this.retryMs = this.options.retryMs?.min ?? MIN_RETRY_MS
@@ -152,6 +160,20 @@ export class SealMcpRelayTunnel {
       return
     }
     socket.send(SEAL_MCP_RELAY_PING)
+    void this.renewSession(socket)
+  }
+
+  /** The relay cuts a tunnel whose host session ran out; hand it the next one before that. */
+  private async renewSession(socket: WebSocket): Promise<void> {
+    try {
+      const token = await this.options.identity()?.session(null)
+      if (token && token !== this.sentSession && this.socket === socket && this.open) {
+        this.sentSession = token
+        socket.send(JSON.stringify({ t: 'session', token } satisfies SealMcpHostToRelayFrame))
+      }
+    } catch {
+      // The session in use still stands; the next keepalive asks again.
+    }
   }
 
   private dropped(socket: WebSocket, refusedSession: string | null): void {
@@ -209,13 +231,19 @@ export class SealMcpRelayTunnel {
 
   private async answer(socket: WebSocket, frame: SealMcpRelayRequestFrame): Promise<void> {
     const { id } = frame
-    const gone = new AbortController()
-    this.inFlight.set(id, gone)
     const send = (reply: SealMcpHostToRelayFrame): void => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(reply))
       }
     }
+    // The relay holds the same cap; one that ignores it still cannot pile work up here.
+    if (this.inFlight.size >= SEAL_MCP_RELAY_MAX_IN_FLIGHT || this.inFlight.has(id)) {
+      send({ t: 'head', id, status: 429, headers: { 'retry-after': '5' } })
+      send({ t: 'end', id })
+      return
+    }
+    const gone = new AbortController()
+    this.inFlight.set(id, gone)
     const sendBody = (text: string): void => {
       for (let at = 0; at < text.length; at += SEAL_MCP_RELAY_CHUNK_CHARS) {
         send({ t: 'chunk', id, data: text.slice(at, at + SEAL_MCP_RELAY_CHUNK_CHARS) })

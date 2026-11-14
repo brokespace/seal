@@ -9,6 +9,10 @@ export const SEAL_MCP_RELAY_PUBLIC_PREFIX = '/mcp/'
 export const SEAL_MCP_RELAY_MAX_BODY_BYTES = 512 * 1024
 /** Response bodies cross the tunnel in pieces, well under a WebSocket message limit. */
 export const SEAL_MCP_RELAY_CHUNK_CHARS = 64 * 1024
+/** No tunnel frame is larger than a full request body, JSON-escaped, plus its envelope. */
+export const SEAL_MCP_RELAY_MAX_FRAME_BYTES = 4 * 1024 * 1024
+/** Both ends refuse more requests in flight for one host than this. */
+export const SEAL_MCP_RELAY_MAX_IN_FLIGHT = 32
 export const SEAL_MCP_RELAY_PING = 'ping'
 export const SEAL_MCP_RELAY_PONG = 'pong'
 
@@ -46,10 +50,14 @@ export type SealMcpRelayAbortFrame = { t: 'abort'; id: string }
 
 export type SealMcpRelayToHostFrame = SealMcpRelayRequestFrame | SealMcpRelayAbortFrame
 
+/** The server's renewed host session: the relay cuts a tunnel whose session ran out. */
+export type SealMcpRelaySessionFrame = { t: 'session'; token: string }
+
 export type SealMcpHostToRelayFrame =
   | { t: 'head'; id: string; status: number; headers: Record<string, string> }
   | { t: 'chunk'; id: string; data: string }
   | { t: 'end'; id: string }
+  | SealMcpRelaySessionFrame
 
 type Rec = Record<string, unknown>
 
@@ -104,6 +112,9 @@ export function parseSealMcpRelayToHostFrame(text: string): SealMcpRelayToHostFr
 
 export function parseSealMcpHostToRelayFrame(text: string): SealMcpHostToRelayFrame | null {
   const frame = parseRecord(text)
+  if (frame?.t === 'session') {
+    return typeof frame.token === 'string' ? { t: 'session', token: frame.token } : null
+  }
   if (!frame || typeof frame.id !== 'string') {
     return null
   }

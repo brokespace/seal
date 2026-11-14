@@ -32,7 +32,7 @@ beforeAll(async () => {
 }, SUITE_TIMEOUT_MS)
 
 describe('cross-version: session-only browser rows', () => {
-  it('a released registry keeps the session row and token rows; this host drops it on restart', () => {
+  it('a released registry keeps the session row and hashed token rows; this host drops it on restart', () => {
     const userDataPath = mkdtempSync(join(tmpdir(), 'orca-xv-web-session-'))
     const current = new DeviceRegistry(userDataPath)
     const legacy = current.addDevice('Browser', 'runtime')
@@ -41,7 +41,6 @@ describe('cross-version: session-only browser rows', () => {
     const session = current.forkDeviceKey(legacy.deviceId, keyB64, 'Tab', { ephemeral: true })
 
     const released = new ReleasedRegistry(userDataPath)
-    expect(released.validateToken(legacy.token)?.deviceId).toBe(legacy.deviceId)
     released.updateLastSeen(legacy.deviceId)
     const rows: DeviceEntry[] = JSON.parse(
       readFileSync(join(userDataPath, DEVICE_REGISTRY_FILENAME), 'utf8')

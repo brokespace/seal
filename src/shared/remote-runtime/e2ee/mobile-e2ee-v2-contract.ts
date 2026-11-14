@@ -1,3 +1,5 @@
+import { isLowOrderX25519PublicKey } from './x25519-low-order-points'
+
 export const MOBILE_E2EE_V2_PROTOCOL = 'orca-mobile-e2ee'
 export const MOBILE_E2EE_V2_TRANSCRIPT_DOMAIN = 'orca-mobile-e2ee/v2/transcript'
 
@@ -17,7 +19,8 @@ export type MobileE2EEV2Hello = {
   v: 2
   clientPublicKeyB64: string
   clientNonceB64: string
-  capabilities: { framing: [2]; payloadKinds: ['text', 'binary'] }
+  // forwardSecrecy asks for a per-session host key; hosts refuse a hello without it.
+  capabilities: { framing: [2]; payloadKinds: ['text', 'binary']; forwardSecrecy: true }
   context: MobileE2EEV2Context
 }
 
@@ -25,9 +28,11 @@ export type MobileE2EEV2Ready = {
   type: 'e2ee_ready'
   v: 2
   desktopPublicKeyB64: string
+  // Fresh per socket; its secret is discarded once the session keys exist.
+  desktopEphemeralPublicKeyB64: string
   clientNonceB64: string
   desktopNonceB64: string
-  selection: { framing: 2; payloadKinds: ['text', 'binary'] }
+  selection: { framing: 2; payloadKinds: ['text', 'binary']; forwardSecrecy: true }
   context: MobileE2EEV2Context
 }
 
@@ -36,6 +41,7 @@ export type MobileE2EEV2Handshake = {
   ready: MobileE2EEV2Ready
   clientPublicKey: Uint8Array
   desktopPublicKey: Uint8Array
+  desktopEphemeralPublicKey: Uint8Array
   clientNonce: Uint8Array
   desktopNonce: Uint8Array
 }
@@ -63,6 +69,7 @@ export function validateMobileE2EEV2Handshake(
       'type',
       'v',
       'desktopPublicKeyB64',
+      'desktopEphemeralPublicKeyB64',
       'clientNonceB64',
       'desktopNonceB64',
       'selection',
@@ -89,11 +96,18 @@ export function validateMobileE2EEV2Handshake(
     return null
   }
 
-  const clientPublicKey = decodeCanonicalBase64Bytes(helloValue.clientPublicKeyB64, 32)
-  const desktopPublicKey = decodeCanonicalBase64Bytes(readyValue.desktopPublicKeyB64, 32)
+  const clientPublicKey = decodeX25519PublicKey(helloValue.clientPublicKeyB64)
+  const desktopPublicKey = decodeX25519PublicKey(readyValue.desktopPublicKeyB64)
+  const desktopEphemeralPublicKey = decodeX25519PublicKey(readyValue.desktopEphemeralPublicKeyB64)
   const clientNonce = decodeCanonicalBase64Bytes(helloValue.clientNonceB64, 32)
   const desktopNonce = decodeCanonicalBase64Bytes(readyValue.desktopNonceB64, 32)
-  if (!clientPublicKey || !desktopPublicKey || !clientNonce || !desktopNonce) {
+  if (
+    !clientPublicKey ||
+    !desktopPublicKey ||
+    !desktopEphemeralPublicKey ||
+    !clientNonce ||
+    !desktopNonce
+  ) {
     return null
   }
 
@@ -102,6 +116,7 @@ export function validateMobileE2EEV2Handshake(
     ready: readyValue as MobileE2EEV2Ready,
     clientPublicKey,
     desktopPublicKey,
+    desktopEphemeralPublicKey,
     clientNonce,
     desktopNonce
   }
@@ -120,6 +135,11 @@ export function encodeMobileE2EEV2Transcript(handshake: MobileE2EEV2Handshake): 
       'mobile-to-desktop.capabilities.payload-kinds',
       encodeStringList(hello.capabilities.payloadKinds)
     ],
+    // Why hashed: a hello stripped of the offer then derives different keys than the client's.
+    [
+      'mobile-to-desktop.capabilities.forward-secrecy',
+      uint32(hello.capabilities.forwardSecrecy ? 1 : 0)
+    ],
     ['mobile-to-desktop.context.protocol', utf8(hello.context.protocol)],
     ['mobile-to-desktop.context.initiator', utf8(hello.context.initiator)],
     ['mobile-to-desktop.context.responder', utf8(hello.context.responder)],
@@ -128,10 +148,12 @@ export function encodeMobileE2EEV2Transcript(handshake: MobileE2EEV2Handshake): 
     ['desktop-to-mobile.type', utf8(ready.type)],
     ['desktop-to-mobile.version', uint32(ready.v)],
     ['desktop-to-mobile.desktop-public-key', handshake.desktopPublicKey],
+    ['desktop-to-mobile.desktop-ephemeral-public-key', handshake.desktopEphemeralPublicKey],
     ['desktop-to-mobile.client-nonce-echo', handshake.clientNonce],
     ['desktop-to-mobile.desktop-nonce', handshake.desktopNonce],
     ['desktop-to-mobile.selection.framing', uint32(ready.selection.framing)],
     ['desktop-to-mobile.selection.payload-kinds', encodeStringList(ready.selection.payloadKinds)],
+    ['desktop-to-mobile.selection.forward-secrecy', uint32(ready.selection.forwardSecrecy ? 1 : 0)],
     ['desktop-to-mobile.context.protocol', utf8(ready.context.protocol)],
     ['desktop-to-mobile.context.initiator', utf8(ready.context.initiator)],
     ['desktop-to-mobile.context.responder', utf8(ready.context.responder)],
@@ -176,7 +198,8 @@ function parseContext(value: unknown): MobileE2EEV2Context | null {
 
 function hasExactCapabilities(value: unknown): boolean {
   return (
-    isExactRecord(value, ['framing', 'payloadKinds']) &&
+    isExactRecord(value, ['framing', 'payloadKinds', 'forwardSecrecy']) &&
+    value.forwardSecrecy === true &&
     Array.isArray(value.framing) &&
     value.framing.length === 1 &&
     value.framing[0] === 2 &&
@@ -189,7 +212,8 @@ function hasExactCapabilities(value: unknown): boolean {
 
 function hasExactSelection(value: unknown): boolean {
   return (
-    isExactRecord(value, ['framing', 'payloadKinds']) &&
+    isExactRecord(value, ['framing', 'payloadKinds', 'forwardSecrecy']) &&
+    value.forwardSecrecy === true &&
     value.framing === 2 &&
     Array.isArray(value.payloadKinds) &&
     value.payloadKinds.length === 2 &&
@@ -206,6 +230,11 @@ function contextsEqual(left: MobileE2EEV2Context, right: MobileE2EEV2Context): b
     left.transport === right.transport &&
     left.relayHostId === right.relayHostId
   )
+}
+
+function decodeX25519PublicKey(value: unknown): Uint8Array | null {
+  const key = decodeCanonicalBase64Bytes(value, 32)
+  return key && !isLowOrderX25519PublicKey(key) ? key : null
 }
 
 function decodeCanonicalBase64Bytes(value: unknown, length: number): Uint8Array | null {

@@ -27,7 +27,7 @@ function readReason(body: string): string {
 
 // The upstream ApnsClient signs with node:crypto's raw ECDSA output, which workerd lacks.
 export class ApnsSender {
-  private cached: { token: string; issuedAtMs: number } | null = null
+  private cached: { token: Promise<string>; issuedAtMs: number } | null = null
 
   constructor(
     private readonly options: {
@@ -37,17 +37,26 @@ export class ApnsSender {
     }
   ) {}
 
-  private async providerToken(nowMs: number): Promise<string> {
+  // The promise is cached, so concurrent sends share one signature instead of racing to sign.
+  private providerToken(nowMs: number): Promise<string> {
     if (this.cached && nowMs - this.cached.issuedAtMs < TOKEN_ROTATION_MS) {
       return this.cached.token
     }
     const { teamId, keyId, keyPem } = this.options.credentials
-    const token = await new SignJWT({})
-      .setProtectedHeader({ alg: 'ES256', kid: keyId })
-      .setIssuer(teamId)
-      .setIssuedAt(Math.floor(nowMs / 1000))
-      .sign(await importPKCS8(keyPem, 'ES256'))
-    this.cached = { token, issuedAtMs: nowMs }
+    const token = importPKCS8(keyPem, 'ES256').then((key) =>
+      new SignJWT({})
+        .setProtectedHeader({ alg: 'ES256', kid: keyId })
+        .setIssuer(teamId)
+        .setIssuedAt(Math.floor(nowMs / 1000))
+        .sign(key)
+    )
+    const entry = { token, issuedAtMs: nowMs }
+    this.cached = entry
+    token.catch(() => {
+      if (this.cached === entry) {
+        this.cached = null
+      }
+    })
     return token
   }
 

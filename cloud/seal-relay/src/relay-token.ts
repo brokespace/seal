@@ -1,8 +1,10 @@
 import { importJWK, SignJWT } from 'jose'
 import { z } from 'zod'
 import type { SealEnv } from './env'
+import { RELAY_PROTOCOL_LIMITS } from '../../../cloud/packages/relay-contract/src/protocol-limits'
 
-export const RELAY_TOKEN_TTL_MS = 60 * 60 * 1000
+// The desktop refreshes a seated control's token well inside this (relay-renewal-jitter.ts).
+export const RELAY_TOKEN_TTL_MS = RELAY_PROTOCOL_LIMITS.relayTokenTtlMs
 
 const PrivateJwkSchema = z.looseObject({
   kty: z.literal('EC'),

@@ -12,7 +12,7 @@ import { buildPushDelivery } from '../../../cloud/apps/push/src/delivery/push-de
 import type { PushProviderOutcome } from '../../../cloud/apps/push/src/providers/push-provider-outcome'
 import type { SealEnv } from './env'
 import { equalStrings, type PendingChallenge } from './host-auth'
-import { createPushProviders, type PushProviders } from './push-providers'
+import { pushProviders } from './push-providers'
 
 type DeviceRecord = {
   registrationId: string
@@ -23,38 +23,66 @@ type DeviceRecord = {
   dead: boolean
 }
 
-// One object per host fingerprint: its pending auth challenges, push devices and send quota.
-export class SealPushHost extends DurableObject<SealEnv> {
-  private providers: PushProviders | null = null
+const SCHEMA = `
+  CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, proof_hash TEXT NOT NULL, expires_at INTEGER NOT NULL);
+  CREATE TABLE IF NOT EXISTS devices (
+    registration_id TEXT PRIMARY KEY, device_id TEXT NOT NULL UNIQUE, platform TEXT NOT NULL,
+    token TEXT NOT NULL, apns_environment TEXT, dead INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL);
+  CREATE TABLE IF NOT EXISTS send_quota (id INTEGER PRIMARY KEY CHECK (id = 1), window_start INTEGER NOT NULL, used INTEGER NOT NULL);
+`
+// A host answers its challenge at once; more unanswered ones than this are not its own.
+const MAX_PENDING_CHALLENGES = 8
 
-  constructor(ctx: DurableObjectState, env: SealEnv) {
-    super(ctx, env)
-    ctx.blockConcurrencyWhile(async () => {
-      this.ctx.storage.sql.exec(`
-        CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, proof_hash TEXT NOT NULL, expires_at INTEGER NOT NULL);
-        CREATE TABLE IF NOT EXISTS devices (
-          registration_id TEXT PRIMARY KEY, device_id TEXT NOT NULL UNIQUE, platform TEXT NOT NULL,
-          token TEXT NOT NULL, apns_environment TEXT, dead INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL);
-        CREATE TABLE IF NOT EXISTS send_quota (id INTEGER PRIMARY KEY CHECK (id = 1), window_start INTEGER NOT NULL, used INTEGER NOT NULL);
-      `)
-    })
+/**
+ * One object per enrolled host fingerprint: its pending auth challenges, push devices and send
+ * quota. Reads never create tables, and an object left with nothing to keep deletes itself.
+ */
+export class SealPushHost extends DurableObject<SealEnv> {
+  private schemaReady = false
+
+  /** Tests point provider traffic at a local fake by overriding this in a test-only entrypoint. */
+  protected providerUrl(url: string): string {
+    return url
   }
 
-  storeChallenge(challengeId: string, pending: PendingChallenge): void {
-    const sql = this.ctx.storage.sql
-    sql.exec(
-      'DELETE FROM challenges WHERE expires_at < ?',
-      Date.now() - PUSH_LIMITS.clockSkewToleranceMs
-    )
+  private hasTables(): boolean {
+    this.schemaReady ||=
+      this.ctx.storage.sql
+        .exec("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'devices'")
+        .toArray().length > 0
+    return this.schemaReady
+  }
+
+  private writableSql(): SqlStorage {
+    if (!this.hasTables()) {
+      this.ctx.storage.sql.exec(SCHEMA)
+      this.schemaReady = true
+    }
+    return this.ctx.storage.sql
+  }
+
+  async storeChallenge(challengeId: string, pending: PendingChallenge): Promise<void> {
+    const sql = this.writableSql()
     sql.exec(
       'INSERT INTO challenges (id, proof_hash, expires_at) VALUES (?, ?, ?)',
       challengeId,
       pending.proofHash,
       pending.expiresAt
     )
+    // The oldest go, not the newest: someone replaying the host's public key cannot lock it out.
+    sql.exec(
+      `DELETE FROM challenges WHERE expires_at < ? OR id NOT IN
+         (SELECT id FROM challenges ORDER BY expires_at DESC, rowid DESC LIMIT ?)`,
+      Date.now(),
+      MAX_PENDING_CHALLENGES
+    )
+    await this.scheduleCleanup(pending.expiresAt)
   }
 
   consumeChallenge(challengeId: string, proofHash: string): boolean {
+    if (!this.hasTables()) {
+      return false
+    }
     const sql = this.ctx.storage.sql
     const row = sql
       .exec<{ proof_hash: string; expires_at: number }>(
@@ -69,8 +97,45 @@ export class SealPushHost extends DurableObject<SealEnv> {
     return row.expires_at >= Date.now() && equalStrings(row.proof_hash, proofHash)
   }
 
-  registerDevice(request: PushDeviceRegistrationRequest): { registrationId: string } | null {
+  /** Purges expired challenges and stale quota; an object holding no device then frees its storage. */
+  async alarm(): Promise<void> {
+    if (!this.hasTables()) {
+      return
+    }
     const sql = this.ctx.storage.sql
+    const now = Date.now()
+    sql.exec('DELETE FROM challenges WHERE expires_at < ?', now)
+    sql.exec('DELETE FROM send_quota WHERE window_start <= ?', now - PUSH_LIMITS.eventQuotaWindowMs)
+    const pending = sql
+      .exec<{ next: number | null }>('SELECT MIN(expires_at) AS next FROM challenges')
+      .one().next
+    const quota = sql
+      .exec<{ window_start: number }>('SELECT window_start FROM send_quota WHERE id = 1')
+      .toArray()[0]
+    const devices = sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM devices').one().n
+    if (pending === null && !quota && devices === 0) {
+      await this.ctx.storage.deleteAll()
+      this.schemaReady = false
+      return
+    }
+    const next = Math.min(
+      pending ?? Number.MAX_SAFE_INTEGER,
+      quota ? quota.window_start + PUSH_LIMITS.eventQuotaWindowMs : Number.MAX_SAFE_INTEGER
+    )
+    if (next !== Number.MAX_SAFE_INTEGER) {
+      await this.ctx.storage.setAlarm(Math.max(next + 1, now + 1000))
+    }
+  }
+
+  private async scheduleCleanup(at: number): Promise<void> {
+    const current = await this.ctx.storage.getAlarm()
+    if (current === null || current > at + 1) {
+      await this.ctx.storage.setAlarm(at + 1)
+    }
+  }
+
+  registerDevice(request: PushDeviceRegistrationRequest): { registrationId: string } | null {
+    const sql = this.writableSql()
     const existing = sql
       .exec<{ registration_id: string }>(
         'SELECT registration_id FROM devices WHERE device_id = ?',
@@ -99,11 +164,16 @@ export class SealPushHost extends DurableObject<SealEnv> {
     return { registrationId }
   }
 
-  removeDevice(registrationId: string): boolean {
-    return (
+  async removeDevice(registrationId: string): Promise<boolean> {
+    if (!this.hasTables()) {
+      return false
+    }
+    const removed =
       this.ctx.storage.sql.exec('DELETE FROM devices WHERE registration_id = ?', registrationId)
         .rowsWritten > 0
-    )
+    // The last device gone: let the alarm free the object.
+    await this.scheduleCleanup(Date.now())
+    return removed
   }
 
   listDevices(): PushDeviceSummary[] {
@@ -125,7 +195,7 @@ export class SealPushHost extends DurableObject<SealEnv> {
         if (!device || device.dead) {
           return { registrationId, status: 'dead' }
         }
-        if (!this.reserveQuota()) {
+        if (!(await this.reserveQuota())) {
           return { registrationId, status: 'rate_limited' }
         }
         const delivery = buildPushDelivery({
@@ -151,23 +221,23 @@ export class SealPushHost extends DurableObject<SealEnv> {
     device: DeviceRecord,
     delivery: ReturnType<typeof buildPushDelivery>
   ): Promise<PushProviderOutcome> {
-    this.providers ??= createPushProviders(this.env)
+    const providers = pushProviders(this.env, (url) => this.providerUrl(url))
     if (device.platform === 'ios') {
-      if (!this.providers.apns || !device.apnsEnvironment) {
+      if (!providers.apns || !device.apnsEnvironment) {
         return { status: 'error', reason: 'apns_not_configured' }
       }
-      return this.providers.apns.send(delivery, {
+      return providers.apns.send(delivery, {
         token: device.token,
         apnsEnvironment: device.apnsEnvironment
       })
     }
-    if (!this.providers.fcm) {
+    if (!providers.fcm) {
       return { status: 'error', reason: 'fcm_not_configured' }
     }
-    return this.providers.fcm.send(delivery, { token: device.token })
+    return providers.fcm.send(delivery, { token: device.token })
   }
 
-  private reserveQuota(now = Date.now()): boolean {
+  private async reserveQuota(now = Date.now()): Promise<boolean> {
     const sql = this.ctx.storage.sql
     const row = sql
       .exec<{ window_start: number; used: number }>(
@@ -184,10 +254,16 @@ export class SealPushHost extends DurableObject<SealEnv> {
       fresh ? now : row.window_start,
       used + 1
     )
+    if (fresh) {
+      await this.scheduleCleanup(now + PUSH_LIMITS.eventQuotaWindowMs)
+    }
     return true
   }
 
   private devices(): DeviceRecord[] {
+    if (!this.hasTables()) {
+      return []
+    }
     return this.ctx.storage.sql
       .exec<{
         registration_id: string

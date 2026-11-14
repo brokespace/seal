@@ -6,6 +6,7 @@ import type { RelayDrainMessage } from '../control-channel/relay-control-protoco
 import type { RelayHostCloseReason } from '../../../../shared/relay-host-close-reason'
 import { RelayRetrySchedule } from '../authentication/relay-retry-schedule'
 import {
+  isPinnedHostRelayCell,
   RelayHttpError,
   requestRelayAssignment,
   type RelayAssignment
@@ -103,9 +104,9 @@ export class RelayOriginPool {
   }
 
   async openInitial(assignment: RelayAssignment, relayJwt: string): Promise<void> {
+    const origin = this.createOrigin(assignment, relayJwt)
     this.assignment = assignment
     this.relayJwt = relayJwt
-    const origin = this.createOrigin(assignment, relayJwt)
     this.origins.add(origin)
     await origin.open()
     this.assertCurrent()
@@ -136,6 +137,16 @@ export class RelayOriginPool {
   }
 
   private createOrigin(assignment: RelayAssignment, relayJwt: string): RelayControlOrigin {
+    // Last gate before the relay JWT and host proof leave: deferred assignments arrive here too.
+    if (
+      !isPinnedHostRelayCell(
+        this.options.directorUrl,
+        assignment.cellUrl,
+        this.options.allowedCellOrigins
+      )
+    ) {
+      throw new RelayHttpError('assignment', 502)
+    }
     return new RelayControlOrigin({
       ...this.options,
       assignment,
@@ -218,6 +229,7 @@ export class RelayOriginPool {
         relayHostId: this.options.relayHostId,
         reconnect: true,
         preferredRegion,
+        allowedCellOrigins: this.options.allowedCellOrigins,
         isCurrent: () => this.isCurrent(),
         fetch: this.options.fetch
       })

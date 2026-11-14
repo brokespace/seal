@@ -1,6 +1,7 @@
-import type {
-  PairedE2EEAuthReply,
-  PairedE2EEClientHandshake
+import {
+  createPairedE2EEClientHandshake,
+  type PairedE2EEAuthReply,
+  type PairedE2EEClientHandshake
 } from '../../../shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
 import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import { resolveWebRuntimeAuthRejection } from './web-runtime-auth-verdict'
@@ -23,9 +24,9 @@ import {
   type WebRuntimeCredentialSource
 } from './web-runtime-credential-source'
 import { migrateWebRuntimeToDeviceKey } from './web-runtime-device-key-migration'
-import { WebTokenFraming } from './web-token-framing'
 
-const UNSUPPORTED_HELLO_CLOSE_CODE = 4001
+// The host's close code for a hello it will not answer.
+const HELLO_REFUSED_CLOSE_CODE = 4001
 
 export type WebRuntimeConnectionLifecycle = {
   onStateChanged?: (state: WebRuntimeConnectionState) => void
@@ -46,7 +47,7 @@ export class WebRuntimeConnectionAuth {
   private readonly credential: WebRuntimeCredentialSource
   private readonly allowKeyMigration: boolean
   private readonly retryLater: () => void
-  private readonly tokenFraming: WebTokenFraming
+  private readonly hostPublicKeyB64: string
 
   constructor(
     connection: PairedRuntimeConnection,
@@ -58,16 +59,11 @@ export class WebRuntimeConnectionAuth {
     // Why: an invalid host key fails construction, not the first connect.
     WEB_PAIRED_E2EE_PRIMITIVES.publicKeyFromBase64(connection.hostPublicKeyB64)
     const deviceToken = connection.credential.deviceToken
+    this.hostPublicKeyB64 = connection.hostPublicKeyB64
     this.retryLater = options.retryLater
-    // Absent: the pairing token over legacy framing, as before device keys.
+    // Absent: the pairing token, as before device keys.
     this.credential = options.credential ?? tokenOnlyCredentialSource(deviceToken)
     this.allowKeyMigration = options.allowKeyMigration === true
-    this.tokenFraming = new WebTokenFraming(
-      connection.hostPublicKeyB64,
-      this.credential.tryV2Token === true &&
-        options.reconnect !== false &&
-        options.crewAttempt !== true
-    )
   }
 
   /** Resolves the next plan, then opens; synchronous for a token-only source. */
@@ -84,15 +80,15 @@ export class WebRuntimeConnectionAuth {
     )
   }
 
+  /** Every socket speaks forward-secret E2EE v2; a host that refuses it is never offered less. */
   createHandshake(plan: WebRuntimeAuthPlan): PairedE2EEClientHandshake {
-    return this.tokenFraming.createHandshake(plan)
-  }
-
-  /** True when this socket only checks a latched host's status, then reconnects. */
-  checkLatchedHostIfPlanned(
-    args: Parameters<WebTokenFraming['checkLatchedHostIfPlanned']>[0]
-  ): boolean {
-    return this.tokenFraming.checkLatchedHostIfPlanned(args)
+    return createPairedE2EEClientHandshake({
+      primitives: WEB_PAIRED_E2EE_PRIMITIVES,
+      hostPublicKeyB64: this.hostPublicKeyB64,
+      transport: 'direct',
+      // Why token sockets only: a migration's token auth carries nothing but the token.
+      v2TokenCapabilities: plan.kind === 'legacy-token'
+    })
   }
 
   async sendAuth(args: {
@@ -147,14 +143,6 @@ export class WebRuntimeConnectionAuth {
   async rejected(
     reply: Extract<PairedE2EEAuthReply, { kind: 'rejected' }>
   ): Promise<{ kind: 'retry' } | { kind: 'failed'; error: WebRuntimeClientError }> {
-    // Hosts that predate capabilities on v2 token auth answer bad_auth; reconnect with legacy.
-    if (
-      reply.errorCode === 'bad_auth' &&
-      this.tokenFraming.sentTokenOverV2 &&
-      this.tokenFraming.noteV2Refused()
-    ) {
-      return { kind: 'retry' }
-    }
     const outcome = await resolveWebRuntimeAuthRejection(this.plan, reply, this.credential)
     if (outcome.kind === 'retry') {
       return outcome
@@ -163,15 +151,17 @@ export class WebRuntimeConnectionAuth {
     return { kind: 'failed', error: this.failureError() }
   }
 
-  socketClosed(closeCode?: number): void {
-    // Why: a host that refuses a v2 hello predates device keys; fall back to the token.
-    if (this.plan?.kind === 'migrate' && !this.readyAccepted) {
-      this.credential.migrationUnavailable()
-    }
-    const v2Hello = this.tokenFraming.sentTokenOverV2 || this.plan?.kind === 'migrate'
-    if (v2Hello && !this.readyAccepted && closeCode === UNSUPPORTED_HELLO_CLOSE_CODE) {
-      this.tokenFraming.noteV2Refused()
-    }
+  /** The host answered the hello with older framing or none: reconnecting cannot help. */
+  hostOutdated(): WebRuntimeClientError {
+    this.failureReason = 'host-outdated'
+    return this.failureError()
+  }
+
+  /** The error to stop on when this close was the host refusing the hello; null for any other close. */
+  socketClosed(closeCode?: number): WebRuntimeClientError | null {
+    return !this.readyAccepted && closeCode === HELLO_REFUSED_CLOSE_CODE
+      ? this.hostOutdated()
+      : null
   }
 }
 

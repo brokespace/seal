@@ -46,7 +46,25 @@ export function bindHostIsNetworkExposed(host: string): boolean {
   return host !== '::1'
 }
 
-export function describeOrcadBindExposure(host: string): string {
+/** A tunnel or reverse proxy on this machine may serve that address; a direct dial of it cannot arrive. */
+function describeUnservedPairingAddress(
+  host: string,
+  pairingAddress: string | null | undefined
+): string | null {
+  return pairingAddress && !bindHostIsNetworkExposed(host)
+    ? `--pairing-address ${pairingAddress} is advertised to clients, but the listener is bound to ` +
+        `${host}: only an SSH forward, tunnel or reverse proxy on this machine can deliver ` +
+        'connections to it. Pass --bind <address> to accept them directly.'
+    : null
+}
+
+/** What a starting server tells its operator about who can reach it. */
+export function orcadBindNotices(host: string, pairingAddress?: string | null): string[] {
+  const unserved = describeUnservedPairingAddress(host, pairingAddress)
+  return [describeOrcadBindExposure(host), ...(unserved ? [unserved] : [])]
+}
+
+function describeOrcadBindExposure(host: string): string {
   return bindHostIsNetworkExposed(host)
     ? `orcad is bound to ${host} and is reachable from the network. Anything that can reach ` +
         'this port can attempt pairing.'

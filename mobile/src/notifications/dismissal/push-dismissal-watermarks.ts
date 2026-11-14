@@ -3,8 +3,9 @@ import type { OrcaPushPayload } from '../payload-identity/push-payload'
 import { nativePushDismissal } from './native-push-dismissal'
 
 const STORAGE_KEY = 'orca:pushDismissalWatermarks:v1'
-// Keep every live fence: count-based eviction lets delayed alerts reappear.
 const RETENTION_MS = 24 * 60 * 60 * 1000
+// Past the cap the oldest fence goes: a delayed alert reappearing costs less than an unbounded ledger.
+const MAX_ENTRIES = 1024
 
 type Entry = { key: string; seq: number; expiresAt: number }
 let writes: Promise<void> = Promise.resolve()
@@ -78,7 +79,10 @@ export async function rememberPushDismissals(payloads: readonly OrcaPushPayload[
       entries.delete(key)
       entries.set(key, { key, seq, expiresAt })
     }
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...entries.values()]))
+    await AsyncStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([...entries.values()].slice(-MAX_ENTRIES))
+    )
   })
 }
 

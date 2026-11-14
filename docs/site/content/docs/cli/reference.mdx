@@ -86,7 +86,21 @@ seal serve --port 6768 --bind 100.64.1.20 --pairing-address 100.64.1.20 --json
 ```
 
 `seal serve` starts a runtime server in the foreground without opening the desktop window. Use it for [Remote Seal Servers](/docs/remote-servers) or headless environments, and stop it with `Ctrl-C`. It accepts clients from localhost, LAN and Tailscale addresses; add `--allow-public` to accept public internet addresses too.
-Use `--bind <literal-ip>` to choose the listening interface; `--pairing-address` changes the address advertised to clients.
+It listens on `127.0.0.1` unless `--bind <literal-ip>` names another address (`--bind 0.0.0.0` for every interface); `--pairing-address` changes only the address advertised to clients.
+
+```bash
+seal devices list --json
+seal devices revoke <deviceId> --json
+seal devices revoke --all --json
+```
+
+`seal devices list` shows the phones and Seal clients paired with this machine: id, name, scope, paired and last-seen times, and whether they connect directly or through Seal Relay. It never prints credentials. `seal devices revoke` disconnects a device at once and withdraws its Relay credential and push registration, exactly like revoking it in Settings; `--all` revokes every device and unused pairing code. Both run only on the machine itself, as its own user. With no Seal running, `revoke` removes the device on disk and the withdrawals are sent at the next start. See [List and revoke paired devices](/docs/remote-servers#list-and-revoke-paired-devices).
+
+```bash
+seal relay host-id
+```
+
+`seal relay host-id` prints the id Seal Relay knows this machine by. A relay serves only the hosts its operator has listed, so a self-hosted relay needs this id in its `HOST_ALLOWLIST` before the machine can pair phones through it or send them notifications. The id is derived from the machine's pairing key and is not a secret; a phone shows the same id when it pairs. It reads the profile on disk, so Seal does not need to be running.
 
 ## Repos
 

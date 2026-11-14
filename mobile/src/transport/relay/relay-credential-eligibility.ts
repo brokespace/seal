@@ -1,4 +1,9 @@
-import { MOBILE_RELAY_CLOSE_CODE } from '../../../../src/shared/remote-runtime/relay/mobile-relay-close-codes'
+import {
+  isMobileRelayCloseCode,
+  MOBILE_RELAY_CLOSE_CODE,
+  mobileRelayRecoveryFor,
+  type MobileRelayRecovery
+} from '../../../../src/shared/remote-runtime/relay/mobile-relay-close-codes'
 import { RelayOuterError } from '../encryption/mobile-relay-e2ee-link'
 
 // Only a relay-hello refusal is the relay's verdict on a credential; a bare 4401
@@ -11,15 +16,18 @@ export function isExplicitCredentialRejection(error: unknown): boolean {
   )
 }
 
-type RelayCredentialLease = { expiresAt: number; version: number }
-
-// Why: only a rejected outer credential can be repaired by the grace token;
-// retrying session/capacity close codes immediately recreates relay churn.
-export function relayFailureAllowsGraceRetry(error: Error): boolean {
-  return (
-    error instanceof RelayOuterError && error.code === MOBILE_RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL
-  )
+/** What a failed resume asks of the phone. A bare 4401 is also how an older relay ends a first-frame timeout, so it asks for a plain retry. */
+export function relayResumeFailureRecovery(error: unknown): MobileRelayRecovery | null {
+  if (!(error instanceof RelayOuterError) || !isMobileRelayCloseCode(error.code)) {
+    return null
+  }
+  const recovery = mobileRelayRecoveryFor(error.code, 'phone-resume')
+  return recovery.kind === 'disable-relay-credential' && !isExplicitCredentialRejection(error)
+    ? null
+    : recovery
 }
+
+type RelayCredentialLease = { expiresAt: number; version: number }
 
 export class RelayCredentialEligibility {
   private readonly rejectedVersions = new Set<number>()

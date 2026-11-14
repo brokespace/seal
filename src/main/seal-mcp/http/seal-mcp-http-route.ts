@@ -13,12 +13,17 @@ function readBody(request: IncomingMessage): Promise<string | null> {
     let size = 0
     request.on('data', (chunk: Buffer) => {
       size += chunk.length
-      if (size > SEAL_MCP_MAX_BODY_BYTES) {
-        // Stop buffering but let the request finish, so the caller reads the 413.
-        chunks.length = 0
+      if (size <= SEAL_MCP_MAX_BODY_BYTES) {
+        chunks.push(chunk)
         return
       }
-      chunks.push(chunk)
+      chunks.length = 0
+      // Answer now; an honest sender's remainder is discarded so it can read the 413.
+      resolve(null)
+      if (size > SEAL_MCP_MAX_BODY_BYTES * 2) {
+        // An upload that keeps going is not waiting for an answer.
+        request.destroy()
+      }
     })
     request.on('end', () =>
       resolve(size > SEAL_MCP_MAX_BODY_BYTES ? null : Buffer.concat(chunks).toString('utf8'))

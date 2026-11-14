@@ -26,7 +26,7 @@ export type DesktopRelayServiceInstaller = {
 function pairingProviderFor(service: DesktopRelayService): MobileRelayPairingProvider {
   return {
     createPairingRelay: (relayDeviceId) => service.createPairingRelay(relayDeviceId),
-    onDeviceRevokeQueued: (item) => service.onDeviceRevokeQueued(item),
+    onDeviceRevokeQueued: () => service.onDeviceRevokeQueued(),
     onDemandStateChanged: () => service.demandStateChanged(),
     getEndpoints: (context, params) => service.getEndpoints(context, params),
     provisionRelay: (context, params) => service.provisionRelay(context, params)

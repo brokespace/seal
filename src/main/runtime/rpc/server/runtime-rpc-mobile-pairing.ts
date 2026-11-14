@@ -7,6 +7,7 @@ import { encodePairingOffer } from '../../../../shared/remote-runtime/pairing/pa
 import { PAIRING_OFFER_VERSION } from '../../../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { NETWORK_EXPOSURE_FAILED_GUIDANCE } from './pairing/network/network-exposure-guidance'
 import { createOwnerPairingOffer } from './pairing/pairing-offer-requests'
+import { deviceTokenHashOf } from './pairing/device-entry'
 import type { PairingOffersRpcContext } from '../core'
 import { RuntimeRpcPairing } from './runtime-rpc-pairing'
 import { withTimeout } from '../../../../shared/promise-timeout-fallback'
@@ -33,17 +34,18 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     rotate?: boolean
     offerTtlMs?: number
   }): Promise<MobilePairingOffer> {
-    // Network pairing opts into LAN exposure: widen before advertising QR endpoints; failed widening stays unavailable on loopback (STA-2370).
-    try {
-      await this.ensureNetworkExposure()
-    } catch (error) {
-      console.error(
-        '[runtime] Network exposure failed while creating a mobile pairing offer:',
-        error
-      )
-      return pairingUnavailable('network_exposure_failed', NETWORK_EXPOSURE_FAILED_GUIDANCE)
-    }
     if (args.connectionMode === 'local-only') {
+      // LAN pairing opts into LAN exposure: widen before advertising QR endpoints; failed widening stays unavailable on loopback (STA-2370).
+      // A Relay offer never widens: the relay reaches a loopback listener through this host's own outbound connection.
+      try {
+        await this.ensureNetworkExposure()
+      } catch (error) {
+        console.error(
+          '[runtime] Network exposure failed while creating a mobile pairing offer:',
+          error
+        )
+        return pairingUnavailable('network_exposure_failed', NETWORK_EXPOSURE_FAILED_GUIDANCE)
+      }
       this.mobilePairingOfferGeneration += 1
       return this.createMobilePairingOfferSerial(args, this.mobilePairingOfferGeneration)
     }
@@ -100,7 +102,7 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     for (const expired of this.deviceRegistry?.listExpiredPairingOffers('mobile') ?? []) {
       this.discardPendingMobilePairingDevice(expired.deviceId)
     }
-    const pending = this.deviceRegistry?.getPendingDevice('mobile', args.offerTtlMs)
+    const pending = this.deviceRegistry?.getPendingDevice('mobile')
     // Rotate when connection policy changes so old QR credentials retain no new-policy authority.
     const switchingPendingMode =
       pending != null &&
@@ -119,7 +121,10 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     const direct = this.createPairingOffer({
       ...args,
       rotate: args.rotate || switchingPendingMode,
-      scope: 'mobile'
+      scope: 'mobile',
+      // A phone paired through Relay alone must not make the next launch listen on the network.
+      reach:
+        connectionMode === 'local-only' || this.isNetworkExposed() ? 'network' : 'this-computer'
     })
     if (!direct.available) {
       return direct
@@ -177,7 +182,9 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     }
     const device = this.deviceRegistry?.getDevice(direct.deviceId)
     const publicKeyB64 = this.getE2EEPublicKey()
-    if (!device?.token || !publicKeyB64) {
+    // Only an unscanned offer still holds its bearer; one used meanwhile cannot be shown again.
+    const deviceToken = device?.token
+    if (!device || !deviceToken || !publicKeyB64) {
       return refuseAutomaticWithoutRelay({
         code: 'e2ee_key_unavailable',
         stage: 'e2ee_missing',
@@ -202,7 +209,8 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     if (
       generation !== this.mobilePairingOfferGeneration ||
       relayProvider !== this.mobileRelayPairingProvider ||
-      currentDevice?.token !== device.token ||
+      !currentDevice ||
+      deviceTokenHashOf(currentDevice) !== deviceTokenHashOf(device) ||
       this.deviceRegistry?.getMobilePairingConnectionMode(device.deviceId) !== 'automatic'
     ) {
       this.queueOrRetainRelayDeviceRevoke(device.deviceId, relayPairing.binding)
@@ -210,6 +218,27 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
         this.discardPendingMobilePairingDevice(direct.deviceId)
       }
       return this.relayPairingRequestSuperseded()
+    }
+    // Validate the relay's invite before it is stored: a binding outlives the request that minted it.
+    let pairingUrl: string
+    try {
+      pairingUrl = encodePairingOffer({
+        v: PAIRING_OFFER_VERSION,
+        endpoint: direct.endpoint,
+        deviceToken,
+        publicKeyB64,
+        pairedDeviceId: device.deviceId,
+        scope: 'mobile',
+        relay: relayPairing.relay
+      })
+    } catch {
+      console.warn('[runtime] Relay pairing invite failed offer validation')
+      this.queueOrRetainRelayDeviceRevoke(device.deviceId, relayPairing.binding)
+      return refuseAutomaticWithoutRelay({
+        code: 'relay_mint_failed',
+        stage: 'create_pairing_relay',
+        message: 'Relay pairing invite was not valid'
+      })
     }
     try {
       if (!this.setMobileRelayBinding(device.deviceId, relayPairing.binding)) {
@@ -229,19 +258,7 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
         message: 'Could not store Relay binding for the pairing device'
       })
     }
-    return {
-      ...direct,
-      connectionMode: 'automatic',
-      pairingUrl: encodePairingOffer({
-        v: PAIRING_OFFER_VERSION,
-        endpoint: direct.endpoint,
-        deviceToken: device.token,
-        publicKeyB64,
-        pairedDeviceId: device.deviceId,
-        scope: 'mobile',
-        relay: relayPairing.relay
-      })
-    }
+    return { ...direct, connectionMode: 'automatic', pairingUrl }
   }
 
   protected relayPairingRequestSuperseded(): PairingOfferUnavailable {
