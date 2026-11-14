@@ -1,12 +1,12 @@
 import { Fragment, useContext, useMemo } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
-import { Page, PageHeader, PageScrollBody } from '@/components/page-layout/Page'
+import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
 import {
   buildHomeAttentionItems,
   countSessionsByState,
   mergeSessionMachines
-} from './home-overview-derivations'
+} from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
   HomeActionsContext,
@@ -50,13 +50,13 @@ function HomeOverviewContent(): React.JSX.Element {
   ].join(' · ')
 
   return (
-    <Page>
+    <PageLayout data-home-page>
       <PageHeader title={t('home.overview.title', 'Home')}>
         <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{summary}</p>
       </PageHeader>
-      <PageScrollBody
+      <PageScrollContent
         // Wide windows put an open chat beside the overview; otherwise the overview has the row.
-        contentClassName="grid grid-cols-1 items-start @min-[96rem]/page:has-[[data-home-slot=chat]:not([data-minimized])]:grid-cols-[minmax(0,1fr)_minmax(26rem,36%)]"
+        className="grid grid-cols-1 items-start @min-[96rem]/page:has-[[data-home-slot=chat]:not([data-minimized])]:grid-cols-[minmax(0,1fr)_minmax(26rem,36%)]"
       >
         <HomeChatSlot />
         <div className="@container/overview flex min-w-0 flex-col gap-(--page-section-gap)">
@@ -85,8 +85,8 @@ function HomeOverviewContent(): React.JSX.Element {
             </PageCardGrid>
           </div>
         </div>
-      </PageScrollBody>
-    </Page>
+      </PageScrollContent>
+    </PageLayout>
   )
 }
 

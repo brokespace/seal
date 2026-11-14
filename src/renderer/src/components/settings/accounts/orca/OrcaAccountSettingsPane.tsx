@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Check, CircleUserRound, Files, Smartphone } from 'lucide-react'
+import { BookOpen, Check, CircleUserRound, Files } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useOrcaProfileAuthStatusRefresh } from '@/hooks/use-orca-profile-auth-status-refresh'
@@ -32,8 +32,8 @@ function accountStatusCopy(
   }
   if (state === 'local') {
     return t(
-      'auto.components.settings.orcaAccount.signedOut',
-      'Sign in to extend Seal with cloud features, including Artifacts and Seal Relay.'
+      'auto.components.settings.orcaAccount.signedOutNoRelay',
+      'Sign in to extend Orca with cloud features, including Artifacts.'
     )
   }
   return t('auto.components.settings.orcaAccount.checking', 'Checking account status…')
@@ -144,25 +144,15 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
                 )}
               />
               <AccountBenefit
-                icon={Smartphone}
+                icon={BookOpen}
                 className="md:pl-6"
-                title={t('auto.components.settings.orcaAccount.relayTitle', 'Seal Relay')}
+                title={t('auto.components.settings.orcaAccount.skillsTitle', 'Skill sharing')}
                 description={t(
-                  'auto.components.settings.orcaAccount.relayDescription',
-                  'Connect Seal Mobile to this desktop across cellular or any Wi-Fi.'
+                  'auto.components.settings.orcaAccount.skillsDescription',
+                  'Share one skill or a whole set behind an unlisted link, and install them on any machine you use.'
                 )}
               />
             </div>
-            {/* Put the third benefit below at full width so it cannot squeeze the existing pair. */}
-            <AccountBenefit
-              icon={BookOpen}
-              className="border-t border-border/60 pt-5"
-              title={t('auto.components.settings.orcaAccount.skillsTitle', 'Skill sharing')}
-              description={t(
-                'auto.components.settings.orcaAccount.skillsDescription',
-                'Share one skill or a whole set behind an unlisted link, and install them on any machine you use.'
-              )}
-            />
           </div>
         </div>
       </div>

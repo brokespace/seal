@@ -7,7 +7,7 @@ A **machine** is a computer Seal works on. This computer is always one. Every ot
 
 Every feature works the same either way:
 
-- Machines tab: stats, files, transfers, previews and folder watching
+- Machines tab: stats, CPU / memory / disk details, cleanup, files, Go to folder, transfers, previews and folder watching
 - Live sessions: scan, send and answer
 - Account push
 - Terminals, agents and worktrees
@@ -98,6 +98,8 @@ Features built on the interface:
 | Machines tab (stats, files, transfers, previews, watchers)        | `src/main/machines/machine-ipc.ts`                                              |
 | Terminals and agents                                              | `src/main/machines/shell/machine-shell-ipc.ts`, `work/machine-agent-launch.ts`  |
 | Worktrees                                                         | `src/main/machines/work/machine-worktrees.ts`                                   |
+| CPU, memory and disk details, cleanup                             | `src/main/machines/resources/`                                                  |
+| Go to folder (completion, recent folders)                         | `src/main/machines/listing/machine-folder-ipc.ts`                               |
 | Live-session scan and input                                       | `src/main/live-sessions/hosts/live-session-hosts.ts` (`machineLiveSessionHost`) |
 | Home chat (`list_machines`, `run_command`, file tools, transfers) | `src/main/home-chat/machines/home-chat-unified-machine.ts`                      |
 | Account push                                                      | `src/main/seal-accounts/seal-desktop-fleet-transport.ts`                        |
@@ -115,6 +117,52 @@ Account push works on both transports. A Seal server gets the swap policy and th
 An older login never replaces a fresher one already on the machine.
 
 Workspaces in the sidebar keep their execution host id: `ssh:<target>` for SSH, `runtime:<environment>` for a server. New workspaces, agent launches and live-session take-over use the machine's active transport.
+
+## Resource details
+
+On a machine's page the **CPU**, **RAM** and **Disk** meters are buttons. Each opens a detail view in place of the file browser; **Back to files** returns. They work on Linux and macOS machines, over SSH and over a Seal server alike. Windows machines show a notice instead.
+
+Every host script runs through `runMachineHostScript` (`resources/machine-host-script.ts`): the login shell is asked only to start `sh -s`, and the script arrives on stdin. That keeps the scripts POSIX `sh` whatever the login shell is (bash, zsh, fish), and no value is ever word-split by it.
+
+| View | Shows                                                                                                                                                                                                                | Actions                                           |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| CPU  | Busiest processes, refreshed every 3 seconds: name, command line, user, pid, CPU %, memory. tmux panes and Claude / Codex processes are listed as sessions with the CPU and memory of everything running under them. | **Stop** (SIGTERM), **Force kill** (SIGKILL)      |
+| RAM  | Largest processes, swap, and Docker containers with their memory when Docker is installed.                                                                                                                           | The same, plus **Stop** / **Restart** a container |
+| Disk | Each mounted disk; **What's taking space**, a drill-down of the largest folders and files under a path; **Clean up**, the reclaimable space by kind.                                                                 | **Delete…** one entry; clean up a reviewed list   |
+
+Linux CPU percentages come from two `/proc` readings one second apart. macOS uses `ps`.
+
+### What can change a machine, and its guards
+
+Nothing here runs without a confirmation dialog that names the machine and what is affected.
+
+- **Signals.** The dialog shows the process's command line. Main refuses pid 0, 1 and negative pids. The request carries the process's start marker (`/proc` start time on Linux, `ps lstart` elsewhere); if the pid now belongs to another process the signal is not sent and the dialog says so. A process that carries Seal's own connection to the machine is labelled, and the dialog warns before it is signalled.
+- **Command lines.** Values of secret-named flags and variables (`--token`, `--api-key`, `PASSWORD=…`), bearer tokens, JWTs and URL passwords are masked in main (`command-line-secrets.ts`) before they reach the renderer or a log.
+- **Containers.** Only `docker stop` and `docker restart`, on a container id read from the listing.
+- **Delete in the drill-down.** The file browser's own delete dialog and `files.remove`.
+- **Clean up.** A scan only measures. It returns items plus a one-use token bound to that machine, valid for 15 minutes. The run accepts the token and the ids of the ticked items only, so the renderer can never name a path or a command. Unknown ids reject the whole run. Paths are checked again by `isRemovableCleanupPath`: absolute, at least two levels deep, no `.` or `..`, and never the home folder.
+
+Cleanup targets (`MACHINE_CLEANUP_TARGETS`):
+
+| Target                    | Finds                                                                                     | Removes with                            |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- |
+| Unused Docker images      | images no container uses                                                                  | `docker image rm` (never `--force`)     |
+| Stopped Docker containers | exited or never started                                                                   | `docker container rm`                   |
+| Unused Docker volumes     | volumes no container references                                                           | `docker volume rm`                      |
+| Docker build cache        | the total from `docker system df`                                                         | `docker builder prune --all --force`    |
+| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                        | `rm -rf` of the cache folder            |
+| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`               | `rm -rf`; none are ticked by default    |
+| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                      | emptied; the folders stay               |
+| Old logs                  | log files not written to for 14 days                                                      | `rm -rf` of each ticked file            |
+| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour | `rm -rf`; running jobs are never listed |
+
+## Go to folder
+
+The path field above the file tree takes a typed path. `~` expands to the home folder. Matching folders appear as you type; **Tab** completes (to the single match, the highlighted one, or the longest shared prefix), the arrow keys pick, and **Enter** opens the tree at that folder. Matching is case-insensitive and hidden folders show once the typed name starts with a dot.
+
+Each machine keeps its 12 most recent folders, newest first, in `seal-machine-recent-folders.json` under the user-data folder. They are keyed by the machine's record id, so they survive a transport switch. An empty, focused field lists them.
+
+The machine page no longer has an **Agents & worktrees** section.
 
 ## Settings
 
@@ -135,13 +183,14 @@ The Machines tab opens the folder on screen (header button) or any file or folde
 | Seal server only (no SSH details)           | Seal's own editor: the file opens in the Machines tab's editor, a folder in its file browser. A notice explains why and offers **Add SSH details…**.                         |
 | SSH details, but no SSH-capable Open In app | Seal's own editor, with a link to the Open In apps setting.                                                                                                                  |
 
-The chevron next to the button picks another app, or Seal's editor, for one open. A launcher that is missing, not executable, or exits with an error within 1.5 seconds is reported with the command and the reason instead of passing as a success.
+The chevron next to the button picks another app, or Seal's editor, for one open. When the app's command-line launcher is missing, fails, or exits with an error within 1.5 seconds, Seal tries the app's registered `vscode://` or `cursor://` link; if that is not registered either, the failure is reported with the command and the reason instead of passing as a success.
 
 ## Known limits
 
 - An SSH machine has no resident Seal, so account auto-swap and fleet policy run only on Seal servers. Pushed logins still land in the CLI's own files.
 - On a Mac reached over SSH, installing the Claude login needs that Mac's login Keychain to be unlocked.
-- **Open in editor** on a remote machine launches an app on this computer, which dials the machine itself over SSH (see below). A custom-port SSH host that is not an SSH config alias cannot be opened by VS Code or Cursor; Seal says so and offers its own editor.
+- **Open in editor** on a remote machine launches an app on this computer, which dials the machine itself over SSH (see above), so it needs stored SSH details whichever transport Seal uses. A server-only machine opens in Seal's own editor and offers **Add SSH details…**, which stores them without leaving the server connection.
+- VS Code and Cursor take a custom SSH port only from a `Host` entry in `~/.ssh/config`. Seal uses a matching entry when one exists; otherwise it says so, offers to copy one, and offers its own editor.
 - Windows machines are not scanned for live sessions: there is no `ps`/tmux to read.
 - The assistant's supervised subagents (`spawn_subagent` in agent mode) need a machine connected over SSH or this computer. On a server-connected machine the assistant uses `start_session` instead.
 
@@ -152,3 +201,5 @@ The chevron next to the button picks another app, or Seal's editor, for one open
 | `src/shared/machines/machine-reconcile.test.ts`                  | Migration, merge reasons, relay and machine-id guards, splits, deletions, kessel-ml                                                       |
 | `src/main/machines/registry/machine-registry.test.ts`            | Routing by connection type, switching, identity merges, adding a transport                                                                |
 | `src/main/machines/connection/machine-connection-parity.test.ts` | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers |
+| `src/main/machines/resources/machine-resources-parity.test.ts`   | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)  |
+| `src/main/machines/resources/machine-resource-parsing.test.ts`   | Linux and macOS probe output, secret masking, cleanup path guards                                                                         |

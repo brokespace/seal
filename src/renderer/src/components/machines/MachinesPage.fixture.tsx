@@ -10,6 +10,7 @@ import type { SshConnectionState } from '../../../../shared/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
 import MachinesPage from './MachinesPage'
+import { fakeMachineResourceApi } from './machine-resource-fixture-data'
 import { MachinesSettingsPane } from '../settings/machines/MachinesSettingsPane'
 
 const GPU = 'gpu-box'
@@ -249,7 +250,8 @@ const fakeMachinesApi: MachinesApi = {
   detectCommands: async () => ['claude', 'codex'],
   listWorktrees: async () => [],
   createWorktree: async () => [],
-  removeWorktree: async () => []
+  removeWorktree: async () => [],
+  ...fakeMachineResourceApi(HOME, TREE[HOME] ?? [])
 }
 
 function sshDetails(targetId: string, host: string, port: number, username: string) {

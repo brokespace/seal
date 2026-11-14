@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { AddMachineDialog, AddMachineMenu, type AddMachineRequest } from './add/AddMachineFlow'
 import { cn } from '@/lib/class-names'
-import { Page, PageHeader, PagePanes } from '@/components/page-layout/Page'
+import { PageHeader, PageLayout, PagePanes } from '@/components/page-layout/PageLayout'
 import type { MachineId } from '../../../../shared/machines/machine-types'
 import { MachineDetail } from './detail/MachineDetail'
 import { MachineList } from './list/MachineList'
@@ -47,7 +47,7 @@ export default function MachinesPage(): React.JSX.Element {
   const selectedMetrics = selected ? metricsById.get(selected.id) : undefined
 
   return (
-    <Page data-machines-page>
+    <PageLayout data-machines-page>
       <PageHeader title={t('auto.components.machines.page.title', 'Machines')}>
         <AddMachineMenu onPick={(mode) => setAdding({ mode, machineId: null })} />
       </PageHeader>
@@ -97,6 +97,6 @@ export default function MachinesPage(): React.JSX.Element {
         }}
         onAdopted={reload}
       />
-    </Page>
+    </PageLayout>
   )
 }

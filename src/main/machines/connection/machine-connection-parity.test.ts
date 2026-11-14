@@ -11,7 +11,8 @@ import type { MachineSummary } from '../../../shared/machines/machine-summaries'
 import { installLoginOnMachine } from '../../seal-accounts/seal-machine-login-install'
 import {
   createInProcessRuntimeChannel,
-  createLoopbackSshLink
+  createInProcessServerConnection,
+  createLoopbackSshConnection
 } from '../testing/machine-transport-test-doubles'
 import {
   createMachineWorktree,
@@ -20,10 +21,7 @@ import {
 } from '../work/machine-worktrees'
 import { runLocalShellScript } from '../exec/local-shell-exec'
 import { classifyMachineWorktreeRemovalRefusal } from '../../../shared/machines/machine-worktree-removal-refusal'
-import { openLocalPty } from './local-machine-shell'
 import type { MachineConnection } from './machine-connection'
-import { ServerMachineConnection } from './server-machine-connection'
-import { SshMachineConnection } from './ssh-machine-connection'
 
 // Both transports reach this host, so one expectation must hold for each of them.
 let home = ''
@@ -41,31 +39,7 @@ afterAll(async () => {
   await rm(home, { recursive: true, force: true })
 })
 
-function sshConnection(): MachineConnection {
-  const link = createLoopbackSshLink()
-  return new SshMachineConnection('machine:loop-ssh', {
-    link: () => link,
-    connect: async () => {},
-    // Mirrors system ssh: `ssh -t` lands in a login shell, then the prelude is typed into it.
-    openSystemShell: async (prelude, options, handlers) => {
-      const shell = await openLocalPty({ file: '/bin/sh', args: [], cwd: home }, options, handlers)
-      if (prelude) {
-        shell.write(`${prelude}\n`)
-      }
-      return shell
-    }
-  })
-}
-
 const server = createInProcessRuntimeChannel().channel
-
-function serverConnection(): MachineConnection {
-  return new ServerMachineConnection('machine:loop-server', {
-    channel: server,
-    isConnected: () => true,
-    connect: async () => {}
-  })
-}
 
 // What the desktop wires in for server machines: the server's own `liveSessions.hostRun`.
 const serverScan = runtimeLiveSessionHost({ id: 'loop', label: 'loop' }, async (...call) => ({
@@ -106,8 +80,8 @@ async function scratch(): Promise<string> {
 }
 
 describe.skipIf(process.platform !== 'linux').each([
-  ['SSH', sshConnection],
-  ['Seal server', serverConnection]
+  ['SSH', () => createLoopbackSshConnection()],
+  ['Seal server', () => createInProcessServerConnection(server)]
 ])('a machine connected via %s', (_name, connect) => {
   const machine = connect()
 

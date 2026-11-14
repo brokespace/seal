@@ -403,6 +403,16 @@ import {
   WorkItemsList as WorkItemsListOfGitlabParams
 } from './gitlab-params'
 import {
+  HomeChatAttachUploadParams,
+  HomeChatAttachmentParams,
+  HomeChatCreateParams,
+  HomeChatIdParams,
+  HomeChatRespondApprovalParams,
+  HomeChatSendParams,
+  HomeChatUnwatchParams,
+  HomeChatUpdateParams
+} from './home-chat-params'
+import {
   HostedReviewCreate,
   HostedReviewCreationEligibility,
   HostedReviewForBranch
@@ -567,6 +577,13 @@ import {
 import { WorkerStartParams } from './orchestration-worker-start-params'
 import { WorkerDispatchParams as WorkerDispatchParamsOfOrchestrationWorkerStopParams } from './orchestration-worker-stop-params'
 import {
+  PhoneDownloadIdParams,
+  PhoneDownloadReadParams,
+  PhoneUploadAppendParams,
+  PhoneUploadBeginParams,
+  PhoneUploadIdParams
+} from './phone-transfer-params'
+import {
   PluginCatalogAddParams,
   PluginCatalogRemoveParams,
   PluginDevEmitParams,
@@ -660,6 +677,17 @@ import {
   SealAccountsSwapSessionParams,
   SealAccountsSyncFleetParams
 } from './seal-accounts-params'
+import {
+  SealMachinesDownloadUrlParams,
+  SealMachinesIdParams,
+  SealMachinesListDirParams,
+  SealMachinesPathParams,
+  SealMachinesReadFileParams,
+  SealMachinesRemoveParams,
+  SealMachinesRenameParams,
+  SealMachinesTransferIdParams,
+  SealMachinesUploadStagedParams
+} from './seal-machines-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
 import {
   ActivateTab,
@@ -1291,6 +1319,20 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.updateMRState': UpdateMrState,
   'gitlab.workItemByPath': WorkItemByPath,
   'gitlab.workItemDetails': WorkItemDetailsOfGitlabParams,
+  'homeChat.attachUpload': HomeChatAttachUploadParams,
+  'homeChat.create': HomeChatCreateParams,
+  'homeChat.delete': HomeChatIdParams,
+  'homeChat.get': HomeChatIdParams,
+  'homeChat.list': null,
+  'homeChat.listAccounts': null,
+  'homeChat.openAttachmentDownload': HomeChatAttachmentParams,
+  'homeChat.readAttachment': HomeChatAttachmentParams,
+  'homeChat.respondApproval': HomeChatRespondApprovalParams,
+  'homeChat.send': HomeChatSendParams,
+  'homeChat.stop': HomeChatIdParams,
+  'homeChat.unwatch': HomeChatUnwatchParams,
+  'homeChat.update': HomeChatUpdateParams,
+  'homeChat.watch': null,
   'host.declareClient': OrcadDeclareClientParamsSchema,
   'host.gitBash.isAvailable': null,
   'host.peerDesktops': OrcadPeerDesktopsParamsSchema,
@@ -1510,6 +1552,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
   'pairing.registerDeviceKey': RegisterDeviceKeyParamsSchema,
+  'phoneTransfer.abortUpload': PhoneUploadIdParams,
+  'phoneTransfer.appendUpload': PhoneUploadAppendParams,
+  'phoneTransfer.beginUpload': PhoneUploadBeginParams,
+  'phoneTransfer.endDownload': PhoneDownloadIdParams,
+  'phoneTransfer.read': PhoneDownloadReadParams,
   'plugins.catalogAdd': PluginCatalogAddParams,
   'plugins.catalogList': null,
   'plugins.catalogRemove': PluginCatalogRemoveParams,
@@ -1616,6 +1663,18 @@ export const RPC_PARAMS_BY_METHOD = {
   'seal.accounts.swap': SealAccountsSwapParams,
   'seal.accounts.swapSession': SealAccountsSwapSessionParams,
   'seal.accounts.syncFleet': SealAccountsSyncFleetParams,
+  'sealMachines.cancelTransfer': SealMachinesTransferIdParams,
+  'sealMachines.createDir': SealMachinesPathParams,
+  'sealMachines.downloadUrl': SealMachinesDownloadUrlParams,
+  'sealMachines.list': null,
+  'sealMachines.listDir': SealMachinesListDirParams,
+  'sealMachines.listTransfers': null,
+  'sealMachines.metrics': SealMachinesIdParams,
+  'sealMachines.openDownload': SealMachinesPathParams,
+  'sealMachines.readFile': SealMachinesReadFileParams,
+  'sealMachines.remove': SealMachinesRemoveParams,
+  'sealMachines.rename': SealMachinesRenameParams,
+  'sealMachines.uploadStaged': SealMachinesUploadStagedParams,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,

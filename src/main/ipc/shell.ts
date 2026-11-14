@@ -17,13 +17,13 @@ import {
 import type { Store } from '../persistence/loading-store/store'
 import {
   EXTERNAL_EDITOR_CLI_COMMAND,
-  EXTERNAL_EDITOR_EARLY_EXIT_GRACE_MS,
-  launchExternalEditor,
+  resolveExternalEditorExecutable,
   resolveExternalEditorLaunchSpec,
   type ExternalEditorLaunchSpec
 } from '../external-editors/external-editor-launch'
+import { launchEditorOrProtocolUrl } from '../external-editors/editor-launch-with-protocol-fallback'
+import { resolveEditorProtocolUrl } from '../external-editors/editor-protocol-url'
 import { resolveRemoteSshEditorLaunchSpec } from '../external-editors/remote-ssh-editor-launch'
-import { ExternalEditorLaunchError } from '../external-editors/external-editor-launch-failure'
 import { resolveOpenInEditorCommand } from '../external-editors/open-in-editor-command'
 import { toSshExecutionHostId } from '../../shared/execution-host'
 import {
@@ -66,22 +66,6 @@ type ShellHandlerStore = Pick<Store, 'getSshTarget'> & {
   getSettings: () => Pick<ReturnType<Store['getSettings']>, 'openInApplications'>
 }
 
-async function launchEditor(
-  launchSpec: ExternalEditorLaunchSpec
-): Promise<ShellOpenExternalEditorResult> {
-  try {
-    await launchExternalEditor(launchSpec, {
-      earlyExitGraceMs: EXTERNAL_EDITOR_EARLY_EXIT_GRACE_MS
-    })
-    return { ok: true }
-  } catch (error) {
-    console.warn('[shell] external editor launch failed:', error)
-    return error instanceof ExternalEditorLaunchError
-      ? { ok: false, reason: 'launch-failed', launchFailure: error.failure }
-      : { ok: false, reason: 'launch-failed' }
-  }
-}
-
 async function openInExternalEditor(
   store: ShellHandlerStore,
   request: ShellOpenExternalEditorRequest,
@@ -112,15 +96,24 @@ async function openInExternalEditor(
     if (!remoteLaunch.ok) {
       return remoteLaunch
     }
-    return launchEditor(remoteLaunch.launchSpec)
+    return launchEditorOrProtocolUrl(remoteLaunch.launchSpec, remoteLaunch.protocolUrl)
   }
 
   const target = await resolveOwnedPathTarget(request.path, request.ownerHostId)
   if (!target.ok) {
     return target
   }
-  // VS Code and Cursor derive --remote wsl+<distro> from UNC paths.
-  return launchEditor(resolveExternalEditorLaunchSpec(command, target.path))
+  let launchSpec: ExternalEditorLaunchSpec
+  let protocolUrl: string | null
+  try {
+    // VS Code and Cursor derive --remote wsl+<distro> from UNC paths.
+    launchSpec = resolveExternalEditorLaunchSpec(command, target.path)
+    const executable = resolveExternalEditorExecutable(command)
+    protocolUrl = executable ? resolveEditorProtocolUrl(executable, target.path) : null
+  } catch {
+    return { ok: false, reason: 'launch-failed' }
+  }
+  return launchEditorOrProtocolUrl(launchSpec, protocolUrl)
 }
 
 /**

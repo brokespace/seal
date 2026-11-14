@@ -6,7 +6,7 @@ export function redactEphemeralVmRecipeDiagnosticText(text: string): string {
     return text
   }
   return stripCredentialsFromMessage(text)
-    .replace(/orca:\/\/pair\?code=[A-Za-z0-9_-]+/g, 'orca://pair?code=[redacted]')
+    .replace(/(?:seal|orca):\/\/pair\?code=[A-Za-z0-9_-]+/gi, 'seal://pair?code=[redacted]')
     .replace(
       /("(?:pairingCode|deviceToken|publicKeyB64|token|secret|password|apiKey|accessToken|identityFile|identityAgent|proxyCommand)"\s*:\s*)"[^"]*"/gi,
       '$1"[redacted]"'

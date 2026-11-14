@@ -12,21 +12,13 @@ import type {
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { Repo } from '../../shared/repo-types'
-import { createHomeChatAccountProvider } from '../home-chat/home-chat-accounts'
-import { HomeChatService } from '../home-chat/home-chat-service'
-import { HomeChatSettingsStore } from '../home-chat/home-chat-settings-store'
-import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
-import { createHomeChatAccountAccess } from '../home-chat/seal/home-chat-account-access'
-import { createHomeChatSessionAccess } from '../home-chat/seal/home-chat-session-access'
-import { HomeChatThreadStore } from '../home-chat/thread/home-chat-thread-store'
+import type { HomeChatService } from '../home-chat/home-chat-service'
+import { installHomeChat, onHomeChatEvent } from '../home-chat/home-chat-install'
 import { getMachineRegistry } from '../machines/registry/machine-registry-service'
 import type { MachineView } from '../../shared/machines/machine-view'
 import { summarizeMachine, type MachineSummary } from '../../shared/machines/machine-summaries'
 import { getRegisteredSshState } from '../ssh/targets/ssh-target-registry'
 import { getRuntimeEnvironmentStatusSnapshot } from './runtime-environments/runtime-environment-request-connections'
-import { runOrcaCli } from '../home-chat/tools/home-chat-orca-cli'
-import { getLiveSessionService } from '../live-sessions/live-session-service-instance'
-import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
 
@@ -63,40 +55,15 @@ export type HomeChatHandlerSources = {
 }
 
 export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void {
-  const rootDir = join(app.getPath('userData'), 'home-chat')
-  const ready = Promise.all([
-    HomeChatThreadStore.open(rootDir),
-    HomeChatSettingsStore.open(rootDir)
-  ]).then(async ([threads, settings]) => {
-    const service = new HomeChatService({
-      rootDir,
-      threads,
-      settings,
-      accounts: createHomeChatAccountProvider({
-        sealCandidates: (provider) => getSealAccountManager()?.candidates(provider) ?? null,
-        listClaudeAccounts: () => sources.claudeAccounts.listAccounts(),
-        listCodexAccounts: sources.codexAccounts
-      }),
-      createMachines: (machineNotes) =>
-        createDefaultHomeChatMachineProvider(machineNotes, {
-          list: () => getMachineRegistry().list(),
-          summarize: summarizeForAssistant,
-          connection: (machineId) => getMachineRegistry().connection(machineId)
-        }),
-      runOrcaCli,
-      repos: sources.repos,
-      seal: {
-        sessions: createHomeChatSessionAccess({ live: getLiveSessionService }),
-        accounts: createHomeChatAccountAccess(getSealAccountManager)
-      },
-      emit: broadcast
-    })
-    await service.start()
-    return service
+  const ready = installHomeChat({
+    ...sources,
+    machines: {
+      list: () => getMachineRegistry().list(),
+      summarize: summarizeForAssistant,
+      connection: (machineId) => getMachineRegistry().connection(machineId)
+    }
   })
-  app.once('before-quit', () => {
-    void ready.then((service) => service.dispose())
-  })
+  onHomeChatEvent(broadcast)
   const handle = <Args, Result>(
     channel: string,
     run: (service: HomeChatService, args: Args) => Result

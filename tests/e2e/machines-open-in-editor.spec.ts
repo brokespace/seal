@@ -44,7 +44,7 @@ async function showMachine(page: Page, machineId: MachineId): Promise<string> {
   await expect(page.locator(`[data-machine-explorer="${machineId}"]`)).toBeVisible({
     timeout: 120_000
   })
-  await expect(page.getByRole('button', { name: 'Open in editor' })).toBeEnabled()
+  await expect(page.locator('[data-machine-open-editor]')).toBeEnabled()
   await expect(
     page.locator(`[data-machine-explorer="${machineId}"] [role=treeitem]`).first()
   ).toBeVisible({ timeout: 60_000 })
@@ -122,7 +122,7 @@ test('Open in editor reaches local, SSH and Seal-server machines, for folders an
 
     await test.step('this computer opens in the first Open In app, or the one picked', async () => {
       await showMachine(page, 'local')
-      await page.getByRole('button', { name: 'Open in editor' }).click()
+      await page.locator('[data-machine-open-editor]').click()
       await expectLastLaunch(editors, ['cursor', '--new-window', localHome])
       await chooseEditor(page, 'VS Code')
       await expectLastLaunch(editors, ['code', localHome])
@@ -160,7 +160,7 @@ test('Open in editor reaches local, SSH and Seal-server machines, for folders an
       ).toContainText('served by seal', { timeout: 30_000 })
       await expect(page.getByText('Opened the file in Seal’s editor')).toBeVisible()
 
-      await page.getByRole('button', { name: 'Open in editor' }).click()
+      await page.locator('[data-machine-open-editor]').click()
       await expect(page.getByText('Showing the folder in Seal’s files')).toBeVisible()
       expect(editors.launches()).toHaveLength(launchesBefore)
 
@@ -200,7 +200,7 @@ test('Open in editor reaches local, SSH and Seal-server machines, for folders an
 
     await test.step('a Seal-server machine with SSH details opens over SSH', async () => {
       const folder = await showMachine(page, merged.id)
-      await page.getByRole('button', { name: 'Open in editor' }).click()
+      await page.locator('[data-machine-open-editor]').click()
       await expectLastLaunch(editors, [
         'cursor',
         '--new-window',
@@ -215,7 +215,7 @@ test('Open in editor reaches local, SSH and Seal-server machines, for folders an
     await test.step('a machine connected over SSH opens its folders and files in the app', async () => {
       await page.getByRole('button', { name: 'More actions' }).click()
       await page.getByRole('menuitem', { name: 'Connect over SSH instead' }).click()
-      await expect(page.getByRole('button', { name: 'Open in editor' })).toBeEnabled({
+      await expect(page.locator('[data-machine-open-editor]')).toBeEnabled({
         timeout: 120_000
       })
       await page.getByRole('button', { name: 'Home folder' }).click()

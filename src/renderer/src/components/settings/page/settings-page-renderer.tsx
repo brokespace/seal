@@ -5,7 +5,7 @@ import { SettingsContentScrollElementProvider } from './settings-content-scroll-
 import { SettingsSidebar } from '../navigation/SettingsSidebar'
 import { PluginInstallTrustDialogHost } from '../../plugins/dialogs/PluginInstallTrustDialog'
 import { cn } from '@/lib/class-names'
-import { PageContent } from '@/components/page-layout/Page'
+import { PageContent } from '@/components/page-layout/PageLayout'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsInteractionController } from './use-settings-interaction-controller'

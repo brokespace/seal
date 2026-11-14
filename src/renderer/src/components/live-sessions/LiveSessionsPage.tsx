@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Page, PageHeader, PagePanes } from '@/components/page-layout/Page'
+import { PageHeader, PageLayout, PagePanes } from '@/components/page-layout/PageLayout'
 import { createNonSecureContextUuid } from '../../../../shared/non-secure-context-uuid'
 import { useTranslate } from '@/i18n/use-translate'
 import type {
@@ -89,7 +89,7 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
       return next
     })
   return (
-    <Page>
+    <PageLayout data-sessions-page>
       <PageHeader
         title={t('auto.components.live-sessions.LiveSessionsPage.title', 'Agent sessions')}
       >
@@ -139,7 +139,7 @@ export function LiveSessionsView(props: LiveSessionsViewProps): React.JSX.Elemen
           </div>
         )}
       </PagePanes>
-    </Page>
+    </PageLayout>
   )
 }
 

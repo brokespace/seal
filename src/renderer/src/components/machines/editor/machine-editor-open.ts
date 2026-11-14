@@ -12,6 +12,10 @@ import type {
 } from '../../../../../shared/shell/opening/shell-open-types'
 import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
 import { planMachineEditorOpen, type MachineBuiltInEditorReason } from './machine-editor-plan'
+import { copyMachineSshConfigEntry } from './machine-ssh-config-entry'
+
+// These toasts carry the fix as an action; the default lifetime is too short to read and click.
+const ACTIONABLE_TOAST_MS = 15_000
 
 export type MachineEditorTarget = { path: string; kind: 'file' | 'folder' }
 
@@ -50,8 +54,9 @@ function announceBuiltIn(
         '{{machine}} is reached through its Seal server only. Add SSH details to open it in VS Code, Cursor, or Zed on this computer.',
         { machine: machine.label }
       ),
+      duration: ACTIONABLE_TOAST_MS,
       action: {
-        label: t('auto.components.machines.editor.addSshDetails', 'Add SSH details…'),
+        label: t('auto.components.machines.detail.addSsh', 'Add SSH details…'),
         onClick: host.addSshDetails
       }
     })
@@ -68,6 +73,7 @@ function announceBuiltIn(
             'auto.components.machines.editor.noRemoteEditor',
             'None of your Open In apps can open a remote machine. Add VS Code, Cursor, or Zed.'
           ),
+    duration: ACTIONABLE_TOAST_MS,
     action: customizeAppsAction()
   })
 }
@@ -116,16 +122,21 @@ function reportFailure(
     toast.error(
       t(
         'auto.components.machines.editor.aliasRequired',
-        '{{app}} needs an SSH config alias for {{machine}}',
+        '{{app}} needs an SSH config entry for {{machine}}',
         { app: application.label, machine: machine.label }
       ),
       {
         description: t(
           'auto.components.machines.editor.aliasRequiredDetail',
-          'It cannot dial a custom port directly. Add a Host alias for {{host}}:{{port}} to your SSH config and connect this machine through that alias.',
+          'It reaches a custom SSH port only through a Host entry for {{host}}:{{port}} in ~/.ssh/config on this computer.',
           { host: result.host, port: result.port }
         ),
-        action: openInSeal
+        duration: ACTIONABLE_TOAST_MS,
+        action: {
+          label: t('auto.components.machines.actions.editorAliasCopy', 'Copy entry'),
+          onClick: () => void copyMachineSshConfigEntry(machine)
+        },
+        cancel: openInSeal
       }
     )
     return
@@ -142,6 +153,7 @@ function reportFailure(
               'auto.components.machines.editor.launchFailedDetail',
               'Check this app’s command under Open In apps.'
             ),
+        duration: ACTIONABLE_TOAST_MS,
         action: result.launchFailure?.kind === 'exited' ? openInSeal : customizeAppsAction()
       }
     )

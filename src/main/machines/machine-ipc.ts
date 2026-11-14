@@ -10,9 +10,7 @@ import {
   LOCAL_MACHINE_ID,
   MACHINE_IPC,
   MACHINE_PREVIEW_MAX_BYTES,
-  type MachineDirChangedEvent,
-  type MachineFileRead,
-  type MachineId
+  type MachineFileRead
 } from '../../shared/machines/machine-types'
 import {
   machineIdOf,
@@ -20,60 +18,30 @@ import {
   requireStrings,
   type MachineInvokeHandler
 } from './machine-ipc-args'
-import { machinePathDirname } from '../../shared/machines/machine-paths'
-import type { MachineFileSystem } from './filesystem/machine-filesystem'
-import { MachineDirectoryService } from './listing/machine-directory-service'
-import { MachineTransferManager } from './transfers/machine-transfer-manager'
-import { MachineDragOutStager } from './drag-out/machine-drag-out'
+import {
+  getMachineServices as getServices,
+  invalidateMachineParentDir as invalidateParent,
+  onMachineDirChanged,
+  onMachineTransferUpdated,
+  removeMachinePaths,
+  resolveMachineFileSystem as resolveFileSystem,
+  setMachineAccess
+} from './machine-services'
 import { getMachineRegistry } from './registry/machine-registry-service'
 import { registerMachineRegistryHandlers } from './registry/machine-registry-ipc'
 import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
 import { registerMachineWorkHandlers } from './work/machine-work-ipc'
+import { registerMachineResourceHandlers } from './resources/machine-resource-ipc'
+import { registerMachineFolderHandlers } from './listing/machine-folder-ipc'
 
-type MachineServices = {
-  directories: MachineDirectoryService
-  transfers: MachineTransferManager
-  dragOut: MachineDragOutStager
-}
-
-let services: MachineServices | null = null
 let currentGetMainWindow: () => BrowserWindow | null = () => null
-
-function resolveFileSystem(machineId: MachineId): MachineFileSystem {
-  return getMachineRegistry().connection(machineId).files
-}
+let unsubscribeRendererEvents: (() => void) | null = null
 
 function sendToRenderer(channel: string, payload: unknown): void {
   const window = currentGetMainWindow()
   if (window && !window.isDestroyed()) {
     window.webContents.send(channel, payload)
   }
-}
-
-function getServices(): MachineServices {
-  if (services) {
-    return services
-  }
-  const directories = new MachineDirectoryService({
-    resolveFileSystem,
-    onDirChanged: (machineId, path) =>
-      sendToRenderer(MACHINE_IPC.dirChanged, { machineId, path } satisfies MachineDirChangedEvent)
-  })
-  services = {
-    directories,
-    transfers: new MachineTransferManager({
-      resolveFileSystem,
-      onUpdate: (transfer) => sendToRenderer(MACHINE_IPC.transferUpdated, transfer),
-      onRemoteDirChanged: (machineId, dir) => directories.invalidate(machineId, dir)
-    }),
-    dragOut: new MachineDragOutStager(resolveFileSystem)
-  }
-  app.once('will-quit', () => {
-    services?.transfers.dispose()
-    services?.directories.dispose()
-    void services?.dragOut.dispose()
-  })
-  return services
 }
 
 /** Machine file access is a desktop-window capability; guests and plugin frames never get it. */
@@ -85,13 +53,6 @@ function assertTrustedSender(event: IpcMainInvokeEvent | IpcMainEvent): void {
     event.senderFrame !== event.sender.mainFrame
   ) {
     throw new Error('Machine access is only available to the main window')
-  }
-}
-
-function invalidateParent(machineId: MachineId, target: string): void {
-  const parent = machinePathDirname(target)
-  if (parent) {
-    getServices().directories.invalidate(machineId, parent)
   }
 }
 
@@ -109,10 +70,29 @@ function handle(channel: string, handler: MachineInvokeHandler): void {
 
 export function registerMachineHandlers(getMainWindow: () => BrowserWindow | null): void {
   currentGetMainWindow = getMainWindow
+  setMachineAccess({
+    views: () => getMachineRegistry().list(),
+    connection: (machineId) => getMachineRegistry().connection(machineId),
+    liveSessionSources: () => getMachineRegistry().liveSessionSources()
+  })
+  unsubscribeRendererEvents?.()
+  const offDirs = onMachineDirChanged((event) => sendToRenderer(MACHINE_IPC.dirChanged, event))
+  const offTransfers = onMachineTransferUpdated((transfer) =>
+    sendToRenderer(MACHINE_IPC.transferUpdated, transfer)
+  )
+  unsubscribeRendererEvents = () => {
+    offDirs()
+    offTransfers()
+  }
   ipcMain.removeAllListeners(MACHINE_IPC.startDrag)
   registerMachineRegistryHandlers(handle)
   registerMachineShellHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineWorkHandlers(handle)
+  registerMachineResourceHandlers(handle)
+  registerMachineFolderHandlers(handle, {
+    directories: () => getServices().directories,
+    resolveFileSystem
+  })
 
   handle(MACHINE_IPC.getMetrics, async (args) => {
     const machineId = machineIdOf(args.machineId)
@@ -177,17 +157,9 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
     invalidateParent(machineId, to)
   })
 
-  handle(MACHINE_IPC.remove, async (args) => {
-    const machineId = machineIdOf(args.machineId)
-    const fs = resolveFileSystem(machineId)
-    for (const path of requireStrings(args.paths, 'paths')) {
-      if (machinePathDirname(path) === null) {
-        throw new Error('Refusing to delete a filesystem root')
-      }
-      await fs.remove(path)
-      invalidateParent(machineId, path)
-    }
-  })
+  handle(MACHINE_IPC.remove, (args) =>
+    removeMachinePaths(machineIdOf(args.machineId), requireStrings(args.paths, 'paths'))
+  )
 
   handle(MACHINE_IPC.upload, (args) =>
     getServices().transfers.upload(

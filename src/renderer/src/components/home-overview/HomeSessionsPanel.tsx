@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Folder, Monitor, Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import { groupHomeSessions } from './home-overview-derivations'
+import { groupHomeSessions } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeSession } from './home-overview-model'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from './HomeOverviewRow'

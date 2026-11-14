@@ -24,14 +24,17 @@ import { HostRemoveDialog } from '@/components/sidebar/HostRemoveDialog'
 import { resolveHostRemoval } from '@/components/sidebar/host-rename-remove'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { cn } from '@/lib/class-names'
+import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
 import { MachineEditorButton } from '../editor/MachineEditorButton'
 import {
   MachineFileExplorer,
-  type MachineFileExplorerHandle
+  type MachineFileExplorerHandle,
+  type MachineFolderRequest
 } from '../explorer/MachineFileExplorer'
-import { MachineWorkSection } from '../work/MachineWorkSection'
+import { MachineResourcePanel } from '../resources/MachineResourcePanel'
+import type { MachineResourceKind } from '../resources/machine-resource-requests'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import type { MachineAgentSession } from '../model/machine-agent-sessions'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
@@ -103,6 +106,7 @@ export function MachineDetail({
   sessions: readonly MachineAgentSession[]
   onBack: () => void
   onChanged: () => void
+  /** Stores SSH details on a server-only machine without switching its connection. */
   onAddSshDetails: () => void
 }): React.JSX.Element {
   const t = useTranslate()
@@ -110,10 +114,16 @@ export function MachineDetail({
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
   const explorerRef = useRef<MachineFileExplorerHandle>(null)
+  const [opened, setOpened] = useState<{ machineId: string; kind: MachineResourceKind } | null>(
+    null
+  )
+  const [folderRequest, setFolderRequest] = useState<MachineFolderRequest | null>(null)
   const removal =
     machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
   const homeDir = metrics?.homeDir ?? null
+  // A detail belongs to the machine it was opened on, and needs that machine reachable.
+  const resource = online && opened?.machineId === machine.id ? opened.kind : null
   const canConnect = machine.connection !== 'local' && machine.status !== 'connecting'
   const otherConnection = machine.connection === 'ssh' ? 'server' : 'ssh'
   const canSwitch =
@@ -127,7 +137,12 @@ export function MachineDetail({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-machine-detail={machine.id}>
-      <header className="flex shrink-0 items-start gap-2 border-b border-border px-3 py-3 md:px-5">
+      <header
+        className={cn(
+          'flex shrink-0 flex-wrap items-start gap-2 border-b border-border py-3',
+          PAGE_GUTTER_X
+        )}
+      >
         <Button
           type="button"
           variant="ghost"
@@ -138,7 +153,8 @@ export function MachineDetail({
         >
           <ArrowLeft />
         </Button>
-        <div className="min-w-0 flex-1">
+        {/* The basis keeps the name readable: a narrow pane wraps the actions below it instead. */}
+        <div className="min-w-0 flex-1 basis-56">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="truncate text-sm font-semibold">{machine.label}</h2>
             <MachineStatusDot status={machine.status} />
@@ -161,7 +177,7 @@ export function MachineDetail({
             </p>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {canConnect && !online ? (
             <Button
               type="button"
@@ -189,7 +205,6 @@ export function MachineDetail({
           </Button>
           <MachineEditorButton
             machine={machine}
-            disabled={!online}
             onOpen={(choice) => explorerRef.current?.openCurrentFolderInEditor(choice)}
             onAddSshDetails={onAddSshDetails}
           />
@@ -241,10 +256,10 @@ export function MachineDetail({
                   <Pencil />
                   {t('auto.components.machines.detail.editSsh', 'Edit SSH details…')}
                 </DropdownMenuItem>
-              ) : machine.connection !== 'local' ? (
+              ) : machine.connection === 'server' ? (
                 <DropdownMenuItem onSelect={onAddSshDetails}>
                   <KeyRound />
-                  {t('auto.components.machines.editor.addSshDetails', 'Add SSH details…')}
+                  {t('auto.components.machines.detail.addSsh', 'Add SSH details…')}
                 </DropdownMenuItem>
               ) : null}
               {removal ? (
@@ -258,21 +273,44 @@ export function MachineDetail({
         </div>
       </header>
       {online ? (
-        <section className="shrink-0 space-y-3 border-b border-border px-3 py-3 md:px-5">
-          <MachineVitalsStrip metrics={metrics} error={metricsError} />
+        <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
+          <MachineVitalsStrip
+            metrics={metrics}
+            error={metricsError}
+            selected={resource}
+            onSelect={(kind) =>
+              setOpened(resource === kind ? null : { machineId: machine.id, kind })
+            }
+          />
           <AgentSessionList sessions={sessions} />
-          <MachineWorkSection machine={machine} online={online} homeDir={homeDir} />
         </section>
       ) : sessions.length > 0 ? (
-        <section className="shrink-0 border-b border-border px-3 py-3 md:px-5">
+        <section className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}>
           <AgentSessionList sessions={sessions} />
         </section>
+      ) : null}
+      {resource ? (
+        <MachineResourcePanel
+          key={`${machine.id}:${resource}`}
+          machine={machine}
+          metrics={metrics}
+          kind={resource}
+          onClose={() => setOpened(null)}
+          onReveal={(path) => {
+            setFolderRequest((previous) => ({ path, id: (previous?.id ?? 0) + 1 }))
+            setOpened(null)
+          }}
+        />
       ) : null}
       <MachineFileExplorer
         key={machine.id}
         ref={explorerRef}
         machine={machine}
         onAddSshDetails={onAddSshDetails}
+        onShown={() => setOpened(null)}
+        homeDir={homeDir}
+        hidden={resource !== null}
+        folderRequest={folderRequest}
       />
       <MachineEditDialog target={editing} onClose={() => setEditing(null)} onSaved={onChanged} />
       {removal ? (

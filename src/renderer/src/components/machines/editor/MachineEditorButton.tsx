@@ -23,12 +23,10 @@ export type MachineEditorChoice = { applicationId?: string } | 'seal'
 /** Opens the folder the file browser shows; the chevron picks which editor. */
 export function MachineEditorButton({
   machine,
-  disabled,
   onOpen,
   onAddSshDetails
 }: {
   machine: MachineSummary
-  disabled: boolean
   onOpen: (choice: MachineEditorChoice) => void
   onAddSshDetails: () => void
 }): React.JSX.Element {
@@ -39,70 +37,84 @@ export function MachineEditorButton({
   const isRemote = machine.connection !== 'local'
   const needsSshDetails = isRemote && !machine.sshTargetId
 
+  const blocked =
+    machine.status === 'online'
+      ? null
+      : t(
+          'auto.components.machines.detail.editorOffline',
+          'Connect this machine to open it in an editor.'
+        )
+  const disabled = blocked !== null
+
   return (
-    <ButtonGroup>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={disabled}
-        title={
-          plan.kind === 'external'
-            ? t('auto.components.machines.editor.openInApp', 'Open in {{app}}', {
-                app: plan.application.label
-              })
-            : t('auto.components.machines.editor.openInSealEditor', 'Open in Seal’s editor')
-        }
-        onClick={() => onOpen({})}
-      >
-        <Code />
-        <span className="hidden sm:inline">
-          {t('auto.components.machines.detail.editor', 'Open in editor')}
-        </span>
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            disabled={disabled}
-            aria-label={t('auto.components.machines.editor.choose', 'Choose editor')}
-          >
-            <ChevronDown />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-52">
-          {usable.map((application) => (
-            <DropdownMenuItem
-              key={application.id}
-              onSelect={() => onOpen({ applicationId: application.id })}
+    // Disabled buttons ignore pointer events; the wrapper carries the explanation.
+    <span title={blocked ?? undefined}>
+      <ButtonGroup>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
+          data-machine-open-editor={plan.kind === 'external' ? plan.application.id : 'seal'}
+          onClick={() => onOpen({})}
+        >
+          {plan.kind === 'external' ? (
+            <OpenInApplicationIcon application={plan.application} size={14} />
+          ) : (
+            <Code />
+          )}
+          <span className="hidden sm:inline">
+            {plan.kind === 'external'
+              ? t('auto.components.machines.editor.openInApp', 'Open in {{app}}', {
+                  app: plan.application.label
+                })
+              : t('auto.components.machines.detail.editor', 'Open in editor')}
+          </span>
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              disabled={disabled}
+              aria-label={t('auto.components.machines.editor.choose', 'Choose editor')}
             >
-              <OpenInApplicationIcon application={application} size={14} />
-              <span className="min-w-0 truncate">{application.label}</span>
-              {isRemote ? (
-                <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
-                  {t('auto.components.sidebar.WorktreeOpenInMenu.remoteSsh', 'Remote SSH')}
-                </span>
-              ) : null}
+              <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-52">
+            {usable.map((application) => (
+              <DropdownMenuItem
+                key={application.id}
+                onSelect={() => onOpen({ applicationId: application.id })}
+              >
+                <OpenInApplicationIcon application={application} size={14} />
+                <span className="min-w-0 truncate">{application.label}</span>
+                {isRemote ? (
+                  <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
+                    {t('auto.components.sidebar.WorktreeOpenInMenu.remoteSsh', 'Remote SSH')}
+                  </span>
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem onSelect={() => onOpen('seal')}>
+              <FileCode />
+              {t('auto.components.machines.editor.sealEditor', 'Seal’s editor')}
             </DropdownMenuItem>
-          ))}
-          <DropdownMenuItem onSelect={() => onOpen('seal')}>
-            <FileCode />
-            {t('auto.components.machines.editor.sealEditor', 'Seal’s editor')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {needsSshDetails ? (
-            <DropdownMenuItem onSelect={onAddSshDetails}>
-              <KeyRound />
-              {t('auto.components.machines.editor.addSshDetails', 'Add SSH details…')}
+            <DropdownMenuSeparator />
+            {needsSshDetails ? (
+              <DropdownMenuItem onSelect={onAddSshDetails}>
+                <KeyRound />
+                {t('auto.components.machines.detail.addSsh', 'Add SSH details…')}
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem onSelect={openOpenInAppsSettings}>
+              {t('auto.components.machines.editor.customizeApps', 'Choose apps…')}
             </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuItem onSelect={openOpenInAppsSettings}>
-            {t('auto.components.machines.editor.customizeApps', 'Choose apps…')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </ButtonGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ButtonGroup>
+    </span>
   )
 }
