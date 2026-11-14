@@ -25,7 +25,12 @@ export function LiveSessionMachineGroups({
                 {machine.sessions.length}
               </span>
             </h3>
-            <LiveSessionRows sessions={machine.sessions} label={machineName(machine)} now={now} />
+            <LiveSessionRows
+              sessions={machine.sessions}
+              label={machineName(machine)}
+              now={now}
+              layout="card"
+            />
           </div>
         )
       })}

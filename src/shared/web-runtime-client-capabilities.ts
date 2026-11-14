@@ -2,6 +2,7 @@ import { GIT_REVERT_CONFLICT_CLIENT_CAPABILITY } from './git/commands/git-commit
 import { GIT_GRAPH_TAB_CAPABILITY } from './source-control/runtime/git-graph-capabilities'
 import { STRUCTURED_AGENT_SESSION_RENDERER_CLIENT_CAPABILITIES } from './agent-session/structured-agent-session-renderer-client-capabilities'
 import { AGENT_SESSION_BOUNDARY_RUNTIME_CAPABILITY } from './agent-session/agent-session-runtime-capabilities'
+import { LIVE_SESSION_STATUS_V2_CLIENT_CAPABILITY } from './live-sessions/live-session-status-compat'
 import {
   AGENT_STATUS_RESTORED_UNCONFIRMED_RUNTIME_CAPABILITY,
   REPO_SEARCH_QUALIFIED_REFS_RUNTIME_CAPABILITY,
@@ -36,5 +37,6 @@ export const WEB_RUNTIME_CLIENT_CAPABILITIES = [
   TERMINAL_QUICK_COMMAND_LONG_PROMPTS_RUNTIME_CAPABILITY,
   TERMINAL_QUICK_COMMAND_LARGE_LISTS_RUNTIME_CAPABILITY,
   // Same renderer as the desktop: a restored, unconfirmed agent row shows as identity only.
-  AGENT_STATUS_RESTORED_UNCONFIRMED_RUNTIME_CAPABILITY
+  AGENT_STATUS_RESTORED_UNCONFIRMED_RUNTIME_CAPABILITY,
+  LIVE_SESSION_STATUS_V2_CLIENT_CAPABILITY
 ] as const

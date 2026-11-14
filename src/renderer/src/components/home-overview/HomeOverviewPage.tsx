@@ -3,10 +3,6 @@ import { useTranslate } from '@/i18n/use-translate'
 import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
-import {
-  countLiveSessionGroups,
-  liveSessionsNeedingAttention
-} from '../../../../shared/live-sessions/live-session-summary'
 import { mergeSessionMachines } from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
@@ -17,10 +13,10 @@ import {
   HomeWorkspacesContext
 } from './home-overview-contexts'
 import type { HomeOverviewProviders } from './home-overview-model'
+import { useLiveSessionCountsLine } from '../live-sessions/status/use-live-session-counts-line'
 import { useHomeNow } from './home-overview-presentation'
 import { HomeOverviewProvidersContext } from './home-overview-providers-context'
 import { HomeAccountsPanel } from './HomeAccountsPanel'
-import { HomeAttentionStrip } from './HomeAttentionStrip'
 import { HomeAutomationsPanel } from './HomeAutomationsPanel'
 import { HomeChatSlot } from './HomeChatSlot'
 import { HomeMachinesPanel } from './HomeMachinesPanel'
@@ -41,13 +37,7 @@ function HomeOverviewContent(): React.JSX.Element {
     () => mergeSessionMachines(providedMachines, sessions),
     [providedMachines, sessions]
   )
-  const attention = useMemo(() => liveSessionsNeedingAttention(sessions), [sessions])
-  const counts = countLiveSessionGroups(sessions)
-  const summary = [
-    t('home.overview.summary.working', '{{count}} working', { count: counts.working }),
-    t('home.overview.summary.waiting', '{{count}} waiting on you', { count: counts.attention }),
-    t('home.overview.summary.idle', '{{count}} idle', { count: counts.idle })
-  ].join(' · ')
+  const summary = useLiveSessionCountsLine(sessions)
 
   return (
     <PageLayout data-home-page>
@@ -60,7 +50,6 @@ function HomeOverviewContent(): React.JSX.Element {
       >
         <HomeChatSlot />
         <div className="@container/overview flex min-w-0 flex-col gap-(--page-section-gap)">
-          <HomeAttentionStrip sessions={attention} onOpen={actions.openSession} />
           <div className="grid grid-cols-1 items-start gap-(--page-section-gap) @min-[56rem]/overview:grid-cols-[minmax(0,1fr)_20rem]">
             <HomeSessionsPanel sessions={sessions} now={now} />
             <PageCardGrid>

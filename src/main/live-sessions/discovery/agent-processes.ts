@@ -66,6 +66,25 @@ export function codexHomeOf(transcriptPath: string | null): string | null {
   return at > 0 ? transcriptPath!.slice(0, at) : null
 }
 
+/** How the agent was told to ask before acting, when its command line says. */
+export function approvalModeFromArgs(args: string): string | null {
+  const words = args.split(/\s+/)
+  if (
+    words.includes('--dangerously-skip-permissions') ||
+    words.includes('--dangerously-bypass-approvals-and-sandbox') ||
+    words.includes('--yolo')
+  ) {
+    return words.some((word) => /(^|\/)codex/.test(word)) ? 'never' : 'bypassPermissions'
+  }
+  for (let i = 0; i < words.length; i++) {
+    const [flag, inline] = words[i].split('=')
+    if (flag === '--permission-mode' || flag === '--ask-for-approval' || flag === '-a') {
+      return inline ?? words[i + 1] ?? null
+    }
+  }
+  return null
+}
+
 /** The session a command line names: `--resume <id>`, `--session-id <id>`, `codex resume <id>`. */
 export function sessionIdFromArgs(args: string): string | null {
   const words = args.split(/\s+/)

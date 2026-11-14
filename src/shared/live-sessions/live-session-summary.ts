@@ -31,13 +31,6 @@ export function liveSessionsNeedingAttention<
     .sort(compareLiveSessions)
 }
 
-/** What it asks or what went wrong, when the session says. */
-export function liveSessionAttentionReason(
-  session: Pick<LiveSession, 'permission' | 'statusDetail'>
-): string | null {
-  return session.permission?.question ?? session.statusDetail
-}
-
 /** Pinned first, then by urgency: the order every list of running sessions uses. */
 export function compareListedLiveSessions(
   a: Pick<LiveSession, 'pinned' | 'status' | 'lastActivityAt'>,

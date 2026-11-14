@@ -84,7 +84,12 @@ export function ProjectAgentsCard({
                   {view.finished.length}
                 </span>
               </h3>
-              <LiveSessionRows sessions={view.finished} label={finishedLabel} now={now} />
+              <LiveSessionRows
+                sessions={view.finished}
+                label={finishedLabel}
+                now={now}
+                layout="card"
+              />
             </div>
           ) : null}
         </div>

@@ -7,29 +7,44 @@ export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
 
 /**
- * working           a turn is running
+ * What a session is doing and whose move it is; `docs/session-status.md` has the signals behind each.
+ *
+ * working           the agent is generating or calling tools
+ * running-shell     a shell command the agent started is still running (looks paused, is busy)
  * waiting-subagent  the agent waits for subagents it started (still busy, nothing for the user to do)
  * waiting-task      the agent waits for background commands it started
- * needs-permission  a permission prompt is up
- * waiting-input     the agent asked the user something
- * idle              the agent is running at an empty prompt with nothing pending
+ * needs-permission  a permission prompt is up: a tool or command waits for the user's approval
+ * waiting-input     the agent asked the user a question
+ * your-turn         the agent finished its turn and waits for the user's next message
+ * idle              the agent is running and has not been given anything to do yet
  * done              the agent process has ended
  * errored           the last turn failed
  */
 export const LIVE_SESSION_STATUSES = [
   'working',
+  'running-shell',
   'waiting-subagent',
   'waiting-task',
   'waiting-input',
   'needs-permission',
+  'your-turn',
   'idle',
   'done',
   'errored'
 ] as const
 export type LiveSessionStatus = (typeof LIVE_SESSION_STATUSES)[number]
 
-/** Where a status came from, strongest first. */
-export type LiveSessionStatusSource = 'seal-hooks' | 'agent-hooks' | 'screen' | 'transcript'
+/**
+ * Where a status came from, strongest first. `process` is the transcript read against the agent's
+ * child processes; `classifier` is the utility model's verdict on a reply the text rules left open.
+ */
+export type LiveSessionStatusSource =
+  | 'seal-hooks'
+  | 'agent-hooks'
+  | 'screen'
+  | 'process'
+  | 'transcript'
+  | 'classifier'
 
 export type LiveSessionMachine = {
   /** `local`, or the machine's record id (its original SSH target or server id, so ids survive merges). */

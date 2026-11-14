@@ -34,6 +34,7 @@ export type LiveSessionRecapsDeps = {
 /** The moments a recap is brought up to date on its own: a turn has ended, or parked. */
 const SETTLED: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-input',
+  'your-turn',
   'idle',
   'waiting-subagent',
   'waiting-task'

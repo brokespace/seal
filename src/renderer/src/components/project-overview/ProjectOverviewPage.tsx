@@ -13,21 +13,16 @@ import {
 } from '@/components/page-layout/PageLayout'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { RepoForkIndicator } from '@/components/repo/repo-fork-indicator'
-import { HomeAttentionStrip } from '@/components/home-overview/HomeAttentionStrip'
 import { useHomeNow } from '@/components/home-overview/home-overview-presentation'
 import { useLiveSessions } from '@/components/live-sessions/live-session-registry-store'
 import { useLiveSessionLinks } from '@/components/live-sessions/links/use-live-session-links'
-import { openLiveSessionView } from '@/components/live-sessions/menu/live-session-menu-effects'
+import { useLiveSessionCountsLine } from '@/components/live-sessions/status/use-live-session-counts-line'
 import { useLocalMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import { useMobilePageEscape } from '@/components/mobile/use-mobile-page-escape'
 import { agentConfigAvailable } from '@/components/agent-config/model/agent-config-client'
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
-import {
-  countLiveSessionGroups,
-  liveSessionsNeedingAttention
-} from '../../../../shared/live-sessions/live-session-summary'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import type { Repo } from '../../../../shared/repo-types'
 import {
@@ -48,7 +43,6 @@ import { ProjectUsageCard } from './ProjectUsageCard'
 import { ProjectWorkspacesCard } from './ProjectWorkspacesCard'
 
 function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
-  const t = useTranslate()
   const now = useHomeNow()
   const repos = useAppStore((s) => s.repos)
   const repoWorktrees = useAppStore((s) => selectWorktreesByRepo(s)[repo.id])
@@ -69,14 +63,8 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
     [allSessions, links, repo.id]
   )
   const running = useMemo(() => sessions.filter(isActiveLiveSession), [sessions])
-  const attention = useMemo(() => liveSessionsNeedingAttention(running), [running])
-  const counts = countLiveSessionGroups(running)
-  // Home's own summary line, so a project reads the way the whole fleet does.
-  const summary = [
-    t('home.overview.summary.working', '{{count}} working', { count: counts.working }),
-    t('home.overview.summary.waiting', '{{count}} waiting on you', { count: counts.attention }),
-    t('home.overview.summary.idle', '{{count}} idle', { count: counts.idle })
-  ].join(' · ')
+  // Home's own header line, so a project reads the way the whole fleet does.
+  const summary = useLiveSessionCountsLine(running)
   const isGit = isGitRepoKind(repo)
 
   return (
@@ -100,10 +88,6 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
       </PageHeader>
       <PageScrollContent>
         <div className="@container/overview flex min-w-0 flex-col gap-(--page-section-gap)">
-          <HomeAttentionStrip
-            sessions={attention}
-            onOpen={(session) => openLiveSessionView(session.id)}
-          />
           <div className="grid grid-cols-1 items-start gap-(--page-section-gap) @min-[56rem]/overview:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="flex min-w-0 flex-col gap-(--page-section-gap)">
               <ProjectAgentsCard repo={repo} sessions={sessions} now={now} />
