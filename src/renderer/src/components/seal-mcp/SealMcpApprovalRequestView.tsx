@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { Loader2, TriangleAlert } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import type { SealMcpApprovalRequest } from '../../../../shared/seal-mcp/seal-mcp-types'
@@ -15,10 +16,10 @@ function formatCountdown(msLeft: number): string {
 
 function useCountdown(expiresAt: number): string {
   const [now, setNow] = useState(Date.now)
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+  useEffect(
+    () => installWindowVisibilityInterval({ run: () => setNow(Date.now()), intervalMs: 1000 }),
+    []
+  )
   return formatCountdown(expiresAt - now)
 }
 

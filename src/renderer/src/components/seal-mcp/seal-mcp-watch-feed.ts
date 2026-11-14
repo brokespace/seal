@@ -49,6 +49,7 @@ function readWatchFrame(value: unknown): WatchFrame | null {
     value.event !== null &&
     'type' in value.event
   ) {
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the server's own event; only the two approval types are read, and the rest just wake observers.
     return { type: 'event', event: value.event as SealMcpEvent }
   }
   return null

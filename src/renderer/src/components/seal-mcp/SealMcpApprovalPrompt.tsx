@@ -37,12 +37,8 @@ export function SealMcpApprovalPromptCard({
   return (
     <SecuritySurface>
       <div data-seal-mcp-approval-prompt="">
-        <Card
-          className="gap-0 py-0 shadow-floating"
-          role="group"
-          aria-labelledby="seal-mcp-approval-heading"
-        >
-          <div className="flex flex-col gap-2.5 p-3.5">
+        <Card size="sm" role="group" aria-labelledby="seal-mcp-approval-heading">
+          <div className="flex flex-col gap-2.5 px-3.5 py-1">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <ShieldQuestion aria-hidden className="size-4 shrink-0 text-muted-foreground" />

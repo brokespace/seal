@@ -84,9 +84,7 @@ export function McpClientRows({
               {client.name}
             </span>
             {revoked ? (
-              <Badge variant="outline" className="border-destructive/40 text-destructive">
-                {t('seal.mcp.clients.revoked', 'Revoked')}
-              </Badge>
+              <Badge variant="destructive">{t('seal.mcp.clients.revoked', 'Revoked')}</Badge>
             ) : null}
           </span>
         }

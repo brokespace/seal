@@ -118,9 +118,9 @@ const auditEntries: SealMcpAuditEntry[] = [
   entry({
     id: 'a4',
     at: NOW - 15 * MINUTE,
-    tool: 'delete_workspace',
+    tool: 'delete_path',
     machine: 'This computer',
-    summary: '{"workspace":"acme-web/fix-login"}',
+    summary: '{"path":"/srv/acme/web/dist","recursive":true}',
     outcome: 'approval-denied',
     approved: false,
     detail: 'Declined in the Seal app.'

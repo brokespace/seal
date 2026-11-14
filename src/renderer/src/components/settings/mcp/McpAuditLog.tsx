@@ -23,18 +23,21 @@ const TIME_FORMAT: Intl.DateTimeFormatOptions = {
   second: '2-digit'
 }
 
-function outcomeClassName(outcome: SealMcpAuditOutcome): string {
+/** Allowed calls read quietly; what Seal refused is outlined, what failed or was not let in is red. */
+function outcomeBadgeVariant(
+  outcome: SealMcpAuditOutcome
+): 'secondary' | 'outline' | 'destructive' {
   switch (outcome) {
     case 'ok':
-      return 'border-status-success-border bg-status-success-background text-status-success'
+      return 'secondary'
     case 'error':
     case 'unauthorized':
-      return 'border-destructive/30 bg-destructive/10 text-destructive'
+      return 'destructive'
     case 'scope-denied':
     case 'machine-denied':
     case 'approval-denied':
     case 'rate-limited':
-      return 'border-status-warning-border bg-status-warning-background text-status-warning-text'
+      return 'outline'
   }
 }
 
@@ -52,7 +55,7 @@ function McpAuditEntryRow({ entry }: { entry: SealMcpAuditEntry }): React.JSX.El
         <span className="min-w-0 truncate font-mono text-xs text-foreground">
           {entry.tool ?? entry.method}
         </span>
-        <Badge variant="outline" className={outcomeClassName(entry.outcome)}>
+        <Badge variant={outcomeBadgeVariant(entry.outcome)}>
           {sealMcpOutcomeLabel(entry.outcome, t)}
         </Badge>
         {entry.approved === true ? (

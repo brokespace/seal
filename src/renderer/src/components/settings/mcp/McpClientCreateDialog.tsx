@@ -29,6 +29,7 @@ import { Label } from '../../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
 import { Switch } from '../../ui/switch'
 import { SettingsSegmentedControl } from '../form-controls/SettingsFormControls'
+import { McpMachineChecklist } from './McpMachineChecklist'
 
 const DEFAULT_CALLS_PER_MINUTE = 120
 const MAX_CALLS_PER_MINUTE = 6000
@@ -198,16 +199,11 @@ function McpClientCreateForm({
             {t('seal.mcp.create.machinesNone', 'This server lists no machines.')}
           </p>
         ) : (
-          <div className="grid max-h-40 gap-2 overflow-y-auto rounded-md border border-border p-2.5 scrollbar-sleek">
-            {machines.map((machine) => (
-              <CheckRow
-                key={machine.id}
-                checked={machineIds.includes(machine.id)}
-                onChange={(on) => setMachineIds((current) => toggled(current, machine.id, on))}
-                label={machine.label}
-              />
-            ))}
-          </div>
+          <McpMachineChecklist
+            machines={machines}
+            selectedIds={machineIds}
+            onToggle={(id, on) => setMachineIds((current) => toggled(current, id, on))}
+          />
         )}
       </fieldset>
 
@@ -266,7 +262,7 @@ function McpClientCreateForm({
           value={rate}
           aria-invalid={!rateValid}
           onChange={(event) => setRate(event.target.value)}
-          className="number-input-clean w-28 tabular-nums"
+          className="w-28"
         />
         <p className="text-xs text-muted-foreground">
           {t(
