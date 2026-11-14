@@ -325,7 +325,14 @@
         "mountAge": "Indexed {{age}} ago",
         "rescanning": "Checking {{mount}} for changes: {{percent}}%",
         "scanning": "Scanning {{mount}}: {{size}} so far",
-        "live": "This machine has no background index, so folders are measured when you open them.",
+        "live": "Folders are measured when you open them.",
+        "unavailable": {
+          "noNode": "This machine has no Node.js 20 or newer, so the background index cannot run on it.",
+          "noProgram": "Seal could not read its disk index program on this machine.",
+          "installFailed": "The disk index program could not be copied to this machine.",
+          "daemonFailed": "The background index did not start on this machine.",
+          "commandFailed": "The command that starts the background index failed on this machine."
+        },
         "pending": "not measured yet",
         "unreadable": "no access",
         "notIndexed": "not indexed",
