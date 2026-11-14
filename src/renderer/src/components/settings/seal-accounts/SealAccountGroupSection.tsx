@@ -77,7 +77,6 @@ function SortableAccount({
     <SealAccountCard
       account={account}
       rank={rank}
-      settings={status.config.autoSwap[account.provider]}
       quarantine={status.quarantine[account.key]}
       now={now}
       pushTargets={pushTargets}

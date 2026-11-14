@@ -2,10 +2,8 @@ import {
   defaultSealAccountsConfig,
   defaultSealAutoSwapSettings
 } from '../../../../../shared/seal-accounts/seal-accounts-config'
-import type {
-  SealAccountCandidate,
-  SealAccountUsage
-} from '../../../../../shared/seal-accounts/seal-account-candidates'
+import type { ProviderRateLimits } from '../../../../../shared/rate-limit-types'
+import type { SealAccountCandidate } from '../../../../../shared/seal-accounts/seal-account-candidates'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import {
   buildSealFleetOverview,
@@ -33,21 +31,35 @@ function candidate(
     active: false,
     launchable: true,
     authFailure: false,
-    usage: null,
+    limits: null,
     sessionThreshold: null,
     weeklyThreshold: null,
     ...overrides
   }
 }
 
-function usage(session: number, weekly: number): SealAccountUsage {
+function usage(
+  session: number,
+  weekly: number,
+  provider: ProviderRateLimits['provider'] = 'claude'
+): ProviderRateLimits {
   return {
-    session: { usedPercent: session, resetsAt: FIXTURE_NOW + 2.5 * HOUR },
-    weekly: { usedPercent: weekly, resetsAt: FIXTURE_NOW + 70 * HOUR },
-    models: [],
-    planType: null,
+    provider,
+    session: {
+      usedPercent: session,
+      windowMinutes: 300,
+      resetsAt: FIXTURE_NOW + 2.5 * HOUR,
+      resetDescription: null
+    },
+    weekly: {
+      usedPercent: weekly,
+      windowMinutes: 10_080,
+      resetsAt: FIXTURE_NOW + 70 * HOUR,
+      resetDescription: null
+    },
     updatedAt: FIXTURE_NOW,
-    error: null
+    error: null,
+    status: 'ok'
   }
 }
 
@@ -59,7 +71,7 @@ const WORK = candidate({
   plan: 'Max 20x',
   priority: 10,
   active: true,
-  usage: usage(82, 41),
+  limits: usage(82, 41),
   swapEstimate: { at: FIXTURE_NOW + 34 * MINUTE, window: '5h', line: 90 },
   nextPollAt: FIXTURE_NOW + MINUTE
 })
@@ -73,7 +85,7 @@ const PERSONAL = candidate({
   localId: null,
   systemLogin: true,
   priority: 20,
-  usage: usage(18, 22),
+  limits: usage(18, 22),
   nextPollAt: FIXTURE_NOW + 3 * MINUTE
 })
 
@@ -93,7 +105,7 @@ const CODEX = candidate({
   label: 'brian@example.com',
   plan: 'Plus',
   active: true,
-  usage: usage(35, 58),
+  limits: usage(35, 58, 'codex'),
   nextPollAt: FIXTURE_NOW + 2 * MINUTE
 })
 
@@ -262,7 +274,14 @@ export function deadLoginScenario(): SealAccountsPageScenario {
     active: false,
     authFailure: true,
     health: { state: 'dead', reason: 'expired' },
-    usage: { ...usage(0, 0), session: null, weekly: null, error: 'Login expired' },
+    limits: {
+      ...usage(0, 0),
+      session: null,
+      weekly: null,
+      status: 'error',
+      error: 'Sign in again to refresh Claude usage.',
+      usageMetadata: { failureKind: 'missing-credentials' }
+    },
     swapEstimate: null
   }
   const expiring: SealAccountCandidate = {
