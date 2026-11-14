@@ -1,5 +1,4 @@
 import { createServer, type IncomingMessage, type Server } from 'node:http'
-import type { AddressInfo } from 'node:net'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { UtilityModelChoice } from '../../shared/utility-model/utility-model-selection'
 import { SessionSummarizer } from '../session-summaries/session-summarizer'
@@ -49,8 +48,11 @@ async function openAiCompatibleServer(
     })
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  const { port } = server.address() as AddressInfo
-  return { baseUrl: `http://127.0.0.1:${port}/api/v1`, seen, server }
+  const address = server.address()
+  if (address === null || typeof address === 'string') {
+    throw new Error('The mock server has no port')
+  }
+  return { baseUrl: `http://127.0.0.1:${address.port}/api/v1`, seen, server }
 }
 
 /** The summary a session card ends up showing when summaries run on OpenRouter with `choice`. */
