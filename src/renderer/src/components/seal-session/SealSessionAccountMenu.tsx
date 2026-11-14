@@ -21,7 +21,7 @@ import { sessionSwapTargets } from './seal-session-account-view'
 import { useAppStore } from '../../store'
 import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
 import type { RateLimitWindow } from '../../../../shared/rate-limit-types'
-import { hasInlineUsage, InlineUsageBars } from '../status-bar/InlineProviderUsage'
+import { accountUsage } from '../status-bar/AccountUsageReading'
 import { formatBareUsagePercentage } from '../status-bar/usage-percentage-label'
 import { clampUsedPercent } from '../status-bar/tooltip'
 
@@ -82,6 +82,7 @@ export function SealSessionAccountMenu({
     window ? formatBareUsagePercentage(clampUsedPercent(window.usedPercent), display, t) : null
   const current = candidates.find((candidate) => candidate.key === session.accountKey) ?? null
   const used = percent(current?.limits?.session)
+  const usage = accountUsage(current?.limits, current?.usageFetching === true)
   const estimate = current?.swapEstimate ?? null
   const swapNote = estimate
     ? estimate.at <= readAt
@@ -121,9 +122,9 @@ export function SealSessionAccountMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
-        {hasInlineUsage(current?.limits) ? (
+        {usage ? (
           <div className="px-2 pt-1.5" data-slot="seal-session-usage">
-            <InlineUsageBars limits={current.limits} isFetching={current.usageFetching === true} />
+            {usage}
           </div>
         ) : null}
         {swapNote ? (

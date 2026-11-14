@@ -128,9 +128,9 @@ describe('RateLimitService', () => {
     service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }, { id: 'account-2' }])
     vi.mocked(fetchInactiveClaudeAccountUsage).mockResolvedValue(okProvider('claude', 93))
 
-    const first = await service.readAccountUsage('claude', 'account-2', { notWithinMs: 30_000 })
+    const first = await service.readAccountUsage('claude', 'account-2')
     vi.setSystemTime(1_700_000_000_000 + 10_000)
-    const second = await service.readAccountUsage('claude', 'account-2', { notWithinMs: 30_000 })
+    const second = await service.readAccountUsage('claude', 'account-2')
 
     expect(
       vi.mocked(fetchInactiveClaudeAccountUsage).mock.calls.map(([account]) => account)
@@ -175,7 +175,7 @@ describe('RateLimitService', () => {
     const service = new RateLimitService()
     vi.mocked(fetchActiveClaudeRateLimits).mockResolvedValue(okProvider('claude', 61))
 
-    await service.readSystemLoginUsage('claude', 'claude:me@acme.dev', { notWithinMs: 30_000 })
+    await service.readSystemLoginUsage('claude', 'claude:me@acme.dev')
 
     expect(
       vi.mocked(fetchActiveClaudeRateLimits).mock.calls.map(([options]) => options?.authPreparation)
@@ -192,9 +192,7 @@ describe('RateLimitService', () => {
 
     // The machine signs in as someone else: the kept reading is not served for the new login.
     vi.mocked(fetchActiveClaudeRateLimits).mockResolvedValue(okProvider('claude', 7))
-    const other = await service.readSystemLoginUsage('claude', 'claude:other@acme.dev', {
-      notWithinMs: 30_000
-    })
+    const other = await service.readSystemLoginUsage('claude', 'claude:other@acme.dev')
     expect(other?.session?.usedPercent).toBe(7)
     expect(service.getState().systemLoginUsage?.claude?.identity).toBe('claude:other@acme.dev')
   })

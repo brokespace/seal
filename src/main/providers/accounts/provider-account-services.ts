@@ -1,7 +1,10 @@
 // Keep Electron imports out: both desktop and orcad bundle these account services.
+import { join } from 'node:path'
+import { getAppEnvironment } from '../../../shared/app-environment'
 import { getClaudeAgentViewService } from '../../claude/agent-view/agent-view-service'
 import type { Store } from '../../persistence/loading-store/store'
 import { RateLimitService } from '../../rate-limits/service/rate-limit-service'
+import { KeptUsageReadings } from '../../rate-limits/service/kept-usage-readings'
 import { CodexRuntimeHomeService } from '../../codex-accounts/runtime-home-service'
 import { CodexAccountService } from '../../codex-accounts/service'
 import { ClaudeRuntimeAuthService } from '../../claude-accounts/runtime-auth-service'
@@ -44,6 +47,11 @@ export function createProviderAccountServices(
   const agentView = getClaudeAgentViewService()
   void agentView.reconcile(store.getSettings())
   const rateLimits = new RateLimitService()
+  rateLimits.setKeptReadings(
+    new KeptUsageReadings(
+      join(getAppEnvironment().getPath('userData'), 'usage-readings', 'last-good.json')
+    )
+  )
   const codexRuntimeHome = new CodexRuntimeHomeService(store)
   const codexAccounts = new CodexAccountService(
     store,
