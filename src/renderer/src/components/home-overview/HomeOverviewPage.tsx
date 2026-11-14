@@ -3,7 +3,6 @@ import { useTranslate } from '@/i18n/use-translate'
 import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
-import { countLiveSessionGroups } from '../../../../shared/live-sessions/live-session-summary'
 import { mergeSessionMachines } from '../../../../shared/home-overview/home-overview-derivations'
 import {
   HomeAccountsContext,
@@ -14,6 +13,7 @@ import {
   HomeWorkspacesContext
 } from './home-overview-contexts'
 import type { HomeOverviewProviders } from './home-overview-model'
+import { useLiveSessionCountsLine } from '../live-sessions/status/use-live-session-counts-line'
 import { useHomeNow } from './home-overview-presentation'
 import { HomeOverviewProvidersContext } from './home-overview-providers-context'
 import { HomeAccountsPanel } from './HomeAccountsPanel'
@@ -37,14 +37,7 @@ function HomeOverviewContent(): React.JSX.Element {
     () => mergeSessionMachines(providedMachines, sessions),
     [providedMachines, sessions]
   )
-  const counts = countLiveSessionGroups(sessions)
-  const yourTurn = sessions.filter((session) => session.status === 'your-turn').length
-  const summary = [
-    t('home.overview.summary.working', '{{count}} working', { count: counts.working }),
-    t('home.overview.summary.blocked', '{{count}} blocked on you', { count: counts.attention }),
-    t('home.overview.summary.waiting', '{{count}} waiting on you', { count: yourTurn }),
-    t('home.overview.summary.idle', '{{count}} idle', { count: counts.idle - yourTurn })
-  ].join(' · ')
+  const summary = useLiveSessionCountsLine(sessions)
 
   return (
     <PageLayout data-home-page>

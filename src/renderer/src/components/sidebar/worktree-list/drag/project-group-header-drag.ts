@@ -53,7 +53,6 @@ export function useProjectGroupHeaderDrag({
   const autoscrollFrameIdRef = useRef<number | null>(null)
 
   const dragSessionRef = useRef<ProjectGroupHeaderDragSession | null>(null)
-  const clickSwallowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refreshHeaderRects = useCallback(() => {
     const container = getContainerRef.current()
@@ -135,7 +134,7 @@ export function useProjectGroupHeaderDrag({
         // Pointer cancellation or unmount may already have released capture.
       }
       if (session.promoted) {
-        clickSwallowTimeoutRef.current = swallowNextClickOnDragHandle(session.handleEl)
+        swallowNextClickOnDragHandle(session.handleEl)
       }
       const sidebarDropIndex =
         commit && session.promoted && latestDropIndexRef.current !== null
@@ -271,10 +270,6 @@ export function useProjectGroupHeaderDrag({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('blur', onBlur)
       cancelAutoscroll()
-      if (clickSwallowTimeoutRef.current !== null) {
-        clearTimeout(clickSwallowTimeoutRef.current)
-        clickSwallowTimeoutRef.current = null
-      }
     }
   }, [
     applyDrop,

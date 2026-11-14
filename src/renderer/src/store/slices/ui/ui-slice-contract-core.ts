@@ -14,6 +14,8 @@ import type { LaunchSource } from '../../../../../shared/telemetry-events'
 import type { TaskSourceContext } from '../../../../../shared/work-items/task-source-context'
 import type { ExecutionHostId } from '../../../../../shared/execution-host'
 import type { TaskResumeState, TopLevelView } from '../../../../../shared/ui-chrome-types'
+import type { Repo } from '../../../../../shared/repo-types'
+import type { ProjectOverviewTarget } from './project-overview-target'
 import type {
   AutomationRunPageOrigin,
   AutomationsPageLocation,
@@ -142,6 +144,7 @@ export type UiViewHistory =
   | 'artifacts'
   | 'mobile'
   | 'sessions'
+  | 'project'
 
 export type UISliceCore = {
   sidebarOpen: boolean
@@ -184,6 +187,9 @@ export type UISliceCore = {
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
   previousViewBeforeSessions: Exclude<UiViewHistory, 'sessions'>
+  previousViewBeforeProject: Exclude<UiViewHistory, 'project'>
+  /** The project the overview page shows; null until one is opened or restored. */
+  projectOverviewTarget: ProjectOverviewTarget | null
   setActiveView: (view: UISliceCore['activeView']) => void
   taskPageData: TaskPageData
   taskResumeState: TaskResumeState | undefined
@@ -238,6 +244,8 @@ export type UISliceCore = {
   closeMobilePage: () => void
   openAgentSessionTabs: () => void
   closeAgentSessionTabs: () => void
+  openProjectOverview: (repo: Pick<Repo, 'id' | 'connectionId' | 'executionHostId'>) => void
+  closeProjectOverview: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void
   clearNewWorkspaceDraft: () => void
   pendingRevealWorktree: PendingSidebarWorktreeReveal | null
