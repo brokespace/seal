@@ -96,14 +96,13 @@
       "connecting": "연결 중…",
       "invalidPairingCode": "유효한 페어링 코드가 아닙니다. 컴퓨터에서 코드를 복사해 다시 붙여넣으세요.",
       "invalidQrCode": "유효한 Seal QR 코드가 아닙니다.",
-      "downloadQrCode": "다운로드용 코드입니다. 데스크톱의 2단계에 있는 페어링 코드를 스캔하세요.",
       "openDesktopStep": "컴퓨터에서 Seal을 실행하세요",
       "openMobileSettingsStep": "설정 → 모바일로 이동하세요",
       "openSettings": "설정 열기",
       "pairingFailed": "페어링 실패: {{error}}",
       "pairingLog": "페어링 로그",
       "pasteCodeMessage": "컴퓨터의 QR 코드 아래에 표시된 코드를 복사하세요.",
-      "pasteCodePlaceholder": "orca://pair?code=... 또는 코드 붙여넣기",
+      "pasteCodePlaceholder": "seal://pair?code=... 또는 코드 붙여넣기",
       "pasteCodeTitle": "페어링 코드 붙여넣기",
       "pasteInstead": "대신 코드 붙여넣기",
       "pastePairingCode": "또는 페어링 코드 붙여넣기",
@@ -937,9 +936,7 @@
       "backToHosts": "호스트로 돌아가기",
       "desktopTooOldBody": "페어링된 데스크톱 앱의 버전이 오래되어 현재 Seal 모바일 앱과 호환되지 않습니다. 컴퓨터에서 Seal을 업데이트한 후 이 호스트에 다시 연결하세요.",
       "getVersion": "Seal {{version}} 받기",
-      "mobileTooOldAppStore": "이 데스크톱에는 더 최신 버전의 Seal 모바일 앱이 필요합니다. App Store에서 Seal 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
       "mobileTooOldGitHubReleases": "이 데스크톱에는 더 최신 버전의 Seal 모바일 앱이 필요합니다. GitHub Releases에서 Seal 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
-      "openAppStore": "App Store 열기",
       "openGitHubReleases": "GitHub Releases 열기",
       "refreshRecoveryNote": "이 메시지가 계속 표시되면 이 호스트를 제거한 후 다시 페어링하세요.",
       "refreshWorkspaceBody": "이 호스트용으로 캐시된 워크스페이스가 데스크톱에서 요구하는 버전보다 오래되었습니다. 이 호스트에 다시 연결하여 최신 버전을 다운로드하세요.",
@@ -947,7 +944,6 @@
       "updateDesktopTitle": "컴퓨터의 Seal 업데이트",
       "updateMobileTitle": "Seal 모바일 업데이트",
       "updateRecoveryNote": "이미 업데이트하셨습니까? 호스트 화면으로 돌아가 연결을 새로고침하세요. 이 메시지가 계속 표시되면 이 호스트를 제거한 후 다시 페어링하세요.",
-      "workspaceNeedsUpdateAppStore": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Seal 모바일 앱이 필요합니다. App Store에서 Seal 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
       "workspaceNeedsUpdateGitHubReleases": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Seal 모바일 앱이 필요합니다. GitHub Releases에서 Seal 모바일을 업데이트한 후 이 호스트에 다시 연결하세요."
     },
     "richMarkdownEditor": {
@@ -2750,11 +2746,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "링크를 열지 못했습니다. 다시 시도하세요.",
-      "socialProfile": "Seal X 프로필",
       "sourceCode": "Seal 소스 코드",
       "tagline": "100배의 성과를 내는 개발자를 위한 오픈 소스 에이전트 IDE",
-      "title": "정보",
-      "website": "Seal 웹사이트"
+      "title": "정보"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "확인 실패",
@@ -2812,7 +2806,6 @@
       "voice": "음성"
     },
     "menuScreen": {
-      "privacyPolicy": "개인정보 처리방침",
       "support": "지원"
     },
     "nativeChatSettingsScreen": {

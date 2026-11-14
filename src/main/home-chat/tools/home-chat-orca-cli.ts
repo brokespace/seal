@@ -1,5 +1,5 @@
 import { runProcess } from '@orca/process-host'
-import { app } from 'electron'
+import { getAppEnvironment } from '../../../shared/app-environment'
 import { prependOrcaCliDirToChildPath } from '../../cli/launchers/orca-cli-child-path'
 import type { HomeChatExecResult } from '../machines/home-chat-machine-types'
 
@@ -11,8 +11,8 @@ function launchEnv(): { env: Record<string, string>; launcher: string | null } {
     }
   }
   const launcher = prependOrcaCliDirToChildPath(env, {
-    isPackaged: app.isPackaged,
-    userDataPath: app.getPath('userData'),
+    isPackaged: getAppEnvironment().isPackaged(),
+    userDataPath: getAppEnvironment().getPath('userData'),
     resourcesPath: process.resourcesPath
   })
   return { env, launcher }

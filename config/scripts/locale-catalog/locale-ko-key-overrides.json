@@ -5378,9 +5378,6 @@
   "auto.components.settings.privacy.search.2b5a5c312f": {
     "ko": "PostHog"
   },
-  "auto.components.settings.orcaAccount.keywordRelay": {
-    "ko": "릴레이"
-  },
   "auto.components.settings.orcaAccount.keywordCloud": {
     "ko": "클라우드"
   },
@@ -5398,9 +5395,6 @@
   },
   "auto.components.settings.MobileRelayBetaNotice.notice": {
     "ko": "Orca Relay는 베타 버전입니다."
-  },
-  "auto.components.settings.MobilePairingConnectionOptions.relaySignInDetail": {
-    "ko": "이 데스크톱에서 Orca에 로그인하고 휴대폰 연결을 Orca 서버를 통해 전달합니다. LAN 연결에는 계정이 필요하지 않습니다."
   },
   "auto.components.settings.SshPassphraseDialog.ce4fdf7914": {
     "ko": "다음 연결 대상에 사용할 SSH 키의 암호 문구를 입력하세요:"

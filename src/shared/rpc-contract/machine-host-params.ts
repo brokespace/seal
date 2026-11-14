@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 import {
   MACHINE_HOST_EXEC_MAX_SCRIPT_CHARS,
   MACHINE_HOST_EXEC_MAX_STDIN_BASE64_CHARS,

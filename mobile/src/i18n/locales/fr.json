@@ -98,14 +98,13 @@
       "connecting": "Connexion…",
       "invalidPairingCode": "Code d'appairage invalide — copiez-le depuis votre ordinateur et collez-le à nouveau.",
       "invalidQrCode": "QR code Seal invalide",
-      "downloadQrCode": "C’est le code de téléchargement. Scannez le code d’association à l’étape 2 sur votre ordinateur.",
       "openDesktopStep": "Ouvrez Seal sur votre ordinateur",
       "openMobileSettingsStep": "Allez dans Paramètres → Mobile",
       "openSettings": "Ouvrir les paramètres",
       "pairingFailed": "Échec de l'appairage : {{error}}",
       "pairingLog": "Journal d'appairage",
       "pasteCodeMessage": "Copiez le code affiché sous le QR code sur votre ordinateur.",
-      "pasteCodePlaceholder": "orca://pair?code=... ou collez le code",
+      "pasteCodePlaceholder": "seal://pair?code=... ou collez le code",
       "pasteCodeTitle": "Coller le code d'appairage",
       "pasteInstead": "Coller plutôt le code",
       "pastePairingCode": "Ou coller le code d'appairage",
@@ -979,9 +978,7 @@
       "backToHosts": "Retour aux hôtes",
       "desktopTooOldBody": "La version de Seal sur cet ordinateur appairé est trop ancienne pour votre version actuelle de Seal Mobile. Mettez Seal à jour sur votre ordinateur, puis réessayez de vous connecter à cet hôte.",
       "getVersion": "Obtenir Seal {{version}}",
-      "mobileTooOldAppStore": "Cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte.",
       "mobileTooOldGitHubReleases": "Cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte.",
-      "openAppStore": "Ouvrir l'App Store",
       "openGitHubReleases": "Ouvrir GitHub Releases",
       "refreshRecoveryNote": "Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
       "refreshWorkspaceBody": "La version de l'espace de travail en cache pour cet hôte est antérieure à celle attendue par l'ordinateur. Reconnectez-vous à cet hôte pour télécharger la version actuelle.",
@@ -989,7 +986,6 @@
       "updateDesktopTitle": "Mettre à jour Seal sur votre ordinateur",
       "updateMobileTitle": "Mettre à jour Seal Mobile",
       "updateRecoveryNote": "Déjà à jour ? Revenez à l'écran Hôtes et actualisez la connexion. Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
-      "workspaceNeedsUpdateAppStore": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte.",
       "workspaceNeedsUpdateGitHubReleases": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente de Seal Mobile. Mettez Seal Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte."
     },
     "richMarkdownEditor": {
@@ -2824,11 +2820,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Impossible d'ouvrir le lien. Réessayez.",
-      "socialProfile": "Seal sur X",
       "sourceCode": "Code source de Seal",
       "tagline": "IDE open source avec agents pour les développeurs 100x",
-      "title": "À propos",
-      "website": "Site web de Seal"
+      "title": "À propos"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "Échec de la vérification",
@@ -2889,7 +2883,6 @@
       "voice": "Voix"
     },
     "menuScreen": {
-      "privacyPolicy": "Politique de confidentialité",
       "support": "Assistance"
     },
     "nativeChatSettingsScreen": {

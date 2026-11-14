@@ -1,7 +1,9 @@
 import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../../../shared/sidebar-inputs-switch'
+import { MOBILE_SEAL_RPC_METHODS } from './runtime-rpc-mobile-seal-methods'
 
 /** Phone methods the relaying Mac always answers itself, even when the call names a server. */
 export const PAIRED_DESKTOP_METHODS = [
+  ...MOBILE_SEAL_RPC_METHODS,
   // Device and pairing concerns of the phone's own pairing.
   'mobileWeb.bundle.brotliRange',
   'mobileWeb.bundle.chunk',
