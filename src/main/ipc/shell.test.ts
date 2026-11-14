@@ -74,17 +74,26 @@ expect.objectContaining({
   shell: false
 })
 
-function createSpawnedProcess(result: 'spawn' | 'error' = 'spawn'): {
+type SpawnOutcome =
+  | { event: 'exit'; exitCode: number }
+  | { event: 'error'; error: NodeJS.ErrnoException }
+
+/** A launcher that starts and then either exits with a code or never starts at all. */
+function createSpawnedProcess(outcome: SpawnOutcome = { event: 'exit', exitCode: 0 }): {
   once: ReturnType<typeof vi.fn>
   off: ReturnType<typeof vi.fn>
   unref: ReturnType<typeof vi.fn>
 } {
   const child = {
-    once: vi.fn((eventName: string, callback: (error?: Error) => void) => {
-      if (eventName === result) {
-        queueMicrotask(() => {
-          callback(result === 'error' ? new Error('launcher unavailable') : undefined)
-        })
+    once: vi.fn((eventName: string, callback: (value?: unknown) => void) => {
+      if (outcome.event === 'error') {
+        if (eventName === 'error') {
+          queueMicrotask(() => callback(outcome.error))
+        }
+      } else if (eventName === 'spawn') {
+        queueMicrotask(() => callback())
+      } else if (eventName === 'exit') {
+        setTimeout(() => callback(outcome.exitCode), 0)
       }
       return child
     }),
@@ -184,6 +193,64 @@ describe('registerShellHandlers', () => {
       }
     )
 
+    it.skipIf(process.platform === 'win32')(
+      'reports why the launcher did not open anything',
+      async () => {
+        settings.openInApplications = [{ id: 'cursor', label: 'Cursor', command: 'cursor' }]
+        const handler = getHandler('shell:openInExternalEditor')
+        const request = {
+          path: '/tmp/project',
+          ownerHostId: 'local',
+          openInApplicationId: 'cursor'
+        }
+
+        spawnMock.mockReturnValue(
+          createSpawnedProcess({
+            event: 'error',
+            error: Object.assign(new Error('spawn editor-cli ENOENT'), { code: 'ENOENT' })
+          })
+        )
+        await expect(handler({}, request)).resolves.toEqual({
+          ok: false,
+          reason: 'launch-failed',
+          launchFailure: { kind: 'not-found', command: 'editor-cli' }
+        })
+
+        spawnMock.mockReturnValue(createSpawnedProcess({ event: 'exit', exitCode: 3 }))
+        await expect(handler({}, request)).resolves.toEqual({
+          ok: false,
+          reason: 'launch-failed',
+          launchFailure: { kind: 'exited', command: 'editor-cli', exitCode: 3 }
+        })
+      }
+    )
+
+    it.skipIf(process.platform === 'win32')(
+      'opens a file on an SSH machine through the app the user picked',
+      async () => {
+        settings.openInApplications = [{ id: 'cursor', label: 'Cursor', command: 'cursor' }]
+        sshTargets.set('ssh-1', createSshTarget())
+        resolveCliCommandMock.mockImplementation((command: string) => command)
+
+        await expect(
+          getHandler('shell:openInExternalEditor')(
+            {},
+            {
+              path: '/srv/project/README.md',
+              openInApplicationId: 'cursor',
+              connectionId: 'ssh-1',
+              ownerHostId: 'ssh:ssh-1'
+            }
+          )
+        ).resolves.toEqual({ ok: true })
+        expect(spawnMock).toHaveBeenLastCalledWith(
+          'cursor',
+          ['--new-window', '--remote', 'ssh-remote+builder', '/srv/project/README.md'],
+          expect.anything()
+        )
+      }
+    )
+
     it('rejects missing and runtime-owned SSH targets', async () => {
       const handler = getHandler('shell:openInExternalEditor')
 
@@ -221,7 +288,12 @@ describe('registerShellHandlers', () => {
 
     it('opens the editor through its registered link when its launcher cannot be spawned', async () => {
       resolveCliCommandMock.mockImplementation((command: string) => command)
-      spawnMock.mockReturnValue(createSpawnedProcess('error'))
+      spawnMock.mockReturnValue(
+        createSpawnedProcess({
+          event: 'error',
+          error: Object.assign(new Error('spawn cursor ENOENT'), { code: 'ENOENT' })
+        })
+      )
       sshTargets.set('ssh-1', createSshTarget())
       const handler = getHandler('shell:openInExternalEditor')
       const request = {
@@ -239,7 +311,11 @@ describe('registerShellHandlers', () => {
 
       openExternalMock.mockClear()
       getApplicationNameForProtocolMock.mockReturnValue('')
-      await expect(handler({}, request)).resolves.toEqual({ ok: false, reason: 'launch-failed' })
+      await expect(handler({}, request)).resolves.toEqual({
+        ok: false,
+        reason: 'launch-failed',
+        launchFailure: { kind: 'not-found', command: 'cursor' }
+      })
       expect(openExternalMock).not.toHaveBeenCalled()
     })
   })

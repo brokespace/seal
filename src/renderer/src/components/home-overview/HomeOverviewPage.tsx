@@ -1,6 +1,7 @@
 import { Fragment, useContext, useMemo } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
+import { PageCardGrid } from '@/components/page-layout/PageCard'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
 import {
   countLiveSessionGroups,
@@ -53,30 +54,35 @@ function HomeOverviewContent(): React.JSX.Element {
       <PageHeader title={t('home.overview.title', 'Home')}>
         <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{summary}</p>
       </PageHeader>
-      <PageScrollContent className="gap-4">
+      <PageScrollContent
+        // Wide windows put an open chat beside the overview; otherwise the overview has the row.
+        className="grid grid-cols-1 items-start @min-[96rem]/page:has-[[data-home-slot=chat]:not([data-minimized])]:grid-cols-[minmax(0,1fr)_minmax(26rem,36%)]"
+      >
         <HomeChatSlot />
-        <HomeAttentionStrip sessions={attention} onOpen={actions.openSession} />
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
-          <HomeSessionsPanel sessions={sessions} now={now} />
-          <div className="flex flex-col gap-4">
-            <HomeMachinesPanel
-              machines={machines}
-              sessions={sessions}
-              onManage={actions.openMachines}
-              onOpen={actions.openMachine}
-            />
-            <HomeAccountsPanel
-              accounts={accounts}
-              now={now}
-              onManage={actions.openAccountsSettings}
-            />
-            <HomeWorkspacesPanel workspaces={workspaces} onOpen={actions.openWorkspace} />
-            <HomeAutomationsPanel
-              result={automations}
-              now={now}
-              onOpen={actions.openAutomations}
-              onOpenAutomation={actions.openAutomation}
-            />
+        <div className="@container/overview flex min-w-0 flex-col gap-(--page-section-gap)">
+          <HomeAttentionStrip sessions={attention} onOpen={actions.openSession} />
+          <div className="grid grid-cols-1 items-start gap-(--page-section-gap) @min-[56rem]/overview:grid-cols-[minmax(0,1fr)_20rem]">
+            <HomeSessionsPanel sessions={sessions} now={now} />
+            <PageCardGrid>
+              <HomeMachinesPanel
+                machines={machines}
+                sessions={sessions}
+                onManage={actions.openMachines}
+                onOpen={actions.openMachine}
+              />
+              <HomeAccountsPanel
+                accounts={accounts}
+                now={now}
+                onManage={actions.openAccountsSettings}
+              />
+              <HomeWorkspacesPanel workspaces={workspaces} onOpen={actions.openWorkspace} />
+              <HomeAutomationsPanel
+                result={automations}
+                now={now}
+                onOpen={actions.openAutomations}
+                onOpenAutomation={actions.openAutomation}
+              />
+            </PageCardGrid>
           </div>
         </div>
       </PageScrollContent>

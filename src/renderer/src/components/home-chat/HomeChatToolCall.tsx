@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Ban, Check, ChevronRight, Loader2, Server, ShieldAlert, X } from 'lucide-react'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
 import { SecuritySurface } from '../ui/security-surface'
 import type { HomeChatEntry } from '../../../../shared/home-chat/home-chat-types'
+import type { NativeChatToolResultBlock } from '../../../../shared/native-chat/native-chat-types'
+import { NativeChatToolOutput } from '../native-chat/tools/lines/NativeChatToolOutput'
 import { formatHomeChatDuration } from './home-chat-format'
 import {
   HOME_CHAT_FALLBACK_TOOL_ICON,
@@ -43,10 +45,16 @@ export function HomeChatToolCall({
   const summary = homeChatToolSummary(entry.tool, entry.input)
   const hasInput = Object.keys(entry.input).length > 0
   const expandable = Boolean(entry.output) || hasInput
+  const failed = entry.status === 'error'
+  // The session transcript's output box: the same clipping, colours and "show full output".
+  const output = useMemo<NativeChatToolResultBlock | null>(
+    () => (entry.output ? { type: 'tool-result', output: entry.output, isError: failed } : null),
+    [entry.output, failed]
+  )
 
   return (
     <div
-      className="rounded-md border border-border text-xs"
+      className="rounded-lg border border-border bg-background text-xs"
       data-tool-status={entry.status}
       data-tool-name={entry.tool}
     >
@@ -89,15 +97,14 @@ export function HomeChatToolCall({
       {open && (
         <div className="space-y-2 border-t border-border px-2.5 py-2">
           {hasInput && (
-            <pre className="scrollbar-sleek max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-muted-foreground">
+            <pre
+              data-native-chat-code-content
+              className="scrollbar-sleek max-h-48 overflow-auto rounded-lg border border-chat-code-border bg-chat-code-surface p-2 font-mono text-chat-code break-all whitespace-pre-wrap text-chat-foreground-faint"
+            >
               {JSON.stringify(entry.input, null, 2)}
             </pre>
           )}
-          {entry.output && (
-            <pre className="scrollbar-sleek max-h-64 overflow-auto whitespace-pre-wrap break-all font-mono text-foreground">
-              {entry.output}
-            </pre>
-          )}
+          {output && <NativeChatToolOutput body={output} />}
         </div>
       )}
 

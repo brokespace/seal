@@ -172,12 +172,25 @@ Settings → **Machines** replaces the old _SSH Hosts_ and _Remote Seal Servers_
 - Each row shows the stored SSH and server details and an **SSH / Seal server** switch. Its menu has **Rename**, **Add SSH details…** / **Pair a Seal server…** (stores the other transport without switching to it) and **split**.
 - **SSH keys, port forwards and server pairing** expands the full SSH host and server settings: editing, port forwards, generating pairing links, and running this computer as a server.
 
+## Open in editor
+
+The Machines tab opens the folder on screen (header button) or any file or folder (right-click) in an editor. `planMachineEditorOpen` (`src/renderer/src/components/machines/editor/machine-editor-plan.ts`) picks where it goes:
+
+| Machine                                     | Opens in                                                                                                                                                                     |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| This computer                               | The first app in Settings → General → **Open In apps**, run with the path.                                                                                                   |
+| Has SSH details (connected either way)      | The first Open In app that can open a path over SSH: VS Code and Cursor get `--remote ssh-remote+<host> <path>`, Zed gets an `ssh://` URL. The app dials the machine itself. |
+| Seal server only (no SSH details)           | Seal's own editor: the file opens in the Machines tab's editor, a folder in its file browser. A notice explains why and offers **Add SSH details…**.                         |
+| SSH details, but no SSH-capable Open In app | Seal's own editor, with a link to the Open In apps setting.                                                                                                                  |
+
+The chevron next to the button picks another app, or Seal's editor, for one open. When the app's command-line launcher is missing, fails, or exits with an error within 1.5 seconds, Seal tries the app's registered `vscode://` or `cursor://` link; if that is not registered either, the failure is reported with the command and the reason instead of passing as a success.
+
 ## Known limits
 
 - An SSH machine has no resident Seal, so account auto-swap and fleet policy run only on Seal servers. Pushed logins still land in the CLI's own files.
 - On a Mac reached over SSH, installing the Claude login needs that Mac's login Keychain to be unlocked.
-- **Open in editor** runs on this computer and reaches the machine over SSH (VS Code or Cursor Remote-SSH, or Zed), so it needs stored SSH details whichever transport Seal uses. A server-only machine offers **Add SSH details**, which stores them without leaving the server connection.
-- VS Code and Cursor take a custom SSH port only from a `Host` entry in `~/.ssh/config`. Seal uses a matching entry when one exists and otherwise offers to copy one.
+- **Open in editor** on a remote machine launches an app on this computer, which dials the machine itself over SSH (see above), so it needs stored SSH details whichever transport Seal uses. A server-only machine opens in Seal's own editor and offers **Add SSH details…**, which stores them without leaving the server connection.
+- VS Code and Cursor take a custom SSH port only from a `Host` entry in `~/.ssh/config`. Seal uses a matching entry when one exists; otherwise it says so, offers to copy one, and offers its own editor.
 - Windows machines are not scanned for live sessions: there is no `ps`/tmux to read.
 - The assistant's supervised subagents (`spawn_subagent` in agent mode) need a machine connected over SSH or this computer. On a server-connected machine the assistant uses `start_session` instead.
 
