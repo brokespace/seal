@@ -12,8 +12,10 @@ import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
 import { createLiveSessionRecaps } from '../session-recap/session-recap-install'
 import { getUtilityModelHost } from '../utility-model/utility-model-host'
 import type { UtilityModelService } from '../utility-model/utility-model-service'
+import { LiveSessionReplyAsks } from './live-session-reply-asks'
 import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
 import { PaneSessionSummaries } from './pane-session-summaries'
+import { REPLY_ASK_TASK } from './reply-ask-task'
 import { SessionSummarizer } from './session-summarizer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
@@ -85,6 +87,8 @@ export class SessionSummariesHost {
   private readonly summarizer: SessionSummarizer
   private readonly panes: PaneSessionSummaries
   private readonly live: LiveSessionSummaries | null
+  /** The fallback of session status detection; see docs/session-status.md. */
+  private readonly replyAsks: { classifier: SessionSummarizer; live: LiveSessionReplyAsks } | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
   private configured = false
@@ -126,6 +130,10 @@ export class SessionSummariesHost {
             log
           })
         : null
+    this.replyAsks =
+      liveSessions && options.summarizeLive !== false
+        ? this.createReplyAsks(liveSessions, log)
+        : null
     this.recap = liveSessions
       ? createLiveSessionRecaps({
           liveSessions,
@@ -138,6 +146,33 @@ export class SessionSummariesHost {
           log
         })
       : null
+  }
+
+  private createReplyAsks(
+    liveSessions: LiveSessionService,
+    log: (message: string, error?: unknown) => void
+  ): { classifier: SessionSummarizer; live: LiveSessionReplyAsks } {
+    const cache = new SessionSummaryCache(
+      join(this.options.userDataPath, 'session-summaries', 'reply-asks.json'),
+      log
+    )
+    void cache.load()
+    const classifier = new SessionSummarizer({
+      complete: async (request, signal) => (await this.utility.complete(request, signal)).text,
+      enabled: () => this.isAvailable(),
+      cache,
+      onChange: () => this.republishSoon(),
+      task: REPLY_ASK_TASK,
+      setTimer: unrefTimer
+    })
+    return {
+      classifier,
+      live: new LiveSessionReplyAsks({
+        classifier,
+        lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
+        log
+      })
+    }
   }
 
   /** Session recaps on this host; null where there is no session registry. */
@@ -168,6 +203,10 @@ export class SessionSummariesHost {
       if (live) {
         this.releases.push(liveSessions.subscribe((event) => live.observe(event)))
       }
+      const replyAsks = this.replyAsks?.live
+      if (replyAsks) {
+        this.releases.push(liveSessions.subscribe((event) => replyAsks.observe(event)))
+      }
     }
     void this.refreshAvailability(true)
   }
@@ -179,6 +218,8 @@ export class SessionSummariesHost {
     this.options.liveSessions?.registry.setDecorator(null)
     this.panes.dispose()
     this.live?.dispose()
+    this.replyAsks?.live.dispose()
+    this.replyAsks?.classifier.dispose()
     this.recap?.dispose()
     this.summarizer.dispose()
   }
@@ -233,7 +274,9 @@ export class SessionSummariesHost {
   }
 
   private decorate(session: LiveSession): LiveSession {
-    const summarized = this.settingOn() && this.live ? this.live.decorate(session) : session
+    const on = this.settingOn()
+    const settled = on && this.replyAsks ? this.replyAsks.live.decorate(session) : session
+    const summarized = on && this.live ? this.live.decorate(settled) : settled
     return this.recap ? this.recap.recaps.decorate(summarized) : summarized
   }
 
@@ -260,6 +303,7 @@ export class SessionSummariesHost {
     this.available = available
     if (cameBack) {
       this.summarizer.retryFailed()
+      this.replyAsks?.classifier.retryFailed()
     }
     // Recaps run with summaries switched off, so they watch the provider on their own terms.
     const recapReady = this.configured && this.utility.health().pausedUntil === null
