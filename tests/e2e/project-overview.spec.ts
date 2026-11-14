@@ -61,7 +61,7 @@ test('project name opens the overview, the chevron folds, and agents open and st
   await header.locator('[data-project-overview-link]').click()
   const page = orcaPage.locator(`[data-project-overview="${repo.id}"]`)
   await expect(page).toBeVisible()
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(repo.name)
+  await expect(page.getByRole('heading', { level: 1, name: repo.name })).toBeVisible()
   await expect(fold).toHaveAttribute('aria-expanded', 'true')
   await expect(cards).toHaveCount(cardCount)
   await expect(page.locator('[data-project-overview-registration="local"]')).toContainText(
