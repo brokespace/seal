@@ -69,6 +69,15 @@ export const SealAccountsPinWorkspaceParams = z
   })
   .strict()
 
+export const SealAccountsChooseNextLaunchParams = z
+  .object({
+    repoId: z.string().min(1).max(4096),
+    provider: Provider,
+    /** Null clears a choice that was never used. */
+    account: AccountRef.nullable()
+  })
+  .strict()
+
 export const SealAccountsAddApiKeyParams = z
   .object({
     provider: Provider,

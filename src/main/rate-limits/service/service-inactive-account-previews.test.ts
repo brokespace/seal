@@ -17,6 +17,13 @@ vi.mock('../providers/claude/claude-managed-account-usage', () => ({
   fetchInactiveClaudeAccountUsage: vi.fn()
 }))
 
+vi.mock('../../claude-accounts/profiles/routing/claude-profile-installed-router', () => ({
+  getClaudeProfileRouter: () => ({
+    systemDefaultHome: () => '/home/me/.claude',
+    userConfigDir: () => '/home/me/.claude'
+  })
+}))
+
 vi.mock('../providers/codex/codex-fetcher', () => ({
   consumeCodexRateLimitResetCredit: vi.fn(),
   fetchCodexRateLimits: vi.fn()
@@ -162,5 +169,33 @@ describe('RateLimitService', () => {
     vi.setSystemTime(1_700_000_000_000 + 301_000)
     await service.readAccountUsage('claude', 'account-1')
     expect(fetchInactiveClaudeAccountUsage).toHaveBeenCalledTimes(2)
+  })
+
+  it("reads the machine's own unselected login from its own home, and never as another login's", async () => {
+    const service = new RateLimitService()
+    vi.mocked(fetchActiveClaudeRateLimits).mockResolvedValue(okProvider('claude', 61))
+
+    await service.readSystemLoginUsage('claude', 'claude:me@acme.dev', { notWithinMs: 30_000 })
+
+    expect(
+      vi.mocked(fetchActiveClaudeRateLimits).mock.calls.map(([options]) => options?.authPreparation)
+    ).toEqual([{ configDir: '/home/me/.claude', envPatch: {}, provenance: 'system' }])
+    expect(service.getState().systemLoginUsage).toEqual({
+      claude: {
+        identity: 'claude:me@acme.dev',
+        rateLimits: expect.objectContaining({
+          session: expect.objectContaining({ usedPercent: 61 })
+        }),
+        isFetching: false
+      }
+    })
+
+    // The machine signs in as someone else: the kept reading is not served for the new login.
+    vi.mocked(fetchActiveClaudeRateLimits).mockResolvedValue(okProvider('claude', 7))
+    const other = await service.readSystemLoginUsage('claude', 'claude:other@acme.dev', {
+      notWithinMs: 30_000
+    })
+    expect(other?.session?.usedPercent).toBe(7)
+    expect(service.getState().systemLoginUsage?.claude?.identity).toBe('claude:other@acme.dev')
   })
 })

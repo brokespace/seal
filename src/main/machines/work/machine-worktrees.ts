@@ -82,15 +82,15 @@ export async function createMachineWorktree(
   return listMachineWorktrees(connection, args.repoPath)
 }
 
+/**
+ * `force` discards uncommitted work; `unlock` also overrides Git's lock (`remove -f -f`). Each is
+ * the user's answer to a refusal Git gave, so neither is ever sent on a first attempt.
+ */
 export async function removeMachineWorktree(
   connection: MachineConnection,
-  args: { repoPath: string; path: string; force?: boolean }
+  args: { repoPath: string; path: string; force?: boolean; unlock?: boolean }
 ): Promise<MachineWorktree[]> {
-  await runGit(connection, args.repoPath, [
-    'worktree',
-    'remove',
-    ...(args.force ? ['--force'] : []),
-    args.path
-  ])
+  const waivers = args.unlock ? ['--force', '--force'] : args.force ? ['--force'] : []
+  await runGit(connection, args.repoPath, ['worktree', 'remove', ...waivers, args.path])
   return listMachineWorktrees(connection, args.repoPath)
 }

@@ -61,6 +61,10 @@ export function withSystemLogin(
   if (isDismissed(sources, key)) {
     return seeds
   }
+  const selected = hostSelection === null
+  // Its own slot while another account is selected, and only when that reading is this login's.
+  const kept = sources.rateLimits?.systemLoginUsage?.[provider]
+  const unselected = kept && sealAccountKeysMatch(kept.identity, key) ? kept : null
   return [
     ...seeds,
     {
@@ -72,15 +76,14 @@ export function withSystemLogin(
       email: system.email,
       orgName: system.orgName,
       fallbackLabel: system.email,
-      active: hostSelection === null,
+      active: selected,
       launchable: true,
       needsSignIn: false,
       systemLogin: true,
       wslDistro: null,
       addedAt: null,
-      // The service reads a login in place only while it is the host's selection.
-      limits: hostSelection === null ? activeLimits : null,
-      fetching: hostSelection === null && activeLimits?.status === 'fetching'
+      limits: selected ? activeLimits : (unselected?.rateLimits ?? null),
+      fetching: selected ? activeLimits?.status === 'fetching' : unselected?.isFetching === true
     }
   ]
 }

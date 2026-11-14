@@ -41,7 +41,8 @@ export function registerMachineWorkHandlers(handle: MachineInvokeRegistrar): voi
     removeMachineWorktree(await connected(args.machineId), {
       repoPath: requireString(args.repoPath, 'repoPath'),
       path: requireString(args.path, 'path'),
-      force: args.force === true
+      force: args.force === true,
+      unlock: args.unlock === true
     })
   )
 }

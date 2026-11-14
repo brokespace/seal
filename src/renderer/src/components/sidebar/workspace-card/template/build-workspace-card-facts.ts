@@ -58,7 +58,7 @@ export function buildWorkspaceCardFacts(card: WorktreeCardController): Workspace
       hasRenameError:
         typeof worktree.firstAgentMessageRenameError === 'string' &&
         worktree.firstAgentMessageRenameError.length > 0,
-      removalError: worktree.removalError || null,
+      removalError: card.deleteFailure,
       comment: worktree.comment
     },
     repo: repo ? { id: repo.id, name: repo.displayName, ssh: Boolean(repo.connectionId) } : null,

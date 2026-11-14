@@ -37,6 +37,14 @@ export function findSealProfile(
   return match ? config.profiles[match] : undefined
 }
 
+function candidateBilling(seed: SealCandidateSeed): SealAccountCandidate['billing'] {
+  if (seed.kind === 'api-key') {
+    // A setup token is a subscription login; every other stored secret is a metered key.
+    return seed.credential === 'setup-token' ? 'subscription' : 'api'
+  }
+  return seed.limits?.billing ?? null
+}
+
 function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): SealAccountCandidate {
   const profile = findSealProfile(sources.config, seed.key)
   const authFailure = isDeadLogin(seed.limits)
@@ -51,6 +59,7 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
     orgName: seed.orgName,
     label: profile?.alias || seed.email || seed.fallbackLabel,
     plan: profile?.plan || seed.limits?.planType || null,
+    billing: candidateBilling(seed),
     systemLogin: seed.systemLogin,
     health: sealAccountHealth({
       now: sources.now ?? Date.now(),

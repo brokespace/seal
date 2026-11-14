@@ -32,7 +32,7 @@ export function WorktreeCardSecondaryRows({
     showLineageChildChip,
     lineageChildAriaLabel,
     childWorkspaceShortLabel,
-    isDeleting
+    deleteFailure
   } = card
   const { hasMetaRow } = presentation
 
@@ -45,10 +45,8 @@ export function WorktreeCardSecondaryRows({
         />
       )}
 
-      {/* The host retains failed deletes until resolved; show its path-leading error in a tooltip. */}
-      {worktree.removalError && !isDeleting ? (
-        <WorktreeCardDeleteFailed error={worktree.removalError} />
-      ) : null}
+      {/* A failed delete stays on the row until retried; its error is in the tooltip. */}
+      {deleteFailure ? <WorktreeCardDeleteFailed error={deleteFailure} /> : null}
 
       {isActive && worktree.linkedLinearIssue ? (
         <LinearAgentSkillSetupPrompt

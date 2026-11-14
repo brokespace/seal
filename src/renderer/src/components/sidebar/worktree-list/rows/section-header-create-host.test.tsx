@@ -142,7 +142,7 @@ function clickCreate(row: GroupHeaderRow): void {
       })}
     </TooltipProvider>
   )
-  fireEvent.click(view.getByRole('button', { name: /Create new worktree for/ }))
+  fireEvent.click(view.getByRole('button', { name: /New agent session in/ }))
 }
 
 it("opens Create on a same-id twin's own host in a view that shows only that host", () => {

@@ -7395,7 +7395,9 @@
               "unstoppedPtyLive": "This workspace still has running terminals, so Seal stopped before deleting any files. Force Delete will kill them and discard any uncommitted work they hold.",
               "runningAgentSession": "Seal could not confirm every agent session in this workspace has closed, so it stopped before deleting any files. Use Force Delete to remove it anyway.",
               "runningAgentSessionLive": "This workspace still has running agent sessions that Seal could not close, so it stopped before deleting any files. Force Delete will discard any work they hold.",
-              "submodules": "This workspace contains submodules, so Git deletes it only with Force Delete. Force Delete also permanently removes anything in those submodules that was never pushed: commits, local branches and stashes."
+              "submodules": "This workspace contains submodules, so Git deletes it only with Force Delete. Force Delete also permanently removes anything in those submodules that was never pushed: commits, local branches and stashes.",
+              "lockedReasonUnlockable": "Git has this workspace locked ({{value0}}), so nothing was deleted. Unlock & Delete releases the lock and deletes it.",
+              "lockedUnlockable": "Git has this workspace locked, so nothing was deleted. Unlock & Delete releases the lock and deletes it."
             },
             "failure": {
               "archive": {
@@ -7418,10 +7420,8 @@
           "header": {
             "create": {
               "state": {
-                "992cfbc44b": "Create new worktree for {{value0}}",
                 "3a70acd808": "Reconnect SSH target before creating workspaces for {{value0}}",
-                "6d022563a8": "Reconnect SSH target before creating workspaces",
-                "62e71f2d5d": "Create workspace for {{value0}}"
+                "6d022563a8": "Reconnect SSH target before creating workspaces"
               }
             }
           }
@@ -20149,7 +20149,17 @@
           "terminalHere": "Terminal here",
           "remove": "Remove worktree",
           "branchPlaceholder": "New branch name",
-          "create": "New worktree"
+          "create": "New worktree",
+          "removeFailed": "Could not remove worktree",
+          "unlockTitle": "Unlock and delete “{{name}}”?",
+          "forceTitle": "Force delete “{{name}}”?",
+          "unlockBody": "Git locked this worktree so it would not be removed. Seal will override that lock and permanently delete the worktree and every file in it, including uncommitted changes.",
+          "forceSubmodulesBody": "This worktree contains submodules, so Git removes it only when forced. That permanently deletes it and anything in those submodules that was never pushed.",
+          "forceChangesBody": "This worktree has modified or untracked files. Force delete permanently removes it and those files.",
+          "lockReason": "Lock reason: {{reason}}",
+          "forceCancel": "Cancel",
+          "unlockConfirm": "Unlock & Delete",
+          "forceConfirm": "Force Delete"
         },
         "terminal": {
           "agentTitle": "{{agent}} · {{host}}",
@@ -22650,6 +22660,28 @@
         "cleaningUp": "Cleaning up…",
         "skipCleanup": "Skip cleanup and insert as heard"
       }
+    },
+    "newAgentSession": {
+      "title": "New agent session",
+      "description": "Choose the agent, account and machine. Turn on Create worktree to start it in a new worktree.",
+      "agent": "Agent",
+      "machine": "Machine",
+      "account": "Account",
+      "accountAutomatic": "Automatic (rules and usage)",
+      "accountMachineLogin": "The machine’s own login",
+      "accountUnmanagedAgent": "Seal picks accounts for Claude Code and Codex. {{agent}} uses its own login.",
+      "accountSshOnly": "This machine is reached over SSH only, so the agent uses the login on that machine.",
+      "accountReadFailed": "Could not read this machine’s accounts: {{error}}",
+      "accountTerminalOnly": "Starts in a terminal, where the session can run on a chosen account.",
+      "accountChoiceFailed": "Could not start on the chosen account",
+      "createWorktree": "Create worktree",
+      "createWorktreeOn": "The agent starts in a new worktree on its own branch.",
+      "createWorktreeOff": "The agent starts in the project’s own directory.",
+      "noProjectCheckout": "Seal could not find this project’s directory on that machine. Turn on Create worktree, or check that the machine is connected.",
+      "openProjectFailed": "Seal could not open this project’s directory.",
+      "start": "Start session",
+      "startShort": "Start",
+      "openFor": "New agent session in {{value0}}"
     }
   },
   "dashboardPopout": {
@@ -23720,7 +23752,12 @@
     "alwaysForceDeleteBranchesDescription": "Applies to branches kept after future workspace deletions.",
     "moreDeleteOptions": "More delete options",
     "alwaysDelete": "Always delete",
-    "alwaysDeleteTooltip": "Skip this confirmation for future deletions."
+    "alwaysDeleteTooltip": "Skip this confirmation for future deletions.",
+    "unlockAndDelete": "Unlock & Delete",
+    "unlockConfirmTitle": "Unlock and delete “{{name}}”?",
+    "unlockConfirmBody": "Git locked this workspace so it would not be removed. Seal will release that lock, then permanently delete the workspace and every file in it, including uncommitted changes.",
+    "unlockConfirmReason": "Lock reason",
+    "unlockConfirmCancel": "Cancel"
   },
   "worktree": {
     "setupTrust": {
@@ -25804,7 +25841,10 @@
     },
     "open": {
       "sessionGone": "That agent session is no longer running."
-    }
+    },
+    "expand": "Expand chat",
+    "minimize": "Minimize chat",
+    "minimizedRunning": "Working…"
   },
   "seal": {
     "accounts": {
@@ -25816,7 +25856,11 @@
         "manualOnly": "Manual only",
         "systemLoginHint": "This is the login the CLI on this computer uses outside Seal.",
         "systemLogin": "System login",
-        "wsl": "WSL: {{value0}}"
+        "wsl": "WSL: {{value0}}",
+        "apiBilling": "API billing",
+        "apiBillingHint": "This login belongs to a Console organization that pays per token.",
+        "subscription": "Subscription",
+        "subscriptionHint": "This login runs on a plan seat, not on API usage."
       },
       "error": "Could not update accounts",
       "refresh": "Refresh usage",

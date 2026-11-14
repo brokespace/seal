@@ -8,6 +8,7 @@ import { isWindowsAbsolutePathLike } from '../../shared/cross-platform-path'
 import { isWslUncPath } from '../../shared/wsl-paths'
 import { stripWin32LongPathPrefix } from '../../shared/windows-path-access'
 import { removeTree } from '../../shared/windows-transient-lock-removal'
+import { quotePosixShell } from '../../shared/shell/launch/shell-argument-quoting'
 
 /** Convert a native host filesystem path to the Win32 long-path namespace. */
 export function toHostFilesystemPath(targetPath: string): string {
@@ -32,7 +33,7 @@ export async function removeHostTree(
   try {
     await removeTree(toHostRemovalPath(targetPath), { rm, signal: options.signal })
   } catch (error) {
-    throw describeRemovalFailure(error)
+    throw describeRemovalFailure(error, targetPath)
   }
 }
 
@@ -86,7 +87,7 @@ export async function removeHostCheckout(
     if (markerGone && getErrorCode(error) === 'ENOTEMPTY') {
       throw unregisteredFolderRefusal(targetPath)
     }
-    throw describeRemovalFailure(error)
+    throw describeRemovalFailure(error, targetPath)
   }
 }
 
@@ -112,16 +113,19 @@ export async function removeHostEmptyDirectory(targetPath: string): Promise<void
 }
 
 // Failed-delete rows show this message; name the blocking file instead of Node's error text.
-function describeRemovalFailure(error: unknown): unknown {
+function describeRemovalFailure(error: unknown, targetPath: string): unknown {
   const code = error instanceof Error && 'code' in error ? error.code : undefined
   const path = error instanceof Error && 'path' in error ? error.path : undefined
   if (path === undefined || (code !== 'EBUSY' && code !== 'EPERM' && code !== 'EACCES')) {
     return error
   }
   const file = stripWin32LongPathPrefix(String(path))
+  // Why: on POSIX this is ownership (a container writing as root), which closing programs never fixes.
   const message =
     code === 'EBUSY'
       ? `${file} is open in another program. Close that program and delete again.`
-      : `${file} could not be deleted; it may be read-only or open in another program. Close any program using it and delete again.`
+      : process.platform === 'win32'
+        ? `${file} could not be deleted; it may be read-only or open in another program. Close any program using it and delete again.`
+        : `${file} could not be deleted: permission denied. Another user owns it (often root, when a container wrote it). On that machine run sudo rm -rf ${quotePosixShell(stripWin32LongPathPrefix(targetPath))}, then delete again.`
   return Object.assign(new Error(message, { cause: error }), { code, path: file })
 }

@@ -19,6 +19,15 @@ import {
 import type { MachineWorktree } from '../../../../../shared/machines/machine-view'
 import { launchMachineAgent, openMachineTerminal } from '../detail/machine-quick-actions'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import {
+  classifyMachineWorktreeRemovalRefusal,
+  machineWorktreeRemovalWaiver
+} from '../../../../../shared/machines/machine-worktree-removal-refusal'
+import { readIpcErrorDetail } from '@/runtime/errors/ipc-error'
+import {
+  MachineWorktreeForceRemoveDialog,
+  type MachineWorktreeForceRemoveRequest
+} from './MachineWorktreeForceRemoveDialog'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -99,6 +108,40 @@ async function runWorktreeWork(
   }
 }
 
+type RemovalWaiver = { force?: true; unlock?: true }
+
+/** Removes a worktree; a refusal Git lets the user waive becomes a question, not a failure. */
+async function removeWorktreeOrAsk(removal: {
+  path: string
+  label: string
+  waiver: RemovalWaiver
+  remove: () => Promise<MachineWorktree[] | undefined>
+  setBusy: (busy: boolean) => void
+  setWorktrees: (worktrees: MachineWorktree[]) => void
+  askToForce: (request: MachineWorktreeForceRemoveRequest) => void
+  failedTitle: string
+}): Promise<void> {
+  const { path, label, waiver } = removal
+  removal.setBusy(true)
+  try {
+    const next = await removal.remove()
+    if (next) {
+      removal.setWorktrees(next)
+    }
+  } catch (error) {
+    const detail = readIpcErrorDetail(error) ?? errorText(error)
+    const refusal = classifyMachineWorktreeRemovalRefusal(detail)
+    // Why: a refusal the waiver already answered is a real failure, not another question.
+    if (refusal && !(waiver.force && (refusal.kind !== 'locked' || waiver.unlock))) {
+      removal.askToForce({ path, label, refusal })
+    } else {
+      toast.error(removal.failedTitle, { description: detail, duration: Infinity })
+    }
+  } finally {
+    removal.setBusy(false)
+  }
+}
+
 export function MachineWorkSection({
   machine,
   online,
@@ -114,6 +157,7 @@ export function MachineWorkSection({
   const [branch, setBranch] = useState('')
   const [worktrees, setWorktrees] = useState<MachineWorktree[] | null>(null)
   const [busy, setBusy] = useState(false)
+  const [forceRequest, setForceRequest] = useState<MachineWorktreeForceRemoveRequest | null>(null)
   if (machine.connection === 'local' || !online) {
     return null
   }
@@ -144,10 +188,18 @@ export function MachineWorkSection({
       return next
     })
   }
-  const remove = (worktree: MachineWorktree): Promise<void> =>
-    run(async () =>
-      machines?.removeWorktree({ machineId: machine.id, repoPath: repo, path: worktree.path })
-    )
+  const remove = (path: string, label: string, waiver: RemovalWaiver = {}): Promise<void> =>
+    removeWorktreeOrAsk({
+      path,
+      label,
+      waiver,
+      remove: async () =>
+        machines?.removeWorktree({ machineId: machine.id, repoPath: repo, path, ...waiver }),
+      setBusy,
+      setWorktrees,
+      askToForce: setForceRequest,
+      failedTitle: t('auto.components.machines.work.removeFailed', 'Could not remove worktree')
+    })
 
   return (
     <section className="space-y-2" data-machine-work>
@@ -215,7 +267,12 @@ export function MachineWorkSection({
                     size="icon-xs"
                     aria-label={t('auto.components.machines.work.remove', 'Remove worktree')}
                     disabled={busy}
-                    onClick={() => void remove(worktree)}
+                    onClick={() =>
+                      void remove(
+                        worktree.path,
+                        worktree.branch ?? machinePathBasename(worktree.path)
+                      )
+                    }
                   >
                     <Trash2 />
                   </Button>
@@ -243,6 +300,14 @@ export function MachineWorkSection({
           </form>
         </div>
       ) : null}
+      <MachineWorktreeForceRemoveDialog
+        request={forceRequest}
+        onCancel={() => setForceRequest(null)}
+        onConfirm={(request) => {
+          setForceRequest(null)
+          void remove(request.path, request.label, machineWorktreeRemovalWaiver(request.refusal))
+        }}
+      />
     </section>
   )
 }

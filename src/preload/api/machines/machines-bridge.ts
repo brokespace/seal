@@ -99,6 +99,7 @@ export type MachinesApi = {
     repoPath: string
     path: string
     force?: boolean
+    unlock?: boolean
   }) => Promise<MachineWorktree[]>
 }
 
