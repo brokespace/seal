@@ -140,9 +140,9 @@ function OpenInMenuRow({
                 'auto.components.settings.OpenInMenuSetting.makeDefault',
                 'Make default'
               )}
-              className="size-7 text-muted-foreground hover:text-foreground"
+              className="size-7"
             >
-              <ArrowUpToLine className="size-3.5" />
+              <ArrowUpToLine className="size-3.5 text-muted-foreground" />
             </Button>
           )}
           <Button
