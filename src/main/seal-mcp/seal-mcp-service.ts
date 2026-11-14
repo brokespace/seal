@@ -7,8 +7,7 @@ import type {
   SealMcpClientCreated,
   SealMcpEvent,
   SealMcpSettings,
-  SealMcpStatus,
-  SealMcpTransport
+  SealMcpStatus
 } from '../../shared/seal-mcp/seal-mcp-types'
 import { SealMcpApprovals } from './approvals/seal-mcp-approvals'
 import { SealMcpAuditLog, type SealMcpAuditQuery } from './audit/seal-mcp-audit-log'
@@ -22,23 +21,26 @@ import {
   isMcpRecord,
   type McpJsonRpcMessage
 } from './protocol/mcp-json-rpc-server'
+import { SealMcpAdmissionDoor, type SealMcpAdmission, type SealMcpPeer } from './seal-mcp-admission'
 import { SealMcpSettingsStore } from './seal-mcp-settings-store'
 import type { SealMcpToolRuntime } from './tools/seal-mcp-scoped-runtime'
 import { SEAL_MCP_TOOL_NAMES, sealMcpToolListFor } from './tools/seal-mcp-tool-catalog'
 import { SealMcpToolRunner, type SealMcpToolOutcome } from './tools/seal-mcp-tool-runner'
 
-const FAILED_SIGN_INS_PER_MINUTE = 20
 const MCP_RATE_LIMITED = -32_000
 
 const INSTRUCTIONS =
   "Seal runs coding agents on the user's own machines. Start with list_machines; every other tool takes a machine name from it. Tools this client was not granted are not listed. Some calls wait up to two minutes for the user to approve them in the Seal app; if one is declined, do not retry or work around it."
 
-/** Where a request came from, as the transport that carried it saw it. */
-export type SealMcpPeer = { transport: SealMcpTransport; remote: string | null }
-
-export type SealMcpAdmission =
-  | { ok: true; client: SealMcpClient }
-  | { ok: false; reason: 'disabled' | 'unauthorized' | 'throttled'; retryAfterSeconds: number }
+const REVOKED: SealMcpToolOutcome = {
+  text: 'This client token was revoked.',
+  isError: true,
+  outcome: 'unauthorized',
+  machine: null,
+  summary: null,
+  approved: null,
+  detail: 'The token was revoked during the request.'
+}
 
 export type SealMcpEndpoints = {
   httpUrls: string[]
@@ -66,7 +68,7 @@ export class SealMcpService {
   private readonly approvals: SealMcpApprovals
   private readonly runner: SealMcpToolRunner
   private readonly calls = new SealMcpRateLimiter()
-  private readonly failedSignIns = new SealMcpRateLimiter()
+  private readonly door: SealMcpAdmissionDoor
   private readonly inFlight = new Map<string, AbortController>()
   private endpoints: () => SealMcpEndpoints = () => ({
     httpUrls: [],
@@ -84,6 +86,12 @@ export class SealMcpService {
     )
     this.approvals = new SealMcpApprovals((event) => this.emit(event), options.approvalTimeoutMs)
     this.runner = new SealMcpToolRunner({ runtime: options.runtime, approvals: this.approvals })
+    this.door = new SealMcpAdmissionDoor({
+      settings: () => this.settings.get(),
+      authenticate: (token) => this.clients.authenticate(token),
+      refused: (peer, client, detail) =>
+        this.record(peer, client, { method: 'authenticate', outcome: 'unauthorized', detail })
+    })
   }
 
   async start(): Promise<void> {
@@ -106,6 +114,10 @@ export class SealMcpService {
   /** The transports report where they listen, so Settings can show the URLs. */
   setEndpoints(endpoints: () => SealMcpEndpoints): void {
     this.endpoints = endpoints
+  }
+
+  statusChanged(): void {
+    this.emit({ type: 'status' })
   }
 
   status(): SealMcpStatus {
@@ -161,34 +173,7 @@ export class SealMcpService {
 
   /** Decides whether a caller holding `token` may talk to the server over this transport. */
   admit(token: string | null | undefined, peer: SealMcpPeer): SealMcpAdmission {
-    const settings = this.settings.get()
-    const closed =
-      (peer.transport === 'http' && !settings.httpEnabled) ||
-      (peer.transport === 'relay' && !settings.relayEnabled)
-    if (closed) {
-      return { ok: false, reason: 'disabled', retryAfterSeconds: 0 }
-    }
-    const peerKey = `${peer.transport}:${peer.remote ?? 'unknown'}`
-    const wait = this.failedSignIns.retryAfter(peerKey, FAILED_SIGN_INS_PER_MINUTE)
-    if (wait > 0) {
-      return { ok: false, reason: 'throttled', retryAfterSeconds: wait }
-    }
-    const client = this.clients.authenticate(token)
-    const refusal = !client
-      ? 'No valid client token.'
-      : peer.transport === 'relay' && !client.allowRelay
-        ? 'This client is not allowed to connect through the relay.'
-        : null
-    if (!client || refusal) {
-      this.failedSignIns.take(peerKey, FAILED_SIGN_INS_PER_MINUTE)
-      this.record(peer, client, {
-        method: 'authenticate',
-        outcome: 'unauthorized',
-        detail: refusal
-      })
-      return { ok: false, reason: 'unauthorized', retryAfterSeconds: 0 }
-    }
-    return { ok: true, client }
+    return this.door.admit(token, peer)
   }
 
   /** Answers one JSON-RPC message from an admitted client; null when it needs no reply. */
@@ -272,14 +257,14 @@ export class SealMcpService {
       callTool: async (name, args) => {
         // Re-read the client so a revocation during a batch stops the rest of it.
         const current = this.clients.get(client.id)
-        if (!current || current.revokedAt !== null) {
-          throw new Error('This client token was revoked.')
-        }
-        const outcome = await this.runner.call(
-          { client: current, transport: peer.transport, signal },
-          name,
-          args
-        )
+        const outcome =
+          current && current.revokedAt === null
+            ? await this.runner.call(
+                { client: current, transport: peer.transport, signal },
+                name,
+                args
+              )
+            : REVOKED
         onToolOutcome(name, outcome)
         return outcome
       }

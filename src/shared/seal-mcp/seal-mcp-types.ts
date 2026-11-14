@@ -109,6 +109,8 @@ export type SealMcpStatus = {
 export type SealMcpEvent =
   | { type: 'clients' }
   | { type: 'settings' }
+  /** Where the server is reachable changed, e.g. the relay tunnel connected or dropped. */
+  | { type: 'status' }
   | { type: 'audit'; entry: SealMcpAuditEntry }
   | { type: 'approval-requested'; request: SealMcpApprovalRequest }
   | { type: 'approval-settled'; id: string }
