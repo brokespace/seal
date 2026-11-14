@@ -122,6 +122,13 @@ export function useNativeChatNavigation({
       if (target.kind === 'rail') {
         return nativeChatRailJumpStep(rail.items, target.id, requestRailJump)
       }
+      if (target.kind === 'message') {
+        if (nativeChatSlotIndexOf(slots, target.id) < 0) {
+          return 'page'
+        }
+        issue({ kind: 'rail', messageId: target.id, requestId: nextRequestId() })
+        return 'landed'
+      }
       const place = nativeChatSubagentPlace({
         agentId: target.agentId,
         conversation,
@@ -181,6 +188,14 @@ export function useNativeChatNavigation({
     },
     [beginNavigation, readerLeavesEnd, startHistoryJump]
   )
+  const revealMessage = useCallback(
+    (messageId: string) => {
+      beginNavigation()
+      readerLeavesEnd()
+      startHistoryJump({ kind: 'message', id: messageId })
+    },
+    [beginNavigation, readerLeavesEnd, startHistoryJump]
+  )
   const jumpToLatest = useCallback(() => {
     beginNavigation()
     scrollToBottom()
@@ -205,6 +220,7 @@ export function useNativeChatNavigation({
     selectRailItem,
     revealDiff,
     revealSubagent,
+    revealMessage,
     jumpToLatest,
     pendingRailId: historyJump.pending?.kind === 'rail' ? historyJump.pending.id : null
   }
