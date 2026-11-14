@@ -38,7 +38,8 @@ export function ActiveAgentsToolbar(props: ActiveAgentsToolbarProps): React.JSX.
     <div className="flex flex-col gap-1 px-1 pb-1">
       <div className="relative">
         <Input
-          type="search"
+          type="text"
+          role="searchbox"
           density="compact"
           adornment={ui.query ? 'trailing' : 'none'}
           value={ui.query}
