@@ -119,6 +119,19 @@ it("a project's chevron folds the list and does not open the overview", () => {
   expect(openOverview).not.toHaveBeenCalled()
 })
 
+it('a press that starts on the chevron and is released over the header opens nothing', () => {
+  renderHeader(projectRow, 'repo')
+  const header = document.querySelector<HTMLElement>('[data-repo-header-id="repo-1"]')!
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Collapse Repo 1' }))
+  fireEvent.click(header)
+  expect(openOverview).not.toHaveBeenCalled()
+  expect(fold).not.toHaveBeenCalled()
+
+  fireEvent.pointerDown(screen.getByText('Repo 1'))
+  fireEvent.click(header)
+  expect(openOverview).toHaveBeenCalledExactlyOnceWith(repo)
+})
+
 it('on a project header Enter opens the overview and Space folds', () => {
   renderHeader(projectRow, 'repo')
   const header = document.querySelector<HTMLElement>('[data-repo-header-id="repo-1"]')!
