@@ -1,4 +1,5 @@
 import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-catalog'
+import { agentConfigDocNameProblem } from '../../shared/agent-config/agent-config-doc-names'
 import {
   newDocumentContent,
   readFrontmatter,
@@ -33,22 +34,12 @@ import { copyMachineTree } from './agent-config-tree-copy'
 /** How the page names a document it wants changed. */
 export type DocumentRef = { kind: AgentConfigDocKind; scope: AgentConfigScope; path: string }
 
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const FILE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
-
 function requireName(kind: AgentConfigDocKind, name: string): string {
-  const trimmed = name.trim()
-  if (kind === 'skill' || kind === 'subagent') {
-    if (trimmed.length > 64 || !SLUG.test(trimmed)) {
-      throw new Error('Use lowercase letters, digits and hyphens for the name (64 at most)')
-    }
-    return trimmed
+  const problem = agentConfigDocNameProblem(kind, name)
+  if (problem) {
+    throw new Error(problem)
   }
-  const segments = trimmed.split('/')
-  if (trimmed.length > 120 || !segments.every((segment) => FILE_SEGMENT.test(segment))) {
-    throw new Error('Use letters, digits, dots, dashes and underscores; "/" makes a sub-folder')
-  }
-  return trimmed
+  return name.trim()
 }
 
 async function resolve(

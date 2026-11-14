@@ -63,6 +63,7 @@ import type { KeybindingsApi, SettingsApi } from './api/preferences/settings-api
 import type { ShellApi } from './api/terminal/shell-api'
 import type { SpeechApi } from './api/speech/speech-api'
 import type { SshApi } from './api/ssh/ssh-api'
+import type { AgentConfigApi } from './api/agent-config/agent-config-bridge'
 import type { MachinesApi } from './api/machines/machines-bridge'
 import type { PlainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
 import type { HomeChatApi } from './api/home-chat/home-chat-api'
@@ -182,6 +183,8 @@ export type PreloadApi = {
   plainSsh?: PlainSshTerminalApi
   /** Desktop only: machine file browsing, transfers and metrics. */
   machines?: MachinesApi
+  /** Desktop only: agent and project configuration on a machine. */
+  agentConfig?: AgentConfigApi
   /** Desktop only: the home-page assistant chat. */
   homeChat?: HomeChatApi
   /** COMPAT(legacy-relay-bridge): desktop-only, revisit 2027-01-15. */
