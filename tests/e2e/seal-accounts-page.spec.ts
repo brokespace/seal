@@ -320,10 +320,19 @@ test('several accounts: health, priority, rules, auto-swap and swap history', as
   await expect(cards.first()).toContainText(WORK.email)
   const handle = orcaPage.getByRole('button', { name: 'Change the priority of Side projects' })
   await handle.focus()
-  await orcaPage.keyboard.press('Space')
-  await expect(handle).toHaveAttribute('aria-pressed', 'true')
-  // A first arrow key can be spent scrolling the page, so press until the list announces the move.
+  // A hidden window never runs the smooth scroll a keyboard drag asks of a scrolled page.
+  await handle.evaluate((element) => {
+    for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+      parent.scrollTop = 0
+    }
+  })
+  // A late window resize cancels a keyboard drag and a first arrow key can do nothing, so pick
+  // the card up again and press until the list announces the move.
   await expect(async () => {
+    if ((await handle.getAttribute('aria-pressed')) !== 'true') {
+      await orcaPage.keyboard.press('Space')
+      await expect(handle).toHaveAttribute('aria-pressed', 'true')
+    }
     await orcaPage.keyboard.press('ArrowUp')
     await expect(orcaPage.getByRole('status').filter({ hasText: WORK.email })).toContainText(
       'was moved over droppable area',
