@@ -1,0 +1,376 @@
+{
+  "accounts": {
+    "screen": {
+      "systemLogin": "System login"
+    }
+  },
+  "app": {
+    "pairScan": {
+      "pasteCodePlaceholder": "seal://pair?code=... or paste the code"
+    }
+  },
+  "hostScreen": {
+    "hostScreenHeader": {
+      "seal": "Seal"
+    }
+  },
+  "seal": {
+    "accounts": {
+      "resetsIn": "Resets in {{value0}}",
+      "estimate": {
+        "now": "Over its {{value0}} limit; swapping",
+        "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
+        "none": "No swap expected before reset"
+      },
+      "liveSwap": {
+        "inherit": "Follow the global setting",
+        "on": "Always move this session",
+        "off": "Never move this session"
+      },
+      "sessionSheetTitle": "Session account",
+      "sessionSheetMessage": "{{value0}} is on {{value1}}. Pick an account to move it to, or whether auto-swap may move it.",
+      "authFailure": "Signed out; sign in again on your computer.",
+      "disabled": "Turned off for auto-swap",
+      "active": "In use",
+      "apiKey": "API key; no usage windows",
+      "window5h": "5h",
+      "windowWeekly": "Week",
+      "autoSwap": "Auto-swap",
+      "autoSwapHint": "Switch accounts before one runs out",
+      "liveSessionSwap": "Move running sessions",
+      "liveSessionSwapHint": "Sessions already running follow the swap",
+      "failover": "Swap when signed out",
+      "failoverHint": "Move off an account whose login stops working",
+      "rateLimitFallback": "Swap on limit messages",
+      "rateLimitFallbackHint": "When an agent stops at a limit usage missed",
+      "apiKeyFallback": "Fall back to API keys",
+      "apiKeyFallbackHint": "Pay-as-you-go once every subscription is used up",
+      "title": "Accounts",
+      "loading": "Loading accounts",
+      "emptyTitle": "No accounts yet",
+      "emptyMessage": "Add Claude or Codex accounts in Seal’s settings on your computer to swap between them here.",
+      "useAccount": "Use for new sessions",
+      "swapNow": "Pick the best account now",
+      "sessions": "Running sessions",
+      "noSessions": "No sessions Seal launched are open.",
+      "failedTitle": "Couldn’t change the account"
+    },
+    "homeChat": {
+      "attachment": {
+        "downloadFailed": "Could not download {{name}}: {{reason}}",
+        "progress": "{{percent}}%",
+        "share": "Download and share {{name}}"
+      },
+      "composer": {
+        "pickFailed": "Could not open the picker: {{reason}}",
+        "removeFile": "Remove {{name}}",
+        "placeholder": "Ask Seal to do something on any of your machines…",
+        "message": "Message",
+        "attach": "Attach files",
+        "stop": "Stop",
+        "send": "Send",
+        "photos": "Photos",
+        "files": "Files"
+      },
+      "uploadFailed": "Could not attach {{name}}: {{reason}}",
+      "approval": {
+        "stale": "This request was already answered",
+        "failed": "Could not send your answer: {{reason}}",
+        "default": "This action needs your approval.",
+        "deny": "Deny",
+        "approve": "Approve"
+      },
+      "sendFailed": "Could not send: {{reason}}",
+      "stopFailed": "Could not stop: {{reason}}",
+      "status": {
+        "running": "Working…",
+        "error": "Stopped with an error"
+      },
+      "backend": {
+        "openai": "Model API",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "chatLoadFailed": "Could not load this chat",
+      "retry": "Retry",
+      "chatLoading": "Loading conversation…",
+      "chatGone": "This chat no longer exists",
+      "back": "Back",
+      "empty": {
+        "title": "Your machines, one chat",
+        "message": "Ask the assistant to run commands, move files or check on jobs across your machines."
+      },
+      "emptyChat": "Ask the assistant to run a command, fetch a file or check on a job.",
+      "working": "Working…",
+      "reconnecting": "Not receiving updates; reconnecting…",
+      "title": "Assistant",
+      "thinking": {
+        "live": "Thinking…",
+        "done": "Thought for {{duration}}",
+        "brief": "Thought briefly"
+      },
+      "notSent": "Not sent",
+      "sending": "Sending…",
+      "createFailed": "Could not start a chat",
+      "renameFailed": "Could not rename the chat",
+      "deleteFailed": "Could not delete the chat",
+      "delete": "Delete",
+      "deleteNamed": "Delete {{title}}",
+      "rowHint": "Long press to rename or delete",
+      "untitled": "New chat",
+      "worker": "Worker",
+      "notLive": "Not receiving updates",
+      "loadFailed": "Could not load chats",
+      "loading": "Loading chats…",
+      "new": "New chat",
+      "showWorkers": "Show worker chats ({{count}})",
+      "showWorkersLabel": "Show worker chats",
+      "rename": "Rename",
+      "renameTitle": "Rename chat",
+      "save": "Save",
+      "deleteTitle": "Delete this chat?",
+      "deleteMessage": "The conversation and its attachments are removed from the desktop.",
+      "account": {
+        "default": "Default login"
+      },
+      "newChat": {
+        "claude": "Claude Code · {{account}}",
+        "openaiDetail": "Uses the model set on the desktop",
+        "title": "New chat",
+        "codex": "Codex · {{account}}",
+        "accountsLoadFailed": "Could not load accounts"
+      },
+      "notice": {
+        "job": "Background job",
+        "subagent": "Subagent",
+        "routine": "Routine",
+        "approval": "Waiting for you"
+      },
+      "tool": {
+        "awaitingApproval": "Needs approval",
+        "running": "Running",
+        "ok": "Done",
+        "error": "Failed",
+        "denied": "Denied"
+      },
+      "compaction": {
+        "auto": "Earlier messages summarized for the model",
+        "manual": "Earlier messages summarized at your request"
+      }
+    },
+    "liveSessions": {
+      "status": {
+        "working": "Working",
+        "waiting": "Waiting for input",
+        "permission": "Needs permission",
+        "errored": "Errored",
+        "done": "Done",
+        "waitingSubagent": "Waiting on subagents",
+        "waitingTask": "Waiting on background tasks",
+        "idle": "Idle"
+      },
+      "untitled": "New session",
+      "message": {
+        "queued": "Waiting to send",
+        "sending": "Sending",
+        "sent": "Sent, waiting for the session",
+        "delivered": "Delivered",
+        "failed": "Not delivered"
+      },
+      "noProject": "No project folder",
+      "permissionTitle": "Needs your answer",
+      "composerPlaceholder": "Message this session",
+      "send": "Send",
+      "external": "External",
+      "loading": "Loading sessions",
+      "emptyTitle": "No agent sessions",
+      "emptyMessage": "Claude Code and Codex sessions on this computer and its SSH hosts show up here.",
+      "title": "Live sessions",
+      "hideFinished": "Hide finished sessions",
+      "showFinished": "Show {{value0}} finished",
+      "answerFailed": "The session didn’t take that answer.",
+      "takeOverDoneTitle": "Session stopped",
+      "takeOverDoneMessage": "Seal stopped the agent. Phones can’t open Seal panes, so reopen it on your computer: choose Take over on this session there, or run {{value0}}.",
+      "takeOverFailedTitle": "Couldn’t take over",
+      "session": "Session",
+      "account": "Session account",
+      "takeOverButton": "Take over",
+      "transcriptError": "Couldn’t read the transcript.",
+      "loadingTranscript": "Loading transcript",
+      "emptyTranscript": "Nothing here yet",
+      "emptyTranscriptMessage": "Messages show up as the session writes them.",
+      "ended": "This session is no longer running.",
+      "noRouteTakeOver": "Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over to reply.",
+      "noRoute": "Seal can’t type into this session.",
+      "loadEarlier": "Load earlier messages",
+      "takeOverTitle": "Take over this session?",
+      "takeOverMessage": "Seal stops {{value0}} on {{value1}} (it ends in the terminal it was started from). A reply in progress stops. Phones can’t open Seal panes, so you finish on your computer.",
+      "takeOverConfirm": "Stop and take over",
+      "takeOver": {
+        "notFound": "That session is no longer listed.",
+        "notExternal": "This session already runs in a Seal pane.",
+        "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
+        "stillRunning": "The agent process didn’t stop.",
+        "failed": "Something went wrong."
+      }
+    },
+    "machines": {
+      "status": {
+        "online": "Online",
+        "connecting": "Connecting",
+        "error": "Error",
+        "offline": "Offline"
+      },
+      "kind": {
+        "local": "This computer",
+        "ssh": "SSH",
+        "server": "Seal server"
+      },
+      "vitals": {
+        "usedOf": "{{used}} of {{total}}",
+        "load": "Load",
+        "cpu": "CPU",
+        "memory": "Memory",
+        "disk": "Disk",
+        "uptime": "Up {{uptime}}"
+      },
+      "list": {
+        "loadFailed": "Unable to load machines",
+        "loading": "Loading machines…",
+        "empty": "No machines",
+        "title": "Machines"
+      },
+      "upload": {
+        "photosDenied": "Allow photo access in Settings to upload photos",
+        "failed": "Upload failed",
+        "tooLarge": "Files over 2 GB cannot be uploaded"
+      },
+      "browser": {
+        "showingCount": "{{shown}} of {{total}}",
+        "loadFailed": "Unable to load this folder",
+        "loading": "Loading folder…",
+        "empty": "This folder is empty",
+        "addMenu": "Add to this folder",
+        "uploadPhotos": "Upload from Photos",
+        "uploadFiles": "Upload from Files",
+        "downloadUrl": "Download from URL",
+        "newFolder": "New Folder"
+      },
+      "detail": {
+        "title": "Machine"
+      },
+      "transfers": {
+        "cancelFailed": "Unable to cancel",
+        "preparing": "Preparing download…",
+        "toPhone": "To this phone · {{progress}}",
+        "queued": "Waiting to upload",
+        "fromPhone": "From this phone · {{progress}}",
+        "dismiss": "Dismiss",
+        "failed": "Transfer failed",
+        "cancelled": "Cancelled",
+        "done": "Done · {{size}}",
+        "fromUrl": "From URL · {{progress}}",
+        "toMachine": "To the machine · {{progress}}",
+        "clearFinished": "Clear finished"
+      },
+      "offline": "Waiting for the desktop connection",
+      "preview": {
+        "imageFailed": "Unable to load this image",
+        "downloading": "Downloading…",
+        "openPdf": "Open PDF",
+        "loadFailed": "Unable to load this file",
+        "loading": "Loading file…"
+      },
+      "actions": {
+        "share": "Share…",
+        "saveToPhotos": "Save to Photos",
+        "rename": "Rename",
+        "copyPath": "Copy Path",
+        "delete": "Delete"
+      },
+      "urlDownload": {
+        "failed": "Unable to start the download",
+        "title": "Download from URL",
+        "urlPlaceholder": "https://example.com/file.zip",
+        "namePlaceholder": "File name (optional)",
+        "submit": "Download"
+      },
+      "invalidName": "Names cannot contain / or \\",
+      "rename": {
+        "title": "Rename",
+        "submit": "Rename",
+        "failed": "Unable to rename"
+      },
+      "newFolder": {
+        "title": "New Folder",
+        "placeholder": "Folder name",
+        "submit": "Create",
+        "failed": "Unable to create the folder"
+      },
+      "delete": {
+        "title": "Delete {{name}}?",
+        "folderMessage": "The folder and everything in it are deleted.",
+        "fileMessage": "The file is deleted from the machine.",
+        "confirm": "Delete",
+        "failed": "Unable to delete"
+      },
+      "export": {
+        "failed": "Unable to download the file",
+        "savedToPhotos": "Saved to Photos"
+      }
+    },
+    "transfers": {
+      "deviceUnavailable": "Phone files are available in the Seal app",
+      "cancelled": "Transfer cancelled",
+      "changed": "The file changed during the transfer"
+    },
+    "hub": {
+      "overview": "Overview",
+      "overviewHint": "What needs you, sessions, machines and usage",
+      "sessions": "Live sessions",
+      "sessionsWaiting": "{{value0}} waiting on you",
+      "sessionsHint": "Every agent session, including ones outside Seal",
+      "machines": "Machines",
+      "machinesHint": "Status, metrics and files",
+      "accounts": "Accounts",
+      "accountsHint": "Usage, auto-swap and switching",
+      "assistant": "Assistant",
+      "assistantHint": "Ask about your sessions and machines",
+      "title": "Seal",
+      "approvals": "MCP approvals",
+      "approvalsWaiting": "{{value0}} waiting for your answer",
+      "approvalsHint": "Calls from outside assistants that need your OK"
+    },
+    "overview": {
+      "machineConnecting": "Connecting",
+      "machineError": "Unreachable",
+      "machineOffline": "Offline",
+      "machineReadings": "CPU {{value0}} · Mem {{value1}} · Disk {{value2}}",
+      "metricsUnavailable": "Metrics unavailable",
+      "metricsLoading": "Reading metrics…",
+      "title": "Overview",
+      "attention": "Needs you",
+      "sessions": "Sessions",
+      "loading": "Loading…",
+      "noSessions": "No agents running right now.",
+      "machines": "Machines",
+      "noMachines": "No machines yet.",
+      "accounts": "Accounts",
+      "noAccounts": "No accounts set up for auto-swap.",
+      "manageAccounts": "Manage accounts"
+    },
+    "mcpApprovals": {
+      "headingOnMachine": "{{value0}} wants {{value1}} on {{value2}}",
+      "heading": "{{value0}} wants {{value1}}",
+      "metaRelay": "Came through the Seal relay · expires in {{value0}}s",
+      "meta": "Over {{value0}} · expires in {{value1}}s",
+      "deny": "Deny",
+      "approve": "Approve",
+      "alreadySettled": "That call had already expired or been answered.",
+      "title": "MCP approvals",
+      "loading": "Loading",
+      "emptyTitle": "Nothing is waiting",
+      "emptyMessage": "When an MCP client asks to run a command or do something destructive, it waits here for your answer."
+    }
+  }
+}

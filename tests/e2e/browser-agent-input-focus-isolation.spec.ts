@@ -143,7 +143,7 @@ test('agent clicks and presses reach the page without leaving the user’s termi
   await runAgentClicksScenario(orcaPage)
 })
 
-test('agent shortcut keys stay in the page instead of running Orca shortcuts', async ({
+test('agent shortcut keys stay in the page instead of running Seal shortcuts', async ({
   orcaPage
 }) => {
   test.setTimeout(120_000)

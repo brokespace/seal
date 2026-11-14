@@ -5,6 +5,7 @@ import { SettingsContentScrollElementProvider } from './settings-content-scroll-
 import { SettingsSidebar } from '../navigation/SettingsSidebar'
 import { PluginInstallTrustDialogHost } from '../../plugins/dialogs/PluginInstallTrustDialog'
 import { cn } from '@/lib/class-names'
+import { PageContent } from '@/components/page-layout/PageLayout'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsInteractionController } from './use-settings-interaction-controller'
@@ -22,10 +23,12 @@ import {
   renderAutomationsSettingsSection,
   renderGeneralSettingsSection,
   renderIntegrationsSettingsSection,
+  renderMcpSettingsSection,
   renderMobileSettingsSection,
   renderOrcaAccountSettingsSection,
   renderSetupGuideSettingsSection,
-  renderShareSkillsSettingsSection
+  renderShareSkillsSettingsSection,
+  renderWorkspaceCleanupSettingsSection
 } from './settings-setup-workflow-section-renderers'
 import {
   renderGitSettingsSection,
@@ -49,8 +52,7 @@ import {
 import {
   renderDeveloperPermissionsSettingsSection,
   renderPrivacySettingsSection,
-  renderServersSettingsSection,
-  renderSshSettingsSection
+  renderMachinesSettingsSection
 } from './settings-remote-security-section-renderers'
 import {
   renderAdvancedSettingsSection,
@@ -121,6 +123,8 @@ export function renderSettingsPage(
           onClose={interactions.closeSettingsPageWithPromptGuard}
           hostPicker={
             !model.isWebClient &&
+            // Accounts are one fleet-wide list; its page shows the machines per account instead.
+            model.activeSectionId !== 'accounts' &&
             shouldShowSettingsHostScopePicker(
               model.settingsHostScope,
               model.runtimeEnvironments
@@ -143,11 +147,12 @@ export function renderSettingsPage(
               : 'overflow-y-auto scrollbar-sleek [scrollbar-gutter:stable]'
           )}
         >
-          <div
+          <PageContent
+            width={view.isFocusedSetupGuidePane || view.isWidePluginsPane ? 'full' : 'readable'}
             className={cn(
-              'mx-auto flex w-full flex-col gap-6 px-8 pt-6',
+              'gap-6 pt-6',
               view.isFocusedShortcutsPane ? 'h-full pb-6' : 'pb-24',
-              view.isFocusedSetupGuidePane || view.isWidePluginsPane ? 'max-w-6xl' : 'max-w-[784px]'
+              (view.isFocusedSetupGuidePane || view.isWidePluginsPane) && 'max-w-6xl'
             )}
           >
             {navigation.visibleNavSections.length === 0 ? (
@@ -169,8 +174,10 @@ export function renderSettingsPage(
                   {renderOrcaAccountSettingsSection(context, t)}
                   {renderSetupGuideSettingsSection(context, t)}
                   {renderGeneralSettingsSection(context, t)}
+                  {renderWorkspaceCleanupSettingsSection(context, t)}
                   {renderIntegrationsSettingsSection(context, t)}
                   {renderMobileSettingsSection(context, t)}
+                  {renderMcpSettingsSection(context, t)}
                   {renderAutomationsSettingsSection(context, t)}
                   {renderArtifactsSettingsSection(context, t)}
                   {renderShareSkillsSettingsSection(context, t)}
@@ -188,8 +195,7 @@ export function renderSettingsPage(
                   {renderNotificationsSettingsSection(context, t)}
                   {renderShortcutsSettingsSection(context, t)}
                   {renderStatsSettingsSection(context, t)}
-                  {renderServersSettingsSection(context, t)}
-                  {renderSshSettingsSection(context, t)}
+                  {renderMachinesSettingsSection(context, t)}
                   {renderDeveloperPermissionsSettingsSection(context, t)}
                   {renderPrivacySettingsSection(context, t)}
                   {renderAdvancedSettingsSection(context, t)}
@@ -200,7 +206,7 @@ export function renderSettingsPage(
                 </ActiveSettingsSectionProvider>
               </SettingsContentScrollElementProvider>
             )}
-          </div>
+          </PageContent>
         </div>
       </div>
       {/* Why page level: Plugins and the Appearance theme pickers both install through it. */}

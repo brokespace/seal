@@ -1,13 +1,17 @@
 import { STATUS_METHODS } from './host-management/status'
+import { DESKTOP_WINDOW_METHODS } from './host-management/desktop-window'
 import { SIDEBAR_INPUT_METHODS } from './sidebar-inputs/sidebar-inputs'
 import { ORCAD_TERMINAL_CENSUS_METHODS } from './orcad/orcad-terminal-census'
 import { ORCAD_MIGRATION_METHODS } from './orcad/orcad-migration'
 import { SESSION_TERMINAL_SCROLLBACK_METHODS } from './terminal/session-terminal-scrollback'
 import { AI_VAULT_METHODS } from './history/ai-vault'
+import { LIVE_SESSION_METHODS } from './live-sessions/live-sessions'
+import { SESSION_SUMMARY_METHODS } from './live-sessions/session-summaries'
 import { AUTOMATION_METHODS } from './automations/automations'
 import { REPO_METHODS } from './projects/repo'
 import { WORKTREE_METHODS } from './workspaces/worktree'
 import { WORKSPACE_CLEANUP_RUNNER_METHODS } from './workspaces/workspace-cleanup-runner-methods'
+import { WORKTREE_ARCHIVE_METHODS } from './workspaces/worktree-archive-methods'
 import { AGENT_ACTIVITY_METHODS } from './workspaces/agent-activity-methods'
 import { REFERENCE_METHODS } from './reference/reference'
 import { TERMINAL_METHODS } from './terminal/terminal'
@@ -27,12 +31,18 @@ import { DIAGNOSTICS_METHODS } from './host-management/diagnostics'
 import { TERMINAL_DAEMON_METHODS } from './terminal/terminal-daemon'
 import { ACCOUNT_METHODS } from './accounts/accounts'
 import { ANTIGRAVITY_ACCOUNT_METHODS } from './accounts/antigravity-accounts'
+import { SEAL_ACCOUNT_METHODS } from './accounts/seal-accounts'
 import { USAGE_CREDENTIAL_METHODS } from './accounts/usage-credentials'
+import { UTILITY_MODEL_METHODS } from './accounts/utility-model'
 import { PREFLIGHT_METHODS } from './preflight/preflight'
 import { COMPUTER_METHODS } from './computer/computer'
 import { SESSION_TAB_METHODS } from './session-tabs/session-tabs'
 import { NATIVE_CHAT_METHODS } from './native-chat/native-chat'
 import { FILE_METHODS } from './files/files'
+import { MACHINE_HOST_METHODS } from './machines/machine-host-methods'
+import { SEAL_MACHINE_METHODS } from './machines/seal-machine-methods'
+import { HOME_CHAT_METHODS } from './home-chat/home-chat-methods'
+import { SEAL_MCP_METHODS } from './mcp/seal-mcp-methods'
 import { GIT_METHODS } from './source-control/git/git'
 import { GITHUB_METHODS } from './source-control/github/github'
 import { GITLAB_METHODS } from './source-control/gitlab/gitlab'
@@ -86,16 +96,19 @@ import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../../../shared/sidebar-inputs-s
 // Keep registration order and the full RPC/security surface visible in one manifest.
 export const ALL_RPC_METHODS = [
   ...STATUS_METHODS,
+  ...DESKTOP_WINDOW_METHODS,
   ...ORCAD_TERMINAL_CENSUS_METHODS,
   ...ORCAD_MIGRATION_METHODS,
   ...SESSION_TERMINAL_SCROLLBACK_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
+  ...LIVE_SESSION_METHODS,
   ...ARTIFACT_METHODS,
   ...AUTOMATION_METHODS,
   ...REPO_METHODS,
   ...WORKTREE_METHODS,
   ...WORKSPACE_CLEANUP_RUNNER_METHODS,
+  ...WORKTREE_ARCHIVE_METHODS,
   ...AGENT_ACTIVITY_METHODS,
   ...REFERENCE_METHODS,
   ...AGENT_SESSION_METHODS,
@@ -123,7 +136,10 @@ export const ALL_RPC_METHODS = [
   ...TERMINAL_DAEMON_METHODS,
   ...ACCOUNT_METHODS,
   ...ANTIGRAVITY_ACCOUNT_METHODS,
+  ...SEAL_ACCOUNT_METHODS,
   ...USAGE_CREDENTIAL_METHODS,
+  ...UTILITY_MODEL_METHODS,
+  ...SESSION_SUMMARY_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,
   ...SESSION_TAB_METHODS,
@@ -132,6 +148,10 @@ export const ALL_RPC_METHODS = [
   ...(ORCA_LAYOUT_OWNER_IS_MAIN ? [...LAYOUT_APPLY_METHODS, ...LAYOUT_VIEW_REPORT_METHODS] : []),
   ...NATIVE_CHAT_METHODS,
   ...FILE_METHODS,
+  ...MACHINE_HOST_METHODS,
+  ...SEAL_MACHINE_METHODS,
+  ...HOME_CHAT_METHODS,
+  ...SEAL_MCP_METHODS,
   ...GIT_METHODS,
   ...GITHUB_METHODS,
   ...GITLAB_METHODS,

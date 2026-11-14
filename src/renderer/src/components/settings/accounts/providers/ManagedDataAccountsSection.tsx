@@ -86,7 +86,7 @@ export function ManagedDataAccountsSection({
     }
   }
 
-  const command = `orca account add --agent ${provider}`
+  const command = `seal account add --agent ${provider}`
   return (
     <SettingsGroup
       title={

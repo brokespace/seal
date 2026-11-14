@@ -6,6 +6,8 @@ import { REFERENCE_HANDLER_GROUP } from '../references/reference-handler-group'
 import { SERVE_PAIRING_HANDLER_GROUPS } from '../server/serve-pairing-handler-groups'
 import { PLUGIN_HANDLER_GROUPS } from '../plugins/plugin-handler-groups'
 import { HOST_HANDLER_GROUPS } from '../hosts/host-handler-groups'
+import { SEAL_ACCOUNT_HANDLER_GROUPS } from '../accounts/seal-account-handler-groups'
+import { SEAL_MCP_HANDLER_GROUP } from '../mcp/seal-mcp-handler-group'
 import { WORKTREE_HANDLER_GROUPS } from '../workspaces/worktree-handler-groups'
 
 export type HandlerGroup = {
@@ -41,6 +43,8 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['account add', 'account list', 'account select', 'account rm'],
     load: async () => (await import('../accounts/account.js')).ACCOUNT_HANDLERS
   },
+  ...SEAL_ACCOUNT_HANDLER_GROUPS,
+  SEAL_MCP_HANDLER_GROUP,
   {
     name: 'artifacts',
     keys: [
@@ -185,6 +189,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
       'computer capabilities',
       'computer list-apps',
       'computer permissions',
+      'computer launch-app',
       'computer list-windows',
       'computer get-app-state',
       'computer wait',
@@ -204,6 +209,19 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     name: 'agent-hooks',
     keys: ['agent hooks prepare-codex', 'agent hooks status', 'agent hooks off', 'agent hooks on'],
     load: async () => (await import('../agents/agent-hooks.js')).AGENT_HOOK_HANDLERS
+  },
+  {
+    name: 'shell-integration',
+    keys: [
+      'shell-integration install',
+      'shell-integration uninstall',
+      'shell-integration status',
+      'shell-integration enable',
+      'shell-integration disable'
+    ],
+    load: async () =>
+      (await import('../shell-integration/shell-integration-commands.js'))
+        .SHELL_INTEGRATION_HANDLERS
   },
   {
     name: 'agent-launch',

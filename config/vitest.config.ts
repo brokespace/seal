@@ -1,3 +1,4 @@
+import { sealBrandCopy } from './seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { globSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
@@ -13,11 +14,11 @@ import { filesSafeToShareWorker } from './scripts/test-runtime/execution-policy/
 import { gitSigningOffEnv } from './scripts/test-runtime/environment/vitest-git-signing-env.mjs'
 import RuntimeSequencer from './scripts/test-runtime/execution-policy/vitest-runtime-sequencer.mjs'
 import { getNodeRuntimeInclude } from './scripts/test-runtime/sqlite-admission/vitest-node-runtime-files.mjs'
-import { nodeRuntimePool } from './scripts/test-runtime/node-worker/vitest-node-runtime-pool'
+import { nodeRuntimePool } from './scripts/test-runtime/node-worker/vitest-node-runtime-pool.ts'
 import { readRunFilters } from './scripts/test-runtime/execution-policy/vitest-run-filters.mjs'
 import { createWorkspaceSourceResolver } from './scripts/workspace/source-exports/workspace-source-exports.mjs'
-import { moduleCacheResolutionKey } from './scripts/test-runtime/module-cache/vitest-module-cache-resolution-key'
-import { vitestReactCompiler } from './build-plugins/vitest-react-compiler'
+import { moduleCacheResolutionKey } from './scripts/test-runtime/module-cache/vitest-module-cache-resolution-key.ts'
+import { vitestReactCompiler } from './build-plugins/vitest-react-compiler.ts'
 
 const nodeRuntimeInclude = process.versions.bun
   ? getNodeRuntimeInclude({ filters: readRunFilters() })
@@ -32,6 +33,7 @@ const transforms = {
   tsconfig: resolve(import.meta.dirname, 'tsconfig.vitest-transform.json'),
   oxc: { exclude: [/\.js$/, phoneContractPattern] },
   plugins: [
+    sealBrandCopy(),
     {
       // These plain TS consumers need no Expo app configuration in root-only installs.
       name: 'phone-contract-oxc',

@@ -38,6 +38,7 @@ import type { BitbucketApi, HostedReviewApi } from './api/hosted-review/hosted-r
 import type { JiraApi } from './api/work-items/jira-api'
 import type { LinearApi } from './api/work-items/linear-api'
 import type { MobileApi } from './api/mobile/mobile-api'
+import type { LiveSessionsApi } from './api/live-sessions/live-sessions-bridge'
 import type { NativeChatApi } from './api/native-chat/native-chat-api'
 import type { OnboardingApi, StarNagApi } from './api/onboarding/onboarding-api'
 import type { OrcaProfileApi } from './api/profiles/orca-profile-api'
@@ -62,7 +63,9 @@ import type { KeybindingsApi, SettingsApi } from './api/preferences/settings-api
 import type { ShellApi } from './api/terminal/shell-api'
 import type { SpeechApi } from './api/speech/speech-api'
 import type { SshApi } from './api/ssh/ssh-api'
+import type { MachinesApi } from './api/machines/machines-bridge'
 import type { PlainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
+import type { HomeChatApi } from './api/home-chat/home-chat-api'
 import type { LegacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import type {
   DiagnosticsApi,
@@ -119,6 +122,7 @@ export type PreloadApi = {
   telemetrySetOptIn: TelemetryApi['telemetrySetOptIn']
   diagnostics: DiagnosticsApi
   telemetryGetConsentState: TelemetryApi['telemetryGetConsentState']
+  telemetryAssignBrowserExtensionsBanner: TelemetryApi['telemetryAssignBrowserExtensionsBanner']
   telemetryAcknowledgeBanner: TelemetryApi['telemetryAcknowledgeBanner']
   settings: SettingsApi
   agentAwake: AgentAwakeApi
@@ -126,6 +130,7 @@ export type PreloadApi = {
   keybindings: KeybindingsApi
   codexAccounts: CodexAccountsApi
   claudeAccounts: ClaudeAccountsApi
+  liveSessions: LiveSessionsApi
   cli: CliApi
   codexConfigSync: CodexConfigSyncApi
   preflight: PreflightApi
@@ -176,6 +181,10 @@ export type PreloadApi = {
   ssh: SshApi
   /** Desktop only: an unmanaged ssh login to a host whose move is blocked. */
   plainSsh?: PlainSshTerminalApi
+  /** Desktop only: machine file browsing, transfers and metrics. */
+  machines?: MachinesApi
+  /** Desktop only: the home-page assistant chat. */
+  homeChat?: HomeChatApi
   /** COMPAT(legacy-relay-bridge): desktop-only, revisit 2027-01-15. */
   legacyRelayBridge?: LegacyRelayBridgeApi
   automations: AutomationsApi

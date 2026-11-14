@@ -9,8 +9,8 @@ export function resolveMacOSComputerUseAppPath(): string | null {
 
   const packaged = [join(process.resourcesPath ?? '', 'Orca Computer Use.app')]
   const dev = [
-    join(process.cwd(), 'native/computer-use-macos/.build/release/Orca Computer Use.app'),
-    resolve(__dirname, '../../native/computer-use-macos/.build/release/Orca Computer Use.app')
+    join(process.cwd(), 'native/computer-use-macos/.build/release/Seal Computer Use.app'),
+    resolve(__dirname, '../../native/computer-use-macos/.build/release/Seal Computer Use.app')
   ]
   const candidates = process.resourcesPath ? [...packaged, ...dev] : dev
 

@@ -19,7 +19,7 @@ import {
 
 test.use(ISOLATED_FRAMES_E2E)
 
-const HEALTHY_TITLE = 'Hello Orca'
+const HEALTHY_TITLE = 'Hello Seal'
 const BROKEN_ID = 'hello-orca-broken'
 
 async function copyPlugin(target: string, id?: string): Promise<void> {
@@ -28,8 +28,8 @@ async function copyPlugin(target: string, id?: string): Promise<void> {
     const manifestPath = join(target, 'orca-plugin.json')
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
     manifest.id = id
-    manifest.name = 'Broken Orca'
-    manifest.contributes.panels[0].title = 'Broken Orca'
+    manifest.name = 'Broken Seal'
+    manifest.contributes.panels[0].title = 'Broken Seal'
     await writeFile(manifestPath, JSON.stringify(manifest))
   }
 }
@@ -97,7 +97,7 @@ test('a failing dev folder does not reload another dev plugin panel', async ({
     await expect(panelButton).toBeVisible({ timeout: 15_000 })
     await panelButton.click()
     await waitForGuestReady(pluginGuest(orcaPage, HEALTHY_TITLE))
-    await expect.poll(() => readHeading(orcaPage)).toBe('Hello Orca 👋')
+    await expect.poll(() => readHeading(orcaPage)).toBe('Hello Seal 👋')
 
     await orcaPage.evaluate((title) => {
       const seen = new WeakMap<Element, string>()
@@ -163,8 +163,8 @@ test('a failing dev folder does not reload another dev plugin panel', async ({
     const restartsBeforeEdit = watcherRestarts()
     const panelPath = join(healthy, 'panel.html')
     const html = await readFile(panelPath, 'utf8')
-    await writeFile(panelPath, html.replace('Hello Orca 👋', 'Hello Orca reloaded'))
-    await expect.poll(() => readHeading(orcaPage), { timeout: 60_000 }).toBe('Hello Orca reloaded')
+    await writeFile(panelPath, html.replace('Hello Seal 👋', 'Hello Seal reloaded'))
+    await expect.poll(() => readHeading(orcaPage), { timeout: 60_000 }).toBe('Hello Seal reloaded')
     // ast-grep-ignore: test-no-real-time-wait -- the claim is that the edit reloads only once
     await orcaPage.waitForTimeout(2_000)
     expect(await healthyLoads(orcaPage)).toBeGreaterThan(loadsBeforeEdit)

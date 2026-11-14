@@ -8,7 +8,7 @@ import type {
 import { quotePowerShellLiteral } from '../../../../../../shared/powershell-native-argument'
 import { hasSufficientWindowsFirewallRemoteScope } from './windows-firewall-remote-scope'
 
-const FIREWALL_RULE_NAME = 'Orca.MobilePairing'
+const FIREWALL_RULE_NAME = 'Seal.MobilePairing'
 const FIREWALL_RULE_DISPLAY_NAME = 'Orca Mobile Pairing'
 const POWERSHELL_TIMEOUT_MS = 10_000
 const ELEVATION_TIMEOUT_MS = 5 * 60_000

@@ -14,6 +14,22 @@ import type { LaunchSource } from '../../../../../shared/telemetry-events'
 import type { TaskSourceContext } from '../../../../../shared/work-items/task-source-context'
 import type { ExecutionHostId } from '../../../../../shared/execution-host'
 import type { TaskResumeState, TopLevelView } from '../../../../../shared/ui-chrome-types'
+import type {
+  AutomationRunPageOrigin,
+  AutomationsPageLocation,
+  AutomationsPageVisitMode
+} from './automations-page-location'
+
+/** Open an automation (runId null) or one of its runs once its host's list has loaded. */
+export type PendingAutomationRunNavigation = {
+  automationId: string
+  runId: string | null
+  hostId?: ExecutionHostId
+  /** With runId null: open the automation's run history instead of its detail. */
+  paneTab?: 'overview' | 'runs'
+  /** With a runId: where Escape returns; defaults to the automation detail. */
+  origin?: AutomationRunPageOrigin
+}
 
 export type PendingSidebarWorktreeReveal = {
   rowKey?: string
@@ -114,15 +130,18 @@ export type NewWorkspaceDraft = {
 }
 
 export type UiViewHistory =
+  | 'home'
   | 'terminal'
   | 'settings'
   | 'tasks'
   | 'activity'
   | 'automations'
+  | 'machines'
   | 'space'
   | 'skills'
   | 'artifacts'
   | 'mobile'
+  | 'sessions'
 
 export type UISliceCore = {
   sidebarOpen: boolean
@@ -160,9 +179,11 @@ export type UISliceCore = {
   previousViewBeforeActivity: Exclude<UiViewHistory, 'activity'>
   previousViewBeforeAutomations: Exclude<UiViewHistory, 'automations'>
   previousViewBeforeSpace: Exclude<UiViewHistory, 'space'>
+  previousViewBeforeMachines: Exclude<UiViewHistory, 'machines'>
   previousViewBeforeSkills: Exclude<UiViewHistory, 'skills'>
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
+  previousViewBeforeSessions: Exclude<UiViewHistory, 'sessions'>
   setActiveView: (view: UISliceCore['activeView']) => void
   taskPageData: TaskPageData
   taskResumeState: TaskResumeState | undefined
@@ -181,18 +202,27 @@ export type UISliceCore = {
   closeActivityPage: () => void
   selectedAutomationId: string | null
   setSelectedAutomationId: (id: string | null) => void
-  pendingAutomationRunNavigation: {
-    automationId: string
-    runId: string | null
-    hostId?: ExecutionHostId
-  } | null
-  setPendingAutomationRunNavigation: (
-    navigation: { automationId: string; runId: string | null; hostId?: ExecutionHostId } | null
-  ) => void
+  pendingAutomationRunNavigation: PendingAutomationRunNavigation | null
+  setPendingAutomationRunNavigation: (navigation: PendingAutomationRunNavigation | null) => void
+  /** A history replay's target sub-page; the Automations page applies it and clears it. */
+  automationsPageLocationRequest: AutomationsPageLocation | null
+  setAutomationsPageLocationRequest: (location: AutomationsPageLocation | null) => void
+  /** Record a settled Automations sub-page in back/forward history. */
+  /** Record a settled Automations sub-page in back/forward history. */
+  recordAutomationsPageVisit: (location: AutomationsPageLocation) => void
+  /** How the next recorded sub-page enters history; consumed by the next record. */
+  /** Set when the user opens Automations (sidebar, deep link, Back/Forward); the page then
+   *  focuses its title once. A page restored at launch or on reload leaves focus alone. */
+  automationsPageFocusTitleOnOpen: boolean
+  setAutomationsPageFocusTitleOnOpen: (value: boolean) => void
+  automationsPageNextVisitMode: AutomationsPageVisitMode
+  setAutomationsPageNextVisitMode: (mode: AutomationsPageVisitMode) => void
   openAutomationsPage: () => void
   closeAutomationsPage: () => void
   openSpacePage: () => void
   closeSpacePage: () => void
+  openMachinesPage: () => void
+  closeMachinesPage: () => void
   openSkillsPage: () => void
   closeSkillsPage: () => void
   pendingSkillShareId: string | null
@@ -206,6 +236,8 @@ export type UISliceCore = {
   closeArtifactsPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
+  openAgentSessionTabs: () => void
+  closeAgentSessionTabs: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void
   clearNewWorkspaceDraft: () => void
   pendingRevealWorktree: PendingSidebarWorktreeReveal | null

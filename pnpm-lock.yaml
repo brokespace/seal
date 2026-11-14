@@ -209,7 +209,7 @@ patchedDependencies:
   '@xterm/xterm@6.1.0-beta.336': 4b7fbfe7a7f626843ab88535cc6e2181872ea7c107876b15406a295182bc3c2c
   glob@13.0.6: 163edae2cab27bf7a8cf791c9a0ee368b596bfef898e490b3b77e7e44a8f0223
   i18next-cli@1.74.2: 2ee32eef742615cd133e1a6940f027deb3723a8430bb7953bba3a6769b0aac47
-  lint-staged@16.4.0: 7333b3837f80a7fbd045964db6d76ba4fc118e49134bdbabb00585b6b7b60673
+  lint-staged@16.4.0: b3b398fa76585526ea579cbb07949ce69c2456afb5ab0b49e10de2de4ea76f6d
   minimatch@10.2.5: 4324868e550a69eee9addc4801001bee415e98339c9b2b88d6ab4fc6028741c6
   minimatch@10.2.6: 4324868e550a69eee9addc4801001bee415e98339c9b2b88d6ab4fc6028741c6
   minimatch@9.0.9: c356feccb9147b4d6a1cc72b10270defcb95d14cb42ee74ddfe7219341417161
@@ -332,6 +332,9 @@ importers:
       '@electron/rebuild':
         specifier: ^4.2.1
         version: 4.2.1(supports-color@7.2.0)
+      '@modelcontextprotocol/sdk':
+        specifier: 1.32.1
+        version: 1.32.1(supports-color@7.2.0)(zod@4.6.7)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(monaco-editor@0.55.1(patch_hash=53b71f7d8a7c00b76ffdb73ce83d18e31692f193f5fafa6a390e48f5b3fdd636))(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
@@ -544,7 +547,7 @@ importers:
         version: 0.18.10
       lint-staged:
         specifier: ^16.4.0
-        version: 16.4.0(patch_hash=7333b3837f80a7fbd045964db6d76ba4fc118e49134bdbabb00585b6b7b60673)
+        version: 16.4.0(patch_hash=b3b398fa76585526ea579cbb07949ce69c2456afb5ab0b49e10de2de4ea76f6d)
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
@@ -563,6 +566,9 @@ importers:
       node-gyp:
         specifier: 12.4.0
         version: 12.4.0
+      oxc-parser:
+        specifier: 0.148.0
+        version: 0.148.0
       oxc-transform-react:
         specifier: ~0.152.0
         version: 0.152.0
@@ -653,6 +659,9 @@ importers:
       sonner:
         specifier: 2.0.7
         version: 2.0.7(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(@types/react@19.2.18)(react@19.2.8))(react@19.2.8)
+      std-env:
+        specifier: 4.3.0
+        version: 4.3.0
       sucrase:
         specifier: 3.35.1
         version: 3.35.1
@@ -13410,7 +13419,7 @@ snapshots:
 
   linkifyjs@4.3.3: {}
 
-  lint-staged@16.4.0(patch_hash=7333b3837f80a7fbd045964db6d76ba4fc118e49134bdbabb00585b6b7b60673):
+  lint-staged@16.4.0(patch_hash=b3b398fa76585526ea579cbb07949ce69c2456afb5ab0b49e10de2de4ea76f6d):
     dependencies:
       commander: 14.0.3
       listr2: 9.0.5

@@ -20,6 +20,12 @@ import { ManagedCodexHomeTemporarilyUnavailableError } from '../../managed-homes
 import { CodexRuntimeHomeRouting } from './runtime-home-service-home-routing'
 import { blockedWslDistroForExec } from '../../../wsl/discovery/wsl-background-exec-gate'
 import { getWslHomeAsync } from '../../../wsl/discovery/distro-catalog'
+import {
+  SEAL_CODEX_ACCOUNT_ID_ENV,
+  SEAL_CODEX_SESSION_HOME_ENV,
+  SEAL_SYSTEM_ACCOUNT
+} from '../../../../shared/seal-accounts/seal-launch-env'
+import type { CodexHomeLaunchOptions } from '../runtime-home-service-types'
 
 export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
   protected initializeLastSyncedState(): void {
@@ -38,7 +44,7 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
   prepareForCodexLaunch(
     target?: CodexAccountSelectionTarget,
     launchEnv?: NodeJS.ProcessEnv,
-    options?: { unavailableManagedHomePath?: string }
+    options?: CodexHomeLaunchOptions
   ): string | null {
     if (target?.runtime === 'wsl') {
       const wslTarget = this.resolveWslDefaultTarget(target)
@@ -47,11 +53,20 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
       this.finishWslLaunchPreparation(wslTarget, homePath)
       return homePath
     }
+    const sealSessionHome = launchEnv?.[SEAL_CODEX_SESSION_HOME_ENV]
+    if (sealSessionHome) {
+      return sealSessionHome
+    }
+    const sealPin = launchEnv?.[SEAL_CODEX_ACCOUNT_ID_ENV]
+    if (sealPin) {
+      return sealPin === SEAL_SYSTEM_ACCOUNT ? null : this.preparePinnedHostAccountHome(sealPin)
+    }
     const selfContainedAccount = this.getSelfContainedManagedHostAccount()
     if (selfContainedAccount) {
       const perAccountHome = this.prepareSelfContainedManagedHomeForLaunch(
         selfContainedAccount,
-        options?.unavailableManagedHomePath
+        options?.unavailableManagedHomePath,
+        options?.deferConfigSync
       )
       if (perAccountHome) {
         return perAccountHome
@@ -67,7 +82,11 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
     this.invalidateBackfillAfterManagedSystemDefaultLaunch(launchEnv)
     this.syncForCurrentSelection(target, launchEnv)
     syncSystemCodexResourcesIntoManagedHome()
-    syncSystemConfigIntoManagedCodexHome()
+    if (options?.deferConfigSync) {
+      options.deferConfigSync(() => syncSystemConfigIntoManagedCodexHome())
+    } else {
+      syncSystemConfigIntoManagedCodexHome()
+    }
     // Keep large history scans off the launch path.
     if (
       isCodexHistorySharedAcrossAccounts(this.store.getSettings()) &&
@@ -79,6 +98,27 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
       )
     }
     return this.getRuntimeHomePath()
+  }
+
+  /** A Seal launch pinned to a saved account that the host does not select; selection state is untouched. */
+  preparePinnedHostAccountHome(accountId: string): string {
+    const account = this.store
+      .getSettings()
+      .codexManagedAccounts.find((candidate) => candidate.id === accountId)
+    if (!account || this.getWslManagedHomePath(account)) {
+      throw new Error('This Codex account is not available on this machine.')
+    }
+    const resolved = this.resolveSelfContainedManagedHome(account)
+    if (resolved.kind !== 'owned') {
+      throw new ManagedCodexHomeTemporarilyUnavailableError()
+    }
+    syncSystemCodexResourcesIntoManagedHome(resolved.homePath)
+    syncSystemConfigIntoManagedCodexHome({
+      runtimeHomePath: resolved.homePath,
+      systemHomePath: getSystemCodexHomePath()
+    })
+    this.startSelfContainedSessionBridgeForLaunch(resolved.homePath)
+    return resolved.homePath
   }
 
   // Real-home launches see managed-account history too, or switching back to system default hides it (#25000).
@@ -128,7 +168,7 @@ export abstract class CodexRuntimeHomeLaunch extends CodexRuntimeHomeRouting {
   async prepareForCodexLaunchAsync(
     target?: CodexAccountSelectionTarget,
     launchEnv?: NodeJS.ProcessEnv,
-    options?: { unavailableManagedHomePath?: string }
+    options?: CodexHomeLaunchOptions
   ): Promise<string | null> {
     if (target?.runtime !== 'wsl') {
       return this.prepareForCodexLaunch(target, launchEnv, options)

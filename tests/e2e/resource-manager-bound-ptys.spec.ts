@@ -39,7 +39,7 @@ for (const theme of ['light', 'dark'] as const) {
       await orcaPage.getByRole('tab', { name: /^PTYs/ }).click()
     }
     await openPtys()
-    await expect(orcaPage.getByText('3 Orca PTYs on this computer')).toBeVisible()
+    await expect(orcaPage.getByText('3 Seal PTYs on this computer')).toBeVisible()
     const body = orcaPage.locator('[data-resource-pty-body]')
     await orcaPage.screenshot({
       animations: 'disabled',
@@ -72,7 +72,7 @@ for (const theme of ['light', 'dark'] as const) {
     }
     await body.getByRole('button', { name: `End ${first.title}`, exact: true }).click()
     await expect(orcaPage.getByRole('dialog', { name: `End ${first.title}?` })).toHaveCount(0)
-    await expect(orcaPage.getByText('2 Orca PTYs on this computer')).toBeVisible()
+    await expect(orcaPage.getByText('2 Seal PTYs on this computer')).toBeVisible()
     await expect(
       body.getByRole('button', { name: `Open ${first.title}`, exact: true })
     ).toHaveCount(0)
@@ -89,8 +89,8 @@ for (const theme of ['light', 'dark'] as const) {
       path: testInfo.outputPath(`bound-ptys-selected-${theme}.png`)
     })
     await panel.getByRole('button', { name: 'End selected (2)', exact: true }).click()
-    await expect(orcaPage.getByText('0 Orca PTYs on this computer')).toBeVisible()
-    await expect(body.getByText('No local Orca PTYs', { exact: true })).toBeVisible()
+    await expect(orcaPage.getByText('0 Seal PTYs on this computer')).toBeVisible()
+    await expect(body.getByText('No local Seal PTYs', { exact: true })).toBeVisible()
     await expect(orcaPage.getByRole('dialog', { name: /^End / })).toHaveCount(0)
     await orcaPage.keyboard.press('Escape')
     await expect(body).toHaveCount(0)

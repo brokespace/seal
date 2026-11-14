@@ -1,0 +1,1546 @@
+{
+  "auto": {
+    "hooks": {
+      "useSettingsNavigationMetadata": {
+        "machinesTitle": "Machines",
+        "machinesDescription": "Other computers Seal works on, over SSH or a Seal server."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "SidebarNav": {
+          "machines": "Machines"
+        },
+        "delete": {
+          "worktree": {
+            "toast": {
+              "lockedReasonUnlockable": "Git has this workspace locked ({{value0}}), so nothing was deleted. Unlock & Delete releases the lock and deletes it.",
+              "lockedUnlockable": "Git has this workspace locked, so nothing was deleted. Unlock & Delete releases the lock and deletes it."
+            }
+          }
+        },
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "Settings": {
+          "machinesTitle": "Machines",
+          "machinesDescription": "Other computers Seal works on: files, terminals, agents, Git and workspaces.",
+          "machinesServers": "Seal servers",
+          "machinesSsh": "SSH connections"
+        },
+        "ssh": {
+          "autoImported": {
+            "label": "Show auto-imported hosts",
+            "description": "{{count}} host(s) that Colima, Lima or OrbStack added to ~/.ssh/config for their own VMs."
+          }
+        },
+        "machines": {
+          "add": "Add machine",
+          "addOverSsh": "Connect over SSH…",
+          "addViaServer": "Connect via Seal server (pairing link)…",
+          "name": "Machine name",
+          "sshLabel": "SSH",
+          "notSet": "Not set up",
+          "serverLabel": "Seal server",
+          "connectsVia": "Connects via",
+          "more": "More actions",
+          "rename": "Rename",
+          "addSsh": "Add SSH details…",
+          "pairServer": "Pair a Seal server…",
+          "separate": "These are different machines — split",
+          "summary": "Each machine connects over SSH or through a Seal server running on it. Every feature works the same either way.",
+          "empty": "No machines yet.",
+          "advanced": "SSH keys, port forwards and server pairing"
+        },
+        "MobileSettingsPane": {
+          "installIntroSeal": "Install Seal Mobile using the",
+          "installGuideLabel": "install guide"
+        },
+        "MobilePairingConnectionOptions": {
+          "anywhereDescriptionNoAccount": "Phone can be on cellular or any Wi‑Fi, through the Seal relay. No account needed."
+        },
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        },
+        "orcaAccount": {
+          "signedOutNoRelay": "Sign in to extend Seal with cloud features, including Artifacts.",
+          "searchDescriptionNoRelay": "Sign in or out of the account used by Artifacts and skill sharing."
+        },
+        "OpenInMenuSetting": {
+          "default": "Default",
+          "makeDefault": "Make default",
+          "defaultHint": "The default app is the editor a machine opens in."
+        }
+      },
+      "machines": {
+        "page": {
+          "localName": "This computer",
+          "title": "Machines",
+          "list": "Machines"
+        },
+        "detail": {
+          "noSessions": "No agents running on this machine.",
+          "back": "All machines",
+          "reconnect": "Reconnect",
+          "connect": "Connect",
+          "terminal": "Terminal",
+          "editor": "Open in editor",
+          "more": "More actions",
+          "refreshStats": "Refresh stats",
+          "remove": "Remove machine…",
+          "useSsh": "Connect over SSH instead",
+          "useServer": "Connect via Seal server instead",
+          "editSsh": "Edit SSH details…",
+          "addSsh": "Add SSH details…",
+          "editorOffline": "Connect this machine to open it in an editor.",
+          "sessions": "Agents on this machine"
+        },
+        "edit": {
+          "saved": "Machine updated"
+        },
+        "status": {
+          "online": "Online",
+          "connecting": "Connecting",
+          "error": "Connection failed",
+          "offline": "Offline"
+        },
+        "vitals": {
+          "cores": "{{count}} cores",
+          "uptime": "up {{uptime}}",
+          "cpu": "CPU",
+          "load": "load {{load}}",
+          "memory": "RAM",
+          "disk": "Disk",
+          "cpuDetails": "CPU: show the busiest processes",
+          "memoryDetails": "RAM: show what is using memory",
+          "diskDetails": "Disk: show what is taking space"
+        },
+        "actions": {
+          "nameLabel": "Name",
+          "invalidName": "Enter a name without slashes.",
+          "newFolderTitle": "New folder",
+          "create": "Create",
+          "renameTitle": "Rename {{name}}",
+          "rename": "Rename",
+          "urlTitle": "Download from URL",
+          "urlDescription": "The machine fetches the file itself, so it never passes through this computer. Saving to {{dir}}.",
+          "urlConfirm": "Download",
+          "urlLabel": "URL",
+          "urlInvalid": "Enter an http or https URL.",
+          "urlFileName": "File name (optional)",
+          "editorAliasCopied": "Copied. Paste it into ~/.ssh/config on this computer, then open the editor again.",
+          "editorAliasCopy": "Copy entry"
+        },
+        "delete": {
+          "titleOne": "Delete {{name}}?",
+          "titleMany": "Delete {{count}} items?",
+          "description": "This permanently deletes them from {{machine}}, including everything inside folders. It cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        },
+        "menu": {
+          "openFolder": "Open folder",
+          "preview": "Preview",
+          "download": "Download to this computer…",
+          "copyPath": "Copy path",
+          "newFolder": "New folder…",
+          "upload": "Upload files…",
+          "downloadUrl": "Download from URL…",
+          "rename": "Rename…",
+          "delete": "Delete…"
+        },
+        "explorer": {
+          "loading": "Loading…",
+          "retry": "Retry",
+          "more": "Show {{count}} more",
+          "home": "Home folder",
+          "up": "Parent folder",
+          "path": "Current folder",
+          "refresh": "Refresh",
+          "hideHidden": "Hide hidden files",
+          "showHidden": "Show hidden files",
+          "newFolder": "New folder",
+          "upload": "Upload files",
+          "downloadUrl": "Download from URL",
+          "unresolvedDrop": "Some dropped items have no local file.",
+          "connecting": "Connecting…",
+          "offline": "Connect to this machine to browse its files.",
+          "empty": "This folder is empty."
+        },
+        "preview": {
+          "desktopOnly": "Previews need the desktop app",
+          "saved": "Saved {{name}}",
+          "tooLarge": "This file is {{size}}, too large to preview here.",
+          "download": "Download",
+          "binary": "Binary file · {{size}}",
+          "truncated": "Showing first {{size}}",
+          "edit": "Edit",
+          "save": "Save",
+          "close": "Close preview"
+        },
+        "prompt": {
+          "cancel": "Cancel"
+        },
+        "list": {
+          "sessions": "{{count}} running agents"
+        },
+        "transfers": {
+          "files": "{{done}} of {{total}} files",
+          "failed": "Failed",
+          "cancelled": "Cancelled",
+          "cancel": "Cancel transfer",
+          "running": "Transfers · {{count}} running",
+          "title": "Transfers",
+          "clear": "Clear finished"
+        },
+        "connection": {
+          "ssh": "SSH",
+          "server": "Seal server"
+        },
+        "terminal": {
+          "agentTitle": "{{agent}} · {{host}}",
+          "title": "Terminal · {{host}}"
+        },
+        "cleanup": {
+          "confirm_one": "Remove {{count}} item ({{size}})",
+          "confirm_other": "Remove {{count}} items ({{size}})",
+          "items_one": "{{count}} item",
+          "items_other": "{{count}} items",
+          "omitted_one": "{{count}} smaller match is not listed and is left alone.",
+          "omitted_other": "{{count}} smaller matches are not listed and are left alone.",
+          "freed": "Freed {{size}} on {{machine}}.",
+          "dialogTitle": "Clean up {{what}} on {{machine}}?",
+          "permanent": "This cannot be undone.",
+          "partial": "Removed {{removed}} items ({{size}}). {{failed}} could not be removed:",
+          "selected": "{{count}} of {{total}} selected",
+          "close": "Close",
+          "cancel": "Cancel",
+          "intro": "Nothing is removed until you review a list and confirm it. Up to {{size}} found so far.",
+          "rescan": "Scan again",
+          "review": "Review…",
+          "dockerImages": {
+            "title": "Unused Docker images",
+            "description": "Images no container uses.",
+            "removal": "Runs docker image rm for each ticked image. Images a container uses are never listed."
+          },
+          "dockerContainers": {
+            "title": "Stopped Docker containers",
+            "description": "Containers that exited or were never started.",
+            "removal": "Runs docker container rm for each ticked container. Files written inside it are deleted. Running containers are never listed."
+          },
+          "dockerVolumes": {
+            "title": "Unused Docker volumes",
+            "description": "Volumes no container references.",
+            "removal": "Runs docker volume rm for each ticked volume. The data stored in it is deleted for good."
+          },
+          "dockerBuildCache": {
+            "title": "Docker build cache",
+            "description": "Layers kept to speed up image builds.",
+            "removal": "Runs docker builder prune --all. The next image builds start from scratch."
+          },
+          "packageCaches": {
+            "title": "Package manager caches",
+            "description": "Download caches of npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun and Homebrew.",
+            "removal": "Deletes each ticked folder. Package managers download what they need again on the next install."
+          },
+          "nodeModules": {
+            "title": "node_modules folders",
+            "description": "Installed dependencies of projects in your home folder.",
+            "removal": "Deletes each ticked folder. Run that project's install again to get it back."
+          },
+          "trash": {
+            "title": "Trash",
+            "description": "Files already moved to the trash.",
+            "removal": "Empties the trash. Nothing in it can be restored afterwards."
+          },
+          "oldLogs": {
+            "title": "Old logs",
+            "description": "Log files nothing has written to for 14 days.",
+            "removal": "Deletes each ticked log file."
+          },
+          "sealCaches": {
+            "title": "Seal leftovers",
+            "description": "Finished job records and temporary files Seal left on this machine.",
+            "removal": "Deletes each ticked item. Jobs that are still running are never listed."
+          }
+        },
+        "disk": {
+          "omitted_one": "{{count}} smaller item ({{size}}) is not listed.",
+          "omitted_other": "{{count}} smaller items ({{size}}) are not listed.",
+          "free": "{{size}} free",
+          "mounts": "Disks",
+          "usageTab": "What's taking space",
+          "cleanupTab": "Clean up",
+          "up": "Parent folder",
+          "path": "Folder being sized",
+          "rescan": "Measure again",
+          "reveal": "Show in files",
+          "sizing": "Measuring… large folders take a while the first time.",
+          "empty": "This folder is empty.",
+          "delete": "Delete…",
+          "incomplete": "Some folders could not be read, so the real total is larger."
+        },
+        "goTo": {
+          "label": "Go to folder",
+          "placeholder": "Go to folder… type a path such as ~/projects, Tab completes",
+          "matches": "Matching folders",
+          "recent": "Recent folders",
+          "more": "More folders match. Keep typing to narrow."
+        },
+        "docker": {
+          "restarted": "Restarted {{name}}.",
+          "stopped": "Stopped {{name}}.",
+          "restartTitle": "Restart container {{name}}?",
+          "stopTitle": "Stop container {{name}}?",
+          "restartDescription": "Runs docker restart on {{machine}}. The container goes down for a moment and whatever it serves is interrupted.",
+          "stopDescription": "Runs docker stop on {{machine}}. The container stays stopped, along with whatever it serves, until it is started again.",
+          "cancel": "Cancel",
+          "restartConfirm": "Restart container",
+          "stopConfirm": "Stop container",
+          "title": "Docker containers",
+          "none": "No containers on this machine.",
+          "restart": "Restart",
+          "stop": "Stop"
+        },
+        "cpu": {
+          "busy": "Busy now",
+          "busyDetail": "all cores, last second",
+          "load": "Load average",
+          "loadDetail": "1, 5 and 15 minutes",
+          "cores": "Cores",
+          "processes": "Processes"
+        },
+        "memory": {
+          "used": "Used",
+          "ofTotal": "of {{total}}",
+          "available": "Available",
+          "swap": "Swap",
+          "noSwap": "None",
+          "noSwapDetail": "no swap configured",
+          "processes": "Processes"
+        },
+        "processes": {
+          "process": "Process",
+          "pid": "PID",
+          "cpu": "CPU",
+          "memory": "Memory",
+          "sealConnection": "Seal connection",
+          "stop": "Stop",
+          "kill": "Force kill",
+          "sessions": "Sessions",
+          "agentInPane": "{{agent}} in tmux {{pane}}",
+          "agentPid": "{{agent}} · pid {{pid}}",
+          "paneProcesses": "{{count}} proc",
+          "killed": "Force killed {{name}} ({{pid}}).",
+          "stopped": "Asked {{name}} ({{pid}}) to stop.",
+          "gone": "{{name}} ({{pid}}) had already exited.",
+          "replaced": "Process {{pid}} is no longer {{name}}: its id now belongs to another process, so nothing was signalled.",
+          "killTitle": "Force kill {{name}}?",
+          "stopTitle": "Stop {{name}}?",
+          "killDescription": "Sends SIGKILL to process {{pid}} on {{machine}}. It ends immediately, with no chance to save or clean up.",
+          "stopDescription": "Sends SIGTERM to process {{pid}} on {{machine}}, asking it to exit. Anything it has not saved is lost.",
+          "owner": "Run by {{user}}",
+          "inPane": "tmux {{pane}}",
+          "connectionWarning": "Seal reaches this machine through this process. Stopping it disconnects Seal from the machine.",
+          "agentWarning": "This is a running {{agent}} session. Stopping it ends the work the agent is doing.",
+          "cancel": "Cancel",
+          "killConfirm": "Force kill",
+          "stopConfirm": "Stop process",
+          "filter": "Filter by name, command, user, or pid",
+          "filterLabel": "Filter processes",
+          "showingTop": "Top {{shown}} of {{total}} processes",
+          "showingMatches": "{{shown}} matching",
+          "paused": "Paused",
+          "live": "Live",
+          "resume": "Resume",
+          "pause": "Pause",
+          "refresh": "Refresh now",
+          "noMatches": "No process matches."
+        },
+        "resources": {
+          "cpuTitle": "CPU: busiest processes",
+          "memoryTitle": "Memory: largest processes",
+          "diskTitle": "Disk: usage and cleanup",
+          "close": "Back to files",
+          "unsupported": "Process, memory and disk details are available for Linux and macOS machines."
+        },
+        "editor": {
+          "openInApp": "Open in {{app}}",
+          "choose": "Choose editor",
+          "sealEditor": "Seal’s editor",
+          "customizeApps": "Choose apps…",
+          "openedFileInSeal": "Opened the file in Seal’s editor",
+          "openedFolderInSeal": "Showing the folder in Seal’s files",
+          "noSshDetails": "{{machine}} is reached through its Seal server only. Add SSH details to open it in VS Code, Cursor, or Zed on this computer.",
+          "noApps": "No Open In apps are set up. Add one to open paths in another editor.",
+          "noRemoteEditor": "None of your Open In apps can open a remote machine. Add VS Code, Cursor, or Zed.",
+          "commandNotFound": "The “{{command}}” command was not found on this computer. Install the app’s command-line launcher, or choose another app.",
+          "commandNotExecutable": "“{{command}}” is not allowed to run on this computer.",
+          "commandExited": "“{{command}}” quit with exit code {{exitCode}} before opening anything.",
+          "commandError": "“{{command}}” could not start: {{message}}",
+          "openInSeal": "Open in Seal",
+          "aliasRequired": "{{app}} needs an SSH config entry for {{machine}}",
+          "aliasRequiredDetail": "It reaches a custom SSH port only through a Host entry for {{host}}:{{port}} in ~/.ssh/config on this computer.",
+          "launchFailed": "Could not open {{app}}",
+          "launchFailedDetail": "Check this app’s command under Open In apps.",
+          "filesLoading": "Still loading this machine’s files. Try again in a moment."
+        }
+      },
+      "live-sessions": {
+        "LiveSessionChat": {
+          "noRouteTakeOver": "Seal can’t type into this session: it runs outside tmux and a Seal pane. Take it over, or install shell integration (Settings › Agents) for next time."
+        },
+        "LiveSessionComposer": {
+          "placeholder": "Message this session",
+          "send": "Send"
+        },
+        "LiveSessionsPage": {
+          "refresh": "Scan again"
+        },
+        "status": {
+          "working": "Working",
+          "waiting": "Waiting for input",
+          "permission": "Needs permission",
+          "errored": "Errored",
+          "done": "Done",
+          "waitingSubagent": "Waiting on subagents",
+          "waitingTask": "Waiting on background tasks",
+          "idle": "Idle"
+        },
+        "untitled": "New session",
+        "message": {
+          "queued": "Waiting to send",
+          "sending": "Sending",
+          "sent": "Sent, waiting for the session",
+          "delivered": "Delivered",
+          "failed": "Not delivered",
+          "title": "Message {{name}}",
+          "description": "Seal types it into the session on {{host}} and tracks it until the agent has it."
+        },
+        "shell-integration": {
+          "checking": "Checking this computer…",
+          "notInstalled": "Not installed. Seal can still message sessions you start inside tmux or a Seal pane.",
+          "installedIn": "Installed in {{files}}.",
+          "needsTmux": "Installed, but tmux 3.0 or newer is missing, so claude and codex run unwrapped.",
+          "toggle": "Let Seal message agents started in your terminal",
+          "toggleDescription": "With shell integration installed, claude and codex from zsh or bash run in a private tmux server (tmux -L seal) that Seal can type into. Off runs them directly, here and on SSH hosts.",
+          "localTitle": "Shell integration on this computer",
+          "remove": "Remove",
+          "install": "Install",
+          "sshInstall": "Install shell integration",
+          "sshRemove": "Remove shell integration",
+          "removed": "Shell integration removed. Open a new shell for it to take effect.",
+          "installedNoTmux": "Shell integration installed, but tmux 3.0+ is missing there, so claude and codex still run unwrapped.",
+          "installed": "Shell integration installed. Open a new shell, then start claude or codex as usual.",
+          "failed": "Shell integration failed: {{reason}}"
+        },
+        "takeOver": {
+          "notFound": "That session is no longer listed.",
+          "notExternal": "This session already runs in a Seal pane.",
+          "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
+          "stillRunning": "The agent process didn’t stop.",
+          "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
+          "failed": "Could not take over the session. {{reason}}"
+        },
+        "remove": {
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop."
+        },
+        "idleReap": {
+          "minutes": "{{count}} min",
+          "hours": "{{count}} h",
+          "label": "End idle Seal sessions",
+          "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
+          "never": "Never"
+        },
+        "wait": {
+          "subagent": "1 subagent",
+          "subagents": "{{count}} subagents",
+          "task": "1 background task",
+          "tasks": "{{count}} background tasks",
+          "label": "Waiting on {{what}}",
+          "and": " and "
+        },
+        "rename": {
+          "title": "Rename session",
+          "description": "The name is kept in Seal; the agent and its transcript are not changed.",
+          "field": "Session name",
+          "reset": "Use the agent’s title",
+          "save": "Rename"
+        },
+        "dialog": {
+          "cancel": "Cancel"
+        },
+        "danger": {
+          "stopTitle": "Stop {{count}} session(s)?",
+          "stopDescription": "The agent process ends now, in the middle of whatever it is doing, along with the Seal tmux pane it ran in. The session stays in Seal under Recently finished and can be resumed.",
+          "stopAction": "Stop",
+          "stopRemoveTitle": "Stop and remove {{count}} session(s)?",
+          "stopRemoveDescription": "The agent process ends now and the session is hidden from Seal for good, even after a rescan. Its transcript stays on disk.",
+          "stopRemoveAction": "Stop and remove",
+          "removeTitle": "Remove {{count}} session(s) from Seal?",
+          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is, and nothing on disk changes.",
+          "removeAction": "Remove from Seal",
+          "deleteTitle": "Delete {{count}} session(s) and their transcripts?",
+          "deleteDescription": "A running agent is stopped first. These files are deleted for good; the conversation cannot be resumed afterwards:",
+          "deleteAction": "Delete"
+        },
+        "menu": {
+          "open": "Open",
+          "openTab": "Open in new tab",
+          "openSplit": "Open in split",
+          "send": "Send message…",
+          "answer": "Answer pending permission",
+          "subagents": "View subagents",
+          "tasks": "View tasks",
+          "reasoning": "View reasoning",
+          "rename": "Rename…",
+          "unpin": "Unpin",
+          "pin": "Pin to top",
+          "copyId": "Copy session id",
+          "copyResume": "Copy resume command",
+          "swap": "Swap account",
+          "takeOver": "Take over in a Seal pane",
+          "openWorktree": "Open project workspace",
+          "openMachine": "Open machine",
+          "reveal": "Reveal transcript file",
+          "stop": "Stop…",
+          "stopRemove": "Stop and remove…",
+          "remove": "Remove from Seal…",
+          "delete": "Delete with transcripts…",
+          "copiedId": "Session id copied",
+          "copiedResume": "Resume command copied",
+          "transcriptRemote": "The transcript is on {{host}}. Its path was copied.",
+          "transcriptMissing": "Could not show the transcript file. It may have been moved or deleted."
+        },
+        "palette": {
+          "section": "Go to agent session"
+        },
+        "notify": {
+          "label": "Notify about agent sessions",
+          "description": "A desktop notification when a Claude Code or Codex session outside Seal’s own panes needs permission or an answer, fails, or finishes. Follows the notification settings: nothing shows while notifications are off."
+        },
+        "sidebar": {
+          "lastMessage": "Last message",
+          "pick": "Select session",
+          "unread": "New output",
+          "pinned": "Pinned",
+          "runningFor": "Running for",
+          "quietFor": "Last activity",
+          "subagentCount": "{{running}} of {{count}} subagents running",
+          "account": "Account",
+          "hostError": "Could not scan {{host}}: {{error}}",
+          "finished": "Recently finished",
+          "title": "Active agents",
+          "options": "Active agents options",
+          "stopPicking": "Done selecting",
+          "startPicking": "Select sessions",
+          "clearFilters": "Clear filters",
+          "settings": "Idle sessions and notifications…",
+          "noMatch": "No sessions match.",
+          "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
+          "chipAttention": "Needs attention",
+          "chipWorking": "Working",
+          "chipMine": "This computer",
+          "chipMineTitle": "Mine, on this machine",
+          "search": "Filter by name, project, machine, agent, status",
+          "searchLabel": "Filter sessions",
+          "clearSearch": "Clear filter",
+          "clearScope": "Show all sessions",
+          "pickedCount": "{{count}} selected",
+          "bulkStop": "Stop",
+          "bulkRemove": "Remove",
+          "bulkDelete": "Delete"
+        },
+        "workspace": {
+          "actions": "Session actions",
+          "loading": "Looking for sessions",
+          "closeSplit": "Close split",
+          "backToSession": "Back to session",
+          "subagentOf": "Subagent: {{title}}",
+          "goneTab": "Session ended",
+          "closeTab": "Close tab",
+          "tabs": "Open agent sessions",
+          "gone": "This session is no longer on its machine. Close the tab, or find it under Recently finished in Active agents.",
+          "pick": "Pick a session under Active agents in the sidebar to open its chat."
+        },
+        "badge": {
+          "one": "1 agent session: {{status}}",
+          "many": "{{count}} agent sessions: {{status}}"
+        },
+        "activity": {
+          "running": "Running",
+          "completed": "Finished",
+          "failed": "Failed",
+          "stopped": "Stopped",
+          "background": "background",
+          "transcriptOpen": "Transcript open",
+          "openTranscript": "Open transcript",
+          "subagents": "Subagents",
+          "tasks": "Tasks",
+          "reasoning": "Reasoning",
+          "close": "Close panel",
+          "noSubagents": "This session has not started any subagents.",
+          "backgroundTasks": "Background tasks",
+          "noTasks": "No background commands or tasks.",
+          "plan": "Plan",
+          "todos": "To-dos",
+          "noTodos": "The agent keeps no list.",
+          "noReasoning": "No reasoning in the part of the transcript read so far."
+        }
+      },
+      "skills": {
+        "SkillInstallReviewContent": {
+          "protocolPlaceholder": "orca://skills/share/…"
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Install Seal Mobile.",
+          "installLead": "Seal Mobile is not on the App Store or Google Play. Build and install it from the Seal repository, then continue to step 2 for the pairing QR.",
+          "installGuide": "Open install guide"
+        }
+      },
+      "orca": {
+        "profiles": {
+          "signout": {
+            "confirm": {
+              "descriptionNoRelay": "Artifact and skill sharing will be unavailable until you sign in again. Seal Relay, your local projects and worktrees won't be affected."
+            }
+          }
+        }
+      },
+      "UnexpectedSignoutCard": {
+        "restoreSharingAs": "Sign in again as {{value0}} to restore Artifact sharing and skill sharing.",
+        "restoreSharing": "Sign in again to restore Artifact sharing and skill sharing."
+      }
+    },
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    }
+  },
+  "accounts": {
+    "claude": {
+      "switchSessions": {
+        "turnOffInAccountsHint": "You can turn this off in Settings → Accounts."
+      },
+      "usageSignInAgainMessage": "The selected Claude account needs you to sign in again. Open Settings > Accounts, or pick another account."
+    }
+  },
+  "home": {
+    "overview": {
+      "accounts": {
+        "loading": "Reading usage…",
+        "error": "Usage unavailable",
+        "noUsage": "No usage reported",
+        "active": "active",
+        "reset": "Resets {{when}}",
+        "title": "Accounts",
+        "manage": "Manage",
+        "empty": "No account usage yet. Sign in to an agent to track limits."
+      },
+      "attention": {
+        "title": "Needs attention",
+        "empty": "Nothing is waiting on you."
+      },
+      "automations": {
+        "title": "Automations",
+        "open": "Open",
+        "loading": "Loading…",
+        "error": "Automations could not be loaded.",
+        "empty": "No automations. Schedule an agent run to see it here.",
+        "summary": "{{enabled}} of {{total}} enabled",
+        "paused": "Paused"
+      },
+      "chat": {
+        "label": "Chat"
+      },
+      "machines": {
+        "load": "CPU {{percent}}%",
+        "memory": "Mem {{percent}}%",
+        "title": "Machines",
+        "manage": "Manage",
+        "empty": "No machines.",
+        "summary": "{{online}} of {{total}} online",
+        "active": "{{count}} active"
+      },
+      "summary": {
+        "working": "{{count}} working",
+        "waiting": "{{count}} waiting on you",
+        "idle": "{{count}} idle"
+      },
+      "title": "Home",
+      "sessions": {
+        "title": "Sessions",
+        "empty": "No agent sessions yet. Start an agent in a workspace and it shows up here."
+      },
+      "workspaces": {
+        "title": "Worktrees & PRs",
+        "empty": "No active worktrees.",
+        "active": "Active",
+        "open": "Open PRs",
+        "draft": "Drafts",
+        "draftLabel": "draft"
+      },
+      "nav": "Home",
+      "machine": {
+        "online": "Online",
+        "connecting": "Connecting",
+        "offline": "Offline",
+        "error": "Connection failed"
+      },
+      "usage": {
+        "session": "5h",
+        "weekly": "Week",
+        "monthly": "Month"
+      }
+    }
+  },
+  "homeChat": {
+    "account": {
+      "label": "Account",
+      "system": "System login"
+    },
+    "approval": {
+      "approve": "Approve",
+      "decline": "Decline",
+      "default": "This action needs your approval."
+    },
+    "backend": {
+      "claude": "Claude",
+      "label": "Model source",
+      "openai": "Model API",
+      "codex": "Codex"
+    },
+    "dismissError": "Dismiss",
+    "empty": {
+      "title": "Your machines, one chat",
+      "capabilities": "Ask Seal for anything on this computer or any connected machine: run a command, move files, check on an agent session, switch accounts, or hand coding work to an agent in a worktree."
+    },
+    "label": "Seal assistant",
+    "messageLabel": "Message",
+    "model": {
+      "label": "Model",
+      "placeholder": "Model"
+    },
+    "new": "New thread",
+    "noChats": "No threads yet",
+    "notSent": "Not sent",
+    "placeholder": "Ask Seal to do something on any of your machines…",
+    "send": "Send",
+    "settings": {
+      "apiKey": "API key",
+      "apiKeyOptional": "Optional for local servers",
+      "apiKeySaved": "Saved — type to replace",
+      "baseUrl": "Base URL",
+      "clearKey": "Remove key",
+      "description": "Used by chats set to Model API: any OpenAI-compatible endpoint such as OpenRouter, xAI, OpenAI or a local server.",
+      "model": "Default model",
+      "save": "Save",
+      "title": "Model API",
+      "openAssistant": "Assistant settings",
+      "contextWindow": "Context window (tokens)",
+      "contextWindowHint": "Seal summarizes older messages for the model before this fills."
+    },
+    "stop": "Stop",
+    "title": "Seal assistant",
+    "working": "Working…",
+    "worker": "Worker",
+    "attachment": {
+      "reveal": "Show in folder",
+      "save": "Save as…"
+    },
+    "memory": {
+      "open": "Memory",
+      "title": "Assistant memory",
+      "description": "Read by the assistant at the start of every turn, in every chat. It adds to this as it works; edit anything here.",
+      "rules": "Rules",
+      "facts": "Facts",
+      "machines": "Machines",
+      "journal": "Journal",
+      "rulePlaceholder": "e.g. Always push to a feature branch",
+      "rulesEmpty": "No standing rules yet.",
+      "factPlaceholder": "e.g. The GPU box is called tower",
+      "factsEmpty": "No facts yet.",
+      "journalPlaceholder": "Add a note",
+      "journalEmpty": "Nothing logged yet.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "remove": "Remove",
+      "add": "Add",
+      "machinesEmpty": "No machine notes yet. The assistant adds them as it learns your machines, or ask it to reach a machine through another one."
+    },
+    "notice": {
+      "job": "Background job",
+      "subagent": "Subagent",
+      "routine": "Routine",
+      "approval": "Waiting for you"
+    },
+    "web": {
+      "title": "Web search",
+      "description": "DuckDuckGo works without a key; the others are more reliable.",
+      "provider": "Provider",
+      "searxngUrl": "SearXNG URL",
+      "apiKey": "Search API key",
+      "apiKeyRequired": "Required for this provider"
+    },
+    "compaction": {
+      "auto": "Earlier messages summarized for the model",
+      "manual": "Earlier messages summarized at your request"
+    },
+    "context": {
+      "thisComputer": "This computer",
+      "machine": "Machine: {{machine}}",
+      "online": "· {{online}} of {{total}} machines online",
+      "machinesTitle": "Machines the assistant can reach",
+      "usage": "{{used}} / {{window}}",
+      "label": "Context: {{usage}} tokens",
+      "title": "Context",
+      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
+      "compactions": "Summaries so far: {{count}}",
+      "compactNow": "Summarize older messages now"
+    },
+    "threads": {
+      "renameLabel": "Thread name",
+      "confirmDelete": "Delete \"{{title}}\"?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "rename": "Rename",
+      "open": "Threads",
+      "title": "Threads",
+      "close": "Close"
+    },
+    "open": {
+      "sessionGone": "That agent session is no longer running."
+    },
+    "expand": "Expand chat",
+    "minimize": "Minimize chat",
+    "minimizedRunning": "Working…"
+  },
+  "seal": {
+    "accounts": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "badge": {
+        "active": "New sessions start here",
+        "paused": "Paused until {{value0}}",
+        "manualOnly": "Manual only",
+        "systemLoginHint": "This is the login the CLI on this computer uses outside Seal.",
+        "systemLogin": "System login",
+        "wsl": "WSL: {{value0}}",
+        "apiBilling": "API billing",
+        "apiBillingHint": "This login belongs to a Console organization that pays per token.",
+        "subscription": "Subscription",
+        "subscriptionHint": "This login runs on a plan seat, not on API usage."
+      },
+      "window": {
+        "session": "5h",
+        "weekly": "7d"
+      },
+      "error": "Could not update accounts",
+      "refresh": "Refresh usage",
+      "loading": "Loading accounts…",
+      "sessions": {
+        "title": "Running sessions",
+        "empty": "No agent sessions are running.",
+        "warning": "Outside its rule",
+        "description": "Each open agent session and the account it runs on. Pick another account to move a session."
+      },
+      "strategy": {
+        "best": "Most headroom",
+        "weeklyFirst": "Save weekly",
+        "consumeFirst": "Use it up",
+        "priority": "Priority"
+      },
+      "autoSwap": {
+        "enabled": "Auto-swap new sessions",
+        "enabledDescription": "Also switch the account new sessions start on, using the same limits.",
+        "strategy": "Strategy",
+        "sessionThreshold": "5h limit",
+        "sessionThresholdDescription": "Swap away once the 5-hour window reaches this. 90% matches claude-swap.",
+        "weeklyThreshold": "7d limit",
+        "weeklyThresholdDescription": "Swap away once the weekly (or a per-model weekly) window reaches this.",
+        "hysteresis": "Headroom margin",
+        "hysteresisDescription": "A swap target needs this many more points of headroom than the current account, and must be under its own limits, so swaps never bounce.",
+        "cooldown": "Cooldown",
+        "cooldownDescription": "Minimum time between swaps before a limit. A full window or dead login skips it.",
+        "failover": "Fail over on dead logins",
+        "failoverDescription": "Swap immediately when the current login expires or is revoked, and pause that account.",
+        "modelLimits": "Count per-model limits",
+        "modelLimitsDescription": "Treat a model-specific weekly cap like the weekly limit.",
+        "apiKeyFallback": "Fall back to API keys",
+        "apiKeyFallbackDescription": "Launch on a pay-as-you-go key when every subscription is exhausted.",
+        "lastDecision": "Last check",
+        "noDecision": "Not run yet",
+        "evaluate": "Check now",
+        "liveSessions": "Move running sessions",
+        "liveSessionsDescription": "Seal polls every account’s 5-hour and weekly usage and moves a running agent to another account before it crosses a limit below, or right away if its login dies. It resumes the conversation when it cannot switch live.",
+        "rateLimitFallback": "Fallback: react to limit messages",
+        "rateLimitFallbackDescription": "Last resort only. If an agent stops with a usage-limit message that polling has not caught yet, move it anyway.",
+        "stateOn": "on",
+        "stateOff": "off",
+        "title": "Auto-swap",
+        "description": "Seal reads every account’s 5-hour and 7-day usage and moves work to the next account in the list before a limit is hit. Each provider has its own settings.",
+        "provider": "Provider",
+        "tab": "{{value0}} · {{value1}}"
+      },
+      "minutes": "min",
+      "meter": {
+        "resetsIn": "resets in {{value0}}"
+      },
+      "estimate": {
+        "now": "Over its {{value0}} limit; swapping",
+        "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
+        "nextPoll": "Usage read again in {{value0}}"
+      },
+      "otherProviders": {
+        "title": "Other providers",
+        "description": "Usage and sign-in setup for agents Seal does not swap accounts for. These settings belong to one machine at a time."
+      },
+      "section": {
+        "title": "Accounts",
+        "description": "The Claude, Codex and API-key accounts Seal runs agents on, how it swaps between them, and which machines hold each login.",
+        "navDescription": "Claude, Codex and API-key accounts, auto-swap, rules and machines, plus usage setup for other providers."
+      },
+      "card": {
+        "oneSession": "1 session running",
+        "sessions": "{{value0}} sessions running",
+        "noSessions": "No sessions running",
+        "rankHint": "Order of preference in this group",
+        "setupTokenUsage": "Runs on your Claude subscription. Claude does not report usage for setup tokens.",
+        "apiKeyUsage": "Pay as you go; no plan limits to track."
+      },
+      "action": {
+        "relogin": "Sign in again",
+        "use": "Use for new sessions",
+        "more": "Actions for {{value0}}",
+        "rename": "Rename and limits…",
+        "reloginMenu": "Sign in again…",
+        "push": "Push to machine",
+        "pushUpdate": "Update login",
+        "pushCopy": "Copy login",
+        "remove": "Remove…",
+        "reorder": "Change the priority of {{value0}}"
+      },
+      "reorderHint": "Drag to change priority, or focus the handle and use Space and the arrow keys.",
+      "add": {
+        "apiKey": "Add API key",
+        "account": "Add account",
+        "browser": "Sign in with your browser",
+        "browserClaude": "Runs `claude` login in a folder of its own, so it never touches your other logins.",
+        "browserCodex": "Runs `codex login` in a CODEX_HOME of its own, so it never touches your other logins.",
+        "device": "Sign in with a device code",
+        "deviceDescription": "Shows a short code to enter on any device. Use it when a browser cannot reach this computer.",
+        "reloginTitle": "Sign in again to {{value0}}",
+        "title": "Add an account",
+        "reloginDescription": "Sign in as the same account to replace its login. Sessions keep running.",
+        "description": "The account is saved on this computer. Push it to other machines from its card.",
+        "kind": "Kind of account",
+        "import": "Use the login already on this computer",
+        "importNone": "The `{{value0}}` CLI on this computer is not signed in.",
+        "importListed": "{{value0}} is already in the list.",
+        "importAvailable": "Lists {{value0}}, the account `{{value1}}` is signed in to. Nothing is copied.",
+        "setupToken": "Paste a setup token",
+        "setupTokenDescription": "A one-year token from `claude setup-token`, for a subscription you cannot sign in to here."
+      },
+      "empty": {
+        "claude": "No Claude accounts yet. Sign in with your browser, use the login already on this computer, or paste a setup token.",
+        "codex": "No Codex accounts yet. Sign in with your browser or a device code, or use the login already on this computer.",
+        "apiKeys": "No API keys. Add one if you want sessions to fall back to pay-as-you-go when every subscription is used up."
+      },
+      "machine": {
+        "activeThere": "new sessions start on it",
+        "systemThere": "system login",
+        "sessionsThere": "{{value0}} running",
+        "heldOn": "Signed in on",
+        "notHere": "Not on this computer",
+        "pushedThere": "Login pushed from this computer. This machine has no Seal server, so its state is not shown.",
+        "thisComputer": "This computer",
+        "thisServer": "This server"
+      },
+      "notice": {
+        "mergedTitle": "Seal merged duplicate accounts",
+        "mergedBody": "Accounts saved more than once now appear once, keeping the copy with the newest login:",
+        "mergedEntry": "{{value0}} ({{value1}} removed)",
+        "dismiss": "Dismiss",
+        "unreachable": "{{value0}} did not answer, so its logins and sessions are not shown.",
+        "stale": "Showing the last reading. {{value0}}"
+      },
+      "onboarding": {
+        "title": "Add your first account",
+        "body": "Seal runs Claude Code and Codex on the accounts you add here. With two or more, it watches each account’s 5-hour and 7-day usage and moves work to the next one before a limit stops you.",
+        "step1": "Add each subscription. Every sign-in gets a folder of its own, so accounts never overwrite each other.",
+        "step2": "Drag accounts into the order you prefer, and turn on auto-swap.",
+        "step3": "Optionally pin projects or machines to specific accounts with rules, and push logins to your other machines.",
+        "addClaude": "Add Claude account",
+        "addCodex": "Add Codex account",
+        "importHint": "This computer’s own CLI is already signed in. Use that login without signing in again:",
+        "importClaude": "Use Claude login {{value0}}",
+        "importCodex": "Use Codex login {{value0}}"
+      },
+      "remove": {
+        "failedOn": "Could not remove it from {{value0}}",
+        "logoutFailed": "Removed {{value0}} from Seal, but could not sign this computer out",
+        "doneLoggedOut": "Removed {{value0}} and signed out",
+        "done": "Removed {{value0}}",
+        "nowUsing": "New sessions now start on {{value0}}.",
+        "title": "Remove {{value0}}?",
+        "secret": "Seal deletes this secret from the keychain and drops it from every rule. Sessions already running on it keep going.",
+        "systemOnly": "Seal stops listing and using this account and drops it from every rule. Sessions already running on it keep going until they end.",
+        "login": "Seal forgets this account, deletes the login it saved, and drops it from every rule. Sessions already running on it keep going until they end.",
+        "remoteOnly": "This account is not on this computer. Seal removes it from the machines checked below.",
+        "systemLogin": "This is also the login the `{{value0}}` CLI uses on this computer outside Seal.",
+        "systemKeep": "Remove from Seal: `{{value0}}` stays signed in in your own terminal. Seal stops listing and using the account until you add it again.",
+        "systemLogout": "Remove and log out: also runs `{{value0}}` and signs this computer out.",
+        "alsoFrom": "Also remove its login from",
+        "leftBehind": "The login pushed to {{value0}} stays there: that machine has no Seal server to remove it. Sign out there to remove it.",
+        "confirmLogout": "Remove and log out",
+        "confirmSeal": "Remove from Seal",
+        "confirm": "Remove"
+      },
+      "push": {
+        "done": "Pushed {{value0}} to {{value1}}",
+        "failed": "Could not push {{value0}} to {{value1}}",
+        "loginOnly": "Sessions there can use this login. Rules and auto-swap run only where a Seal server runs."
+      },
+      "rules": {
+        "synced": "Rules and auto-swap settings pushed to {{value0}}.",
+        "syncFailed": "Could not reach {{value0}}: {{value1}}",
+        "syncError": "Sync failed: {{value0}}",
+        "editTitle": "Edit rule",
+        "addTitle": "Add rule",
+        "dialogDescription": "A project rule narrows what its machine allows. Sessions already running are not moved.",
+        "appliesTo": "Applies to",
+        "project": "Project",
+        "machine": "Machine",
+        "provider": "Provider",
+        "projectMatch": "Repo or folder",
+        "projectHelp": "A git remote such as github.com/owner/repo, a repo path, or a folder name. Use * to match many.",
+        "name": "Name (optional)",
+        "allowed": "Accounts it may use",
+        "noAccounts": "Add an account for this provider first.",
+        "allowedAll": "Nothing checked: every account is allowed.",
+        "allowedSome": "Only the checked accounts are allowed.",
+        "preferred": "Preferred account",
+        "bestAvailable": "The one with the most headroom",
+        "title": "Rules",
+        "description": "Limit which accounts a project or a machine may use, and which one it prefers. Without a rule, every account may be used everywhere.",
+        "sync": "Sync to machines",
+        "add": "Add rule",
+        "empty": "No rules yet. Add one to keep a client’s repos on a work account, or a shared machine on a single login.",
+        "mayUse": "May use {{value0}}.",
+        "mayUseAny": "May use any account.",
+        "prefers": "Prefers {{value0}}.",
+        "prefersBest": "Picks the one with the most headroom.",
+        "edit": "Edit rule for {{value0}}",
+        "remove": "Remove rule for {{value0}}",
+        "projectPlaceholder": "github.com/acme/*"
+      },
+      "summary": {
+        "none": "No accounts yet.",
+        "fleet": "{{value0}} accounts across {{value1}} machines.",
+        "one": "1 account on this computer.",
+        "fleetOne": "1 account across {{value0}} machines.",
+        "local": "{{value0}} accounts on this computer."
+      },
+      "group": {
+        "claude": "Claude",
+        "codex": "Codex",
+        "apiKey": "API key",
+        "apiKeys": "API keys",
+        "claudeDescription": "Claude subscriptions for Claude Code. The first working account in the list is preferred.",
+        "codexDescription": "ChatGPT logins for Codex. The first working account in the list is preferred.",
+        "apiKeysDescription": "Pay-as-you-go Anthropic and OpenAI keys, sealed in this computer’s keychain. Used when a rule picks one or as a fallback."
+      },
+      "history": {
+        "manual": "You switched",
+        "authFailure": "Login stopped working",
+        "threshold": "Near its limit",
+        "rateLimit": "Hit a rate limit",
+        "notAllowed": "A rule changed",
+        "live": "switched live",
+        "resume": "resumed on the new account",
+        "failed": "could not be moved",
+        "title": "Swap history",
+        "description": "Every time Seal or you moved new sessions or a running session to another account.",
+        "empty": "No swaps yet.",
+        "newSessions": "new sessions",
+        "session": "running session"
+      },
+      "edit": {
+        "title": "Rename and limits",
+        "alias": "Name",
+        "aliasHelp": "Shown everywhere instead of the email, and accepted by `seal account` commands.",
+        "plan": "Plan label",
+        "planPlaceholder": "e.g. Max 20x",
+        "sessionLimit": "Swap at 5h usage (%)",
+        "useDefault": "Auto-swap default",
+        "weeklyLimit": "Swap at 7d usage (%)",
+        "manualOnly": "Manual only",
+        "manualOnlyHelp": "Auto-swap and rules never pick it; you can still choose it yourself."
+      },
+      "secret": {
+        "tokenHelp": "Run `claude setup-token` in a terminal where that account is signed in, then paste the token it prints. It is sealed in this computer’s keychain and used only for sessions Seal starts.",
+        "keyHelp": "Sealed in this computer’s keychain. Keys never leave the machine they were added on.",
+        "anthropic": "Anthropic (Claude)",
+        "openai": "OpenAI (Codex)",
+        "provider": "Provider",
+        "label": "Name",
+        "tokenLabelPlaceholder": "Work subscription",
+        "keyLabelPlaceholder": "Team key",
+        "token": "Setup token",
+        "key": "Key",
+        "notSetupToken": "Setup tokens start with sk-ant-oat. For an API key, choose API key instead.",
+        "saveToken": "Add token",
+        "saveKey": "Add key",
+        "tokenPlaceholder": "sk-ant-oat01-…",
+        "anthropicPlaceholder": "sk-ant-api03-…",
+        "openaiPlaceholder": "sk-…"
+      },
+      "signIn": {
+        "copied": "Copied",
+        "copyFailed": "Could not copy",
+        "pasteCodeHelp": "If the page shows a code instead of returning here, paste it:",
+        "submitCode": "Continue",
+        "starting": "Starting `{{value0}}` sign-in…",
+        "waitingDevice": "Open the page below on any device and enter the code. Seal finishes as soon as you approve.",
+        "waitingBrowser": "Finish signing in in the browser window that just opened. Seal continues on its own.",
+        "waitingLink": "Open the page below, sign in, and Seal continues on its own.",
+        "verifying": "Finishing sign-in…",
+        "copyLink": "Copy link",
+        "open": "Open page",
+        "enterCode": "Code to enter on that page:",
+        "copyCode": "Copy code",
+        "added": "Added {{value0}}.",
+        "refreshed": "{{value0}} is signed in again. Its sessions pick up the new login.",
+        "otherAccount": "You signed in as {{value0}}, not {{value1}}. {{value1}} still needs its own sign-in.",
+        "failed": "The sign-in did not finish.",
+        "cancelled": "Sign-in cancelled. Nothing was added.",
+        "cancel": "Cancel sign-in",
+        "addAnother": "Add another",
+        "retry": "Try again"
+      },
+      "done": "Done",
+      "back": "Back",
+      "health": {
+        "ok": "Working",
+        "expiring": "Expires {{value0}}",
+        "signedOut": "Signed out",
+        "rejected": "Login rejected",
+        "expired": "Expired",
+        "missingSecret": "Secret missing",
+        "advice": {
+          "tokenExpiring": "Setup tokens last one year. Paste a new one before this one runs out.",
+          "loginExpiring": "This login cannot renew itself. Sign in again before it runs out.",
+          "missingSecret": "This computer’s keychain no longer holds the secret. Remove it and add it again.",
+          "tokenDead": "The provider no longer accepts this token. Remove it and paste a new one.",
+          "loginDead": "The provider no longer accepts this login. Sign in again to keep using it."
+        }
+      },
+      "identity": {
+        "setupToken": "Claude setup token",
+        "anthropicKey": "Anthropic API key",
+        "openaiKey": "OpenAI API key"
+      },
+      "search": {
+        "accounts": {
+          "title": "Claude and Codex accounts",
+          "description": "Add, sign in again, rename, order, remove and push the accounts Seal runs agents on."
+        },
+        "keyword": {
+          "claude": "claude",
+          "codex": "codex",
+          "account": "account",
+          "signIn": "sign in",
+          "login": "login",
+          "apiKey": "api key",
+          "setupToken": "setup token",
+          "usage": "usage",
+          "machine": "machine",
+          "swap": "swap",
+          "limit": "limit",
+          "cooldown": "cooldown",
+          "quota": "quota",
+          "rule": "rule",
+          "project": "project",
+          "history": "history"
+        },
+        "autoSwap": {
+          "title": "Auto-swap",
+          "description": "Move to another account when the 5-hour or weekly limit gets close."
+        },
+        "rules": {
+          "title": "Account rules",
+          "description": "Choose which accounts a project or a machine may use."
+        },
+        "history": {
+          "title": "Swap history",
+          "description": "Every account swap Seal made, and why."
+        }
+      },
+      "home": {
+        "signInAgain": "Sign in again in Settings > Accounts"
+      }
+    },
+    "session": {
+      "liveSwap": {
+        "inherit": "Follow the global setting",
+        "on": "Always move this session",
+        "off": "Never move this session"
+      },
+      "delivery": {
+        "live": "switched live",
+        "resume": "resumed",
+        "failed": "failed"
+      },
+      "badge": {
+        "title": "Running on {{value0}}. Click to switch.",
+        "aria": "Session account {{value0}}"
+      },
+      "menu": {
+        "switch": "Move this session to",
+        "liveSwap": "When this account runs low",
+        "lastSwap": "{{value0}} to {{value1}}, {{value2}}",
+        "usage5h": "5h {{value0}}%",
+        "usage7d": "7d {{value0}}%",
+        "swapNow": "swapping now",
+        "swapAt": "next swap ~{{value0}}",
+        "noSwap": "no swap expected before reset"
+      },
+      "error": {
+        "swap": "Could not switch this session",
+        "liveSwap": "Could not change this session’s setting"
+      },
+      "notice": {
+        "resumed": "Session resumed on {{value0}}",
+        "resumedDescription": "It could not switch logins while running, so Seal restarted it on the new account with the same conversation.",
+        "failed": "Could not move a session to {{value0}}"
+      }
+    },
+    "sessionSummaries": {
+      "paused": "Summaries paused",
+      "pausedDetail": "Cloudflare’s free limit for today is used up. New summaries resume at {{time}}.",
+      "pending": "Summarizing…",
+      "tooltipSource": "AI summary of the last message",
+      "setting": {
+        "title": "Session summaries",
+        "searchDescription": "Show a one-line AI summary on agent sessions.",
+        "description": "When an agent stops or waits on a task, show one short sentence saying what it did or needs. Only the agent’s last message is sent, never tool output.",
+        "needsProvider": "Starts once a Cloudflare account is linked above."
+      },
+      "toggleFailed": "Could not change session summaries."
+    },
+    "cloudflareAi": {
+      "status": {
+        "fromFile": "Read from ~/.config/seal/cloudflare-ai.json on this computer.",
+        "fromFileOnHost": "Read from ~/.config/seal/cloudflare-ai.json on {{host}}.",
+        "stored": "Stored on this computer and sent only to Cloudflare.",
+        "storedOnHost": "Stored on {{host}} and sent from there only to Cloudflare.",
+        "connected": "Account linked · …{{account}}",
+        "notConfigured": "No Cloudflare account linked",
+        "notConfiguredHelp": "Save an account ID and API token below, or put them in ~/.config/seal/cloudflare-ai.json on the host.",
+        "paused": "Cloudflare’s limit was reached. Summaries resume at {{time}}; nothing else is affected."
+      },
+      "title": "Cloudflare AI",
+      "subtitle": "A small Workers AI model writes the one-line summary on each agent session. The free plan is enough.",
+      "tokensLink": "Get API token",
+      "test": {
+        "okFallback": "Works: the fallback {{model}} answered in {{ms}} ms.",
+        "ok": "Works: {{model}} answered in {{ms}} ms.",
+        "button": "Test"
+      },
+      "hostOnly": "Change the Cloudflare account and model in the desktop app, or in the config file on the computer running Seal.",
+      "credentials": {
+        "title": "Account ID and API token",
+        "description": "The Cloudflare account ID and a Workers AI API token.",
+        "saved": "Saved",
+        "notSaved": "Not saved",
+        "tokenName": "The Cloudflare API token",
+        "accountIdPlaceholder": "Account ID",
+        "tokenPlaceholder": "API token",
+        "replace": "Replace",
+        "save": "Save",
+        "forget": "Forget",
+        "accountIdInvalid": "The account ID is 32 letters and digits, shown on the Workers AI page of the Cloudflare dashboard.",
+        "help": "Create a token with the Workers AI Read permission. It is kept in the host’s credential storage, sent only to Cloudflare, and never shown again."
+      },
+      "model": {
+        "notOnPlan": "paid plan",
+        "title": "Model",
+        "description": "The Workers AI model that writes summaries, and the one used when it is unavailable.",
+        "fallbackTitle": "Fallback model",
+        "usingFallback": "Summaries use {{model}} instead.",
+        "catalogFailed": "Could not load the model list: {{reason}}",
+        "help": "GLM 4.7 Flash answers in about half a second and fits roughly 7,000 summaries a day in the Workers Free allocation."
+      },
+      "search": {
+        "title": "Cloudflare AI",
+        "description": "Link a Cloudflare Workers AI account for session summaries. Pick the model and turn summaries on or off.",
+        "kw": {
+          "cloudflare": "cloudflare",
+          "workersAi": "workers ai",
+          "summary": "summary",
+          "summaries": "summaries",
+          "model": "model",
+          "apiToken": "api token"
+        }
+      },
+      "saveFailed": "Cloudflare AI settings were not saved.",
+      "testFailed": "Could not run the Cloudflare AI test.",
+      "failure": {
+        "thisModel": "This model",
+        "notConfigured": "Add an account ID and API token first.",
+        "unauthorized": "Cloudflare rejected the credentials. Check the account ID, and that the token has the Workers AI permission.",
+        "planUnavailable": "{{model}} is not available on this account’s Workers plan (it needs a paid plan).",
+        "rateLimited": "Cloudflare’s rate limit or daily free allocation was reached.",
+        "modelNotFound": "{{model}} does not exist on Workers AI.",
+        "badResponse": "Cloudflare answered unexpectedly: {{message}}"
+      }
+    },
+    "mcp": {
+      "approval": {
+        "heading": "MCP call needs your approval",
+        "queue": "1 of {{total}}",
+        "title": "{{client}} asks to run {{tool}}",
+        "relayNotice": "This call arrived over the internet through the Seal relay.",
+        "client": "Client",
+        "transport": "Arrived over",
+        "tool": "Tool",
+        "machine": "Machine",
+        "noMachine": "None named",
+        "reason": "Why it asks",
+        "arguments": "Arguments",
+        "countdown": "Seal declines it in {{time}} if nobody answers.",
+        "deny": "Deny",
+        "approve": "Approve",
+        "alreadySettled": "That request had already expired or been answered.",
+        "respondFailed": "Could not send your answer"
+      },
+      "scope": {
+        "read": "Read",
+        "sessions": "Sessions",
+        "files": "Files",
+        "commands": "Commands",
+        "destructive": "Destructive",
+        "readDescription": "List machines, sessions, projects, workspaces, usage and skills.",
+        "sessionsDescription": "Message and start agent sessions.",
+        "filesDescription": "Read and write files on the allowed machines.",
+        "commandsDescription": "Run shell commands. This is effectively full access to the allowed machines as your user.",
+        "destructiveDescription": "Delete files, stop sessions, switch accounts, and run commands Seal flags as risky."
+      },
+      "policy": {
+        "never": "Never ask",
+        "destructive": "Ask before destructive calls",
+        "commands": "Ask before every command too"
+      },
+      "transport": {
+        "stdio": "stdio",
+        "http": "HTTP",
+        "relay": "Relay"
+      },
+      "outcome": {
+        "ok": "OK",
+        "error": "Error",
+        "unauthorized": "Unauthorized",
+        "scopeDenied": "Scope denied",
+        "machineDenied": "Machine denied",
+        "approvalDenied": "Not approved",
+        "rateLimited": "Rate limited"
+      },
+      "audit": {
+        "approved": "Approved in the app",
+        "noToken": "No valid token",
+        "filter": "Show calls from",
+        "allClients": "Every client",
+        "loading": "Reading the audit log…",
+        "loadFailed": "Could not read the audit log: {{error}}",
+        "emptyClient": "No calls from this client yet.",
+        "empty": "No MCP calls yet.",
+        "olderFailed": "Could not load older calls: {{error}}",
+        "loadingOlder": "Loading…",
+        "loadOlder": "Load older",
+        "title": "Audit log",
+        "description": "Every MCP request this server received, newest first, including the ones it refused."
+      },
+      "create": {
+        "name": "Name",
+        "namePlaceholder": "Claude Code on my laptop",
+        "scopes": "What it may do",
+        "scopesRequired": "Choose at least one.",
+        "machines": "Machines it may act on",
+        "machinesAll": "All machines",
+        "machinesSome": "Only these",
+        "machinesAllDescription": "Includes machines added to this server later.",
+        "machinesLoading": "Reading machines…",
+        "machinesNone": "This server lists no machines.",
+        "approval": "Approval in the Seal app",
+        "approvalDescription": "A call that waits for approval is declined if nobody answers within two minutes.",
+        "allowRelay": "Allow through relay",
+        "allowRelayDescription": "Lets this client connect over the public relay URL. The relay can read what passes through it.",
+        "rate": "Calls per minute",
+        "rateDescription": "Above this the client is told to slow down. 1 to 6000.",
+        "cancel": "Cancel",
+        "submit": "Create client",
+        "title": "Add MCP client",
+        "description": "Each client gets its own token. Give it only what it needs; you can revoke it at any time.",
+        "failed": "Could not add the client"
+      },
+      "clients": {
+        "empty": "No clients yet. Add one to get a token an MCP client can connect with.",
+        "allMachines": "All machines",
+        "relayAllowed": "Relay allowed",
+        "relayBlocked": "No relay",
+        "rate": "{{rate}} calls/min",
+        "created": "Created {{date}}",
+        "neverUsed": "Never used",
+        "lastUsed": "Last used {{when}}",
+        "revoked": "Revoked",
+        "revoke": "Revoke",
+        "remove": "Remove {{name}}",
+        "revokeTitle": "Revoke {{name}}?",
+        "revokeDescription": "Its token stops working at once and cannot be turned back on. The client stays in the list so its past calls keep a name.",
+        "removeTitle": "Remove {{name}}?",
+        "removeDescription": "Its token stops working at once and the client leaves this list. Its entries stay in the audit log.",
+        "removeConfirm": "Remove",
+        "revokeFailed": "Could not revoke the client",
+        "removeFailed": "Could not remove the client",
+        "title": "Clients",
+        "description": "One token per client. Revoking stops the token at once and keeps the entry; removing deletes it.",
+        "add": "Add client"
+      },
+      "connect": {
+        "stdioRemoteNote": "The client runs \"seal mcp\" on this computer, which carries its calls to the selected server.",
+        "relayNote": "Only a client created with \"Allow through relay\" can connect at this URL.",
+        "relayOffNote": "The relay endpoint is off. Turn it on under Endpoints before connecting.",
+        "httpOffNote": "The HTTP endpoint is off. Turn it on under Endpoints before connecting.",
+        "transport": "Transport",
+        "stdio": "stdio on this computer",
+        "http": "HTTP: {{url}}",
+        "relay": "Relay: {{url}}",
+        "title": "Connect a client",
+        "description": "Replace <token> with the token shown when you added the client. Seal cannot show it again."
+      },
+      "copy": {
+        "copied": "Copied",
+        "failed": "Could not copy",
+        "copy": "Copy"
+      },
+      "endpoints": {
+        "http": {
+          "label": "HTTP on this server's port",
+          "description": "Serves /mcp on the port the Seal server already listens on. It is plain HTTP without TLS, meant for a LAN or a tailnet, not the open internet.",
+          "noListener": "This server has no network listener yet, so there is no HTTP URL to connect to.",
+          "copy": "Copy HTTP URL"
+        },
+        "relay": {
+          "label": "Seal relay",
+          "description": "Gives this server a public HTTPS URL on the Seal relay. The relay terminates TLS, so it can read everything that passes through it, tokens included. Only a client created with \"Allow through relay\" can use it, and destructive calls over the relay always ask for approval.",
+          "copy": "Copy relay URL",
+          "off": "The relay endpoint is off, so calls to this URL are refused.",
+          "connected": "Connected to the relay",
+          "notConnected": "Not connected to the relay",
+          "noIdentity": "Pair a device first so this server has a relay identity."
+        },
+        "stdio": "stdio is always available on this computer: an MCP client starts the \"seal mcp\" command and talks to it directly.",
+        "updateFailed": "Could not change the endpoint",
+        "title": "Endpoints",
+        "description": "How MCP clients reach this server. Every call needs a client token, whichever way it arrives."
+      },
+      "managed": {
+        "remote": "Managing the Seal server on {{name}}.",
+        "local": "Managing the Seal server on this computer."
+      },
+      "loading": "Reading MCP settings…",
+      "unsupported": "This Seal server does not have the MCP server yet. Update Seal on that machine to manage it here.",
+      "loadFailed": "Could not read MCP settings: {{error}}",
+      "retry": "Try again",
+      "pending": {
+        "title": "Waiting for approval",
+        "description": "Each call is declined if nobody answers before its time runs out."
+      },
+      "snippets": {
+        "generic": "Any other client",
+        "shell": "Run in a terminal",
+        "file": "Add to {{file}}",
+        "copy": "Copy {{client}} setup"
+      },
+      "token": {
+        "title": "Token for {{name}}",
+        "description": "This is the only time the token is shown. Seal stores only its hash, so copy it now. If it is lost, revoke this client and add a new one.",
+        "copy": "Copy token",
+        "setup": "Set up the client",
+        "setupDescription": "These already contain the token. Treat anything you paste them into as a secret.",
+        "done": "Done"
+      },
+      "search": {
+        "endpointsDescription": "Turn the HTTP and Seal relay MCP endpoints on or off and copy their URLs.",
+        "keywordMcp": "mcp",
+        "keywordModelContextProtocol": "model context protocol",
+        "keywordHttp": "http",
+        "keywordRelay": "relay",
+        "keywordStdio": "stdio",
+        "keywordUrl": "url",
+        "keywordServer": "server",
+        "clientsDescription": "Add, revoke and remove MCP clients, and choose what each token may do.",
+        "keywordToken": "token",
+        "keywordClient": "client",
+        "keywordScope": "scope",
+        "keywordRevoke": "revoke",
+        "keywordApproval": "approval",
+        "keywordPermission": "permission",
+        "connectDescription": "Setup text for Claude Code, Codex, Cursor and other MCP clients.",
+        "keywordClaudeCode": "claude code",
+        "keywordCodex": "codex",
+        "keywordCursor": "cursor",
+        "keywordSetup": "setup",
+        "keywordConfig": "config",
+        "auditDescription": "Every MCP request this server received, with who sent it and how it ended.",
+        "keywordAudit": "audit",
+        "keywordLog": "log",
+        "keywordHistory": "history",
+        "keywordDenied": "denied"
+      },
+      "title": "MCP",
+      "description": "Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server."
+    }
+  },
+  "components": {
+    "newAgentSession": {
+      "title": "New agent session",
+      "description": "Choose the agent, account and machine. Turn on Create worktree to start it in a new worktree.",
+      "agent": "Agent",
+      "machine": "Machine",
+      "account": "Account",
+      "accountAutomatic": "Automatic (rules and usage)",
+      "accountMachineLogin": "The machine’s own login",
+      "accountUnmanagedAgent": "Seal picks accounts for Claude Code and Codex. {{agent}} uses its own login.",
+      "accountSshOnly": "This machine is reached over SSH only, so the agent uses the login on that machine.",
+      "accountReadFailed": "Could not read this machine’s accounts: {{error}}",
+      "accountTerminalOnly": "Starts in a terminal, where the session can run on a chosen account.",
+      "accountChoiceFailed": "Could not start on the chosen account",
+      "createWorktree": "Create worktree",
+      "createWorktreeOn": "The agent starts in a new worktree on its own branch.",
+      "createWorktreeOff": "The agent starts in the project’s own directory.",
+      "noProjectCheckout": "Seal could not find this project’s directory on that machine. Turn on Create worktree, or check that the machine is connected.",
+      "openProjectFailed": "Seal could not open this project’s directory.",
+      "start": "Start session",
+      "startShort": "Start",
+      "openFor": "New agent session in {{value0}}"
+    }
+  },
+  "workspaceDeletion": {
+    "unlockAndDelete": "Unlock & Delete",
+    "unlockConfirmTitle": "Unlock and delete “{{name}}”?",
+    "unlockConfirmBody": "Git locked this workspace so it would not be removed. Seal will release that lock, then permanently delete the workspace and every file in it, including uncommitted changes.",
+    "unlockConfirmReason": "Lock reason",
+    "unlockConfirmCancel": "Cancel"
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload."
+    }
+  }
+}

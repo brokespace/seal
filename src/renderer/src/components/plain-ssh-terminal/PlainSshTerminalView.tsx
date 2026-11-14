@@ -8,13 +8,13 @@ import { composeActiveTerminalTheme } from '@/components/terminal-pane/appearanc
 import { resolveEffectiveTerminalAppearance } from '@/lib/terminal/appearance/terminal-theme'
 import { useSystemPrefersDark } from '@/hooks/theme/use-system-prefers-dark'
 import { resolveTerminalMinimumContrastRatio } from '../../../../shared/terminal-themes/terminal-contrast-correction'
-import { syncPreviewTerminalLigatures } from '@/components/dashboard-popout/preview-terminal-ligatures'
+import { syncPreviewTerminalLigatures } from '@/components/standalone-terminal/rendering/preview-terminal-ligatures'
 import {
   buildPreviewAppearanceOptions,
   buildPreviewTerminalOptions
-} from '@/components/dashboard-popout/preview-terminal-options'
+} from '@/components/standalone-terminal/rendering/preview-terminal-options'
 import { openStandaloneTerminal } from '@/components/standalone-terminal/open-standalone-terminal'
-import { removePlainSshPanel } from '@/ssh/plain-ssh-terminal-panels'
+import { removePlainSshPanel, type MachineTerminalLaunch } from '@/ssh/plain-ssh-terminal-panels'
 import { usePluginFontReady } from '@/store/plugins/appearance/plugin-fonts'
 import type { ITheme, Terminal } from '@xterm/xterm'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
@@ -63,6 +63,48 @@ export function plainSshOpenFailureText(
   }
 }
 
+type TerminalSessionApi = {
+  open: (args: {
+    targetId: string
+    cols: number
+    rows: number
+    purpose?: 'machine-shell'
+  }) => Promise<PlainSshTerminalOpenResult>
+  write: (args: { sessionId: string; data: string }) => void
+  resize: (args: { sessionId: string; cols: number; rows: number }) => void
+  close: (args: { sessionId: string }) => void
+  ack: (args: { sessionId: string; chars: number }) => void
+  onEvent: (callback: (event: PlainSshTerminalEvent) => void) => () => void
+}
+
+/** Machine shells speak the plain SSH session protocol, so one view serves both transports. */
+function machineTerminalSessionApi(launch: MachineTerminalLaunch): TerminalSessionApi | null {
+  const machines = window.api.machines
+  if (!machines) {
+    return null
+  }
+  return {
+    open: async ({ cols, rows }) => {
+      const result = await machines.shellOpen({ ...launch, cols, rows })
+      return result.ok
+        ? { ok: true, sessionId: result.sessionId, label: '' }
+        : { ok: false, reason: 'spawn-failed', message: result.message }
+    },
+    write: (args) => void machines.shellWrite(args).catch(() => {}),
+    resize: (args) => void machines.shellResize(args).catch(() => {}),
+    close: (args) => void machines.shellClose(args).catch(() => {}),
+    ack: () => {},
+    onEvent: (callback) =>
+      machines.onShellEvent((event) =>
+        callback(
+          event.kind === 'data'
+            ? event
+            : { sessionId: event.sessionId, kind: 'exit', exitCode: event.exitCode ?? -1 }
+        )
+      )
+  }
+}
+
 function resolveThemeColors(
   settings: GlobalSettings | null,
   systemPrefersDark: boolean
@@ -80,10 +122,14 @@ function resolveThemeColors(
 /** One plain SSH session on Orca's standalone terminal; it starts on mount and hangs up on unmount. */
 export function PlainSshTerminalView({
   targetId,
+  purpose,
+  machine,
   hidden,
   onPhase
 }: {
   targetId: string
+  purpose?: 'machine-shell'
+  machine?: MachineTerminalLaunch
   hidden: boolean
   onPhase: (phase: PlainSshTerminalPhase) => void
 }): React.JSX.Element {
@@ -108,7 +154,9 @@ export function PlainSshTerminalView({
 
   useEffect(() => {
     const container = containerRef.current
-    const api = window.api.plainSsh
+    const api: TerminalSessionApi | null | undefined = machine
+      ? machineTerminalSessionApi(machine)
+      : window.api.plainSsh
     if (!container || !api) {
       return
     }
@@ -220,7 +268,7 @@ export function PlainSshTerminalView({
       }
     })
     void api
-      .open({ targetId, cols: terminal.cols, rows: terminal.rows })
+      .open({ targetId, cols: terminal.cols, rows: terminal.rows, purpose })
       .then((result) => {
         if (disposed) {
           if (result.ok) {
@@ -280,7 +328,7 @@ export function PlainSshTerminalView({
       terminalRef.current = null
       fitRef.current = null
     }
-  }, [targetId])
+  }, [targetId, purpose, machine])
 
   // Why: appearance and Option-as-Alt changes must land live; reopening would hang up ssh.
   useEffect(() => {

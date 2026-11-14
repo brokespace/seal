@@ -14,6 +14,7 @@ export function getWorktreeRemovalOptionsKey(
     | 'allowUnverifiedPtyStop'
     | 'skipArchive'
     | 'allowFailedArchiveHook'
+    | 'unlockLockedWorktree'
     | 'approvedNestedWorktrees'
     | 'expectedCheckout'
   >
@@ -29,7 +30,9 @@ export function getWorktreeRemovalOptionsKey(
     args.approvedNestedWorktrees || args.expectedCheckout
       ? `:${JSON.stringify([args.approvedNestedWorktrees, args.expectedCheckout])}`
       : ''
-  return `${forceKey}:${archiveKey}:${ptyKey}:${archiveFailureKey}${checkoutKey}`
+  // An unlock retry must not join the attempt the lock just refused.
+  const lockKey = args.unlockLockedWorktree === true ? ':unlock' : ''
+  return `${forceKey}:${archiveKey}:${ptyKey}:${archiveFailureKey}${lockKey}${checkoutKey}`
 }
 
 export function getWorktreeRemovalInFlightKey(

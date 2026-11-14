@@ -1,9 +1,9 @@
 # @orca/docs
 
 This package contains the product documentation and public media intended to
-ship alongside Orca's source code.
+ship alongside Seal's source code.
 
-Open-source product documentation for [Orca](https://orca.dev), served at `/docs` (same URL shape as `https://orca.dev/docs`).
+Open-source product documentation for [Seal](https://orca.dev), served at `/docs` (same URL shape as `https://orca.dev/docs`).
 
 This package is a **self-contained Next.js app**. It is intentionally **not** a root monorepo workspace member, so installing Electron app dependencies does not pull Next/fumadocs.
 

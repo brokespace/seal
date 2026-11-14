@@ -53,7 +53,8 @@ export const CARD_ACTIVITY_PARTS = {
   Agents: part(['tight'], (props, _children, card) => (
     <WorktreeCardAgents
       worktreeId={card.worktree.id}
-      agents={card.agentActivityDisplayMode === 'compact' ? card.compactInlineAgentRows : undefined}
+      executionHostId={card.worktree.hostId}
+      agents={card.inlineAgentRows}
       // Why: counterbalance the card stack gap so agents right after the title read as one group.
       className={props.tight === true ? '-mt-1' : 'mt-0'}
     />
@@ -66,8 +67,8 @@ export const CARD_ACTIVITY_PARTS = {
       />
     ) : null
   ),
-  DeleteFailed: part([], (_props, _children, { worktree }) =>
-    worktree.removalError ? <WorktreeCardDeleteFailed error={worktree.removalError} /> : null
+  DeleteFailed: part([], (_props, _children, { deleteFailure }) =>
+    deleteFailure ? <WorktreeCardDeleteFailed error={deleteFailure} /> : null
   ),
   LinearSetupPrompt: part([], (_props, _children, { repo, settings }) => (
     <LinearAgentSkillSetupPrompt

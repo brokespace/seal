@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { runProcessSync } from '@orca/process-host'
 import type { ProcessResult } from '@orca/process-host/process-spec'
+import { ORCA_APP_ID } from '../../../shared/local-build-compatibility'
 import { writeFileAtomically } from '../../filesystem/atomic-file-publication'
 
 // Opt out of the accent picker once so terminal keys repeat (#14746); later user choices win.
@@ -18,7 +19,7 @@ const DEFAULTS_TIMEOUT_MS = 5_000
 // defaults uses exit 1 for an absent key; other failures leave its presence unknown.
 const DEFAULTS_MISSING_STATUS = 1
 
-const ORCA_BUNDLE_ID = 'com.stablyai.orca'
+const ORCA_BUNDLE_ID = ORCA_APP_ID
 
 export type PressAndHoldDecision =
   | 'not-macos'

@@ -4,7 +4,8 @@ import { getDeleteWorktreeToastCopy } from './delete-worktree-toast'
 import { useTranslate } from '@/i18n/use-translate'
 import { DeleteNestedWorktreesDialog } from './DeleteNestedWorktreesDialog'
 import { WorktreeForceDeleteButton } from './WorktreeForceDeleteButton'
-import { isNestedWorktreeRemovalError } from '../../../../../../shared/worktree/nested-removal'
+import { UnlockAndDeleteWorktreeDialog } from './UnlockAndDeleteWorktreeDialog'
+import { isNestedWorktreeRemovalError } from '../../../../../../shared/worktree/removal/nested-removal'
 import { composeWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import {
@@ -12,7 +13,7 @@ import {
   SUBMODULE_DIRTY_REMOVAL_DETAIL,
   type WorktreeForceDeleteReason,
   type WorktreeRemovalTarget
-} from '../../../../../../shared/worktree/removal'
+} from '../../../../../../shared/worktree/removal/removal'
 
 type DeleteWorktreeFailureToastOptions = {
   error: string
@@ -22,6 +23,9 @@ type DeleteWorktreeFailureToastOptions = {
   hasKnownChanges?: boolean
   /** The archive hook refused this removal, so the user may waive it (#19334). */
   canWaiveArchiveHook?: boolean
+  /** Git's lock refused this removal, so the user may release it and delete. */
+  canUnlockLockedWorktree?: boolean
+  onUnlockAndDelete?: () => void
   onViewChanges: () => void
   onForceDelete: () => void
   onAlwaysForceDelete?: () => Promise<void>
@@ -47,6 +51,7 @@ function DeleteWorktreeFailureToastBody({
   description,
   canForceDelete,
   canWaiveArchiveHook,
+  unlock,
   showViewChanges,
   onViewChanges,
   onForceDelete,
@@ -60,6 +65,7 @@ function DeleteWorktreeFailureToastBody({
   description?: string
   canForceDelete: boolean
   canWaiveArchiveHook: boolean
+  unlock: { lockReason: string | null; onConfirm: () => void } | null
   showViewChanges: boolean
   onViewChanges: () => void
   onForceDelete: () => void
@@ -106,6 +112,16 @@ function DeleteWorktreeFailureToastBody({
             onAlwaysForceDelete={onAlwaysForceDelete}
           />
         ) : null}
+        {unlock ? (
+          <UnlockAndDeleteWorktreeDialog
+            worktreeName={worktreeName}
+            lockReason={unlock.lockReason}
+            onConfirm={() => {
+              toast.dismiss(toastId)
+              unlock.onConfirm()
+            }}
+          />
+        ) : null}
         {canWaiveArchiveHook ? (
           <Button type="button" variant="destructive" size="sm" onClick={deleteAnyway}>
             {t('auto.components.sidebar.delete.worktree.failure.archive.waiver', 'Delete Anyway')}
@@ -123,6 +139,8 @@ export function showDeleteWorktreeFailureToast({
   lockReason,
   hasKnownChanges,
   canWaiveArchiveHook,
+  canUnlockLockedWorktree,
+  onUnlockAndDelete,
   onViewChanges,
   onForceDelete,
   onAlwaysForceDelete,
@@ -133,11 +151,16 @@ export function showDeleteWorktreeFailureToast({
   nestedRemovalTarget,
   onNestedDeleted
 }: DeleteWorktreeFailureToastOptions): void {
+  const unlock =
+    canUnlockLockedWorktree === true && onUnlockAndDelete
+      ? { lockReason: lockReason ?? null, onConfirm: onUnlockAndDelete }
+      : null
   const toastCopy = getDeleteWorktreeToastCopy(
     worktreeName,
     forceDeleteReason,
     error,
-    lockReason ?? null
+    lockReason ?? null,
+    unlock !== null
   )
   const showToast = toastCopy.isDestructive ? toast.error : toast.info
   const id = deleteWorktreeFailureToastId({
@@ -154,6 +177,7 @@ export function showDeleteWorktreeFailureToast({
         description={toastCopy.description}
         canForceDelete={canForceDelete}
         canWaiveArchiveHook={canWaiveArchiveHook === true}
+        unlock={unlock}
         showViewChanges={
           !(
             isLockedWorktreeRemovalError(error) ||
@@ -171,7 +195,8 @@ export function showDeleteWorktreeFailureToast({
       />
     ),
     // A toast offering a destructive choice must not expire before the user reads the reason.
-    duration: canForceDelete || canWaiveArchiveHook === true || nestedTarget ? Infinity : 10000,
+    duration:
+      canForceDelete || canWaiveArchiveHook === true || unlock || nestedTarget ? Infinity : 10000,
     dismissible: true
   })
 }

@@ -1,11 +1,16 @@
 import { app, powerMonitor } from 'electron'
-import { getOrcaCloudAuthConfig } from '../../orca-profiles/cloud-auth/profile-cloud-auth-config'
+import { resolveSealRelayOrigin } from '../../../shared/seal-cloud/seal-service-origins'
+import {
+  createSealRelayContextReader,
+  sealRelayEndpointConfig
+} from '../../runtime/mobile-cloud-relay/authentication/seal-relay-host-auth'
 import { getProfileUserDataPath } from '../../orca-profiles/profile-storage-paths'
 import type { OrcaRuntimeRpcServer } from '../../runtime/rpc/server/runtime-rpc'
 import { DesktopRelayService } from '../../runtime/mobile-cloud-relay/desktop-relay-service'
 import { createDesktopRelayServiceInstaller } from '../../runtime/mobile-cloud-relay/desktop-relay-service-installer'
 import { publishDesktopRelayStatus } from './main-process-relay-status'
 import { mainProcessState as state } from '../main-process-state'
+import { startSealMcpEndpoints } from '../../seal-mcp/relay/seal-mcp-relay-startup'
 
 // Register before proxy readiness; the installer waits before its first request.
 export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void {
@@ -14,16 +19,15 @@ export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void
     whenNetworkReady: state.initialProxyApplicationReady,
     isFenced: () => state.isQuitting,
     create: () => {
-      const cloudAuth = getOrcaCloudAuthConfig()
-      return cloudAuth.configured
-        ? new DesktopRelayService({
-            authConfig: cloudAuth.config,
-            userDataPath: getProfileUserDataPath(),
-            appVersion: app.getVersion(),
-            runtimeRpc,
-            onStatus: publishDesktopRelayStatus
-          })
-        : null
+      const relayOrigin = resolveSealRelayOrigin(process.env, app.isPackaged)
+      return new DesktopRelayService({
+        authConfig: sealRelayEndpointConfig(relayOrigin),
+        readContext: (keypair) => createSealRelayContextReader({ relayOrigin, keypair }),
+        userDataPath: getProfileUserDataPath(),
+        appVersion: app.getVersion(),
+        runtimeRpc,
+        onStatus: publishDesktopRelayStatus
+      })
     },
     onInstalled: (service) => {
       state.desktopRelayService = service
@@ -34,4 +38,9 @@ export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void
   // Sleep can expire the token with no retry timer; resume is the recovery opportunity.
   powerMonitor.on('resume', () => state.desktopRelayService?.ensureLive())
   void installer.ensure()
+  const stopMcpEndpoints = startSealMcpEndpoints({
+    runtimeRpc,
+    relayOrigin: resolveSealRelayOrigin(process.env, app.isPackaged)
+  })
+  app.once('will-quit', stopMcpEndpoints)
 }

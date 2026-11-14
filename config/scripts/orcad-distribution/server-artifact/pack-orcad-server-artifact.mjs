@@ -127,7 +127,7 @@ function stageSlot(templateDir, target, slotDir) {
 // `serve` at a desktop app this install does not have.
 function launcherScript(nodeRelativePath) {
   return `#!/bin/sh
-# Orca server-only launcher: runs the bundled Orca CLI under the bundled Node.
+# Seal server-only launcher: runs the bundled Seal CLI under the bundled Node.
 set -e
 self=$0
 if command -v readlink >/dev/null 2>&1 && resolved=$(readlink -f -- "$self" 2>/dev/null); then
@@ -156,7 +156,7 @@ try {
   const version = readFileSync(join(slot, ${JSON.stringify(ORCAD_VERSION_FILENAME)}), 'utf8').trim()
   selection = { kind: 'orcad', runtime: process.execPath, entry: join(slot, ${JSON.stringify(ORCAD_SERVER_ENTRY_FILENAME)}), version }
 } catch (error) {
-  process.stderr.write('This Orca server install is incomplete; extract the release archive again.\\n')
+  process.stderr.write('This Seal server install is incomplete; extract the release archive again.\\n')
   process.exit(1)
 }
 process.stdout.write('ORCA_SERVE_RUNTIME ' + JSON.stringify(selection) + '\\n')

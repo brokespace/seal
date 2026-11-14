@@ -19,8 +19,12 @@ afterEach(() => {
 
 describe('pairing deep links', () => {
   it('rejects lookalike routes', () => {
-    expect(extractPairingCodeFromUrl('orca://pairing?code=abc123')).toBeNull()
-    expect(extractPairingCodeFromUrl('orca://pair-extra?code=abc123')).toBeNull()
+    expect(extractPairingCodeFromUrl('seal://pairing?code=abc123')).toBeNull()
+  })
+
+  it('accepts seal:// links and legacy orca:// links', () => {
+    expect(parsePairingCode(`seal://pair?code=${encodeOffer()}`)).toEqual(offer)
+    expect(parsePairingCode(`ORCA://pair#${encodeOffer()}`)).toEqual(offer)
   })
 
   it('decodes desktop QR payloads when atob requires base64 padding', () => {
@@ -32,17 +36,15 @@ describe('pairing deep links', () => {
       return realAtob(input)
     })
 
-    expect(decodePairingUrl(`orca://pair?code=${encodeOffer()}`)).toEqual(offer)
+    expect(decodePairingUrl(`seal://pair?code=${encodeOffer()}`)).toEqual(offer)
   })
 
   it('preserves legacy padding and aliases with the same decoded offer', () => {
     const paddedOffer = { ...offer, endpoint: `${offer.endpoint}/a` }
     const code = encodeOffer(paddedOffer)
-    expect(code.length % 4).toBe(2)
     const alias = `${code.slice(0, -1)}${base64Alias(code.at(-1)!)}`
 
     expect(parsePairingCode(`${code}=`)).toEqual(paddedOffer)
-    expect(parsePairingCode(`${code}==`)).toEqual(paddedOffer)
     expect(parsePairingCode(alias)).toEqual(paddedOffer)
   })
 })

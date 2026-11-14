@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a problem with Orca
+description: Report a problem with Seal
 title: '[Bug]: '
 type: Bug
 labels:
@@ -8,19 +8,19 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form for Orca bugs. Include enough detail for someone else to reproduce the issue.
+        Use this form for Seal bugs. Include enough detail for someone else to reproduce the issue.
 
         Please write your issue in English.
 
   - type: dropdown
     id: where
     attributes:
-      label: Where were you using Orca?
+      label: Where were you using Seal?
       description: Where you saw the bug.
       options:
         - Desktop only
         - Desktop + SSH host
-        - Desktop + Orca server
+        - Desktop + Seal server
         - Desktop + WSL
         - Mobile app
         - Web browser
@@ -47,7 +47,7 @@ body:
     id: remote_os
     attributes:
       label: Remote host operating system
-      description: Only for SSH, Orca server or web.
+      description: Only for SSH, Seal server or web.
       options:
         - Linux
         - macOS
@@ -60,8 +60,8 @@ body:
   - type: input
     id: orca_version
     attributes:
-      label: Orca version
-      description: 'macOS: Orca > About Orca. Windows/Linux: Help > About Orca. Mobile: Settings > About.'
+      label: Seal version
+      description: 'macOS: Seal > About Seal. Windows/Linux: Help > About Seal. Mobile: Settings > About.'
       placeholder: v1.4.2
     validations:
       required: false
@@ -73,7 +73,7 @@ body:
       description: Describe the bug in your own words. Include a short summary, reproduction steps, and anything else that seems relevant.
       placeholder: |
         Short summary:
-        Orca crashes when ...
+        Seal crashes when ...
 
         What happened?
 

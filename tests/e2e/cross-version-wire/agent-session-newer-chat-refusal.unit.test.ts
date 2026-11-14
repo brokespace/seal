@@ -158,7 +158,7 @@ async function releasedReader(ref: string) {
   return { words, isFinal }
 }
 
-describe('a chat a newer Orca saved, across versions', () => {
+describe('a chat a newer Seal saved, across versions', () => {
   it(
     'old client against new host: a release before the reason words it as an unreadable history and keeps retrying',
     async () => {
@@ -193,7 +193,7 @@ describe('a chat a newer Orca saved, across versions', () => {
     ['body kind', NEWER_BODY_KIND],
     ['plan subject kind', NEWER_NESTED_LITERAL]
   ])(
-    "this build refuses a newer build's %s as a newer Orca's and keeps it; a build before it deletes it",
+    "this build refuses a newer build's %s as a newer Seal's and keeps it; a build before it deletes it",
     async (_value, body) => {
       rmSync(directory, { recursive: true, force: true })
       directory = mkdtempSync(join(tmpdir(), 'orca-newer-chat-xv-'))

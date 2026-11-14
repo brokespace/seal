@@ -9,24 +9,21 @@ import SetupScriptPromptCard from './SetupScriptPromptCard'
 import WorktreeList from './worktree-list/listing/WorktreeList'
 import WslMovedProjectsSection from './WslMovedProjectsSection'
 import HiddenProjectsSection from './hidden-projects/HiddenProjectsSection'
+import ActiveAgentsSection from '../live-sessions/active-agents/ActiveAgentsSection'
 import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './workspace-board/surface/WorkspaceKanbanDrawer'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { cn } from '@/lib/class-names'
 import { FolderPlus, Loader2 } from 'lucide-react'
-import { ActivityThreadCollapseContext } from '@/components/activity/activity-thread-collapse-context'
 import { useSidebarProjectDrop } from './project-admission/drop/useSidebarProjectDrop'
 import { useWorkspaceBoardPanel } from './workspace-board/surface/useWorkspaceBoardPanel'
-import { useWorkspaceRevealBodyRedirect } from './worktree-list/navigation/use-workspace-reveal-body-redirect'
 import { resolveLeftSidebarStyleVariables } from '@/app-shell/appearance/left-sidebar-appearance'
 import { lazyWithRetry } from '@/app-shell/startup/lazy-with-retry'
 import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 import { SeveredTerminalDaemonBanner } from './SeveredTerminalDaemonBanner'
 import { StalledTerminalDaemonBanner } from './StalledTerminalDaemonBanner'
 import { StartupWorktreeRefreshStatus } from './StartupWorktreeRefreshStatus'
-
-// Load the shared Activity badge/list pipeline after the sidebar shell.
-const SidebarAgentsList = lazyWithRetry(() => import('./SidebarAgentsList'))
+import { WorktreeCardsUpdateNotice } from './WorktreeCardsUpdateNotice'
 
 const WorktreeMetaDialog = lazyWithRetry(
   () => import('./workspace-card/metadata/WorktreeMetaDialog')
@@ -69,40 +66,11 @@ function Sidebar({
   const repos = useAppStore((s) => s.repos)
   const startupWorktreeRefreshCompleted = useAppStore((s) => s.startupWorktreeRefreshCompleted)
   const settings = useAppStore((s) => s.settings)
-  const sidebarBody = useAppStore((s) => s.sidebarBody ?? 'workspaces')
   const showAgentDashboard = settings?.experimentalAgentDashboardPopout === true
   const agentDashboardDrawerOpen = useAppStore((s) => s.agentDashboardDrawerOpen)
   const setAgentDashboardDrawerOpen = useAppStore((s) => s.setAgentDashboardDrawerOpen)
-  const agentReadFilter = useAppStore((s) => s.agentsReadFilter)
-  const setAgentReadFilter = useAppStore((s) => s.setAgentsReadFilter)
-  const agentGroupBy = useAppStore((s) => s.agentsGroupBy)
-  const setAgentGroupBy = useAppStore((s) => s.setAgentsGroupBy)
-  const [agentQuery, setAgentQuery] = React.useState('')
-  const [agentOptionsTarget, setAgentOptionsTarget] = React.useState<HTMLDivElement | null>(null)
   const [projectsCollapseTarget, setProjectsCollapseTarget] = React.useState<HTMLDivElement | null>(
     null
-  )
-  const [agentBadgeTarget, setAgentBadgeTarget] = React.useState<HTMLSpanElement | null>(null)
-  const agentsScrollTopRef = React.useRef(0)
-  // Retain collapse state and scroll geometry across Agents-list unmounts.
-  const [agentsCollapsedGroupKeys, setAgentsCollapsedGroupKeys] = React.useState<
-    ReadonlySet<string>
-  >(() => new Set())
-  const agentsCollapseState = useMemo(
-    () => ({
-      collapsedGroupKeys: agentsCollapsedGroupKeys,
-      onToggleGroupCollapse: (groupKey: string) =>
-        setAgentsCollapsedGroupKeys((prev) => {
-          const next = new Set(prev)
-          if (next.has(groupKey)) {
-            next.delete(groupKey)
-          } else {
-            next.add(groupKey)
-          }
-          return next
-        })
-    }),
-    [agentsCollapsedGroupKeys]
   )
   const fetchAllWorktrees = useAppStore((s) => s.fetchAllWorktrees)
   const activeModal = useAppStore((s) => s.activeModal)
@@ -159,7 +127,6 @@ function Sidebar({
   const drawerCoversSeam =
     workspaceBoardRenderedOpen || (showAgentDashboard && agentDashboardDrawerOpen)
 
-  useWorkspaceRevealBodyRedirect(sidebarOpen && sidebarBody === 'agents')
   // A collapsed sidebar takes no drops.
   const sidebarRef = React.useCallback(
     (node: HTMLDivElement | null) => {
@@ -183,49 +150,27 @@ function Sidebar({
             <>
               <SidebarNav />
               <SidebarHeader
-                activityBadgeTarget={setAgentBadgeTarget}
                 onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}
-                activityOptionsTarget={setAgentOptionsTarget}
                 projectsCollapseTarget={setProjectsCollapseTarget}
               />
               <SeveredTerminalDaemonBanner />
               <StalledTerminalDaemonBanner />
-              <React.Suspense
-                fallback={sidebarBody === 'agents' ? <div className="min-h-0 flex-1" /> : null}
-              >
-                <ActivityThreadCollapseContext.Provider value={agentsCollapseState}>
-                  <SidebarAgentsList
-                    active={sidebarBody === 'agents'}
-                    readFilter={agentReadFilter}
-                    setReadFilter={setAgentReadFilter}
-                    groupBy={agentGroupBy}
-                    setGroupBy={setAgentGroupBy}
-                    query={agentQuery}
-                    setQuery={setAgentQuery}
-                    optionsTarget={agentOptionsTarget}
-                    badgeTarget={agentBadgeTarget}
-                    scrollTopRef={agentsScrollTopRef}
-                  />
-                </ActivityThreadCollapseContext.Provider>
-              </React.Suspense>
-              {sidebarBody !== 'agents' && (
-                <>
-                  <LocalGitToolchainScanBanner />
-                  <StartupWorktreeRefreshStatus />
-                  <WorktreeList
-                    scrollOffsetRef={worktreeScrollOffsetRef}
-                    scrollAnchorRef={worktreeScrollAnchorRef}
-                    workspaceBoardOpen={workspaceBoardOpen}
-                    onWorktreeCardClick={closeWorkspaceBoard}
-                    onWorkspaceBoardDragPreviewStart={previewWorkspaceBoardFromDrag}
-                    onWorkspaceBoardDragPreviewCommit={solidifyWorkspaceBoardFromDrag}
-                    onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
-                    projectsCollapseTarget={projectsCollapseTarget}
-                  />
-                  <WslMovedProjectsSection />
-                  <HiddenProjectsSection />
-                </>
-              )}
+              <LocalGitToolchainScanBanner />
+              <StartupWorktreeRefreshStatus />
+              <WorktreeCardsUpdateNotice />
+              <WorktreeList
+                scrollOffsetRef={worktreeScrollOffsetRef}
+                scrollAnchorRef={worktreeScrollAnchorRef}
+                workspaceBoardOpen={workspaceBoardOpen}
+                onWorktreeCardClick={closeWorkspaceBoard}
+                onWorkspaceBoardDragPreviewStart={previewWorkspaceBoardFromDrag}
+                onWorkspaceBoardDragPreviewCommit={solidifyWorkspaceBoardFromDrag}
+                onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
+                projectsCollapseTarget={projectsCollapseTarget}
+              />
+              <ActiveAgentsSection />
+              <WslMovedProjectsSection />
+              <HiddenProjectsSection />
 
               <div className="relative shrink-0">
                 <SetupScriptPromptCard />

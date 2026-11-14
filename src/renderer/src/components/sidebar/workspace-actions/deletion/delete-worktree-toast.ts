@@ -5,7 +5,7 @@ import {
   isProvenLivePtyRemovalError,
   isProvenLiveStructuredSessionRemovalError,
   type WorktreeForceDeleteReason
-} from '../../../../../../shared/worktree/removal'
+} from '../../../../../../shared/worktree/removal/removal'
 export type DeleteWorktreeToastCopy = {
   title: string
   description?: string
@@ -23,8 +23,29 @@ export function getDeleteWorktreeToastCopy(
   worktreeName: string,
   forceDeleteReason: WorktreeForceDeleteReason | null,
   error: string,
-  lockReason: string | null = null
+  lockReason: string | null = null,
+  canUnlock = false
 ): DeleteWorktreeToastCopy {
+  if (isLockedWorktreeRemovalError(error) && canUnlock) {
+    return {
+      title: translate(
+        'auto.components.sidebar.delete.worktree.toast.1d0fa5c0a5',
+        'Failed to delete workspace {{value0}}',
+        { value0: worktreeName }
+      ),
+      description: lockReason
+        ? translate(
+            'auto.components.sidebar.delete.worktree.toast.lockedReasonUnlockable',
+            'Git has this workspace locked ({{value0}}), so nothing was deleted. Unlock & Delete releases the lock and deletes it.',
+            { value0: lockReason }
+          )
+        : translate(
+            'auto.components.sidebar.delete.worktree.toast.lockedUnlockable',
+            'Git has this workspace locked, so nothing was deleted. Unlock & Delete releases the lock and deletes it.'
+          ),
+      isDestructive: false
+    }
+  }
   if (isLockedWorktreeRemovalError(error)) {
     return {
       title: translate(

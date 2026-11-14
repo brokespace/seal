@@ -9,6 +9,8 @@ export type LogStreamChild = ChildProcessByStdio<Writable, Readable, Readable>
 
 // TCC can attribute terminal access to the detached helper independently of the main app.
 const ORCA_RESPONSIBLE_IDENTIFIERS = new Set([
+  'com.brokespace.seal',
+  'com.brokespace.seal.helper',
   'com.stablyai.orca',
   'com.stablyai.orca.helper',
   'com.stablyai.orca.dev',

@@ -1,9 +1,9 @@
 {
   "ios": {
-    "NSCameraUsageDescription": "Allow Orca to use the camera for QR code scanning.",
-    "NSLocalNetworkUsageDescription": "Orca connects to the desktop app on your LAN.",
-    "NSMicrophoneUsageDescription": "Allow Orca to use your microphone for voice dictation, transcribed on this phone or on your paired computer.",
-    "NSPhotoLibraryAddUsageDescription": "Allow Orca to save images from your sessions to Photos.",
-    "NSPhotoLibraryUsageDescription": "Allow Orca to attach photos from your library to a terminal session on your paired desktop."
+    "NSCameraUsageDescription": "Allow Seal to use the camera for QR code scanning.",
+    "NSLocalNetworkUsageDescription": "Seal connects to the desktop app on your LAN.",
+    "NSMicrophoneUsageDescription": "Allow Seal to use your microphone for voice dictation, transcribed on this phone or on your paired computer.",
+    "NSPhotoLibraryAddUsageDescription": "Allow Seal to save images from your sessions to Photos.",
+    "NSPhotoLibraryUsageDescription": "Allow Seal to attach photos from your library to a terminal session on your paired desktop."
   }
 }

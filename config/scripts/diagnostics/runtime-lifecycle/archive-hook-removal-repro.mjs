@@ -296,7 +296,7 @@ async function main() {
       before.dirExists === after1.dirExists && before.registered === after1.registered
     )
     const shown = ok(['worktree', 'show', '--worktree', wt1.id]).worktree
-    check('Orca still resolves the worktree', shown?.id === wt1.id)
+    check('Seal still resolves the worktree', shown?.id === wt1.id)
     check(
       'the hook really ran (twice: plain + --force)',
       hookRuns().length >= 2,

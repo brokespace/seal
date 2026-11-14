@@ -13,7 +13,7 @@ export async function captureLiveInputLag(page, durationMs = 30_000) {
   }
   const identity = await page.evaluate(async () => {
     if (!window.api?.app?.getIdentity) {
-      throw new Error('Target is not the main Orca renderer')
+      throw new Error('Target is not the main Seal renderer')
     }
     if (window.__orcaLiveInputLag || window.__orcaIdleCpuTimingProbe) {
       throw new Error('A renderer timing probe already exists; stop it before capturing')

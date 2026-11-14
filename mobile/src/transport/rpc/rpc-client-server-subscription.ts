@@ -4,7 +4,9 @@ export const READY_STREAM_RELEASE_METHODS: ReadonlyMap<string, string> = new Map
   ['browser.screencast', 'browser.screencast.unsubscribe'],
   ['runtime.clientEvents.subscribe', 'runtime.clientEvents.unsubscribe'],
   ['notifications.subscribe', 'notifications.unsubscribe'],
-  ['accounts.subscribe', 'accounts.unsubscribe']
+  ['accounts.subscribe', 'accounts.unsubscribe'],
+  ['liveSessions.watch', 'liveSessions.unwatch'],
+  ['liveSessions.watchTranscript', 'liveSessions.unwatch']
 ])
 
 export function isReadyIdStream(method: string | undefined): boolean {

@@ -1,4 +1,5 @@
 import type { SshTarget } from '../../../shared/ssh-types'
+import type { SshConfigHost } from '../config/ssh-config-parser'
 import { isOpenSshConfigBackedTarget } from '../system-transport/system-ssh-args'
 
 type VsCodeSshAuthorityResult =
@@ -16,7 +17,31 @@ export function isValidAuthorityPart(value: string, allowEmpty = false): boolean
   )
 }
 
-export function resolveVsCodeSshAuthority(target: SshTarget): VsCodeSshAuthorityResult {
+/** Remote-SSH takes no port in its authority; an alias the user already wrote carries it. */
+function findAuthorityInSshConfig(
+  configHosts: readonly SshConfigHost[],
+  host: string,
+  port: number,
+  username: string
+): string | null {
+  for (const entry of configHosts) {
+    if (
+      (entry.hostname ?? entry.host).toLowerCase() !== host.toLowerCase() ||
+      (entry.port ?? 22) !== port ||
+      !isValidAuthorityPart(entry.host) ||
+      (entry.user && username && entry.user !== username)
+    ) {
+      continue
+    }
+    return entry.user || !username ? entry.host : `${username}@${entry.host}`
+  }
+  return null
+}
+
+export function resolveVsCodeSshAuthority(
+  target: SshTarget,
+  loadSshConfigHosts: () => readonly SshConfigHost[] = () => []
+): VsCodeSshAuthorityResult {
   if (isOpenSshConfigBackedTarget(target)) {
     const configHost = target.configHost ?? ''
     return isValidAuthorityPart(configHost)
@@ -36,7 +61,10 @@ export function resolveVsCodeSshAuthority(target: SshTarget): VsCodeSshAuthority
     return { ok: false, reason: 'ssh-target-invalid' }
   }
   if (target.port !== 22) {
-    return { ok: false, reason: 'ssh-alias-required', host, port: target.port }
+    const authority = findAuthorityInSshConfig(loadSshConfigHosts(), host, target.port, username)
+    return authority
+      ? { ok: true, authority }
+      : { ok: false, reason: 'ssh-alias-required', host, port: target.port }
   }
   return { ok: true, authority: username ? `${username}@${host}` : host }
 }

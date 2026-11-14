@@ -41,6 +41,7 @@ import { localhostWorktreeLabelsApi } from './api/workspaces/localhost-worktree-
 import { keybindingsApi } from './api/preferences/keybindings-bridge'
 import { codexAccountsApi } from './api/agent-accounts/codex-accounts-bridge'
 import { claudeAccountsApi } from './api/agent-accounts/claude-accounts-bridge'
+import { liveSessionsApi } from './api/live-sessions/live-sessions-bridge'
 import { cliApi } from './api/cli-install/cli-bridge'
 import { codexConfigSyncApi } from './api/agent-accounts/codex-config-sync-bridge'
 import { preflightApi } from './api/preflight/preflight-bridge'
@@ -86,6 +87,8 @@ import { grokAccountsApi } from './api/agent-accounts/grok-accounts-bridge'
 import { cursorAccountsApi } from './api/agent-accounts/cursor-accounts-bridge'
 import { sshApi } from './api/ssh/ssh-bridge'
 import { plainSshTerminalApi } from './api/terminal/plain-ssh-terminal-bridge'
+import { machinesApi } from './api/machines/machines-bridge'
+import { homeChatApi } from './api/home-chat/home-chat-bridge'
 import { legacyRelayBridgeApi } from './api/mobile/legacy-relay-bridge-api'
 import { automationsApi } from './api/automations/automations-bridge'
 import { e2eApi } from './api/diagnostics/e2e-bridge'
@@ -101,6 +104,8 @@ const telemetrySetOptInApi: PreloadApi['telemetrySetOptIn'] = (optedIn) =>
   ipcRenderer.invoke('telemetry:setOptIn', optedIn)
 const telemetryAcknowledgeBannerApi: PreloadApi['telemetryAcknowledgeBanner'] = () =>
   ipcRenderer.invoke('telemetry:acknowledgeBanner')
+const telemetryAssignBrowserExtensionsBannerApi: PreloadApi['telemetryAssignBrowserExtensionsBanner'] =
+  () => ipcRenderer.invoke('telemetry:assignBrowserExtensionsBanner')
 const telemetryGetConsentStateApi: PreloadApi['telemetryGetConsentState'] = () =>
   ipcRenderer.invoke('telemetry:getConsentState')
 
@@ -140,6 +145,7 @@ const api = {
   telemetrySetOptIn: telemetrySetOptInApi,
   telemetryAcknowledgeBanner: telemetryAcknowledgeBannerApi,
   telemetryGetConsentState: telemetryGetConsentStateApi,
+  telemetryAssignBrowserExtensionsBanner: telemetryAssignBrowserExtensionsBannerApi,
   diagnostics: diagnosticsApi,
   settings: settingsApi,
   agentAwake: agentAwakeApi,
@@ -147,6 +153,7 @@ const api = {
   keybindings: keybindingsApi,
   codexAccounts: codexAccountsApi,
   claudeAccounts: claudeAccountsApi,
+  liveSessions: liveSessionsApi,
   cli: cliApi,
   codexConfigSync: codexConfigSyncApi,
   preflight: preflightApi,
@@ -192,6 +199,8 @@ const api = {
   cursorAccounts: cursorAccountsApi,
   ssh: sshApi,
   plainSsh: plainSshTerminalApi,
+  machines: machinesApi,
+  homeChat: homeChatApi,
   legacyRelayBridge: legacyRelayBridgeApi,
   automations: automationsApi,
   e2e: e2eApi,

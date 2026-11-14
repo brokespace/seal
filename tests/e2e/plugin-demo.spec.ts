@@ -41,18 +41,18 @@ async function openDemoPanel(page: Page): Promise<void> {
       state.toggleRightSidebar()
     }
   })
-  const panelButton = page.getByRole('button', { name: 'Hello Orca', exact: true })
+  const panelButton = page.getByRole('button', { name: 'Hello Seal', exact: true })
   await expect(panelButton).toBeVisible({ timeout: 15_000 })
   await panelButton.click()
-  const guest = pluginGuest(page, 'Hello Orca')
+  const guest = pluginGuest(page, 'Hello Seal')
   await expect(guest).toBeVisible({ timeout: 15_000 })
-  await expect.poll(() => readDemoHeading(page)).toBe('Hello Orca 👋')
+  await expect.poll(() => readDemoHeading(page)).toBe('Hello Seal 👋')
   expect(await readGuestCsp(guest)).toMatch(/default-src 'self'.*connect-src 'self' data: blob:/)
 }
 
 function readDemoHeading(page: Page): Promise<string | null> {
   return readInGuest<string | null>(
-    pluginGuest(page, 'Hello Orca'),
+    pluginGuest(page, 'Hello Seal'),
     `document.querySelector('h1')?.textContent ?? null`
   )
 }
@@ -129,7 +129,7 @@ test('runs hello-orca panel, command, and event behind visible consent', async (
     await expect(consent).toBeVisible()
     await expect(orcaPage.getByRole('article')).toContainText('Local folder')
     await expect(consent).toContainText(
-      'Full access: runs as a normal program and can read your files, use the network, run other programs and control Orca, including your terminals and agents.'
+      'Full access: runs as a normal program and can read your files, use the network, run other programs and control Seal, including your terminals and agents.'
     )
     await expect(orcaPage.getByRole('dialog')).toHaveCount(0)
     await orcaPage
@@ -184,10 +184,10 @@ test('runs hello-orca panel, command, and event behind visible consent', async (
 
     const panelPath = join(pluginRoot, 'panel.html')
     const panelHtml = await readFile(panelPath, 'utf8')
-    await writeFile(panelPath, panelHtml.replace('Hello Orca 👋', 'Hello Orca reloaded'))
+    await writeFile(panelPath, panelHtml.replace('Hello Seal 👋', 'Hello Seal reloaded'))
     await expect
       .poll(() => readDemoHeading(orcaPage), { timeout: 15_000 })
-      .toBe('Hello Orca reloaded')
+      .toBe('Hello Seal reloaded')
 
     createdWorktreeId = await createWorktree(orcaPage, `plugin-event-${Date.now()}`)
     await expect

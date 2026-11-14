@@ -25,7 +25,16 @@ export function createUiSettingsActions(set: UISliceSet, get: UISliceGet): Parti
         }
         return
       }
-      set({ settingsNavigationTarget: target })
+      // Desktop folds SSH hosts and Seal servers into one Machines section; the web client keeps Servers.
+      const foldsIntoMachines =
+        (target.pane === 'ssh' || target.pane === 'servers') &&
+        typeof window !== 'undefined' &&
+        window.api?.machines !== undefined
+      set({
+        settingsNavigationTarget: foldsIntoMachines
+          ? { ...target, pane: 'machines', sectionId: undefined }
+          : target
+      })
     },
     clearSettingsTarget: () => set({ settingsNavigationTarget: null }),
     settingsProjectHostSelection: {},

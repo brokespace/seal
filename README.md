@@ -1,6 +1,13 @@
 <h1 align="center">
-  <a href="https://orca.dev"><img src="resources/build/icon.png" alt="Orca" width="64" valign="middle" /></a> Orca
+  <a href="https://github.com/brokespace/seal"><img src="resources/build/icon.png" alt="Seal" width="64" valign="middle" /></a> Seal
 </h1>
+
+> **Seal is a fork of [Orca](https://github.com/stablyai/orca)** by [Stably AI](https://github.com/stablyai), maintained by [brokespace](https://github.com/brokespace) for Brian Kessel.
+> All credit for the underlying IDE goes to the Orca authors. Seal stays under Orca's [MIT license](LICENSE), and the upstream copyright notice is kept unchanged.
+>
+> Seal installs and runs beside Orca: it has its own app id (`com.brokespace.seal`), profile folder, `seal` CLI command and icon. It never checks Orca's release feeds for updates, and it does not send telemetry, feedback or crash reports to Stably's servers. See [docs/upstream-sync.md](docs/upstream-sync.md) for how Seal syncs with Orca.
+>
+> Everything below this notice is Orca's original README. Links to orca.dev, Orca releases and Orca's community point at the upstream project, not at Seal.
 
 <p align="center">
   <a href="https://github.com/stablyai/orca"><img src="https://img.shields.io/github/stars/stablyai/orca?style=flat&amp;label=%E2%98%85&amp;color=08C" alt="GitHub stars" /></a>
@@ -285,6 +292,26 @@ Pair with your desktop app to monitor and steer your agents from your phone.
 
 - **iOS:** [Download on the App Store](https://apps.apple.com/us/app/orca-ide/id6766130217)
 - **Android:** [Download APK](https://orca.dev/download/android) · [Install guide](https://orca.dev/docs/android-apk)
+
+### Seal: chat with agents started outside the app
+
+Seal's **Agent sessions** view finds Claude Code and Codex sessions on this computer, on connected
+SSH hosts and on paired servers (**Settings › Remote servers**), including ones you started in your
+own terminal, and lets you chat with them. A running agent is listed however long ago it last wrote.
+A paired server needs a Seal build with live sessions; an older one shows an "update Seal on this
+server" notice.
+Codex sessions and sessions inside tmux need no setup. For Claude sessions started in a plain
+terminal tab, install shell integration once per machine:
+
+```bash
+orca shell-integration install              # this computer (zsh and bash)
+orca shell-integration install --ssh myhost # an SSH host
+```
+
+You can also install it from **Settings › Agents** or from an SSH host's **⋯** menu in **Settings › SSH**.
+Any session can also be moved into a Seal pane with **Take over**. Details:
+[shell integration](docs/live-sessions-shell-integration.md) ·
+[how input delivery works](docs/live-sessions-input.md).
 
 ---
 

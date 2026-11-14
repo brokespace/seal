@@ -1,5 +1,5 @@
 import { appendFileSync } from 'node:fs'
-import type { SshConnectionState } from '../../../shared/ssh-types'
+import type { SshConnectionState, SshTarget } from '../../../shared/ssh-types'
 import { createCancelledConnectAttemptError } from '../../ssh/connection/reconnect/ssh-connect-attempt-cancellation'
 import {
   getSshProviderAuthority,
@@ -12,7 +12,7 @@ import {
 } from '../../ssh/connection/ssh-connection-attribution'
 import { getSshTargetRegistryStore } from '../../ssh/targets/ssh-target-registry'
 import { getManagedOrcadFenceEnvironmentId } from '../../../shared/managed-orcad-ssh-owner'
-import { noteRuntimeEnvironmentConnectRequested } from '../runtime-environments/runtime-environment-pairing-refusal-registry'
+import { noteRuntimeEnvironmentConnectRequested } from '../runtime-environments/pairing/runtime-environment-pairing-refusal-registry'
 import {
   decideHostServer,
   recheckWhenManagedFenceClears,
@@ -30,11 +30,14 @@ import {
   connectInFlight,
   isCurrentConnectAttempt
 } from './ssh-connect-attempt-registry'
-import { connectionManager } from './ssh-ipc-context'
+import { connectionManager, getCurrentMainWindow } from './ssh-ipc-context'
+import { broadcastSshState, getPublicSshState } from './ssh-renderer-broadcast'
+import { connectsDirectlyOverSsh } from '../../ssh/host-server/ssh-direct-connect-policy'
 import { abandonDecisionTransport } from './ssh-session-teardown'
 import { awaitTargetLifecycle } from './ssh-target-lifecycle-queue'
 import { startLegacyRelayBridge } from '../../ssh/legacy-relay/bridge/legacy-relay-bridge-registry'
 import {
+  clearSshHostServerStatus,
   getSshHostServerStatus,
   isSshHostKeptForBridgedTerminals
 } from '../../ssh/host-server/ssh-host-server-status'
@@ -197,6 +200,9 @@ async function doConnect(
 
   // Attribute decision-created transports so cancellation closes only those not adopted by a newer owner.
   const owner = Symbol(targetId)
+  if (!quiet && connectsDirectlyOverSsh(targetId)) {
+    return connectDirect(target, owner, authority)
+  }
   // Deploy/conversion require teardown first; rotated authority still lets concurrent connects join.
   const server = await runAttributedToSshOwner(owner, () => decideHostServer(target)).catch(
     async (error: unknown): Promise<HostServerOnConnectResult> => {
@@ -272,6 +278,41 @@ async function doConnect(
   // Unserved hosts have no relay fallback.
   await abandonDecisionTransport(targetId, owner, authority)
   throw publishUnservedHostServer(target, server)
+}
+
+/** A machine set to SSH gets a session and nothing else; its features run over this transport. */
+async function connectDirect(
+  target: SshTarget,
+  owner: symbol,
+  authority: ReturnType<typeof getSshProviderAuthority>
+): Promise<SshConnectionState> {
+  const targetId = target.id
+  try {
+    await runAttributedToSshOwner(owner, () => connectionManager!.connect(target))
+  } catch (error) {
+    if (!isCurrentConnectAttempt(targetId, authority)) {
+      await abandonDecisionTransport(targetId, owner, authority)
+      throw createCancelledConnectAttemptError()
+    }
+    await abandonDecisionTransport(targetId, owner, authority)
+    publishHostServerDecisionFailure(targetId, error)
+    throw error
+  }
+  assertSshConnectsNotFenced()
+  if (!isCurrentConnectAttempt(targetId, authority)) {
+    await abandonDecisionTransport(targetId, owner, authority)
+    throw createCancelledConnectAttemptError()
+  }
+  adoptCurrentTransport(targetId, owner)
+  clearSshHostServerStatus(targetId)
+  const state: SshConnectionState = {
+    ...(connectionManager!.getState(targetId) ?? { targetId, reconnectAttempt: 0 }),
+    targetId,
+    status: 'connected',
+    error: null
+  }
+  broadcastSshState(getCurrentMainWindow, targetId, state)
+  return getPublicSshState(targetId) ?? state
 }
 
 function adoptCurrentTransport(targetId: string, owner: symbol): void {

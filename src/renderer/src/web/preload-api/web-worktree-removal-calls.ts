@@ -1,7 +1,7 @@
 import type { PreloadApi } from '../../../../preload/api-types'
 import type { GitWorktreeInfo } from '../../../../shared/worktree/types'
 import type { RemoveWorktreeResult } from '../../../../shared/worktree/create-types'
-import { worktreeRemovalReplyTimeoutMs } from '../../../../shared/worktree/archive-hook-removal-gate'
+import { worktreeRemovalReplyTimeoutMs } from '../../../../shared/worktree/removal/archive-hook-removal-gate'
 import { toRuntimeWorktreeSelector } from '../../runtime/rpc/targets/runtime-worktree-selector'
 import { callRuntimeResult } from './web-runtime-calls'
 import { invalidateRuntimeWorktreeCaches } from './web-runtime-session'
@@ -24,6 +24,7 @@ export function createWebWorktreeRemovalCalls(): Pick<
       force,
       approvedNestedWorktrees,
       allowUnverifiedPtyStop,
+      unlockLockedWorktree,
       skipArchive
     }) => {
       invalidateRuntimeWorktreeCaches()
@@ -36,6 +37,7 @@ export function createWebWorktreeRemovalCalls(): Pick<
           ...(approvedNestedWorktrees ? { approvedNestedWorktrees } : {}),
           // Forward Force Delete waiver or paired clients stay wedged (#11960).
           allowUnverifiedPtyStop,
+          ...(unlockLockedWorktree === true ? { unlockLockedWorktree: true } : {}),
           runHooks: skipArchive !== true
         },
         // Why: the host replies once Git has deleted the checkout, past the default 30 s budget.

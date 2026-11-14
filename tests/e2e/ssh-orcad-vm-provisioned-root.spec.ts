@@ -91,7 +91,7 @@ test('adopts a recipe-provisioned SSH root without creating a linked worktree', 
     ).toBe(expectedRefHead)
 
     const removeDialog = orcaPage.getByRole('dialog', { name: 'Remove Project' })
-    const removeMenuItem = orcaPage.getByRole('menuitem', { name: 'Remove Project from Orca' })
+    const removeMenuItem = orcaPage.getByRole('menuitem', { name: 'Remove Project from Seal' })
     await expect(async () => {
       await orcaPage
         .getByRole('option', { name: new RegExp(workspaceName) })
@@ -305,7 +305,7 @@ ${docker} rm -f ${quotePosixShell(target.containerName)} >/dev/null
   )
   execFileSync('git', ['init'], { cwd: repoPath })
   execFileSync('git', ['config', 'user.email', 'e2e@test.local'], { cwd: repoPath })
-  execFileSync('git', ['config', 'user.name', 'Orca E2E'], { cwd: repoPath })
+  execFileSync('git', ['config', 'user.name', 'Seal E2E'], { cwd: repoPath })
   execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/stablyai/orca.git'], {
     cwd: repoPath
   })

@@ -1,7 +1,7 @@
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import type { ConfirmedUnsavedDiscards } from './removed-workspace-unsaved-files'
 
-import type { NestedWorktreeRemovalApproval } from '../../../../../../shared/worktree/nested-removal'
+import type { NestedWorktreeRemovalApproval } from '../../../../../../shared/worktree/removal/nested-removal'
 
 export type RemoveWorktreeOptions = {
   /** Renderer-only admission check after hook trust, immediately before destructive dispatch. */
@@ -15,6 +15,8 @@ export type RemoveWorktreeOptions = {
   allowUnverifiedPtyStop?: boolean
   // Only explicit Delete anyway after archive-hook refusal waives it; ordinary confirmation/force never does (#19334).
   allowFailedArchiveHook?: boolean
+  // Only the confirmed Unlock & Delete releases a Git lock; force and always-force never do.
+  unlockLockedWorktree?: boolean
   snapshotPruneBatchId?: string
   /** Fresh cleanup-scan evidence for a same-id owner not represented in the catalog. */
   sameIdSurvivingHostId?: ExecutionHostId

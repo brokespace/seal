@@ -44,7 +44,9 @@ export async function runClaudePastedCodeLogin(
   folder: ClaudeCommandConfig,
   runCommand: RunCommand,
   channel: HostAccountSignInChannel,
-  setCancel: (cancel: (() => boolean) | null) => void
+  setCancel: (cancel: (() => boolean) | null) => void,
+  /** `openBrowser` lets Claude open the page itself; the pasted code stays as the fallback. */
+  options: { openBrowser?: boolean } = {}
 ): Promise<void> {
   // Cancellation while queued must prevent spawning the login.
   if (channel.signal.aborted) {
@@ -67,11 +69,11 @@ export async function runClaudePastedCodeLogin(
   let browser: Awaited<ReturnType<typeof prepareClaudeSignInBrowser>> | null = null
   try {
     // Suppress browser opening on the unattended execution host.
-    browser = await prepareClaudeSignInBrowser(folder)
+    browser = options.openBrowser ? null : await prepareClaudeSignInBrowser(folder)
     await runCommand(['auth', 'login', '--claudeai'], folder, LOGIN_TIMEOUT_MS, {
       signal: controller.signal,
       keepStdinOpen: true,
-      browser: browser.path,
+      browser: browser?.path,
       onStdin: (send) => {
         sendToClaude = send
       },

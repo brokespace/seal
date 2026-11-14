@@ -1,3 +1,4 @@
+import { sealBrandCopy } from './config/seal/brand-copy/seal-brand-vite-plugin.mjs'
 import { markdownParserAliases } from './config/build-plugins/markdown-parser-exports'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
@@ -47,16 +48,9 @@ const ORCA_BUILD_IDENTITY_LITERAL =
   orcaBuildIdentity === 'stable' || orcaBuildIdentity === 'rc'
     ? JSON.stringify(orcaBuildIdentity)
     : 'null'
-const orcaPostHogWriteKey = process.env.ORCA_POSTHOG_WRITE_KEY
-const ORCA_POSTHOG_WRITE_KEY_LITERAL =
-  typeof orcaPostHogWriteKey === 'string' && orcaPostHogWriteKey.length > 0
-    ? JSON.stringify(orcaPostHogWriteKey)
-    : 'null'
-const orcaDiagnosticsTokenUrl = process.env.ORCA_DIAGNOSTICS_TOKEN_URL
-const ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL =
-  typeof orcaDiagnosticsTokenUrl === 'string' && orcaDiagnosticsTokenUrl.length > 0
-    ? JSON.stringify(orcaDiagnosticsTokenUrl)
-    : 'null'
+// Seal never reports to upstream's PostHog project or diagnostics service, whatever the build env holds.
+const ORCA_POSTHOG_WRITE_KEY_LITERAL = 'null'
+const ORCA_DIAGNOSTICS_TOKEN_URL_LITERAL = 'null'
 
 const darkBuildSwitches: {
   darkBuildDefines: () => Record<string, string>
@@ -209,7 +203,7 @@ const MAIN_MINIFY: 'oxc' | false = process.env.ORCA_UNMINIFIED_MAIN === '1' ? fa
 export const electronViteConfig: UserConfig = {
   main: {
     // A Vite `pre` plugin: Rollup-level plugins only see ids Vite's resolver leaves unresolved.
-    plugins: [createSucraseUnusedTransformersPlugin()],
+    plugins: [sealBrandCopy(), createSucraseUnusedTransformersPlugin()],
     build: {
       // Use Rolldown’s in-process oxc minifier; esbuild mode depends on an undeclared hoisted package.
       minify: MAIN_MINIFY,
@@ -265,6 +259,7 @@ export const electronViteConfig: UserConfig = {
     }
   },
   preload: {
+    plugins: [sealBrandCopy()],
     build: {
       externalizeDeps: false,
       rollupOptions: { output: ONE_BYTE_UNMINIFIED_OUTPUT }
@@ -285,6 +280,7 @@ export const electronViteConfig: UserConfig = {
       }
     },
     plugins: [
+      sealBrandCopy(),
       react(reactPluginOptions()),
       tailwindcss(),
       createPdfjsViewerAssetsPlugin(),
@@ -292,6 +288,7 @@ export const electronViteConfig: UserConfig = {
     ],
     worker: {
       format: 'es',
+      plugins: () => [sealBrandCopy()],
       rollupOptions: {
         output: { charset: 'ascii' }
       }

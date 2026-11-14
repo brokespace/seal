@@ -25,13 +25,15 @@ const LOGIN_CANCELLED_MESSAGES = new Set([
   CODEX_LOGIN_CANCELLED_MESSAGE
 ])
 
-export type HostAccountSignInRunner = (
+export type HostAccountSignInRunner<Request = undefined> = (
   provider: HostAccountSignInProvider,
-  channel: HostAccountSignInChannel
-) => Promise<Pick<HostAccountSignInStatus, 'claude' | 'codex'>>
+  channel: HostAccountSignInChannel,
+  request: Request | undefined
+) => Promise<Pick<HostAccountSignInStatus, 'claude' | 'codex' | 'seal'>>
 
-type Flow = {
+type Flow<Request> = {
   owner: string
+  request: Request | undefined
   status: HostAccountSignInStatus
   ended: AbortController
   stop: 'cancelled' | 'silent' | null
@@ -42,28 +44,46 @@ type Flow = {
   silence: ReturnType<typeof setTimeout> | null
 }
 
-const settled = (flow: Flow): boolean => HOST_ACCOUNT_SIGN_IN_SETTLED_PHASES.has(flow.status.phase)
+const settled = (flow: Flow<unknown>): boolean =>
+  HOST_ACCOUNT_SIGN_IN_SETTLED_PHASES.has(flow.status.phase)
 
 /** Serialize host-local sign-ins; only the initiating client may inspect/answer/cancel.
  * Credentials stay here. Settle with the login's outcome even if it refused cancellation. */
-export class HostAccountSignInFlows {
-  private active: Flow | null = null
-  private readonly latest = new Map<string, Flow>()
+export class HostAccountSignInFlows<Request = undefined> {
+  private active: Flow<Request> | null = null
+  private readonly latest = new Map<string, Flow<Request>>()
 
   constructor(
-    private readonly run: HostAccountSignInRunner,
-    private readonly platform: NodeJS.Platform = process.platform
+    private readonly run: HostAccountSignInRunner<Request>,
+    private readonly platform: NodeJS.Platform = process.platform,
+    /** Set where the runner drives Windows logins itself instead of relaying a pasted code. */
+    private readonly options: { windowsHosts?: boolean } = {}
   ) {}
 
-  start(owner: string, provider: HostAccountSignInProvider): HostAccountSignInStatus {
-    if (this.platform === 'win32') {
+  /** The owner's sign-in that is still running, so a new one can cancel it first. */
+  activeFlowId(owner: string): string | null {
+    const flow = this.active
+    return flow && flow.owner === owner && !settled(flow) ? flow.status.flowId : null
+  }
+
+  start(
+    owner: string,
+    provider: HostAccountSignInProvider,
+    request?: Request
+  ): HostAccountSignInStatus {
+    if (this.platform === 'win32' && !this.options.windowsHosts) {
       throw new Error(
         'Adding accounts from another device is not available on Windows hosts yet. Run `orca account add` in a terminal on that host.'
       )
     }
     const current = this.active
     if (current) {
-      if (current.owner === owner && current.status.provider === provider && !current.stop) {
+      if (
+        current.owner === owner &&
+        current.status.provider === provider &&
+        !current.stop &&
+        request === undefined
+      ) {
         this.touch(current)
         return current.status
       }
@@ -76,8 +96,9 @@ export class HostAccountSignInFlows {
     const code = Promise.withResolvers<string>()
     // Startup failure may reject code before any listener attaches.
     code.promise.catch(() => {})
-    const flow: Flow = {
+    const flow: Flow<Request> = {
       owner,
+      request,
       status: { flowId: randomUUID(), provider, revision: 1, phase: 'starting' },
       ended: new AbortController(),
       stop: null,
@@ -94,7 +115,7 @@ export class HostAccountSignInFlows {
     return flow.status
   }
 
-  private async runFlow(flow: Flow): Promise<void> {
+  private async runFlow(flow: Flow<Request>): Promise<void> {
     const channel: HostAccountSignInChannel = {
       signal: flow.ended.signal,
       onPrompt: (prompt) => {
@@ -109,7 +130,7 @@ export class HostAccountSignInFlows {
       nextCode: () => flow.code.promise
     }
     try {
-      const result = await this.run(flow.status.provider, channel)
+      const result = await this.run(flow.status.provider, channel, flow.request)
       this.update(flow, { phase: 'signedIn', prompt: undefined, ...result })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -180,7 +201,7 @@ export class HostAccountSignInFlows {
     return flow.status
   }
 
-  private own(owner: string, flowId: string): Flow {
+  private own(owner: string, flowId: string): Flow<Request> {
     const flow = this.latest.get(owner)
     if (!flow || flow.status.flowId !== flowId) {
       throw new Error(NOT_ACTIVE)
@@ -188,7 +209,7 @@ export class HostAccountSignInFlows {
     return flow
   }
 
-  private touch(flow: Flow): void {
+  private touch(flow: Flow<Request>): void {
     if (settled(flow) || flow.stop) {
       return
     }
@@ -203,7 +224,7 @@ export class HostAccountSignInFlows {
     }, OWNER_SILENCE_MS)
   }
 
-  private end(flow: Flow): void {
+  private end(flow: Flow<Request>): void {
     if (flow.silence) {
       clearTimeout(flow.silence)
       flow.silence = null
@@ -212,7 +233,7 @@ export class HostAccountSignInFlows {
     flow.ended.abort()
   }
 
-  private update(flow: Flow, patch: Partial<HostAccountSignInStatus>): void {
+  private update(flow: Flow<Request>, patch: Partial<HostAccountSignInStatus>): void {
     if (settled(flow)) {
       return
     }
@@ -229,7 +250,10 @@ function coded(
   return { error: HOST_ACCOUNT_SIGN_IN_FAILURE_COPY[errorCode], errorCode }
 }
 
-function failure(flow: Flow, raw: string): Pick<HostAccountSignInStatus, 'error' | 'errorCode'> {
+function failure(
+  flow: Flow<unknown>,
+  raw: string
+): Pick<HostAccountSignInStatus, 'error' | 'errorCode'> {
   if (flow.stop === 'silent') {
     return coded('ownerSilent')
   }

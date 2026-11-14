@@ -42,7 +42,7 @@ for (const [name, width, rows] of [
 
 test('the catalogs start within two screens at phone width', async ({ page }) => {
   await openFixture(page, 'page390', 390)
-  const heading = page.getByRole('heading', { name: 'Orca Official Plugins' })
+  const heading = page.getByRole('heading', { name: 'Seal Official Plugins' })
   const top = await heading.evaluate((node) => node.getBoundingClientRect().top + window.scrollY)
   expect(top).toBeLessThan(2 * 844)
 })
@@ -53,6 +53,6 @@ test('cards past two rows stay in their catalog group', async ({ page }) => {
   const card = '[data-plugin-key="hilbana.hilbana"]'
   await expect(page.getByRole('region', { name: 'Newly added' }).locator(card)).toBeHidden()
   await expect(
-    page.getByRole('region', { name: 'Orca Community Plugins' }).locator(card)
+    page.getByRole('region', { name: 'Seal Community Plugins' }).locator(card)
   ).toBeVisible()
 })

@@ -189,7 +189,10 @@ export const getExperimentalSearchEntry = createLocalizedCatalog(
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
   (): SettingsSearchEntry[] => [
-    ...Object.values(getExperimentalSearchEntry()),
+    // Seal dropped the Agent Dashboard toggle, so its entry must not match a search.
+    ...Object.entries(getExperimentalSearchEntry()).flatMap(([id, entry]) =>
+      id === 'agentDashboard' ? [] : [entry]
+    ),
     // Index WSL toggles only on Windows desktops that expose them.
     ...(typeof window !== 'undefined' && window.api?.runtimeEnvironments?.wslHosts
       ? [getWslHostsExperimentalSearchEntry()]

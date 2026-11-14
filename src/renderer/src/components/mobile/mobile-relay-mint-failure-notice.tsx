@@ -3,7 +3,6 @@ import { CircleAlert, Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
-import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { relayClockSkewMessage } from './relay-clock-skew-message'
 
@@ -26,11 +25,6 @@ export function MobileRelayMintFailureNotice({
 }): React.JSX.Element {
   const t = useTranslate()
   const providerMissing = failure.stage === 'provider_missing'
-  // Why: a revoked cloud session fails every mint; "retry or use LAN" hides the one action that works.
-  const reconnectRequired =
-    useAppStore((state) => state.orcaProfileAuthStatus?.state === 'reconnect-required') ||
-    failure.code === 'relay_signed_out'
-  const notEntitled = failure.code === 'relay_not_entitled'
   const [showBusyFeedback, setShowBusyFeedback] = useState(false)
   useEffect(() => {
     if (!busy) {
@@ -48,20 +42,10 @@ export function MobileRelayMintFailureNotice({
           'auto.components.mobile.MobileRelayMintFailureNotice.unavailableTitle',
           'Orca Relay isn’t available on this desktop.'
         )
-      : reconnectRequired
-        ? t(
-            'auto.components.mobile.MobileRelayMintFailureNotice.reconnectTitle',
-            'Your Orca account session expired.'
-          )
-        : notEntitled
-          ? t(
-              'auto.components.mobile.MobileRelayMintFailureNotice.notEntitledTitle',
-              'Orca Relay isn’t included with this Orca account.'
-            )
-          : t(
-              'auto.components.mobile.MobileRelayMintFailureNotice.title',
-              'Couldn’t create a Relay pairing code.'
-            )
+      : t(
+          'auto.components.mobile.MobileRelayMintFailureNotice.title',
+          'Couldn’t create a Relay pairing code.'
+        )
   const body = visibleBusy
     ? t(
         'auto.components.mobile.MobileRelayMintFailureNotice.retryingBody',
@@ -72,27 +56,17 @@ export function MobileRelayMintFailureNotice({
           'auto.components.mobile.MobileRelayMintFailureNotice.unavailableBody',
           'Use LAN to pair over Tailscale or the same Wi‑Fi.'
         )
-      : reconnectRequired
+      : failure.code === 'relay_rate_limited'
         ? t(
-            'auto.components.mobile.MobileRelayMintFailureNotice.reconnectBody',
-            'Sign in again to use Orca Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.'
+            'auto.components.mobile.MobileRelayMintFailureNotice.rateLimitedBody',
+            'Orca Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
           )
-        : notEntitled
-          ? t(
-              'auto.components.mobile.MobileRelayMintFailureNotice.unavailableBody',
-              'Use LAN to pair over Tailscale or the same Wi‑Fi.'
+        : failure.code === 'relay_clock_skew' && failure.clockOffsetMs !== undefined
+          ? relayClockSkewMessage(failure.clockOffsetMs, t)
+          : t(
+              'auto.components.mobile.MobileRelayMintFailureNotice.body',
+              'Retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
             )
-          : failure.code === 'relay_rate_limited'
-            ? t(
-                'auto.components.mobile.MobileRelayMintFailureNotice.rateLimitedBody',
-                'Orca Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
-              )
-            : failure.code === 'relay_clock_skew' && failure.clockOffsetMs !== undefined
-              ? relayClockSkewMessage(failure.clockOffsetMs, t)
-              : t(
-                  'auto.components.mobile.MobileRelayMintFailureNotice.body',
-                  'Retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
-                )
 
   return (
     <div
@@ -122,21 +96,19 @@ export function MobileRelayMintFailureNotice({
           <Button type="button" size={compact ? 'xs' : 'sm'} onClick={onUseLan}>
             {t('auto.components.mobile.MobileRelayMintFailureNotice.useLan', 'Use LAN')}
           </Button>
-          {!reconnectRequired && !notEntitled ? (
-            <Button
-              type="button"
-              size={compact ? 'xs' : 'sm'}
-              variant="outline"
-              onClick={onRetry}
-              disabled={busy}
-              className="w-28"
-            >
-              {visibleBusy ? <Loader2 className="animate-spin" /> : null}
-              {visibleBusy
-                ? t('auto.components.mobile.MobileRelayMintFailureNotice.retrying', 'Retrying…')
-                : t('auto.components.mobile.MobileRelayMintFailureNotice.retry', 'Retry Relay')}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            size={compact ? 'xs' : 'sm'}
+            variant="outline"
+            onClick={onRetry}
+            disabled={busy}
+            className="w-28"
+          >
+            {visibleBusy ? <Loader2 className="animate-spin" /> : null}
+            {visibleBusy
+              ? t('auto.components.mobile.MobileRelayMintFailureNotice.retrying', 'Retrying…')
+              : t('auto.components.mobile.MobileRelayMintFailureNotice.retry', 'Retry Relay')}
+          </Button>
           <Button
             type="button"
             size={compact ? 'xs' : 'sm'}

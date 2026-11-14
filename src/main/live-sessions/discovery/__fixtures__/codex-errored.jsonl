@@ -1,0 +1,5 @@
+{"timestamp":"2026-11-13T10:00:03.000Z","type":"session_meta","payload":{"id":"e2ee5551-e898-4983-80b5-1b7e60534d80","timestamp":"2026-11-13T10:00:00.000Z","cwd":"/srv/api","originator":"codex_cli_rs","cli_version":"0.169.0","source":"cli","model_provider":"openai"}}
+{"timestamp":"2026-11-13T10:00:06.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Bump the database driver."}]}}
+{"timestamp":"2026-11-13T10:00:09.000Z","type":"event_msg","payload":{"type":"user_message","message":"Bump the database driver.","kind":"plain"}}
+{"timestamp":"2026-11-13T10:00:12.000Z","type":"event_msg","payload":{"type":"task_started","model_context_window":272000}}
+{"timestamp":"2026-11-13T10:00:15.000Z","type":"event_msg","payload":{"type":"error","message":"stream disconnected before completion: Rate limit reached for requests"}}

@@ -14,6 +14,7 @@ import {
 } from './helpers/paired-electron-client'
 import { waitForPairedClientWorktree } from './helpers/paired-client-host-session'
 import { readHostBrowserPageIds } from './helpers/host-session-tabs'
+import { orcaCliResult } from './helpers/compiled-orca-cli'
 
 // #36804: a click on a target=_blank link in a streamed server page opens a new Orca tab.
 
@@ -37,7 +38,7 @@ async function startLinkServer(): Promise<{ server: Server; origin: string }> {
   return { server, origin: `http://127.0.0.1:${address.port}` }
 }
 
-test('a target=_blank click in a streamed server page opens a new Orca tab', async ({
+test('a target=_blank click in a streamed server page opens a new Seal tab', async ({
   testRepoPath
 }, testInfo) => {
   // Boots a headless host and a paired client, then waits on two streamed tab opens.
@@ -93,6 +94,26 @@ test('a target=_blank click in a streamed server page opens a new Orca tab', asy
       page: created.browserPageId,
       expression: "document.getElementById('blank-link').click()"
     })
+    await waitForOpenedTab(before)
+    await expect(addressBar).toHaveValue(`${origin}/`)
+
+    // An agent's CLI on the client shares the desktop's pairing, but its click must not move the desktop.
+    before = await listPages()
+    const cli = <T>(args: string[]) =>
+      orcaCliResult<T>(client!.userDataDir, [
+        ...args,
+        '--page',
+        created.browserPageId,
+        '--environment',
+        environmentId
+      ])
+    // agent-browser keys refs by id: { e1: { role, name } }.
+    const { refs } = await cli<{ refs: Record<string, { name: string }> }>(['snapshot'])
+    const linkRef = Object.entries(refs).find(([, ref]) => ref.name === 'Open destination')?.[0]
+    if (!linkRef) {
+      throw new Error(`snapshot has no link ref: ${JSON.stringify(refs)}`)
+    }
+    await cli(['click', '--element', `@${linkRef}`])
     await waitForOpenedTab(before)
     await expect(addressBar).toHaveValue(`${origin}/`)
 

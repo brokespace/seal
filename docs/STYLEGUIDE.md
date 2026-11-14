@@ -1,8 +1,8 @@
-# Orca UI Style Guide
+# Seal UI Style Guide
 
-UI rules for Orca. Token values live in `src/renderer/src/assets/main.css` (canonical); this file documents _roles and rules_, not values.
+UI rules for Seal. Token values live in `src/renderer/src/assets/main.css` (canonical); this file documents _roles and rules_, not values.
 
-The identity is **monochrome and quiet**: neutral grays carry the chrome, color is reserved for state (selection ring, destructive, git decorations). Orca mostly hosts other tools (Monaco, xterm, Markdown previews), so its own UI should recede and frame. When in doubt:
+The identity is **monochrome and quiet**: neutral grays carry the chrome, color is reserved for state (selection ring, destructive, git decorations). Seal mostly hosts other tools (Monaco, xterm, Markdown previews), so its own UI should recede and frame. When in doubt:
 
 - Reach for **muted/accent/border** before color.
 - Reach for **CSS variables** before hardcoded hex.
@@ -51,6 +51,13 @@ Tokens pair a **surface** with a **foreground** that meets contrast on it; alway
 
 - Radii derive from `--radius` in `main.css`. Buttons and inputs use `rounded-md`, `Card` uses `rounded-xl`, badges use `rounded-full`. Match the existing primitive's radius; don't introduce a new one.
 - Three elevation levels, no fourth: (1) `border` hairline, the default for almost everything; (2) `shadow-xs` + single-token border for outline buttons and embedded cards; (3) `shadow-floating`, reserved for popovers and popups that escape the editor surface; toasts and bottom-right notification cards use its notice form (`--notice-surface`, `--notice-border`, `shadow-notice`) so they read over chat, editor and terminal. Needing more than floating usually means you want the focus `ring`.
+
+## Page layout
+
+- Every top-level page is built from `src/renderer/src/components/page-layout/`: `PageLayout` (the frame), `PageHeader` (16px semibold title, actions on the right; `topOfWindow` keeps them clear of the window controls on pages with no titlebar strip above), then `PagePanes` (panes that meet the page edges, such as a list beside a detail view) or `PageScrollContent` (scrolling sections and cards). Nested toolbars take the gutter from `PAGE_GUTTER_X`. Never hand-write a page frame, header or gutter.
+- Pages use the full width. Gutters and widths are tokens in `main.css`: `--page-gutter` (12px, 20px from `md`), `--page-top-inset`, `--page-section-gap`, `--page-card-min-width` and `--page-readable-max-width`. Only forms and prose take `PageContent width="readable"` (Settings); never cap a whole page with `max-w-*`.
+- Group content with `PageSection` (captioned) and `PageCard` (bordered, caption header, optional action); lay cards out with `PageCardGrid`, which fits as many equal columns as its width allows. Respond to the page's own width with container queries (`@min-[…]/page`), not the viewport: sidebars change it.
+- A chat that fills a page pane takes `.chat-wide-column`: the transcript column widens to 76rem while prose keeps the 46rem chat measure, so code blocks, tables and tool cards use the room.
 
 ## Components
 
