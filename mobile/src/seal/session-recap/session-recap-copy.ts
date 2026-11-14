@@ -43,17 +43,17 @@ export function recapStateNote(view: SessionRecapView): string | null {
       return view.pausedUntil === null
         ? translate(
             'seal.sessionRecap.state.paused',
-            'Cloudflare\u2019s free limit for today is used up. The recap resumes when it resets.'
+            'The model provider\u2019s limit was reached. The recap resumes when it resets.'
           )
         : translate(
             'seal.sessionRecap.state.pausedUntil',
-            'Cloudflare\u2019s free limit for today is used up. The recap resumes at {{time}}.',
+            'The model provider\u2019s limit was reached. The recap resumes at {{time}}.',
             { time: recapClockTime(view.pausedUntil) }
           )
     case 'over-budget':
       return translate(
         'seal.sessionRecap.state.overBudget',
-        'Today\u2019s share of the free Cloudflare allocation for recaps is used. It resets at midnight UTC.'
+        'Today\u2019s budget for recaps is used. It resets at midnight UTC.'
       )
     case 'failed':
       return view.failure
@@ -64,7 +64,7 @@ export function recapStateNote(view: SessionRecapView): string | null {
     case 'unavailable':
       return translate(
         'seal.sessionRecap.state.unavailable',
-        'Recaps are off, or no Cloudflare Workers AI account is set up on the computer running Seal.'
+        'Recaps are off, or the model provider chosen for them is not set up on the computer running Seal.'
       )
     case 'empty':
       return translate(

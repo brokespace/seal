@@ -1504,14 +1504,13 @@
     },
     "sessionSummaries": {
       "paused": "Summaries paused",
-      "pausedDetail": "Cloudflare’s free limit for today is used up. New summaries resume at {{time}}.",
+      "pausedDetail": "The model provider’s limit was reached. New summaries resume at {{time}}.",
       "pending": "Summarizing…",
       "tooltipSource": "AI summary of the last message",
       "setting": {
         "title": "Session summaries",
         "searchDescription": "Show a one-line AI summary on agent sessions.",
-        "description": "When an agent stops or waits on a task, show one short sentence saying what it did or needs. Only the agent’s last message is sent, never tool output.",
-        "needsProvider": "Starts once a Cloudflare account is linked above."
+        "description": "When an agent stops or waits on a task, show one short sentence saying what it did or needs. Only the agent’s last message is sent, never tool output."
       },
       "toggleFailed": "Could not change session summaries."
     },
@@ -1523,18 +1522,17 @@
         "storedOnHost": "Stored on {{host}} and sent from there only to Cloudflare.",
         "connected": "Account linked · …{{account}}",
         "notConfigured": "No Cloudflare account linked",
-        "notConfiguredHelp": "Save an account ID and API token below, or put them in ~/.config/seal/cloudflare-ai.json on the host.",
-        "paused": "Cloudflare’s limit was reached. Summaries resume at {{time}}; nothing else is affected."
+        "notConfiguredHelp": "Save an account ID and API token below, or put them in ~/.config/seal/cloudflare-ai.json on the host."
       },
       "title": "Cloudflare AI",
-      "subtitle": "A small Workers AI model writes the one-line summary and the recap on each agent session. The free plan is enough.",
+      "subtitle": "A Workers AI account that session summaries and recaps can run on. The free plan is enough. Choose the provider and model in Session summaries & recaps.",
       "tokensLink": "Get API token",
       "test": {
         "okFallback": "Works: the fallback {{model}} answered in {{ms}} ms.",
         "ok": "Works: {{model}} answered in {{ms}} ms.",
         "button": "Test"
       },
-      "hostOnly": "Change the Cloudflare account and model in the desktop app, or in the config file on the computer running Seal.",
+      "hostOnly": "Change the Cloudflare account in the desktop app, or in the config file on the computer running Seal.",
       "credentials": {
         "title": "Account ID and API token",
         "description": "The Cloudflare account ID and a Workers AI API token.",
@@ -1551,22 +1549,16 @@
       },
       "model": {
         "notOnPlan": "paid plan",
-        "title": "Model",
-        "description": "The Workers AI model that writes summaries, and the one used when it is unavailable.",
-        "fallbackTitle": "Fallback model",
-        "usingFallback": "Summaries use {{model}} instead.",
-        "catalogFailed": "Could not load the model list: {{reason}}",
-        "help": "GLM 4.7 Flash answers in about half a second and fits roughly 7,000 summaries a day in the Workers Free allocation."
+        "catalogFailed": "Could not load the model list: {{reason}}"
       },
       "search": {
         "title": "Cloudflare AI",
-        "description": "Link a Cloudflare Workers AI account for session summaries and recaps. Pick the model and turn each on or off.",
+        "description": "Link a Cloudflare Workers AI account that session summaries and recaps can run on.",
         "kw": {
           "cloudflare": "cloudflare",
           "workersAi": "workers ai",
           "summary": "summary",
           "summaries": "summaries",
-          "model": "model",
           "apiToken": "api token",
           "recap": "recap"
         }
@@ -1842,12 +1834,12 @@
         "done": "Done"
       },
       "state": {
-        "pausedUntil": "Cloudflare’s free limit for today is used up. The recap resumes at {{time}}.",
-        "paused": "Cloudflare’s free limit for today is used up. The recap resumes when it resets.",
-        "overBudget": "Today’s share of the free Cloudflare allocation for recaps is used. It resets at midnight UTC.",
+        "pausedUntil": "The model provider’s limit was reached. The recap resumes at {{time}}.",
+        "paused": "The model provider’s limit was reached. The recap resumes when it resets.",
+        "overBudget": "Today’s budget for recaps is used. It resets at midnight UTC.",
         "failedWhy": "The last update failed: {{reason}}",
         "failed": "The last update failed.",
-        "unavailable": "Recaps are off, or no Cloudflare Workers AI account is set up on this computer.",
+        "unavailable": "Recaps are off, or the model provider chosen for them is not set up on this computer.",
         "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
         "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
         "stale": "The session has moved on since this was written."
@@ -1858,6 +1850,121 @@
         "description": "Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Only your messages and the agent’s replies are sent, never tool output."
       },
       "toggleFailed": "Could not change session recaps."
+    },
+    "openRouter": {
+      "status": {
+        "fromEnvironment": "Read from OPENROUTER_API_KEY in the environment Seal started with.",
+        "fromEnvironmentOnHost": "Read from OPENROUTER_API_KEY in the environment Seal started with on {{host}}.",
+        "stored": "Stored on this computer and sent only to OpenRouter.",
+        "storedOnHost": "Stored on {{host}} and sent from there only to OpenRouter.",
+        "connected": "Key saved · …{{key}}",
+        "notConfigured": "No OpenRouter key saved",
+        "notConfiguredHelp": "Save a key below, or start Seal with OPENROUTER_API_KEY set on the host."
+      },
+      "saveFailed": "The OpenRouter key was not saved.",
+      "testFailed": "Could not run the OpenRouter test.",
+      "key": {
+        "title": "API key",
+        "description": "The OpenRouter API key.",
+        "name": "The OpenRouter API key",
+        "placeholder": "sk-or-…",
+        "help": "It is kept in the host’s credential storage, sent only to OpenRouter, and never shown again. Free models need no credits but have a daily request limit."
+      },
+      "title": "OpenRouter",
+      "subtitle": "One key for many models, some of them free. Session summaries and recaps can run on it; choose the model in Session summaries & recaps.",
+      "keysLink": "Get API key",
+      "hostOnly": "Change the OpenRouter key in the desktop app, or in the environment of the computer running Seal.",
+      "search": {
+        "title": "OpenRouter",
+        "description": "Save an OpenRouter API key that session summaries and recaps can run on, including its free models.",
+        "kw": {
+          "openrouter": "openrouter",
+          "apiKey": "api key",
+          "free": "free models"
+        }
+      }
+    },
+    "utilityModel": {
+      "status": {
+        "paused": "{{provider}}’s limit was reached. Summaries and recaps on it resume at {{time}}; nothing else is affected."
+      },
+      "failure": {
+        "cliMissing": "The {{provider}} CLI was not found on this host.",
+        "keyMissing": "Save a {{provider}} API key in Settings > Accounts first.",
+        "cliSignedOut": "{{provider}} is not signed in on this host: {{message}}",
+        "unauthorized": "{{provider}} rejected the API key.",
+        "planUnavailable": "{{model}} needs credits this {{provider}} account does not have.",
+        "rateLimited": "{{provider}}’s rate limit was reached.",
+        "modelNotFound": "{{model}} is not a model {{provider}} offers.",
+        "badResponse": "{{provider}} failed: {{message}}"
+      }
+    },
+    "summaryModels": {
+      "section": {
+        "title": "Session summaries & recaps",
+        "description": "Seal can write a one-line summary and a longer recap of every agent session. Choose whether each runs, and the provider and model that writes it.",
+        "navDescription": "Turn summaries and recaps on, and choose the provider and model that write them."
+      },
+      "separate": {
+        "title": "Use a different model for recaps",
+        "searchDescription": "Run session recaps on another provider or model than session summaries.",
+        "same": "Recaps run on the same model as summaries: {{provider}} · {{model}}.",
+        "different": "A recap reads far more text than a summary, so a larger model can pay off here."
+      },
+      "needsSetup": "Starts once its provider is set up.",
+      "hostOutdated": "Update Seal on {{host}} to choose a provider there. Until then it runs summaries and recaps on Cloudflare Workers AI.",
+      "hostUnreachable": "Could not read the model providers on {{host}}.",
+      "thisComputer": "this computer",
+      "summaries": {
+        "groupDescription": "One short sentence on each agent session saying what it did or what it needs from you."
+      },
+      "recaps": {
+        "groupDescription": "A longer account of each session: its goal, where it stands, and the questions and action items still on you."
+      },
+      "provider": {
+        "title": "Provider",
+        "cliHelp": "Runs the {{provider}} CLI once per request, on the account it is signed into. Each run starts an agent process: slower than an API, and it counts against that plan’s limits.",
+        "apiHelp": "Calls {{provider}} with the account saved in Accounts.",
+        "openAccounts": "Open Accounts",
+        "apiGroup": "API",
+        "cliGroup": "Agent CLI subscription",
+        "notSetUp": "not set up"
+      },
+      "model": {
+        "title": "Model",
+        "cliHelp": "A model name the {{provider}} CLI accepts. A small, fast one keeps each run cheap.",
+        "apiHelp": "Pick from {{provider}}’s list, or type any model id it offers.",
+        "default": "Default · {{model}}",
+        "free": "free",
+        "freeHeading": "Free",
+        "paidHeading": "Paid",
+        "search": "Search models or type a model id",
+        "loading": "Loading the provider’s models…",
+        "useTyped": "Use “{{model}}”"
+      },
+      "fallback": {
+        "title": "Fallback model",
+        "help": "Tried when the model is rate limited, unavailable on the account’s plan, or gone.",
+        "none": "None"
+      },
+      "search": {
+        "description": "Choose the provider and model that write session summaries and recaps: Cloudflare Workers AI, OpenRouter, MiniMax, or the Claude, Codex, Grok, Antigravity or Devin CLI.",
+        "title": "Summary and recap model",
+        "kw": {
+          "provider": "provider",
+          "model": "model",
+          "fallback": "fallback"
+        }
+      },
+      "status": {
+        "ready": "{{provider}} is set up on this host",
+        "notSetUp": "{{provider}} is not set up yet",
+        "testHelp": "Test sends one short request through the model chosen here.",
+        "cliSetup": "Install {{provider}} and sign in on this host, then come back.",
+        "apiSetup": "Save its account in Accounts; nothing is written until then."
+      },
+      "saveFailed": "The provider and model were not saved.",
+      "testFailed": "Could not run the test."
     }
   },
   "components": {

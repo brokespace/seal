@@ -10,6 +10,7 @@ import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile
 import { getMcpSettingsSearchEntries } from '@/components/settings/mcp/mcp-settings-search'
 import { getOrcaAccountSettingsSearchEntries } from '@/components/settings/accounts/orca/orca-account-settings-search'
 import { OrcaLogoSettingsIcon } from '@/components/settings/page/orca-logo-settings-icon'
+import { getSessionSummariesSettingsSearchEntries } from '@/components/settings/session-summaries/session-summaries-settings-search'
 import { getOrchestrationPaneSearchEntries } from '@/components/settings/orchestration/orchestration-search'
 import { getVoicePaneSearchEntries } from '@/components/settings/voice/voice-pane-search'
 import { getWorkspaceCleanupSettingsSearchEntries } from '@/components/settings/workspace-cleanup/workspace-cleanup-settings-search'
@@ -28,6 +29,7 @@ import {
   Plug,
   SlidersHorizontal,
   Smartphone,
+  Sparkles,
   UserCog
 } from 'lucide-react'
 import type { SettingsNavigationBuildOptions } from './settings-navigation-build-options'
@@ -80,6 +82,17 @@ export function buildCapabilitySettingsSections(
       ),
       icon: UserCog,
       searchEntries: getAccountsPaneSearchEntries(),
+      group: 'capabilities'
+    },
+    {
+      id: 'session-summaries',
+      title: t('seal.summaryModels.section.title', 'Session summaries & recaps'),
+      description: t(
+        'seal.summaryModels.section.navDescription',
+        'Turn summaries and recaps on, and choose the provider and model that write them.'
+      ),
+      icon: Sparkles,
+      searchEntries: getSessionSummariesSettingsSearchEntries(),
       group: 'capabilities'
     },
     {
