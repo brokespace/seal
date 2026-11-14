@@ -144,7 +144,11 @@ export type RealMachineSuite = {
  */
 export async function launchHomeChatOnRealMachines(
   testInfo: TestInfo,
-  projectPath: string
+  projectPath: string,
+  options: {
+    /** Runs on a remote machine's account before Seal first reaches that machine. */
+    beforeConnect?: (key: TargetKey, sh: Target['sh']) => void
+  } = {}
 ): Promise<RealMachineSuite> {
   const cleanups: (() => Promise<void> | void)[] = []
   const dispose = async (): Promise<void> => {
@@ -161,10 +165,17 @@ export async function launchHomeChatOnRealMachines(
     cleanups.push(() => void web.server.close())
     const sshd = await startLocalSshdMachines(SSH_ACCOUNTS)
     cleanups.push(() => sshd.dispose())
+    for (const account of SSH_ACCOUNTS) {
+      const user = sshd.users.find((candidate) => candidate.username === account.username)!
+      options.beforeConnect?.(account.key, user.sh)
+    }
     // The agent lets this computer and the Seal server log in to the accounts, as a user's key would.
     const appEnv = { SHELL: APP_LOGIN_SHELL, SSH_AUTH_SOCK: sshd.agentSocket }
     const host = await launchHeadlessPairedRuntimeHost({ extraEnv: appEnv })
     cleanups.push(() => host.dispose())
+    if (host.env.HOME) {
+      options.beforeConnect?.('seal-server', shellAs(host.env.HOME))
+    }
     const session = createRestartSession(testInfo, appEnv)
     let app: ElectronApplication | undefined
     cleanups.push(() => session.dispose(app))
