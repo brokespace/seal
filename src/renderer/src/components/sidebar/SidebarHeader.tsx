@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/index'
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarHeaderActions } from './sidebar-header-actions'
+import { SidebarSectionHeader } from './SidebarSectionHeader'
 
 type SidebarHeaderProps = {
   onWorkspaceBoardMenuOpenChange: (open: boolean) => void
@@ -22,25 +23,19 @@ const SidebarHeader = React.memo(function SidebarHeader({
       ? t('dashboard.sidebar.projects', 'Projects')
       : t('dashboard.sidebar.workspaces', 'Workspaces')
   return (
-    <div className="group/sidebar-header mt-2 flex h-8 min-w-0 shrink-0 items-center justify-between gap-1.5 px-2">
-      <div
-        className="flex min-w-0 items-center"
-        data-contextual-tour-target={groupBy === 'repo' ? 'projects-collapse-all' : undefined}
-      >
-        <span
-          // Truncate localized titles because fixed-width actions cannot shrink inside the short header row.
-          className="min-w-0 truncate select-none pl-2 pr-0.5 text-xs font-semibold text-muted-foreground/80"
-          data-sidebar-section-title={groupBy === 'repo' ? 'projects' : 'workspaces'}
-        >
-          {sidebarTitle}
-        </span>
-        {/* WorktreeList portals the collapse-all toggle here; it owns the rendered project rows. */}
+    <SidebarSectionHeader
+      className="mt-2"
+      title={sidebarTitle}
+      section={groupBy === 'repo' ? 'projects' : 'workspaces'}
+      tourTarget={groupBy === 'repo' ? 'projects-collapse-all' : undefined}
+      // WorktreeList portals the collapse-all toggle here; it owns the rendered project rows.
+      toggle={
         <div ref={projectsCollapseTarget} className="flex shrink-0 items-center empty:hidden" />
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
+      }
+      actions={
         <SidebarHeaderActions onWorkspaceBoardMenuOpenChange={onWorkspaceBoardMenuOpenChange} />
-      </div>
-    </div>
+      }
+    />
   )
 })
 

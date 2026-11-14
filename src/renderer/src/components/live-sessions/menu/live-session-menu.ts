@@ -15,7 +15,6 @@ export const LIVE_SESSION_MENU_ITEM_IDS = [
   'answer-permission',
   'view-subagents',
   'view-tasks',
-  'view-reasoning',
   'rename',
   'pin',
   'copy-session-id',
@@ -105,7 +104,6 @@ function isDisabled(
     case 'pin':
     case 'copy-session-id':
     case 'open-machine':
-    case 'view-reasoning':
     case 'remove':
       return false
     case 'send-message':
@@ -178,8 +176,6 @@ export function runLiveSessionMenuItem(
       return effects.focus(session.id, 'subagents')
     case 'view-tasks':
       return effects.focus(session.id, 'tasks')
-    case 'view-reasoning':
-      return effects.focus(session.id, 'reasoning')
     case 'rename':
       return effects.askRename(session)
     case 'pin':

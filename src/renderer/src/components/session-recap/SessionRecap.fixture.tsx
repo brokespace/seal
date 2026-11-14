@@ -198,12 +198,7 @@ const ROWS = [
 ]
 
 function Rows(): React.JSX.Element {
-  const view = buildActiveAgents(
-    ROWS,
-    { query: '', chips: new Set(), scope: null },
-    new Map(),
-    SAMPLE_NOW
-  )
+  const view = buildActiveAgents(ROWS, null, new Map(), SAMPLE_NOW)
   return (
     <div
       role="listbox"

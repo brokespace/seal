@@ -181,7 +181,7 @@ describe('a workspace badge', () => {
     const badge = liveSessionBadges(SESSIONS, links).byWorktree.get('wt-shop')
     const listed = buildActiveAgents(
       SESSIONS,
-      { query: '', chips: new Set(), scope: { kind: 'worktree', id: 'wt-shop', label: 'shop' } },
+      { kind: 'worktree', id: 'wt-shop', label: 'shop' },
       links,
       SAMPLE_NOW
     ).machines.flatMap((machine) => machine.sessions.map((session) => session.id))
