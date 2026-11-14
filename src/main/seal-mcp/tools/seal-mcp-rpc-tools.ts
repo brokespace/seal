@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { getRepoExecutionHostId } from '../../../shared/execution-host'
 import { clipToolText, type HomeChatToolResult } from '../../home-chat/tools/home-chat-tool-context'
 import type { SealMcpToolRuntime } from './seal-mcp-scoped-runtime'
@@ -15,11 +16,13 @@ const ok = (body: unknown): HomeChatToolResult => ({
   isError: false
 })
 
+const RepoHostFields = z.object({
+  connectionId: z.string().nullish().catch(null),
+  executionHostId: z.string().nullish().catch(null)
+})
+
 function repoHost(repo: Rec): string {
-  return getRepoExecutionHostId({
-    connectionId: text(repo.connectionId),
-    executionHostId: text(repo.executionHostId)
-  })
+  return getRepoExecutionHostId(RepoHostFields.parse(repo))
 }
 
 /**

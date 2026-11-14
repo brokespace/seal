@@ -53,13 +53,13 @@ export type SealMcpHostToRelayFrame =
 
 type Rec = Record<string, unknown>
 
+const isRec = (value: unknown): value is Rec =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
 function parseRecord(text: string): Rec | null {
   try {
     const parsed: unknown = JSON.parse(text)
-    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a non-null, non-array object is a record of unknowns.
-    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-      ? (parsed as Rec)
-      : null
+    return isRec(parsed) ? parsed : null
   } catch {
     return null
   }
