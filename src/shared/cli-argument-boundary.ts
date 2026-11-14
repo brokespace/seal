@@ -5,6 +5,7 @@ export const CLI_BOOLEAN_FLAGS = new Set([
   'accept-changed-state',
   'agent-wait',
   'all',
+  'allow-relay',
   'allow-failed-archive-hook',
   'allow-public',
   'allow-system-shortcut',
