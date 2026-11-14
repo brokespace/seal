@@ -25,9 +25,9 @@ export function useProjectGitChanges(
   worktrees: readonly Worktree[]
 ): ProjectOverviewLoad<ProjectChangeSummaries> {
   const targets = worktrees.slice(0, PROJECT_CHANGES_MAX_WORKTREES)
-  const key = targets.map((worktree) => `${getWorktreeHostIdentity(worktree)}@${worktree.head}`)
+  // The repeat picks up a new commit; keying on the head would blank every row for a moment.
   return useProjectOverviewLoad(
-    key.join('\n'),
+    targets.map(getWorktreeHostIdentity).join('\n'),
     async (signal) => {
       const repos = useAppStore.getState().repos
       const entries = await Promise.all(
