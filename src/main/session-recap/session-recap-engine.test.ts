@@ -19,6 +19,15 @@ function firstTurn() {
   ]
 }
 
+/** Sixty long turns: far more prose than three chunks hold. */
+function longSession() {
+  const filler = Array.from({ length: 230 }, (_, word) => `word${word}`).join(' ')
+  return Array.from({ length: 60 }, (_, turn) => [
+    recapMessage(turn * 200, 'user', `Request ${turn + 1}. ${filler}`),
+    recapMessage(turn * 200 + 100, 'assistant', `Reply ${turn + 1}. ${filler}`)
+  ]).flat()
+}
+
 describe('SessionRecapEngine', () => {
   it('reads the transcript once, then sends only what was said since with the recap carried forward', async () => {
     const messages = firstTurn()
@@ -70,6 +79,27 @@ describe('SessionRecapEngine', () => {
       }
     ])
     expect(recap?.coveredTo).toBe(400)
+  })
+
+  it('recaps a long session from its recent end: three chunks when asked, one on its own', async () => {
+    const asked = await recapHarness(longSession(), [FIRST_REPLY, FIRST_REPLY, FIRST_REPLY])
+    expect(await asked.engine.update('s1', 'asked')).toBe('updated')
+
+    expect(asked.requests).toHaveLength(3)
+    expect(lastContent(asked.requests[2])).toContain('USER: Request 60.')
+    expect(lastContent(asked.requests[0])).not.toContain('USER: Request 60.')
+    expect(
+      asked.requests.some((request) => lastContent(request).includes('USER: Request 1.'))
+    ).toBe(false)
+    expect(asked.store.get('s1')?.recap?.coveredFrom).toBeGreaterThan(0)
+    expect(asked.store.get('s1')?.recap?.coveredTo).toBe(12_000)
+
+    const auto = await recapHarness(longSession(), [FIRST_REPLY])
+    expect(await auto.engine.update('s1', 'auto')).toBe('updated')
+
+    expect(auto.requests).toHaveLength(1)
+    expect(lastContent(auto.requests[0])).toContain('USER: Request 60.')
+    expect(auto.store.get('s1')?.recap?.coveredTo).toBe(12_000)
   })
 
   it('asks no model when nothing was said since the last pass', async () => {
