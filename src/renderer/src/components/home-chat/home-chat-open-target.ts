@@ -78,14 +78,13 @@ export function openHomeChatTarget(target: HomeChatOpenTarget): void {
         case 'machines':
           store.openMachinesPage()
           return
+        // Agent activity lives in Active agents; the upstream Activity page lists panes only.
         case 'sessions':
+        case 'activity':
           showActiveAgents()
           return
         case 'tasks':
           store.openTaskPage()
-          return
-        case 'activity':
-          store.openActivityPage()
           return
         case 'automations':
           store.openAutomationsPage()

@@ -12,7 +12,7 @@ import { openWorkspaceBrowserTab } from '@/lib/browser/workspace/workspace-brows
 import './WorktreeCardMeta'
 import { hasWorktreeCardDetails } from '../metadata/WorktreeCardMetaBadges'
 import { usePromptCacheCountdownStartedAt } from '../activity/CacheTimer'
-import { useWorktreeAgentRows } from '../activity/useWorktreeAgentRows'
+import { useWorktreeCardAgentRows } from '../activity/use-worktree-card-agent-rows'
 import type { WorktreeCardSecondaryDetailsInputs } from './worktree-card-secondary-details-inputs'
 
 export function useWorktreeCardSecondaryDetails({
@@ -62,7 +62,7 @@ export function useWorktreeCardSecondaryDetails({
   const metaCliProvenance = showCli ? worktree.cliProvenance : null
   const metaComment = showComment ? hoverComment : null
   const showInlineAgentList = cardDetails.inlineAgents
-  const compactInlineAgentRows = useWorktreeAgentRows(
+  const compactInlineAgentRows = useWorktreeCardAgentRows(
     worktree.id,
     showInlineAgentList && agentActivityDisplayMode === 'compact'
   )
