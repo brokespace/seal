@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 export const SEAL_PROVIDERS = ['claude', 'codex'] as const
 export type SealProvider = (typeof SEAL_PROVIDERS)[number]

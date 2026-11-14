@@ -5,23 +5,19 @@ import {
   type MobilePairingConnectionMode
 } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 
-/** Resolve persisted mode and sign-in consistently across MobilePage and MobilePane. */
+/** Resolve the persisted mode consistently across MobilePage and MobilePane. */
 export function useMobilePairingConnectionMode(): [
   MobilePairingConnectionMode,
   React.Dispatch<React.SetStateAction<MobilePairingConnectionMode>>
 ] {
   const savedConnectionMode = useAppStore((s) => s.settings?.mobilePairingConnectionMode)
-  const signedIn = useAppStore((s) => s.orcaProfileAuthStatus?.state === 'connected')
   const [connectionMode, setConnectionMode] = useState<MobilePairingConnectionMode>(() =>
-    resolveMobilePairingConnectionMode(savedConnectionMode, { signedIn })
+    resolveMobilePairingConnectionMode(savedConnectionMode)
   )
-  const [resolvedFrom, setResolvedFrom] = useState({ savedConnectionMode, signedIn })
-  if (
-    resolvedFrom.savedConnectionMode !== savedConnectionMode ||
-    resolvedFrom.signedIn !== signedIn
-  ) {
-    setResolvedFrom({ savedConnectionMode, signedIn })
-    setConnectionMode(resolveMobilePairingConnectionMode(savedConnectionMode, { signedIn }))
+  const [resolvedFrom, setResolvedFrom] = useState(savedConnectionMode)
+  if (resolvedFrom !== savedConnectionMode) {
+    setResolvedFrom(savedConnectionMode)
+    setConnectionMode(resolveMobilePairingConnectionMode(savedConnectionMode))
   }
   return [connectionMode, setConnectionMode]
 }

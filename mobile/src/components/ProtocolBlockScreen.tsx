@@ -1,7 +1,7 @@
 import { useWallAppUpdate } from '../app-update/use-wall-app-update'
 import { openExternalLink } from '../platform/external-links/external-link'
 import { useRouteHandoff } from '../navigation/route-handoff'
-import { Platform, Pressable, Text, View } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 import { colors, radii, spacing, typography } from '../theme/mobile-theme'
 import { themedStyleSheet } from '../theme/themed-styles'
 import { useMobileColorScheme } from '../theme/use-mobile-color-scheme'
@@ -11,8 +11,7 @@ import type { CompatVerdict } from '../transport/connection/protocol-compat'
 import type { MobileWebBundleCompatVerdict } from '../transport/web-bundle/mobile-web-bundle-compat'
 import type { PageRouteRefusalVerdict } from '../mobile-web-shell/page-route-policy'
 
-const RELEASES_URL = 'https://github.com/stablyai/orca/releases'
-const IOS_APP_STORE_URL = 'itms-apps://apps.apple.com/app/orca-ide/id6766130217'
+const RELEASES_URL = 'https://github.com/brokespace/seal/releases'
 
 // Protocol/bundle/page-route walls are terminal: no native workspace fallback; update the relevant app or bundle.
 export type BlockedVerdict =
@@ -64,26 +63,16 @@ function blockBody(verdict: BlockedVerdict, remedy: BlockRemedy, t: Translate): 
     )
   }
   if (verdict.reason === 'mobile-too-old') {
-    return Platform.OS === 'ios'
-      ? t(
-          'components.protocolBlockScreen.mobileTooOldAppStore',
-          'This desktop needs a newer Seal Mobile app. Update Seal Mobile from the App Store, then try this host again.'
-        )
-      : t(
-          'components.protocolBlockScreen.mobileTooOldGitHubReleases',
-          'This desktop needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again.'
-        )
+    return t(
+      'components.protocolBlockScreen.mobileTooOldGitHubReleases',
+      'This desktop needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again.'
+    )
   }
   if (remedy === 'update-mobile') {
-    return Platform.OS === 'ios'
-      ? t(
-          'components.protocolBlockScreen.workspaceNeedsUpdateAppStore',
-          "This desktop's mobile workspace needs a newer Seal Mobile app. Update Seal Mobile from the App Store, then try this host again."
-        )
-      : t(
-          'components.protocolBlockScreen.workspaceNeedsUpdateGitHubReleases',
-          "This desktop's mobile workspace needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again."
-        )
+    return t(
+      'components.protocolBlockScreen.workspaceNeedsUpdateGitHubReleases',
+      "This desktop's mobile workspace needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again."
+    )
   }
   return t(
     'components.protocolBlockScreen.desktopTooOldBody',
@@ -97,17 +86,10 @@ export function ProtocolBlockScreen({ verdict }: Props) {
   const router = useRouteHandoff()
   const mobileUpdate = useWallAppUpdate()
   const remedy = blockRemedy(verdict)
-  // Why: Android APKs ship through GitHub Releases until a Play Store listing exists.
-  const mobileUpdateTarget =
-    Platform.OS === 'ios'
-      ? {
-          label: t('components.protocolBlockScreen.openAppStore', 'Open App Store'),
-          url: IOS_APP_STORE_URL
-        }
-      : {
-          label: t('components.protocolBlockScreen.openGitHubReleases', 'Open GitHub Releases'),
-          url: RELEASES_URL
-        }
+  const releasesTarget = {
+    label: t('components.protocolBlockScreen.openGitHubReleases', 'Open GitHub Releases'),
+    url: RELEASES_URL
+  }
   const mobileAction = mobileUpdate
     ? {
         label: t('components.protocolBlockScreen.getVersion', 'Get Seal {{version}}', {
@@ -115,17 +97,10 @@ export function ProtocolBlockScreen({ verdict }: Props) {
         }),
         url: mobileUpdate.url
       }
-    : { label: mobileUpdateTarget.label, url: mobileUpdateTarget.url }
+    : releasesTarget
   // No download to offer when the fix is a refetch: reconnecting is what this screen leaves you to do.
   const primaryAction =
-    remedy === 'refresh-bundle'
-      ? null
-      : remedy === 'update-mobile'
-        ? mobileAction
-        : {
-            label: t('components.protocolBlockScreen.openGitHubReleases', 'Open GitHub Releases'),
-            url: RELEASES_URL
-          }
+    remedy === 'refresh-bundle' ? null : remedy === 'update-mobile' ? mobileAction : releasesTarget
 
   const title = blockTitle(remedy, t)
   const body = blockBody(verdict, remedy, t)

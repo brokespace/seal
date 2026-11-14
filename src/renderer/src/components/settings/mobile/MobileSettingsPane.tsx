@@ -10,9 +10,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
 import { MobileRelayBetaNotice } from '../../mobile/pairing/MobileRelayBetaNotice'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
-
-const ORCA_IOS_APP_STORE_URL = 'https://apps.apple.com/app/orca-ide/id6766130217'
-const ORCA_ANDROID_APK_URL = 'https://orca.dev/download/android'
+import { SEAL_MOBILE_INSTALL_GUIDE_URL } from '../../mobile/seal-mobile-install-guide'
 
 export function MobileSettingsPane(): React.JSX.Element {
   const t = useTranslate()
@@ -34,24 +32,18 @@ export function MobileSettingsPane(): React.JSX.Element {
           <div className="space-y-2 text-xs text-muted-foreground">
             <p>
               {t(
-                'auto.components.settings.MobileSettingsPane.installIntro',
-                'Install Seal Mobile from the'
+                'auto.components.settings.MobileSettingsPane.installIntroSeal',
+                'Install Seal Mobile using the'
               )}{' '}
               <button
                 type="button"
-                onClick={(event) => openAppHttpLink(ORCA_IOS_APP_STORE_URL, { event })}
+                onClick={(event) => openAppHttpLink(SEAL_MOBILE_INSTALL_GUIDE_URL, { event })}
                 className="cursor-pointer underline underline-offset-2 hover:text-foreground"
               >
-                {t('auto.components.settings.MobileSettingsPane.b5a2ed83ff', 'App Store')}
-              </button>
-              {' · '}
-              <button
-                type="button"
-                // Link the pinned release APK until Android distribution moves to Google Play.
-                onClick={(event) => openAppHttpLink(ORCA_ANDROID_APK_URL, { event })}
-                className="cursor-pointer underline underline-offset-2 hover:text-foreground"
-              >
-                {t('auto.components.settings.MobileSettingsPane.androidApkLabel', 'Android APK')}
+                {t(
+                  'auto.components.settings.MobileSettingsPane.installGuideLabel',
+                  'install guide'
+                )}
               </button>
               {t('auto.components.settings.MobileSettingsPane.installOutro', ', then pair below.')}
             </p>
