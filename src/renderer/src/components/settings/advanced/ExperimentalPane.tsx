@@ -9,7 +9,6 @@ import { getExperimentalSearchEntry } from './experimental-search'
 import { HiddenExperimentalGroup } from './HiddenExperimentalGroup'
 import { NumberField } from '../form-controls/SettingsFormControls'
 import { useTranslate } from '@/i18n/use-translate'
-import { AgentDashboardExperimentalSetting } from '../../dashboard/AgentDashboardExperimentalSetting'
 import { EphemeralVmsExperimentalSetting } from '../virtual-machines/recipes/EphemeralVmsExperimentalSetting'
 import { WslHostsExperimentalSetting } from '../wsl/hosts/WslHostsExperimentalSetting'
 import { wslHostsAvailable } from '../../sidebar/use-wsl-hosts-enabled'
@@ -36,9 +35,6 @@ export function ExperimentalPane({
   const t = useTranslate()
   const searchQuery = useAppStore((s) => s.settingsSearchQuery)
   const showPet = matchesSettingsSearch(searchQuery, [getExperimentalSearchEntry().pet])
-  const showAgentDashboard = matchesSettingsSearch(searchQuery, [
-    getExperimentalSearchEntry().agentDashboard
-  ])
   const showTerminalAttention = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().terminalAttention
   ])
@@ -58,10 +54,6 @@ export function ExperimentalPane({
   return (
     <div className="space-y-8">
       <SettingsGroup>
-        {showAgentDashboard ? (
-          <AgentDashboardExperimentalSetting settings={settings} updateSettings={updateSettings} />
-        ) : null}
-
         {showPet ? (
           <SearchableSetting
             title={t('auto.components.settings.ExperimentalPane.dd6f0a1d45', 'Pet')}
@@ -157,7 +149,7 @@ export function ExperimentalPane({
                 <p className="text-xs text-muted-foreground">
                   {t(
                     'auto.components.settings.ExperimentalPane.agentHibernation.copy',
-                    'Stops idle background agent terminals after the configured idle window and resumes supported sessions when you open them again. Agent sleep preserves launch options for agents started by Seal. Manually started agents may resume with your current Seal defaults. Experimental while we tune the safety model.'
+                    'Stops idle background agent terminals after the configured idle window and resumes supported sessions when you open them again. Agent sleep preserves launch options for agents started by Orca. Manually started agents may resume with your current Orca defaults. Experimental while we tune the safety model.'
                   )}
                 </p>
               </div>
@@ -184,7 +176,7 @@ export function ExperimentalPane({
                   )}
                   description={t(
                     'auto.components.settings.ExperimentalPane.agentHibernation.idleMinutesDescription',
-                    'How many idle minutes a completed background agent must wait before Seal can sleep it.'
+                    'How many idle minutes a completed background agent must wait before Orca can sleep it.'
                   )}
                   value={agentHibernationIdleMinutes}
                   min={MIN_AGENT_HIBERNATION_IDLE_MS / MS_PER_MINUTE}

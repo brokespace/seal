@@ -28,7 +28,7 @@ export function setPluginHostRendererRequest(next: PluginHostRendererRequest | n
 async function ask(body: PluginViewRequestBody): Promise<void> {
   const pending = request?.(body) ?? null
   if (!pending) {
-    throw new PluginHostCallError('unavailable', 'Seal has no window open to do this in')
+    throw new PluginHostCallError('unavailable', 'Orca has no window open to do this in')
   }
   const reply = await pending.catch((error: unknown) => {
     throw new PluginHostCallError(

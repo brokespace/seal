@@ -19,7 +19,7 @@ export type PluginRuntimeRpc = (
 
 type Failure = [PluginErrorCode, string]
 const NO_LIVE_TERMINAL: Failure = ['action_failed', 'no live terminal has this id']
-const NO_WINDOW: Failure = ['unavailable', "Seal's window is not available"]
+const NO_WINDOW: Failure = ['unavailable', "Orca's window is not available"]
 
 // Runtime refusals whose wording names Orca internals; a plugin gets a fixed message instead.
 const RUNTIME_FAILURES: ReadonlyMap<string, Failure> = new Map([
@@ -34,13 +34,13 @@ const RUNTIME_FAILURES: ReadonlyMap<string, Failure> = new Map([
   ['terminal_exited', NO_LIVE_TERMINAL],
   ['terminal_gone', NO_LIVE_TERMINAL],
   ['tab_not_found', NO_LIVE_TERMINAL],
-  ['terminal_tab_pinned', ['conflict', "the terminal's tab is pinned; unpin it in Seal first"]],
+  ['terminal_tab_pinned', ['conflict', "the terminal's tab is pinned; unpin it in Orca first"]],
   ['renderer_unavailable', NO_WINDOW],
   ['client_disconnected', ['unavailable', 'the host that owns this is not connected']],
-  ['runtime_unavailable', ['unavailable', 'this Seal host cannot run workspace actions now']],
+  ['runtime_unavailable', ['unavailable', 'this Orca host cannot run workspace actions now']],
   ['Automation not found.', ['action_failed', 'no automation has this id']]
 ])
-const UNKNOWN_FAILURE: Failure = ['action_failed', 'Seal could not complete this action']
+const UNKNOWN_FAILURE: Failure = ['action_failed', 'Orca could not complete this action']
 
 /**
  * A runtime refusal as the plugin sees it: a fixed message, never the runtime's wording, which
@@ -66,7 +66,7 @@ export function pluginRuntimeFailure(error: unknown): unknown {
 
 export function pluginHostRenderer(services: PluginHostServices): PluginHostRendererActions {
   if (!services.renderer) {
-    throw new PluginHostCallError('unavailable', 'only the Seal desktop app can do this')
+    throw new PluginHostCallError('unavailable', 'only the Orca desktop app can do this')
   }
   return services.renderer
 }
@@ -75,7 +75,7 @@ export function pluginHostRenderer(services: PluginHostServices): PluginHostRend
 export function pluginHostRpc(services: PluginHostServices): PluginRuntimeRpc {
   const call = services.runtimeRpc
   if (!call) {
-    throw new PluginHostCallError('unavailable', 'this Seal host cannot run workspace actions')
+    throw new PluginHostCallError('unavailable', 'this Orca host cannot run workspace actions')
   }
   return (method, params, options) =>
     call(method, params, options).catch((error: unknown) => {

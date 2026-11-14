@@ -24,8 +24,8 @@ describe('openServeBundlePark', () => {
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'orca-bundle-park-'))
-    const bundle = join(root, 'Seal.app')
-    executable = join(bundle, 'Contents', 'MacOS', 'Seal')
+    const bundle = join(root, 'Orca.app')
+    executable = join(bundle, 'Contents', 'MacOS', 'Orca')
     await mkdir(join(bundle, 'Contents', 'MacOS'), { recursive: true })
     await writeFile(executable, '')
     await writeFile(join(bundle, 'Contents', 'Info.plist'), 'v1')
@@ -153,7 +153,7 @@ describe('openServeBundlePark', () => {
     // 'unused' differs from the real identity, which models a bundle ShipIt already replaced.
     expect(park.holds()).toBe(false)
     const identity = formatBundleIdentity(
-      await stat(join(root, 'Seal.app', 'Contents', 'Info.plist'))
+      await stat(join(root, 'Orca.app', 'Contents', 'Info.plist'))
     )
     await writeRecord({
       phase: 'commit',

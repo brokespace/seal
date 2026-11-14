@@ -107,7 +107,7 @@ export function openSharedControlSocket(
       }
       callbacks.onSocketClosed(
         remoteRuntimeUnavailableError(
-          'Remote Seal runtime stopped responding; resetting the control connection.'
+          'Remote Orca runtime stopped responding; resetting the control connection.'
         ),
         cause
       )

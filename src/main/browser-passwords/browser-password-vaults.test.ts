@@ -29,7 +29,7 @@ describe('deleteBrowserPasswordVault', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  it('deletes the captured vault after a Seal profile switch without touching its replacement', () => {
+  it('deletes the captured vault after an Orca profile switch without touching its replacement', () => {
     const original = getBrowserPasswordVault('default')
     original.add({ origin: 'https://a.test', username: 'original', password: 'p' })
     configureBrowserPasswordVaults(join(dir, 'other-profile'))

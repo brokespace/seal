@@ -38,7 +38,7 @@ export function usageCredentialAccessNotice(
   if (access === 'outdated') {
     return t(
       'auto.components.settings.usageCredentialHost.outdated',
-      'Update Seal on {{host}} to save this key there.',
+      'Update Orca on {{host}} to save this key there.',
       { host: host.label }
     )
   }
@@ -64,12 +64,12 @@ export function usageCredentialUnreadableNotice(
   return unreadable === 'sealed-elsewhere'
     ? t(
         'auto.components.settings.usageCredentialHost.sealedElsewhereForgettable',
-        'Saved by another Seal app on {{host}}, which this one cannot read. Change it in that app, or forget it here.',
+        'Saved by another Orca app on {{host}}, which this one cannot read. Change it in that app, or forget it here.',
         { host: host.label }
       )
     : t(
         'auto.components.settings.usageCredentialHost.unreadableKey',
-        'Seal on {{host}} cannot read the saved key. Replace it or forget it.',
+        'Orca on {{host}} cannot read the saved key. Replace it or forget it.',
         { host: host.label }
       )
 }

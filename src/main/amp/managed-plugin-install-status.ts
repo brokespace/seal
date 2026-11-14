@@ -78,7 +78,7 @@ export function statusFromState(
         state: 'partial',
         configPath: pluginPath,
         managedHooksPresent: false,
-        detail: 'Amp Seal status plugin exists but is not Seal-managed'
+        detail: 'Amp Orca status plugin exists but is not Orca-managed'
       }
     case 'error':
       return {

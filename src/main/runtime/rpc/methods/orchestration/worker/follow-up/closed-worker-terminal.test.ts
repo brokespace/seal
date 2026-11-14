@@ -5,7 +5,7 @@ import { useHelperFollowUpCli } from '../testing/helper-follow-up-cli.test-suppo
 const CONVERSATION = { key: 'session_id', id: 'fixture-conversation' } as const
 const REOPENED_PANE = 'tab_reopened:leaf'
 
-describe('opening a terminal worker Seal closed', () => {
+describe('opening a terminal worker Orca closed', () => {
   const { h, panes, pair, success } = useHelperFollowUpCli()
 
   /** A finished helper whose pane recorded `conversation`, then closed by Orca. */

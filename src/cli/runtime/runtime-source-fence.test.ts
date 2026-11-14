@@ -146,7 +146,7 @@ describe('RuntimeClient runtime-source fence', () => {
     expect(runtime.methods).toEqual(['status.get'])
   })
 
-  it('keeps the unfenced path for a CLI started outside a Seal terminal', async () => {
+  it('keeps the unfenced path for a CLI started outside an Orca terminal', async () => {
     const runtime = await startRuntime({ runtimeId: 'runtime-b', installationId: SOURCE_B })
     delete process.env[RUNTIME_SOURCE_ID_ENV]
     delete process.env[RUNTIME_SOURCE_INCARNATION_ENV]

@@ -92,11 +92,11 @@ export function orcadSnapshotShortfallMessage(
   // A recorded active version does not prove the server is running.
   const keeps = where.active
     ? `The update left the current server (${where.active}) in place.`
-    : 'Seal cannot start its server on this host until then.'
+    : 'Orca cannot start its server on this host until then.'
   const free = formatKb(space.availableKb - space.reclaimKb)
   const reclaim =
     space.reclaimKb > 0
-      ? ` (plus ${formatKb(space.reclaimKb)} Seal would reclaim from earlier snapshots)`
+      ? ` (plus ${formatKb(space.reclaimKb)} Orca would reclaim from earlier snapshots)`
       : ''
   return (
     `Not enough disk space to snapshot ${where.userDataDir} before activating ` +

@@ -40,8 +40,8 @@ export function pluginManifestJsonSchema(): PluginJsonSchema {
   return toPublishedSchema(
     pluginManifestV2Object,
     PLUGIN_MANIFEST_SCHEMA_FILE,
-    'Seal plugin manifest',
-    'The orca-plugin.json file at the root of a Seal plugin (manifest format 2).'
+    'Orca plugin manifest',
+    'The orca-plugin.json file at the root of an Orca plugin (manifest format 2).'
   )
 }
 
@@ -49,7 +49,7 @@ export function pluginCatalogJsonSchema(): PluginJsonSchema {
   return toPublishedSchema(
     pluginCatalogDocumentSchema,
     PLUGIN_CATALOG_SCHEMA_FILE,
-    'Seal plugin catalog',
+    'Orca plugin catalog',
     `The ${PLUGIN_CATALOG_FILENAME} file that lists installable plugins and their releases.`
   )
 }
@@ -66,14 +66,14 @@ export function pluginSchemaGeneratedFiles(): Record<string, string> {
       file: 'orca-plugin.json',
       schemaFile: PLUGIN_MANIFEST_SCHEMA_FILE,
       sinceNote:
-        '`Since` is the first Seal release that reads the field; raise `engines.orca` when you use a newer one.',
+        '`Since` is the first Orca release that reads the field; raise `engines.orca` when you use a newer one.',
       appendix: PLUGIN_MANIFEST_POLICY_NOTES
     }),
     'docs/reference/plugin-catalog.md': renderPluginSchemaReference(catalog, {
       file: PLUGIN_CATALOG_FILENAME,
       schemaFile: PLUGIN_CATALOG_SCHEMA_FILE,
       sinceNote:
-        '`Since` is the first Seal release that reads the field. Older releases ignore fields they do not know.',
+        '`Since` is the first Orca release that reads the field. Older releases ignore fields they do not know.',
       appendix: PLUGIN_CATALOG_POLICY_NOTES
     }),
     'docs/reference/plugin-host-api.md': renderPluginHostApiReference(),

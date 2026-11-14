@@ -87,7 +87,7 @@ export async function prepareEphemeralVmWorkspaceTarget(
       await assertRuntimeEnvironmentCapability(
         environmentId,
         PROJECT_HOST_SETUP_RUNTIME_CAPABILITY,
-        'The recipe-created Seal server does not support project setup.'
+        'The recipe-created Orca server does not support project setup.'
       )
       if (checkoutMode === 'provisioned-root') {
         await assertRuntimeEnvironmentCapability(
@@ -95,7 +95,7 @@ export async function prepareEphemeralVmWorkspaceTarget(
           WORKTREE_PROVISIONED_ROOT_RUNTIME_CAPABILITY,
           translate(
             'auto.lib.ephemeralVm.provisionedRootNeedsUpdate',
-            'The Seal server on this VM cannot adopt a provisioned root. Update Seal on the VM.'
+            'The Orca server on this VM cannot adopt a provisioned root. Update Orca on the VM.'
           )
         )
       }

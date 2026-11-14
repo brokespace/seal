@@ -86,7 +86,7 @@ function SkillShareAccessSummary({
           )
         : t(
             'auto.components.skills.SkillShareReviewContent.c15d90c10b',
-            'A connected Seal Cloud account is required.'
+            'A connected Orca Cloud account is required.'
           )}
     </p>
   )

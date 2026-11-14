@@ -28,11 +28,11 @@
       "ordinal": 2,
       "json": "{\"id\":\"frame-1\",\"deviceToken\":\"recording-device\",\"method\":\"session.tabs.close\",\"params\":{\"worktree\":\"id:workspace-1\",\"tabId\":\"tab-1\",\"reason\":\"user\"}}"
     },
-    "57501dfa874d": {
+    "b8970b98f1e3": {
       "name": "toast",
       "ordinal": 3,
       "value": {
-        "message": "Couldn't close the tab. Seal on your computer is still loading. Try again in a moment."
+        "message": "Couldn't close the tab. Orca on your computer is still loading. Try again in a moment."
       }
     },
     "d1730750ac1c": {
@@ -93,7 +93,7 @@
             "close-tab": "eb79a9b3682a"
           },
           "state": "3e15def58214",
-          "effects": ["57501dfa874d"]
+          "effects": ["b8970b98f1e3"]
         }
       }
     ]

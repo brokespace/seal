@@ -121,7 +121,7 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
     kind: 'media',
     title: 'Remote workspaces',
     caption:
-      'Run agents on a remote machine with the same Seal editing, git, and terminal workflow.',
+      'Run agents on a remote machine with the same Orca editing, git, and terminal workflow.',
     gifPath: 'tile-06.webp',
     posterPath: 'tile-06.poster.jpg',
     recordedAtPath: 'tile-06.recorded-at.json',
@@ -156,8 +156,8 @@ export const FEATURE_WALL_TILES: readonly FeatureWallTile[] = [
   {
     id: 'tile-09',
     kind: 'media',
-    title: 'Seal CLI',
-    caption: 'Agents can drive Seal too: create workspaces, snapshot screens, click, and fill.',
+    title: 'Orca CLI',
+    caption: 'Agents can drive Orca too: create workspaces, snapshot screens, click, and fill.',
     gifPath: 'tile-09.webp',
     posterPath: 'tile-09.poster.jpg',
     recordedAtPath: 'tile-09.recorded-at.json',

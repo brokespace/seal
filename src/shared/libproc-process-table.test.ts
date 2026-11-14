@@ -312,7 +312,7 @@ describe('runPsInProcess', () => {
       row({
         pid: 700,
         ppid: 1,
-        comm: 'Seal',
+        comm: 'Orca',
         command: '/Applications/Orca',
         commandIncomplete: false
       }),

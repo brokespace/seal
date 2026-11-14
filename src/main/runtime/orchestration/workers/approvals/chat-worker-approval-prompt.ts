@@ -85,7 +85,7 @@ export async function answerChatWorkerApproval(input: {
     return {
       ok: false,
       code: 'approval_refused',
-      message: `Seal could not read the worker's chat, so ${approvalId} was not answered. Try again.`
+      message: `Orca could not read the worker's chat, so ${approvalId} was not answered. Try again.`
     }
   }
   const notOpen: ChatWorkerApprovalAnswer = {
@@ -108,7 +108,7 @@ export async function answerChatWorkerApproval(input: {
       code: 'approval_option_missing',
       message:
         decision === 'deny'
-          ? `Approval ${approvalId} offers no way to refuse just this request, so Seal will not pick one. A person must answer it on the worker.`
+          ? `Approval ${approvalId} offers no way to refuse just this request, so Orca will not pick one. A person must answer it on the worker.`
           : `Approval ${approvalId} offers no way to allow just this request. A person must answer it on the worker.`
     }
   }

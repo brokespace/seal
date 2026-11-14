@@ -67,7 +67,7 @@ export function buildBrowserExtensionBackgroundWrapper(
   manifest: Manifest
 ): BrowserExtensionBackgroundWrapper | null {
   if (manifest.manifest_version !== 3) {
-    throw new Error('Seal supports Manifest V3 extensions only')
+    throw new Error('Orca supports Manifest V3 extensions only')
   }
   const background = asRecord(manifest.background)
   const worker = background?.service_worker
@@ -107,6 +107,6 @@ export function buildBrowserExtensionBackgroundWrapper(
         : {})
     },
     wrapperPath,
-    wrapperSource: `// Written by Seal: its chrome.* additions, then this extension's own worker.\n${load}`
+    wrapperSource: `// Written by Orca: its chrome.* additions, then this extension's own worker.\n${load}`
   }
 }

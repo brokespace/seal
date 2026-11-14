@@ -84,7 +84,7 @@ export async function jiraUpdateIssueForTarget(
       JIRA_TRANSITION_FIELDS_RUNTIME_CAPABILITY,
       translate(
         'auto.runtime.jira.transitionFieldsNeedsUpdate',
-        'Update the remote Seal server to submit required transition fields, or complete the transition in Jira.'
+        'Update the remote Orca server to submit required transition fields, or complete the transition in Jira.'
       )
     )
   }

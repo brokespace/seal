@@ -78,7 +78,7 @@ describe.skipIf(!fish.available)('fish vendor snippet in a real fish', () => {
 
   // Distro vendor snippets such as snapd may change XDG_DATA_DIRS themselves.
   it.each([['/opt/a:/opt/b/'], ['/opt/a:'], [undefined]] as const)(
-    'leaves fish exactly as it starts without Seal when XDG_DATA_DIRS is %s',
+    'leaves fish exactly as it starts without Orca when XDG_DATA_DIRS is %s',
     (inherited) => {
       const base: Record<string, string> =
         inherited === undefined ? {} : { XDG_DATA_DIRS: inherited }

@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS federation_relay_items (
 CREATE INDEX IF NOT EXISTS idx_federation_relay_pending
   ON federation_relay_items(dispatch_id, direction, acked_at, sequence);
 
--- Holds only what is still unacknowledged, so a paired Seal's mail pull costs what is pending, not every conversation it ever had.
+-- Holds only what is still unacknowledged, so a paired Orca's mail pull costs what is pending, not every conversation it ever had.
 CREATE INDEX IF NOT EXISTS idx_federation_relay_unacked
   ON federation_relay_items(direction, dispatch_id) WHERE acked_at IS NULL;
 
@@ -119,9 +119,9 @@ CREATE TABLE IF NOT EXISTS remote_questions (
 CREATE INDEX IF NOT EXISTS idx_remote_questions_dispatch_status
   ON remote_questions(dispatch_id, status);
 
--- Agent mail between paired Seals. 'home': this Seal opened it for local_party and pulls replies
--- from environment_id over the pairing credential peer_fingerprint, so a re-pair opens a new one. 'peer': the paired Seal peer_fingerprint opened it here; its replies wait in
--- federation_relay_items under dispatch_id = conversation_id until that Seal pulls them.
+-- Agent mail between paired Orcas. 'home': this Orca opened it for local_party and pulls replies
+-- from environment_id over the pairing credential peer_fingerprint, so a re-pair opens a new one. 'peer': the paired Orca peer_fingerprint opened it here; its replies wait in
+-- federation_relay_items under dispatch_id = conversation_id until that Orca pulls them.
 CREATE TABLE IF NOT EXISTS peer_mail_conversations (
   conversation_id  TEXT PRIMARY KEY,
   role             TEXT NOT NULL CHECK(role IN ('home', 'peer')),
@@ -137,7 +137,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_peer_mail_home_pairing
 CREATE INDEX IF NOT EXISTS idx_peer_mail_peer_fingerprint
   ON peer_mail_conversations(peer_fingerprint, role);
 
--- A message that crossed between paired Seals: its reply goes back over its conversation, to remote_party.
+-- A message that crossed between paired Orcas: its reply goes back over its conversation, to remote_party.
 CREATE TABLE IF NOT EXISTS peer_mail_messages (
   message_id      TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS dispatch_contexts (
   launch_token_hash   TEXT,
   assignee_handle     TEXT,
   assignee_pane_key   TEXT,
-  -- Bare Seal session id the agent is addressed by, when it has one (today only structured
+  -- Bare Orca session id the agent is addressed by, when it has one (today only structured
   -- sessions); for a /clear'd chat, its lineage root's. Not its orca_session_id:<id> address.
   assignee_orca_session_id TEXT,
   capability_hash     TEXT,
@@ -193,7 +193,7 @@ CREATE TABLE IF NOT EXISTS dispatch_contexts (
   retry_of_dispatch_id TEXT,
   creator_dispatch_id TEXT,
   -- Who created this row. A row whose creator is its own assignee is bookkeeping, not delegation,
-  -- so it must not count as a nesting parent. Null on rows written before v37 and for Seal's loop.
+  -- so it must not count as a nesting parent. Null on rows written before v37 and for Orca's loop.
   creator_handle      TEXT,
   creator_pane_key    TEXT,
   -- Same form as assignee_orca_session_id: the id the creator is addressed by (a lineage root's).
@@ -203,7 +203,7 @@ CREATE TABLE IF NOT EXISTS dispatch_contexts (
     CHECK(status IN ('pending', 'dispatched', 'completed', 'failed', 'circuit_broken')),
   failure_count       INTEGER NOT NULL DEFAULT 0,
   last_failure        TEXT,
-  -- Why the process is gone, when Seal could establish it. See TerminalExitCause.
+  -- Why the process is gone, when Orca could establish it. See TerminalExitCause.
   termination_reason  TEXT,
   -- Nesting depth: a root coordinator's worker is 1, its worker's worker is 2.
   -- Defaults to 1 so an unstamped row fails closed rather than reading as a root.

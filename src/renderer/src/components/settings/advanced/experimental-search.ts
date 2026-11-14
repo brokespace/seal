@@ -153,7 +153,7 @@ export const getExperimentalSearchEntry = createLocalizedCatalog(
         ),
         description: translate(
           'auto.components.settings.experimental.search.agentHibernation.description',
-          'Stops idle background agent terminals after the configured idle window and resumes supported sessions when opened again. Agent sleep preserves launch options for agents started by Seal; manually started agents may resume with current Seal defaults.'
+          'Stops idle background agent terminals after the configured idle window and resumes supported sessions when opened again. Agent sleep preserves launch options for agents started by Orca; manually started agents may resume with current Orca defaults.'
         ),
         keywords: [
           ...translateSearchKeyword(
@@ -189,7 +189,10 @@ export const getExperimentalSearchEntry = createLocalizedCatalog(
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
   (): SettingsSearchEntry[] => [
-    ...Object.values(getExperimentalSearchEntry()),
+    // Seal dropped the Agent Dashboard toggle, so its entry must not match a search.
+    ...Object.entries(getExperimentalSearchEntry()).flatMap(([id, entry]) =>
+      id === 'agentDashboard' ? [] : [entry]
+    ),
     // Index WSL toggles only on Windows desktops that expose them.
     ...(typeof window !== 'undefined' && window.api?.runtimeEnvironments?.wslHosts
       ? [getWslHostsExperimentalSearchEntry()]

@@ -24,7 +24,7 @@ export async function prepareKimiTextTaskPolicy(
     'required'
   )
   let content =
-    '---\nname: orca-text-generation\ndescription: Text generation for Seal\ntools: []\n---\n${base_prompt}\n'
+    '---\nname: orca-text-generation\ndescription: Text generation for Orca\ntools: []\n---\n${base_prompt}\n'
   if (file) {
     if (!file.value) {
       throw new Error('Missing text task agent file')

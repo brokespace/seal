@@ -1,30 +1,43 @@
 import { useMemo } from 'react'
-import { Folder, Monitor, Server } from 'lucide-react'
+import { Monitor, Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import { groupHomeSessions } from '../../../../shared/home-overview/home-overview-derivations'
-import type { HomeSession } from './home-overview-model'
+import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import {
+  buildActiveAgents,
+  NO_ACTIVE_AGENTS_FILTER
+} from '../live-sessions/active-agents/active-agents-model'
+import { useLiveSessionLinks } from '../live-sessions/links/use-live-session-links'
+import { LiveSessionRows } from '../live-sessions/row/LiveSessionRows'
+import { useSessionMachineName } from '../machines/model/use-local-machine-name'
 import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
-import { HomeSessionRow } from './HomeSessionRow'
 
+/** Active agents' machines and rows, on Home: the same sessions in the same order. */
 export function HomeSessionsPanel({
   sessions,
-  now,
-  onOpen
+  now
 }: {
-  sessions: readonly HomeSession[]
+  sessions: readonly LiveSession[]
   now: number
-  onOpen: (session: HomeSession) => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const groups = useMemo(() => groupHomeSessions(sessions), [sessions])
+  const { links } = useLiveSessionLinks()
+  const machineName = useSessionMachineName()
+  const view = useMemo(
+    () => buildActiveAgents(sessions, NO_ACTIVE_AGENTS_FILTER, links, now),
+    [sessions, links, now]
+  )
   return (
     <HomeOverviewPanel
       title={t('home.overview.sessions.title', 'Sessions')}
       action={
-        <span className="text-2xs text-muted-foreground tabular-nums">{sessions.length}</span>
+        <span className="flex items-center gap-2">
+          <SessionSummariesPausedNote />
+          <span className="text-2xs text-muted-foreground tabular-nums">{view.activeCount}</span>
+        </span>
       }
     >
-      {groups.length === 0 ? (
+      {view.machines.length === 0 ? (
         <HomeOverviewEmpty>
           {t(
             'home.overview.sessions.empty',
@@ -33,35 +46,22 @@ export function HomeSessionsPanel({
         </HomeOverviewEmpty>
       ) : (
         <div className="divide-y divide-border">
-          {groups.map((machine) => {
-            const MachineIcon = machine.machineId === 'local' ? Monitor : Server
+          {view.machines.map((machine) => {
+            const MachineIcon = machine.kind === 'local' ? Monitor : Server
             return (
-              <div key={machine.machineId} className="px-2 py-2">
-                <h3 className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-foreground">
+              <div key={machine.hostId} data-home-sessions-machine={machine.hostId} className="p-2">
+                <h3 className="flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium text-foreground">
                   <MachineIcon className="size-3.5 text-muted-foreground" />
-                  <span className="truncate">{machine.machineLabel}</span>
+                  <span className="truncate">{machineName(machine)}</span>
                   <span className="text-2xs font-normal text-muted-foreground tabular-nums">
-                    {machine.sessionCount}
+                    {machine.sessions.length}
                   </span>
                 </h3>
-                {machine.projects.map((project) => (
-                  <div key={project.projectId} className="mt-1">
-                    <h4 className="flex items-center gap-1.5 px-2 pt-1 text-2xs text-muted-foreground">
-                      <Folder className="size-3" />
-                      <span className="truncate">{project.projectName}</span>
-                    </h4>
-                    <ul>
-                      {project.sessions.map((session) => (
-                        <HomeSessionRow
-                          key={session.id}
-                          session={session}
-                          now={now}
-                          onOpen={onOpen}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                <LiveSessionRows
+                  sessions={machine.sessions}
+                  label={machineName(machine)}
+                  now={now}
+                />
               </div>
             )
           })}

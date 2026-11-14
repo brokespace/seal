@@ -69,7 +69,7 @@ export async function withCliAgentLaunchRecovery<T>(
     // Replace transport restart-and-retry advice: the accepted launch may still be running.
     throw new RuntimeClientError(
       'agent_session_operation_unknown',
-      'Seal could not confirm the launch outcome; the agent may already be running and the prompt may already be submitted.',
+      'Orca could not confirm the launch outcome; the agent may already be running and the prompt may already be submitted.',
       {
         launchOutcome: 'unknown',
         retrySafe: Boolean(recovery.operationId),

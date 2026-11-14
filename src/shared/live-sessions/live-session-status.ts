@@ -1,3 +1,4 @@
+import type { AgentListStatus } from '../agent-status/presentation/agent-list-status'
 import type { LiveSession, LiveSessionStatus } from './live-session-types'
 
 /** Where a status sorts and how it is colored: attention first, then busy, then quiet. */
@@ -23,6 +24,23 @@ const RANK: Record<LiveSessionStatus, number> = {
   'waiting-task': 5,
   idle: 6,
   done: 7
+}
+
+const DOTS: Record<LiveSessionStatus, AgentListStatus> = {
+  working: 'working',
+  // Still the agent's move: drawn in the working color, not as something for the user.
+  'waiting-subagent': 'monitoring',
+  'waiting-task': 'monitoring',
+  'waiting-input': 'waiting',
+  'needs-permission': 'permission',
+  idle: 'idle',
+  errored: 'failed',
+  done: 'done'
+}
+
+/** The dot every surface draws for a status, on desktop and mobile. */
+export function liveSessionDotState(status: LiveSessionStatus): AgentListStatus {
+  return DOTS[status]
 }
 
 export function liveSessionStatusGroup(status: LiveSessionStatus): LiveSessionStatusGroup {

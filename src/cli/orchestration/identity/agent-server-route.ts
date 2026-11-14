@@ -71,7 +71,7 @@ export async function refuseAgentServerRoute(
   if (command === 'check') {
     throw new RuntimeClientError(
       'mailbox_is_local',
-      `Your mailbox is on this Seal; replies from ${name} arrive here. Drop ${route}.`
+      `Your mailbox is on this Orca; replies from ${name} arrive here. Drop ${route}.`
     )
   }
   const verb = command === 'send' ? 'message an agent' : 'start a worker'
@@ -90,7 +90,7 @@ export async function requirePeerMailCarrier(ctx: HandlerContext): Promise<void>
   if (!result.capabilities?.includes(ORCHESTRATION_PEER_MAIL_RUNTIME_CAPABILITY)) {
     throw new RuntimeClientError(
       'server_mail_unsupported',
-      'The Seal running here is too old to carry mail to another server. Update or restart Seal here, then send again. Nothing was sent.'
+      'The Orca running here is too old to carry mail to another server. Update or restart Orca here, then send again. Nothing was sent.'
     )
   }
 }

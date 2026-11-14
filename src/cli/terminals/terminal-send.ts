@@ -36,7 +36,7 @@ export const terminalSendHandler: CommandHandler = async ({ flags, client, cwd, 
     if (!status.result.runtime.reachable) {
       throw new RuntimeClientError(
         'runtime_unavailable',
-        'Seal could not verify prompt-delivery support, so no input was sent. Wait for the execution host to become reachable and retry.'
+        'Orca could not verify prompt-delivery support, so no input was sent. Wait for the execution host to become reachable and retry.'
       )
     }
     promptDeliverySupported =
@@ -47,13 +47,13 @@ export const terminalSendHandler: CommandHandler = async ({ flags, client, cwd, 
   if (retryRequest && !promptDeliverySupported) {
     throw new RuntimeClientError(
       'incompatible_runtime',
-      'This Seal host cannot honor --retry-request and never recorded this request ID. This attempt sent no input, but an earlier prompt may have been delivered; inspect the terminal and do not resend unless you independently prove it was not delivered, because updating the host cannot make this specific retry idempotent.'
+      'This Orca host cannot honor --retry-request and never recorded this request ID. This attempt sent no input, but an earlier prompt may have been delivered; inspect the terminal and do not resend unless you independently prove it was not delivered, because updating the host cannot make this specific retry idempotent.'
     )
   }
   if (waitSubmitMs && !promptDeliverySupported) {
     throw new RuntimeClientError(
       'incompatible_runtime',
-      'This Seal host does not support --wait-submit. No input was sent; update Seal on the execution host, or omit only --wait-submit for a legacy prompt whose delivery cannot be observed or retried safely.'
+      'This Orca host does not support --wait-submit. No input was sent; update Orca on the execution host, or omit only --wait-submit for a legacy prompt whose delivery cannot be observed or retried safely.'
     )
   }
   const params = {
@@ -87,7 +87,7 @@ export const terminalSendHandler: CommandHandler = async ({ flags, client, cwd, 
     throw attachUnverifiedTerminalPromptRecovery(
       new RuntimeClientError(
         'incompatible_runtime',
-        'The Seal host changed after prompt-delivery support was verified and accepted input without returning a durable prompt receipt.'
+        'The Orca host changed after prompt-delivery support was verified and accepted input without returning a durable prompt receipt.'
       )
     )
   }

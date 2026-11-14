@@ -106,7 +106,7 @@ const jiraProjectsFixture: JiraProject[] = [
   {
     id: '100',
     key: 'ORCA',
-    name: 'Seal Desktop',
+    name: 'Orca Desktop',
     siteId: 'site-1',
     siteName: 'stably.atlassian.net'
   },

@@ -72,7 +72,7 @@ export const CODEX_EVENT_LABEL: Record<(typeof CODEX_EVENTS)[number], CodexEvent
 }
 
 // Codex's hook review lists unnamed hooks as "Hook N"; Codex hashes this, so changing it needs a new command form.
-const CODEX_MANAGED_HOOK_STATUS_MESSAGE = 'Reporting status to Seal'
+const CODEX_MANAGED_HOOK_STATUS_MESSAGE = 'Reporting status to Orca'
 
 export function getCodexManagedHookStatusMessage(command: string): string | undefined {
   return codexHookCommandCarriesStatusMessage(command)

@@ -6,9 +6,9 @@
  */
 export function adaptChromeWebStoreWordingForOrca(): void {
   const replacements: [RegExp, string][] = [
-    [/\bAdd to Chrome\b/g, 'Add to Seal'],
-    [/\bRemove from Chrome\b/g, 'Remove from Seal'],
-    [/ has been removed from Chrome\./g, ' has been removed from Seal.']
+    [/\bAdd to Chrome\b/g, 'Add to Orca'],
+    [/\bRemove from Chrome\b/g, 'Remove from Orca'],
+    [/ has been removed from Chrome\./g, ' has been removed from Orca.']
   ]
   const SWITCH_BANNER_TEXT = 'Switch to Chrome to install extensions and themes'
   const HIDDEN_BANNER_ATTRIBUTE = 'data-orca-hidden-switch-banner'

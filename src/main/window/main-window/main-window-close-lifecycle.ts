@@ -85,7 +85,7 @@ export function installMainWindowCloseLifecycle(args: {
           title: APP_PRODUCT_NAME,
           body: translateMain(
             'tray.minimizeNotice.body',
-            'Seal is still running in the system tray'
+            'Orca is still running in the system tray'
           )
         }).show()
       } catch {

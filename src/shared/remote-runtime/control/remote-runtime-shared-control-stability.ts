@@ -69,7 +69,7 @@ export class SharedControlReadinessTimer {
             onUnresponsive: (generation) =>
               args.retire(
                 remoteRuntimeUnavailableError(
-                  'Remote Seal runtime stopped answering requests; resetting the control connection.'
+                  'Remote Orca runtime stopped answering requests; resetting the control connection.'
                 ),
                 generation,
                 'runtime_unresponsive'
@@ -98,7 +98,7 @@ export class SharedControlReadinessTimer {
       this.timer = null
       this.args.retire(
         remoteRuntimeUnavailableError(
-          'Remote Seal runtime did not finish connecting; resetting the control connection.'
+          'Remote Orca runtime did not finish connecting; resetting the control connection.'
         ),
         generation,
         'ready_timeout'

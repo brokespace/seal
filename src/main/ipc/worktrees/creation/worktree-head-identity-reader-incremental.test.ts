@@ -173,7 +173,7 @@ describe('readGitCommonHeadIdentities (incremental)', () => {
     expect(headOf(identities, pathB)).toBe(OID_D)
   })
 
-  it('keeps a worktree whose checkout was deleted behind Seal back', async () => {
+  it('keeps a worktree whose checkout was deleted behind Orca back', async () => {
     const { commonDir, cache, pathA } = await seed()
     // Checkout absence is a prunable-listing concern; Git may retain its admin metadata.
     await rm(pathA, { recursive: true, force: true })

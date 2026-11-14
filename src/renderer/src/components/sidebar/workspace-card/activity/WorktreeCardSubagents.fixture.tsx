@@ -58,7 +58,7 @@ function rowsFor(worktreeId: string) {
     tabId: tab.id,
     agentType: 'claude',
     state: 'working',
-    prompt: 'Seal plugin architecture review',
+    prompt: 'Orca plugin architecture review',
     updatedAt: now,
     stateStartedAt: now - 5 * HOUR,
     stateHistory: [],

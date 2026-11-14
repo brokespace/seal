@@ -15,6 +15,8 @@ import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import { runningSubagents } from '../../../../../shared/live-sessions/live-session-activity'
 import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { liveSessionSummaryView } from '../../../../../shared/session-summaries/live-session-summary-view'
+import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
 import { liveSessionTitle } from '../live-session-presentation'
 import {
   CONTEXT_MENU_KIT,
@@ -89,6 +91,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const since =
     group === 'working' ? (session.startedAt ?? session.lastActivityAt) : session.lastActivityAt
   const place = props.workspaceName ?? session.project
+  const summary = liveSessionSummaryView(session)
 
   return (
     <ContextMenu onOpenChange={setMenuOpen}>
@@ -225,6 +228,10 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                     </span>
                   ) : null}
                 </span>
+                {/* The hover preview shows the whole sentence. */}
+                {summary ? (
+                  <SessionSummaryLine summary={summary} tooltip={false} className="text-2xs" />
+                ) : null}
               </span>
               <DropdownMenu onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>

@@ -63,7 +63,7 @@ export function claimPluginReplacedActionRun(pluginKey: string, action: string):
   if (runs.some((entry) => entry.abandoned)) {
     throw new PluginHostCallError(
       'unavailable',
-      `Seal already ran ${action} itself: the replacing command did not finish in time`
+      `Orca already ran ${action} itself: the replacing command did not finish in time`
     )
   }
   // Why only the oldest: with two presses in flight, one handler's run must not also count as

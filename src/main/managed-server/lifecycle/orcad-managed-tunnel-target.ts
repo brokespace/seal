@@ -61,7 +61,7 @@ async function wakeStoppedManagedOrcadForTunnel(input: OrcadTunnelPortInput): Pr
     )
   } catch (error) {
     // Failed wake does not settle identity; reread and validate the resulting forward.
-    console.warn('[ssh] Could not start the managed Seal server behind a foreign answer:', error)
+    console.warn('[ssh] Could not start the managed Orca server behind a foreign answer:', error)
     return
   }
   // The crash-loop reason beats the foreign-port mismatch the reread would report.
@@ -144,7 +144,7 @@ export async function forwardToVerifiedOrcad(
       if (identity.verdict === 'unreachable') {
         // Unreachable servers may be down or starting; this is not proof of a foreign server.
         console.warn(
-          `[ssh] Managed Seal server did not answer through its tunnel: ${identity.detail}`
+          `[ssh] Managed Orca server did not answer through its tunnel: ${identity.detail}`
         )
       }
       return forward
@@ -181,7 +181,7 @@ async function addCurrentForward(
   )
   if (args.localPort !== 0 && forward.localPort !== args.localPort) {
     await args.forwards.removeForwardAndWait(forward.id)
-    throw new Error('Managed Seal tunnel bound an unexpected local port.')
+    throw new Error('Managed Orca tunnel bound an unexpected local port.')
   }
   if (!args.stillCurrent()) {
     await args.forwards.removeForwardAndWait(forward.id)

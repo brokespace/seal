@@ -59,6 +59,7 @@ desktop.ini
 
 .oxlintcache
 /.cache/vite/
+/.cache/seal/
 /.cache/vite.lock/
 /.cache/typecheck/
 /.cache/fixtures/
@@ -100,7 +101,9 @@ docs/**
 !docs/bug-reproductions/**
 !docs/live-sessions-*.md
 !docs/home-chat-architecture.md
+!docs/information-architecture.md
 !docs/TESTING-seal-all.md
+!docs/upstream-sync.md
 !docs/STYLEGUIDE.md
 !docs/development.md
 !docs/styleguide/

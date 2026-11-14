@@ -220,13 +220,13 @@ export const START_FAILURE_COPY = {
   agentCommandNotRunnable: (values) =>
     translate(
       'session.failure.agentCommandNotRunnable',
-      "{{agent}}'s Command in Settings → Agents must be a program path or name Seal can find, with no arguments or variables. Change it or reset it.",
+      "{{agent}}'s Command in Settings → Agents must be a program path or name Orca can find, with no arguments or variables. Change it or reset it.",
       values
     ),
   runtimeNotInstalled: (values) =>
     translate(
       'session.failure.runtimeNotInstalled',
-      "{{agent}} isn't installed on the computer running this chat. Install it from the chat in a current version of Seal.",
+      "{{agent}} isn't installed on the computer running this chat. Install it from the chat in a current version of Orca.",
       values
     ),
   fullAccessAsRoot: (values) =>
@@ -238,7 +238,7 @@ export const START_FAILURE_COPY = {
   launchPreparationFailed: (values) =>
     translate(
       'session.failure.launchPreparationFailed',
-      "Seal couldn't prepare {{agent}} to start on the computer running this chat.",
+      "Orca couldn't prepare {{agent}} to start on the computer running this chat.",
       values
     ),
   conversationOpenElsewhere: (values) =>

@@ -84,14 +84,14 @@ export function GeneralUpdateSettingsSection({
         )}
         description={t(
           'auto.components.settings.GeneralUpdateSettingsSection.ceb579abaf',
-          'Check for app updates and install a newer Seal version.'
+          'Check for app updates and install a newer Orca version.'
         )}
         keywords={['about', 'update', 'version', 'release notes', 'download']}
         className="space-y-3 py-3"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm">
-            {t('settings.general.about.version', 'Seal {{version}}', {
+            {t('settings.general.about.version', 'Orca {{version}}', {
               version: appVersion ?? '…'
             })}
           </span>
@@ -184,7 +184,7 @@ export function GeneralUpdateSettingsSection({
               {updateStatus.externallyManaged
                 ? t(
                     'auto.components.settings.GeneralUpdateSettingsSection.e3b9d21c07',
-                    'is available. Update Seal through your system package manager — Seal cannot install this release itself.'
+                    'is available. Update Orca through your system package manager — Orca cannot install this release itself.'
                   )
                 : t(
                     'auto.components.settings.GeneralUpdateSettingsSection.8311da27ba',
@@ -212,7 +212,7 @@ export function GeneralUpdateSettingsSection({
             (updateStatus.unsupportedSystemUpdate
               ? t(
                   'macosUpdateRequirement.settingsStatus',
-                  'Seal {{version}} requires macOS {{macos}} or later. This is the latest version for this Mac.',
+                  'Orca {{version}} requires macOS {{macos}} or later. This is the latest version for this Mac.',
                   {
                     version: updateStatus.unsupportedSystemUpdate.version,
                     macos: updateStatus.unsupportedSystemUpdate.minimumMacosVersion

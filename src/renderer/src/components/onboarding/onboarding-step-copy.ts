@@ -39,7 +39,7 @@ export const stepCopy = {
     get subtitle() {
       return translate(
         'components.onboarding.flow.agentTerminal.subtitle',
-        "Seal works with every CLI agent. Choose the one you'll reach for most."
+        "Orca works with every CLI agent. Choose the one you'll reach for most."
       )
     }
   },
@@ -64,7 +64,7 @@ export const stepCopy = {
     get subtitle() {
       return translate(
         'auto.components.onboarding.OnboardingFlow.ff92d15436',
-        'Seal will notify you when agents are done or need help.'
+        'Orca will notify you when agents are done or need help.'
       )
     }
   },

@@ -9,6 +9,8 @@ import type {
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { MachineProcessList, type MachineProcessSort } from './MachineProcessList'
+import { useLiveSessions } from '../../live-sessions/live-session-registry-store'
+import { liveSessionsByPid } from '../model/machine-live-sessions'
 import { MachineProcessSessions } from './MachineProcessSessions'
 import {
   MachineProcessSignalDialog,
@@ -46,6 +48,8 @@ export function MachineProcessesView({
 }): React.JSX.Element {
   const t = useTranslate()
   const { snapshot, error, paused, setPaused, refresh } = useMachineProcesses(machine.id)
+  const { sessions } = useLiveSessions()
+  const sessionsByPid = useMemo(() => liveSessionsByPid(machine, sessions), [machine, sessions])
   const [sort, setSort] = useState<MachineProcessSort>(initialSort)
   const [filter, setFilter] = useState('')
   const [signal, setSignal] = useState<MachineProcessSignalRequest | null>(null)
@@ -62,7 +66,12 @@ export function MachineProcessesView({
     <div className="space-y-4">
       {summary(snapshot)}
       {snapshot ? (
-        <MachineProcessSessions snapshot={snapshot} filter={filter} onFilter={setFilter} />
+        <MachineProcessSessions
+          snapshot={snapshot}
+          sessionsByPid={sessionsByPid}
+          filter={filter}
+          onFilter={setFilter}
+        />
       ) : null}
       {children}
       <div>

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { liveSessionTranscriptFiles } from '../../../../../shared/live-sessions/live-session-transcript-files'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
@@ -198,6 +199,7 @@ function DangerDialog({
   sessions: LiveSession[]
 }): React.JSX.Element {
   const t = useTranslate()
+  const machineName = useSessionMachineName()
   const [busy, setBusy] = useState(false)
   const copy = dangerCopy(danger, sessions.length, t)
   const files =
@@ -240,7 +242,7 @@ function DangerDialog({
             ))
           : sessions.map((session) => (
               <li key={session.id} className="truncate">
-                {liveSessionTitle(session)} · {session.machine.label}
+                {liveSessionTitle(session)} · {machineName(session.machine)}
               </li>
             ))}
       </ul>

@@ -123,8 +123,7 @@ const devChannelRepo = isHourlyChannel
     : isAdhocChannel
       ? 'orca-adhoc'
       : null
-// Seal's own bundle identity so it installs and runs beside an upstream Orca.
-const appId = 'com.brokespace.seal'
+const appId = 'com.stablyai.orca'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
   to: 'onboarding/feature-wall'
@@ -247,7 +246,7 @@ const macUsageDescriptions = {
   ...MACOS_FOLDER_USAGE_DESCRIPTIONS
 }
 // Developer ID team that signs every release-channel mac build.
-const ORCA_MAC_TEAM_ID = '6CX3WHS9HZ'
+const ORCA_MAC_TEAM_ID = require('./seal/seal-branding.cjs').signing.macTeamId
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
@@ -573,10 +572,6 @@ module.exports = {
         to: 'bin/orca.cmd'
       },
       {
-        from: 'resources/win32/bin/seal.cmd',
-        to: 'bin/seal.cmd'
-      },
-      {
         from: 'native/windows-cli-launcher/.build/orca.exe',
         to: 'bin/orca.exe'
       },
@@ -661,7 +656,7 @@ module.exports = {
         to: 'agent-browser-darwin-${arch}'
       },
       {
-        from: 'native/computer-use-macos/.build/release/Seal Computer Use.app',
+        from: 'native/computer-use-macos/.build/release/Orca Computer Use.app',
         to: 'Seal Computer Use.app'
       },
       featureWallResources
@@ -702,15 +697,15 @@ module.exports = {
     // shared-mime-info already maps md/markdown: advertise handler only, leaving mimeapps.list defaults intact.
     // Omit mdx because Ubuntu 24.04 maps it to application/x-genesis-32x-rom; claiming it would need a glob override.
     mimeTypes: ['text/markdown', 'text/csv', 'text/tab-separated-values'],
-    // Avoid GNOME Orca’s orca package and an installed Orca's orca-ide icons, mime and desktop files.
-    executableName: 'seal',
+    // Avoid GNOME Orca’s orca package and /usr/bin/orca names.
+    executableName: 'orca-ide',
     // Use icns to generate hicolor sizes; some Linux docks ignore a lone 1024px PNG.
     icon: 'resources/build/icon.icns',
     desktop: {
       entry: {
-        // Why: Electron reports WM_CLASS=seal (lowercased app name) for the visible Linux window;
-        // GNOME docks need an exact match to group it with seal.desktop.
-        StartupWMClass: 'seal'
+        // Why: Electron reports WM_CLASS=orca for the visible Linux window;
+        // GNOME docks need an exact match to group it with orca-ide.desktop.
+        StartupWMClass: 'orca'
       }
     },
     extraResources: [
@@ -736,14 +731,14 @@ module.exports = {
     ],
     // Keep local artifacts aligned with the release pipeline.
     target: ['AppImage', 'deb', 'rpm'],
-    maintainer: 'brokespace',
+    maintainer: 'stablyai',
     category: 'Utility'
   },
   appImage: {
     artifactName: isLinuxArm64Release ? 'orca-linux-arm64.${ext}' : 'orca-linux.${ext}'
   },
   deb: {
-    packageName: 'seal',
+    packageName: 'orca-ide',
     artifactName: 'orca-ide_${version}_${arch}.${ext}',
     // Headless Chromium still needs display service; orca serve starts packaged Xvfb when available (ensure-virtual-display.ts).
     depends: [
@@ -763,7 +758,7 @@ module.exports = {
     fpm: appImageNodeRuntimeFpmArgs
   },
   rpm: {
-    packageName: 'seal',
+    packageName: 'orca-ide',
     artifactName: 'orca-ide-${version}.${arch}.${ext}',
     // Why: see deb depends. RPM distros ship Xvfb as xorg-x11-server-Xvfb (there
     // is no `xvfb` package), so the name differs from the deb here.
@@ -785,11 +780,10 @@ module.exports = {
   // Dual-arch builds need target node-pty rebuilds or Intel Macs get arm64 binaries and posix_spawnp failure.
   // beforeBuild performs targeted rebuild then returns false to skip optional cpu-features.
   npmRebuild: true,
-  // Never point at stablyai/orca: Seal must not publish to or update from upstream releases.
   publish: {
     provider: 'github',
-    owner: 'brokespace',
-    repo: devChannelRepo ? `seal-${devChannelRepo.replace(/^orca-/, '')}` : 'seal',
+    owner: 'stablyai',
+    repo: devChannelRepo ?? 'orca',
     // Keep main-repo releases draft until release-cut verifies all assets; early --publish always would expose missing Windows installers.
     releaseType: devChannelRepo ? 'prerelease' : 'draft'
   }
@@ -947,3 +941,5 @@ function findInstalledMacSigningIdentity(keychainFile) {
   } catch {}
   return null
 }
+
+module.exports = require('./seal/seal-electron-builder.cjs').applySealBranding(module.exports)

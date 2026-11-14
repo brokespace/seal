@@ -162,7 +162,7 @@ export function refusePeerAddressClaim(declared: string | undefined): void {
   if (isPeerCoordinatorAddress(declared)) {
     throw new OrchestrationError(
       'forbidden',
-      `${declared} is a paired Seal's coordinator address, and only that Seal can act as it. No effects were applied.`,
+      `${declared} is a paired Orca's coordinator address, and only that Orca can act as it. No effects were applied.`,
       NO_EFFECTS
     )
   }
