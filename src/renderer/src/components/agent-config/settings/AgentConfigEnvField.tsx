@@ -61,14 +61,16 @@ export function AgentConfigEnvField({ value, patch }: SettingsFormProps): React.
           value={name}
           placeholder={t('auto.components.agentConfig.example.variable', 'NAME')}
           aria-label={t('auto.components.agentConfig.settings.envName', 'New variable name')}
-          className="h-7 w-2/5 font-mono text-xs"
+          variant="code"
+          className="h-7 w-2/5"
           onChange={(event) => setName(event.target.value)}
         />
         <Input
           value={text}
           placeholder={t('auto.components.agentConfig.value', 'value')}
           aria-label={t('auto.components.agentConfig.settings.envNewValue', 'New variable value')}
-          className="h-7 min-w-0 flex-1 font-mono text-xs"
+          variant="code"
+          className="h-7 min-w-0 flex-1"
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {

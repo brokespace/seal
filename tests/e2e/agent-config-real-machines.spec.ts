@@ -28,6 +28,7 @@ test('agent configuration is managed from Settings over SSH and through a Seal s
   // A developer machine without sudo cannot host the accounts; CI must never skip them.
   test.skip(unavailable !== null && !process.env.CI, unavailable ?? '')
   expect(unavailable, 'CI must be able to run a real sshd').toBeNull()
+  // Two machines, each through every kind of configuration, with real agent CLIs installing plugins.
   test.setTimeout(20 * 60_000)
 
   const suite = await launchHomeChatOnRealMachines(testInfo, testRepoPath)

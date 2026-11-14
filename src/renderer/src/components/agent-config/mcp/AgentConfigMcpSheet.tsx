@@ -174,19 +174,23 @@ export function AgentConfigMcpSheet({
 
   return (
     <Sheet open={edit !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="flex flex-col gap-0 p-0" data-agent-config-mcp-form>
-        <SheetHeader className="shrink-0 border-b border-border pr-12">
-          <SheetTitle>
-            {server
-              ? t('auto.components.agentConfig.mcp.editTitle', 'Edit {{name}}', {
-                  name: server.name
-                })
-              : t('auto.components.agentConfig.mcp.addTitle', 'Add an MCP server')}
-          </SheetTitle>
-          <SheetDescription className="font-mono text-xs">
-            {server?.sourcePath ?? place?.file}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent data-agent-config-mcp-form>
+        <div className="shrink-0 border-b border-border pr-8">
+          <SheetHeader>
+            <SheetTitle>
+              {server
+                ? t('auto.components.agentConfig.mcp.editTitle', 'Edit {{name}}', {
+                    name: server.name
+                  })
+                : t('auto.components.agentConfig.mcp.addTitle', 'Add an MCP server')}
+            </SheetTitle>
+            <SheetDescription>
+              <span className="font-mono text-xs [overflow-wrap:anywhere]">
+                {server?.sourcePath ?? place?.file}
+              </span>
+            </SheetDescription>
+          </SheetHeader>
+        </div>
         <div className="scrollbar-sleek min-h-0 flex-1 space-y-4 overflow-auto p-4">
           {server || scopes.length < 2
             ? null
@@ -195,7 +199,12 @@ export function AgentConfigMcpSheet({
                 t('auto.components.agentConfig.mcp.scope', 'Available in'),
                 <Select
                   value={scope}
-                  onValueChange={(value) => setScope(value as AgentConfigScope)}
+                  onValueChange={(value) => {
+                    const chosen = scopes.find((item) => item.scope === value)
+                    if (chosen) {
+                      setScope(chosen.scope)
+                    }
+                  }}
                 >
                   <SelectTrigger id="agent-config-mcp-scope" className="w-full">
                     <SelectValue />
@@ -226,7 +235,11 @@ export function AgentConfigMcpSheet({
             t('auto.components.agentConfig.mcp.transport', 'Connection'),
             <Select
               value={form.transport}
-              onValueChange={(value) => set({ transport: value as AgentConfigMcpTransport })}
+              onValueChange={(value) => {
+                if (value === 'stdio' || value === 'http' || value === 'sse') {
+                  set({ transport: value })
+                }
+              }}
             >
               <SelectTrigger id="agent-config-mcp-transport" className="w-full">
                 <SelectValue />

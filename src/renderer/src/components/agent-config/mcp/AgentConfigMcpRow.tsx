@@ -157,7 +157,11 @@ export function AgentConfigMcpRow({
       {server.activation ? (
         <Select
           value={server.activation}
-          onValueChange={(value) => onActivation(value as AgentConfigMcpActivation)}
+          onValueChange={(value) => {
+            if (value === 'approved' || value === 'disabled' || value === 'pending') {
+              onActivation(value)
+            }
+          }}
         >
           <SelectTrigger
             className="w-36 shrink-0"

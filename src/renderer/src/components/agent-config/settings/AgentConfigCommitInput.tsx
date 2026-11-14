@@ -36,7 +36,8 @@ export function AgentConfigCommitInput({
       value={draft}
       placeholder={placeholder}
       aria-label={ariaLabel}
-      className={cn('h-7 font-mono text-xs', className)}
+      variant="code"
+      className={cn('h-7', className)}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {

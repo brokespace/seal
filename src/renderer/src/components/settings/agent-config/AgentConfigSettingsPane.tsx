@@ -1,12 +1,6 @@
 import React, { useState } from 'react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import { useTranslate } from '@/i18n/use-translate'
+import { HostCombobox } from '../../host-picker/HostCombobox'
 import { AgentConfigPanel } from '../../agent-config/AgentConfigPanel'
 import { MachineStatusDot } from '../../machines/detail/MachineVitals'
 import { SettingsRow } from '../form-controls/SettingsFormControls'
@@ -30,25 +24,23 @@ export function AgentConfigSettingsPane(): React.JSX.Element {
             'Each machine has its own agent configuration. A project’s own files are in that project’s settings.'
           )}
           control={
-            <Select value={machine?.id ?? ''} onValueChange={setMachineId}>
-              <SelectTrigger
-                className="w-56"
-                aria-label={t('auto.components.agentConfig.pane.machine', 'Machine')}
-                data-agent-config-machine=""
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {machines.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    <span className="flex items-center gap-2">
+            <div className="w-56" data-agent-config-machine="">
+              <HostCombobox
+                value={machine?.id ?? ''}
+                onChange={setMachineId}
+                ariaLabel={t('auto.components.agentConfig.pane.machine', 'Machine')}
+                options={machines.map((item) => ({
+                  id: item.id,
+                  label: item.label,
+                  content: (
+                    <span className="flex min-w-0 items-center gap-2">
                       <MachineStatusDot status={item.status} />
-                      {item.label}
+                      <span className="truncate">{item.label}</span>
                     </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  )
+                }))}
+              />
+            </div>
           }
         />
       </SettingsGroup>

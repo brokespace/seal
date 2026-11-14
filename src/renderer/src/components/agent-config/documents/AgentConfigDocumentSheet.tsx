@@ -162,19 +162,24 @@ export function AgentConfigDocumentSheet({
 
   return (
     <Sheet open={document !== null} onOpenChange={(open) => !open && requestClose()}>
-      <SheetContent
-        className="flex w-[92vw] flex-col gap-0 p-0 sm:max-w-[1100px]"
-        data-agent-config-editor={path ?? ''}
-      >
-        <SheetHeader className="shrink-0 gap-1 border-b border-border pr-12">
-          <SheetTitle className="flex min-w-0 items-center gap-2">
-            <span className="truncate">{document?.title}</span>
-            {document?.scope ? <AgentConfigScopeBadge scope={document.scope} /> : null}
-          </SheetTitle>
-          <SheetDescription className="truncate font-mono text-xs" title={path ?? undefined}>
-            {path}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="w-[92vw] sm:max-w-[1100px]" data-agent-config-editor={path ?? ''}>
+        <div className="shrink-0 border-b border-border pr-8">
+          <SheetHeader>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="min-w-0">
+                <SheetTitle>
+                  <span className="block truncate">{document?.title}</span>
+                </SheetTitle>
+              </div>
+              {document?.scope ? <AgentConfigScopeBadge scope={document.scope} /> : null}
+            </div>
+            <SheetDescription>
+              <span className="block truncate font-mono text-xs" title={path ?? undefined}>
+                {path}
+              </span>
+            </SheetDescription>
+          </SheetHeader>
+        </div>
 
         <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2">
           {markdown ? (

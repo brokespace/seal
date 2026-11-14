@@ -34,6 +34,7 @@ import type {
   AgentConfigScope
 } from '../../../../shared/agent-config/agent-config-types'
 import type { MachineId } from '../../../../shared/machines/machine-types'
+import { HostCombobox } from '../host-picker/HostCombobox'
 import { agentConfigApi, agentConfigErrorText } from './model/agent-config-client'
 import { useAgentConfig } from './model/agent-config-context'
 import { agentConfigScopeLabel } from './model/agent-config-scope-labels'
@@ -99,7 +100,7 @@ export function AgentConfigCopyDialog({
 
   const inProject = place !== ACCOUNT
   const projectPath = place === OTHER ? otherPath.trim() : place
-  const machineProjects = projects.filter((project) => project.machineId === machineId)
+  const projectsThere = projects.filter((project) => project.machineId === machineId)
   const agents = request
     ? AGENT_CONFIG_LAYOUTS.filter((layout) => accepts(layout, request, inProject))
     : []
@@ -176,24 +177,22 @@ export function AgentConfigCopyDialog({
             <Label htmlFor="agent-config-copy-machine">
               {t('auto.components.agentConfig.copy.machine', 'Machine')}
             </Label>
-            <Select
+            <HostCombobox
+              id="agent-config-copy-machine"
               value={machineId}
-              onValueChange={(value) => {
-                setMachineId(value as MachineId)
-                setPlace(ACCOUNT)
+              onChange={(value) => {
+                const chosen = machines.find((item) => item.id === value)
+                if (chosen) {
+                  setMachineId(chosen.id)
+                  setPlace(ACCOUNT)
+                }
               }}
-            >
-              <SelectTrigger id="agent-config-copy-machine" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {machines.map((item) => (
-                  <SelectItem key={item.id} value={item.id} disabled={item.status !== 'online'}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={machines.map((item) => ({
+                id: item.id,
+                label: item.label,
+                disabled: item.status !== 'online'
+              }))}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="agent-config-copy-place">
@@ -207,7 +206,7 @@ export function AgentConfigCopyDialog({
                 <SelectItem value={ACCOUNT}>
                   {t('auto.components.agentConfig.copy.account', 'The account on that machine')}
                 </SelectItem>
-                {machineProjects.map((project) => (
+                {projectsThere.map((project) => (
                   <SelectItem key={project.path} value={project.path}>
                     {project.label}
                   </SelectItem>
@@ -221,7 +220,7 @@ export function AgentConfigCopyDialog({
               <Input
                 autoFocus
                 value={otherPath}
-                className="font-mono text-xs"
+                variant="code"
                 placeholder={t('auto.components.agentConfig.example.folder', '/home/me/project')}
                 aria-label={t('auto.components.agentConfig.copy.folder', 'Project folder')}
                 onChange={(event) => setOtherPath(event.target.value)}

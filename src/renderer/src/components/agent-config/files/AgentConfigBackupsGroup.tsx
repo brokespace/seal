@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { uiDateTimeFormat } from '@/i18n/ui-intl-formatters'
 import { useTranslate } from '@/i18n/use-translate'
 import type { AgentConfigBackup } from '../../../../../shared/agent-config/agent-config-types'
 import { SettingsGroup } from '../../settings/section-layout/SettingsGroup'
@@ -12,6 +13,11 @@ import { agentConfigApi, agentConfigErrorText } from '../model/agent-config-clie
 import { useAgentConfig } from '../model/agent-config-context'
 
 const SHOWN = 30
+const TAKEN_AT: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'medium' }
+
+function takenAt(backup: AgentConfigBackup): string {
+  return uiDateTimeFormat(TAKEN_AT).format(new Date(backup.takenAt))
+}
 
 /** Every change Seal made on this machine left the previous file here. */
 export function AgentConfigBackupsGroup(): React.JSX.Element {
@@ -88,7 +94,7 @@ export function AgentConfigBackupsGroup(): React.JSX.Element {
                   {short(backup.originalPath)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(backup.takenAt).toLocaleString()}
+                  {takenAt(backup)}
                   {backup.isDirectory
                     ? ` · ${t('auto.components.agentConfig.backups.folder', 'folder')}`
                     : ''}
@@ -109,7 +115,7 @@ export function AgentConfigBackupsGroup(): React.JSX.Element {
                       '{{path}} goes back to how it was on {{when}}. What is there now is backed up first.',
                       {
                         path: short(backup.originalPath),
-                        when: new Date(backup.takenAt).toLocaleString()
+                        when: takenAt(backup)
                       }
                     ),
                     confirmLabel: t('auto.components.agentConfig.backups.restore', 'Restore'),

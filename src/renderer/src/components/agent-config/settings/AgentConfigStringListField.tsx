@@ -54,7 +54,8 @@ export function AgentConfigStringListField({
           value={draft}
           placeholder={placeholder}
           aria-label={label}
-          className="h-7 min-w-0 flex-1 font-mono text-xs"
+          variant="code"
+          className="h-7 min-w-0 flex-1"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {

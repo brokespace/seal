@@ -29,7 +29,11 @@ export async function openMachineAgentConfig(page: Page, machineLabel: string): 
   })
   const section = page.locator('section[data-settings-section="agent-config"]')
   await expect(section).toBeVisible({ timeout: 30_000 })
-  await choose(page, section.locator('[data-agent-config-machine]'), machineLabel)
+  await choose(
+    page,
+    section.locator('[data-agent-config-machine]').getByRole('combobox'),
+    machineLabel
+  )
   await expect(section.locator('[data-agent-config-section="documents"]')).toBeVisible({
     timeout: 60_000
   })

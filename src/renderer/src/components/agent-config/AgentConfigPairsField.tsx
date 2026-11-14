@@ -47,14 +47,16 @@ export function AgentConfigPairsField({
         <div key={pair.id} className="flex items-center gap-2">
           <Input
             value={pair.key}
-            className="h-7 w-2/5 font-mono text-xs"
+            variant="code"
+            className="h-7 w-2/5"
             placeholder={keyPlaceholder}
             aria-label={`${label}: ${keyPlaceholder}`}
             onChange={(event) => patch(pair.id, { key: event.target.value })}
           />
           <Input
             value={pair.value}
-            className="h-7 min-w-0 flex-1 font-mono text-xs"
+            variant="code"
+            className="h-7 min-w-0 flex-1"
             placeholder={valuePlaceholder}
             aria-label={`${label}: ${valuePlaceholder}`}
             onChange={(event) => patch(pair.id, { value: event.target.value })}

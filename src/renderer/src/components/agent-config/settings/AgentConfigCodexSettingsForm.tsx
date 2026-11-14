@@ -147,7 +147,8 @@ export function AgentConfigCodexSettingsForm({
           value={newProfile}
           placeholder={t('auto.components.agentConfig.settings.profileName', 'profile name')}
           aria-label={t('auto.components.agentConfig.settings.newProfile', 'New profile name')}
-          className="h-7 w-48 font-mono text-xs"
+          variant="code"
+          className="h-7 w-48"
           onChange={(event) => setNewProfile(event.target.value)}
         />
         <Button

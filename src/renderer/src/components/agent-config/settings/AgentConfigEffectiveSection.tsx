@@ -39,7 +39,8 @@ export function AgentConfigEffectiveSection(): React.JSX.Element {
           value={filter}
           placeholder={t('auto.components.agentConfig.effective.filter', 'Filter settings')}
           aria-label={t('auto.components.agentConfig.effective.filter', 'Filter settings')}
-          className="h-7 w-48 text-xs"
+          density="compact"
+          className="w-48"
           onChange={(event) => setFilter(event.target.value)}
         />
       </div>

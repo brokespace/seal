@@ -208,7 +208,12 @@ export function AgentConfigPanel({
 
       {context ? (
         <AgentConfigProvider value={context}>
-          <Tabs value={activeTab} onValueChange={(value) => setTab(value as TabId)}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) =>
+              setTab(tabs.find((item) => item.id === value)?.id ?? 'documents')
+            }
+          >
             <TabsList size="sm" className="max-w-full flex-wrap justify-start">
               {tabs.map((item) => (
                 <TabsTrigger key={item.id} value={item.id} data-agent-config-tab={item.id}>
@@ -219,22 +224,22 @@ export function AgentConfigPanel({
                 </TabsTrigger>
               ))}
             </TabsList>
-            <TabsContent value="documents" className="pt-2">
+            <TabsContent value="documents" className="mt-2">
               <AgentConfigDocumentsSection />
             </TabsContent>
-            <TabsContent value="mcp" className="pt-2">
+            <TabsContent value="mcp" className="mt-2">
               <AgentConfigMcpSection />
             </TabsContent>
-            <TabsContent value="plugins" className="pt-2">
+            <TabsContent value="plugins" className="mt-2">
               <AgentConfigPluginsSection />
             </TabsContent>
-            <TabsContent value="settings" className="pt-2">
+            <TabsContent value="settings" className="mt-2">
               <AgentConfigSettingsSection />
             </TabsContent>
-            <TabsContent value="effective" className="pt-2">
+            <TabsContent value="effective" className="mt-2">
               <AgentConfigEffectiveSection />
             </TabsContent>
-            <TabsContent value="files" className="pt-2">
+            <TabsContent value="files" className="mt-2">
               <AgentConfigFilesSection />
             </TabsContent>
           </Tabs>

@@ -146,14 +146,16 @@ export function AgentConfigHooksField({ value, patch }: SettingsFormProps): Reac
           value={matcher}
           placeholder={t('auto.components.agentConfig.settings.hookMatcher', 'tools (optional)')}
           aria-label={t('auto.components.agentConfig.settings.hookMatcherLabel', 'Tool matcher')}
-          className="h-7 w-24 shrink-0 font-mono text-xs"
+          variant="code"
+          className="h-7 w-24 shrink-0"
           onChange={(change) => setMatcher(change.target.value)}
         />
         <Input
           value={command}
           placeholder={t('auto.components.agentConfig.settings.hookCommand', 'command to run')}
           aria-label={t('auto.components.agentConfig.settings.hookCommandLabel', 'Hook command')}
-          className="h-7 min-w-0 flex-1 font-mono text-xs"
+          variant="code"
+          className="h-7 min-w-0 flex-1"
           onChange={(change) => setCommand(change.target.value)}
           onKeyDown={(press) => {
             if (press.key === 'Enter' && command.trim() !== '') {

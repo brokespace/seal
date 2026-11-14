@@ -77,14 +77,14 @@ export function readOnMachine(target: Target, relative: string): string {
   return target.sh(`cat "$HOME/${relative}"`).toString()
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 /** A value inside a JSON file on the machine, by key path. */
 export function jsonOnMachine(target: Target, relative: string, ...keys: string[]): unknown {
   return keys.reduce<unknown>(
-    (node, key) =>
-      // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: checked to be a non-null object.
-      typeof node === 'object' && node !== null
-        ? (node as Record<string, unknown>)[key]
-        : undefined,
+    (node, key) => (isRecord(node) ? node[key] : undefined),
     JSON.parse(readOnMachine(target, relative))
   )
 }
