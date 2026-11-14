@@ -21150,8 +21150,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Tableau de bord des agents",
-      "openActivity": "Afficher l'activité",
-      "closeActivity": "Désactiver la vue des activités",
       "projects": "Projets",
       "workspaces": "Espaces de travail"
     }
@@ -21809,13 +21807,6 @@
       "switchedIn": "Dans {{workspace}}",
       "thisComputer": "cet ordinateur",
       "updateHost": "Mettez à jour Seal sur {{host}} pour changer de branche d’ici."
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Les agents sont plus faciles à trouver",
-      "description": "Votre vue Agents est désormais un onglet de barre latérale dédié. Votre activité et vos filtres sont conservés.",
-      "dismiss": "J'ai compris"
     }
   },
   "rendererRecovery": {

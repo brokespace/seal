@@ -20296,8 +20296,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Agent ダッシュボード",
-      "openActivity": "アクティビティを表示",
-      "closeActivity": "アクティビティビューを閉じる",
       "projects": "プロジェクト",
       "workspaces": "ワークスペース"
     }
@@ -20564,13 +20562,6 @@
         "addressInUse": "別のプロセスがポートを使用している可能性があります。Seal を再起動してから、もう一度お試しください。",
         "unknown": "Seal を再起動してから、もう一度お試しください。"
       }
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Agent が見つけやすくなりました",
-      "description": "Agent ビューはサイドバーの専用タブになりました。アクティビティとフィルターはそのまま引き継がれます。",
-      "dismiss": "OK"
     }
   },
   "notifications": {

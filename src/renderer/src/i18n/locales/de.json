@@ -20996,8 +20996,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Agenten-Dashboard",
-      "openActivity": "Aktivität anzeigen",
-      "closeActivity": "Aktivitätsansicht deaktivieren",
       "projects": "Projekte",
       "workspaces": "Arbeitsbereiche"
     }
@@ -21415,13 +21413,6 @@
       "switchedIn": "In {{workspace}}",
       "thisComputer": "diesem Computer",
       "updateHost": "Aktualisiere Seal auf {{host}}, um von hier aus Branches zu wechseln."
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Agenten sind leichter zu finden",
-      "description": "Die Agentenansicht hat jetzt einen eigenen Tab in der Seitenleiste. Aktivitäten und Filter bleiben erhalten.",
-      "dismiss": "Verstanden"
     }
   },
   "rendererRecovery": {

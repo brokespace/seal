@@ -20028,7 +20028,6 @@
         },
         "detail": {
           "noSessions": "No agents running on this machine.",
-          "agent": "Agent",
           "back": "All machines",
           "reconnect": "Reconnect",
           "connect": "Connect",
@@ -20039,7 +20038,8 @@
           "remove": "Remove machine…",
           "useSsh": "Connect over SSH instead",
           "useServer": "Connect via Seal server instead",
-          "editSsh": "Edit SSH details…"
+          "editSsh": "Edit SSH details…",
+          "sessions": "Agents on this machine"
         },
         "edit": {
           "saved": "Machine updated"
@@ -22868,8 +22868,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Agent Dashboard",
-      "openActivity": "View activity",
-      "closeActivity": "Turn off activity view",
       "projects": "Projects",
       "workspaces": "Workspaces"
     }
@@ -23296,13 +23294,6 @@
       "switchedIn": "In {{workspace}}",
       "thisComputer": "this computer",
       "updateHost": "Update Seal on {{host}} to switch branches from here."
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Agents are easier to find",
-      "description": "Your Agents view is now a dedicated sidebar tab. Your activity and filters are preserved.",
-      "dismiss": "Got it"
     }
   },
   "rendererRecovery": {
@@ -25793,12 +25784,9 @@
       "summary": {
         "working": "{{count}} working",
         "waiting": "{{count}} waiting on you",
-        "done": "{{count}} done"
+        "idle": "{{count}} idle"
       },
       "title": "Home",
-      "session": {
-        "you": "You"
-      },
       "sessions": {
         "title": "Sessions",
         "empty": "No agent sessions yet. Start an agent in a workspace and it shows up here."
@@ -25812,14 +25800,6 @@
         "draftLabel": "draft"
       },
       "nav": "Home",
-      "state": {
-        "working": "Working",
-        "waiting": "Waiting on you",
-        "permission": "Needs permission",
-        "errored": "Errored",
-        "done": "Done",
-        "idle": "Idle"
-      },
       "machine": {
         "online": "Online",
         "connecting": "Connecting",

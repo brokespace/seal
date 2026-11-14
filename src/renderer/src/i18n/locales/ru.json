@@ -21671,8 +21671,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Панель агентов",
-      "openActivity": "Посмотреть активность",
-      "closeActivity": "Выключить просмотр активности",
       "projects": "Проекты",
       "workspaces": "Рабочие пространства"
     }
@@ -22096,13 +22094,6 @@
       "switchedIn": "В {{workspace}}",
       "thisComputer": "этот компьютер",
       "updateHost": "Обновите Seal на {{host}}, чтобы менять ветки отсюда."
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Агентов стало проще найти",
-      "description": "Представление агентов теперь находится на отдельной вкладке боковой панели. Активность и фильтры сохранены.",
-      "dismiss": "Понятно"
     }
   },
   "rendererRecovery": {

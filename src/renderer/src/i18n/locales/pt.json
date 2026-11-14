@@ -650,17 +650,8 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Painel de Agentes",
-      "openActivity": "Ver atividade",
-      "closeActivity": "Desativar visualização de atividade",
       "projects": "Projetos",
       "workspaces": "Espaços de trabalho"
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Os agentes agora são mais fáceis de encontrar",
-      "description": "Sua visualização de Agentes agora é uma aba dedicada na barra lateral. Sua atividade e seus filtros foram preservados.",
-      "dismiss": "Entendi"
     }
   },
   "featureTips": {

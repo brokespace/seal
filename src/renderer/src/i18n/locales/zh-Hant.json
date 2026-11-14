@@ -20678,8 +20678,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "代理程式看板",
-      "openActivity": "檢視活動",
-      "closeActivity": "關閉活動檢視",
       "projects": "專案",
       "workspaces": "工作區"
     }
@@ -21095,13 +21093,6 @@
       "switchedIn": "在 {{workspace}} 中",
       "thisComputer": "這台電腦",
       "updateHost": "請在 {{host}} 上更新 Seal，以便從這裡切換分支。"
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "代理程式更容易找到了",
-      "description": "代理程式檢視現在是側邊欄的專用分頁。你的活動和篩選條件都會保留。",
-      "dismiss": "知道了"
     }
   },
   "rendererRecovery": {

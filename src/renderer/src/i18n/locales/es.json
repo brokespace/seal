@@ -20873,8 +20873,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Panel de agentes",
-      "openActivity": "Ver actividad",
-      "closeActivity": "Cerrar vista de actividad",
       "projects": "Proyectos",
       "workspaces": "Espacios de trabajo"
     }
@@ -21147,13 +21145,6 @@
         "addressInUse": "Otro proceso puede estar reteniendo el puerto. Reinicie Seal para intentarlo nuevamente.",
         "unknown": "Reinicie Seal para intentarlo nuevamente."
       }
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Los agentes son más fáciles de encontrar",
-      "description": "Tu vista de Agentes ahora es una pestaña dedicada de la barra lateral. Tu actividad y filtros se conservan.",
-      "dismiss": "Entendido"
     }
   },
   "notifications": {

@@ -20288,8 +20288,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "에이전트 대시보드",
-      "openActivity": "활동 보기",
-      "closeActivity": "활동 보기 닫기",
       "projects": "프로젝트",
       "workspaces": "워크스페이스"
     }
@@ -20556,13 +20554,6 @@
         "addressInUse": "다른 프로세스가 포트를 사용 중일 수 있습니다. Seal을 다시 시작한 후 다시 시도하세요.",
         "unknown": "Seal을 다시 시작한 후 다시 시도하세요."
       }
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "에이전트를 더 쉽게 찾을 수 있습니다",
-      "description": "에이전트 보기가 이제 사이드바 전용 탭이 되었습니다. 활동과 필터는 그대로 유지됩니다.",
-      "dismiss": "확인"
     }
   },
   "notifications": {

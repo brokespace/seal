@@ -20966,8 +20966,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "Ajan Panosu",
-      "openActivity": "Etkinliği görüntüle",
-      "closeActivity": "Etkinlik görünümünü kapat",
       "projects": "Projeler",
       "workspaces": "Çalışma alanları"
     }
@@ -21385,13 +21383,6 @@
       "switchedIn": "{{workspace}} içinde",
       "thisComputer": "bu bilgisayar",
       "updateHost": "Buradan dal değiştirmek için {{host}} üzerindeki Seal'i güncelleyin."
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "Ajanları bulmak artık daha kolay",
-      "description": "Ajanlar görünümünüz artık ayrı bir kenar çubuğu sekmesi. Etkinliğiniz ve filtreleriniz korunuyor.",
-      "dismiss": "Anladım"
     }
   },
   "rendererRecovery": {

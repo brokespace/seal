@@ -20635,8 +20635,6 @@
   "dashboard": {
     "sidebar": {
       "dashboardLabel": "智能体仪表盘",
-      "openActivity": "查看活动",
-      "closeActivity": "关闭活动视图",
       "projects": "项目",
       "workspaces": "工作区"
     }
@@ -20903,13 +20901,6 @@
         "addressInUse": "另一个进程可能占用了端口，请重启 Seal 以重试",
         "unknown": "请重启 Seal 以重试"
       }
-    }
-  },
-  "agentsSidebarIntro": {
-    "migrated": {
-      "title": "智能体更容易找到了",
-      "description": "智能体视图现在是侧边栏的专用标签页，你的活动和筛选条件都会保留",
-      "dismiss": "知道了"
     }
   },
   "notifications": {
