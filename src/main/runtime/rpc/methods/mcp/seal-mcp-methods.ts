@@ -96,6 +96,24 @@ export const SEAL_MCP_METHODS = [
       })
     }
   }),
+  // What a paired phone may watch: calls waiting for a person, and nothing about clients or the log.
+  defineStreamingMethod({
+    name: 'sealMcp.watchApprovals',
+    permission: 'host-admin',
+    params: null,
+    handler: async (_params, ctx, emit) => {
+      const service = mcp()
+      await holdSubscription('seal-mcp-approvals', ctx, emit, (subscriptionId) => {
+        const off = service.onEvent((event) => {
+          if (event.type === 'approval-requested' || event.type === 'approval-settled') {
+            emit({ type: 'event', event })
+          }
+        })
+        emit({ type: 'ready', subscriptionId, approvals: service.listApprovals() })
+        return off
+      })
+    }
+  }),
   defineMethod({
     name: 'sealMcp.unwatch',
     permission: 'host-admin',

@@ -1670,6 +1670,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'sealMcp.unwatch': SealMcpUnwatchParams,
   'sealMcp.updateSettings': SealMcpSettingsUpdateParams,
   'sealMcp.watch': null,
+  'sealMcp.watchApprovals': null,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
