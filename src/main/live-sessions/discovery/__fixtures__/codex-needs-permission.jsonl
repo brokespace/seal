@@ -1,0 +1,6 @@
+{"timestamp":"2026-11-13T10:00:03.000Z","type":"session_meta","payload":{"id":"edf2dab5-631e-4024-8633-a9ff8672b7f2","timestamp":"2026-11-13T10:00:00.000Z","cwd":"/srv/api","originator":"codex_cli_rs","cli_version":"0.169.0","source":"cli","model_provider":"openai"}}
+{"timestamp":"2026-11-13T10:00:06.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Remove the stale build output."}]}}
+{"timestamp":"2026-11-13T10:00:09.000Z","type":"event_msg","payload":{"type":"user_message","message":"Remove the stale build output.","kind":"plain"}}
+{"timestamp":"2026-11-13T10:00:12.000Z","type":"event_msg","payload":{"type":"task_started","model_context_window":272000}}
+{"timestamp":"2026-11-13T10:00:15.000Z","type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\": [\"bash\", \"-lc\", \"rm -rf dist .cache\"]}","call_id":"call_Ap7pR02"}}
+{"timestamp":"2026-11-13T10:00:18.000Z","type":"event_msg","payload":{"type":"exec_approval_request","call_id":"call_Ap7pR02","command":["bash","-lc","rm -rf dist .cache"],"cwd":"/srv/api","reason":"The command removes files outside the sandbox allowlist"}}

@@ -10,10 +10,13 @@ import type { SessionSummaryView } from '../../../../shared/session-summaries/se
  */
 export function SessionSummaryLine({
   summary,
-  className
+  className,
+  tooltip = true
 }: {
   summary: SessionSummaryView
   className?: string
+  /** Off where the row's own hover preview already shows the whole sentence. */
+  tooltip?: boolean
 }): React.JSX.Element | null {
   const t = useTranslate()
   if (summary.text === null) {
@@ -28,20 +31,21 @@ export function SessionSummaryLine({
       </span>
     ) : null
   }
+  const line = (
+    <span
+      data-session-summary=""
+      className={cn('flex h-4 min-w-0 items-center gap-1 text-xs text-muted-foreground', className)}
+    >
+      <Sparkles className="size-3 shrink-0 text-muted-foreground/70" aria-hidden />
+      <span className="min-w-0 truncate">{summary.text}</span>
+    </span>
+  )
+  if (!tooltip) {
+    return line
+  }
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          data-session-summary=""
-          className={cn(
-            'flex h-4 min-w-0 items-center gap-1 text-xs text-muted-foreground',
-            className
-          )}
-        >
-          <Sparkles className="size-3 shrink-0 text-muted-foreground/70" aria-hidden />
-          <span className="min-w-0 truncate">{summary.text}</span>
-        </span>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{line}</TooltipTrigger>
       <TooltipContent side="bottom" align="start" className="max-w-80">
         {summary.text}
         <span className="mt-0.5 block text-background/60">

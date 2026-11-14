@@ -33,6 +33,7 @@ import {
   DesktopBrowserBridgeResultParams
 } from '../desktop-browser-bridge-protocol'
 import {
+  LiveSessionAnnotateParams,
   LiveSessionAnswerParams,
   LiveSessionHostRunParams,
   LiveSessionMessagesParams,
@@ -1425,6 +1426,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
   'linkPreview.get': LinkPreviewGetParams,
+  'liveSessions.annotate': LiveSessionAnnotateParams,
   'liveSessions.answer': LiveSessionAnswerParams,
   'liveSessions.hostRun': LiveSessionHostRunParams,
   'liveSessions.list': null,

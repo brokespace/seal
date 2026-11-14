@@ -17,6 +17,8 @@ export type LiveSessionRegistryDeps = {
   subscribeSealPanes?: (onChange: () => void) => () => void
   /** Sessions the user removed from Seal; never published. */
   isRemoved?: (session: LiveSession) => boolean
+  /** Adds what the user set on a session in Seal (its name, its pin). */
+  annotate?: (session: LiveSession) => LiveSession
   onHostScanned?: (host: LiveSessionHost, sessions: LiveSession[]) => void
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
@@ -259,6 +261,7 @@ export class LiveSessionRegistry {
     const decorate = this.decorator
     const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
       .filter((session) => !this.deps.isRemoved?.(session))
+      .map((session) => this.deps.annotate?.(session) ?? session)
       .map((session) => (decorate ? decorate(session) : session))
     const seen = new Set<string>()
     for (const session of merged) {
@@ -278,15 +281,18 @@ export class LiveSessionRegistry {
         continue
       }
       this.published.delete(sessionId)
+      // The same session under a new id: a fresh agent named by its first prompt, or one resumed
+      // into a new transcript after an error.
       const successor =
-        gone.pid !== null && gone.providerSessionId.startsWith('pid-')
+        merged.find((s) => s.continues?.includes(sessionId)) ??
+        (gone.pid !== null && gone.providerSessionId.startsWith('pid-')
           ? merged.find(
               (s) =>
                 s.pid === gone.pid &&
                 s.machine.hostId === gone.machine.hostId &&
                 s.provider === gone.provider
             )
-          : undefined
+          : undefined)
       if (successor) {
         this.renamed.set(sessionId, successor.id)
       }

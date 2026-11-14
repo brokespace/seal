@@ -36,9 +36,13 @@ function harness(
   } = {}
 ) {
   const calls: string[] = []
+  const asking: boolean[] = []
   const views = new Map<string, SessionSummaryView>()
   const summarizer: LiveSessionSummariesDeps['summarizer'] = {
-    request: (key, message) => void calls.push(`request ${key} ${message}`),
+    request: (key, message, asks) => {
+      calls.push(`request ${key} ${message}`)
+      asking.push(asks)
+    },
     clear: (key) => void calls.push(`clear ${key}`),
     forget: (key) => void calls.push(`forget ${key}`),
     view: (key) => views.get(key) ?? null
@@ -56,7 +60,7 @@ function harness(
     now: () => 10_000
   })
   const settle = () => new Promise<void>((resolve) => setImmediate(resolve))
-  return { live, calls, views, lastAssistantText, onChange, settle }
+  return { live, calls, asking, views, lastAssistantText, onChange, settle }
 }
 
 describe('LiveSessionSummaries', () => {
@@ -87,10 +91,21 @@ describe('LiveSessionSummaries', () => {
     expect(h.lastAssistantText).toHaveBeenCalledTimes(2)
   })
 
+  it('summarizes a finished turn as what it did and a question as what it needs', async () => {
+    const h = harness()
+
+    h.live.observe(upsert(session({ status: 'idle' })))
+    await h.settle()
+    h.live.observe(upsert(session({ status: 'waiting-input', lastActivityAt: 2_000 })))
+    await h.settle()
+
+    expect(h.asking).toEqual([false, true])
+  })
+
   it('summarizes a session parked on a subagent and clears it when plain work resumes', async () => {
     const h = harness()
 
-    h.live.observe(upsert(session({ status: 'working', statusDetail: 'Task: run the test suite' })))
+    h.live.observe(upsert(session({ status: 'waiting-subagent' })))
     await h.settle()
     h.live.observe(upsert(session({ status: 'working', statusDetail: 'Bash: pnpm test' })))
 

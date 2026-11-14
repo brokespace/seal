@@ -1,6 +1,7 @@
 import type {
   LiveSession,
-  LiveSessionRegistryEvent
+  LiveSessionRegistryEvent,
+  LiveSessionStatus
 } from '../../shared/live-sessions/live-session-types'
 import type {
   SessionSummariesListResult,
@@ -55,19 +56,16 @@ export function liveSummaryKey(sessionId: string): string {
   return `live:${sessionId}`
 }
 
-/** The agent's turn is parked on a subagent or background task: Claude's Task/Agent tool, Codex's spawned agents. */
-export function liveSessionWaitsOnTask(
-  session: Pick<LiveSession, 'status' | 'statusDetail'>
-): boolean {
-  return (
-    session.status === 'working' &&
-    /^(?:Task|Agent|spawn_agent|wait_agent|wait)\b/.test(session.statusDetail ?? '')
-  )
-}
+/** Stopped for its user, or parked on a subagent or background task: the moments a summary describes. */
+const SUMMARIZED_STATUSES: ReadonlySet<LiveSessionStatus> = new Set([
+  'waiting-input',
+  'idle',
+  'waiting-subagent',
+  'waiting-task'
+])
 
-/** Stopped for its user or parked on a task: the moments a summary describes. */
 function stopped(session: LiveSession): boolean {
-  return session.status === 'waiting-input' || liveSessionWaitsOnTask(session)
+  return SUMMARIZED_STATUSES.has(session.status)
 }
 
 function sealPaneKey(session: LiveSession): string | null {
@@ -207,7 +205,9 @@ export class LiveSessionSummaries {
           return
         }
         if (text && tracked.stamp === stamp && stamp !== null) {
-          this.deps.summarizer.request(liveSummaryKey(sessionId), text, false)
+          // Only a question put to the user leads with what the agent needs.
+          const asking = tracked.session.status === 'waiting-input'
+          this.deps.summarizer.request(liveSummaryKey(sessionId), text, asking)
         }
       })
   }

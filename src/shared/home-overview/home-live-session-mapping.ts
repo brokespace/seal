@@ -29,7 +29,12 @@ type HomeLiveSessionFields = Pick<
 function homeStateFromLive(status: LiveSessionStatus, alive: boolean): HomeSessionState {
   switch (status) {
     case 'working':
+    case 'waiting-subagent':
+    case 'waiting-task':
+      // Waiting on its own subagents or background commands is work in progress, not a wait on the user.
       return alive ? 'working' : 'done'
+    case 'idle':
+      return alive ? 'idle' : 'done'
     case 'waiting-input':
       return alive ? 'waiting' : 'done'
     case 'needs-permission':

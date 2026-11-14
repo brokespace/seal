@@ -5138,7 +5138,10 @@
         "waiting": "Waiting for input",
         "permission": "Needs permission",
         "errored": "Errored",
-        "done": "Done"
+        "done": "Done",
+        "waitingSubagent": "Waiting on subagents",
+        "waitingTask": "Waiting on background tasks",
+        "idle": "Idle"
       },
       "untitled": "New session",
       "message": {
