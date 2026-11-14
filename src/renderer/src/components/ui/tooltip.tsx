@@ -3,7 +3,7 @@ import * as TooltipPrimitive from 'radix-ui/tooltip'
 
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/class-names'
-import { noteTooltipEscape } from '@/lib/overlay-interaction/tooltip-escape'
+import { noteHoverLayerEscape } from '@/lib/overlay-interaction/hover-layer-escape'
 import { PortalContainerContext, usePortalContainer } from './portal-container-context'
 
 function TooltipProvider({
@@ -74,7 +74,7 @@ function TooltipContent({
           className={cn(tooltipContentVariants({ variant }), className)}
           onEscapeKeyDown={(event) => {
             onEscapeKeyDown?.(event)
-            noteTooltipEscape(event)
+            noteHoverLayerEscape(event)
           }}
           {...props}
         >

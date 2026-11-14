@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { isEscapeHandledAbovePage } from '@/lib/overlay-interaction/tooltip-escape'
+import { isEscapeHandledAbovePage } from '@/lib/overlay-interaction/hover-layer-escape'
 
 function isEditableElement(target: EventTarget | null): target is HTMLElement {
   return (
