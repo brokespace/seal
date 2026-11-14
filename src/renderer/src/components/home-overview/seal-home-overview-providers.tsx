@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useLiveSessions } from '@/components/live-sessions/live-session-registry-store'
 import {
   useMachineMetricsEntries,
@@ -6,12 +6,8 @@ import {
 } from '@/components/machines/model/machine-metrics-store'
 import { useLocalMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
-import {
-  sealHostSnapshot,
-  subscribeSealHost
-} from '@/components/seal-session/seal-session-status-store'
+import { useSealAccounts } from '@/components/settings/seal-accounts/use-seal-accounts'
 import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
-import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import {
   HomeAccountsContext,
   HomeActionsContext,
@@ -30,16 +26,6 @@ import { homeMachineFromSummary, mergeSealAccounts } from './seal-home-overview-
 type Children = { children: ReactNode }
 
 const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
-
-const subscribeLocalSealHost = (listener: () => void): (() => void) =>
-  subscribeSealHost(LOCAL_TARGET, listener)
-
-function useLocalSealAccountsStatus(): SealAccountsStatus | null {
-  return (
-    useSyncExternalStore(subscribeLocalSealHost, () => sealHostSnapshot(LOCAL_TARGET))?.status ??
-    null
-  )
-}
 
 function SealSessions({ children }: Children): React.JSX.Element {
   const { sessions } = useLiveSessions()
@@ -72,7 +58,8 @@ function SealMachines({ children }: Children): React.JSX.Element {
 
 function SealAccounts({ children }: Children): React.JSX.Element {
   const orcaAccounts = useOrcaAccounts()
-  const seal = useLocalSealAccountsStatus()
+  // The accounts Manage accounts lists, over the same status and the same usage readings.
+  const { status: seal } = useSealAccounts(LOCAL_TARGET)
   const accounts = useMemo(() => mergeSealAccounts(orcaAccounts, seal), [orcaAccounts, seal])
   return <HomeAccountsContext.Provider value={accounts}>{children}</HomeAccountsContext.Provider>
 }

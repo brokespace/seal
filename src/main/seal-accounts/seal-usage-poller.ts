@@ -25,9 +25,6 @@ import type { SealUsageSample } from '../../shared/seal-accounts/seal-swap-estim
 const MAX_SLEEP_MS = 60_000
 const MIN_SLEEP_MS = 1_000
 
-/** Asking for fresh numbers re-reads an account at most this often. */
-const MANUAL_REFRESH_FLOOR_MS = 30_000
-
 type Entry = {
   latest: SealUsageSample | null
   previous: SealUsageSample | null
@@ -64,8 +61,13 @@ function readingsOf(
   return relevantWindows({ ...candidate, limits }, settings, now)
 }
 
+/** An account with a login to read usage from; one switched off is still shown with its usage. */
+function isReadable(candidate: SealAccountCandidate): boolean {
+  return candidate.kind !== 'api-key' && candidate.launchable
+}
+
 function isPollable(candidate: SealAccountCandidate): boolean {
-  return candidate.kind !== 'api-key' && candidate.launchable && !candidate.disabled
+  return isReadable(candidate) && !candidate.disabled
 }
 
 /**
@@ -168,29 +170,23 @@ export class SealUsagePoller {
     return pass
   }
 
-  /** A person asked for fresh numbers: read every account now, except ones just read or rate limited. */
-  refreshNow(): Promise<void> {
-    if (this.stopped) {
-      return Promise.resolve()
-    }
+  /**
+   * A person asked for fresh numbers: every account is asked for through the same fetch as a
+   * poll, so the rate-limit service's per-account budget decides which are actually read.
+   */
+  readAll(): Promise<void> {
     return this.track(
-      (this.running ?? Promise.resolve()).then(() => this.runManualPass()),
+      (this.running ?? Promise.resolve()).then(() => this.runFullPass()),
       'refresh'
     )
   }
 
-  private async runManualPass(): Promise<void> {
+  private async runFullPass(): Promise<void> {
     let polled = 0
     for (const provider of SEAL_PROVIDERS) {
       const settings = this.deps.settings(provider)
       const inUse = this.deps.inUse(provider)
-      for (const candidate of this.deps.candidates(provider).filter(isPollable)) {
-        const entry = this.entries.get(candidate.key)
-        const now = this.deps.now()
-        const rateLimited = entry?.last429At != null && now < entry.nextPollAt
-        if (entry && (rateLimited || now - entry.fetchedAt < MANUAL_REFRESH_FLOOR_MS)) {
-          continue
-        }
+      for (const candidate of this.deps.candidates(provider).filter(isReadable)) {
         await this.pollOne(candidate, settings, inUse.has(candidate.key))
         polled += 1
       }

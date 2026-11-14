@@ -1,9 +1,8 @@
 import { RateLimitServiceFetchQueue } from './service-fetch-queue'
 import {
-  ACTIVE_FAILURE_REFETCH_MS,
   DEFERRED_STARTUP_ACTIVE_REFRESH_MS,
+  failureBackoffMs,
   INDIVIDUALLY_REFRESHABLE_PROVIDERS,
-  MAX_ACTIVE_FAILURE_REFETCH_MS,
   MIN_REFETCH_MS,
   normalizePollingInterval,
   type ActiveProviderState,
@@ -105,11 +104,7 @@ export abstract class RateLimitServicePolling extends RateLimitServiceFetchQueue
   /** Whether a failing provider's backoff allows another automatic read now. */
   protected failureRetryDue(provider: ActiveRateLimitProvider, now: number): boolean {
     const throttleMs = INDIVIDUALLY_REFRESHABLE_PROVIDERS.has(provider)
-      ? Math.min(
-          ACTIVE_FAILURE_REFETCH_MS *
-            2 ** Math.max(0, this.activeFailureStreakByProvider[provider] - 1),
-          MAX_ACTIVE_FAILURE_REFETCH_MS
-        )
+      ? failureBackoffMs(this.activeFailureStreakByProvider[provider])
       : MIN_REFETCH_MS
     return now - this.lastActiveFailureRetryAtByProvider[provider] >= throttleMs
   }

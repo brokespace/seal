@@ -195,10 +195,10 @@ export abstract class RateLimitServiceFullCycleApplication extends RateLimitServ
     this.updateState({
       ...this.state,
       claude: shouldApplyClaude
-        ? this.resolveClaudeFetchApply(claude, previousState.claude)
+        ? this.resolveClaudeFetchApply(claude, previousState.claude, claudeProvenance)
         : this.state.claude,
       codex: shouldApplyCodex
-        ? this.applyStalePolicy(codex, previousState.codex)
+        ? this.applyAccountReading(`codex:${codexProvenance}`, codex, previousState.codex)
         : codexBecameUnavailable
           ? codexStateBeforeFetch
           : this.state.codex,

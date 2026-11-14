@@ -498,7 +498,7 @@ function claudeLogin(name: string): FakeClaudeLogin {
 /** The spoken form of each usage bar in a row, e.g. "5h: 34% used, resets in 2h 9m". */
 function usageBars(row: Locator): Promise<(string | null)[]> {
   return row
-    .getByRole('img')
+    .locator('[role="img"]')
     .evaluateAll((bars) => bars.map((bar) => bar.getAttribute('aria-label')))
 }
 
@@ -568,6 +568,29 @@ test('account cards show the usage popover’s own figures, and only a full acco
   await capture(orcaPage, '27-accounts-beside-usage-popover')
   await orcaPage.keyboard.press('Escape')
   await expect(popoverRow(near)).toHaveCount(0)
+
+  // Home's Accounts card is a third view of the same readings.
+  await orcaPage.getByRole('button', { name: 'Back to app' }).click()
+  await orcaPage.evaluate(() => window.__store?.getState().setActiveView('home'))
+  const homeRow = (login: FakeClaudeLogin): Locator =>
+    orcaPage.locator('[data-home-page] li').filter({ hasText: login.email })
+  await expect(homeRow(near)).toContainText('93%')
+  await orcaPage.getByRole('button', { name: 'Usage', exact: true }).click()
+  await orcaPage.getByRole('menuitem').filter({ hasText: 'Claude' }).first().click()
+  await expect(async () => {
+    for (const login of listed) {
+      const [onHome, inPopover] = await Promise.all([
+        usageBars(homeRow(login)),
+        usageBars(popoverRow(login))
+      ])
+      expect(onHome).toEqual(inPopover)
+    }
+  }).toPass({ timeout: 10_000 })
+  await expect(homeRow(roomy)).toContainText('34%')
+  await expect(homeRow(roomy)).toContainText('61%')
+  await capture(orcaPage, '27b-home-beside-usage-popover')
+  await orcaPage.keyboard.press('Escape')
+  await expect(popoverRow(near)).toHaveCount(0)
   await openAccounts(orcaPage)
 
   // `seal account usage` prints the same readings and the same verdicts.
@@ -619,7 +642,16 @@ test('account cards show the usage popover’s own figures, and only a full acco
     await expect.poll(nearReading, { timeout: 2_000 }).toBe('rate-limited')
   }).toPass({ timeout: 60_000 })
   await expect(cardUsage(near)).toContainText('93%')
+  // The kept figures are named by their age, not by the refused check.
+  await expect(cardUsage(near)).toContainText('Updated')
+  await expect(cardUsage(near)).not.toContainText('throttled')
   await expect(health(near)).toHaveCount(0)
   await capture(orcaPage, '28-throttled-check-keeps-last-reading', group(orcaPage, 'claude'))
+  await orcaPage.getByRole('button', { name: 'Back to app' }).click()
+  await orcaPage.evaluate(() => window.__store?.getState().setActiveView('home'))
+  expect(await usageBars(homeRow(near))).toHaveLength(2)
+  await expect(homeRow(near)).toContainText('Updated')
+  await homeRow(near).evaluate((element) => element.scrollIntoView({ block: 'center' }))
+  await capture(orcaPage, '28b-home-keeps-last-reading')
   await expectNoFakeCliRunning()
 })

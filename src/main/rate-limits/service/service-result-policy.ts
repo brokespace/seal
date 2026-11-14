@@ -1,5 +1,6 @@
 import type { RateLimitWindow, ProviderRateLimits } from '../../../shared/rate-limit-types'
 import { RateLimitServiceFetchControl } from './service-fetch-control'
+import type { KeptUsageReadings } from './kept-usage-readings'
 import {
   LONG_STALE_THRESHOLD_MS,
   MAX_ACTIVE_FAILURE_STREAK,
@@ -34,6 +35,29 @@ export function withoutResetWindows(limits: ProviderRateLimits, now: number): Pr
 }
 
 export abstract class RateLimitServiceResultPolicy extends RateLimitServiceFetchControl {
+  protected keptReadings: KeptUsageReadings | null = null
+
+  /**
+   * The stale policy for one login's reading. `keptKey` names the login so a failed check with
+   * nothing in memory falls back to the last good reading kept from an earlier run.
+   */
+  protected applyAccountReading(
+    keptKey: string | null,
+    fresh: ProviderRateLimits,
+    previous: ProviderRateLimits | null,
+    identity?: string
+  ): ProviderRateLimits {
+    const kept = keptKey ? (this.keptReadings?.get(keptKey, identity) ?? null) : null
+    const next = this.applyStalePolicy(
+      fresh,
+      previous && hasUsageWindows(previous) ? previous : (kept ?? previous)
+    )
+    if (keptKey) {
+      this.keptReadings?.keep(keptKey, next, identity)
+    }
+    return next
+  }
+
   protected applyStalePolicy(
     fresh: ProviderRateLimits,
     previous: ProviderRateLimits | null

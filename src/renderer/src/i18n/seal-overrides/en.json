@@ -981,8 +981,6 @@
   "home": {
     "overview": {
       "accounts": {
-        "loading": "Reading usage…",
-        "noUsage": "No usage reported",
         "active": "active",
         "title": "Accounts",
         "manage": "Manage",

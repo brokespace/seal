@@ -34,13 +34,10 @@ import {
 } from './status-bar-claude-accounts'
 import { handleRunningClaudeSessionsAfterSwitch } from '@/lib/provider-accounts/claude-account-switch-sessions'
 import { AccountRuntimeToggle } from './StatusBarAccountControls'
-import {
-  InlineUsageBars,
-  InlineUsageSignInAction,
-  InlineUsageSkeleton
-} from './InlineProviderUsage'
+import { InlineUsageSignInAction } from './InlineProviderUsage'
 import { AccountSwitchSection, AccountSwitchSignedOutHeading } from './AccountSwitchList'
 import { AccountSwitchRowItem } from './AccountSwitchRowItem'
+import { accountUsage } from './AccountUsageReading'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
 import { signInToClaudeAccount } from '@/lib/provider-accounts/claude-account-sign-in'
 import { useSealStatusSwitchView } from './seal-status-switch-view'
@@ -281,11 +278,9 @@ export function ClaudeSwitcherForOwner({
         ) : undefined
       }
     >
-      {signInId ? null : inactiveUsage?.isFetching && !inactiveUsage.rateLimits ? (
-        <InlineUsageSkeleton />
-      ) : inactiveUsage?.rateLimits ? (
-        <InlineUsageBars limits={inactiveUsage.rateLimits} isFetching={inactiveUsage.isFetching} />
-      ) : null}
+      {signInId
+        ? null
+        : accountUsage(inactiveUsage?.rateLimits, inactiveUsage?.isFetching === true)}
     </AccountSwitchRowItem>
   )
 
