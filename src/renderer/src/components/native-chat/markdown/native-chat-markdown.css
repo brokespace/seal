@@ -13,6 +13,11 @@
   font-weight: 600;
 }
 
+/* A wide pane sets the measure: prose stays readable while code, tables and visuals keep the column. */
+.native-chat-markdown > :where(p, ul, ol, blockquote, h1, h2, h3, h4, h5, h6) {
+  max-width: var(--chat-prose-max-width, none);
+}
+
 .native-chat-markdown h1 {
   font-size: 1.2857142857em;
 }

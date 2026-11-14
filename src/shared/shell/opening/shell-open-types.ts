@@ -32,11 +32,19 @@ export type ShellOpenLocalPathResult =
   | { ok: true }
   | { ok: false; reason: ShellOpenLocalPathFailureReason }
 
+/** Why the editor's launcher did not start, or quit at once; `command` is what Seal ran. */
+export type ShellEditorLaunchFailure =
+  | { kind: 'not-found' | 'not-executable'; command: string }
+  | { kind: 'exited'; command: string; exitCode: number }
+  | { kind: 'error'; command: string; message: string }
+
 export type ShellOpenExternalEditorResult =
   | { ok: true }
   | {
       ok: false
       reason: Exclude<ShellOpenPathFailureReason, 'ssh-alias-required'>
+      /** Present on `launch-failed` when the launcher itself reported the failure. */
+      launchFailure?: ShellEditorLaunchFailure
     }
   | { ok: false; reason: 'ssh-alias-required'; host: string; port: number }
 
