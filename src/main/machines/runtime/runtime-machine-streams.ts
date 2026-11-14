@@ -100,6 +100,8 @@ export async function runRuntimeMachineUrlDownload(
             break
           case 'change':
           case 'end':
+          case 'data':
+          case 'exit':
             break
         }
       },
