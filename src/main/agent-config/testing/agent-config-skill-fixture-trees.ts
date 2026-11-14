@@ -202,7 +202,7 @@ enabled = false
 }
 
 /** Skill folders that are links, as a dotfiles setup makes them. */
-const SKILL_FIXTURE_LINKS: Record<string, string> = {
+export const SKILL_FIXTURE_LINKS: Record<string, string> = {
   '.claude/skills/shared-kit': 'dotfiles/skills/shared-kit',
   '.agents/skills/shared-kit': 'dotfiles/skills/shared-kit'
 }
