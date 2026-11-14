@@ -222,7 +222,7 @@ export function AgentConfigPanel({
                 <TabsTrigger
                   key={item.id}
                   value={item.id}
-                  className="flex-none py-0.5"
+                  className="flex-none"
                   data-agent-config-tab={item.id}
                 >
                   {item.label}

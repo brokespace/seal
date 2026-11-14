@@ -17,7 +17,8 @@ function isInFolder(doc: AgentConfigDocRef, dir: string): boolean {
   return doc.path.replaceAll('\\', '/').includes(`/${dir}/`)
 }
 
-const FOLDER_ORDER = new Intl.Collator(undefined, { numeric: true })
+// Folder names are file names, so the order must not move with the UI language.
+const FOLDER_ORDER = new Intl.Collator('en', { numeric: true })
 
 /** One folder name at a time: the machine's own sort puts `good-skill-copy` before `good-skill`. */
 function byFolder(left: AgentConfigDocRef, right: AgentConfigDocRef): number {
