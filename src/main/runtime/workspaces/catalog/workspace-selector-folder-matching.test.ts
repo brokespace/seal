@@ -169,7 +169,7 @@ describe('path: on repo-backed rows', () => {
 })
 
 describe('explicit create parents named by path:', () => {
-  it('record a folder parent on a child in another host of the same Orca', async () => {
+  it('record a folder parent on a child in another host of the same Seal', async () => {
     const runtime = createRuntime([folder({ id: 'hub-a' })], [sshRepo])
 
     const resolution = await runtime.resolveLineageForWorktreeCreate(

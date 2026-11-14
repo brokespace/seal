@@ -24,16 +24,21 @@ import {
 
 export type AddRemoteHostMode = 'ssh' | 'server' | 'wsl'
 
+export type AddedRemoteHost = { sshTargetId: string } | { environmentId: string }
+
 type AddRemoteHostDialogProps = {
   mode: AddRemoteHostMode | null
   onOpenChange: (mode: AddRemoteHostMode | null) => void
+  /** Called with what a single add saved, so it can become (part of) a machine. */
+  onAdded?: (added: AddedRemoteHost) => void
 }
 
 type SshDialogView = 'form' | 'config-picker'
 
 export function AddRemoteHostDialog({
   mode,
-  onOpenChange
+  onOpenChange,
+  onAdded
 }: AddRemoteHostDialogProps): React.JSX.Element {
   const t = useTranslate()
   const open = mode !== null
@@ -110,6 +115,9 @@ export function AddRemoteHostDialog({
   const saveSshHost = async () => {
     setIsSaving(true)
     try {
+      const before = onAdded
+        ? new Set((await window.api.ssh.listTargets()).map((target) => target.id))
+        : null
       const outcome = await saveNewSshHostFromForm({
         form: sshForm,
         ssh: window.api.ssh,
@@ -118,8 +126,14 @@ export function AddRemoteHostDialog({
         recordFeatureInteraction
       })
       if (outcome === 'saved') {
+        const added = before
+          ? (await window.api.ssh.listTargets()).find((target) => !before.has(target.id))
+          : undefined
         reset()
         onOpenChange(null)
+        if (added) {
+          onAdded?.({ sshTargetId: added.id })
+        }
       }
     } finally {
       setIsSaving(false)
@@ -295,6 +309,7 @@ export function AddRemoteHostDialog({
       )
       reset()
       onOpenChange(null)
+      onAdded?.({ environmentId: result.environment.id })
     } catch (error) {
       toast.error(
         error instanceof Error

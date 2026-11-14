@@ -119,7 +119,7 @@ export function KeybindingsFileActions(): React.JSX.Element {
           ? error.message
           : t(
               'auto.components.settings.KeybindingsFileActions.dd532a01ce',
-              'Failed to open keybindings in Orca.'
+              'Failed to open keybindings in Seal.'
             )
       )
     }
@@ -170,7 +170,7 @@ export function KeybindingsFileActions(): React.JSX.Element {
         onClick={() => void editKeybindingsInOrca()}
       >
         <FileText className="size-3" />
-        {t('auto.components.settings.KeybindingsFileActions.ad58206841', 'Edit file in Orca')}
+        {t('auto.components.settings.KeybindingsFileActions.ad58206841', 'Edit file in Seal')}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

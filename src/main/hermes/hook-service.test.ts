@@ -31,7 +31,7 @@ describe('HermesHookService', () => {
     rmSync(homeDir, { recursive: true, force: true })
   })
 
-  it('preserves other enabled plugins and removes Orca from disabled list', () => {
+  it('preserves other enabled plugins and removes Seal from disabled list', () => {
     writeFileSync(
       join(homeDir, 'config.yaml'),
       [
@@ -199,7 +199,7 @@ describe('HermesHookService', () => {
     expect(config.plugins.disabled).toBe('not-a-list')
   })
 
-  it('registered plugin hooks post normalized JSON to Orca', async () => {
+  it('registered plugin hooks post normalized JSON to Seal', async () => {
     const pythonAvailable = spawnSync('python3', ['--version'], { encoding: 'utf-8' }).status === 0
     if (!pythonAvailable) {
       return
@@ -369,7 +369,7 @@ describe('HermesHookService', () => {
         '    ctx.hooks["pre_tool_call"](session_id="sess-C", tool_name="patch")',
         '# Gateway housekeeping runs outside any session, so it has no proven pane.',
         'ctx.hooks["on_session_finalize"](session_id="sess-B", platform="local")',
-        '# A non-Orca shell attached to the same gateway.',
+        '# A non-Seal shell attached to the same gateway.',
         'with client_env_scope({"PATH": "/usr/bin"}):',
         '    ctx.hooks["pre_llm_call"](session_id="sess-X", user_message="not a pane")'
       ].join('\n')

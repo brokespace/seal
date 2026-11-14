@@ -42,7 +42,7 @@ export async function callConnector<TResult>(
     if (error instanceof RuntimeClientError && error.code === 'method_not_found') {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'This Orca host has no connectors. Update Orca on the host and try again.'
+        'This Seal host has no connectors. Update Seal on the host and try again.'
       )
     }
     throw error
@@ -69,7 +69,7 @@ export function formatPendingPrompt(prompt: ConnectorPrompt | null): string {
       ? `approval ${prompt.tool}${prompt.summary ? `: ${prompt.summary}` : ''}`
       : prompt.kind === 'question'
         ? `question: ${prompt.question}`
-        : 'unsupported (answer in Orca)'
+        : 'unsupported (answer in Seal)'
   const options = known ? (prompt.options ?? []) : []
   return [
     head,
@@ -104,7 +104,7 @@ const REPLY_UNAVAILABLE_CODES = new Set([
 export function formatReply(reply: ConnectorReply): string {
   return reply.status === 'posted'
     ? 'Posted to the thread.'
-    : 'Sent; Orca Cloud will post it to the thread.'
+    : 'Sent; Seal Cloud will post it to the thread.'
 }
 
 export const CONNECTOR_HANDLERS: Record<string, CommandHandler> = {
@@ -184,7 +184,7 @@ export const CONNECTOR_HANDLERS: Record<string, CommandHandler> = {
     if (!paneKey) {
       throw new RuntimeClientError(
         'invalid_argument',
-        'Run this from an agent a connector message started; this terminal is not an Orca agent pane.'
+        'Run this from an agent a connector message started; this terminal is not a Seal agent pane.'
       )
     }
     const reply = await callConnector<ConnectorReply>(

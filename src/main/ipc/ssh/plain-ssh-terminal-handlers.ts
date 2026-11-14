@@ -67,11 +67,17 @@ export function registerPlainSshTerminalHandlers(): void {
 
   ipcMain.handle(
     open,
-    async (ipcEvent, args: { targetId?: unknown; cols?: unknown; rows?: unknown }) => {
+    async (
+      ipcEvent,
+      args: { targetId?: unknown; cols?: unknown; rows?: unknown; purpose?: unknown }
+    ) => {
       const sender = ipcEvent.sender
       endSessionsWithOwner(sender)
+      // The Machines tab opens a shell on any saved host, not only ones whose server move is blocked.
+      const openDeps =
+        args?.purpose === 'machine-shell' ? { ...deps, isMoveBlocked: () => true } : deps
       return openPlainSshTerminal(
-        deps,
+        openDeps,
         { targetId: args?.targetId, cols: args?.cols, rows: args?.rows, owner: sender.id },
         (payload: PlainSshTerminalEvent) => {
           if (sender.isDestroyed()) {

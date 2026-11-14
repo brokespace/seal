@@ -29,6 +29,8 @@ import type { SettingsHostScope } from '../host-scope/settings-host-scope'
 import { SettingsGroup } from '../section-layout/SettingsGroup'
 import { useTranslate } from '@/i18n/use-translate'
 import { AgentWorkspaceTrustSetting } from './behavior/AgentWorkspaceTrustSetting'
+import { LiveSessionsShellIntegrationSetting } from '../../live-sessions/shell-integration/LiveSessionsShellIntegrationSetting'
+import { LiveSessionsIdleReapSetting } from '../../live-sessions/shell-integration/LiveSessionsIdleReapSetting'
 
 type AgentSettingProps = {
   settings: GlobalSettings
@@ -104,7 +106,14 @@ export function AgentsPane({
         ) : null}
         <AgentGeneratedTabTitlesSetting settings={settings} updateSettings={updateSettings} />
         {!isPairedWebClientWindow() ? (
-          <AgentAwakeSetting settings={settings} updateSettings={updateSettings} />
+          <>
+            <AgentAwakeSetting settings={settings} updateSettings={updateSettings} />
+            <LiveSessionsShellIntegrationSetting
+              settings={settings}
+              updateSettings={updateSettings}
+            />
+            <LiveSessionsIdleReapSetting settings={settings} updateSettings={updateSettings} />
+          </>
         ) : null}
       </SettingsGroup>
       <AgentCacheTimerSection settings={settings} updateSettings={updateSettings} />

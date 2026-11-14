@@ -69,7 +69,7 @@ describe('what a lookup may spawn', () => {
   it('never asks Codex outside the app, reading only what the app learned', async () => {
     const answer = await resolveCodexHookAnswer()
 
-    expect(answer).toEqual({ kind: 'pending', failure: 'Orca has not asked Codex yet' })
+    expect(answer).toEqual({ kind: 'pending', failure: 'Seal has not asked Codex yet' })
     expect(mocks.probeCodexVersion).not.toHaveBeenCalled()
 
     allowAsking()
@@ -105,7 +105,7 @@ describe('what a lookup may spawn', () => {
     mocks.deriveCodexHookHashes.mockResolvedValue({
       kind: 'refused',
       codexVersion: 'codex-cli 0.150.1',
-      failure: 'Codex 0.150.1 did not recognize Orca status hook'
+      failure: 'Codex 0.150.1 did not recognize Seal status hook'
     })
     await resolveCodexHookAnswer()
     // Simulate a restart retaining the persisted answer.

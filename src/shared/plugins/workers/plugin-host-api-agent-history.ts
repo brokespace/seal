@@ -57,7 +57,7 @@ const agentListSessionsResult = z.object({
 export const PLUGIN_AGENT_HISTORY_API = {
   'agent.listSessions': spec({
     summary:
-      "Past agent sessions in Orca's Agent Session History on this computer (WSL distributions included on Windows), newest first: title, agent, workspace, branch, times, message and token counts, and whether an Orca terminal here runs it. Leaves out Antigravity IDE conversations and subagent transcripts, and never gives the conversation or file paths, though a title can be the start of its first message. `agent.resume` resumes one by its `sessionId`, for agents that resume by id.",
+      "Past agent sessions in Seal's Agent Session History on this computer (WSL distributions included on Windows), newest first: title, agent, workspace, branch, times, message and token counts, and whether a Seal terminal here runs it. Leaves out Antigravity IDE conversations and subagent transcripts, and never gives the conversation or file paths, though a title can be the start of its first message. `agent.resume` resumes one by its `sessionId`, for agents that resume by id.",
     since: 9,
     scope: 'any-workspace',
     capability: 'history:read',

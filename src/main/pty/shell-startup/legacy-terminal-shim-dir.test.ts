@@ -262,7 +262,7 @@ describe('legacy terminal shim neutralization', () => {
         ...process.env,
         PATH: `${shimDir}//::${realBin}:${process.env.PATH ?? ''}`,
         ORCA_ENABLE_GIT_ATTRIBUTION: '1',
-        ORCA_GIT_COMMIT_TRAILER: 'Co-authored-by: Orca <help@stably.ai>',
+        ORCA_GIT_COMMIT_TRAILER: 'Co-authored-by: Seal <help@stably.ai>',
         ORCA_ATTRIBUTION_SHIM_DIR: ''
       },
       stdio: ['pipe', 'pipe', 'pipe']
@@ -296,7 +296,7 @@ describe('legacy terminal shim neutralization', () => {
       child.kill('SIGKILL')
     }
     expect(stdout).toContain('arg=<commit>\narg=<-m>\narg=<subject with spaces>\nstdin payload\n')
-    expect(stdout).not.toContain('Co-authored-by: Orca')
+    expect(stdout).not.toContain('Co-authored-by: Seal')
     expect(stderr).toBe('fixture stderr\n')
   })
 })

@@ -16,7 +16,8 @@ import { prepareArtifactCloudUse } from '../orca-profiles/cloud-auth/profile-art
 import { runWithFreshOrcaCloudSession } from '../orca-profiles/cloud-session/profile-cloud-session-refresh'
 import {
   allowsArtifactCloudAuthOverride,
-  resolveArtifactCloudApiUrl
+  ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE,
+  findArtifactCloudApiUrl
 } from './artifact-cloud-config'
 import {
   type ArtifactShareScope,
@@ -86,7 +87,7 @@ function authContext(
         !isArtifactShareLifecycleCurrent(active.profile.id, userDataPath, lifecycleGeneration)
       ) {
         throw new Error(
-          'The signed-in Orca account changed while the artifact request was running.'
+          'The signed-in Seal account changed while the artifact request was running.'
         )
       }
     }
@@ -99,7 +100,7 @@ function storedSessionAuthContext(
   userDataPath: string
 ): ArtifactAuthContext {
   if (!active.profile.cloud) {
-    throw new Error('The active Orca profile is not linked to a cloud account.')
+    throw new Error('The active Seal profile is not linked to a cloud account.')
   }
   return authContext(
     active,
@@ -200,7 +201,7 @@ export class ArtifactCloudService {
           auth.scope
         )
         if (!record) {
-          throw new Error('This file has not been shared from the active Orca profile.')
+          throw new Error('This file has not been shared from the active Seal profile.')
         }
         return this.publisher.runForSlug(record.slug, auth, async () => {
           auth.assertCurrent()
@@ -242,7 +243,7 @@ export class ArtifactCloudService {
           auth.scope
         )
         if (!record) {
-          throw new Error('This file has not been shared from the active Orca profile.')
+          throw new Error('This file has not been shared from the active Seal profile.')
         }
         return this.publisher.runForSlug(record.slug, auth, async () => {
           auth.assertCurrent()
@@ -272,7 +273,10 @@ export class ArtifactCloudService {
     options: ArtifactCloudOptions,
     operation: (token: string, apiUrl: string, auth: ArtifactAuthContext) => Promise<T>
   ): Promise<ArtifactCloudOperation<T>> {
-    const apiUrl = resolveArtifactCloudApiUrl(options.apiUrl)
+    const apiUrl = findArtifactCloudApiUrl(options.apiUrl)
+    if (!apiUrl) {
+      return { status: 'unconfigured', message: ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE }
+    }
     const active = ensureActiveOrcaProfile(this.userDataPath)
     prepareArtifactCloudUse(active.profile, this.userDataPath)
     if (options.authToken?.trim()) {

@@ -124,7 +124,7 @@ function makeRepo(overrides: Partial<Repo> = {}): Repo {
   return {
     id: 'repo-1',
     path: '/workspace/orca',
-    displayName: 'Orca',
+    displayName: 'Seal',
     badgeColor: '#33aa99',
     addedAt: 100,
     kind: 'git',

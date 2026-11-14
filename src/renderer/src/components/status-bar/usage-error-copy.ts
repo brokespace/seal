@@ -149,19 +149,19 @@ export function getProviderUsageErrorMessage(
   if (delegatedCliProvider === 'grok') {
     return t(
       'auto.components.status.bar.tooltip.d1b7f509ac',
-      'Run grok in a terminal on the computer running Orca and wait for it to start. If prompted, complete sign-in, then retry usage. You do not need to send a chat message.'
+      'Run grok in a terminal on the computer running Seal and wait for it to start. If prompted, complete sign-in, then retry usage. You do not need to send a chat message.'
     )
   }
   if (delegatedCliProvider === 'kimi') {
     return t(
       'auto.components.status.bar.tooltip.a37e8c15d4',
-      'Run kimi in a terminal on the computer running Orca and wait for it to start, then retry usage.'
+      'Run kimi in a terminal on the computer running Seal and wait for it to start, then retry usage.'
     )
   }
   if (p.provider === 'cursor' && p.usageMetadata?.failureKind === 'stale-token') {
     return t(
       'auto.components.status.bar.tooltip.cursor.expired.message',
-      'Run cursor-agent login in a terminal on the computer running Orca, then retry usage.'
+      'Run cursor-agent login in a terminal on the computer running Seal, then retry usage.'
     )
   }
   if (p.provider === 'claude') {
@@ -197,8 +197,8 @@ export function getProviderUsageErrorMessage(
         )
       case 'missing-credentials':
         return t(
-          'accounts.claude.usageSignInMessage',
-          'The selected Claude account needs you to sign in again. Open Settings > AI Provider Accounts, or choose System default.'
+          'accounts.claude.usageSignInAgainMessage',
+          'The selected Claude account needs you to sign in again. Open Settings > Accounts, or pick another account.'
         )
       case 'server':
       case 'parse':

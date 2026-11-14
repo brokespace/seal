@@ -54,7 +54,7 @@ beforeEach(async () => {
   forkPath = join(scratchDir, 'fork')
   await mkdir(repoPath, { recursive: true })
   await git(['init', '-q'], repoPath)
-  await git(['config', 'user.name', 'Orca Test'], repoPath)
+  await git(['config', 'user.name', 'Seal Test'], repoPath)
   await git(['config', 'user.email', 'orca@example.test'], repoPath)
   await git(['config', 'commit.gpgSign', 'false'], repoPath)
   await git(['config', 'core.hooksPath', '.git/no-hooks'], repoPath)
@@ -63,7 +63,7 @@ beforeEach(async () => {
   await git(['commit', '-qm', 'seed'], repoPath)
 
   await git(['clone', '-q', repoPath, forkPath], scratchDir)
-  await git(['config', 'user.name', 'Orca Test'], forkPath)
+  await git(['config', 'user.name', 'Seal Test'], forkPath)
   await git(['config', 'user.email', 'orca@example.test'], forkPath)
   await git(['config', 'commit.gpgSign', 'false'], forkPath)
   await git(['config', 'core.hooksPath', '.git/no-hooks'], forkPath)

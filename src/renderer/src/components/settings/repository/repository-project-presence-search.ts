@@ -14,7 +14,7 @@ export function getRepositoryPresenceSearchEntries(
     title: t('auto.components.settings.repository.search.bbbe994528', 'Remove project'),
     description: t(
       'auto.components.settings.repository.search.c86478c3d8',
-      'Remove this project from Orca.'
+      'Remove this project from Seal.'
     ),
     keywords: [
       repo.displayName,
@@ -30,7 +30,7 @@ export function getRepositoryPresenceSearchEntries(
     title: t('sidebar.hiddenProjects.settingsTitle', 'Hide from sidebar'),
     description: t(
       'sidebar.hiddenProjects.settingsDescription',
-      "Hides this host's copy of the project from the sidebar, project pickers and the workspace switcher. Its terminals, agents and automations keep running. On a paired Orca server, this hides it for everyone connected to that server."
+      "Hides this host's copy of the project from the sidebar, project pickers and the workspace switcher. Its terminals, agents and automations keep running. On a paired Seal server, this hides it for everyone connected to that server."
     ),
     keywords: [
       repo.displayName,

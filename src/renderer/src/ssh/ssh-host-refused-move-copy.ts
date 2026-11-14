@@ -22,12 +22,12 @@ export function leaveBehindLine(
     text: inline
       ? t(
           'auto.components.settings.sshHostServer.refusedLeaveBehind',
-          'Some saved items for this host can’t move to its Orca server: {{items}}. Move anyway connects the host and keeps them on this computer.',
+          'Some saved items for this host can’t move to its Seal server: {{items}}. Move anyway connects the host and keeps them on this computer.',
           { items: inline }
         )
       : t(
           'auto.components.settings.sshHostServer.refusedLeaveBehindUnnamed',
-          'Some saved items for this host can’t move to its Orca server. Move anyway connects the host and keeps them on this computer.'
+          'Some saved items for this host can’t move to its Seal server. Move anyway connects the host and keeps them on this computer.'
         ),
     ...(reason ? { detail: reason } : {})
   }
@@ -45,7 +45,7 @@ export function refusedLine(
       tone: 'destructive',
       text: t(
         'auto.components.settings.sshHostServer.refusedBlocked',
-        'Orca isn’t set up on this host yet: something on the host stops the move.'
+        'Seal isn’t set up on this host yet: something on the host stops the move.'
       )
     }
   }
@@ -54,7 +54,7 @@ export function refusedLine(
     tone: 'destructive',
     text: t(
       'auto.components.settings.sshHostServer.refusedBlockedReason',
-      'Orca isn’t set up on this host yet. {{reason}}',
+      'Seal isn’t set up on this host yet. {{reason}}',
       { reason: inline }
     ),
     detail: reason

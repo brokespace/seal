@@ -1,5 +1,5 @@
 import { Platform } from 'react-native'
-import { z } from 'zod'
+import * as z from 'zod'
 import type { DeviceCredentialInstalled } from '../../../src/shared/remote-runtime/relay/mobile-relay-credential-contract'
 import type { MobileRelayPairingJournal } from '../pairing/mobile-relay-pairing-journal'
 import {
@@ -105,6 +105,6 @@ export async function deleteMobileRelayCredentialBundle(hostId: string): Promise
 
 function requireNativeSecretStore(): void {
   if (Platform.OS === 'web') {
-    throw new Error('Orca Relay credentials require a native secret store')
+    throw new Error('Seal Relay credentials require a native secret store')
   }
 }

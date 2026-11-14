@@ -191,9 +191,9 @@ async function startJourney(
   }
 }
 
-const offerTitle = 'Match Claude Code to your Orca theme?'
+const offerTitle = 'Match Claude Code to your Seal theme?'
 
-test('an existing user accepts the offer, then Claude Code follows the Orca theme live and restores', async ({
+test('an existing user accepts the offer, then Claude Code follows the Seal theme live and restores', async ({
   electronApp,
   orcaPage
 }, testInfo) => {

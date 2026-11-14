@@ -110,7 +110,7 @@ function HostAutomations(props: {
         catalog.error ===
         t(
           'automations.mobile.hostUnavailable',
-          'Automations are unavailable on this host. Update Orca on that host and reconnect.'
+          'Automations are unavailable on this host. Update Seal on that host and reconnect.'
         )
       return (
         <AutomationsEmpty
@@ -119,7 +119,7 @@ function HostAutomations(props: {
             outdated
               ? t(
                   'home.automationsTab.updateDesktop',
-                  'Update Orca on {{desktop}} to use automations.',
+                  'Update Seal on {{desktop}} to use automations.',
                   { desktop }
                 )
               : describeLoadError(catalog.error, t).message

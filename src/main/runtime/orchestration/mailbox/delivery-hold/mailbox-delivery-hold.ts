@@ -70,11 +70,11 @@ export function describeMailboxDeliveryHold(recipient: string, hold: MailboxDeli
     case 'draft':
       return `Queued. ${recipient}'s terminal has typed text that is not sent yet; delivery is held until it is sent or cleared.`
     case 'restoring':
-      return `Queued. ${recipient}'s terminal is still restoring; delivery waits until Orca can read it.`
+      return `Queued. ${recipient}'s terminal is still restoring; delivery waits until Seal can read it.`
     case 'blocked':
       return `Queued. ${recipient} is blocked (${hold.reason}); delivery is held until that clears.`
     case 'busy-program':
-      return `Queued. ${recipient}'s terminal is running a program Orca does not type into; delivery waits until the agent is back at its prompt.`
+      return `Queued. ${recipient}'s terminal is running a program Seal does not type into; delivery waits until the agent is back at its prompt.`
     case 'overlay':
       return `Queued. ${recipient}'s screen shows something that refuses typed input; delivery waits until it closes.`
     case 'unsettled':

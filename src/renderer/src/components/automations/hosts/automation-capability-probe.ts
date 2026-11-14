@@ -148,7 +148,7 @@ export async function assertAutomationCreateIdempotencySupported(
     AUTOMATION_CREATE_IDEMPOTENCY_RUNTIME_CAPABILITY,
     translate(
       'auto.components.automations.capabilityProbe.createIdempotencyUpdateRequired',
-      'Moving automations to this host requires a newer Orca server. Update the HUB and try again.'
+      'Moving automations to this host requires a newer Seal server. Update the HUB and try again.'
     )
   )
 }
@@ -217,7 +217,7 @@ export async function prepareAutomationLaunchSetup<
   if (modern) {
     if (!status.capabilities?.includes(AUTOMATION_LAUNCH_SETUP_RUNTIME_CAPABILITY)) {
       throw new AutomationHostScopeUnsupportedError(
-        'Update Orca on the destination host to keep these agent launch settings, or choose another agent.'
+        'Update Seal on the destination host to keep these agent launch settings, or choose another agent.'
       )
     }
     return input
@@ -227,7 +227,7 @@ export async function prepareAutomationLaunchSetup<
   }
   if (launchSetupPatch.surface === 'chat') {
     throw new AutomationHostScopeUnsupportedError(
-      'Update Orca on this host to run automations in Chat.'
+      'Update Seal on this host to run automations in Chat.'
     )
   }
   const extraAgentArgs =

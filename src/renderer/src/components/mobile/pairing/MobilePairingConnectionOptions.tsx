@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Badge } from '../../ui/badge'
 import { translate } from '../../../i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
-import { useAppStore } from '../../../store/index'
-import { useOrcaProfileAuthStatusRefresh } from '@/hooks/use-orca-profile-auth-status-refresh'
 import { cn } from '@/lib/class-names'
 import type {
   MobileRelayStatus,
@@ -11,7 +9,6 @@ import type {
 } from '../../../../../shared/remote-runtime/relay/mobile-relay-status'
 import type { MobilePairingConnectionMode } from '../../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import { MobilePairingPathOption } from './MobilePairingPathOption'
-import { MobileRelaySignInPanel } from './MobileRelaySignInPanel'
 import { relayClockSkewMessage } from '../relay-clock-skew-message'
 
 function relayStatusLabel(status: MobileRelayStatus, t: Translate = translate): string {
@@ -54,22 +51,14 @@ export function MobilePairingConnectionOptions({
   relayMintRetrying?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  const authStatus = useAppStore((state) => state.orcaProfileAuthStatus)
   const [relayStatus, setRelayStatus] = useState<MobileRelayStatusDetail>({ status: 'offline' })
-  const signedIn = authStatus?.state === 'connected'
-  const reconnectRequired = authStatus?.state === 'reconnect-required'
-  // Unconfigured builds have no Relay sign-in endpoint; mark unavailable instead of offering a dead CTA.
-  const configured = authStatus?.configured !== false
-  const needsSignIn = value === 'automatic' && !signedIn && configured
-  // Availability is a property of the build, not of the current selection.
-  const relayUnavailable = !signedIn && !configured
-  const relayDisabled = relayMintRetrying || relayUnavailable
+  const relayDisabled = relayMintRetrying
   const optionRefs = useRef<Record<MobilePairingConnectionMode, HTMLDivElement | null>>({
     automatic: null,
     'local-only': null
   })
 
-  // Wrap/focus radio arrow navigation, but leave nested Sign in controls’ arrows untouched.
+  // Wrap/focus radio arrow navigation, but leave nested controls’ arrows untouched.
   const handleArrowKeys = (event: React.KeyboardEvent): void => {
     if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
       return
@@ -89,8 +78,6 @@ export function MobilePairingConnectionOptions({
   }
 
   const relayCell = relayStatus.cellUrl ? relayCellLabel(relayStatus.cellUrl) : null
-
-  useOrcaProfileAuthStatusRefresh()
 
   useEffect(() => {
     let receivedEvent = false
@@ -141,28 +128,14 @@ export function MobilePairingConnectionOptions({
           onSelect={() => onChange('automatic')}
           title={t(
             'auto.components.settings.MobilePairingConnectionOptions.anywhereTitle',
-            'Orca Relay'
+            'Seal Relay'
           )}
-          description={
-            relayUnavailable
-              ? t(
-                  'auto.components.settings.MobilePairingConnectionOptions.relayUnavailable',
-                  'Orca Relay isn’t available in this build. Use LAN.'
-                )
-              : t(
-                  'auto.components.settings.MobilePairingConnectionOptions.anywhereDescription',
-                  'Phone can be on cellular or any Wi‑Fi. Sign-in required for Relay only.'
-                )
-          }
+          description={t(
+            'auto.components.settings.MobilePairingConnectionOptions.anywhereDescriptionNoAccount',
+            'Phone can be on cellular or any Wi‑Fi, through the Seal relay. No account needed.'
+          )}
           trailing={
-            relayUnavailable ? (
-              <Badge variant="outline" className="text-[11px]">
-                {t(
-                  'auto.components.settings.MobilePairingConnectionOptions.unavailable',
-                  'Unavailable'
-                )}
-              </Badge>
-            ) : signedIn && value === 'automatic' ? (
+            value === 'automatic' ? (
               <Badge variant="outline" className="text-[11px]">
                 {relayMintRetrying
                   ? t(
@@ -179,11 +152,7 @@ export function MobilePairingConnectionOptions({
             ) : null
           }
         />
-        {needsSignIn ? <MobileRelaySignInPanel reconnectRequired={reconnectRequired} /> : null}
-        {signedIn &&
-        value === 'automatic' &&
-        !relayMintFailed &&
-        relayStatus.clockOffsetMs !== undefined ? (
+        {value === 'automatic' && !relayMintFailed && relayStatus.clockOffsetMs !== undefined ? (
           <p className="border-t border-border/60 px-3 py-2 text-xs text-destructive" role="alert">
             {relayClockSkewMessage(relayStatus.clockOffsetMs, t)}
           </p>

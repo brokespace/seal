@@ -293,7 +293,7 @@ if [[ "$runtime_ready" != true ]]; then
   exit 1
 fi
 identity_alive "$launcher_pid" "$launcher_start_ticks"
-[[ $(readlink -f "/proc/$runtime_pid/exe") == "$runtime_root/orca-ide" ]]
+[[ $(readlink -f "/proc/$runtime_pid/exe") == "$runtime_root/seal" ]]
 parent_pid_namespace=$(readlink /proc/self/ns/pid)
 namespace_command=(unshare --pid --fork --kill-child --mount-proc)
 if ! timeout --kill-after=5s 10s "${namespace_command[@]}" true 2> "$state_dir/pidns-setup.stderr"; then

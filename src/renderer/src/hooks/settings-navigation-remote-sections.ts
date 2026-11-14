@@ -17,7 +17,6 @@ import type { Repo } from '../../../shared/repo-types'
 import {
   Blocks,
   Bug,
-  Cable,
   FlaskConical,
   Lock,
   Server,
@@ -42,31 +41,29 @@ export function buildRemoteSettingsSections(
 ): SettingsNavSection[] {
   const showDesktopOnlySettings = !isWebClient
   return [
-    ...(showDesktopOnlySettings
-      ? [
-          {
-            id: 'ssh',
-            title: t('auto.hooks.useSettingsNavigationMetadata.94a5afe910', 'SSH Hosts'),
-            description: t(
-              'auto.hooks.useSettingsNavigationMetadata.31e57d1c70',
-              'Use existing machines over SSH for files, terminals, Git, and workspaces.'
-            ),
-            icon: Cable,
-            searchEntries: getSshPaneSearchEntries(),
-            group: 'remote'
-          }
-        ]
-      : []),
-    {
-      id: 'servers',
-      title: t('auto.hooks.useSettingsNavigationMetadata.de0c2907a1', 'Remote Orca Servers'),
-      description: isWebClient
-        ? 'Connect this browser to a saved Orca server.'
-        : 'Run Orca on another machine and work on it from here.',
-      icon: Server,
-      searchEntries: [runtimeEnvironmentsSearchEntry],
-      group: 'remote'
-    },
+    showDesktopOnlySettings
+      ? {
+          id: 'machines',
+          title: t('auto.hooks.useSettingsNavigationMetadata.machinesTitle', 'Machines'),
+          description: t(
+            'auto.hooks.useSettingsNavigationMetadata.machinesDescription',
+            'Other computers Seal works on, over SSH or a Seal server.'
+          ),
+          icon: Server,
+          searchEntries: [...getSshPaneSearchEntries(), runtimeEnvironmentsSearchEntry],
+          group: 'remote'
+        }
+      : {
+          id: 'servers',
+          title: t('auto.hooks.useSettingsNavigationMetadata.de0c2907a1', 'Remote Seal Servers'),
+          description: t(
+            'auto.components.settings.Settings.7686cb5c36',
+            'Connect this browser to a saved Seal server.'
+          ),
+          icon: Server,
+          searchEntries: [runtimeEnvironmentsSearchEntry],
+          group: 'remote'
+        },
     ...(showDesktopOnlySettings && isMac
       ? [
           {
@@ -144,7 +141,7 @@ export function buildRemoteSettingsSections(
             title: t('auto.hooks.useSettingsNavigationMetadata.pluginsTitle', 'Plugins'),
             description: t(
               'auto.hooks.useSettingsNavigationMetadata.pluginsDescription',
-              'Install and manage Orca plugins (Alpha).'
+              'Install and manage Seal plugins (Alpha).'
             ),
             icon: Blocks,
             searchEntries: getPluginsPaneSearchEntries(),

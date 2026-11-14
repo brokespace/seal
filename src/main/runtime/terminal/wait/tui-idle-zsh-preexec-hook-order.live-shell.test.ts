@@ -311,7 +311,7 @@ describe.skipIf(process.platform === 'win32')('tui-idle under real zsh preexec h
     }, 40_000)
 
     itWithZsh(
-      "runs Orca's marker hook before the user hook, so hook output follows OSC 133;C",
+      "runs Seal's marker hook before the user hook, so hook output follows OSC 133;C",
       () => {
         expect(capture.hookOrder.split(/\s+/)[0]).toBe('__orca_osc133_preexec')
         expect(capture.hookOrder).toContain(hookCase.hookName)

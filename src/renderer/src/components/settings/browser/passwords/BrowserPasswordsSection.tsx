@@ -159,7 +159,7 @@ function BrowserPasswordsProfile({
       toast.success(
         t(
           'settings.browser.passwords.copied',
-          'Password copied. Orca clears it from the clipboard in 2 minutes.'
+          'Password copied. Seal clears it from the clipboard in 2 minutes.'
         )
       )
     } else if (result.reason === 'auth-failed') {
@@ -175,7 +175,7 @@ function BrowserPasswordsProfile({
         item.username || t('settings.browser.passwords.noUsername', '(no username)'),
         t(
           'settings.browser.passwords.deleteConfirmDescription',
-          'Orca won’t fill it anymore. This can’t be undone.'
+          'Seal won’t fill it anymore. This can’t be undone.'
         )
       ].join('\n'),
       confirmLabel: t('settings.browser.passwords.deleteConfirm', 'Delete'),
@@ -222,7 +222,7 @@ function BrowserPasswordsProfile({
           <p className="text-xs text-muted-foreground">
             {t(
               'settings.browser.passwords.profileDescription',
-              'Saved logins for the {{profile}} profile. Orca fills one only when you pick it under a sign-in field.',
+              'Saved logins for the {{profile}} profile. Seal fills one only when you pick it under a sign-in field.',
               { profile: profileLabel }
             )}
           </p>
@@ -274,7 +274,7 @@ function BrowserPasswordsProfile({
             <p className="text-xs text-muted-foreground">
               {t(
                 'settings.browser.passwords.empty',
-                'Orca offers to save a login after you sign in. You can also bring them from another browser or a CSV file.'
+                'Seal offers to save a login after you sign in. You can also bring them from another browser or a CSV file.'
               )}
             </p>
           </div>

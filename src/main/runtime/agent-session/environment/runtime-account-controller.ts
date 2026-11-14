@@ -36,6 +36,8 @@ import {
 import type { HostClaudeProfileRefresh } from './host-claude-profile-refresh'
 import { HostAccountLaunchEnvState } from './host-account-launch-env-state'
 import type { RuntimeNotifier } from '../../client/events/runtime-notifier-contract'
+import type { SealAccountSwitchViews } from '../../../../shared/seal-accounts/seal-account-switch-view'
+import { sealAccountSwitchViews } from '../../../seal-accounts/seal-account-switch-views'
 
 export type RuntimeAccountServices = {
   claudeAccounts: ClaudeAccountService
@@ -49,6 +51,8 @@ export type AccountsSnapshot = {
   claude: ClaudeRateLimitAccountsState
   codex: CodexRateLimitAccountsState
   rateLimits: RateLimitState
+  /** Seal's names for the Claude and Codex rows; absent on a host without Seal accounts. */
+  seal?: SealAccountSwitchViews
 }
 
 export type CodexRateLimitResetRpcResult = {
@@ -122,24 +126,24 @@ export class RuntimeAccountController {
     return this.services?.claudeAccounts.getRuntimeConfigDir(target) ?? null
   }
 
-  getSnapshot(): AccountsSnapshot {
-    const { claudeAccounts, codexAccounts, rateLimits } = this.requireServices()
+  private providerAccountsSnapshot(
+    rateLimits?: RateLimitState
+  ): Pick<AccountsSnapshot, 'claude' | 'codex' | 'rateLimits' | 'seal'> {
+    const services = this.requireServices()
     return {
-      ...this.dataAccountsSnapshot(),
-      claude: claudeAccounts.listAccounts(),
-      codex: codexAccounts.listAccounts(),
-      rateLimits: rateLimits.getState()
+      claude: services.claudeAccounts.listAccounts(),
+      codex: services.codexAccounts.listAccounts(),
+      rateLimits: rateLimits ?? services.rateLimits.getState(),
+      ...sealAccountSwitchViews()
     }
   }
 
+  getSnapshot(): AccountsSnapshot {
+    return { ...this.dataAccountsSnapshot(), ...this.providerAccountsSnapshot() }
+  }
+
   getStreamSnapshot(): AccountsSnapshot {
-    const { claudeAccounts, codexAccounts, rateLimits } = this.requireServices()
-    return {
-      ...this.streamDataAccountsSnapshot(),
-      claude: claudeAccounts.listAccounts(),
-      codex: codexAccounts.listAccounts(),
-      rateLimits: rateLimits.getState()
-    }
+    return { ...this.streamDataAccountsSnapshot(), ...this.providerAccountsSnapshot() }
   }
 
   private streamDataAccountsSnapshot(): Pick<AccountsSnapshot, 'opencode' | 'devin'> {
@@ -310,9 +314,7 @@ export class RuntimeAccountController {
     const unsubscribeUsage = services.rateLimits.onStateChange((rateLimits) => {
       listener({
         ...this.streamDataAccountsSnapshot(),
-        claude: services.claudeAccounts.listAccounts(),
-        codex: services.codexAccounts.listAccounts(),
-        rateLimits
+        ...this.providerAccountsSnapshot(rateLimits)
       })
     })
     return () => {

@@ -148,7 +148,7 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
 
   return (
     <SettingsGroup
-      title={t('auto.components.settings.DevToolsPane.orcaCloud', 'Orca Cloud')}
+      title={t('auto.components.settings.DevToolsPane.orcaCloud', 'Seal Cloud')}
       description={t(
         'auto.components.settings.DevToolsPane.orcaCloudDescription',
         'Dev-only preview of first-party cloud sign-in. Hidden in production; in dev it also appears in the sidebar account switcher once ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID are set.'
@@ -187,7 +187,7 @@ function OrcaCloudDevSubsection(): React.JSX.Element {
           {authStatus?.setupMessage ??
             t(
               'auto.components.settings.DevToolsPane.orcaCloudNotConfigured',
-              'Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Orca Cloud sign-in in this dev build.'
+              'Set ORCA_CLOUD_API_URL and ORCA_CLOUD_CLIENT_ID to preview Seal Cloud sign-in in this dev build.'
             )}
         </p>
       )}

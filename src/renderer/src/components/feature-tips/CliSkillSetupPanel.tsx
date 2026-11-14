@@ -37,7 +37,7 @@ function BundledCliSkillSetupPanel(): React.JSX.Element {
       title={t('auto.components.feature.tips.CliSkillSetupPanel.title', 'Skill setup')}
       description={t(
         'auto.components.feature.tips.CliSkillSetupPanel.description',
-        'Install the Orca CLI and orchestration skills for your agents.'
+        'Install the Seal CLI and orchestration skills for your agents.'
       )}
       skillNames={CLI_TIP_SKILL_NAMES}
       installed={installed}

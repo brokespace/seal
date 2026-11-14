@@ -296,7 +296,7 @@ describe('Claude permission wait that Claude denies itself', () => {
     expect(states.at(-1)).toBe('PostToolBatch:working')
   })
 
-  describe('with a wait Orca cannot identify', () => {
+  describe('with a wait Seal cannot identify', () => {
     const childB = { agent_id: 'agent-b', agent_type: 'general-purpose' }
     const commandB = { command: 'touch /private/tmp/orca-permcap-b' }
     const childBDenial = [

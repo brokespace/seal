@@ -232,7 +232,7 @@ function buildWindowsStartupCommand(
     // to a reporting catch; never rethrow and abort startup over a broken security module.
     "$orcaProgress = $ProgressPreference; $ProgressPreference = 'SilentlyContinue'",
     'try { Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction Stop } ' +
-      'catch { [Console]::Error.WriteLine("Orca: could not relax the execution policy for this " + ' +
+      'catch { [Console]::Error.WriteLine("Seal: could not relax the execution policy for this " + ' +
       '"session (" + $_.FullyQualifiedErrorId + "). A startup command that runs a .ps1 " + ' +
       '"may be blocked.") }',
     '$ProgressPreference = $orcaProgress',

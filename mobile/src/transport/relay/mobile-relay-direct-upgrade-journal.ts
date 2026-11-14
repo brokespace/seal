@@ -1,5 +1,5 @@
 import { Platform } from 'react-native'
-import { z } from 'zod'
+import * as z from 'zod'
 import { hashMobileRelayCredential } from './mobile-relay-credential-hash'
 import {
   deletePairingKeychainItem,
@@ -82,6 +82,6 @@ function encodeBase64Url(value: Uint8Array): string {
 
 function requireNativeSecretStore(): void {
   if (Platform.OS === 'web') {
-    throw new Error('Orca Relay upgrade state requires a native secret store')
+    throw new Error('Seal Relay upgrade state requires a native secret store')
   }
 }

@@ -27,7 +27,7 @@ function getSectionLabel(url: string): string {
 }
 
 function getFooterTag(title: string, section: string): string {
-  return `${title} - ${section} - Orca`
+  return `${title} - ${section} - Seal`
 }
 
 function getTitleFontSize(title: string): number {

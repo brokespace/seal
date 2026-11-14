@@ -111,7 +111,7 @@ export function assertLoadableHookTrustConfig(
 ): void {
   if (isLoadableToml(previous) && !isLoadableToml(contents)) {
     throw new CodexConfigTomlRefusedError(
-      `${configPath} defines hook approvals in a form Orca cannot add to without breaking it`
+      `${configPath} defines hook approvals in a form Seal cannot add to without breaking it`
     )
   }
 }
@@ -221,7 +221,7 @@ export async function removeOrcaCreatedProjectTrustEntries(projectPath: string):
       try {
         removeOrcaCreatedProjectTrustEntry(configPath, projectPath)
       } catch (error) {
-        console.warn('[codex-config] Failed to remove an Orca-created project trust entry:', error)
+        console.warn('[codex-config] Failed to remove a Seal-created project trust entry:', error)
       }
     })
   }

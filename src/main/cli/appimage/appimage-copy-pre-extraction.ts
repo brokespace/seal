@@ -2,6 +2,7 @@
 import { existsSync } from 'node:fs'
 import { lstat, stat } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join } from 'node:path'
+import { LINUX_EXECUTABLE_NAME } from '../../../shared/appimage-cache-identity'
 import { resolveAppImageRuntimeIdentity } from '../../updater/linux-package/appimage-runtime-identity'
 import {
   isAppImageExtractionComplete,
@@ -22,7 +23,6 @@ export const APPIMAGE_COPY_DAEMON_WAIT_MS = 8_000
 const NICE_PROGRAM_PATHS = ['/usr/bin/nice', '/bin/nice'] as const
 // electron-updater keeps a custom AppImage name unless it carries a version (AppImageUpdater.doInstall).
 const VERSIONED_NAME = /\d+\.\d+\.\d+/
-const GENERATION_EXECUTABLE_NAME = 'orca-ide'
 
 export type AppImageCopyPreExtractionOptions = {
   /** The running AppImage; defaults to this process's validated one. */
@@ -157,7 +157,7 @@ async function preExtract(
     if (options.installedAppImagePath) {
       // This window's lease protects the unused update copy from pruning until installation.
       await leaseAppImageGenerationForCurrentProcess({
-        execPath: join(root.rootPath, GENERATION_EXECUTABLE_NAME)
+        execPath: join(root.rootPath, LINUX_EXECUTABLE_NAME)
       })
     }
     log(`[appimage-copy] Unpacked ${subject} in ${Math.round((Date.now() - startedAt) / 1000)}s`)

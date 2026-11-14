@@ -26,7 +26,7 @@ export type ParsedRemoteRuntimeFrame =
   | { type: 'error'; error: RemoteRuntimeClientError }
 
 export function remoteRuntimeUnavailableError(
-  message = 'Remote Orca runtime closed the connection.'
+  message = 'Remote Seal runtime closed the connection.'
 ): RemoteRuntimeClientError {
   return new RemoteRuntimeClientError('remote_runtime_unavailable', message)
 }
@@ -34,7 +34,7 @@ export function remoteRuntimeUnavailableError(
 export function remoteRuntimeTimeoutError(): RemoteRuntimeClientError {
   return new RemoteRuntimeClientError(
     'runtime_timeout',
-    'Timed out waiting for the remote Orca runtime to respond.'
+    'Timed out waiting for the remote Seal runtime to respond.'
   )
 }
 
@@ -50,8 +50,8 @@ export function remoteRuntimeReadyError(
   }
   return invalidRemoteRuntimeResponseError(
     verdict === 'invalid'
-      ? 'Remote Orca runtime returned an invalid E2EE handshake frame.'
-      : 'Remote Orca runtime returned an unexpected E2EE handshake frame.'
+      ? 'Remote Seal runtime returned an invalid E2EE handshake frame.'
+      : 'Remote Seal runtime returned an unexpected E2EE handshake frame.'
   )
 }
 
@@ -63,12 +63,12 @@ export function remoteRuntimeAuthReplyError(
   }
   if (reply.kind === 'invalid') {
     return invalidRemoteRuntimeResponseError(
-      'Remote Orca runtime returned an invalid E2EE auth frame.'
+      'Remote Seal runtime returned an invalid E2EE auth frame.'
     )
   }
   return new RemoteRuntimeClientError(
     reply.errorCode === 'unauthorized' ? 'unauthorized' : 'invalid_runtime_response',
-    'Remote Orca runtime rejected the pairing token.'
+    'Remote Seal runtime rejected the pairing token.'
   )
 }
 
@@ -80,7 +80,7 @@ export function parseRemoteRuntimeRpcFrame(plaintext: string): ParsedRemoteRunti
     return {
       type: 'error',
       error: invalidRemoteRuntimeResponseError(
-        'Remote Orca runtime returned an invalid response frame.'
+        'Remote Seal runtime returned an invalid response frame.'
       )
     }
   }
@@ -92,7 +92,7 @@ export function parseRemoteRuntimeRpcFrame(plaintext: string): ParsedRemoteRunti
     return {
       type: 'error',
       error: invalidRemoteRuntimeResponseError(
-        'Remote Orca runtime returned an invalid response frame.'
+        'Remote Seal runtime returned an invalid response frame.'
       )
     }
   }

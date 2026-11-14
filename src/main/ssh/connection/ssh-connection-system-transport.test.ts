@@ -185,7 +185,7 @@ describe('SshConnection', () => {
     expect(removeControlSocketPathMock).toHaveBeenCalledWith('/tmp/orca-ssh-501/stale-socket')
   })
 
-  it('keeps a host pinned in the Orca key store on ssh2 when negotiation fails', async () => {
+  it('keeps a host pinned in the Seal key store on ssh2 when negotiation fails', async () => {
     const storeDir = mkdtempSync(join(tmpdir(), 'orca-ssh-pinned-store-'))
     try {
       initSshHostKeyStoreFile(join(storeDir, 'orca.json'))

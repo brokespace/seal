@@ -55,7 +55,7 @@ describe.skipIf(process.platform !== 'darwin')('terminal host assembly', () => {
 
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'orca-terminal-host-'))
-    appPath = join(root, 'Orca.app')
+    appPath = join(root, 'Seal.app')
     const resources = join(appPath, 'Contents', 'Resources')
     const out = join(resources, 'app.asar.unpacked', 'out')
     mkdirSync(join(out, 'main', 'chunks'), { recursive: true })
@@ -89,7 +89,7 @@ describe.skipIf(process.platform !== 'darwin')('terminal host assembly', () => {
       info
     })
     expect(paths).toEqual(macTerminalHostPaths(appPath))
-    expect(paths.bundle).toBe(join(appPath, 'Contents', 'Helpers', 'Orca Terminal Host.app'))
+    expect(paths.bundle).toBe(join(appPath, 'Contents', 'Helpers', 'Seal Terminal Host.app'))
     expect(readFileSync(paths.executable, 'utf8')).toBe('pinned-node')
     expect(statSync(paths.executable).mode & 0o777).toBe(0o755)
     expect(statSync(paths.spawnHelper).mode & 0o777).toBe(0o755)

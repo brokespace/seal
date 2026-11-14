@@ -23,7 +23,7 @@ function makeSetup(
 ): ProjectHostSetup {
   return {
     projectId,
-    displayName: 'Orca',
+    displayName: 'Seal',
     kind: 'git',
     setupState: 'ready',
     setupMethod: 'legacy-repo',
@@ -56,11 +56,11 @@ afterEach(() => {
 
 describe('RepositoryHostSetupsSection settings entry scope', () => {
   it('lists only its own settings entry when same-host clones split the project (#20861)', () => {
-    const cloneA = makeRepo({ id: 'clone-a', displayName: 'Orca', path: '/work/orca' })
-    const cloneB = makeRepo({ id: 'clone-b', displayName: 'Orca B', path: '/work/orca-b' })
+    const cloneA = makeRepo({ id: 'clone-a', displayName: 'Seal', path: '/work/orca' })
+    const cloneB = makeRepo({ id: 'clone-b', displayName: 'Seal B', path: '/work/orca-b' })
     const remoteRepo = makeRepo({
       id: 'remote-repo',
-      displayName: 'Orca',
+      displayName: 'Seal',
       path: '/home/alice/orca',
       connectionId: 'openclaw 2'
     })
@@ -69,7 +69,7 @@ describe('RepositoryHostSetupsSection settings entry scope', () => {
       projects: [
         {
           id: projectId,
-          displayName: 'Orca',
+          displayName: 'Seal',
           badgeColor: '#737373',
           sourceRepoIds: [cloneA.id, cloneB.id, remoteRepo.id],
           createdAt: 100,

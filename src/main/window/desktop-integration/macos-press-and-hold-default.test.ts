@@ -17,14 +17,14 @@ describe('readBundleIdentifierFromExecutablePath', () => {
   function bundleWithPlist(body: string): string {
     const root = mkdtempSync(join(tmpdir(), 'orca-press-hold-'))
     roots.push(root)
-    mkdirSync(join(root, 'Orca.app', 'Contents', 'MacOS'), { recursive: true })
-    writeFileSync(join(root, 'Orca.app', 'Contents', 'Info.plist'), body)
-    return join(root, 'Orca.app', 'Contents', 'MacOS', 'Orca')
+    mkdirSync(join(root, 'Seal.app', 'Contents', 'MacOS'), { recursive: true })
+    writeFileSync(join(root, 'Seal.app', 'Contents', 'Info.plist'), body)
+    return join(root, 'Seal.app', 'Contents', 'MacOS', 'Seal')
   }
 
   it('reads CFBundleIdentifier from the plist beside the executable', () => {
     const exe = bundleWithPlist(
-      '<plist><dict>\n<key>CFBundleName</key>\n<string>Orca</string>\n' +
+      '<plist><dict>\n<key>CFBundleName</key>\n<string>Seal</string>\n' +
         '<key>CFBundleIdentifier</key>\n\t<string>com.stablyai.orca</string>\n</dict></plist>'
     )
 

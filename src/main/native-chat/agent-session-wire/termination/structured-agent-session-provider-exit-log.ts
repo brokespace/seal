@@ -41,7 +41,7 @@ export function logProviderChildExit(
   // A requested end is normal; record it without a failed span.
   try {
     startSpan('agentSession.provider-exit', { attributes: fields }).end()
-    console.info('[agent-session] provider-exit: agent process ended by Orca', fields)
+    console.info('[agent-session] provider-exit: agent process ended by Seal', fields)
   } catch {
     // Diagnostics never fail the exit they describe.
   }

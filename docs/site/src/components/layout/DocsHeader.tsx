@@ -33,7 +33,7 @@ export async function DocsHeader() {
         <div className="flex shrink-0 items-center gap-6">
           <Link
             href="/docs"
-            aria-label="Orca docs"
+            aria-label="Seal docs"
             className="group flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Image src="/docs/logo.svg" alt="" width={40} height={25} />

@@ -116,6 +116,8 @@ export type WorktreeApi = {
     skipArchive?: boolean
     // Waives a failed hook, unlike skipArchive; force does not imply this approval.
     allowFailedArchiveHook?: boolean
+    // Confirmed Unlock & Delete only: release Git's lock before deleting.
+    unlockLockedWorktree?: boolean
     snapshotPruneBatchId?: string
   }) => Promise<RemoveWorktreeResult>
   // Forget local metadata without remote Git/FS work, even when the SSH host is unavailable.

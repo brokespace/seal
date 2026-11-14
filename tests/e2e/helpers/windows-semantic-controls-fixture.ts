@@ -36,7 +36,7 @@ export type WindowsSemanticFixture = {
 export async function launchWindowsSemanticFixture(): Promise<WindowsSemanticFixture> {
   const tempDir = await mkdtemp(join(tmpdir(), 'orca-computer-windows-semantic-'))
   const statePath = join(tempDir, 'state.json')
-  const title = `Orca Semantic Controls ${Date.now()}`
+  const title = `Seal Semantic Controls ${Date.now()}`
   const holderTitle = `${title} holder`
   // Why: a window in another process takes activation back, as the user's own app would hold it.
   const holder: ChildProcess = spawn(

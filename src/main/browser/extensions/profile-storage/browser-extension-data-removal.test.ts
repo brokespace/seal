@@ -72,8 +72,8 @@ beforeEach(() => {
   mocks.windows.length = 0
 })
 
-describe('uninstall while another Orca profile is inactive', () => {
-  it('clears native and origin data and grants after uninstall and reinstall in another Orca profile', async () => {
+describe('uninstall while another Seal profile is inactive', () => {
+  it('clears native and origin data and grants after uninstall and reinstall in another Seal profile', async () => {
     const personalDirectory = mkdtempSync(join(tmpdir(), 'orca-extension-personal-'))
     const workDirectory = mkdtempSync(join(tmpdir(), 'orca-extension-work-'))
     async function openOrcaProfile(directory: string) {

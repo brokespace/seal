@@ -190,7 +190,7 @@ describe('PiTitlebarExtensionService', () => {
     }
   )
 
-  it("does not overwrite a user's same-named Orca extension file", () => {
+  it("does not overwrite a user's same-named Seal extension file", () => {
     const userStatusExtension = 'user-owned status extension'
     writeFileSync(join(piHome, 'extensions', 'orca-agent-status.ts'), userStatusExtension, 'utf-8')
 

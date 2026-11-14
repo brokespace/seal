@@ -20,6 +20,7 @@ import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel
 const MemoFloatingTerminalToggleButton = memo(FloatingTerminalToggleButton)
 
 const Landing = lazy(() => import('../components/Landing'))
+const HomeOverviewPage = lazy(() => import('../components/home-overview/HomeOverviewPage'))
 const WorktreeCreationPanel = lazy(
   () => import('../components/worktree-creation/WorktreeCreationPanel')
 )
@@ -31,9 +32,11 @@ const AutomationsPage = lazy(() => import('../components/automations/Automations
 const ActivityPrototypePage = lazy(() => import('../components/activity/ActivityPrototypePage'))
 const Settings = lazy(() => import('../components/settings/Settings'))
 const SkillsPage = lazy(() => import('../components/skills/SkillsPage'))
+const MachinesPage = lazy(() => import('../components/machines/MachinesPage'))
 const ArtifactsPage = lazy(() => import('../components/artifacts/ArtifactsPage'))
 const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
+const LiveSessionsPage = lazy(() => import('../components/live-sessions/LiveSessionsPage'))
 const Terminal = lazy(() => import('../components/Terminal'))
 
 type WorktreeSidebarScrollRefs = {
@@ -87,18 +90,33 @@ function PendingCreationSurface(props: {
   return opensChat ? <PendingNativeChatCreation {...props} /> : <WorktreeCreationPanel {...props} />
 }
 
+// Home is the landing surface once a project exists; first-run onboarding stays on Landing.
+function HomeOrLanding(): React.JSX.Element {
+  const hasProjects = useAppStore((s) => s.repos.length > 0)
+  return hasProjects ? (
+    <div className="absolute inset-0 flex">
+      <HomeOverviewPage />
+    </div>
+  ) : (
+    <Landing />
+  )
+}
+
 function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
   const { activeView, hasActiveWorktree, activePendingCreationId, creationLayoutActive } = layout
   return (
     <>
+      {activeView === 'home' ? <HomeOrLanding /> : null}
       {activeView === 'settings' ? <Settings /> : null}
       {activeView === 'skills' ? <SkillsPage /> : null}
+      {activeView === 'machines' ? <MachinesPage /> : null}
       {activeView === 'artifacts' ? <ArtifactsPage /> : null}
       {activeView === 'tasks' ? <TaskPage /> : null}
       {activeView === 'automations' ? <AutomationsPage /> : null}
       {activeView === 'activity' ? <ActivityPrototypePage /> : null}
       {activeView === 'space' ? <WorkspaceSpacePage /> : null}
       {activeView === 'mobile' ? <MobilePage /> : null}
+      {activeView === 'sessions' ? <LiveSessionsPage /> : null}
       {activeView === 'terminal' && creationLayoutActive && activePendingCreationId ? (
         <PendingCreationSurface
           creationId={activePendingCreationId}
@@ -106,7 +124,7 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
         />
       ) : null}
       {activeView === 'terminal' && !hasActiveWorktree && !creationLayoutActive ? (
-        <Landing />
+        <HomeOrLanding />
       ) : null}
     </>
   )
@@ -236,7 +254,7 @@ export function AppWorkspaceShell(props: {
                       title={t('auto.App.b7a714db1e', 'This page hit an error.')}
                       description={t(
                         'auto.App.03a14f6b5b',
-                        'Retry the page or navigate to another Orca surface.'
+                        'Retry the page or navigate to another Seal surface.'
                       )}
                     >
                       <ActivePage layout={layout} />

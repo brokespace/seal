@@ -29,12 +29,12 @@ internal fun saveImageToGallery(context: Context, uri: Uri, mime: String) {
     throw CodedException("native_verb_failed", "Saving images needs Android 10 or later", null)
   }
   val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
-  val name = "Orca ${System.currentTimeMillis()}" + (extension?.let { ".$it" } ?: "")
+  val name = "Seal ${System.currentTimeMillis()}" + (extension?.let { ".$it" } ?: "")
   val resolver = context.contentResolver
   val pending = ContentValues().apply {
     put(MediaStore.MediaColumns.DISPLAY_NAME, name)
     put(MediaStore.MediaColumns.MIME_TYPE, mime)
-    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Orca")
+    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Seal")
     put(MediaStore.MediaColumns.IS_PENDING, 1)
   }
   val target = resolver.insert(

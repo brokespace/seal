@@ -47,7 +47,7 @@ export function AgentLaunchNotice({
     availability === 'update-required'
       ? t(
           'components.agentLaunchNotice.updateRequired',
-          'Update Orca on your computer to start an agent from your phone.'
+          'Update Seal on your computer to start an agent from your phone.'
         )
       : availability === 'unverified'
         ? t(

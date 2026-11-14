@@ -198,7 +198,7 @@ export const getStatusBarToggles = createLocalizedCatalog(
       ],
       toggleDescription: translate(
         'settings.appearance.statusBar.sshToggleDescription',
-        'Show configured SSH and remote Orca hosts when any are available.'
+        'Show configured SSH and remote Seal hosts when any are available.'
       )
     },
     {

@@ -57,7 +57,7 @@ const hasMarker = (home: SkillHome, text: string) =>
     () => false
   )
 
-describe("another Orca build's copy on the same host", () => {
+describe("another Seal build's copy on the same host", () => {
   it('links a newly selected agent to a recognized shared copy', async () => {
     const home = await makeSkillHome()
     await writeCopy(home.shared, NEWER_TEXT)

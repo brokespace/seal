@@ -63,6 +63,7 @@ import { recordDurableCrashBreadcrumb } from '../../crash-reporting/breadcrumbs/
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../shared/layout-owner-switch'
 import { getRuntimeEnvironmentRegistryRoot } from '../../ipc/runtime-environments/runtime-environment-registry-root'
 import { openOffscreenBrowserPageLink } from '../../runtime/browser/commands/offscreen-browser-page-link'
+import { bindSealSessionTerminal } from '../../seal-accounts/seal-runtime-terminal'
 
 export function getDesktopWindowStatus(): RuntimeDesktopWindowStatus {
   const activation = state.desktopActivationGate
@@ -205,6 +206,7 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
   )
   browserSessionRegistry.onProfilesChanged = () => runtime.notifyBrowserProfilesChanged()
   runtime.startupWorkerAuthority.begin()
+  bindSealSessionTerminal(runtime, () => agentHookServer.getStatusSnapshot())
   return runtime
 }
 

@@ -43,7 +43,7 @@ export function panel(input: PluginTemplateInput): PluginTemplate {
       const label = document.getElementById('workspace')
       async function refresh() {
         if (!orca.host.has('workspace.readContext')) {
-          label.textContent = 'This Orca cannot read workspace context.'
+          label.textContent = 'This Seal cannot read workspace context.'
           return
         }
         try {

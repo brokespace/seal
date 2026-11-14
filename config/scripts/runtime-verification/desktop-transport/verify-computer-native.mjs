@@ -135,7 +135,7 @@ function verifyMacOSHelperApp() {
     'computer-use-macos',
     '.build',
     'release',
-    'Orca Computer Use.app'
+    'Seal Computer Use.app'
   )
   if (!existsSync(appPath)) {
     console.error(

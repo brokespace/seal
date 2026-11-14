@@ -215,7 +215,7 @@ function UsageCard(props: {
   useMobileColorScheme()
   const [pressed, setPressed] = useState(false)
   const { card } = props
-  const title = card.email ?? t('accounts.screen.default', 'System default')
+  const title = card.email ?? t('accounts.screen.systemLogin', 'System login')
   const subtitle =
     card.email == null
       ? t('accounts.screen.agentLogin', "Use the agent's own login")

@@ -40,7 +40,7 @@ describe('the Grok hook file backup after removal', () => {
   })
 
   it.each(['sync', 'quit'] as const)(
-    'deletes a backup that held only Orca entries (%s path)',
+    'deletes a backup that held only Seal entries (%s path)',
     async (path) => {
       const service = new GrokHookService()
       expect(service.install().state).toBe('installed')
@@ -57,7 +57,7 @@ describe('the Grok hook file backup after removal', () => {
     }
   )
 
-  it("strips Orca's entries from a backup that also holds the user's own", () => {
+  it("strips Seal's entries from a backup that also holds the user's own", () => {
     const service = new GrokHookService()
     expect(service.install().state).toBe('installed')
     const config: { hooks: Record<string, unknown[]> } = JSON.parse(

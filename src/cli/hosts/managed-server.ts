@@ -19,7 +19,7 @@ import { formatManagedServerStatus } from './managed-server-format'
 import { reportAfterClosedConnection } from './managed-server-reconnect'
 
 const UNSUPPORTED_MESSAGE =
-  'This Orca runtime cannot manage servers over SSH. Run this on the computer whose Orca desktop app deployed the server, after updating Orca there.'
+  'This Seal runtime cannot manage servers over SSH. Run this on the computer whose Seal desktop app deployed the server, after updating Seal there.'
 
 // Windows promotion and readiness waits can take ten minutes; allow headroom on slow hosts.
 export const MANAGED_SERVER_ACTION_TIMEOUT_MS = 20 * 60_000
@@ -93,7 +93,7 @@ function report<TResult extends Outcome, TSettled extends TResult['outcome']>(
 ): void {
   const result = response.result
   if (!isSettled(result, settled)) {
-    const reason = result.reason ?? `The managed Orca server action was ${result.outcome}.`
+    const reason = result.reason ?? `The managed Seal server action was ${result.outcome}.`
     const step = nextStep?.(result)
     throw new RuntimeClientError(
       `managed_server_${result.outcome}`,

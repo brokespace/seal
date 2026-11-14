@@ -255,7 +255,7 @@ export function useFolderCreateFlow(args: {
       title={t('sourceControl.folder.setupChoiceTitle', 'Retry without setup?')}
       message={t(
         'sourceControl.folder.setupChoiceMessage',
-        "Orca couldn't confirm the last create in {{repo}}. Retrying it needs a setup choice; it will be created without running the repository's setup.",
+        "Seal couldn't confirm the last create in {{repo}}. Retrying it needs a setup choice; it will be created without running the repository's setup.",
         { repo: choice?.repo.displayName ?? '' }
       )}
       confirmLabel={t('sourceControl.folder.setupChoiceSkip', 'Retry without setup')}

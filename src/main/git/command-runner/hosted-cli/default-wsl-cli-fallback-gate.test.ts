@@ -103,7 +103,7 @@ describe.each(CLIS)('$cli default-distro fallback', ({ cli, run }) => {
   })
 })
 
-describe('starring Orca, which is always a click', () => {
+describe('starring Seal, which is always a click', () => {
   it('may start the stopped default distro its gh lives in', async () => {
     readWslDistroRunningStateMock.mockResolvedValue('stopped')
     hostMissingThenWslAnswers('gh')

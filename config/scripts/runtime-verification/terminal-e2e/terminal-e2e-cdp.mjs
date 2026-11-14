@@ -190,7 +190,7 @@ if (process.argv[1]?.endsWith('terminal-e2e-cdp.mjs')) {
   const command = cmdIdx !== -1 ? args[cmdIdx + 1] : null
 
   const term = new OrcaTerminal(port)
-  console.log('Connecting to Orca on CDP port', port, '...')
+  console.log('Connecting to Seal on CDP port', port, '...')
   term.connect()
   console.log('Connected.')
 

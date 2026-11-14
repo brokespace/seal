@@ -10,8 +10,11 @@ import type {
   AiVaultPrepareSessionResumeResult
 } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
 import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
+import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-account-types'
 import { resolveTuiAgentLaunchEnv } from '../../../shared/agent-launch/choices/tui-agent-launch-defaults'
 import { createProviderAccountServices } from '../../providers/accounts/provider-account-services'
+import { bindSealSessionTerminal } from '../../seal-accounts/seal-runtime-terminal'
+import { agentHookServer } from '../../agent-hooks/server/agent-hook-server'
 import { createCodexRuntimeHomeLaunchPreparation } from '../../codex/configuration/homes/codex-runtime-home-launch-preparation'
 import { createCodexSessionResumeLaunchPreparation } from '../../codex/history/resume/codex-session-resume-launch-preparation'
 import { prepareCodexAiVaultSessionResume } from '../../codex/history/resume/codex-ai-vault-session-resume'
@@ -36,10 +39,15 @@ type OrcadAccountServices = {
     ) => Promise<AiVaultPrepareSessionResumeResult>
   }
   listCodexSessionHomes: () => string[]
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
   attachToRuntime: (
     runtime: Pick<
       OrcaRuntimeService,
-      'setAccountServices' | 'setCommitMessageAgentEnvironmentResolvers'
+      | 'setAccountServices'
+      | 'setCommitMessageAgentEnvironmentResolvers'
+      | 'getTerminalHandleForPaneKey'
+      | 'sendTerminal'
+      | 'isTerminalRunningAgent'
     >
   ) => void
 }
@@ -108,6 +116,7 @@ export function createOrcadAccountServices(args: {
         })
     },
     listCodexSessionHomes: () => codexRuntimeHome.getHostCodexHomePathsForSessionDiscovery(),
+    claudeAccounts: services.claudeAccounts,
     attachToRuntime: (runtime) => {
       runtime.setAccountServices({
         claudeAccounts: services.claudeAccounts,
@@ -119,6 +128,8 @@ export function createOrcadAccountServices(args: {
         prepareForClaudeLaunch: prepareClaudeAuth,
         resolveBaseEnvironment: () => resolveHostAgentBaseEnvironment(store.getSettings())
       })
+      // Seal moves this host's own running sessions between accounts.
+      bindSealSessionTerminal(runtime, () => agentHookServer.getStatusSnapshot())
     }
   }
 }

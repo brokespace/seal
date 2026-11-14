@@ -114,15 +114,18 @@ export type NewWorkspaceDraft = {
 }
 
 export type UiViewHistory =
+  | 'home'
   | 'terminal'
   | 'settings'
   | 'tasks'
   | 'activity'
   | 'automations'
+  | 'machines'
   | 'space'
   | 'skills'
   | 'artifacts'
   | 'mobile'
+  | 'sessions'
 
 export type UISliceCore = {
   sidebarOpen: boolean
@@ -160,9 +163,11 @@ export type UISliceCore = {
   previousViewBeforeActivity: Exclude<UiViewHistory, 'activity'>
   previousViewBeforeAutomations: Exclude<UiViewHistory, 'automations'>
   previousViewBeforeSpace: Exclude<UiViewHistory, 'space'>
+  previousViewBeforeMachines: Exclude<UiViewHistory, 'machines'>
   previousViewBeforeSkills: Exclude<UiViewHistory, 'skills'>
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
+  previousViewBeforeSessions: Exclude<UiViewHistory, 'sessions'>
   setActiveView: (view: UISliceCore['activeView']) => void
   taskPageData: TaskPageData
   taskResumeState: TaskResumeState | undefined
@@ -193,6 +198,8 @@ export type UISliceCore = {
   closeAutomationsPage: () => void
   openSpacePage: () => void
   closeSpacePage: () => void
+  openMachinesPage: () => void
+  closeMachinesPage: () => void
   openSkillsPage: () => void
   closeSkillsPage: () => void
   pendingSkillShareId: string | null
@@ -206,6 +213,8 @@ export type UISliceCore = {
   closeArtifactsPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
+  openSessionsPage: () => void
+  closeSessionsPage: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void
   clearNewWorkspaceDraft: () => void
   pendingRevealWorktree: PendingSidebarWorktreeReveal | null

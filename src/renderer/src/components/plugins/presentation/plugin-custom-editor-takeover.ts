@@ -24,12 +24,12 @@ export function customEditorTakeover(
   return editor.priority === 'default'
     ? t(
         'auto.components.settings.pluginContributions.editorReplacesViewer',
-        'Opens {{value0}} instead of Orca’s viewer',
+        'Opens {{value0}} instead of Seal’s viewer',
         { value0 }
       )
     : t(
         'auto.components.settings.pluginContributions.editorMayReplaceViewer',
-        'May open {{value0}} instead of Orca’s viewer',
+        'May open {{value0}} instead of Seal’s viewer',
         { value0 }
       )
 }

@@ -32,7 +32,7 @@ export function NewerDaemonHoldBanner({
           ? t('terminal.newerDaemonBanner.failedTitle', "Couldn't reopen this terminal")
           : t(
               'terminal.newerDaemonBanner.title',
-              'This terminal was opened in a newer version of Orca'
+              'This terminal was opened in a newer version of Seal'
             )
       }
       body={

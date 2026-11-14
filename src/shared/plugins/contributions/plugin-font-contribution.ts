@@ -101,7 +101,7 @@ export const pluginFontContributionSchema = z
       )
       .meta(
         pluginFieldDoc(
-          'Family name shown in the font pickers. Orca adds the plugin id, so a plugin font never replaces an installed or built-in font of the same name.',
+          'Family name shown in the font pickers. Seal adds the plugin id, so a plugin font never replaces an installed or built-in font of the same name.',
           SINCE,
           ['Geist']
         )

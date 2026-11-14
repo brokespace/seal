@@ -155,7 +155,7 @@ export function agentMessageSenderUnavailableText(
     : target.kind === 'ambiguous'
       ? translate(
           'components.native-chat.agentMessage.senderAmbiguous',
-          "Orca can't tell which terminal {{name}} is running in. Open it from the sidebar.",
+          "Seal can't tell which terminal {{name}} is running in. Open it from the sidebar.",
           { name: subject }
         )
       : translate(

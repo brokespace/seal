@@ -92,7 +92,7 @@ it.each([
   ['on a host that has not listed them yet', false, undefined],
   ['for a client shown only Codex', false, (agent: string) => agent === 'codex']
 ])(
-  "dismisses every listed offer and leaves a newer Orca's hidden one as it was, %s",
+  "dismisses every listed offer and leaves a newer Seal's hidden one as it was, %s",
   async (_when, listFirst, audience) => {
     const NEWER = 'session-newer-orca'
     const created = await hostTestState().host.attach(

@@ -20,7 +20,7 @@ afterEach(() => {
   read.mockReset()
 })
 
-it('strips only a previously inherited Orca path when disabled', () => {
+it('strips only a previously inherited Seal path when disabled', () => {
   vi.stubEnv('ORCA_CLAUDE_AGENT_VIEW_PLUGIN_DIR', '/orca/previous')
   vi.stubEnv('CLAUDE_CODE_PLUGIN_DIRS', `/user/plugin${delimiter}/orca/previous`)
   const env = {}

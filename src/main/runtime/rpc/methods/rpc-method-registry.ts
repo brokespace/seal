@@ -4,6 +4,7 @@ import { ORCAD_TERMINAL_CENSUS_METHODS } from './orcad/orcad-terminal-census'
 import { ORCAD_MIGRATION_METHODS } from './orcad/orcad-migration'
 import { SESSION_TERMINAL_SCROLLBACK_METHODS } from './terminal/session-terminal-scrollback'
 import { AI_VAULT_METHODS } from './history/ai-vault'
+import { LIVE_SESSION_METHODS } from './live-sessions/live-sessions'
 import { AUTOMATION_METHODS } from './automations/automations'
 import { REPO_METHODS } from './projects/repo'
 import { WORKTREE_METHODS } from './workspaces/worktree'
@@ -27,12 +28,16 @@ import { DIAGNOSTICS_METHODS } from './host-management/diagnostics'
 import { TERMINAL_DAEMON_METHODS } from './terminal/terminal-daemon'
 import { ACCOUNT_METHODS } from './accounts/accounts'
 import { ANTIGRAVITY_ACCOUNT_METHODS } from './accounts/antigravity-accounts'
+import { SEAL_ACCOUNT_METHODS } from './accounts/seal-accounts'
 import { USAGE_CREDENTIAL_METHODS } from './accounts/usage-credentials'
 import { PREFLIGHT_METHODS } from './preflight/preflight'
 import { COMPUTER_METHODS } from './computer/computer'
 import { SESSION_TAB_METHODS } from './session-tabs/session-tabs'
 import { NATIVE_CHAT_METHODS } from './native-chat/native-chat'
 import { FILE_METHODS } from './files/files'
+import { MACHINE_HOST_METHODS } from './machines/machine-host-methods'
+import { SEAL_MACHINE_METHODS } from './machines/seal-machine-methods'
+import { HOME_CHAT_METHODS } from './home-chat/home-chat-methods'
 import { GIT_METHODS } from './source-control/git/git'
 import { GITHUB_METHODS } from './source-control/github/github'
 import { GITLAB_METHODS } from './source-control/gitlab/gitlab'
@@ -91,6 +96,7 @@ export const ALL_RPC_METHODS = [
   ...SESSION_TERMINAL_SCROLLBACK_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
+  ...LIVE_SESSION_METHODS,
   ...ARTIFACT_METHODS,
   ...AUTOMATION_METHODS,
   ...REPO_METHODS,
@@ -123,6 +129,7 @@ export const ALL_RPC_METHODS = [
   ...TERMINAL_DAEMON_METHODS,
   ...ACCOUNT_METHODS,
   ...ANTIGRAVITY_ACCOUNT_METHODS,
+  ...SEAL_ACCOUNT_METHODS,
   ...USAGE_CREDENTIAL_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,
@@ -132,6 +139,9 @@ export const ALL_RPC_METHODS = [
   ...(ORCA_LAYOUT_OWNER_IS_MAIN ? [...LAYOUT_APPLY_METHODS, ...LAYOUT_VIEW_REPORT_METHODS] : []),
   ...NATIVE_CHAT_METHODS,
   ...FILE_METHODS,
+  ...MACHINE_HOST_METHODS,
+  ...SEAL_MACHINE_METHODS,
+  ...HOME_CHAT_METHODS,
   ...GIT_METHODS,
   ...GITHUB_METHODS,
   ...GITLAB_METHODS,

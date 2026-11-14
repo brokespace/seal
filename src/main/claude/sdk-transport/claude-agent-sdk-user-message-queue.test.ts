@@ -13,7 +13,7 @@ const frame = (text: string): SDKUserMessage =>
   }) as unknown as SDKUserMessage
 
 describe('claude user message queue', () => {
-  it('marks only frames still queued in Orca as provably unwritten', async () => {
+  it('marks only frames still queued in Seal as provably unwritten', async () => {
     const queue = createClaudeUserMessageQueue()
     const pump = queue.messages[Symbol.asyncIterator]()
     const inFlight = queue.push(frame('first')).catch((caught: unknown) => caught)

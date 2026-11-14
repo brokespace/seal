@@ -436,8 +436,8 @@ jobs:
           set -euo pipefail
           app_dir=dist/mac
           if [[ "$MAC_ARCH" == arm64 ]]; then app_dir=dist/mac-arm64; fi
-          codesign --verify --deep --strict "$app_dir/Orca.app"
-          xcrun stapler validate "$app_dir/Orca.app"
+          codesign --verify --deep --strict "$app_dir/Seal.app"
+          xcrun stapler validate "$app_dir/Seal.app"
 
       - name: Verify this architecture's updater files
         env:

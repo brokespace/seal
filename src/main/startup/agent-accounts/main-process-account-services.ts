@@ -16,6 +16,8 @@ import { resolveHostCodexSessionSourceHome } from '../../codex/history/rollouts/
 import { browserManager } from '../../browser/guest-lifecycle/manager/browser-manager'
 import { prewarmStructuredAgentModelCatalogs } from '../../runtime/agent-session/model-catalog/structured-agent-model-catalog-wiring'
 import { mainProcessState as state } from '../main-process-state'
+import { setSealFleetTransport } from '../../seal-accounts/seal-fleet-sync'
+import { sealDesktopFleetTransport } from '../../seal-accounts/seal-desktop-fleet-transport'
 
 // Settings that change which account or binary a new chat's agent runs under.
 const MODEL_CATALOG_ACCOUNT_SETTINGS = [
@@ -50,6 +52,7 @@ export function initializeMainProcessAccountServices(): void {
     codexAccountLifecycle: { onHostSystemDefaultSelected: state.codexSessionMigration.requestRun },
     setClaudeStatusLineListener: (listener) => agentHookServer.setClaudeStatusLineListener(listener)
   })
+  setSealFleetTransport(sealDesktopFleetTransport)
   state.rateLimits = services.rateLimits
   state.codexRuntimeHome = services.codexRuntimeHome
   state.codexAccounts = services.codexAccounts

@@ -48,7 +48,7 @@ describe('CliInstaller', () => {
       const fixture = await makeFixture()
       const commandDir = join(fixture.root, '.local', 'bin')
       const installPath = join(commandDir, 'orca-ide')
-      const appImagePath = join(fixture.root, "Orca's AppImage.AppImage")
+      const appImagePath = join(fixture.root, "Seal's AppImage.AppImage")
       const cacheRootPath = join(fixture.root, 'cache')
       await mkdir(commandDir, { recursive: true })
       await writeFile(appImagePath, '#!/usr/bin/env bash\n', { encoding: 'utf8', mode: 0o755 })

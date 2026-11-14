@@ -3,7 +3,7 @@ import { fixture } from './crew-read-model.test-fixture'
 import { buildCrewSnapshot } from './crew-party-snapshot'
 import { approvalReportId } from '../workers/approvals/worker-approval-report'
 
-it("puts each approval's newest report on its worker's row, keeps old receipts, and ignores rows Orca did not write", () => {
+it("puts each approval's newest report on its worker's row, keeps old receipts, and ignores rows Seal did not write", () => {
   const { db, deps, run, assign } = fixture()
   const dispatch = assign('term_worker')
   const send = (approvalId: string, state: 'open' | 'answered', own = true) =>

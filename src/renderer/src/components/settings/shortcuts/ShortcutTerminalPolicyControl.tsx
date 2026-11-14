@@ -26,7 +26,7 @@ export function ShortcutTerminalPolicyControl({
       )}
       description={t(
         'auto.components.settings.ShortcutTerminalPolicyControl.0f55c6f15c',
-        'Choose whether Orca or the focused terminal wins when shortcuts overlap.'
+        'Choose whether Seal or the focused terminal wins when shortcuts overlap.'
       )}
       keywords={keywords}
       className="max-w-none"
@@ -56,7 +56,7 @@ export function ShortcutTerminalPolicyControl({
               <SelectItem value="orca-first">
                 {t(
                   'auto.components.settings.ShortcutTerminalPolicyControl.63308571d8',
-                  'Orca first'
+                  'Seal first'
                 )}
               </SelectItem>
               <SelectItem value="terminal-first">

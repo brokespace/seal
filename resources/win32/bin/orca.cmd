@@ -4,7 +4,7 @@ set "SCRIPT_DIR=%~dp0"
 set "LAUNCHER=%SCRIPT_DIR%orca.exe"
 
 if not exist "%LAUNCHER%" (
-  echo Unable to locate the native Orca CLI launcher at "%LAUNCHER%" 1>&2
+  echo Unable to locate the native Seal CLI launcher at "%LAUNCHER%" 1>&2
   exit /b 1
 )
 

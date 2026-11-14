@@ -51,7 +51,7 @@ export function endAcpStructuredSession(
   // Orca's own close (stream loss, refusal) names the cause; the agent's stderr stays beside it.
   const lead = failureClose ?? session.journalClosed ?? `${session.spec.agent} ACP agent exited`
   const reason = session.closeRequested
-    ? `${session.spec.agent} ACP agent closed by Orca`
+    ? `${session.spec.agent} ACP agent closed by Seal`
     : `${lead}${how ? ` ${how}` : ''}${stderr ? `: ${stderr}` : ''}`
   // Spontaneous exit interrupts now; requested close leaves the host to revise an unverifiable turn.
   closeAcpSessionJournal(

@@ -2,10 +2,10 @@
 export const SHARING_UNAVAILABLE_ON_HOST_CODE = 'sharing_unavailable_on_host' as const
 
 export const SHARING_UNAVAILABLE_ON_HOST_MESSAGE =
-  "Orca cloud features like sharing aren't available on headless Orca servers yet. Use the Orca desktop app for this."
+  "Seal cloud features like sharing aren't available on headless Seal servers yet. Use the Seal desktop app for this."
 
 export const SHARING_UNAVAILABLE_ON_HOST_NEXT_STEPS: readonly string[] = [
-  'Open the Orca desktop app, sign in, and run the command from an Orca terminal there.'
+  'Open the Seal desktop app, sign in, and run the command from a Seal terminal there.'
 ]
 
 export class SharingUnavailableOnHostError extends Error {

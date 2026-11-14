@@ -11,7 +11,7 @@ vi.mock('./web-runtime-calls', () => ({ callEnvironmentEnvelope: mocks.callEnvir
 vi.mock('./web-runtime-session', () => ({
   resolveEnvironment: (selector: string) => {
     if (selector !== mocks.activeEnvironment.id) {
-      throw new Error(`Unknown Orca runtime environment: ${selector}`)
+      throw new Error(`Unknown Seal runtime environment: ${selector}`)
     }
     return mocks.activeEnvironment
   }

@@ -117,7 +117,7 @@ export function PluginDeclarativeUnsupported({ name }: { name: string }): React.
     <div className="rounded-md border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground">
       {t(
         'auto.components.plugins.declarative.PluginDeclarativeView.unsupported',
-        '{{value0}} is not available in this version of Orca',
+        '{{value0}} is not available in this version of Seal',
         { value0: name }
       )}
     </div>

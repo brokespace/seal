@@ -171,19 +171,25 @@ export function registerRuntimeEnvironmentConnectivityHandlers({
     async (
       _event,
       args: { selector: string; timeoutMs?: number }
-    ): Promise<RuntimeRpcResponse<RuntimeStatus>> => {
-      const environment = resolveEnvironment(getUserDataPath(), args.selector)
-      assertWslHostReachable(environment)
-      clearRuntimeEnvironmentManualDisconnect(environment.id)
-      noteRuntimeEnvironmentConnectRequested(environment.id)
-      clearSshCredentialDeclinedForEnvironment(environment)
-      await liftSshUserDisconnectForEnvironment(environment)
-      await connectThroughOwningService(environment)
-      return getRuntimeEnvironmentStatus(getUserDataPath(), environment.id, args.timeoutMs, {
-        reconnect: true
-      })
-    }
+    ): Promise<RuntimeRpcResponse<RuntimeStatus>> =>
+      connectRuntimeEnvironmentOnRequest(getUserDataPath(), args.selector, args.timeoutMs)
   )
+}
+
+/** A user-asked connect: lifts manual disconnects and holds, then dials the server. */
+export async function connectRuntimeEnvironmentOnRequest(
+  userDataPath: string,
+  selector: string,
+  timeoutMs?: number
+): Promise<RuntimeRpcResponse<RuntimeStatus>> {
+  const environment = resolveEnvironment(userDataPath, selector)
+  assertWslHostReachable(environment)
+  clearRuntimeEnvironmentManualDisconnect(environment.id)
+  noteRuntimeEnvironmentConnectRequested(environment.id)
+  clearSshCredentialDeclinedForEnvironment(environment)
+  await liftSshUserDisconnectForEnvironment(environment)
+  await connectThroughOwningService(environment)
+  return getRuntimeEnvironmentStatus(userDataPath, environment.id, timeoutMs, { reconnect: true })
 }
 
 export function registerRuntimeEnvironmentPassiveHandlers(

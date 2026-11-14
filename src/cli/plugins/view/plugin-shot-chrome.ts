@@ -53,9 +53,9 @@ export function chromeShotRegion(ctx: HandlerContext): ChromeRegion | null {
 
 export function formatPluginChromeShot(shot: PluginChromeShotSaved, requested?: string): string {
   return [
-    `Saved ${shot.path} (${shot.width}x${shot.height}, ${shot.theme} theme, Orca's ${shot.region === 'window' ? 'window' : 'status bar'})`,
+    `Saved ${shot.path} (${shot.width}x${shot.height}, ${shot.theme} theme, Seal's ${shot.region === 'window' ? 'window' : 'status bar'})`,
     ...(requested && !shot.themeApplied
-      ? [`  note: ${requested} was not applied (${shot.themeReason ?? 'Orca could not paint it'}).`]
+      ? [`  note: ${requested} was not applied (${shot.themeReason ?? 'Seal could not paint it'}).`]
       : []),
     ...shot.errors.map((error) => `  error: ${error}`)
   ].join('\n')

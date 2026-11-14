@@ -133,7 +133,7 @@ export function BrowserToolbarAppearanceSub({
             <DropdownMenuRadioItem value={MATCH_ORCA_VALUE}>
               {t(
                 'auto.components.browser.pane.BrowserToolbarMenu.appearanceMatchOrca',
-                'Match Orca'
+                'Match Seal'
               )}
             </DropdownMenuRadioItem>
             <DropdownMenuSeparator />

@@ -95,6 +95,6 @@ describe('RuntimeClient orchestration recovery identity', () => {
     expect(error).toBeInstanceOf(RuntimeClientError)
     expect(error).not.toBeInstanceOf(RuntimeRpcFailureError)
     expectPromptRetryBlockedJson(error, 'prompt-downgraded-lost-reply')
-    expect(JSON.stringify((error as RuntimeClientError).data)).not.toContain('Update Orca')
+    expect(JSON.stringify((error as RuntimeClientError).data)).not.toContain('Update Seal')
   })
 })

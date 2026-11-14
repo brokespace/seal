@@ -9,7 +9,7 @@ export const pluginApiMajorSchema = z
   .refine((major) => major === PLUGIN_HOST_API_MAJOR, {
     error: (issue) =>
       typeof issue.input === 'number' && issue.input > PLUGIN_HOST_API_MAJOR
-        ? `targets host API ${issue.input}, but this Orca supports only ${PLUGIN_HOST_API_MAJOR}; update Orca`
+        ? `targets host API ${issue.input}, but this Seal supports only ${PLUGIN_HOST_API_MAJOR}; update Seal`
         : `must be ${PLUGIN_HOST_API_MAJOR}`
   })
   // Why const for editors only: the refine above gives the runtime its clearer message.

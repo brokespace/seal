@@ -120,13 +120,13 @@ export function WorktreeCardTaskActions({
       {url && openInOrca ? (
         <DropdownMenuItem onClick={openInOrca}>
           <MonitorUp className="size-3.5" />
-          {t('auto.components.sidebar.WorktreeCardMeta.2c67730e07', 'Open in Orca')}
+          {t('auto.components.sidebar.WorktreeCardMeta.2c67730e07', 'Open in Seal')}
         </DropdownMenuItem>
       ) : null}
       {url && onOpenIssueInBrowser ? (
         <DropdownMenuItem onClick={() => onOpenIssueInBrowser(url)}>
           <Globe className="size-3.5" />
-          {t('auto.components.sidebar.WorktreeCardMeta.openInOrcaBrowser', 'Open in Orca browser')}
+          {t('auto.components.sidebar.WorktreeCardMeta.openInOrcaBrowser', 'Open in Seal browser')}
         </DropdownMenuItem>
       ) : null}
       {onEdit ? (

@@ -130,7 +130,7 @@ function terminalBusyError(
   const followUp = claim.followUpOf ? `, the follow-up of Dispatch ${claim.followUpOf}` : ''
   return new OrchestrationError(
     'terminal_busy',
-    `${busy}${followUp} (task ${claim.taskId}${title ? ` "${title}"` : ''}) is still open on it. To answer it or give it more work, use your Orca CLI's \`orchestration send --to dispatch:${claim.dispatchId}\`; to replace it, run \`orchestration worker-stop --dispatch ${claim.dispatchId}\` and then start again. No effects were applied.`,
+    `${busy}${followUp} (task ${claim.taskId}${title ? ` "${title}"` : ''}) is still open on it. To answer it or give it more work, use your Seal CLI's \`orchestration send --to dispatch:${claim.dispatchId}\`; to replace it, run \`orchestration worker-stop --dispatch ${claim.dispatchId}\` and then start again. No effects were applied.`,
     data
   )
 }

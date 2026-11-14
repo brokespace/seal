@@ -179,7 +179,7 @@ describe('codex hook trust write-back promotion', () => {
     expect(readFileSync(runtimeTomlPath, 'utf-8')).toBe(runtimeTomlAfterPromotion)
   })
 
-  it('never promotes trust for the Orca-managed status hook into ~/.codex', async () => {
+  it('never promotes trust for the Seal-managed status hook into ~/.codex', async () => {
     writeSystemUserHook()
     const service = new CodexHookService()
     await service.install()

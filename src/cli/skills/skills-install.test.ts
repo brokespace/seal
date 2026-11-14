@@ -153,8 +153,8 @@ describe('orca skills install/update', () => {
     await writeCopy(paths.shared, EDITED_TEXT)
 
     const left = await run(['update', '--skill', NAME, '--agent', 'universal'])
-    expect(left).toContain('Update skipped: Skill edited outside Orca')
-    expect(left).toContain('1 skipped: Skill edited outside Orca')
+    expect(left).toContain('Update skipped: Skill edited outside Seal')
+    expect(left).toContain('1 skipped: Skill edited outside Seal')
     expect(left).toContain('Rerun with --force to replace a copy that was skipped')
     expect(left).not.toContain('left alone')
     expect(process.exitCode).toBe(0)

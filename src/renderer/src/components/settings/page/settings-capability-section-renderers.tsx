@@ -1,4 +1,10 @@
 import { AccountsPane } from '../accounts/AccountsPane'
+import { OtherProviderAccountsHeader } from '../accounts/OtherProviderAccountsHeader'
+import { ClaudeAccountOptionRows } from '../accounts/claude/ClaudeAccountOptionRows'
+import { getSealAccountsSearchEntries } from '../seal-accounts/seal-accounts-search'
+import { matchesSettingsSearch } from '../search/settings-search'
+import { SealAccountsPage } from '../seal-accounts/SealAccountsPage'
+import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
@@ -7,12 +13,18 @@ import { LinearAgentSkillPane } from '../skills/linear/LinearAgentSkillPane'
 import { OrchestrationPane } from '../orchestration/OrchestrationPane'
 import { VoicePane } from '../voice/VoicePane'
 import { SettingsSection } from '../section-layout/SettingsSection'
-import { SettingsHostScopeUnavailableNotice } from '../host-scope/SettingsHostScopePicker'
+import {
+  SettingsHostScopePicker,
+  SettingsHostScopeUnavailableNotice,
+  shouldShowSettingsHostScopePicker
+} from '../host-scope/SettingsHostScopePicker'
 import { LOCAL_SETTINGS_HOST_SCOPE } from '../host-scope/settings-host-scope'
 import { wslHostDistroForTarget } from '@/runtime/provider-accounts/ownership/wsl-host-account-owner'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsRenderContext } from './settings-render-context'
+
+const LOCAL_RUNTIME_TARGET: RuntimeClientTarget = { kind: 'local' }
 
 export function renderAgentsSettingsSection(
   context: SettingsRenderContext,
@@ -58,49 +70,92 @@ export function renderAccountsSettingsSection(
     model.settingsHostScope.target,
     model.runtimeEnvironments
   )
+  // The desktop manages Seal accounts for its whole fleet; a web client manages its own server.
+  const sealTarget = model.isWebClient ? model.settingsHostScope.target : LOCAL_RUNTIME_TARGET
   return (
     <SettingsSection
       id="accounts"
-      title={t('auto.components.settings.Settings.4198aae333', 'AI provider accounts')}
+      title={t('seal.accounts.section.title', 'Accounts')}
       description={t(
-        'auto.components.settings.Settings.21f09426ea',
-        'Optional. Orca works with your existing provider logins; add accounts only if you want Orca to help switch between them.'
+        'seal.accounts.section.description',
+        'The Claude, Codex and API-key accounts Seal runs agents on, how it swaps between them, and which machines hold each login.'
       )}
       searchEntries={navigation.getSectionSearchEntries('accounts')}
     >
-      {!view.isSectionMounted('accounts') ? null : !model.settingsHostScope.available ? (
-        <SettingsHostScopeUnavailableNotice />
-      ) : wslHostDistro ? (
-        // A WSL host's orcad has no account services; this desktop owns its distro's accounts.
-        <AccountsPane
-          key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
-          nativeAccounts={model.nativeAccounts}
-          onAccountLocationChange={model.releaseNativeAccounts}
-          settings={model.settings}
-          updateSettings={model.updateSettings}
-          updateSettingsOrThrow={model.updateSettingsOrThrow}
-          hostScope={LOCAL_SETTINGS_HOST_SCOPE}
-          wslHostDistro={wslHostDistro}
-          wslSupportedPlatform={terminal.localWslSupportedPlatform}
-          wslAvailable={terminal.localWindowsRuntimeCapabilities.wslAvailable}
-          wslDistros={terminal.localWindowsRuntimeCapabilities.wslDistros}
-          wslCapabilitiesLoading={terminal.localWindowsRuntimeCapabilities.isLoading}
-        />
-      ) : (
-        <AccountsPane
-          key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
-          nativeAccounts={model.nativeAccounts}
-          onAccountLocationChange={model.releaseNativeAccounts}
-          settings={model.settings}
-          updateSettings={model.updateSettings}
-          updateSettingsOrThrow={model.updateSettingsOrThrow}
-          hostScope={model.settingsHostScope}
-          wslSupportedPlatform={terminal.runtimeWslSupportedPlatform}
-          wslAvailable={terminal.windowsTerminalCapabilities.wslAvailable}
-          wslDistros={terminal.windowsTerminalCapabilities.wslDistros}
-          wslCapabilitiesLoading={terminal.windowsTerminalCapabilities.isLoading}
-          accountOwnerPlatform={terminal.windowsTerminalCapabilities.hostPlatform}
-        />
+      {!view.isSectionMounted('accounts') ? null : (
+        <div className="space-y-10">
+          {!matchesSettingsSearch(
+            model.settingsSearchQuery,
+            getSealAccountsSearchEntries()
+          ) ? null : (
+            <SealAccountsPage
+              key={getProviderAccountsOwnerKey(sealTarget)}
+              target={sealTarget}
+              claudeOptions={
+                <ClaudeAccountOptionRows
+                  settings={model.settings}
+                  updateSettings={model.updateSettings}
+                />
+              }
+            />
+          )}
+          <OtherProviderAccountsHeader
+            hostPicker={
+              !model.isWebClient &&
+              shouldShowSettingsHostScopePicker(
+                model.settingsHostScope,
+                model.runtimeEnvironments
+              ) ? (
+                <SettingsHostScopePicker
+                  scope={model.settingsHostScope}
+                  environments={model.runtimeEnvironments}
+                  onChoose={model.setSettingsHostChoice}
+                />
+              ) : null
+            }
+          />
+          {!model.settingsHostScope.available ? (
+            <SettingsHostScopeUnavailableNotice />
+          ) : (
+            <AccountsPane
+              key={wslHostDistro ?? getProviderAccountsOwnerKey(model.settingsHostScope.target)}
+              nativeAccounts={model.nativeAccounts}
+              onAccountLocationChange={model.releaseNativeAccounts}
+              settings={model.settings}
+              updateSettings={model.updateSettings}
+              updateSettingsOrThrow={model.updateSettingsOrThrow}
+              // A WSL host's orcad has no account services; this desktop owns its distro's accounts.
+              hostScope={wslHostDistro ? LOCAL_SETTINGS_HOST_SCOPE : model.settingsHostScope}
+              wslHostDistro={wslHostDistro}
+              wslSupportedPlatform={
+                wslHostDistro
+                  ? terminal.localWslSupportedPlatform
+                  : terminal.runtimeWslSupportedPlatform
+              }
+              wslAvailable={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).wslAvailable
+              }
+              wslDistros={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).wslDistros
+              }
+              wslCapabilitiesLoading={
+                (wslHostDistro
+                  ? terminal.localWindowsRuntimeCapabilities
+                  : terminal.windowsTerminalCapabilities
+                ).isLoading
+              }
+              accountOwnerPlatform={
+                wslHostDistro ? undefined : terminal.windowsTerminalCapabilities.hostPlatform
+              }
+            />
+          )}
+        </div>
       )}
     </SettingsSection>
   )
@@ -117,7 +172,7 @@ export function renderOrchestrationSettingsSection(
       title={t('auto.components.settings.Settings.00c3a7950d', 'Orchestration')}
       description={t(
         'auto.components.settings.Settings.475980f53d',
-        'Coordinate multiple coding agents through Orca.'
+        'Coordinate multiple coding agents through Seal.'
       )}
       searchEntries={navigation.getSectionSearchEntries('orchestration')}
     >
@@ -139,7 +194,7 @@ export function renderLinearSettingsSection(
       title={t('auto.components.settings.Settings.linearTitle', 'Linear')}
       description={t(
         'auto.components.settings.Settings.linearDescription',
-        'How Linear works in Orca, setup checklist, agent skill, and example prompts.'
+        'How Linear works in Seal, setup checklist, agent skill, and example prompts.'
       )}
       searchEntries={navigation.getSectionSearchEntries('linear')}
     >

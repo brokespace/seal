@@ -30,7 +30,7 @@ const SERVER: OrchestrationWorkerServer = {
 const PIN = remoteServerPin(SERVER)
 const PEER_RUN = 'run_on_b'
 
-describe('remote-owned records on the coordinating Orca', () => {
+describe('remote-owned records on the coordinating Seal', () => {
   let db: OrchestrationDb
   let run: RunRow
   let link: RemoteRunLinkRow

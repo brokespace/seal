@@ -21,6 +21,8 @@ const NODE_RUNTIME_INCLUDE = [
   'src/main/github/api/rate-limit.test.ts',
   // Electron main bridges streams with Node's implementation.
   'src/main/host/electron-http-client.test.ts',
+  // Drives both machine transports through Node child-process streams and node-pty, as Electron main does.
+  'src/main/machines/connection/machine-connection-parity.test.ts',
   'src/main/browser/extensions/native-messaging/browser-extension-native-host-process-backpressure.test.ts',
   'src/main/daemon/providers/lifecycle/testing/daemon-init-provider-installation.test.ts',
   'src/renderer/src/components/terminal-pane/pty-transport/input/pty-input-write-queue.test.ts',

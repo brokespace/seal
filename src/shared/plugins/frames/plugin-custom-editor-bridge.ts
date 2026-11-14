@@ -65,7 +65,7 @@ export const CUSTOM_EDITOR_CONFLICT: PluginError = pluginError(
 
 export const CUSTOM_EDITOR_TOO_LARGE: PluginError = pluginError(
   'too_large',
-  'The edit is larger than Orca accepts; the file keeps its last accepted edit.'
+  'The edit is larger than Seal accepts; the file keeps its last accepted edit.'
 )
 
 export type CustomEditorKeyChord = {

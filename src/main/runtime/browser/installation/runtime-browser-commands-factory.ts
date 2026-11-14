@@ -140,7 +140,7 @@ export function getRuntimeBrowserExtensions(): NonNullable<
   ) {
     throw new BrowserError(
       'browser_unavailable',
-      'Browser extension management requires the Orca desktop on this host; it is unavailable in headless or remote browser providers.'
+      'Browser extension management requires the Seal desktop on this host; it is unavailable in headless or remote browser providers.'
     )
   }
   return currentOptions.extensions

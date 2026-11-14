@@ -180,7 +180,7 @@ export const ORCHESTRATION_WORKER_TERMINAL_HANDLERS: Record<string, CommandHandl
     if (requiresCurrentListSemantics && !result.result.page) {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'The connected Orca runtime did not prove support for the requested worker-list flags, so no inventory was printed. Update the connected Orca runtime and retry.'
+        'The connected Seal runtime did not prove support for the requested worker-list flags, so no inventory was printed. Update the connected Seal runtime and retry.'
       )
     }
     if (!flags.has('full')) {

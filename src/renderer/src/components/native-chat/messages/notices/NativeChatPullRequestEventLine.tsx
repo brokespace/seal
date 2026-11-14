@@ -85,7 +85,7 @@ export function NativeChatPullRequestEventLine({
           settingSectionId={NATIVE_CHAT_CI_RESULT_LINES_SETTING_SECTION_ID}
           hiddenMessage={t(
             'components.native-chat.ciResultLine.hidden',
-            "Orca won't show CI result lines anymore"
+            "Seal won't show CI result lines anymore"
           )}
           ariaLabel={t('components.native-chat.ciResultLine.hide', "Don't show CI result lines")}
         />

@@ -17,7 +17,7 @@ const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '
 
 describe('normalizeTerminalTitle keeps the OMP/Pi session label', () => {
   it.each([
-    ['Orca extension (spinner leads)', ORCA_EXTENSION_WORKING],
+    ['Seal extension (spinner leads)', ORCA_EXTENSION_WORKING],
     ['OMP native (spinner is medial)', OMP_NATIVE_WORKING]
   ])('collapses every %s frame to one value without losing the label', (_name, build) => {
     const normalized = new Set(FRAMES.map((frame) => normalizeTerminalTitle(build(frame))))

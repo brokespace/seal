@@ -173,7 +173,7 @@ async function publisherOwnerWarning(pluginDir: string): Promise<string | undefi
       ? manifest.publisher
       : undefined
   return owner && typeof publisher === 'string' && owner !== publisher.toLowerCase()
-    ? `Orca lists this plugin under the repository owner "${owner}", and older Orca refuses it because publisher is "${publisher}"; remove publisher or set it to "${owner}"`
+    ? `Seal lists this plugin under the repository owner "${owner}", and older Seal refuses it because publisher is "${publisher}"; remove publisher or set it to "${owner}"`
     : undefined
 }
 

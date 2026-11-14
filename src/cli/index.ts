@@ -50,7 +50,7 @@ export async function main(
   if (argv.length === 1 && (argv[0] === '--version' || argv[0] === '-v')) {
     const version = readOrcaCliVersion()
     if (!version) {
-      process.stderr.write('Could not determine the Orca version for this build.\n')
+      process.stderr.write('Could not determine the Seal version for this build.\n')
       process.exitCode = 1
       return
     }
@@ -116,7 +116,7 @@ export async function main(
     ) {
       throw new RuntimeClientError(
         'invalid_argument',
-        '--on already names the server; drop --environment. Your own Orca reaches it.'
+        '--on already names the server; drop --environment. Your own Seal reaches it.'
       )
     }
     const ignoreRemoteSelection = onCallersOrca || ignoresRemoteSelection(parsed.commandPath)

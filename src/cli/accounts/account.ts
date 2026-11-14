@@ -43,6 +43,7 @@ import {
   formatDataAccounts
 } from './account-list-format'
 import { resolveOpenCodeLoginCommand } from './opencode-account-login-command'
+import { readSealAccountsTable } from './seal-account-table'
 import {
   listAgentAccounts,
   readAntigravityAccountsForList,
@@ -234,7 +235,7 @@ async function assertAccountImportSupported(
   if (!status.result.capabilities?.includes(capability)) {
     throw new RuntimeClientError(
       'incompatible_runtime',
-      'The running Orca runtime is too old to add accounts from the CLI. Update or restart Orca and try again.'
+      'The running Seal runtime is too old to add accounts from the CLI. Update or restart Seal and try again.'
     )
   }
 }
@@ -284,10 +285,15 @@ export const ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
     // accounts.list snapshot, and an older host simply has none to show.
     const antigravity = await readAntigravityAccountsForList(ctx)
     const result = antigravity ? { ...response.result, antigravity } : response.result
+    const sealTable = await readSealAccountsTable(ctx, ['claude', 'codex'])
     printResult({ ...response, result }, json, (snapshot) =>
       [
-        formatAccountsBlock('Claude', snapshot.claude),
-        formatAccountsBlock('Codex', snapshot.codex),
+        ...(sealTable
+          ? [sealTable]
+          : [
+              formatAccountsBlock('Claude', snapshot.claude),
+              formatAccountsBlock('Codex', snapshot.codex)
+            ]),
         ...(snapshot.opencode ? [formatDataAccounts('OpenCode', snapshot.opencode)] : []),
         ...(snapshot.devin ? [formatDataAccounts('Devin', snapshot.devin)] : []),
         ...(snapshot.antigravity ? [formatAntigravityAccounts(snapshot.antigravity)] : [])

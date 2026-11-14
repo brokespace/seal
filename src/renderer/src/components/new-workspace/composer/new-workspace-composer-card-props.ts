@@ -73,6 +73,15 @@ export type NewWorkspaceComposerCardProps = {
   allowSmartNameAddProject?: boolean
   smartNameRepoSwitchTarget?: 'project' | 'task-source'
   primaryActionLabel: string
+  /** The submit button's visible text when it is not a create. */
+  primaryActionText?: string
+  /** New agent session: the worktree fields stay hidden until its toggle is on. */
+  agentSession?: {
+    createWorktree: boolean
+    /** Absent for a target that always creates its workspace, which has no toggle. */
+    onCreateWorktreeChange?: (next: boolean) => void
+    accountField: React.ReactNode
+  }
   projectLabel?: string
   projectPlaceholder?: string
   emptyProjectMessage?: string

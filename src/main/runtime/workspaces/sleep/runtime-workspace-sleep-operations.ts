@@ -48,7 +48,7 @@ export abstract class RuntimeWorkspaceSleepOperations extends OrcaRuntimeWithRes
 
   removeRecipeWorkspace(params: RecipeWorkspaceRemoveParams): Promise<RecipeWorkspaceRemoval> {
     if (!this.recipeWorkspaceRemoval) {
-      throw new Error('This Orca host cannot remove recipe workspaces.')
+      throw new Error('This Seal host cannot remove recipe workspaces.')
     }
     return this.recipeWorkspaceRemoval.remove(params)
   }

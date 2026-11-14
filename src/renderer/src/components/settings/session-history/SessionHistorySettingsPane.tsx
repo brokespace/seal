@@ -187,7 +187,7 @@ export function SessionHistorySettingsPane({
           {isWebClient
             ? t(
                 'sessionHistory.settings.webUnsupported',
-                'Turn on session search from the Orca desktop app on that computer.'
+                'Turn on session search from the Seal desktop app on that computer.'
               )
             : t(
                 'sessionHistory.settings.computersConsent',

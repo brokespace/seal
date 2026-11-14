@@ -77,7 +77,7 @@ describe('a worker whose terminal is gone after a restart', () => {
     expect(db.getDispatchContextById(dispatchId)?.status).toBe('failed')
     const mail = db.getUnreadMessages(`run:${runId}`, ['escalation'])
     expect(mail.map((message) => message.subject)).toEqual(['Worker lost without reporting'])
-    expect(mail[0]?.body).toContain('is gone (its terminal was gone when Orca restarted)')
+    expect(mail[0]?.body).toContain('is gone (its terminal was gone when Seal restarted)')
     expect(mail[0]?.body).toContain('gh pr checks 596 --watch')
     // Recovery puts the Task back to ready, which --retry-of refuses.
     expect(db.getTask(taskId)?.status).toBe('ready')

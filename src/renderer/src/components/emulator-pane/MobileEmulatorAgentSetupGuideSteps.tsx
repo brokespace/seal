@@ -19,7 +19,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
       <p className="text-sm font-medium">
         {t(
           'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.21f5687c07',
-          'Orca CLI skill'
+          'Seal CLI skill'
         )}
       </p>
       <AgentSkillSetupPanel
@@ -28,11 +28,11 @@ export function MobileEmulatorAgentSetupGuideSteps({
         className="min-w-0"
         title={t(
           'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.21f5687c07',
-          'Orca CLI skill'
+          'Seal CLI skill'
         )}
         description={t(
           'auto.components.emulator.pane.MobileEmulatorAgentSetupGuideSteps.64fb057667',
-          'Teaches agents the orca emulator commands for this worktree.'
+          'Teaches agents the seal emulator commands for this worktree.'
         )}
         skillNames={[ORCA_CLI_SKILL_NAME]}
         target={setup.skillRuntime.bundledSkillTarget}

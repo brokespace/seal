@@ -286,7 +286,7 @@ export function formatPluginPanelCheck(check: PluginPanelCheck): string[] {
     `${head}failed`,
     ...check.issues.map(
       (issue) =>
-        `  ${issue.location ?? check.entry}: ${issue.kind === 'refused' ? 'Orca would refuse this render: ' : ''}${issue.message}`
+        `  ${issue.location ?? check.entry}: ${issue.kind === 'refused' ? 'Seal would refuse this render: ' : ''}${issue.message}`
     ),
     ...check.warnings.map((warning) => `  warning: ${warning}`)
   ]

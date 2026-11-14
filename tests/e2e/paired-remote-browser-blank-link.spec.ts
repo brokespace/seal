@@ -37,7 +37,7 @@ async function startLinkServer(): Promise<{ server: Server; origin: string }> {
   return { server, origin: `http://127.0.0.1:${address.port}` }
 }
 
-test('a target=_blank click in a streamed server page opens a new Orca tab', async ({
+test('a target=_blank click in a streamed server page opens a new Seal tab', async ({
   testRepoPath
 }, testInfo) => {
   // Boots a headless host and a paired client, then waits on two streamed tab opens.

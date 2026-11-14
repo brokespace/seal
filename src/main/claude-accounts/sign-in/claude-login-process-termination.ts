@@ -3,6 +3,7 @@ import type { ChildProcess } from 'node:child_process'
 import type { WindowsHostInteractiveLoginSpawn } from '../../../shared/windows-interactive-login-spawn'
 import { recordSelfInitiatedTreeKill } from '../../crash-reporting/process-exits/self-initiated-tree-kill-log'
 import { admitSelfInitiatedTreeKill } from '../../pty/process-retirement/own-chromium-tree-kill-guard'
+import { reapAccountCliProcess } from '../../provider-process/account-cli-process-reaper'
 
 const WINDOWS_TASKKILL_TIMEOUT_MS = 5_000
 
@@ -68,23 +69,13 @@ export function terminateClaudeProcess(
     return
   }
   if (child.pid) {
-    let signaledGroup = false
-    try {
-      process.kill(-child.pid)
-      signaledGroup = true
-    } catch {
-      // Fall back to the direct child when group signaling fails.
-    }
-    if (signaledGroup) {
-      recordSelfInitiatedTreeKill({
-        pid: child.pid,
-        site: 'claude-account-login-teardown',
-        scope: 'posix-process-group'
-      })
-      afterKill()
-      return
-    }
+    recordSelfInitiatedTreeKill({
+      pid: child.pid,
+      site: 'claude-account-login-teardown',
+      scope: 'posix-process-group'
+    })
   }
-  child.kill()
+  // SIGTERM first so Claude can release its config lock; SIGKILL if it is still there.
+  reapAccountCliProcess(child, { group: true })
   afterKill()
 }

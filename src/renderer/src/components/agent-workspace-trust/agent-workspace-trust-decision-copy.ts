@@ -14,7 +14,7 @@ export const agentWorkspaceTrustDecisionCopy = {
   settingDescription: () =>
     translate(
       'auto.components.agent-workspace-trust-decision.setting-description',
-      'Whether agents Orca starts in this repository\'s worktrees skip their "Do you trust this folder?" prompt and load the project\'s agent settings and hooks right away.'
+      'Whether agents Seal starts in this repository\'s worktrees skip their "Do you trust this folder?" prompt and load the project\'s agent settings and hooks right away.'
     ),
   settingGlobalOff: () =>
     translate(

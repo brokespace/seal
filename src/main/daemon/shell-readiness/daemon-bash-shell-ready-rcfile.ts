@@ -10,7 +10,7 @@ import {
 } from '../../pty/shell-startup/shell-templates'
 
 export function getDaemonBashShellReadyRcfileContent(): string {
-  return `# Orca daemon bash shell-ready wrapper
+  return `# Seal daemon bash shell-ready wrapper
 ${BASH_FEATURE_CHANNEL_BLOCK}
 ${SHELL_STARTUP_IDENTITY_MARKER_BLOCK}
 # Consume the feature channel before profiles so child processes cannot inherit the selection.

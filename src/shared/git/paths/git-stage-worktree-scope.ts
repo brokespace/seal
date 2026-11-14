@@ -11,7 +11,7 @@ export function parseGitStageWorktreeScope(value: unknown): GitStageWorktreeScop
 }
 
 export const GIT_STAGE_WORKTREE_SCOPE_UNSUPPORTED_MESSAGE =
-  'The Orca version running this workspace cannot stage changes beyond the ones listed, so nothing was staged. Update Orca on that host, or stage from a terminal.'
+  'The Seal version running this workspace cannot stage changes beyond the ones listed, so nothing was staged. Update Seal on that host, or stage from a terminal.'
 
 /** Older hosts strip scope and stage the empty filePaths list; require a receipt before reporting stage-all success. */
 export function requireGitStageWorktreeScopeReceipt(

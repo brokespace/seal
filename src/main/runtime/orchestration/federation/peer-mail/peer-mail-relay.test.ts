@@ -15,7 +15,7 @@ const SERVER: OrchestrationWorkerServer = {
 let relay: PeerMailRelay | null = null
 afterEach(() => relay?.stop())
 
-it("stops pulling from a server once this Orca's last link to it closes", async () => {
+it("stops pulling from a server once this Seal's last link to it closes", async () => {
   const db = new OrchestrationDb(':memory:')
   const run = db.createRun({
     objective: 'remote work',

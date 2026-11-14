@@ -83,7 +83,7 @@ export function buildBareOrcaDispatcherScript(launcherPath: string): string {
     '#!/usr/bin/env bash',
     `launcher=${quotePosixShellDoubleQuotedApostrophe(launcherPath)}`,
     'gone() {',
-    `  printf 'orca: Orca is no longer installed at %s. Remove %s to stop this message.\\n' "$launcher" "\${BASH_SOURCE[0]}" >&2`,
+    `  printf 'orca: Seal is no longer installed at %s. Remove %s to stop this message.\\n' "$launcher" "\${BASH_SOURCE[0]}" >&2`,
     '  exit 127',
     '}',
     // An agent's `orca …` must never start a talking screen reader, even once Orca is gone.

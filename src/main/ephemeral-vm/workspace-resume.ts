@@ -114,7 +114,7 @@ export async function resumeEphemeralVmWorkspace(
     // A pairing failure leaves the VM running: retrying the recipe's resume on it would fail.
     const pairingCode = getEphemeralVmRecipeResultPairingCode(result.runtime.recipeResult)
     if (!pairingCode) {
-      throw new Error('Resume result did not include an Orca Server pairing code.')
+      throw new Error('Resume result did not include a Seal Server pairing code.')
     }
     const { environment } = await applyResumedRuntimePairing({
       userDataPath,
@@ -169,7 +169,7 @@ export async function resumeEphemeralVmWorkspace(
 }
 
 export const RECIPE_VM_UNREACHABLE_WITHOUT_RESUME_MESSAGE =
-  "Orca hasn't reached this workspace's VM for several minutes, and its recipe has no resume " +
+  "Seal hasn't reached this workspace's VM for several minutes, and its recipe has no resume " +
   'step to restart it. If the VM is gone, delete this workspace and create it again.'
 
 /** A paired VM server Orca could not reach for minutes, that is not ready now and that the user

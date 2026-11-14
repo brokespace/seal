@@ -21,7 +21,7 @@ function host() {
   }
 }
 
-describe('declared plugin settings in Orca Settings', () => {
+describe('declared plugin settings in Seal Settings', () => {
   it('shows defaults until the person sets a value, then theirs, and tells the plugin', () => {
     const settingsHost = host()
     expect(readPluginDeclaredSettings(settingsHost, 'acme.todos')?.values).toEqual({

@@ -67,7 +67,7 @@ function removeCalls(exec: ExecMock): string[][] {
 }
 
 describe('cleanupUnusedWorktreePushTargetRemoteWithExec', () => {
-  it('keeps a remote Orca did not create (remoteCreated falsy)', async () => {
+  it('keeps a remote Seal did not create (remoteCreated falsy)', async () => {
     const exec = makeExec()
     await cleanupUnusedWorktreePushTargetRemoteWithExec(
       REPO_PATH,

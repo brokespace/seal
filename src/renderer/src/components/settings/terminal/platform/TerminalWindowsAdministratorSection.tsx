@@ -18,8 +18,6 @@ import { MANAGE_SESSIONS_SECTION_ID } from '../session-management/open-terminal-
 import { useAppStore } from '../../../../store/index'
 import { useTranslate } from '@/i18n/use-translate'
 import { isWebClientLocation } from '@/app-shell/platform/web-client-location'
-import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
-
 export function TerminalWindowsAdministratorSection(): React.JSX.Element {
   const t = useTranslate()
   const [administrator, setAdministrator] = useState<boolean | null | undefined>()
@@ -116,7 +114,7 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
           }
           description={t(
             'settings.terminal.windows.administratorScope',
-            'Permissions for the Orca app. Existing terminals may differ.'
+            'Permissions for the Seal app. Existing terminals may differ.'
           )}
           control={
             <DialogTrigger asChild>
@@ -177,7 +175,7 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
               <p className="text-xs text-muted-foreground">
                 {t(
                   'settings.terminal.windows.administratorPromptCancellation',
-                  'Canceling Windows’ prompt reopens Orca with its retained terminals. SSH and WSL permissions stay controlled on their hosts.'
+                  'Canceling Windows’ prompt reopens Seal with its retained terminals. SSH and WSL permissions stay controlled on their hosts.'
                 )}
               </p>
             </div>
@@ -187,18 +185,18 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
                 <li>
                   {t(
                     'settings.terminal.windows.closeLocalSessions',
-                    'Save your work, close all local terminal sessions, then exit Orca.'
+                    'Save your work, close all local terminal sessions, then exit Seal.'
                   )}
                 </li>
                 <li>
                   {administrator
                     ? t(
                         'settings.terminal.windows.launchStandard',
-                        'Open Orca normally from the Windows Start menu.'
+                        'Open Seal normally from the Windows Start menu.'
                       )
                     : t(
                         'settings.terminal.windows.launchAdministrator',
-                        'In the Windows Start menu, right-click Orca and choose Run as administrator. Approve the Windows prompt using your usual account.'
+                        'In the Windows Start menu, right-click Seal and choose Run as administrator. Approve the Windows prompt using your usual account.'
                       )}
                 </li>
               </ol>
@@ -214,7 +212,7 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
             <p role="alert" className="text-sm text-destructive">
               {t(
                 'settings.terminal.windows.administratorRestartFailed',
-                'Orca could not restart. Try again or use the manual instructions.'
+                'Seal could not restart. Try again or use the manual instructions.'
               )}
             </p>
           )}
@@ -231,19 +229,7 @@ export function TerminalWindowsAdministratorSection(): React.JSX.Element {
               >
                 {t('settings.terminal.windows.manualAdministratorHelp', 'Manual instructions')}
               </Button>
-            ) : (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={(event) =>
-                  openAppHttpLink('https://orca.dev/docs/terminal#windows-administrator-mode', {
-                    event
-                  })
-                }
-              >
-                {t('settings.terminal.windows.administratorDocumentation', 'Read the guide')}
-              </Button>
-            )}
+            ) : null}
             <DialogClose asChild>
               <Button variant="ghost" size="sm" ref={cancelRef} disabled={restarting}>
                 {showConfirmation

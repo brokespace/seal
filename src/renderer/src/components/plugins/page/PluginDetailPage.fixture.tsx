@@ -15,7 +15,7 @@ function communityListing(
 ): PluginMarketplaceHostListing {
   return {
     marketplaceSourceId: 'community',
-    marketplaceName: 'Orca Community Plugins',
+    marketplaceName: 'Seal Community Plugins',
     marketplaceOwner: 'stablyai',
     marketplaceCommit: 'c',
     pluginKey: `octocat.${id}`,
@@ -56,7 +56,7 @@ function entryFor(listing: PluginMarketplaceHostListing): PluginListEntry {
 const main = entryFor(
   communityListing(
     'monospace-themes',
-    'Monospace Light and Dark themes for Orca, with app colors, editor syntax highlighting, and matching terminal palettes.',
+    'Monospace Light and Dark themes for Seal, with app colors, editor syntax highlighting, and matching terminal palettes.',
     ['app-theme', 'terminal-theme']
   )
 )

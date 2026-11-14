@@ -235,6 +235,8 @@ export const WorktreeRemove = WorktreeSelector.extend({
   runHooks: OptionalBoolean,
   // Waive failed-hook refusal explicitly and record it; independent of force and whether hooks run (#19334).
   allowFailedArchiveHook: OptionalBoolean,
+  // The user confirmed deleting a Git-locked worktree; the host unlocks it first. Older hosts strip it and refuse.
+  unlockLockedWorktree: OptionalBoolean,
   // Reply with Git's outcome instead of on acceptance; older hosts strip it and answer `removing: true` (#35135).
   waitForBackgroundRemoval: OptionalBoolean,
   // The reviewed nested-delete plan; the host re-lists and refuses if it no longer matches.

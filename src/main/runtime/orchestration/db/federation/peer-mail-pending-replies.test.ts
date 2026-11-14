@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { OrchestrationDb } from '../orchestration-db'
 
-describe('a paired Orca pulling its replies', () => {
+describe('a paired Seal pulling its replies', () => {
   let db: OrchestrationDb
 
   beforeEach(() => {

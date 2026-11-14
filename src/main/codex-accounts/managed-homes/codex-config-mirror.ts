@@ -115,7 +115,7 @@ export class CodexConfigMirror {
 
     // A custom-provider pin would prevent the new OAuth credentials from being used.
     throw new Error(
-      `Orca cannot add a Codex OAuth account while ~/.codex/config.toml pins the custom provider ${JSON.stringify(modelProvider)}. Keep using the system-default account for this provider, or remove model_provider (or set it to "openai") before adding an OAuth account. Orca left your config unchanged.`
+      `Seal cannot add a Codex OAuth account while ~/.codex/config.toml pins the custom provider ${JSON.stringify(modelProvider)}. Keep using the system-default account for this provider, or remove model_provider (or set it to "openai") before adding an OAuth account. Seal left your config unchanged.`
     )
   }
 

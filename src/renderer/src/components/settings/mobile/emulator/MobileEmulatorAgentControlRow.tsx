@@ -26,7 +26,7 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
       )}
       description={t(
         'auto.components.settings.MobileEmulatorAgentControlRow.ff4b7e65d6',
-        'Let coding agents control the active mobile emulator with Orca CLI commands.'
+        'Let coding agents control the active mobile emulator with Seal CLI commands.'
       )}
     >
       <div className="divide-y divide-border">
@@ -35,11 +35,11 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
             variant="inline"
             title={t(
               'auto.components.settings.MobileEmulatorAgentControlRow.67e19ee03c',
-              'Orca CLI skill'
+              'Seal CLI skill'
             )}
             description={t(
               'auto.components.settings.MobileEmulatorAgentControlRow.d94ca6a623',
-              'Enables agents to use Orca CLI commands, including mobile emulator control.'
+              'Enables agents to use Seal CLI commands, including mobile emulator control.'
             )}
             skillNames={[ORCA_CLI_SKILL_NAME]}
             target={activeSkillRuntime.bundledSkillTarget}

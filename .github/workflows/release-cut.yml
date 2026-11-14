@@ -1468,8 +1468,8 @@ jobs:
               $list.Add($relative)
             }
 
-          if (-not ($list -contains 'Orca.exe')) {
-            throw 'Orca.exe was not staged for signing; unpacked layout changed?'
+          if (-not ($list -contains 'Seal.exe')) {
+            throw 'Seal.exe was not staged for signing; unpacked layout changed?'
           }
           if (-not ($list | Where-Object { $_ -like '*conpty_console_list.node' })) {
             throw 'node-pty conpty_console_list.node was not staged; this is the file from issue #7785.'
@@ -1481,7 +1481,7 @@ jobs:
           Write-Host "Skipped $($skipped.Count) already-signed files:"
           $skipped | ForEach-Object { Write-Host "  $_" }
 
-          # Include MDE-flagged old-uninstaller.exe/Uninstall Orca.exe in this approval without another wait.
+          # Include MDE-flagged old-uninstaller.exe/Uninstall Seal.exe in this approval without another wait.
           # Exclude it from win-unpacked’s copy-back list; the sign hook re-injects it during rebuild.
           $exportedUninstaller = Join-Path $env:RUNNER_TEMP 'uninstaller-signing\unsigned\orca-uninstaller.exe'
           if (-not (Test-Path -LiteralPath $exportedUninstaller)) {
@@ -1880,7 +1880,7 @@ jobs:
           }
           $signature.SignerCertificate | Format-List Subject,Issuer,NotBefore,NotAfter,Thumbprint
 
-      # #7785 evidence extracts every staged exe/dll/node from shipped installer, superseding #7170’s Orca.exe-only gate; unsigned assets block publish.
+      # #7785 evidence extracts every staged exe/dll/node from shipped installer, superseding #7170’s Seal.exe-only gate; unsigned assets block publish.
       - name: Verify Windows inner binary signatures
         if: matrix.platform == 'win' && github.run_attempt == 1
         shell: pwsh
@@ -1952,7 +1952,7 @@ jobs:
             # Verify the CLI even when a cached signed copy bypassed staging (#23383).
             # Always verify elevate.exe, even when cached signatures skipped staging; NSIS rebuild can clobber it.
             $targets = @(Get-Content 'inner-signing-list.txt')
-            foreach ($requiredTarget in @('Orca.exe', 'resources\bin\orca.exe', 'resources\bin\orca-agent-hook.exe')) {
+            foreach ($requiredTarget in @('Seal.exe', 'resources\bin\orca.exe', 'resources\bin\orca-agent-hook.exe')) {
               if ($targets -notcontains $requiredTarget) { $targets += $requiredTarget }
             }
             if ($targets -notcontains 'resources\elevate.exe') {
@@ -1971,13 +1971,13 @@ jobs:
                 $actual = (Get-FileHash -LiteralPath $signedUninstaller -Algorithm SHA256).Hash.ToLowerInvariant()
                 $signature = Get-AuthenticodeSignature -FilePath $signedUninstaller
                 $subject = if ($null -eq $signature.SignerCertificate) { '<none>' } else { $signature.SignerCertificate.Subject }
-                $line = "{0,-14} {1}  <{2}>" -f $signature.Status, 'Uninstall Orca.exe (embedded)', $subject
+                $line = "{0,-14} {1}  <{2}>" -f $signature.Status, 'Uninstall Seal.exe (embedded)', $subject
                 $report.Add($line)
                 Write-Host $line
                 if ($embedded -ne $actual) {
                   $failures.Add("the rebuilt installer embedded different uninstaller bytes than the signed one ($embedded vs $actual)")
                 } elseif ($signature.Status -ne 'Valid' -or $subject -notlike '*CN=SignPath Foundation*') {
-                  $failures.Add("not signed by SignPath Foundation: Uninstall Orca.exe ($($signature.Status), $subject)")
+                  $failures.Add("not signed by SignPath Foundation: Uninstall Seal.exe ($($signature.Status), $subject)")
                 }
               }
             } else {

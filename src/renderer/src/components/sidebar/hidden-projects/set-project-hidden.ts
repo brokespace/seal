@@ -37,7 +37,7 @@ async function undoHide(
   // Removed meanwhile: nothing is left to show, which is not a failure.
   if (rows.every((row) => row === undefined)) {
     toast.info(
-      translate('sidebar.hiddenProjects.undoGone', '{{name}} was removed from Orca.', { name })
+      translate('sidebar.hiddenProjects.undoGone', '{{name}} was removed from Seal.', { name })
     )
     return
   }
@@ -65,7 +65,7 @@ export async function setProjectHidden(
       hidden
         ? translate(
             'sidebar.hiddenProjects.hideFailed',
-            "Couldn't hide {{name}}. Its host may need an Orca update.",
+            "Couldn't hide {{name}}. Its host may need a Seal update.",
             { name }
           )
         : translate('sidebar.hiddenProjects.showFailed', "Couldn't show {{name}} again.", { name })

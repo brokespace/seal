@@ -74,7 +74,7 @@ function ProjectViewTab({
           ? view.name
           : t(
               'auto.components.github.project.ProjectViewWrapper.2edf5e7e77',
-              "{{value0}} — Orca doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
+              "{{value0}} — Seal doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
               { value0: view.name, value1: layoutLabel, value2: ORCA_FEATURE_REQUEST_URL }
             )
       }
@@ -96,7 +96,7 @@ function ProjectViewTab({
   }
   const message = t(
     'projectViews.unsupported.layoutNotSupported',
-    "Orca doesn't support {{layout}} project views yet.",
+    "Seal doesn't support {{layout}} project views yet.",
     { layout: layoutLabel }
   )
   return (
@@ -120,7 +120,7 @@ function ProjectViewTab({
             {message}{' '}
             {t(
               'projectViews.unsupported.switchLayout',
-              'Switch to a Table, Board, or Roadmap view to work with this project in Orca.'
+              'Switch to a Table, Board, or Roadmap view to work with this project in Seal.'
             )}
           </p>
           <Button

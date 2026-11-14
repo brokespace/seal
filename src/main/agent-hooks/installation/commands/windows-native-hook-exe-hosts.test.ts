@@ -130,7 +130,7 @@ describe.skipIf(process.platform !== 'win32' || !tempIsCmdSafe)('native agent ho
     return listener
   }
 
-  it('exits 0 without reading stdin outside an Orca pane or in a background job (#11549, #9236)', async () => {
+  it('exits 0 without reading stdin outside a Seal pane or in a background job (#11549, #9236)', async () => {
     const listener = await listen()
     for (const env of [
       hookEnv({}),

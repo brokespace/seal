@@ -20,6 +20,7 @@ import type {
 } from '../ipc/pty/host-env/types'
 import { registerDaemonManagementHandlers } from '../ipc/pty/pty-management'
 import { registerSshHandlers } from '../ipc/ssh/ssh'
+import { registerMachineHandlers } from '../machines/machine-ipc'
 import { browserManager } from '../browser/guest-lifecycle/manager/browser-manager'
 import {
   hasSystemMediaAccess,
@@ -132,6 +133,7 @@ export function attachMainWindowServices(
     void hydrateLocalPtyRegistryAtBoot(store)
   }
   registerSshHandlers(store, () => mainWindow, runtime)
+  registerMachineHandlers(() => mainWindow)
   registerDroppedPathPreparation(mainWindow, async () => {
     await ensureStructuredAgentSessionHostUnlessRefused(() =>
       runtime.ensureStructuredAgentSessionHost()

@@ -6,7 +6,7 @@ import { okFixture } from '../../runtime/fixtures/runtime-rpc-fixtures'
 
 const client = new RuntimeClient('/tmp/orca-older-runtime-run', 60_000, null, null)
 
-describe('an older Orca server that binds one Run per coordinator', () => {
+describe('an older Seal server that binds one Run per coordinator', () => {
   beforeEach(() => {
     vi.stubEnv('ORCA_CLI_COMMAND', 'orca')
     vi.stubEnv('ORCA_TERMINAL_HANDLE', '')
@@ -44,7 +44,7 @@ describe('an older Orca server that binds one Run per coordinator', () => {
     ).rejects.toMatchObject({
       code: 'incompatible_runtime',
       message:
-        'This Orca server is an older version and needs a Run first. Run `orca orchestration run-create --objective "<goal>" --json`, then run this worker-start again.'
+        'This Seal server is an older version and needs a Run first. Run `orca orchestration run-create --objective "<goal>" --json`, then run this worker-start again.'
     })
     expect(methods).not.toContain('orchestration.runCreate')
   })

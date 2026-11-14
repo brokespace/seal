@@ -59,7 +59,7 @@ function listRunGroupCandidates(args: {
         warnings.push({
           code: 'recipient_unreachable',
           recipient: to,
-          message: `${to} runs on a remote Orca server; group fan-out does not relay there. Send --to ${to} instead.`
+          message: `${to} runs on a remote Seal server; group fan-out does not relay there. Send --to ${to} instead.`
         })
       }
       return []

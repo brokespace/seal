@@ -58,7 +58,7 @@ export class BackendSupervisor {
         }
         const { sender, senderFrame } = event
         if (!senderFrame || senderFrame !== sender.mainFrame || !trustsBackendRenderer(sender)) {
-          throw new Error('This document cannot connect to Orca.')
+          throw new Error('This document cannot connect to Seal.')
         }
         const document = trackBackendDocument(
           this.documents,
@@ -68,7 +68,7 @@ export class BackendSupervisor {
           (retiredToken) => this.child?.postMessage({ type: 'retire', token: retiredToken })
         )
         if (!this.desiredRunning) {
-          throw new Error('Orca is shutting down.')
+          throw new Error('Seal is shutting down.')
         }
         const ready = purpose === 'recovery' ? this.ready : this.ensureReady(true)
         const child = this.child
@@ -84,7 +84,7 @@ export class BackendSupervisor {
           sender.isDestroyed() ||
           sender.mainFrame !== senderFrame
         ) {
-          throw new Error('The document was replaced before Orca connected.')
+          throw new Error('The document was replaced before Seal connected.')
         }
         const { port1, port2 } = new MessageChannelMain()
         child.postMessage({ type: 'client', token: document.token }, [port1])
@@ -149,7 +149,7 @@ export class BackendSupervisor {
 
   private async ensureReady(explicit: boolean): Promise<void> {
     if (!this.desiredRunning) {
-      throw new Error('Orca is shutting down.')
+      throw new Error('Seal is shutting down.')
     }
     if (explicit) {
       this.disposeFailedStartup?.()

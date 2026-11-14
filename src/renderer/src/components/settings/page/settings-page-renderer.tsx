@@ -49,8 +49,7 @@ import {
 import {
   renderDeveloperPermissionsSettingsSection,
   renderPrivacySettingsSection,
-  renderServersSettingsSection,
-  renderSshSettingsSection
+  renderMachinesSettingsSection
 } from './settings-remote-security-section-renderers'
 import {
   renderAdvancedSettingsSection,
@@ -121,6 +120,8 @@ export function renderSettingsPage(
           onClose={interactions.closeSettingsPageWithPromptGuard}
           hostPicker={
             !model.isWebClient &&
+            // Accounts are one fleet-wide list; its page shows the machines per account instead.
+            model.activeSectionId !== 'accounts' &&
             shouldShowSettingsHostScopePicker(
               model.settingsHostScope,
               model.runtimeEnvironments
@@ -188,8 +189,7 @@ export function renderSettingsPage(
                   {renderNotificationsSettingsSection(context, t)}
                   {renderShortcutsSettingsSection(context, t)}
                   {renderStatsSettingsSection(context, t)}
-                  {renderServersSettingsSection(context, t)}
-                  {renderSshSettingsSection(context, t)}
+                  {renderMachinesSettingsSection(context, t)}
                   {renderDeveloperPermissionsSettingsSection(context, t)}
                   {renderPrivacySettingsSection(context, t)}
                   {renderAdvancedSettingsSection(context, t)}

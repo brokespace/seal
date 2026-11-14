@@ -18,7 +18,7 @@ export function formatWorkspaceCreateError(error: unknown): WorkspaceCreateError
       title: translate('auto.lib.workspace.create.error.format.64555d0014', 'No base branch found'),
       message: translate(
         'auto.lib.workspace.create.error.format.37cf0bc991',
-        'Orca could not resolve a usable base ref for this workspace.'
+        'Seal could not resolve a usable base ref for this workspace.'
       ),
       help: translate(
         'components.toastFallbacks.missingBaseBranchHelp',

@@ -133,7 +133,7 @@ describe('WSL CLI PowerShell boundary', () => {
     'pins a non-ASCII app identity and the dev launcher env through Windows PowerShell 5.1',
     async () => {
       const root = await mkdtemp(join(tmpdir(), 'orca-wsl-managed-bridge-'))
-      const userDataPath = join(root, "张三's O\u2019Brien Orca")
+      const userDataPath = join(root, "张三's O\u2019Brien Seal")
       const cliEntryPath = join(root, 'cli \u2018entry\u2019.cjs')
       const bridgePath = join(root, 'orca-wsl-bridge.ps1')
       try {

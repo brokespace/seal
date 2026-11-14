@@ -9,17 +9,17 @@ Usage:
   node tests/tools/daemon-relocation-spike/spike.mjs --app-dir <win-unpacked> --work-dir <temp out> [--tier <t>]
 
 Required (launch mode):
-  --app-dir <path>    Path to a packaged win-unpacked build (contains Orca.exe)
+  --app-dir <path>    Path to a packaged win-unpacked build (contains Seal.exe)
   --work-dir <path>   Scratch dir for the copied host + logs (created, then removed)
 
 Options:
   --tier <t>          File-set tier to copy: "full" (default), "no-gpu", "minimal"
-                        full    = Orca.exe + icudtl.dat + both snapshot blobs +
+                        full    = Seal.exe + icudtl.dat + both snapshot blobs +
                                   ALL top-level *.dll + daemon bundle + node-pty
                         no-gpu  = full minus GPU/render DLLs (libEGL, libGLESv2,
                                   vk_swiftshader, vulkan-1, d3dcompiler_47);
                                   ffmpeg.dll kept
-                        minimal = Orca.exe + icudtl.dat + both snapshots +
+                        minimal = Seal.exe + icudtl.dat + both snapshots +
                                   daemon bundle + node-pty only (no top-level DLLs)
   --keep-work-dir     Leave --work-dir on disk after the run (for inspection)
   -h, --help          Show this help

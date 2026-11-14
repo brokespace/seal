@@ -32,7 +32,7 @@ function installManagedScript(): { scriptPath: string; cleanup: () => void } {
 }
 
 describe.runIf(process.platform !== 'win32')('jcode managed hook as jcode runs it', () => {
-  it('drains the gate stdin before exiting on a missing Orca environment', () => {
+  it('drains the gate stdin before exiting on a missing Seal environment', () => {
     const { scriptPath, cleanup } = installManagedScript()
     try {
       // Returning proves the gate drained input larger than the pipe buffer before exiting.

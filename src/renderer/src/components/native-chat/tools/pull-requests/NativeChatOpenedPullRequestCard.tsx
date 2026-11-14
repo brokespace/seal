@@ -244,7 +244,7 @@ export function NativeChatOpenedPullRequestCard({
           settingSectionId={NATIVE_CHAT_OPENED_PULL_REQUESTS_SETTING_SECTION_ID}
           hiddenMessage={t(
             'components.native-chat.openedPullRequests.hidden',
-            "Orca won't show opened pull requests anymore"
+            "Seal won't show opened pull requests anymore"
           )}
         />
       </div>

@@ -75,7 +75,7 @@ export function useMobileSessionCloseActions(scope: MobileSessionContentCreateAc
       code === 'runtime_unavailable'
         ? translate(
             'session.useCloseActions.closeFailedDesktopNotReady',
-            "Couldn't close the tab. Orca on your computer is still loading. Try again in a moment."
+            "Couldn't close the tab. Seal on your computer is still loading. Try again in a moment."
           )
         : translate('session.useCloseActions.closeFailed', "Couldn't close the tab. Try again."),
       2400

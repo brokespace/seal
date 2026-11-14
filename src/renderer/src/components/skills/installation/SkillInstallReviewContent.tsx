@@ -36,15 +36,15 @@ export function SkillShareLinkInputForm({
       }}
     >
       <Label htmlFor="skill-share-link">
-        {t('auto.components.skills.SkillInstallReviewContent.93eb0fe8c7', 'Orca skill link')}
+        {t('auto.components.skills.SkillInstallReviewContent.93eb0fe8c7', 'Seal skill link')}
       </Label>
       <Input
         id="skill-share-link"
         value={link}
         onChange={(event) => onLinkChange(event.target.value)}
         placeholder={t(
-          'auto.components.skills.SkillInstallReviewContent.66cff7a804',
-          'https://app.orca.dev/skills/share/…'
+          'auto.components.skills.SkillInstallReviewContent.protocolPlaceholder',
+          'orca://skills/share/…'
         )}
         className="font-mono text-xs"
         autoFocus
@@ -179,7 +179,7 @@ export function SkillInstallReview({
             )}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            {t('auto.components.skills.SkillInstallReviewContent.2a31912f14', 'Orca found')}{' '}
+            {t('auto.components.skills.SkillInstallReviewContent.2a31912f14', 'Seal found')}{' '}
             {result?.conflict?.kind ||
               destinationPreview?.currentState ||
               t('auto.components.skills.SkillInstallReviewContent.37d990b94c', 'changed')}{' '}

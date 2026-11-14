@@ -23,7 +23,7 @@ let execPath: string
 
 beforeEach(() => {
   installDir = mkdtempSync(join(os.tmpdir(), 'orca-renderer-runtime-files-'))
-  execPath = join(installDir, 'Orca.exe')
+  execPath = join(installDir, 'Seal.exe')
 })
 
 afterEach(() => {

@@ -5,7 +5,7 @@ import type { AutomationRunUsage } from './automations/history/automation-run'
 export const BACKEND_PORT_REQUEST = 'backend:connect'
 export const BACKEND_PORT_DELIVERY = 'backend:port'
 export const BACKEND_CONNECTION_CHANGED = 'backend:connectionChanged'
-export const BACKEND_UTILITY_PROCESS_NAME = 'Orca backend'
+export const BACKEND_UTILITY_PROCESS_NAME = 'Seal backend'
 
 export type BackendConnectionPurpose = 'demand' | 'recovery'
 export type BackendConnectionStatus = { connected: boolean; unavailable?: boolean }

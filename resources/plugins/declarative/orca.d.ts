@@ -103,9 +103,9 @@ declare module 'orca' {
     "settings.get": { params: Record<string, never> | undefined; result: { settings: Record<string, JsonValue> } }
     /** Writes one setting the plugin owns. */
     "settings.set": { params: { key: string; value: JsonValue }; result: { ok: true } }
-    /** Opens an http:, https: or mailto: URL in the default browser. Needs a click or key press in the frame; desktop app only. Orca asks the person before an http(s) host the plugin was not allowed; `opened` is false if they cancel. */
+    /** Opens an http:, https: or mailto: URL in the default browser. Needs a click or key press in the frame; desktop app only. Seal asks the person before an http(s) host the plugin was not allowed; `opened` is false if they cancel. */
     "shell.openExternal": { params: { url: string }; result: { opened: boolean; reason?: "cancelled" | "consent-unavailable" } }
-    /** Offers data (a string or ArrayBuffer, up to 64 MiB) in Orca's save dialog; the plugin never learns the path. Needs a click or key press in the frame; desktop app only. */
+    /** Offers data (a string or ArrayBuffer, up to 64 MiB) in Seal's save dialog; the plugin never learns the path. Needs a click or key press in the frame; desktop app only. */
     "files.saveAs": { params: { suggestedName?: string; mimeType?: string; data: string | ArrayBuffer }; result: { status: "saved" | "cancelled" } }
     /** Asks the plugin's own worker to run the handler it registered with `orca.panels.handle(name)`, starting the worker if needed; resolves with what the handler returned. `unknown_method` when no handler has that name. */
     "plugin.request": { params: { name: string; input?: JsonValue; timeoutMs?: number }; result: { output: JsonValue } }
@@ -113,7 +113,7 @@ declare module 'orca' {
     "agents.list": { params: Record<string, never> | undefined; result: { agents: { terminalId: string | null; title: string | null; agent: string | null; state: "working" | "blocked" | "waiting" | "done"; stateStartedAt: number; sessionId?: string | null; task?: { title: string } | null }[] } }
     /** Delivers a workspace, agent or editor event to this panel as `orca.on(event)`; needs the event's read capability, when it has one. The frame APIs call it for you. */
     "events.subscribe": { params: { event: "workspace.created" | "workspace.removed" | "agent.status.changed" | "workspace.changed" | "editor.typography.changed" }; result: { ok: true } }
-    /** The font family, size, weight, line height, ligatures, word wrap and minimap Orca's file editor uses now, editor zoom included. `editor.typography.changed` reports each change after. */
+    /** The font family, size, weight, line height, ligatures, word wrap and minimap Seal's file editor uses now, editor zoom included. `editor.typography.changed` reports each change after. */
     "editor.readTypography": { params: Record<string, never> | undefined; result: { fontFamily: string; cssFontFamily: string; fontSize: number; fontWeight: string; lineHeight: number; fontLigatures: boolean; wordWrap: "on" | "off"; minimap: boolean } }
   }
   /** Workspace and agent events `on(event)` delivers, with the read capability of their domain. */
@@ -122,11 +122,11 @@ declare module 'orca' {
     "workspace.created": { workspaceId: string; workspaceListId?: string; kind: "worktree" | "folder"; path: string; branch: string }
     /** A worktree workspace was removed; `workspaceListId` (host API 1.7) is the id `workspace.list` gave it. */
     "workspace.removed": { workspaceId: string; workspaceListId?: string; kind: "worktree" | "folder"; path: string }
-    /** An agent in a terminal pane changed status; `workspaceId` is null when Orca cannot tie the pane to a workspace, `workspaceListId` (host API 1.7) is the id `workspace.list` gives that workspace, `terminalId` names its terminal when Orca lists it, and `sessionId` (host API 1.8) is what `agent.resume` takes. */
+    /** An agent in a terminal pane changed status; `workspaceId` is null when Seal cannot tie the pane to a workspace, `workspaceListId` (host API 1.7) is the id `workspace.list` gives that workspace, `terminalId` names its terminal when Seal lists it, and `sessionId` (host API 1.8) is what `agent.resume` takes. */
     "agent.status.changed": { workspaceId: string | null; workspaceListId?: string; paneKey: string; terminalId?: string; title?: string; state: "working" | "blocked" | "waiting" | "done"; receivedAt: number; mainAgent?: { state: "working" | "blocked" | "waiting" | "done"; outcome?: "success" | "failure" | "cancellation" | "superseded" | "interruption" | "unconfirmed"; stateStartedAt: number }; sessionId?: string }
     /** The focused workspace changed, or its terminals were opened, closed or renamed; `context` is what `workspace.readContext` now answers, its `workspaceId` included. Each new subscriber first gets the current context. */
     "workspace.changed": { context: { workspaceId?: string; branch: string; displayName: string; terminals: { id: string; title?: string }[] } | null }
-    /** What Orca's file editor uses changed (a setting or the editor zoom); the payload is what `editor.readTypography` now answers. Needs no capability. */
+    /** What Seal's file editor uses changed (a setting or the editor zoom); the payload is what `editor.readTypography` now answers. Needs no capability. */
     "editor.typography.changed": { fontFamily: string; cssFontFamily: string; fontSize: number; fontWeight: string; lineHeight: number; fontLigatures: boolean; wordWrap: "on" | "off"; minimap: boolean }
   }
   // </generated>

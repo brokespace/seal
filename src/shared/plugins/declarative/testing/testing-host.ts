@@ -136,7 +136,7 @@ export function createMockHost(
   async function check(method: string, params: unknown, surface: Surface): Promise<unknown> {
     const spec = getPluginHostMethodSpec(method)
     if (!spec) {
-      return refuse('unknown_method', `${method} does not exist in this Orca`)
+      return refuse('unknown_method', `${method} does not exist in this Seal`)
     }
     if (!spec.surfaces.includes(surface)) {
       return refuse('not_permitted', `${method} is not available to ${surface}s`)

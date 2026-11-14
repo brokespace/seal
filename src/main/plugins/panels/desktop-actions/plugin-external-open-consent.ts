@@ -53,7 +53,7 @@ export async function confirmPluginExternalOpen(input: {
   }
   if (!canConfirmInWindow(input.window)) {
     input.log?.(
-      `shell.openExternal(${host}): not opened; Orca's window is hidden, so nobody can confirm it`
+      `shell.openExternal(${host}): not opened; Seal's window is hidden, so nobody can confirm it`
     )
     return 'unavailable'
   }

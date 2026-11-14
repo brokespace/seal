@@ -34,7 +34,7 @@ export function createNativeDiagnosticsOperations(
       const appEntries = await readHydratedConnectionLog(connectionLogStore, NATIVE_APP_LOG_ID)
       if (!host) {
         return {
-          report: `Orca Mobile connection diagnostics\nApp: Orca Mobile ${appVersion} · ${platform}\nNo paired hosts.\n\n${formatConnectionLogHistory(appEntries)}`,
+          report: `Seal Mobile connection diagnostics\nApp: Seal Mobile ${appVersion} · ${platform}\nNo paired hosts.\n\n${formatConnectionLogHistory(appEntries)}`,
           appVersion,
           platform,
           incidentId: null

@@ -17,6 +17,7 @@ import {
   type FeedbackSubmissionType,
   type FeedbackSubmitBody
 } from './feedback-request'
+import { isUpstreamFeedbackEnabled, SEAL_ISSUES_URL } from '../upstream-service-policy'
 
 export type {
   FeedbackDiagnosticBundleAttachment,
@@ -183,6 +184,13 @@ async function submitFeedbackWithDiagnosticBundle(
 export async function submitFeedback(
   args: InternalFeedbackSubmitArgs
 ): Promise<FeedbackSubmitResult> {
+  if (!isUpstreamFeedbackEnabled()) {
+    return {
+      ok: false,
+      status: null,
+      error: `Seal does not send feedback or crash reports upstream. Please open an issue at ${SEAL_ISSUES_URL}.`
+    }
+  }
   // Ignore discarded crash-lane images instead of rejecting over unused attachments.
   if (args.submissionType !== 'crash' && args.images !== undefined) {
     const imageError = validateFeedbackImages(args.images)

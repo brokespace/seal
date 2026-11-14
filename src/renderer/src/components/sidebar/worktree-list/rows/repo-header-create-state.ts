@@ -24,16 +24,12 @@ export function getRepoHeaderCreateState(
   if (!isGitRepoKind(input.repo)) {
     return {
       disabled: false,
-      tooltip: t(
-        'auto.components.sidebar.repo.header.create.state.62e71f2d5d',
-        'Create workspace for {{value0}}',
-        { value0: input.label }
-      ),
-      ariaLabel: t(
-        'auto.components.sidebar.repo.header.create.state.62e71f2d5d',
-        'Create workspace for {{value0}}',
-        { value0: input.label }
-      ),
+      tooltip: t('components.newAgentSession.openFor', 'New agent session in {{value0}}', {
+        value0: input.label
+      }),
+      ariaLabel: t('components.newAgentSession.openFor', 'New agent session in {{value0}}', {
+        value0: input.label
+      }),
       requiresSshReconnect: false
     }
   }
@@ -57,16 +53,12 @@ export function getRepoHeaderCreateState(
 
   return {
     disabled: false,
-    tooltip: t(
-      'auto.components.sidebar.repo.header.create.state.992cfbc44b',
-      'Create new worktree for {{value0}}',
-      { value0: input.label }
-    ),
-    ariaLabel: t(
-      'auto.components.sidebar.repo.header.create.state.992cfbc44b',
-      'Create new worktree for {{value0}}',
-      { value0: input.label }
-    ),
+    tooltip: t('components.newAgentSession.openFor', 'New agent session in {{value0}}', {
+      value0: input.label
+    }),
+    ariaLabel: t('components.newAgentSession.openFor', 'New agent session in {{value0}}', {
+      value0: input.label
+    }),
     requiresSshReconnect: false
   }
 }

@@ -50,7 +50,7 @@ const parentIssue: LinearIssue = {
     }),
     subIssue(105, 'Remove the legacy tour', { name: 'Done', type: 'completed', color: '#5e6ad2' }),
     subIssue(106, 'Localize the wizard', { name: 'Canceled', type: 'canceled', color: '#95a2b3' }),
-    subIssue(107, 'Sub-issue created in Orca before refresh')
+    subIssue(107, 'Sub-issue created in Seal before refresh')
   ]
 }
 

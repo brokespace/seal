@@ -42,8 +42,8 @@ export async function captureChrome(
       code: 'chrome_hidden',
       message:
         region === 'status-bar'
-          ? "Orca's status bar is hidden; turn on Appearance > Show Status Bar, then shoot again."
-          : "Orca's window has no area to capture."
+          ? "Seal's status bar is hidden; turn on Appearance > Show Status Bar, then shoot again."
+          : "Seal's window has no area to capture."
     }
   }
   const dark = document.documentElement.classList.contains('dark')

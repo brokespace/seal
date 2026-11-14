@@ -303,7 +303,11 @@ export function createRemoveWorktree(
             canForceDelete: forceDeleteReason !== null,
             forceDeleteReason,
             ...(canWaiveArchiveHook ? { canWaiveArchiveHook: true } : {}),
-            ...(locked ? { lockReason: getLockedWorktreeRemovalReason(error) } : {})
+            ...(locked ? { lockReason: getLockedWorktreeRemovalReason(error) } : {}),
+            // Why: a host too old to unlock refuses again; offering it twice would loop.
+            ...(locked && policy.options?.unlockLockedWorktree !== true
+              ? { canUnlockLockedWorktree: true }
+              : {})
           }
         }
       }))

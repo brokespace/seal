@@ -32,7 +32,7 @@ function needsUserAnswer(toolName: string, options: Parameters<CanUseTool>[2]): 
 function denySafeResult(toolUseId: string | undefined): PermissionResult {
   return {
     behavior: 'deny',
-    message: 'Orca could not decode this permission request.',
+    message: 'Seal could not decode this permission request.',
     ...(toolUseId ? { toolUseID: toolUseId } : {})
   }
 }

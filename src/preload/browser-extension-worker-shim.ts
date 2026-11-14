@@ -36,7 +36,7 @@ import {
 
 const FAILED: BrowserExtensionInvokeReply = {
   ok: false,
-  error: 'Orca could not handle this extension call'
+  error: 'Seal could not handle this extension call'
 }
 const RECONNECT_DELAY_MS = 1000
 

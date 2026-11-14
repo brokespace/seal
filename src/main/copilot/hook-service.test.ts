@@ -139,7 +139,7 @@ describe('CopilotHookService', () => {
     expect(hooks.UserPromptSubmit).toHaveLength(2)
   })
 
-  it('remove deletes only Orca-managed Copilot hooks', () => {
+  it('remove deletes only Seal-managed Copilot hooks', () => {
     const service = new CopilotHookService()
     service.install()
     const configPath = join(copilotHome, 'hooks', 'orca.json')

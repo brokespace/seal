@@ -55,7 +55,7 @@ function refusalMessage(
   return result.reason === 'unverifiable'
     ? translate(
         'terminal.severedDaemonBanner.unverifiable',
-        'Orca could not verify the terminal service process, so nothing was stopped.'
+        'Seal could not verify the terminal service process, so nothing was stopped.'
       )
     : translate(
         'terminal.severedDaemonBanner.alreadyReplaced',
@@ -146,7 +146,7 @@ export function SeveredTerminalDaemonBanner(): React.JSX.Element | null {
           <p className="text-xs leading-snug text-muted-foreground">
             {t(
               'terminal.severedDaemonBanner.body',
-              'The terminal service on this computer started from an AppImage that is no longer mounted. It still runs {{sessions}}, but it can crash at any moment. Until you restart it, new terminals are not kept when Orca quits.',
+              'The terminal service on this computer started from an AppImage that is no longer mounted. It still runs {{sessions}}, but it can crash at any moment. Until you restart it, new terminals are not kept when Seal quits.',
               { sessions: sessionsLabel(daemon.liveSessionCount, t) }
             )}
           </p>

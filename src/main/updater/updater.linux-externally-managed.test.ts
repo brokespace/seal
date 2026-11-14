@@ -38,7 +38,7 @@ vi.mock('../local-builds/local-build-switch', () => moduleFactories.localBuildSw
 vi.mock('../local-builds/local-build-feed-server', () => moduleFactories.localBuildFeedServer())
 
 const EXTERNALLY_MANAGED_MESSAGE =
-  'This copy of Orca is managed by your system package manager, so Orca cannot install updates itself. Update Orca through your distribution instead.'
+  'This copy of Seal is managed by your system package manager, so Seal cannot install updates itself. Update Seal through your distribution instead.'
 
 // Repackaged installs can retain the deb marker without a usable package manager.
 warmUpdaterModule()

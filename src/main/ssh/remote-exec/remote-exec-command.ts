@@ -21,7 +21,7 @@ const MAX_EXEC_OUTPUT_CHARS = 1024 * 1024
 
 type ExecCommandOptions = SshExecOptions & {
   timeoutMs?: number
-  // Log stderr separately: zero-exit probes can need diagnostics, but mixing them into stdout could match probe tokens or OpenSSH noise.
+  // Stderr arrives separately (on success or a non-zero exit): mixing it into stdout could match probe tokens or OpenSSH noise.
   onStderr?: (stderr: string) => void
   /** Streamed into the command's stdin, then EOF. A read error terminates the command. */
   stdin?: Readable
@@ -264,6 +264,9 @@ async function execCommandOnce(
         }
         settle(reject, terminationError)
       } else if (code !== 0) {
+        if (stderr && onStderr) {
+          onStderr(redactRelayInstallMarkerTokens(stderr))
+        }
         // System SSH stderr is local client noise; prefer the remote command's merged stdout.
         const payload = readPayload(stdout)
         const output = [stderr.trim(), payload.trim()].filter(Boolean).join('\n')

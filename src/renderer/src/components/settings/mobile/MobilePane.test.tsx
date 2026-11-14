@@ -18,7 +18,6 @@ type PairedDevicesProps = {
 }
 
 type StoreState = {
-  orcaProfileAuthStatus: { state: 'connected' | 'local' }
   settingsSearchQuery: string
   settings: {
     mobileAutoRestoreFitMs: number | null
@@ -28,7 +27,6 @@ type StoreState = {
   }
   updateSettings: (patch: Record<string, unknown>) => Promise<void>
   recordFeatureInteraction: (feature: string) => void
-  fetchOrcaProfileAuthStatus: () => Promise<unknown>
 }
 
 const mocks = vi.hoisted(() => {
@@ -69,7 +67,6 @@ vi.mock('../../mobile/pairing/mobile-pairing-device-polling', () => ({
 vi.mock('./pairing/MobilePairingSetupSection', () => ({
   MobilePairingSetupSection: (props: {
     connectionMode: MobilePairingConnectionMode
-    canGenerate?: boolean
     loading: boolean
     connectionPathControl: React.ReactNode
     networkInterfaces: { name: string; address: string }[]
@@ -85,7 +82,6 @@ vi.mock('./pairing/MobilePairingSetupSection', () => ({
   }) => (
     <div>
       <span data-testid="mode">{props.connectionMode}</span>
-      <span data-testid="can-generate">{String(props.canGenerate)}</span>
       <span data-testid="loading">{String(props.loading)}</span>
       <span data-testid="selected-address">{props.selectedAddress ?? 'none'}</span>
       <span data-testid="selected-address-is-custom">{String(props.selectedAddressIsCustom)}</span>
@@ -93,11 +89,7 @@ vi.mock('./pairing/MobilePairingSetupSection', () => ({
       <span data-testid="refreshing-addresses">{String(props.refreshingNetworkInterfaces)}</span>
       {props.connectionPathControl}
       {/* Mirror real generation gating so wedged loading state remains observable. */}
-      <button
-        type="button"
-        onClick={props.onGenerateQr}
-        disabled={props.loading || props.canGenerate === false}
-      >
+      <button type="button" onClick={props.onGenerateQr} disabled={props.loading}>
         Generate
       </button>
       <button type="button" onClick={() => props.onCustomAddressSelect('100.126.117.25:6768')}>
@@ -181,12 +173,10 @@ describe('MobilePane pairing connection mode', () => {
     mocks.revokeDevice.mockReset().mockResolvedValue({ revoked: true })
     updateSettings.mockReset().mockResolvedValue(undefined)
     mocks.holder.state = {
-      orcaProfileAuthStatus: { state: 'connected' },
       settingsSearchQuery: '',
       settings: { mobileAutoRestoreFitMs: null },
       updateSettings,
-      recordFeatureInteraction: vi.fn(),
-      fetchOrcaProfileAuthStatus: vi.fn().mockResolvedValue(null)
+      recordFeatureInteraction: vi.fn()
     }
     Object.defineProperty(window, 'api', {
       configurable: true,

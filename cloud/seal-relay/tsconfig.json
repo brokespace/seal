@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "lib": ["es2022"],
+    "types": ["@cloudflare/workers-types", "@types/node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@orca-cloud/relay-contract": ["../../cloud/packages/relay-contract/src/index.ts"],
+      "@orca-cloud/relay-contract/*": ["../../cloud/packages/relay-contract/src/*.ts"],
+      "@orca-cloud/push-contract/*": ["../../cloud/packages/push-contract/src/*.ts"],
+      "@orca-cloud/postgres-schema": ["../../cloud/packages/postgres-schema/src/index.ts"],
+      "@orca-cloud/postgres-schema/*": ["../../cloud/packages/postgres-schema/src/*.ts"],
+      "jose": ["./node_modules/jose"],
+      "tweetnacl": ["./node_modules/tweetnacl"],
+      "zod": ["./node_modules/zod"],
+      "pg": ["./node_modules/@types/pg"]
+    }
+  },
+  "include": ["src"]
+}

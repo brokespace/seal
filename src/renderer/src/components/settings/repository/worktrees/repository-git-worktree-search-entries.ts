@@ -14,7 +14,7 @@ function getRepositoryGitWorktreeSearchParts(repo: Repo, t: Translate = translat
       ),
       description: t(
         'auto.components.settings.repository.search.externalWorktreesDescription',
-        'Override whether worktrees created outside Orca appear for this project.'
+        'Override whether worktrees created outside Seal appear for this project.'
       ),
       keywords: [
         repo.displayName,

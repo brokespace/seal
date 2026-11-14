@@ -87,7 +87,7 @@ function addRuntimeHost(
     id: hostId,
     kind: 'runtime',
     label,
-    detail: 'Orca server',
+    detail: 'Seal server',
     health,
     ...(blockedReason ? { blockedReason } : {}),
     compatibility: compatibility ?? undefined,

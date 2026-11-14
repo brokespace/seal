@@ -117,8 +117,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pnpm exec electron-builder --config config/electron-builder.config.cjs --win --publish never
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path 'dist/win-unpacked/Orca.exe')) {
-            throw 'electron-builder --win did not produce dist/win-unpacked/Orca.exe'
+          if (-not (Test-Path 'dist/win-unpacked/Seal.exe')) {
+            throw 'electron-builder --win did not produce dist/win-unpacked/Seal.exe'
           }
           if (-not (Test-Path -LiteralPath $env:ORCA_WIN_UNINSTALLER_EXPORT_PATH)) {
             throw "The sign hook did not export the NSIS uninstaller to $env:ORCA_WIN_UNINSTALLER_EXPORT_PATH"
@@ -154,8 +154,8 @@ jobs:
               $list.Add($relative)
             }
 
-          if (-not ($list -contains 'Orca.exe')) {
-            throw 'Orca.exe was not staged for signing; unpacked layout changed?'
+          if (-not ($list -contains 'Seal.exe')) {
+            throw 'Seal.exe was not staged for signing; unpacked layout changed?'
           }
           if (-not ($list | Where-Object { $_ -like '*conpty_console_list.node' })) {
             throw 'node-pty conpty_console_list.node was not staged; this is the file from issue #7785.'
@@ -448,7 +448,7 @@ jobs:
             }
             # Poll app shutdown: oneClick can launch Orca after installer exit, leaving app/daemon handles in LOCALAPPDATA\Programs.
             for ($attempt = 0; $attempt -lt 20; $attempt++) {
-              $running = @(Get-Process -Name 'Orca' -ErrorAction SilentlyContinue)
+              $running = @(Get-Process -Name 'Seal' -ErrorAction SilentlyContinue)
               if ($running.Count -gt 0) {
                 $running | Stop-Process -Force -ErrorAction SilentlyContinue
                 break
@@ -458,7 +458,7 @@ jobs:
             Get-Process -Name 'orca-terminal-daemon' -ErrorAction SilentlyContinue |
               Stop-Process -Force -ErrorAction SilentlyContinue
             $installedUninstaller = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Recurse -File -Filter 'Uninstall*.exe' -ErrorAction SilentlyContinue |
-              Where-Object { $_.FullName -like '*Orca*' } |
+              Where-Object { $_.FullName -like '*Seal*' } |
               Select-Object -First 1
             if ($null -ne $installedUninstaller) { $installedVia = 'a silent install' }
           }
@@ -474,11 +474,11 @@ jobs:
                 $failures.Add("the uninstaller the installer ships is not the relayed one (via $installedVia): $shippedDigest vs $expectedDigest")
               }
             }
-            Test-Signature "shipped: Uninstall Orca.exe (via $installedVia)" $installedUninstaller.FullName
+            Test-Signature "shipped: Uninstall Seal.exe (via $installedVia)" $installedUninstaller.FullName
           }
 
           $targets = @(Get-Content 'inner-signing-list.txt')
-          foreach ($requiredTarget in @('Orca.exe', 'resources\bin\orca.exe', 'resources\bin\orca-agent-hook.exe')) {
+          foreach ($requiredTarget in @('Seal.exe', 'resources\bin\orca.exe', 'resources\bin\orca-agent-hook.exe')) {
             if ($targets -notcontains $requiredTarget) { $targets += $requiredTarget }
           }
           foreach ($relative in $targets) {

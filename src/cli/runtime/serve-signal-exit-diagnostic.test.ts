@@ -66,7 +66,7 @@ describe('superviseForegroundServe signal exits', () => {
     expect(child.kill).toHaveBeenCalledTimes(2)
 
     child.emit('exit', null, 'SIGKILL')
-    await expect(supervised).rejects.toThrow('Orca serve exited via SIGKILL.')
+    await expect(supervised).rejects.toThrow('Seal serve exited via SIGKILL.')
   })
 
   it('lets a shared-console Windows child handle Ctrl-C gracefully', async () => {

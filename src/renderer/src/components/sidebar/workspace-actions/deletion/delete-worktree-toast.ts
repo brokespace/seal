@@ -23,8 +23,29 @@ export function getDeleteWorktreeToastCopy(
   worktreeName: string,
   forceDeleteReason: WorktreeForceDeleteReason | null,
   error: string,
-  lockReason: string | null = null
+  lockReason: string | null = null,
+  canUnlock = false
 ): DeleteWorktreeToastCopy {
+  if (isLockedWorktreeRemovalError(error) && canUnlock) {
+    return {
+      title: translate(
+        'auto.components.sidebar.delete.worktree.toast.1d0fa5c0a5',
+        'Failed to delete workspace {{value0}}',
+        { value0: worktreeName }
+      ),
+      description: lockReason
+        ? translate(
+            'auto.components.sidebar.delete.worktree.toast.lockedReasonUnlockable',
+            'Git has this workspace locked ({{value0}}), so nothing was deleted. Unlock & Delete releases the lock and deletes it.',
+            { value0: lockReason }
+          )
+        : translate(
+            'auto.components.sidebar.delete.worktree.toast.lockedUnlockable',
+            'Git has this workspace locked, so nothing was deleted. Unlock & Delete releases the lock and deletes it.'
+          ),
+      isDestructive: false
+    }
+  }
   if (isLockedWorktreeRemovalError(error)) {
     return {
       title: translate(
@@ -72,11 +93,11 @@ export function getDeleteWorktreeToastCopy(
         description: isProvenLivePtyRemovalError(error)
           ? translate(
               'auto.components.sidebar.delete.worktree.toast.unstoppedPtyLive',
-              'This workspace still has running terminals, so Orca stopped before deleting any files. Force Delete will kill them and discard any uncommitted work they hold.'
+              'This workspace still has running terminals, so Seal stopped before deleting any files. Force Delete will kill them and discard any uncommitted work they hold.'
             )
           : translate(
               'auto.components.sidebar.delete.worktree.toast.unstoppedPty',
-              'Orca could not confirm every terminal in this workspace has exited, so it stopped before deleting any files. Use Force Delete to remove it anyway.'
+              'Seal could not confirm every terminal in this workspace has exited, so it stopped before deleting any files. Use Force Delete to remove it anyway.'
             ),
         isDestructive: false
       }
@@ -92,11 +113,11 @@ export function getDeleteWorktreeToastCopy(
         description: isProvenLiveStructuredSessionRemovalError(error)
           ? translate(
               'auto.components.sidebar.delete.worktree.toast.runningAgentSessionLive',
-              'This workspace still has running agent sessions that Orca could not close, so it stopped before deleting any files. Force Delete will discard any work they hold.'
+              'This workspace still has running agent sessions that Seal could not close, so it stopped before deleting any files. Force Delete will discard any work they hold.'
             )
           : translate(
               'auto.components.sidebar.delete.worktree.toast.runningAgentSession',
-              'Orca could not confirm every agent session in this workspace has closed, so it stopped before deleting any files. Use Force Delete to remove it anyway.'
+              'Seal could not confirm every agent session in this workspace has closed, so it stopped before deleting any files. Use Force Delete to remove it anyway.'
             ),
         isDestructive: false
       }
@@ -121,7 +142,7 @@ export function getDeleteWorktreeToastCopy(
         ),
         description: translate(
           'auto.components.sidebar.delete.worktree.toast.905fc8efac',
-          'Git already removed this workspace. Use Force Delete to clear it from Orca.'
+          'Git already removed this workspace. Use Force Delete to clear it from Seal.'
         ),
         isDestructive: false
       }

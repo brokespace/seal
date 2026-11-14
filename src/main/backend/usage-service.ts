@@ -107,7 +107,7 @@ export function createUsageService(host: UsageStoreHost) {
     privileged: boolean
   ): Promise<unknown> => {
     if (!accepting) {
-      throw new Error('Usage service is stopping. Try again after Orca reconnects.')
+      throw new Error('Usage service is stopping. Try again after Seal reconnects.')
     }
     if (privileged && method === 'claudeUsage:getAutomationRunUsage') {
       return stores.claudeUsage.getAutomationRunUsage(automationSchema.parse(params))

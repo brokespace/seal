@@ -2,7 +2,7 @@ import { QrCode } from 'lucide-react-native'
 import { Fragment, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import Animated from 'react-native-reanimated'
-import { OrcaLogo } from '../components/OrcaLogo'
+import { SealLogo } from '../components/SealLogo'
 import type { Translate } from '../i18n/mobile-i18n'
 import { useMobileTranslation } from '../i18n/use-mobile-translation'
 import { colors, radii, spacing } from '../theme/mobile-theme'
@@ -13,7 +13,7 @@ function onboardingSteps(t: Translate) {
   return [
     {
       id: 'open-desktop',
-      title: t('home.emptyState.openDesktopTitle', 'Open Orca desktop'),
+      title: t('home.emptyState.openDesktopTitle', 'Open Seal desktop'),
       desc: t(
         'home.emptyState.openDesktopDescription',
         'Go to Settings → Mobile and generate a pairing QR code.'
@@ -60,14 +60,14 @@ export function MobileHomeEmptyState(props: {
       ]}
     >
       <View style={styles.hero}>
-        <OrcaLogo size={44} />
+        <SealLogo size={44} />
         <Text style={styles.title} accessibilityRole="header">
           {t('home.emptyState.title', 'Connect your desktop')}
         </Text>
         <Text style={styles.body}>
           {t(
             'home.emptyState.description',
-            'Pair with Orca on your computer to check on your agents, jump into any terminal, and drive work from your phone.'
+            'Pair with Seal on your computer to check on your agents, jump into any terminal, and drive work from your phone.'
           )}
         </Text>
       </View>

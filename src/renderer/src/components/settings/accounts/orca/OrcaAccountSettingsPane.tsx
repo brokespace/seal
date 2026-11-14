@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Check, CircleUserRound, Files, Smartphone } from 'lucide-react'
+import { BookOpen, Check, CircleUserRound, Files } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useOrcaProfileAuthStatusRefresh } from '@/hooks/use-orca-profile-auth-status-refresh'
@@ -27,13 +27,13 @@ function accountStatusCopy(
   if (state === 'unconfigured') {
     return t(
       'auto.components.settings.orcaAccount.unavailable',
-      'Orca sign-in is unavailable in this build.'
+      'Seal sign-in is unavailable in this build.'
     )
   }
   if (state === 'local') {
     return t(
-      'auto.components.settings.orcaAccount.signedOut',
-      'Sign in to extend Orca with cloud features, including Artifacts and Orca Relay.'
+      'auto.components.settings.orcaAccount.signedOutNoRelay',
+      'Sign in to extend Orca with cloud features, including Artifacts.'
     )
   }
   return t('auto.components.settings.orcaAccount.checking', 'Checking account status…')
@@ -95,7 +95,7 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-medium">
                 {authStatus?.cloud?.displayName?.trim() ||
-                  t('auto.components.settings.orcaAccount.account', 'Orca account')}
+                  t('auto.components.settings.orcaAccount.account', 'Seal account')}
               </p>
               {connected ? (
                 <Badge variant="outline" className="text-[11px] text-muted-foreground">
@@ -122,7 +122,7 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
             <OrcaSignInButton size="sm" disabled={!canConnect}>
               {authStatus?.state === 'reconnect-required'
                 ? t('auto.components.settings.orcaAccount.signInAgain', 'Sign in again')
-                : t('auto.components.settings.orcaAccount.signIn', 'Sign in to Orca')}
+                : t('auto.components.settings.orcaAccount.signIn', 'Sign in to Seal')}
             </OrcaSignInButton>
           )}
           {connected ? null : <OrcaSignInWaitNotice className="basis-full" />}
@@ -140,29 +140,19 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
                 title={t('auto.components.settings.orcaAccount.artifactsTitle', 'Artifact sharing')}
                 description={t(
                   'auto.components.settings.orcaAccount.artifactsDescription',
-                  'Publish HTML and Markdown files, then manage every shared link from Orca.'
+                  'Publish HTML and Markdown files, then manage every shared link from Seal.'
                 )}
               />
               <AccountBenefit
-                icon={Smartphone}
+                icon={BookOpen}
                 className="md:pl-6"
-                title={t('auto.components.settings.orcaAccount.relayTitle', 'Orca Relay')}
+                title={t('auto.components.settings.orcaAccount.skillsTitle', 'Skill sharing')}
                 description={t(
-                  'auto.components.settings.orcaAccount.relayDescription',
-                  'Connect Orca Mobile to this desktop across cellular or any Wi-Fi.'
+                  'auto.components.settings.orcaAccount.skillsDescription',
+                  'Share one skill or a whole set behind an unlisted link, and install them on any machine you use.'
                 )}
               />
             </div>
-            {/* Put the third benefit below at full width so it cannot squeeze the existing pair. */}
-            <AccountBenefit
-              icon={BookOpen}
-              className="border-t border-border/60 pt-5"
-              title={t('auto.components.settings.orcaAccount.skillsTitle', 'Skill sharing')}
-              description={t(
-                'auto.components.settings.orcaAccount.skillsDescription',
-                'Share one skill or a whole set behind an unlisted link, and install them on any machine you use.'
-              )}
-            />
           </div>
         </div>
       </div>

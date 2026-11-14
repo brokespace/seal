@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Orca",
-    "slug": "orca-mobile",
+    "name": "Seal",
+    "slug": "seal-mobile",
     "version": "0.0.64",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "orca",
+    "scheme": ["seal", "orca"],
     "newArchEnabled": true,
     "locales": {
       "en": "./locales/en.json",
@@ -28,14 +28,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stably.orca.mobile",
+      "bundleIdentifier": "com.brokespace.seal.mobile",
       "buildNumber": "1",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
-        "NSLocalNetworkUsageDescription": "Orca connects to the desktop app on your LAN.",
-        "NSMicrophoneUsageDescription": "Allow Orca to use your microphone for voice dictation, transcribed on this phone or on your paired computer.",
-        "NSPhotoLibraryUsageDescription": "Allow Orca to attach photos from your library to a terminal session on your paired desktop.",
-        "NSPhotoLibraryAddUsageDescription": "Allow Orca to save images from your sessions to Photos.",
+        "NSLocalNetworkUsageDescription": "Seal connects to the desktop app on your LAN.",
+        "NSMicrophoneUsageDescription": "Allow Seal to use your microphone for voice dictation, transcribed on this phone or on your paired computer.",
+        "NSPhotoLibraryUsageDescription": "Allow Seal to attach photos from your library to a terminal session on your paired desktop.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Seal to save images from your sessions to Photos.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true,
           "NSExceptionDomains": {
@@ -90,7 +90,7 @@
       "allowBackup": false,
       "permissions": ["RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS"],
       "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"],
-      "package": "com.stably.orca.mobile",
+      "package": "com.brokespace.seal.mobile",
       "versionCode": 28,
       "googleServicesFile": "./google-services.json"
     },
@@ -129,15 +129,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Orca to use the camera for QR code scanning.",
-          "microphonePermission": "Allow Orca to use your microphone for voice dictation sent to your paired desktop for transcription.",
+          "cameraPermission": "Allow Seal to use the camera for QR code scanning.",
+          "microphonePermission": "Allow Seal to use your microphone for voice dictation sent to your paired desktop for transcription.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Orca to attach photos from your library to a terminal session on your paired desktop."
+          "photosPermission": "Allow Seal to attach photos from your library to a terminal session on your paired desktop."
         }
       ],
       [

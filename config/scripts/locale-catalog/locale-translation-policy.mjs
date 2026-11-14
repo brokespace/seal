@@ -61,6 +61,7 @@ export const NEVER_TRANSLATE_VALUES = new Set([
   'PostHog',
   'Qwen Code',
   'Rovo Dev',
+  'Seal',
   'Markdown',
   'VS Code',
   'Warp',
@@ -443,6 +444,13 @@ export function repairTranslatedValue({ key, enValue, localeValue, locale }) {
       .replaceAll('虎鲸', 'Orca')
       .replaceAll('逆戟鲸', 'Orca')
       .replaceAll('シャチ', 'Orca')
+  }
+
+  if (enValue === 'Seal' || enValue.startsWith('Seal ')) {
+    result = result
+      .replaceAll('海豹', 'Seal')
+      .replaceAll('アザラシ', 'Seal')
+      .replaceAll('물개', 'Seal')
   }
 
   if (enValue.includes('orca://')) {

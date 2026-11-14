@@ -62,7 +62,7 @@ describe('Kitty config import', () => {
     expect(unsupportedKeys).toEqual(['geninclude', 'map'])
   })
 
-  it('reports values Orca cannot represent instead of guessing', () => {
+  it('reports values Seal cannot represent instead of guessing', () => {
     const options = new Map([
       ['font_family', 'monospace'],
       ['cursor_text_color', 'background'],
