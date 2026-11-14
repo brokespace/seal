@@ -374,11 +374,13 @@ module.exports = {
     'out/main/orcad/orcad-local-serve-selection-entry.js',
     'out/main/orcad/instance-lock/orcad-stale-lock-reclaim.js',
     'out/main/orcad/profile-state/orcad-host-identity-reset.js',
+    'out/main/orcad/profile-state/paired-devices-under-lock.js',
     'out/main/chunks/**',
     'out/renderer/**',
     'out/mobile-web/**',
     'resources/**',
     'node_modules/ws/**',
+    'node_modules/@noble/hashes/**',
     'node_modules/tweetnacl/**',
     'node_modules/zod/**',
     'node_modules/yaml/**'
