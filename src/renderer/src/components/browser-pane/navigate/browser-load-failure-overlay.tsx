@@ -104,7 +104,7 @@ function formatCertificateProceedFailure(
   if (reason === 'request-failed') {
     return t(
       'browser.loadFailure.certificateProceedFailed',
-      'Seal could not approve this certificate request. Retry the page and try again.'
+      'Orca could not approve this certificate request. Retry the page and try again.'
     )
   }
   return t(

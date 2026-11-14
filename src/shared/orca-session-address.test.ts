@@ -4,7 +4,7 @@ import { testOrcaSessionId } from './orca-session-address-test-fixture'
 
 const SESSION_ID = testOrcaSessionId('0b7e4c2a-5f1d-4e8a-9c3b-2d6f8a1e4b70')
 
-describe('Seal session address', () => {
+describe('Orca session address', () => {
   it('reads only the addressed spelling when parsing an address', () => {
     // A bare id is what the columns store, not an address.
     expect(parseOrcaSessionAddress(SESSION_ID)).toBeNull()
@@ -35,7 +35,7 @@ describe('Seal session address', () => {
     ['a PTY terminal handle', 'term_4f2c9a1b-7d3e-4a5f-8b6c-9d0e1f2a3b4c'],
     ['a short PTY terminal handle', 'term_4f2c9a'],
     ['a structured-worker handle', 'structworker_4f2c9a1b-7d3e-4a5f-8b6c-9d0e1f2a3b4c']
-  ])('never treats %s as a Seal session id', (_label, handle) => {
+  ])('never treats %s as an Orca session id', (_label, handle) => {
     // Handles share the session-id charset, so the session-record predicate alone would accept them.
     expect(isOrcaSessionId(handle)).toBe(false)
     expect(parseOrcaSessionAddress(`orca_session_id:${handle}`)).toBeNull()

@@ -28,7 +28,7 @@ function requireRuntimePairing(
   ) {
     throw new OrchestrationError(
       'mail_requires_server_pairing',
-      'Agent mail between Seal servers comes only from a paired computer. Nothing was delivered.',
+      'Agent mail between Orca servers comes only from a paired computer. Nothing was delivered.',
       NOTHING_DELIVERED
     )
   }
@@ -144,7 +144,7 @@ export const ORCHESTRATION_PEER_MAIL_METHODS = [
         // Its mailbox is its Dispatch, which only its Run home writes to.
         throw new OrchestrationError(
           'invalid_argument',
-          `${to} is a worker for another Seal's Run; message it through that Run's coordinator. Nothing was delivered.`,
+          `${to} is a worker for another Orca's Run; message it through that Run's coordinator. Nothing was delivered.`,
           NOTHING_DELIVERED
         )
       }

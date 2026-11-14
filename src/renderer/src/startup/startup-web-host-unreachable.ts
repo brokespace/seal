@@ -45,10 +45,10 @@ export function announceWebHostUnreachableAtStartup(signal: AbortSignal): void {
   const reload = (): void => {
     void window.api.app.relaunch()
   }
-  toast.error(translate('auto.startup.webHostUnreachable.title', "Couldn't reach your Seal host"), {
+  toast.error(translate('auto.startup.webHostUnreachable.title', "Couldn't reach your Orca host"), {
     description: translate(
       'auto.startup.webHostUnreachable.description',
-      "Nothing was lost. Seal will reload when the host answers, and won't save changes until then."
+      "Nothing was lost. Orca will reload when the host answers, and won't save changes until then."
     ),
     duration: Infinity,
     dismissible: true,

@@ -52,7 +52,7 @@ export function createRuntimeEnvironmentsApi(): PreloadApi['runtimeEnvironments'
     addFromPairingCode: async ({ name, pairingCode }) => {
       const offer = parseWebPairingInput(pairingCode)
       if (!offer) {
-        throw new Error('Invalid Seal pairing code.')
+        throw new Error('Invalid Orca pairing code.')
       }
       const previousEnvironment = webRuntimeState.activeEnvironment
       closeActiveRuntimeClients()
@@ -129,7 +129,7 @@ export function createRuntimeEnvironmentsApi(): PreloadApi['runtimeEnvironments'
           kind: 'host-unreachable',
           message: translate(
             'auto.web.webPreloadApi.remotePairingUnreachable',
-            'Cannot reach Seal at {{endpoint}}.',
+            'Cannot reach Orca at {{endpoint}}.',
             { endpoint: parsed.value.displayEndpoint }
           )
         }
@@ -155,7 +155,7 @@ export function createRuntimeEnvironmentsApi(): PreloadApi['runtimeEnvironments'
           kind: 'environment-save-failed',
           message: translate(
             'auto.web.webPreloadApi.remotePairingSaveFailed',
-            'Seal verified the host but could not save it. Check browser storage and try again.'
+            'Orca verified the host but could not save it. Check browser storage and try again.'
           )
         }
       }

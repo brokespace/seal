@@ -39,7 +39,7 @@ export function assertWorkspaceCleanupAgentStopApproved(
     throw new Error(
       translate(
         'auto.store.slices.workspace.cleanup.hostUnresolved',
-        'Seal cannot tell which host owns this workspace. Refresh projects and review it again.'
+        'Orca cannot tell which host owns this workspace. Refresh projects and review it again.'
       )
     )
   }

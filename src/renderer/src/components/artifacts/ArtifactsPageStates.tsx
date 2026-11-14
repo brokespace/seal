@@ -39,7 +39,7 @@ export function ArtifactsPageAuthState({
       <div className="space-y-1">
         <h2 className="text-sm font-semibold">
           {needsReconnect
-            ? t('auto.components.artifacts.ArtifactsPage.reconnectHeading', 'Sign in to Seal again')
+            ? t('auto.components.artifacts.ArtifactsPage.reconnectHeading', 'Sign in to Orca again')
             : t(
                 'auto.components.artifacts.ArtifactsPage.shareSignInHeading',
                 'Sign in to share artifacts'
@@ -53,7 +53,7 @@ export function ArtifactsPageAuthState({
               )
             : t(
                 'auto.components.artifacts.ArtifactsPage.shareSignInCopy',
-                'Use your Seal account to upload artifacts and manage their public links.'
+                'Use your Orca account to upload artifacts and manage their public links.'
               )}
         </p>
       </div>
@@ -62,7 +62,7 @@ export function ArtifactsPageAuthState({
           <OrcaSignInButton size="sm">
             {needsReconnect
               ? t('auto.components.artifacts.ArtifactsPage.signInAgainAction', 'Sign in again')
-              : t('auto.components.artifacts.ArtifactsPage.signIn', 'Sign in to Seal')}
+              : t('auto.components.artifacts.ArtifactsPage.signIn', 'Sign in to Orca')}
           </OrcaSignInButton>
           <OrcaSignInWaitNotice className="justify-center" />
         </>
@@ -71,7 +71,7 @@ export function ArtifactsPageAuthState({
           <p className="max-w-sm text-xs leading-5 text-muted-foreground">
             {t(
               'auto.components.artifacts.ArtifactsPage.unconfiguredCopy',
-              'Seal account sign-in is not configured on this machine yet.'
+              'Orca account sign-in is not configured on this machine yet.'
             )}
           </p>
           <Button variant="outline" size="sm" onClick={onOpenAccountSettings}>

@@ -80,7 +80,7 @@ describe('extension load directories', () => {
     expect(readFileSync(join(directory, 'orca-extension-api.js'), 'utf8')).toBe('/* shim v2 */')
   })
 
-  it('loads an unpacked folder from a stable Seal copy and never touches the folder', async () => {
+  it('loads an unpacked folder from a stable Orca copy and never touches the folder', async () => {
     const source = join(mocks.userData, 'dev', 'my-extension')
     writeExtension(source, {
       manifest_version: 3,

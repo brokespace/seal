@@ -37,11 +37,11 @@ export async function presentProfileStateStartupRecoveryDialog(
   const nextStep = deps.recoveryCommand
     ? deps.translate(
         'profileState.startupRecovery.copyCommandDetail',
-        'Copy the recovery command, then run it after Seal closes.'
+        'Copy the recovery command, then run it after Orca closes.'
       )
     : deps.translate(
         'profileState.startupRecovery.quitDetail',
-        'Quit Seal and resolve the profile-state authority before retrying.'
+        'Quit Orca and resolve the profile-state authority before retrying.'
       )
   const detail = `${deps.message}\n\n${nextStep}`
   const { response } = await deps.showMessageBox({
@@ -51,11 +51,11 @@ export async function presentProfileStateStartupRecoveryDialog(
     cancelId: buttons.length - 1,
     title: deps.translate(
       'profileState.startupRecovery.title',
-      'Seal profile state cannot be opened'
+      'Orca profile state cannot be opened'
     ),
     message: deps.translate(
       'profileState.startupRecovery.message',
-      'Seal cannot safely open this profile.'
+      'Orca cannot safely open this profile.'
     ),
     detail
   })
@@ -131,12 +131,12 @@ export async function chooseProfileStateCopy(
     detail: [
       deps.translate(
         'profileState.copyChoice.cause',
-        'This usually happens after opening the profile in an older version of Seal.'
+        'This usually happens after opening the profile in an older version of Orca.'
       ),
       '',
       deps.translate(
         'profileState.copyChoice.sqliteOption',
-        'SQLite: what this version of Seal saved. Changes made in the older version are discarded.'
+        'SQLite: what this version of Orca saved. Changes made in the older version are discarded.'
       ) + savedAt(deps.sqliteSavedAt),
       '',
       deps.translate(
@@ -146,7 +146,7 @@ export async function chooseProfileStateCopy(
       '',
       deps.translate(
         'profileState.copyChoice.archiveNote',
-        'Seal archives both copies before switching, then restarts.'
+        'Orca archives both copies before switching, then restarts.'
       )
     ].join('\n')
   })
@@ -195,14 +195,14 @@ export async function chooseProfileStateRepair(
         ? [
             deps.translate(
               'profileState.repairChoice.projectsForgotten',
-              'Seal will forget your projects and their workspace details. Files on disk are not touched.'
+              'Orca will forget your projects and their workspace details. Files on disk are not touched.'
             ),
             ''
           ]
         : [
             deps.translate(
               'profileState.repairChoice.newerProjectsRemoved',
-              'Projects added after that backup will be removed from Seal, along with their workspace details. Files on disk are not touched.'
+              'Projects added after that backup will be removed from Orca, along with their workspace details. Files on disk are not touched.'
             ),
             ''
           ]
@@ -231,7 +231,7 @@ export async function chooseProfileStateRepair(
       ...projectNote,
       deps.translate(
         'profileState.repairChoice.damagedCopyKept',
-        'Seal keeps a copy of the damaged file in its data folder, then restarts.'
+        'Orca keeps a copy of the damaged file in its data folder, then restarts.'
       )
     ].join('\n')
   })

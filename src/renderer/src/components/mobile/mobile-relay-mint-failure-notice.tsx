@@ -42,21 +42,21 @@ export function MobileRelayMintFailureNotice({
   }, [busy])
   const visibleBusy = busy && showBusyFeedback
   const title = visibleBusy
-    ? t('auto.components.mobile.MobileRelayMintFailureNotice.retryingTitle', 'Retrying Seal Relay…')
+    ? t('auto.components.mobile.MobileRelayMintFailureNotice.retryingTitle', 'Retrying Orca Relay…')
     : providerMissing
       ? t(
           'auto.components.mobile.MobileRelayMintFailureNotice.unavailableTitle',
-          'Seal Relay isn’t available on this desktop.'
+          'Orca Relay isn’t available on this desktop.'
         )
       : reconnectRequired
         ? t(
             'auto.components.mobile.MobileRelayMintFailureNotice.reconnectTitle',
-            'Your Seal account session expired.'
+            'Your Orca account session expired.'
           )
         : notEntitled
           ? t(
               'auto.components.mobile.MobileRelayMintFailureNotice.notEntitledTitle',
-              'Seal Relay isn’t included with this Seal account.'
+              'Orca Relay isn’t included with this Orca account.'
             )
           : t(
               'auto.components.mobile.MobileRelayMintFailureNotice.title',
@@ -75,7 +75,7 @@ export function MobileRelayMintFailureNotice({
       : reconnectRequired
         ? t(
             'auto.components.mobile.MobileRelayMintFailureNotice.reconnectBody',
-            'Sign in again to use Seal Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.'
+            'Sign in again to use Orca Relay, or use LAN to pair over Tailscale or the same Wi‑Fi.'
           )
         : notEntitled
           ? t(
@@ -85,7 +85,7 @@ export function MobileRelayMintFailureNotice({
           : failure.code === 'relay_rate_limited'
             ? t(
                 'auto.components.mobile.MobileRelayMintFailureNotice.rateLimitedBody',
-                'Seal Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
+                'Orca Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
               )
             : failure.code === 'relay_clock_skew' && failure.clockOffsetMs !== undefined
               ? relayClockSkewMessage(failure.clockOffsetMs, t)

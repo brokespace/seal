@@ -136,7 +136,7 @@ async function refreshPlan(force: boolean): Promise<void> {
       publishSnapshot({
         ...IDLE,
         targetKey,
-        error: cause instanceof Error ? cause.message : 'Could not inspect Seal skills.'
+        error: cause instanceof Error ? cause.message : 'Could not inspect Orca skills.'
       })
     }
   }

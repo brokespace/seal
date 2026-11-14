@@ -12,33 +12,33 @@ const specs: CommandSpec[] = [
     ],
     destructive: true,
     summary: 'Remove a worktree',
-    usage: 'seal worktree rm',
+    usage: 'orca worktree rm',
     allowedFlags: []
   },
   {
     path: ['worktree', 'list'],
     summary: 'List worktrees',
-    usage: 'seal worktree list',
+    usage: 'orca worktree list',
     allowedFlags: []
   },
   {
     path: ['terminal', 'send'],
     summary: 'Send input',
-    usage: 'seal terminal send',
+    usage: 'orca terminal send',
     allowedFlags: []
   },
   {
     path: ['emulator', 'kill'],
     destructive: true,
     summary: 'Kill the emulator',
-    usage: 'seal emulator kill',
+    usage: 'orca emulator kill',
     allowedFlags: []
   },
   {
     path: ['terminal', 'stop'],
     hidden: true,
     summary: 'Deprecated terminal stop',
-    usage: 'seal terminal stop',
+    usage: 'orca terminal stop',
     allowedFlags: []
   }
 ]

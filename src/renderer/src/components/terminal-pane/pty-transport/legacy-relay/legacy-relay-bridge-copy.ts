@@ -4,5 +4,5 @@ import { translate } from '@/i18n/i18n'
 export const legacyRelayBridgeUnreachableMessage = (): string =>
   translate(
     'auto.components.terminal.pane.legacyRelayBridge.unreachable',
-    'This terminal is still running on the host under an older version of Seal. Reconnecting to it…'
+    'This terminal is still running on the host under an older version of Orca. Reconnecting to it…'
   )

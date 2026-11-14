@@ -58,7 +58,7 @@ export function getFolderWorkspacePathStatusDescription(
   if (!isHandledPathStatusReason(status.reason)) {
     return t(
       'auto.lib.folderWorkspacePathStatus.description.unrecognized',
-      'Seal cannot use {{path}}, and this version does not recognize the reason. Update Seal to see the details.',
+      'Orca cannot use {{path}}, and this version does not recognize the reason. Update Orca to see the details.',
       { path: status.path }
     )
   }
@@ -66,7 +66,7 @@ export function getFolderWorkspacePathStatusDescription(
     case 'missing':
       return t(
         'auto.lib.folderWorkspacePathStatus.description.missing',
-        'Seal cannot find {{path}}. Remove and re-import this folder workspace.',
+        'Orca cannot find {{path}}. Remove and re-import this folder workspace.',
         { path: status.path }
       )
     case 'not-directory':
@@ -78,13 +78,13 @@ export function getFolderWorkspacePathStatusDescription(
     case 'ambiguous-connection':
       return t(
         'auto.lib.folderWorkspacePathStatus.description.ambiguousConnection',
-        'Seal cannot tell which SSH connection owns this folder scope.'
+        'Orca cannot tell which SSH connection owns this folder scope.'
       )
     case undefined:
     case 'unavailable':
       return t(
         'auto.lib.folderWorkspacePathStatus.description.unavailable',
-        'Seal cannot verify this folder right now. Check the runtime or SSH connection and try again.'
+        'Orca cannot verify this folder right now. Check the runtime or SSH connection and try again.'
       )
   }
 }
@@ -116,7 +116,7 @@ export function getFolderWorkspacePathErrorCopy(message: string): {
         ),
         description: translate(
           'auto.lib.folderWorkspacePathStatus.createError.description.missing',
-          'Seal cannot find {{path}}. Remove and re-import the folder.',
+          'Orca cannot find {{path}}. Remove and re-import the folder.',
           { path }
         )
       }
@@ -140,7 +140,7 @@ export function getFolderWorkspacePathErrorCopy(message: string): {
         ),
         description: translate(
           'auto.lib.folderWorkspacePathStatus.createError.description.ambiguousConnection',
-          'Seal cannot tell which SSH connection owns this folder scope.'
+          'Orca cannot tell which SSH connection owns this folder scope.'
         )
       }
     default:
@@ -151,7 +151,7 @@ export function getFolderWorkspacePathErrorCopy(message: string): {
         ),
         description: translate(
           'auto.lib.folderWorkspacePathStatus.createError.description.unavailable',
-          'Seal cannot verify this folder right now. Check the runtime or SSH connection and try again.'
+          'Orca cannot verify this folder right now. Check the runtime or SSH connection and try again.'
         )
       }
   }

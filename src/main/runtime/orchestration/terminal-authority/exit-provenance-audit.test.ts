@@ -139,7 +139,7 @@ describe('STA-4603/STA-4536 exit provenance', () => {
     expect(observe(db, ctx.id).termination_reason).toBe('operator_close')
     const mail = escalations(db, ctx.runId)
     expect(mail.map((message) => message.subject)).toEqual(['Worker lost without reporting'])
-    expect(mail[0]?.body).toContain('is gone (it was closed in Seal)')
+    expect(mail[0]?.body).toContain('is gone (it was closed in Orca)')
     expect(mail[0]?.body).toContain('Waiting for CI on the pull request')
     expect(mail[0]?.body).not.toContain('still open')
   })

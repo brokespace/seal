@@ -53,7 +53,7 @@ export function computerUseErrorRecoveryData(
     case 'provider_incompatible':
       return recoverWith(
         'Run `orca computer capabilities --json` and verify the local provider supports the requested operation.',
-        'Update Seal or use a supported platform/provider path before retrying.'
+        'Update Orca or use a supported platform/provider path before retrying.'
       )
     case 'unsupported_capability':
       return recoverWith(
@@ -63,8 +63,8 @@ export function computerUseErrorRecoveryData(
     case 'permission_denied':
       if (message?.includes('target_elevated')) {
         return recoverWith(
-          'Do not retry: Windows blocks input from a non-administrator Seal to an app running as administrator.',
-          'Ask the user to handle this window, or to restart Seal as administrator if they want it to control elevated apps.'
+          'Do not retry: Windows blocks input from a non-administrator Orca to an app running as administrator.',
+          'Ask the user to handle this window, or to restart Orca as administrator if they want it to control elevated apps.'
         )
       }
       return recoverWith(
@@ -140,7 +140,7 @@ export function computerUseErrorRecoveryData(
       // Why: an Orca server installed before it bundled computer use reports only this exit (#31777).
       if (message?.startsWith('computer sidecar exited with code')) {
         return recoverWith(
-          'If this targets a Seal server (`orca serve`, SSH or WSL), its install may not include computer use: update or reprovision the server, then retry.',
+          'If this targets an Orca server (`orca serve`, SSH or WSL), its install may not include computer use: update or reprovision the server, then retry.',
           'Run `orca computer capabilities --json` to confirm the provider is available before retrying.'
         )
       }

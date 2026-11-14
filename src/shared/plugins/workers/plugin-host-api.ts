@@ -264,7 +264,7 @@ export const PLUGIN_HOST_API = {
   }),
   'shell.openExternal': spec({
     summary:
-      'Opens an http:, https: or mailto: URL in the default browser. Needs a click or key press in the frame; desktop app only. Seal asks the person before an http(s) host the plugin was not allowed; `opened` is false if they cancel.',
+      'Opens an http:, https: or mailto: URL in the default browser. Needs a click or key press in the frame; desktop app only. Orca asks the person before an http(s) host the plugin was not allowed; `opened` is false if they cancel.',
     since: 1,
     scope: 'desktop',
     capability: null,
@@ -276,7 +276,7 @@ export const PLUGIN_HOST_API = {
   }),
   'files.saveAs': spec({
     summary:
-      "Offers data (a string or ArrayBuffer, up to 64 MiB) in Seal's save dialog; the plugin never learns the path. Needs a click or key press in the frame; desktop app only.",
+      "Offers data (a string or ArrayBuffer, up to 64 MiB) in Orca's save dialog; the plugin never learns the path. Needs a click or key press in the frame; desktop app only.",
     since: 1,
     scope: 'desktop',
     capability: null,

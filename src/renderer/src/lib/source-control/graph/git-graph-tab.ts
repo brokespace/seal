@@ -112,7 +112,7 @@ export function gitGraphUpdateMessage(worktreeId: string, t: Translate = transla
     scope?.target.kind === 'environment'
       ? state.runtimeEnvironments?.find((entry) => entry.id === environmentId)
       : undefined
-  return t('gitGraph.updateHost', 'Update Seal on {{host}} to open the Git Graph', {
+  return t('gitGraph.updateHost', 'Update Orca on {{host}} to open the Git Graph', {
     host: environment?.name ?? scope?.route.executionHostId ?? ''
   })
 }

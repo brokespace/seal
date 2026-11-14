@@ -259,7 +259,7 @@ export function SidebarFeedbackDialog({
           <DialogDescription className="text-xs">
             {t(
               'auto.components.sidebar.SidebarFeedbackDialog.a828fa4aee',
-              "Share what's working, what's broken, or what Seal should do next."
+              "Share what's working, what's broken, or what Orca should do next."
             )}
           </DialogDescription>
         </DialogHeader>

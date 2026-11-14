@@ -90,7 +90,7 @@ describe('commands about a worker a paired server owns', () => {
       await whileSending()
       const answer = answers[method]?.shift() ?? 'unreachable'
       if (answer === 'unreachable') {
-        throw Object.assign(new Error('Could not connect to the remote Seal runtime.'), {
+        throw Object.assign(new Error('Could not connect to the remote Orca runtime.'), {
           code: 'remote_runtime_unavailable'
         })
       }

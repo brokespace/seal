@@ -231,7 +231,7 @@ describe('Store', () => {
         repo,
         write
       )
-    ).rejects.toThrow('The project changed while Seal was checking it')
+    ).rejects.toThrow('The project changed while Orca was checking it')
     expect(write).not.toHaveBeenCalled()
   })
 })

@@ -97,7 +97,7 @@ export function NativeChatTurnDiffRollup({
           settingSectionId={NATIVE_CHAT_TURN_DIFF_SETTING_SECTION_ID}
           hiddenMessage={t(
             'components.native-chat.turnDiff.hidden',
-            "Seal won't show turn diffs anymore"
+            "Orca won't show turn diffs anymore"
           )}
         />
       </div>

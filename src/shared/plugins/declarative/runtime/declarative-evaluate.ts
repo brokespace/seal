@@ -140,7 +140,9 @@ export function evaluateOrcaTree(
     depth: number
   ): OrcaWireNode {
     if (!/^[A-Z]/.test(type)) {
-      throw new TypeError(`<${type.slice(0, 64)}> is not a Seal component; panels never render DOM`)
+      throw new TypeError(
+        `<${type.slice(0, 64)}> is not an Orca component; panels never render DOM`
+      )
     }
     const path = `${parentPath}/${key}`
     const wireProps: Record<string, unknown> = {}

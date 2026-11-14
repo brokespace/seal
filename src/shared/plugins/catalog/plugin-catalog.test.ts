@@ -30,7 +30,7 @@ function catalog(plugins: unknown[], extra: Record<string, unknown> = {}) {
 }
 
 describe('plugin catalog', () => {
-  it('offers the newest release this Seal can install', () => {
+  it('offers the newest release this Orca can install', () => {
     const releases = [
       release('3.0.0', '2.0.0'),
       release('2.0.0', '1.5.0'),

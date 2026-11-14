@@ -78,12 +78,12 @@ export function HostScreenOverlays({ controller }: { controller: HostScreenContr
                     {state.confirmDelete.recipeEnvironment.destroys === false
                       ? t(
                           'hostScreen.hostScreenOverlays.deleteKeepsEnvironment',
-                          'The environment "{{environment}}" that Seal created for it keeps running: its recipe has no destroy step.',
+                          'The environment "{{environment}}" that Orca created for it keeps running: its recipe has no destroy step.',
                           { environment: state.confirmDelete.recipeEnvironment.name }
                         )
                       : t(
                           'hostScreen.hostScreenOverlays.deleteDestroysEnvironment',
-                          'This also destroys the environment "{{environment}}" that Seal created for it, with any uncommitted work and running terminals on it.',
+                          'This also destroys the environment "{{environment}}" that Orca created for it, with any uncommitted work and running terminals on it.',
                           { environment: state.confirmDelete.recipeEnvironment.name }
                         )}
                   </Text>

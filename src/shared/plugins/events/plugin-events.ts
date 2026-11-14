@@ -102,11 +102,11 @@ export const PLUGIN_EVENT_SUMMARIES: Record<PluginEventName, string> = {
   'workspace.removed':
     'A worktree workspace was removed; `workspaceListId` (host API 1.7) is the id `workspace.list` gave it.',
   'agent.status.changed':
-    'An agent in a terminal pane changed status; `workspaceId` is null when Seal cannot tie the pane to a workspace, `workspaceListId` (host API 1.7) is the id `workspace.list` gives that workspace, `terminalId` names its terminal when Seal lists it, and `sessionId` (host API 1.8) is what `agent.resume` takes.',
+    'An agent in a terminal pane changed status; `workspaceId` is null when Orca cannot tie the pane to a workspace, `workspaceListId` (host API 1.7) is the id `workspace.list` gives that workspace, `terminalId` names its terminal when Orca lists it, and `sessionId` (host API 1.8) is what `agent.resume` takes.',
   'workspace.changed':
     'The focused workspace changed, or its terminals were opened, closed or renamed; `context` is what `workspace.readContext` now answers, its `workspaceId` included. Each new subscriber first gets the current context.',
   'editor.typography.changed':
-    "What Seal's file editor uses changed (a setting or the editor zoom); the payload is what `editor.readTypography` now answers. Needs no capability."
+    "What Orca's file editor uses changed (a setting or the editor zoom); the payload is what `editor.readTypography` now answers. Needs no capability."
 }
 
 export type PluginEventPayload<E extends PluginEventName> = z.infer<

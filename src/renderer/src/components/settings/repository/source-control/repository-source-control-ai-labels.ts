@@ -62,7 +62,7 @@ export function commandTemplateStateLabel(args: {
     return 'Repository custom prompt'
   }
   return args.inheritedTemplate === DEFAULT_SOURCE_CONTROL_ACTION_COMMAND_TEMPLATES[args.actionId]
-    ? 'Seal default prompt'
+    ? 'Orca default prompt'
     : 'Global custom prompt'
 }
 

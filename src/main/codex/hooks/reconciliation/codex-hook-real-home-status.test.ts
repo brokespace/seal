@@ -100,15 +100,15 @@ afterEach(() => {
 })
 
 describe('Codex hook status for ~/.codex', () => {
-  it("is installed once ~/.codex holds Seal's entry approved with Codex's hash", async () => {
+  it("is installed once ~/.codex holds Orca's entry approved with Codex's hash", async () => {
     await answer({ kind: 'hashes', codexVersion: 'codex-cli 0.160.1', hashes: CODEX_HASHES })
     await writeOrcaEntry(CODEX_HASHES)
 
     expect(status()).toMatchObject({ state: 'installed', detail: null })
   })
 
-  it("says Codex was not found, and that Seal's own approval stands until it answers", async () => {
-    const failure = `Seal could not find Codex at ${mocks.codexPath}`
+  it("says Codex was not found, and that Orca's own approval stands until it answers", async () => {
+    const failure = `Orca could not find Codex at ${mocks.codexPath}`
     await answer({ kind: 'pending', failure })
     expect(status()).toMatchObject({ state: 'not_installed', detail: failure })
 
@@ -116,7 +116,7 @@ describe('Codex hook status for ~/.codex', () => {
 
     expect(status()).toMatchObject({
       state: 'installed',
-      detail: `Approved by Seal; not yet confirmed by Codex (${failure})`
+      detail: `Approved by Orca; not yet confirmed by Codex (${failure})`
     })
   })
 
@@ -129,7 +129,7 @@ describe('Codex hook status for ~/.codex', () => {
 
     expect(status()).toMatchObject({
       state: 'not_installed',
-      detail: `${tomlPath()} keeps hook approvals inline, so Seal cannot add its own there; Seal shows no status for ~/.codex until they are tables`
+      detail: `${tomlPath()} keeps hook approvals inline, so Orca cannot add its own there; Orca shows no status for ~/.codex until they are tables`
     })
   })
 
@@ -152,7 +152,7 @@ describe('Codex hook status for ~/.codex', () => {
       state: 'error',
       configPath: hooksPath(),
       managedHooksPresent: false,
-      detail: `Seal cannot add its hook to ${hooksPath()}, so Seal shows no status for ~/.codex`
+      detail: `Orca cannot add its hook to ${hooksPath()}, so Orca shows no status for ~/.codex`
     })
   })
 
@@ -168,7 +168,7 @@ describe('Codex hook status for ~/.codex', () => {
 
     expect(status()).toMatchObject({
       configPath: join(accountHome, 'hooks.json'),
-      detail: 'Seal has not asked Codex yet'
+      detail: 'Orca has not asked Codex yet'
     })
   })
 })

@@ -40,7 +40,7 @@ export function warnWslHostServerStop(serverStop: WslHostServerStop | undefined)
     toast.info(
       translate(
         'auto.components.sidebar.wslHostRemoval.keptForOthers',
-        'Removed from this Seal. The host keeps running for {{value0}}.',
+        'Removed from this Orca. The host keeps running for {{value0}}.',
         { value0: names }
       )
     )
@@ -54,7 +54,7 @@ export function warnWslHostServerStop(serverStop: WslHostServerStop | undefined)
     toast.warning(
       translate(
         'auto.components.sidebar.wslHostRemoval.pending',
-        'Seal didn’t remove the host yet: {{value0}} Remove it again to retry, or connect it to keep it.',
+        'Orca didn’t remove the host yet: {{value0}} Remove it again to retry, or connect it to keep it.',
         { value0: wslHostStopReasonMessage(serverStop) }
       ),
       { duration: Infinity }

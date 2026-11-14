@@ -55,7 +55,7 @@ describe('findOrphanedOrcaSshForward', () => {
     ).toBeNull()
   })
 
-  it("never picks a forward whose Seal is still running (another instance's tunnel)", () => {
+  it("never picks a forward whose Orca is still running (another instance's tunnel)", () => {
     const rows = [
       row(400, 1, '/Applications/Orca.app/Contents/MacOS/Orca'),
       row(900, 400, ORCA_FORWARD)
@@ -63,7 +63,7 @@ describe('findOrphanedOrcaSshForward', () => {
     expect(findOrphanedOrcaSshForward(rows, EXPECTED, 'darwin')).toBeNull()
   })
 
-  it("never picks the user's own ssh on the port, even an orphaned daemon in Seal's flag order", () => {
+  it("never picks the user's own ssh on the port, even an orphaned daemon in Orca's flag order", () => {
     const rows = [
       row(900, 1, 'ssh -N -L 127.0.0.1:47123:127.0.0.1:6768 devbox'),
       row(

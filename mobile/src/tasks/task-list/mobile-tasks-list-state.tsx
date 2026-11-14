@@ -86,7 +86,7 @@ export function renderMobileTasksSupportState(
     return (
       <MobileStateView
         icon={CircleAlert}
-        title={translate('tasks.listSurface.updateDesktopTitle', 'Update Seal desktop')}
+        title={translate('tasks.listSurface.updateDesktopTitle', 'Update Orca desktop')}
         message={translate(
           'tasks.listSurface.updateDesktopMessage',
           'This mobile Tasks view needs a newer desktop runtime.'

@@ -135,7 +135,7 @@ export function showDictationStartErrorToast(message: string): void {
     toast.error(
       translate(
         'auto.components.dictation.DictationController.2d5b9fabf9',
-        'Microphone access denied. Grant access in system settings, then restart Seal.'
+        'Microphone access denied. Grant access in system settings, then restart Orca.'
       )
     )
   } else if (message.includes(SPEECH_MODEL_NEEDS_UPDATE_ERROR)) {

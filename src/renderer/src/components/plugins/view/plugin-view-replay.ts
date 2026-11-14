@@ -76,7 +76,7 @@ export async function replayPluginPanel(
   replays += 1
   usePluginShotReplayStore.getState().show({ tree: parsed.tree, width, id: replays })
   if (!(await waitForSurface(replay.timeoutMs))) {
-    return fail(requestId, NOT_DRAWN, 'Seal did not draw the scenario preview in time.')
+    return fail(requestId, NOT_DRAWN, 'Orca did not draw the scenario preview in time.')
   }
   await waitForColorScheme(wantDark)
   const rect = measurePluginShotReplay()

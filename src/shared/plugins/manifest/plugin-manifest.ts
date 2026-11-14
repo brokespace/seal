@@ -67,7 +67,7 @@ const authorDoc = pluginFieldDoc('Who maintains the plugin.', V1)
 const enginesFields = {
   orca: orcaEngineRangeSchema.meta(
     pluginFieldDoc(
-      `Oldest Seal release this plugin runs on, as \`>=x.y.z\`. Raise it to the newest "Since" of any field you use; a format 2 manifest needs at least \`>=${NEXT}\`, because older Seal cannot read format 2.`,
+      `Oldest Orca release this plugin runs on, as \`>=x.y.z\`. Raise it to the newest "Since" of any field you use; a format 2 manifest needs at least \`>=${NEXT}\`, because older Orca cannot read format 2.`,
       V1,
       [`>=${NEXT}`]
     )
@@ -82,7 +82,7 @@ const enginesDoc = pluginFieldDoc(
 const pluginManifestFields = {
   id: pluginIdSchema.meta(
     pluginFieldDoc(
-      'Plugin id, kebab-case. The install identity is `<publisher>.<id>`, where Seal derives the publisher from the repository owner. The reserved names `constructor` and `prototype` are refused.',
+      'Plugin id, kebab-case. The install identity is `<publisher>.<id>`, where Orca derives the publisher from the repository owner. The reserved names `constructor` and `prototype` are refused.',
       V1,
       ['gleam-syntax']
     )
@@ -90,7 +90,7 @@ const pluginManifestFields = {
   // Why both ids: bare-id global uniqueness is unverifiable without a registry.
   publisher: pluginIdSchema.meta(
     pluginFieldDoc(
-      "Publisher slug, kebab-case. Must be the GitHub or GitLab user or organization that owns the repository (`acme` for `github.com/acme/gleam-syntax`), or the official and community catalogs reject the listing. The reserved names `constructor` and `prototype` are refused. The publishers `stablyai`, `official`, `anthropic`, `openai`, `github` and any starting `orca` (any case), and ids starting `orca-`, install only from Seal's official catalog.",
+      "Publisher slug, kebab-case. Must be the GitHub or GitLab user or organization that owns the repository (`acme` for `github.com/acme/gleam-syntax`), or the official and community catalogs reject the listing. The reserved names `constructor` and `prototype` are refused. The publishers `stablyai`, `official`, `anthropic`, `openai`, `github` and any starting `orca` (any case), and ids starting `orca-`, install only from Orca's official catalog.",
       V1,
       ['acme']
     )
@@ -128,7 +128,7 @@ const pluginManifestFields = {
     .optional()
     .meta(
       pluginPathFieldDoc(
-        `Node entry run in an out-of-process plugin worker: a \`.js\`/\`.mjs\` module, or a \`.ts\`/\`.mts\` module that Seal transpiles when it loads (needs \`engines.orca\` \`>=${PLUGIN_SOURCE_MODULES_SINCE}\`). Requires the \`trusted-worker\` execution profile, and is required by it, by \`contributes.events\`, by \`contributes.hooks\` and by any command without an \`action\`.`,
+        `Node entry run in an out-of-process plugin worker: a \`.js\`/\`.mjs\` module, or a \`.ts\`/\`.mts\` module that Orca transpiles when it loads (needs \`engines.orca\` \`>=${PLUGIN_SOURCE_MODULES_SINCE}\`). Requires the \`trusted-worker\` execution profile, and is required by it, by \`contributes.events\`, by \`contributes.hooks\` and by any command without an \`action\`.`,
         V1,
         ['dist/main.mjs']
       )
@@ -138,7 +138,7 @@ const pluginManifestFields = {
     .strict()
     // Why prefault: runs `{}` through the schema, so every family's own default applies.
     .prefault({})
-    .meta(pluginFieldDoc('What the plugin adds to Seal. Every point defaults to empty.', V1)),
+    .meta(pluginFieldDoc('What the plugin adds to Orca. Every point defaults to empty.', V1)),
   capabilities: z
     .array(pluginCapabilitySchema)
     .max(32)
@@ -161,7 +161,7 @@ export const pluginManifestV2Object = z
       .string()
       .max(2048)
       .optional()
-      .meta(pluginFieldDoc('JSON Schema URL for editor completion. Ignored by Seal.', NEXT)),
+      .meta(pluginFieldDoc('JSON Schema URL for editor completion. Ignored by Orca.', NEXT)),
     manifestVersion: z
       .literal(2)
       .meta(pluginFieldDoc('Manifest format. Use 2 for new plugins.', NEXT)),
@@ -177,7 +177,7 @@ export const pluginManifestV2Object = z
     publisher: pluginIdSchema.optional().meta({
       deprecated: true,
       ...pluginFieldDoc(
-        `Deprecated: leave it out. Seal derives the publisher from where the plugin comes from, the way a Go module is named by its repository path: the repository owner for the official and community catalogs and for Git URL installs (\`acme\` for \`github.com/acme/gleam-syntax\`), and \`local\` for a folder. A value here is ignored for catalog and Git installs. Leaving it out needs \`engines.orca\` of at least \`>=${PLUGIN_DERIVED_PUBLISHER_SINCE}\`, because older Seal requires it; if you keep it for older Seal, it must equal the repository owner. Reserved owners (\`stablyai\`, \`official\`, \`anthropic\`, \`openai\`, \`github\` and any starting \`orca\`) and ids starting \`orca-\` install only from Seal's official catalog.`,
+        `Deprecated: leave it out. Orca derives the publisher from where the plugin comes from, the way a Go module is named by its repository path: the repository owner for the official and community catalogs and for Git URL installs (\`acme\` for \`github.com/acme/gleam-syntax\`), and \`local\` for a folder. A value here is ignored for catalog and Git installs. Leaving it out needs \`engines.orca\` of at least \`>=${PLUGIN_DERIVED_PUBLISHER_SINCE}\`, because older Orca requires it; if you keep it for older Orca, it must equal the repository owner. Reserved owners (\`stablyai\`, \`official\`, \`anthropic\`, \`openai\`, \`github\` and any starting \`orca\`) and ids starting \`orca-\` install only from Orca's official catalog.`,
         V1,
         ['acme']
       )

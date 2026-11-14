@@ -129,7 +129,7 @@ export class OrcadManagedTunnelManager {
     checks: OrcadTunnelStartChecks = {}
   ): Promise<number> {
     if (!target.generation) {
-      throw new Error('Managed Seal SSH target has no registration generation.')
+      throw new Error('Managed Orca SSH target has no registration generation.')
     }
     this.buildTargets.set(environmentId, target.id)
     const managerGeneration = this.managerGeneration
@@ -148,7 +148,7 @@ export class OrcadManagedTunnelManager {
       connection,
       forwards: this.forwards,
       localPort: 0,
-      label: 'Seal on this host',
+      label: 'Orca on this host',
       remotePort,
       rereadRemotePort: checks.rereadRemotePort,
       verify: checks.verify,
@@ -285,7 +285,7 @@ export class OrcadManagedTunnelManager {
       connection,
       forwards: this.forwards,
       localPort: deployment.localPort,
-      label: `Seal on ${environment.name}`,
+      label: `Orca on ${environment.name}`,
       ...checks,
       stillCurrent: () => stillOwned() && connection.getConnectGeneration() === transportGeneration
     })

@@ -41,7 +41,7 @@ describe('classifyWindowsTreeKillTarget', () => {
     expect(classifyWindowsTreeKillTarget(4242, rows, ORCA_PID)).toBe('foreign')
   })
 
-  it('rejects a chain longer than the ConPTY/winpty depth even if Seal is above it', () => {
+  it('rejects a chain longer than the ConPTY/winpty depth even if Orca is above it', () => {
     const rows = [
       link(ORCA_PID, 900),
       link(10, ORCA_PID),

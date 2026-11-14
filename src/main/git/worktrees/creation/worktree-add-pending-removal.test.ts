@@ -56,7 +56,7 @@ async function startDeleting(): Promise<void> {
   await waitForWorktreeRemovalAcceptance('repo-1::/repo-feature')
 }
 
-describe('addWorktree while Seal deletes a checkout in the background', () => {
+describe('addWorktree while Orca deletes a checkout in the background', () => {
   let directory = ''
   beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), 'orca-add-pending-removal-'))
@@ -72,7 +72,7 @@ describe('addWorktree while Seal deletes a checkout in the background', () => {
   it('refuses the same path with a clear message and runs no git', async () => {
     await startDeleting()
     await expect(addWorktree('/repo', '/repo-feature', 'other-branch')).rejects.toThrow(
-      'Seal is still deleting the workspace at /repo-feature. Cleanup is pending; try again shortly.'
+      'Orca is still deleting the workspace at /repo-feature. Cleanup is pending; try again shortly.'
     )
     expect(gitExecFileAsyncMock).not.toHaveBeenCalled()
   })

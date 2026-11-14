@@ -87,7 +87,7 @@ export function VoiceCleanupConsentDialog({
           <DialogDescription>
             {t(
               'components.settings.voice.cleanup.consent.description',
-              'After each dictation, Seal sends the text to {{agent}} to tidy it before it lands.',
+              'After each dictation, Orca sends the text to {{agent}} to tidy it before it lands.',
               { agent: agentLabel }
             )}
           </DialogDescription>

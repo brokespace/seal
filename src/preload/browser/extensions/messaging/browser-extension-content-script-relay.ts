@@ -111,7 +111,7 @@ export function installContentScriptRelayFilter(answer?: BrowserExtensionStorage
       const from = typeof request.from === 'string' ? request.from : undefined
       answer(request.method, request.args, from).then(
         (reply) => sendResponse(reply),
-        () => sendResponse({ ok: false, error: 'Seal could not handle this extension call' })
+        () => sendResponse({ ok: false, error: 'Orca could not handle this extension call' })
       )
       return true
     })
@@ -178,7 +178,7 @@ export function createContentScriptRelayBridge(
     call: async (_namespace, method, args) => {
       try {
         const reply = await sendMessage({ [CONTENT_SCRIPT_RELAY_KEY]: { method, args, from } })
-        return isReply(reply) ? reply : { ok: false, error: 'Seal could not reach the extension' }
+        return isReply(reply) ? reply : { ok: false, error: 'Orca could not reach the extension' }
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : String(error) }
       }

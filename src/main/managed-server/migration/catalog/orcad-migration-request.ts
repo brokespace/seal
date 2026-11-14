@@ -11,11 +11,11 @@ export const ORCAD_MIGRATION_DESTINATION_UNSUPPORTED = 'orcad_migration_destinat
 
 /** Refuse older destinations that would silently strip extra agent arguments. */
 export const ORCAD_MIGRATION_DESTINATION_EXTRA_AGENT_ARGS_UNSUPPORTED =
-  'orcad_migration_destination_extra_agent_args_unsupported:Update Seal on this host to use extra arguments.'
+  'orcad_migration_destination_extra_agent_args_unsupported:Update Orca on this host to use extra arguments.'
 
 /** Unsupported source kinds are refused before any staging request. */
 export const ORCAD_MIGRATION_DESTINATION_SOURCE_KIND_UNSUPPORTED =
-  'orcad_migration_destination_source_kind_unsupported:Update Seal on this host to move this project to it.'
+  'orcad_migration_destination_source_kind_unsupported:Update Orca on this host to move this project to it.'
 
 export type CatalogRequestOptions = {
   signal?: AbortSignal

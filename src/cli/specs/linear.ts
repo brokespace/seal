@@ -8,7 +8,7 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
     path: ['linear', 'issue'],
     summary: 'Read Linear issue context for agents',
     usage:
-      'seal linear issue [<id>] [--current] [--comments] [--children] [--depth <n>] [--attachments] [--relations] [--activity] [--full] [--workspace <id>] [--json]',
+      'orca linear issue [<id>] [--current] [--comments] [--children] [--depth <n>] [--attachments] [--relations] [--activity] [--full] [--workspace <id>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'current',
@@ -24,176 +24,176 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
     ],
     positionalArgs: ['id'],
     examples: [
-      'seal linear issue ENG-123',
-      'seal linear issue --current --comments',
-      'seal linear issue https://linear.app/acme/issue/ENG-123 --full --json'
+      'orca linear issue ENG-123',
+      'orca linear issue --current --comments',
+      'orca linear issue https://linear.app/acme/issue/ENG-123 --full --json'
     ]
   },
   {
     path: ['linear', 'search'],
     summary: 'Search connected Linear workspaces',
-    usage: 'seal linear search <query> [--limit <n>] [--workspace <id>|all] [--json]',
+    usage: 'orca linear search <query> [--limit <n>] [--workspace <id>|all] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'limit', 'workspace', 'query'],
     positionalArgs: ['query'],
-    examples: ['seal linear search "auth bug"', 'seal linear search ENG --workspace all --json']
+    examples: ['orca linear search "auth bug"', 'orca linear search ENG --workspace all --json']
   },
   {
     path: ['linear', 'team', 'list'],
     summary: 'List connected Linear teams',
-    usage: 'seal linear team list [--workspace <id>|all] [--json]',
+    usage: 'orca linear team list [--workspace <id>|all] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'workspace'],
-    examples: ['seal linear team list --workspace all --json']
+    examples: ['orca linear team list --workspace all --json']
   },
   {
     path: ['linear', 'team', 'members'],
     summary: 'List Linear team members',
-    usage: 'seal linear team members --team <key|id> [--workspace <id>] [--json]',
+    usage: 'orca linear team members --team <key|id> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'team', 'workspace'],
-    examples: ['seal linear team members --team ENG --json']
+    examples: ['orca linear team members --team ENG --json']
   },
   {
     path: ['linear', 'team', 'states'],
     summary: 'List Linear team workflow states',
-    usage: 'seal linear team states --team <key|id> [--workspace <id>] [--json]',
+    usage: 'orca linear team states --team <key|id> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'team', 'workspace'],
-    examples: ['seal linear team states --team ENG --json']
+    examples: ['orca linear team states --team ENG --json']
   },
   {
     path: ['linear', 'team', 'labels'],
     summary: 'List Linear team labels',
-    usage: 'seal linear team labels --team <key|id> [--workspace <id>] [--json]',
+    usage: 'orca linear team labels --team <key|id> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'team', 'workspace'],
-    examples: ['seal linear team labels --team ENG --json']
+    examples: ['orca linear team labels --team ENG --json']
   },
   {
     path: ['linear', 'project', 'list'],
     summary: 'List connected Linear projects',
     usage:
-      'seal linear project list [--query <text>] [--limit <n>] [--workspace <id>|all] [--json]',
+      'orca linear project list [--query <text>] [--limit <n>] [--workspace <id>|all] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'query', 'limit', 'workspace'],
     examples: [
-      'seal linear project list --query launch --json',
-      'seal linear project list --workspace all --json'
+      'orca linear project list --query launch --json',
+      'orca linear project list --workspace all --json'
     ]
   },
   {
     path: ['linear', 'list'],
     summary: 'List Linear issues for task triage',
     usage:
-      'seal linear list [--filter assigned|created|all|completed|open] [--team <key|id>] [--limit <n>] [--workspace <id>|all] [--json]',
+      'orca linear list [--filter assigned|created|all|completed|open] [--team <key|id>] [--limit <n>] [--workspace <id>|all] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'filter', 'team', 'limit', 'workspace'],
-    examples: ['seal linear list --filter assigned --limit 10 --json']
+    examples: ['orca linear list --filter assigned --limit 10 --json']
   },
   {
     path: ['linear', 'status', 'set'],
     summary: 'Set a Linear issue status',
-    usage: 'seal linear status set [<id>] [--current] --to <state> [--workspace <id>] [--json]',
+    usage: 'orca linear status set [<id>] [--current] --to <state> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'to', 'workspace', 'id'],
     positionalArgs: ['id'],
     examples: [
-      'seal linear status set ENG-123 --to "In Review"',
-      'seal linear status set --current --to Done --json'
+      'orca linear status set ENG-123 --to "In Review"',
+      'orca linear status set --current --to Done --json'
     ]
   },
   {
     path: ['linear', 'assignee', 'set'],
     summary: 'Assign a Linear issue',
     usage:
-      'seal linear assignee set [<id>] [--current] (--me | --to-id <userId>) [--workspace <id>] [--json]',
+      'orca linear assignee set [<id>] [--current] (--me | --to-id <userId>) [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'me', 'to-id', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear assignee set --current --me --json']
+    examples: ['orca linear assignee set --current --me --json']
   },
   {
     path: ['linear', 'assignee', 'clear'],
     summary: 'Clear a Linear issue assignee',
-    usage: 'seal linear assignee clear [<id>] [--current] [--workspace <id>] [--json]',
+    usage: 'orca linear assignee clear [<id>] [--current] [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear assignee clear ENG-123 --json']
+    examples: ['orca linear assignee clear ENG-123 --json']
   },
   {
     path: ['linear', 'priority', 'set'],
     summary: 'Set a Linear issue priority',
     usage:
-      'seal linear priority set [<id>] [--current] --to none|low|medium|high|urgent [--workspace <id>] [--json]',
+      'orca linear priority set [<id>] [--current] --to none|low|medium|high|urgent [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'to', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear priority set --current --to high --json']
+    examples: ['orca linear priority set --current --to high --json']
   },
   {
     path: ['linear', 'priority', 'clear'],
     summary: 'Clear a Linear issue priority',
-    usage: 'seal linear priority clear [<id>] [--current] [--workspace <id>] [--json]',
+    usage: 'orca linear priority clear [<id>] [--current] [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear priority clear ENG-123 --json']
+    examples: ['orca linear priority clear ENG-123 --json']
   },
   {
     path: ['linear', 'estimate', 'set'],
     summary: 'Set a Linear issue estimate',
-    usage: 'seal linear estimate set [<id>] [--current] --to <number> [--workspace <id>] [--json]',
+    usage: 'orca linear estimate set [<id>] [--current] --to <number> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'to', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear estimate set --current --to 3 --json']
+    examples: ['orca linear estimate set --current --to 3 --json']
   },
   {
     path: ['linear', 'estimate', 'clear'],
     summary: 'Clear a Linear issue estimate',
-    usage: 'seal linear estimate clear [<id>] [--current] [--workspace <id>] [--json]',
+    usage: 'orca linear estimate clear [<id>] [--current] [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear estimate clear ENG-123 --json']
+    examples: ['orca linear estimate clear ENG-123 --json']
   },
   {
     path: ['linear', 'due-date', 'set'],
     summary: 'Set a Linear issue due date',
     usage:
-      'seal linear due-date set [<id>] [--current] --to <yyyy-mm-dd> [--workspace <id>] [--json]',
+      'orca linear due-date set [<id>] [--current] --to <yyyy-mm-dd> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'to', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear due-date set --current --to 2026-06-30 --json']
+    examples: ['orca linear due-date set --current --to 2026-06-30 --json']
   },
   {
     path: ['linear', 'due-date', 'clear'],
     summary: 'Clear a Linear issue due date',
-    usage: 'seal linear due-date clear [<id>] [--current] [--workspace <id>] [--json]',
+    usage: 'orca linear due-date clear [<id>] [--current] [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear due-date clear ENG-123 --json']
+    examples: ['orca linear due-date clear ENG-123 --json']
   },
   {
     path: ['linear', 'label', 'add'],
     summary: 'Add labels to a Linear issue',
     usage:
-      'seal linear label add [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
+      'orca linear label add [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'label', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear label add --current --label Bug --json']
+    examples: ['orca linear label add --current --label Bug --json']
   },
   {
     path: ['linear', 'label', 'remove'],
     summary: 'Remove labels from a Linear issue',
     usage:
-      'seal linear label remove [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
+      'orca linear label remove [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'label', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear label remove --current --label Bug --json']
+    examples: ['orca linear label remove --current --label Bug --json']
   },
   {
     path: ['linear', 'label', 'set'],
     summary: 'Replace labels on a Linear issue',
     usage:
-      'seal linear label set [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
+      'orca linear label set [<id>] [--current] --label <labelId-or-exact-name>... [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'label', 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear label set ENG-123 --label Bug --json']
+    examples: ['orca linear label set ENG-123 --label Bug --json']
   },
   {
     path: ['linear', 'comment', 'add'],
     summary: 'Add a comment to a Linear issue',
     usage:
-      'seal linear comment add [<id>] [--current] (--body <text> | --body-file <path|->) [--reply-to <commentId>] [--write-id <uuid>] [--workspace <id>] [--json]',
+      'orca linear comment add [<id>] [--current] (--body <text> | --body-file <path|->) [--reply-to <commentId>] [--write-id <uuid>] [--workspace <id>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'current',
@@ -206,8 +206,8 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
     ],
     positionalArgs: ['id'],
     examples: [
-      'seal linear comment add ENG-123 --body "Implementation is ready for review."',
-      'seal linear comment add --current --body-file - --json'
+      'orca linear comment add ENG-123 --body "Implementation is ready for review."',
+      'orca linear comment add --current --body-file - --json'
     ],
     notes: ['Use --body-file - to read multiline comment bodies from stdin.']
   },
@@ -215,15 +215,15 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
     path: ['linear', 'comment', 'edit'],
     summary: 'Replace the body of a Linear comment',
     usage:
-      'seal linear comment edit <commentId> (--body <text> | --body-file <path|->) [--workspace <id>] [--json]',
+      'orca linear comment edit <commentId> (--body <text> | --body-file <path|->) [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'body', 'body-file', 'workspace', 'id'],
     positionalArgs: ['id'],
     examples: [
-      'seal linear comment edit <commentId> --body "Updated: ready for review."',
-      'seal linear comment edit <commentId> --body-file - --json'
+      'orca linear comment edit <commentId> --body "Updated: ready for review."',
+      'orca linear comment edit <commentId> --body-file - --json'
     ],
     notes: [
-      'Comment ids come from `comment add` output or `seal linear issue <id> --comments --json`.',
+      'Comment ids come from `comment add` output or `orca linear issue <id> --comments --json`.',
       'Linear only lets a comment be edited by its author.'
     ]
   },
@@ -232,31 +232,31 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
     destructive: true,
     aliases: [['linear', 'comment', 'rm']],
     summary: 'Delete a Linear comment',
-    usage: 'seal linear comment delete <commentId> [--workspace <id>] [--json]',
+    usage: 'orca linear comment delete <commentId> [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'workspace', 'id'],
     positionalArgs: ['id'],
-    examples: ['seal linear comment delete <commentId> --json'],
+    examples: ['orca linear comment delete <commentId> --json'],
     notes: [
-      'Comment ids come from `comment add` output or `seal linear issue <id> --comments --json`.'
+      'Comment ids come from `comment add` output or `orca linear issue <id> --comments --json`.'
     ]
   },
   {
     path: ['linear', 'attach'],
     summary: 'Attach a link to a Linear issue',
     usage:
-      'seal linear attach [<id>] [--current] --url <url> [--title <title>] [--write-id <uuid>] [--workspace <id>] [--json]',
+      'orca linear attach [<id>] [--current] --url <url> [--title <title>] [--write-id <uuid>] [--workspace <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'current', 'url', 'title', 'write-id', 'workspace', 'id'],
     positionalArgs: ['id'],
     examples: [
-      'seal linear attach ENG-123 --url https://example.com/review/123 --title "PR/MR link"',
-      'seal linear attach --current --url https://example.com/review/123 --json'
+      'orca linear attach ENG-123 --url https://example.com/review/123 --title "PR/MR link"',
+      'orca linear attach --current --url https://example.com/review/123 --json'
     ]
   },
   {
     path: ['linear', 'create'],
     summary: 'Create a Linear issue',
     usage:
-      'seal linear create --title <title> [--body <text> | --body-file <path|->] [--team <key|id>] [--project <projectId-or-exact-name>] [--state <stateId|exact-name>] [--assignee me|<userId>] [--priority none|low|medium|high|urgent] [--estimate <number>] [--due-date <yyyy-mm-dd>] [--label <labelId-or-exact-name>]... [--parent <id> | --parent-current] [--write-id <uuid>] [--workspace <id>] [--json]',
+      'orca linear create --title <title> [--body <text> | --body-file <path|->] [--team <key|id>] [--project <projectId-or-exact-name>] [--state <stateId|exact-name>] [--assignee me|<userId>] [--priority none|low|medium|high|urgent] [--estimate <number>] [--due-date <yyyy-mm-dd>] [--label <labelId-or-exact-name>]... [--parent <id> | --parent-current] [--write-id <uuid>] [--workspace <id>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'title',
@@ -276,8 +276,8 @@ export const LINEAR_COMMAND_SPECS: CommandSpec[] = [
       'workspace'
     ],
     examples: [
-      'seal linear create --title "Investigate flaky login" --team ENG --project "Launch"',
-      'seal linear create --title "Follow-up bug" --parent-current --body-file - --json'
+      'orca linear create --title "Investigate flaky login" --team ENG --project "Launch"',
+      'orca linear create --title "Follow-up bug" --parent-current --body-file - --json'
     ],
     notes: ['Use --body-file - to read multiline issue bodies from stdin.']
   }

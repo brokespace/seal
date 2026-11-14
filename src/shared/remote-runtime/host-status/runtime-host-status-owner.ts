@@ -112,7 +112,7 @@ export class RuntimeHostStatusOwner {
             'runtime_unavailable',
             this.snapshot.transport === 'ready'
               ? 'Status request timed out.'
-              : 'Timed out waiting for the remote Seal runtime.'
+              : 'Timed out waiting for the remote Orca runtime.'
           )
         )
       }, options.timeoutMs ?? REQUEST_TIMEOUT_MS)

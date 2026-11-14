@@ -234,7 +234,7 @@ export function releaseCommitFieldsForCapturedArchive(captured: WorkerOutputArch
 }
 
 const OLDER_READER_NOTE =
-  'This version of Seal reads released output from the saved copy only. Read it with a newer Seal, or see its report (worker_done) or task result.'
+  'This version of Orca reads released output from the saved copy only. Read it with a newer Orca, or see its report (worker_done) or task result.'
 
 /** Empty copy fields, so a downgraded Orca shows a note instead of failing on a reference row. */
 function olderReaderFields(kind: WorkerTerminalArchiveKind) {

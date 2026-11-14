@@ -77,7 +77,7 @@ describe('startup scan of an already-current host', () => {
           new RuntimeRpcCallError({
             id: '1',
             ok: false,
-            error: { code: 'timeout', message: 'Timed out waiting for the remote Seal runtime' },
+            error: { code: 'timeout', message: 'Timed out waiting for the remote Orca runtime' },
             _meta: { runtimeId: 'r' }
           })
         )

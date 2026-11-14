@@ -4,10 +4,10 @@ import { translateSearchKeyword } from '../../search/settings-search-keywords'
 
 export const getOrcaAccountSettingsSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.orcaAccount.account', 'Seal account'),
+    title: translate('auto.components.settings.orcaAccount.account', 'Orca account'),
     description: translate(
       'auto.components.settings.orcaAccount.searchDescription',
-      'Sign in or out of the account used by Artifacts and Seal Relay.'
+      'Sign in or out of the account used by Artifacts and Orca Relay.'
     ),
     keywords: [
       ...translateSearchKeyword('auto.components.settings.orcaAccount.keywordAccount', 'account'),

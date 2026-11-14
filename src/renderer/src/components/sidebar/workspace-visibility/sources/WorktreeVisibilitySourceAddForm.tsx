@@ -125,7 +125,7 @@ export function WorktreeVisibilitySourceAddForm({
         {inputError ??
           t(
             'auto.components.sidebar.WorktreeVisibilitySourceList.rootHelp',
-            'Seal will recognize worktrees beneath this folder.'
+            'Orca will recognize worktrees beneath this folder.'
           )}
       </p>
     </form>

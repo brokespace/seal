@@ -275,7 +275,7 @@ export abstract class AgentBrowserBridgeExecution extends AgentBrowserBridgeTabs
       })
       return new BrowserError(
         'browser_error',
-        `The agent-browser helper was refused by Seal's browser proxy (${message}). The helper session was reset; retry the command.`
+        `The agent-browser helper was refused by Orca's browser proxy (${message}). The helper session was reset; retry the command.`
       )
     }
     return new BrowserError(fallbackCode, message)

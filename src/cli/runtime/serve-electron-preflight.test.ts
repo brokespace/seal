@@ -107,7 +107,7 @@ describe('preflightElectronServe', () => {
     const fingerprint = () => 'Background|ssh=1|sandbox=0'
 
     it('refuses a later run from the same environment with exit 78 before anything else', () => {
-      recordElectronServeStartupAbort(userData, 'Seal serve aborted with SIGABRT on macOS.', {
+      recordElectronServeStartupAbort(userData, 'Orca serve aborted with SIGABRT on macOS.', {
         now: 1_000,
         fingerprint
       })

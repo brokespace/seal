@@ -203,7 +203,7 @@ export function SkillBundleInstallFlow(props: {
           operation.status === 'reconnect-required'
             ? t(
                 'auto.components.skills.install.reconnectBeforeInstalling',
-                'Reconnect your Seal account before installing.'
+                'Reconnect your Orca account before installing.'
               )
             : operation.message
         )
@@ -222,7 +222,7 @@ export function SkillBundleInstallFlow(props: {
       setError(
         t(
           'auto.components.skills.install.bundleVerificationFailed',
-          'Installation failed before Seal could verify the requested bundle.'
+          'Installation failed before Orca could verify the requested bundle.'
         )
       )
     } finally {

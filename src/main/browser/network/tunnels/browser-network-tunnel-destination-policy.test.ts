@@ -47,7 +47,7 @@ describe('browser tunnel destination policy', () => {
     expect(browserTunnelTargetBlockReason(host, port)).toBe('link_local')
   })
 
-  it("blocks only the host's own reserved Seal listener ports, and only while reserved", () => {
+  it("blocks only the host's own reserved Orca listener ports, and only while reserved", () => {
     const release = reserveBrowserTunnelOrcaListenerPort(6768)
     cleanups.push(release)
 
@@ -93,7 +93,7 @@ describe('browser tunnel destination policy', () => {
 })
 
 describe('remote (SSH/WSL) browser tunnel routes', () => {
-  it("refuse the remote machine's metadata but keep its loopback and Seal-port-numbered servers", () => {
+  it("refuse the remote machine's metadata but keep its loopback and Orca-port-numbered servers", () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     cleanups.push(reserveBrowserTunnelOrcaListenerPort(6768))
     const dialed: string[] = []

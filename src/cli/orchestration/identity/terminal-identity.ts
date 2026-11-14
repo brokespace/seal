@@ -216,8 +216,8 @@ export function throwNoActiveSenderTerminal(flagName: 'from' | 'terminal' = 'fro
     throw new RuntimeClientError(
       'no_active_sender_terminal',
       'Codex ran this orchestration command without ORCA_TERMINAL_HANDLE. If Codex was started in ' +
-        'a Seal terminal, its shell_environment_policy removed it, and relaunching the same way ' +
-        'will not restore it. Start Codex by typing `codex` in a Seal terminal, or set ' +
+        'an Orca terminal, its shell_environment_policy removed it, and relaunching the same way ' +
+        'will not restore it. Start Codex by typing `codex` in an Orca terminal, or set ' +
         'inherit = "all" with include_only listing the variables to keep plus "ORCA_*". ' +
         `Pass --${flagName} only with your own terminal's handle — another pane's handle would act on ` +
         'its mailbox.'
@@ -227,6 +227,6 @@ export function throwNoActiveSenderTerminal(flagName: 'from' | 'terminal' = 'fro
     'no_active_sender_terminal',
     'Could not determine the calling terminal for this orchestration command. ' +
       `Pass --${flagName} with your own terminal's handle — another pane's handle would act on its mailbox — ` +
-      'or run the command inside a live Seal terminal with ORCA_TERMINAL_HANDLE set.'
+      'or run the command inside a live Orca terminal with ORCA_TERMINAL_HANDLE set.'
   )
 }

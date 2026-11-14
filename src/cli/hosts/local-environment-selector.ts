@@ -32,7 +32,7 @@ export async function refuseLocalManagementSelector(
   const named = await savedEnvironmentNamedLocal()
   throw new RuntimeClientError(
     'invalid_argument',
-    `--environment local names this machine's own Seal, not a saved environment, so \`orca ${commandPath.join(' ')}\` cannot act on it.`,
+    `--environment local names this machine's own Orca, not a saved environment, so \`orca ${commandPath.join(' ')}\` cannot act on it.`,
     {
       nextSteps: [
         ...(named
@@ -48,7 +48,7 @@ export function refuseReservedEnvironmentName(name: string): void {
   if (isLocalEnvironmentSelector(name)) {
     throw new RuntimeClientError(
       'invalid_argument',
-      '`local` is reserved: --environment local always means this machine’s own Seal. Save the environment under another name.'
+      '`local` is reserved: --environment local always means this machine’s own Orca. Save the environment under another name.'
     )
   }
 }

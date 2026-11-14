@@ -160,7 +160,7 @@ describe('runtime environment store with records this build cannot read', () => 
       const storeBefore = readFileSync(getEnvironmentStorePath(userDataPath), 'utf8')
 
       expect(() => removeManagedOrcadEnvironment(userDataPath, pinned.id)).toThrow(
-        'newer version of Seal'
+        'newer version of Orca'
       )
       expect(readFileSync(getEnvironmentStorePath(userDataPath), 'utf8')).toBe(storeBefore)
       expect(() =>
@@ -170,7 +170,7 @@ describe('runtime environment store with records this build cannot read', () => 
           pinned,
           null
         )
-      ).toThrow('newer version of Seal')
+      ).toThrow('newer version of Orca')
 
       removeEnvironment(userDataPath, other.id)
       expect(readJson(sidecarPath).entries?.pinned).toEqual(unreadableEntry)

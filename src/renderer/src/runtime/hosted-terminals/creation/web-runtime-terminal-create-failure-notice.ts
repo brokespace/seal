@@ -9,7 +9,7 @@ export function notifyWebRuntimeTerminalCreateFailure(
   toast.error(
     translate(
       'auto.runtime.webRuntimeSession.terminalCreateUnconfirmed',
-      'Seal couldn’t confirm that the new terminal opened on the host.'
+      'Orca couldn’t confirm that the new terminal opened on the host.'
     ),
     {
       // Why an id: automatic seeding retries on every reconnect and must not stack toasts.

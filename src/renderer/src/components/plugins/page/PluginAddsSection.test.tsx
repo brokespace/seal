@@ -34,12 +34,12 @@ const hello: PluginHostListEntry = {
   ...gleam,
   pluginKey: 'samples.hello-orca',
   consentFingerprint: 'sha256-hello',
-  name: 'Hello Seal',
+  name: 'Hello Orca',
   publisher: 'samples',
   status: 'running',
   hasWorker: true,
   execution: 'trusted-worker',
-  panels: [{ id: 'hello', title: 'Hello Seal', tabKey: 'plugin:samples.hello-orca/hello' }],
+  panels: [{ id: 'hello', title: 'Hello Orca', tabKey: 'plugin:samples.hello-orca/hello' }],
   commands: [
     {
       id: 'ping',
@@ -112,7 +112,7 @@ afterEach(() => {
 it('opens a live panel over the workspace Settings came from', () => {
   useAppStore.setState({ activeWorktreeId: 'wt-1', previousViewBeforeSettings: 'terminal' })
   renderAdds(hello)
-  fireEvent.click(screen.getByRole('button', { name: 'Open panel: Hello Seal' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Open panel: Hello Orca' }))
   const state = useAppStore.getState()
   expect(state.activeView).toBe('terminal')
   expect(state.rightSidebarTab).toBe('plugin:samples.hello-orca/hello')

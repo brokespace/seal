@@ -58,11 +58,11 @@ describe('resetServeHostIdentity', () => {
     }
   })
 
-  it('refuses while a Seal holds the profile lock and changes nothing', async () => {
+  it('refuses while an Orca holds the profile lock and changes nothing', async () => {
     const before = pairedProfile()
     const lock = acquireOrcadInstanceLock(before.dir)
     try {
-      await expect(resetServeHostIdentity(before.dir)).rejects.toThrow(/Stop Seal/)
+      await expect(resetServeHostIdentity(before.dir)).rejects.toThrow(/Stop Orca/)
     } finally {
       lock.release()
     }
@@ -77,7 +77,7 @@ describe('resetServeHostIdentity', () => {
       chmodSync(before.dir, 0o755)
       const lock = acquireOrcadInstanceLock(before.dir, { role: 'desktop' })
       try {
-        await expect(resetServeHostIdentity(before.dir)).rejects.toThrow(/Stop Seal/)
+        await expect(resetServeHostIdentity(before.dir)).rejects.toThrow(/Stop Orca/)
       } finally {
         lock.release()
       }

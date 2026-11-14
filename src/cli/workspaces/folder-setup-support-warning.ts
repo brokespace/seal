@@ -4,7 +4,7 @@ import { FOLDER_WORKSPACE_INSTANCE_SEPARATOR } from '../../shared/worktree/id'
 import { WORKTREE_FOLDER_SETUP_RUNTIME_CAPABILITY } from '../../shared/worktree-runtime-capabilities'
 
 const FOLDER_SETUP_UNSUPPORTED_WARNING =
-  'Setup did not run: this host runs an older Seal without folder workspace setup. Update Seal on that host to run it.'
+  'Setup did not run: this host runs an older Orca without folder workspace setup. Update Orca on that host to run it.'
 
 /** An older host makes folder workspaces without running setup; say so rather than imply it ran. */
 export async function folderSetupUnsupportedWarning(

@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "aboutScreen": {
+      "socialProfile": "Seal on X"
+    }
+  },
+  "accounts": {
+    "screen": {
+      "systemLogin": "System login"
+    }
+  }
+}

@@ -130,7 +130,7 @@ function RuntimeRepairForm({
         <DialogDescription>
           {t(
             'auto.components.settings.RuntimeRepairDialog.descriptionShareComputer',
-            '{{name}} no longer accepts this computer. On {{name}}, open Settings → Remote Seal Servers → Share this computer, create a link for another Seal, then paste it here.',
+            '{{name}} no longer accepts this computer. On {{name}}, open Settings → Remote Orca Servers → Share this computer, create a link for another Orca, then paste it here.',
             { name }
           )}
         </DialogDescription>

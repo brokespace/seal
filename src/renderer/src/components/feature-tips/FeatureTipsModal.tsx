@@ -219,7 +219,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
             toast.success(
               t(
                 'auto.components.feature.tips.FeatureTipsModal.ce13a742d0',
-                'Registered `seal` in PATH.'
+                'Registered `orca` in PATH.'
               )
             )
             setSkillTerminalOpen(true)
@@ -233,7 +233,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
           toast.warning(
             t(
               'auto.components.feature.tips.FeatureTipsModal.1da82af45b',
-              'Seal CLI needs attention'
+              'Orca CLI needs attention'
             ),
             {
               description:
@@ -252,7 +252,7 @@ export default function FeatureTipsModal(): JSX.Element | null {
               ? error.message
               : t(
                   'auto.components.feature.tips.FeatureTipsModal.cliInstallFailed',
-                  'Failed to install Seal CLI.'
+                  'Failed to install Orca CLI.'
                 )
           if (
             import.meta.env.DEV &&

@@ -78,7 +78,7 @@ export function beginOrcaCloudPkceFlow(
 
     function writeInvalidCallback(response: ServerResponse): void {
       response.writeHead(400)
-      response.end('Invalid Seal sign-in response.')
+      response.end('Invalid Orca sign-in response.')
     }
 
     const server = createServer((request, response) => {
@@ -101,8 +101,8 @@ export function beginOrcaCloudPkceFlow(
           response.writeHead(400)
           response.end(
             cancelled
-              ? 'Seal sign-in was cancelled.'
-              : 'Seal sign-in failed. Return to Seal and try again.'
+              ? 'Orca sign-in was cancelled.'
+              : 'Orca sign-in failed. Return to Orca and try again.'
           )
           rejectFlow(
             new Error(cancelled ? 'orca_cloud_auth_denied' : 'orca_cloud_auth_callback_failed')

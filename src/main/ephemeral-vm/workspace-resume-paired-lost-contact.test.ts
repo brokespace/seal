@@ -136,7 +136,7 @@ async function probe(environmentId: string) {
   }
 }
 
-describe('opening a workspace whose paired VM server Seal could not reach for minutes', () => {
+describe('opening a workspace whose paired VM server Orca could not reach for minutes', () => {
   let serverDataPath: string
   let environmentId: string
   let keyPair: KeyPair

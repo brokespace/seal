@@ -1,0 +1,16 @@
+{
+  "auto": {
+    "components": {
+      "settings": {
+        "RepositoryHooksSection": {
+          "d88b6ff88f": "仅 orca.yaml"
+        },
+        "repository": {
+          "search": {
+            "9cad92fe77": "orca.yaml 挂钩"
+          }
+        }
+      }
+    }
+  }
+}

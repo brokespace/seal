@@ -49,7 +49,7 @@ export default function AboutScreen({
     <SettingsScreen title={t('settings.aboutScreen.title', 'About')} onBack={onBack}>
       <View style={styles.brand}>
         <OrcaLogo size={28} />
-        <Text style={styles.brandName}>Seal</Text>
+        <Text style={styles.brandName}>Orca</Text>
         <Text style={styles.brandSub}>
           {t('settings.aboutScreen.tagline', 'Open-source agent IDE for 100x builders')}
         </Text>
@@ -60,21 +60,21 @@ export default function AboutScreen({
           key="website"
           title="orca.dev"
           leading={<Globe size={18} color={colors.textSecondary} />}
-          accessibilityLabel={t('settings.aboutScreen.website', 'Seal website')}
+          accessibilityLabel={t('settings.aboutScreen.website', 'Orca website')}
           onPress={() => openLink('https://orca.dev')}
         />
         <ListRow
           key="source"
           title="stablyai/orca"
           leading={<GithubIcon size={18} />}
-          accessibilityLabel={t('settings.aboutScreen.sourceCode', 'Seal source code')}
+          accessibilityLabel={t('settings.aboutScreen.sourceCode', 'Orca source code')}
           onPress={() => openLink('https://github.com/stablyai/orca')}
         />
         <ListRow
           key="social"
           title="@orca_build"
           leading={<XIcon size={18} />}
-          accessibilityLabel={t('settings.aboutScreen.socialProfile', 'Seal on X')}
+          accessibilityLabel={t('settings.aboutScreen.socialProfile', 'Orca on X')}
           onPress={() => openLink('https://x.com/orca_build')}
         />
       </SettingsSection>

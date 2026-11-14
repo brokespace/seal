@@ -64,7 +64,7 @@ export function serveProfileRefusalMessage(
   verdict: Exclude<ServeProfileVerdict, { verdict: 'absent' }>
 ): string {
   const who = verdict.pid === null ? 'another process' : `pid ${verdict.pid}`
-  const lead = `[serve] Seal is already running for this userData profile as ${who}`
+  const lead = `[serve] Orca is already running for this userData profile as ${who}`
   if (verdict.verdict === 'live') {
     return verdict.evidence === 'rpc'
       ? `${lead}; not starting a second process. Run \`orca status\` to inspect it, or stop it before serving again.`

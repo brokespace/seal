@@ -179,7 +179,7 @@ export function createSkillMutationHandler(verb: SkillMutationVerb): CommandHand
       throw new RuntimeClientError(
         'invalid_environment',
         `orca skills ${verb} writes to the machine that runs it, but this shell forwards ` +
-          `orca to the Seal host. Run the same orca skills ${verb} command on the machine ` +
+          `orca to the Orca host. Run the same orca skills ${verb} command on the machine ` +
           "you want it on, where it can detect that host's agents."
       )
     }
@@ -213,7 +213,7 @@ export function createSkillMutationHandler(verb: SkillMutationVerb): CommandHand
         `${name}: not installed, so skipped. Install it with: orca skills install --skill ${name}`
     )
     const forceHint = hasReplaceableLeave(plan)
-      ? ['', 'Rerun with --force to replace a copy that was skipped; Seal keeps a backup of it.']
+      ? ['', 'Rerun with --force to replace a copy that was skipped; Orca keeps a backup of it.']
       : []
 
     if (flags.get('dry-run') === true) {
@@ -271,7 +271,7 @@ export function createSkillMutationHandler(verb: SkillMutationVerb): CommandHand
       })
     ])
     if (lines.length === 0 && notInstalledLines.length === 0) {
-      lines.push('No Seal skills are installed here, so there is nothing to update.')
+      lines.push('No Orca skills are installed here, so there is nothing to update.')
     }
     writeStdoutLine([...lines, ...notInstalledLines, ...forceHint].join('\n'))
   }

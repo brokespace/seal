@@ -138,7 +138,7 @@ describe('subscribeRemoteRuntimeRequest', () => {
 })
 
 describe('sendRemoteRuntimeRequest', () => {
-  it('classifies a non-Seal handshake as a host identity mismatch', async () => {
+  it('classifies a non-Orca handshake as a host identity mismatch', async () => {
     const server = await createInvalidHandshakeServer()
 
     await expect(

@@ -167,7 +167,7 @@ function AuthForm({
           setError({
             message: translate(
               'accounts.antigravity.settingsLoadFailed',
-              "Seal couldn't load your Antigravity sign-in settings. Try again."
+              "Orca couldn't load your Antigravity sign-in settings. Try again."
             ),
             recovery: 'reload'
           })
@@ -242,7 +242,7 @@ function AuthForm({
           setError({
             message: t(
               'accounts.antigravity.settingsSaveFailed',
-              "Seal couldn't save your Antigravity sign-in settings. Try again."
+              "Orca couldn't save your Antigravity sign-in settings. Try again."
             ),
             recovery: null
           })

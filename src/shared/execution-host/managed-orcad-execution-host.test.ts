@@ -38,7 +38,7 @@ function registry(managedServer?: SshConnectionState['managedServer']) {
   })
 }
 
-describe('managed Seal server host merging', () => {
+describe('managed Orca server host merging', () => {
   it('routes to the server before main reports a route', () => {
     expect(pickerExecutionHosts(registry()).map((host) => host.id)).toEqual([
       'local',

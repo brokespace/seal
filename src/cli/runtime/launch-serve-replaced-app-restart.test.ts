@@ -57,8 +57,8 @@ function overrideProperty(key: 'platform' | 'execPath', value: string): () => vo
 
 async function installApp(dir: string, version: string): Promise<void> {
   await mkdir(join(dir, 'Contents', 'MacOS'), { recursive: true })
-  await writeFile(join(dir, 'Contents', 'MacOS', 'Seal'), '')
-  await chmod(join(dir, 'Contents', 'MacOS', 'Seal'), 0o755)
+  await writeFile(join(dir, 'Contents', 'MacOS', 'Orca'), '')
+  await chmod(join(dir, 'Contents', 'MacOS', 'Orca'), 0o755)
   await writeFile(
     join(dir, 'Contents', 'Info.plist'),
     `<plist><dict><key>CFBundleShortVersionString</key><string>${version}</string></dict></plist>`
@@ -81,7 +81,7 @@ describe('serveOrcaApp restarts from a replaced app before any server starts', (
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'orca-serve-replaced-app-'))
-    app = join(root, 'Seal.app')
+    app = join(root, 'Orca.app')
     await installApp(app, NEW)
     for (const key of ENV_KEYS) {
       savedEnv[key] = process.env[key]
@@ -94,7 +94,7 @@ describe('serveOrcaApp restarts from a replaced app before any server starts', (
     await mkdir(join(root, 'profile'), { recursive: true })
     handoffPath = getServeUpdateHandoffPath(join(root, 'profile'))
     restore.push(overrideProperty('platform', 'darwin'))
-    restore.push(overrideProperty('execPath', join(app, 'Contents', 'MacOS', 'Seal')))
+    restore.push(overrideProperty('execPath', join(app, 'Contents', 'MacOS', 'Orca')))
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
   })
 

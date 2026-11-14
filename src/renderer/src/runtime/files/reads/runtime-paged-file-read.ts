@@ -38,7 +38,7 @@ export const REMOTE_FILE_CHANGED_DURING_READ_MESSAGE =
 export const REMOTE_PATH_IS_DIRECTORY_MESSAGE = 'Remote path is a directory'
 // Why: an older server has no files.stat/readChunk, so a truncated files.read cannot be completed.
 export const REMOTE_FILE_PAGED_READ_UNSUPPORTED_MESSAGE =
-  'Remote file is larger than the 512 KB this Seal server can send. Update the server to open it.'
+  'Remote file is larger than the 512 KB this Orca server can send. Update the server to open it.'
 
 export type PagedRemoteFileRead =
   | { kind: 'ok'; bytes: Uint8Array<ArrayBuffer> }

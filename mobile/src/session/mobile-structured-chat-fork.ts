@@ -122,6 +122,6 @@ const mobileChatForkCopy = {
   unsupported: () =>
     translate(
       'chat.fork.unsupported',
-      'This host runs an older Seal. Update Seal on the host, then try again.'
+      'This host runs an older Orca. Update Orca on the host, then try again.'
     )
 }

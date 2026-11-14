@@ -96,7 +96,7 @@ export function SkillUnsupportedStatusPill({
         ? t('auto.components.skills.SkillFreshnessStatusPill.connectHost', 'Connect the SSH host')
         : t(
             'auto.components.skills.SkillFreshnessStatusPill.updateServer',
-            'Update Seal on the server'
+            'Update Orca on the server'
           )}
     </IntegrationStatusPill>
   )

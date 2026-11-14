@@ -59,7 +59,7 @@ async function projectWorktrees(call: PluginRuntimeRpc, project: PluginProjectTa
 const setupDecisionRequired = (): PluginHostCallError =>
   new PluginHostCallError(
     'action_failed',
-    "this project's setup script needs a decision; pass setup: 'skip' or create it in Seal"
+    "this project's setup script needs a decision; pass setup: 'skip' or create it in Orca"
   )
 
 export const PLUGIN_WORKSPACE_CREATE_HANDLERS = {

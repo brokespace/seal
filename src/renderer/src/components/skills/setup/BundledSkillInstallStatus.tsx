@@ -43,7 +43,7 @@ export function BundledSkillInstallStatus(props: {
             )
           : t(
               'auto.components.settings.BundledSkillInstallStatus.updateServer',
-              'Update Seal on the server to install its skills.'
+              'Update Orca on the server to install its skills.'
             )}
       </p>
     )

@@ -46,8 +46,8 @@ export function translatePluginRpcError(
   if (code === 'method_not_found') {
     return new RuntimeClientError(
       'runtime_unsupported',
-      `The Seal host this command reached is too old for \`${method}\`.`,
-      { nextSteps: ['Update Seal on that host, then run the command again.'] }
+      `The Orca host this command reached is too old for \`${method}\`.`,
+      { nextSteps: ['Update Orca on that host, then run the command again.'] }
     )
   }
   const fingerprint = approvalFingerprintOf(data)
@@ -90,7 +90,7 @@ export function resolveHostPluginPath(ctx: HandlerContext, value: string): strin
   if (process.env.ORCA_CLI_CWD) {
     throw new RuntimeClientError(
       'invalid_environment',
-      'This shell forwards orca to a Seal host on another machine, which cannot read this folder. Run the command on the machine that runs Seal, or pass --environment for a Seal server that has the folder.'
+      'This shell forwards orca to an Orca host on another machine, which cannot read this folder. Run the command on the machine that runs Orca, or pass --environment for an Orca server that has the folder.'
     )
   }
   if (isAbsolute(value)) {
@@ -99,7 +99,7 @@ export function resolveHostPluginPath(ctx: HandlerContext, value: string): strin
   if (ctx.client.isRemote) {
     throw new RuntimeClientError(
       'invalid_argument',
-      'Pass an absolute path on the Seal server; a relative path names a folder on this machine.'
+      'Pass an absolute path on the Orca server; a relative path names a folder on this machine.'
     )
   }
   return resolve(ctx.cwd, value)
@@ -131,7 +131,7 @@ function formatDevLoad(result: DevLoadResult): string {
   return [
     `${result.added ? 'Loaded' : 'Reloaded'} ${result.pluginKey} from ${result.path} (${how}).`,
     result.plugin ? formatPluginRow(result.plugin) : '',
-    'Seal reloads it (and restarts its worker) when its files change; `orca plugin logs` shows what it printed.'
+    'Orca reloads it (and restarts its worker) when its files change; `orca plugin logs` shows what it printed.'
   ]
     .filter(Boolean)
     .join('\n')
@@ -268,7 +268,7 @@ export const PLUGIN_RUNTIME_HANDLERS: Record<string, CommandHandler> = {
       ctx,
       result,
       result.opened === 0
-        ? `${result.pluginKey} has no open panel or editor; open one in Seal, then run this again.`
+        ? `${result.pluginKey} has no open panel or editor; open one in Orca, then run this again.`
         : `Opened DevTools for ${result.opened} ${result.pluginKey} frame(s).`
     )
   },

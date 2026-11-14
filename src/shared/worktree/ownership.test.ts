@@ -93,7 +93,7 @@ function makeSettings(overrides: Partial<GlobalSettings> = {}): GlobalSettings {
 }
 
 describe('worktree ownership classification', () => {
-  it('does not treat generic discovery metadata on nested workspace paths as Seal-managed', () => {
+  it('does not treat generic discovery metadata on nested workspace paths as Orca-managed', () => {
     const repo = makeRepo({ externalWorktreeVisibility: 'hide' })
     const settings = makeSettings()
     const detected = toDetectedWorktree({

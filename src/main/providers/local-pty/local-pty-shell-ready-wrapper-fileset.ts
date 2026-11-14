@@ -30,7 +30,7 @@ export function getLocalShellReadyWrapperPaths(root: string): readonly string[] 
 
 export function getLocalZshWrapperSpec(): ZshStartupHookSpec {
   return {
-    headerLabel: 'Seal zsh shell-ready wrapper',
+    headerLabel: 'Orca zsh shell-ready wrapper',
     readyMarkerEscaped: SHELL_READY_MARKER_ESCAPED,
     osc133CommandMarkers: true,
     startupCommandDelivery: true,

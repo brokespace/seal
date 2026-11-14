@@ -108,7 +108,7 @@ export async function collectAutomationRunUsage({
         unavailable('codex', 'scan_failed', 'Codex usage was unavailable when this run finished.')
       )
   }
-  return unavailable(null, 'provider_unsupported', 'This agent does not report usage to Seal yet.')
+  return unavailable(null, 'provider_unsupported', 'This agent does not report usage to Orca yet.')
 }
 
 export async function writeAutomationRunUsage(input: {

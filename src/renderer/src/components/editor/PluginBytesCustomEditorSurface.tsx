@@ -152,7 +152,7 @@ export default function PluginBytesCustomEditorSurface({
       <SurfaceMessage>
         {t(
           'auto.components.editor.PluginBytesCustomEditorSurface.unsupported',
-          "{{value0}} can't read this file from where it is stored. Update the Seal server that hosts it, or switch to Source.",
+          "{{value0}} can't read this file from where it is stored. Update the Orca server that hosts it, or switch to Source.",
           { value0: editor.title }
         )}
       </SurfaceMessage>

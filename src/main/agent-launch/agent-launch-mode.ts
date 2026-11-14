@@ -72,7 +72,7 @@ const DOWNGRADE_DETAIL: Record<AgentLaunchDowngradeReason, string> = {
   chat_unavailable_on_windows: "this agent's chat isn't available on Windows yet",
   structured_unsupported_on_host: 'the execution host cannot create one here',
   chat_runtime_not_installed:
-    "its chat runtime isn't installed on this host (install it from a new chat tab in Seal)"
+    "its chat runtime isn't installed on this host (install it from a new chat tab in Orca)"
 }
 
 const BLOCKER_REASON: Record<StructuredNativeChatBlocker, AgentLaunchDowngradeReason> = {

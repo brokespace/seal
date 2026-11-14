@@ -54,7 +54,7 @@ function WebRoot(): React.JSX.Element {
     if (startupDecision.kind === 'auto-save-runtime-offer') {
       saveStoredWebRuntimeEnvironment(
         createStoredWebRuntimeEnvironment({
-          name: 'Seal Server',
+          name: 'Orca Server',
           offer: startupDecision.offer,
           previousEnvironment: readStoredWebRuntimeEnvironment()
         })
@@ -97,7 +97,7 @@ function WebRootBoundary(): React.JSX.Element {
     <RecoverableRenderErrorBoundary
       boundaryId="web.root"
       surface="web-root"
-      title={t('app.recoverableError.webTitle', 'Seal web hit a renderer error.')}
+      title={t('app.recoverableError.webTitle', 'Orca web hit a renderer error.')}
       description={t(
         'app.recoverableError.webDescription',
         'Retry the web client or reconnect to the paired runtime.'

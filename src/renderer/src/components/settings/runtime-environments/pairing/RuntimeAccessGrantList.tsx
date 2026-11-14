@@ -106,14 +106,14 @@ export function RuntimeAccessGrantList({
                     <LegacyEncryptionNotice
                       message={t(
                         'auto.components.settings.RuntimeAccessGrantList.legacyEncryption',
-                        'Last used with older encryption. Update Seal where this link is used.'
+                        'Last used with older encryption. Update Orca where this link is used.'
                       )}
                     />
                   ) : grant.olderPairingMethod ? (
                     <div className="text-muted-foreground text-xs">
                       {t(
                         'auto.components.settings.RuntimeAccessGrantList.olderPairingMethod',
-                        'Uses an older pairing method. Update Seal on the device that uses this link.'
+                        'Uses an older pairing method. Update Orca on the device that uses this link.'
                       )}
                     </div>
                   ) : null}

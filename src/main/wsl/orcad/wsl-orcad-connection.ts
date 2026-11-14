@@ -261,7 +261,7 @@ export class WslOrcadConnectionManager {
         distro,
         remotePort: launch.port,
         localPort: preferredLocalPort,
-        label: `Seal server in WSL: ${label}`
+        label: `Orca server in WSL: ${label}`
       },
       this.dependencies.listen
     )

@@ -60,7 +60,7 @@ export function importRemoteOwnedItem(
   return runLifecycleWriteTransaction(db.db, 'import_remote_owned_item', () => {
     const link = getRemoteRunLink(db, item.conversationId)
     if (!link || link.environment_id !== server.environment_id) {
-      throw unreadable(item, `it names no Run this Seal placed on ${server.environment_id}`)
+      throw unreadable(item, `it names no Run this Orca placed on ${server.environment_id}`)
     }
     if (item.sequence <= link.last_imported_sequence) {
       return undefined
@@ -107,7 +107,7 @@ function parseRemoteOwnedItem(item: PulledRemoteOwnedItem): ParsedItem {
   }
   const parsed = parseKind(item.kind, json)
   if (!parsed) {
-    throw unreadable(item, `its kind ${item.kind ?? '(none)'} is not one this Seal reads`)
+    throw unreadable(item, `its kind ${item.kind ?? '(none)'} is not one this Orca reads`)
   }
   if (!parsed.success) {
     throw unreadable(item, `its payload does not match ${item.kind}: ${parsed.error}`)

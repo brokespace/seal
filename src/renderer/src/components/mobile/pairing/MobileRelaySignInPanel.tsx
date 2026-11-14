@@ -28,7 +28,7 @@ export function MobileRelaySignInPanel({
         <p className="min-w-0 flex-1 text-xs text-muted-foreground">
           {t(
             'auto.components.settings.MobilePairingConnectionOptions.relaySignInDetail',
-            'Signs this desktop in to Seal and routes the phone through Seal’s servers. LAN does not need an account.'
+            'Signs this desktop in to Orca and routes the phone through Orca’s servers. LAN does not need an account.'
           )}
         </p>
       )}

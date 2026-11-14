@@ -133,7 +133,7 @@ function formatCommandFlagHelp(flag: string, commandPath: string[]): string {
     return '--terminal-state <state> Terminal accounting filter: active, reclaimable, retained, release_pending, release_unknown, or released'
   }
   if (command.startsWith('orchestration ') && flag === 'full') {
-    return '--full                 Print the full record Seal returned instead of the concise view'
+    return '--full                 Print the full record Orca returned instead of the concise view'
   }
   if (command === 'skills get' && flag === 'full') {
     return '--full                 Print the full guide with bundled references'

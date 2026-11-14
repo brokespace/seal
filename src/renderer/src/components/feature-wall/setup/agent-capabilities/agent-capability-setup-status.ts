@@ -223,7 +223,7 @@ function getComputerUseInstallStatus(
         permissions.unavailableReason === 'web_client'
           ? t(
               'auto.components.feature.wall.agent.capability.setup.status.requiresOrcaDesktop',
-              'Requires Seal Desktop'
+              'Requires Orca Desktop'
             )
           : t(
               'auto.components.feature.wall.agent.capability.setup.status.6d2b0a84e1',

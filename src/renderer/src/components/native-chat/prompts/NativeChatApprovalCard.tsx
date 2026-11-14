@@ -192,7 +192,7 @@ export function NativeChatApprovalCard({
                   <p data-native-chat-approval-needs-newer-orca="true" className="break-words">
                     {t(
                       'components.native-chat.approval.needsNewerOrca',
-                      'This request needs a newer version of Seal.'
+                      'This request needs a newer version of Orca.'
                     )}
                   </p>
                 ) : null}

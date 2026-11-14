@@ -209,7 +209,7 @@ describe('orchestration agent views', () => {
 
     expect(stdout).toBe(
       'dispatchId=ctx_1 taskId=task_1 runId=run_1 state=outcome_unknown terminal=term_agent workspace=wt_1::/repo\n' +
-        "Next: Task typed in but the worker hasn't been seen starting; don't resend or abandon it. End your turn; Seal wakes you when it reports. If nothing arrives, run orca-dev orchestration worker-show --dispatch ctx_1."
+        "Next: Task typed in but the worker hasn't been seen starting; don't resend or abandon it. End your turn; Orca wakes you when it reports. If nothing arrives, run orca-dev orchestration worker-show --dispatch ctx_1."
     )
     expect(stderr).toBe(
       "warning: turn_start_unobserved: task typed in; the worker may still be starting. Don't resend."
@@ -293,7 +293,7 @@ describe('orchestration agent views', () => {
     expect(JSON.parse(stdout)).toMatchObject({ ok: false, result: { workers: [] } })
   })
 
-  it('never lets a payload stand in for Seal-computed message fields', async () => {
+  it('never lets a payload stand in for Orca-computed message fields', async () => {
     const { stdout } = await run('check', [['run', 'run_1']], {
       messages: [
         {

@@ -124,14 +124,14 @@ beforeAll(async () => {
     join(extensionDir, 'manifest.json'),
     JSON.stringify({
       manifest_version: 3,
-      name: 'Seal persistence probe',
+      name: 'Orca persistence probe',
       version: '1.0.0',
       permissions: ['contextMenus', 'scripting', 'storage', 'webRequest'],
       host_permissions: ['http://127.0.0.1/*'],
       background: { service_worker: 'worker.js' },
       commands: {
         fill_login: { suggested_key: { default: 'Ctrl+Shift+L' }, description: 'Fill' },
-        orca_owned: { suggested_key: { default: 'Ctrl+Shift+F' }, description: 'Taken by Seal' }
+        orca_owned: { suggested_key: { default: 'Ctrl+Shift+F' }, description: 'Taken by Orca' }
       }
     })
   )
@@ -198,7 +198,7 @@ describe('browser extension state across a restart', () => {
         extensionId: expect.any(String),
         items: [
           expect.objectContaining({
-            title: 'Seal persistence probe',
+            title: 'Orca persistence probe',
             children: [
               expect.objectContaining({ key: '"fill"', title: 'Fill field' }),
               expect.objectContaining({ key: '"generate"', title: 'Generate password' })

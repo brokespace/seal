@@ -32,8 +32,8 @@ export function useThemeLooks(
       community: t('components.onboarding.theme.looks.sourceCommunity', 'Terminal palette'),
       builtIn: (base: ThemeLookBase) =>
         base === 'dark'
-          ? t('components.onboarding.theme.looks.orcaDark', 'Seal Dark')
-          : t('components.onboarding.theme.looks.orcaLight', 'Seal Light')
+          ? t('components.onboarding.theme.looks.orcaDark', 'Orca Dark')
+          : t('components.onboarding.theme.looks.orcaLight', 'Orca Light')
     }
     const build = (base: ThemeLookBase): ThemeLook[] =>
       buildThemeLooks({ base, pluginThemes, pluginTerminalThemes, baseline, labels }, t)

@@ -117,7 +117,7 @@ export default function ProjectBoard({
         <div className="flex-none border-b border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
           {t(
             'projectBoard.noColumnField',
-            'This board view has no single-select or iteration field to group by, so Seal is listing items instead.'
+            'This board view has no single-select or iteration field to group by, so Orca is listing items instead.'
           )}
         </div>
         {fallback}

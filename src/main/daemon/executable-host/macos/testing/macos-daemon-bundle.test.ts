@@ -40,8 +40,8 @@ const helperExecutable = (): string => join(helper, 'Contents', 'MacOS', 'orca-t
 beforeEach(async () => {
   root = await realpath(await mkdtemp(join(tmpdir(), 'orca-mac-runtime-')))
   // Model an update that moved the running bundle and replaced its original path.
-  source = join(root, 'com.stablyai.orca.ShipIt.old', 'Seal.app')
-  helper = join(source, 'Contents', 'Helpers', 'Seal Terminal Host.app')
+  source = join(root, 'com.stablyai.orca.ShipIt.old', 'Orca.app')
+  helper = join(source, 'Contents', 'Helpers', 'Orca Terminal Host.app')
   copies = join(root, 'profile', 'daemon-host', 'macos')
   await mkdir(join(source, 'Contents', 'MacOS'), { recursive: true })
   await mkdir(join(helper, 'Contents', 'MacOS'), { recursive: true })
@@ -57,7 +57,7 @@ beforeEach(async () => {
   onCopy = null
   inspectMock.mockReset().mockResolvedValue({
     identity: 'parked',
-    executablePath: join(source, 'Contents', 'MacOS', 'Seal')
+    executablePath: join(source, 'Contents', 'MacOS', 'Orca')
   })
   runProcessMock.mockReset().mockImplementation(async (spec) => {
     const args = spec.args ?? []
@@ -104,7 +104,7 @@ it('publishes one verified copy per helper build, from the running app rather th
     join(
       copy.directory,
       'app.noindex',
-      'Seal Terminal Host.app',
+      'Orca Terminal Host.app',
       'Contents',
       'MacOS',
       'orca-terminal-host'
@@ -136,7 +136,7 @@ it("rejects a copy that does not satisfy the running app's requirement and publi
 it('keeps the winning copy when a concurrent publisher renames first', async () => {
   onCopy = async () => {
     onCopy = null
-    const winner = join(copies, `terminal-host-${cdhash}`, 'app.noindex', 'Seal Terminal Host.app')
+    const winner = join(copies, `terminal-host-${cdhash}`, 'app.noindex', 'Orca Terminal Host.app')
     await cp(helper, winner, { recursive: true })
     await writeFile(join(winner, 'Contents', 'MacOS', 'orca-terminal-host'), 'winner')
   }
@@ -155,7 +155,7 @@ it('stops at the shared deadline and removes the staging copy', async () => {
     return controller.signal.aborted ? { ...ok, code: null } : (signed?.(spec) ?? ok)
   })
   await expect(materializeMacDaemonBundle(copies, controller.signal)).rejects.toThrow(
-    'Could not copy Seal Terminal Host.app'
+    'Could not copy Orca Terminal Host.app'
   )
   expect(await readdir(copies)).toEqual([])
 })
@@ -165,7 +165,7 @@ it('copies the app behind a symbolic link rather than retaining a link to the up
   await symlink(source, alias, 'junction')
   inspectMock.mockResolvedValue({
     identity: 'resolved',
-    executablePath: join(alias, 'Contents', 'MacOS', 'Seal')
+    executablePath: join(alias, 'Contents', 'MacOS', 'Orca')
   })
   const copy = await materializeMacDaemonBundle(copies, signal())
   await rm(alias)

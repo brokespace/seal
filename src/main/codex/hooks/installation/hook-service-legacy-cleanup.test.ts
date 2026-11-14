@@ -108,7 +108,7 @@ describe('CodexHookService', () => {
     expect(readFileSync(join(systemCodexHome, 'config.toml'), 'utf-8')).toContain(':stop:1:0')
   })
 
-  it('removes very large legacy Seal-managed hook lists from system ~/.codex', async () => {
+  it('removes very large legacy Orca-managed hook lists from system ~/.codex', async () => {
     const systemCodexHome = join(homes.tmpHome, '.codex')
     const systemHooksPath = join(systemCodexHome, 'hooks.json')
     const legacyCommand = legacyManagedHookCommand()
@@ -142,7 +142,7 @@ describe('CodexHookService', () => {
     expect(systemHooks.hooks.Stop).toBeUndefined()
   }, 30_000)
 
-  it('removes only the legacy Seal block from a user-edited Codex profile file', async () => {
+  it('removes only the legacy Orca block from a user-edited Codex profile file', async () => {
     const systemCodexHome = join(homes.tmpHome, '.codex')
     const profilePath = join(systemCodexHome, 'orca-agent-status.config.toml')
     mkdirSync(systemCodexHome, { recursive: true })

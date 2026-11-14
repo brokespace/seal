@@ -184,7 +184,7 @@ if (preflightReady) {
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
       const message =
-        formatProfileStateStartupFailure(error) ?? `Seal could not finish starting: ${detail}`
+        formatProfileStateStartupFailure(error) ?? `Orca could not finish starting: ${detail}`
       const failureClass = profileStateStartupFailureClass(error)
       if (failureClass !== undefined) {
         recordDurableCrashBreadcrumb('profile_state_startup_failed', {
@@ -245,7 +245,7 @@ if (preflightReady) {
               formatProfileStateStartupFailure(error, translateMain) ??
               translateMain(
                 'startupFailure.finishFailed',
-                'Seal could not finish starting: {{detail}}',
+                'Orca could not finish starting: {{detail}}',
                 { detail }
               ),
             ...(failureClass === 'recovery-required' || failureClass === 'ambiguous-authority'

@@ -37,7 +37,7 @@ async function callReference<TResult>(
     if (error instanceof RuntimeClientError && error.code === 'method_not_found') {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'This Seal host does not support reference commands yet. Update Seal on the execution host.'
+        'This Orca host does not support reference commands yet. Update Orca on the execution host.'
       )
     }
     throw error

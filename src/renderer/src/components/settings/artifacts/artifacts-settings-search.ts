@@ -10,7 +10,7 @@ export const getArtifactsSettingsSearchEntries = createLocalizedCatalog(() => [
     ),
     description: translate(
       'auto.components.settings.artifacts.allowPublishingSearchDescription',
-      'Allow Seal to publish HTML and Markdown files as public links.'
+      'Allow Orca to publish HTML and Markdown files as public links.'
     ),
     keywords: [
       ...translateSearchKeyword('auto.components.settings.artifacts.keywordArtifacts', 'artifacts'),

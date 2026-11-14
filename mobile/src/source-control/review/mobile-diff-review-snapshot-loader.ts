@@ -79,7 +79,7 @@ async function buildWorktreeSnapshot(
       kind: 'unavailable',
       message: translate(
         'session.diffReviewLoaders.desktopUpdateRequired',
-        'Update Seal desktop to review changes on mobile.'
+        'Update Orca desktop to review changes on mobile.'
       )
     }
   }

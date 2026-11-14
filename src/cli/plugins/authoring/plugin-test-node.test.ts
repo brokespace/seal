@@ -41,7 +41,7 @@ describe('selectPluginTestNode', () => {
     ['not on PATH', answering(new Error('spawn node ENOENT'))],
     ['failing', answering('', 1)],
     ['answering garbage', answering('nope')]
-  ])('falls back to Seal as Node when the system node is %s', async (_reason, probe) => {
+  ])('falls back to Orca as Node when the system node is %s', async (_reason, probe) => {
     const node = await selectPluginTestNode({ ...ORCA, electron: '38.0.0', run: probe.run })
     expect(node).toEqual({
       program: ORCA.execPath,

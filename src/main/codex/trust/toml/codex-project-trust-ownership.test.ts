@@ -15,7 +15,7 @@ import {
 const PROJECT = '/tmp/worktrees/feature-r1'
 const OTHER = '/tmp/worktrees/other-r1'
 
-describe('Seal-created project trust lifecycle', () => {
+describe('Orca-created project trust lifecycle', () => {
   let userDataDir: string
   let managedConfigPath: string
   let accountConfigPath: string
@@ -42,7 +42,7 @@ describe('Seal-created project trust lifecycle', () => {
     }
   })
 
-  it('removes the tables Seal created for a removed worktree, per account, and keeps other paths', async () => {
+  it('removes the tables Orca created for a removed worktree, per account, and keeps other paths', async () => {
     upsertOrcaCreatedProjectTrustLevel(managedConfigPath, PROJECT, 'trusted')
     upsertOrcaCreatedProjectTrustLevel(accountConfigPath, PROJECT, 'trusted')
     upsertOrcaCreatedProjectTrustLevel(managedConfigPath, OTHER, 'trusted')
@@ -59,7 +59,7 @@ describe('Seal-created project trust lifecycle', () => {
     expect(readFileSync(managedConfigPath, 'utf-8')).toContain(`[projects."${OTHER}"]`)
   })
 
-  it('keeps a table that existed at the path before Seal wrote it', async () => {
+  it('keeps a table that existed at the path before Orca wrote it', async () => {
     const userTable = [`[projects."${PROJECT}"]`, 'trust_level = "untrusted"', ''].join('\n')
     writeFileSync(managedConfigPath, userTable)
     writeFileSync(accountConfigPath, userTable)
@@ -78,7 +78,7 @@ describe('Seal-created project trust lifecycle', () => {
     )
   })
 
-  it('does not delete a table the user replaced after Seal created the original', async () => {
+  it('does not delete a table the user replaced after Orca created the original', async () => {
     upsertOrcaCreatedProjectTrustLevel(managedConfigPath, PROJECT, 'trusted')
     const replacement = [
       `[projects."${PROJECT}"]`,

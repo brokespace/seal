@@ -68,7 +68,7 @@ beforeEach(() => {
   mainWindow().rendererReady()
 })
 
-describe('an extension tab opened while Seal starts', () => {
+describe('an extension tab opened while Orca starts', () => {
   afterEach(() => {
     vi.useRealTimers()
   })

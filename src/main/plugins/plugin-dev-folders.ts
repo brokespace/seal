@@ -53,10 +53,10 @@ export function assertPluginSystemEnabled(service: {
   if (!service.options.isPluginSystemEnabled()) {
     throw new PluginCliError(
       PLUGIN_SYSTEM_DISABLED_CODE,
-      'Plugins are turned off on this Seal host.',
+      'Plugins are turned off on this Orca host.',
       {
         nextSteps: [
-          'Ask the user to click "Turn on plugins" in Seal Settings → Plugins (or, on a host with no window such as `orca serve`, to run `orca plugin system on` against it), then run the command again.'
+          'Ask the user to click "Turn on plugins" in Orca Settings → Plugins (or, on a host with no window such as `orca serve`, to run `orca plugin system on` against it), then run the command again.'
         ]
       }
     )
@@ -72,16 +72,16 @@ export async function resolveHostPluginFolder(path: string): Promise<string> {
   if (!isAbsolute(path)) {
     throw new PluginCliError(
       'invalid_argument',
-      `${path} is not an absolute path on the Seal host.`,
+      `${path} is not an absolute path on the Orca host.`,
       {
-        nextSteps: ['Pass the plugin folder as an absolute path on the machine that runs Seal.']
+        nextSteps: ['Pass the plugin folder as an absolute path on the machine that runs Orca.']
       }
     )
   }
   const real = await realpath(path).catch(() => null)
   if (!real || !(await stat(real)).isDirectory()) {
-    throw new PluginCliError('invalid_argument', `${path} is not a folder on the Seal host.`, {
-      nextSteps: ['Check the path; development folders must be on the machine that runs Seal.']
+    throw new PluginCliError('invalid_argument', `${path} is not a folder on the Orca host.`, {
+      nextSteps: ['Check the path; development folders must be on the machine that runs Orca.']
     })
   }
   return real

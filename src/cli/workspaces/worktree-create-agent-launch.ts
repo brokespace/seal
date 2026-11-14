@@ -62,7 +62,7 @@ export async function createWorktreeWithAgent(args: {
     if (hasLaunchModelFlags(flags)) {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'This Seal host cannot start an agent on a chosen model or effort. Update Seal on the execution host, or omit --model and --effort.'
+        'This Orca host cannot start an agent on a chosen model or effort. Update Orca on the execution host, or omit --model and --effort.'
       )
     }
     if (launch.surface) {

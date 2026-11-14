@@ -49,17 +49,17 @@ const sshPlatformWithheld = (): string =>
 const runtimePlatformWithheld = (): string =>
   translate(
     'auto.lib.executionHostFacts.runtimePlatformWithheld',
-    'The Seal server has not reported its operating system yet. Reconnect to it and try again.'
+    'The Orca server has not reported its operating system yet. Reconnect to it and try again.'
   )
 const runtimePlatformUpdate = (): string =>
   translate(
     'auto.lib.executionHostFacts.runtimePlatformUpdate',
-    'This Seal server does not report its operating system. Update the server to launch agents on it.'
+    'This Orca server does not report its operating system. Update the server to launch agents on it.'
   )
 const hostUnresolvedWithheld = (): string =>
   translate(
     'auto.lib.executionHostFacts.hostUnresolvedWithheld',
-    'Seal cannot tell which host owns this workspace yet.'
+    'Orca cannot tell which host owns this workspace yet.'
   )
 
 function resolveLocalPlatform(

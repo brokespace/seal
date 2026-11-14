@@ -35,7 +35,7 @@ export async function isUnregisteredRemovalLeftover(
 
 export function differentCheckoutAtPathError(worktreePath: string): Error {
   return new Error(
-    `A different checkout is now at ${worktreePath}; Seal left it in place. Delete it again to remove it.`
+    `A different checkout is now at ${worktreePath}; Orca left it in place. Delete it again to remove it.`
   )
 }
 

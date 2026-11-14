@@ -10,10 +10,10 @@ export function browserExtensionRemovalDescription(
   return source === 'unpacked'
     ? t(
         'settings.browser.extensions.removeUnpackedDescription',
-        'It is removed from every Seal browser profile, with its saved data. The folder on disk stays where it is.'
+        'It is removed from every Orca browser profile, with its saved data. The folder on disk stays where it is.'
       )
     : t(
         'settings.browser.extensions.removeDescription',
-        'It is removed from every Seal browser profile, with its saved data.'
+        'It is removed from every Orca browser profile, with its saved data.'
       )
 }

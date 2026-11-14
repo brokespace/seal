@@ -189,7 +189,7 @@ describe('MarkdownPreview http link routing (Cmd vs Cmd+Shift click)', () => {
     })
   }
 
-  it('plain left-click opens an HTTP link in Seal even when openLinksInApp is false', () => {
+  it('plain left-click opens an HTTP link in Orca even when openLinksInApp is false', () => {
     registerHttpLinkStoreAccessor(() => ({
       settings: { openLinksInApp: false, activeRuntimeEnvironmentId: null },
       setActiveWorktree: setActiveWorktreeMock,

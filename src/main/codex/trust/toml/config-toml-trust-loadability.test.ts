@@ -126,7 +126,7 @@ describe('hook approval writes never break a config.toml Codex can load', () => 
     ['an inline hooks.state table', '[hooks]\nstate = { "x:stop:0:0" = { trusted_hash = "u" } }\n'],
     ['an inline hooks table', 'hooks = { state = {} }\n'],
     [
-      "a dotted approval for Seal's own key",
+      "a dotted approval for Orca's own key",
       (): string => `hooks.state."${tomlKey(stopEntry())}".trusted_hash = "sha256:user"\n`
     ]
   ])('upsert refuses and leaves the file byte-identical: %s', (_case, content) => {

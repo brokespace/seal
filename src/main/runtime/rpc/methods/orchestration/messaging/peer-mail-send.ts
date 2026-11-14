@@ -33,14 +33,14 @@ export function peerMailLocalCaller(args: {
   if (!args.from || !paneKey) {
     throw new OrchestrationError(
       'invalid_argument',
-      '--on needs a terminal or chat agent on this Seal to receive the replies. Run it from that agent. Nothing was sent.',
+      '--on needs a terminal or chat agent on this Orca to receive the replies. Run it from that agent. Nothing was sent.',
       NOTHING_SENT
     )
   }
   if (args.runtime.getOrchestrationDb().findActiveRemoteAttachmentForPane(paneKey)) {
     throw new OrchestrationError(
       'invalid_argument',
-      "This terminal is a worker for another Seal's Run; its mail goes to that Run's coordinator, not to other servers. Nothing was sent.",
+      "This terminal is a worker for another Orca's Run; its mail goes to that Run's coordinator, not to other servers. Nothing was sent.",
       NOTHING_SENT
     )
   }
@@ -76,7 +76,7 @@ export async function sendPeerMail(args: {
   if (params.payload !== undefined) {
     throw new OrchestrationError(
       'invalid_argument',
-      '--on carries a subject and body; payload fields such as --task-id or --report-path name work on this Seal only. Nothing was sent.',
+      '--on carries a subject and body; payload fields such as --task-id or --report-path name work on this Orca only. Nothing was sent.',
       NOTHING_SENT
     )
   }

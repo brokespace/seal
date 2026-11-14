@@ -285,7 +285,7 @@ const runWslSetup: WslSetup = async (distro, home, accountId) => {
     .map((dir) => join(dir, WSL_CLAUDE_PROFILE_HELPER_FILENAME))
     .find(existsSync)
   if (!helper) {
-    throw new Error('The bundled WSL Claude account helper is missing. Reinstall Seal.')
+    throw new Error('The bundled WSL Claude account helper is missing. Reinstall Orca.')
   }
   const run = (spec: WslSpec, timeoutMs?: number) => runGuest(distro, spec, timeoutMs)
   const node = await ensureWslPinnedRuntime(

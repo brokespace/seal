@@ -128,10 +128,10 @@ export const KNOWN_RATE_LIMIT_ERRORS_A: RateLimitKnownError[] = [
     fallback: 'Unable to read Grok auth file'
   },
   {
-    test: 'Grok sign-in expired — run grok on the computer running Seal; sign in if prompted. No chat message is needed.',
+    test: 'Grok sign-in expired — run grok on the computer running Orca; sign in if prompted. No chat message is needed.',
     key: 'auto.lib.rateLimits.errors.grokSignInExpired',
     fallback:
-      'Grok sign-in expired — run grok on the computer running Seal; sign in if prompted. No chat message is needed.'
+      'Grok sign-in expired — run grok on the computer running Orca; sign in if prompted. No chat message is needed.'
   },
   {
     test: 'Grok billing response did not include config',

@@ -19,7 +19,7 @@ const PAIRED = {
   clientKind: 'runtime' as const
 }
 
-describe('a paired Seal coordinating its Run on this server', () => {
+describe('a paired Orca coordinating its Run on this server', () => {
   let dir: string
   let db: OrchestrationDb
   let runtime: OrcaRuntimeService

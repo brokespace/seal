@@ -186,7 +186,7 @@ export function sendQueuedStructuredAgentMessage(
               refusal: refuse(
                 'execution_owner_reconciling',
                 { reason: 'mailOwnerUnconfirmed' },
-                "Seal can't confirm this queued mail is still owed to this chat."
+                "Orca can't confirm this queued mail is still owed to this chat."
               )
             }
           }

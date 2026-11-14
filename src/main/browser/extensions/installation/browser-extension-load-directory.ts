@@ -149,7 +149,7 @@ export async function refuseOrcaFileCollisions(
   for (const path of wrapperPath ? [...ORCA_ROOT_FILES, wrapperPath] : ORCA_ROOT_FILES) {
     const target = resolveInsideExtensionDirectory(directory, path)
     if (target && (await stat(target).catch(() => null))) {
-      throw new Error(`Seal can't load this extension: its file ${path} uses a name Seal reserves`)
+      throw new Error(`Orca can't load this extension: its file ${path} uses a name Orca reserves`)
     }
   }
 }

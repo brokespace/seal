@@ -42,7 +42,7 @@ export function resumeFailureGuidance(
 function manualContinuationText(t: Translate = translate): string {
   return t(
     'auto.components.NativeChatResumeFailureGuidance.fallback',
-    'Seal couldn’t resume this chat. Open it to continue manually.'
+    'Orca couldn’t resume this chat. Open it to continue manually.'
   )
 }
 
@@ -54,7 +54,7 @@ function reasonGuidance(
     return {
       text: t(
         'auto.components.NativeChatResumeFailureGuidance.unconfirmed',
-        'Seal couldn’t confirm the “continue” message was delivered. Open the chat and check before sending another.'
+        'Orca couldn’t confirm the “continue” message was delivered. Open the chat and check before sending another.'
       ),
       primary: 'open',
       secondary: null
@@ -65,7 +65,7 @@ function reasonGuidance(
     return {
       text: t(
         'auto.components.NativeChatResumeFailureGuidance.superseded',
-        'Open the chat and reply. New work arrived in it right after the restart, so Seal didn’t send its “continue” message.'
+        'Open the chat and reply. New work arrived in it right after the restart, so Orca didn’t send its “continue” message.'
       ),
       primary: 'open',
       secondary: null
@@ -75,7 +75,7 @@ function reasonGuidance(
     return {
       text: t(
         'auto.components.NativeChatResumeFailureGuidance.conflict',
-        'This chat is open in another Seal window or terminal. Close it there, then retry.'
+        'This chat is open in another Orca window or terminal. Close it there, then retry.'
       ),
       primary: 'retry',
       secondary: 'open'
@@ -115,7 +115,7 @@ function reasonGuidance(
     return {
       text: t(
         'auto.components.NativeChatResumeFailureGuidance.unsupported',
-        'This chat can’t be resumed by Seal. Open it to see where it stopped.'
+        'This chat can’t be resumed by Orca. Open it to see where it stopped.'
       ),
       primary: 'open',
       secondary: 'dismiss'

@@ -58,7 +58,7 @@ export function getOrcaCloudAuthConfig(
   if (!apiBaseUrl || !clientId) {
     return {
       configured: false,
-      setupMessage: 'Seal Cloud sign-in is not configured for this build.'
+      setupMessage: 'Orca Cloud sign-in is not configured for this build.'
     }
   }
 

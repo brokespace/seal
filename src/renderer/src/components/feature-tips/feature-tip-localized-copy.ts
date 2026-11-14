@@ -18,7 +18,7 @@ const getFeatureTipCopyById = createLocalizedCatalog(
     },
     'orca-cli': {
       eyebrow: translate('featureTips.eyebrowTip', 'Tip'),
-      title: translate('featureTips.orcaCli.title', 'Let agents drive Seal with the Seal CLI'),
+      title: translate('featureTips.orcaCli.title', 'Let agents drive Orca with the Orca CLI'),
       description: translate(
         'featureTips.orcaCli.description',
         'Enable agents to coordinate child worktrees and communicate between worktrees.'

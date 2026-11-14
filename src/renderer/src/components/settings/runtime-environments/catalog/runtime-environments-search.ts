@@ -8,11 +8,11 @@ export const getRuntimeEnvironmentsSearchEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
       'auto.components.settings.runtime.environments.search.24cc0a2244',
-      'Remote Seal servers'
+      'Remote Orca servers'
     ),
     description: translate(
       'auto.components.settings.runtime.environments.search.addShareDefault',
-      'Add a remote Seal server, share this computer, or choose where new projects open.'
+      'Add a remote Orca server, share this computer, or choose where new projects open.'
     ),
     keywords: [
       ...translateSearchKeyword(
@@ -74,7 +74,7 @@ export const getRuntimeEnvironmentsSearchEntry = createLocalizedCatalog(
       ),
       ...translateSearchKeyword(
         'auto.components.settings.managedServers.search.title',
-        'Seal on your SSH hosts'
+        'Orca on your SSH hosts'
       ),
       ...translateSearchKeyword('auto.components.settings.managedServers.search.keywordSsh', 'ssh'),
       ...translateSearchKeyword(
@@ -104,11 +104,11 @@ export const getWebRuntimeEnvironmentsSearchEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
       'auto.components.settings.runtime.environments.search.24cc0a2244',
-      'Remote Seal servers'
+      'Remote Orca servers'
     ),
     description: translate(
       'auto.components.settings.runtime.environments.search.baec27aa8f',
-      'Connect this browser to a saved Seal server.'
+      'Connect this browser to a saved Orca server.'
     ),
     keywords: [
       ...translateSearchKeyword(

@@ -119,7 +119,7 @@ export function VaultSessionRow({
   const deleteBlockedReason = session.structuredSession
     ? t(
         'auto.components.right.sidebar.AiVaultSessionRow.deleteReasonSyntheticPath',
-        "This session can't be deleted from Seal."
+        "This session can't be deleted from Orca."
       )
     : onRequestDelete
       ? aiVaultSessionDeleteBlockedReason(session, deleteHost, t)

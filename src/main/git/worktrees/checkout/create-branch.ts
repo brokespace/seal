@@ -28,7 +28,7 @@ export async function createBranch(
         throw new BranchSwitchCollisionError(name)
       }
       throw new Error(
-        "Seal couldn't create the branch. Check this repository in a terminal, then try again."
+        "Orca couldn't create the branch. Check this repository in a terminal, then try again."
       )
     })
     return { outcome: 'landed', branch: name, commitId: startPoint.toLowerCase() }

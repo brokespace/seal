@@ -47,12 +47,12 @@ export function renderMobileTasksProjectMissingRepoDrawer(model: ConnectionPrese
         <View>
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>
-              {translate('tasks.projectDetailDrawer.repositoryNotInOrca', 'Repository not in Seal')}
+              {translate('tasks.projectDetailDrawer.repositoryNotInOrca', 'Repository not in Orca')}
             </Text>
             <Text style={styles.sheetSubtitle}>
               {translate(
                 'tasks.projectDetailDrawer.addRepositoryFromDesktop',
-                '{{repository}} is not added to Seal. Add this repository from the desktop app, then refresh mobile Tasks.',
+                '{{repository}} is not added to Orca. Add this repository from the desktop app, then refresh mobile Tasks.',
                 { repository: `${projectRepoNotInOrca.owner}/${projectRepoNotInOrca.repo}` }
               )}
             </Text>
@@ -353,7 +353,7 @@ export function renderMobileTasksProjectDetailDrawer(model: ConnectionPresentati
                     ? undefined
                     : translate(
                         'tasks.projectDetailDrawer.mergeRepositoryRequirement',
-                        'Merge requires this repository in Seal.'
+                        'Merge requires this repository in Orca.'
                       )
                 }
                 leading={<GitBranch size={16} color={colors.textPrimary} />}

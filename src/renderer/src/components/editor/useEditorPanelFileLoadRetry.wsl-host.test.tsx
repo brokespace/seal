@@ -35,7 +35,7 @@ const FILE: OpenFile = {
   isDirty: false,
   mode: 'edit'
 }
-const UNREACHABLE = 'Could not connect to the remote Seal runtime.'
+const UNREACHABLE = 'Could not connect to the remote Orca runtime.'
 
 function Probe({ loadFileContent }: { loadFileContent: () => Promise<void> }): null {
   const [fileContents, setFileContents] = useState<Record<string, FileContent>>({

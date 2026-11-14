@@ -100,7 +100,7 @@ export function FloatingTerminalOrchestrationDialog({
           <DialogDescription className="sr-only">
             {t(
               'auto.components.floating.terminal.FloatingTerminalOrchestrationDialog.6f0aed26b8',
-              'Install the Seal CLI and orchestration skill so agents can coordinate through Seal.'
+              'Install the Orca CLI and orchestration skill so agents can coordinate through Orca.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -112,7 +112,7 @@ export function FloatingTerminalOrchestrationDialog({
           )}
           description={t(
             'auto.components.floating.terminal.FloatingTerminalOrchestrationDialog.f726054620',
-            'Enables agents to hand off context and coordinate work through Seal.'
+            'Enables agents to hand off context and coordinate work through Orca.'
           )}
           skillNames={[ORCHESTRATION_SKILL_NAME]}
           installed={orchestrationSkillDetected}

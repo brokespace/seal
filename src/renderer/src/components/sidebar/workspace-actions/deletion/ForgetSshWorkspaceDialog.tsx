@@ -142,7 +142,7 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
             <ServerOff className="size-4 text-muted-foreground" />
             {t(
               'auto.components.sidebar.ForgetSshWorkspaceDialog.removeTitle',
-              'Remove “{{name}}” from Seal?',
+              'Remove “{{name}}” from Orca?',
               { name: displayName }
             )}
           </DialogTitle>
@@ -150,12 +150,12 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
             {resolution.kind === 'saved'
               ? t(
                   'auto.components.sidebar.ForgetSshWorkspaceDialog.savedHostBody',
-                  'This workspace’s project isn’t served by Seal’s server on {{host}}, so Seal can’t delete it there. You can remove it from Seal; files, the Git worktree, and branches on {{host}} are left untouched.',
+                  'This workspace’s project isn’t served by Orca’s server on {{host}}, so Orca can’t delete it there. You can remove it from Orca; files, the Git worktree, and branches on {{host}} are left untouched.',
                   { host: hostLabel }
                 )
               : t(
                   'auto.components.sidebar.ForgetSshWorkspaceDialog.ghostBody',
-                  '{{host}} is no longer a saved SSH host, so this workspace is no longer connected to a live host. It can only be removed from Seal — files and branches on the remote are left untouched.',
+                  '{{host}} is no longer a saved SSH host, so this workspace is no longer connected to a live host. It can only be removed from Orca — files and branches on the remote are left untouched.',
                   { host: hostLabel }
                 )}
           </DialogDescription>
@@ -174,7 +174,7 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
           </Button>
           <Button size="sm" onClick={() => void handleForget()} disabled={busy}>
             {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            {t('auto.components.sidebar.ForgetSshWorkspaceDialog.forget', 'Remove from Seal')}
+            {t('auto.components.sidebar.ForgetSshWorkspaceDialog.forget', 'Remove from Orca')}
           </Button>
         </DialogFooter>
       </DialogContent>

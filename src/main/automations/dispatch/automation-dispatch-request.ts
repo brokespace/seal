@@ -63,7 +63,7 @@ export async function requestAutomationDispatch(
   const readRun = (): AutomationRun => {
     if (!ctx.isActive()) {
       throw new AutomationDispatchCancelledError(
-        'Seal stopped before this automation could launch.'
+        'Orca stopped before this automation could launch.'
       )
     }
     const current = ctx.store.listAutomationRuns(automation.id).find((entry) => entry.id === run.id)
