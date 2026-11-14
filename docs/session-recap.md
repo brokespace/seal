@@ -41,10 +41,10 @@ session after the first turn.
 | Title                 | Up to six words naming the session. Used as its label (see precedence).                         | model, guarded |
 | Goal and why          | One sentence: what he wants and the purpose behind it.                                          | model          |
 | Where it stands       | One or two sentences on the current state.                                                      | model          |
-| Since you last looked | Counts of what entered the recap after his previous visit; those rows are marked new.           | host, no model |
+| Since you last looked | What the agent did, decided or left aside after his previous visit, newest first.               | host, no model |
 | Open questions        | Questions the agent put to him that are still unanswered. Can be ticked or dismissed.           | model          |
 | Action items          | Things he must do himself: said he would, or the agent told him to. Can be ticked or dismissed. | model          |
-| Not addressed         | Requests of his the agent never acted on. Can be dismissed.                                     | model          |
+| Not addressed         | Requests of his the agent never acted on. They leave when the agent gets to them.               | model          |
 | What I asked          | Each of his requests, condensed to a line, oldest first.                                        | model          |
 | What the agent did    | Work items, each `done`, `in-progress` or `blocked`.                                            | model          |
 | Decisions             | Choices made, by either side.                                                                   | model          |
@@ -53,6 +53,10 @@ session after the first turn.
 Two sections cost nothing. _Files, PRs and links_ is read off the transcript's edit tool calls
 (their paths only) and the URLs in the prose. _Since you last looked_ compares each item's arrival
 time with the previous visit. Both are exact, which a model would not be.
+
+_Since you last looked_ lists only the agent's side (work, decisions, requests left aside).
+Questions and action items that arrived in the same window are not repeated there: they stay in
+their own lists, where they can be ticked, and carry a "New" mark.
 
 ## Information model
 
@@ -146,7 +150,7 @@ transcript is never re-read from the start.
 | Trigger                                                                         | Rule                                                                                                                                        |
 | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | The session stops (`waiting-input`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one pass per session every 4 minutes; a stop inside that window is picked up when it ends. |
-| He opens the session                                                            | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status.                                                  |
+| He opens the session, or comes back to the window or app                        | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                            |
 | Refresh recap                                                                   | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                  |
 | The transcript shrank (rewritten)                                               | Start over from the recent history.                                                                                                         |
 
@@ -166,7 +170,7 @@ outcome and any question sit).
   chat view tails with). Typically one turn: a few hundred tokens.
 - **First pass.** Page backward from the end (`transcriptPage`) until 3 chunks' worth of prose
   is collected or the start is reached. Older history is left out and `coveredFrom` says so; the
-  UI states "covers the last N messages". The first prompt still informs the goal: it is the
+  UI states that the recap covers recent history only. The first prompt still informs the goal: it is the
   provider title the registry already holds.
 - **Chunks.** 24,000 characters of prose each (about 6.9k tokens), processed oldest to newest,
   each call carrying the rolling recap forward. At most 1 chunk for an automatic first pass, 3
@@ -253,25 +257,41 @@ panel shows why, and the next trigger tries again.
 
 Desktop, inside the session view (`LiveSessionPane`):
 
-- **Recap bar** under the header, one line: where it stands, then chips for open questions and
-  action items, and a dot when something arrived since he last looked. It is what he sees on
-  open. Clicking it opens the panel.
-- **Recap panel**, a fourth side panel beside Subagents, Tasks and Reasoning, with the same
-  chrome. Top to bottom: since you last looked; goal; where it stands; open questions and action
-  items (checkbox, dismiss); not addressed; what I asked; what the agent did; decisions; files,
-  PRs and links. Each row jumps to its message, paging older history in when needed. The footer
-  has "Updated 5 min ago", what the recap covers, and Refresh recap.
-- **Badge** on Active agents rows and Home session cards: open questions and open action items.
+- **Recap button** in the header, first among Subagents, Tasks and Reasoning, with the number of
+  open questions and action items in the attention colour.
+- **Recap bar** under the header, one line: where it stands (else the goal), "N new" when
+  something arrived since he last looked, the open question and action item counts, and "Updated
+  5m ago". It is what he sees on open without doing anything. The whole bar is a button that
+  opens and closes the panel.
+- **Recap panel**, a right-side panel with the chrome Subagents, Tasks and Reasoning use
+  (`LiveSessionSidePanel`). Top to bottom: a note when the recap is not fresh; goal; where it
+  stands; since you last looked; questions for you and your action items (checkbox for done, X to
+  dismiss; settled ones fold under "N done or dismissed", where they can be unticked or brought
+  back); asked but not addressed; what you asked (the last six, the rest behind "N earlier"); what
+  the agent did (in progress, blocked, then done); decisions; files, PRs and links. The footer has
+  "Updated 5m ago", "recent history only" when older history was left out, and Refresh recap.
+- **Jumping.** Every item with a message behind it is a button. It closes any subagent transcript
+  and reveals the message through the chat list's own navigation (`revealMessage`), which pages
+  older history in until the message is loaded and lands on it the way the turn rail does. A PR or
+  link also has an open-in-browser button.
+- **Badge** on session rows (Active agents): open questions and open action items, in the
+  attention colour, absent at zero.
 
-Mobile, over the same RPC:
+Mobile, over the same RPC and the same synced session:
 
 - The same badge on session rows, and the same label precedence.
-- A recap banner above the transcript, and a sheet with the same sections, ticks and Refresh.
-  Rows jump to their message when it is loaded.
+- A recap banner above the transcript: the headline and the two counts. Tapping it opens a
+  sheet with the same sections, ticks, dismissals and Refresh. Tapping an item closes the sheet
+  and scrolls the transcript to its message, loading earlier pages (up to 12) until it is there.
+- Opening the session, and bringing the app back to the foreground, count as a visit.
 
-States: writing the first recap; up to date; out of date and updating; paused (rate limit) with
-the time it resumes; budget spent for today; failed with the provider's reason; no utility model
-on this host (the bar and panel are hidden).
+Both clients read a recap through `session-recap-view.ts` (what is new, what is open, the order
+of work), so they cannot disagree about what a recap says.
+
+States: writing the first recap; up to date; out of date ("the session has moved on"); updating;
+paused (rate limit) with the time it resumes; budget spent for today; failed with the provider's
+reason; degraded (the model's reply was unusable); recaps off or no utility model on this host,
+where the desktop panel links to the setting and the bar and the phone's banner are absent.
 
 ## Not in this version
 
