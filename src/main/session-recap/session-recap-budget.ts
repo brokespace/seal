@@ -14,12 +14,22 @@ const RATES: Record<string, { input: number; output: number }> = {
 const UNKNOWN_RATE = { input: 9.091, output: 36.4 }
 const CHARS_PER_TOKEN = 3.5
 
-/** Of the 10,000 free neurons a day: where passes nobody asked for stop, and where all do. */
+/**
+ * Of the 10,000 free neurons a day: where passes on sessions still at work stop, then passes on
+ * stops nobody asked for, then all. Each tier leaves room for the one above it.
+ */
+export const RECAP_WORKING_DAILY_NEURONS = 3000
 export const RECAP_AUTO_DAILY_NEURONS = 6000
 export const RECAP_ASKED_DAILY_NEURONS = 9000
 
-/** `auto` runs on its own when a session stops; `asked` is the user opening or refreshing. */
-export type RecapPassKind = 'auto' | 'asked'
+/** `working` runs while a session works; `auto` when it stops; `asked` is the user opening or refreshing. */
+export type RecapPassKind = 'working' | 'auto' | 'asked'
+
+const DAILY_LIMITS: Record<RecapPassKind, number> = {
+  working: RECAP_WORKING_DAILY_NEURONS,
+  auto: RECAP_AUTO_DAILY_NEURONS,
+  asked: RECAP_ASKED_DAILY_NEURONS
+}
 
 type BudgetDay = { day: string; neurons: number }
 
@@ -70,8 +80,7 @@ export class SessionRecapBudget {
   }
 
   allows(kind: RecapPassKind): boolean {
-    const limit = kind === 'auto' ? RECAP_AUTO_DAILY_NEURONS : RECAP_ASKED_DAILY_NEURONS
-    return this.day().neurons < limit
+    return this.day().neurons < DAILY_LIMITS[kind]
   }
 
   spend(neurons: number): void {

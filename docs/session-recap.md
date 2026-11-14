@@ -152,16 +152,20 @@ a new title once; one that keeps working on the same thing keeps its title.
 Always incrementally: the previous recap, compacted, plus the messages since `coveredTo`. The
 transcript is never re-read from the start.
 
-| Trigger                                                                                      | Rule                                                                                                                                        |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| The session stops (`waiting-input`, `your-turn`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one pass per session every 4 minutes; a stop inside that window is picked up when it ends. |
-| He opens the session, or comes back to the window or app                                     | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                            |
-| Refresh recap                                                                                | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                  |
-| The transcript shrank (rewritten)                                                            | Start over from the recent history.                                                                                                         |
+| Trigger                                                                                      | Rule                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The session stops (`waiting-input`, `your-turn`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one stop pass per session every 4 minutes; a stop inside that window is picked up when it ends. A pass made while it worked never delays this one.                                                                                              |
+| The session is working (`working`, `running-shell`)                                          | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its stop pass. |
+| He opens the session, or comes back to the window or app                                     | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                                                                                                                                                                                 |
+| Refresh recap                                                                                | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                                                                                                                                                                       |
+| The transcript shrank (rewritten)                                                            | Start over from the recent history.                                                                                                                                                                                                                                                              |
 
-A working session is not recapped on its own: its turn is not a fact yet. A headless server only
-keeps up sessions someone has opened from a client paired to it, so a desktop and a server that
-both see a session do not both pay for it.
+A pass on a working session reads the turn before it has ended, so its request says so: the
+agent's last message is unfinished, work in it is recorded as in progress, never done, and
+_where it stands_ says what the agent is doing now. The stop pass that follows settles it. While
+the agent has written too little, the check asks no model and leaves `coveredTo` where it was. A
+headless server only keeps up sessions someone has opened from a client paired to it, so a
+desktop and a server that both see a session do not both pay for it.
 
 ## Reading and chunking the transcript
 
@@ -178,8 +182,8 @@ outcome and any question sit).
   UI states that the recap covers recent history only. The first prompt still informs the goal: it is the
   provider title the registry already holds.
 - **Chunks.** 24,000 characters of prose each (about 6.9k tokens), processed oldest to newest,
-  each call carrying the rolling recap forward. At most 1 chunk for an automatic first pass, 3
-  for a pass he asked for. Anything beyond that is dropped from the old end, never from the new.
+  each call carrying the rolling recap forward. At most 1 chunk for a first pass nobody asked
+  for (a stop, or a working session), 3 for a pass he asked for. Anything beyond that is dropped from the old end, never from the new.
 
 The context window (131k tokens) is never the constraint; the daily allocation is.
 
@@ -193,15 +197,20 @@ status summaries. Tokens are estimated at 3.5 characters each.
 | Call                                      | Input tokens                     | Output tokens | Neurons |
 | ----------------------------------------- | -------------------------------- | ------------- | ------- |
 | Typical update (one turn)                 | 450 system + 600 recap + 600 new | 250           | ~18     |
+| Update while working (1,200+ characters)  | 450 system + 600 recap + 500 new | 250           | ~18     |
 | Full chunk (first pass, long gap)         | 450 + 900 + 6,900                | 700           | ~71     |
 | Worst case (repair retry of a full chunk) | 2 x 8,250 + 600                  | 2 x 1,000     | ~167    |
 | Status summary, for comparison            | 600                              | 30            | ~4.4    |
 
 A day of 150 turns across all sessions is about 2,700 neurons of recaps plus 660 of summaries.
-The host keeps its own tally (per UTC day, persisted) and enforces:
+A session that works without stopping adds at most 15 passes an hour, about 270 neurons. The
+host keeps its own tally (per UTC day, persisted) and enforces three tiers, each leaving room
+for the next:
 
-- **Automatic passes stop at 6,000 neurons** of recap work a day. Rows keep their last recap and
-  the panel says updates resume tomorrow.
+- **Passes on working sessions stop at 3,000 neurons** of recap work a day (about 11 hours of
+  uninterrupted agent work). After that a session is recapped when it stops, as before.
+- **Passes on stops stop at 6,000 neurons**. Rows keep their last recap and the panel says
+  updates resume tomorrow.
 - **Passes he asks for** (open, Refresh) run until 9,000.
 - A 429 or a spent allocation pauses every utility request to that provider through its
   `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note.
@@ -265,13 +274,13 @@ panel shows why, and the next trigger tries again.
 
 Desktop, inside the session view (`LiveSessionPane`):
 
-- **Recap button** in the header, first among Subagents, Tasks and Reasoning, with the number of
+- **Recap button** in the header, before Subagents and Tasks, with the number of
   open questions and action items in the attention colour.
 - **Recap bar** under the header, one line: where it stands (else the goal), "N new" when
   something arrived since he last looked, the open question and action item counts, and "Updated
   5m ago". It is what he sees on open without doing anything. The whole bar is a button that
   opens and closes the panel.
-- **Recap panel**, a right-side panel with the chrome Subagents, Tasks and Reasoning use
+- **Recap panel**, a right-side panel with the chrome Subagents and Tasks use
   (`LiveSessionSidePanel`). Top to bottom: a note when the recap is not fresh; goal; where it
   stands; since you last looked; questions for you and your action items (checkbox for done, X to
   dismiss; settled ones fold under "N done or dismissed", where they can be unticked or brought

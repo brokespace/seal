@@ -4,7 +4,7 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
-import { activeAgentsFilterStore } from '../active-agents/active-agents-filter-store'
+import { activeAgentsScopeStore } from '../active-agents/active-agents-scope-store'
 import type { ActiveAgentsScope } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { useLiveSessionLinks } from './use-live-session-links'
@@ -49,7 +49,7 @@ export function LiveSessionsBadge({
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        activeAgentsFilterStore.setScope(scope)
+        activeAgentsScopeStore.setScope(scope)
         liveSessionMarksStore.reveal(badge.sessionIds[0])
       }}
       className={cn(

@@ -10,16 +10,23 @@ import { useAppStore } from '@/store/index'
 
 export function ProjectsCollapseAllButton({
   allCollapsed,
-  onToggle
+  onToggle,
+  label: sectionLabel,
+  pinned
 }: {
   allCollapsed: boolean
   onToggle: () => void
+  /** Another sidebar section folding with this toggle names its own action; the shortcut is Projects'. */
+  label?: string
+  /** Shown without hover: a folded section has nothing else to say it is folded. */
+  pinned?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
   const shortcut = useShortcutKeyDetails('sidebar.projects.toggleCollapse')
-  const label = allCollapsed
+  const projectsLabel = allCollapsed
     ? t('auto.components.sidebar.SidebarHeader.expandAllProjects', 'Expand all projects')
     : t('auto.components.sidebar.SidebarHeader.collapseAllProjects', 'Collapse all projects')
+  const label = sectionLabel ?? projectsLabel
   const Icon = allCollapsed ? ChevronsUpDown : ChevronsDownUp
   const announcing = useAppStore((s) => s.activeContextualTourId === 'projects-collapse-all')
 
@@ -34,7 +41,7 @@ export function ProjectsCollapseAllButton({
             'can-hover:w-0 can-hover:opacity-0',
             'can-hover:group-hover/sidebar-header:w-6 can-hover:group-hover/sidebar-header:opacity-100',
             'can-hover:focus-within:w-6 can-hover:focus-within:opacity-100',
-            announcing && 'can-hover:w-6 can-hover:opacity-100'
+            (announcing || pinned) && 'can-hover:w-6 can-hover:opacity-100'
           )}
         >
           <TooltipTrigger asChild>
@@ -52,7 +59,7 @@ export function ProjectsCollapseAllButton({
         <TooltipContent side="top" sideOffset={4}>
           <span className="flex items-center gap-2">
             {label}
-            <ShortcutKeyCombo {...shortcut} />
+            {sectionLabel ? null : <ShortcutKeyCombo {...shortcut} />}
           </span>
         </TooltipContent>
       </Tooltip>
