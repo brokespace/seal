@@ -26252,6 +26252,86 @@
         "resumedDescription": "It could not switch logins while running, so Seal restarted it on the new account with the same conversation.",
         "failed": "Could not move a session to {{value0}}"
       }
+    },
+    "sessionSummaries": {
+      "paused": "Summaries paused",
+      "pausedDetail": "Cloudflare’s free limit for today is used up. New summaries resume at {{time}}.",
+      "pending": "Summarizing…",
+      "tooltipSource": "AI summary of the last message",
+      "setting": {
+        "title": "Session summaries",
+        "searchDescription": "Show a one-line AI summary on agent sessions.",
+        "description": "When an agent stops or waits on a task, show one short sentence saying what it did or needs. Only the agent’s last message is sent, never tool output.",
+        "needsProvider": "Starts once a Cloudflare account is linked above."
+      },
+      "toggleFailed": "Could not change session summaries."
+    },
+    "cloudflareAi": {
+      "status": {
+        "fromFile": "Read from ~/.config/seal/cloudflare-ai.json on this computer.",
+        "fromFileOnHost": "Read from ~/.config/seal/cloudflare-ai.json on {{host}}.",
+        "stored": "Stored on this computer and sent only to Cloudflare.",
+        "storedOnHost": "Stored on {{host}} and sent from there only to Cloudflare.",
+        "connected": "Account linked · …{{account}}",
+        "notConfigured": "No Cloudflare account linked",
+        "notConfiguredHelp": "Save an account ID and API token below, or put them in ~/.config/seal/cloudflare-ai.json on the host.",
+        "paused": "Cloudflare’s limit was reached. Summaries resume at {{time}}; nothing else is affected."
+      },
+      "title": "Cloudflare AI",
+      "subtitle": "A small Workers AI model writes the one-line summary on each agent session. The free plan is enough.",
+      "tokensLink": "Get API token",
+      "test": {
+        "okFallback": "Works: the fallback {{model}} answered in {{ms}} ms.",
+        "ok": "Works: {{model}} answered in {{ms}} ms.",
+        "button": "Test"
+      },
+      "hostOnly": "Change the Cloudflare account and model in the desktop app, or in the config file on the computer running Seal.",
+      "credentials": {
+        "title": "Account ID and API token",
+        "description": "The Cloudflare account ID and a Workers AI API token.",
+        "saved": "Saved",
+        "notSaved": "Not saved",
+        "tokenName": "The Cloudflare API token",
+        "accountIdPlaceholder": "Account ID",
+        "tokenPlaceholder": "API token",
+        "replace": "Replace",
+        "save": "Save",
+        "forget": "Forget",
+        "accountIdInvalid": "The account ID is 32 letters and digits, shown on the Workers AI page of the Cloudflare dashboard.",
+        "help": "Create a token with the Workers AI Read permission. It is kept in the host’s credential storage, sent only to Cloudflare, and never shown again."
+      },
+      "model": {
+        "notOnPlan": "paid plan",
+        "title": "Model",
+        "description": "The Workers AI model that writes summaries, and the one used when it is unavailable.",
+        "fallbackTitle": "Fallback model",
+        "usingFallback": "Summaries use {{model}} instead.",
+        "catalogFailed": "Could not load the model list: {{reason}}",
+        "help": "GLM 4.7 Flash answers in about half a second and fits roughly 7,000 summaries a day in the Workers Free allocation."
+      },
+      "search": {
+        "title": "Cloudflare AI",
+        "description": "Link a Cloudflare Workers AI account for session summaries. Pick the model and turn summaries on or off.",
+        "kw": {
+          "cloudflare": "cloudflare",
+          "workersAi": "workers ai",
+          "summary": "summary",
+          "summaries": "summaries",
+          "model": "model",
+          "apiToken": "api token"
+        }
+      },
+      "saveFailed": "Cloudflare AI settings were not saved.",
+      "testFailed": "Could not run the Cloudflare AI test.",
+      "failure": {
+        "thisModel": "This model",
+        "notConfigured": "Add an account ID and API token first.",
+        "unauthorized": "Cloudflare rejected the credentials. Check the account ID, and that the token has the Workers AI permission.",
+        "planUnavailable": "{{model}} is not available on this account’s Workers plan (it needs a paid plan).",
+        "rateLimited": "Cloudflare’s rate limit or daily free allocation was reached.",
+        "modelNotFound": "{{model}} does not exist on Workers AI.",
+        "badResponse": "Cloudflare answered unexpectedly: {{message}}"
+      }
     }
   }
 }
