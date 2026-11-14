@@ -94,6 +94,6 @@ Local workerd speaks only HTTP/1.1 to upstreams, so APNs (HTTP/2 only) is unreac
 
 ## Notes
 
-- Only end-to-end-encrypted frames cross the relay for pairing, terminals and device traffic. The MCP endpoint above is the exception. The desktop and the phone run their own X25519 E2EE channel; the Worker splices bytes and stores credential hashes.
+- Only end-to-end-encrypted frames cross the relay for pairing, terminals and device traffic. The desktop and the phone run their own X25519 E2EE channel; the Worker splices bytes and stores credential hashes. There are two exceptions: the MCP endpoint above, and push notifications, whose title, body and device token pass through the Worker and on to Apple or Google readable. Keep Workers Logs and Logpush off.
 - Nothing in this Worker calls Orca's cloud. Each host is its own relay account (`seal:<relayHostId>`), proven by its pairing key and admitted by `HOST_ALLOWLIST`.
 - If you change `wrangler.toml` routes, keep `relay.` and `push.` on the same Worker, or deploy the Worker twice with the same secrets.
