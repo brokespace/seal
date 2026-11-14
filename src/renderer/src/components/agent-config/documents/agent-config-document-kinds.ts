@@ -1,5 +1,5 @@
 import type { Translate } from '@/i18n/use-translate'
-import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-layout-types'
 import type {
   AgentConfigDocKind,
   AgentConfigDocRef,
@@ -56,7 +56,8 @@ export function openDocumentFor(doc: AgentConfigDocRef): AgentConfigOpenDocument
     title: doc.kind === 'instructions' ? (doc.relativePath ?? doc.name) : doc.name,
     validation: file.endsWith('.toml') ? 'toml' : doc.kind,
     scope: doc.scope,
-    ...(expectedName ? { expectedName } : {})
+    ...(expectedName ? { expectedName } : {}),
+    ...(doc.bundle ? { readOnly: true } : {})
   }
 }
 

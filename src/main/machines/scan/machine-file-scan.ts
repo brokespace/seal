@@ -5,12 +5,25 @@ import type { MachineShellDialect } from '../connection/machine-connection'
 export type MachineFileScanRequest = {
   /** Single files, reported when they exist. */
   files?: { tag: string; path: string }[]
-  /** Folders of skills: every `<dir>/<name>/SKILL.md`. */
-  skillRoots?: { tag: string; dir: string }[]
+  /**
+   * Folders of skills: every `SKILL.md` from `minDepth` to `maxDepth` folders below `dir`
+   * (`<dir>/<name>/SKILL.md` is 1, the default for both). Linked folders are followed.
+   */
+  skillRoots?: { tag: string; dir: string; minDepth?: number; maxDepth?: number }[]
   /** Every file with this extension under a folder. */
   trees?: { tag: string; dir: string; extension: string; recursive: boolean }[]
   /** Files with one of these names anywhere under a folder, to a depth, skipping some folders. */
-  named?: { tag: string; root: string; names: string[]; maxDepth: number; skipDirs: string[] }[]
+  named?: {
+    tag: string
+    root: string
+    names: string[]
+    maxDepth: number
+    skipDirs: string[]
+    /** Walk into linked folders, and into the root when it is a link itself. */
+    followLinks?: boolean
+    /** Look inside folders Windows marks hidden as well. */
+    includeHidden?: boolean
+  }[]
   /** Folders, reported when they exist. */
   dirs?: { tag: string; path: string }[]
   /** Programs, reported when they are on the login PATH. */
@@ -36,6 +49,9 @@ const COMMAND_TAG = '@command'
 const DIR_TAG = '@dir:'
 const MAX_TREE_FILES = 400
 const MAX_TREE_DEPTH = 8
+const SKILL_FILE = 'SKILL.md'
+/** Folders inside a skills folder or a plugin that are someone else's tree, never a skill. */
+export const SKILL_SCAN_SKIP_DIRS = ['node_modules', '.git']
 
 function posixWord(path: string): string {
   if (path === '~') {
@@ -59,9 +75,12 @@ function posixScript(request: MachineFileScanRequest): string {
       ({ tag, path }) =>
         `[ -d ${posixWord(path)} ] && mark ${quotePosixShell(`${DIR_TAG}${tag}`)} ${posixWord(path)}`
     ),
-    ...(request.skillRoots ?? []).map(
-      ({ tag, dir }) =>
-        `for f in ${posixWord(dir)}/*/SKILL.md; do emit ${quotePosixShell(tag)} "$f"; done`
+    ...(request.skillRoots ?? []).map(({ tag, dir, minDepth = 1, maxDepth = 1 }) =>
+      each(
+        // -L: skills are often links into a dotfiles repository or another agent's folder.
+        `[ -d ${posixWord(dir)} ] && find -L ${posixWord(dir)} -mindepth ${minDepth + 1} -maxdepth ${maxDepth + 1} -type d \\( ${SKILL_SCAN_SKIP_DIRS.map((name) => `-name ${quotePosixShell(name)}`).join(' -o ')} \\) -prune -o -type f -name ${quotePosixShell(SKILL_FILE)} -print`,
+        tag
+      )
     ),
     ...(request.trees ?? []).map(({ tag, dir, extension, recursive }) =>
       each(
@@ -70,11 +89,11 @@ function posixScript(request: MachineFileScanRequest): string {
         tag
       )
     ),
-    ...(request.named ?? []).map(({ tag, root, names, maxDepth, skipDirs }) => {
+    ...(request.named ?? []).map(({ tag, root, names, maxDepth, skipDirs, followLinks }) => {
       const prune = skipDirs.map((name) => `-name ${quotePosixShell(name)}`).join(' -o ')
       const wanted = names.map((name) => `-name ${quotePosixShell(name)}`).join(' -o ')
       return each(
-        `[ -d ${posixWord(root)} ] && find ${posixWord(root)} -maxdepth ${maxDepth} ${prune ? `-type d \\( ${prune} \\) -prune -o ` : ''}-type f \\( ${wanted} \\) -print`,
+        `[ -d ${posixWord(root)} ] && find ${followLinks ? '-L ' : ''}${posixWord(root)} -maxdepth ${maxDepth} ${prune ? `-type d \\( ${prune} \\) -prune -o ` : ''}-type f \\( ${wanted} \\) -print`,
         tag
       )
     }),
@@ -105,6 +124,9 @@ function powerShellScript(request: MachineFileScanRequest): string {
   return [
     "$ErrorActionPreference = 'SilentlyContinue'",
     '$h = $env:USERPROFILE',
+    // Windows PowerShell 5 walks into linked folders by itself; PowerShell 6+ has to be asked.
+    '$links = @{}; if ($PSVersionTable.PSVersion.Major -ge 6) { $links.FollowSymlink = $true }',
+    "function Below($root, $path) { ($path.Substring($root.Length).Trim([char]92, [char]47) -split '[\\\\/]').Count - 1 }",
     'function Mark($tag, $value) { [Console]::Out.Write([string][char]30 + $tag + [char]31 + $value + [char]31 + "0" + [char]31) }',
     'function Emit($tag, $path) {',
     '  if (Test-Path -LiteralPath $path -PathType Leaf) {',
@@ -123,16 +145,16 @@ function powerShellScript(request: MachineFileScanRequest): string {
         `if (Test-Path -LiteralPath ${powerShellPath(path)} -PathType Container) { Mark ${powerShellLiteral(`${DIR_TAG}${tag}`)} ${powerShellPath(path)} }`
     ),
     ...(request.skillRoots ?? []).map(
-      ({ tag, dir }) =>
-        `if (Test-Path -LiteralPath ${powerShellPath(dir)}) { Get-ChildItem -LiteralPath ${powerShellPath(dir)} -Directory | Sort-Object Name | ForEach-Object { Emit ${powerShellLiteral(tag)} (Join-Path $_.FullName 'SKILL.md') } }`
+      ({ tag, dir, minDepth = 1, maxDepth = 1 }) =>
+        `$root = ${powerShellPath(dir)}; if (Test-Path -LiteralPath $root -PathType Container) { $skip = ${list(SKILL_SCAN_SKIP_DIRS)}; Get-ChildItem -LiteralPath $root -File -Force -Recurse -Depth ${maxDepth} @links -Filter ${powerShellLiteral(SKILL_FILE)} | Where-Object { (Below $root $_.FullName) -ge ${minDepth} -and -not ($_.FullName.Split([IO.Path]::DirectorySeparatorChar) | Where-Object { $skip -contains $_ }) } | Sort-Object FullName | Select-Object -First ${MAX_TREE_FILES} | ForEach-Object { Emit ${powerShellLiteral(tag)} $_.FullName } }`
     ),
     ...(request.trees ?? []).map(
       ({ tag, dir, extension, recursive }) =>
         `if (Test-Path -LiteralPath ${powerShellPath(dir)}) { Get-ChildItem -LiteralPath ${powerShellPath(dir)} -File ${recursive ? `-Recurse -Depth ${MAX_TREE_DEPTH} ` : ''}-Filter ${powerShellLiteral(`*${extension}`)} | Sort-Object FullName | Select-Object -First ${MAX_TREE_FILES} | ForEach-Object { Emit ${powerShellLiteral(tag)} $_.FullName } }`
     ),
     ...(request.named ?? []).map(
-      ({ tag, root, names, maxDepth, skipDirs }) =>
-        `if (Test-Path -LiteralPath ${powerShellPath(root)}) { $skip = ${list(skipDirs)}; Get-ChildItem -LiteralPath ${powerShellPath(root)} -File -Recurse -Depth ${maxDepth} | Where-Object { ${list(names)} -contains $_.Name -and -not ($_.FullName.Split([IO.Path]::DirectorySeparatorChar) | Where-Object { $skip -contains $_ }) } | Sort-Object FullName | Select-Object -First ${MAX_TREE_FILES} | ForEach-Object { Emit ${powerShellLiteral(tag)} $_.FullName } }`
+      ({ tag, root, names, maxDepth, skipDirs, followLinks, includeHidden }) =>
+        `if (Test-Path -LiteralPath ${powerShellPath(root)}) { $skip = ${list(skipDirs)}; Get-ChildItem -LiteralPath ${powerShellPath(root)} -File ${includeHidden ? '-Force ' : ''}-Recurse -Depth ${maxDepth - 1} ${followLinks ? '@links ' : ''}| Where-Object { ${list(names)} -contains $_.Name -and -not ($_.FullName.Split([IO.Path]::DirectorySeparatorChar) | Where-Object { $skip -contains $_ }) } | Sort-Object FullName | Select-Object -First ${MAX_TREE_FILES} | ForEach-Object { Emit ${powerShellLiteral(tag)} $_.FullName } }`
     ),
     ...(request.files ?? []).map(
       ({ tag, path }) => `Emit ${powerShellLiteral(tag)} ${powerShellPath(path)}`

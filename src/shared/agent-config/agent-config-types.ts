@@ -35,6 +35,19 @@ export type AgentConfigIssue = {
   field?: string
 }
 
+/** Where a skill comes from when it is not one of the account's or the project's own folders. */
+export type AgentConfigSkillBundle =
+  | {
+      kind: 'plugin'
+      /** `name@marketplace` where the agent names plugins that way, else the plugin's name. */
+      id: string
+      name: string
+      version: string | null
+      /** Whether the agent loads the plugin; null when it has no switch for it. */
+      enabled: boolean | null
+    }
+  | { kind: 'builtin' }
+
 export type AgentConfigDocRef = {
   kind: AgentConfigDocKind
   scope: AgentConfigScope
@@ -47,6 +60,10 @@ export type AgentConfigDocRef = {
   bytes: number
   /** Position under the project root, for nested instruction files. */
   relativePath?: string
+  /** A skill that ships with a plugin or with the agent; those are shown, not edited. */
+  bundle?: AgentConfigSkillBundle
+  /** A skill the agent's settings switch off. */
+  disabled?: boolean
   issues: AgentConfigIssue[]
 }
 
@@ -315,6 +332,7 @@ export const AGENT_CONFIG_IPC = {
   setMcpActivation: 'agentConfig:setMcpActivation',
   patchSettings: 'agentConfig:patchSettings',
   setPluginEnabled: 'agentConfig:setPluginEnabled',
+  setSkillEnabled: 'agentConfig:setSkillEnabled',
   runPluginCommand: 'agentConfig:runPluginCommand',
   listBackups: 'agentConfig:listBackups',
   restoreBackup: 'agentConfig:restoreBackup',

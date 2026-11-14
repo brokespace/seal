@@ -1,9 +1,9 @@
-import {
-  agentConfigLayout,
-  type AgentConfigFileSpec,
-  type AgentConfigLayout,
-  type AgentConfigScopeLayout
-} from '../../shared/agent-config/agent-config-catalog'
+import { agentConfigLayout } from '../../shared/agent-config/agent-config-catalog'
+import type {
+  AgentConfigFileSpec,
+  AgentConfigLayout,
+  AgentConfigScopeLayout
+} from '../../shared/agent-config/agent-config-layout-types'
 import type { McpServersLocation } from '../../shared/agent-config/agent-config-mcp-servers'
 import type {
   AgentConfigScope,
@@ -110,7 +110,7 @@ export function mcpFiles(resolved: ResolvedTarget): McpFile[] {
   return scopes.flatMap((scope) => mcpFile(resolved, scope) ?? [])
 }
 
-function isInside(root: string, path: string): boolean {
+export function isInside(root: string, path: string): boolean {
   const separator = machinePathStyle(root) === 'windows' ? '\\' : '/'
   return path === root || path.startsWith(root.endsWith(separator) ? root : `${root}${separator}`)
 }

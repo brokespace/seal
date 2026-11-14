@@ -1,4 +1,4 @@
-import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-layout-types'
 import { agentConfigDocNameProblem } from '../../shared/agent-config/agent-config-doc-names'
 import {
   newDocumentContent,
@@ -74,6 +74,16 @@ function collectionOf(resolved: ResolvedTarget, ref: DocumentRef): Placed {
     throw new Error(`${ref.path} is not one of ${resolved.layout.label}'s ${ref.kind}s`)
   }
   return found
+}
+
+/** The folder kind a document is copied out of; a plugin's or the agent's own skill counts too. */
+function sourceCollection(resolved: ResolvedTarget, ref: DocumentRef): AgentConfigCollection {
+  const skills = resolved.layout.user.collections.find((collection) => collection.kind === 'skill')
+  if (ref.kind !== 'skill' || !skills || machinePathBasename(ref.path) !== 'SKILL.md') {
+    return collectionOf(resolved, ref).collection
+  }
+  assertManagedPath(resolved, ref.path)
+  return skills
 }
 
 function documentPath(placed: Placed, name: string): { path: string; directory: string | null } {
@@ -271,17 +281,17 @@ export async function copyDocument(
     })
     return { path, backupPath: written.backupPath }
   }
-  const placed = collectionOf(from, args.ref)
+  const sourceKind = sourceCollection(from, args.ref)
   const target = collections(to, args.toScope, args.ref.kind).find(
-    (candidate) => candidate.collection.extension === placed.collection.extension
+    (candidate) => candidate.collection.extension === sourceKind.extension
   )
   if (!target) {
     throw new Error(`${to.layout.label} has no ${args.ref.kind}s there in this format`)
   }
   const name =
-    placed.collection.shape === 'skill-folders'
+    sourceKind.shape === 'skill-folders'
       ? machinePathBasename(machinePathDirname(args.ref.path) ?? args.ref.path)
-      : collectionEntryName(args.ref.path, placed.collection)
+      : collectionEntryName(args.ref.path, sourceKind)
   const { path, directory } = documentPath(target, name)
   if (!directory) {
     const content = (await readConfigFile(source, args.ref.path)).content

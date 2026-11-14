@@ -1,4 +1,4 @@
-import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-layout-types'
 import {
   readFrontmatter,
   validateMarkdownDocument
@@ -7,7 +7,8 @@ import { parseTomlObject } from '../../shared/agent-config/agent-config-toml-edi
 import type {
   AgentConfigDocRef,
   AgentConfigIssue,
-  AgentConfigScope
+  AgentConfigScope,
+  AgentConfigSkillBundle
 } from '../../shared/agent-config/agent-config-types'
 import { machinePathBasename, machinePathDirname } from '../../shared/machines/machine-paths'
 import { summarizeSkillMarkdown } from '../../shared/skill-metadata'
@@ -80,6 +81,23 @@ export function docFromRecord(
       ? validateMarkdownDocument(collection.kind, record.head, machinePathBasename(fileName))
       : []
   }
+}
+
+const BUNDLED_SKILLS: AgentConfigCollection = {
+  kind: 'skill',
+  dir: '',
+  shape: 'skill-folders',
+  extension: '.md',
+  recursive: false
+}
+
+/** A skill that ships with a plugin or the agent: listed as it is, since it is not the user's to fix. */
+export function bundledSkillFromRecord(
+  record: MachineFileScanRecord,
+  bundle: AgentConfigSkillBundle,
+  headBytes: number
+): AgentConfigDocRef {
+  return { ...docFromRecord(record, 'user', BUNDLED_SKILLS, headBytes), bundle, issues: [] }
 }
 
 export function instructionsFromRecord(

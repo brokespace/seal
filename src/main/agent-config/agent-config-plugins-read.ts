@@ -12,14 +12,14 @@ const MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 
 type ParsedFile = { value: Record<string, unknown> | null }
 
-/** Claude Code's plugin registry on the machine, read from the files `claude plugin` maintains. */
+/** Claude Code's plugin registry on the machine, read from the files `claude plugin` maintains, with each marketplace's own plugin list. */
 export async function readPluginsState(
   connection: MachineConnection,
   home: string,
   parsedAt: (path: string) => Promise<ParsedFile>,
   settings: { scope: AgentConfigScope; value: Record<string, unknown> | null }[],
   projectRoot: string | null
-): Promise<AgentConfigPluginsState> {
+): Promise<{ state: AgentConfigPluginsState; manifests: Record<string, unknown> }> {
   const pluginsDir = joinRelative(home, '.claude/plugins')
   const [installed, known] = await Promise.all([
     parsedAt(joinRelative(pluginsDir, 'installed_plugins.json')),
@@ -43,11 +43,12 @@ export async function readPluginsState(
       }
     })
   )
-  return buildPluginsState({
+  const state = buildPluginsState({
     installed: installed.value,
     marketplaces: known.value,
     manifests,
     settings,
     ...(projectRoot ? { projectPath: projectRoot } : {})
   })
+  return { state, manifests }
 }

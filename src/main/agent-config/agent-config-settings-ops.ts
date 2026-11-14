@@ -7,6 +7,10 @@ import {
   type McpEdit
 } from '../../shared/agent-config/agent-config-mcp-servers'
 import { hasMask } from '../../shared/agent-config/agent-config-secrets'
+import {
+  claudeSkillSwitchEdit,
+  codexSkillSwitchText
+} from '../../shared/agent-config/agent-config-skill-switches'
 import { editTomlText, parseTomlObject } from '../../shared/agent-config/agent-config-toml-edit'
 import type {
   AgentConfigMcpActivation,
@@ -19,9 +23,11 @@ import type {
   AgentConfigWriteResult
 } from '../../shared/agent-config/agent-config-types'
 import { stringList } from '../../shared/agent-config/agent-config-values'
+import { machinePathBasename, machinePathDirname } from '../../shared/machines/machine-paths'
 import type { MachineConnection } from '../machines/connection/machine-connection'
 import { readConfigFile, writeConfigFile } from './agent-config-file-io'
 import {
+  assertManagedPath,
   mcpFile,
   primaryFile,
   resolveTarget,
@@ -205,6 +211,55 @@ export async function patchSettings(
     primary.path,
     primary.spec.format === 'toml' ? 'toml' : 'json',
     () => args.edits,
+    { private: args.scope !== 'project' }
+  )
+}
+
+const SCOPE_ORDER: readonly AgentConfigScope[] = ['user', 'project', 'local']
+
+/** Switches one skill on or off the way its agent records that, without touching the skill. */
+export async function setSkillEnabled(
+  connection: MachineConnection,
+  args: {
+    target: AgentConfigTarget
+    /** The settings file that takes the change; Codex only reads the account's. */
+    scope: AgentConfigScope
+    /** The skill's `SKILL.md`. */
+    path: string
+    enabled: boolean
+  }
+): Promise<AgentConfigWriteResult> {
+  const resolved = await resolve(connection, args.target)
+  const kind = resolved.layout.skills.switch
+  if (!kind || machinePathBasename(args.path) !== 'SKILL.md') {
+    throw new Error(`${resolved.layout.label} has no switch for single skills`)
+  }
+  if (kind === 'codex-config') {
+    assertManagedPath(resolved, args.path)
+    const primary = requirePrimary(resolved, 'user')
+    const file = await readConfigFile(connection, primary.path)
+    return writeConfigFile(
+      connection,
+      primary.path,
+      codexSkillSwitchText(file.content, args.path, args.enabled),
+      { expectedHash: file.hash, private: true }
+    )
+  }
+  const primary = requirePrimary(resolved, args.scope)
+  const weaker = await Promise.all(
+    SCOPE_ORDER.slice(0, SCOPE_ORDER.indexOf(args.scope)).map(async (scope) => {
+      const lower = primaryFile(resolved, scope)
+      const read = lower ? await readConfigFile(connection, lower.path) : null
+      const parsed = read?.exists ? parseJsonObject(read.content) : null
+      return parsed?.ok ? parsed.value : null
+    })
+  )
+  const skill = { path: args.path, directory: machinePathDirname(args.path) }
+  return editFile(
+    connection,
+    primary.path,
+    'json',
+    () => [claudeSkillSwitchEdit(skill, args.enabled, weaker)],
     { private: args.scope !== 'project' }
   )
 }

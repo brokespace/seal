@@ -5,8 +5,10 @@ import {
   markShadowedServers
 } from '../../shared/agent-config/agent-config-mcp-servers'
 import { maskConfigValue } from '../../shared/agent-config/agent-config-secrets'
+import { isSkillSwitchedOff } from '../../shared/agent-config/agent-config-skill-switches'
 import { parseTomlObject } from '../../shared/agent-config/agent-config-toml-edit'
 import type {
+  AgentConfigDocRef,
   AgentConfigFileRef,
   AgentConfigMcpServer,
   AgentConfigSettingsLayer,
@@ -20,9 +22,14 @@ import {
 } from '../../shared/agent-config/agent-config-values'
 import type { MachineConnection } from '../machines/connection/machine-connection'
 import { scanMachineFiles, type MachineFileScanRecord } from '../machines/scan/machine-file-scan'
-import { docFromRecord, instructionsFromRecord } from './agent-config-doc-refs'
+import {
+  bundledSkillFromRecord,
+  docFromRecord,
+  instructionsFromRecord
+} from './agent-config-doc-refs'
 import { scanRunner } from './agent-config-file-io'
 import {
+  isInside,
   joinRelative,
   mcpFiles,
   primaryFile,
@@ -30,6 +37,7 @@ import {
   scopeRoot,
   type ResolvedTarget
 } from './agent-config-locations'
+import { readPluginSkills } from './agent-config-plugin-skills-read'
 import { readPluginsState } from './agent-config-plugins-read'
 import { SCAN_HEAD_BYTES, scanPlan, type ScanPlan } from './agent-config-scan-plan'
 
@@ -108,7 +116,7 @@ export async function buildAgentConfigSnapshot(
   target: AgentConfigTarget
 ): Promise<AgentConfigSnapshot> {
   const draft = resolveTarget(target, '~')
-  const { request, collections, instructions, files } = scanPlan(draft)
+  const { request, collections, builtinSkillDirs, instructions, files } = scanPlan(draft)
   const scan = await scanMachineFiles(await scanRunner(connection), request)
   const resolved = resolveTarget(target, scan.home)
   const { layout, projectRoot } = resolved
@@ -117,7 +125,8 @@ export async function buildAgentConfigSnapshot(
   const tagged = (tag: string): MachineFileScanRecord[] =>
     scan.records.filter((record) => record.tag === tag)
 
-  const docs = [
+  const builtinRoots = builtinSkillDirs.map((dir) => joinRelative(scan.home, dir))
+  const ownDocs = [
     ...instructions.flatMap((item, index) =>
       tagged(`i${index}`).map((record) => instructionsFromRecord(record, item.scope, projectRoot))
     ),
@@ -128,8 +137,14 @@ export async function buildAgentConfigSnapshot(
       )
       .map((record) => instructionsFromRecord(record, 'project', projectRoot)),
     ...collections.flatMap((item, index) =>
-      tagged(`c${index}`).map((record) =>
-        docFromRecord(record, item.scope, item.collection, SCAN_HEAD_BYTES)
+      tagged(`c${index}`)
+        // The agent's own skills can sit inside the account's folder; they are listed apart.
+        .filter((record) => !builtinRoots.some((root) => isInside(root, record.path)))
+        .map((record) => docFromRecord(record, item.scope, item.collection, SCAN_HEAD_BYTES))
+    ),
+    ...builtinRoots.flatMap((_root, index) =>
+      tagged(`b${index}`).map((record) =>
+        bundledSkillFromRecord(record, { kind: 'builtin' }, SCAN_HEAD_BYTES)
       )
     )
   ]
@@ -230,9 +245,32 @@ export async function buildAgentConfigSnapshot(
       : server
   )
 
-  const plugins = layout.features.plugins
+  const claudePlugins = layout.features.plugins
     ? await readPluginsState(connection, scan.home, parsedAt, rawSettings, projectRoot)
     : null
+  const pluginSkills = await readPluginSkills(
+    connection,
+    resolved,
+    {
+      claude: claudePlugins,
+      userSettings: rawSettings.find((layer) => layer.scope === 'user')?.value ?? null
+    },
+    SCAN_HEAD_BYTES
+  ).catch((error: unknown) => {
+    warnings.push(
+      `Plugin skills could not be listed: ${error instanceof Error ? error.message : String(error)}`
+    )
+    return []
+  })
+  const settingsLayers = rawSettings.map((layer) => layer.value)
+  const docs = [...ownDocs, ...pluginSkills].map((doc): AgentConfigDocRef =>
+    doc.kind === 'skill' &&
+    // Claude Code's overrides name the account's and project's skills, not a plugin's.
+    !(layout.skills.switch === 'claude-overrides' && doc.bundle) &&
+    isSkillSwitchedOff(layout.skills.switch, settingsLayers, doc)
+      ? { ...doc, disabled: true }
+      : doc
+  )
 
   return {
     target,
@@ -245,7 +283,7 @@ export async function buildAgentConfigSnapshot(
     files: fileRefs,
     settings,
     mcp,
-    plugins,
+    plugins: claudePlugins?.state ?? null,
     effective: effectiveConfig(settings, { mergeLists: layout.id === 'claude' }),
     warnings
   }

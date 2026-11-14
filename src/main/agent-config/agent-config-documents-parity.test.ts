@@ -191,10 +191,9 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
         })
       ).rejects.toThrow()
       const listed = await buildAgentConfigSnapshot(machine.connection, target('codex', true))
-      expect(listed.docs.map((doc) => doc.relativePath)).toEqual([
-        'AGENTS.md',
-        'packages/api/AGENTS.md'
-      ])
+      expect(
+        listed.docs.filter((doc) => doc.kind === 'instructions').map((doc) => doc.relativePath)
+      ).toEqual(['AGENTS.md', 'packages/api/AGENTS.md'])
     })
 
     it('tests a stdio server with its stored variables and reports what answered', async () => {

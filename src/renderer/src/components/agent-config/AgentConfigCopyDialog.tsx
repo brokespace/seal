@@ -23,9 +23,9 @@ import {
 import { useTranslate } from '@/i18n/use-translate'
 import {
   AGENT_CONFIG_LAYOUTS,
-  isAgentConfigAgentId,
-  type AgentConfigLayout
+  isAgentConfigAgentId
 } from '../../../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigLayout } from '../../../../shared/agent-config/agent-config-layout-types'
 import { agentConfigMcpScopes } from '../../../../shared/agent-config/agent-config-mcp-scopes'
 import type {
   AgentConfigAgentId,
