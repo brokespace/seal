@@ -634,6 +634,7 @@ import {
   SealAccountsSyncFleetParams
 } from './seal-accounts-params'
 import {
+  SealMachinesDiskIndexParams,
   SealMachinesDownloadUrlParams,
   SealMachinesIdParams,
   SealMachinesListDirParams,
@@ -1716,6 +1717,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'seal.accounts.syncFleet': SealAccountsSyncFleetParams,
   'sealMachines.cancelTransfer': SealMachinesTransferIdParams,
   'sealMachines.createDir': SealMachinesPathParams,
+  'sealMachines.diskIndex': SealMachinesDiskIndexParams,
   'sealMachines.downloadUrl': SealMachinesDownloadUrlParams,
   'sealMachines.list': null,
   'sealMachines.listDir': SealMachinesListDirParams,

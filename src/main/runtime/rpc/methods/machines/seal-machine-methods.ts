@@ -6,6 +6,7 @@ import {
 } from '../../../../../shared/machines/machine-types'
 import {
   PHONE_MACHINE_PREVIEW_MAX_BYTES,
+  SealMachinesDiskIndexParams,
   SealMachinesDownloadUrlParams,
   SealMachinesIdParams,
   SealMachinesListDirParams,
@@ -32,6 +33,10 @@ import {
   resolveMachineConnection,
   resolveMachineFileSystem
 } from '../../../../machines/machine-services'
+import {
+  ensureMachineDiskIndex,
+  queryMachineDiskIndex
+} from '../../../../machines/resources/machine-disk-index'
 import {
   openMachineFileForPhone,
   uploadStagedToMachine
@@ -64,7 +69,26 @@ export const SEAL_MACHINE_METHODS = [
     name: 'sealMachines.metrics',
     permission: 'workspace',
     params: SealMachinesIdParams,
-    handler: (params) => resolveMachineConnection(machineId(params.machineId)).metrics()
+    handler: async (params) => {
+      const connection = resolveMachineConnection(machineId(params.machineId))
+      const metrics = await connection.metrics()
+      ensureMachineDiskIndex(connection)
+      return metrics
+    }
+  }),
+  defineMethod({
+    name: 'sealMachines.diskIndex',
+    permission: 'workspace',
+    params: SealMachinesDiskIndexParams,
+    handler: async (params) => {
+      const connection = resolveMachineConnection(machineId(params.machineId))
+      await connection.connect()
+      const reply = await queryMachineDiskIndex(connection, params.request)
+      if (!reply.ok) {
+        throw new Error(reply.message)
+      }
+      return reply
+    }
   }),
   defineMethod({
     name: 'sealMachines.listDir',
