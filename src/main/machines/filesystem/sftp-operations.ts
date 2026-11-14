@@ -71,6 +71,13 @@ export const sftpRealpath = (sftp: SFTPWrapper, path: string): Promise<string> =
 export const sftpUnlink = (sftp: SFTPWrapper, path: string): Promise<void> =>
   callbackVoid((cb) => sftp.unlink(path, cb))
 
+/**
+ * Replaces a file's bytes in place. ssh2's write stream sets every file it opens to mode 0666,
+ * which would open a token file to every account; opening the file directly keeps its mode.
+ */
+export const sftpWriteFile = (sftp: SFTPWrapper, path: string, data: Buffer): Promise<void> =>
+  callbackVoid((cb) => sftp.writeFile(path, data, cb))
+
 export const sftpRename = (sftp: SFTPWrapper, from: string, to: string): Promise<void> =>
   callbackVoid((cb) => sftp.rename(from, to, cb))
 

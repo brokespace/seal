@@ -24,6 +24,7 @@ import { RepositorySidebarVisibilitySection } from './RepositorySidebarVisibilit
 import { RepositoryRemoveProjectSection } from './RepositoryRemoveProjectSection'
 import type { SettingsProjectRemovalScope } from '../navigation/settings-project-list'
 import { matchesSettingsSearch } from '../search/settings-search'
+import { RepositoryAgentConfigSection } from '../agent-config/RepositoryAgentConfigSection'
 import { useAppStore } from '@/store/index'
 import { getRepositoryIconSectionId } from './repository-settings-targets'
 import { RepositoryIconPicker } from './identity/RepositoryIconPicker'
@@ -191,6 +192,7 @@ export function RepositoryPane({
     sparsePresets: sparsePresetEntries,
     hooks: hooksEntries,
     mcp: mcpEntries,
+    agentConfig: agentConfigEntries,
     sharedPaths: symlinkEntries,
     sourceControlAi: sourceControlAiEntries,
     hostSetups: hostSetupEntries,
@@ -387,6 +389,10 @@ export function RepositoryPane({
     ) : null,
     !isFolder && (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, mcpEntries)) ? (
       <McpConfigSection key={`mcp-configs:${selectedHostId}:${repo.id}`} repo={repo} />
+    ) : null,
+    agentConfigEntries &&
+    (forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, agentConfigEntries)) ? (
+      <RepositoryAgentConfigSection key={`agent-config:${selectedHostId}:${repo.id}`} repo={repo} />
     ) : null,
     forceFullPaneForRepoMatch || matchesSettingsSearch(searchQuery, [sidebarVisibilityEntry]) ? (
       <RepositorySidebarVisibilitySection

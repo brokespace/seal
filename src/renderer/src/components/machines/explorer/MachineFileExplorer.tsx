@@ -21,6 +21,7 @@ import { MachineFilePreview } from './MachineFilePreview'
 import { MachineGoToFolder } from './MachineGoToFolder'
 import { MachinePromptDialog } from './MachinePromptDialog'
 import type { ExplorerRow } from './machine-explorer-rows'
+import type { MachineExplorerFileOps } from './machine-explorer-source'
 import { useMachineExplorerTree } from './use-machine-explorer-tree'
 import { useMachineFileActions } from './use-machine-file-actions'
 
@@ -36,24 +37,29 @@ export type MachineFolderRequest = { path: string; id: number }
 
 export function MachineFileExplorer({
   machine,
-  homeDir,
+  homeDir = null,
   hidden = false,
-  folderRequest = null
+  folderRequest = null,
+  startAt,
+  fileOps
 }: {
   machine: MachineSummary
-  homeDir: string | null
+  homeDir?: string | null
   /** Kept mounted behind a resource detail so the tree and its scroll position survive. */
   hidden?: boolean
   /** Another part of the page asking the tree to open a folder. */
   folderRequest?: MachineFolderRequest | null
+  startAt?: string
+  /** A tree scoped to one feature's files; it has no jump to arbitrary folders. */
+  fileOps?: MachineExplorerFileOps
 }): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
   const isRemote = machine.connection !== 'local'
   const [showHidden, setShowHidden] = useState(false)
-  const tree = useMachineExplorerTree(machine.id, online, showHidden)
+  const tree = useMachineExplorerTree(machine.id, online, showHidden, startAt)
   const { navigate, toggle, refresh, loadMore } = tree
-  const actions = useMachineFileActions(machine.id, tree.refresh)
+  const actions = useMachineFileActions(machine.id, tree.refresh, fileOps)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [preview, setPreview] = useState<PreviewTarget | null>(null)
   const [menuRow, setMenuRow] = useState<EntryRow | null>(null)
@@ -207,15 +213,17 @@ export function MachineFileExplorer({
         refresh={() => refresh()}
         actions={actions}
       />
-      <MachineGoToFolder
-        machineId={machine.id}
-        currentDir={root}
-        homeDir={homeDir}
-        onOpen={(path) => {
-          navigate(path)
-          setPreview(null)
-        }}
-      />
+      {fileOps ? null : (
+        <MachineGoToFolder
+          machineId={machine.id}
+          currentDir={root}
+          homeDir={homeDir}
+          onOpen={(path) => {
+            navigate(path)
+            setPreview(null)
+          }}
+        />
+      )}
       <div className="flex min-h-0 flex-1">
         <ContextMenu onOpenChange={(open) => !open && setMenuRow(null)}>
           <ContextMenuTrigger asChild>
@@ -311,6 +319,8 @@ export function MachineFileExplorer({
             entry={preview.entry}
             onClose={() => setPreview(null)}
             onDownload={() => actions.download([preview.path])}
+            readText={fileOps?.readText}
+            writeFile={fileOps?.write}
           />
         ) : null}
       </div>
@@ -318,6 +328,7 @@ export function MachineFileExplorer({
       <MachineDeleteDialog
         paths={actions.pendingDelete}
         machineLabel={machine.label}
+        description={fileOps?.removeDescription}
         onConfirm={async (paths) => {
           await actions.confirmDelete(paths)
           setSelected(new Set())
