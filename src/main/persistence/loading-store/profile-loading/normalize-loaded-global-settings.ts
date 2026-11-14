@@ -94,6 +94,8 @@ export function normalizeLoadedGlobalSettings(
       stripRetiredGlobalSettings(parsed.settings),
       defaults.settings
     ),
+    // Seal: Active agents replaced the Agent Dashboard, so an earlier opt-in must not reopen it.
+    experimentalAgentDashboardPopout: false,
     agentDefaultSurface: normalizeAgentDefaultSurface(parsed.settings?.agentDefaultSurface),
     nativeChatAppearance: normalizeNativeChatAppearanceSettings(
       parsed.settings?.nativeChatAppearance
