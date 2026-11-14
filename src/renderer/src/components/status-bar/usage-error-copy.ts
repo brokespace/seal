@@ -98,11 +98,13 @@ export function getProviderUsageStatusLabel(
       // Why: the host reports this only for a selected account whose own profile has no login.
       case 'missing-credentials':
         return t('accounts.claude.usageSignInLabel', 'Sign in again')
+      // Why: a 429 from Claude's usage endpoint throttles the check; the account's quota is untouched.
+      case 'rate-limited':
+        return t('seal.usage.checkThrottled.label', 'Usage check throttled')
       case 'missing-scope':
       case 'network':
       case 'no-subscription':
       case 'parse':
-      case 'rate-limited':
       case 'server':
       case 'unknown':
       case undefined:
@@ -208,8 +210,12 @@ export function getProviderUsageErrorMessage(
           'auto.components.status.bar.tooltip.a7517cccb6',
           'Claude usage is unavailable right now.'
         )
-      case 'no-subscription':
       case 'rate-limited':
+        return t(
+          'seal.usage.checkThrottled.message',
+          'Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume.'
+        )
+      case 'no-subscription':
       case 'unknown':
       case undefined:
         break

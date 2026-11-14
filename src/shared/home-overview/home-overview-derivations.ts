@@ -1,12 +1,4 @@
-import type {
-  HomeAccount,
-  HomeMachine,
-  HomeSession,
-  HomeSessionState,
-  HomeUsageWindow
-} from './home-overview-types'
-
-export const ACCOUNT_NEAR_LIMIT_PERCENT = 80
+import type { HomeMachine, HomeSession, HomeSessionState } from './home-overview-types'
 
 const STATE_PRIORITY: Record<HomeSessionState, number> = {
   permission: 0,
@@ -90,38 +82,6 @@ export function countSessionsByState(
     counts[session.state] += 1
   }
   return counts
-}
-
-export function peakUsageWindow(account: HomeAccount): HomeUsageWindow | null {
-  let peak: HomeUsageWindow | null = null
-  for (const window of account.windows) {
-    if (!peak || window.usedPercent > peak.usedPercent) {
-      peak = window
-    }
-  }
-  return peak
-}
-
-export function accountNearLimit(account: HomeAccount): boolean {
-  return (peakUsageWindow(account)?.usedPercent ?? 0) >= ACCOUNT_NEAR_LIMIT_PERCENT
-}
-
-/** Earliest future reset; for an account near its limit, the reset of the window that is close. */
-export function accountNextReset(account: HomeAccount, now: number): number | null {
-  const candidates = accountNearLimit(account)
-    ? account.windows.filter((window) => window.usedPercent >= ACCOUNT_NEAR_LIMIT_PERCENT)
-    : account.windows
-  let next: number | null = null
-  for (const window of candidates) {
-    if (
-      window.resetsAt !== null &&
-      window.resetsAt > now &&
-      (next === null || window.resetsAt < next)
-    ) {
-      next = window.resetsAt
-    }
-  }
-  return next
 }
 
 export type HomeAttentionItem = {

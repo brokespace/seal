@@ -2,45 +2,24 @@ import type { HandlerContext } from '../dispatch/dispatch'
 import { printResult } from '../output/command-result-output'
 import { formatAccountsBlock } from './account-list-format'
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
-import type {
-  SealAccountCandidate,
-  SealAccountHealth,
-  SealUsageWindow
-} from '../../shared/seal-accounts/seal-account-candidates'
+import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
+import { formatResetDuration } from '../../shared/rate-limit-reset-format'
+import { formatUsageWindowText, usageCheckRemark } from '../../shared/usage-window-text'
 import type { SealAccountsStatus } from '../../shared/seal-accounts/seal-accounts-status'
 import { sealAccountKeysMatch } from '../../shared/seal-accounts/seal-account-key'
 
 const PROVIDER_TITLES: Record<SealProvider, string> = { claude: 'CLAUDE', codex: 'CODEX' }
 const HEADERS = ['', '#', 'ACCOUNT', 'IDENTITY', 'PLAN', 'HEALTH', '5H', '7D', 'SESSIONS', 'NOTES']
 
-export function formatSealDuration(ms: number): string {
-  const minutes = Math.max(0, Math.round(ms / 60_000))
-  if (minutes < 60) {
-    return `${minutes}m`
-  }
-  const hours = Math.floor(minutes / 60)
-  if (hours < 48) {
-    return `${hours}h ${minutes % 60}m`
-  }
-  return `${Math.floor(hours / 24)}d ${hours % 24}h`
-}
-
-function usageCell(window: SealUsageWindow | null | undefined, now: number): string {
-  if (!window) {
-    return '—'
-  }
-  const reset = window.resetsAt !== null && window.resetsAt <= now
-  const used = reset ? 0 : Math.round(window.usedPercent)
-  const left =
-    window.resetsAt && window.resetsAt > now
-      ? ` (${formatSealDuration(window.resetsAt - now)})`
-      : ''
-  return `${used}%${left}`
-}
-
-function healthCell(health: SealAccountHealth | undefined): string {
+function healthCell(candidate: SealAccountCandidate, now: number): string {
+  const { health, rateLimit } = candidate
   if (!health || health.state === 'ok') {
-    return 'ok'
+    if (!rateLimit) {
+      return 'ok'
+    }
+    return rateLimit.resetsAt === null
+      ? 'rate limited'
+      : `rate limited (${formatResetDuration(rateLimit.resetsAt - now)})`
   }
   if (health.state === 'expiring') {
     return `expires ${new Date(health.expiresAt).toISOString().slice(0, 10)}`
@@ -65,16 +44,14 @@ function notesCell(candidate: SealAccountCandidate, status: SealAccountsStatus, 
     candidate.wslDistro ? `WSL ${candidate.wslDistro}` : null,
     candidate.disabled ? 'manual only' : null,
     quarantine && quarantine.until > now
-      ? `paused ${formatSealDuration(quarantine.until - now)}`
+      ? `paused ${formatResetDuration(quarantine.until - now)}`
       : null,
     estimate
       ? estimate.at <= now
         ? `swap now (${estimate.window} ≥ ${estimate.line}%)`
-        : `swap ~${formatSealDuration(estimate.at - now)} (${estimate.window} → ${estimate.line}%)`
+        : `swap ~${formatResetDuration(estimate.at - now)} (${estimate.window} → ${estimate.line}%)`
       : null,
-    candidate.usage?.error && candidate.health?.state !== 'dead'
-      ? `usage: ${candidate.usage.error}`
-      : null
+    candidate.health?.state === 'dead' ? null : usageCheckRemark(candidate.limits)
   ]
     .filter(Boolean)
     .join(', ')
@@ -129,9 +106,9 @@ export function formatSealAccountsTable(
         candidate.label,
         identityCell(candidate, status),
         candidate.plan ?? '—',
-        healthCell(candidate.health),
-        usageCell(candidate.usage?.session, now),
-        usageCell(candidate.usage?.weekly, now),
+        healthCell(candidate, now),
+        formatUsageWindowText(candidate.limits?.session, now),
+        formatUsageWindowText(candidate.limits?.weekly, now),
         sessionCount(candidate, status),
         notesCell(candidate, status, now)
       ])

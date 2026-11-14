@@ -1,7 +1,8 @@
 // Drives Settings > Accounts in the real app against stand-in `claude` and `codex` CLIs.
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import type { ElectronApplication, Locator, Page } from '@stablyai/playwright-test'
+import { runProcess } from '@orca/process-host'
 import { launchHeadlessPairedRuntimeHost } from './helpers/headless-paired-runtime-host'
 import { expect, test } from './helpers/orca-app'
 import {
@@ -16,6 +17,12 @@ import {
   type FakeClaudeLogin
 } from './helpers/seal-fake-account-clis'
 import { serveFakeAccountUsage } from './helpers/seal-fake-usage-endpoints'
+import {
+  claudeUsageAtLimit,
+  claudeUsageCheckThrottled,
+  claudeUsageNearLimit,
+  claudeUsageWithRoom
+} from '../../src/main/rate-limits/providers/claude/claude-oauth-usage-responses.test-fixture'
 
 test.skip(process.platform === 'win32', 'the stand-in CLIs are POSIX scripts')
 
@@ -162,7 +169,8 @@ test('first run: add a Claude account by pasted code and a Codex account by devi
 
   const claude = card(orcaPage, 'claude', WORK.email)
   await expect(claude).toContainText('Acme')
-  await expect(claude).toContainText('Working')
+  // A healthy login carries no status at all.
+  await expect(claude.locator('[data-slot="seal-account-health"]')).toHaveCount(0)
   await expect(claude).toContainText('42%')
   await expect(claude).toContainText('18%')
   const codex = card(orcaPage, 'codex', CODEX.email)
@@ -371,7 +379,8 @@ test('several accounts: health, priority, rules, auto-swap and swap history', as
   ).toBeVisible()
   await capture(orcaPage, '22-signed-in-again')
   await dialog.getByRole('button', { name: 'Done' }).click()
-  await expect(work).toContainText('Working')
+  await expect(work.locator('[data-slot="seal-account-health"]')).toHaveCount(0)
+  await expect(work).toContainText('3%')
   await expectNoFakeCliRunning()
 })
 
@@ -465,5 +474,143 @@ test('Home lists the accounts with their usage, and Manage opens Settings > Acco
   await accounts.getByRole('button', { name: 'Manage' }).click()
   await expect(orcaPage.getByRole('heading', { name: 'Accounts', exact: true })).toBeVisible()
   await expect(card(orcaPage, 'claude', PERSONAL.email)).toContainText('77%')
+  await expectNoFakeCliRunning()
+})
+
+function claudeLogin(name: string): FakeClaudeLogin {
+  return {
+    email: `${name}@acme.dev`,
+    organizationUuid: `org-${name}`,
+    organizationName: 'Acme',
+    code: `${name}-code#SEAL_E2E`
+  }
+}
+
+/** The spoken form of each usage bar in a row, e.g. "5h: 34% used, resets in 2h 9m". */
+function usageBars(row: Locator): Promise<(string | null)[]> {
+  return row
+    .getByRole('img')
+    .evaluateAll((bars) => bars.map((bar) => bar.getAttribute('aria-label')))
+}
+
+test('account cards show the usage popover’s own figures, and only a full account is rate limited', async ({
+  electronApp,
+  orcaPage
+}) => {
+  const [roomy, near, full, throttled] = ['roomy', 'near', 'full', 'throttled'].map(claudeLogin)
+  const now = Date.now()
+  const usage = {
+    [fakeClaudeAccessToken(roomy.email)]: claudeUsageWithRoom(now),
+    [fakeClaudeAccessToken(near.email)]: claudeUsageNearLimit(now),
+    [fakeClaudeAccessToken(full.email)]: claudeUsageAtLimit(now),
+    [fakeClaudeAccessToken(throttled.email)]: claudeUsageCheckThrottled(600)
+  }
+  await serveFakeAccountUsage(electronApp, usage)
+  await openAccounts(orcaPage)
+  for (const login of [roomy, near, full, throttled]) {
+    await addClaudeAccount(orcaPage, login)
+  }
+  const health = (login: FakeClaudeLogin): Locator =>
+    card(orcaPage, 'claude', login.email).locator('[data-slot="seal-account-health"]')
+  const cardUsage = (login: FakeClaudeLogin): Locator =>
+    card(orcaPage, 'claude', login.email).locator('[data-slot="seal-account-usage"]')
+
+  await expect(cardUsage(roomy)).toContainText('34%')
+  await expect(cardUsage(roomy)).toContainText('61%')
+  await expect(cardUsage(near)).toContainText('93%')
+  await expect(cardUsage(near)).toContainText('78%')
+  await expect(cardUsage(full)).toContainText('100%')
+  await expect(cardUsage(full)).toContainText('88%')
+  // The usage endpoint refused the check itself; that is not the account running out.
+  await expect(cardUsage(throttled)).toHaveText('Usage check throttled')
+
+  await expect(health(full)).toHaveAttribute('data-health', 'rate-limited')
+  await expect(health(full)).toContainText('Rate limited')
+  for (const login of [roomy, near, throttled]) {
+    await expect(health(login)).toHaveCount(0)
+  }
+
+  // The status bar's usage popover, opened over the page it has to agree with.
+  await orcaPage.setViewportSize({ width: 1440, height: 1800 })
+  await orcaPage.getByRole('button', { name: 'Usage', exact: true }).click()
+  await orcaPage.getByRole('menuitem').filter({ hasText: 'Claude' }).first().click()
+  const popoverRow = (login: FakeClaudeLogin): Locator =>
+    orcaPage.getByRole('menuitem').filter({ hasText: login.email })
+  // Whichever account new sessions start on is the popover's headline panel, not a row.
+  const listed = [near, full, throttled]
+  for (const login of listed) {
+    await expect(popoverRow(login)).toBeVisible()
+  }
+  // Both are read in one pass so a countdown tick cannot fall between them.
+  await expect(async () => {
+    for (const login of listed) {
+      const [onCard, inPopover] = await Promise.all([
+        usageBars(cardUsage(login)),
+        usageBars(popoverRow(login))
+      ])
+      expect(onCard).toEqual(inPopover)
+    }
+  }).toPass({ timeout: 10_000 })
+  expect(await usageBars(cardUsage(near))).toHaveLength(2)
+  await expect(popoverRow(throttled)).toContainText('Usage check throttled')
+  const headline = orcaPage.getByRole('menu').filter({ hasText: 'Manage Accounts' }).last()
+  await expect(headline).toContainText('34% used')
+  await expect(headline).toContainText('61% used')
+  await capture(orcaPage, '27-accounts-beside-usage-popover')
+  await orcaPage.keyboard.press('Escape')
+  await expect(popoverRow(near)).toHaveCount(0)
+  await openAccounts(orcaPage)
+
+  // `seal account usage` prints the same readings and the same verdicts.
+  const userDataDir = await electronApp.evaluate(({ app }) => app.getPath('userData'))
+  const cli = await runProcess({
+    program: process.execPath,
+    args: [
+      path.join(process.cwd(), 'out', 'cli', 'index.js'),
+      'account',
+      'usage',
+      '--agent',
+      'claude'
+    ],
+    env: { ...process.env, ORCA_USER_DATA_PATH: userDataDir },
+    timeoutMs: 60_000
+  })
+  expect(cli.code, `${cli.stderr}\n${cli.stdout}`).toBe(0)
+  const cliRow = (login: FakeClaudeLogin): string =>
+    cli.stdout.split('\n').find((line) => line.includes(login.email)) ?? ''
+  expect(cliRow(roomy)).toMatch(/\sok\s+34% \(\S.*?\)\s+61% \(/)
+  expect(cliRow(near)).toMatch(/\sok\s+93% \(\S.*?\)\s+78% \(/)
+  expect(cliRow(full)).toMatch(/\srate limited \(\S.*?\)\s+100% \(\S.*?\)\s+88% \(/)
+  expect(cliRow(throttled)).toMatch(/\sok\s+—\s+—\s/)
+  expect(cliRow(throttled)).toContain('usage check throttled')
+  if (process.env.SEAL_ACCOUNTS_SHOT_DIR) {
+    writeFileSync(
+      path.join(process.env.SEAL_ACCOUNTS_SHOT_DIR, '27-seal-account-usage.txt'),
+      cli.stdout
+    )
+  }
+
+  // A throttled check keeps the last reading and still does not mark the account rate limited.
+  await serveFakeAccountUsage(electronApp, {
+    ...usage,
+    [fakeClaudeAccessToken(near.email)]: claudeUsageCheckThrottled(600)
+  })
+  const nearReading = (): Promise<string | undefined> =>
+    orcaPage.evaluate(
+      () =>
+        window.__store
+          ?.getState()
+          .rateLimits.inactiveClaudeAccounts.find(
+            (entry) => entry.rateLimits?.session?.usedPercent === 93
+          )?.rateLimits?.usageMetadata?.failureKind
+    )
+  // Seal reads an account at most every 30 seconds, however often Refresh usage is clicked.
+  await expect(async () => {
+    await orcaPage.getByRole('button', { name: 'Refresh usage' }).first().click()
+    await expect.poll(nearReading, { timeout: 2_000 }).toBe('rate-limited')
+  }).toPass({ timeout: 60_000 })
+  await expect(cardUsage(near)).toContainText('93%')
+  await expect(health(near)).toHaveCount(0)
+  await capture(orcaPage, '28-throttled-check-keeps-last-reading', group(orcaPage, 'claude'))
   await expectNoFakeCliRunning()
 })

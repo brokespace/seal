@@ -2425,7 +2425,6 @@
           "claudeKeychainUnavailable": "Claude Keychain credentials unavailable",
           "claudeOauthTokenUnavailable": "Claude OAuth access token unavailable",
           "claudePlanUsageUnavailable": "Claude plan usage is unavailable for this Claude CLI session.",
-          "claudeRateLimited": "Claude usage is rate limited right now.",
           "claudeUsageUnavailable": "Claude usage is unavailable right now.",
           "claudeWaitingCredentialRotate": "Claude usage refresh is waiting for the live Claude terminal to rotate its credentials.",
           "cliExitedBeforeStatus": "CLI exited before status was available",
@@ -25894,10 +25893,8 @@
     "overview": {
       "accounts": {
         "loading": "Reading usage…",
-        "error": "Usage unavailable",
         "noUsage": "No usage reported",
         "active": "active",
-        "reset": "Resets {{when}}",
         "title": "Accounts",
         "manage": "Manage",
         "empty": "No account usage yet. Sign in to an agent to track limits."
@@ -25962,11 +25959,6 @@
         "connecting": "Connecting",
         "offline": "Offline",
         "error": "Connection failed"
-      },
-      "usage": {
-        "session": "5h",
-        "weekly": "Week",
-        "monthly": "Month"
       }
     }
   },
@@ -26112,10 +26104,6 @@
         "subscription": "Subscription",
         "subscriptionHint": "This login runs on a plan seat, not on API usage."
       },
-      "window": {
-        "session": "5h",
-        "weekly": "7d"
-      },
       "error": "Could not update accounts",
       "refresh": "Refresh usage",
       "loading": "Loading accounts…",
@@ -26164,9 +26152,6 @@
         "tab": "{{value0}} · {{value1}}"
       },
       "minutes": "min",
-      "meter": {
-        "resetsIn": "resets in {{value0}}"
-      },
       "estimate": {
         "now": "Over its {{value0}} limit; swapping",
         "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
@@ -26187,7 +26172,8 @@
         "noSessions": "No sessions running",
         "rankHint": "Order of preference in this group",
         "setupTokenUsage": "Runs on your Claude subscription. Claude does not report usage for setup tokens.",
-        "apiKeyUsage": "Pay as you go; no plan limits to track."
+        "apiKeyUsage": "Pay as you go; no plan limits to track.",
+        "noUsage": "No usage reading yet."
       },
       "action": {
         "relogin": "Sign in again",
@@ -26402,7 +26388,6 @@
       "done": "Done",
       "back": "Back",
       "health": {
-        "ok": "Working",
         "expiring": "Expires {{value0}}",
         "signedOut": "Signed out",
         "rejected": "Login rejected",
@@ -26414,7 +26399,9 @@
           "missingSecret": "This computer’s keychain no longer holds the secret. Remove it and add it again.",
           "tokenDead": "The provider no longer accepts this token. Remove it and paste a new one.",
           "loginDead": "The provider no longer accepts this login. Sign in again to keep using it."
-        }
+        },
+        "rateLimited": "Rate limited",
+        "rateLimitedUntil": "Rate limited · resets in {{value0}}"
       },
       "identity": {
         "setupToken": "Claude setup token",
@@ -26480,8 +26467,6 @@
         "switch": "Move this session to",
         "liveSwap": "When this account runs low",
         "lastSwap": "{{value0}} to {{value1}}, {{value2}}",
-        "usage5h": "5h {{value0}}%",
-        "usage7d": "7d {{value0}}%",
         "swapNow": "swapping now",
         "swapAt": "next swap ~{{value0}}",
         "noSwap": "no swap expected before reset"
@@ -26494,6 +26479,12 @@
         "resumed": "Session resumed on {{value0}}",
         "resumedDescription": "It could not switch logins while running, so Seal restarted it on the new account with the same conversation.",
         "failed": "Could not move a session to {{value0}}"
+      }
+    },
+    "usage": {
+      "checkThrottled": {
+        "label": "Usage check throttled",
+        "message": "Claude is throttling usage checks right now. This is not the account’s own limit; figures update when checks resume."
       }
     }
   }

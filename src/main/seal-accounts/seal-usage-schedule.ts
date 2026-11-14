@@ -6,6 +6,7 @@ import type {
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import type { SealSessionAssignment } from '../../shared/seal-accounts/seal-accounts-status'
 import { sealAccountKeysMatch } from '../../shared/seal-accounts/seal-account-key'
+import { sealAccountRateLimit } from '../../shared/seal-accounts/seal-account-rate-limit'
 import { estimateSwap } from '../../shared/seal-accounts/seal-swap-estimate'
 import { accountLines } from '../../shared/seal-accounts/seal-usage-lines'
 import { SealUsagePoller, type SealUsageFetch } from './seal-usage-poller'
@@ -57,13 +58,17 @@ export function sealUsagePollingWanted(
   })
 }
 
-/** Adds the poller's next read and, for accounts in use, when each is expected to swap. */
+/**
+ * Adds the poller's next read, whether the account is out of quota and, for accounts in use,
+ * when each is expected to swap.
+ */
 export function withUsageSchedule(
   candidates: SealAccountCandidate[],
   options: {
     poller: SealUsagePoller
     config: SealAccountsConfig
     inUse: ReadonlySet<SealAccountKey>
+    limitStopAt: (key: SealAccountKey) => number | null
     now: number
   }
 ): SealAccountCandidate[] {
@@ -76,6 +81,10 @@ export function withUsageSchedule(
     return {
       ...candidate,
       nextPollAt: options.poller.nextPollAt(candidate.key),
+      rateLimit: sealAccountRateLimit(candidate, {
+        now: options.now,
+        limitStopAt: options.limitStopAt(candidate.key)
+      }),
       swapEstimate: options.inUse.has(candidate.key)
         ? estimateSwap(
             samples.latest,

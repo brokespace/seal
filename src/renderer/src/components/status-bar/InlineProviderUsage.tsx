@@ -11,6 +11,7 @@ import {
 import { useResetCountdownClock } from '@/hooks/useResetCountdownClock'
 import { barColor, clampUsedPercent } from './tooltip'
 import { formatWindowLabel } from '../../../../shared/rate-limit-window-label'
+import { hasUsageData } from '../../../../shared/usage-provider-windows'
 import { formatResetDuration } from '../../../../shared/rate-limit-reset-format'
 import { formatBareUsagePercentage, formatUsagePercentageLabel } from './usage-percentage-label'
 import { getUsageRosterRowState } from './usage-roster-row-state'
@@ -141,6 +142,13 @@ export function InlineUsageBars({
       ) : null}
     </div>
   )
+}
+
+/** Whether the bars have something to show: a usage window, or a failed check to name. */
+export function hasInlineUsage(
+  limits: ProviderRateLimits | null | undefined
+): limits is ProviderRateLimits {
+  return Boolean(limits && (hasUsageData(limits) || limits.status === 'error'))
 }
 
 export function isUnavailableInactiveUsage(limits: ProviderRateLimits | null | undefined): boolean {

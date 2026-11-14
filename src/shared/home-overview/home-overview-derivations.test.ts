@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  accountNextReset,
   buildHomeAttentionItems,
   groupHomeSessions,
   homeElapsed,
   mergeSessionMachines
 } from './home-overview-derivations'
-import type { HomeAccount, HomeSession } from './home-overview-types'
+import type { HomeSession } from './home-overview-types'
 
 function session(id: string, overrides: Partial<HomeSession> = {}): HomeSession {
   return {
@@ -28,19 +27,6 @@ function session(id: string, overrides: Partial<HomeSession> = {}): HomeSession 
       kind: 'orca-pane',
       reveal: { repoId: 'p1', worktreeId: 'w1', tabId: 't1', leafId: null }
     },
-    ...overrides
-  }
-}
-
-function account(overrides: Partial<HomeAccount> = {}): HomeAccount {
-  return {
-    id: 'claude:active',
-    provider: 'claude',
-    providerLabel: 'Claude',
-    label: 'me@example.com',
-    active: true,
-    status: 'ok',
-    windows: [],
     ...overrides
   }
 }
@@ -72,29 +58,6 @@ describe('buildHomeAttentionItems', () => {
       ['session:waiting', 'Pick a branch name'],
       ['session:new-error', 'API Error: 500']
     ])
-  })
-})
-
-describe('accountNextReset', () => {
-  it('reports the reset of the window that is near its limit', () => {
-    const near = account({
-      windows: [
-        { kind: 'session', usedPercent: 20, resetsAt: 5_000 },
-        { kind: 'weekly', usedPercent: 85, resetsAt: 50_000 }
-      ]
-    })
-    expect(accountNextReset(near, 1_000)).toBe(50_000)
-  })
-
-  it('reports the earliest future reset otherwise', () => {
-    const relaxed = account({
-      windows: [
-        { kind: 'session', usedPercent: 20, resetsAt: 500 },
-        { kind: 'weekly', usedPercent: 30, resetsAt: 50_000 },
-        { kind: 'monthly', usedPercent: 10, resetsAt: 9_000 }
-      ]
-    })
-    expect(accountNextReset(relaxed, 1_000)).toBe(9_000)
   })
 })
 

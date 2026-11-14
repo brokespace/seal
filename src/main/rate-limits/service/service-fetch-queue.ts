@@ -17,7 +17,10 @@ export abstract class RateLimitServiceFetchQueue extends RateLimitServiceProvide
     )
   }
 
-  protected async fetchCodexOnly(options?: { force?: boolean }): Promise<void> {
+  protected async fetchCodexOnly(options?: {
+    force?: boolean
+    preferBackend?: boolean
+  }): Promise<void> {
     if (this.isFetching) {
       if (options?.force) {
         this.codexOnlyFetchQueued = true
@@ -25,7 +28,9 @@ export abstract class RateLimitServiceFetchQueue extends RateLimitServiceProvide
       }
       return
     }
-    return this.runFetchQueue((signal) => this.runFetchCodexOnlyCycle(signal))
+    return this.runFetchQueue((signal) =>
+      this.runFetchCodexOnlyCycle(signal, { preferBackend: options?.preferBackend })
+    )
   }
 
   protected async fetchClaudeOnly(options?: { force?: boolean }): Promise<void> {

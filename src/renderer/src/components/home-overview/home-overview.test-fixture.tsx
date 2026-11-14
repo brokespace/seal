@@ -1,5 +1,6 @@
 /** Static sample data behind the Home fixtures and tests. */
 import type { ReactNode } from 'react'
+import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
 import {
   HomeAccountsContext,
   HomeAutomationsContext,
@@ -115,6 +116,34 @@ const MACHINES: HomeMachine[] = [
   }
 ]
 
+function limits(
+  provider: ProviderRateLimits['provider'],
+  session: number,
+  weekly: number | null
+): ProviderRateLimits {
+  return {
+    provider,
+    session: {
+      usedPercent: session,
+      windowMinutes: 300,
+      resetsAt: NOW + 95 * MIN,
+      resetDescription: null
+    },
+    weekly:
+      weekly === null
+        ? null
+        : {
+            usedPercent: weekly,
+            windowMinutes: 10_080,
+            resetsAt: NOW + 3 * 24 * 60 * MIN,
+            resetDescription: null
+          },
+    updatedAt: NOW,
+    error: null,
+    status: 'ok'
+  }
+}
+
 const ACCOUNTS: HomeAccount[] = [
   {
     id: 'claude:active',
@@ -122,11 +151,8 @@ const ACCOUNTS: HomeAccount[] = [
     providerLabel: 'Claude',
     label: 'brian@example.com',
     active: true,
-    status: 'ok',
-    windows: [
-      { kind: 'session', usedPercent: 86, resetsAt: NOW + 95 * MIN },
-      { kind: 'weekly', usedPercent: 41, resetsAt: NOW + 3 * 24 * 60 * MIN }
-    ]
+    limits: limits('claude', 86, 41),
+    fetching: false
   },
   {
     id: 'claude:work',
@@ -134,8 +160,8 @@ const ACCOUNTS: HomeAccount[] = [
     providerLabel: 'Claude',
     label: 'brian@work.example',
     active: false,
-    status: 'ok',
-    windows: [{ kind: 'session', usedPercent: 8, resetsAt: NOW + 4 * 60 * MIN }]
+    limits: limits('claude', 8, null),
+    fetching: false
   },
   {
     id: 'codex:active',
@@ -143,11 +169,8 @@ const ACCOUNTS: HomeAccount[] = [
     providerLabel: 'Codex',
     label: 'Codex',
     active: true,
-    status: 'ok',
-    windows: [
-      { kind: 'session', usedPercent: 22, resetsAt: NOW + 3 * 60 * MIN },
-      { kind: 'weekly', usedPercent: 57, resetsAt: NOW + 5 * 24 * 60 * MIN }
-    ]
+    limits: limits('codex', 22, 57),
+    fetching: false
   }
 ]
 

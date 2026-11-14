@@ -8,7 +8,6 @@ import type {
 
 export type {
   HomeAccount,
-  HomeAccountStatus,
   HomeAutomation,
   HomeAutomationsResult,
   HomeMachine,
@@ -18,8 +17,6 @@ export type {
   HomeSession,
   HomeSessionState,
   HomeSessionTarget,
-  HomeUsageWindow,
-  HomeUsageWindowKind,
   HomeWorkspace
 } from '../../../../shared/home-overview/home-overview-types'
 

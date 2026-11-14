@@ -65,11 +65,7 @@ function HomeOverviewContent(): React.JSX.Element {
               onManage={actions.openMachines}
               onOpen={actions.openMachine}
             />
-            <HomeAccountsPanel
-              accounts={accounts}
-              now={now}
-              onManage={actions.openAccountsSettings}
-            />
+            <HomeAccountsPanel accounts={accounts} onManage={actions.openAccountsSettings} />
             <HomeWorkspacesPanel workspaces={workspaces} onOpen={actions.openWorkspace} />
             <HomeAutomationsPanel
               result={automations}

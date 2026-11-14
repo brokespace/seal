@@ -4990,7 +4990,6 @@
   },
   "seal": {
     "accounts": {
-      "resetsIn": "Resets in {{value0}}",
       "estimate": {
         "now": "Over its {{value0}} limit; swapping",
         "at": "Next swap ~{{value0}} ({{value1}} reaches {{value2}}%)",
@@ -5005,10 +5004,10 @@
       "sessionSheetMessage": "{{value0}} is on {{value1}}. Pick an account to move it to, or whether auto-swap may move it.",
       "authFailure": "Signed out; sign in again on your computer.",
       "disabled": "Turned off for auto-swap",
+      "rateLimited": "Rate limited",
+      "rateLimitedUntil": "Rate limited · resets in {{value0}}",
       "active": "In use",
       "apiKey": "API key; no usage windows",
-      "window5h": "5h",
-      "windowWeekly": "Week",
       "autoSwap": "Auto-swap",
       "autoSwapHint": "Switch accounts before one runs out",
       "liveSessionSwap": "Move running sessions",

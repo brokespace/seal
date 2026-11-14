@@ -258,11 +258,6 @@ describe('RateLimitService', () => {
     await refresh
 
     expect(service.getState().inactiveClaudeAccounts).toEqual([])
-    expect(service.getState().claude).toMatchObject({
-      session: null,
-      weekly: null,
-      status: 'unavailable'
-    })
   })
 
   it.each(['all', 'claude'] as const)(

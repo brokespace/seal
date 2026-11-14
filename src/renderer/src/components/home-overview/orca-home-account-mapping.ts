@@ -4,7 +4,8 @@ import type {
   RateLimitState
 } from '../../../../shared/rate-limit-types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import type { HomeAccount, HomeAccountStatus, HomeUsageWindow } from './home-overview-model'
+import { hasUsageData } from '../../../../shared/usage-provider-windows'
+import type { HomeAccount } from './home-overview-model'
 
 type RateLimitProviderKey = Exclude<
   {
@@ -36,36 +37,12 @@ export type OrcaAccountSettings = Pick<
   | 'activeCodexManagedAccountId'
 >
 
-function usageWindows(limits: ProviderRateLimits | null): HomeUsageWindow[] {
-  if (!limits) {
-    return []
-  }
-  const windows: HomeUsageWindow[] = []
-  for (const kind of ['session', 'weekly', 'monthly'] as const) {
-    const window = limits[kind]
-    if (window) {
-      windows.push({ kind, usedPercent: window.usedPercent, resetsAt: window.resetsAt })
-    }
-  }
-  return windows
-}
-
-function accountStatus(limits: ProviderRateLimits | null, fetching = false): HomeAccountStatus {
-  if (fetching || !limits || limits.status === 'fetching' || limits.status === 'idle') {
-    return limits && usageWindows(limits).length > 0 ? 'ok' : 'loading'
-  }
-  if (limits.status === 'error') {
-    return 'error'
-  }
-  return limits.status === 'unavailable' ? 'unavailable' : 'ok'
-}
-
 function shouldListProvider(limits: ProviderRateLimits | null): limits is ProviderRateLimits {
   // Providers the user never set up report idle/unavailable with no usage; listing them is noise.
   if (!limits) {
     return false
   }
-  return limits.status === 'ok' || limits.status === 'error' || usageWindows(limits).length > 0
+  return limits.status === 'ok' || limits.status === 'error' || hasUsageData(limits)
 }
 
 function inactiveAccounts(
@@ -80,9 +57,8 @@ function inactiveAccounts(
     providerLabel,
     label: emailsById.get(entry.accountId) ?? providerLabel,
     active: false,
-    status: accountStatus(entry.rateLimits, entry.isFetching),
-    windows: usageWindows(entry.rateLimits),
-    ...(entry.rateLimits?.error ? { error: entry.rateLimits.error } : {})
+    limits: entry.rateLimits,
+    fetching: entry.isFetching
   }))
 }
 
@@ -113,9 +89,8 @@ export function orcaHomeAccounts(
       providerLabel: brand,
       label: activeLabels[key] ?? limits.usageMetadata?.account?.email ?? brand,
       active: true,
-      status: accountStatus(limits),
-      windows: usageWindows(limits),
-      ...(limits.error ? { error: limits.error } : {})
+      limits,
+      fetching: limits.status === 'fetching'
     })
   }
   accounts.push(

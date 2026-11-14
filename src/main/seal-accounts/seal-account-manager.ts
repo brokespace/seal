@@ -64,6 +64,8 @@ export class SealAccountManager {
   }
   private unsubscribeUsage: (() => void) | null = null
   readonly usage: SealUsagePoller
+  /** When an agent running on each account last printed a limit stop. */
+  readonly limitStops = new Map<SealAccountKey, number>()
   private evaluateTimer: ReturnType<typeof setTimeout> | null = null
   private evaluating: Promise<unknown> = Promise.resolve()
   readonly loginExpiry = new SealLoginExpiryCache()
@@ -77,7 +79,7 @@ export class SealAccountManager {
     this.store = new SealAccountsStore(dir)
     this.vault = new SealApiKeyVault(dir)
     this.now = deps.now ?? Date.now
-    this.usage = createSealUsagePoller(this, deps.fetchUsage ?? sealUsageFetcher(this))
+    this.usage = createSealUsagePoller(this, deps.fetchUsage ?? sealUsageFetcher(deps.services))
     this.usage.onPolled(() => this.scheduleEvaluation())
   }
 
@@ -112,7 +114,7 @@ export class SealAccountManager {
     return this.store.getState().machineKey
   }
 
-  /** Every account with its freshest usage, before the poll schedule and swap estimate. */
+  /** Every account with the rate-limit service's reading, before the poll schedule and swap estimate. */
   baseCandidates(provider: SealProvider): SealAccountCandidate[] {
     return buildSealCandidates(
       {
@@ -121,7 +123,6 @@ export class SealAccountManager {
         codex: this.services.codexAccounts.listAccounts(),
         rateLimits: this.services.rateLimits.getState(),
         storedApiKeyIds: this.vault.storedIds(),
-        polled: (key) => this.usage.limitsFor(key),
         systemLogins: readSealSystemLogins(this.services),
         dismissedSystemLogins: this.store.getState().dismissedSystemLogins,
         loginExpiry: (key) => this.loginExpiry.get(key),
@@ -136,6 +137,7 @@ export class SealAccountManager {
       poller: this.usage,
       config: this.getConfig(),
       inUse: this.accountsInUse(provider),
+      limitStopAt: (key) => this.limitStops.get(key) ?? null,
       now: this.now()
     })
   }
@@ -190,9 +192,10 @@ export class SealAccountManager {
       rateLimits.refreshIfStale(),
       rateLimits.fetchInactiveClaudeAccountsOnOpen(),
       rateLimits.fetchInactiveCodexAccountsOnOpen(),
-      this.loginExpiry.refresh(this),
-      this.usage.refreshNow()
+      this.loginExpiry.refresh(this)
     ])
+    // After the service's own pass, so an account it just read is not requested twice.
+    await this.usage.refreshNow()
   }
 
   private anyAutoSwapEnabled(): boolean {

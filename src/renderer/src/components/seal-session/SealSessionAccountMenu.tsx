@@ -17,7 +17,13 @@ import type {
   SealSessionLiveSwapMode,
   SealSessionSwapEntry
 } from '../../../../shared/seal-accounts/seal-accounts-status'
-import { sessionSwapTargets, windowUsedPercent } from './seal-session-account-view'
+import { sessionSwapTargets } from './seal-session-account-view'
+import { useAppStore } from '../../store'
+import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
+import type { RateLimitWindow } from '../../../../shared/rate-limit-types'
+import { hasInlineUsage, InlineUsageBars } from '../status-bar/InlineProviderUsage'
+import { formatBareUsagePercentage } from '../status-bar/usage-percentage-label'
+import { clampUsedPercent } from '../status-bar/tooltip'
 
 type SealSessionAccountMenuProps = {
   session: SealSessionAssignment
@@ -68,10 +74,24 @@ export function SealSessionAccountMenu({
   defaultOpen
 }: SealSessionAccountMenuProps) {
   const t = useTranslate()
+  const display = normalizeUsagePercentageDisplay(
+    useAppStore((state) => state.usagePercentageDisplay)
+  )
+  // The popover's own figure for a window, so the badge can never disagree with it.
+  const percent = (window: RateLimitWindow | null | undefined): string | null =>
+    window ? formatBareUsagePercentage(clampUsedPercent(window.usedPercent), display, t) : null
   const current = candidates.find((candidate) => candidate.key === session.accountKey) ?? null
-  const used = windowUsedPercent(current?.usage?.session ?? null, readAt)
-  const weekly = windowUsedPercent(current?.usage?.weekly ?? null, readAt)
+  const used = percent(current?.limits?.session)
   const estimate = current?.swapEstimate ?? null
+  const swapNote = estimate
+    ? estimate.at <= readAt
+      ? t('seal.session.menu.swapNow', 'swapping now')
+      : t('seal.session.menu.swapAt', 'next swap ~{{value0}}', {
+          value0: formatResetDuration(estimate.at - readAt)
+        })
+    : current?.nextPollAt
+      ? t('seal.session.menu.noSwap', 'no swap expected before reset')
+      : null
   const targets = sessionSwapTargets(session, candidates)
   const last = session.history?.at(-1) ?? null
   const label = current?.label ?? session.accountLabel
@@ -97,31 +117,18 @@ export function SealSessionAccountMenu({
           onDoubleClick={(event) => event.stopPropagation()}
         >
           <span className="truncate">{label}</span>
-          {used !== null ? <span className="tabular-nums">{used}%</span> : null}
+          {used !== null ? <span className="tabular-nums">{used}</span> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-56">
-        <p className="px-2 pt-1.5 text-2xs text-muted-foreground tabular-nums">
-          {[
-            used !== null
-              ? t('seal.session.menu.usage5h', '5h {{value0}}%', { value0: used })
-              : null,
-            weekly !== null
-              ? t('seal.session.menu.usage7d', '7d {{value0}}%', { value0: weekly })
-              : null,
-            estimate
-              ? estimate.at <= readAt
-                ? t('seal.session.menu.swapNow', 'swapping now')
-                : t('seal.session.menu.swapAt', 'next swap ~{{value0}}', {
-                    value0: formatResetDuration(estimate.at - readAt)
-                  })
-              : current?.nextPollAt
-                ? t('seal.session.menu.noSwap', 'no swap expected before reset')
-                : null
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
+        {hasInlineUsage(current?.limits) ? (
+          <div className="px-2 pt-1.5" data-slot="seal-session-usage">
+            <InlineUsageBars limits={current.limits} isFetching={current.usageFetching === true} />
+          </div>
+        ) : null}
+        {swapNote ? (
+          <p className="px-2 pt-1 text-2xs text-muted-foreground tabular-nums">{swapNote}</p>
+        ) : null}
         <DropdownMenuLabel>
           {t('seal.session.menu.switch', 'Move this session to')}
         </DropdownMenuLabel>
@@ -134,13 +141,13 @@ export function SealSessionAccountMenu({
           }}
         >
           {targets.map((candidate) => {
-            const percent = windowUsedPercent(candidate.usage?.session ?? null, readAt)
+            const sessionUsed = percent(candidate.limits?.session)
             return (
               <DropdownMenuRadioItem key={candidate.key} value={candidate.key}>
                 <span className="truncate">{candidate.label}</span>
-                {percent !== null ? (
+                {sessionUsed !== null ? (
                   <span className="ml-auto pl-3 text-muted-foreground tabular-nums">
-                    {percent}%
+                    {sessionUsed}
                   </span>
                 ) : null}
               </DropdownMenuRadioItem>

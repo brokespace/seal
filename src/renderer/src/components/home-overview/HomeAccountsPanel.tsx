@@ -1,48 +1,27 @@
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
-import { cn } from '@/lib/class-names'
-import {
-  ACCOUNT_NEAR_LIMIT_PERCENT,
-  accountNextReset
-} from '../../../../shared/home-overview/home-overview-derivations'
+import { hasInlineUsage, InlineUsageBars } from '../status-bar/InlineProviderUsage'
 import type { HomeAccount } from './home-overview-model'
-import { formatHomeCountdown, homeUsageWindowLabel } from './home-overview-presentation'
 import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
-
-function UsageBar({ percent }: { percent: number }): React.JSX.Element {
-  const clamped = Math.max(0, Math.min(100, percent))
-  return (
-    <span className="relative block h-1 w-full overflow-hidden rounded-full bg-muted">
-      <span
-        className={cn(
-          'absolute inset-y-0 left-0 rounded-full',
-          clamped >= ACCOUNT_NEAR_LIMIT_PERCENT ? 'bg-destructive' : 'bg-foreground/50'
-        )}
-        style={{ width: `${clamped}%` }}
-      />
-    </span>
-  )
-}
 
 function AccountRow({
   account,
-  now,
   onOpen
 }: {
   account: HomeAccount
-  now: number
   onOpen: () => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const reset = accountNextReset(account, now)
-  const statusText =
-    account.status === 'loading'
-      ? t('home.overview.accounts.loading', 'Reading usage…')
-      : account.status === 'error'
-        ? (account.error ?? t('home.overview.accounts.error', 'Usage unavailable'))
-        : account.windows.length === 0
-          ? t('home.overview.accounts.noUsage', 'No usage reported')
-          : null
+  const { limits } = account
+  const pending = account.fetching || limits?.status === 'fetching' || limits?.status === 'idle'
+  // A reading with windows or a failed check is the popover's to describe; the rest has no bars.
+  const statusText = account.needsSignIn
+    ? t('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')
+    : hasInlineUsage(limits)
+      ? null
+      : pending
+        ? t('home.overview.accounts.loading', 'Reading usage…')
+        : t('home.overview.accounts.noUsage', 'No usage reported')
   return (
     <li className="p-1">
       <HomeOverviewRowButton onClick={onOpen} className="block px-2 py-1">
@@ -53,30 +32,13 @@ function AccountRow({
             {account.active ? ` · ${t('home.overview.accounts.active', 'active')}` : ''}
           </span>
         </span>
-        {statusText ? (
+        {statusText || !limits ? (
           <span className="mt-1 block truncate text-2xs text-muted-foreground">{statusText}</span>
         ) : (
-          <span className="mt-1.5 grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-1">
-            {account.windows.map((window) => (
-              <span key={window.kind} className="contents">
-                <span className="text-3xs text-muted-foreground">
-                  {homeUsageWindowLabel(window.kind, t)}
-                </span>
-                <UsageBar percent={window.usedPercent} />
-                <span className="text-3xs text-muted-foreground tabular-nums">
-                  {Math.round(window.usedPercent)}%
-                </span>
-              </span>
-            ))}
+          <span className="mt-1.5 block">
+            <InlineUsageBars limits={limits} isFetching={account.fetching} />
           </span>
         )}
-        {reset ? (
-          <span className="mt-1 block text-3xs text-muted-foreground tabular-nums">
-            {t('home.overview.accounts.reset', 'Resets {{when}}', {
-              when: formatHomeCountdown(reset, now)
-            })}
-          </span>
-        ) : null}
       </HomeOverviewRowButton>
     </li>
   )
@@ -84,11 +46,9 @@ function AccountRow({
 
 export function HomeAccountsPanel({
   accounts,
-  now,
   onManage
 }: {
   accounts: readonly HomeAccount[]
-  now: number
   onManage: () => void
 }): React.JSX.Element {
   const t = useTranslate()
@@ -111,7 +71,7 @@ export function HomeAccountsPanel({
       ) : (
         <ul className="divide-y divide-border">
           {accounts.map((account) => (
-            <AccountRow key={account.id} account={account} now={now} onOpen={onManage} />
+            <AccountRow key={account.id} account={account} onOpen={onManage} />
           ))}
         </ul>
       )}

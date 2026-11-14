@@ -20,7 +20,9 @@ export type SealCandidateSeed = {
   systemLogin: boolean
   wslDistro: string | null
   addedAt: number | null
+  /** The rate-limit service's reading for this account; null when it holds none. */
   limits: ProviderRateLimits | null
+  fetching: boolean
 }
 
 /** The identity the machine's own `claude` or `codex` CLI is signed in to. */
@@ -59,6 +61,10 @@ export function withSystemLogin(
   if (isDismissed(sources, key)) {
     return seeds
   }
+  const selected = hostSelection === null
+  // Its own slot while another account is selected, and only when that reading is this login's.
+  const kept = sources.rateLimits?.systemLoginUsage?.[provider]
+  const unselected = kept && sealAccountKeysMatch(kept.identity, key) ? kept : null
   return [
     ...seeds,
     {
@@ -70,13 +76,14 @@ export function withSystemLogin(
       email: system.email,
       orgName: system.orgName,
       fallbackLabel: system.email,
-      active: hostSelection === null,
+      active: selected,
       launchable: true,
       needsSignIn: false,
       systemLogin: true,
       wslDistro: null,
       addedAt: null,
-      limits: hostSelection === null ? activeLimits : null
+      limits: selected ? activeLimits : (unselected?.rateLimits ?? null),
+      fetching: selected ? activeLimits?.status === 'fetching' : unselected?.isFetching === true
     }
   ]
 }

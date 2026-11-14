@@ -6,7 +6,10 @@ import { readGrokAuthSession } from '../providers/grok/grok-auth'
 import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
 
 export abstract class RateLimitServiceProviderCycles extends RateLimitServiceFullCycleApplication {
-  protected async runFetchCodexOnlyCycle(signal: AbortSignal): Promise<void> {
+  protected async runFetchCodexOnlyCycle(
+    signal: AbortSignal,
+    options?: { preferBackend?: boolean }
+  ): Promise<void> {
     if (signal.aborted) {
       return
     }
@@ -41,7 +44,8 @@ export abstract class RateLimitServiceProviderCycles extends RateLimitServiceFul
         : fetchCodexRateLimits({
             codexHomePath,
             networkProxySettings: this.networkProxySettingsResolver?.(),
-            signal
+            signal,
+            preferBackend: options?.preferBackend
           })
     ).catch((err): ProviderRateLimits => ({
       provider: 'codex',

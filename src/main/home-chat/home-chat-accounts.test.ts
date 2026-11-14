@@ -16,7 +16,7 @@ function claude(overrides: Partial<SealAccountCandidate>): SealAccountCandidate 
     active: false,
     launchable: true,
     authFailure: false,
-    usage: null,
+    limits: null,
     sessionThreshold: null,
     weeklyThreshold: null,
     ...overrides

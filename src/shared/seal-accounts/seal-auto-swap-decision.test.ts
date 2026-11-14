@@ -24,17 +24,30 @@ function account(
     active: false,
     launchable: true,
     authFailure: false,
-    usage: usage
+    limits: usage
       ? {
+          provider: 'claude',
           session:
             usage.session === undefined
               ? null
-              : { usedPercent: usage.session, resetsAt: usage.resetsAt ?? NOW + HOUR },
-          weekly: usage.weekly === undefined ? null : { usedPercent: usage.weekly, resetsAt: null },
-          models: [],
-          planType: null,
+              : {
+                  usedPercent: usage.session,
+                  windowMinutes: 300,
+                  resetsAt: usage.resetsAt ?? NOW + HOUR,
+                  resetDescription: null
+                },
+          weekly:
+            usage.weekly === undefined
+              ? null
+              : {
+                  usedPercent: usage.weekly,
+                  windowMinutes: 10_080,
+                  resetsAt: null,
+                  resetDescription: null
+                },
           updatedAt: NOW,
-          error: null
+          error: null,
+          status: 'ok'
         }
       : null,
     sessionThreshold: null,

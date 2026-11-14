@@ -1,6 +1,13 @@
 import type { SealAccountCandidate } from '../../../shared/seal-accounts/seal-account-candidates'
 import type { SealProvider } from '../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../shared/seal-accounts/seal-accounts-status'
+import { clampUsedPercent } from '../../../shared/usage-percentage-display'
+import {
+  getUsageWindowSections,
+  hasUsageData,
+  type UsageWindowSection
+} from '../../../shared/usage-provider-windows'
+import { usageCheckRemark } from '../../../shared/usage-window-text'
 
 /** The slice of Seal's account manager the assistant uses. */
 export type HomeChatSealAccounts = {
@@ -18,15 +25,19 @@ export type HomeChatAccountAccess = {
 
 const PROVIDERS: readonly SealProvider[] = ['claude', 'codex']
 
-function window(
-  name: string,
-  value: { usedPercent: number; resetsAt: number | null } | null
-): string {
-  if (!value) {
+function describeWindow(section: UsageWindowSection): string {
+  const name =
+    section.kind === 'bucket'
+      ? section.name
+      : section.kind === 'fableWeekly'
+        ? 'Fable weekly'
+        : section.kind
+  if (!section.window) {
     return `${name}: unknown`
   }
-  const reset = value.resetsAt ? `, resets ${new Date(value.resetsAt).toISOString()}` : ''
-  return `${name}: ${Math.round(value.usedPercent)}% used${reset}`
+  const { usedPercent, resetsAt } = section.window
+  const reset = resetsAt ? `, resets ${new Date(resetsAt).toISOString()}` : ''
+  return `${name}: ${clampUsedPercent(usedPercent)}% used${reset}`
 }
 
 export function describeAccount(account: SealAccountCandidate): string {
@@ -34,17 +45,20 @@ export function describeAccount(account: SealAccountCandidate): string {
     account.active ? 'ACTIVE' : null,
     account.disabled ? 'disabled' : null,
     account.authFailure ? 'needs sign-in' : null,
+    account.rateLimit
+      ? `RATE LIMITED${account.rateLimit.resetsAt ? ` until ${new Date(account.rateLimit.resetsAt).toISOString()}` : ''}`
+      : null,
     account.launchable ? null : 'cannot launch on this machine'
   ].filter(Boolean)
-  const usage = account.usage
-    ? [
-        window('session', account.usage.session),
-        window('weekly', account.usage.weekly),
-        ...account.usage.models.map((model) => window(model.name, model)),
-        ...(account.usage.error ? [`usage error: ${account.usage.error}`] : [])
-      ].join('; ')
-    : 'usage not read yet'
-  const plan = account.plan ?? account.usage?.planType
+  const limits = account.limits
+  const remark = account.authFailure ? null : usageCheckRemark(limits)
+  const usage =
+    limits && hasUsageData(limits)
+      ? [...getUsageWindowSections(limits).map(describeWindow), ...(remark ? [remark] : [])].join(
+          '; '
+        )
+      : (remark ?? 'usage not read yet')
+  const plan = account.plan ?? limits?.planType
   return `- ${account.label}${account.email && account.email !== account.label ? ` <${account.email}>` : ''} [key ${account.key}, ${account.kind}${plan ? `, ${plan}` : ''}]${flags.length ? ` (${flags.join(', ')})` : ''}\n  ${usage}`
 }
 

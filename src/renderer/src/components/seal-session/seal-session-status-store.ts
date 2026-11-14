@@ -7,6 +7,7 @@ import type {
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { translate } from '@/i18n/i18n'
+import { onUsageReadingPushed } from './usage-reading-pushes'
 
 const POLL_MS = 30_000
 
@@ -93,7 +94,7 @@ async function load(host: HostEntry): Promise<void> {
   }
 }
 
-/** Shares one 30s status poll per host across every badge that shows it. */
+/** Shares one status poll per host across every view that shows it: every 30s and after each usage reading. */
 export function subscribeSealHost(target: RuntimeClientTarget, listener: () => void): () => void {
   const key = sealHostKey(target)
   let host = hosts.get(key)
@@ -105,11 +106,16 @@ export function subscribeSealHost(target: RuntimeClientTarget, listener: () => v
   entry.listeners.add(listener)
   if (!entry.stopPolling) {
     void load(entry)
-    entry.stopPolling = installWindowVisibilityInterval({
+    const stopInterval = installWindowVisibilityInterval({
       run: () => void load(entry),
       intervalMs: POLL_MS,
       slowWhileUnfocused: true
     })
+    const stopFollowing = onUsageReadingPushed(() => void load(entry))
+    entry.stopPolling = () => {
+      stopInterval()
+      stopFollowing()
+    }
   }
   return () => {
     entry.listeners.delete(listener)

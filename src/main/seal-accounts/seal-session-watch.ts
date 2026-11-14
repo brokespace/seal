@@ -127,6 +127,9 @@ export class SealSessionWatch {
         row.state !== 'working' &&
         row.receivedAt > (session.lastSwapAt ?? 0) &&
         isRateLimitStop(row.lastAssistantMessage)
+      if (rateLimited && session.accountKey) {
+        this.manager.limitStops.set(session.accountKey, row.receivedAt)
+      }
       const providerSessionId = row?.providerSession?.id ?? null
       const decision = decideSessionSwap({
         session: {
