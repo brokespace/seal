@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
 import { writeSecureJsonFile } from '../../../shared/secure-storage/secure-file'
@@ -26,9 +26,9 @@ const FileSchema = z.object({
   )
 })
 
-function readFile(path: string): Map<string, KeptReading> {
+async function readKept(path: string): Promise<Map<string, KeptReading>> {
   try {
-    const parsed = FileSchema.safeParse(JSON.parse(readFileSync(path, 'utf8')))
+    const parsed = FileSchema.safeParse(JSON.parse(await readFile(path, 'utf8')))
     if (!parsed.success) {
       return new Map()
     }
@@ -44,19 +44,30 @@ function readFile(path: string): Map<string, KeptReading> {
  * after a start then still has figures to show, dated when they were read.
  */
 export class KeptUsageReadings {
-  private readings: Map<string, KeptReading> | null = null
+  private readonly readings = new Map<string, KeptReading>()
+  private readonly loaded: Promise<void>
   private saveTimer: ReturnType<typeof setTimeout> | null = null
 
-  constructor(private readonly path: string) {}
+  constructor(private readonly path: string) {
+    // Read off the main thread's sync path; it finishes long before the first check answers.
+    this.loaded = readKept(path).then((kept) => {
+      for (const [key, reading] of kept) {
+        // A reading taken while the file was being read is the newer one.
+        if (!this.readings.has(key)) {
+          this.readings.set(key, reading)
+        }
+      }
+    })
+  }
 
-  private all(): Map<string, KeptReading> {
-    this.readings ??= readFile(this.path)
-    return this.readings
+  /** Resolves once the previous run's readings can be served. */
+  whenLoaded(): Promise<void> {
+    return this.loaded
   }
 
   /** A reading kept for another identity never stands in for this one. */
   get(key: string, identity?: string): ProviderRateLimits | null {
-    const kept = this.all().get(key)
+    const kept = this.readings.get(key)
     return kept && kept.identity === identity ? kept.limits : null
   }
 
@@ -64,7 +75,7 @@ export class KeptUsageReadings {
     if (limits.status !== 'ok') {
       return
     }
-    this.all().set(key, { ...(identity ? { identity } : {}), limits })
+    this.readings.set(key, { ...(identity ? { identity } : {}), limits })
     this.saveTimer ??= setTimeout(() => this.flush(), SAVE_DELAY_MS)
     this.saveTimer.unref?.()
   }
@@ -77,7 +88,7 @@ export class KeptUsageReadings {
     this.saveTimer = null
     const now = Date.now()
     const readings = Object.fromEntries(
-      [...this.all()].filter(([, kept]) => now - kept.limits.updatedAt < LONG_STALE_THRESHOLD_MS)
+      [...this.readings].filter(([, kept]) => now - kept.limits.updatedAt < LONG_STALE_THRESHOLD_MS)
     )
     try {
       writeSecureJsonFile(this.path, { readings })

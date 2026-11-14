@@ -180,7 +180,9 @@ describe('last good reading across a restart', () => {
 
     vi.setSystemTime(NOW + 20 * MINUTE)
     const after = serviceWithAccounts()
-    after.setKeptReadings(new KeptUsageReadings(file))
+    const kept = new KeptUsageReadings(file)
+    await kept.whenLoaded()
+    after.setKeptReadings(kept)
     vi.mocked(fetchInactiveClaudeAccountUsage).mockResolvedValue(throttled(NOW + 25 * MINUTE))
 
     expect(await after.readAccountUsage('claude', 'side')).toMatchObject({
