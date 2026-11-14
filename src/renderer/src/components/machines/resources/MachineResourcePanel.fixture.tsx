@@ -3,6 +3,7 @@ import { toRuntimeExecutionHostId } from '../../../../../shared/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { toMachineId } from '../../../../../shared/machines/machine-types'
 import { fakeMachinesApi, KESSEL, METRICS } from '../machine-api-fixture'
+import { fakeDiskIndexNotStartedReply } from '../machine-disk-index-fixture-data'
 import { MachineResourcePanel } from './MachineResourcePanel'
 import type { MachineResourceKind } from './machine-resource-requests'
 
@@ -31,11 +32,15 @@ function press(frame: HTMLElement, text: string): void {
   target?.click()
 }
 
-function panel(kind: MachineResourceKind, then?: (frame: HTMLElement) => void) {
+function panel(
+  kind: MachineResourceKind,
+  then?: (frame: HTMLElement) => void,
+  api: typeof fakeMachinesApi = fakeMachinesApi
+) {
   return defineFixture({
     width: 920,
     setup: () => {
-      window.api.machines = fakeMachinesApi
+      window.api.machines = api
     },
     render: () => (
       <div className="flex flex-col bg-background" style={{ minHeight: 400 }}>
@@ -75,3 +80,8 @@ export const diskLargestFiles = panel('disk', (frame) => press(frame, 'Largest f
 export const diskLargestFolders = panel('disk', (frame) => press(frame, 'Largest folders'))
 
 export const diskCleanup = panel('disk', (frame) => press(frame, 'Clean up'))
+
+export const diskIndexNotStarted = panel('disk', undefined, {
+  ...fakeMachinesApi,
+  diskIndex: async ({ request }) => fakeDiskIndexNotStartedReply('/home/brian', request)
+})

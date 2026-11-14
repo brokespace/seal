@@ -38,8 +38,6 @@ const SCAN_BACKOFF_FACTOR = 10
 
 export type DiskIndexDaemonOptions = {
   dataDir: string
-  /** Names the program file this daemon runs from. */
-  build: string
   /** False once another daemon has taken over the socket. */
   stillOwnsSocket(): Promise<boolean>
   /** The daemon stops when this process is gone. */
@@ -98,11 +96,8 @@ export class DiskIndexDaemon {
 
   async handle(envelope: DiskIndexEnvelope): Promise<DiskIndexDaemonReply> {
     this.lastRequestAt = Date.now()
-    // A newer build takes over, but never in the middle of a scan it would have to start again.
-    if (
-      envelope.protocol > DISK_INDEX_PROTOCOL ||
-      (envelope.build !== this.options.build && !this.scan)
-    ) {
+    // Several Seal builds share one machine (a desktop, its server, a phone), so only a newer protocol takes over.
+    if (envelope.protocol > DISK_INDEX_PROTOCOL) {
       setTimeout(() => this.options.exit(), 50)
       return { ok: false, superseded: true }
     }

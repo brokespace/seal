@@ -36,8 +36,6 @@ import { registerMachineResourceHandlers } from './resources/machine-resource-ip
 import { ensureMachineDiskIndex } from './resources/machine-disk-index'
 import { registerMachineFolderHandlers } from './listing/machine-folder-ipc'
 
-const LOCAL_DISK_INDEX_START_DELAY_MS = 30_000
-
 let currentGetMainWindow: () => BrowserWindow | null = () => null
 let unsubscribeRendererEvents: (() => void) | null = null
 
@@ -79,13 +77,6 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
     connection: (machineId) => getMachineRegistry().connection(machineId),
     liveSessionSources: () => getMachineRegistry().liveSessionSources()
   })
-  // This computer's index starts with the app; agent- and test-launched apps leave the disk alone.
-  if (process.env.ORCA_BACKGROUND_LAUNCH !== '1') {
-    setTimeout(
-      () => ensureMachineDiskIndex(getMachineRegistry().connection(LOCAL_MACHINE_ID)),
-      LOCAL_DISK_INDEX_START_DELAY_MS
-    ).unref()
-  }
   unsubscribeRendererEvents?.()
   const offDirs = onMachineDirChanged((event) => sendToRenderer(MACHINE_IPC.dirChanged, event))
   const offTransfers = onMachineTransferUpdated((transfer) =>

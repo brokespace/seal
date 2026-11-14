@@ -165,3 +165,31 @@ export function fakeDiskIndexReply(
   }
   return { ok: true, status: STATUS }
 }
+
+/** A machine whose daemon did not come up: live figures, the failed step and the machine's words. */
+export function fakeDiskIndexNotStartedReply(
+  home: string,
+  request: MachineDiskIndexRequest
+): MachineDiskIndexReply {
+  if (request.op === 'list' || request.op === 'largest') {
+    return fakeDiskIndexReply(home, request)
+  }
+  return {
+    ok: true,
+    status: {
+      ...STATUS,
+      source: 'live',
+      unavailableReason: 'daemon-failed',
+      unavailableDetail: `listen EACCES: permission denied ${home}/.seal/disk-index/daemon.sock`,
+      mounts: STATUS.mounts.map((mount) => ({
+        ...mount,
+        indexed: false,
+        skipReason: null,
+        scannedAt: null,
+        indexedFiles: null
+      })),
+      scan: null,
+      nextScanAt: null
+    }
+  }
+}
