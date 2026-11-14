@@ -52,16 +52,16 @@
     {
       "name": "orca-computer-use",
       "sourcePath": "skills/orca-computer-use",
-      "packageDigest": "aeffe31ab2ee7f23ca0d271402578dd538c5ae7a61bd46b4559aa86e08ed2eaf",
+      "packageDigest": "9cd2276931697ead5dc1dc9700c62b273eb1471be467cdd776df40a49ec0f410",
       "files": [
         {
           "path": "SKILL.md",
           "size": 2221,
           "executable": false,
           "classification": "text",
-          "exactSha256": "69376456185483ea494eb354be09bce5b8bde9d1c792e8cb1ce7687691d1a021",
-          "textNormalizedSha256": "69376456185483ea494eb354be09bce5b8bde9d1c792e8cb1ce7687691d1a021",
-          "identitySha256": "69376456185483ea494eb354be09bce5b8bde9d1c792e8cb1ce7687691d1a021"
+          "exactSha256": "c03d6cb2f35d5efde660cf1a26716f2281b7269e6efbf344c0fa8820b36a8ca1",
+          "textNormalizedSha256": "c03d6cb2f35d5efde660cf1a26716f2281b7269e6efbf344c0fa8820b36a8ca1",
+          "identitySha256": "c03d6cb2f35d5efde660cf1a26716f2281b7269e6efbf344c0fa8820b36a8ca1"
         }
       ]
     },

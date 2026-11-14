@@ -142,14 +142,13 @@ export function OrcaLogo(): React.JSX.Element {
       style={{ opacity: 0.9, verticalAlign: 'middle' }}
     >
       <path
-        fill="#ffffff"
+        style={{ fill: '#ffffff' }}
         fillRule="evenodd"
         d="M28 136 a100 92 0 1 0 200 0 a100 92 0 1 0 -200 0 Z M81 116 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M149 116 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 Z M113 141 Q128 133 143 141 Q137 157 128 160 Q119 157 113 141 Z"
       />
       <path
         d="M62 150 L14 138 M62 162 L12 166 M64 174 L20 194 M194 150 L242 138 M194 162 L244 166 M192 174 L236 194"
-        fill="none"
-        stroke="#ffffff"
+        style={{ fill: 'none', stroke: '#ffffff' }}
         strokeWidth={6}
         strokeLinecap="round"
       />
