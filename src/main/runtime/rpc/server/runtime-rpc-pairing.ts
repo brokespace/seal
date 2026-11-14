@@ -185,7 +185,7 @@ export class RuntimeRpcPairing extends RuntimeRpcNetworkExposure {
     reach?: RuntimePairingReach
     // Grant administrative permissions only at pairing, never as later device upgrades.
     grants?: readonly RuntimeDeviceGrant[]
-    // Desktop UI only; absent keeps headless offers valid until scanned.
+    // Absent uses the scope's default lifetime; no offer is valid forever.
     offerTtlMs?: number
   }):
     | PairingOfferUnavailable

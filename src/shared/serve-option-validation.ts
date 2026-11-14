@@ -1,7 +1,7 @@
 import { levenshtein } from './edit-distance'
 
 export type ServeOptionValidationInput = {
-  /** Explicit --bind value; undefined/null means the host's default listener. */
+  /** Explicit --bind value; undefined/null means loopback. Any bind pairs a phone: Relay on loopback, the LAN otherwise. */
   bind?: string | null
   noPairing: boolean
   mobilePairing: boolean
@@ -15,10 +15,6 @@ export type ServeOptionValidationInput = {
 export function getServeOptionValidationError(options: ServeOptionValidationInput): string | null {
   if (options.noPairing && options.mobilePairing) {
     return 'Use either --mobile-pairing or --no-pairing, not both.'
-  }
-  if (options.mobilePairing && options.bind && options.bind !== '0.0.0.0') {
-    // Mobile offers widen the listener to all interfaces, which a pinned --bind refuses, so the QR could never be served.
-    return '--mobile-pairing needs --bind 0.0.0.0 (or no --bind); a narrower --bind cannot serve the mobile pairing offer.'
   }
   if (options.grantDesktopControl && (options.noPairing || options.mobilePairing)) {
     return '--grant-desktop-control applies only to the default runtime pairing offer.'

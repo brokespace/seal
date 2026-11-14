@@ -1,5 +1,6 @@
 import type { DeviceRegistry } from '../../rpc/server/pairing/device-registry'
 import type { RelayRevokeOutbox } from '../pairing/relay-revoke-outbox'
+import { isLiveRelayInviteExpiry } from '../../../../shared/remote-runtime/pairing/mobile-relay-invite-expiry'
 
 type RelayDemandLedgerOptions = {
   deviceRegistry: DeviceRegistry
@@ -52,7 +53,11 @@ export class RelayDemandLedger {
         return false
       }
       // E2EE marks seen before install; only durable credential install removes invite expiry and grants standing demand.
-      return binding.inviteExpiresAt === undefined || binding.inviteExpiresAt > now
+      // An expiry beyond the invite lifetime never came from a real invite: it must not hold standing demand.
+      return (
+        binding.inviteExpiresAt === undefined ||
+        isLiveRelayInviteExpiry(binding.inviteExpiresAt, now)
+      )
     })
   }
 
@@ -61,7 +66,11 @@ export class RelayDemandLedger {
     let next: number | null = null
     for (const device of this.options.deviceRegistry.listDevices()) {
       const expiresAt = device.relayBinding?.inviteExpiresAt
-      if (expiresAt && expiresAt > now && (next === null || expiresAt < next)) {
+      if (
+        expiresAt &&
+        isLiveRelayInviteExpiry(expiresAt, now) &&
+        (next === null || expiresAt < next)
+      ) {
         next = expiresAt
       }
     }

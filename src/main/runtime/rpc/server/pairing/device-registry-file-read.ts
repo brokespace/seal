@@ -5,7 +5,10 @@ import {
 } from '../../../../../shared/secure-storage/secure-file'
 import { corruptRegistryCopyExists, isMissingFileError } from './device-registry-corruption'
 import type { DeviceEntry } from './device-entry'
-import { normalizeLoadedDeviceRow } from './device-registry-row-validation'
+import {
+  normalizeLoadedDeviceRow,
+  storesUsedPlaintextCredential
+} from './device-registry-row-validation'
 
 export type DeviceRegistryFileRead = {
   devices: DeviceEntry[]
@@ -15,6 +18,8 @@ export type DeviceRegistryFileRead = {
   doubtful: boolean
   /** A corrupt file must be set aside before the first rewrite. */
   corruptFilePending: boolean
+  /** The file still holds a used bearer in the clear (older build); `devices` already has hashes. */
+  plaintextCredentialsStored?: boolean
 }
 
 export function readDeviceRegistryFile(registryPath: string): DeviceRegistryFileRead {
@@ -35,7 +40,8 @@ export function readDeviceRegistryFile(registryPath: string): DeviceRegistryFile
       devices,
       unreadable: false,
       doubtful: doubtful || droppedRows,
-      corruptFilePending: droppedRows
+      corruptFilePending: droppedRows,
+      plaintextCredentialsStored: parsed.some(storesUsedPlaintextCredential)
     }
   } catch (error) {
     if (isMissingFileError(error)) {

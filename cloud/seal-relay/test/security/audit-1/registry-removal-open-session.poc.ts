@@ -1,12 +1,13 @@
-// Audit 1, A1-04: after an operator removes a paired device's row from orca-devices.json, a socket
-// that device already had open keeps receiving host-pushed terminal output for as long as it sends
-// no application frame. Real headless RPC server on loopback with a stub PTY; pairings made here.
+// Audit 1, A1-04, fixed: after an operator removed a paired device's row from orca-devices.json, a
+// socket that device already had open kept receiving host-pushed terminal output for as long as it
+// sent no application frame. These assert that the host now closes it within the revocation sweep.
+// Real headless RPC server on loopback with a stub PTY; pairings made here.
 import type * as WorktreeScanCacheModule from '../../../../../src/main/git/worktrees/catalog/worktree-scan-cache'
 import type * as WorktreeListingModule from '../../../../../src/main/git/worktrees/catalog/worktree-listing'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { pairedRuntimeConnectionFromOffer } from '../../../../../src/shared/remote-runtime/pairing/paired-runtime-connection'
 import { parsePairingCode } from '../../../../../src/shared/remote-runtime/pairing/pairing'
@@ -31,7 +32,6 @@ import { settledWriteStub } from '../../../../../src/main/providers/testing/sett
 import { publishHeadlessRuntimeGraph } from '../../../../../src/main/runtime/session-graph/headless-runtime-graph'
 import { committingSpawn } from '../../../../../src/main/runtime/orca-runtime-tests/bind-first-pane.test-fixture'
 import { DEVICE_REGISTRY_FILENAME } from '../../../../../src/main/runtime/rpc/server/pairing/mobile-pairing-files'
-import { describePoc } from './security-poc-opt-in'
 
 vi.mock(
   '../../../../../src/main/git/worktrees/catalog/worktree-scan-cache',
@@ -64,10 +64,8 @@ const PTY_ID = 'shared-pty'
 const SPAWN = { cols: 80, rows: 24 }
 const WORKTREE = 'id:repo-1::/tmp/worktree-a'
 const SLOW_WAIT = { timeout: 20_000, interval: 50 }
-// Longer than three 15 s server heartbeat sweeps, the point at which an unresponsive socket is reaped.
-const HEARTBEAT_SPAN_MS = 50_000
-const FLOOD_CHUNKS = 48
-const FLOOD_CHUNK_BYTES = 56 * 1024
+// The host re-checks every open socket's device once a second.
+const REVOCATION_SWEEP_WAIT = { timeout: 5_000, interval: 50 }
 
 type StreamResponse = { type?: string; streamId?: number }
 
@@ -147,7 +145,7 @@ async function attach(pairingUrl: string, terminal: string) {
   }
 }
 
-describePoc('audit 1 A1-04: registry removal versus open sessions on a headless host', () => {
+describe('audit 1 A1-04: registry removal versus open sessions on a headless host', () => {
   const cleanups: (() => unknown)[] = []
   afterEach(async () => {
     for (const cleanup of cleanups.splice(0).toReversed()) {
@@ -240,18 +238,10 @@ describePoc('audit 1 A1-04: registry removal versus open sessions on a headless 
         return false
       }
     }
-    const flood = async (tag: string): Promise<void> => {
-      for (let i = 0; i < FLOOD_CHUNKS; i++) {
-        const marker = `<<${tag}:${i}>>`
-        const data = `${marker}${'x'.repeat(FLOOD_CHUNK_BYTES - marker.length - 2)}\r\n`
-        runtime.onPtyData(PTY_ID, data, Date.now())
-        await sleep(5)
-      }
-    }
-    return { runtime, server, wiring, writes, pair, joinPhone, removeRowOnDisk, freshSignIn, flood }
+    return { runtime, server, wiring, pair, joinPhone, removeRowOnDisk, freshSignIn }
   }
 
-  it('row removed on disk: a silent socket subscribed without ackOutput keeps streaming', async () => {
+  it('row removed on disk: a silent socket subscribed without ackOutput is closed and gets no more output', async () => {
     const h = await start()
     const registry = h.server.getDeviceRegistry()!
     const url = h.pair('phone')
@@ -261,48 +251,22 @@ describePoc('audit 1 A1-04: registry removal versus open sessions on a headless 
     h.runtime.onPtyData(PTY_ID, 'before-revoke\r\n', Date.now())
     await vi.waitFor(() => expect(phone.output()).toContain('before-revoke'), SLOW_WAIT)
     const terminate = vi.spyOn(h.wiring, 'terminateDeviceConnections')
-
-    h.removeRowOnDisk(deviceId)
-    await sleep(1_300)
-
-    // The host's own sign-in path is what notices the removal; the test does not touch the registry.
-    expect(await h.freshSignIn(url)).toBe(false)
-    expect(registry.listDevices().some((d) => d.deviceId === deviceId)).toBe(false)
-
     // Counts every application frame the host receives on any mobile socket from here on.
     const inbound = vi.spyOn(h.wiring, 'handleRawMessage')
-    const bytesBefore = phone.outputBytes()
-    await h.flood('POST')
-    await vi.waitFor(
-      () => expect(phone.output()).toContain(`<<POST:${FLOOD_CHUNKS - 1}>>`),
-      SLOW_WAIT
-    )
-    const delivered = phone.outputBytes() - bytesBefore
-    const markers = Array.from({ length: FLOOD_CHUNKS }, (_, i) => i).filter((i) =>
-      phone.output().includes(`<<POST:${i}>>`)
-    ).length
-    expect(markers).toBe(FLOOD_CHUNKS)
-    expect(delivered).toBeGreaterThan(2_000_000)
-    expect(phone.isClosed()).toBe(false)
 
-    await sleep(HEARTBEAT_SPAN_MS)
-    h.runtime.onPtyData(PTY_ID, 'late-marker-after-heartbeats\r\n', Date.now())
-    await vi.waitFor(
-      () => expect(phone.output()).toContain('late-marker-after-heartbeats'),
-      SLOW_WAIT
-    )
-    expect(phone.isClosed()).toBe(false)
-    expect(terminate).not.toHaveBeenCalled()
+    h.removeRowOnDisk(deviceId)
 
+    // The phone sends nothing and no other client signs in: the host's own sweep ends the session.
+    await vi.waitFor(() => expect(phone.isClosed()).toBe(true), REVOCATION_SWEEP_WAIT)
     expect(inbound.mock.calls.length).toBe(0)
+    expect(terminate).toHaveBeenCalledWith(deviceId)
 
-    // Strongest control on the path: the first inbound application frame is refused.
-    const writesBefore = h.writes.length
-    phone.type('x')
-    await vi.waitFor(() => expect(phone.isClosed()).toBe(true), SLOW_WAIT)
-    await sleep(300)
-    expect(h.writes.length).toBe(writesBefore)
-  }, 240_000)
+    h.runtime.onPtyData(PTY_ID, 'after-revoke\r\n', Date.now())
+    await sleep(1_000)
+    expect(phone.output()).not.toContain('after-revoke')
+    expect(registry.listDevices().some((d) => d.deviceId === deviceId)).toBe(false)
+    expect(await h.freshSignIn(url)).toBe(false)
+  }, 60_000)
 
   it('control: the in-process revoke used by the desktop app closes the socket', async () => {
     const h = await start()

@@ -1,8 +1,13 @@
-import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import type { E2EEKeypair } from '../../rpc/server/pairing/e2ee-keypair'
 import { cancelUnreadResponseBody } from '../../../lib/unread-response-body'
 import { parseRetryAfterHeaderMs } from '../../../../shared/retry-after-header'
+import {
+  isCanonicalRelayOrigin,
+  isPinnedRelayCellOrigin
+} from '../../../../shared/remote-runtime/relay/relay-cell-origin-pin'
+import { deriveRelayHostId } from '../../../../shared/remote-runtime/relay/relay-host-id'
+import { resolveSealRelayCellOrigins } from '../../../../shared/seal-cloud/seal-service-origins'
 import {
   RelayAssignAbortedError,
   RelayAssignRateLimitedError,
@@ -82,21 +87,19 @@ export function shouldRetryRelayConnectionError(error: unknown): boolean {
   )
 }
 
-export function deriveRelayHostId(publicKey: Uint8Array): string {
-  return createHash('sha256').update(publicKey).digest('base64url').slice(0, 16)
-}
+export { deriveRelayHostId }
 
-function isAllowedRelayOrigin(value: string): boolean {
-  try {
-    const url = new URL(value)
-    const loopback =
-      url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]'
-    return (
-      url.origin === value && (url.protocol === 'https:' || (url.protocol === 'http:' && loopback))
-    )
-  } catch {
-    return false
-  }
+/** The host follows a director only to itself or to a cell the build or `SEAL_RELAY_CELL_ORIGINS` lists. */
+export function isPinnedHostRelayCell(
+  directorUrl: string,
+  cellUrl: string,
+  allowedCellOrigins: readonly string[] = resolveSealRelayCellOrigins(process.env)
+): boolean {
+  return isPinnedRelayCellOrigin(cellUrl, {
+    directorOrigin: directorUrl,
+    allowedCellOrigins,
+    allowLoopbackHttp: true
+  })
 }
 
 export async function exchangeRelayAuthorization(input: {
@@ -139,12 +142,13 @@ type RelayAssignmentRequest = {
   requestDeadlineMs?: number
   isCurrent?: () => boolean
   assignRateGate?: RelayAssignRateGate
+  allowedCellOrigins?: readonly string[]
 }
 
 export async function requestRelayAssignment(
   input: RelayAssignmentRequest
 ): Promise<RelayAssignment> {
-  if (!isAllowedRelayOrigin(input.directorUrl)) {
+  if (!isCanonicalRelayOrigin(input.directorUrl, true)) {
     throw new RelayHttpError('assignment', 400)
   }
   const gate = input.assignRateGate ?? sharedRelayAssignRateGate
@@ -204,7 +208,11 @@ async function sendRelayAssignment(
     throw new RelayHttpError('assignment', response.status, retryAfterMs)
   }
   const parsed = AssignmentResponseSchema.safeParse(await response.json())
-  if (!parsed.success || !isAllowedRelayOrigin(parsed.data.cellUrl)) {
+  // An out-of-pin cell is a bad director answer: fail it like any 5xx so the caller backs off and retries.
+  if (
+    !parsed.success ||
+    !isPinnedHostRelayCell(input.directorUrl, parsed.data.cellUrl, input.allowedCellOrigins)
+  ) {
     throw new RelayHttpError('assignment', 502)
   }
   return parsed.data

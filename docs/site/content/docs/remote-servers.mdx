@@ -135,27 +135,36 @@ Install Seal and its bundled CLI on the server, then run:
 </Callout>
 
 ```bash
-seal serve --pairing-address <server-tailscale-ip-or-hostname>
+seal serve --bind <server-tailscale-ip> --pairing-address <server-tailscale-ip-or-hostname>
 # Linux
-orca-ide serve --pairing-address <server-tailscale-ip-or-hostname>
+orca-ide serve --bind <server-tailscale-ip> --pairing-address <server-tailscale-ip-or-hostname>
 ```
 
-Use `--bind <literal-ip>` to choose the interface that accepts runtime connections. For a
-server reached through an SSH tunnel or reverse proxy, bind locally; use a Tailscale or LAN IP
-when the client should connect directly. `--pairing-address` still controls only the address
-embedded in pairing links. `--mobile-pairing` needs all interfaces, so use it without `--bind` or with
-`--bind 0.0.0.0`.
+`seal serve` listens on `127.0.0.1` unless you pass `--bind <literal-ip>`, so nothing on the
+network can connect to a server started without it. Pass a Tailscale or LAN IP when clients should
+connect directly, or `--bind 0.0.0.0` to listen on every interface. For a server reached through an
+SSH tunnel or a reverse proxy on the same machine, leave the default. `--pairing-address` controls
+only the address embedded in pairing links; it does not change where the server listens. The
+readiness output states the address it bound and whether the network can reach it.
 
 ```bash
-orca-ide serve --bind 127.0.0.1 --pairing-address 127.0.0.1
+# Reached through an SSH port-forward or a reverse proxy on this machine
+orca-ide serve --pairing-address 127.0.0.1
 ```
+
+<Callout title="Upgrading: seal serve no longer listens on every interface">
+  Earlier versions listened on `0.0.0.0` when `--bind` was omitted. If clients connect to this
+  server directly (LAN, Tailscale, or a provider's port mapping), add `--bind <address>` to the
+  command or service unit, or they can no longer reach it. `seal serve service install` keeps the
+  `--bind` it was given; reinstall the service with `--bind` if it had none.
+</Callout>
 
 For example:
 
 ```bash
-seal serve --pairing-address 100.64.1.20
+seal serve --bind 100.64.1.20 --pairing-address 100.64.1.20
 # Linux
-orca-ide serve --pairing-address 100.64.1.20
+orca-ide serve --bind 100.64.1.20 --pairing-address 100.64.1.20
 ```
 
 The command:
@@ -180,9 +189,9 @@ The startup log says which rule applies, and the first refused public address ea
 Add `--port 6768` when a firewall, tunnel, or service definition requires a fixed port:
 
 ```bash
-seal serve --port 6768 --pairing-address 100.64.1.20
+seal serve --port 6768 --bind 100.64.1.20 --pairing-address 100.64.1.20
 # Linux
-orca-ide serve --port 6768 --pairing-address 100.64.1.20
+orca-ide serve --port 6768 --bind 100.64.1.20 --pairing-address 100.64.1.20
 ```
 
 Use only one host mode at a time. If the Seal desktop app is already sharing that computer, do not start a second `seal serve` process for the same setup.
@@ -200,7 +209,7 @@ curl -fsSLO "$base/orca-server-linux-$arch.tar.gz" -O "$base/orca-server-sha256s
 sha256sum --check --ignore-missing orca-server-sha256sums.txt
 sudo mkdir -p /opt/orca-server
 sudo tar -xzf "orca-server-linux-$arch.tar.gz" -C /opt/orca-server --strip-components=1
-/opt/orca-server/bin/orca-ide serve --pairing-address <server-tailscale-ip-or-hostname>
+/opt/orca-server/bin/orca-ide serve --bind <server-tailscale-ip> --pairing-address <server-tailscale-ip-or-hostname>
 ```
 
 To pin a release, replace `latest/download` with `download/v<version>`, and keep that release's checksum in your script rather than downloading it next to the archive. The server needs glibc 2.28 or newer (Ubuntu 20.04, Debian 10, RHEL 8 and later).
@@ -214,7 +223,7 @@ By default, nothing caps how much memory a terminal's processes use, so one runa
 ```bash
 export ORCA_TERMINAL_MEMORY_MAX=16G      # memory per terminal, 256M or more
 export ORCA_TERMINAL_MEMORY_SWAP_MAX=0   # swap per terminal; 0 means no swap
-orca-ide serve --pairing-address 100.64.1.20
+orca-ide serve --bind 100.64.1.20 --pairing-address 100.64.1.20
 ```
 
 - Each terminal already runs in its own systemd user scope. The limits become that scope's `MemoryMax` and `MemorySwapMax`.
@@ -230,7 +239,7 @@ On Linux, `seal serve` turns off hardware acceleration by default, because most 
 
 ```bash
 export ORCA_SERVE_GPU=1
-orca-ide serve --pairing-address 100.64.1.20
+orca-ide serve --bind 100.64.1.20 --pairing-address 100.64.1.20
 ```
 
 This only stops Seal from turning the GPU off. Chromium may still render in software on Seal's own Xvfb, which has no GPU of its own; open `chrome://gpu` in a browser pane to check, and point `DISPLAY` at a GPU-backed X server if it reports software rendering. If you installed the server with `seal serve service install`, add the variable to the service unit yourself. If the server stops starting or browser panes crash with it set, unset it to go back to software rendering.
@@ -248,22 +257,32 @@ Copies of a machine image share the server identity: the pairing key, the paired
 
 ### Mobile from a headless server
 
-For the Seal mobile app, request a mobile-scoped QR code and link:
+For the Seal mobile app, request a mobile-scoped QR code and link. On the default loopback
+listener the phone pairs through Seal Relay, which needs no open port on the server:
 
 ```bash
-seal serve --pairing-address 100.64.1.20 --mobile-pairing
+seal serve --mobile-pairing
 # Linux
-orca-ide serve --pairing-address 100.64.1.20 --mobile-pairing
+orca-ide serve --mobile-pairing
 ```
 
-Keep the phone on the same tailnet, open Seal Mobile, choose **Pair**, and scan the terminal QR code or paste the printed link.
+To pair directly over a tailnet or LAN instead, bind the server to that address:
+
+```bash
+seal serve --bind 100.64.1.20 --pairing-address 100.64.1.20 --mobile-pairing
+```
+
+Keep the phone on the same tailnet for a direct pairing. Open Seal Mobile, choose **Pair**, and scan the terminal QR code or paste the printed link.
+
+An unused pairing code stops working after 10 minutes (60 minutes for an access link to another Seal); the output states the time. Run `seal pair` for a new one.
 
 ### Pair without restarting the server
 
 `seal pair` asks the Seal already running on this machine for a new pairing, so you do not have to stop a service or restart `seal serve`. Run it on the server, as the user Seal runs as:
 
 ```bash
-seal pair --mobile --address 100.64.1.20   # QR code and link for Seal Mobile
+seal pair --mobile --address 100.64.1.20   # QR code and link for Seal Mobile, over the LAN or tailnet
+seal pair --mobile --relay                 # QR code and link for Seal Mobile, through Seal Relay
 seal pair --address 100.64.1.20            # access link for another Seal
 # Linux
 orca-ide pair --mobile --address 100.64.1.20
@@ -271,12 +290,28 @@ orca-ide pair --mobile --address 100.64.1.20
 
 It works the same against the desktop app, a foreground `seal serve`, or `seal serve service install`. Only the machine's own user can run it; paired clients and phones cannot create pairings.
 
+### List and revoke paired devices
+
+A headless server has no Settings window, so list and revoke its paired phones and clients from the terminal. Run these on the server, as the user Seal runs as:
+
+```bash
+seal devices list                 # id, name, scope, paired and last-seen times, route
+seal devices revoke <deviceId>    # disconnect one device and stop it signing in
+seal devices revoke --all         # every paired device and unused pairing code
+```
+
+`seal devices revoke` is the same revoke as the trash button in the desktop app: the device's connections close at once, its Seal Relay credential and push notifications are withdrawn, and anything paired through it is revoked with it. The device must pair again to regain access. Credentials are never printed.
+
+If no Seal is running, the device is removed from the registry on disk and the Relay and push withdrawals are sent the next time Seal starts; the output says so. Until then the Relay may still hold a connection for that device open, but nothing answers it, and the server refuses the device as soon as it starts.
+
+Paired devices also lapse on their own. A phone or client that has not connected for 30 days stops being accepted and is removed; pair it again. Devices that sign in with a device key (the current Seal Mobile and web client) are not affected.
+
 ### A Mac reached only over SSH
 
 On a packaged macOS app, `seal serve` uses the desktop app's server, which needs a desktop login: started from an SSH session with nobody logged in, it aborts at startup. To serve such a Mac, ask for Seal's Node server instead. It has no in-app updater, so update the app yourself (for example with `brew upgrade --cask stablyai/orca/orca`) and restart the server:
 
 ```bash
-ORCA_SERVE_RUNTIME=orcad seal serve --pairing-address 100.64.1.20
+ORCA_SERVE_RUNTIME=orcad seal serve --bind 100.64.1.20 --pairing-address 100.64.1.20
 ```
 
 ## Desktop app or `seal serve`?
@@ -322,7 +357,7 @@ Install and authenticate that CLI on the server computer. Remote sessions use th
 Stop the command and restart it with an address the client can reach:
 
 ```bash
-seal serve --pairing-address <reachable-tailscale-ip-or-hostname>
+seal serve --bind <server-tailscale-ip> --pairing-address <reachable-tailscale-ip-or-hostname>
 ```
 
 Do not use a wildcard address or `127.0.0.1` for a remote client.

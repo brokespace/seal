@@ -14,7 +14,11 @@ export function installMultiplexSubscribeFrame(state: TerminalMultiplexConnectio
     if (!parsed.success) {
       return
     }
-    const request = parsed.data
+    // Shipped phones send their bearer token as client id; other viewers must only see the device id.
+    const request =
+      parsed.data.client?.type === 'mobile' && state.viewerDeviceId
+        ? { ...parsed.data, client: { ...parsed.data.client, id: state.viewerDeviceId } }
+        : parsed.data
     const resolution = resolveMultiplexSubscribePty(state, request)
     const ptyId =
       typeof resolution === 'string' || resolution === null ? resolution : await resolution

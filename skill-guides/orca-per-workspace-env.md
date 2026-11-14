@@ -351,6 +351,7 @@ improvise them.
 
 ```bash
 orca serve \
+  --bind 0.0.0.0 \
   --port "$PORT" \
   --project-root "$ABS_REPO_PATH_ON_REMOTE" \
   --pairing-address "$EXTERNAL_WSS_URL" \
@@ -360,7 +361,9 @@ orca serve \
 In an environment built from source, run it as `pnpm exec orca-dev serve …` from the repo root;
 `orca-dev` is the in-repo entrypoint. Plain `orca serve …` is the same command when the built CLI is
 on that machine's PATH, and the flags and output are identical either way. There is no `--host` flag,
-and `--project-root` must be an absolute directory on the remote.
+and `--project-root` must be an absolute directory on the remote. `orca serve` listens only on
+`127.0.0.1` without `--bind`; a provider's port mapping reaches the sandbox's network interface, so
+keep `--bind 0.0.0.0` unless a tunnel on the same machine delivers the connections.
 
 `pairingCode` embeds whatever you passed as `--pairing-address`, so pass the externally reachable
 address there and never hand-edit the code. Tunneling and port mapping are the script's job. With

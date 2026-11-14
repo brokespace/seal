@@ -1,6 +1,7 @@
 import type { DeviceScope } from '../../../../../shared/runtime-session-contracts'
 import type { RelayDeviceBinding } from '../../../mobile-cloud-relay/pairing/relay-revoke-outbox'
-import type { DeviceEntry } from './device-entry'
+import { withoutUsedPlaintextToken, type DeviceEntry } from './device-entry'
+import { hashDeviceToken, isDeviceTokenHash } from './device-token-hash'
 import { parseMobilePushRegistration } from '../../../../../shared/mobile-push-contract'
 import { isDevicePublicKeyB64 } from '../../../../../shared/remote-runtime/pairing/device-key-proof'
 import { isExchangeDeviceToken } from '../../../../../shared/remote-runtime/pairing/ticket-exchange-contract'
@@ -47,30 +48,41 @@ function isTimestamp(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
+/** A row written before bearers were hashed: its used token or replacement is still readable. */
+export function storesUsedPlaintextCredential(row: unknown): boolean {
+  return (
+    isRecord(row) &&
+    ((typeof row.token === 'string' && row.lastSeenAt !== 0) || row.exchangeToken !== undefined)
+  )
+}
+
 /** Null for a row without a usable identity; the caller must treat the registry as doubtful. */
-export function normalizeLoadedDeviceRow(device: unknown): DeviceEntry | null {
+export function normalizeLoadedDeviceRow(row: unknown): DeviceEntry | null {
   if (
-    !isRecord(device) ||
-    typeof device.deviceId !== 'string' ||
-    !device.deviceId ||
-    !isTimestamp(device.pairedAt) ||
-    !isTimestamp(device.lastSeenAt)
+    !isRecord(row) ||
+    typeof row.deviceId !== 'string' ||
+    !row.deviceId ||
+    !isTimestamp(row.pairedAt) ||
+    !isTimestamp(row.lastSeenAt)
   ) {
     return null
   }
-  return {
+  // Older builds stored the replacement in the clear; only its hash is kept.
+  const { exchangeToken, ...device } = row
+  return withoutUsedPlaintextToken({
     ...device,
-    deviceId: device.deviceId,
+    deviceId: row.deviceId,
     name: typeof device.name === 'string' ? device.name : '',
     // Why: a non-string bearer can never match, so the row stays listed but inert.
     token: typeof device.token === 'string' ? device.token : undefined,
-    pairedAt: device.pairedAt,
-    lastSeenAt: device.lastSeenAt,
+    tokenHash: isDeviceTokenHash(device.tokenHash) ? device.tokenHash : undefined,
+    pairedAt: row.pairedAt,
+    lastSeenAt: row.lastSeenAt,
     lastSourceClass: NETWORK_SOURCE_CLASSES.find((value) => value === device.lastSourceClass),
     // Legacy registries held phones only; missing scope must not grant CLI powers.
     scope: device.scope === 'runtime' ? 'runtime' : 'mobile',
     grants: validGrants(device.grants, device.scope === 'runtime' ? 'runtime' : 'mobile'),
-    relayBinding: validRelayBinding(device.relayBinding, device.deviceId),
+    relayBinding: validRelayBinding(device.relayBinding, row.deviceId),
     mobilePairingConnectionMode:
       device.mobilePairingConnectionMode === 'local-only' ? 'local-only' : 'automatic',
     // Older grants reached the network; preserve all-interface binding on reconnect.
@@ -89,14 +101,18 @@ export function normalizeLoadedDeviceRow(device: unknown): DeviceEntry | null {
       typeof device.callerFingerprint === 'string' && device.callerFingerprint.length > 0
         ? device.callerFingerprint
         : undefined,
-    // Unreadable expiry fails open to today's never-expiring offer.
+    // Why: an unscanned offer without a readable expiry is treated as expired.
     offerExpiresAt: isTimestamp(device.offerExpiresAt) ? device.offerExpiresAt : undefined,
     ticket: device.ticket === true ? true : undefined,
-    exchangeToken: isExchangeDeviceToken(device.exchangeToken) ? device.exchangeToken : undefined,
+    exchangeTokenHash: isDeviceTokenHash(device.exchangeTokenHash)
+      ? device.exchangeTokenHash
+      : isExchangeDeviceToken(exchangeToken)
+        ? hashDeviceToken(exchangeToken)
+        : undefined,
     ticketFirstSeenAt: isTimestamp(device.ticketFirstSeenAt) ? device.ticketFirstSeenAt : undefined,
     servesSessionBrowsers: device.servesSessionBrowsers === true ? true : undefined,
     ...validDeviceKeyFields(device)
-  }
+  })
 }
 
 // Malformed keyed rows stay keyed and unauthenticatable; never fall back to bearer auth.

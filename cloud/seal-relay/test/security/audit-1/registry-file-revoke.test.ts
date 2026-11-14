@@ -1,14 +1,15 @@
-// Audit 1, A1-05: removing a phone's row from orca-devices.json (the only per-device revoke on a
-// headless host) leaves its push delivery, relay credential and push registration live.
-// Real DeviceRegistry, DesktopPushService, relay control client, data transport and socket wiring
-// against the real Worker in local workerd with fake APNs. Keys and tokens are generated here.
+// Audit 1, A1-05, fixed: removing a phone's row from orca-devices.json left its push delivery,
+// relay credential and push registration live. These assert that the removal is now finished as a
+// revoke, with no client activity: pushes stop at once, and within the revocation sweep the relay
+// refuses the phone's credential and the Worker drops its push registration.
+// Real DeviceRegistry, DesktopPushService, relay control client, data transport, socket wiring and
+// revoke path against the real Worker in local workerd with fake APNs. Keys and tokens are generated here.
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import nacl from 'tweetnacl'
 import WebSocket from 'ws'
-import { afterAll, beforeAll, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { RelayControlClient } from '../../../../../src/main/runtime/mobile-cloud-relay/control-channel/relay-control-client'
 import {
   createSealRelayContextReader,
@@ -22,27 +23,29 @@ import {
   requestRelayAssignment
 } from '../../../../../src/main/runtime/mobile-cloud-relay/director/relay-http-client'
 import { RelayAssignRateGate } from '../../../../../src/main/runtime/mobile-cloud-relay/director/relay-assign-rate-gate'
+import { RelayRevokeDelivery } from '../../../../../src/main/runtime/mobile-cloud-relay/pairing/relay-revoke-delivery'
 import { RelayRevokeOutbox } from '../../../../../src/main/runtime/mobile-cloud-relay/pairing/relay-revoke-outbox'
 import { MobileSocketWiring } from '../../../../../src/main/runtime/rpc/mobile/mobile-socket-wiring'
 import { DeviceRegistry } from '../../../../../src/main/runtime/rpc/server/pairing/device-registry'
-import type { E2EEKeypair } from '../../../../../src/main/runtime/rpc/server/pairing/e2ee-keypair'
+import { revokeDevices } from '../../../../../src/main/runtime/rpc/server/pairing/device-revocation'
 import { CloudRelayTransport } from '../../../../../src/main/runtime/rpc/transports/relay-transport'
 import { DesktopPushService } from '../../../../../src/main/runtime/push/desktop-push-service'
 import { PushUnregisterOutbox } from '../../../../../src/main/runtime/push/push-unregister-outbox'
 import {
   generateTestSecrets,
+  newHostKeypair,
   sleep,
   startFakeProviders,
   startSealRelay,
   waitFor
 } from '../../seal-relay-harness'
-import { describePoc } from './security-poc-opt-in'
 
 const WAIT_MS = 20_000
 
 let relay: Awaited<ReturnType<typeof startSealRelay>>
 let providers: Awaited<ReturnType<typeof startFakeProviders>>
 let userData: string
+const hostKeys = newHostKeypair()
 
 type RelayHello = { ok?: boolean; credentialKind?: string }
 
@@ -77,14 +80,14 @@ function alertBodiesFor(token: string): string[] {
     )
 }
 
-describePoc('audit 1 A1-05: phone row removed from orca-devices.json', () => {
+describe('audit 1 A1-05: phone row removed from orca-devices.json', () => {
   beforeAll(async () => {
     userData = mkdtempSync(join(tmpdir(), 'seal-audit-1-registry-'))
     providers = await startFakeProviders()
     const generated = await generateTestSecrets()
-    relay = await startSealRelay({
-      ...generated.secrets,
-      PUSH_PROVIDER_ORIGIN_OVERRIDE: providers.origin
+    relay = await startSealRelay(generated.secrets, {
+      enrolled: [hostKeys],
+      providerOrigin: providers.origin
     })
   })
 
@@ -94,13 +97,8 @@ describePoc('audit 1 A1-05: phone row removed from orca-devices.json', () => {
     rmSync(userData, { recursive: true, force: true })
   })
 
-  it('leaves push delivery, the relay credential and the push registration live', async () => {
+  it('stops push delivery and withdraws the relay credential and the push registration', async () => {
     const registryPath = join(userData, 'orca-devices.json')
-    const box = nacl.box.keyPair()
-    const hostKeys: E2EEKeypair = {
-      ...box,
-      publicKeyB64: Buffer.from(box.publicKey).toString('base64')
-    }
     const relayHostId = deriveRelayHostId(hostKeys.publicKey)
     const ownerIdentityKey = relayIdentityKey(sealRelayIdentity(relayHostId))
 
@@ -155,12 +153,44 @@ describePoc('audit 1 A1-05: phone row removed from orca-devices.json', () => {
       generation: ack.generation
     })
     const liveTransport = transport
-    const wiring = new MobileSocketWiring({
+    const relayOutbox = new RelayRevokeOutbox(userData)
+    const pushOutbox = new PushUnregisterOutbox(userData)
+    const revokeDelivery = new RelayRevokeDelivery({
+      outbox: relayOutbox,
+      activeSender: () => ({
+        hostId: relayHostId,
+        ownerIdentityKey,
+        revokeDevice: (relayDeviceId, reqId) => client.revokeDevice(relayDeviceId, reqId)
+      }),
+      onDelivered: () => {}
+    })
+    const queued = { relay: 0, push: 0 }
+    const wiring: MobileSocketWiring = new MobileSocketWiring({
       deviceRegistry: registry,
       e2eeKeypair: hostKeys,
       onText: () => {},
       onBinary: () => {},
-      onClose: () => {}
+      onClose: () => {},
+      // As the RPC server wires it: a row that left the file is finished by the one revoke path.
+      onDevicesRevoked: (devices) => {
+        revokeDevices(devices, {
+          registry,
+          queueRelayDeviceRevoke: (binding) => {
+            relayOutbox.enqueue(binding)
+            queued.relay += 1
+            revokeDelivery.flush()
+            return true
+          },
+          queuePushUnregister: (deviceId, registrationId) => {
+            if (registrationId) {
+              pushOutbox.enqueue({ registrationId, deviceId })
+              queued.push += 1
+              void pushService.flushUnregisterOutbox()
+            }
+          },
+          onRevoked: (device) => wiring.terminateDeviceConnections(device.deviceId)
+        })
+      }
     })
     wiring.attachTransport(liveTransport, (ws) => liveTransport.metadataFor(ws))
 
@@ -182,9 +212,8 @@ describePoc('audit 1 A1-05: phone row removed from orca-devices.json', () => {
       return token
     }
     const removedResume = await installResume(removed.deviceId)
-    await installResume(kept.deviceId)
+    const keptResume = await installResume(kept.deviceId)
 
-    const pushOutbox = new PushUnregisterOutbox(userData)
     const listeners = new Set<(event: unknown) => void>()
     let seq = 0
     const emit = (body: string): void => {
@@ -256,58 +285,50 @@ describePoc('audit 1 A1-05: phone row removed from orca-devices.json', () => {
       )
     )
 
-    // Well past the one-second re-read interval, with no client activity, the host still pushes
-    // alert text to the removed phone.
-    await sleep(2500)
+    // No sweep has run and no client has done anything: the very next notification skips phone A.
     emit('AFTER-REMOVAL')
-    expect(
-      await waitFor(() => alertBodiesFor(removedApns).includes('AFTER-REMOVAL'), WAIT_MS)
-    ).toBe(true)
-
-    // Another client's sign-in makes the registry re-read the file; pushes to phone A then stop.
-    expect(registry.validateToken(kept.token)?.deviceId).toBe(kept.deviceId)
-    expect(registry.validateToken(removed.token)).toBeNull()
-    emit('AFTER-ADOPTION')
-    expect(await waitFor(() => alertBodiesFor(keptApns).includes('AFTER-ADOPTION'), WAIT_MS)).toBe(
+    expect(await waitFor(() => alertBodiesFor(keptApns).includes('AFTER-REMOVAL'), WAIT_MS)).toBe(
       true
     )
     await sleep(500)
-    expect(alertBodiesFor(removedApns)).not.toContain('AFTER-ADOPTION')
+    expect(alertBodiesFor(removedApns)).not.toContain('AFTER-REMOVAL')
 
-    // The adoption queued neither cleanup.
-    await pushService.flushUnregisterOutbox()
-    expect(new RelayRevokeOutbox(userData).pendingFor(ownerIdentityKey, relayHostId)).toHaveLength(
-      0
-    )
-    expect(pushOutbox.pending()).toHaveLength(0)
+    // The revocation sweep, still with no client activity, queues and delivers both withdrawals.
+    expect(
+      await waitFor(
+        () =>
+          queued.relay === 1 &&
+          queued.push === 1 &&
+          relayOutbox.pendingFor(ownerIdentityKey, relayHostId).length === 0 &&
+          pushOutbox.pending().length === 0,
+        WAIT_MS
+      )
+    ).toBe(true)
 
-    // The Worker still stores phone A's push registration.
+    // The Worker refuses phone A's resume token and no longer has the host open a data socket.
+    const opensBefore = opens.length
+    expect((await relayHelloFor(relayHostId, removedResume))?.ok).not.toBe(true)
+    expect(opens.length).toBe(opensBefore)
+
+    // The Worker no longer stores a live push registration for phone A.
     const listed = (await (
       await fetch(`${relay.origin}/v1/devices`, {
         headers: { authorization: `Bearer ${context!.accessToken}` }
       })
     ).json()) as { devices: { deviceId: string; dead: boolean }[] }
     expect(
-      listed.devices.some((device) => device.deviceId === removed.deviceId && !device.dead)
-    ).toBe(true)
+      listed.devices.filter((device) => !device.dead).map((device) => device.deviceId)
+    ).toEqual([kept.deviceId])
 
-    // The Worker still accepts phone A's resume token and has the host open a data socket.
-    expect((await relayHelloFor(relayHostId, randomBytes(32).toString('base64url')))?.ok).not.toBe(
-      true
-    )
-    const opensBefore = opens.length
-    expect(await relayHelloFor(relayHostId, removedResume)).toMatchObject({
+    // Control: phone B, whose row stayed, keeps its relay credential and its pushes.
+    expect(await relayHelloFor(relayHostId, keptResume)).toMatchObject({
       ok: true,
       credentialKind: 'resume'
     })
-    expect(opens.slice(opensBefore).some((open) => open.relayDeviceId === removed.deviceId)).toBe(
-      true
-    )
+    expect(registry.validateToken(kept.token)?.deviceId).toBe(kept.deviceId)
+    expect(registry.validateToken(removed.token)).toBeNull()
 
-    // Control: the relay revoke that the in-process revoke queues does end it.
-    await client.revokeDevice(removed.deviceId)
-    expect((await relayHelloFor(relayHostId, removedResume))?.ok).not.toBe(true)
-
+    revokeDelivery.stop()
     pushService.stop()
     wiring.dispose()
     client.closeNow()

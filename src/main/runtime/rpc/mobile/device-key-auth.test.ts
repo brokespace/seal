@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import nacl from 'tweetnacl'
 import type { WebSocket } from 'ws'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   encodeDeviceProofMessage,
   type DeviceProofPurpose
@@ -44,6 +44,7 @@ class FakeTransport implements MobileSocketTransport {
 }
 
 const desktop = generateKeyPair()
+const LEGACY_LAST_SEEN_AT = Date.UTC(2026, 0, 1)
 
 function sign(key: nacl.SignKeyPair, purpose: DeviceProofPurpose, transcriptHashB64: string) {
   const message = encodeDeviceProofMessage(purpose, Buffer.from(transcriptHashB64, 'base64'))
@@ -94,8 +95,15 @@ function freshRegistry(): DeviceRegistry {
   return new DeviceRegistry(mkdtempSync(join(tmpdir(), 'orca-device-key-')))
 }
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('device-key authentication (host)', () => {
   it('forks a pre-ticket token row per installation, then authenticates the key and keeps the token working', () => {
+    // A token unused for 30 days no longer signs in, so this phone was last seen a minute ago.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(LEGACY_LAST_SEEN_AT + 60_000)
     // Rows paired before single-use tickets may be shared by several installations.
     const dir = mkdtempSync(join(tmpdir(), 'orca-device-key-'))
     const legacy = {
@@ -104,7 +112,7 @@ describe('device-key authentication (host)', () => {
       token: 'legacy-token',
       scope: 'mobile' as const,
       pairedAt: 1,
-      lastSeenAt: 2
+      lastSeenAt: LEGACY_LAST_SEEN_AT
     }
     writeFileSync(join(dir, DEVICE_REGISTRY_FILENAME), JSON.stringify([legacy]))
     const registry = new DeviceRegistry(dir)
@@ -112,6 +120,8 @@ describe('device-key authentication (host)', () => {
 
     const migrating = connect(() => ({ deviceToken: legacy.token }))
     expect(migrating.reply).toMatchObject({ type: 'e2ee_authenticated' })
+    // The bearer is a credential only; handlers and other devices see the device id.
+    expect(migrating.socket!.device.clientId).toBe(legacy.deviceId)
     const key = nacl.sign.keyPair()
     const params = {
       devicePublicKeyB64: Buffer.from(key.publicKey).toString('base64'),

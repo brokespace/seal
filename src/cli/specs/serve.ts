@@ -26,13 +26,15 @@ export const SERVE_COMMAND_SPECS: CommandSpec[] = [
       'yes'
     ],
     notes: [
-      'Runs in the foreground and prints the bound endpoint, advertised endpoint, and pairing status. Stop it with Ctrl+C.',
+      'Runs in the foreground and prints the bound endpoint, advertised endpoint, whether the listener is reachable from the network, and pairing status. Stop it with Ctrl+C.',
+      'Listens on 127.0.0.1 unless --bind names another address: nothing on the network can connect by default. Reach a default server through an SSH port-forward, a tunnel or a reverse proxy on the same machine, or pass --bind.',
       'With --port, serve exits with an error when that port is already in use. Without it, serve uses 6768 and moves to another port when 6768 is taken.',
-      '--pairing-address changes only the client-advertised address; use a reachable LAN, Tailscale, SSH-forward, or reverse-proxy endpoint.',
-      '--bind controls the interface the runtime listens on; it accepts a literal IP such as 127.0.0.1, a Tailscale address, or 0.0.0.0. --mobile-pairing needs no --bind or --bind 0.0.0.0.',
+      '--pairing-address changes only the client-advertised address; use a reachable LAN, Tailscale, SSH-forward, or reverse-proxy endpoint. It does not make the server listen there: pair it with --bind unless a forward or proxy on this machine delivers the connections.',
+      '--bind controls the interface the runtime listens on; it accepts a literal IP such as 127.0.0.1, a Tailscale address, or 0.0.0.0 for every interface.',
       'Serve accepts clients from localhost, LAN (10/8, 172.16/12, 192.168/16, link-local, fc00::/7) and Tailscale (100.64/10, fd7a:115c:a1e0::/48) addresses. Public addresses are also accepted with --allow-public, when --pairing-address is a hostname or public IP, once a paired device has connected from one, or while devices paired before this check existed remain paired. Addresses inside a network prefix of one of this host interfaces (for example same-network global IPv6) count as LAN. --refuse-public refuses public addresses in every case and cannot be combined with --allow-public. The startup log states which applies.',
       'Use --recipe-json with --project-root from VM recipes to print the recipe result JSON and leave the server running.',
-      'Use --mobile-pairing to print a mobile-scoped pairing QR/link instead of the default runtime-environment pairing link. To pair later without restarting, run `orca pair`.',
+      'Use --mobile-pairing to print a mobile-scoped pairing QR/link instead of the default runtime-environment pairing link. On the default loopback listener the phone pairs through Relay, which needs no open port; with a network --bind it pairs directly over that network. To pair later without restarting, run `orca pair`.',
+      'A pairing link that nobody used stops working: after 60 minutes for a runtime link, 10 minutes for a mobile one. The readiness output states the time. Run `orca pair` for a new one; nothing restarts.',
       'On a packaged macOS app serve runs Electron, which needs a desktop login; over SSH with nobody logged in, set ORCA_SERVE_RUNTIME=orcad to run the Node server instead (it has no in-app updater).',
       "A paired client cannot drive this machine's desktop (orca computer) unless the offer was created with --grant-desktop-control.",
       'When the web client bundle is available, the server also prints a browser URL with the pairing data embedded.',
@@ -47,9 +49,10 @@ export const SERVE_COMMAND_SPECS: CommandSpec[] = [
     examples: [
       'orca serve',
       'orca serve --json',
-      'orca serve --project-root /workspace/repo --pairing-address wss://sandbox.example.com --recipe-json',
+      'orca serve --bind 0.0.0.0 --project-root /workspace/repo --pairing-address wss://sandbox.example.com --recipe-json',
       'orca serve --port 6768 --bind 100.64.1.20 --pairing-address 100.64.1.20',
-      'orca serve --pairing-address 100.64.1.20 --mobile-pairing',
+      'orca serve --mobile-pairing',
+      'orca serve --bind 100.64.1.20 --pairing-address 100.64.1.20 --mobile-pairing',
       'orca serve --reclaim-stale-lock'
     ]
   },

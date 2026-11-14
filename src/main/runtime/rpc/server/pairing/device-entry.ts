@@ -5,12 +5,18 @@ import type { RuntimePairingReach } from '../../../../../shared/runtime-pairing-
 import type { RelayDeviceBinding } from '../../../mobile-cloud-relay/pairing/relay-revoke-outbox'
 import type { RuntimeDeviceGrant } from '../../callers/rpc-method-permission'
 import type { NetworkSourceClass } from '../../transports/websocket/source-admission/network-source-class'
+import { hashDeviceToken, sameDeviceTokenHash } from './device-token-hash'
+
+// Matches the Relay's resume-credential lifetime: a bearer unused this long stops authenticating.
+export const DEVICE_TOKEN_IDLE_TTL_MS = 30 * 24 * 60 * 60_000
 
 export type DeviceEntry = {
   deviceId: string
   name: string
-  // Keyed rows have no bearer, so older builds cannot authenticate them.
+  // Plaintext only while an unscanned offer, which must stay displayable; first sign-in hashes it.
   token?: string
+  // SHA-256 of a used bearer. Keyed rows have neither, so older builds cannot authenticate them.
+  tokenHash?: string
   scope: DeviceScope
   pairedAt: number
   lastSeenAt: number
@@ -38,14 +44,14 @@ export type DeviceEntry = {
   forkedFrom?: string
   // Session-only browser key (memory only); the row is dropped on host restart and after idling.
   ephemeral?: true
-  // A never-seen offer stops authenticating here; absent (older rows, headless offers) never expires.
+  // A never-seen offer stops authenticating here; one without it (older builds) is already expired.
   offerExpiresAt?: number
   // Last sign-in used the older E2EE framing (set then; a v2 sign-in clears it). Local-only notice data.
   legacyE2EEAuthAt?: number
   // Minted as a pairing offer by a host that can exchange it; clients that never exchange keep using it.
   ticket?: true
-  // Client-chosen replacement; first sign-in with it retires the pairing token (see pairing-ticket-exchange.ts).
-  exchangeToken?: string
+  // Hash of the client-chosen replacement; first sign-in with it retires the pairing token (see pairing-ticket-exchange.ts).
+  exchangeTokenHash?: string
   // First sign-in with a ticket; exchange is offered only shortly after it.
   ticketFirstSeenAt?: number
   // A plain-http browser re-registers a session-only key from this link on each page load.
@@ -69,9 +75,36 @@ export function isPendingTokenRow(device: DeviceEntry): device is TokenDeviceEnt
   )
 }
 
-export function isExpiredPairingOffer(device: DeviceEntry, now: number): boolean {
+export function deviceTokenHashOf(device: DeviceEntry): string | undefined {
   return (
-    device.lastSeenAt === 0 && device.offerExpiresAt !== undefined && device.offerExpiresAt <= now
+    device.tokenHash ?? (device.token !== undefined ? hashDeviceToken(device.token) : undefined)
+  )
+}
+
+/** The row as stored once its bearer has been used: the hash, never the bearer. */
+export function withoutUsedPlaintextToken(device: DeviceEntry): DeviceEntry {
+  if (device.token === undefined || device.lastSeenAt === 0) {
+    return device
+  }
+  const { token, ...rest } = device
+  return { ...rest, tokenHash: hashDeviceToken(token) }
+}
+
+export function isExpiredPairingOffer(device: DeviceEntry, now: number): boolean {
+  if (device.lastSeenAt !== 0) {
+    return false
+  }
+  return device.offerExpiresAt === undefined
+    ? device.credentialKind === undefined
+    : device.offerExpiresAt <= now
+}
+
+/** Keyed rows prove possession on every sign-in, so only bearers age out. */
+export function isIdleExpiredBearer(device: DeviceEntry, now: number): boolean {
+  return (
+    device.credentialKind === undefined &&
+    device.lastSeenAt > 0 &&
+    now - device.lastSeenAt > DEVICE_TOKEN_IDLE_TTL_MS
   )
 }
 
@@ -104,21 +137,32 @@ export type AuthenticatedPrincipalBinding = {
 
 export function isStillAuthenticated(
   device: DeviceEntry,
-  principal: AuthenticatedPrincipalBinding
+  principal: AuthenticatedPrincipalBinding,
+  now = Date.now()
 ): boolean {
-  return (
-    (device.credentialRevision ?? 0) === principal.credentialRevision &&
-    (principal.deviceToken === undefined ||
-      device.token === principal.deviceToken ||
-      // Signed in with the replacement while retiring the pairing token failed to persist.
-      device.exchangeToken === principal.deviceToken) &&
+  if ((device.credentialRevision ?? 0) !== principal.credentialRevision) {
+    return false
+  }
+  if (principal.deviceToken === undefined) {
     // A keyed socket cannot survive replacement by a bearer row.
-    (principal.deviceToken !== undefined || device.credentialKind === 'device-key')
+    return device.credentialKind === 'device-key'
+  }
+  return (
+    !isIdleExpiredBearer(device, now) &&
+    holdsBearerHash(device, hashDeviceToken(principal.deviceToken))
+  )
+}
+
+function holdsBearerHash(device: DeviceEntry, presentedHash: string): boolean {
+  return (
+    sameDeviceTokenHash(deviceTokenHashOf(device), presentedHash) ||
+    // Signed in with the replacement while retiring the pairing token failed to persist.
+    sameDeviceTokenHash(device.exchangeTokenHash, presentedHash)
   )
 }
 
 // Forks and delegated phones lose authority with any ancestor pairing.
-function withPairedParent(
+export function withPairedParent(
   device: DeviceEntry,
   devices: readonly DeviceEntry[],
   ancestors = new Set<string>()
@@ -145,12 +189,15 @@ export function findTokenDevice(
   seen: ReadonlySet<string> = new Set(),
   now = Date.now()
 ): DeviceEntry | null {
+  const presentedHash = hashDeviceToken(token)
   const device =
     token &&
-    devices.find(
-      (d) => d.credentialKind === undefined && (d.token === token || d.exchangeToken === token)
-    )
-  if (!device || (isExpiredPairingOffer(device, now) && !seen.has(device.deviceId))) {
+    devices.find((d) => d.credentialKind === undefined && holdsBearerHash(d, presentedHash))
+  if (
+    !device ||
+    (isExpiredPairingOffer(device, now) && !seen.has(device.deviceId)) ||
+    isIdleExpiredBearer(device, now)
+  ) {
     return null
   }
   return withPairedParent(device, devices)

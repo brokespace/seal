@@ -13,7 +13,8 @@ const PUSH_RETRY_DELAY_MS = 2_000
 const MAX_REGISTRATIONS_PER_SEND = 20
 
 export type PushDispatcherRegistry = {
-  listDevices(): readonly { deviceId: string; pushRegistration?: MobilePushRegistration }[]
+  /** Read fresh per notification: a device revoked on disk gets nothing from then on. */
+  listCurrentDevices(): readonly { deviceId: string; pushRegistration?: MobilePushRegistration }[]
   setPushRegistration(deviceId: string, registration: MobilePushRegistration | null): boolean
 }
 
@@ -92,7 +93,7 @@ export class PushDispatcher {
         return null
       }
       const targets = this.registry
-        .listDevices()
+        .listCurrentDevices()
         .flatMap(({ deviceId, pushRegistration: registration }) =>
           registration && registration.expiresAt > Date.now() ? [{ deviceId, registration }] : []
         )
@@ -116,7 +117,7 @@ export class PushDispatcher {
     if (!content) {
       return null
     }
-    const targets = this.registry.listDevices().flatMap((device) => {
+    const targets = this.registry.listCurrentDevices().flatMap((device) => {
       const registration = device.pushRegistration
       if (
         !registration ||
@@ -164,7 +165,7 @@ export class PushDispatcher {
     }
     const currentTargets = targets.filter((target) =>
       this.registry
-        .listDevices()
+        .listCurrentDevices()
         .some(
           (device) =>
             device.deviceId === target.deviceId &&
@@ -217,7 +218,7 @@ export class PushDispatcher {
       )
       if (
         !target ||
-        this.registry.listDevices().find((device) => device.deviceId === target.deviceId)
+        this.registry.listCurrentDevices().find((device) => device.deviceId === target.deviceId)
           ?.pushRegistration !== target.registration
       ) {
         continue

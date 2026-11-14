@@ -10,6 +10,7 @@ import {
   type RelayDeviceResumeConfirmedMessage,
   type RelayInviteCreatedMessage
 } from './relay-control-protocol'
+import { isLiveRelayInviteExpiry } from '../../../../shared/remote-runtime/pairing/mobile-relay-invite-expiry'
 
 type PendingRequest = {
   kind: 'invite' | 'revoke' | 'install' | 'install-status' | 'confirm'
@@ -27,6 +28,7 @@ export type OnRelayControlRequestTimeout = (timeout: RelayControlRequestTimeout)
 
 // REQUEST_TIMEOUT_CODE is an anchored relay_* classification key; diagnostics belong in liveness logs.
 const REQUEST_TIMEOUT_CODE = 'relay_control_request_timeout'
+const INVITE_EXPIRY_OUT_OF_WINDOW_CODE = 'relay_invite_expiry_out_of_window'
 
 export type DeviceCredentialInstallAuthorization =
   | { mode: 'relay-basis'; basisConnId: string }
@@ -139,7 +141,12 @@ export class RelayControlRequests {
         return false
       }
       this.finish(reqId)
-      pending.resolve(invite.data)
+      // The expiry drives the host's demand timer and the QR offer: a relay may not stretch it past an invite's life.
+      if (isLiveRelayInviteExpiry(invite.data.expiresAt, Date.now())) {
+        pending.resolve(invite.data)
+      } else {
+        pending.reject(new Error(INVITE_EXPIRY_OUT_OF_WINDOW_CODE))
+      }
       return true
     }
     if (pending.kind === 'revoke') {

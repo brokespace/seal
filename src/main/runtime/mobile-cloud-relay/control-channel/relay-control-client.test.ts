@@ -383,4 +383,71 @@ describe('RelayControlClient', () => {
     socket.send(JSON.stringify({ type: 'drain', graceMs: 5_000, recovery: 'resolve-director' }))
     await vi.waitFor(() => expect(onDrain).toHaveBeenCalledOnce())
   })
+
+  it('closes the control socket when a decryptable challenge fails many transcript checks', async () => {
+    const server = new WebSocketServer({ host: '127.0.0.1', port: 0, perMessageDeflate: false })
+    servers.push(server)
+    await new Promise<void>((resolve) => server.once('listening', resolve))
+    const address = server.address()
+    if (!address || typeof address === 'string') {
+      throw new Error('expected TCP relay test server')
+    }
+    const hostKeys = nacl.box.keyPair()
+    const accepted = new Promise<WebSocket>((resolve) => server.once('connection', resolve))
+    const client = new RelayControlClient({
+      cellUrl: `http://127.0.0.1:${address.port}`,
+      relayJwt: 'scoped-token',
+      relayHostId: createHash('sha256').update(hostKeys.publicKey).digest('base64url').slice(0, 16),
+      assignmentEpoch: 3,
+      identity: { userId: 'user-1', profileId: 'profile-1', organizationId: 'org-1' },
+      keypair: { ...hostKeys, publicKeyB64: Buffer.from(hostKeys.publicKey).toString('base64') },
+      appVersion: '1.2.3',
+      onConnectionOpen: vi.fn(),
+      onDrain: vi.fn(),
+      onClose: vi.fn()
+    })
+    clients.push(client)
+    const connecting = client.connect()
+    const rejected = expect(connecting).rejects.toThrow('invalid host challenge: transcript:')
+    const socket = await accepted
+    await nextJson(socket)
+    const closed = new Promise<{ code: number; reasonBytes: number }>((resolve) => {
+      socket.once('close', (code, reason) => resolve({ code, reasonBytes: reason.byteLength }))
+    })
+
+    const relayKeys = nacl.box.keyPair()
+    const nonce = randomBytes(24)
+    // Sealed to the host key so it decrypts, but nine transcript fields disagree with the session.
+    const transcript = buildTranscript({
+      origin: 'https://other-relay.example',
+      relayKey: nacl.box.keyPair().publicKey,
+      nonce: randomBytes(24),
+      challengeId: 'another-challenge',
+      issuedAt: 2_000,
+      expiresAt: 1_000,
+      relayHostId: 'AAAAAAAAAAAAAAAA',
+      hostKey: nacl.box.keyPair().publicKey
+    })
+    const plaintext = concat([
+      text(`${CHALLENGE_DOMAIN}\0`),
+      uint32(transcript.byteLength),
+      transcript,
+      randomBytes(32)
+    ])
+    socket.send(
+      JSON.stringify({
+        type: 'host-challenge',
+        challengeId: 'challenge-1',
+        relayEphemeralPublicKeyB64: Buffer.from(relayKeys.publicKey).toString('base64'),
+        nonceB64: nonce.toString('base64'),
+        ciphertextB64: Buffer.from(
+          nacl.box(plaintext, nonce, hostKeys.publicKey, relayKeys.secretKey)
+        ).toString('base64'),
+        expiresAt: 500
+      })
+    )
+
+    await rejected
+    await expect(closed).resolves.toEqual({ code: 4401, reasonBytes: 123 })
+  })
 })

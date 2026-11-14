@@ -16,7 +16,7 @@ import type { RuntimePairingReach } from '../../../../../shared/runtime-pairing-
 import type { DelegatedPhone } from '../../../../../shared/delegated-mobile-device-contract'
 import {
   planDelegatedMobileDevices,
-  type DelegatedMobileDeviceEntry
+  type DelegatedMobileDeviceGrant
 } from './delegated-mobile-devices'
 import type { RuntimeDeviceGrant } from '../../callers/rpc-method-permission'
 import { validGrants } from './device-registry-row-validation'
@@ -30,6 +30,8 @@ import {
   mobilePairingConnectionModeOf,
   findPrincipalDevice,
   findTokenDevice,
+  isIdleExpiredBearer,
+  withPairedParent,
   type AuthenticatedPrincipalBinding,
   lookupDeviceKeyRow,
   type DeviceEntry,
@@ -38,7 +40,13 @@ import {
 } from './device-entry'
 import type { MobilePushRegistration } from '../../../../../shared/mobile-push-contract'
 
+// A long-lived socket counts as use, so its row's idle clock is refreshed at this pace.
+const LIVE_BEARER_SIGHTING_INTERVAL_MS = 60 * 60_000
+
 export class DeviceRegistry extends DeviceRegistrySightings {
+  /** Bearers of delegated children minted by this process; the file holds only their hashes. */
+  private readonly delegatedTokens = new Map<string, string>()
+
   addDevice(
     name: string,
     scope: DeviceScope = 'mobile',
@@ -80,7 +88,7 @@ export class DeviceRegistry extends DeviceRegistrySightings {
       this.saveOrLog({}, 'prune expired pairing offers', this.devices, live)
     }
     // Reuse only identical grants so re-advertisement cannot expand permissions.
-    const existing = this.getPendingDevice(scope, offerTtlMs, grants)
+    const existing = this.getPendingDevice(scope, grants)
     if (existing) {
       // Widen advertised reach, never narrow it and break an off-host link already handed out.
       const widen = pairingReach === 'network' && existing.pairingReach === 'this-computer'
@@ -121,15 +129,29 @@ export class DeviceRegistry extends DeviceRegistrySightings {
   upsertDelegatedMobileDevices(
     parent: DeviceEntry,
     phones: readonly DelegatedPhone[]
-  ): DelegatedMobileDeviceEntry[] {
+  ): DelegatedMobileDeviceGrant[] {
     // Plan over the file as it is: an unchanged child removed on disk would skip the save's merge.
     this.adoptExternalEdits({ fresh: true })
-    const { nextDevices, entries } = planDelegatedMobileDevices(this.devices, parent, phones)
+    const { nextDevices, grants } = planDelegatedMobileDevices(
+      this.devices,
+      parent,
+      phones,
+      this.delegatedTokens
+    )
     if (nextDevices !== this.devices) {
       this.devices = this.save(nextDevices)
     }
+    for (const deviceId of this.delegatedTokens.keys()) {
+      if (this.getDevice(deviceId) === null) {
+        this.delegatedTokens.delete(deviceId)
+      }
+    }
     // A child the file had already lost is dropped by the save: never hand out its token.
-    return entries.filter((entry) => this.getDevice(entry.deviceId) !== null)
+    const persisted = grants.filter((grant) => this.getDevice(grant.deviceId) !== null)
+    for (const grant of persisted) {
+      this.delegatedTokens.set(grant.deviceId, grant.token)
+    }
+    return persisted
   }
 
   removeDevice(deviceId: string): boolean {
@@ -146,15 +168,14 @@ export class DeviceRegistry extends DeviceRegistrySightings {
     return this.devices.find((d) => d.deviceId === deviceId) ?? null
   }
 
-  /** The offer re-advertisement under `offerTtlMs` would reuse. */
+  /** The offer re-advertisement would reuse. */
   getPendingDevice(
     scope: DeviceScope = 'mobile',
-    offerTtlMs?: number,
     grants: readonly RuntimeDeviceGrant[] = []
   ): TokenDeviceEntry | null {
     this.adoptExternalEdits({ fresh: true })
     const offers = this.listPendingDevices(scope)
-    return reusablePairingOffer(offers, validGrants(grants, scope) ?? [], offerTtlMs)
+    return reusablePairingOffer(offers, validGrants(grants, scope) ?? [])
   }
 
   listPendingDevices(scope: DeviceScope): TokenDeviceEntry[] {
@@ -197,6 +218,28 @@ export class DeviceRegistry extends DeviceRegistrySightings {
     return this.devices
   }
 
+  /** Rows that could still sign in, after re-reading the file: a revoke on disk is seen at once. */
+  listCurrentDevices(now = Date.now()): readonly DeviceEntry[] {
+    this.adoptExternalEdits({ fresh: true })
+    return this.devices.filter(
+      (device) => !isIdleExpiredBearer(device, now) && withPairedParent(device, this.devices)
+    )
+  }
+
+  /**
+   * Devices whose revocation the caller must finish: rows another writer removed from the file
+   * (handed out once), and bearer rows unused for the idle lifetime (until the caller removes them).
+   * A row a device key was forked from stays as that key's anchor; its bearer is refused instead.
+   */
+  takeRevokedDevices(now = Date.now()): DeviceEntry[] {
+    const removed = this.takeExternallyRemoved()
+    const anchors = new Set(this.devices.map((device) => device.forkedFrom))
+    const idle = this.devices.filter(
+      (device) => isIdleExpiredBearer(device, now) && !anchors.has(device.deviceId)
+    )
+    return [...removed, ...idle]
+  }
+
   validateToken(token: string): DeviceEntry | null {
     this.adoptExternalEdits()
     const device = findTokenDevice(this.devices, token, this.seenDeviceIds)
@@ -224,7 +267,7 @@ export class DeviceRegistry extends DeviceRegistrySightings {
   }
 
   /** First sign-in with the replacement; a failed write keeps both tokens and retries next sign-in. */
-  private retirePairingToken(device: DeviceEntry & { exchangeToken: string }): DeviceEntry {
+  private retirePairingToken(device: DeviceEntry & { exchangeTokenHash: string }): DeviceEntry {
     const promoted = promoteExchangedTicket(device)
     try {
       this.devices = this.save(
@@ -234,11 +277,7 @@ export class DeviceRegistry extends DeviceRegistrySightings {
       return this.getDevice(device.deviceId) ?? promoted
     } catch (error) {
       console.error('[runtime] Failed to retire an exchanged pairing token:', error)
-      return {
-        ...device,
-        token: device.exchangeToken,
-        callerFingerprint: promoted.callerFingerprint
-      }
+      return { ...device, callerFingerprint: promoted.callerFingerprint }
     }
   }
 
@@ -290,6 +329,14 @@ export class DeviceRegistry extends DeviceRegistrySightings {
 
   resolveAuthenticatedPrincipal(principal: AuthenticatedPrincipalBinding): DeviceEntry | null {
     this.adoptExternalEdits()
-    return findPrincipalDevice(this.devices, principal)
+    const device = findPrincipalDevice(this.devices, principal)
+    if (
+      device &&
+      principal.deviceToken !== undefined &&
+      Date.now() - device.lastSeenAt > LIVE_BEARER_SIGHTING_INTERVAL_MS
+    ) {
+      this.updateLastSeenDeferred(device.deviceId)
+    }
+    return device
   }
 }
