@@ -7,6 +7,7 @@ import {
   type SealMcpAuditEntry,
   type SealMcpClient,
   type SealMcpClientCreated,
+  type SealMcpMachine,
   type SealMcpSettings,
   type SealMcpStatus
 } from '../../shared/seal-mcp/seal-mcp-types'
@@ -176,6 +177,12 @@ export const SEAL_MCP_HANDLERS: Record<string, CommandHandler> = {
       limit: getOptionalPositiveIntegerFlag(ctx.flags, 'limit') ?? 50
     })
     printResult(response, ctx.json, ({ entries }) => formatSealMcpAudit(entries))
+  },
+  'mcp machines': async (ctx) => {
+    const response = await ctx.client.call<{ machines: SealMcpMachine[] }>('sealMcp.listMachines')
+    printResult(response, ctx.json, ({ machines }) =>
+      machines.map((machine) => `${machine.id}\t${machine.label}`).join('\n')
+    )
   },
   'mcp approvals': async (ctx) => {
     const response = await ctx.client.call<{ approvals: SealMcpApprovalRequest[] }>(

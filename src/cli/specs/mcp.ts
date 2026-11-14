@@ -96,6 +96,12 @@ export const MCP_COMMAND_SPECS: CommandSpec[] = [
     positionalArgs: ['id']
   },
   {
+    path: ['mcp', 'machines'],
+    summary: 'List the machines an MCP client can be limited to, with the ids --machines takes',
+    usage: 'seal mcp machines [--json]',
+    allowedFlags: [...GLOBAL_FLAGS]
+  },
+  {
     path: ['mcp', 'audit'],
     summary: 'Show recent MCP calls: who, what, where, and whether Seal allowed them',
     usage: 'seal mcp audit [--client <id>] [--limit <n>] [--json]',

@@ -30,6 +30,7 @@ seal mcp token create --name "Claude Code" --scopes read,sessions   # prints the
 seal mcp status                                                     # where the server is reachable
 seal mcp enable http                                                # serve /mcp on Seal's own port
 seal mcp enable relay                                               # public HTTPS URL through the relay
+seal mcp machines                                                   # machine ids for --machines
 seal mcp token list
 seal mcp token revoke <id>
 seal mcp audit --limit 100
@@ -38,7 +39,9 @@ seal mcp approvals && seal mcp approve <id>                         # or: seal m
 
 Add `--environment <id>` to any of these to manage a paired Seal server from your own computer.
 `seal mcp token create` takes `--scopes`, `--machines <id,id>`, `--approval never|destructive|commands`,
-`--allow-relay` and `--rate <calls-per-minute>`.
+`--allow-relay` and `--rate <calls-per-minute>`. Machine ids are the ones `seal mcp machines` and
+the `list_machines` tool print: `local` for the Seal host itself, `machine:<id>` for a machine from
+the Machines page.
 
 A token looks like `smcp_<12 hex>_<43 characters>`. It is shown once. Seal stores a SHA-256 hash of
 it in `<userData>/mcp/clients.json` (mode 0600) and can never show it again.
