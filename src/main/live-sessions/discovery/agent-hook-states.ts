@@ -46,13 +46,16 @@ export function parseHookStates(files: { path: string; text: string }[]): HookSt
 export function hookStatus(
   state: string,
   running: boolean,
-  summary: TranscriptSummary | undefined
+  summary: TranscriptSummary | undefined,
+  /** The host listed its processes and this agent is not among them, nor still writing. */
+  gone: boolean
 ): LiveSessionStatus | null {
   switch (state) {
     case 'working':
       return 'working'
     case 'needs':
-      return 'needs-permission'
+      // An agent killed at its prompt never clears the file; the prompt went with it.
+      return gone ? 'done' : 'needs-permission'
     case 'done':
     case 'idle':
       return running ? restingStatus(summary) : 'done'
