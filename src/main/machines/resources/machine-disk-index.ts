@@ -32,6 +32,9 @@ const ENSURE_RETRY_AFTER_MS = [60_000, 5 * 60_000, 30 * 60_000]
 const START_ANSWER_LIMIT_MS = 5 * 60_000
 const DETAIL_MAX_CHARS = 400
 
+/** What a start is doing, so one that has gone quiet can say where. */
+type StartStep = (step: string) => void
+
 type Program = { name: string; bytes: Buffer }
 type Outcome = { reply: MachineDiskIndexReply } | { marker: string; said: string | null }
 
@@ -90,10 +93,12 @@ function readOutcome(result: MachineExecResult): Outcome {
 async function askIndex(
   connection: MachineConnection,
   request: MachineDiskIndexRequest,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  step?: StartStep
 ): Promise<MachineDiskIndexReply | DiskIndexFailure> {
   let build: Program
   try {
+    step?.('reading the index program')
     build = await loadProgram()
   } catch (error) {
     return { reason: 'no-program', detail: messageOf(error) }
@@ -109,14 +114,17 @@ async function askIndex(
         ...(signal ? { signal } : {})
       })
     )
+  step?.('running the start script')
   let outcome = await run()
   if ('marker' in outcome && outcome.marker === DISK_INDEX_NO_PROGRAM) {
     let installedIn: string
     try {
+      step?.('copying the index program')
       installedIn = await installProgram(connection, build)
     } catch (error) {
       return { reason: 'install-failed', detail: messageOf(error) }
     }
+    step?.('running the start script again')
     outcome = await run()
     if ('marker' in outcome && outcome.marker === DISK_INDEX_NO_PROGRAM) {
       return {
@@ -146,13 +154,14 @@ async function askIndex(
 export async function queryMachineDiskIndex(
   connection: MachineConnection,
   request: MachineDiskIndexRequest,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  step?: StartStep
 ): Promise<MachineDiskIndexReply> {
   const known = unavailable.get(connection.machineId)
   if (known && Date.now() - known.at < UNAVAILABLE_RETRY_MS) {
     return answerDiskRequestLive(connection, request, known, signal)
   }
-  const answer = await askIndex(connection, request, signal).catch((error: unknown) => {
+  const answer = await askIndex(connection, request, signal, step).catch((error: unknown) => {
     if (!signal?.aborted) {
       logDiskIndexStart(connection, {
         outcome: 'failed',
@@ -190,11 +199,19 @@ type Kept = {
 }
 
 const kept = new Map<MachineId, Kept>()
+const startSteps = new Map<MachineId, string>()
+
+/** What a machine's start was last doing; null when none is under way. */
+export function diskIndexStartStep(machineId: MachineId): string | null {
+  return startSteps.get(machineId) ?? null
+}
 
 async function startIndex(
   connection: MachineConnection,
   signal: AbortSignal
 ): Promise<DiskIndexKeptState> {
+  const step: StartStep = (name) => startSteps.set(connection.machineId, name)
+  step('asking which shell the machine has')
   if ((await connection.dialect()) !== 'posix') {
     logDiskIndexStart(connection, {
       outcome: 'skipped',
@@ -204,7 +221,7 @@ async function startIndex(
   }
   // A start is a real attempt, never the remembered failure.
   unavailable.delete(connection.machineId)
-  const reply = await queryMachineDiskIndex(connection, { op: 'status' }, signal)
+  const reply = await queryMachineDiskIndex(connection, { op: 'status' }, signal, step)
   return 'status' in reply && reply.status.source === 'index' ? 'answering' : 'not-available'
 }
 
@@ -224,8 +241,9 @@ async function startIndexWithinLimit(connection: MachineConnection): Promise<Dis
     return settled.value
   }
   giveUp.abort()
+  const step = diskIndexStartStep(connection.machineId)
   return failed(
-    `The machine did not answer within ${START_ANSWER_LIMIT_MS / 60_000} minutes of being asked.`
+    `The machine did not answer within ${START_ANSWER_LIMIT_MS / 60_000} minutes of being asked${step ? `; it was ${step}` : ''}.`
   )
 }
 
@@ -252,6 +270,7 @@ export function keepMachineDiskIndex(connection: MachineConnection): Promise<Mac
   state.asking = startIndexWithinLimit(connection).then((result) => {
     const failed = result === 'not-available'
     state.asking = null
+    startSteps.delete(machineId)
     state.state = result
     state.failures = failed ? state.failures + 1 : 0
     state.dueAt =

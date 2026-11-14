@@ -206,7 +206,7 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
     expect(installedPrograms(home)).toEqual([])
   })
 
-  it("is started by the keeper from the desktop's own machine list, with nothing connected", async () => {
+  it('is started by the keeper as the desktop starts, before any timer fires or window exists', async () => {
     const home = await emptyHome('h6')
     await sealInstalledAt(packagedResources('Seal.app', programCode), home, 'local')
     const { setActiveSink } = await import('../../observability/tracer')
@@ -214,35 +214,37 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
     const { desktopMachineAccess } = await import('../registry/machine-registry-service')
     const { startMachineDiskIndexKeeper } = await import('./machine-disk-index-keeper')
     const spans: TraceSpan[] = []
-    const firstPassEnded = new Promise<void>((resolve) => {
-      setActiveSink({
-        push: (record) => {
-          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the tracer hands its sink the span records it built, which have this shape.
-          const span = record as TraceSpan
-          spans.push(span)
-          if (span.attributes.event === 'pass') {
-            resolve()
-          }
-        },
-        flush: () => {},
-        close: () => {}
-      })
+    let passEnded = (): void => {}
+    setActiveSink({
+      push: (record) => {
+        // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the tracer hands its sink the span records it built, which have this shape.
+        const span = record as TraceSpan
+        spans.push(span)
+        if (span.attributes.event === 'pass') {
+          passEnded()
+        }
+      },
+      flush: () => {},
+      close: () => {}
     })
-    setMachineAccess(desktopMachineAccess())
-    // Only the keeper's own wait is skipped; the daemon is started and asked in real time.
+    const firstPassEnded = new Promise<void>((resolve) => {
+      passEnded = resolve
+    })
+    // No timer runs until the test says so; the daemon is started and asked in real time.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
 
     startMachineDiskIndexKeeper({ orcadSidecar: false })
-    await vi.advanceTimersByTimeAsync(30_000)
     await firstPassEnded
 
     expect(daemonPids(home)).toHaveLength(1)
     expect(spans.map((span) => ({ span: span.name, ...span.attributes }))).toEqual([
+      { span: 'machines.disk-index.keeper', event: 'started', pid: process.pid },
       {
         span: 'machines.disk-index.keeper',
-        event: 'started',
-        pid: process.pid,
-        firstPassInSeconds: 30
+        event: 'pass-due',
+        pass: 1,
+        by: 'start',
+        lateBySeconds: 0
       },
       {
         span: 'machines.disk-index.keeper',
@@ -270,6 +272,29 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
         nextPassInSeconds: 1800
       }
     ])
+
+    // Attaching the window hands the keeper the desktop's own machine list for later passes.
+    setMachineAccess(desktopMachineAccess())
+    await vi.advanceTimersByTimeAsync(30 * 60_000)
+
+    expect(spans.slice(5).map((span) => span.attributes)).toEqual([
+      { event: 'pass-due', pass: 2, by: 'timer', lateBySeconds: 0 },
+      {
+        event: 'pass-began',
+        pass: 2,
+        machines: 'local',
+        otherMachinesConnected: 0,
+        otherMachinesNotConnected: 0
+      },
+      {
+        event: 'pass',
+        pass: 2,
+        machines: 'local answering (not due)',
+        otherMachinesNotConnected: 0,
+        errors: null,
+        nextPassInSeconds: 1800
+      }
+    ])
   })
 
   it('gives up on a machine that never answers, and writes that down', async () => {
@@ -288,7 +313,7 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
 
     await expect(keeping).resolves.toMatchObject({ state: 'not-available', asked: true })
     expect(console.warn).toHaveBeenCalledWith(
-      '[disk-index] local machine machine:silent: the disk index is not available (command-failed): The machine did not answer within 5 minutes of being asked.'
+      '[disk-index] local machine machine:silent: the disk index is not available (command-failed): The machine did not answer within 5 minutes of being asked; it was asking which shell the machine has.'
     )
   })
 })
