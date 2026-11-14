@@ -4,7 +4,7 @@ import { translate } from '@/i18n/i18n'
 import { getAgentCatalog } from '@/lib/agent-catalog/agent-catalog'
 import type { NewWorkspaceComposerCardProps } from '../composer/new-workspace-composer-card-props'
 import type { TuiAgent } from '../../../../../shared/agent-launch/catalog/tui-agent'
-import type { ExecutionHostId } from '../../../../../shared/execution-host'
+import { normalizeExecutionHostId } from '../../../../../shared/execution-host'
 import { AgentSessionAccountField } from './AgentSessionAccountField'
 import {
   chooseAgentSessionAccount,
@@ -47,6 +47,18 @@ export type AgentSessionDialog = {
   ) => Promise<'create-worktree' | 'started' | 'stopped'>
 }
 
+async function whileStarting<T>(
+  setStarting: (starting: boolean) => void,
+  work: () => Promise<T>
+): Promise<T> {
+  setStarting(true)
+  try {
+    return await work()
+  } finally {
+    setStarting(false)
+  }
+}
+
 /** The New agent session dialog's own state on top of the workspace composer it extends. */
 export function useAgentSessionDialog({
   enabled,
@@ -63,9 +75,7 @@ export function useAgentSessionDialog({
   const [accountChoice, setAccountChoice] = useState<AgentSessionAccountChoice | null>(null)
   const [starting, setStarting] = useState(false)
 
-  const hostId = (executionHostId ??
-    cardProps.selectedRepoExecutionHostId ??
-    null) as ExecutionHostId | null
+  const hostId = normalizeExecutionHostId(executionHostId ?? cardProps.selectedRepoExecutionHostId)
   const selectedProject = cardProps.projectOptions?.find(
     (option) => option.id === cardProps.selectedProjectId
   )
@@ -112,18 +122,10 @@ export function useAgentSessionDialog({
       if (createWorktree) {
         return 'create-worktree'
       }
-      setStarting(true)
-      try {
-        const started = await startAgentSessionInProject({
-          repoId,
-          executionHostId: hostId,
-          agent,
-          ...launch
-        })
-        return started ? 'started' : 'stopped'
-      } finally {
-        setStarting(false)
-      }
+      const started = await whileStarting(setStarting, () =>
+        startAgentSessionInProject({ repoId, executionHostId: hostId, agent, ...launch })
+      )
+      return started ? 'started' : 'stopped'
     },
     [account, agent, createWorktree, enabled, hostId, repoId]
   )

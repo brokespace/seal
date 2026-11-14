@@ -48,21 +48,23 @@ export function AgentSessionAccountField({
   const [reading, setReading] = useState<Reading | null>(null)
 
   useEffect(() => {
-    if (!hostId || !target || !provider) {
+    const machine = agentSessionAccountHost(executionHostId)
+    const runtime = machine?.target
+    if (!machine || !runtime || !provider) {
       return
     }
     let current = true
     callRuntimeRpc<SealAccountsStatus>(
-      target,
+      runtime,
       'seal.accounts.status',
       { refreshUsage: false },
       { timeoutMs: 20_000 }
     ).then(
-      (status) => current && setReading({ hostId, status, error: null }),
+      (status) => current && setReading({ hostId: machine.hostId, status, error: null }),
       (caught: unknown) =>
         current &&
         setReading({
-          hostId,
+          hostId: machine.hostId,
           status: null,
           error: caught instanceof Error ? caught.message : String(caught)
         })
@@ -70,9 +72,7 @@ export function AgentSessionAccountField({
     return () => {
       current = false
     }
-    // The target is derived from hostId, so hostId alone identifies the machine to read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hostId, provider])
+  }, [executionHostId, provider])
 
   const current = reading?.hostId === hostId ? reading : null
   const candidates =
@@ -126,7 +126,7 @@ export function AgentSessionAccountField({
         }
       >
         <SelectTrigger
-          className="h-9 w-full text-sm"
+          className="h-9 w-full"
           aria-label={t('components.newAgentSession.account', 'Account')}
         >
           <SelectValue />
