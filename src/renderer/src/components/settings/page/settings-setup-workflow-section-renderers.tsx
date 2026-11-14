@@ -5,6 +5,9 @@ import { AutomationsSettingsPane } from '../automations/AutomationsSettingsPane'
 import { GeneralPane } from '../general/GeneralPane'
 import { IntegrationsPane } from '../integrations/IntegrationsPane'
 import { MobileSettingsPane } from '../mobile/MobileSettingsPane'
+import { McpSettingsPane } from '../mcp/McpSettingsPane'
+import { SettingsHostScopeUnavailableNotice } from '../host-scope/SettingsHostScopePicker'
+import { sealHostKey } from '@/components/seal-session/seal-session-status-store'
 import { OrcaAccountSettingsPane } from '../accounts/orca/OrcaAccountSettingsPane'
 import { SettingsSetupGuidePane } from '../setup-guide/SettingsSetupGuidePane'
 import { ShareSkillsSettingsPane } from '../skills/sharing/ShareSkillsSettingsPane'
@@ -142,6 +145,33 @@ export function renderMobileSettingsSection(
       searchEntries={navigation.getSectionSearchEntries('mobile')}
     >
       {view.isSectionMounted('mobile') ? <MobileSettingsPane /> : null}
+    </SettingsSection>
+  ) : null
+}
+
+export function renderMcpSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element | null {
+  const { model, navigation, view } = context
+  return model.showDesktopOnlySettings ? (
+    <SettingsSection
+      id="mcp"
+      title={t('seal.mcp.title', 'MCP')}
+      description={t(
+        'seal.mcp.description',
+        'Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('mcp')}
+    >
+      {!view.isSectionMounted('mcp') ? null : !model.settingsHostScope.available ? (
+        <SettingsHostScopeUnavailableNotice />
+      ) : (
+        <McpSettingsPane
+          key={sealHostKey(model.settingsHostScope.target)}
+          target={model.settingsHostScope.target}
+        />
+      )}
     </SettingsSection>
   ) : null
 }

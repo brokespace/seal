@@ -2,7 +2,8 @@ import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { hasInlineUsage, InlineUsageBars } from '../status-bar/InlineProviderUsage'
 import type { HomeAccount } from './home-overview-model'
-import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 
 function AccountRow({
   account,
@@ -53,7 +54,7 @@ export function HomeAccountsPanel({
 }): React.JSX.Element {
   const t = useTranslate()
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.accounts.title', 'Accounts')}
       action={
         <Button variant="ghost" size="xs" onClick={onManage}>
@@ -75,6 +76,6 @@ export function HomeAccountsPanel({
           ))}
         </ul>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

@@ -7,6 +7,7 @@ import { SERVE_PAIRING_HANDLER_GROUPS } from '../server/serve-pairing-handler-gr
 import { PLUGIN_HANDLER_GROUPS } from '../plugins/plugin-handler-groups'
 import { HOST_HANDLER_GROUPS } from '../hosts/host-handler-groups'
 import { SEAL_ACCOUNT_HANDLER_GROUPS } from '../accounts/seal-account-handler-groups'
+import { SEAL_MCP_HANDLER_GROUP } from '../mcp/seal-mcp-handler-group'
 import { WORKTREE_HANDLER_GROUPS } from '../workspaces/worktree-handler-groups'
 
 export type HandlerGroup = {
@@ -43,6 +44,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('../accounts/account.js')).ACCOUNT_HANDLERS
   },
   ...SEAL_ACCOUNT_HANDLER_GROUPS,
+  SEAL_MCP_HANDLER_GROUP,
   {
     name: 'artifacts',
     keys: [

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Monitor, Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
+import { PageCard } from '@/components/page-layout/PageCard'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import {
   buildActiveAgents,
@@ -10,7 +11,7 @@ import {
 import { useLiveSessionLinks } from '../live-sessions/links/use-live-session-links'
 import { LiveSessionRows } from '../live-sessions/row/LiveSessionRows'
 import { useSessionMachineName } from '../machines/model/use-local-machine-name'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { HomeOverviewEmpty } from './HomeOverviewRow'
 
 /** Active agents' machines and rows, on Home: the same sessions in the same order. */
 export function HomeSessionsPanel({
@@ -28,7 +29,7 @@ export function HomeSessionsPanel({
     [sessions, links, now]
   )
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.sessions.title', 'Sessions')}
       action={
         <span className="flex items-center gap-2">
@@ -67,6 +68,6 @@ export function HomeSessionsPanel({
           })}
         </div>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }
