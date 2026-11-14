@@ -25811,7 +25811,10 @@
     },
     "open": {
       "sessionGone": "That agent session is no longer running."
-    }
+    },
+    "expand": "Expand chat",
+    "minimize": "Minimize chat",
+    "minimizedRunning": "Working…"
   },
   "seal": {
     "accounts": {
