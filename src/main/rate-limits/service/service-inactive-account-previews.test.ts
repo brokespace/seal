@@ -115,4 +115,52 @@ describe('RateLimitService', () => {
       }
     ])
   })
+
+  it('reads one account on request into the state every surface shows, and serves it again while fresh', async () => {
+    const service = new RateLimitService()
+    service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }, { id: 'account-2' }])
+    vi.mocked(fetchInactiveClaudeAccountUsage).mockResolvedValue(okProvider('claude', 93))
+
+    const first = await service.readAccountUsage('claude', 'account-2', { notWithinMs: 30_000 })
+    vi.setSystemTime(1_700_000_000_000 + 10_000)
+    const second = await service.readAccountUsage('claude', 'account-2', { notWithinMs: 30_000 })
+
+    expect(
+      vi.mocked(fetchInactiveClaudeAccountUsage).mock.calls.map(([account]) => account)
+    ).toEqual([{ id: 'account-2' }])
+    expect(second).toBe(first)
+    expect(service.getState().inactiveClaudeAccounts).toEqual([
+      {
+        accountId: 'account-2',
+        rateLimits: expect.objectContaining({
+          session: expect.objectContaining({ usedPercent: 93 })
+        }),
+        updatedAt: 1_700_000_000_000,
+        isFetching: false
+      }
+    ])
+  })
+
+  it('does not ask again while a throttled usage check is still told to wait', async () => {
+    const service = new RateLimitService()
+    service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }])
+    vi.mocked(fetchInactiveClaudeAccountUsage).mockResolvedValue({
+      provider: 'claude',
+      session: null,
+      weekly: null,
+      updatedAt: 1_700_000_000_000,
+      error: 'Claude usage is rate limited right now.',
+      status: 'error',
+      usageMetadata: { failureKind: 'rate-limited', retryAtMs: 1_700_000_000_000 + 300_000 }
+    })
+
+    await service.readAccountUsage('claude', 'account-1')
+    vi.setSystemTime(1_700_000_000_000 + 120_000)
+    await service.readAccountUsage('claude', 'account-1')
+    expect(fetchInactiveClaudeAccountUsage).toHaveBeenCalledTimes(1)
+
+    vi.setSystemTime(1_700_000_000_000 + 301_000)
+    await service.readAccountUsage('claude', 'account-1')
+    expect(fetchInactiveClaudeAccountUsage).toHaveBeenCalledTimes(2)
+  })
 })
