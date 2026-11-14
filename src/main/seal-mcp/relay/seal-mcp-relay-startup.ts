@@ -1,7 +1,7 @@
 import { PushGatewaySession } from '../../runtime/push/push-gateway-session'
 import type { E2EEKeypair } from '../../runtime/rpc/server/pairing/e2ee-keypair'
 import { sealMcpHttpUrls } from '../http/seal-mcp-http-urls'
-import { getSealMcpService } from '../seal-mcp-service-instance'
+import { whenSealMcpServiceRuns } from '../seal-mcp-service-instance'
 import { SealMcpRelayTunnel, type SealMcpRelayIdentity } from './seal-mcp-relay-tunnel'
 
 type RuntimeRpcEndpoints = {
@@ -53,24 +53,27 @@ export function startSealMcpEndpoints(input: {
   runtimeRpc: RuntimeRpcEndpoints
   relayOrigin: string
 }): () => void {
-  const service = getSealMcpService()
-  if (!service) {
-    return () => {}
-  }
-  const tunnel = new SealMcpRelayTunnel({
-    relayOrigin: input.relayOrigin,
-    identity: sealMcpRelayIdentitySource({
+  let stopTunnel = (): void => {}
+  const cancel = whenSealMcpServiceRuns((service) => {
+    const tunnel = new SealMcpRelayTunnel({
       relayOrigin: input.relayOrigin,
-      getKeypair: input.runtimeRpc.getE2EEKeypair
-    }),
-    service,
-    onStatus: () => service.statusChanged()
+      identity: sealMcpRelayIdentitySource({
+        relayOrigin: input.relayOrigin,
+        getKeypair: input.runtimeRpc.getE2EEKeypair
+      }),
+      service,
+      onStatus: () => service.statusChanged()
+    })
+    service.setEndpoints(() => ({
+      httpUrls: sealMcpHttpUrls(input.runtimeRpc.getWebSocketEndpoint()),
+      relayUrl: tunnel.publicUrl,
+      relayConnected: tunnel.connected
+    }))
+    tunnel.start()
+    stopTunnel = () => tunnel.stop()
   })
-  service.setEndpoints(() => ({
-    httpUrls: sealMcpHttpUrls(input.runtimeRpc.getWebSocketEndpoint()),
-    relayUrl: tunnel.publicUrl,
-    relayConnected: tunnel.connected
-  }))
-  tunnel.start()
-  return () => tunnel.stop()
+  return () => {
+    cancel()
+    stopTunnel()
+  }
 }

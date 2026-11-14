@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { writeSecureJsonFile } from '../../../shared/secure-storage/secure-file'
 import {
   isSealMcpApprovalPolicy,
@@ -102,9 +102,12 @@ export class SealMcpClientStore {
   constructor(
     private readonly path: string,
     private readonly onChange: () => void = () => {}
-  ) {
+  ) {}
+
+  /** Reads the saved clients. Until it resolves the store is empty, and a write would drop them. */
+  async load(): Promise<void> {
     try {
-      const saved: unknown = JSON.parse(readFileSync(path, 'utf8'))
+      const saved: unknown = JSON.parse(await readFile(this.path, 'utf8'))
       const list = isRecord(saved) && Array.isArray(saved.clients) ? saved.clients : []
       for (const client of list.map(parseStored)) {
         if (client) {

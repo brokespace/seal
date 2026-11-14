@@ -9,7 +9,7 @@ import { LOCAL_CLI_RPC_CALLER } from '../runtime/rpc/callers/rpc-caller-identity
 import { RpcDispatcher } from '../runtime/rpc/dispatcher'
 import { ALL_RPC_METHODS } from '../runtime/rpc/methods/rpc-method-registry'
 import { SealMcpService } from './seal-mcp-service'
-import { getSealMcpService, setSealMcpService } from './seal-mcp-service-instance'
+import { setSealMcpService } from './seal-mcp-service-instance'
 
 /**
  * Tells the person a call is waiting, wherever they are. The notice names who and what, never the
@@ -36,15 +36,17 @@ function announceApprovalRequest(
   })
 }
 
+let installed = false
+
 /**
  * One MCP server per host process, on the desktop app and on the headless server alike. Its tools
  * are the Home assistant's tools and Seal's RPC methods, called in-process as this host's owner.
  */
-export function installSealMcp(runtime: OrcaRuntimeService): SealMcpService {
-  const existing = getSealMcpService()
-  if (existing) {
-    return existing
+export function installSealMcp(runtime: OrcaRuntimeService): void {
+  if (installed) {
+    return
   }
+  installed = true
   const dispatcher = new RpcDispatcher({ runtime, methods: ALL_RPC_METHODS })
   const callRpc = async (method: string, params?: unknown): Promise<unknown> => {
     const response = await dispatcher.dispatch(
@@ -61,15 +63,14 @@ export function installSealMcp(runtime: OrcaRuntimeService): SealMcpService {
     version: getAppEnvironment().getVersion(),
     runtime: async () => ({ ...(await requireHomeChat()).toolRuntime(), callRpc })
   })
-  setSealMcpService(service)
   service.onEvent((event) => {
     if (event.type === 'approval-requested') {
       announceApprovalRequest(runtime, event.request)
     }
   })
-  void service.start()
+  // Published only once its clients and settings are read, so nothing can act on an empty store.
+  void service.start().then(() => setSealMcpService(service))
   getAppEnvironment().onWillQuit(() => {
     void service.stop()
   })
-  return service
 }

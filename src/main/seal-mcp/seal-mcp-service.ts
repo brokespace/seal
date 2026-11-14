@@ -95,8 +95,9 @@ export class SealMcpService {
     })
   }
 
+  /** Reads what is saved on disk. Nothing may use the service before this resolves. */
   async start(): Promise<void> {
-    await this.audit.load()
+    await Promise.all([this.clients.load(), this.settings.load(), this.audit.load()])
   }
 
   async stop(): Promise<void> {
