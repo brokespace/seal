@@ -191,6 +191,16 @@ switch on its row picks the one Seal uses. See [machines.md](machines.md).
 - [ ] **Take over** stops an external session and resumes it in a Seal pane.
 - [ ] Works the same against the paired Linux server (its sessions show under that machine).
 
+### AI session summaries (Cloudflare Workers AI)
+
+- [ ] Settings → Accounts → **Cloudflare AI** shows "Account linked" from `~/.config/seal/cloudflare-ai.json` (keys `accountId`, `apiToken`, `model`, `fallbackModel`) without anything typed in; **Test** answers in well under two seconds and names the model.
+- [ ] Saving an account ID and token in the section replaces the file's values; after saving, the fields are empty again and the token never reappears. **Forget** goes back to the file.
+- [ ] The model lists come from the account. Picking GLM 5.3 Flash (not on the Workers Free plan) and pressing Test names the plan problem and says summaries use the fallback model; summaries keep arriving.
+- [ ] Let a Claude Code or Codex agent finish a turn, ask a question, or wait on a subagent: within a few seconds one short sentence (sparkle icon) appears under its title in Home → Sessions and Agent sessions, and after the title in the sidebar agent row; hovering shows the whole sentence. A new prompt clears it.
+- [ ] The same sentence shows for a session on the paired Linux server (made there, with its own config file) and in the mobile agent list. `seal worktree ps --json` on the server carries it as `statusSummary`.
+- [ ] Turning **Session summaries** off removes the lines and stops requests; turning it on brings back cached sentences without new requests.
+- [ ] After the daily free allocation is used up, Home → Sessions says "Summaries paused" and the section says when they resume (00:00 UTC); nothing else changes.
+
 ### Cross-cutting
 
 - [ ] Everything above also works with the Mac connected to the Linux server (remote host), and in a folder (non-git) workspace where relevant.
