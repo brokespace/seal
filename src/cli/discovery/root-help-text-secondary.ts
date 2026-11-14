@@ -113,7 +113,7 @@ export const ROOT_HELP_TEXT_SECONDARY = [
   '',
   'Output Options:',
   '  --json                    Emit machine-readable JSON instead of human text',
-  '  --pairing-code <code>      Connect to a remote Seal runtime using an orca://pair?... code',
+  '  --pairing-code <code>      Connect to a remote Seal runtime using a seal://pair?... code',
   "  --environment <selector>   Connect using a saved environment id or name; `local` is this machine's own Seal",
   '  --help                    Show this help message',
   '',

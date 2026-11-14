@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import { buildHomeAttentionItems } from './home-overview-derivations'
+import { buildHomeAttentionItems } from '../../../../shared/home-overview/home-overview-derivations'
 import { homeSessionFromLive, mergeLiveSessions } from './seal-home-overview-mapping'
 
 function live(id: string, overrides: Partial<LiveSession> = {}): LiveSession {

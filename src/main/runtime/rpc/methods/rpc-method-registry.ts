@@ -38,6 +38,8 @@ import { SESSION_TAB_METHODS } from './session-tabs/session-tabs'
 import { NATIVE_CHAT_METHODS } from './native-chat/native-chat'
 import { FILE_METHODS } from './files/files'
 import { MACHINE_HOST_METHODS } from './machines/machine-host-methods'
+import { SEAL_MACHINE_METHODS } from './machines/seal-machine-methods'
+import { HOME_CHAT_METHODS } from './home-chat/home-chat-methods'
 import { GIT_METHODS } from './source-control/git/git'
 import { GITHUB_METHODS } from './source-control/github/github'
 import { GITLAB_METHODS } from './source-control/gitlab/gitlab'
@@ -142,6 +144,8 @@ export const ALL_RPC_METHODS = [
   ...NATIVE_CHAT_METHODS,
   ...FILE_METHODS,
   ...MACHINE_HOST_METHODS,
+  ...SEAL_MACHINE_METHODS,
+  ...HOME_CHAT_METHODS,
   ...GIT_METHODS,
   ...GITHUB_METHODS,
   ...GITLAB_METHODS,

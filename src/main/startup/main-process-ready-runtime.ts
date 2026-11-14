@@ -52,6 +52,7 @@ import { startClaudeCodeThemeSync } from '../claude/theme-sync/claude-code-theme
 import { startWorkspaceCleanupRunner } from '../workspaces/cleanup/workspace-cleanup-runner-startup'
 import { installLiveSessions } from '../live-sessions/live-sessions-install'
 import { installDesktopSessionSummaries } from '../session-summaries/desktop-session-summaries'
+import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
 
 // Headless serve has no first window; timer fallback must still sweep trash.
 const WORKTREE_TRASH_SWEEP_FALLBACK_MS = 15_000
@@ -71,7 +72,11 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   initializeMainProcessAutomations()
   startWorkspaceCleanupRunner(runtime, store)
   configureRuntimeServices(runtime)
-  installDesktopSessionSummaries(runtime, store, installLiveSessions(runtime, store))
+  const liveSessions = installLiveSessions(runtime, store)
+  if (liveSessions) {
+    registerLiveSessionIpc(liveSessions.service, liveSessions.shellIntegration)
+    installDesktopSessionSummaries(runtime, store, liveSessions.service)
+  }
   installFirstWorkRenameHookSubscription()
   await initializeMainProcessPlugins(runtime)
   state.starNag = new StarNagService(store, state.stats!)

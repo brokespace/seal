@@ -1,4 +1,5 @@
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { liveSessionSummaryView } from '../../../../shared/session-summaries/live-session-summary-view'
 import type { SessionSummaryView } from '../../../../shared/session-summaries/session-summary-contracts'
 
 /** How a row names its agent: its Seal pane, and the conversation it runs when the host knows it. */
@@ -15,15 +16,6 @@ export type SessionSummaryIndex = {
 
 function conversationKey(agentType: string, providerSessionId: string): string {
   return `${agentType}:${providerSessionId}`
-}
-
-export function liveSessionSummaryView(
-  session: Pick<LiveSession, 'summary' | 'summaryPending'>
-): SessionSummaryView | null {
-  if (session.summary) {
-    return { text: session.summary, pending: false }
-  }
-  return session.summaryPending ? { text: null, pending: true } : null
 }
 
 const indexes = new WeakMap<readonly LiveSession[], SessionSummaryIndex>()

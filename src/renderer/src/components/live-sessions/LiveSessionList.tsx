@@ -1,13 +1,13 @@
 import { Laptop, Server } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
-import { liveSessionSummaryView } from '@/components/session-summaries/session-summary-index'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { liveSessionSummaryView } from '../../../../shared/session-summaries/live-session-summary-view'
 import {
   groupByMachine,
   liveSessionDotState,

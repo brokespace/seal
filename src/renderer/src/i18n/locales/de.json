@@ -599,7 +599,6 @@
         "retainedTerminalPermissions": "Falls neue Terminals weiterhin die vorherigen Berechtigungen verwenden, „Sitzungen verwalten“ öffnen und „Daemon neu starten“ auswählen. Dadurch werden lokale Terminals und ihre laufenden Befehle beendet.",
         "administratorRestartFailed": "Seal konnte nicht neu gestartet werden. Erneut versuchen oder der manuellen Anleitung folgen.",
         "manualAdministratorHelp": "Manuelle Anleitung",
-        "administratorDocumentation": "Anleitung lesen",
         "cancelAdministratorRestart": "Abbrechen",
         "closeAdministratorHelp": "Schließen",
         "restartingAdministrator": "Wird neu gestartet…",
@@ -1191,7 +1190,7 @@
         "b411ec0069": "Verbinden",
         "2cf9e5a294": "Gespeicherten Server entfernen",
         "4a4c017be1": "Endpunkt:",
-        "27393856e4": "orca://pair?code=...",
+        "27393856e4": "seal://pair?code=...",
         "7a566540de": "Kopplungs-URL oder -Code",
         "cb4d287238": "Servername",
         "3affe7de3a": "Eine Kopplungs-URL von einem Seal-Server einfügen, den dieser Browser erreichen kann.",
@@ -5571,7 +5570,6 @@
           "66270286ac": "· Ein erneuter Versuch ist sicher möglich.",
           "157de228b4": "Skill prüfen",
           "69236de8d6": "Wird geprüft…",
-          "66cff7a804": "https://app.orca.dev/skills/share/…",
           "93eb0fe8c7": "Seal-Skill-Link",
           "releaseNotes": "Versionshinweise:",
           "targetHeader": "Installationsziel",
@@ -7059,7 +7057,7 @@
           "nameInOrca": "Name in Seal",
           "serverNamePlaceholder": "Entwicklungsrechner",
           "accessLink": "Zugriffslink",
-          "pairingCodePlaceholder": "orca://pair?code=...",
+          "pairingCodePlaceholder": "seal://pair?code=...",
           "sshImportAlreadySynced": "~/.ssh/config ist bereits synchronisiert.",
           "sshImportFailed": "SSH-Konfiguration konnte nicht importiert werden.",
           "sshAlreadyExists": "Dieser SSH-Host ist bereits in Seal vorhanden.",
@@ -8352,10 +8350,7 @@
           "5f539ff331": "Gekoppelte Geräte"
         },
         "MobileSettingsPane": {
-          "b5a2ed83ff": "App Store",
-          "installIntro": "Installiere Seal Mobile aus dem",
           "installOutro": ", dann kopple es unten.",
-          "androidApkLabel": "Android-APK",
           "e7a3ae8c4e": "Mobil",
           "174f4a3c6d": "Terminals und Agenten vom Smartphone aus steuern.",
           "682293cadf": "Die Seal Mobile-Schaltfläche oben in der linken Seitenleiste anzeigen.",
@@ -11748,15 +11743,10 @@
           "unavailable": "Nicht verfügbar",
           "pathGroup": "Verbindungsweg vom Smartphone zu diesem Computer",
           "anywhereTitle": "Seal Relay",
-          "anywhereDescription": "Das Smartphone kann Mobilfunk oder ein beliebiges WLAN nutzen. Eine Anmeldung ist nur für Relay erforderlich.",
-          "relayUnavailable": "Seal Relay ist in diesem Build nicht verfügbar. LAN verwenden.",
-          "signIn": "Für Relay anmelden",
-          "signInAgain": "Erneut für Relay anmelden",
           "localTitle": "LAN",
           "localDescription": "Das Smartphone muss mit diesem WLAN oder über Tailscale verbunden sein. Kein Konto erforderlich.",
           "retrying": "Erneuter Versuch",
-          "relayCell": "Relay-Zelle",
-          "relaySignInDetail": "Meldet diesen Desktop bei Seal an und leitet die Smartphone-Verbindung über die Server von Seal. Für LAN ist kein Konto erforderlich."
+          "relayCell": "Relay-Zelle"
         },
         "MobilePairingSetupSection": {
           "title": "Smartphone koppeln",
@@ -12136,7 +12126,7 @@
         "RuntimeHostAccessForm": {
           "namePlaceholder": "Linux-Arbeitsstation",
           "accessLink": "Zugriffslink",
-          "accessLinkPlaceholder": "orca://pair?code=...",
+          "accessLinkPlaceholder": "seal://pair?code=...",
           "accessLinkHelp": "Seal zeigt das Ziel vor dem Verbindungsaufbau an. Zugangsdaten bleiben verborgen.",
           "destination": "Link-Ziel",
           "loopbackTitle": "Dieser Link verweist auf dieses Gerät zurück",
@@ -12255,7 +12245,6 @@
           "connected": "Verbunden",
           "reconnectRequired": "Die Sitzung ist abgelaufen. Erneut anmelden, um Cloud-Funktionen zu nutzen.",
           "unavailable": "Die Seal-Anmeldung ist in diesem Build nicht verfügbar.",
-          "signedOut": "Anmelden, um Seal um Cloud-Funktionen wie Artefakte und Seal Relay zu erweitern.",
           "checking": "Kontostatus wird geprüft…",
           "account": "Seal-Konto",
           "signOut": "Abmelden",
@@ -12263,12 +12252,9 @@
           "signIn": "Bei Seal anmelden",
           "title": "Seal-Konto",
           "description": "Arbeit sofort teilen und von überall über Seal Mobile auf den Desktop zugreifen.",
-          "searchDescription": "Beim Konto für Artefakte und Seal Relay anmelden oder abmelden.",
           "benefitsTitle": "Im Konto enthalten",
           "artifactsTitle": "Teilen von Artefakten",
           "artifactsDescription": "HTML- und Markdown-Dateien veröffentlichen und alle geteilten Links in Seal verwalten.",
-          "relayTitle": "Seal Relay",
-          "relayDescription": "Seal Mobile über Mobilfunk oder ein beliebiges WLAN mit diesem Desktop verbinden.",
           "skillsTitle": "Teilen von Skills",
           "skillsDescription": "Einen Skill oder eine ganze Sammlung über einen nicht gelisteten Link teilen und auf allen verwendeten Computern installieren.",
           "keywordAccount": "Konto",
@@ -12276,7 +12262,6 @@
           "keywordLogout": "Abmeldung",
           "keywordSignIn": "anmelden",
           "keywordSignOut": "abmelden",
-          "keywordRelay": "Relay",
           "keywordCloud": "Cloud"
         },
         "automations": {
@@ -15249,12 +15234,8 @@
           "85067b9e06": "Netzwerkschnittstellen aktualisieren",
           "dfd2aa9d5d": "Netzwerk",
           "3960f5c339": "Schritt 2 von 2",
-          "3241f3c26a": "QR-Code zur Installation",
-          "aa97420ba4": "Installationslink kopieren",
           "ac1eb64952": "Android",
           "711e6f4b47": "iOS",
-          "e75647ace0": "Scanne diesen Download-QR-Code mit der Kamera deines Smartphones. Seal Mobile ist schon installiert? Weiter zu Schritt 2 für den Kopplungs-QR-Code.",
-          "0d9b33299e": "App herunterladen.",
           "92ddfdfa1f": "Schritt 1 von 2",
           "ff48d9d520": "Weiteres Gerät koppeln",
           "f9cbf4bb53": "Gerätezugriff widerrufen",
@@ -15273,8 +15254,6 @@
           "051978a785": "Das Smartphone ist gekoppelt.",
           "pairingQrError": "Dieser Kopplungscode konnte nicht als QR-Code dargestellt werden. Stattdessen in Seal Mobile kopieren.",
           "noRelayCode": "Kein Kopplungscode verfügbar",
-          "noPairingCode": "Kein Kopplungscode verfügbar",
-          "qrSignInRequired": "Anmelden, um einen Relay-Kopplungscode zu erstellen",
           "qrRenderFailed": "QR-Code konnte nicht dargestellt werden – den Code unten kopieren",
           "qrGeneratePrompt": "Kopplungscode generieren, um fortzufahren",
           "pairingCodeReady": "Kopplungscode bereit",
@@ -15283,15 +15262,13 @@
           "pairThisComputer": "Diesen Computer koppeln.",
           "directAddressDisclosure": "Zusätzlich eine schnellere lokale Verbindung nutzen",
           "directAddressHint": "Optional. Die WLAN- oder Tailscale-Adresse auswählen, die das Smartphone in der Nähe verwenden soll – meist schneller als Relay. Relay funktioniert auch unterwegs.",
-          "androidHelp": {
-            "guide": "Installationsanleitung"
-          },
-          "openAppAndScan": "Seal Mobile öffnen, auf <strong>Desktop koppeln</strong> tippen und den Code scannen."
+          "openAppAndScan": "Seal Mobile öffnen, auf <strong>Desktop koppeln</strong> tippen und den Code scannen.",
+          "installHeading": "Installiere Seal Mobile.",
+          "installLead": "Seal Mobile ist nicht im App Store oder bei Google Play erhältlich. Baue und installiere es aus dem Seal-Repository und fahre dann mit Schritt 2 für den Kopplungs-QR-Code fort.",
+          "installGuide": "Installationsanleitung öffnen"
         },
         "MobilePage": {
           "e17393c6a3": "Smartphone-Vorschau",
-          "baea63c445": "Link konnte nicht kopiert werden",
-          "fad833de8d": "Installationslink kopiert",
           "6a66e38943": "Kopplungscode konnte nicht kopiert werden",
           "3c1f7168bb": "Kopplungscode kopiert",
           "4c8bd11c1a": "Kopplungscode konnte nicht generiert werden",
@@ -15313,14 +15290,6 @@
           "96d651cb87": "Terminal-Sitzung",
           "93217b41c1": "Worktree-Liste",
           "89c7713645": "Seal Mobile-Startbildschirm"
-        },
-        "mobile": {
-          "platform": {
-            "copy": {
-              "downloadApk": "APK herunterladen",
-              "openAppStore": "App Store öffnen"
-            }
-          }
         },
         "slides": {
           "HomeSlide": {
@@ -15420,9 +15389,6 @@
           "retrying": "Wird erneut versucht…",
           "retry": "Relay erneut versuchen",
           "copyDiagnostics": "Diagnosedaten kopieren",
-          "reconnectTitle": "Die Sitzung des Seal-Kontos ist abgelaufen.",
-          "reconnectBody": "Erneut anmelden, um Seal Relay zu nutzen, oder LAN verwenden, um über Tailscale oder dasselbe Wi‑Fi-Netzwerk zu koppeln.",
-          "notEntitledTitle": "Seal Relay ist in diesem Seal-Konto nicht enthalten.",
           "rateLimitedBody": "Seal Relay ist ausgelastet. Eine Minute warten und erneut versuchen oder LAN verwenden, um über Tailscale oder dasselbe Wi‑Fi-Netzwerk zu koppeln."
         },
         "relayClockSkewMessage": {
@@ -18407,7 +18373,6 @@
           "signout": {
             "confirm": {
               "title": "Von Seal abmelden?",
-              "description": "Artefakte und Seal Relay sind bis zur erneuten Anmeldung nicht verfügbar. Lokale Projekte und Worktrees sind davon nicht betroffen.",
               "cancel": "Abbrechen",
               "action": "Abmelden"
             }
@@ -18743,8 +18708,6 @@
       "UnexpectedSignoutCard": {
         "9f2c1a4b7d": "Die Anmeldung wurde beendet",
         "3e8f5c2a91": "Ausblenden",
-        "7b4d9e1f2a": "Erneut als {{value0}} anmelden, um das Teilen von Artefakten und Skills sowie Seal Relay wieder zu nutzen.",
-        "5a1c8d3e6f": "Erneut anmelden, um das Teilen von Artefakten und Skills sowie Seal Relay wieder zu nutzen.",
         "1f6b2c9d4e": "Wieder verfügbare Funktionen",
         "8d2e4f7a1b": "Teilen von Artefakten",
         "2c9a5b6e8d": "HTML- und Markdown-Dateien veröffentlichen und alle geteilten Links in Seal verwalten.",
@@ -22966,7 +22929,7 @@
       "serverReplaced": "Anderer Server"
     },
     "remoteServerPairingErrors": {
-      "invalidPairingCode": "Ungültiger Kopplungscode. Eine URL im Format orca://pair?... oder reine Kopplungsdaten erwartet.",
+      "invalidPairingCode": "Ungültiger Kopplungscode. Eine URL im Format seal://pair?... oder reine Kopplungsdaten erwartet.",
       "selfPairingCode": "Dieser Kopplungscode gehört zu dieser Seal-Instanz selbst. Den Code stattdessen auf dem anderen Computer erzeugen.",
       "managedDeployment": "Seal betreibt diesen Server für dich auf einem SSH-Host; seine Kopplung kann hier nicht ersetzt oder entfernt werden. Zur Stilllegung `seal environment stop --environment <name> --yes` ausführen oder Einstellungen > Seal auf SSH-Hosts verwenden; falls der Host nicht mehr vorhanden ist, `seal environment forget --environment <name> --yes` ausführen.",
       "sshAccessChangePending": "Die Änderung des SSH-Zugriffs für diesen Server wurde nicht abgeschlossen. Unter Einstellungen > Entfernte Seal-Server > SSH-Zugriff für gekoppelte Server erneut versuchen oder abbrechen, bevor die Kopplung ersetzt oder der Server entfernt wird.",

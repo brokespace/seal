@@ -10,6 +10,7 @@ import type { ConnectionLogEntry } from './connection/connection-log-types'
 import type { ConnectionState } from '../transport/connection/connection-state'
 import type { ConnectionDiagnosis } from './connection-diagnostics-analysis'
 import type { DiagnosticsSubmissionState } from './connection-diagnostics-screen-data'
+import { CONNECTION_DIAGNOSTICS_UPLOAD_ENABLED } from './connection-diagnostics-submission'
 import { useMobileTranslation } from '../i18n/use-mobile-translation'
 import { SettingsNavBar, settingsScreenStyles } from '../settings/settings-screen-frame'
 
@@ -106,42 +107,43 @@ export function ConnectionDiagnosticsView({
                 </Text>
                 <Text style={styles.diagnosisText}>{diagnosis.likelyCause}</Text>
                 <Text style={styles.diagnosisNext}>{diagnosis.nextStep}</Text>
-                {diagnosis.reportability === 'orca-relay' && (
-                  <>
-                    <Text style={styles.privacyHint}>
-                      {t(
-                        'diagnostics.connectionDiagnosticsView.privacyHint',
-                        'Sends a size-limited redacted report including host name, endpoint, versions, connection state, and events—never terminal contents or credentials.'
-                      )}
-                    </Text>
-                    <Pressable
-                      style={({ pressed }) => [styles.sendButton, pressed && pressedStyle]}
-                      onPress={() => void sendDiagnostics()}
-                      disabled={submissionState === 'sending'}
-                    >
-                      {submissionState === 'sent' ? (
-                        <Check size={14} color={colors.statusGreen} />
-                      ) : (
-                        <Send size={14} color={colors.textPrimary} />
-                      )}
-                      <Text style={styles.sendButtonText}>
-                        {submissionState === 'sending'
-                          ? t('diagnostics.connectionDiagnosticsView.sending', 'Sending…')
-                          : submissionState === 'sent'
-                            ? t('diagnostics.connectionDiagnosticsView.sent', 'Diagnostics sent')
-                            : submissionState === 'failed'
-                              ? t(
-                                  'diagnostics.connectionDiagnosticsView.retrySending',
-                                  'Retry sending'
-                                )
-                              : t(
-                                  'diagnostics.connectionDiagnosticsView.sendDiagnostics',
-                                  'Send diagnostics to Seal'
-                                )}
+                {diagnosis.reportability === 'orca-relay' &&
+                  CONNECTION_DIAGNOSTICS_UPLOAD_ENABLED && (
+                    <>
+                      <Text style={styles.privacyHint}>
+                        {t(
+                          'diagnostics.connectionDiagnosticsView.privacyHint',
+                          'Sends a size-limited redacted report including host name, endpoint, versions, connection state, and events—never terminal contents or credentials.'
+                        )}
                       </Text>
-                    </Pressable>
-                  </>
-                )}
+                      <Pressable
+                        style={({ pressed }) => [styles.sendButton, pressed && pressedStyle]}
+                        onPress={() => void sendDiagnostics()}
+                        disabled={submissionState === 'sending'}
+                      >
+                        {submissionState === 'sent' ? (
+                          <Check size={14} color={colors.statusGreen} />
+                        ) : (
+                          <Send size={14} color={colors.textPrimary} />
+                        )}
+                        <Text style={styles.sendButtonText}>
+                          {submissionState === 'sending'
+                            ? t('diagnostics.connectionDiagnosticsView.sending', 'Sending…')
+                            : submissionState === 'sent'
+                              ? t('diagnostics.connectionDiagnosticsView.sent', 'Diagnostics sent')
+                              : submissionState === 'failed'
+                                ? t(
+                                    'diagnostics.connectionDiagnosticsView.retrySending',
+                                    'Retry sending'
+                                  )
+                                : t(
+                                    'diagnostics.connectionDiagnosticsView.sendDiagnostics',
+                                    'Send diagnostics to Seal'
+                                  )}
+                        </Text>
+                      </Pressable>
+                    </>
+                  )}
               </View>
             )}
             {entries.length > 0 ? (

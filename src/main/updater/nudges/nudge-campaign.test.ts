@@ -8,6 +8,10 @@ vi.mock('electron', () => ({
   net: { fetch: netFetchMock }
 }))
 
+vi.mock('../../upstream-service-policy', () => ({
+  isUpstreamUpdateFeedEnabled: () => true
+}))
+
 import { fetchNudge, versionMatchesRange } from './nudge-campaign'
 
 describe('updater-nudge', () => {
