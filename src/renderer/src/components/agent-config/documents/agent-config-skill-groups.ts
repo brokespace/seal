@@ -17,6 +17,22 @@ function isInFolder(doc: AgentConfigDocRef, dir: string): boolean {
   return doc.path.replaceAll('\\', '/').includes(`/${dir}/`)
 }
 
+const FOLDER_ORDER = new Intl.Collator(undefined, { numeric: true })
+
+/** One folder name at a time: the machine's own sort puts `good-skill-copy` before `good-skill`. */
+function byFolder(left: AgentConfigDocRef, right: AgentConfigDocRef): number {
+  const parts = (doc: AgentConfigDocRef): string[] =>
+    (doc.directory ?? doc.path).replaceAll('\\', '/').split('/')
+  const [a, b] = [parts(left), parts(right)]
+  for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
+    const order = FOLDER_ORDER.compare(a[index], b[index])
+    if (order !== 0) {
+      return order
+    }
+  }
+  return a.length - b.length
+}
+
 /**
  * Skills by where they come from: the page's own folders, then the account's on a project
  * page, then each plugin, then the ones that ship with the agent.
@@ -57,13 +73,14 @@ export function agentConfigSkillGroups(
     }
   }
   const builtin = skills.filter((doc) => doc.bundle?.kind === 'builtin')
-  return [
+  const groups: AgentConfigSkillGroup[] = [
     ...folders,
     ...plugins.values(),
     ...(builtin.length > 0
       ? [{ key: 'builtin', source: 'builtin', docs: builtin } satisfies AgentConfigSkillGroup]
       : [])
   ]
+  return groups.map((group) => ({ ...group, docs: group.docs.toSorted(byFolder) }))
 }
 
 /** A document's place as people write it: `~/…` in the account, relative inside the project. */

@@ -55,9 +55,9 @@ export function openDocumentFor(doc: AgentConfigDocRef): AgentConfigOpenDocument
     path: doc.path,
     title: doc.kind === 'instructions' ? (doc.relativePath ?? doc.name) : doc.name,
     validation: file.endsWith('.toml') ? 'toml' : doc.kind,
-    scope: doc.scope,
     ...(expectedName ? { expectedName } : {}),
-    ...(doc.bundle ? { readOnly: true } : {})
+    // A plugin's or the agent's own skill belongs to no scope of this page.
+    ...(doc.bundle ? { readOnly: true } : { scope: doc.scope })
   }
 }
 

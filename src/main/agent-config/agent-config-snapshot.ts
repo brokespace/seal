@@ -1,5 +1,6 @@
 import { effectiveConfig } from '../../shared/agent-config/agent-config-effective'
 import { parseJsonObject } from '../../shared/agent-config/agent-config-json-edit'
+import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-layout-types'
 import {
   listMcpServers,
   markShadowedServers
@@ -110,6 +111,22 @@ function activationOf(
   return approved ? 'approved' : 'pending'
 }
 
+/** Codex, the agent that reads grouped skills, skips folders whose name starts with a dot. */
+function isInHiddenSkillGroup(path: string, collection: AgentConfigCollection): boolean {
+  if (collection.shape !== 'skill-folders' || !collection.recursive) {
+    return false
+  }
+  const normalized = path.replaceAll('\\', '/')
+  const start = normalized.indexOf(`/${collection.dir}/`)
+  return (
+    start !== -1 &&
+    normalized
+      .slice(start + collection.dir.length + 2)
+      .split('/')
+      .some((folder) => folder.startsWith('.'))
+  )
+}
+
 /** Everything Settings shows for one agent on one machine, or for one project of it. */
 export async function buildAgentConfigSnapshot(
   connection: MachineConnection,
@@ -139,7 +156,11 @@ export async function buildAgentConfigSnapshot(
     ...collections.flatMap((item, index) =>
       tagged(`c${index}`)
         // The agent's own skills can sit inside the account's folder; they are listed apart.
-        .filter((record) => !builtinRoots.some((root) => isInside(root, record.path)))
+        .filter(
+          (record) =>
+            !builtinRoots.some((root) => isInside(root, record.path)) &&
+            !isInHiddenSkillGroup(record.path, item.collection)
+        )
         .map((record) => docFromRecord(record, item.scope, item.collection, SCAN_HEAD_BYTES))
     ),
     ...builtinRoots.flatMap((_root, index) =>

@@ -1,6 +1,7 @@
 import {
   claudePluginSkillFolders,
   codexPluginSkillFolders,
+  CURSOR_INSTALLED_MARK_PATTERN,
   cursorPluginSkillFolders,
   latestPluginVersion,
   PLUGIN_SKILL_FILE_NAMES,
@@ -60,7 +61,10 @@ export async function readPluginSkills(
     named: roots.map((root, index) => ({
       tag: `p${index}`,
       root,
-      names: PLUGIN_SKILL_FILE_NAMES,
+      names:
+        registry === 'cursor'
+          ? [...PLUGIN_SKILL_FILE_NAMES, CURSOR_INSTALLED_MARK_PATTERN]
+          : PLUGIN_SKILL_FILE_NAMES,
       maxDepth: registry === 'cursor' ? CURSOR_CACHE_SCAN_DEPTH : PLUGIN_SCAN_DEPTH,
       skipDirs: SKILL_SCAN_SKIP_DIRS,
       followLinks: true,

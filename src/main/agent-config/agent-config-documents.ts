@@ -97,6 +97,12 @@ function documentPath(placed: Placed, name: string): { path: string; directory: 
   }
 }
 
+/** A copy or a new name stays in the grouping folder the document is in. */
+function besideDocument(placed: Placed, ref: DocumentRef): Placed {
+  const group = machinePathDirname(machinePathDirname(ref.path) ?? '')
+  return placed.collection.shape === 'skill-folders' && group ? { ...placed, dir: group } : placed
+}
+
 async function requireMissing(
   connection: MachineConnection,
   path: string,
@@ -193,7 +199,7 @@ export async function duplicateDocument(
   args: { target: AgentConfigTarget; ref: DocumentRef; newName: string }
 ): Promise<AgentConfigWriteResult> {
   const resolved = await resolve(connection, args.target)
-  const placed = collectionOf(resolved, args.ref)
+  const placed = besideDocument(collectionOf(resolved, args.ref), args.ref)
   const name = requireName(args.ref.kind, args.newName)
   const { path, directory } = documentPath(placed, name)
   await requireMissing(connection, directory ?? path, `a ${args.ref.kind}`)
@@ -220,7 +226,7 @@ export async function renameDocument(
     throw new Error('Agents look for instructions under a fixed name')
   }
   const resolved = await resolve(connection, args.target)
-  const placed = collectionOf(resolved, args.ref)
+  const placed = besideDocument(collectionOf(resolved, args.ref), args.ref)
   const name = requireName(args.ref.kind, args.newName)
   const { path, directory } = documentPath(placed, name)
   await requireMissing(connection, directory ?? path, `a ${args.ref.kind}`)

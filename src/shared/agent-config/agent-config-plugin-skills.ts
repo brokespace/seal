@@ -12,19 +12,29 @@ export type PluginSkillFolder = {
   declared: string[]
   /** Whether `<root>/skills` is read as well. */
   defaultDir: boolean
+  /** The agent reads `<root>/skills` only when the plugin's manifest names no folder itself. */
+  manifestReplacesDefault?: boolean
+  /** Where the agent looks for the plugin's manifest; the first one found counts. */
+  manifestDirs: readonly string[]
   /** Whether a skill may sit in a grouping folder below a skills folder. */
   nested: boolean
 }
 
 const SKILL_FILE = 'SKILL.md'
 const MANIFEST_FILE = 'plugin.json'
-const MANIFEST_DIRS = ['.claude-plugin', '.codex-plugin', '.cursor-plugin', '']
+const CLAUDE_MANIFEST_DIRS = ['.claude-plugin', '.codex-plugin', '.cursor-plugin', '']
+/** Codex takes a Claude Code manifest when the plugin has none of its own. */
+const CODEX_MANIFEST_DIRS = ['.codex-plugin', '.claude-plugin']
+const CURSOR_MANIFEST_DIRS = ['.cursor-plugin', '.claude-plugin', '.codex-plugin', '']
 const DEFAULT_SKILLS_DIR = 'skills'
 /** 1.10.0 comes after 1.9.0. */
 const VERSION_ORDER = new Intl.Collator(undefined, { numeric: true })
 
 /** File names a plugin's folder is searched for. */
 export const PLUGIN_SKILL_FILE_NAMES = [SKILL_FILE, MANIFEST_FILE]
+/** Cursor leaves `<version>.installed` next to the download of a plugin it has in use. */
+const CURSOR_INSTALLED_SUFFIX = '.installed'
+export const CURSOR_INSTALLED_MARK_PATTERN = `*${CURSOR_INSTALLED_SUFFIX}`
 
 function normalize(path: string): string {
   return path.replaceAll('\\', '/').replace(/\/+$/, '')
@@ -73,8 +83,8 @@ export function claudePluginSkillFolders(
     const isMarketplaceRoot =
       typeof entry?.source === 'string' && relativeFolder(entry.source) === ''
     return plugin.installs.flatMap((install): PluginSkillFolder[] => {
-      // The machine page is about the account: another project's install is not loaded here.
-      if (!install.installPath || (!inProject && install.scope !== 'user')) {
+      // A project's install is loaded everywhere once the account's settings switch the plugin on.
+      if (!install.installPath || (!inProject && install.scope !== 'user' && !plugin.enabled)) {
         return []
       }
       if (seen.has(install.installPath)) {
@@ -93,6 +103,7 @@ export function claudePluginSkillFolders(
           root: install.installPath,
           declared,
           defaultDir: !(isMarketplaceRoot && declared.length > 0),
+          manifestDirs: CLAUDE_MANIFEST_DIRS,
           nested: false
         }
       ]
@@ -124,6 +135,8 @@ export function codexPluginSkillFolders(
         root: [cacheDir, marketplace, name].join(separator),
         declared: [],
         defaultDir: true,
+        manifestReplacesDefault: true,
+        manifestDirs: CODEX_MANIFEST_DIRS,
         nested: true
       }
     ]
@@ -148,21 +161,38 @@ export function latestPluginVersion<T extends { path: string }>(
       }
 }
 
-/** Cursor unpacks plugins as `<cache>/<marketplace>/<plugin>/<version>` and keeps no registry of them. */
+/**
+ * Cursor unpacks plugins as `<cache>/<marketplace>/<plugin>/<version>` and keeps no registry of
+ * them. An older download can stay behind, so the one marked installed wins.
+ */
 export function cursorPluginSkillFolders<T extends { path: string }>(
   cacheDir: string,
   records: readonly T[]
 ): PluginSkillFolder[] {
   const separator = cacheDir.includes('\\') ? '\\' : '/'
+  const installed = new Set(
+    records.flatMap((record) => {
+      const relative = relativeTo(cacheDir, record.path)
+      return relative?.endsWith(CURSOR_INSTALLED_SUFFIX)
+        ? [relative.slice(0, -CURSOR_INSTALLED_SUFFIX.length)]
+        : []
+    })
+  )
+  const inUse = (parts: string[]): boolean => installed.has(parts.join('/'))
   const latest = new Map<string, string[]>()
   for (const record of records) {
     const parts = relativeTo(cacheDir, record.path)?.split('/') ?? []
     if (parts.length > 3) {
-      const [marketplace, plugin, version] = parts
-      const key = `${marketplace}/${plugin}`
-      const known = latest.get(key)?.[2]
-      if (known === undefined || VERSION_ORDER.compare(known, version) < 0) {
-        latest.set(key, [marketplace, plugin, version])
+      const found = parts.slice(0, 3)
+      const key = `${found[0]}/${found[1]}`
+      const known = latest.get(key)
+      if (
+        known === undefined ||
+        (inUse(known) === inUse(found)
+          ? VERSION_ORDER.compare(known[2], found[2]) < 0
+          : inUse(found))
+      ) {
+        latest.set(key, found)
       }
     }
   }
@@ -171,17 +201,18 @@ export function cursorPluginSkillFolders<T extends { path: string }>(
     root: [cacheDir, ...parts].join(separator),
     declared: [],
     defaultDir: true,
+    manifestDirs: CURSOR_MANIFEST_DIRS,
     nested: false
   }))
 }
 
 function manifestOf<T extends { path: string; head: string }>(
-  root: string,
+  folder: PluginSkillFolder,
   records: readonly T[]
 ): Record<string, unknown> | null {
-  for (const dir of MANIFEST_DIRS) {
+  for (const dir of folder.manifestDirs) {
     const wanted = dir ? `${dir}/${MANIFEST_FILE}` : MANIFEST_FILE
-    const record = records.find((item) => relativeTo(root, item.path) === wanted)
+    const record = records.find((item) => relativeTo(folder.root, item.path) === wanted)
     const parsed = record ? parseJsonObject(record.head) : null
     if (parsed?.ok) {
       return parsed.value
@@ -195,11 +226,13 @@ export function pluginSkills<T extends { path: string; head: string }>(
   folder: PluginSkillFolder,
   records: readonly T[]
 ): { bundle: PluginSkillBundle; skills: T[] } {
-  const manifest = manifestOf(folder.root, records)
+  const manifest = manifestOf(folder, records)
+  const listed = pathList(manifest?.skills).map(relativeFolder)
+  const readsDefault = folder.defaultDir && !(folder.manifestReplacesDefault && listed.length > 0)
   const folders = new Set([
     ...folder.declared,
-    ...pathList(manifest?.skills).map(relativeFolder),
-    ...(folder.defaultDir ? [DEFAULT_SKILLS_DIR] : [])
+    ...listed,
+    ...(readsDefault ? [DEFAULT_SKILLS_DIR] : [])
   ])
   const skills = records.filter((record) => {
     const relative = relativeTo(folder.root, record.path)

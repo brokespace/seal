@@ -15,5 +15,5 @@ export const AGENT_CONFIG_NESTED_SKIP_DIRS = [
 /** How deep under a project root nested instruction files are looked for. */
 export const AGENT_CONFIG_NESTED_MAX_DEPTH = 6
 
-/** How many folders below a skills folder a skill may sit, for agents that read grouped skills. */
-export const AGENT_CONFIG_SKILL_MAX_DEPTH = 5
+/** How many folders below a skills folder a skill may sit; Codex, which reads grouped skills, stops at 6. */
+export const AGENT_CONFIG_SKILL_MAX_DEPTH = 6
