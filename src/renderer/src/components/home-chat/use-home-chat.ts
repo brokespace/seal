@@ -14,7 +14,7 @@ import type {
   HomeChatSummary,
   HomeChatUpdateArgs
 } from '../../../../shared/home-chat/home-chat-types'
-import { openHomeChatTarget } from './home-chat-open-target'
+import { registerHomeChatThreadSelector } from './home-chat-open-target'
 
 function upsertSummary(list: HomeChatSummary[], chat: HomeChatSummary): HomeChatSummary[] {
   return [chat, ...list.filter((existing) => existing.id !== chat.id)].sort(
@@ -87,9 +87,7 @@ export function useHomeChat(api: HomeChatApi) {
         if (activeIdRef.current === event.chatId) {
           select(null)
         }
-      } else if (event.type === 'open') {
-        openHomeChatTarget(event.target, select)
-      } else {
+      } else if (event.type !== 'open') {
         setMemoryVersion((version) => version + 1)
       }
     })
@@ -114,6 +112,8 @@ export function useHomeChat(api: HomeChatApi) {
       unsubscribe()
     }
   }, [api, select, refreshMachines])
+
+  useEffect(() => registerHomeChatThreadSelector(select), [select])
 
   useEffect(() => {
     if (!activeId) {

@@ -23,6 +23,7 @@ export const HOP_MACHINE_PREFIX = 'hop:'
 
 // BatchMode fails fast instead of hanging on a password prompt nobody can answer.
 const SSH_OPTIONS = ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=20']
+const COPY_TIMEOUT_MS = 6 * 60 * 60_000
 
 function destination(note: HomeChatMachineNote): string {
   return note.user ? `${note.user}@${note.host}` : String(note.host)
@@ -66,6 +67,19 @@ function scpCommand(note: HomeChatMachineNote, from: string, to: string): string
   return ['scp', '-q', ...SSH_OPTIONS, ...port, from, to].map(quotePosixShell).join(' ')
 }
 
+// POSIX hops stream through ssh: older scp lets the far shell split a path with spaces.
+function fetchCommand(note: HomeChatMachineNote, remotePath: string, staged: string): string {
+  return note.os === 'windows'
+    ? scpCommand(note, `${destination(note)}:${remotePath}`, staged)
+    : `${hopSshCommand(note, `cat -- ${quotePosixShell(remotePath)}`)} > ${quotePosixShell(staged)}`
+}
+
+function sendCommand(note: HomeChatMachineNote, staged: string, remotePath: string): string {
+  return note.os === 'windows'
+    ? scpCommand(note, staged, `${destination(note)}:${remotePath}`)
+    : `${hopSshCommand(note, writeFromStdinScript('posix', remotePath, false))} < ${quotePosixShell(staged)}`
+}
+
 /** A machine Seal reaches by running ssh on another machine ("reach X through Y"). */
 export function createHopMachine(
   note: HomeChatMachineNote,
@@ -99,11 +113,17 @@ export function createHopMachine(
       await parent.exec(`rm -f -- ${quotePosixShell(staged)}`, { timeoutMs: 30_000 })
     }
   }
-  const remote = (path: string) => `${destination(note)}:${path}`
   return {
     info: hopMachineInfo(note, true),
     dialect,
     exec,
+    homeDir: async () => {
+      const result = await quiet(
+        dialect === 'powershell' ? '[Console]::Out.Write($HOME)' : 'printf %s "$HOME"'
+      )
+      failIfNonZero(result, 'finding the home folder')
+      return result.stdout.trim()
+    },
     readTextFile: async (path, maxBytes) => {
       const result = await quiet(readFileBase64Script(dialect, path, maxBytes))
       failIfNonZero(result, `reading ${path}`)
@@ -117,8 +137,8 @@ export function createHopMachine(
     },
     downloadTo: (remotePath, localPath) =>
       stage(async (staged) => {
-        const result = await parent.exec(scpCommand(note, remote(remotePath), staged), {
-          timeoutMs: 6 * 60 * 60_000
+        const result = await parent.exec(fetchCommand(note, remotePath, staged), {
+          timeoutMs: COPY_TIMEOUT_MS
         })
         failIfNonZero(result, `copying ${remotePath}`)
         await parent.downloadTo(staged, localPath)
@@ -126,8 +146,8 @@ export function createHopMachine(
     uploadFrom: (localPath, remotePath) =>
       stage(async (staged) => {
         await parent.uploadFrom(localPath, staged)
-        const result = await parent.exec(scpCommand(note, staged, remote(remotePath)), {
-          timeoutMs: 6 * 60 * 60_000
+        const result = await parent.exec(sendCommand(note, staged, remotePath), {
+          timeoutMs: COPY_TIMEOUT_MS
         })
         failIfNonZero(result, `copying to ${remotePath}`)
       }),
