@@ -229,6 +229,7 @@ export class RelayOriginPool {
         relayHostId: this.options.relayHostId,
         reconnect: true,
         preferredRegion,
+        allowedCellOrigins: this.options.allowedCellOrigins,
         isCurrent: () => this.isCurrent(),
         fetch: this.options.fetch
       })
