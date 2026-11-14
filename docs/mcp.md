@@ -112,10 +112,15 @@ Only clients created with **Allow through relay** (`--allow-relay`) can use this
 
 The relay is not deployed yet. Deploying `cloud/seal-relay` adds a Durable Object class
 (`SealMcpTunnel`, migration `v2`) and a rate-limit binding (`MCP_LIMITER`); see
-`cloud/seal-relay/deploy.md`. Limits on this path: request bodies up to 512 KiB, 32 requests in
-flight per server, 300 requests a minute per source address per server, and 180 seconds for the
-server to start answering (an answer that has started, such as a call waiting on approval, streams
-for as long as it needs).
+`cloud/seal-relay/deploy.md`. The relay serves this URL only for a server whose host id is on its
+allowlist (`docs/security/relay-deploy.md`); for any other id it answers `404` without waking
+anything. Limits on this path: request bodies up to 512 KiB (cut off while they upload, not after),
+32 requests in flight per server, 300 requests a minute per source network (an IPv4 address or an
+IPv6 /64) per server, and 180 seconds for the server to start answering. An answer that has
+started, such as a call waiting on approval, streams for as long as it needs, provided the server
+keeps sending something at least once a minute (it sends a keepalive every 15 seconds). The relay
+drops a server that has been silent for 90 seconds or whose sign-in has run out; the server renews
+its sign-in over the open connection.
 
 ## Connect a client
 
@@ -238,7 +243,8 @@ it has waiting and stops its calls in progress.
 
 **Rate limits** — each client has a calls-per-minute budget (120 by default); beyond it, calls
 answer a JSON-RPC error until the budget refills. A source that presents bad tokens is locked out
-after 20 failures in a minute (`429`). The relay additionally limits each source address per host
+after 20 failures in a minute (`429`); a source is an IPv4 address or an IPv6 /64, so one network
+cannot spread its failures over many addresses. The relay additionally limits each source per host
 and holds at most 32 requests in flight per host.
 
 **Audit log** — every request except `ping` and notifications is recorded in

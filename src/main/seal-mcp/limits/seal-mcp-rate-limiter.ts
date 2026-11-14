@@ -23,6 +23,11 @@ export class SealMcpRateLimiter {
 
   /** Seconds until `key` may try again, without taking a call. */
   retryAfter(key: string, perMinute: number): number {
+    // A key never charged owes nothing, and looking must not use up a bucket: a flood of
+    // strangers filling the map would otherwise lock out callers who never failed.
+    if (!this.buckets.has(key)) {
+      return 0
+    }
     const bucket = this.refill(key, perMinute)
     return bucket.tokens >= 1 ? 0 : Math.ceil(((1 - bucket.tokens) / perMinute) * 60)
   }

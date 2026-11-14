@@ -3,6 +3,7 @@ import type {
   SealMcpSettings,
   SealMcpTransport
 } from '../../shared/seal-mcp/seal-mcp-types'
+import { sourceAddressKey } from '../../shared/source-address-key'
 import { SealMcpRateLimiter } from './limits/seal-mcp-rate-limiter'
 
 const FAILED_SIGN_INS_PER_MINUTE = 20
@@ -34,7 +35,8 @@ export class SealMcpAdmissionDoor {
     if (closed) {
       return { ok: false, reason: 'disabled', retryAfterSeconds: 0 }
     }
-    const peerKey = `${peer.transport}:${peer.remote ?? 'unknown'}`
+    // Per IPv6 /64: one subscriber rotating addresses is still one guesser.
+    const peerKey = `${peer.transport}:${sourceAddressKey(peer.remote)}`
     const wait = this.failedSignIns.retryAfter(peerKey, FAILED_SIGN_INS_PER_MINUTE)
     if (wait > 0) {
       return { ok: false, reason: 'throttled', retryAfterSeconds: wait }

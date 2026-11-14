@@ -1,4 +1,3 @@
-import nacl from 'tweetnacl'
 import WebSocket from 'ws'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { E2EEKeypair } from '../../../src/main/runtime/rpc/server/pairing/e2ee-keypair'
@@ -14,12 +13,15 @@ import {
   createSealMcpTestHost,
   type SealMcpTestHost
 } from '../../../src/main/seal-mcp/testing/seal-mcp-test-host.test-support'
-import { generateTestSecrets, startSealRelay, waitFor } from './seal-relay-harness'
-
-function newHostKeypair(): E2EEKeypair {
-  const box = nacl.box.keyPair()
-  return { ...box, publicKeyB64: Buffer.from(box.publicKey).toString('base64') }
-}
+import { deriveRelayHostId } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-http-client'
+import {
+  generateTestSecrets,
+  newHostKeypair,
+  sleep,
+  startSealRelay,
+  waitFor
+} from './seal-relay-harness'
+import { awayFromLimiterWindowEdge, signHostSession } from './security/relay-attack-surface'
 
 const LIST_TOOLS = { jsonrpc: '2.0', id: 1, method: 'tools/list' }
 const WELL_FORMED_UNKNOWN_TOKEN = `smcp_000000000000_${'A'.repeat(43)}`
@@ -27,12 +29,23 @@ const WELL_FORMED_UNKNOWN_TOKEN = `smcp_000000000000_${'A'.repeat(43)}`
 let relay: Awaited<ReturnType<typeof startSealRelay>>
 let host: SealMcpTestHost
 let tunnel: SealMcpRelayTunnel
+let hostKeys: E2EEKeypair
 let url: string
 let closers: (() => Promise<void> | void)[]
+// The relay's allowlist; every test brings a fresh one of these online.
+const enrolled = Array.from({ length: 24 }, newHostKeypair)
+const enrolledHost = (): E2EEKeypair => enrolled.pop()!
+
+let hostSessionSecret: string
 
 beforeAll(async () => {
-  relay = await startSealRelay((await generateTestSecrets()).secrets)
+  const { secrets } = await generateTestSecrets()
+  hostSessionSecret = secrets.HOST_SESSION_SECRET
+  relay = await startSealRelay(secrets, { enrolled })
 })
+
+const publicUrl = (keypair: E2EEKeypair): string =>
+  `${relay.origin}/mcp/${deriveRelayHostId(keypair.publicKey)}`
 
 afterAll(async () => {
   await relay?.dispose()
@@ -40,7 +53,8 @@ afterAll(async () => {
 
 /** A Seal server with relay access switched on, dialed out to the relay under a fresh host key. */
 async function hostOnline(): Promise<void> {
-  const keypair = newHostKeypair()
+  const keypair = enrolledHost()
+  hostKeys = keypair
   tunnel = new SealMcpRelayTunnel({
     relayOrigin: relay.origin,
     identity: sealMcpRelayIdentitySource({ relayOrigin: relay.origin, getKeypair: () => keypair }),
@@ -133,11 +147,36 @@ describe('Seal MCP through the relay', () => {
     expect(host.service.listAudit({ limit: 100 })).toHaveLength(before)
   })
 
-  it('answers 503 for a host that is not connected, and 404 for an id that is not a host', async () => {
-    const offline = `${relay.origin}/mcp/${'ab'.repeat(8)}`
+  it('answers 503 for an enrolled host that is not connected, and 404 for any other id', async () => {
+    const offline = publicUrl(enrolledHost())
+    const stranger = publicUrl(newHostKeypair())
 
     expect((await post(relayToken(), LIST_TOOLS, offline)).status).toBe(503)
+    expect((await post(relayToken(), LIST_TOOLS, stranger)).status).toBe(404)
     expect((await post(relayToken(), LIST_TOOLS, `${relay.origin}/mcp/nope`)).status).toBe(404)
+  })
+
+  it('counts every address of one IPv6 /64 against the same per-host budget', async () => {
+    await awayFromLimiterWindowEdge()
+    const offline = publicUrl(enrolledHost())
+    const from = (index: number): Promise<number> =>
+      fetch(offline, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${WELL_FORMED_UNKNOWN_TOKEN}`,
+          // Cloudflare sets this header to the real client address; here it stands in for it.
+          'cf-connecting-ip': `2001:db8:cccc:1::${(index + 1).toString(16)}`
+        },
+        body: JSON.stringify(LIST_TOOLS)
+      }).then((reply) => reply.status)
+    const statuses: number[] = []
+    for (let batch = 0; batch < 31; batch++) {
+      statuses.push(...(await Promise.all(Array.from({ length: 10 }, (_, i) => from(batch * 10 + i)))))
+    }
+
+    expect(statuses.filter((status) => status === 503)).toHaveLength(300)
+    expect(statuses.filter((status) => status === 429)).toHaveLength(10)
   })
 
   it('hangs up the tunnel when relay access is switched off in Settings', async () => {
@@ -158,6 +197,30 @@ describe('Seal MCP through the relay', () => {
 
   it('refuses a body larger than the relay will carry', async () => {
     const reply = await post(relayToken(), 'x'.repeat(600 * 1024))
+
+    expect(reply.status).toBe(413)
+  })
+
+  it('refuses an upload with no declared length as soon as it passes the limit', async () => {
+    let sent = 0
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent < 600 * 1024) {
+          sent += 16 * 1024
+          controller.enqueue(new Uint8Array(16 * 1024).fill(0x20))
+        }
+        // Never closes: only a reader that stops at the limit can answer.
+        return new Promise((resolve) => setTimeout(resolve, 2))
+      }
+    })
+
+    const reply = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${relayToken()}` },
+      body: endless,
+      duplex: 'half',
+      signal: AbortSignal.timeout(8000)
+    } as RequestInit)
 
     expect(reply.status).toBe(413)
   })
@@ -191,22 +254,53 @@ describe('Seal MCP through the relay', () => {
 })
 
 describe('Seal MCP relay host socket', () => {
-  function dialHost(authorization: string | null): Promise<number> {
-    return new Promise((resolve) => {
-      const socket = new WebSocket(`${relay.origin.replace(/^http/, 'ws')}/v1/host/mcp`, {
-        headers: authorization ? { authorization } : {}
-      })
+  function openHostSocket(authorization: string | null): {
+    status: Promise<number>
+    closed: Promise<number>
+    socket: WebSocket
+  } {
+    const socket = new WebSocket(`${relay.origin.replace(/^http/, 'ws')}/v1/host/mcp`, {
+      headers: authorization ? { authorization } : {}
+    })
+    const status = new Promise<number>((resolve) => {
       socket.on('unexpected-response', (_request, response) => {
         response.resume()
         resolve(response.statusCode ?? 0)
       })
-      socket.on('open', () => {
-        socket.terminate()
-        resolve(101)
-      })
+      socket.on('open', () => resolve(101))
       socket.on('error', () => resolve(0))
     })
+    const closed = new Promise<number>((resolve) => socket.on('close', resolve))
+    closers.push(() => socket.terminate())
+    return { status, closed, socket }
   }
+
+  async function dialHost(authorization: string | null): Promise<number> {
+    const dialed = openHostSocket(authorization)
+    const status = await dialed.status
+    dialed.socket.terminate()
+    return status
+  }
+
+  const sessionFor = (keypair: E2EEKeypair, lifetimeMs = 60_000): string =>
+    `Bearer ${signHostSession(hostSessionSecret, deriveRelayHostId(keypair.publicKey), Date.now() + lifetimeMs)}`
+
+  it('cannot be claimed by a host that is not enrolled, even with a session the relay signed', async () => {
+    expect(await dialHost(sessionFor(newHostKeypair()))).toBe(403)
+    expect(await dialHost(sessionFor(enrolledHost()))).toBe(101)
+  })
+
+  it('is cut once the host session it was opened with runs out', async () => {
+    const keypair = enrolledHost()
+    const dialed = openHostSocket(sessionFor(keypair, 1500))
+    expect(await dialed.status).toBe(101)
+    await sleep(1600)
+
+    const reply = await post(relayToken(), LIST_TOOLS, publicUrl(keypair))
+
+    expect(reply.status).toBe(503)
+    expect(await dialed.closed).toBe(4401)
+  })
 
   it('cannot be claimed without a host session, or with a client token, or with a forged session', async () => {
     expect(await dialHost(null)).toBe(401)
@@ -219,7 +313,7 @@ describe('Seal MCP relay host socket', () => {
     const victimToken = relayToken()
     const attackerHost = await createSealMcpTestHost()
     closers.push(() => attackerHost.dispose())
-    const attackerKeys = newHostKeypair()
+    const attackerKeys = enrolledHost()
     const attacker = new SealMcpRelayTunnel({
       relayOrigin: relay.origin,
       identity: sealMcpRelayIdentitySource({ relayOrigin: relay.origin, getKeypair: () => attackerKeys }),
