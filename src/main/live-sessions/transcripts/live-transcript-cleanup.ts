@@ -19,7 +19,8 @@ export type LiveTranscriptClass = 'conversation' | 'hidden' | 'summarized'
 /** How a raw record reads in a live session, before the shared decoder sees it. */
 export function classifyLiveTranscriptRecord(
   provider: LiveSessionProvider,
-  line: string
+  line: string,
+  options: { subagent?: boolean } = {}
 ): LiveTranscriptClass {
   const record = parseJsonRecord(line)
   if (!record) {
@@ -29,7 +30,9 @@ export function classifyLiveTranscriptRecord(
     if (record.isCompactSummary === true) {
       return 'summarized'
     }
-    return record.type === 'summary' || record.type === 'system' || record.isSidechain === true
+    // A session's file may hold its subagents' records; they read only in the subagent's own view.
+    const sidechain = record.isSidechain === true && options.subagent !== true
+    return record.type === 'summary' || record.type === 'system' || sidechain
       ? 'hidden'
       : 'conversation'
   }
