@@ -10,8 +10,9 @@ import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { DesktopPushService } from '../../runtime/push/desktop-push-service'
 import { resolvePushGatewayOrigin } from '../../runtime/push/push-gateway-origin'
 import type { OrcaRuntimeRpcServer } from '../../runtime/rpc/server/runtime-rpc'
+import { startSealMcpEndpoints } from '../../seal-mcp/relay/seal-mcp-relay-startup'
 
-/** Push and the Seal relay for headless hosts; both authenticate with the host's pairing key. */
+/** Push, the Seal relay and MCP endpoints for headless hosts; all authenticate with the host's pairing key. */
 export function startOrcadSealCloudServices(input: {
   runtime: OrcaRuntimeService
   rpc: OrcaRuntimeRpcServer
@@ -50,9 +51,14 @@ export function startOrcadSealCloudServices(input: {
     }
   })
   rpc.setMobileRelayPairingProviderInstaller(() => installer.ensure())
+  const stopMcpEndpoints = startSealMcpEndpoints({
+    runtimeRpc: rpc,
+    relayOrigin: resolveSealRelayOrigin(process.env, environment.isPackaged())
+  })
   registerCleanup(() => {
     stopping = true
     relay?.stop()
+    stopMcpEndpoints()
   })
   void installer.ensure()
 }

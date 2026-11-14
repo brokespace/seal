@@ -10,6 +10,7 @@ import { DesktopRelayService } from '../../runtime/mobile-cloud-relay/desktop-re
 import { createDesktopRelayServiceInstaller } from '../../runtime/mobile-cloud-relay/desktop-relay-service-installer'
 import { publishDesktopRelayStatus } from './main-process-relay-status'
 import { mainProcessState as state } from '../main-process-state'
+import { startSealMcpEndpoints } from '../../seal-mcp/relay/seal-mcp-relay-startup'
 
 // Register before proxy readiness; the installer waits before its first request.
 export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void {
@@ -37,4 +38,9 @@ export function startDesktopRelayService(runtimeRpc: OrcaRuntimeRpcServer): void
   // Sleep can expire the token with no retry timer; resume is the recovery opportunity.
   powerMonitor.on('resume', () => state.desktopRelayService?.ensureLive())
   void installer.ensure()
+  const stopMcpEndpoints = startSealMcpEndpoints({
+    runtimeRpc,
+    relayOrigin: resolveSealRelayOrigin(process.env, app.isPackaged)
+  })
+  app.once('will-quit', stopMcpEndpoints)
 }
