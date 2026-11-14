@@ -22,7 +22,8 @@ export function useProjectReadme(
       if (!machineId || !api) {
         return null
       }
-      const listing = await api.listDir({ machineId, path: projectPath })
+      // A cached listing is a read behind: a README added or deleted would show one round late.
+      const listing = await api.listDir({ machineId, path: projectPath, force: true })
       const name = findReadmeName(
         listing.entries.filter((entry) => !entry.isDirectoryLike).map((entry) => entry.name)
       )
