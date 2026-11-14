@@ -77,7 +77,6 @@ const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...
   'answer-permission': ['focus', SESSION_ID, 'permission'],
   'view-subagents': ['focus', SESSION_ID, 'subagents'],
   'view-tasks': ['focus', SESSION_ID, 'tasks'],
-  'view-reasoning': ['focus', SESSION_ID, 'reasoning'],
   rename: ['askRename', session],
   pin: ['setPinned', session, true],
   'copy-session-id': ['copy', '04186322-14da-4a67-890c-c5f4a754e99f', 'session-id'],

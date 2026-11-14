@@ -3,7 +3,6 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import { completeLines, decodeTranscriptLines } from './live-transcript-reader'
-import { UNRECORDED_REASONING_TEXT } from './live-transcript-reasoning'
 
 const FIXTURES = join(__dirname, '..', 'discovery', '__fixtures__')
 
@@ -17,7 +16,7 @@ function textOf(message: ReturnType<typeof decode>[number]): string {
 }
 
 describe('reasoning in a live transcript', () => {
-  it('shows Claude thinking text, and signature-only thinking with its duration', () => {
+  it('shows Claude thinking text in place, and nothing for thinking stored without text', () => {
     const rows = decode('claude', 'claude-reasoning.jsonl').map((message) => [
       message.role,
       textOf(message),
@@ -40,7 +39,6 @@ describe('reasoning in a live transcript', () => {
         undefined,
         null
       ],
-      ['reasoning', UNRECORDED_REASONING_TEXT, 'completed', 3400],
       ['assistant', 'tool-call', undefined, null]
     ])
   })
@@ -51,6 +49,24 @@ describe('reasoning in a live transcript', () => {
       '**Tracing the handlers**\n\nThe handlers share a router factory, so one middleware covers them all.'
     ])
     expect(reasoning[0].state).toBe('completed')
+  })
+
+  it('shows Codex raw reasoning when there is no summary, and nothing when it is only encrypted', () => {
+    const reasoning = (content: { type: string; text: string }[] | null) =>
+      decodeTranscriptLines('codex', [
+        {
+          offset: 0,
+          text: JSON.stringify({
+            timestamp: '2026-11-13T10:00:18.000Z',
+            type: 'response_item',
+            payload: { type: 'reasoning', summary: [], encrypted_content: 'gAAAAABn', content }
+          })
+        }
+      ]).map(textOf)
+    expect(reasoning([{ type: 'reasoning_text', text: 'The router factory owns them.' }])).toEqual([
+      'The router factory owns them.'
+    ])
+    expect(reasoning(null)).toEqual([])
   })
 })
 

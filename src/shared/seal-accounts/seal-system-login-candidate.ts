@@ -3,6 +3,7 @@ import type { SealAccountKey, SealProvider } from './seal-accounts-config'
 import type { SealAccountKind, SealCredentialKind } from './seal-account-candidates'
 import type { SealCandidateSources } from './seal-account-candidate-builder'
 import { oauthAccountKey, sealAccountKeysMatch } from './seal-account-key'
+import { sealAccountUsageReading } from './seal-account-usage-reading'
 
 /** One account before its profile, usage and health are applied. */
 export type SealCandidateSeed = {
@@ -43,8 +44,7 @@ export function withSystemLogin(
   sources: SealCandidateSources,
   provider: SealProvider,
   system: SealSystemIdentity | null,
-  hostSelection: string | null,
-  activeLimits: ProviderRateLimits | null
+  hostSelection: string | null
 ): SealCandidateSeed[] {
   if (!system) {
     return seeds
@@ -62,9 +62,13 @@ export function withSystemLogin(
     return seeds
   }
   const selected = hostSelection === null
-  // Its own slot while another account is selected, and only when that reading is this login's.
-  const kept = sources.rateLimits?.systemLoginUsage?.[provider]
-  const unselected = kept && sealAccountKeysMatch(kept.identity, key) ? kept : null
+  const reading = sealAccountUsageReading(sources.rateLimits, {
+    provider,
+    kind: 'system',
+    active: selected,
+    localId: null,
+    key
+  })
   return [
     ...seeds,
     {
@@ -82,8 +86,7 @@ export function withSystemLogin(
       systemLogin: true,
       wslDistro: null,
       addedAt: null,
-      limits: selected ? activeLimits : (unselected?.rateLimits ?? null),
-      fetching: selected ? activeLimits?.status === 'fetching' : unselected?.isFetching === true
+      ...reading
     }
   ]
 }

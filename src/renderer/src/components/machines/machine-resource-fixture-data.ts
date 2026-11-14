@@ -1,8 +1,52 @@
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
-import type { MachineProcess } from '../../../../shared/machines/machine-resource-types'
+import type {
+  MachineCleanupItem,
+  MachineCleanupTargetId,
+  MachineProcess
+} from '../../../../shared/machines/machine-resource-types'
 import type { MachineFileEntry } from '../../../../shared/machines/machine-types'
+import { fakeDiskIndexReply } from './machine-disk-index-fixture-data'
 
 const now = Date.now()
+const GB = 1024 ** 3
+
+function cleanupItem(
+  id: string,
+  label: string,
+  group: string | null,
+  bytes: number,
+  preselected: boolean
+): MachineCleanupItem {
+  return { id, label, group, bytes, modifiedAt: now, preselected }
+}
+
+const CLEANUP_ITEMS: Partial<Record<MachineCleanupTargetId, MachineCleanupItem[]>> = {
+  'package-caches': [
+    cleanupItem('package-caches:0', '/home/brian/.npm/_cacache', 'npm', 3.2 * GB, true)
+  ],
+  'docker-containers': [
+    cleanupItem(
+      'docker-containers:0',
+      'eval-run-0412',
+      'seal/eval:2026.04 · exited',
+      1.9 * GB,
+      false
+    )
+  ],
+  'docker-dangling-images': [
+    cleanupItem('docker-dangling-images:0', '9f1c2ab04e77', null, 7.4 * GB, true),
+    cleanupItem('docker-dangling-images:1', '51d0a6c3be19', null, 5.1 * GB, true)
+  ],
+  'docker-images': [
+    cleanupItem('docker-images:0', 'nvidia/cuda:12.4.1-devel', null, 18.5 * GB, false),
+    cleanupItem('docker-images:1', '9f1c2ab04e77', null, 7.4 * GB, false),
+    cleanupItem('docker-images:2', '51d0a6c3be19', null, 5.1 * GB, false)
+  ],
+  'docker-volumes': [cleanupItem('docker-volumes:0', 'mlflow-artifacts', null, 18 * GB, false)],
+  'docker-build-cache': [
+    cleanupItem('docker-build-cache:0', 'docker builder prune --all', null, 44 * GB, true)
+  ]
+}
 
 function fakeProcess(
   pid: number,
@@ -44,8 +88,8 @@ type MachineResourceApi = Pick<
   | 'signalProcess'
   | 'listDockerContainers'
   | 'dockerContainerAction'
-  | 'listDiskMounts'
-  | 'measureDiskUsage'
+  | 'dockerStorage'
+  | 'diskIndex'
   | 'scanCleanup'
   | 'runCleanup'
   | 'completeFolder'
@@ -58,7 +102,6 @@ export function fakeMachineResourceApi(
   home: string,
   homeEntries: readonly MachineFileEntry[]
 ): MachineResourceApi {
-  const npmCache = `${home}/.npm/_cacache`
   return {
     listProcesses: async () => ({
       processes: PROCESSES,
@@ -84,54 +127,48 @@ export function fakeMachineResourceApi(
           memLimitBytes: 4 * 1024 ** 3,
           memPercent: 37.5,
           cpuPercent: 2.1
+        },
+        {
+          id: '7a8b9c0d1e2f',
+          name: 'jupyter',
+          image: 'jupyter/pytorch-notebook:latest',
+          status: 'Up 5 hours',
+          running: true,
+          memUsageBytes: 6.2 * GB,
+          memLimitBytes: 32 * GB,
+          memPercent: 19.4,
+          cpuPercent: 11.8
+        },
+        {
+          id: '43b92ff52610',
+          name: 'eval-run-0412',
+          image: 'seal/eval:2026.04',
+          status: 'Exited (0) 2 weeks ago',
+          running: false,
+          memUsageBytes: null,
+          memLimitBytes: null,
+          memPercent: null,
+          cpuPercent: null
         }
       ]
     }),
     dockerContainerAction: async () => {},
-    listDiskMounts: async () => [
-      {
-        filesystem: '/dev/nvme0n1p2',
-        mount: '/',
-        totalBytes: 4 * 1024 ** 4,
-        usedBytes: 2.9 * 1024 ** 4,
-        availableBytes: 1.1 * 1024 ** 4
-      }
-    ],
-    measureDiskUsage: async ({ path }) => ({
-      path,
-      totalBytes: 1.9 * 1024 ** 4,
-      entries: [
-        { path: `${path}/datasets`, name: 'datasets', kind: 'directory', bytes: 1.2 * 1024 ** 4 },
-        {
-          path: `${path}/checkpoints`,
-          name: 'checkpoints',
-          kind: 'directory',
-          bytes: 640 * 1024 ** 3
-        },
-        { path: `${path}/train.log`, name: 'train.log', kind: 'file', bytes: 48_210_944 }
-      ],
-      omittedCount: 0,
-      omittedBytes: 0,
-      incomplete: false
+    dockerStorage: async () => ({
+      state: 'ready',
+      rows: [
+        { kind: 'images', count: 14, sizeBytes: 86 * GB, reclaimableBytes: 31 * GB },
+        { kind: 'containers', count: 3, sizeBytes: 2.4 * GB, reclaimableBytes: 1.9 * GB },
+        { kind: 'volumes', count: 6, sizeBytes: 212 * GB, reclaimableBytes: 18 * GB },
+        { kind: 'build-cache', count: 240, sizeBytes: 44 * GB, reclaimableBytes: 44 * GB }
+      ]
     }),
+    diskIndex: async ({ request }) => fakeDiskIndexReply(home, request),
     scanCleanup: async ({ machineId, target }) => ({
       machineId,
       target,
       token: target,
-      items:
-        target === 'package-caches'
-          ? [
-              {
-                id: 'package-caches:0',
-                label: npmCache,
-                group: 'npm',
-                bytes: 3.2 * 1024 ** 3,
-                modifiedAt: now,
-                preselected: true
-              }
-            ]
-          : [],
-      totalBytes: target === 'package-caches' ? 3.2 * 1024 ** 3 : 0,
+      items: CLEANUP_ITEMS[target] ?? [],
+      totalBytes: (CLEANUP_ITEMS[target] ?? []).reduce((sum, item) => sum + (item.bytes ?? 0), 0),
       omittedCount: 0,
       unavailable: null
     }),

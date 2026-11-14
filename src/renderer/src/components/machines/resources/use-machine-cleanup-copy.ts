@@ -23,6 +23,20 @@ export function useMachineCleanupCopy(): Record<MachineCleanupTargetId, MachineC
         'Runs docker image rm for each ticked image. Images a container uses are never listed.'
       )
     },
+    'docker-dangling-images': {
+      title: t(
+        'auto.components.machines.cleanup.dockerDanglingImages.title',
+        'Dangling Docker images'
+      ),
+      description: t(
+        'auto.components.machines.cleanup.dockerDanglingImages.description',
+        'Untagged image layers left behind by rebuilds and pulls.'
+      ),
+      removal: t(
+        'auto.components.machines.cleanup.dockerDanglingImages.removal',
+        'Runs docker image rm for each ticked image, like docker image prune. Tagged images and images a container uses are never listed.'
+      )
+    },
     'docker-containers': {
       title: t(
         'auto.components.machines.cleanup.dockerContainers.title',

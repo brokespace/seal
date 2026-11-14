@@ -124,11 +124,15 @@ On a machine's page the **CPU**, **RAM** and **Disk** meters are buttons. Each o
 
 Every host script runs through `runMachineHostScript` (`resources/machine-host-script.ts`): the login shell is asked only to start `sh -s`, and the script arrives on stdin. That keeps the scripts POSIX `sh` whatever the login shell is (bash, zsh, fish), and no value is ever word-split by it.
 
-| View | Shows                                                                                                                                                                                                                | Actions                                           |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| CPU  | Busiest processes, refreshed every 3 seconds: name, command line, user, pid, CPU %, memory. tmux panes and Claude / Codex processes are listed as sessions with the CPU and memory of everything running under them. | **Stop** (SIGTERM), **Force kill** (SIGKILL)      |
-| RAM  | Largest processes, swap, and Docker containers with their memory when Docker is installed.                                                                                                                           | The same, plus **Stop** / **Restart** a container |
-| Disk | Each mounted disk; **What's taking space**, a drill-down of the largest folders and files under a path; **Clean up**, the reclaimable space by kind.                                                                 | **Delete…** one entry; clean up a reviewed list   |
+| View | Shows                                                                                                                                                                                         | Actions                                                                                                                                                         |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CPU  | Busiest processes: name, command line, user, pid, CPU %, memory. tmux panes and Claude / Codex processes are listed as sessions with the CPU and memory of everything running under them.     | **Stop** (SIGTERM), **Force kill** (SIGKILL)                                                                                                                    |
+| RAM  | Largest processes, swap, Docker containers with their memory, and what Docker's images, containers, volumes and build cache hold and could free (`docker system df`).                         | The same, plus **Start**, **Stop**, **Restart** and **Remove** a container, and pruning stopped containers, dangling images, unused volumes and the build cache |
+| Disk | Each mounted disk with its index age and scan progress; **What's taking space**, a drill-down by folder; **Largest files**; **Largest folders**; **Clean up**, the reclaimable space by kind. | **Delete…** one entry; clean up a reviewed list; choose which disks are indexed                                                                                 |
+
+Every view shows the machine as it is and keeps itself current: there is no pause or refresh control. Processes are sampled every 3 seconds, containers every 5, Docker's storage figures every 30, and the cleanup measurements every minute; all of them stop while the window is hidden.
+
+Disk sizes come from a background index that each machine keeps for itself, so the panel opens at once however large the disk is. Its design is in [Disk usage index](./disk-usage-index.md).
 
 Linux CPU percentages come from two `/proc` readings one second apart. macOS uses `ps`.
 
@@ -138,23 +142,25 @@ Nothing here runs without a confirmation dialog that names the machine and what 
 
 - **Signals.** The dialog shows the process's command line. Main refuses pid 0, 1 and negative pids. The request carries the process's start marker (`/proc` start time on Linux, `ps lstart` elsewhere); if the pid now belongs to another process the signal is not sent and the dialog says so. A process that carries Seal's own connection to the machine is labelled, and the dialog warns before it is signalled.
 - **Command lines.** Values of secret-named flags and variables (`--token`, `--api-key`, `PASSWORD=…`), bearer tokens, JWTs and URL passwords are masked in main (`command-line-secrets.ts`) before they reach the renderer or a log.
-- **Containers.** Only `docker stop` and `docker restart`, on a container id read from the listing.
+- **Containers.** Only `docker start`, `docker stop`, `docker restart` and `docker rm`, on a container id read from the listing, on the machine the container lives on. Stop, restart and remove ask first; start does not, since it interrupts nothing. Remove never passes `--force`, so Docker refuses a container that is still running.
+- **Docker prune.** The RAM detail's prune rows are the Docker cleanup targets below and go through the same scan, review and one-use token as **Clean up**. Each row shows what it would free before anything is ticked.
 - **Delete in the drill-down.** The file browser's own delete dialog and `files.remove`.
 - **Clean up.** A scan only measures. It returns items plus a one-use token bound to that machine, valid for 15 minutes. The run accepts the token and the ids of the ticked items only, so the renderer can never name a path or a command. Unknown ids reject the whole run. Paths are checked again by `isRemovableCleanupPath`: absolute, at least two levels deep, no `.` or `..`, and never the home folder.
 
 Cleanup targets (`MACHINE_CLEANUP_TARGETS`):
 
-| Target                    | Finds                                                                                     | Removes with                            |
-| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- |
-| Unused Docker images      | images no container uses                                                                  | `docker image rm` (never `--force`)     |
-| Stopped Docker containers | exited or never started                                                                   | `docker container rm`                   |
-| Unused Docker volumes     | volumes no container references                                                           | `docker volume rm`                      |
-| Docker build cache        | the total from `docker system df`                                                         | `docker builder prune --all --force`    |
-| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                        | `rm -rf` of the cache folder            |
-| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`               | `rm -rf`; none are ticked by default    |
-| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                      | emptied; the folders stay               |
-| Old logs                  | log files not written to for 14 days                                                      | `rm -rf` of each ticked file            |
-| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour | `rm -rf`; running jobs are never listed |
+| Target                    | Finds                                                                                            | Removes with                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Unused Docker images      | images no container uses                                                                         | `docker image rm` (never `--force`)     |
+| Dangling Docker images    | untagged images no container uses (RAM detail only; **Clean up** lists them under unused images) | `docker image rm` (never `--force`)     |
+| Stopped Docker containers | exited or never started                                                                          | `docker container rm`                   |
+| Unused Docker volumes     | volumes no container references                                                                  | `docker volume rm`                      |
+| Docker build cache        | the total from `docker system df`                                                                | `docker builder prune --all --force`    |
+| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                               | `rm -rf` of the cache folder            |
+| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`                      | `rm -rf`; none are ticked by default    |
+| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                             | emptied; the folders stay               |
+| Old logs                  | log files not written to for 14 days                                                             | `rm -rf` of each ticked file            |
+| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour        | `rm -rf`; running jobs are never listed |
 
 ## Go to folder
 

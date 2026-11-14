@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Loader2, Pause, Play, RefreshCw, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Loader2, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useTranslate } from '@/i18n/use-translate'
 import type {
@@ -47,7 +46,7 @@ export function MachineProcessesView({
   children?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
-  const { snapshot, error, paused, setPaused, refresh } = useMachineProcesses(machine.id)
+  const { snapshot, error, sampleNow } = useMachineProcesses(machine.id)
   const { sessions } = useLiveSessions()
   const sessionsByPid = useMemo(() => liveSessionsByPid(machine, sessions), [machine, sessions])
   const [sort, setSort] = useState<MachineProcessSort>(initialSort)
@@ -103,31 +102,6 @@ export function MachineProcessesView({
                   })
               : null}
           </span>
-          <span className="flex shrink-0 items-center gap-1.5 text-2xs text-muted-foreground">
-            {paused ? (
-              t('auto.components.machines.processes.paused', 'Paused')
-            ) : (
-              <>
-                <span className="size-1.5 animate-pulse rounded-full bg-status-success" />
-                {t('auto.components.machines.processes.live', 'Live')}
-              </>
-            )}
-          </span>
-          <Button type="button" variant="ghost" size="xs" onClick={() => setPaused(!paused)}>
-            {paused ? <Play /> : <Pause />}
-            {paused
-              ? t('auto.components.machines.processes.resume', 'Resume')
-              : t('auto.components.machines.processes.pause', 'Pause')}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            aria-label={t('auto.components.machines.processes.refresh', 'Refresh now')}
-            onClick={refresh}
-          >
-            <RefreshCw />
-          </Button>
         </div>
         {error ? (
           <p className="pb-2 text-xs text-destructive [overflow-wrap:anywhere]" role="alert">
@@ -158,7 +132,7 @@ export function MachineProcessesView({
         machineLabel={machine.label}
         request={signal}
         onClose={() => setSignal(null)}
-        onSignalled={refresh}
+        onSignalled={sampleNow}
       />
     </div>
   )

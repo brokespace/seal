@@ -318,6 +318,37 @@
       "export": {
         "failed": "Unable to download the file",
         "savedToPhotos": "Saved to Photos"
+      },
+      "disk": {
+        "mountSkipped": "Not indexed",
+        "mountWaiting": "First scan in progress",
+        "mountAge": "Indexed {{age}} ago",
+        "rescanning": "Checking {{mount}} for changes: {{percent}}%",
+        "scanning": "Scanning {{mount}}: {{size}} so far",
+        "live": "Folders are measured when you open them.",
+        "unavailable": {
+          "noNode": "This machine has no Node.js 20 or newer, so the background index cannot run on it.",
+          "noProgram": "Seal could not read its disk index program on this machine.",
+          "installFailed": "The disk index program could not be copied to this machine.",
+          "daemonFailed": "The background index did not start on this machine.",
+          "commandFailed": "The command that starts the background index failed on this machine."
+        },
+        "pending": "not measured yet",
+        "unreadable": "no access",
+        "notIndexed": "not indexed",
+        "omitted": "{{count}} smaller items ({{size}}) are not listed.",
+        "incomplete": "Some folders could not be read, so the real total is larger.",
+        "age": "Sizes are from the index, {{age}} old.",
+        "view": {
+          "folders": "Folders",
+          "files": "Largest files",
+          "largestFolders": "Largest folders"
+        },
+        "loadFailed": "Unable to read disk usage",
+        "loading": "Reading disk usage…",
+        "noIndex": "Nothing has been indexed here yet",
+        "title": "Disk usage",
+        "showInFiles": "Show in files"
       }
     },
     "transfers": {

@@ -1,18 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View
-} from 'react-native'
+import { useCallback, useState } from 'react'
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft,
-  ChevronRight,
   FolderOpen,
   FolderPlus,
   Images,
@@ -20,7 +11,7 @@ import {
   Plus,
   Upload
 } from 'lucide-react-native'
-import { joinMachinePath, machinePathCrumbs } from '../../../../src/shared/machines/machine-paths'
+import { joinMachinePath } from '../../../../src/shared/machines/machine-paths'
 import { ActionSheetModal } from '../../components/ActionSheetModal'
 import {
   MobileLoadErrorState,
@@ -38,7 +29,7 @@ import { hostScreenState } from '../../query/host-query-screen-state'
 import { useRefreshHint } from '../../query/refresh-hint'
 import { connectionRetryAction } from '../../transport/connection/connection-retry-action'
 import { useForceReconnect, useHostClient } from '../../transport/connection/host-client-hooks'
-import { colors, pressedStyle, spacing } from '../../theme/mobile-theme'
+import { colors, spacing } from '../../theme/mobile-theme'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 import { pickFilesForUpload, pickPhotosForUpload } from '../transfers/phone-file-device'
 import {
@@ -49,9 +40,10 @@ import {
   startMachineUrlDownload
 } from './machine-operations'
 import type { MobileMachineFileEntry } from './machine-reply-schemas'
-import { machineDetailHref, machineFilePreviewHref } from './machine-routes'
+import { machineDetailHref, machineDiskHref, machineFilePreviewHref } from './machine-routes'
 import { machineScreenStyles as styles } from './machine-screen-styles'
 import { MachineFileRow } from './MachineFileRow'
+import { MachinePathCrumbs } from './MachinePathCrumbs'
 import { MachineTransfersPanel } from './MachineTransfersPanel'
 import { MachineUrlDownloadSheet } from './MachineUrlDownloadSheet'
 import { MachineVitalsBars } from './MachineVitalsBars'
@@ -62,37 +54,6 @@ import { useMachineTransfers } from './use-machine-transfers'
 import { useMachineUploads } from './use-machine-uploads'
 
 const NO_INPUT = {}
-
-function MachinePathCrumbs({ path, onOpen }: { path: string; onOpen: (path: string) => void }) {
-  const crumbs = useMemo(() => machinePathCrumbs(path), [path])
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.crumbs}
-      contentContainerStyle={styles.crumbsContent}
-    >
-      {crumbs.map((crumb, index) => {
-        const last = index === crumbs.length - 1
-        return (
-          <View key={crumb.path} style={styles.vitalRow}>
-            {index > 0 ? <ChevronRight size={12} color={colors.textMuted} /> : null}
-            <Pressable
-              style={({ pressed }) => [styles.crumb, pressed && pressedStyle]}
-              onPress={() => onOpen(crumb.path)}
-              disabled={last}
-              accessibilityRole="link"
-            >
-              <Text style={[styles.crumbText, last && styles.crumbCurrent]} numberOfLines={1}>
-                {crumb.label}
-              </Text>
-            </Pressable>
-          </View>
-        )
-      })}
-    </ScrollView>
-  )
-}
 
 export function MachineDetailScreen({
   hostId,
@@ -212,7 +173,11 @@ export function MachineDetailScreen({
   const header = (
     <View style={styles.detailHeader}>
       {machine?.status !== 'offline' ? (
-        <MachineVitalsBars metrics={metrics.data} loading={metrics.isFetching} />
+        <MachineVitalsBars
+          metrics={metrics.data}
+          loading={metrics.isFetching}
+          onOpenDisk={() => router.push(machineDiskHref(hostId, machineId, folder))}
+        />
       ) : null}
       <MachinePathCrumbs path={folder} onOpen={openCrumb} />
     </View>

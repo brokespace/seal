@@ -20,6 +20,7 @@ import {
   type SealSystemIdentity
 } from './seal-system-login-candidate'
 import { sealAccountHealth, type SealLoginExpiry } from './seal-account-health'
+import { sealAccountUsageReading } from './seal-account-usage-reading'
 
 /** The popover's own sign-in test, so a login is dead here exactly when it asks for a sign-in there. */
 function isDeadLogin(limits: ProviderRateLimits | null): boolean {
@@ -83,20 +84,6 @@ function toCandidate(seed: SealCandidateSeed, sources: SealCandidateSources): Se
   }
 }
 
-function inactiveReading(
-  entries: RateLimitState['inactiveClaudeAccounts'] | undefined,
-  accountId: string
-): Pick<SealCandidateSeed, 'limits' | 'fetching'> {
-  const entry = entries?.find((candidate) => candidate.accountId === accountId)
-  return { limits: entry?.rateLimits ?? null, fetching: entry?.isFetching === true }
-}
-
-function activeReading(
-  limits: ProviderRateLimits | null
-): Pick<SealCandidateSeed, 'limits' | 'fetching'> {
-  return { limits, fetching: limits?.status === 'fetching' }
-}
-
 export type SealCandidateSources = {
   config: SealAccountsConfig
   claude: ClaudeRateLimitAccountsState
@@ -135,13 +122,12 @@ function withoutDuplicateLogins(seeds: SealCandidateSeed[]): SealCandidateSeed[]
 function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[] {
   const { claude, rateLimits } = sources
   const hostSelection = claude.activeAccountIdsByRuntime?.host ?? claude.activeAccountId
-  const activeLimits =
-    rateLimits?.claudeTarget.runtime === 'wsl' ? null : (rateLimits?.claude ?? null)
   const saved: SealCandidateSeed[] = claude.accounts.map((account) => {
     const active = hostSelection === account.id
     const wsl = account.managedAuthRuntime === 'wsl'
+    const key = oauthAccountKey('claude', account.email, account.organizationUuid)
     return {
-      key: oauthAccountKey('claude', account.email, account.organizationUuid),
+      key,
       provider: 'claude',
       kind: 'oauth',
       credential: 'login',
@@ -155,9 +141,13 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
       systemLogin: false,
       wslDistro: wsl ? (account.wslDistro ?? null) : null,
       addedAt: account.createdAt,
-      ...(active
-        ? activeReading(activeLimits)
-        : inactiveReading(rateLimits?.inactiveClaudeAccounts, account.id))
+      ...sealAccountUsageReading(rateLimits, {
+        provider: 'claude',
+        kind: 'oauth',
+        active,
+        localId: account.id,
+        key
+      })
     }
   })
   const seeds = withSystemLogin(
@@ -165,8 +155,7 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
     sources,
     'claude',
     claudeSystemIdentity(sources),
-    hostSelection,
-    activeLimits
+    hostSelection
   )
   return seeds.map((seed) => toCandidate(seed, sources))
 }
@@ -174,13 +163,12 @@ function claudeCandidates(sources: SealCandidateSources): SealAccountCandidate[]
 function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] {
   const { codex, rateLimits } = sources
   const hostSelection = codex.activeAccountIdsByRuntime?.host ?? codex.activeAccountId
-  const activeLimits =
-    rateLimits?.codexTarget.runtime === 'wsl' ? null : (rateLimits?.codex ?? null)
   const saved: SealCandidateSeed[] = codex.accounts.map((account) => {
     const active = hostSelection === account.id
     const wsl = account.managedHomeRuntime === 'wsl'
+    const key = oauthAccountKey('codex', account.email, account.workspaceAccountId)
     return {
-      key: oauthAccountKey('codex', account.email, account.workspaceAccountId),
+      key,
       provider: 'codex',
       kind: 'oauth',
       credential: 'login',
@@ -194,9 +182,13 @@ function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] 
       systemLogin: false,
       wslDistro: wsl ? (account.wslDistro ?? null) : null,
       addedAt: account.createdAt,
-      ...(active
-        ? activeReading(activeLimits)
-        : inactiveReading(rateLimits?.inactiveCodexAccounts, account.id))
+      ...sealAccountUsageReading(rateLimits, {
+        provider: 'codex',
+        kind: 'oauth',
+        active,
+        localId: account.id,
+        key
+      })
     }
   })
   const seeds = withSystemLogin(
@@ -204,8 +196,7 @@ function codexCandidates(sources: SealCandidateSources): SealAccountCandidate[] 
     sources,
     'codex',
     codexSystemIdentity(sources),
-    hostSelection,
-    activeLimits
+    hostSelection
   )
   return seeds.map((seed) => toCandidate(seed, sources))
 }

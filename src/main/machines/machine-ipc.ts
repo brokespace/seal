@@ -33,6 +33,7 @@ import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
 import { registerMachineWorkHandlers } from './work/machine-work-ipc'
 import { registerAgentConfigHandlers } from '../agent-config/agent-config-ipc'
 import { registerMachineResourceHandlers } from './resources/machine-resource-ipc'
+import { ensureMachineDiskIndex } from './resources/machine-disk-index'
 import { registerMachineFolderHandlers } from './listing/machine-folder-ipc'
 
 let currentGetMainWindow: () => BrowserWindow | null = () => null
@@ -98,8 +99,10 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
 
   handle(MACHINE_IPC.getMetrics, async (args) => {
     const machineId = machineIdOf(args.machineId)
-    const metrics = await getMachineRegistry().connection(machineId).metrics()
+    const connection = getMachineRegistry().connection(machineId)
+    const metrics = await connection.metrics()
     void getMachineRegistry().probeIdentity(machineId)
+    ensureMachineDiskIndex(connection)
     return metrics
   })
 

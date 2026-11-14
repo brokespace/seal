@@ -13,13 +13,16 @@ import {
 import type { MachineConnectionType } from '../../../shared/machines/machine-record'
 import type { MachineView, MachineWorktree } from '../../../shared/machines/machine-view'
 import type {
+  MachineDiskIndexReply,
+  MachineDiskIndexRequest
+} from '../../../shared/machines/machine-disk-index-types'
+import type {
   MachineCleanupResult,
   MachineCleanupScan,
   MachineCleanupTargetId,
-  MachineDiskMount,
-  MachineDiskUsage,
   MachineDockerContainerAction,
   MachineDockerContainers,
+  MachineDockerStorage,
   MachineFolderCompletion,
   MachineFolderOpenResult,
   MachineProcessSignal,
@@ -129,9 +132,13 @@ export type MachinesApi = {
     containerId: string
     action: MachineDockerContainerAction
   }) => Promise<void>
-  listDiskMounts: (args: { machineId: MachineId }) => Promise<MachineDiskMount[]>
-  /** Sizes of what sits directly under `path`; a newer call for the machine cancels this one. */
-  measureDiskUsage: (args: { machineId: MachineId; path: string }) => Promise<MachineDiskUsage>
+  /** What `docker system df` reports, with what pruning each kind would free. */
+  dockerStorage: (args: { machineId: MachineId }) => Promise<MachineDockerStorage>
+  /** One question to the machine's disk-usage index; a newer `list` for the machine cancels the previous one. */
+  diskIndex: (args: {
+    machineId: MachineId
+    request: MachineDiskIndexRequest
+  }) => Promise<MachineDiskIndexReply>
   scanCleanup: (args: {
     machineId: MachineId
     target: MachineCleanupTargetId
@@ -201,8 +208,8 @@ export const machinesApi: MachinesApi = {
   signalProcess: (args) => ipcRenderer.invoke(MACHINE_IPC.signalProcess, args),
   listDockerContainers: (args) => ipcRenderer.invoke(MACHINE_IPC.listDockerContainers, args),
   dockerContainerAction: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerContainerAction, args),
-  listDiskMounts: (args) => ipcRenderer.invoke(MACHINE_IPC.listDiskMounts, args),
-  measureDiskUsage: (args) => ipcRenderer.invoke(MACHINE_IPC.measureDiskUsage, args),
+  dockerStorage: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerStorage, args),
+  diskIndex: (args) => ipcRenderer.invoke(MACHINE_IPC.diskIndex, args),
   scanCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.scanCleanup, args),
   runCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.runCleanup, args),
   completeFolder: (args) => ipcRenderer.invoke(MACHINE_IPC.completeFolder, args),

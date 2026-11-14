@@ -12,11 +12,7 @@ import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
 import { SealAccountCardMenu } from './SealAccountCardMenu'
 import { SealAccountMachines } from './SealAccountMachines'
-import {
-  hasInlineUsage,
-  InlineUsageBars,
-  InlineUsageSkeleton
-} from '../../status-bar/InlineProviderUsage'
+import { AccountUsageReading } from '../../status-bar/AccountUsageReading'
 import {
   sealAccountIdentity,
   sealAccountNotice,
@@ -81,10 +77,8 @@ export function SealAccountCard({
 }: SealAccountCardProps): React.JSX.Element {
   const t = useTranslate()
   const { candidate } = account
-  const { limits } = candidate
   const tone = sealHealthTone(candidate.health)
   const notice = sealAccountNotice(candidate, now, t)
-  const firstReadPending = candidate.usageFetching === true || limits?.status === 'fetching'
   const isLogin = candidate.kind !== 'api-key'
   const identity = sealAccountIdentity(candidate, t)
   const advice = sealHealthAdvice(candidate, t)
@@ -237,15 +231,10 @@ export function SealAccountCard({
         ) : (
           // The usage popover's own bars over the same reading, so the two always agree.
           <div className="max-w-sm" data-slot="seal-account-usage">
-            {hasInlineUsage(limits) ? (
-              <InlineUsageBars limits={limits} isFetching={candidate.usageFetching === true} />
-            ) : firstReadPending ? (
-              <InlineUsageSkeleton />
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {t('seal.accounts.card.noUsage', 'No usage reading yet.')}
-              </p>
-            )}
+            <AccountUsageReading
+              limits={candidate.limits}
+              fetching={candidate.usageFetching === true}
+            />
           </div>
         )}
         <p className="text-xs text-muted-foreground" data-slot="seal-account-facts">

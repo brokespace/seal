@@ -21,6 +21,7 @@ import { selectSealFallbackAccount } from './seal-account-removal'
 import { readClaudeHomeCredentials } from './seal-claude-home-credentials'
 import { importClaudeCredential } from './seal-credential-transfer'
 import { refreshSealSystemLogins } from './seal-system-login'
+import { forgetSealAccountUsage } from './seal-usage-fetch'
 
 const CLAUDE_NO_LOGIN_MESSAGE = 'Claude finished without signing in. Start the sign-in again.'
 const CODEX_NO_LOGIN_MESSAGE = 'Codex finished without signing in. Start the sign-in again.'
@@ -238,7 +239,7 @@ export function createSealSignInFlows(manager: SealAccountManager): SealSignInFl
             codexLoginUrl = listener
           }))
       manager.loginExpiry.invalidate()
-      manager.usage.forget(seal.accountKey)
+      forgetSealAccountUsage(manager, seal.accountKey)
       manager.store.updateState((next) => {
         delete next.quarantine[seal.accountKey]
       })

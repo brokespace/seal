@@ -15,6 +15,11 @@ const {
   verifyPackagedMacTerminalHostBoots
 } = require('./scripts/desktop-distribution/runtime-verification/verify-packaged-daemon-entry.cjs')
 const {
+  assertPackagedDiskIndexProgramExists,
+  packagedAppAsNode,
+  verifyPackagedDiskIndexProgramRuns
+} = require('./scripts/desktop-distribution/runtime-verification/verify-packaged-disk-index-program.cjs')
+const {
   buildMacTerminalHost,
   macTerminalHostSignIgnore,
   verifyMacTerminalHost
@@ -363,6 +368,7 @@ module.exports = {
     'out/main/startup/network-compatibility/http1-compatibility-marker.js',
     'out/main/daemon-entry.js',
     'out/main/session-scanner-service-entry.js',
+    'out/main/disk-usage-index-entry.js',
     'out/main/wsl-transcript-fs-process-entry.js',
     'out/main/foreign-sqlite-reader-entry.js',
     'out/main/agent-identity-worker-entry.js',
@@ -498,12 +504,20 @@ module.exports = {
     }
     if (canExecuteTargetArch) {
       verifyPackagedDaemonEntryBoots(resourcesDir)
+      verifyPackagedDiskIndexProgramRuns(resourcesDir, [
+        { program: process.execPath, env: {} },
+        // The unsigned macOS app is not run before signing, and Windows runs the index only on other machines.
+        ...(context.electronPlatformName === 'linux'
+          ? [packagedAppAsNode(join(context.appOutDir, context.packager.executableName))]
+          : [])
+      ])
       if (appImageNodeRuntime) {
         await verifyAppImageNodeRuntimeServesPty(resourcesDir, appImageNodeRuntime)
       }
     } else {
       // Cross-arch smoke cannot run, but missing unpacked entry is always a packaging error.
       assertPackagedDaemonEntryExists(resourcesDir)
+      assertPackagedDiskIndexProgramExists(resourcesDir)
       console.log(
         `[verify-packaged-daemon-entry] skipped boot on cross-arch slice (target ${context.arch}, host ${process.arch})`
       )

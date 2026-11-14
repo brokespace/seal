@@ -74,7 +74,25 @@ export type MachineDockerContainers =
   | { state: 'unreachable'; message: string }
   | { state: 'ready'; containers: MachineDockerContainer[] }
 
-export type MachineDockerContainerAction = 'stop' | 'restart'
+export const MACHINE_DOCKER_CONTAINER_ACTIONS = ['stop', 'start', 'restart', 'remove'] as const
+
+export type MachineDockerContainerAction = (typeof MACHINE_DOCKER_CONTAINER_ACTIONS)[number]
+
+export type MachineDockerStorageKind = 'images' | 'containers' | 'volumes' | 'build-cache'
+
+/** One row of `docker system df`. */
+export type MachineDockerStorageRow = {
+  kind: MachineDockerStorageKind
+  count: number
+  sizeBytes: number
+  /** What Docker itself says pruning this kind would free. */
+  reclaimableBytes: number
+}
+
+export type MachineDockerStorage =
+  | { state: 'missing' }
+  | { state: 'unreachable'; message: string }
+  | { state: 'ready'; rows: MachineDockerStorageRow[] }
 
 export type MachineDiskMount = {
   filesystem: string
@@ -104,6 +122,7 @@ export type MachineDiskUsage = {
 
 export const MACHINE_CLEANUP_TARGETS = [
   'docker-images',
+  'docker-dangling-images',
   'docker-containers',
   'docker-volumes',
   'docker-build-cache',
@@ -115,6 +134,18 @@ export const MACHINE_CLEANUP_TARGETS = [
 ] as const
 
 export type MachineCleanupTargetId = (typeof MACHINE_CLEANUP_TARGETS)[number]
+
+/** What the Docker panel offers to prune; each maps to a `docker … prune`. */
+export const MACHINE_DOCKER_PRUNE_TARGETS = [
+  'docker-containers',
+  'docker-dangling-images',
+  'docker-volumes',
+  'docker-build-cache'
+] as const satisfies readonly MachineCleanupTargetId[]
+
+/** Dangling images are a subset of unused ones, so the disk cleanup lists only the wider row. */
+export const MACHINE_DISK_CLEANUP_TARGETS: readonly MachineCleanupTargetId[] =
+  MACHINE_CLEANUP_TARGETS.filter((target) => target !== 'docker-dangling-images')
 
 export type MachineCleanupItem = {
   id: string
