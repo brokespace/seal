@@ -652,6 +652,7 @@
         "cliMissing": "{{agent}} is not on this machine’s PATH. Its files can still be edited here.",
         "rowActions": "Actions for {{name}}",
         "edit": "Edit",
+        "view": "View",
         "duplicate": "Duplicate…",
         "rename": "Rename…",
         "copyTo": "Copy to…",
@@ -670,7 +671,8 @@
           "discardPrompt": "This file has unsaved changes.",
           "keepEditing": "Keep editing",
           "discard": "Discard changes",
-          "reload": "Reload from the machine"
+          "reload": "Reload from the machine",
+          "readOnly": "Read-only: this file is replaced when its plugin or the agent updates. Copy the skill to change it."
         },
         "name": "Name",
         "duplicateTitle": "Duplicate {{name}}",
@@ -709,6 +711,16 @@
           "command": "slash command",
           "prompt": "prompt",
           "rule": "rule"
+        },
+        "skills": {
+          "account": "Account skills",
+          "project": "Project skills",
+          "shared": "another agent’s folder that {{agent}} reads too",
+          "builtin": "Built-in skills",
+          "builtinDescription": "These ship with {{agent}}.",
+          "plugin": "Plugin skills: {{plugin}}",
+          "pluginOff": "the plugin is off, so {{agent}} does not load these",
+          "enable": "Use {{name}}"
         },
         "backups": {
           "title": "Backups",

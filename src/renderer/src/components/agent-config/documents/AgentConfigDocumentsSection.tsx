@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
-import type { AgentConfigCollection } from '../../../../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigCollection } from '../../../../../shared/agent-config/agent-config-layout-types'
 import { agentConfigDocNameProblem } from '../../../../../shared/agent-config/agent-config-doc-names'
 import type {
   AgentConfigDocRef,
@@ -32,6 +32,7 @@ import {
   type AgentConfigDocumentRowActions
 } from './AgentConfigDocumentRow'
 import { AgentConfigDocumentSheet, type AgentConfigOpenDocument } from './AgentConfigDocumentSheet'
+import { AgentConfigSkillGroups } from './AgentConfigSkillGroups'
 import {
   agentConfigKindNoun,
   agentConfigKindTitle,
@@ -273,41 +274,45 @@ export function AgentConfigDocumentsSection(): React.JSX.Element {
             ))}
       </SettingsGroup>
 
-      {scopeLayout.collections.map((collection) => {
-        const docs = snapshot.docs.filter((doc) => inCollection(doc, collection))
-        return (
-          <SettingsGroup
-            key={collection.dir}
-            title={agentConfigKindTitle(collection.kind, t)}
-            description={
-              <span className="font-mono">{`${homeScope === 'user' ? '~/' : ''}${collection.dir}`}</span>
-            }
-            action={
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-agent-config-new={collection.kind}
-                onClick={() => create(collection)}
-              >
-                <Plus />
-                {t('auto.components.agentConfig.new', 'New')}
-              </Button>
-            }
-          >
-            {docs.length === 0
-              ? emptyRow(t('auto.components.agentConfig.noneHere', 'Nothing here yet.'))
-              : docs.map((doc) => (
-                  <AgentConfigDocumentRow
-                    key={doc.path}
-                    doc={doc}
-                    showScope={false}
-                    actions={actions}
-                  />
-                ))}
-          </SettingsGroup>
-        )
-      })}
+      <AgentConfigSkillGroups actions={actions} onCreate={create} />
+
+      {scopeLayout.collections
+        .filter((collection) => collection.kind !== 'skill')
+        .map((collection) => {
+          const docs = snapshot.docs.filter((doc) => inCollection(doc, collection))
+          return (
+            <SettingsGroup
+              key={collection.dir}
+              title={agentConfigKindTitle(collection.kind, t)}
+              description={
+                <span className="font-mono">{`${homeScope === 'user' ? '~/' : ''}${collection.dir}`}</span>
+              }
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  data-agent-config-new={collection.kind}
+                  onClick={() => create(collection)}
+                >
+                  <Plus />
+                  {t('auto.components.agentConfig.new', 'New')}
+                </Button>
+              }
+            >
+              {docs.length === 0
+                ? emptyRow(t('auto.components.agentConfig.noneHere', 'Nothing here yet.'))
+                : docs.map((doc) => (
+                    <AgentConfigDocumentRow
+                      key={doc.path}
+                      doc={doc}
+                      showScope={false}
+                      actions={actions}
+                    />
+                  ))}
+            </SettingsGroup>
+          )
+        })}
 
       <AgentConfigDocumentSheet document={open} onClose={() => setOpen(null)} />
       <MachinePromptDialog request={prompt} onClose={() => setPrompt(null)} />
