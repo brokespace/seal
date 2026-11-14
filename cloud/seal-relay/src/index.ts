@@ -20,9 +20,11 @@ import {
 } from './host-auth'
 import { mintRelayToken, sealRelayUserId } from './relay-token'
 import { SealHostRelay } from './seal-host-relay'
+import { routeSealMcp } from './seal-mcp-routes'
+import { SealMcpTunnel } from './seal-mcp-tunnel'
 import { SealPushHost } from './seal-push-host'
 
-export { SealHostRelay, SpliceRelay, SealPushHost }
+export { SealHostRelay, SpliceRelay, SealPushHost, SealMcpTunnel }
 
 const RelayTokenRequestSchema = z.object({
   relayHostId: z.string().regex(HOST_ID),
@@ -233,6 +235,10 @@ export default {
         return handleRelayToken(env, request, hostFingerprint)
       }
       return handlePush(env, request, path, hostFingerprint)
+    }
+    const mcp = await routeSealMcp(env, request, path)
+    if (mcp) {
+      return mcp
     }
     // The shared edge's admin and spike routes stay unreachable: only relay socket paths pass.
     if (RELAY_PATHS.test(path)) {

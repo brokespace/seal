@@ -1298,6 +1298,212 @@
         "modelNotFound": "{{model}} does not exist on Workers AI.",
         "badResponse": "Cloudflare answered unexpectedly: {{message}}"
       }
+    },
+    "mcp": {
+      "approval": {
+        "heading": "MCP call needs your approval",
+        "queue": "1 of {{total}}",
+        "title": "{{client}} asks to run {{tool}}",
+        "relayNotice": "This call arrived over the internet through the Seal relay.",
+        "client": "Client",
+        "transport": "Arrived over",
+        "tool": "Tool",
+        "machine": "Machine",
+        "noMachine": "None named",
+        "reason": "Why it asks",
+        "arguments": "Arguments",
+        "countdown": "Seal declines it in {{time}} if nobody answers.",
+        "deny": "Deny",
+        "approve": "Approve",
+        "alreadySettled": "That request had already expired or been answered.",
+        "respondFailed": "Could not send your answer"
+      },
+      "scope": {
+        "read": "Read",
+        "sessions": "Sessions",
+        "files": "Files",
+        "commands": "Commands",
+        "destructive": "Destructive",
+        "readDescription": "List machines, sessions, projects, workspaces, usage and skills.",
+        "sessionsDescription": "Message and start agent sessions.",
+        "filesDescription": "Read and write files on the allowed machines.",
+        "commandsDescription": "Run shell commands. This is effectively full access to the allowed machines as your user.",
+        "destructiveDescription": "Delete files, stop sessions, switch accounts, and run commands Seal flags as risky."
+      },
+      "policy": {
+        "never": "Never ask",
+        "destructive": "Ask before destructive calls",
+        "commands": "Ask before every command too"
+      },
+      "transport": {
+        "stdio": "stdio",
+        "http": "HTTP",
+        "relay": "Relay"
+      },
+      "outcome": {
+        "ok": "OK",
+        "error": "Error",
+        "unauthorized": "Unauthorized",
+        "scopeDenied": "Scope denied",
+        "machineDenied": "Machine denied",
+        "approvalDenied": "Not approved",
+        "rateLimited": "Rate limited"
+      },
+      "audit": {
+        "approved": "Approved in the app",
+        "noToken": "No valid token",
+        "filter": "Show calls from",
+        "allClients": "Every client",
+        "loading": "Reading the audit log…",
+        "loadFailed": "Could not read the audit log: {{error}}",
+        "emptyClient": "No calls from this client yet.",
+        "empty": "No MCP calls yet.",
+        "olderFailed": "Could not load older calls: {{error}}",
+        "loadingOlder": "Loading…",
+        "loadOlder": "Load older",
+        "title": "Audit log",
+        "description": "Every MCP request this server received, newest first, including the ones it refused."
+      },
+      "create": {
+        "name": "Name",
+        "namePlaceholder": "Claude Code on my laptop",
+        "scopes": "What it may do",
+        "scopesRequired": "Choose at least one.",
+        "machines": "Machines it may act on",
+        "machinesAll": "All machines",
+        "machinesSome": "Only these",
+        "machinesAllDescription": "Includes machines added to this server later.",
+        "machinesLoading": "Reading machines…",
+        "machinesNone": "This server lists no machines.",
+        "approval": "Approval in the Seal app",
+        "approvalDescription": "A call that waits for approval is declined if nobody answers within two minutes.",
+        "allowRelay": "Allow through relay",
+        "allowRelayDescription": "Lets this client connect over the public relay URL. The relay can read what passes through it.",
+        "rate": "Calls per minute",
+        "rateDescription": "Above this the client is told to slow down. 1 to 6000.",
+        "cancel": "Cancel",
+        "submit": "Create client",
+        "title": "Add MCP client",
+        "description": "Each client gets its own token. Give it only what it needs; you can revoke it at any time.",
+        "failed": "Could not add the client"
+      },
+      "clients": {
+        "empty": "No clients yet. Add one to get a token an MCP client can connect with.",
+        "allMachines": "All machines",
+        "relayAllowed": "Relay allowed",
+        "relayBlocked": "No relay",
+        "rate": "{{rate}} calls/min",
+        "created": "Created {{date}}",
+        "neverUsed": "Never used",
+        "lastUsed": "Last used {{when}}",
+        "revoked": "Revoked",
+        "revoke": "Revoke",
+        "remove": "Remove {{name}}",
+        "revokeTitle": "Revoke {{name}}?",
+        "revokeDescription": "Its token stops working at once and cannot be turned back on. The client stays in the list so its past calls keep a name.",
+        "removeTitle": "Remove {{name}}?",
+        "removeDescription": "Its token stops working at once and the client leaves this list. Its entries stay in the audit log.",
+        "removeConfirm": "Remove",
+        "revokeFailed": "Could not revoke the client",
+        "removeFailed": "Could not remove the client",
+        "title": "Clients",
+        "description": "One token per client. Revoking stops the token at once and keeps the entry; removing deletes it.",
+        "add": "Add client"
+      },
+      "connect": {
+        "stdioRemoteNote": "The client runs \"seal mcp\" on this computer, which carries its calls to the selected server.",
+        "relayNote": "Only a client created with \"Allow through relay\" can connect at this URL.",
+        "relayOffNote": "The relay endpoint is off. Turn it on under Endpoints before connecting.",
+        "httpOffNote": "The HTTP endpoint is off. Turn it on under Endpoints before connecting.",
+        "transport": "Transport",
+        "stdio": "stdio on this computer",
+        "http": "HTTP: {{url}}",
+        "relay": "Relay: {{url}}",
+        "title": "Connect a client",
+        "description": "Replace <token> with the token shown when you added the client. Seal cannot show it again."
+      },
+      "copy": {
+        "copied": "Copied",
+        "failed": "Could not copy",
+        "copy": "Copy"
+      },
+      "endpoints": {
+        "http": {
+          "label": "HTTP on this server's port",
+          "description": "Serves /mcp on the port the Seal server already listens on. It is plain HTTP without TLS, meant for a LAN or a tailnet, not the open internet.",
+          "noListener": "This server has no network listener yet, so there is no HTTP URL to connect to.",
+          "copy": "Copy HTTP URL"
+        },
+        "relay": {
+          "label": "Seal relay",
+          "description": "Gives this server a public HTTPS URL on the Seal relay. The relay terminates TLS, so it can read everything that passes through it, tokens included. Only a client created with \"Allow through relay\" can use it, and destructive calls over the relay always ask for approval.",
+          "copy": "Copy relay URL",
+          "off": "The relay endpoint is off, so calls to this URL are refused.",
+          "connected": "Connected to the relay",
+          "notConnected": "Not connected to the relay",
+          "noIdentity": "Pair a device first so this server has a relay identity."
+        },
+        "stdio": "stdio is always available on this computer: an MCP client starts the \"seal mcp\" command and talks to it directly.",
+        "updateFailed": "Could not change the endpoint",
+        "title": "Endpoints",
+        "description": "How MCP clients reach this server. Every call needs a client token, whichever way it arrives."
+      },
+      "managed": {
+        "remote": "Managing the Seal server on {{name}}.",
+        "local": "Managing the Seal server on this computer."
+      },
+      "loading": "Reading MCP settings…",
+      "unsupported": "This Seal server does not have the MCP server yet. Update Seal on that machine to manage it here.",
+      "loadFailed": "Could not read MCP settings: {{error}}",
+      "retry": "Try again",
+      "pending": {
+        "title": "Waiting for approval",
+        "description": "Each call is declined if nobody answers before its time runs out."
+      },
+      "snippets": {
+        "generic": "Any other client",
+        "shell": "Run in a terminal",
+        "file": "Add to {{file}}",
+        "copy": "Copy {{client}} setup"
+      },
+      "token": {
+        "title": "Token for {{name}}",
+        "description": "This is the only time the token is shown. Seal stores only its hash, so copy it now. If it is lost, revoke this client and add a new one.",
+        "copy": "Copy token",
+        "setup": "Set up the client",
+        "setupDescription": "These already contain the token. Treat anything you paste them into as a secret.",
+        "done": "Done"
+      },
+      "search": {
+        "endpointsDescription": "Turn the HTTP and Seal relay MCP endpoints on or off and copy their URLs.",
+        "keywordMcp": "mcp",
+        "keywordModelContextProtocol": "model context protocol",
+        "keywordHttp": "http",
+        "keywordRelay": "relay",
+        "keywordStdio": "stdio",
+        "keywordUrl": "url",
+        "keywordServer": "server",
+        "clientsDescription": "Add, revoke and remove MCP clients, and choose what each token may do.",
+        "keywordToken": "token",
+        "keywordClient": "client",
+        "keywordScope": "scope",
+        "keywordRevoke": "revoke",
+        "keywordApproval": "approval",
+        "keywordPermission": "permission",
+        "connectDescription": "Setup text for Claude Code, Codex, Cursor and other MCP clients.",
+        "keywordClaudeCode": "claude code",
+        "keywordCodex": "codex",
+        "keywordCursor": "cursor",
+        "keywordSetup": "setup",
+        "keywordConfig": "config",
+        "auditDescription": "Every MCP request this server received, with who sent it and how it ended.",
+        "keywordAudit": "audit",
+        "keywordLog": "log",
+        "keywordHistory": "history",
+        "keywordDenied": "denied"
+      },
+      "title": "MCP",
+      "description": "Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server."
     }
   },
   "components": {

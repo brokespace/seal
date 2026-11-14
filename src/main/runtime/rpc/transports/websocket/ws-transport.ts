@@ -4,6 +4,7 @@ import type { Socket } from 'node:net'
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { RpcTransport } from '../../transport'
 import { answerWithoutWebClient, createStaticWebClientHandler } from './static-web-client-handler'
+import { withSealMcpRoute } from '../../../../seal-mcp/http/seal-mcp-http-route'
 import {
   attachNodeWebSocketLifecycle,
   clearNodeWebSocketPreAuthTimer,
@@ -223,7 +224,9 @@ export class WebSocketTransport implements RpcTransport {
     await assertPortNotShadowingListener(this.host, port)
     // Without an HTTP request listener, plain HTTP hangs instead of receiving 404 (#30100).
     const httpServer = createHttpServer(
-      this.staticRoot ? createStaticWebClientHandler(this.staticRoot) : answerWithoutWebClient
+      withSealMcpRoute(
+        this.staticRoot ? createStaticWebClientHandler(this.staticRoot) : answerWithoutWebClient
+      )
     )
 
     await new Promise<void>((resolve, reject) => {

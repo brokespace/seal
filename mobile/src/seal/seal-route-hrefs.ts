@@ -1,4 +1,4 @@
-export type SealPage = 'overview' | 'machines' | 'accounts' | 'sessions' | 'chat'
+export type SealPage = 'overview' | 'machines' | 'accounts' | 'sessions' | 'chat' | 'approvals'
 
 export function sealHubHref(hostId: string): `/h/${string}` {
   return `/h/${encodeURIComponent(hostId)}/seal`

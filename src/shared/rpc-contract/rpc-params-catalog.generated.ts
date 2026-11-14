@@ -640,6 +640,15 @@ import {
   SealMachinesTransferIdParams,
   SealMachinesUploadStagedParams
 } from './seal-machines-params'
+import {
+  SealMcpApprovalRespondParams,
+  SealMcpAuditListParams,
+  SealMcpClientCreateParams,
+  SealMcpClientIdParams,
+  SealMcpMessageParams,
+  SealMcpSettingsUpdateParams,
+  SealMcpUnwatchParams
+} from './seal-mcp-params'
 import { SessionSummariesSetEnabledParams } from './session-summaries-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs/session-tabs-params'
 import {
@@ -1705,6 +1714,19 @@ export const RPC_PARAMS_BY_METHOD = {
   'sealMachines.remove': SealMachinesRemoveParams,
   'sealMachines.rename': SealMachinesRenameParams,
   'sealMachines.uploadStaged': SealMachinesUploadStagedParams,
+  'sealMcp.createClient': SealMcpClientCreateParams,
+  'sealMcp.listApprovals': null,
+  'sealMcp.listAudit': SealMcpAuditListParams,
+  'sealMcp.listMachines': null,
+  'sealMcp.message': SealMcpMessageParams,
+  'sealMcp.removeClient': SealMcpClientIdParams,
+  'sealMcp.respondApproval': SealMcpApprovalRespondParams,
+  'sealMcp.revokeClient': SealMcpClientIdParams,
+  'sealMcp.status': null,
+  'sealMcp.unwatch': SealMcpUnwatchParams,
+  'sealMcp.updateSettings': SealMcpSettingsUpdateParams,
+  'sealMcp.watch': null,
+  'sealMcp.watchApprovals': null,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,

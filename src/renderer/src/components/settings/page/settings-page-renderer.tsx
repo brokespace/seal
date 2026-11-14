@@ -22,6 +22,7 @@ import {
   renderAutomationsSettingsSection,
   renderGeneralSettingsSection,
   renderIntegrationsSettingsSection,
+  renderMcpSettingsSection,
   renderMobileSettingsSection,
   renderOrcaAccountSettingsSection,
   renderSetupGuideSettingsSection,
@@ -174,6 +175,7 @@ export function renderSettingsPage(
                   {renderWorkspaceCleanupSettingsSection(context, t)}
                   {renderIntegrationsSettingsSection(context, t)}
                   {renderMobileSettingsSection(context, t)}
+                  {renderMcpSettingsSection(context, t)}
                   {renderAutomationsSettingsSection(context, t)}
                   {renderArtifactsSettingsSection(context, t)}
                   {renderShareSkillsSettingsSection(context, t)}
