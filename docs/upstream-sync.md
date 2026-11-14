@@ -86,6 +86,8 @@ The shipped catalog is upstream's catalog, rebranded, minus `removed-keys.json`,
 
 Upstream's localization gates (`pnpm verify:localization-*`) read catalogs through `config/seal/locale-overlay/seal-catalog-gate-fs.mjs`, a stand-in for `node:fs/promises` that shows them the merged view and splits `--fix` writes back between upstream's file and the overlay. That one-line import swap is Seal's only change to those scripts.
 
+A Seal branch written before the overlay edits upstream's catalogs in place. When one is merged, take the branch's side of any catalog that conflicts (`git checkout --theirs <file>`), then run `pnpm seal:sync:restore --upstream=$(git merge-base HEAD upstream/main)` and `pnpm seal:regenerate`. The restore moves the branch's strings to the overlay, records keys it deleted in `removed-keys.json`, and puts the catalogs back to upstream's text. `pnpm seal:rebrand-check` fails while a catalog under `locales/` still holds Seal's name.
+
 ## Seal-owned files
 
 These exist only in Seal, so upstream never conflicts with them:

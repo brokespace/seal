@@ -96,6 +96,14 @@ function checkShippedCatalogs() {
           fail('catalog', `${path} ${key}`, value)
         }
       }
+      // Upstream never writes Seal's name, so finding it means a branch edited upstream's file.
+      if (new RegExp(`\\b${branding.productName}\\b`).test(read(path))) {
+        fail(
+          'catalog',
+          path,
+          `holds ${branding.productName} copy; move it to the overlay with \`pnpm seal:sync:restore\``
+        )
+      }
     }
   }
 }

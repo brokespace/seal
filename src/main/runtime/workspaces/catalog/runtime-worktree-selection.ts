@@ -23,6 +23,8 @@ export type RemoveManagedWorktreeOptions = {
   allowUnverifiedPtyStop?: boolean
   /** Waives a FAILED archive hook (#19334). Never implied by `force`, never by `runHooks`. */
   allowFailedArchiveHook?: boolean
+  /** Releases a Git lock first. Set only by an explicit, confirmed Unlock & Delete; never by `force`. */
+  unlockLockedWorktree?: boolean
   hostId?: string
   /** Reply with the finished delete's result; otherwise a background delete replies on acceptance. */
   waitForBackgroundRemoval?: boolean
@@ -31,7 +33,12 @@ export type RemoveManagedWorktreeOptions = {
 export function getRuntimeWorktreeRemovalOptionsKey(
   options: Pick<
     RemoveManagedWorktreeOptions,
-    'force' | 'runHooks' | 'allowUnverifiedPtyStop' | 'allowFailedArchiveHook' | 'deleteBranch'
+    | 'force'
+    | 'runHooks'
+    | 'allowUnverifiedPtyStop'
+    | 'allowFailedArchiveHook'
+    | 'unlockLockedWorktree'
+    | 'deleteBranch'
   >
 ): string {
   // Forced retries must not coalesce onto an attempt refusing unverified PTY stop.
@@ -45,7 +52,9 @@ export function getRuntimeWorktreeRemovalOptionsKey(
       : options.deleteBranch
         ? 'delete-branch'
         : 'keep-branch'
-  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}:${branchKey}`
+  // An unlock retry must not join the attempt the lock just refused.
+  const lockKey = options.unlockLockedWorktree ? ':unlock' : ''
+  return `${options.force ? 'force' : 'normal'}:${hooksKey}:${ptyKey}:${archiveKey}:${branchKey}${lockKey}`
 }
 
 // Null host is host-unaware; unstamped legacy rows are adoptable, but either explicit host spelling must match exactly.

@@ -76,13 +76,19 @@ function restoreCatalogs() {
       } catch {
         // No overlay yet for this locale.
       }
-      const shippedNow = mergeCatalogOverlay(JSON.parse(currentText), overlay)
-      const { catalog: rebranded } = rebrandCatalog(JSON.parse(upstreamText), {
-        locale,
-        commandKeys: runtimeRequired ? new Set() : commandKeys
-      })
+      const brandOptions = { locale, commandKeys: runtimeRequired ? new Set() : commandKeys }
+      const { catalog: rebranded } = rebrandCatalog(JSON.parse(upstreamText), brandOptions)
+      // The file may hold upstream's text or Seal's; rebranding makes both read as what ships.
+      const { catalog: current } = rebrandCatalog(JSON.parse(currentText), brandOptions)
+      // An edit made in upstream's file is newer than the overlay's value for the same key.
+      const editedInPlace = catalogDifference(rebranded, current)
+      const shippedNow = mergeCatalogOverlay(mergeCatalogOverlay(current, overlay), editedInPlace)
       // The boot bundle carries the whole English overlay, so its own differences fold into it.
       const nextOverlay = mergeCatalogOverlay(overlay, catalogDifference(rebranded, shippedNow))
+      if (runtimeRequired && JSON.stringify(nextOverlay) === JSON.stringify(overlay)) {
+        // Generated from Seal's source, so it may lack upstream keys; seal:regenerate owns it.
+        continue
+      }
       restored += 1
       console.log(`catalog: ${path} -> upstream (+ ${surface.overlayDir}/${locale}.json)`)
       if (locale === 'en' && !runtimeRequired) {

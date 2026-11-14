@@ -13,6 +13,8 @@ import type { TaskSourceContext } from '../../../../../shared/work-items/task-so
 import type { WorkspaceCreationTargetHint } from '@/lib/workspace/creation/project-host-workspace-target'
 
 export type ComposerModalData = {
+  /** Opens as New agent session: the worktree is optional and off until its toggle is on. */
+  agentSession?: true
   recovery?: {
     note: string
     agent: TuiAgent | null

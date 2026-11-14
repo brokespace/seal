@@ -13,6 +13,7 @@ import {
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth/runtime-auth-types'
 import { getSealAccountManager, type SealAccountManager } from './seal-account-manager'
 import { pinClaudeLaunch } from './seal-claude-launch-pin'
+import { sealNextLaunchAccounts } from './seal-next-launch-account'
 import { pickSealLaunch, recordSealSession, sealProjectIdentity } from './seal-launch-pick-context'
 import { canIsolateSession, launchInSessionHome } from './seal-session-launch'
 import { ptySpawnPaneFromIds } from '../ipc/pty/spawn-pane-env'
@@ -151,13 +152,16 @@ export async function applySealSpawnAccount(
   let applied: Applied = { env: { ...input.env }, claudeAuth: input.claudeAuth }
   let changed = false
   for (const provider of providers) {
-    const ref = sealLaunchOverrideRef(input.env, provider)
+    const envRef = sealLaunchOverrideRef(input.env, provider)
+    const chosen =
+      envRef || !launched ? null : sealNextLaunchAccounts(manager).take(input.worktreeId, provider)
+    const ref = envRef ?? chosen
     let pick: SealLaunchPick
     try {
       pick = pickSealLaunch(manager, {
         provider,
         worktreeId: input.worktreeId,
-        override: ref ? { ref, source: 'env' } : null,
+        override: ref ? { ref, source: envRef ? 'env' : 'session-choice' } : null,
         autoRank: launched !== null
       })
     } catch (error) {
