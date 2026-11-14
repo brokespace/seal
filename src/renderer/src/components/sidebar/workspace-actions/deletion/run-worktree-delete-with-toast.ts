@@ -54,6 +54,15 @@ export function runWorktreeDeleteWithToast(
       error,
       canForceDelete: state?.canForceDelete ?? false,
       canWaiveArchiveHook: state?.canWaiveArchiveHook === true,
+      canUnlockLockedWorktree: state?.canUnlockLockedWorktree === true,
+      // The confirmed unlock is a force delete of that worktree, so it waives what Force Delete waives.
+      onUnlockAndDelete: () =>
+        retryFromToast({
+          force: true,
+          allowUnverifiedPtyStop: true,
+          unlockLockedWorktree: true,
+          withViewAction: false
+        }),
       forceDeleteReason: state?.forceDeleteReason ?? null,
       lockReason: state?.lockReason ?? null,
       hasKnownChanges,
@@ -87,6 +96,7 @@ export function runWorktreeDeleteWithToast(
     force: boolean
     allowUnverifiedPtyStop?: boolean
     allowFailedArchiveHook?: boolean
+    unlockLockedWorktree?: boolean
     failedTitle?: string
     withViewAction?: boolean
   }): void => {
@@ -104,7 +114,11 @@ export function runWorktreeDeleteWithToast(
         { id: worktreeId, hostId: target.executionHostId ?? undefined },
         useAppStore.getState().deleteStateByWorktreeId
       )
-      if (retryState?.canForceDelete === true || retryState?.canWaiveArchiveHook === true) {
+      if (
+        retryState?.canForceDelete === true ||
+        retryState?.canWaiveArchiveHook === true ||
+        retryState?.canUnlockLockedWorktree === true
+      ) {
         showFailureToast(description, retryState)
         return
       }
@@ -132,6 +146,7 @@ export function runWorktreeDeleteWithToast(
       .removeWorktree(target, retry.force, {
         ...(retry.allowUnverifiedPtyStop ? { allowUnverifiedPtyStop: true } : {}),
         ...(retry.allowFailedArchiveHook ? { allowFailedArchiveHook: true } : {}),
+        ...(retry.unlockLockedWorktree ? { unlockLockedWorktree: true } : {}),
         ...(options.assertBeforeDispatch
           ? { assertBeforeDispatch: options.assertBeforeDispatch }
           : {})
