@@ -689,6 +689,12 @@ import {
   SealMachinesTransferIdParams,
   SealMachinesUploadStagedParams
 } from './seal-machines-params'
+import {
+  SessionRecapGetParams,
+  SessionRecapMarkParams,
+  SessionRecapRefreshParams,
+  SessionRecapSetEnabledParams
+} from './session-recap-params'
 import { SessionSummariesSetEnabledParams } from './session-summaries-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
 import {
@@ -1694,6 +1700,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
   'session.tabs.updatePaneLayout': UpdatePaneLayout,
+  'sessionRecap.get': SessionRecapGetParams,
+  'sessionRecap.mark': SessionRecapMarkParams,
+  'sessionRecap.refresh': SessionRecapRefreshParams,
+  'sessionRecap.setEnabled': SessionRecapSetEnabledParams,
   'sessionSummaries.list': null,
   'sessionSummaries.setEnabled': SessionSummariesSetEnabledParams,
   'sessionSummaries.status': null,

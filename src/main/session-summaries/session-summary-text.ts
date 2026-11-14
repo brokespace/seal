@@ -8,13 +8,9 @@ const INPUT_HEAD_CHARS = 700
 const INPUT_TAIL_CHARS = 1500
 const FENCED_BLOCK = /(```|~~~)[\s\S]*?(?:\1|$)/g
 
-/**
- * What of an agent's last message goes to the utility model: its prose only. Code blocks and
- * terminal escapes go, credentials are redacted, and a long message keeps its opening and its
- * end, where the outcome and any question sit.
- */
-export function prepareSummaryInput(message: string): string {
-  const prose = redactString(
+/** A message's prose: code blocks and terminal escapes go, and credentials are redacted. */
+export function sessionProse(message: string): string {
+  return redactString(
     stripAnsiEscapeSequences(message)
       .replace(FENCED_BLOCK, ' ')
       // oxlint-disable-next-line no-control-regex -- Control bytes left by a terminal are the target.
@@ -24,10 +20,19 @@ export function prepareSummaryInput(message: string): string {
     .replace(/ ?\n ?/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  if (prose.length <= INPUT_HEAD_CHARS + INPUT_TAIL_CHARS) {
+}
+
+/** A long text keeps its opening and its end, where the outcome and any question sit. */
+export function clipProseMiddle(prose: string, head: number, tail: number): string {
+  if (prose.length <= head + tail) {
     return prose
   }
-  return `${prose.slice(0, INPUT_HEAD_CHARS).trimEnd()}\n…\n${prose.slice(-INPUT_TAIL_CHARS).trimStart()}`
+  return `${prose.slice(0, head).trimEnd()}\n\u2026\n${prose.slice(-tail).trimStart()}`
+}
+
+/** What of an agent's last message goes to the utility model: its prose only, clipped. */
+export function prepareSummaryInput(message: string): string {
+  return clipProseMiddle(sessionProse(message), INPUT_HEAD_CHARS, INPUT_TAIL_CHARS)
 }
 
 /** A message this short is its own summary; no request is worth making. */
@@ -66,6 +71,14 @@ export function summaryRequest(input: string, asking: boolean): UtilityModelRequ
   }
 }
 
+/** Markdown emphasis, code ticks and heading marks off a line; an underscore inside a name stays. */
+export function withoutMarkdownMarks(line: string): string {
+  return line
+    .replace(/[*`]+/g, '')
+    .replace(/^\s*#+\s*/, '')
+    .replace(/(^|[\s(])_+|_+(?=[\s).,;:!?]|$)/g, '$1')
+}
+
 /** One line of at most SESSION_SUMMARY_MAX_CHARS from whatever the model said; null when nothing usable. */
 export function cleanSummary(reply: string): string | null {
   const line = reply
@@ -75,8 +88,7 @@ export function cleanSummary(reply: string): string | null {
   if (!line) {
     return null
   }
-  const text = line
-    .replace(/[*_`#]+/g, '')
+  const text = withoutMarkdownMarks(line)
     .trim()
     .replace(/^(?:summary|status)\s*:\s*/i, '')
     .replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, '')

@@ -40,6 +40,8 @@ export type TranscriptSummary = TranscriptTurn & {
   providerSessionId: string
   cwd: string | null
   title: string | null
+  /** The title is a name the user gave the session in the agent, not a prompt or the agent's summary. */
+  titleNamed?: true
   firstAt: number | null
   lastAt: number | null
   /** Another program drives it (`claude -p`, an Agent SDK host such as Seal's Home chat, `codex exec`). */
@@ -119,6 +121,7 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
     providerSessionId: id,
     cwd,
     title: customTitle ?? summary ?? (firstPrompt ? oneLine(firstPrompt, 80) : null),
+    ...(customTitle ? { titleNamed: true as const } : {}),
     ...claudePhase(tail.length > 0 ? tail : head),
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
