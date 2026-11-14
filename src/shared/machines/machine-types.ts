@@ -137,7 +137,18 @@ export const MACHINE_IPC = {
   detectCommands: 'machines:detectCommands',
   listWorktrees: 'machines:listWorktrees',
   createWorktree: 'machines:createWorktree',
-  removeWorktree: 'machines:removeWorktree'
+  removeWorktree: 'machines:removeWorktree',
+  listProcesses: 'machines:listProcesses',
+  signalProcess: 'machines:signalProcess',
+  listDockerContainers: 'machines:listDockerContainers',
+  dockerContainerAction: 'machines:dockerContainerAction',
+  listDiskMounts: 'machines:listDiskMounts',
+  measureDiskUsage: 'machines:measureDiskUsage',
+  scanCleanup: 'machines:scanCleanup',
+  runCleanup: 'machines:runCleanup',
+  completeFolder: 'machines:completeFolder',
+  openFolder: 'machines:openFolder',
+  recentFolders: 'machines:recentFolders'
 } as const
 
 export type MachineShellEvent =

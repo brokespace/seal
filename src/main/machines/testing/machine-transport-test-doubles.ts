@@ -48,6 +48,12 @@ import { runLocalShellScript } from '../exec/local-shell-exec'
 import { MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES } from '../../../shared/machines/machine-host-limits'
 import type { RuntimeMachineChannel } from '../runtime/runtime-machine-channel'
 import type { SshMachineLink } from '../connection/ssh-machine-link'
+import type { SshExecOptions } from '../../ssh/connection/ssh-exec-options'
+import { wrapRemoteCommandForPosixShell } from '../../ssh/remote-exec/ssh-posix-command-wrapper'
+import type { MachineConnection } from '../connection/machine-connection'
+import { openLocalPty } from '../connection/local-machine-shell'
+import { ServerMachineConnection } from '../connection/server-machine-connection'
+import { SshMachineConnection } from '../connection/ssh-machine-connection'
 
 /** A Seal server on this host: the desktop channel routed straight into the runtime's machineHost handlers. */
 export function createInProcessRuntimeChannel(
@@ -148,15 +154,15 @@ export function createInProcessRuntimeChannel(
   return { channel, emitted }
 }
 
-/** A system-ssh command channel whose "remote" is `/bin/sh` here: `close` carries the exit code. */
+/** A system-ssh command channel whose "remote" is this host's login shell: `close` carries the exit code. */
 class LoopbackCommandChannel extends Duplex implements RemoteCommandChannel {
   readonly stdin: Writable
   readonly stderr: Readable
   private readonly child: ChildProcessWithoutNullStreams
 
-  constructor(command: string, env: NodeJS.ProcessEnv) {
+  constructor(shell: string, command: string, env: NodeJS.ProcessEnv) {
     super({ emitClose: false })
-    this.child = spawn('/bin/sh', ['-c', command], { env })
+    this.child = spawn(shell, ['-c', command], { env })
     this.stdin = this.child.stdin
     this.stderr = this.child.stderr
     this.child.stdin.on('error', () => {})
@@ -188,9 +194,17 @@ class LoopbackCommandChannel extends Duplex implements RemoteCommandChannel {
   }
 }
 
-/** An SSH host that is this machine: commands run in `/bin/sh` the way system ssh runs them remotely. */
-export function createLoopbackSshLink(): SshMachineLink {
-  const exec = async (command: string) => new LoopbackCommandChannel(command, process.env)
+/** An SSH host that is this machine: sshd hands each command to the user's login shell, here `loginShell`. */
+export function createLoopbackSshLink(loginShell = '/bin/sh'): SshMachineLink {
+  // Same wrapping the real transport applies, so the login shell only parses what sshd would hand it.
+  const exec = async (command: string, options?: SshExecOptions) =>
+    new LoopbackCommandChannel(
+      loginShell,
+      options?.wrapCommand === false
+        ? command
+        : wrapRemoteCommandForPosixShell(command, { compress: options?.compressCommand === true }),
+      process.env
+    )
   return {
     exec,
     usesSystemSshTransport: () => true,
@@ -214,4 +228,36 @@ export function createLoopbackSshLink(): SshMachineLink {
       close: () => {}
     })
   }
+}
+
+/** A machine reached over SSH that is this host; its terminals start in `$HOME`. */
+export function createLoopbackSshConnection(loginShell = '/bin/sh'): MachineConnection {
+  const link = createLoopbackSshLink(loginShell)
+  return new SshMachineConnection('machine:loop-ssh', {
+    link: () => link,
+    connect: async () => {},
+    // Mirrors system ssh: `ssh -t` lands in a login shell, then the prelude is typed into it.
+    openSystemShell: async (prelude, options, handlers) => {
+      const shell = await openLocalPty(
+        { file: '/bin/sh', args: [], cwd: process.env.HOME ?? os.homedir() },
+        options,
+        handlers
+      )
+      if (prelude) {
+        shell.write(`${prelude}\n`)
+      }
+      return shell
+    }
+  })
+}
+
+/** A machine reached through a Seal server that is this host. */
+export function createInProcessServerConnection(
+  channel: RuntimeMachineChannel = createInProcessRuntimeChannel().channel
+): MachineConnection {
+  return new ServerMachineConnection('machine:loop-server', {
+    channel,
+    isConnected: () => true,
+    connect: async () => {}
+  })
 }
