@@ -1,4 +1,5 @@
 import { AgentStateDot } from '@/components/AgentStateDot'
+import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { HomeSession } from './home-overview-model'
@@ -28,10 +29,11 @@ export function HomeSessionRow({
   const t = useTranslate()
   const stateLabel = homeSessionStateLabel(session.state, t)
   const elapsed = sessionElapsed(session, now)
-  const message =
-    (session.state === 'waiting' || session.state === 'permission') && session.askSummary
-      ? session.askSummary
-      : session.lastMessage?.text
+  const ask =
+    session.state === 'waiting' || session.state === 'permission' ? session.askSummary : undefined
+  // An approval prompt is the literal ask; otherwise the host's summary stands in for the raw message.
+  const summary = session.state === 'permission' && ask ? undefined : session.summary
+  const message = ask ?? session.lastMessage?.text
   const meta = [session.agentLabel, session.model, session.account, session.workspaceName].filter(
     (part): part is string => Boolean(part)
   )
@@ -64,7 +66,9 @@ export function HomeSessionRow({
           <span className="mt-0.5 block truncate text-2xs text-muted-foreground">
             {meta.join(' · ')}
           </span>
-          {message ? (
+          {summary ? (
+            <SessionSummaryLine summary={summary} className="mt-1" />
+          ) : message ? (
             <span className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {session.lastMessage?.role === 'user' && message === session.lastMessage.text
                 ? `${t('home.overview.session.you', 'You')}: ${message}`

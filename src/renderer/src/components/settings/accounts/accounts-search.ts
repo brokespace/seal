@@ -3,6 +3,7 @@ import { translate } from '@/i18n/i18n'
 import { translateSearchKeyword } from '../search/settings-search-keywords'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { getSealAccountsSearchEntries } from '../seal-accounts/seal-accounts-search'
+import { getCloudflareAiSearchEntries } from './cloudflare-ai/cloudflare-ai-search'
 
 export const ACCOUNTS_SECTION_IDS = {
   minimax: 'accounts-minimax',
@@ -247,5 +248,6 @@ export const getAccountsPaneSearchEntries = createLocalizedCatalog((): SettingsS
   ...getAccountsGrokSearchEntries(),
   ...getAccountsAntigravitySearchEntries(),
   ...getAccountsCursorSearchEntries(),
-  ...getAccountsZcodePlanSearchEntries()
+  ...getAccountsZcodePlanSearchEntries(),
+  ...getCloudflareAiSearchEntries()
 ])

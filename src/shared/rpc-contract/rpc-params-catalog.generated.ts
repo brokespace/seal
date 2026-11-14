@@ -689,6 +689,7 @@ import {
   SealMachinesTransferIdParams,
   SealMachinesUploadStagedParams
 } from './seal-machines-params'
+import { SessionSummariesSetEnabledParams } from './session-summaries-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
 import {
   ActivateTab,
@@ -818,6 +819,7 @@ import {
   UsageCredentialSessionCookieParams
 } from './usage-credentials-params'
 import { CancelUsageLimitContinueParams } from './usage-limit-continue-params'
+import { UtilityModelSetCloudflareParams } from './utility-model-params'
 import {
   WorkspaceCleanupPreviewParams,
   WorkspaceCleanupReportUnsavedEditorsParams,
@@ -1692,6 +1694,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
   'session.tabs.updatePaneLayout': UpdatePaneLayout,
+  'sessionSummaries.list': null,
+  'sessionSummaries.setEnabled': SessionSummariesSetEnabledParams,
+  'sessionSummaries.status': null,
   'settings.get': null,
   'settings.getAgentLaunch': null,
   'settings.getTerminalQuickCommands': null,
@@ -1815,6 +1820,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'updater.download': null,
   'updater.getStatus': null,
   'updater.install': null,
+  'utilityModel.clearCloudflare': null,
+  'utilityModel.listModels': null,
+  'utilityModel.setCloudflare': UtilityModelSetCloudflareParams,
+  'utilityModel.status': null,
+  'utilityModel.test': null,
   'workspaceCleanup.preview': WorkspaceCleanupPreviewParams,
   'workspaceCleanup.report': null,
   'workspaceCleanup.reportUnsavedEditors': WorkspaceCleanupReportUnsavedEditorsParams,
