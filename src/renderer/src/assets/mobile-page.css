@@ -1,33 +1,5 @@
 /* Scoped under .mobile-page-root; mobile/orca-mobile-sidebar-mock-v3.html is the 1:1 design spec. */
 
-.mobile-page-root .mp-page-toolbar {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  z-index: 3;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.mobile-page-root .mp-page-toolbar-primary {
-  max-width: min(100%, 22rem);
-}
-
-.mobile-page-root .mp-sidebar-toggle-btn {
-  max-width: 100%;
-  justify-content: flex-start;
-  font-weight: 600;
-  text-align: left;
-  white-space: normal;
-}
-
-.mobile-page-root .mp-page-toolbar-close {
-  margin-top: 1px;
-}
-
 .mobile-page-root {
   /* Use mobile-theme.ts tokens inside simulated device screens. */
   --mp-flow-card-padding: 24px;

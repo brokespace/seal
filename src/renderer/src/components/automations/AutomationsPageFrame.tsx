@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/class-names'
+import { PAGE_GUTTER_X, PageHeader } from '@/components/page-layout/PageLayout'
 
-/** One column for every Automations page: the header and the body share width and gutter. */
-export const AUTOMATIONS_PAGE_CONTAINER_CLASS = 'mx-auto w-full max-w-[1080px] px-4 md:px-6'
+/** Every Automations page takes the full width inside the shared page gutter. */
+export const AUTOMATIONS_PAGE_CONTAINER_CLASS = cn('w-full', PAGE_GUTTER_X)
 
 /** Page-wide notices (an owner conflict) that every sub-page shows above its content. */
 export const AutomationsPageNoticeContext = createContext<React.ReactNode>(null)
@@ -53,20 +54,19 @@ export function AutomationsPageFrame({
   const pageNotice = useContext(AutomationsPageNoticeContext)
   return (
     <>
-      <header
-        className="shrink-0 border-b border-border/60"
-        style={{ paddingRight: 'var(--window-controls-width, 0px)' }}
-      >
-        <div
-          ref={headerRef}
-          className={cn(AUTOMATIONS_PAGE_CONTAINER_CLASS, 'flex min-h-12 items-center gap-3')}
-        >
-          <div className="flex min-w-0 flex-1 items-center">{nav}</div>
-          {actions ? (
-            <div className="flex shrink-0 items-center gap-2">{actions({ compact })}</div>
-          ) : null}
-        </div>
-      </header>
+      {/* The tabs' underline sits on the divider, so the header carries it and its own bottom inset. */}
+      <PageHeader
+        topOfWindow
+        className="border-b border-border pb-0"
+        title={
+          <div ref={headerRef} className="flex min-h-11 min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center">{nav}</div>
+            {actions ? (
+              <div className="flex shrink-0 items-center gap-2">{actions({ compact })}</div>
+            ) : null}
+          </div>
+        }
+      />
       {bodyScroll === 'page' ? (
         <div className="scrollbar-sleek min-h-0 flex-1 overflow-auto">
           <div className={cn(AUTOMATIONS_PAGE_CONTAINER_CLASS, 'pb-10')}>

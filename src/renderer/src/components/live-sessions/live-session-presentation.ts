@@ -4,6 +4,7 @@ import type {
   LiveSession,
   LiveSessionStatus
 } from '../../../../shared/live-sessions/live-session-types'
+import { liveSessionLabel } from '../../../../shared/session-recap/live-session-label'
 import {
   runningBackgroundTasks,
   runningSubagents
@@ -77,10 +78,7 @@ export function liveSessionStatusText(session: Pick<LiveSession, 'status' | 'act
 
 export function liveSessionTitle(session: LiveSession): string {
   return (
-    session.customTitle ??
-    session.title ??
-    session.project ??
-    translate('auto.components.live-sessions.untitled', 'New session')
+    liveSessionLabel(session) ?? translate('auto.components.live-sessions.untitled', 'New session')
   )
 }
 

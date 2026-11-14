@@ -8,6 +8,8 @@ import type {
   SessionSummarySettings
 } from '../../shared/session-summaries/session-summary-contracts'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
+import { createLiveSessionRecaps } from '../session-recap/session-recap-install'
 import { getUtilityModelHost } from '../utility-model/utility-model-host'
 import type { UtilityModelService } from '../utility-model/utility-model-service'
 import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
@@ -34,8 +36,12 @@ export type SessionSummariesInstallOptions = {
   runtime: SummaryRuntime
   store: SummarySettingsStore
   userDataPath: string
-  /** The desktop's session registry; a headless server has none and summarizes its panes only. */
+  /** This host's session registry: its sessions get recaps, and status summaries unless `summarizeLive` is off. */
   liveSessions?: LiveSessionService | null
+  /** False on a headless server, whose registry sessions the desktop that sees them summarizes. */
+  summarizeLive?: boolean
+  /** Recap every stopped session (the desktop), or only those opened from a client of this host. */
+  recapEagerly?: boolean
   serverSummaries?: LiveSessionSummariesDeps['serverSummaries']
   /** A pane's summary changed: clients reading agent rows should read again. */
   onPaneSummaryChanged?: () => void
@@ -79,10 +85,12 @@ export class SessionSummariesHost {
   private readonly summarizer: SessionSummarizer
   private readonly panes: PaneSessionSummaries
   private readonly live: LiveSessionSummaries | null
+  private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
   private configured = false
   private configuredCheckedAt = 0
   private available = false
+  private recapReady = false
   private republishQueued = false
 
   constructor(private readonly options: SessionSummariesInstallOptions) {
@@ -106,17 +114,35 @@ export class SessionSummariesHost {
       readHookRow: (paneKey) => options.runtime.agentTransitions.latestRow(paneKey),
       setTimer: unrefTimer
     })
-    this.live = liveSessions
-      ? new LiveSessionSummaries({
-          summarizer: this.summarizer,
-          lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
-          paneView: (paneKey) => this.panes.view(paneKey),
-          serverSummaries: options.serverSummaries,
+    this.live =
+      liveSessions && options.summarizeLive !== false
+        ? new LiveSessionSummaries({
+            summarizer: this.summarizer,
+            lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
+            paneView: (paneKey) => this.panes.view(paneKey),
+            serverSummaries: options.serverSummaries,
+            onChange: () => this.republishSoon(),
+            setTimer: unrefTimer,
+            log
+          })
+        : null
+    this.recap = liveSessions
+      ? createLiveSessionRecaps({
+          liveSessions,
+          utility: this.utility,
+          userDataPath: options.userDataPath,
+          enabled: () => this.recapOn() && this.isConfigured(),
+          eager: options.recapEagerly !== false,
           onChange: () => this.republishSoon(),
           setTimer: unrefTimer,
           log
         })
       : null
+  }
+
+  /** Session recaps on this host; null where there is no session registry. */
+  get recaps(): LiveSessionRecaps | null {
+    return this.recap?.recaps ?? null
   }
 
   start(): void {
@@ -131,15 +157,17 @@ export class SessionSummariesHost {
       this.panes.observe(seed)
     }
     store.onSettingsChanged((updates) => {
-      if ('sessionSummariesEnabled' in updates) {
+      if ('sessionSummariesEnabled' in updates || 'sessionRecapEnabled' in updates) {
         void this.refreshAvailability(false)
         this.republishSoon()
       }
     })
-    if (liveSessions && this.live) {
+    if (liveSessions) {
       const live = this.live
       liveSessions.registry.setDecorator((session) => this.decorate(session))
-      this.releases.push(liveSessions.subscribe((event) => live.observe(event)))
+      if (live) {
+        this.releases.push(liveSessions.subscribe((event) => live.observe(event)))
+      }
     }
     void this.refreshAvailability(true)
   }
@@ -151,6 +179,7 @@ export class SessionSummariesHost {
     this.options.liveSessions?.registry.setDecorator(null)
     this.panes.dispose()
     this.live?.dispose()
+    this.recap?.dispose()
     this.summarizer.dispose()
   }
 
@@ -163,6 +192,7 @@ export class SessionSummariesHost {
     await this.refreshAvailability(true)
     return {
       enabled: this.settingOn(),
+      recapEnabled: this.recapOn(),
       configured: this.configured,
       pausedUntil: this.utility.health().pausedUntil
     }
@@ -189,20 +219,34 @@ export class SessionSummariesHost {
     return await this.status()
   }
 
+  async setRecapEnabled(enabled: boolean): Promise<SessionSummariesStatus> {
+    this.options.store.updateSettings({ sessionRecapEnabled: enabled })
+    return await this.status()
+  }
+
+  private recapOn(): boolean {
+    return this.options.store.getSettings().sessionRecapEnabled !== false
+  }
+
   private settingOn(): boolean {
     return this.options.store.getSettings().sessionSummariesEnabled !== false
   }
 
   private decorate(session: LiveSession): LiveSession {
-    return this.settingOn() && this.live ? this.live.decorate(session) : session
+    const summarized = this.settingOn() && this.live ? this.live.decorate(session) : session
+    return this.recap ? this.recap.recaps.decorate(summarized) : summarized
   }
 
-  private isAvailable(): boolean {
+  private isConfigured(): boolean {
     if (Date.now() - this.configuredCheckedAt > CONFIGURED_RECHECK_MS) {
       // A config file dropped in later is found without a restart.
       void this.refreshAvailability(true)
     }
-    return this.settingOn() && this.configured && this.utility.health().pausedUntil === null
+    return this.configured
+  }
+
+  private isAvailable(): boolean {
+    return this.settingOn() && this.isConfigured() && this.utility.health().pausedUntil === null
   }
 
   private async refreshAvailability(recheckConfigured: boolean): Promise<void> {
@@ -217,6 +261,12 @@ export class SessionSummariesHost {
     if (cameBack) {
       this.summarizer.retryFailed()
     }
+    // Recaps run with summaries switched off, so they watch the provider on their own terms.
+    const recapReady = this.configured && this.utility.health().pausedUntil === null
+    if (recapReady && !this.recapReady) {
+      this.recap?.recaps.resume()
+    }
+    this.recapReady = recapReady
   }
 
   /** Coalesced and deferred: a change often lands while the registry is mid-publish. */

@@ -1,4 +1,5 @@
 // The live-session registry's public contract: plain JSON, shared by main, preload, renderer and RPC.
+import type { LiveSessionRecapBrief } from '../session-recap/session-recap-types'
 import type { NativeChatMessage } from '../native-chat/native-chat-types'
 import type { LiveSessionActivity } from './live-session-activity'
 
@@ -103,6 +104,10 @@ export type LiveSession = {
   summary?: string
   /** That summary is being made. */
   summaryPending?: true
+  /** `title` is a name the user gave it in the agent itself (Claude's `/rename`), not a prompt or a summary. */
+  titleNamed?: true
+  /** Its rolling recap in brief: the title a row shows and what is still open for the user. */
+  recap?: LiveSessionRecapBrief
 }
 
 /** What the user sets on a session in Seal; an absent field is left as it is. */
