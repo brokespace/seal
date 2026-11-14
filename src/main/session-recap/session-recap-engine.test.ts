@@ -165,6 +165,35 @@ describe('SessionRecapEngine', () => {
     expect(await h.engine.update('s1', 'asked')).toBe('updated')
   })
 
+  it('stops passes on working sessions at half the automatic share, and still recaps a stop', async () => {
+    const h = await recapHarness(firstTurn(), [FIRST_REPLY])
+    h.budget.spend(3_000)
+
+    expect(await h.engine.update('s1', 'working')).toBe('over-budget')
+    expect(h.requests).toHaveLength(0)
+
+    expect(await h.engine.update('s1', 'auto')).toBe('updated')
+  })
+
+  it('waits while a working session has said too little, without marking it as read', async () => {
+    const messages = firstTurn()
+    const h = await recapHarness(messages, [
+      FIRST_REPLY,
+      '{"standing":"Wiring the header switch."}'
+    ])
+    await h.engine.update('s1', 'asked')
+    messages.push(recapMessage(200, 'assistant', 'Looking at the header component.'))
+
+    expect(await h.engine.update('s1', 'working', false, 1_200)).toBe('current')
+    expect(h.requests).toHaveLength(1)
+    expect(h.store.get('s1')?.recap?.coveredTo).toBe(200)
+
+    messages.push(recapMessage(300, 'assistant', 'The header needs a new slot. '.repeat(50)))
+    expect(await h.engine.update('s1', 'working', false, 1_200)).toBe('updated')
+    expect(h.store.get('s1')?.recap?.standing).toBe('Wiring the header switch.')
+    expect(h.store.get('s1')?.recap?.coveredTo).toBe(400)
+  })
+
   it('keeps a tick through later passes and carries it by text into a rebuilt recap', async () => {
     const messages = firstTurn()
     const h = await recapHarness(messages, [

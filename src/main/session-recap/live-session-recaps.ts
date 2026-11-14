@@ -31,7 +31,7 @@ export type LiveSessionRecapsDeps = {
   now?: () => number
 }
 
-/** The moments a recap is brought up to date on its own: a turn has ended, or parked. */
+/** The moments a recap is brought up to date at once: a turn has ended, or parked. */
 const SETTLED: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-input',
   'idle',
@@ -43,12 +43,22 @@ const SETTLE_DELAY_MS = 2_500
 export const RECAP_AUTO_INTERVAL_MS = 4 * 60_000
 /** Opening a session again this soon does not start another pass. */
 const OPEN_INTERVAL_MS = 60_000
+/** A session at work is recapped once it has said this much since its last pass... */
+export const RECAP_WORKING_MIN_PROSE_CHARS = 1_200
+/** ...or, having said anything at all, once this long has gone by. */
+export const RECAP_WORKING_MAX_WAIT_MS = 10 * 60_000
+/** How often a working session's transcript is read to see whether it has said enough. */
+const WORKING_CHECK_MS = 60_000
 
 type Tracked = {
   /** The stop last handled, so a rescan of the same stop schedules nothing. */
   stamp: string | null
+  /** When it was first seen at work on this turn; null while it is not working. */
+  workingSince: number | null
   timer: { cancel: () => void } | null
+  /** The last pass for a stop or for the user; a pass made mid-turn never delays those. */
   lastPassAt: number
+  lastWorkingPassAt: number
   outcome: RecapPassOutcome | null
 }
 
@@ -81,14 +91,24 @@ export class LiveSessionRecaps {
       return
     }
     const { session } = event
-    if (!session.alive || !session.transcriptPath || !SETTLED.has(session.status)) {
+    const readable = session.alive && session.transcriptPath
+    if (readable && session.status === 'working') {
+      const tracked = this.track(session.id)
+      tracked.stamp = null
+      tracked.workingSince ??= this.now()
+      this.scheduleWorking(session.id, tracked)
+      return
+    }
+    if (!readable || !SETTLED.has(session.status)) {
       const tracked = this.tracked.get(session.id)
       if (tracked) {
         tracked.stamp = null
+        tracked.workingSince = null
       }
       return
     }
     const tracked = this.track(session.id)
+    tracked.workingSince = null
     const stamp = `${session.status}:${session.lastActivityAt}`
     if (tracked.stamp === stamp) {
       return
@@ -148,7 +168,7 @@ export class LiveSessionRecaps {
       (stale || recap === null) &&
       session?.transcriptPath &&
       this.available() &&
-      now - tracked.lastPassAt > OPEN_INTERVAL_MS
+      now - Math.max(tracked.lastPassAt, tracked.lastWorkingPassAt) > OPEN_INTERVAL_MS
     ) {
       this.run(id, tracked, 'asked', false)
     }
@@ -202,7 +222,14 @@ export class LiveSessionRecaps {
   private track(sessionId: string): Tracked {
     let tracked = this.tracked.get(sessionId)
     if (!tracked) {
-      tracked = { stamp: null, timer: null, lastPassAt: 0, outcome: null }
+      tracked = {
+        stamp: null,
+        workingSince: null,
+        timer: null,
+        lastPassAt: 0,
+        lastWorkingPassAt: 0,
+        outcome: null
+      }
       this.tracked.set(sessionId, tracked)
     }
     return tracked
@@ -216,11 +243,55 @@ export class LiveSessionRecaps {
     const wait = Math.max(SETTLE_DELAY_MS, tracked.lastPassAt + RECAP_AUTO_INTERVAL_MS - this.now())
     tracked.timer = this.setTimer(() => {
       tracked.timer = null
-      // Still the stop it was scheduled for; a session back at work is recapped when it next stops.
+      // Still the stop it was scheduled for; a session back at work is recapped as it works.
       if (this.tracked.get(sessionId) === tracked && tracked.stamp !== null && this.available()) {
         void this.run(sessionId, tracked, 'auto', false)
       }
     }, wait)
+  }
+
+  /** A working turn's passes count from its start, or from the last pass of any kind since. */
+  private workingBase(tracked: Tracked): number {
+    return Math.max(tracked.workingSince ?? 0, tracked.lastPassAt, tracked.lastWorkingPassAt)
+  }
+
+  /** While a session works: a look at what it has said since its recap, once a pass may follow. */
+  private scheduleWorking(sessionId: string, tracked: Tracked): void {
+    if (tracked.timer || (!this.deps.eager && !this.deps.store.get(sessionId)?.recap)) {
+      return
+    }
+    const wait = Math.max(
+      WORKING_CHECK_MS,
+      this.workingBase(tracked) + RECAP_AUTO_INTERVAL_MS - this.now()
+    )
+    tracked.timer = this.setTimer(() => {
+      tracked.timer = null
+      if (
+        this.tracked.get(sessionId) === tracked &&
+        tracked.workingSince !== null &&
+        this.available()
+      ) {
+        void this.runWorking(sessionId, tracked)
+      }
+    }, wait)
+  }
+
+  private async runWorking(sessionId: string, tracked: Tracked): Promise<void> {
+    const overdue = this.now() - this.workingBase(tracked) >= RECAP_WORKING_MAX_WAIT_MS
+    const outcome = await this.deps.engine.update(
+      sessionId,
+      'working',
+      false,
+      overdue ? 1 : RECAP_WORKING_MIN_PROSE_CHARS
+    )
+    // Too little said yet: the next activity looks again. Anything else waits out the interval.
+    if (outcome !== 'current') {
+      tracked.lastWorkingPassAt = this.now()
+    }
+    // Out of the working tier is not out of budget for the user, who can still open or refresh.
+    if (outcome === 'updated' || outcome === 'failed') {
+      tracked.outcome = outcome
+    }
   }
 
   private run(

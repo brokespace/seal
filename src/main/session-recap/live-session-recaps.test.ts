@@ -8,6 +8,7 @@ import {
   type SessionRecap
 } from '../../shared/session-recap/session-recap-types'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
+import type { RecapPassOutcome } from './session-recap-engine'
 import { SessionRecapStore } from './session-recap-store'
 
 function session(overrides: Partial<LiveSession> = {}): LiveSession {
@@ -52,12 +53,16 @@ async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
     join(await mkdtemp(join(tmpdir(), 'seal-live-recaps-')), 'recaps.json')
   )
   const passes: string[] = []
-  const timers: (() => void)[] = []
+  const timers: { run: () => void; at: number }[] = []
+  const clock = { now: 10_000_000 }
+  /** What the engine answers, in order; `updated` once these run out. */
+  const outcomes: RecapPassOutcome[] = []
   const sessions = new Map<string, LiveSession>()
   const engine: LiveSessionRecapsDeps['engine'] = {
-    update: async (sessionId, kind, rebuild) => {
-      passes.push(`${kind}${rebuild ? ' rebuild' : ''} ${sessionId}`)
-      return 'updated'
+    update: async (sessionId, kind, rebuild, minProseChars) => {
+      const prose = minProseChars ? ` ${minProseChars}+` : ''
+      passes.push(`${kind}${rebuild ? ' rebuild' : ''}${prose} ${sessionId}`)
+      return outcomes.shift() ?? 'updated'
     },
     isUpdating: () => false,
     failure: () => null,
@@ -70,20 +75,35 @@ async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
     pausedUntil: () => null,
     session: (sessionId) => sessions.get(sessionId) ?? null,
     eager: options.eager ?? true,
-    setTimer: (run) => {
-      timers.push(run)
-      return { cancel: () => undefined }
+    setTimer: (run, delayMs) => {
+      const timer = { run, at: clock.now + delayMs }
+      timers.push(timer)
+      return {
+        cancel: () => void (timers.includes(timer) && timers.splice(timers.indexOf(timer), 1))
+      }
     },
-    now: () => 10_000_000
+    now: () => clock.now
   })
-  const stop = (next: LiveSession) => {
+  const seen = (next: LiveSession) => {
     sessions.set(next.id, next)
     recaps.observe({ type: 'upsert', revision: 1, session: next })
-    for (const run of timers.splice(0)) {
+  }
+  const stop = (next: LiveSession) => {
+    seen(next)
+    for (const { run } of timers.splice(0)) {
       run()
     }
   }
-  return { recaps, store, passes, stop, sessions }
+  /** Time passes: timers that came due run, and the passes they started finish. */
+  const wait = async (ms: number) => {
+    clock.now += ms
+    for (const timer of timers.filter(({ at }) => at <= clock.now)) {
+      timers.splice(timers.indexOf(timer), 1)
+      timer.run()
+    }
+    await new Promise((resolve) => setImmediate(resolve))
+  }
+  return { recaps, store, passes, stop, seen, wait, outcomes, sessions }
 }
 
 describe('LiveSessionRecaps', () => {
@@ -108,13 +128,40 @@ describe('LiveSessionRecaps', () => {
     expect(h.recaps.decorate(session()).recap).toBeUndefined()
   })
 
-  it('recaps a session when it stops, not while it works', async () => {
+  it('recaps a session four minutes into a working turn, and again when it stops', async () => {
     const h = await harness()
 
-    h.stop(session({ status: 'working' }))
+    h.seen(session({ status: 'working' }))
+    await h.wait(3 * 60_000)
     expect(h.passes).toEqual([])
 
+    await h.wait(60_000)
+    expect(h.passes).toEqual(['working 1200+ local:claude:abc'])
+
     h.stop(session({ status: 'waiting-input', lastActivityAt: 2_000 }))
+    expect(h.passes).toEqual(['working 1200+ local:claude:abc', 'auto local:claude:abc'])
+  })
+
+  it('takes any new prose once a working session has gone ten minutes without a pass', async () => {
+    const h = await harness()
+    h.outcomes.push('current')
+
+    h.seen(session({ status: 'working' }))
+    await h.wait(4 * 60_000)
+    h.seen(session({ status: 'working', lastActivityAt: 2_000 }))
+    await h.wait(6 * 60_000)
+
+    expect(h.passes).toEqual(['working 1200+ local:claude:abc', 'working 1+ local:claude:abc'])
+  })
+
+  it('does not recap a turn that ends inside four minutes until it stops', async () => {
+    const h = await harness()
+
+    h.seen(session({ status: 'working' }))
+    await h.wait(2 * 60_000)
+    h.seen(session({ status: 'waiting-input', lastActivityAt: 2_000 }))
+    await h.wait(5 * 60_000)
+
     expect(h.passes).toEqual(['auto local:claude:abc'])
   })
 

@@ -100,14 +100,22 @@ export class SessionRecapEngine {
     this.abort.abort()
   }
 
-  /** `rebuild` starts over from the recent history instead of continuing the recap. */
-  update(sessionId: string, kind: RecapPassKind, rebuild = false): Promise<RecapPassOutcome> {
+  /**
+   * `rebuild` starts over from the recent history instead of continuing the recap. With fewer than
+   * `minProseChars` of new prose the pass waits: nothing is asked of the model or marked as read.
+   */
+  update(
+    sessionId: string,
+    kind: RecapPassKind,
+    rebuild = false,
+    minProseChars = 0
+  ): Promise<RecapPassOutcome> {
     const running = this.running.get(sessionId)
     if (running) {
       return running
     }
     const pass = this.queue
-      .then(() => this.pass(sessionId, kind, rebuild))
+      .then(() => this.pass(sessionId, kind, rebuild, minProseChars))
       .catch((error: unknown): RecapPassOutcome => {
         if (!this.abort.signal.aborted) {
           this.failures.set(
@@ -135,7 +143,8 @@ export class SessionRecapEngine {
   private async pass(
     sessionId: string,
     kind: RecapPassKind,
-    rebuild: boolean
+    rebuild: boolean,
+    minProseChars: number
   ): Promise<RecapPassOutcome> {
     const { store, budget } = this.deps
     await store.load()
@@ -163,10 +172,13 @@ export class SessionRecapEngine {
       }
       return added ? 'updated' : 'current'
     }
+    if (digest.entries.reduce((sum, entry) => sum + entry.text.length, 0) < minProseChars) {
+      return 'current'
+    }
     if (!budget.allows(kind)) {
       return 'over-budget'
     }
-    const maxChunks = !base && kind === 'auto' ? AUTO_FIRST_CHUNKS : MAX_CHUNKS
+    const maxChunks = !base && kind !== 'asked' ? AUTO_FIRST_CHUNKS : MAX_CHUNKS
     const { chunks, dropped } = chunkRecapEntries(digest.entries, RECAP_CHUNK_CHARS, maxChunks)
     // A rebuilt recap keeps counting ids, so none it hands out was ever another item's.
     let recap: SessionRecap = base ?? {
@@ -175,7 +187,12 @@ export class SessionRecapEngine {
     }
     let degraded = false
     for (const chunk of chunks) {
-      const prompt = recapPrompt(recap, chunk, this.deps.firstPrompt(sessionId))
+      const prompt = recapPrompt(
+        recap,
+        chunk,
+        this.deps.firstPrompt(sessionId),
+        kind === 'working' && chunk === chunks.at(-1)
+      )
       const parsed = await this.ask(prompt.request)
       degraded ||= !parsed.ok
       recap = applyRecapDelta(

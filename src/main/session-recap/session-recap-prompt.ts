@@ -70,10 +70,15 @@ export type RecapPrompt = {
   refOf: (entry: RecapEntry) => string
 }
 
+// A turn read before it ends is not an outcome yet.
+const STILL_WORKING =
+  'The agent is still working and its last message is unfinished: record what it is doing as "in-progress", never "done", and say in "standing" what it is doing now.'
+
 export function recapPrompt(
   recap: SessionRecap,
   entries: readonly RecapEntry[],
-  firstPrompt: string | null
+  firstPrompt: string | null,
+  stillWorking = false
 ): RecapPrompt {
   const refs = new Map<string, string>()
   const tags = new Map<RecapEntry, string>()
@@ -91,7 +96,7 @@ export function recapPrompt(
         { role: 'system', content: SYSTEM },
         {
           role: 'user',
-          content: `<recap>\n${carriedRecap(recap, firstPrompt)}\n</recap>\n<new_messages>\n${lines.join('\n\n')}\n</new_messages>`
+          content: `<recap>\n${carriedRecap(recap, firstPrompt)}\n</recap>\n<new_messages>\n${lines.join('\n\n')}\n</new_messages>${stillWorking ? `\n${STILL_WORKING}` : ''}`
         }
       ],
       maxTokens: RECAP_MAX_OUTPUT_TOKENS,
