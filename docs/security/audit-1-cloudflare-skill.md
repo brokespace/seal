@@ -17,7 +17,7 @@
   against the real Worker in local workerd (wrangler's `unstable_startWorker`, the repository's own
   test harness) inside a sandbox with no network, with keys and tokens generated in the test.
 - **This report changes no product code.** It adds this file and opt-in PoC tests under
-  `cloud/seal-relay/test/security/audit-1/`.
+  `cloud/seal-relay/test/security/audit-1/` (see [Proofs of concept](#proofs-of-concept)).
 
 ## Run status: incomplete
 
@@ -258,6 +258,40 @@ second verifier. Severity is the skill's likelihood × impact rating.
   before persisting the binding; treat an out-of-window stored expiry as lapsed in `RelayDemandLedger`
   (do not delete the field: a binding without it counts as an installed credential); clamp the timer.
 - **Other audits:** only this audit.
+
+## Proofs of concept
+
+Five of the eight confirmed findings have a PoC committed under
+`cloud/seal-relay/test/security/audit-1/`. Each one passes while the weakness exists, so a fix makes
+it fail by design. They are therefore skipped unless `SEAL_SECURITY_POC=1` is set, and CI
+(`pnpm test` in `cloud/seal-relay`) reports the three `*.test.ts` suites as skipped and never
+collects the two `*.poc.ts` suites.
+
+| Finding | File                                   | What it shows                                                                                                                                   |
+| ------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1-01   | `anonymous-object-storage.test.ts`     | Anonymous resolve, challenge and session requests leave SQLite tables on disk that are still there after the Worker restarts                    |
+| A1-02   | `host-auth-limiter-ipv6.test.ts`       | One IPv6 address is stopped at 30 challenges a minute; 40 addresses of one /64 get 40 in the same minute                                        |
+| A1-03   | `pairing-recovery-resume-token.poc.ts` | After an interrupted pairing, recovery opens the attacker-supplied cell and sends it the resume token of an already paired host                 |
+| A1-04   | `registry-removal-open-session.poc.ts` | A silent socket keeps receiving terminal output after its row is removed from the registry file; the in-process revoke closes it (control)      |
+| A1-05   | `registry-file-revoke.test.ts`         | After the row is removed from the registry file, push delivery, the relay credential and the push registration are all still live at the Worker |
+
+Run them from `cloud/seal-relay`:
+
+```sh
+# A1-01, A1-02, A1-05: the Worker's own test config
+SEAL_SECURITY_POC=1 pnpm test test/security/audit-1
+
+# A1-03, A1-04: these import phone and host code, so they need their own config
+SEAL_SECURITY_POC=1 pnpm exec vitest run --config test/security/audit-1/vitest.poc.config.ts
+```
+
+Last run from the committed sources at `95dd0be`, in the audit sandbox and again in this branch's
+checkout: 4 of 4 and 3 of 3 tests passed with the variable set; without it, 4 skipped and the
+Worker's existing 6 tests passed. They have not been run against `291fb3ac`.
+
+A1-06, A1-07 and A1-08 were reproduced in the audit sandbox only. Each needs a fault-injection
+harness between the host and the Worker (a failed revoke response, a delayed first frame, a relay
+that returns a far-future expiry), and those harnesses are not committed.
 
 ## Needs validation
 
