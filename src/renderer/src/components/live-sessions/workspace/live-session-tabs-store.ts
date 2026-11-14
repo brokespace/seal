@@ -30,8 +30,9 @@ function restore(): LiveSessionTabsState {
     const saved: unknown = JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY) ?? 'null')
     if (saved && typeof saved === 'object' && 'tabs' in saved && Array.isArray(saved.tabs)) {
       const tabs = saved.tabs.filter((id): id is string => typeof id === 'string')
+      const fields = new Map<string, unknown>(Object.entries(saved))
       const pick = (key: 'activeId' | 'splitId'): string | null => {
-        const id = (saved as Record<string, unknown>)[key]
+        const id = fields.get(key)
         return typeof id === 'string' && tabs.includes(id) ? id : null
       }
       return {

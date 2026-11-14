@@ -175,6 +175,18 @@ function textOf(message: NativeChatMessage): string {
     .trim()
 }
 
+/** Two to-dos may read the same; the nth of a kind keeps its key as the list changes around it. */
+function keyedTodos<T extends { content: string }>(
+  todos: readonly T[]
+): { key: string; todo: T }[] {
+  const seen = new Map<string, number>()
+  return todos.map((todo) => {
+    const nth = seen.get(todo.content) ?? 0
+    seen.set(todo.content, nth + 1)
+    return { key: `${todo.content}#${nth}`, todo }
+  })
+}
+
 function ReasoningItem({ message }: { message: NativeChatMessage }): React.JSX.Element {
   const t = useTranslate()
   const headline = nativeChatReasoningHeadline(message, { live: false })
@@ -182,18 +194,20 @@ function ReasoningItem({ message }: { message: NativeChatMessage }): React.JSX.E
   return (
     <Collapsible asChild>
       <li data-live-reasoning={message.id} className="px-2">
-        <CollapsibleTrigger className="group flex w-full items-start gap-1.5 rounded-md px-1 py-1.5 text-left hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-          <ChevronRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-xs font-medium">
-              {headline.kind === 'thoughtFor'
-                ? t('components.native-chat.thoughtForDuration', 'Thought for {{duration}}', {
-                    duration: headline.duration
-                  })
-                : t('components.native-chat.thought', 'Thought')}
-            </span>
-            <span className="truncate text-xs text-muted-foreground group-data-[state=open]:hidden">
-              {text.split('\n')[0]}
+        <CollapsibleTrigger variant="row">
+          <span className="flex min-w-0 flex-1 items-start gap-1.5 px-1">
+            <ChevronRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-xs font-medium">
+                {headline.kind === 'thoughtFor'
+                  ? t('components.native-chat.thoughtForDuration', 'Thought for {{duration}}', {
+                      duration: headline.duration
+                    })
+                  : t('components.native-chat.thought', 'Thought')}
+              </span>
+              <span className="truncate text-xs text-muted-foreground group-data-[state=open]:hidden">
+                {text.split('\n')[0]}
+              </span>
             </span>
           </span>
         </CollapsibleTrigger>
@@ -307,8 +321,8 @@ export function LiveSessionActivityPanel({
             </SectionTitle>
             {todos.length > 0 ? (
               <ul>
-                {todos.map((todo, index) => (
-                  <TodoRow key={`${index}:${todo.content}`} todo={todo} />
+                {keyedTodos(todos).map(({ key, todo }) => (
+                  <TodoRow key={key} todo={todo} />
                 ))}
               </ul>
             ) : (

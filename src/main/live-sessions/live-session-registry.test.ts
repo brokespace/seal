@@ -28,7 +28,11 @@ function transcript(fixture: string, sessionId: string, ageMs: number): Discover
 
 /** A machine whose processes, transcripts and Seal panes the test changes between scans. */
 function machine() {
-  const state = { running: false, files: [] as DiscoveredFile[], panes: [] as SealPane[] }
+  const state: { running: boolean; files: DiscoveredFile[]; panes: SealPane[] } = {
+    running: false,
+    files: [],
+    panes: []
+  }
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
     run: async () =>

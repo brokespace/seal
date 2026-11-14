@@ -49,24 +49,16 @@ export class LiveSessionAnnotations {
   }
 
   set({ sessionId, customTitle, pinned }: LiveSessionAnnotation): void {
-    const next: Saved = { ...this.bySession.get(sessionId), sessionId }
-    if (customTitle !== undefined) {
-      const title = customTitle?.trim()
-      if (title) {
-        next.customTitle = title
-      } else {
-        delete next.customTitle
-      }
-    }
-    if (pinned !== undefined) {
-      if (pinned) {
-        next.pinned = true
-      } else {
-        delete next.pinned
-      }
-    }
-    if (next.customTitle || next.pinned) {
-      this.bySession.set(sessionId, next)
+    const saved = this.bySession.get(sessionId)
+    // Undefined leaves a field as it was; null or false clears it.
+    const title = customTitle === undefined ? saved?.customTitle : customTitle?.trim()
+    const pin = pinned ?? saved?.pinned
+    if (title || pin) {
+      this.bySession.set(sessionId, {
+        sessionId,
+        ...(title ? { customTitle: title } : {}),
+        ...(pin ? { pinned: true } : {})
+      })
     } else {
       this.bySession.delete(sessionId)
     }

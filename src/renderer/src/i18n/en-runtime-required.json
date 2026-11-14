@@ -348,48 +348,6 @@
           }
         }
       },
-      "live-sessions": {
-        "LiveSessionList": {
-          "label": "Agent sessions",
-          "sealPane": "Seal pane"
-        },
-        "LiveSessionsPage": {
-          "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server.",
-          "pick": "Pick a session to open its chat",
-          "scanning": "Looking for sessions",
-          "title": "Agent sessions"
-        },
-        "LiveSessionsSidebarEntry": {
-          "label": "Agent sessions"
-        },
-        "remove": {
-          "button": "Remove from Seal",
-          "cancel": "Cancel",
-          "deleteFiles": "Also delete transcript files",
-          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
-          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
-          "done": "Done",
-          "hideOnly": "Remove from Seal",
-          "removeAndDelete": "Remove and delete",
-          "removeSelected": "Remove",
-          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
-          "select": "Select",
-          "selectAll": "Select all",
-          "selectNone": "Select none",
-          "selected": "{{count}} selected",
-          "stopAndRemove": "Stop and remove",
-          "titleMany": "Remove {{count}} sessions from Seal?",
-          "titleOne": "Remove this session from Seal?"
-        },
-        "takeOver": {
-          "button": "Take over",
-          "cancel": "Cancel",
-          "confirm": "Take over",
-          "descriptionAlive": "Seal stops {{agent}} on {{host}} (it ends in the terminal it was started from) and reopens the conversation in a Seal pane with {{resume}}. A reply in progress stops.",
-          "descriptionClosed": "Seal reopens the conversation in a Seal pane with {{resume}}.",
-          "title": "Take over this session?"
-        }
-      },
       "onboarding": {
         "AgentStep": {
           "showMoreAgents": "Show {{value0}} more agents →",
