@@ -4,7 +4,8 @@ import { useTranslate } from '@/i18n/use-translate'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { groupHomeSessions } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeSession } from './home-overview-model'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty } from './HomeOverviewRow'
 import { HomeSessionRow } from './HomeSessionRow'
 
 export function HomeSessionsPanel({
@@ -19,7 +20,7 @@ export function HomeSessionsPanel({
   const t = useTranslate()
   const groups = useMemo(() => groupHomeSessions(sessions), [sessions])
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.sessions.title', 'Sessions')}
       action={
         <span className="flex items-center gap-2">
@@ -71,6 +72,6 @@ export function HomeSessionsPanel({
           })}
         </div>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

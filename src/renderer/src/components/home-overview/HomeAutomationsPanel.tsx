@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import type { HomeAutomation, HomeAutomationsResult } from './home-overview-model'
 import { formatHomeCountdown } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 
 const MAX_AUTOMATION_ROWS = 5
 
@@ -21,7 +22,7 @@ export function HomeAutomationsPanel({
   const t = useTranslate()
   const enabled = result.automations.filter((automation) => automation.enabled)
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.automations.title', 'Automations')}
       action={
         <Button variant="ghost" size="xs" onClick={onOpen}>
@@ -70,6 +71,6 @@ export function HomeAutomationsPanel({
           </ul>
         </>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

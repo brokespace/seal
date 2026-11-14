@@ -1,4 +1,5 @@
 import { AgentStateDot } from '@/components/AgentStateDot'
+import { PageSection } from '@/components/page-layout/PageCard'
 import { useTranslate } from '@/i18n/use-translate'
 import type { HomeAttentionItem } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeOverviewActions } from './home-overview-model'
@@ -43,15 +44,18 @@ export function HomeAttentionStrip({
   actions: HomeOverviewActions
 }): React.JSX.Element {
   const t = useTranslate()
+  const label = t('home.overview.attention.title', 'Needs attention')
   return (
-    <section
-      aria-label={t('home.overview.attention.title', 'Needs attention')}
-      className="flex min-h-12 items-center gap-3"
+    <PageSection
+      inline
+      label={label}
+      caption={
+        <>
+          {label}
+          <span className="ml-1.5 tabular-nums">{items.length}</span>
+        </>
+      }
     >
-      <h2 className="shrink-0 text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-        {t('home.overview.attention.title', 'Needs attention')}
-        <span className="ml-1.5 tabular-nums">{items.length}</span>
-      </h2>
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           {t('home.overview.attention.empty', 'Nothing is waiting on you.')}
@@ -65,6 +69,6 @@ export function HomeAttentionStrip({
           ))}
         </ul>
       )}
-    </section>
+    </PageSection>
   )
 }

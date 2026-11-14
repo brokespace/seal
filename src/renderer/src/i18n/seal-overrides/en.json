@@ -95,10 +95,7 @@
           "useServer": "Connect via Seal server instead",
           "editSsh": "Edit SSH details…",
           "addSsh": "Add SSH details…",
-          "editorOffline": "Connect this machine to open it in an editor.",
-          "editorNoHome": "Waiting for this machine to report its home folder.",
-          "editorOpenIn": "Open in {{app}}",
-          "editorChoose": "Choose editor"
+          "editorOffline": "Connect this machine to open it in an editor."
         },
         "edit": {
           "saved": "Machine updated"
@@ -134,19 +131,7 @@
           "urlInvalid": "Enter an http or https URL.",
           "urlFileName": "File name (optional)",
           "editorAliasCopied": "Copied. Paste it into ~/.ssh/config on this computer, then open the editor again.",
-          "editorChoose": "Choose editor",
-          "editorAliasTitle": "{{app}} needs an SSH config entry for {{machine}}.",
-          "editorAliasDetail": "{{app}} reaches a custom SSH port ({{port}}) only through a Host entry in ~/.ssh/config on this computer.",
-          "editorAliasCopy": "Copy entry",
-          "editorLaunchFailed": "Could not start {{app}}.",
-          "editorLaunchFailedDetail": "Seal could not run the {{command}} command on this computer. Install it from the app, or choose another editor.",
-          "editorNone": "No editor is set up.",
-          "editorNoneDetail": "Add VS Code, Cursor, or another editor under Settings, then try again.",
-          "editorLocalOnly": "{{app}} cannot open folders on another machine.",
-          "editorLocalOnlyDetail": "VS Code, Cursor, and Zed can. Add one of them, then try again.",
-          "editorNeedsSshTitle": "{{app}} needs SSH details for {{machine}}.",
-          "editorNeedsSshDetail": "This machine is connected through its Seal server, and an editor on this computer connects over SSH. The server connection stays in use.",
-          "editorAddSsh": "Add SSH details"
+          "editorAliasCopy": "Copy entry"
         },
         "delete": {
           "titleOne": "Delete {{name}}?",
@@ -380,6 +365,27 @@
           "diskTitle": "Disk: usage and cleanup",
           "close": "Back to files",
           "unsupported": "Process, memory and disk details are available for Linux and macOS machines."
+        },
+        "editor": {
+          "openInApp": "Open in {{app}}",
+          "choose": "Choose editor",
+          "sealEditor": "Seal’s editor",
+          "customizeApps": "Choose apps…",
+          "openedFileInSeal": "Opened the file in Seal’s editor",
+          "openedFolderInSeal": "Showing the folder in Seal’s files",
+          "noSshDetails": "{{machine}} is reached through its Seal server only. Add SSH details to open it in VS Code, Cursor, or Zed on this computer.",
+          "noApps": "No Open In apps are set up. Add one to open paths in another editor.",
+          "noRemoteEditor": "None of your Open In apps can open a remote machine. Add VS Code, Cursor, or Zed.",
+          "commandNotFound": "The “{{command}}” command was not found on this computer. Install the app’s command-line launcher, or choose another app.",
+          "commandNotExecutable": "“{{command}}” is not allowed to run on this computer.",
+          "commandExited": "“{{command}}” quit with exit code {{exitCode}} before opening anything.",
+          "commandError": "“{{command}}” could not start: {{message}}",
+          "openInSeal": "Open in Seal",
+          "aliasRequired": "{{app}} needs an SSH config entry for {{machine}}",
+          "aliasRequiredDetail": "It reaches a custom SSH port only through a Host entry for {{host}}:{{port}} in ~/.ssh/config on this computer.",
+          "launchFailed": "Could not open {{app}}",
+          "launchFailedDetail": "Check this app’s command under Open In apps.",
+          "filesLoading": "Still loading this machine’s files. Try again in a moment."
         }
       },
       "live-sessions": {
@@ -751,11 +757,6 @@
       "contextWindowHint": "Seal summarizes older messages for the model before this fills."
     },
     "stop": "Stop",
-    "thinking": {
-      "brief": "Thought briefly",
-      "done": "Thought for {{duration}}",
-      "live": "Thinking…"
-    },
     "title": "Seal assistant",
     "working": "Working…",
     "worker": "Worker",

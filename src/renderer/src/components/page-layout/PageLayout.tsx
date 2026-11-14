@@ -12,7 +12,7 @@ export function PageLayout({
   return (
     <main
       className={cn(
-        'relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background pt-5 text-foreground [--page-gutter:0.75rem] md:pt-6 md:[--page-gutter:1.25rem]',
+        'relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background pt-(--page-top-inset) text-foreground',
         className
       )}
       {...props}
@@ -57,19 +57,42 @@ export function PagePanes({ className, ...props }: React.ComponentProps<'div'>):
   return <div className={cn('flex min-h-0 flex-1 border-t border-border', className)} {...props} />
 }
 
-/** The region under the header for a page that is one scrolling column of content. */
+/** The inset column of a page's content; `readable` holds forms and prose to a comfortable measure. */
+export function PageContent({
+  width = 'full',
+  className,
+  ...props
+}: React.ComponentProps<'div'> & { width?: 'full' | 'readable' }): React.JSX.Element {
+  return (
+    <div
+      className={cn(
+        'mx-auto flex w-full flex-col gap-(--page-section-gap) py-(--page-gutter)',
+        PAGE_GUTTER_X,
+        width === 'readable' &&
+          // The measure excludes the gutters, so narrow windows keep them.
+          'max-w-[calc(var(--page-readable-max-width)+2*var(--page-gutter))]',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+/** The region under the header for a page that scrolls; a size container named `page` for its content. */
 export function PageScrollContent({
+  width,
   className,
   children
 }: {
+  width?: 'full' | 'readable'
   className?: string
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto border-t border-border">
-      <div className={cn('flex w-full flex-col pt-4 pb-16', PAGE_GUTTER_X, className)}>
+    <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto border-t border-border [container:page/size]">
+      <PageContent width={width} className={className}>
         {children}
-      </div>
+      </PageContent>
     </div>
   )
 }
