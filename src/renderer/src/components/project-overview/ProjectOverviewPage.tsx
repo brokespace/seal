@@ -70,6 +70,7 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   return (
     <PageLayout data-project-overview={repo.id}>
       <PageHeader
+        className="@container/project-header"
         title={
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <RepoIconGlyph
@@ -78,9 +79,12 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
               className="size-5 shrink-0"
               iconClassName="size-4"
             />
-            <PageTitle className="flex-none">{repo.displayName}</PageTitle>
+            <PageTitle className="flex-initial">{repo.displayName}</PageTitle>
             <RepoForkIndicator upstream={repo.upstream} />
-            <p className="min-w-0 truncate text-xs text-muted-foreground tabular-nums">{summary}</p>
+            {/* The Agents card says the same below, so a narrow page gives the row to the name. */}
+            <p className="hidden shrink-0 text-xs text-muted-foreground tabular-nums @min-[60rem]/project-header:block">
+              {summary}
+            </p>
           </div>
         }
       >
