@@ -10,13 +10,14 @@ type MachineTreeMemory = {
 }
 
 // Survives page switches so reopening a machine paints its last tree instantly.
-const memory = new Map<MachineId, MachineTreeMemory>()
+const memory = new Map<string, MachineTreeMemory>()
 
-function memoryFor(machineId: MachineId): MachineTreeMemory {
-  let entry = memory.get(machineId)
+function memoryFor(machineId: MachineId, startAt: string | undefined): MachineTreeMemory {
+  const key = startAt ? `${machineId}\n${startAt}` : machineId
+  let entry = memory.get(key)
   if (!entry) {
-    entry = { root: null, expanded: new Set(), folders: new Map() }
-    memory.set(machineId, entry)
+    entry = { root: startAt ?? null, expanded: new Set(), folders: new Map() }
+    memory.set(key, entry)
   }
   return entry
 }
@@ -41,9 +42,11 @@ export type MachineExplorerTree = {
 export function useMachineExplorerTree(
   machineId: MachineId,
   online: boolean,
-  showHidden: boolean
+  showHidden: boolean,
+  /** Opens on this folder instead of the home folder, with its own remembered tree. */
+  startAt?: string
 ): MachineExplorerTree {
-  const remembered = memoryFor(machineId)
+  const remembered = memoryFor(machineId, startAt)
   const [root, setRoot] = useState<string | null>(remembered.root)
   const [expanded, setExpanded] = useState<Set<string>>(remembered.expanded)
   const [folders, setFolders] = useState<Map<string, FolderState>>(remembered.folders)
@@ -56,11 +59,11 @@ export function useMachineExplorerTree(
   })
 
   useEffect(() => {
-    const entry = memoryFor(machineId)
+    const entry = memoryFor(machineId, startAt)
     entry.root = root
     entry.expanded = expanded
     entry.folders = folders
-  }, [machineId, root, expanded, folders])
+  }, [machineId, startAt, root, expanded, folders])
 
   const patchFolder = useCallback((path: string, patch: Partial<FolderState>) => {
     setFolders((previous) => {

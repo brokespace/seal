@@ -9,6 +9,7 @@ import {
   machinePathDirname
 } from '../../../../../shared/machines/machine-paths'
 import type { MachinePromptRequest } from './MachinePromptDialog'
+import type { MachineExplorerFileOps } from './machine-explorer-source'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -39,7 +40,8 @@ export type MachineFileActions = {
 
 export function useMachineFileActions(
   machineId: MachineId,
-  refresh: (path: string) => void
+  refresh: (path: string) => void,
+  fileOps?: MachineExplorerFileOps
 ): MachineFileActions {
   const t = useTranslate()
   const [prompt, setPrompt] = useState<MachinePromptRequest | null>(null)
@@ -88,22 +90,25 @@ export function useMachineFileActions(
           if (!name || name === current) {
             return
           }
-          await machinesApi().rename({ machineId, from: path, to: joinMachinePath(parent, name) })
+          const to = joinMachinePath(parent, name)
+          await (fileOps
+            ? fileOps.rename(path, to)
+            : machinesApi().rename({ machineId, from: path, to }))
           refresh(parent)
         }
       })
     },
-    [machineId, nameField, refresh, t]
+    [fileOps, machineId, nameField, refresh, t]
   )
 
   const confirmDelete = useCallback(
     async (paths: string[]) => {
-      await machinesApi().remove({ machineId, paths })
+      await (fileOps ? fileOps.remove(paths) : machinesApi().remove({ machineId, paths }))
       for (const parent of new Set(paths.map((path) => machinePathDirname(path) ?? path))) {
         refresh(parent)
       }
     },
-    [machineId, refresh]
+    [fileOps, machineId, refresh]
   )
 
   const download = useCallback(

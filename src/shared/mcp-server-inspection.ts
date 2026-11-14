@@ -5,9 +5,9 @@ import {
 } from './mcp-config-inspection-limits'
 import type { McpServerSummary, McpServerTransport } from './mcp-config'
 
-const SENSITIVE_ENV_KEY_PATTERN =
+export const SENSITIVE_ENV_KEY_PATTERN =
   /(api[_-]?key|auth|bearer|cookie|credential|password|private[_-]?key|secret|session|token)/i
-const SENSITIVE_ENV_VALUE_PATTERN =
+export const SENSITIVE_ENV_VALUE_PATTERN =
   /(sk-[A-Za-z0-9_-]{12,}|gh[pousr]_[A-Za-z0-9_]{12,}|xox[baprs]-[A-Za-z0-9-]{12,})/
 
 type BoundedString = { value?: string; oversized: boolean }

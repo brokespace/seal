@@ -39,7 +39,8 @@ import {
   sftpRealpath,
   sftpRename,
   sftpStat,
-  sftpUnlink
+  sftpUnlink,
+  sftpWriteFile
 } from './sftp-operations'
 
 const LIST_TIMEOUT_MS = 30_000
@@ -201,7 +202,12 @@ export class SshMachineFileSystem implements MachineFileSystem {
   }
 
   async writeFile(target: string, data: Buffer): Promise<void> {
-    await this.connection().writeBuffer(target, data)
+    const conn = this.connection()
+    if (this.usesSftp(conn)) {
+      await this.withSftp(conn, (sftp) => sftpWriteFile(sftp, target, data))
+      return
+    }
+    await conn.writeBuffer(target, data)
   }
 
   async createDir(target: string): Promise<void> {

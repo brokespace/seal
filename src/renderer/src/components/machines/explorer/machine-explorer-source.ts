@@ -16,3 +16,14 @@ export async function listMachineDirectory(
   }
   return api.listDir({ machineId, path: path ?? undefined, ...options })
 }
+
+/** Lets a caller put its own safeguards around edits (agent settings back files up first). */
+export type MachineExplorerFileOps = {
+  /** The text to show for a file, when it is not simply the file's bytes (hidden secrets). */
+  readText?: (path: string) => Promise<string>
+  write: (path: string, content: string) => Promise<void>
+  rename: (from: string, to: string) => Promise<void>
+  remove: (paths: string[]) => Promise<void>
+  /** Shown in the delete confirmation in place of "cannot be undone". */
+  removeDescription?: string
+}

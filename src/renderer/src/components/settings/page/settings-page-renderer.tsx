@@ -12,6 +12,7 @@ import type { SettingsInteractionController } from './use-settings-interaction-c
 import type { SettingsRenderContext } from './settings-render-context'
 import {
   renderAccountsSettingsSection,
+  renderAgentConfigSettingsSection,
   renderAgentsSettingsSection,
   renderDesktopCapabilitySettingsSections,
   renderLinearSettingsSection,
@@ -167,6 +168,7 @@ export function renderSettingsPage(
               <SettingsContentScrollElementProvider value={interactions.contentScrollElement}>
                 <ActiveSettingsSectionProvider value={model.activeSectionId}>
                   {renderAgentsSettingsSection(context, t)}
+                  {renderAgentConfigSettingsSection(context, t)}
                   {renderAccountsSettingsSection(context, t)}
                   {renderOrchestrationSettingsSection(context, t)}
                   {renderLinearSettingsSection(context, t)}
