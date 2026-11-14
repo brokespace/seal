@@ -56,7 +56,7 @@ export function ProjectAgentsCard({
             data-project-overview-agents-count
             className="text-2xs text-muted-foreground tabular-nums"
           >
-            {t('seal.projectOverview.agents.running', '{{count}} running', {
+            {t('seal.projectOverview.agents.active', '{{count}} active', {
               count: view.activeCount
             })}
           </span>

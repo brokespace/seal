@@ -2017,7 +2017,7 @@
       "agents": {
         "title": "Agents",
         "showInActiveAgents": "Show in Active agents",
-        "running": "{{count}} running",
+        "active": "{{count}} active",
         "empty": "No agents are running in this project. Start one with New agent."
       },
       "changes": {
