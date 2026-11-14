@@ -40,7 +40,8 @@ export function ProjectHeaderName({
       data-project-overview-link={repo?.id}
       data-project-overview-current={current ? '' : undefined}
       aria-current={current ? 'page' : undefined}
-      className="min-w-0 truncate text-[13px] font-semibold leading-4"
+      // A drag on the header moves the project; it must not start a text selection.
+      className="min-w-0 truncate text-[13px] font-semibold leading-4 select-none"
     >
       {label}
     </div>
