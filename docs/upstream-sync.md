@@ -66,6 +66,8 @@ The pass rewrites only string literals, template text and JSX text, and only whe
 
 Because tests run through the same pass, a test under `src/` asserts upstream's text in its source and passes against Seal's output. Do not hand-edit "Orca" to "Seal" in those roots: the edit is a diff against upstream that the build would have made anyway.
 
+The mobile RPC recordings in `mobile/rpc-foundation/goldens` are the exception. Their recorder transpiles source from disk itself, without the pass, so the goldens hold upstream's text and stay identical to upstream's files. If a merge brings in rebranded goldens, check out upstream's copies or re-record them (`pnpm --dir mobile rpc:record <scenario>`).
+
 A build step that reads source or catalogs without a bundler (the mobile web bundle's per-locale catalog copies, for example) needs its own hook; `seal:rebrand-check --built` is what catches a missing one. The Metro pass loads `oxc-parser` from the repo root, so a native mobile build needs `pnpm install` at the root as well as in `mobile/`; without it the build stops with a module-not-found error.
 
 ### Locale overlay
