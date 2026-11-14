@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... oder den Code einfügen"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Computer",
+      "newComputer": "Noch nicht mit diesem Telefon gekoppelt",
+      "fingerprintLabel": "Schlüssel-Fingerabdruck",
+      "relayLabel": "Relay",
+      "directLabel": "Direkte Adresse",
+      "replaceNotice": "Dadurch wird die bestehende Kopplung mit {{name}} ersetzt.",
+      "otherRelayNotice": "Dieser Code verwendet {{origin}} statt des in dieser App eingebauten Relays. Nur koppeln, wenn dem Betreiber vertraut wird."
+    }
   }
 }

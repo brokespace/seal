@@ -1,6 +1,10 @@
 import type { PairingRelay } from '../../../src/shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { relayConnectWebSocketUrl } from '../transport/relay/mobile-relay-connect-url'
 import { RelayMovedSchema } from '../../../src/shared/remote-runtime/relay/mobile-relay-phone-protocol'
+import {
+  isPinnedMobileRelayCell,
+  RelayCellOutsidePinError
+} from '../transport/relay/mobile-relay-cell-pin'
 
 export class RelayDirectorMoveNotNewerError extends Error {
   readonly cellUrl: string
@@ -62,6 +66,16 @@ export function resolvePairingInviteThroughDirector(args: {
       const moved = RelayMovedSchema.safeParse(value)
       if (!moved.success) {
         finish(new Error('invalid relay director move'))
+        return
+      }
+      // The invite token goes to the cell this names: a move outside the pin is a failed resolution.
+      if (
+        !isPinnedMobileRelayCell({
+          directorUrl: args.relay.directorUrl,
+          cellUrl: moved.data.cellUrl
+        })
+      ) {
+        finish(new RelayCellOutsidePinError())
         return
       }
       if (moved.data.assignmentEpoch <= args.relay.assignmentEpoch) {

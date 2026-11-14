@@ -371,6 +371,15 @@
       "loading": "Loading",
       "emptyTitle": "Nothing is waiting",
       "emptyMessage": "When an MCP client asks to run a command or do something destructive, it waits here for your answer."
+    },
+    "pairConfirm": {
+      "computerLabel": "Computer",
+      "newComputer": "Not paired with this phone yet",
+      "fingerprintLabel": "Key fingerprint",
+      "relayLabel": "Relay",
+      "directLabel": "Direct address",
+      "replaceNotice": "This will replace your existing pairing with {{name}}.",
+      "otherRelayNotice": "This code uses {{origin}} instead of the relay built into this app. Pair only if you trust whoever runs it."
     }
   }
 }

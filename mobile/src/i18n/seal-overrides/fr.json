@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... ou collez le code"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "Ordinateur",
+      "newComputer": "Pas encore jumelé avec ce téléphone",
+      "fingerprintLabel": "Empreinte de la clé",
+      "relayLabel": "Relais",
+      "directLabel": "Adresse directe",
+      "replaceNotice": "Cela remplacera le jumelage existant avec {{name}}.",
+      "otherRelayNotice": "Ce code utilise {{origin}} au lieu du relais intégré à cette app. Ne jumelez que si vous faites confiance à son exploitant."
+    }
   }
 }

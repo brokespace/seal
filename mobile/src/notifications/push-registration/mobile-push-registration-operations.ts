@@ -58,10 +58,18 @@ export async function sendRegister(
 
 export async function sendUnregister(
   client: UnvalidatedRpcRequestPort,
-  timeoutMs: number
+  timeoutMs: number,
+  // A client dialed only for this request has not connected yet; its dial then shares the budget.
+  { awaitConnect = false }: { awaitConnect?: boolean } = {}
 ): Promise<boolean> {
   const reply = await pushRouteUnregister
-    .request(client, null, { timeoutMs, failWhenDisconnected: true })
+    .request(
+      client,
+      null,
+      awaitConnect
+        ? { timeoutMs, budgetSpansConnect: true }
+        : { timeoutMs, failWhenDisconnected: true }
+    )
     .catch(() => null)
   return reply !== null && pushRouteUnregister.interpret(reply).accepted
 }

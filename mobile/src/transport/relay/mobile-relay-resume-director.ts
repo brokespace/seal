@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { parseRetryAfterHeaderMs } from '../../../../src/shared/retry-after-header'
 import { MOBILE_RELAY_RETRY_AFTER_MAX_MS } from './mobile-relay-retry-delays'
 import type { MobileRelayEndpoint } from '../../../../src/shared/remote-runtime/relay/mobile-relay-credential-contract'
+import { isCanonicalRelayOrigin } from '../../../../src/shared/remote-runtime/relay/relay-cell-origin-pin'
+import { assertPinnedMobileRelayCell } from './mobile-relay-cell-pin'
 
 const MAX_RESPONSE_BYTES = 16 * 1024
 
@@ -25,7 +27,7 @@ export function relayDirectorRetryAfterMs(error: Error | null): number {
 const ResolveResponseSchema = z
   .object({
     v: z.literal(1),
-    cellUrl: z.string().refine(isCanonicalHttpsOrigin),
+    cellUrl: z.string().refine((value) => isCanonicalRelayOrigin(value)),
     assignmentEpoch: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
     leaseExpiresAt: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER)
   })
@@ -69,6 +71,8 @@ export async function resolveMobileRelayEndpoint(args: {
       throw new Error('relay director resolve response too large')
     }
     const resolved = ResolveResponseSchema.parse(JSON.parse(raw) as unknown)
+    // Thrown like any malformed answer: the caller backs off and the route is never persisted or dialed.
+    assertPinnedMobileRelayCell({ directorUrl: args.relay.directorUrl, cellUrl: resolved.cellUrl })
     return {
       ...args.relay,
       cellUrl: resolved.cellUrl,
@@ -76,14 +80,5 @@ export async function resolveMobileRelayEndpoint(args: {
     }
   } finally {
     clearTimeout(timer)
-  }
-}
-
-function isCanonicalHttpsOrigin(value: string): boolean {
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === 'https:' && parsed.origin === value
-  } catch {
-    return false
   }
 }

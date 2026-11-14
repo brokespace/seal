@@ -15,15 +15,16 @@ export async function removeHostAndCloseClient(
   forgetHostClient: (hostId: string) => void,
   queryClient: QueryClient
 ): Promise<void> {
-  // Unregister before removal while the client is authenticated; desktop revocation covers undelivered requests.
-  const restorePushRegistration = await unregisterPushForRemovedHost(hostId)
+  // Unregister before removal while the client is authenticated; an unreachable desktop is asked again later.
+  const pushRegistration = await unregisterPushForRemovedHost(hostId)
   // Close only after metadata commits so storage failure cannot strand a still-paired host.
   try {
     await removeHost(hostId)
   } catch (error) {
-    restorePushRegistration()
+    pushRegistration.restore()
     throw error
   }
+  pushRegistration.commit()
   forgetHostClient(hostId)
   forgetHostDescriptor(hostId)
   // Before the wipe, so nothing this world still holds is written back after it.

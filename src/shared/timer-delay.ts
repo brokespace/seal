@@ -9,6 +9,15 @@ export function isSafeTimerDelayMs(value: unknown): value is number {
   )
 }
 
+/** setTimeout fires after 1 ms for a delay beyond 2^31-1 and NaN, so a peer-supplied deadline must not reach it raw. */
+export function clampTimerDelayMs(delayMs: number, maxDelayMs = MAX_TIMER_DELAY_MS): number {
+  const ceiling = Math.min(maxDelayMs, MAX_TIMER_DELAY_MS)
+  if (Number.isNaN(delayMs)) {
+    return ceiling
+  }
+  return Math.min(Math.max(0, Math.ceil(delayMs)), ceiling)
+}
+
 export function parsePositiveSafeIntegerText(raw: string): number | null {
   const trimmed = raw.trim()
   const value = Number(trimmed)

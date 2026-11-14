@@ -45,6 +45,11 @@ import Foundation
   precondition(batchReopened.contains(identity(1, "batch", "qa-epoch", "c"), now: 301))
   precondition(batchReopened.contains(identity(5, "batch"), now: 86699))
   precondition(!batchReopened.contains(identity(5, "batch"), now: 86700))
+  let capped = PushDismissalLedger(defaults: defaults)
+  capped.remember((0..<1025).map { identity(1, "cap", "qa-epoch", "note-\($0)") }, now: 400)
+  precondition(!capped.contains(identity(1, "cap", "qa-epoch", "note-0"), now: 401))
+  precondition(capped.contains(identity(1, "cap", "qa-epoch", "note-1"), now: 401))
+  precondition(capped.contains(identity(1, "cap", "qa-epoch", "note-1024"), now: 401))
   print("Native persisted fence: restart, ordering, identity isolation, expiry and invalid sequence checks passed")
  }
 }

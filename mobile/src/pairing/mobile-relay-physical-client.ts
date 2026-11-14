@@ -1,6 +1,5 @@
 import type { PairingRelay } from '../../../src/shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { RelayPhoneHelloSchema } from '../../../src/shared/remote-runtime/relay/mobile-relay-phone-protocol'
-import { latchHostToE2EEV2 } from '../transport/encryption/e2ee-v2-host-latch'
 import { MobileE2EEV2ClientSession } from '../transport/encryption/mobile-e2ee-v2-client-session'
 import { MobileE2EEV2PhysicalChannel } from '../transport/encryption/mobile-e2ee-v2-physical-channel'
 import {
@@ -16,6 +15,7 @@ import { relayConnectWebSocketUrl } from '../transport/relay/mobile-relay-connec
 import { WsInboundMessageQueue } from '../../../src/shared/ws-inbound-message-queue'
 
 import { RelayOuterError } from '../transport/encryption/mobile-relay-e2ee-link'
+import { assertPinnedMobileRelayCell } from '../transport/relay/mobile-relay-cell-pin'
 
 const RELAY_ERROR_CLOSE_GRACE_MS = 250
 
@@ -31,7 +31,8 @@ export type PairingCandidateClient = {
 }
 
 export function connectMobileRelayForPairing(args: {
-  relay: PairingRelay
+  /** An invite dial reads its credential from the relay; any other dial passes `credential`. */
+  relay: Pick<PairingRelay, 'directorUrl' | 'cellUrl' | 'relayHostId'> & { inviteToken?: string }
   deviceToken: string
   desktopPublicKeyB64: string
   credential?: string
@@ -40,6 +41,12 @@ export function connectMobileRelayForPairing(args: {
   createSocket?: (url: string) => WebSocket
   onLog?: ConnectionLogSink
 }): PairingCandidateClient {
+  // Before any socket exists: the first frame carries the invite or resume token to this cell.
+  assertPinnedMobileRelayCell(args.relay)
+  const credential = args.credential ?? args.relay.inviteToken
+  if (!credential) {
+    throw new Error('relay dial has no invite or resume credential')
+  }
   const requestTimeoutMs = args.requestTimeoutMs ?? 30_000
   const socketUrl = relayConnectWebSocketUrl(args.relay.cellUrl, args.relay.relayHostId)
   const log = createPairingRelayLogger(args.onLog)
@@ -71,7 +78,6 @@ export function connectMobileRelayForPairing(args: {
     decodeBinary: websocketPayloadToUint8,
     onAuthenticated: () => {
       authenticated = true
-      latchHostToE2EEV2(args.desktopPublicKeyB64)
       log('success', 'Relay: authenticated', 'Channel ready for RPC')
       resolveAuthenticated()
     },
@@ -103,7 +109,7 @@ export function connectMobileRelayForPairing(args: {
         type: 'relay-auth',
         v: 1,
         mode: 'connect',
-        credential: args.credential ?? args.relay.inviteToken
+        credential
       })
     )
   }

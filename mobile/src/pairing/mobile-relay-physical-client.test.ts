@@ -52,8 +52,8 @@ class FakeSocket {
 
 const relay = {
   v: 1 as const,
-  directorUrl: 'https://relay.onorca.dev',
-  cellUrl: 'https://relay-c1.onorca.dev',
+  directorUrl: 'https://relay.example',
+  cellUrl: 'https://relay.example',
   assignmentEpoch: 7,
   relayHostId: 'AbCdEf0123_-xyZ9',
   inviteToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGH012345678',
@@ -123,6 +123,22 @@ describe('mobile relay physical pairing client', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('never opens a socket to a cell outside the pin', () => {
+    const createSocket = vi.fn(() => pairingWebSocket(new FakeSocket()))
+
+    expect(() =>
+      connectMobileRelayForPairing({
+        relay: { ...relay, cellUrl: 'https://cell.attacker.example' },
+        deviceToken: 'device-token',
+        desktopPublicKeyB64: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+        credential: 'resume-token',
+        expectedCredentialKind: 'resume',
+        createSocket
+      })
+    ).toThrow('relay cell is outside the origins this host may use')
+    expect(createSocket).not.toHaveBeenCalled()
   })
 })
 

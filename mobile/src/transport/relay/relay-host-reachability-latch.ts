@@ -1,5 +1,6 @@
 import { RelayOuterError } from '../encryption/mobile-relay-e2ee-link'
 import { RelayDirectorHttpError } from './mobile-relay-resume-director'
+import { isExplicitCredentialRejection } from './relay-credential-eligibility'
 import {
   relayHostReachabilityForCloseCode,
   type RelayHostReachability
@@ -9,10 +10,14 @@ import {
 const RELAY_HOST_REACHABILITY_STREAK = 2
 
 // One failed relay dial, read as what it says about the desktop. A director 401
-// is the same refusal as a cell 4401, delivered before the cell was reached.
+// is the same refusal as a relay-hello 4401, delivered before the cell was reached.
 export function relayHostReachabilityForFailure(error: Error | null): RelayHostReachability {
   if (error instanceof RelayOuterError) {
-    return relayHostReachabilityForCloseCode(error.code)
+    const reachability = relayHostReachabilityForCloseCode(error.code)
+    // A 4401 close without a relay-hello refusal may be a timeout, not a verdict on the credential.
+    return reachability === 'credential-refused' && !isExplicitCredentialRejection(error)
+      ? 'connecting'
+      : reachability
   }
   if (error instanceof RelayDirectorHttpError && error.status === 401) {
     return 'credential-refused'

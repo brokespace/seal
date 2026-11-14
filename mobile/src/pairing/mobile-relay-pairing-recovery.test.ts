@@ -24,13 +24,14 @@ const offer = {
   v: 2,
   endpoint: 'ws://192.168.1.10:6768',
   deviceToken: 'device-token',
-  publicKeyB64: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  publicKeyB64: 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=',
   relay: {
     v: 1,
-    directorUrl: 'https://relay.onorca.dev',
-    cellUrl: 'https://relay-c1.onorca.dev',
+    directorUrl: 'https://relay.example',
+    cellUrl: 'https://relay.example',
     assignmentEpoch: 7,
-    relayHostId: 'AbCdEf0123_-xyZ9',
+    // SHA-256 of the 32 key bytes 1..32, base64url, first 16 characters.
+    relayHostId: 'riFsLvUkejeCwTXv',
     inviteToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGH012345678',
     inviteExpiresAt: now + 300_000,
     e2eeFraming: 2
@@ -71,9 +72,12 @@ function endpoints(
   }
 }
 
-function journal(mode: 'authenticated-direct' | 'relay-basis' = 'authenticated-direct') {
+function journal(
+  mode: 'authenticated-direct' | 'relay-basis' = 'authenticated-direct',
+  relay: Partial<PairingOffer['relay']> = {}
+) {
   const value = createMobileRelayPairingJournal({
-    offer,
+    offer: { ...offer, relay: { ...offer.relay, ...relay } },
     hostId: 'host-1',
     hostName: 'Blue Whale',
     now,
@@ -111,7 +115,11 @@ function dependencies(args: {
     readCredentialBundle: vi.fn(async () => args.bundle ?? null),
     writeCredentialBundle: vi.fn(async (_bundle: MobileRelayCredentialBundle) => {}),
     loadHosts: vi.fn(async (): Promise<HostProfile[]> => args.hosts ?? []),
-    savePairedHost: vi.fn(async () => {}),
+    resolveHostIdentity: vi.fn(async (_publicKeyB64: string, id: string) => ({
+      id,
+      name: 'Blue Whale'
+    })),
+    savePairedHost: vi.fn(async (_host: HostProfile) => {}),
     connectRelay: args.connectRelay,
     resolveInviteDirector: vi.fn(async () => {
       throw new Error('director not needed')
@@ -210,5 +218,69 @@ describe('mobile relay pairing recovery', () => {
     expect(deps.savePairedHost).not.toHaveBeenCalled()
     expect(deps.releaseJournal).toHaveBeenCalled()
     expect(committed.close).toHaveBeenCalled()
+  })
+
+  it("sends only the journal's own secrets, never the paired host's stored resume token", async () => {
+    const saved = journal()
+    const stored: MobileRelayCredentialBundle = {
+      v: 1,
+      hostId: 'host-1',
+      deviceToken: 'paired-device-token',
+      current: {
+        token: 'S'.repeat(43),
+        hash: 'H'.repeat(43),
+        version: 4,
+        expiresAt: now + 86_400_000
+      }
+    }
+    const unreachable = client(async () => {
+      throw new Error('relay unreachable')
+    })
+    const connectRelay = vi.fn<typeof connectMobileRelayForPairing>(() => unreachable)
+    const deps = dependencies({ journal: saved, connectRelay, bundle: stored })
+
+    await recoverMobileRelayPairing(deps)
+
+    // 32 bytes of 0x20: the journal's pending resume token; the invite dial passes no credential.
+    expect(connectRelay.mock.calls.map(([dial]) => dial.credential)).toEqual([
+      'ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA',
+      undefined
+    ])
+  })
+
+  it.each([
+    ['a relay host id not derived from the host key', { relayHostId: 'AAAAAAAAAAAAAAAA' }],
+    ['a cell outside the pin', { cellUrl: 'https://cell.attacker.example' }]
+  ])('abandons a journal naming %s without dialing', async (_name, relay) => {
+    const saved = journal('authenticated-direct', relay)
+    const connectRelay = vi.fn<typeof connectMobileRelayForPairing>()
+    const deps = dependencies({ journal: saved, connectRelay })
+
+    await expect(recoverMobileRelayPairing(deps)).resolves.toBe('abandoned')
+
+    expect(connectRelay).not.toHaveBeenCalled()
+    expect(deps.resolveInviteDirector).not.toHaveBeenCalled()
+    expect(deps.clearJournal).toHaveBeenCalledWith(saved.metadata.journalId)
+  })
+
+  it('publishes under a known host only after that host answered the journal', async () => {
+    const saved = journal()
+    const directInstalled = installed(saved, 'authenticated-direct')
+    const committed = client(async () =>
+      response(endpoints(saved, { state: 'committed', result: directInstalled }))
+    )
+    const deps = {
+      ...dependencies({ journal: saved, connectRelay: vi.fn(() => committed) }),
+      resolveHostIdentity: vi.fn(async () => ({ id: 'host-known', name: 'Grey Seal' }))
+    }
+
+    await expect(recoverMobileRelayPairing(deps)).resolves.toBe('recovered')
+
+    expect(deps.readCredentialBundle).toHaveBeenCalledExactlyOnceWith('host-1')
+    expect(deps.savePairedHost.mock.calls[0]?.[0]).toMatchObject({
+      id: 'host-known',
+      name: 'Grey Seal'
+    })
+    expect(deps.writeCredentialBundle.mock.calls[0]?.[0]).toMatchObject({ hostId: 'host-known' })
   })
 })

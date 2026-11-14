@@ -3,5 +3,16 @@
     "pairScan": {
       "pasteCodePlaceholder": "seal://pair?code=... 또는 코드 붙여넣기"
     }
+  },
+  "seal": {
+    "pairConfirm": {
+      "computerLabel": "컴퓨터",
+      "newComputer": "아직 이 휴대폰과 페어링되지 않음",
+      "fingerprintLabel": "키 지문",
+      "relayLabel": "릴레이",
+      "directLabel": "직접 연결 주소",
+      "replaceNotice": "{{name}}과(와)의 기존 페어링이 대체됩니다.",
+      "otherRelayNotice": "이 코드는 이 앱에 내장된 릴레이 대신 {{origin}}을(를) 사용합니다. 운영자를 신뢰하는 경우에만 페어링하세요."
+    }
   }
 }

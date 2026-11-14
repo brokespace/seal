@@ -6,7 +6,8 @@ import {
 } from './mobile-relay-director-fallback'
 import { encodeBase64Url } from '../encryption/mobile-session-id-encoding'
 import { persistResumeConfirmation } from './mobile-relay-credential-rotation'
-import { relayFailureAllowsGraceRetry } from './relay-credential-eligibility'
+import { isExplicitCredentialRejection } from './relay-credential-eligibility'
+import { isPinnedMobileRelayCell, RelayCellOutsidePinError } from './mobile-relay-cell-pin'
 import type { MobileRelayCredentialBundle } from '../../host-credentials/mobile-relay-credential-bundle'
 import type { RelayReconnectController } from './mobile-relay-reconnect-controller'
 import type { StableLogicalRpcClient } from '../connection/stable-logical-rpc-client'
@@ -59,7 +60,7 @@ export class MobileRelaySessionEstablisher {
     this.relay = relay
   }
 
-  // Try only grace-repairable BAD_OUTER_CREDENTIAL failures with another eligible credential.
+  // Only a credential the relay explicitly refused is retried with another eligible credential.
   async dialEligible(
     credentials: { token: string; version: number }[]
   ): Promise<
@@ -76,7 +77,8 @@ export class MobileRelaySessionEstablisher {
       }
       lastError = result.error
       this.args.onDialFailure(result.error)
-      if (!relayFailureAllowsGraceRetry(result.error)) {
+      // A bare 4401 also covers a first-frame timeout: it must not retire a working credential.
+      if (!isExplicitCredentialRejection(result.error)) {
         break
       }
       // Why: a rejected version stays invalid; retry only the grace credential.
@@ -104,6 +106,10 @@ export class MobileRelaySessionEstablisher {
     // Why: director resolution and grace fallback can finish after background/stop.
     if (!args.isActive() || !bundle) {
       return { ok: false, error: new RelayDialAbortedError() }
+    }
+    // Not a relay close: the director fallback re-resolves, so a stale stored cell heals without the token leaving.
+    if (!isPinnedMobileRelayCell(this.relay)) {
+      return { ok: false, error: new RelayCellOutsidePinError() }
     }
     const session = args.openRelay(
       this.relay,
