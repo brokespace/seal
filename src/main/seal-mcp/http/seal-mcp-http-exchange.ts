@@ -28,6 +28,8 @@ export type SealMcpHttpExchange = {
   signal: AbortSignal
   respond: (status: number, headers: Record<string, string>, body?: string) => void
   openStream: (status: number, headers: Record<string, string>) => SealMcpHttpStream
+  /** How often an open event stream is written to; a dead caller is only noticed on a write. */
+  keepAliveMs?: number
 }
 
 const JSON_HEADERS = { 'content-type': 'application/json' }
@@ -128,7 +130,10 @@ export async function answerSealMcpHttp(
     'content-type': 'text/event-stream',
     'cache-control': 'no-cache, no-transform'
   })
-  const keepalive = setInterval(() => stream.write(': keepalive\n\n'), KEEPALIVE_MS)
+  const keepalive = setInterval(
+    () => stream.write(': keepalive\n\n'),
+    exchange.keepAliveMs ?? KEEPALIVE_MS
+  )
   try {
     await Promise.all(
       parsed.messages.map(async (message) => {

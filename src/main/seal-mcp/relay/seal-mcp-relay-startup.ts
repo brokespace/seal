@@ -10,20 +10,16 @@ type RuntimeRpcEndpoints = {
 }
 
 /**
- * Tells the MCP server where it is reachable and keeps its relay tunnel in step with Settings.
- * The host signs in to the relay with its pairing key, as it does for push; no account is involved.
+ * This host's identity on the relay: it signs in with its pairing key, as it does for push, so no
+ * account is involved and only the holder of that key can serve its MCP URL.
  */
-export function startSealMcpEndpoints(input: {
-  runtimeRpc: RuntimeRpcEndpoints
+export function sealMcpRelayIdentitySource(input: {
   relayOrigin: string
-}): () => void {
-  const service = getSealMcpService()
-  if (!service) {
-    return () => {}
-  }
+  getKeypair: () => E2EEKeypair | null
+}): () => SealMcpRelayIdentity | null {
   let signedIn: { publicKeyB64: string; identity: SealMcpRelayIdentity } | null = null
-  const identity = (): SealMcpRelayIdentity | null => {
-    const keypair = input.runtimeRpc.getE2EEKeypair()
+  return () => {
+    const keypair = input.getKeypair()
     if (!keypair) {
       return null
     }
@@ -50,9 +46,23 @@ export function startSealMcpEndpoints(input: {
     }
     return signedIn.identity
   }
+}
+
+/** Tells the MCP server where it is reachable and keeps its relay tunnel in step with Settings. */
+export function startSealMcpEndpoints(input: {
+  runtimeRpc: RuntimeRpcEndpoints
+  relayOrigin: string
+}): () => void {
+  const service = getSealMcpService()
+  if (!service) {
+    return () => {}
+  }
   const tunnel = new SealMcpRelayTunnel({
     relayOrigin: input.relayOrigin,
-    identity,
+    identity: sealMcpRelayIdentitySource({
+      relayOrigin: input.relayOrigin,
+      getKeypair: input.runtimeRpc.getE2EEKeypair
+    }),
     service,
     onStatus: () => service.statusChanged()
   })

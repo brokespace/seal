@@ -32,6 +32,7 @@ export type SealMcpRelayTunnelOptions = {
   service: SealMcpService
   onStatus?: () => void
   retryMs?: { min: number; max: number }
+  keepAliveMs?: number
 }
 
 /**
@@ -231,6 +232,7 @@ export class SealMcpRelayTunnel {
           ),
         peer: { transport: 'relay', remote: frame.remote },
         signal: gone.signal,
+        keepAliveMs: this.options.keepAliveMs,
         respond: (status, headers, body) => {
           answered = true
           send({ t: 'head', id, status, headers })
