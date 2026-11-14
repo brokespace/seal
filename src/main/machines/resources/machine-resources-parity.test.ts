@@ -102,7 +102,6 @@ describe.skipIf(process.platform !== 'linux').each(cases)(
           name: 'sh',
           command: '/bin/sh -c while :; do :; done seal-busy --api-key=••••',
           agent: null,
-          tmuxPane: null,
           carriesSealConnection: false
         })
         expect(listed!.cpuPercent).toBeGreaterThan(5)
