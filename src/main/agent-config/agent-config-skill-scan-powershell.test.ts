@@ -44,8 +44,8 @@ describe.skipIf(process.platform === 'win32' || !hasPowerShell())('file scan in 
     const scan = await scanMachineFiles(runner(), {
       skillRoots: [
         { tag: 'claude', dir: '~/.claude/skills' },
-        { tag: 'codex', dir: '~/.codex/skills', maxDepth: 5 },
-        { tag: 'agents', dir: '~/.agents/skills', maxDepth: 5 },
+        { tag: 'codex', dir: '~/.codex/skills', maxDepth: 6 },
+        { tag: 'agents', dir: '~/.agents/skills', maxDepth: 6 },
         { tag: 'missing', dir: '~/.qwen/skills' }
       ],
       named: [
@@ -65,7 +65,9 @@ describe.skipIf(process.platform === 'win32' || !hasPowerShell())('file scan in 
     expect(scan.home).toBe(home)
     expect(scan.records.map((record) => [record.tag, path.relative(home, record.path)])).toEqual([
       ['claude', '.claude/skills/shared-kit/SKILL.md'],
+      ['codex', '.codex/skills/.drafts/hidden/SKILL.md'],
       ['codex', '.codex/skills/.system/imagegen/SKILL.md'],
+      ['codex', '.codex/skills/a/b/c/d/e/deep-six/SKILL.md'],
       ['codex', '.codex/skills/ops/rollback/SKILL.md'],
       ['agents', '.agents/skills/notes/SKILL.md'],
       ['agents', '.agents/skills/shared-kit/SKILL.md'],

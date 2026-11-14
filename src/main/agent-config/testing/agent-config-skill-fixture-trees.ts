@@ -138,7 +138,7 @@ enabled = false
 enabled = true
 
 [[skills.config]]
-path = "${path.join(home, '.agents/skills/notes/SKILL.md')}"
+path = ${JSON.stringify(path.join(home, '.agents/skills/notes/SKILL.md'))}
 enabled = false
 `,
     '.codex/skills/ops/rollback/SKILL.md': skill('rollback', 'Roll a release back.'),
