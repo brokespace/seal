@@ -1,84 +1,72 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import { AlertCircle, ChevronRight, Dot } from 'lucide-react'
-import { cn } from '@/lib/class-names'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { AlertCircle, Dot } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import CommentMarkdown from '../sidebar/CommentMarkdown'
+import { NATIVE_CHAT_TRANSCRIPT_COLUMN_CLASS } from '../native-chat/appearance/native-chat-appearance-style'
+import { MessageRow } from '../native-chat/messages/rows/NativeChatMessageRow'
+import { NativeChatJumpToLatest } from '../native-chat/viewport/scroll/NativeChatJumpToLatest'
 import type { HomeChatEntry } from '../../../../shared/home-chat/home-chat-types'
 import { HomeChatAttachment, type HomeChatAttachmentActions } from './HomeChatAttachment'
 import { HomeChatCompactionDivider } from './HomeChatCompactionDivider'
 import { HomeChatNotice } from './HomeChatNotice'
 import { HomeChatToolCall } from './HomeChatToolCall'
-import { formatHomeChatDuration } from './home-chat-format'
+import { homeChatTranscriptRows, type HomeChatTranscriptRow } from './home-chat-transcript-rows'
 
-type ThinkingEntry = Extract<HomeChatEntry, { kind: 'thinking' }>
+function scrollRowToTop(row: HTMLElement): void {
+  row.scrollIntoView({ block: 'start' })
+}
 
-function Thinking({ entry }: { entry: ThinkingEntry }): React.JSX.Element {
+/** What the user and the assistant said, drawn by the session transcript's own row. */
+function Message({
+  row
+}: {
+  row: Extract<HomeChatTranscriptRow, { kind: 'message' }>
+}): React.JSX.Element {
   const t = useTranslate()
-  const [open, setOpen] = useState(false)
-  const label = entry.streaming
-    ? t('homeChat.thinking.live', 'Thinking…')
-    : entry.durationMs !== undefined
-      ? t('homeChat.thinking.done', 'Thought for {{duration}}', {
-          duration: formatHomeChatDuration(entry.durationMs)
-        })
-      : t('homeChat.thinking.brief', 'Thought briefly')
+  const { entry, message } = row
+  if (entry.kind === 'user') {
+    return (
+      <div data-home-chat-user>
+        <MessageRow
+          message={message}
+          expandSignal={false}
+          onScrollMessageToTop={scrollRowToTop}
+          deliveryNotice={
+            entry.delivery === 'sending'
+              ? { sending: true }
+              : entry.delivery === 'failed'
+                ? { text: t('homeChat.notSent', 'Not sent') }
+                : undefined
+          }
+        />
+      </div>
+    )
+  }
   return (
-    <div className="text-xs text-muted-foreground">
-      <button
-        type="button"
-        className="flex cursor-pointer items-center gap-1 hover:text-foreground"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
-        {label}
-      </button>
-      {open && <p className={cn('mt-1 whitespace-pre-wrap pl-4.5', PROSE_MEASURE)}>{entry.text}</p>}
-    </div>
+    <MessageRow
+      message={message}
+      expandSignal={false}
+      onScrollMessageToTop={scrollRowToTop}
+      activeTurnIsWorking={entry.streaming}
+      trailingRun={entry.streaming}
+      endsResponse={row.endsResponse}
+      latestResponse={row.latestResponse}
+      // Hover-only actions of an earlier response take no room of their own.
+      actionsHang={row.endsResponse && !row.latestResponse}
+    />
   )
 }
 
 function Entry({
   entry,
-  onRespond,
   attachments
 }: {
-  entry: HomeChatEntry
-  onRespond: (entryId: string, approved: boolean) => void
+  entry: Extract<HomeChatTranscriptRow, { kind: 'entry' }>['entry']
   attachments: HomeChatAttachmentActions
-}): React.JSX.Element | null {
-  const t = useTranslate()
+}): React.JSX.Element {
   switch (entry.kind) {
-    case 'user':
-      return (
-        <div className="flex flex-col items-end gap-1">
-          <div
-            className="max-w-[min(85%,72rem)] whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
-            data-home-chat-user
-          >
-            {entry.text}
-          </div>
-          {entry.delivery === 'failed' && (
-            <span className="text-2xs text-destructive">{t('homeChat.notSent', 'Not sent')}</span>
-          )}
-        </div>
-      )
-    case 'assistant':
-      return entry.text ? (
-        <CommentMarkdown
-          className={cn('text-sm text-foreground', MARKDOWN_PROSE_MEASURE)}
-          content={entry.text}
-          variant="document"
-          growing={entry.streaming}
-        />
-      ) : null
-    case 'thinking':
-      return entry.text || entry.streaming ? <Thinking entry={entry} /> : null
-    case 'tool':
-      return <HomeChatToolCall entry={entry} onRespond={(ok) => onRespond(entry.id, ok)} />
     case 'progress':
       return (
-        <p className="flex items-center text-xs text-muted-foreground">
+        <p className="flex items-center text-xs text-chat-foreground-faint">
           <Dot className="size-4 shrink-0" />
           {entry.text}
         </p>
@@ -101,10 +89,6 @@ function Entry({
 
 const STICK_TO_BOTTOM_PX = 48
 
-// Why: running text stays a readable measure on very wide panels; code, tables and tool cards keep the full width.
-const PROSE_MEASURE = 'max-w-[72rem]'
-const MARKDOWN_PROSE_MEASURE = '[&>:is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6)]:max-w-[72rem]'
-
 export function HomeChatConversation({
   entries,
   running,
@@ -118,7 +102,10 @@ export function HomeChatConversation({
 }): React.JSX.Element {
   const t = useTranslate()
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const columnRef = useRef<HTMLDivElement | null>(null)
   const stickRef = useRef(true)
+  const [awayFromEnd, setAwayFromEnd] = useState(false)
+  const rows = useMemo(() => homeChatTranscriptRows(entries), [entries])
 
   // Follow new output only while the reader is already at the bottom.
   useLayoutEffect(() => {
@@ -128,6 +115,31 @@ export function HomeChatConversation({
     }
   }, [entries])
 
+  // Paced replies and resized panes change the height after their entry arrived.
+  useEffect(() => {
+    const el = scrollRef.current
+    const column = columnRef.current
+    if (!el || !column || typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const observer = new ResizeObserver(() => {
+      if (stickRef.current) {
+        el.scrollTop = el.scrollHeight
+      }
+    })
+    observer.observe(el)
+    observer.observe(column)
+    return () => observer.disconnect()
+  }, [])
+
+  const jumpToLatest = useCallback(() => {
+    const el = scrollRef.current
+    if (el) {
+      stickRef.current = true
+      el.scrollTop = el.scrollHeight
+    }
+  }, [])
+
   const last = entries.at(-1)
   // An approval card is waiting on the user, not on the assistant.
   const waiting =
@@ -135,25 +147,47 @@ export function HomeChatConversation({
     (!last ||
       last.kind === 'user' ||
       last.kind === 'notice' ||
+      (last.kind === 'thinking' && !last.text) ||
       (last.kind === 'tool' && last.status !== 'awaiting-approval'))
 
   return (
-    <div
-      ref={scrollRef}
-      className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto px-4 py-4"
-      onScroll={(event) => {
-        const el = event.currentTarget
-        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < STICK_TO_BOTTOM_PX
-      }}
-    >
-      <div className="flex flex-col gap-3" data-home-chat-messages>
-        {entries.map((entry) => (
-          <Entry key={entry.id} entry={entry} onRespond={onRespond} attachments={attachments} />
-        ))}
-        {waiting && (
-          <p className="text-xs text-muted-foreground">{t('homeChat.working', 'Working…')}</p>
-        )}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        ref={scrollRef}
+        className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto px-3 py-5 [scrollbar-gutter:stable_both-edges] sm:px-4"
+        onScroll={(event) => {
+          const el = event.currentTarget
+          const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < STICK_TO_BOTTOM_PX
+          stickRef.current = atEnd
+          setAwayFromEnd(!atEnd)
+        }}
+      >
+        <div ref={columnRef} className={NATIVE_CHAT_TRANSCRIPT_COLUMN_CLASS}>
+          {rows.map((row) =>
+            row.kind === 'message' ? (
+              <Message key={row.entry.id} row={row} />
+            ) : row.kind === 'tools' ? (
+              <div key={row.entries[0].id} className="flex flex-col gap-1.5">
+                {row.entries.map((entry) => (
+                  <HomeChatToolCall
+                    key={entry.id}
+                    entry={entry}
+                    onRespond={(approved) => onRespond(entry.id, approved)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Entry key={row.entry.id} entry={row.entry} attachments={attachments} />
+            )
+          )}
+          {waiting && (
+            <p className="text-xs text-chat-foreground-faint">
+              {t('homeChat.working', 'Working…')}
+            </p>
+          )}
+        </div>
       </div>
+      <NativeChatJumpToLatest visible={awayFromEnd} onJump={jumpToLatest} />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { SettingsContentScrollElementProvider } from './settings-content-scroll-
 import { SettingsSidebar } from '../navigation/SettingsSidebar'
 import { PluginInstallTrustDialogHost } from '../../plugins/dialogs/PluginInstallTrustDialog'
 import { cn } from '@/lib/class-names'
+import { PageContent } from '@/components/page-layout/PageLayout'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsInteractionController } from './use-settings-interaction-controller'
@@ -146,11 +147,12 @@ export function renderSettingsPage(
               : 'overflow-y-auto scrollbar-sleek [scrollbar-gutter:stable]'
           )}
         >
-          <div
+          <PageContent
+            width={view.isFocusedSetupGuidePane || view.isWidePluginsPane ? 'full' : 'readable'}
             className={cn(
-              'mx-auto flex w-full flex-col gap-6 px-8 pt-6',
+              'gap-6 pt-6',
               view.isFocusedShortcutsPane ? 'h-full pb-6' : 'pb-24',
-              view.isFocusedSetupGuidePane || view.isWidePluginsPane ? 'max-w-6xl' : 'max-w-[784px]'
+              (view.isFocusedSetupGuidePane || view.isWidePluginsPane) && 'max-w-6xl'
             )}
           >
             {navigation.visibleNavSections.length === 0 ? (
@@ -204,7 +206,7 @@ export function renderSettingsPage(
                 </ActiveSettingsSectionProvider>
               </SettingsContentScrollElementProvider>
             )}
-          </div>
+          </PageContent>
         </div>
       </div>
       {/* Why page level: Plugins and the Appearance theme pickers both install through it. */}

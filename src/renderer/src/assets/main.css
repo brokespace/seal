@@ -581,6 +581,29 @@
     inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
+/* Every top-level page reads its gutters and widths here (components/page-layout); the same in light and dark. */
+:root {
+  --page-gutter: 0.75rem;
+  --page-top-inset: 1.25rem;
+  --page-section-gap: 1rem;
+  /* Forms and prose keep a readable column; everything else takes the width it is given. */
+  --page-readable-max-width: 45rem;
+  --page-card-min-width: 17rem;
+}
+
+/* A chat given a page-wide pane: prose keeps the standard chat measure; code, tables and tools use the column. */
+.chat-wide-column {
+  --chat-content-max-width: 76rem;
+  --chat-prose-max-width: 46rem;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --page-gutter: 1.25rem;
+    --page-top-inset: 1.5rem;
+  }
+}
+
 /* Why: buttons, text and inner panels paint from these; foregrounds pair with the popover the surface lifts,
    and every remapped foreground keeps its surface (outline buttons paint text-foreground on bg-background). */
 [data-sonner-toaster],
@@ -2313,6 +2336,8 @@ html.native-shell .app-layout {
 
 .settings-view-shell {
   animation: settings-shell-enter 180ms ease-out;
+  /* Settings rows keep 32px side gutters at every window width. */
+  --page-gutter: 2rem;
 }
 
 /* Shared row primitives also render outside Settings; their density stays local to this page. */
