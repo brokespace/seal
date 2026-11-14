@@ -108,6 +108,40 @@ async function runWorktreeWork(
   }
 }
 
+type RemovalWaiver = { force?: true; unlock?: true }
+
+/** Removes a worktree; a refusal Git lets the user waive becomes a question, not a failure. */
+async function removeWorktreeOrAsk(removal: {
+  path: string
+  label: string
+  waiver: RemovalWaiver
+  remove: () => Promise<MachineWorktree[] | undefined>
+  setBusy: (busy: boolean) => void
+  setWorktrees: (worktrees: MachineWorktree[]) => void
+  askToForce: (request: MachineWorktreeForceRemoveRequest) => void
+  failedTitle: string
+}): Promise<void> {
+  const { path, label, waiver } = removal
+  removal.setBusy(true)
+  try {
+    const next = await removal.remove()
+    if (next) {
+      removal.setWorktrees(next)
+    }
+  } catch (error) {
+    const detail = readIpcErrorDetail(error) ?? errorText(error)
+    const refusal = classifyMachineWorktreeRemovalRefusal(detail)
+    // Why: a refusal the waiver already answered is a real failure, not another question.
+    if (refusal && !(waiver.force && (refusal.kind !== 'locked' || waiver.unlock))) {
+      removal.askToForce({ path, label, refusal })
+    } else {
+      toast.error(removal.failedTitle, { description: detail, duration: Infinity })
+    }
+  } finally {
+    removal.setBusy(false)
+  }
+}
+
 export function MachineWorkSection({
   machine,
   online,
@@ -154,38 +188,18 @@ export function MachineWorkSection({
       return next
     })
   }
-  const remove = async (
-    path: string,
-    label: string,
-    waiver: { force?: true; unlock?: true } = {}
-  ): Promise<void> => {
-    setBusy(true)
-    try {
-      const next = await machines?.removeWorktree({
-        machineId: machine.id,
-        repoPath: repo,
-        path,
-        ...waiver
-      })
-      if (next) {
-        setWorktrees(next)
-      }
-    } catch (error) {
-      const detail = readIpcErrorDetail(error) ?? errorText(error)
-      const refusal = classifyMachineWorktreeRemovalRefusal(detail)
-      // Why: a refusal the waiver already answered is a real failure, not another question.
-      if (refusal && !(waiver.force && (refusal.kind !== 'locked' || waiver.unlock))) {
-        setForceRequest({ path, label, refusal })
-      } else {
-        toast.error(t('auto.components.machines.work.removeFailed', 'Could not remove worktree'), {
-          description: detail,
-          duration: Infinity
-        })
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
+  const remove = (path: string, label: string, waiver: RemovalWaiver = {}): Promise<void> =>
+    removeWorktreeOrAsk({
+      path,
+      label,
+      waiver,
+      remove: async () =>
+        machines?.removeWorktree({ machineId: machine.id, repoPath: repo, path, ...waiver }),
+      setBusy,
+      setWorktrees,
+      askToForce: setForceRequest,
+      failedTitle: t('auto.components.machines.work.removeFailed', 'Could not remove worktree')
+    })
 
   return (
     <section className="space-y-2" data-machine-work>
