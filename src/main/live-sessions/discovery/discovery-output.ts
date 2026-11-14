@@ -1,5 +1,6 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
+import type { DiscoveredSubagentFile } from './claude-subagent-files'
 
 export type DiscoveredProcess = {
   pid: number
@@ -38,6 +39,8 @@ export type DiscoveredFile = {
   mtimeMs: number
   head: string | null
   tail: string | null
+  /** Claude: the session's subagent transcripts, newest first. */
+  subagents?: DiscoveredSubagentFile[]
 }
 
 export type DiscoveryOutput = {
@@ -96,6 +99,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
   const processes = new Map<number, DiscoveredProcess>()
   const files = new Map<string, DiscoveredFile>()
   const screens = new Map<string, string>()
+  const subagents = new Map<string, DiscoveredSubagentFile>()
   for (const line of stdout.split('\n')) {
     if (!line.startsWith('@@')) {
       continue
@@ -200,6 +204,32 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         const file = files.get(path)
         if (file) {
           file[tag === 'HEAD' ? 'head' : 'tail'] = decode(payload)
+        }
+        break
+      }
+      case 'SUB': {
+        const m = /^(\d+) (\d+) (.+)$/.exec(rest)
+        // `<session>/subagents/agent-<id>.jsonl` belongs to `<session>.jsonl`.
+        const parent = m ? files.get(m[3].replace(/\/subagents\/[^/]+$/, '.jsonl')) : undefined
+        if (m && parent) {
+          const sub = {
+            path: m[3],
+            size: Number(m[1]),
+            mtimeMs: Number(m[2]) * 1000,
+            meta: null,
+            tail: null
+          }
+          subagents.set(sub.path, sub)
+          parent.subagents = [...(parent.subagents ?? []), sub]
+        }
+        break
+      }
+      case 'SUBMETA':
+      case 'SUBTAIL': {
+        const { path, payload } = pathAndPayload(rest)
+        const sub = subagents.get(path)
+        if (sub) {
+          sub[tag === 'SUBMETA' ? 'meta' : 'tail'] = decode(payload)
         }
         break
       }

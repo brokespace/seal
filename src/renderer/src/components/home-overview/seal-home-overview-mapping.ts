@@ -66,7 +66,8 @@ export function homeSessionFromLive(session: LiveSession): HomeSession {
 
 /**
  * Seal's own panes come from the dashboard (they open the pane); the registry adds sessions running
- * outside Seal. Finished transcripts the registry still remembers stay on the Agent sessions page.
+ * outside Seal. Finished transcripts the registry still remembers stay under Recently finished in
+ * Active agents.
  */
 export function mergeLiveSessions(
   paneSessions: readonly HomeSession[],

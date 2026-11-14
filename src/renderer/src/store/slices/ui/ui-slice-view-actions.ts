@@ -116,13 +116,13 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
       set((state) => ({
         activeView: state.previousViewBeforeMobile
       })),
-    openSessionsPage: () =>
+    openAgentSessionTabs: () =>
       set((state) => ({
         activeView: 'sessions',
         previousViewBeforeSessions:
           state.activeView === 'sessions' ? state.previousViewBeforeSessions : state.activeView
       })),
-    closeSessionsPage: () =>
+    closeAgentSessionTabs: () =>
       set((state) => ({
         activeView: state.previousViewBeforeSessions
       })),
