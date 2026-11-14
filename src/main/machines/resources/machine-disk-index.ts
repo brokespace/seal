@@ -7,9 +7,10 @@ import type {
 import type { MachineExecResult } from '../../../shared/machines/machine-host-wire'
 import { joinMachinePath } from '../../../shared/machines/machine-paths'
 import type { MachineId } from '../../../shared/machines/machine-types'
+import { withTimeoutResult } from '../../../shared/promise-timeout-fallback'
 import { getForkedChildEntryPath } from '../../worker-threads/forked-child-entry-path'
 import type { MachineConnection } from '../connection/machine-connection'
-import { logDiskIndexStart } from './machine-disk-index-log'
+import { logDiskIndexStart, type DiskIndexKeptState } from './machine-disk-index-log'
 import {
   buildDiskIndexScript,
   DISK_INDEX_NO_DAEMON,
@@ -27,7 +28,12 @@ const UNAVAILABLE_RETRY_MS = 2 * 60_000
 /** A machine whose index answers is asked again this often, which also keeps a remote daemon from idling out. */
 const ENSURE_HEALTHY_EVERY_MS = 30 * 60_000
 const ENSURE_RETRY_AFTER_MS = [60_000, 5 * 60_000, 30 * 60_000]
+/** Longer than the script's two runs can take; a start that is still silent then has hung. */
+const START_ANSWER_LIMIT_MS = 5 * 60_000
 const DETAIL_MAX_CHARS = 400
+
+/** What a start is doing, so one that has gone quiet can say where. */
+type StartStep = (step: string) => void
 
 type Program = { name: string; bytes: Buffer }
 type Outcome = { reply: MachineDiskIndexReply } | { marker: string; said: string | null }
@@ -87,10 +93,12 @@ function readOutcome(result: MachineExecResult): Outcome {
 async function askIndex(
   connection: MachineConnection,
   request: MachineDiskIndexRequest,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  step?: StartStep
 ): Promise<MachineDiskIndexReply | DiskIndexFailure> {
   let build: Program
   try {
+    step?.('reading the index program')
     build = await loadProgram()
   } catch (error) {
     return { reason: 'no-program', detail: messageOf(error) }
@@ -106,14 +114,17 @@ async function askIndex(
         ...(signal ? { signal } : {})
       })
     )
+  step?.('running the start script')
   let outcome = await run()
   if ('marker' in outcome && outcome.marker === DISK_INDEX_NO_PROGRAM) {
     let installedIn: string
     try {
+      step?.('copying the index program')
       installedIn = await installProgram(connection, build)
     } catch (error) {
       return { reason: 'install-failed', detail: messageOf(error) }
     }
+    step?.('running the start script again')
     outcome = await run()
     if ('marker' in outcome && outcome.marker === DISK_INDEX_NO_PROGRAM) {
       return {
@@ -143,13 +154,14 @@ async function askIndex(
 export async function queryMachineDiskIndex(
   connection: MachineConnection,
   request: MachineDiskIndexRequest,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  step?: StartStep
 ): Promise<MachineDiskIndexReply> {
   const known = unavailable.get(connection.machineId)
   if (known && Date.now() - known.at < UNAVAILABLE_RETRY_MS) {
     return answerDiskRequestLive(connection, request, known, signal)
   }
-  const answer = await askIndex(connection, request, signal).catch((error: unknown) => {
+  const answer = await askIndex(connection, request, signal, step).catch((error: unknown) => {
     if (!signal?.aborted) {
       logDiskIndexStart(connection, {
         outcome: 'failed',
@@ -169,58 +181,105 @@ export async function queryMachineDiskIndex(
   return answerDiskRequestLive(connection, request, answer, signal)
 }
 
-type Kept = { nextAt: number; failures: number; asking: Promise<number> | null }
+/** Where a machine stands after `keepMachineDiskIndex`. */
+export type MachineDiskIndexKeep = {
+  /** When the machine should be looked at again. */
+  dueAt: number
+  /** What the machine said when it was last asked. */
+  state: DiskIndexKeptState
+  /** False when the machine was not due, so nothing was run on it. */
+  asked: boolean
+}
+
+type Kept = {
+  dueAt: number
+  failures: number
+  state: DiskIndexKeptState
+  asking: Promise<MachineDiskIndexKeep> | null
+}
 
 const kept = new Map<MachineId, Kept>()
+const startSteps = new Map<MachineId, string>()
 
-async function startIndex(connection: MachineConnection): Promise<boolean> {
+/** What a machine's start was last doing; null when none is under way. */
+export function diskIndexStartStep(machineId: MachineId): string | null {
+  return startSteps.get(machineId) ?? null
+}
+
+async function startIndex(
+  connection: MachineConnection,
+  signal: AbortSignal
+): Promise<DiskIndexKeptState> {
+  const step: StartStep = (name) => startSteps.set(connection.machineId, name)
+  step('asking which shell the machine has')
   if ((await connection.dialect()) !== 'posix') {
     logDiskIndexStart(connection, {
       outcome: 'skipped',
       detail: 'the index runs on Linux and macOS machines only'
     })
-    return true
+    return 'not-supported'
   }
   // A start is a real attempt, never the remembered failure.
   unavailable.delete(connection.machineId)
-  const reply = await queryMachineDiskIndex(connection, { op: 'status' })
-  return 'status' in reply && reply.status.source === 'index'
+  const reply = await queryMachineDiskIndex(connection, { op: 'status' }, signal, step)
+  return 'status' in reply && reply.status.source === 'index' ? 'answering' : 'not-available'
+}
+
+/** One start that always ends: a machine that throws or never answers is written down as failed. */
+async function startIndexWithinLimit(connection: MachineConnection): Promise<DiskIndexKeptState> {
+  const giveUp = new AbortController()
+  const failed = (detail: string): DiskIndexKeptState => {
+    logDiskIndexStart(connection, { outcome: 'failed', reason: 'command-failed', detail })
+    return 'not-available'
+  }
+  const start = startIndex(connection, giveUp.signal).catch((error: unknown) =>
+    // Once given up on, the start has already been written down.
+    giveUp.signal.aborted ? 'not-available' : failed(messageOf(error))
+  )
+  const settled = await withTimeoutResult(start, START_ANSWER_LIMIT_MS)
+  if (settled.ok) {
+    return settled.value
+  }
+  giveUp.abort()
+  const step = diskIndexStartStep(connection.machineId)
+  return failed(
+    `The machine did not answer within ${START_ANSWER_LIMIT_MS / 60_000} minutes of being asked${step ? `; it was ${step}` : ''}.`
+  )
 }
 
 /**
  * Starts a machine's index daemon without anyone opening the disk panel, so the index is already
- * there when they do, and resolves with when the machine is due again. Safe to call often: a
- * machine is only asked when it is due, and one that fails is retried with growing pauses.
+ * there when they do, and says where the machine stands and when it is due again. Safe to call
+ * often: a machine is only asked when it is due, and one that fails is retried with growing pauses.
  */
-export function keepMachineDiskIndex(connection: MachineConnection): Promise<number> {
+export function keepMachineDiskIndex(connection: MachineConnection): Promise<MachineDiskIndexKeep> {
   const machineId = connection.machineId
-  const state = kept.get(machineId) ?? { nextAt: 0, failures: 0, asking: null }
+  const state = kept.get(machineId) ?? {
+    dueAt: 0,
+    failures: 0,
+    state: 'not-available',
+    asking: null
+  }
   kept.set(machineId, state)
   if (state.asking) {
     return state.asking
   }
-  if (Date.now() < state.nextAt) {
-    return Promise.resolve(state.nextAt)
+  if (Date.now() < state.dueAt) {
+    return Promise.resolve({ dueAt: state.dueAt, state: state.state, asked: false })
   }
-  state.asking = startIndex(connection)
-    .catch((error: unknown) => {
-      logDiskIndexStart(connection, {
-        outcome: 'failed',
-        reason: 'command-failed',
-        detail: messageOf(error)
-      })
-      return false
-    })
-    .then((answering) => {
-      state.asking = null
-      state.failures = answering ? 0 : state.failures + 1
-      state.nextAt =
-        Date.now() +
-        (answering
-          ? ENSURE_HEALTHY_EVERY_MS
-          : ENSURE_RETRY_AFTER_MS[Math.min(state.failures, ENSURE_RETRY_AFTER_MS.length) - 1])
-      return state.nextAt
-    })
+  state.asking = startIndexWithinLimit(connection).then((result) => {
+    const failed = result === 'not-available'
+    state.asking = null
+    startSteps.delete(machineId)
+    state.state = result
+    state.failures = failed ? state.failures + 1 : 0
+    state.dueAt =
+      Date.now() +
+      (failed
+        ? ENSURE_RETRY_AFTER_MS[Math.min(state.failures, ENSURE_RETRY_AFTER_MS.length) - 1]
+        : ENSURE_HEALTHY_EVERY_MS)
+    return { dueAt: state.dueAt, state: result, asked: true }
+  })
   return state.asking
 }
 

@@ -671,6 +671,7 @@
           "title": "Copy {{name}} to…",
           "mcpDescription": "The server goes straight from one machine’s file to the other’s, stored tokens included.",
           "documentDescription": "A skill is copied with every file in its folder.",
+          "fileDescription": "The file is copied as it is written.",
           "machine": "Machine",
           "place": "Where",
           "account": "The account on that machine",
@@ -678,6 +679,7 @@
           "folder": "Project folder",
           "agent": "Agent",
           "private": "Only for me ({{scope}}), not in the project’s shared file",
+          "nowhere": "No agent keeps this kind of file there. Choose another place.",
           "overwrite": "Replace what is there (it is kept in backups)",
           "confirm": "Copy"
         },
@@ -701,6 +703,7 @@
         "cliMissing": "{{agent}} is not on this machine’s PATH. Its files can still be edited here.",
         "rowActions": "Actions for {{name}}",
         "edit": "Edit",
+        "view": "View",
         "duplicate": "Duplicate…",
         "rename": "Rename…",
         "copyTo": "Copy to…",
@@ -719,7 +722,8 @@
           "discardPrompt": "This file has unsaved changes.",
           "keepEditing": "Keep editing",
           "discard": "Discard changes",
-          "reload": "Reload from the machine"
+          "reload": "Reload from the machine",
+          "readOnly": "Read-only: this file is replaced when its plugin or the agent updates. Copy the skill to change it."
         },
         "name": "Name",
         "duplicateTitle": "Duplicate {{name}}",
@@ -737,6 +741,7 @@
         "nestedDescription": "The agent reads {{file}} in a folder when it works on files there.",
         "nestedFolder": "Folder, from the project root",
         "nestedInvalid": "Enter a folder inside the project.",
+        "nestedUnlisted": "Instructions are not looked for there: it is a dependency or build folder, or more than five folders deep.",
         "instructionsUser": "What {{agent}} is told in every project on this machine.",
         "instructionsProject": "What {{agent}} is told in this project, including files in sub-folders.",
         "new": "New",
@@ -758,6 +763,16 @@
           "command": "slash command",
           "prompt": "prompt",
           "rule": "rule"
+        },
+        "skills": {
+          "account": "Account skills",
+          "project": "Project skills",
+          "shared": "another agent’s folder that {{agent}} reads too",
+          "builtin": "Built-in skills",
+          "builtinDescription": "These ship with {{agent}}.",
+          "plugin": "Plugin skills: {{plugin}}",
+          "pluginOff": "the plugin is off, so {{agent}} does not load these",
+          "enable": "Use {{name}}"
         },
         "backups": {
           "title": "Backups",

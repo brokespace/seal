@@ -113,6 +113,13 @@ export type AgentConfigApi = {
     plugin: string
     enabled: boolean | null
   }) => Promise<AgentConfigWriteResult>
+  /** Switches one skill in the agent's settings; the skill's files are left alone. */
+  setSkillEnabled: (args: {
+    target: AgentConfigTarget
+    scope: AgentConfigScope
+    path: string
+    enabled: boolean
+  }) => Promise<AgentConfigWriteResult>
   runPluginCommand: (args: {
     target: AgentConfigTarget
     command: AgentConfigPluginCommand

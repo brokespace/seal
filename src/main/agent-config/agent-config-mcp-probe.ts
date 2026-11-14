@@ -59,6 +59,8 @@ function stdioScript(
     '  kill -0 "$pid" 2>/dev/null || break',
     '  sleep 0.2; i=$((i+1))',
     'done',
+    // Still running with nothing said is a server that hangs, not one that exited.
+    `[ "$i" -ge ${STDIO_WAIT_SECONDS * 5} ] && echo 'The server did not answer in ${STDIO_WAIT_SECONDS} seconds' >>"$err"`,
     'kill "$pid" 2>/dev/null',
     'head -c 8000 "$out"',
     `printf '\\n${MARK}\\n'`,
@@ -248,7 +250,8 @@ export async function testMcpServer(
   }
   const newline = body.indexOf('\n')
   const httpStatus = Number.parseInt(newline === -1 ? body : body.slice(0, newline), 10) || 0
-  const info = serverInfo(newline === -1 ? '' : body.slice(newline + 1))
+  const answer = newline === -1 ? '' : body.slice(newline + 1)
+  const info = serverInfo(answer)
   const auth: AgentConfigMcpAuth = staticAuth
     ? 'static-header'
     : bearerEnvVar
@@ -267,6 +270,16 @@ export async function testMcpServer(
         : staticAuth
           ? `The server rejected the configured credentials (HTTP ${httpStatus})`
           : `The server wants you to sign in (HTTP ${httpStatus})`,
+      httpStatus
+    })
+  }
+  // Any web page answers 200; only an event stream may hold back its handshake.
+  const spoke = info !== null || fields.transport === 'sse' || answer.includes('"jsonrpc"')
+  if (httpStatus >= 200 && httpStatus < 300 && !spoke) {
+    return done({
+      status: 'failed',
+      auth,
+      detail: `The URL answered HTTP ${httpStatus}, but not as an MCP server`,
       httpStatus
     })
   }

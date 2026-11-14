@@ -58,7 +58,8 @@ export function SessionRecapBar({
   const recap = view?.recap ?? null
   const headline = recapHeadline(recap)
   const writing = view?.state === 'updating'
-  if (view === null || (headline === null && !writing)) {
+  // Recaps off, or no utility model: the panel says so; the bar would show a recap nobody keeps.
+  if (view === null || view.state === 'unavailable' || (headline === null && !writing)) {
     return null
   }
   const questions = recap ? recapItemsByMark(recap.questions, view.marks).open.length : 0

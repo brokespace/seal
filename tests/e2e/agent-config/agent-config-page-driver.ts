@@ -21,7 +21,10 @@ async function choose(page: Page, trigger: Locator, option: string | RegExp): Pr
 }
 
 /** Settings > Agent configuration, on one machine. */
-export async function openMachineAgentConfig(page: Page, machineLabel: string): Promise<Locator> {
+export async function openMachineAgentConfig(
+  page: Page,
+  machineLabel: string | RegExp
+): Promise<Locator> {
   await page.evaluate(() => {
     const state = window.__store!.getState()
     state.openSettingsTarget({ pane: 'agent-config', repoId: null })

@@ -45,7 +45,8 @@ import {
   removeMcpServer,
   revealMcpServer,
   saveMcpServer,
-  setMcpActivation
+  setMcpActivation,
+  setSkillEnabled
 } from './agent-config-settings-ops'
 import { detectAgentConfigAgents } from './agent-config-agent-detection'
 import { buildAgentConfigSnapshot } from './agent-config-snapshot'
@@ -242,6 +243,16 @@ export function registerAgentConfigHandlers(
       scope: scopeOf(args.scope),
       plugin: requireString(args.plugin, 'plugin'),
       enabled: typeof args.enabled === 'boolean' ? args.enabled : null
+    })
+    return { machineId: target.machineId, result }
+  })
+  changing(AGENT_CONFIG_IPC.setSkillEnabled, async (args) => {
+    const { connection, target } = await forTarget(args.target)
+    const result = await setSkillEnabled(connection, {
+      target,
+      scope: scopeOf(args.scope),
+      path: requireString(args.path, 'path'),
+      enabled: args.enabled === true
     })
     return { machineId: target.machineId, result }
   })

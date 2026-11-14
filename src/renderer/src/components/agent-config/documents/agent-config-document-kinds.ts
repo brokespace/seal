@@ -1,5 +1,5 @@
 import type { Translate } from '@/i18n/use-translate'
-import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-layout-types'
 import type {
   AgentConfigDocKind,
   AgentConfigDocRef,
@@ -55,8 +55,9 @@ export function openDocumentFor(doc: AgentConfigDocRef): AgentConfigOpenDocument
     path: doc.path,
     title: doc.kind === 'instructions' ? (doc.relativePath ?? doc.name) : doc.name,
     validation: file.endsWith('.toml') ? 'toml' : doc.kind,
-    scope: doc.scope,
-    ...(expectedName ? { expectedName } : {})
+    ...(expectedName ? { expectedName } : {}),
+    // A plugin's or the agent's own skill belongs to no scope of this page.
+    ...(doc.bundle ? { readOnly: true } : { scope: doc.scope })
   }
 }
 
@@ -81,10 +82,14 @@ export function missingInstructions(
             relative
           }))
         ]
-  const existing = docs
-    .filter((doc) => doc.kind === 'instructions')
-    .map((doc) => doc.path.replaceAll('\\', '/'))
+  const existing = docs.filter((doc) => doc.kind === 'instructions')
+  // A nested or `.claude/` file ends with the root file's name too, so a project compares whole paths.
   return candidates.filter(
-    (candidate) => !existing.some((path) => path.endsWith(`/${candidate.relative}`))
+    (candidate) =>
+      !existing.some((doc) =>
+        homeScope === 'project' && doc.relativePath !== undefined
+          ? doc.relativePath.replaceAll('\\', '/') === candidate.relative
+          : doc.path.replaceAll('\\', '/').endsWith(`/${candidate.relative}`)
+      )
   )
 }

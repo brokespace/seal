@@ -23,9 +23,10 @@ import { switchMachineConnection } from '../../machines/detail/machine-quick-act
 import { MachineConnectionBadge } from '../../machines/list/MachineConnectionBadge'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return readIpcErrorMessage(error) ?? String(error)
 }
 
 function sshDetails(view: MachineView): string | null {
@@ -90,7 +91,7 @@ function MachineSettingsRow({
   }
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-2 px-3 py-2.5 @lg:flex-row @lg:items-center">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <MachineStatusDot status={machine.status} />
@@ -240,7 +241,7 @@ export function MachinesSettingsPane({
           {t('auto.components.settings.machines.empty', 'No machines yet.')}
         </p>
       ) : (
-        <ul className="divide-y divide-border rounded-md border border-border">
+        <ul className="@container divide-y divide-border rounded-md border border-border">
           {remote.map((machine) => {
             const view = views.find((candidate) => candidate.id === machine.id)
             return view ? (

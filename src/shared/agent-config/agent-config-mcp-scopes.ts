@@ -1,4 +1,4 @@
-import type { AgentConfigLayout, AgentConfigMcpCodec } from './agent-config-catalog'
+import type { AgentConfigLayout, AgentConfigMcpCodec } from './agent-config-layout-types'
 
 /** Where an agent keeps MCP servers; Claude Code alone has a private per-project place. */
 export function agentConfigMcpScopes(

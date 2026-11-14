@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { machinePathBasename } from '../../../../../shared/machines/machine-paths'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 export function MachineDeleteDialog({
   paths,
@@ -30,12 +31,17 @@ export function MachineDeleteDialog({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [seededFor, setSeededFor] = useState<string[] | null>(null)
+  // The last request stays on screen while the dialog fades out.
+  const [shown, setShown] = useState<string[]>([])
   if (seededFor !== paths) {
     setSeededFor(paths)
     setBusy(false)
     setError(null)
+    if (paths) {
+      setShown(paths)
+    }
   }
-  const count = paths?.length ?? 0
+  const count = shown.length
   const confirm = async (): Promise<void> => {
     if (!paths || busy) {
       return
@@ -45,7 +51,7 @@ export function MachineDeleteDialog({
       await onConfirm(paths)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(readIpcErrorMessage(err) ?? String(err))
       setBusy(false)
     }
   }
@@ -56,7 +62,7 @@ export function MachineDeleteDialog({
           <DialogTitle>
             {count === 1
               ? t('auto.components.machines.delete.titleOne', 'Delete {{name}}?', {
-                  name: machinePathBasename(paths?.[0] ?? '')
+                  name: machinePathBasename(shown[0] ?? '')
                 })
               : t('auto.components.machines.delete.titleMany', 'Delete {{count}} items?', {
                   count

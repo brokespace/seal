@@ -90,17 +90,15 @@ export function AgentConfigEffectiveSection(): React.JSX.Element {
               {entry.overrides.map((override) => (
                 <p
                   key={override.source}
-                  className="pl-[40%] text-xs text-muted-foreground line-through [overflow-wrap:anywhere]"
+                  className="pl-[40%] text-xs text-muted-foreground [overflow-wrap:anywhere]"
                   title={t(
                     'auto.components.agentConfig.effective.overridden',
                     'Replaced: {{scope}} had {{value}}',
                     { scope: agentConfigScopeLabel(override.source, t), value: override.value }
                   )}
                 >
-                  <span className="font-mono">{override.value}</span>{' '}
-                  <span className="no-underline">
-                    ({agentConfigScopeLabel(override.source, t)})
-                  </span>
+                  <span className="font-mono line-through">{override.value}</span>{' '}
+                  <span>({agentConfigScopeLabel(override.source, t)})</span>
                 </p>
               ))}
             </div>

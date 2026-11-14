@@ -6,6 +6,7 @@ import {
 } from '../../../../../shared/machines/machine-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 const METRICS_POLL_MS = 15_000
 
@@ -33,7 +34,7 @@ export async function refreshMachineMetrics(machineId: MachineId): Promise<void>
   } catch (error) {
     publish(machineId, {
       metrics: entries.get(machineId)?.metrics ?? null,
-      error: error instanceof Error ? error.message : String(error)
+      error: readIpcErrorMessage(error) ?? String(error)
     })
   } finally {
     inflight.delete(machineId)

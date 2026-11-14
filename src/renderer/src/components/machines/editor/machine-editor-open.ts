@@ -13,6 +13,7 @@ import type {
 import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
 import { planMachineEditorOpen, type MachineBuiltInEditorReason } from './machine-editor-plan'
 import { copyMachineSshConfigEntry } from './machine-ssh-config-entry'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 // These toasts carry the fix as an action; the default lifetime is too short to read and click.
 const ACTIONABLE_TOAST_MS = 15_000
@@ -195,7 +196,7 @@ export async function openMachinePathInEditor(
       t('auto.components.machines.editor.launchFailed', 'Could not open {{app}}', {
         app: plan.application.label
       }),
-      { description: error instanceof Error ? error.message : String(error) }
+      { description: readIpcErrorMessage(error) ?? String(error) }
     )
     return
   }

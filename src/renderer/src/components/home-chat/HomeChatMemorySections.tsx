@@ -75,6 +75,8 @@ export function HomeChatMemoryItems({
           placeholder={placeholder}
           className="h-8"
           onChange={(event) => setDraft(event.target.value)}
+          // Save and the other tabs take focus first; a typed item would otherwise be dropped.
+          onBlur={add}
           onKeyDown={(event) => event.key === 'Enter' && add()}
         />
         <Button size="sm" variant="outline" disabled={!draft.trim()} onClick={add}>
