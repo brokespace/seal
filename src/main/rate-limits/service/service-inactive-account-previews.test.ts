@@ -156,7 +156,7 @@ describe('RateLimitService', () => {
       session: null,
       weekly: null,
       updatedAt: 1_700_000_000_000,
-      error: 'Claude usage is rate limited right now.',
+      error: 'Claude is throttling usage checks right now.',
       status: 'error',
       usageMetadata: { failureKind: 'rate-limited', retryAtMs: 1_700_000_000_000 + 300_000 }
     })

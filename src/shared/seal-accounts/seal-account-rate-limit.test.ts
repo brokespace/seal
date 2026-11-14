@@ -49,7 +49,7 @@ describe('sealAccountRateLimit', () => {
   it('ignores a failed usage check that kept the last windows', () => {
     const limits = reading({
       status: 'error',
-      error: 'Claude usage is rate limited right now.',
+      error: 'Claude is throttling usage checks right now.',
       usageMetadata: { failureKind: 'rate-limited', retryAtMs: NOW + 5 * MINUTE }
     })
     expect(sealAccountRateLimit({ limits }, { now: NOW })).toBeNull()

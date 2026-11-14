@@ -1334,7 +1334,6 @@
           "claudeKeychainUnavailable": "Claude Keychain credentials unavailable",
           "claudeOauthTokenUnavailable": "Claude OAuth access token unavailable",
           "claudePlanUsageUnavailable": "Claude plan usage is unavailable for this Claude CLI session.",
-          "claudeRateLimited": "Claude usage is rate limited right now.",
           "claudeUsageUnavailable": "Claude usage is unavailable right now.",
           "claudeWaitingCredentialRotate": "Claude usage refresh is waiting for the live Claude terminal to rotate its credentials.",
           "cliExitedBeforeStatus": "CLI exited before status was available",

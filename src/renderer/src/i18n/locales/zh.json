@@ -1555,7 +1555,6 @@
           "claudeKeychainUnavailable": "无法读取 Claude Keychain 凭据",
           "claudeOauthTokenUnavailable": "Claude OAuth 访问令牌不可用",
           "claudePlanUsageUnavailable": "此 Claude CLI 会话无法获取套餐用量",
-          "claudeRateLimited": "Claude 用量当前已达速率限制",
           "claudeUsageUnavailable": "Claude 用量当前不可用",
           "claudeWaitingCredentialRotate": "Claude 用量刷新正在等待实时 Claude 终端轮换凭据",
           "cliExitedBeforeStatus": "CLI 在状态可用前退出",
