@@ -147,11 +147,23 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
         activeView: state.previousViewBeforeMobile
       })),
     openAgentSessionTabs: () =>
-      set((state) => ({
-        activeView: 'sessions',
-        previousViewBeforeSessions:
-          state.activeView === 'sessions' ? state.previousViewBeforeSessions : state.activeView
-      })),
+      set((state) => {
+        if (state.activeView === 'sessions') {
+          return {}
+        }
+        const before = state.previousViewBeforeSessions
+        return {
+          activeView: 'sessions',
+          previousViewBeforeSessions: state.activeView,
+          // An overview reached from the sessions view steps over it, or the two would lead back
+          // to each other for ever.
+          ...(state.activeView === 'project' &&
+          state.previousViewBeforeProject === 'sessions' &&
+          before !== 'project'
+            ? { previousViewBeforeProject: before }
+            : {})
+        }
+      }),
     closeAgentSessionTabs: () =>
       set((state) => ({
         activeView: state.previousViewBeforeSessions
@@ -163,7 +175,11 @@ export function createUiViewActions(set: UISliceSet, get: UISliceGet): Partial<U
         activeView: 'project',
         projectOverviewTarget: target,
         previousViewBeforeProject:
-          state.activeView === 'project' ? state.previousViewBeforeProject : state.activeView
+          state.activeView === 'project' ||
+          // A session opened from the overview leads back to it, not on to a second one.
+          (state.activeView === 'sessions' && state.previousViewBeforeSessions === 'project')
+            ? state.previousViewBeforeProject
+            : state.activeView
       }))
     },
     closeProjectOverview: () =>
