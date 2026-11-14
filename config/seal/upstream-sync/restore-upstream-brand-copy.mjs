@@ -13,6 +13,7 @@ import {
   REMOVED_KEYS_FILE,
   catalogDifference,
   englishCommandKeys,
+  leafKeyNames,
   mergeCatalogOverlay,
   readRemovedKeys,
   rebrandCatalog,
@@ -49,6 +50,42 @@ function showUpstream(path) {
 
 function formatCatalog(catalog) {
   return `${JSON.stringify(catalog, null, 2)}\n`
+}
+
+function revision(name) {
+  try {
+    return git(['rev-parse', '--verify', '--quiet', name], {
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim()
+  } catch {
+    return null
+  }
+}
+
+function shippedKeyNames(ref, paths) {
+  const names = new Set()
+  for (const path of paths) {
+    try {
+      const text = git(['show', `${ref}:${path}`], { stdio: ['ignore', 'pipe', 'ignore'] })
+      leafKeyNames(JSON.parse(text), '', names)
+    } catch {
+      // The ref has no such file.
+    }
+  }
+  return names
+}
+
+/** Keys the branch being merged deleted; without this the overlay would keep shipping them. */
+function keysDroppedByMergedBranch(catalogPath, overlayPath) {
+  const theirs = revision('MERGE_HEAD')
+  if (theirs === null) {
+    return new Set()
+  }
+  const base = git(['merge-base', 'HEAD', theirs]).trim()
+  const kept = shippedKeyNames(theirs, [catalogPath, overlayPath])
+  return new Set(
+    [...shippedKeyNames(base, [catalogPath, overlayPath])].filter((name) => !kept.has(name))
+  )
 }
 
 function restoreCatalogs() {
@@ -93,6 +130,12 @@ function restoreCatalogs() {
       let overlay = {}
       try {
         overlay = JSON.parse(readFileSync(overlayPath, 'utf8'))
+        if (!runtimeRequired) {
+          overlay = withoutRemovedKeys(
+            overlay,
+            keysDroppedByMergedBranch(path, `${surface.overlayDir}/${locale}.json`)
+          )
+        }
       } catch {
         // No overlay yet for this locale.
       }

@@ -67,6 +67,11 @@
         "orcaAccount": {
           "signedOutNoRelay": "Sign in to extend Seal with cloud features, including Artifacts.",
           "searchDescriptionNoRelay": "Sign in or out of the account used by Artifacts and skill sharing."
+        },
+        "OpenInMenuSetting": {
+          "default": "Default",
+          "makeDefault": "Make default",
+          "defaultHint": "The default app is the editor a machine opens in."
         }
       },
       "machines": {
@@ -88,7 +93,12 @@
           "remove": "Remove machine…",
           "useSsh": "Connect over SSH instead",
           "useServer": "Connect via Seal server instead",
-          "editSsh": "Edit SSH details…"
+          "editSsh": "Edit SSH details…",
+          "addSsh": "Add SSH details…",
+          "editorOffline": "Connect this machine to open it in an editor.",
+          "editorNoHome": "Waiting for this machine to report its home folder.",
+          "editorOpenIn": "Open in {{app}}",
+          "editorChoose": "Choose editor"
         },
         "edit": {
           "saved": "Machine updated"
@@ -108,8 +118,6 @@
           "disk": "Disk"
         },
         "actions": {
-          "editorAlias": "Add {{host}} to your SSH config to open it in an editor.",
-          "editorFailed": "Could not open the editor ({{reason}}).",
           "nameLabel": "Name",
           "invalidName": "Enter a name without slashes.",
           "newFolderTitle": "New folder",
@@ -122,7 +130,20 @@
           "urlLabel": "URL",
           "urlInvalid": "Enter an http or https URL.",
           "urlFileName": "File name (optional)",
-          "editorNeedsSsh": "Add SSH details to this machine to open it in VS Code. You can edit its files here under Files."
+          "editorAliasCopied": "Copied. Paste it into ~/.ssh/config on this computer, then open the editor again.",
+          "editorChoose": "Choose editor",
+          "editorAliasTitle": "{{app}} needs an SSH config entry for {{machine}}.",
+          "editorAliasDetail": "{{app}} reaches a custom SSH port ({{port}}) only through a Host entry in ~/.ssh/config on this computer.",
+          "editorAliasCopy": "Copy entry",
+          "editorLaunchFailed": "Could not start {{app}}.",
+          "editorLaunchFailedDetail": "Seal could not run the {{command}} command on this computer. Install it from the app, or choose another editor.",
+          "editorNone": "No editor is set up.",
+          "editorNoneDetail": "Add VS Code, Cursor, or another editor under Settings, then try again.",
+          "editorLocalOnly": "{{app}} cannot open folders on another machine.",
+          "editorLocalOnlyDetail": "VS Code, Cursor, and Zed can. Add one of them, then try again.",
+          "editorNeedsSshTitle": "{{app}} needs SSH details for {{machine}}.",
+          "editorNeedsSshDetail": "This machine is connected through its Seal server, and an editor on this computer connects over SSH. The server connection stays in use.",
+          "editorAddSsh": "Add SSH details"
         },
         "delete": {
           "titleOne": "Delete {{name}}?",

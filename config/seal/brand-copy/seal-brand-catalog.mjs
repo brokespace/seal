@@ -148,7 +148,7 @@ export function withoutRemovedKeys(catalog, removedKeys, prefix = '') {
   return kept
 }
 
-function leafKeyNames(catalog, prefix = '', names = new Set()) {
+export function leafKeyNames(catalog, prefix = '', names = new Set()) {
   for (const [key, value] of Object.entries(catalog)) {
     const path = prefix ? `${prefix}.${key}` : key
     if (isPlainObject(value)) {

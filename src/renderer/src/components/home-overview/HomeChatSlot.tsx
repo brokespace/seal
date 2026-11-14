@@ -19,7 +19,7 @@ export function HomeChatSlot(): React.JSX.Element | null {
       <HomeChat
         className={cn(
           'overflow-hidden rounded-xl border border-border',
-          !minimized && 'h-[clamp(360px,55vh,640px)]'
+          !minimized && 'h-[clamp(360px,60vh,800px)]'
         )}
         minimized={minimized}
         onMinimizedChange={setMinimized}

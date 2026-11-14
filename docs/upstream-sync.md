@@ -99,7 +99,7 @@ pnpm seal:regenerate
 git add -A && git commit
 ```
 
-The restore moves the branch's strings to the overlay, records keys it deleted in `removed-keys.json`, and puts source and catalogs back to upstream's text. `pnpm seal:rebrand-check` fails while a catalog under `locales/` still holds Seal's name.
+Run the restore before committing the merge: it moves the branch's strings to the overlay, drops Seal keys the branch deleted from the overlay, records upstream keys it deleted in `removed-keys.json`, and puts source and catalogs back to upstream's text. `pnpm seal:rebrand-check` fails while a catalog under `locales/` still holds Seal's name.
 
 ## Seal-owned files
 
