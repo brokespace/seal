@@ -16,6 +16,7 @@ import type { SealMcpApprovals } from '../approvals/seal-mcp-approvals'
 import { summarizeMcpToolArguments } from '../audit/seal-mcp-audit-summary'
 import { executeSealMcpRpcTool } from './seal-mcp-rpc-tools'
 import { scopeSealMcpToolRuntime, type SealMcpToolRuntime } from './seal-mcp-scoped-runtime'
+import { pinSessionTargetToAllowedMachines } from './seal-mcp-session-target'
 import {
   isSealMcpHomeChatTool,
   isSealMcpRpcTool,
@@ -240,11 +241,19 @@ export class SealMcpToolRunner {
       }
     }
     const runtime = scopeSealMcpToolRuntime(full, client.machines)
+    let toolInput = input
+    if (tool === 'start_session' && client.machines) {
+      const pinned = await pinSessionTargetToAllowedMachines(input, runtime)
+      if ('refusal' in pinned) {
+        return refused('machine-denied', pinned.refusal)
+      }
+      toolInput = pinned.input
+    }
     let result: HomeChatToolResult
     if (isSealMcpRpcTool(tool)) {
       result = await executeSealMcpRpcTool(tool, input, runtime, client.machines !== null)
     } else if (isSealMcpHomeChatTool(tool)) {
-      result = await executeHomeChatTool(tool, input, {
+      result = await executeHomeChatTool(tool, toolInput, {
         chatId,
         machines: runtime.machines,
         runOrcaCli: runtime.runOrcaCli,

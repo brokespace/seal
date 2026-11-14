@@ -37,6 +37,8 @@ export type SealMcpTestHost = {
   root: string
   rpcCalls: { method: string; params: unknown }[]
   sentToSessions: { sessionId: string; text: string }[]
+  /** Argument lists of every `seal` CLI run a tool asked for; each one succeeds. */
+  cliRuns: string[][]
   createToken: (args?: Partial<SealMcpClientCreateArgs>) => { token: string; clientId: string }
   dispose: () => Promise<void>
 }
@@ -63,6 +65,7 @@ export async function createSealMcpTestHost(
   ]
   const rpcCalls: SealMcpTestHost['rpcCalls'] = []
   const sentToSessions: SealMcpTestHost['sentToSessions'] = []
+  const cliRuns: string[][] = []
   const { runtime } = createTestHomeChatRuntime(
     join(root, 'state'),
     {
@@ -130,7 +133,10 @@ export async function createSealMcpTestHost(
       Promise.resolve({
         services: runtime.services,
         machines: runtime.machines,
-        runOrcaCli: () => Promise.reject(new Error('unused')),
+        runOrcaCli: (args) => {
+          cliRuns.push([...args])
+          return Promise.resolve({ exitCode: 0, stdout: '{}', stderr: '', timedOut: false })
+        },
         callRpc
       })
   })
@@ -140,6 +146,7 @@ export async function createSealMcpTestHost(
     root,
     rpcCalls,
     sentToSessions,
+    cliRuns,
     createToken: (args = {}) => {
       const created = service.createClient({ name: 'test client', scopes: ['read'], ...args })
       return { token: created.token, clientId: created.client.id }

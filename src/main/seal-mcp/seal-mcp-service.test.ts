@@ -380,6 +380,27 @@ describe.skipIf(process.platform === 'win32')('SealMcpService commands and appro
   })
 })
 
+describe('SealMcpService start_session with a machine allowlist', () => {
+  it('starts a session only in a project or workspace on an allowed machine', async () => {
+    const { token } = host.createToken({ scopes: ['sessions'], machines: ['local'] })
+
+    const otherProject = await callTool(token, 'start_session', { prompt: 'go', project: 'models' })
+    const otherWorkspace = await callTool(token, 'start_session', {
+      prompt: 'go',
+      worktree: 'path:/srv/models'
+    })
+    expect(otherProject.isError).toBe(true)
+    expect(otherWorkspace.isError).toBe(true)
+    expect(host.cliRuns).toEqual([])
+
+    const allowed = await callTool(token, 'start_session', { prompt: 'go', worktree: 'w-1' })
+    expect(allowed.isError).toBe(false)
+    expect(host.cliRuns).toEqual([
+      ['agent', 'launch', '--agent', 'claude', '--worktree', 'id:w-1', '--prompt', 'go', '--json']
+    ])
+  })
+})
+
 describe('SealMcpService limits and RPC-backed tools', () => {
   it('tells a client that calls too fast to slow down', async () => {
     const { token } = host.createToken({ callsPerMinute: 2 })

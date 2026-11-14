@@ -44,7 +44,11 @@ async function allowedHosts(
   )
 }
 
-async function visibleRepos(runtime: SealMcpToolRuntime, restricted: boolean): Promise<Rec[]> {
+/** Projects on machines the client may use. `runtime` must already be narrowed to its allowlist. */
+export async function visibleRepos(
+  runtime: SealMcpToolRuntime,
+  restricted: boolean
+): Promise<Rec[]> {
   const reply = await runtime.callRpc('repo.list', {})
   const hosts = await allowedHosts(runtime, restricted)
   return records(isRec(reply) ? reply.repos : null).filter(
@@ -68,6 +72,18 @@ async function listProjects(
   )
 }
 
+/** Workspaces that belong to the given projects. */
+export async function worktreesOf(
+  runtime: SealMcpToolRuntime,
+  repoIds: ReadonlySet<string | null>,
+  query: Rec = {}
+): Promise<Rec[]> {
+  const reply = await runtime.callRpc('worktree.list', query)
+  return records(isRec(reply) ? reply.worktrees : null).filter((worktree) =>
+    repoIds.has(text(worktree.repoId))
+  )
+}
+
 async function listWorkspaces(
   input: Rec,
   runtime: SealMcpToolRuntime,
@@ -82,13 +98,10 @@ async function listWorkspaces(
   if (wanted && !project) {
     return { text: `No project "${wanted}". Use an id or name from list_projects.`, isError: true }
   }
-  const reply = await runtime.callRpc('worktree.list', {
+  const worktrees = await worktreesOf(runtime, repoIds, {
     ...(project ? { repo: `id:${String(project.id)}` } : {}),
     ...(typeof input.limit === 'number' ? { limit: input.limit } : {})
   })
-  const worktrees = records(isRec(reply) ? reply.worktrees : null).filter((worktree) =>
-    repoIds.has(text(worktree.repoId))
-  )
   return ok(
     worktrees.map((worktree) => ({
       id: worktree.id,

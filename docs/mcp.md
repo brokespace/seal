@@ -213,7 +213,9 @@ only what you tick.
 
 **Machine allowlist** — a client can be limited to some machines. Tools that take a machine are
 refused for any other; lists of machines, sessions, projects and workspaces are filtered to the
-allowed machines; a background job can only be followed by the client that started it.
+allowed machines; `start_session` only starts in a project or workspace on an allowed machine; a
+background job can only be followed by the client that started it. Account tools (`account_usage`,
+`switch_account`) act on the Seal host as a whole and are not narrowed by the allowlist.
 
 **Approval** — per client:
 
