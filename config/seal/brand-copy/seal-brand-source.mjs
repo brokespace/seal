@@ -65,7 +65,11 @@ export const SKIPPED_SOURCE_FILES = new Map([
     'src/main/orcad/host-runtime/orcad-app-paths.ts',
     'headless server data directory (upstream-compatible)'
   ],
-  ['src/main/orcad/browser-providers/orcad-browser-provider.ts', 'install paths, edited by hand']
+  ['src/main/orcad/browser-providers/orcad-browser-provider.ts', 'install paths, edited by hand'],
+  [
+    'src/main/orcad/serve-startup/orcad-cli-launcher.integration.test.ts',
+    'quotes a heading of the agent-facing orchestration skill guide'
+  ]
 ])
 
 const MODULE_SOURCE_PARENTS = new Set([
