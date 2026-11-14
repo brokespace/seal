@@ -102,27 +102,25 @@ function BackToProjectOverview(): React.JSX.Element {
   const t = useTranslate()
   const project = useAppStore((s) => resolveProjectOverviewRepo(s.repos, s.projectOverviewTarget))
   const back = useAppStore((s) => s.closeAgentSessionTabs)
+  const label = project
+    ? t('auto.components.live-sessions.workspace.backToProject', 'Back to {{project}}', {
+        project: project.displayName
+      })
+    : t('auto.components.live-sessions.workspace.backToProjectOverview', 'Back to project overview')
   return (
-    <div className="flex h-8 shrink-0 items-center border-r border-border px-1">
+    // In a narrow column the label gives way to the tabs; the arrow stays.
+    <div className="flex h-8 min-w-9 items-center border-r border-border px-1">
       <Button
         type="button"
         variant="ghost"
         size="xs"
         data-live-session-back-to-project
+        aria-label={label}
         onClick={back}
-        className="max-w-56"
+        className="max-w-56 min-w-0 justify-start overflow-hidden"
       >
-        <ArrowLeft className="size-3.5" />
-        <span className="min-w-0 truncate">
-          {project
-            ? t('auto.components.live-sessions.workspace.backToProject', 'Back to {{project}}', {
-                project: project.displayName
-              })
-            : t(
-                'auto.components.live-sessions.workspace.backToProjectOverview',
-                'Back to project overview'
-              )}
-        </span>
+        <ArrowLeft className="size-3.5 shrink-0" />
+        <span className="min-w-0 truncate">{label}</span>
       </Button>
     </div>
   )
@@ -162,7 +160,7 @@ export default function LiveSessionWorkspace(): React.JSX.Element {
             <div
               role="tablist"
               aria-label={t('auto.components.live-sessions.workspace.tabs', 'Open agent sessions')}
-              className="scrollbar-sleek flex min-w-0 flex-1 overflow-x-auto"
+              className="scrollbar-sleek flex min-w-20 flex-1 overflow-x-auto"
             >
               {tabs.tabs.map((sessionId) => (
                 <SessionTab
