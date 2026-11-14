@@ -12,6 +12,8 @@ export type WorktreeDeleteState = {
   lockReason?: string | null
   /** The removal was refused by a failed archive hook, so "Delete anyway" is offered (#19334). */
   canWaiveArchiveHook?: boolean
+  /** Git's lock refused the removal, so a confirmed "Unlock & Delete" is offered. */
+  canUnlockLockedWorktree?: boolean
 }
 
 export type WorktreeDeleteStateTarget = Pick<Worktree, 'id' | 'hostId'>

@@ -24,13 +24,9 @@ import {
   type RuntimeWorktreeRemovalTarget
 } from '../catalog/runtime-worktree-selection'
 import { withWorktreeSpan } from '../../../observability/instrumentation'
-import {
-  resolveWorktreeRemovalHome,
-  resolveWorktreeRemovalRoute
-} from '../../../workspaces/removal/worktree-removal-execution-host-route'
-import { listWorktreesOnRemovalRoute } from './worktree-removal-route-listing'
+import { resolveWorktreeRemovalRoute } from '../../../workspaces/removal/worktree-removal-execution-host-route'
+import { findRegisteredWorktreeOnRemovalRoute } from './worktree-removal-route-listing'
 import { authorizeUnregisteredWindowsRemoval } from '../../../git/worktrees/removal/windows-worktree-removal'
-import { findRegisteredDeletableWorktree } from '../../../workspaces/removal/worktree-removal-safety'
 import { removeRuntimeUnregisteredWorktree } from './runtime-unregistered-worktree-removal'
 import { removeStaleLocalWorktreeRegistration } from '../../../workspaces/removal/local-worktree-removal-recovery'
 import { cleanupUnusedWorktreePushTargetRemote } from '../../../ipc/worktree-remote'
@@ -79,6 +75,7 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
       runHooks = false,
       allowUnverifiedPtyStop = false,
       allowFailedArchiveHook = false,
+      unlockLockedWorktree = false,
       hostId
     } = options
     const store = this.requireStore()
@@ -150,11 +147,14 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
         }
         // Use one host for list/prune/delete; executionHostId-only SSH rows must never fall back to this client. Missing/folder repos returned earlier.
         const route = resolveWorktreeRemovalRoute(removalHostId!)
-        const { localWorktreeGitOptions, registeredWorktrees } = await listWorktreesOnRemovalRoute(
-          route,
-          repo!,
-          this.requireStore()
-        )
+        const { localWorktreeGitOptions, registeredWorktrees, registeredWorktree } =
+          await findRegisteredWorktreeOnRemovalRoute({
+            route,
+            repo: repo!,
+            store: this.requireStore(),
+            worktreePath: removalTarget.path,
+            unlockLockedWorktree
+          })
         const removedMeta = resolveWorktreeRemovalMetadata(
           store,
           removalTarget.repoId,
@@ -162,13 +162,6 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends RuntimeWorksp
           removalHostId!
         )
         const removedPushTarget = removedMeta?.pushTarget ?? removalTarget.pushTarget
-        const removalHome = resolveWorktreeRemovalHome(route)
-        const registeredWorktree = findRegisteredDeletableWorktree(
-          repo!.path,
-          removalTarget.path,
-          registeredWorktrees,
-          removalHome
-        )
         await authorizeUnregisteredWindowsRemoval(
           !!registeredWorktree,
           repo!.path,
