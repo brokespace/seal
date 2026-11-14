@@ -76,7 +76,11 @@ function ProjectHeaderIdentityTooltip({
         }}
         onPointerMove={(event) => {
           const wasOverAction = actionOwnsTooltip.current
-          actionOwnsTooltip.current = isRepoHeaderActionTarget(event.target, event.currentTarget)
+          actionOwnsTooltip.current =
+            isRepoHeaderActionTarget(event.target, event.currentTarget) ||
+            // The name says what a click on it does.
+            (event.target instanceof Element &&
+              event.target.closest('[data-project-overview-link]') !== null)
           if (actionOwnsTooltip.current) {
             setOpen(false)
             event.preventDefault()

@@ -229,7 +229,7 @@ export function renderWorktreeSectionHeaderRow(
               ? headerDrag.repoHeaderSectionEndByRepoId.get(projectIdForHeader)
               : undefined
           }
-          // Padding remains a drag handle; only the title shows grab so action buttons never inherit it.
+          // Padding remains a drag handle; only the title area shows grab so action buttons never inherit it.
           data-repo-header-drag-handle={isDraggableRepoHeader ? '' : undefined}
           data-project-group-header-id={projectGroupDragIdForHeader}
           data-project-group-header-index={projectGroupHeaderIndex}
@@ -344,7 +344,7 @@ export function renderWorktreeSectionHeaderRow(
 
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                <ProjectHeaderName repo={overviewRepo} label={label} />
+                <ProjectHeaderName repo={overviewRepo} label={label} drag={headerDrag} />
                 {hostContext ? <ProjectHeaderHostLabel context={hostContext} /> : null}
                 <RepoForkIndicator upstream={row.repo?.upstream} />
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />

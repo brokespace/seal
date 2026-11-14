@@ -2110,7 +2110,8 @@
       "sidebar": {
         "expand": "Expand {{project}}",
         "collapse": "Collapse {{project}}",
-        "open": "Project Overview"
+        "open": "Project Overview",
+        "openOverview": "Open project overview"
       }
     }
   },
