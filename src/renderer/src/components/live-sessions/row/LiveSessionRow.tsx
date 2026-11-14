@@ -16,6 +16,7 @@ import { runningSubagents } from '../../../../../shared/live-sessions/live-sessi
 import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionSummaryView } from '../../../../../shared/session-summaries/live-session-summary-view'
+import { SessionRecapBadge } from '@/components/session-recap/SessionRecapBadge'
 import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
 import { liveSessionTitle } from '../live-session-presentation'
 import {
@@ -198,6 +199,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <span className="min-w-0 flex-1 truncate">
                     {place ? `\u00b7 ${place}` : null}
                   </span>
+                  <SessionRecapBadge brief={session.recap} />
                   {subagents > 0 ? (
                     <span
                       data-live-session-subagents={subagents}

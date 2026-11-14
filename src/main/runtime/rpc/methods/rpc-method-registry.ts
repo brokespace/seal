@@ -6,6 +6,7 @@ import { ORCAD_MIGRATION_METHODS } from './orcad/orcad-migration'
 import { SESSION_TERMINAL_SCROLLBACK_METHODS } from './terminal/session-terminal-scrollback'
 import { AI_VAULT_METHODS } from './history/ai-vault'
 import { LIVE_SESSION_METHODS } from './live-sessions/live-sessions'
+import { SESSION_RECAP_METHODS } from './live-sessions/session-recap'
 import { SESSION_SUMMARY_METHODS } from './live-sessions/session-summaries'
 import { AUTOMATION_METHODS } from './automations/automations'
 import { REPO_METHODS } from './projects/repo'
@@ -140,6 +141,7 @@ export const ALL_RPC_METHODS = [
   ...USAGE_CREDENTIAL_METHODS,
   ...UTILITY_MODEL_METHODS,
   ...SESSION_SUMMARY_METHODS,
+  ...SESSION_RECAP_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,
   ...SESSION_TAB_METHODS,

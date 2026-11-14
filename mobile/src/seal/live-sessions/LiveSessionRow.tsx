@@ -8,6 +8,7 @@ import {
 } from '../../components/list/ListGroup'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { sealStyles } from '../seal-screen-styles'
+import { SessionRecapCounts } from '../session-recap/SessionRecapCounts'
 import {
   groupLiveSessions,
   liveSessionDotState,
@@ -37,6 +38,11 @@ export function LiveSessionRow({
       leading={<AgentStateDot state={liveSessionDotState(session.status)} />}
       value={
         session.origin === 'external' ? t('seal.liveSessions.external', 'External') : undefined
+      }
+      accessory={
+        session.recap ? (
+          <SessionRecapCounts questions={session.recap.questions} actions={session.recap.actions} />
+        ) : undefined
       }
       navigates
       onPress={() => onPress(session)}

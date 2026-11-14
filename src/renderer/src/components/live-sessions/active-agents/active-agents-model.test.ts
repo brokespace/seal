@@ -79,6 +79,17 @@ describe('buildActiveAgents', () => {
     expect(find('needs permission')).toEqual(['review'])
   })
 
+  it('finds an unnamed session by the recap title its row shows', () => {
+    const sessions = [
+      session('first prompt', {
+        recap: { title: 'Move billing webhooks', rev: 1, questions: 0, actions: 0 }
+      }),
+      session('other')
+    ]
+    const view = buildActiveAgents(sessions, { ...NO_FILTER, query: 'billing' }, NO_LINKS, NOW)
+    expect(view.machines.flatMap((m) => ids(m.sessions))).toEqual(['first prompt'])
+  })
+
   it('narrows with the quick chips and a Projects scope', () => {
     const sessions = [
       session('local-working', { status: 'working' }),
