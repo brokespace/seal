@@ -607,6 +607,8 @@
           "loading": "Looking for sessions",
           "closeSplit": "Close split",
           "backToSession": "Back to session",
+          "backToProject": "Back to {{project}}",
+          "backToProjectOverview": "Back to project overview",
           "subagentOf": "Subagent: {{title}}",
           "goneTab": "Session ended",
           "closeTab": "Close tab",
