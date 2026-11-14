@@ -15,7 +15,7 @@ import type {
   HomeWorkspace
 } from './home-overview-model'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import { sampleLiveSession } from '../live-sessions/live-session-sample'
+import { sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 
 const NOW = Date.now()
 const MIN = 60_000

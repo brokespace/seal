@@ -14,7 +14,7 @@ import ActiveAgentsSection from './active-agents/ActiveAgentsSection'
 import { buildActiveAgents } from './active-agents/active-agents-model'
 import { liveSessionBadges, type LiveSessionLink } from './links/live-session-links'
 import { liveSessionRegistryStore, useLiveSessions } from './live-session-registry-store'
-import { SAMPLE_NOW, sampleLiveSession } from './live-session-sample'
+import { SAMPLE_NOW, sampleLiveSession } from './live-session.test-fixture'
 import { liveSessionDialogStore } from './menu/live-session-dialog-store'
 import { liveSessionTabsStore } from './workspace/live-session-tabs-store'
 
