@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Folder, Monitor, Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
+import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { groupHomeSessions } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeSession } from './home-overview-model'
 import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
@@ -21,7 +22,10 @@ export function HomeSessionsPanel({
     <HomeOverviewPanel
       title={t('home.overview.sessions.title', 'Sessions')}
       action={
-        <span className="text-2xs text-muted-foreground tabular-nums">{sessions.length}</span>
+        <span className="flex items-center gap-2">
+          <SessionSummariesPausedNote />
+          <span className="text-2xs text-muted-foreground tabular-nums">{sessions.length}</span>
+        </span>
       }
     >
       {groups.length === 0 ? (
