@@ -330,7 +330,12 @@ export function useWorktreeContextMenuModel({
       const sidebar = scopeRef.current?.closest('[data-worktree-sidebar]')
       if (sidebar instanceof HTMLElement) {
         sidebar.focus({ preventScroll: true })
+        return
       }
+      // Outside the sidebar the card is its own tab stop, so the keyboard carries on from it.
+      scopeRef.current
+        ?.querySelector<HTMLElement>('[data-worktree-card-surface][tabindex]')
+        ?.focus({ preventScroll: true })
     },
     [openPendingParentPicker]
   )
