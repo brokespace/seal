@@ -3,6 +3,7 @@ import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-c
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import {
+  machineGpuUtilizationPercent,
   machineLoad,
   machineMemoryUsedPercent
 } from '../../../../shared/home-overview/home-machine-readings'
@@ -15,6 +16,7 @@ export function homeMachineFromSummary(
 ): HomeMachine {
   const load = machineLoad(metrics)
   const memoryUsedPercent = machineMemoryUsedPercent(metrics)
+  const gpuUtilizationPercent = machineGpuUtilizationPercent(metrics)
   return {
     id: summary.id,
     executionHostId: summary.executionHostId,
@@ -25,6 +27,7 @@ export function homeMachineFromSummary(
     status: summary.status,
     ...(load !== undefined ? { load } : {}),
     ...(memoryUsedPercent !== undefined ? { memoryUsedPercent } : {}),
+    ...(gpuUtilizationPercent !== undefined ? { gpuUtilizationPercent } : {}),
     ...(summary.statusDetail ? { error: summary.statusDetail } : {})
   }
 }

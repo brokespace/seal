@@ -2,18 +2,39 @@ import { uiNumberFormat } from '@/i18n/ui-intl-formatters'
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
-export function formatBytes(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes < 0) {
-    return '—'
-  }
+function byteScale(bytes: number): { divisor: number; unit: string; digits: number } {
   let value = bytes
   let unit = 0
   while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
     value /= 1024
     unit += 1
   }
-  const digits = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2
-  return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`
+  return {
+    divisor: 1024 ** unit,
+    unit: BYTE_UNITS[unit],
+    digits: unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2
+  }
+}
+
+function isByteCount(bytes: number | null | undefined): bytes is number {
+  return bytes !== null && bytes !== undefined && Number.isFinite(bytes) && bytes >= 0
+}
+
+export function formatBytes(bytes: number | null | undefined): string {
+  if (!isByteCount(bytes)) {
+    return '—'
+  }
+  const { divisor, unit, digits } = byteScale(bytes)
+  return `${(bytes / divisor).toFixed(digits)} ${unit}`
+}
+
+/** Used over total in the total's unit, e.g. `19.9 / 24.0 GB`, so the pair reads as one figure. */
+export function formatBytesOfTotal(used: number, total: number): string {
+  if (!isByteCount(used) || !isByteCount(total)) {
+    return '—'
+  }
+  const { divisor, unit, digits } = byteScale(total)
+  return `${(used / divisor).toFixed(digits)} / ${(total / divisor).toFixed(digits)} ${unit}`
 }
 
 // Formatter caches key on option identity, so this must be a module constant.

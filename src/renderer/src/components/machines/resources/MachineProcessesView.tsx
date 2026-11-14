@@ -7,7 +7,12 @@ import type {
   MachineProcessSnapshot
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
-import { MachineProcessList, type MachineProcessSort } from './MachineProcessList'
+import { MachineGpuUnlistedProcesses } from './MachineGpuUnlistedProcesses'
+import {
+  MachineProcessList,
+  type MachineProcessGpuUse,
+  type MachineProcessSort
+} from './MachineProcessList'
 import { useLiveSessions } from '../../live-sessions/live-session-registry-store'
 import { liveSessionsByPid } from '../model/machine-live-sessions'
 import { MachineProcessSessions } from './MachineProcessSessions'
@@ -33,7 +38,27 @@ function matches(process: MachineProcess, filter: string): boolean {
   )
 }
 
-/** Live process table shared by the CPU and memory details, which differ in ranking and headline. */
+/** A process on two GPUs is one row: its GPUs side by side and its memory on them added up. */
+function gpuUseByPid(snapshot: MachineProcessSnapshot | null): Map<number, MachineProcessGpuUse> {
+  const byPid = new Map<number, MachineProcessGpuUse>()
+  for (const use of snapshot?.gpu?.processes ?? []) {
+    const known = byPid.get(use.pid)
+    byPid.set(use.pid, {
+      gpuIndexes: [...(known?.gpuIndexes ?? []), ...(use.gpuIndex === null ? [] : [use.gpuIndex])],
+      memoryBytes:
+        use.memoryBytes === null && known?.memoryBytes == null
+          ? null
+          : (known?.memoryBytes ?? 0) + (use.memoryBytes ?? 0),
+      container: known?.container ?? use.container
+    })
+  }
+  return byPid
+}
+
+/**
+ * Live process table shared by the CPU, memory and GPU details, which differ in ranking and
+ * headline. The GPU detail lists only the processes on the GPUs.
+ */
 export function MachineProcessesView({
   machine,
   initialSort,
@@ -46,25 +71,35 @@ export function MachineProcessesView({
   children?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
-  const { snapshot, error, sampleNow } = useMachineProcesses(machine.id)
+  const onGpus = initialSort === 'gpu'
+  const { snapshot, error, sampleNow } = useMachineProcesses(machine.id, onGpus)
   const { sessions } = useLiveSessions()
   const sessionsByPid = useMemo(() => liveSessionsByPid(machine, sessions), [machine, sessions])
   const [sort, setSort] = useState<MachineProcessSort>(initialSort)
   const [filter, setFilter] = useState('')
   const [signal, setSignal] = useState<MachineProcessSignalRequest | null>(null)
+  const gpuUse = useMemo(() => (onGpus ? gpuUseByPid(snapshot) : undefined), [onGpus, snapshot])
 
   const shown = useMemo(() => {
-    const filtered = (snapshot?.processes ?? []).filter((process) => matches(process, filter))
+    const filtered = (snapshot?.processes ?? []).filter(
+      (process) => (!gpuUse || gpuUse.has(process.pid)) && matches(process, filter)
+    )
+    const gpuMemory = (process: MachineProcess): number =>
+      gpuUse?.get(process.pid)?.memoryBytes ?? -1
     filtered.sort((a, b) =>
-      sort === 'cpu' ? b.cpuPercent - a.cpuPercent : b.rssBytes - a.rssBytes
+      sort === 'cpu'
+        ? b.cpuPercent - a.cpuPercent
+        : sort === 'gpu'
+          ? gpuMemory(b) - gpuMemory(a) || a.pid - b.pid
+          : b.rssBytes - a.rssBytes
     )
     return filter.trim() === '' ? filtered.slice(0, TOP_SHOWN) : filtered
-  }, [snapshot, filter, sort])
+  }, [snapshot, filter, sort, gpuUse])
 
   return (
     <div className="space-y-4">
       {summary(snapshot)}
-      {snapshot ? (
+      {snapshot && !onGpus ? (
         <MachineProcessSessions
           snapshot={snapshot}
           sessionsByPid={sessionsByPid}
@@ -91,15 +126,24 @@ export function MachineProcessesView({
           </div>
           <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
             {snapshot
-              ? filter.trim() === ''
+              ? onGpus
                 ? t(
-                    'auto.components.machines.processes.showingTop',
-                    'Top {{shown}} of {{total}} processes',
-                    { shown: shown.length, total: snapshot.totalProcesses }
+                    'auto.components.machines.gpu.processCount',
+                    '{{count}} processes on the GPUs',
+                    {
+                      count: gpuUse?.size ?? 0,
+                      defaultValue_one: '{{count}} process on the GPUs'
+                    }
                   )
-                : t('auto.components.machines.processes.showingMatches', '{{shown}} matching', {
-                    shown: shown.length
-                  })
+                : filter.trim() === ''
+                  ? t(
+                      'auto.components.machines.processes.showingTop',
+                      'Top {{shown}} of {{total}} processes',
+                      { shown: shown.length, total: snapshot.totalProcesses }
+                    )
+                  : t('auto.components.machines.processes.showingMatches', '{{shown}} matching', {
+                      shown: shown.length
+                    })
               : null}
           </span>
         </div>
@@ -115,10 +159,13 @@ export function MachineProcessesView({
               sort={sort}
               onSort={setSort}
               onSignal={(process, kind) => setSignal({ process, signal: kind })}
+              gpuUse={gpuUse}
             />
           ) : (
             <p className="py-6 text-center text-xs text-muted-foreground">
-              {t('auto.components.machines.processes.noMatches', 'No process matches.')}
+              {onGpus && gpuUse?.size === 0
+                ? t('auto.components.machines.gpu.noProcesses', 'No process is using a GPU.')
+                : t('auto.components.machines.processes.noMatches', 'No process matches.')}
             </p>
           )
         ) : error ? null : (
@@ -126,6 +173,13 @@ export function MachineProcessesView({
             <Loader2 className="size-4 animate-spin text-muted-foreground" />
           </div>
         )}
+        {snapshot?.gpu ? (
+          <MachineGpuUnlistedProcesses
+            processes={snapshot.gpu.processes.filter(
+              (use) => !snapshot.processes.some((process) => process.pid === use.pid)
+            )}
+          />
+        ) : null}
       </div>
       <MachineProcessSignalDialog
         machineId={machine.id}

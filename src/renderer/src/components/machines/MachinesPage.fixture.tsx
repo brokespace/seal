@@ -4,6 +4,7 @@ import type { SshConnectionState } from '../../../../shared/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import MachinesPage from './MachinesPage'
 import { fakeMachinesApi, GPU, HOME, KESSEL, NAS, now } from './machine-api-fixture'
+import { A100_80GB, RTX_4090, seedFakeGpuHistory } from './machine-gpu-fixture-data'
 import { MachinesSettingsPane } from '../settings/machines/MachinesSettingsPane'
 
 const STATES = new Map<string, SshConnectionState>([
@@ -87,6 +88,29 @@ export const runtimeMachine = defineFixture({
   render: () => <Page />,
   interact: (frame) => openMachine(frame, toMachineId(KESSEL))
 })
+
+function gpuDetailFixture(machine: string, model: typeof A100_80GB, count: number, width: number) {
+  return defineFixture({
+    width,
+    store: { sshConnectionStates: STATES },
+    setup: () => {
+      installFakes()
+      seedFakeGpuHistory(toMachineId(machine), model, count)
+    },
+    render: () => <Page />,
+    interact: async (frame) => {
+      await openMachine(frame, toMachineId(machine))
+      frame.querySelector<HTMLElement>('[data-machine-meter="gpu"]')?.click()
+      await wait(600)
+    }
+  })
+}
+
+export const gpuDetail = gpuDetailFixture(KESSEL, A100_80GB, 8, 1200)
+
+export const gpuDetailTwo = gpuDetailFixture(GPU, RTX_4090, 2, 1200)
+
+export const gpuDetailNarrow = gpuDetailFixture(KESSEL, A100_80GB, 8, 560)
 
 export const diskDetail = defineFixture({
   width: 1200,

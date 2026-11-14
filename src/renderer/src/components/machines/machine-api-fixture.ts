@@ -6,6 +6,7 @@ import type {
   MachineTransfer
 } from '../../../../shared/machines/machine-types'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
+import { A100_80GB, APPLE_GPU, fakeGpus, RTX_4090 } from './machine-gpu-fixture-data'
 import { fakeMachineResourceApi } from './machine-resource-fixture-data'
 
 export const GPU = 'gpu-box'
@@ -114,7 +115,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     cpuCount: 12,
     loadAverage: [2.1, 1.8, 1.6],
     cpuUsagePercent: null,
-    homeDir: '/Users/brian'
+    homeDir: '/Users/brian',
+    gpus: [APPLE_GPU]
   }),
   [toMachineId(GPU)]: metrics({
     hostname: 'gpu-box',
@@ -127,7 +129,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     memAvailableBytes: 22 * 1024 ** 3,
     diskTotalBytes: 4 * 1024 ** 4,
     diskAvailableBytes: 1.1 * 1024 ** 4,
-    uptimeSeconds: 1_209_600
+    uptimeSeconds: 1_209_600,
+    gpus: fakeGpus(RTX_4090, 2)
   }),
   [toMachineId(KESSEL)]: metrics({
     hostname: 'kessel-ml',
@@ -139,7 +142,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     memAvailableBytes: 141 * 1024 ** 3,
     diskTotalBytes: 8 * 1024 ** 4,
     diskAvailableBytes: 5.2 * 1024 ** 4,
-    uptimeSeconds: 432_000
+    uptimeSeconds: 432_000,
+    gpus: fakeGpus(A100_80GB, 8)
   })
 }
 
@@ -246,7 +250,7 @@ export const fakeMachinesApi: MachinesApi = {
   listWorktrees: async () => [],
   createWorktree: async () => [],
   removeWorktree: async () => [],
-  ...fakeMachineResourceApi(HOME, TREE[HOME] ?? [])
+  ...fakeMachineResourceApi(HOME, TREE[HOME] ?? [], (machineId) => METRICS[machineId]?.gpus ?? [])
 }
 
 function sshDetails(targetId: string, host: string, port: number, username: string) {

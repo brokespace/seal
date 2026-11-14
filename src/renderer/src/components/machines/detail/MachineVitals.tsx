@@ -5,6 +5,8 @@ import type { MachineMetrics, MachineOs } from '../../../../../shared/machines/m
 import { cpuLoadPercent, formatBytes, formatUptime, usedPercent } from '../model/machine-format'
 import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
 import type { MachineResourceKind } from '../resources/machine-resource-requests'
+import { machineMeterTone, type MachineMeterTone } from '../model/machine-meter-tone'
+import { MachineGpuMeter } from './MachineGpuMeter'
 
 function statusDotClass(status: MachineStatus): string {
   switch (status) {
@@ -68,21 +70,15 @@ export function MachineMeter({
   label,
   percent,
   detail,
-  compact = false
+  compact = false,
+  tone = 'pressure'
 }: {
   label: string
   percent: number | null
   detail?: string
   compact?: boolean
+  tone?: MachineMeterTone
 }): React.JSX.Element {
-  const tone =
-    percent === null
-      ? 'bg-muted-foreground/30'
-      : percent >= 90
-        ? 'bg-destructive'
-        : percent >= 75
-          ? 'bg-status-warning'
-          : 'bg-foreground/60'
   return (
     <div className={cn('min-w-0', compact ? 'flex items-center gap-1.5' : 'space-y-1')}>
       <div
@@ -107,7 +103,10 @@ export function MachineMeter({
         aria-valuenow={percent === null ? undefined : Math.round(percent)}
       >
         <div
-          className={cn('h-full rounded-full transition-[width] duration-500', tone)}
+          className={cn(
+            'h-full rounded-full transition-[width] duration-500',
+            machineMeterTone(percent, tone)
+          )}
           style={{ width: `${percent ?? 0}%` }}
         />
       </div>
@@ -193,9 +192,15 @@ export function MachineVitalsStrip({
         })
       : null
   ].filter((fact): fact is string => Boolean(fact))
+  const gpus = metrics?.gpus ?? []
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-3 gap-4">
+    <div className="@container space-y-2">
+      <div
+        className={cn(
+          'grid gap-4',
+          gpus.length > 0 ? 'grid-cols-2 @xl:grid-cols-4' : 'grid-cols-3'
+        )}
+      >
         <MeterButton
           kind="cpu"
           label={t('auto.components.machines.vitals.cpuDetails', 'CPU: show the busiest processes')}
@@ -244,6 +249,19 @@ export function MachineVitalsStrip({
             detail={used(metrics?.diskTotalBytes ?? null, metrics?.diskAvailableBytes ?? null)}
           />
         </MeterButton>
+        {gpus.length > 0 ? (
+          <MeterButton
+            kind="gpu"
+            label={t(
+              'auto.components.machines.vitals.gpuDetails',
+              'GPU: show each GPU and what is running on it'
+            )}
+            selected={selected === 'gpu'}
+            onSelect={onSelect}
+          >
+            <MachineGpuMeter gpus={gpus} />
+          </MeterButton>
+        ) : null}
       </div>
       {facts.length > 0 || error ? (
         <p

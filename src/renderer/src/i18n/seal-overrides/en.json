@@ -115,7 +115,9 @@
           "disk": "Disk",
           "cpuDetails": "CPU: show the busiest processes",
           "memoryDetails": "RAM: show what is using memory",
-          "diskDetails": "Disk: show what is taking space"
+          "diskDetails": "Disk: show what is taking space",
+          "gpu": "GPU",
+          "gpuDetails": "GPU: show each GPU and what is running on it"
         },
         "actions": {
           "nameLabel": "Name",
@@ -411,14 +413,16 @@
           "filterLabel": "Filter processes",
           "showingTop": "Top {{shown}} of {{total}} processes",
           "showingMatches": "{{shown}} matching",
-          "noMatches": "No process matches."
+          "noMatches": "No process matches.",
+          "gpuMemory": "GPU memory"
         },
         "resources": {
           "cpuTitle": "CPU: busiest processes",
           "memoryTitle": "Memory: largest processes",
           "diskTitle": "Disk: usage and cleanup",
           "close": "Back to files",
-          "unsupported": "Process, memory and disk details are available for Linux and macOS machines."
+          "unsupported": "Process, memory and disk details are available for Linux and macOS machines.",
+          "gpuTitle": "GPU: readings and processes"
         },
         "editor": {
           "openInApp": "Open in {{app}}",
@@ -440,6 +444,31 @@
           "launchFailed": "Could not open {{app}}",
           "launchFailedDetail": "Check this app’s command under Open In apps.",
           "filesLoading": "Still loading this machine’s files. Try again in a moment."
+        },
+        "gpu": {
+          "cell": "GPU {{index}}: {{readings}}",
+          "count_one": "{{count}} GPU",
+          "count_other": "{{count}} GPUs",
+          "temperature": "Temperature",
+          "power": "Power",
+          "fan": "Fan",
+          "clock": "Core clock",
+          "clocks": "Core / memory clock",
+          "index": "GPU {{index}}",
+          "migDetail": "Split into MIG instances, so the driver reports no utilization for the whole card.",
+          "mig": "MIG",
+          "utilization": "Utilization",
+          "memory": "Memory",
+          "average_one": "{{count}} GPU",
+          "average_other": "average of {{count}} GPUs",
+          "memoryUsed": "Memory used",
+          "powerLimit": "of a {{limit}} limit",
+          "hottest": "Hottest",
+          "none": "No GPU is reporting on this machine.",
+          "unlisted": "The driver also reports these, but the machine does not list them as processes (they may have just exited, or run where this account cannot see them), so they cannot be stopped from here:",
+          "processCount_one": "{{count}} process on the GPUs",
+          "processCount_other": "{{count}} processes on the GPUs",
+          "noProcesses": "No process is using a GPU."
         }
       },
       "live-sessions": {
@@ -1000,7 +1029,8 @@
         "manage": "Manage",
         "empty": "No machines.",
         "summary": "{{online}} of {{total}} online",
-        "active": "{{count}} active"
+        "active": "{{count}} active",
+        "gpu": "GPU {{percent}}%"
       },
       "summary": {
         "working": "{{count}} working",
