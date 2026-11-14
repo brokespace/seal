@@ -5,14 +5,17 @@ type CachedSummary = { session: string; hash: string; text: string; at: number }
 const MAX_ENTRIES = 600
 
 function isCachedSummary(item: unknown): item is CachedSummary {
-  const entry = item as Partial<CachedSummary> | null
   return (
-    typeof entry === 'object' &&
-    entry !== null &&
-    typeof entry.session === 'string' &&
-    typeof entry.hash === 'string' &&
-    typeof entry.text === 'string' &&
-    typeof entry.at === 'number'
+    typeof item === 'object' &&
+    item !== null &&
+    'session' in item &&
+    typeof item.session === 'string' &&
+    'hash' in item &&
+    typeof item.hash === 'string' &&
+    'text' in item &&
+    typeof item.text === 'string' &&
+    'at' in item &&
+    typeof item.at === 'number'
   )
 }
 

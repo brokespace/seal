@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentPaneChange } from '../agent-hooks/observations/agent-transition-detector'
 import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
-import { PaneSessionSummaries } from './pane-session-summaries'
-import type { SessionSummarizer } from './session-summarizer'
+import { PaneSessionSummaries, type PaneSessionSummariesDeps } from './pane-session-summaries'
 
 const PANE = 'tab-1:leaf-1'
 const WORKSPACE = { worktreeId: 'wt-1', sshHostId: null }
@@ -16,9 +15,9 @@ function row(overrides: Partial<AgentStatusIpcPayload>): AgentStatusIpcPayload {
     connectionId: null,
     receivedAt: 1_000,
     stateStartedAt: 1_000,
-    providerSession: { id: 'session-abc' },
+    providerSession: { key: 'session_id', id: 'session-abc' },
     ...overrides
-  } as AgentStatusIpcPayload
+  }
 }
 
 function moved(
@@ -32,13 +31,13 @@ function moved(
 function harness() {
   let current: AgentStatusIpcPayload | null = null
   const calls: string[] = []
-  const summarizer = {
-    request: (key: string, message: string, asking: boolean) =>
-      calls.push(`request ${key} asking=${asking} ${message}`),
-    clear: (key: string) => calls.push(`clear ${key}`),
-    forget: (key: string) => calls.push(`forget ${key}`),
+  const summarizer: PaneSessionSummariesDeps['summarizer'] = {
+    request: (key, message, asking) =>
+      void calls.push(`request ${key} asking=${asking} ${message}`),
+    clear: (key) => void calls.push(`clear ${key}`),
+    forget: (key) => void calls.push(`forget ${key}`),
     view: () => ({ text: 'Fixed the login redirect.', pending: false })
-  } as unknown as SessionSummarizer
+  }
   const panes = new PaneSessionSummaries({
     summarizer,
     readHookRow: () => current,
@@ -92,7 +91,7 @@ describe('PaneSessionSummaries', () => {
         workingMode: 'monitoring',
         lastAssistantMessage: 'Waiting on the test-runner subagent.',
         mainAgent: { state: 'done', stateStartedAt: 1_500 }
-      } as Partial<AgentStatusIpcPayload>)
+      })
     )
 
     h.panes.observe({

@@ -16,13 +16,14 @@ import {
 const SERVER_LIST_TIMEOUT_MS = 15_000
 
 function isListResult(value: unknown): value is SessionSummariesListResult {
-  const result = value as Partial<SessionSummariesListResult> | null
   return (
-    typeof result === 'object' &&
-    result !== null &&
-    typeof result.status === 'object' &&
-    result.status !== null &&
-    Array.isArray(result.sessions)
+    typeof value === 'object' &&
+    value !== null &&
+    'status' in value &&
+    typeof value.status === 'object' &&
+    value.status !== null &&
+    'sessions' in value &&
+    Array.isArray(value.sessions)
   )
 }
 

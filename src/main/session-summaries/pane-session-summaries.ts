@@ -8,7 +8,7 @@ type PaneStop = { paneKey: string; row: AgentStatusIpcPayload }
 export type PaneSessionIdentity = { paneKey: string; agentType: string; providerSessionId: string }
 
 export type PaneSessionSummariesDeps = {
-  summarizer: SessionSummarizer
+  summarizer: Pick<SessionSummarizer, 'request' | 'clear' | 'forget' | 'view'>
   readHookRow: (paneKey: string) => AgentStatusIpcPayload | null
   setTimer: (run: () => void, delayMs: number) => { cancel: () => void }
 }

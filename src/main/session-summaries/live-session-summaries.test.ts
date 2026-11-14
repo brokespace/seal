@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import type { SessionSummariesListResult } from '../../shared/session-summaries/session-summary-contracts'
-import { LiveSessionSummaries } from './live-session-summaries'
-import type { SessionSummarizer, SessionSummaryView } from './session-summarizer'
+import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
+import type { SessionSummaryView } from './session-summarizer'
 
 function session(overrides: Partial<LiveSession> = {}): LiveSession {
   return {
@@ -37,12 +37,12 @@ function harness(
 ) {
   const calls: string[] = []
   const views = new Map<string, SessionSummaryView>()
-  const summarizer = {
-    request: (key: string, message: string) => calls.push(`request ${key} ${message}`),
-    clear: (key: string) => calls.push(`clear ${key}`),
-    forget: (key: string) => calls.push(`forget ${key}`),
-    view: (key: string) => views.get(key) ?? null
-  } as unknown as SessionSummarizer
+  const summarizer: LiveSessionSummariesDeps['summarizer'] = {
+    request: (key, message) => void calls.push(`request ${key} ${message}`),
+    clear: (key) => void calls.push(`clear ${key}`),
+    forget: (key) => void calls.push(`forget ${key}`),
+    view: (key) => views.get(key) ?? null
+  }
   const lastAssistantText = vi.fn(async () => 'Patched the middleware and added a test.')
   const onChange = vi.fn()
   const live = new LiveSessionSummaries({

@@ -14,6 +14,9 @@ export type SessionSummariesStatus = {
   pausedUntil: number | null
 }
 
+/** What a session row shows: the sentence, or that one is being written. */
+export type SessionSummaryView = { text: string | null; pending: boolean }
+
 /** A summary this host made for an agent in one of its own panes. */
 export type SessionSummaryListEntry = {
   paneKey: string

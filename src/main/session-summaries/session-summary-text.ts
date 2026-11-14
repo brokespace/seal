@@ -79,7 +79,7 @@ export function cleanSummary(reply: string): string | null {
     .replace(/[*_`#]+/g, '')
     .trim()
     .replace(/^(?:summary|status)\s*:\s*/i, '')
-    .replace(/^["'“‘]+|["'”’]+$/g, '')
+    .replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim()
   if (!text) {

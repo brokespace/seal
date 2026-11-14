@@ -9,7 +9,7 @@ import type {
 import type { SessionSummarizer, SessionSummaryView } from './session-summarizer'
 
 export type LiveSessionSummariesDeps = {
-  summarizer: SessionSummarizer
+  summarizer: Pick<SessionSummarizer, 'request' | 'clear' | 'forget' | 'view'>
   /** The agent's newest own words in the session's transcript; null when it has said nothing. */
   lastAssistantText: (sessionId: string) => Promise<string | null>
   /** A summary made for one of this host's own panes. */

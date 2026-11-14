@@ -1,3 +1,4 @@
+import type { SessionSummaryView } from '../../shared/session-summaries/session-summary-contracts'
 import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
 import type { SessionSummaryCache } from './session-summary-cache'
 import {
@@ -8,7 +9,7 @@ import {
   summaryWithoutModel
 } from './session-summary-text'
 
-export type SessionSummaryView = { text: string | null; pending: boolean }
+export type { SessionSummaryView }
 
 export type SessionSummarizerDeps = {
   /** The utility model's reply text; rejects when it cannot answer (unconfigured, paused, failed). */

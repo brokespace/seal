@@ -111,7 +111,7 @@ export function createCloudflareWorkersAiProvider(
     // Always read the body: an unread one can crash the process (see http-client).
     const body: unknown = await response
       .text()
-      .then((raw) => JSON.parse(raw) as unknown)
+      .then((raw): unknown => JSON.parse(raw))
       .catch(() => null)
     if (!response.ok || record(body)?.success === false) {
       throw failureOf(response, body, model)
