@@ -4,6 +4,7 @@ import { cn } from '@/lib/class-names'
 import type { MachineMetrics, MachineOs } from '../../../../../shared/machines/machine-types'
 import { cpuLoadPercent, formatBytes, formatUptime, usedPercent } from '../model/machine-format'
 import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
+import type { MachineResourceKind } from '../resources/machine-resource-requests'
 
 function statusDotClass(status: MachineStatus): string {
   switch (status) {
@@ -128,12 +129,50 @@ export function machineMeterValues(metrics: MachineMetrics | null): {
   }
 }
 
+function MeterButton({
+  kind,
+  label,
+  selected,
+  onSelect,
+  children
+}: {
+  kind: MachineResourceKind
+  label: string
+  selected: boolean
+  onSelect: ((kind: MachineResourceKind) => void) | undefined
+  children: React.ReactNode
+}): React.JSX.Element {
+  if (!onSelect) {
+    return <>{children}</>
+  }
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      aria-label={label}
+      data-machine-meter={kind}
+      className={cn(
+        '-m-1.5 min-w-0 rounded-md border border-transparent p-1.5 text-left transition-colors hover:border-border hover:bg-accent/40 focus-visible:border-ring focus-visible:outline-none',
+        selected && 'border-border bg-accent/60'
+      )}
+      onClick={() => onSelect(kind)}
+    >
+      {children}
+    </button>
+  )
+}
+
 export function MachineVitalsStrip({
   metrics,
-  error
+  error,
+  selected = null,
+  onSelect
 }: {
   metrics: MachineMetrics | null
   error: string | null
+  selected?: MachineResourceKind | null
+  /** Makes each meter a button that opens what is using that resource. */
+  onSelect?: (kind: MachineResourceKind) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const values = machineMeterValues(metrics)
@@ -157,27 +196,54 @@ export function MachineVitalsStrip({
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-3 gap-4">
-        <MachineMeter
-          label={t('auto.components.machines.vitals.cpu', 'CPU')}
-          percent={values.cpu}
-          detail={
-            metrics?.loadAverage
-              ? t('auto.components.machines.vitals.load', 'load {{load}}', {
-                  load: metrics.loadAverage[0].toFixed(2)
-                })
-              : undefined
-          }
-        />
-        <MachineMeter
-          label={t('auto.components.machines.vitals.memory', 'RAM')}
-          percent={values.memory}
-          detail={used(metrics?.memTotalBytes ?? null, metrics?.memAvailableBytes ?? null)}
-        />
-        <MachineMeter
-          label={t('auto.components.machines.vitals.disk', 'Disk')}
-          percent={values.disk}
-          detail={used(metrics?.diskTotalBytes ?? null, metrics?.diskAvailableBytes ?? null)}
-        />
+        <MeterButton
+          kind="cpu"
+          label={t('auto.components.machines.vitals.cpuDetails', 'CPU: show the busiest processes')}
+          selected={selected === 'cpu'}
+          onSelect={onSelect}
+        >
+          <MachineMeter
+            label={t('auto.components.machines.vitals.cpu', 'CPU')}
+            percent={values.cpu}
+            detail={
+              metrics?.loadAverage
+                ? t('auto.components.machines.vitals.load', 'load {{load}}', {
+                    load: metrics.loadAverage[0].toFixed(2)
+                  })
+                : undefined
+            }
+          />
+        </MeterButton>
+        <MeterButton
+          kind="memory"
+          label={t(
+            'auto.components.machines.vitals.memoryDetails',
+            'RAM: show what is using memory'
+          )}
+          selected={selected === 'memory'}
+          onSelect={onSelect}
+        >
+          <MachineMeter
+            label={t('auto.components.machines.vitals.memory', 'RAM')}
+            percent={values.memory}
+            detail={used(metrics?.memTotalBytes ?? null, metrics?.memAvailableBytes ?? null)}
+          />
+        </MeterButton>
+        <MeterButton
+          kind="disk"
+          label={t(
+            'auto.components.machines.vitals.diskDetails',
+            'Disk: show what is taking space'
+          )}
+          selected={selected === 'disk'}
+          onSelect={onSelect}
+        >
+          <MachineMeter
+            label={t('auto.components.machines.vitals.disk', 'Disk')}
+            percent={values.disk}
+            detail={used(metrics?.diskTotalBytes ?? null, metrics?.diskAvailableBytes ?? null)}
+          />
+        </MeterButton>
       </div>
       {facts.length > 0 || error ? (
         <p

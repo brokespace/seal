@@ -3,8 +3,8 @@ import { ArrowUp, Eye, EyeOff, FolderPlus, Globe, House, RefreshCw, Upload } fro
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn } from '@/lib/class-names'
-import { machinePathCrumbs, machinePathDirname } from '../../../../../shared/machines/machine-paths'
+import { machinePathDirname } from '../../../../../shared/machines/machine-paths'
+import { MachinePathCrumbs } from './MachinePathCrumbs'
 import type { MachineFileActions } from './use-machine-file-actions'
 
 function ToolbarButton({
@@ -71,30 +71,11 @@ export function MachineExplorerToolbar({
       >
         <ArrowUp />
       </ToolbarButton>
-      <nav
-        className="scrollbar-none flex min-w-0 flex-1 items-center overflow-x-auto px-1 font-mono text-xs"
-        aria-label={t('auto.components.machines.explorer.path', 'Current folder')}
-      >
-        {root
-          ? machinePathCrumbs(root).map((crumb, index, crumbs) => (
-              <React.Fragment key={crumb.path}>
-                {index > 0 && crumbs[index - 1]?.label !== '/' ? (
-                  <span className="px-0.5 text-muted-foreground">/</span>
-                ) : null}
-                <button
-                  type="button"
-                  className={cn(
-                    'shrink-0 rounded px-1 py-0.5 hover:bg-accent',
-                    index === crumbs.length - 1 ? 'text-foreground' : 'text-muted-foreground'
-                  )}
-                  onClick={() => navigate(crumb.path)}
-                >
-                  {crumb.label}
-                </button>
-              </React.Fragment>
-            ))
-          : null}
-      </nav>
+      <MachinePathCrumbs
+        path={root}
+        label={t('auto.components.machines.explorer.path', 'Current folder')}
+        onOpen={navigate}
+      />
       <ToolbarButton
         label={t('auto.components.machines.explorer.refresh', 'Refresh')}
         onClick={() => refresh()}

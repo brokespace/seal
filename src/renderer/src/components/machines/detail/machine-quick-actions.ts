@@ -25,19 +25,6 @@ export function openMachineTerminal(machine: MachineSummary, cwd?: string): void
   showMachineTerminalPanel(machine.label, { machineId: machine.id, ...(cwd ? { cwd } : {}) })
 }
 
-export function launchMachineAgent(
-  machine: MachineSummary,
-  agent: string,
-  options: { cwd?: string; prompt?: string } = {}
-): void {
-  showMachineTerminalPanel(machine.label, {
-    machineId: machine.id,
-    agent,
-    ...(options.cwd ? { cwd: options.cwd } : {}),
-    ...(options.prompt ? { prompt: options.prompt } : {})
-  })
-}
-
 /** VS Code dials the stored SSH details itself, whichever transport Seal is using. */
 export async function openMachineInEditor(machine: MachineSummary, path: string): Promise<void> {
   if (machine.connection !== 'local' && !machine.sshTargetId) {
