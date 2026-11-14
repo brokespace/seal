@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageLayout } from '@/components/page-layout/PageLayout'
 import { useAppStore } from '@/store/index'
 import { resolveAutomationRunTarget } from './runs/automation-run-open-target'
 import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
@@ -369,10 +370,7 @@ export function AutomationsPageSurface({
   }
 
   return (
-    <main
-      ref={mainRef}
-      className="relative flex h-full min-h-0 flex-col bg-background pt-2 text-foreground"
-    >
+    <PageLayout ref={mainRef}>
       <AutomationsPageEditorDialog controller={controller} />
       <AutomationsPageDeleteDialogs
         deleteTarget={deleteTarget?.automation ?? null}
@@ -391,6 +389,6 @@ export function AutomationsPageSurface({
       <AutomationsPageNoticeContext.Provider value={ownerNotice}>
         {renderPage()}
       </AutomationsPageNoticeContext.Provider>
-    </main>
+    </PageLayout>
   )
 }

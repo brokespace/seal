@@ -7,6 +7,7 @@ import type { PairedMobileDevice } from './paired-mobile-devices'
 import type { MobilePageStage } from './mobile-page-stage'
 import { MobilePageToolbar } from './MobilePageToolbar'
 import { PhoneCarousel } from './PhoneCarousel'
+import { PageLayout, PagePanes } from '@/components/page-layout/PageLayout'
 import type { MobilePairingConnectionMode } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import type { MobileRelayMintFailure } from '../../../../shared/remote-runtime/relay/mobile-relay-mint-failure'
 
@@ -91,64 +92,66 @@ export function MobilePageContent({
 }: MobilePageContentProps): React.JSX.Element {
   const t = useTranslate()
   return (
-    <div className="mobile-page-root scrollbar-sleek">
+    <PageLayout>
       <MobilePageToolbar
         showMobileButton={showMobileButton}
         onClose={closeMobilePage}
         onToggleMobileSidebarButton={toggleMobileSidebarButton}
       />
-      <section className="mp-hero">
-        <div className="mp-hero-copy">
-          {stage === null ? null : stage === 'intro' ? (
-            <HeroIntro onStart={enterFlow} />
-          ) : stage === 'paired' ? (
-            <HeroPaired
-              devices={devices}
-              onPairAnother={pairAnotherDevice}
-              onRevoke={(id) => revokeDevice(id)}
-              revokingDeviceIds={revokingDeviceIds}
-            />
-          ) : (
-            <HeroFlow
-              stepIdx={stepIdx}
-              onOpenInstallGuide={openInstallGuide}
-              pairQrDataUrl={pairQrDataUrl}
-              pairQrSize={pairQrSize}
-              pairingUrl={pairingUrl}
-              pairingQrError={pairingQrError}
-              relayMintFailure={relayMintFailure}
-              onUseLan={onUseLan}
-              onRetryRelay={onRetryRelay}
-              onCopyRelayDiagnostics={onCopyRelayDiagnostics}
-              pairLoading={pairLoading}
-              connectionMode={connectionMode}
-              onConnectionModeChange={handleConnectionModeChange}
-              onRegeneratePairing={() => generatePairing(true)}
-              onCopyPairingCode={copyPairingCode}
-              networkInterfaces={networkInterfaces}
-              customAddresses={customAddresses}
-              selectedAddress={selectedAddress}
-              selectedAddressIsCustom={selectedAddressIsCustom}
-              onSelectedAddressChange={handleAddressChange}
-              onCustomAddressSelect={onCustomAddressSelect}
-              onCustomAddressRemove={onCustomAddressRemove}
-              beforeCustomAddressChange={beforeCustomAddressChange}
-              onRefreshNetworkInterfaces={loadNetworkInterfaces}
-              refreshingNetworkInterfaces={refreshingNetworkInterfaces}
-              onBack={handleBack}
-              onContinue={handleContinue}
-              onDone={devices.length > 0 ? () => showPairedDevices(devices.length) : undefined}
-            />
-          )}
-        </div>
+      <PagePanes className="mobile-page-root scrollbar-sleek">
+        <section className="mp-hero">
+          <div className="mp-hero-copy">
+            {stage === null ? null : stage === 'intro' ? (
+              <HeroIntro onStart={enterFlow} />
+            ) : stage === 'paired' ? (
+              <HeroPaired
+                devices={devices}
+                onPairAnother={pairAnotherDevice}
+                onRevoke={(id) => revokeDevice(id)}
+                revokingDeviceIds={revokingDeviceIds}
+              />
+            ) : (
+              <HeroFlow
+                stepIdx={stepIdx}
+                onOpenInstallGuide={openInstallGuide}
+                pairQrDataUrl={pairQrDataUrl}
+                pairQrSize={pairQrSize}
+                pairingUrl={pairingUrl}
+                pairingQrError={pairingQrError}
+                relayMintFailure={relayMintFailure}
+                onUseLan={onUseLan}
+                onRetryRelay={onRetryRelay}
+                onCopyRelayDiagnostics={onCopyRelayDiagnostics}
+                pairLoading={pairLoading}
+                connectionMode={connectionMode}
+                onConnectionModeChange={handleConnectionModeChange}
+                onRegeneratePairing={() => generatePairing(true)}
+                onCopyPairingCode={copyPairingCode}
+                networkInterfaces={networkInterfaces}
+                customAddresses={customAddresses}
+                selectedAddress={selectedAddress}
+                selectedAddressIsCustom={selectedAddressIsCustom}
+                onSelectedAddressChange={handleAddressChange}
+                onCustomAddressSelect={onCustomAddressSelect}
+                onCustomAddressRemove={onCustomAddressRemove}
+                beforeCustomAddressChange={beforeCustomAddressChange}
+                onRefreshNetworkInterfaces={loadNetworkInterfaces}
+                refreshingNetworkInterfaces={refreshingNetworkInterfaces}
+                onBack={handleBack}
+                onContinue={handleContinue}
+                onDone={devices.length > 0 ? () => showPairedDevices(devices.length) : undefined}
+              />
+            )}
+          </div>
 
-        <div
-          className="mp-stage"
-          aria-label={t('auto.components.mobile.MobilePage.e17393c6a3', 'Phone preview')}
-        >
-          <PhoneCarousel />
-        </div>
-      </section>
-    </div>
+          <div
+            className="mp-stage"
+            aria-label={t('auto.components.mobile.MobilePage.e17393c6a3', 'Phone preview')}
+          >
+            <PhoneCarousel />
+          </div>
+        </section>
+      </PagePanes>
+    </PageLayout>
   )
 }

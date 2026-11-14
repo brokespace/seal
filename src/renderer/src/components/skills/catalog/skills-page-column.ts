@@ -1,2 +1,4 @@
-/** Align Skills header, filters and rows on a full-width column instead of wasting wide-window space. */
-export const SKILLS_PAGE_COLUMN = 'w-full px-5 md:px-8'
+import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
+
+/** Align Skills header, filters and rows on the shared page gutter at full width. */
+export const SKILLS_PAGE_COLUMN = `w-full ${PAGE_GUTTER_X}`

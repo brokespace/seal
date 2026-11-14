@@ -48,8 +48,18 @@ export function PageHeader({
   )
 }
 
-export function PageTitle({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <h1 className="min-w-0 flex-1 truncate text-base leading-8 font-semibold">{children}</h1>
+export function PageTitle({
+  children,
+  className
+}: {
+  children: React.ReactNode
+  className?: string
+}): React.JSX.Element {
+  return (
+    <h1 className={cn('min-w-0 flex-1 truncate text-base leading-8 font-semibold', className)}>
+      {children}
+    </h1>
+  )
 }
 
 /** The region under the header for pages that lay out their own panes (list + detail). */
