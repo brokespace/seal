@@ -390,26 +390,18 @@
           "placeholder": "Message this session",
           "send": "Send"
         },
-        "LiveSessionList": {
-          "label": "Agent sessions",
-          "sealPane": "Seal pane"
-        },
         "LiveSessionsPage": {
-          "title": "Agent sessions",
-          "refresh": "Scan again",
-          "scanning": "Looking for sessions",
-          "pick": "Pick a session to open its chat",
-          "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server."
-        },
-        "LiveSessionsSidebarEntry": {
-          "label": "Agent sessions"
+          "refresh": "Scan again"
         },
         "status": {
           "working": "Working",
           "waiting": "Waiting for input",
           "permission": "Needs permission",
           "errored": "Errored",
-          "done": "Done"
+          "done": "Done",
+          "waitingSubagent": "Waiting on subagents",
+          "waitingTask": "Waiting on background tasks",
+          "idle": "Idle"
         },
         "untitled": "New session",
         "message": {
@@ -417,7 +409,9 @@
           "sending": "Sending",
           "sent": "Sent, waiting for the session",
           "delivered": "Delivered",
-          "failed": "Not delivered"
+          "failed": "Not delivered",
+          "title": "Message {{name}}",
+          "description": "Seal types it into the session on {{host}} and tracks it until the agent has it."
         },
         "shell-integration": {
           "checking": "Checking this computer…",
@@ -437,12 +431,6 @@
           "failed": "Shell integration failed: {{reason}}"
         },
         "takeOver": {
-          "button": "Take over",
-          "title": "Take over this session?",
-          "descriptionAlive": "Seal stops {{agent}} on {{host}} (it ends in the terminal it was started from) and reopens the conversation in a Seal pane with {{resume}}. A reply in progress stops.",
-          "descriptionClosed": "Seal reopens the conversation in a Seal pane with {{resume}}.",
-          "cancel": "Cancel",
-          "confirm": "Take over",
           "notFound": "That session is no longer listed.",
           "notExternal": "This session already runs in a Seal pane.",
           "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
@@ -451,24 +439,7 @@
           "failed": "Could not take over the session. {{reason}}"
         },
         "remove": {
-          "select": "Select",
-          "selected": "{{count}} selected",
-          "selectNone": "Select none",
-          "selectAll": "Select all",
-          "removeSelected": "Remove",
-          "done": "Done",
-          "button": "Remove from Seal",
-          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.",
-          "titleOne": "Remove this session from Seal?",
-          "titleMany": "Remove {{count}} sessions from Seal?",
-          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
-          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
-          "deleteFiles": "Also delete transcript files",
-          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
-          "cancel": "Cancel",
-          "hideOnly": "Remove from Seal",
-          "stopAndRemove": "Stop and remove",
-          "removeAndDelete": "Remove and delete"
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop."
         },
         "idleReap": {
           "minutes": "{{count}} min",
@@ -476,6 +447,141 @@
           "label": "End idle Seal sessions",
           "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
           "never": "Never"
+        },
+        "wait": {
+          "subagent": "1 subagent",
+          "subagents": "{{count}} subagents",
+          "task": "1 background task",
+          "tasks": "{{count}} background tasks",
+          "label": "Waiting on {{what}}",
+          "and": " and "
+        },
+        "rename": {
+          "title": "Rename session",
+          "description": "The name is kept in Seal; the agent and its transcript are not changed.",
+          "field": "Session name",
+          "reset": "Use the agent’s title",
+          "save": "Rename"
+        },
+        "dialog": {
+          "cancel": "Cancel"
+        },
+        "danger": {
+          "stopTitle": "Stop {{count}} session(s)?",
+          "stopDescription": "The agent process ends now, in the middle of whatever it is doing, along with the Seal tmux pane it ran in. The session stays in Seal under Recently finished and can be resumed.",
+          "stopAction": "Stop",
+          "stopRemoveTitle": "Stop and remove {{count}} session(s)?",
+          "stopRemoveDescription": "The agent process ends now and the session is hidden from Seal for good, even after a rescan. Its transcript stays on disk.",
+          "stopRemoveAction": "Stop and remove",
+          "removeTitle": "Remove {{count}} session(s) from Seal?",
+          "removeDescription": "Removed sessions stay hidden, even after Seal rescans. A running agent keeps running where it is, and nothing on disk changes.",
+          "removeAction": "Remove from Seal",
+          "deleteTitle": "Delete {{count}} session(s) and their transcripts?",
+          "deleteDescription": "A running agent is stopped first. These files are deleted for good; the conversation cannot be resumed afterwards:",
+          "deleteAction": "Delete"
+        },
+        "menu": {
+          "open": "Open",
+          "openTab": "Open in new tab",
+          "openSplit": "Open in split",
+          "send": "Send message…",
+          "answer": "Answer pending permission",
+          "subagents": "View subagents",
+          "tasks": "View tasks",
+          "reasoning": "View reasoning",
+          "rename": "Rename…",
+          "unpin": "Unpin",
+          "pin": "Pin to top",
+          "copyId": "Copy session id",
+          "copyResume": "Copy resume command",
+          "swap": "Swap account",
+          "takeOver": "Take over in a Seal pane",
+          "openWorktree": "Open project workspace",
+          "openMachine": "Open machine",
+          "reveal": "Reveal transcript file",
+          "stop": "Stop…",
+          "stopRemove": "Stop and remove…",
+          "remove": "Remove from Seal…",
+          "delete": "Delete with transcripts…",
+          "copiedId": "Session id copied",
+          "copiedResume": "Resume command copied",
+          "transcriptRemote": "The transcript is on {{host}}. Its path was copied.",
+          "transcriptMissing": "Could not show the transcript file. It may have been moved or deleted."
+        },
+        "palette": {
+          "section": "Go to agent session"
+        },
+        "notify": {
+          "label": "Notify about agent sessions",
+          "description": "A desktop notification when a Claude Code or Codex session outside Seal’s own panes needs permission or an answer, fails, or finishes. Follows the notification settings: nothing shows while notifications are off."
+        },
+        "sidebar": {
+          "lastMessage": "Last message",
+          "pick": "Select session",
+          "unread": "New output",
+          "pinned": "Pinned",
+          "runningFor": "Running for",
+          "quietFor": "Last activity",
+          "subagentCount": "{{running}} of {{count}} subagents running",
+          "account": "Account",
+          "hostError": "Could not scan {{host}}: {{error}}",
+          "finished": "Recently finished",
+          "title": "Active agents",
+          "options": "Active agents options",
+          "stopPicking": "Done selecting",
+          "startPicking": "Select sessions",
+          "clearFilters": "Clear filters",
+          "settings": "Idle sessions and notifications…",
+          "noMatch": "No sessions match.",
+          "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
+          "chipAttention": "Needs attention",
+          "chipWorking": "Working",
+          "chipMine": "This machine",
+          "chipMineTitle": "Mine, on this machine",
+          "search": "Filter by name, project, machine, agent, status",
+          "searchLabel": "Filter sessions",
+          "clearSearch": "Clear filter",
+          "clearScope": "Show all sessions",
+          "pickedCount": "{{count}} selected",
+          "bulkStop": "Stop",
+          "bulkRemove": "Remove",
+          "bulkDelete": "Delete"
+        },
+        "workspace": {
+          "actions": "Session actions",
+          "loading": "Looking for sessions",
+          "closeSplit": "Close split",
+          "backToSession": "Back to session",
+          "subagentOf": "Subagent: {{title}}",
+          "goneTab": "Session ended",
+          "closeTab": "Close tab",
+          "tabs": "Open agent sessions",
+          "gone": "This session is no longer on its machine. Close the tab, or find it under Recently finished in Active agents.",
+          "pick": "Pick a session under Active agents in the sidebar to open its chat."
+        },
+        "badge": {
+          "one": "1 agent session: {{status}}",
+          "many": "{{count}} agent sessions: {{status}}"
+        },
+        "activity": {
+          "running": "Running",
+          "completed": "Finished",
+          "failed": "Failed",
+          "stopped": "Stopped",
+          "background": "background",
+          "transcriptOpen": "Transcript open",
+          "openTranscript": "Open transcript",
+          "subagents": "Subagents",
+          "tasks": "Tasks",
+          "reasoning": "Reasoning",
+          "close": "Close panel",
+          "noSubagents": "This session has not started any subagents.",
+          "backgroundTasks": "Background tasks",
+          "noTasks": "No background commands or tasks.",
+          "plan": "Plan",
+          "todos": "To-dos",
+          "noTodos": "The agent keeps no list.",
+          "noReasoning": "No reasoning in the part of the transcript read so far."
         }
       },
       "skills": {

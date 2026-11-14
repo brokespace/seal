@@ -213,8 +213,8 @@ export type UISliceCore = {
   closeArtifactsPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
-  openSessionsPage: () => void
-  closeSessionsPage: () => void
+  openAgentSessionTabs: () => void
+  closeAgentSessionTabs: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void
   clearNewWorkspaceDraft: () => void
   pendingRevealWorktree: PendingSidebarWorktreeReveal | null

@@ -6,10 +6,16 @@ export function liveSessionDotState(status: LiveSession['status']): AgentDotStat
   switch (status) {
     case 'working':
       return 'working'
+    case 'waiting-subagent':
+    case 'waiting-task':
+      // Still the agent's move: drawn as busy, not as something for the person.
+      return 'monitoring'
     case 'waiting-input':
       return 'waiting'
     case 'needs-permission':
       return 'permission'
+    case 'idle':
+      return 'idle'
     case 'errored':
       return 'failed'
     case 'done':
@@ -21,6 +27,12 @@ export function liveSessionStatusLabel(status: LiveSession['status']): string {
   switch (status) {
     case 'working':
       return translate('seal.liveSessions.status.working', 'Working')
+    case 'waiting-subagent':
+      return translate('seal.liveSessions.status.waitingSubagent', 'Waiting on subagents')
+    case 'waiting-task':
+      return translate('seal.liveSessions.status.waitingTask', 'Waiting on background tasks')
+    case 'idle':
+      return translate('seal.liveSessions.status.idle', 'Idle')
     case 'waiting-input':
       return translate('seal.liveSessions.status.waiting', 'Waiting for input')
     case 'needs-permission':
