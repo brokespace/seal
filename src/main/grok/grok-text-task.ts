@@ -1,4 +1,5 @@
 import type { InitializeResponse } from '../acp/generated/acp-protocol.generated'
+import type { CommitMessagePlan } from '../../shared/source-control/ai/generation/commit-message-plan'
 import {
   resolveProviderChildEnv,
   type ProviderProcessLaunch
@@ -25,20 +26,19 @@ export function grokTextTaskPreservesAccount(
   return selected === expected
 }
 
-/** The CLI applies this tool filter after resolving model-specific harnesses and saved grants. */
-export async function runGrokTextTask(input: {
-  launch: ProviderProcessLaunch & { prefixArgs: string[] }
-  cwd: string
+/** One headless Grok turn: the CLI applies this tool filter after resolving model-specific harnesses and saved grants. */
+export function grokTextTaskPlan(input: {
+  command: string
+  prefixArgs: readonly string[]
   prompt: string
   sessionId: string
-  signal: AbortSignal
-  timeoutMs: number
-}): Promise<string> {
-  input.signal.throwIfAborted()
+  model?: string
+}): CommitMessagePlan {
   const args = [
-    ...input.launch.prefixArgs,
+    ...input.prefixArgs,
     '--session-id',
     input.sessionId,
+    ...(input.model ? ['--model', input.model] : []),
     '--tools',
     'Read,Grep,Glob',
     '--disallowed-tools',
@@ -52,17 +52,32 @@ export async function runGrokTextTask(input: {
     '--prompt-file',
     '{text-task-prompt}'
   ]
+  return {
+    binary: input.command,
+    args,
+    label: 'Grok',
+    stdinPayload: null,
+    taskFiles: [{ name: 'text-task-prompt.txt', content: input.prompt, argIndex: args.length - 1 }]
+  }
+}
+
+export async function runGrokTextTask(input: {
+  launch: ProviderProcessLaunch & { prefixArgs: string[] }
+  cwd: string
+  prompt: string
+  sessionId: string
+  signal: AbortSignal
+  timeoutMs: number
+}): Promise<string> {
+  input.signal.throwIfAborted()
   const cancel = () => cancelLocalGeneration('conversation-name', input.cwd)
   const execution = runLocalSourceControlPlan({
-    plan: {
-      binary: input.launch.command,
-      args,
-      label: 'Grok',
-      stdinPayload: null,
-      taskFiles: [
-        { name: 'text-task-prompt.txt', content: input.prompt, argIndex: args.length - 1 }
-      ]
-    },
+    plan: grokTextTaskPlan({
+      command: input.launch.command,
+      prefixArgs: input.launch.prefixArgs,
+      prompt: input.prompt,
+      sessionId: input.sessionId
+    }),
     cwd: input.cwd,
     operation: 'conversation-name',
     env: { ...resolveProviderChildEnv(input.launch, process.env), ...GROK_TEXT_TASK_ENV },

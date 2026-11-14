@@ -191,19 +191,25 @@ switch on its row picks the one Seal uses. See [machines.md](machines.md).
 - [ ] **Take over** stops an external session and resumes it in a Seal pane.
 - [ ] Works the same against the paired Linux server (its sessions show under that machine).
 
-### AI session summaries (Cloudflare Workers AI)
+### AI session summaries
+
+Providers: [summaries-providers.md](./summaries-providers.md). Cloudflare Workers AI is the default.
 
 - [ ] Settings → Accounts → **Cloudflare AI** shows "Account linked" from `~/.config/seal/cloudflare-ai.json` (keys `accountId`, `apiToken`, `model`, `fallbackModel`) without anything typed in; **Test** answers in well under two seconds and names the model.
 - [ ] Saving an account ID and token in the section replaces the file's values; after saving, the fields are empty again and the token never reappears. **Forget** goes back to the file.
-- [ ] The model lists come from the account. Picking GLM 5.3 Flash (not on the Workers Free plan) and pressing Test names the plan problem and says summaries use the fallback model; summaries keep arriving.
+- [ ] Settings → **Session summaries & recaps** shows Cloudflare Workers AI with its saved models on an install that never chose a provider, and summaries keep arriving after the update with nothing changed.
+- [ ] The model list there comes from the account. Picking GLM 5.3 Flash (not on the Workers Free plan) and pressing Test answers with the fallback model and names the plan problem; summaries keep arriving.
+- [ ] Settings → Accounts → **OpenRouter**: save a key, press **Test**. In Session summaries & recaps choose OpenRouter; the model picker lists the catalog with free models first, and a `:free` model writes summaries. Removing the key says OpenRouter is not set up and stops requests.
+- [ ] Choose Claude (or Codex) as the provider with its smallest model: Test answers within some seconds on the signed-in account, summaries arrive more slowly, and no session appears in any project's history.
+- [ ] Turn on **Use a different model for recaps** and pick another provider: recaps come from it while summaries stay on the first, and a pause on one leaves the other running.
 - [ ] Let a Claude Code or Codex agent finish a turn, ask a question, or wait on a subagent: within a few seconds one short sentence (sparkle icon) appears under its title in Home → Sessions and in the sidebar's Active agents rows, and after the title in a workspace card's agent row; hovering shows the whole sentence. A new prompt clears it.
 - [ ] The same sentence shows for a session on the paired Linux server (made there, with its own config file) and on the phone's Overview and Agent sessions rows. `seal worktree ps --json` on the server carries it as `statusSummary`.
-- [ ] Turning **Session summaries** off removes the lines and stops requests; turning it on brings back cached sentences without new requests.
+- [ ] Turning **Session summaries** off (Settings → Session summaries & recaps) removes the lines and stops requests; turning it on brings back cached sentences without new requests.
 - [ ] After the daily free allocation is used up, Home → Sessions says "Summaries paused" and the section says when they resume (00:00 UTC); nothing else changes.
 
 ### Session recap
 
-Design: [session-recap.md](./session-recap.md). Needs the Cloudflare AI account above.
+Design: [session-recap.md](./session-recap.md). Needs a model provider set up as above.
 
 - [ ] A session you have not named takes a short title from its recap in the sidebar, the session header and on the phone, and keeps it while the work stays on the same thing. Renaming it in Seal, or with `/rename` in Claude Code, always wins, and removing your name brings the recap title back.
 - [ ] Let an agent finish a turn that asks you something or tells you to do something: the row gets a badge with the open question and action item counts, on desktop and on the phone.
@@ -213,7 +219,7 @@ Design: [session-recap.md](./session-recap.md). Needs the Cloudflare AI account 
 - [ ] Leave, let the agent do more, come back: "Since you last looked" lists what it did, and new questions and action items carry "New".
 - [ ] **Refresh recap** updates it and the footer's "Updated" text; with nothing new it rebuilds from recent history and keeps your ticks.
 - [ ] On the phone, the banner above the transcript opens the recap sheet; ticking there shows on the desktop within a moment.
-- [ ] Turning **Session recaps** off (Settings → Accounts → Cloudflare AI) removes titles, badges and the bar and stops requests, while one-line summaries keep working.
+- [ ] Turning **Session recaps** off (Settings → Session summaries & recaps) removes titles, badges and the bar and stops requests, while one-line summaries keep working.
 
 ### Cross-cutting
 
