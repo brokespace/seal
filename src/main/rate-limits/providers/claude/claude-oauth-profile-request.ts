@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { z } from 'zod'
 import type { ClaudeBillingSignals } from '../../../../shared/claude-account-billing'
 import { abortSignalWithTimeout } from '../../../lib/abort-signal-with-timeout'
 import { getMainHttpClient } from '../../../network/http-client'
@@ -10,13 +11,13 @@ const KNOWN_TTL_MS = 12 * 60 * 60 * 1000
 const UNKNOWN_TTL_MS = 15 * 60 * 1000
 const MAX_CACHED_LOGINS = 64
 
-type OAuthProfileResponse = {
-  organization?: {
-    organization_type?: unknown
-    rate_limit_tier?: unknown
-    billing_type?: unknown
-  } | null
-}
+const profileSchema = z.object({
+  organization: z.object({
+    organization_type: z.unknown().optional(),
+    rate_limit_tier: z.unknown().optional(),
+    billing_type: z.unknown().optional()
+  })
+})
 
 const cache = new Map<string, { signals: ClaudeBillingSignals | null; expiresAt: number }>()
 
@@ -25,10 +26,11 @@ function text(value: unknown): string | undefined {
 }
 
 export function claudeBillingSignalsFromProfile(profile: unknown): ClaudeBillingSignals | null {
-  const organization = (profile as OAuthProfileResponse | null)?.organization
-  if (!organization || typeof organization !== 'object') {
+  const parsed = profileSchema.safeParse(profile)
+  if (!parsed.success) {
     return null
   }
+  const { organization } = parsed.data
   const signals: ClaudeBillingSignals = {
     organizationType: text(organization.organization_type),
     rateLimitTier: text(organization.rate_limit_tier),
@@ -71,8 +73,9 @@ export async function fetchClaudeOAuthProfileBilling(
   if (signal?.aborted) {
     return signals
   }
-  if (cache.size >= MAX_CACHED_LOGINS) {
-    cache.delete(cache.keys().next().value as string)
+  const oldest = cache.keys().next()
+  if (cache.size >= MAX_CACHED_LOGINS && !oldest.done) {
+    cache.delete(oldest.value)
   }
   cache.set(key, {
     signals,

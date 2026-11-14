@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { z } from 'zod'
 import type { ClaudeBillingSignals } from '../../../../shared/claude-account-billing'
 import { claudeStateFileAsync } from '../../../claude-accounts/sign-in/claude-account-folder'
 
@@ -12,12 +13,18 @@ function text(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
+const stateSchema = z.object({
+  oauthAccount: z
+    .object({ emailAddress: z.unknown().optional(), billingType: z.unknown().optional() })
+    .optional()
+    .catch(undefined),
+  primaryApiKey: z.unknown().optional()
+})
+
 export function claudeStateBilling(state: unknown): ClaudeStateBilling {
-  const record = state && typeof state === 'object' ? (state as Record<string, unknown>) : {}
-  const account =
-    record.oauthAccount && typeof record.oauthAccount === 'object'
-      ? (record.oauthAccount as Record<string, unknown>)
-      : null
+  const parsed = stateSchema.safeParse(state)
+  const record = parsed.success ? parsed.data : {}
+  const account = record.oauthAccount
   return {
     signedIn: Boolean(text(account?.emailAddress)),
     signals: {
