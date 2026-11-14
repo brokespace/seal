@@ -9,8 +9,10 @@ const GROUPS: Record<LiveSessionStatus, LiveSessionStatusGroup> = {
   'waiting-input': 'attention',
   errored: 'attention',
   working: 'working',
+  'running-shell': 'working',
   'waiting-subagent': 'working',
   'waiting-task': 'working',
+  'your-turn': 'idle',
   idle: 'idle',
   done: 'finished'
 }
@@ -20,22 +22,61 @@ const RANK: Record<LiveSessionStatus, number> = {
   'waiting-input': 1,
   errored: 2,
   working: 3,
-  'waiting-subagent': 4,
-  'waiting-task': 5,
-  idle: 6,
-  done: 7
+  'running-shell': 4,
+  'waiting-subagent': 5,
+  'waiting-task': 6,
+  'your-turn': 7,
+  idle: 8,
+  done: 9
 }
 
 const DOTS: Record<LiveSessionStatus, AgentListStatus> = {
   working: 'working',
   // Still the agent's move: drawn in the working color, not as something for the user.
+  'running-shell': 'monitoring',
   'waiting-subagent': 'monitoring',
   'waiting-task': 'monitoring',
   'waiting-input': 'waiting',
   'needs-permission': 'permission',
+  'your-turn': 'done',
   idle: 'idle',
   errored: 'failed',
   done: 'done'
+}
+
+/**
+ * The color a status reads in at a glance, by whose move it is: the agent's (`busy`, `waiting`),
+ * the user's right now (`approval`, `question`), the user's whenever (`turn`), nobody's (`quiet`).
+ */
+export type LiveSessionStatusTone =
+  | 'busy'
+  | 'waiting'
+  | 'approval'
+  | 'question'
+  | 'turn'
+  | 'failed'
+  | 'quiet'
+
+const TONES: Record<LiveSessionStatus, LiveSessionStatusTone> = {
+  working: 'busy',
+  'running-shell': 'busy',
+  'waiting-subagent': 'waiting',
+  'waiting-task': 'waiting',
+  'needs-permission': 'approval',
+  'waiting-input': 'question',
+  'your-turn': 'turn',
+  idle: 'quiet',
+  errored: 'failed',
+  done: 'quiet'
+}
+
+export function liveSessionStatusTone(status: LiveSessionStatus): LiveSessionStatusTone {
+  return TONES[status]
+}
+
+/** The agent is at its prompt with nothing running: it took a turn and stopped, or never had one. */
+export function isRestingLiveSessionStatus(status: LiveSessionStatus): boolean {
+  return status === 'your-turn' || status === 'idle'
 }
 
 /** The dot every surface draws for a status, on desktop and mobile. */

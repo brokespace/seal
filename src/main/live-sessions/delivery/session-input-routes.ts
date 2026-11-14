@@ -7,7 +7,7 @@ import type {
 } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { parseAgentScreen, screenAcceptsInput, type AgentScreen } from '../discovery/agent-screen'
-import { permissionPromptId } from '../discovery/session-assembly'
+import { permissionPromptId } from '../discovery/agent-screen-status'
 import { normalizeForMatch, sanitizeTypedText } from './transcript-user-texts'
 
 export type RouteAttempt =

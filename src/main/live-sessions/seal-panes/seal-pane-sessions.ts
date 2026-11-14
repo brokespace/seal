@@ -8,6 +8,8 @@ import type {
   LiveSessionProvider,
   LiveSessionStatus
 } from '../../../shared/live-sessions/live-session-types'
+import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/agent-question-answered-intent'
+import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
 import { oneLine } from '../discovery/transcript-records'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
@@ -47,17 +49,34 @@ export type SealPane = {
   permission: LiveSessionPermissionPrompt | null
 }
 
-function hookStatus(state: SealPaneRow['state']): LiveSessionStatus {
-  switch (state) {
+/** What a pane waits on: a hook reports a question and a permission request alike as `waiting`. */
+function waitingStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSessionStatus {
+  if (prompt?.kind === 'approval') {
+    return 'needs-permission'
+  }
+  if (
+    prompt?.kind === 'question' ||
+    !row.toolName ||
+    isAskUserQuestionTool(row.toolName) ||
+    isClaudeAskTool(row.toolName)
+  ) {
+    return 'waiting-input'
+  }
+  // Any other tool the agent stopped on waits for its permission prompt.
+  return 'needs-permission'
+}
+
+function hookStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSessionStatus {
+  switch (row.state) {
     case 'working':
       return 'working'
     case 'blocked':
       return 'needs-permission'
     case 'waiting':
-      return 'waiting-input'
+      return waitingStatus(row, prompt)
     case 'done':
       // A finished turn in a live pane sits at its prompt.
-      return 'idle'
+      return 'your-turn'
   }
 }
 
@@ -88,11 +107,12 @@ export function sealPanesFromRows(
     if (!provider || !id || row.providerSessionOnly) {
       return []
     }
-    const status = hookStatus(row.state)
-    const permission =
-      status === 'needs-permission' || row.state === 'waiting'
-        ? permissionFromPendingPrompt(pendingPrompt(row.paneKey, provider))
+    const prompt =
+      row.state === 'blocked' || row.state === 'waiting'
+        ? pendingPrompt(row.paneKey, provider)
         : null
+    const status = hookStatus(row, prompt)
+    const permission = permissionFromPendingPrompt(prompt)
     return [
       {
         paneKey: row.paneKey,
@@ -103,9 +123,10 @@ export function sealPanesFromRows(
         statusDetail:
           status === 'working' && row.toolName
             ? row.toolName
-            : row.state === 'waiting'
+            : status === 'waiting-input'
               ? 'Question for you'
-              : (permission?.question ?? null),
+              : (permission?.question ??
+                (row.state === 'waiting' && row.toolName ? `Allow ${row.toolName}?` : null)),
         cwd: row.providerSession?.cwd ?? null,
         transcriptPath: row.providerSession?.transcriptPath ?? null,
         prompt: row.prompt ? oneLine(row.prompt, 80) : null,
@@ -145,12 +166,14 @@ export function mergeSealPanes(
     const route = { kind: 'seal-pane' as const, paneKey: pane.paneKey }
     if (index !== undefined) {
       const found = out[index]
-      // The transcript knows what a quiet pane waits on: its subagents, its background tasks, the user.
+      // The transcript knows what a quiet pane waits on (its subagents, its background tasks, an
+      // answer), and with the process list, that a working one runs a shell command.
       const transcriptSaysMore =
-        found.statusSource === 'transcript' &&
-        (pane.status === 'idle'
+        (found.statusSource === 'transcript' || found.statusSource === 'process') &&
+        (pane.status === 'your-turn'
           ? RESTING_ON_SOMETHING.has(found.status)
-          : pane.status === 'working' && found.status === 'waiting-subagent')
+          : pane.status === 'working' &&
+            (found.status === 'waiting-subagent' || found.status === 'running-shell'))
       const screenAsks =
         (found.statusSource === 'screen' && found.permission !== null) || transcriptSaysMore
       const named = found.providerSessionId.startsWith('pid-')

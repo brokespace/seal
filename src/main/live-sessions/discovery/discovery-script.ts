@@ -37,6 +37,7 @@ echo "@@UNAME $(uname -s)"
 KNOWN=${shQuote(known)}
 HEADKNOWN=${shQuote(headKnown)}
 TTYS='|'
+AGENTS=' '
 PINS="\${TMPDIR:-/tmp}/.seal-live-pins.$$"
 : > "$PINS"
 SUBREADS="\${TMPDIR:-/tmp}/.seal-live-subs.$$"
@@ -49,6 +50,7 @@ CODEX_ROOTS="$HOME/.codex
 ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 while read -r pid ppid tty args; do
   echo "@@PROC $pid $ppid $tty $args"
+  AGENTS="$AGENTS$pid "
   cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
   if [ -z "$cwd" ] && command -v lsof >/dev/null 2>&1; then
     cwd=$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)
@@ -58,7 +60,7 @@ while read -r pid ppid tty args; do
 ${pinSection()}
 done < "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 rm -f "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
-if command -v tmux >/dev/null 2>&1; then
+${childSection()}if command -v tmux >/dev/null 2>&1; then
   SOCKS=""
   for d in "\${TMUX_TMPDIR:-}" /tmp "\${TMPDIR:-/tmp}"; do
     [ -n "$d" ] || continue
@@ -97,6 +99,36 @@ done
 sort -u "$PINS" | sed 's/^/@@PIN /'
 ${transcriptSection(options)}rm -f "$PINS" "$SUBREADS"
 echo "@@DONE"
+`
+}
+
+/**
+ * What runs under each agent: a shell command it started shows here while its transcript stands
+ * still. Only the process's kind and name leave the host, never its arguments.
+ */
+function childSection(): string {
+  return `ps -A -o pid= -o ppid= -o etime= -o args= 2>/dev/null | awk -v roots="$AGENTS" '
+BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
+{
+  if ($1 in under) listed = 1
+  pid[NR] = $1; ppid[NR] = $2; et[NR] = $3
+  c = $4; sub(/.*\\//, "", c)
+  k = "other"
+  if ($0 ~ /\\/shell[-_]snapshots\\//) k = "snapshot"
+  else if (c ~ /^(codex-linux-sandbox|bwrap|sandbox-exec)$/) k = "sandbox"
+  else if (c ~ /^-?(sh|bash|zsh|dash|ksh|fish)$/) k = "shell"
+  kind[NR] = k; comm[NR] = substr(c, 1, 40)
+}
+END {
+  # A ps that cannot list this way shows no agent either: say nothing rather than "no children".
+  if (!listed) exit
+  print "@@CHILDREN"
+  do {
+    grew = 0
+    for (i = 1; i <= NR; i++) if (!(pid[i] in under) && (ppid[i] in under)) { under[pid[i]] = 1; grew = 1 }
+  } while (grew)
+  for (i = 1; i <= NR; i++) if (ppid[i] in under) print "@@CHILD", pid[i], ppid[i], et[i], kind[i], comm[i]
+}'
 `
 }
 

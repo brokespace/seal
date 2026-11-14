@@ -1,14 +1,25 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parseAgentScreen, screenAcceptsInput } from './agent-screen'
 
 const RULE = '\u2500'.repeat(40)
+/** Screens captured from real Claude Code 2.1 and Codex 0.169 panes with `tmux capture-pane -e`. */
+const captured = (name: string) =>
+  readFileSync(join(__dirname, '__fixtures__', `${name}.screen`), 'utf8')
 
 describe('parseAgentScreen', () => {
   it('reads an empty Claude Code prompt box as free', () => {
     const screen = parseAgentScreen(
       ['● Done.', '', RULE, '\u276f ', RULE, '  ? for shortcuts'].join('\n')
     )
-    expect(screen).toEqual({ promptBox: true, draft: '', approval: null })
+    expect(screen).toEqual({
+      promptBox: true,
+      draft: '',
+      approval: null,
+      dialog: null,
+      busy: false
+    })
     expect(screenAcceptsInput(screen)).toBe(true)
   })
 
@@ -68,7 +79,30 @@ describe('parseAgentScreen', () => {
     const composer = parseAgentScreen(
       ['• Ran tests', '', '\u203a \u001b[2mAsk Codex to do anything\u001b[0m'].join('\n')
     )
-    expect(composer).toEqual({ promptBox: true, draft: '', approval: null })
+    expect(composer).toEqual({
+      promptBox: true,
+      draft: '',
+      approval: null,
+      dialog: null,
+      busy: false
+    })
+  })
+
+  it('reads a captured approval whose options carry no numbers', () => {
+    const screen = parseAgentScreen(captured('live-claude-approval-unnumbered'))
+    expect(screen.approval).toEqual({ question: 'Do you want to proceed?', options: [] })
+    expect(screen.promptBox).toBe(false)
+  })
+
+  it('reads a captured blocking dialog that is not an approval by its title', () => {
+    const screen = parseAgentScreen(captured('live-claude-auto-mode-dialog'))
+    expect(screen.approval).toBeNull()
+    expect(screen.dialog).toBe("Auto mode can't check actions in this session")
+  })
+
+  it('reads a captured screen of a running command as busy, with nothing to answer', () => {
+    const screen = parseAgentScreen(captured('live-claude-shell-busy'))
+    expect([screen.busy, screen.approval, screen.dialog]).toEqual([true, null, null])
   })
 
   it('reports no prompt box while the screen shows something else', () => {

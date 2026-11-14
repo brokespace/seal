@@ -9,7 +9,7 @@ import { LiveSessionRow } from './LiveSessionRow'
 
 afterEach(cleanup)
 
-function renderRow(session: LiveSession): void {
+function renderRow(session: LiveSession, layout?: 'card'): void {
   render(
     <LiveSessionRow
       session={session}
@@ -21,6 +21,7 @@ function renderRow(session: LiveSession): void {
       picked={null}
       tabStop
       now={SAMPLE_NOW}
+      layout={layout}
       onOpen={() => {}}
       onPick={() => {}}
       menu={() => null}
@@ -56,5 +57,24 @@ it('badges a session with what still waits on the user, and not one with nothing
 
   cleanup()
   renderRow(sampleLiveSession('a', { recap }))
+  expect(document.querySelector('[data-session-recap-badge]')).toBeNull()
+})
+
+it('leads a Home card with the status in words and what it waits on, without the recap counts', () => {
+  renderRow(
+    sampleLiveSession('a', {
+      status: 'running-shell',
+      statusDetail: 'Bash: pnpm test',
+      recap: { ...recap, questions: 3, actions: 1 }
+    }),
+    'card'
+  )
+  expect(document.querySelector('[data-live-session-status-dot]')).toHaveAttribute(
+    'data-live-session-status-dot',
+    'busy'
+  )
+  expect(document.querySelector('[data-live-session-row]')).toHaveTextContent(
+    'Running shell· Bash: pnpm test · seal'
+  )
   expect(document.querySelector('[data-session-recap-badge]')).toBeNull()
 })
