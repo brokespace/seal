@@ -59,9 +59,11 @@ async function routeTo(
       )
     }
     const keyEnv: Record<string, string> =
-      provider === 'claude'
-        ? { ANTHROPIC_API_KEY: apiKey }
-        : { OPENAI_API_KEY: apiKey, CODEX_API_KEY: apiKey }
+      candidate.credential === 'setup-token'
+        ? { CLAUDE_CODE_OAUTH_TOKEN: apiKey }
+        : provider === 'claude'
+          ? { ANTHROPIC_API_KEY: apiKey }
+          : { OPENAI_API_KEY: apiKey, CODEX_API_KEY: apiKey }
     return { ...current, env: { ...current.env, ...keyEnv } }
   }
   if (candidate.active) {
@@ -202,7 +204,7 @@ export async function applySealSpawnAccount(
       id: sessionId,
       provider,
       accountKey: account?.key ?? null,
-      accountLabel: account?.label ?? 'System default',
+      accountLabel: account?.label ?? "This machine's login",
       paneKey: ptySpawnPaneFromIds(input)?.paneKey ?? null,
       profileHome: isolated.profileHome,
       reason: pick.kind === 'account' ? pick.reason : 'host-selection',

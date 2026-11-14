@@ -18,7 +18,15 @@ export type SealAccountUsage = {
   error: string | null
 }
 
+/** `system` is this machine's own CLI login used in place; `api-key` covers every secret Seal injects by env. */
 export type SealAccountKind = 'oauth' | 'api-key' | 'system'
+
+export type SealCredentialKind = 'login' | 'setup-token' | 'api-key'
+
+export type SealAccountHealth =
+  | { state: 'ok' }
+  | { state: 'expiring'; expiresAt: number }
+  | { state: 'dead'; reason: 'signed-out' | 'rejected' | 'expired' | 'missing-secret' }
 
 /** One account this host could launch an agent with, as Seal's policy and swap logic see it. */
 export type SealAccountCandidate = {
@@ -28,8 +36,17 @@ export type SealAccountCandidate = {
   /** The id this host's account service knows it by; null for the provider's own login. */
   localId: string | null
   email: string | null
+  /** Claude organization or Codex workspace name, when the login names one. */
+  orgName?: string | null
   label: string
   plan: string | null
+  credential?: SealCredentialKind
+  /** This identity is the machine's own `claude`/`codex` login (the row itself, or a saved twin). */
+  systemLogin?: boolean
+  health?: SealAccountHealth
+  /** Set for an account that lives in a WSL distro rather than on the host. */
+  wslDistro?: string | null
+  addedAt?: number | null
   priority: number
   disabled: boolean
   active: boolean

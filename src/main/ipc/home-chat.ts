@@ -73,6 +73,7 @@ export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void 
       threads,
       settings,
       accounts: createHomeChatAccountProvider({
+        sealCandidates: (provider) => getSealAccountManager()?.candidates(provider) ?? null,
         listClaudeAccounts: () => sources.claudeAccounts.listAccounts(),
         listCodexAccounts: sources.codexAccounts
       }),

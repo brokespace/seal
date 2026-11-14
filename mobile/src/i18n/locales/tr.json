@@ -4,7 +4,6 @@
       "agentLogin": "Ajanın kendi oturum açma bilgilerini kullan",
       "connecting": "Sunucuya bağlanılıyor…",
       "connectingTo": "{{name}} ile bağlantı kuruluyor…",
-      "default": "Sistem varsayılanı",
       "fableWindow": "Fable",
       "hostNotFound": "Sunucu bulunamadı",
       "invalidSnapshot": "Sunucudan gelen hesap anlık görüntüsü geçersiz",

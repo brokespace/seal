@@ -4,7 +4,6 @@
       "agentLogin": "Usar o login do próprio agente",
       "connecting": "Conectando ao host…",
       "connectingTo": "Conectando a {{name}}…",
-      "default": "Padrão do sistema",
       "fableWindow": "Fable",
       "hostNotFound": "Host não encontrado",
       "invalidSnapshot": "Snapshot de contas inválido recebido do host",

@@ -137,8 +137,7 @@ export function CodexSwitcherMenu({
       variant="account"
       accountLabel={
         !hasActiveRuntimeEnvironment
-          ? (activeTarget?.label ??
-            t('auto.components.status.bar.StatusBar.c676918adc', 'System default'))
+          ? (activeTarget?.label ?? t('seal.accounts.badge.systemLogin', 'System login'))
           : undefined
       }
       panelFooter={

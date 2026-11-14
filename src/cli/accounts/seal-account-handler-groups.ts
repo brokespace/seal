@@ -23,6 +23,12 @@ export const SEAL_ACCOUNT_HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./seal-account-commands.js')).SEAL_ACCOUNT_HANDLERS
   },
   {
+    name: 'seal-account-roster',
+    keys: ['account remove', 'account import', 'account token add', 'account order'],
+    load: async () =>
+      (await import('./seal-account-roster-commands.js')).SEAL_ACCOUNT_ROSTER_HANDLERS
+  },
+  {
     name: 'seal-session',
     keys: ['account session swap', 'account session live'],
     load: async () => (await import('./seal-session-commands.js')).SEAL_SESSION_HANDLERS

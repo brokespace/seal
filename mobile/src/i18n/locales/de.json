@@ -4,7 +4,6 @@
       "agentLogin": "Agenteneigene Anmeldung verwenden",
       "connecting": "Verbindung zum Host wird hergestellt…",
       "connectingTo": "Verbindung zu {{name}} wird hergestellt…",
-      "default": "Systemstandard",
       "fableWindow": "Fable",
       "hostNotFound": "Host nicht gefunden",
       "invalidSnapshot": "Ungültige Momentaufnahme der Konten vom Host",

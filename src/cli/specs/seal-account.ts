@@ -15,7 +15,7 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
     usage: 'seal account usage [--agent claude|codex] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'agent'],
     notes: [
-      'Refreshes stale usage first. `*` marks the account new launches use; `!` a dead login; `q` a quarantined one.',
+      'Refreshes stale usage first. `*` marks the account new sessions start on; rows are in order of preference.',
       AGENT_NOTE
     ],
     examples: ['seal account usage', 'seal account usage --agent codex --json']
@@ -144,6 +144,55 @@ export const SEAL_ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
       'Sessions launched in that workspace (and typed `claude`/`codex` in its terminals) run on the pinned account, even after the host swaps.',
       'For one launch only, set SEAL_ACCOUNT=<ref> (or SEAL_CLAUDE_ACCOUNT / SEAL_CODEX_ACCOUNT) in the launch environment.'
     ]
+  },
+  {
+    path: ['account', 'import'],
+    summary: 'Add this machine’s own claude or codex login to Seal',
+    usage: 'seal account import --agent claude|codex [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'agent'],
+    notes: [
+      'Seal lists the machine’s CLI login on its own until you remove it; this adds it back afterwards.',
+      'Nothing is copied: the login stays where the CLI keeps it and Seal uses it in place.'
+    ],
+    examples: ['seal account import --agent claude']
+  },
+  {
+    path: ['account', 'remove'],
+    destructive: true,
+    summary: 'Remove an account from Seal, optionally signing the machine’s CLI out too',
+    usage: 'seal account remove --account <ref> [--agent claude|codex] [--logout] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'account', 'agent', 'logout'],
+    notes: [
+      'Deletes the login or secret Seal saved and drops the account from every rule. Running sessions keep going until they end.',
+      'For the machine’s own CLI login, removal only hides it from Seal and it stays hidden across restarts. Pass --logout to also run `claude auth logout` / `codex logout`.',
+      ACCOUNT_REF_NOTE
+    ],
+    examples: [
+      'seal account remove --account old@example.com',
+      'seal account remove --account me@example.com --agent claude --logout'
+    ]
+  },
+  {
+    path: ['account', 'order'],
+    summary: 'Set the order of preference for a provider’s accounts',
+    usage: 'seal account order --agent claude|codex --accounts <ref,ref,...> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'agent', 'accounts'],
+    notes: [
+      'Listed accounts get priorities 10, 20, … in that order; lower runs first. List every account of the provider to set the whole order.',
+      ACCOUNT_REF_NOTE
+    ],
+    examples: ['seal account order --agent claude --accounts work,personal']
+  },
+  {
+    path: ['account', 'token', 'add'],
+    summary: 'Store a `claude setup-token` token as a Claude account',
+    usage: 'seal account token add --label <name> --token-file <path|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'label', 'token-file'],
+    notes: [
+      'Pass `--token-file -` and pipe the token on stdin so it never appears in shell history or argv.',
+      'The token runs on your Claude subscription and lasts one year; Claude reports no usage for it.'
+    ],
+    examples: ['claude setup-token | tail -1 | seal account token add --label ci --token-file -']
   },
   {
     path: ['account', 'key', 'add'],

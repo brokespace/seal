@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useEffectEvent, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import { SEAL_PROVIDERS } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 
 const POLL_MS = 30_000
+/** A first usage reading follows a sign-in or import by seconds; re-read until it shows. */
+const FIRST_READING_POLL_MS = 2_000
+const FIRST_READING_POLLS = 10
 
 export type SealAccountsMutation = (
   method: string,
@@ -28,6 +32,21 @@ function statusFrom(result: unknown): SealAccountsStatus | null {
     return isSealAccountsStatus(result.status) ? result.status : null
   }
   return null
+}
+
+/** The logins still waiting for their first usage reading, as one comparable string. */
+function awaitingFirstReading(status: SealAccountsStatus): string {
+  return SEAL_PROVIDERS.flatMap((provider) => status.providers[provider].candidates)
+    .filter(
+      ({ kind, launchable, authFailure, health, usage }) =>
+        kind !== 'api-key' &&
+        launchable &&
+        !authFailure &&
+        health?.state !== 'dead' &&
+        (!usage || (!usage.session && !usage.weekly && !usage.error))
+    )
+    .map((candidate) => candidate.key)
+    .join('\n')
 }
 
 function errorText(caught: unknown): string {
@@ -91,6 +110,23 @@ export function useSealAccounts(target: RuntimeClientTarget): {
     })
   }, [])
 
+  const awaiting = snapshot ? awaitingFirstReading(snapshot.status) : ''
+  const readAt = snapshot?.at ?? 0
+  const firstReading = useRef({ awaiting: '', polls: 0 })
+  useEffect(() => {
+    if (firstReading.current.awaiting !== awaiting) {
+      firstReading.current = { awaiting, polls: 0 }
+    }
+    if (!awaiting || firstReading.current.polls >= FIRST_READING_POLLS) {
+      return
+    }
+    const timer = setTimeout(() => {
+      firstReading.current.polls += 1
+      poll(false)
+    }, FIRST_READING_POLL_MS)
+    return () => clearTimeout(timer)
+  }, [awaiting, readAt])
+
   const mutate = useCallback<SealAccountsMutation>(
     async (method, params, failureMessage) => {
       try {
@@ -112,7 +148,7 @@ export function useSealAccounts(target: RuntimeClientTarget): {
 
   return {
     status: snapshot?.status ?? null,
-    readAt: snapshot?.at ?? 0,
+    readAt,
     error,
     refreshing,
     refresh,

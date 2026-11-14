@@ -4,7 +4,6 @@
       "agentLogin": "使用智能体自身的登录信息",
       "connecting": "正在连接到主机…",
       "connectingTo": "正在连接到 {{name}}…",
-      "default": "系统默认",
       "fableWindow": "Fable",
       "hostNotFound": "未找到主机",
       "invalidSnapshot": "主机返回的账户快照无效",

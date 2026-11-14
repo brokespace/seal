@@ -4,7 +4,6 @@
       "agentLogin": "Utiliser l'authentification de l'agent",
       "connecting": "Connexion à l'hôte…",
       "connectingTo": "Connexion à {{name}}…",
-      "default": "Valeur par défaut du système",
       "fableWindow": "Fable",
       "hostNotFound": "Hôte introuvable",
       "invalidSnapshot": "État des comptes invalide reçu de l'hôte",

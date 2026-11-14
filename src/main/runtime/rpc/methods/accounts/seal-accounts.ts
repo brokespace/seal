@@ -1,4 +1,5 @@
 import { defineMethod, type RpcContext } from '../../core'
+import { resolveRpcCallerIdentity } from '../../callers/rpc-caller-identity'
 import type { OrcadFeature } from '../../startup/orcad-readiness'
 import {
   SealAccountsAddApiKeyParams,
@@ -33,6 +34,8 @@ import {
   swapSealSessionTo
 } from '../../../../seal-accounts/seal-session-swap'
 import { pickSealLaunch } from '../../../../seal-accounts/seal-launch-pick-context'
+import { refreshSealSystemLogins } from '../../../../seal-accounts/seal-system-login'
+import { SEAL_ACCOUNT_ROSTER_METHODS } from './seal-account-roster'
 import {
   withAutoSwap,
   withPolicyEdit,
@@ -57,6 +60,7 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
       if (params?.refreshUsage) {
         await accounts().refreshUsage()
       }
+      await refreshSealSystemLogins()
       return accounts().status()
     }
   }),
@@ -191,7 +195,8 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
     params: SealAccountsSyncFleetParams,
     handler: async (params, context) => {
       // Exported logins must never leave this desktop for a paired client's request.
-      if (context.clientKind !== undefined) {
+      const caller = resolveRpcCallerIdentity(context)?.kind
+      if (caller !== 'desktop' && caller !== 'local-cli') {
         throw new Error('Push accounts from the Seal desktop app or its CLI.')
       }
       const targets = [...(params.environmentIds ?? []), ...(params.machineIds ?? [])]
@@ -237,7 +242,10 @@ const SEAL_ACCOUNT_METHOD_DEFINITIONS = [
   })
 ]
 
-export const SEAL_ACCOUNT_METHODS = SEAL_ACCOUNT_METHOD_DEFINITIONS.map((method) => ({
+export const SEAL_ACCOUNT_METHODS = [
+  ...SEAL_ACCOUNT_METHOD_DEFINITIONS,
+  ...SEAL_ACCOUNT_ROSTER_METHODS
+].map((method) => ({
   ...method,
   requires: ['accounts'] satisfies OrcadFeature[]
 }))

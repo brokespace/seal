@@ -149,3 +149,51 @@ export const SealAccountsCredentialFreshnessParams = z
 
 /** The managing desktop pulls back a login this host refreshed, so other copies can follow. */
 export const SealAccountsExportCredentialParams = z.object({ account: AccountRef }).strict()
+
+/** A Claude setup token (`claude setup-token`); stored like an API key, sealed by the OS keychain. */
+export const SealAccountsAddSetupTokenParams = z
+  .object({
+    label: z.string().trim().min(1).max(80),
+    token: z.string().trim().min(8).max(4096)
+  })
+  .strict()
+
+export const SealAccountsRemoveAccountParams = z
+  .object({
+    account: AccountRef,
+    provider: Provider.optional(),
+    /** Also sign the machine's own CLI out, when the account is its login. */
+    logout: z.boolean().optional()
+  })
+  .strict()
+
+/** Lists the machine's own `claude`/`codex` login again after it was removed from Seal. */
+export const SealAccountsImportSystemLoginParams = z.object({ provider: Provider }).strict()
+
+/** The accounts of one provider in preference order; the first is tried first. */
+export const SealAccountsReorderParams = z
+  .object({ provider: Provider, accounts: z.array(AccountRef).min(1).max(200) })
+  .strict()
+
+export const SealAccountsDismissNoticeParams = z.object({}).strict().nullish()
+
+export const SealAccountsSignInStartParams = z
+  .object({
+    provider: Provider,
+    method: z.enum(['browser', 'device-code']),
+    openBrowser: z.boolean(),
+    account: AccountRef.optional()
+  })
+  .strict()
+
+const FlowId = z.string().trim().min(1).max(128)
+
+export const SealAccountsSignInWaitParams = z
+  .object({ flowId: FlowId, afterRevision: z.number().int().min(0) })
+  .strict()
+
+export const SealAccountsSignInSubmitCodeParams = z
+  .object({ flowId: FlowId, code: z.string().trim().min(1).max(2048) })
+  .strict()
+
+export const SealAccountsSignInCancelParams = z.object({ flowId: FlowId }).strict()

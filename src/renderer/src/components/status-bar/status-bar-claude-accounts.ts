@@ -2,6 +2,8 @@ import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { ClaudeRateLimitAccountsState } from '../../../../shared/managed-account-types'
 import { translate } from '@/i18n/i18n'
 import {
+  showsSystemLoginRowFor,
+  systemLoginRowLabel,
   getCodexStatusRuntimeKey,
   getCodexStatusRuntimeLabel,
   getCodexStatusWslKey,
@@ -84,15 +86,19 @@ export function buildClaudeStatusSwitchGroups(
       label: getCodexStatusRuntimeLabel(target, options.hostLabel),
       runtimeTarget: target,
       targets: [
-        {
-          id: null,
-          label: translate('auto.components.status.bar.StatusBar.c676918adc', 'System default'),
-          active: activeId === null,
-          runtimeTarget: target
-        },
+        ...(showsSystemLoginRowFor(target, activeId, options.seal)
+          ? [
+              {
+                id: null,
+                label: systemLoginRowLabel(target, options.seal),
+                active: activeId === null,
+                runtimeTarget: target
+              }
+            ]
+          : []),
         ...accountsForTarget.map((account) => ({
           id: account.id,
-          label: account.email,
+          label: (target.runtime === 'host' && options.seal?.labels[account.id]) || account.email,
           active: account.id === activeId,
           runtimeTarget: target,
           ...(account.needsSignIn

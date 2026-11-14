@@ -51,15 +51,14 @@ export function buildCapabilitySettingsSections(
     },
     {
       id: 'accounts',
-      title: t('auto.hooks.useSettingsNavigationMetadata.f70ac54d38', 'AI Provider Accounts'),
+      title: t('seal.accounts.section.title', 'Accounts'),
       description: t(
-        'auto.hooks.useSettingsNavigationMetadata.b1c2f8b0ac',
-        'Optional account switching and usage setup for Claude, Codex, Gemini, OpenCode Go, MiniMax, and Grok.'
+        'seal.accounts.section.navDescription',
+        'Claude, Codex and API-key accounts, auto-swap, rules and machines, plus usage setup for other providers.'
       ),
       icon: UserCog,
       searchEntries: getAccountsPaneSearchEntries(),
-      group: 'capabilities',
-      badge: t('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
+      group: 'capabilities'
     },
     {
       id: 'orchestration',
