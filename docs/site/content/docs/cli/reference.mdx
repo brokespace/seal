@@ -424,6 +424,30 @@ seal account rm --agent codex --account old@example.com         # forget a saved
 
 A selection applies to every agent of that provider launched on the host after it — the same switch as the status-bar account menu — not to a single workspace. An email shared by several accounts (one sign-in in two organizations) is refused; pass the id instead. Antigravity has no `system` default, and `account rm` never removes system credentials.
 
+## MCP server
+
+Seal is an MCP server for outside assistants and MCP clients (Claude Code, Codex, Cursor). `seal mcp` is the stdio transport; the other commands manage clients on a host, which is how a headless `seal serve` box is set up. Setup, client configuration and the threat model are in [`docs/mcp.md`](https://github.com/brokespace/seal/blob/seal/all/docs/mcp.md).
+
+```bash
+seal mcp token create --name "Claude Code" --scopes read,sessions   # prints the token once
+SEAL_MCP_TOKEN=smcp_... seal mcp                                    # MCP over stdio
+SEAL_MCP_TOKEN=smcp_... seal mcp --environment kessel-ml            # drive a paired Seal server
+seal mcp enable http            # serve /mcp on Seal's own port (LAN)
+seal mcp enable relay           # public HTTPS URL through the Seal relay
+seal mcp status
+seal mcp machines               # machine ids for --machines
+seal mcp token list
+seal mcp token revoke <id>
+seal mcp audit --limit 100
+seal mcp approvals
+seal mcp approve <id>
+seal mcp deny <id>
+```
+
+- Scopes are `read`, `sessions`, `files`, `commands`, `destructive`. A tool needs every scope it lists, and a tool the token is not scoped for does not exist for that client.
+- `--machines <id,id>` limits a client to those machines; `--approval never|destructive|commands` sets when a call waits for approval in the Seal app; `--allow-relay` lets the client connect through the relay; `--rate` is calls per minute.
+- Managing clients needs this machine's own user (or a paired Seal client): an MCP client cannot create or change tokens through MCP.
+
 ## Artifacts
 
 Publish HTML or Markdown through the signed-in Seal account. Viewing a public link does not require sign-in; create/list/update/delete do. Publishing follows **Settings → Artifacts → Allow publishing public artifact links** on the device: on by default for new profiles, while profiles created before this default keep their previous setting. Only a human can change it; there is no CLI flag that grants the gate. `list`, `unshare`, and `delete` stay available so you can audit or revoke links after turning publishing off.

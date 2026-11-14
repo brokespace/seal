@@ -20173,7 +20173,8 @@
           "knownDescription": "Every file {{agent}} reads here. Opening one edits it as text, with the same checks and backups.",
           "missing": "Not created",
           "browse": "Browse the folder",
-          "browseDescription": "Everything under {{path}}, including files Seal has no form for."
+          "browseDescription": "Everything under {{path}}, including files Seal has no form for.",
+          "addSshDetails": "Add SSH details for {{machine}} on the Machines page to open its files in your editor."
         },
         "mcp": {
           "auth": {

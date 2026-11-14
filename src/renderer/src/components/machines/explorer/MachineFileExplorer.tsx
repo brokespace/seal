@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
@@ -8,6 +8,8 @@ import { cn } from '@/lib/class-names'
 import type { MachineFileEntry } from '../../../../../shared/machines/machine-types'
 import { machinePathDirname } from '../../../../../shared/machines/machine-paths'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineEditorChoice } from '../editor/MachineEditorButton'
+import { useMachineExplorerEditor } from '../editor/use-machine-explorer-editor'
 import { MachineDeleteDialog } from './MachineDeleteDialog'
 import { MachineExplorerMenu } from './MachineExplorerMenu'
 import { MachineExplorerToolbar } from './MachineExplorerToolbar'
@@ -35,13 +37,21 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
 
 export type MachineFolderRequest = { path: string; id: number }
 
+export type MachineFileExplorerHandle = {
+  /** Opens the folder on screen in the chosen editor. */
+  openCurrentFolderInEditor: (choice: MachineEditorChoice) => void
+}
+
 export function MachineFileExplorer({
   machine,
   homeDir = null,
   hidden = false,
   folderRequest = null,
   startAt,
-  fileOps
+  fileOps,
+  onAddSshDetails,
+  onShown,
+  ref
 }: {
   machine: MachineSummary
   homeDir?: string | null
@@ -52,6 +62,10 @@ export function MachineFileExplorer({
   startAt?: string
   /** A tree scoped to one feature's files; it has no jump to arbitrary folders. */
   fileOps?: MachineExplorerFileOps
+  onAddSshDetails: () => void
+  /** The explorer put a path on screen itself, so anything covering it should step aside. */
+  onShown: () => void
+  ref?: React.Ref<MachineFileExplorerHandle>
 }): React.JSX.Element {
   const t = useTranslate()
   const online = machine.status === 'online'
@@ -116,6 +130,27 @@ export function MachineFileExplorer({
     },
     [navigate]
   )
+
+  const editor = useMachineExplorerEditor({
+    machine,
+    root,
+    rootError: tree.rootError,
+    rows: tree.rows,
+    onAddSshDetails,
+    showFolder: (path) => {
+      navigate(path)
+      setPreview(null)
+      onShown()
+      scrollElement?.focus()
+    },
+    showFile: (path, entry) => {
+      setPreview({ path, entry })
+      onShown()
+    }
+  })
+  useImperativeHandle(ref, () => ({ openCurrentFolderInEditor: editor.openCurrentFolder }), [
+    editor.openCurrentFolder
+  ])
 
   const handlers = useMemo<MachineExplorerRowHandlers>(
     () => ({
@@ -308,6 +343,8 @@ export function MachineFileExplorer({
             selectedPaths={selectedPaths}
             machineKind={machine.connection}
             onOpen={openEntry}
+            editorLabel={editor.label}
+            onOpenInEditor={editor.openRow}
             actions={actions}
           />
         </ContextMenu>

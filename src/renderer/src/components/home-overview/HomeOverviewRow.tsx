@@ -1,31 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/class-names'
 
-/** Bordered section with an uppercase caption, shared by every Home summary. */
-export function HomeOverviewPanel({
-  title,
-  action,
-  children,
-  className
-}: {
-  title: string
-  action?: ReactNode
-  children: ReactNode
-  className?: string
-}): React.JSX.Element {
-  return (
-    <section className={cn('rounded-xl border border-border bg-card', className)}>
-      <header className="flex h-9 items-center justify-between gap-2 border-b border-border px-3">
-        <h2 className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-          {title}
-        </h2>
-        {action}
-      </header>
-      {children}
-    </section>
-  )
-}
-
 /** Full-width row button used by every clickable list row on Home. */
 export function HomeOverviewRowButton({
   onClick,

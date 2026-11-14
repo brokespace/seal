@@ -1,18 +1,31 @@
 import { homedir } from 'node:os'
 import { posix, win32 } from 'node:path'
 
+function macAppCliPaths(app: string, cli: string): string[] {
+  const relative = posix.join(app, 'Contents/Resources/app/bin', cli)
+  return [posix.join('/Applications', relative), posix.join(homedir(), 'Applications', relative)]
+}
+
 function listVsCodeCliInstallPaths(command: string, platform: NodeJS.Platform): string[] {
+  if (command === 'cursor') {
+    if (platform === 'darwin') {
+      return macAppCliPaths('Cursor.app', 'cursor')
+    }
+    const { LOCALAPPDATA } = process.env
+    return platform === 'win32' && LOCALAPPDATA
+      ? [win32.join(LOCALAPPDATA, 'Programs', 'cursor', 'resources', 'app', 'bin', 'cursor.cmd')]
+      : []
+  }
   if (command !== 'code' && command !== 'code-insiders') {
     return []
   }
   const insiders = command === 'code-insiders'
   if (platform === 'darwin') {
     // The bundled macOS CLI is named `code` for both stable and Insiders.
-    const cli = posix.join(
+    return macAppCliPaths(
       insiders ? 'Visual Studio Code - Insiders.app' : 'Visual Studio Code.app',
-      'Contents/Resources/app/bin/code'
+      'code'
     )
-    return [posix.join('/Applications', cli), posix.join(homedir(), 'Applications', cli)]
   }
   if (platform === 'win32') {
     const cli = win32.join(
@@ -30,7 +43,7 @@ function listVsCodeCliInstallPaths(command: string, platform: NodeJS.Platform): 
   return []
 }
 
-/** VS Code's bundled CLI, for GUI launches whose PATH lacks the optional `code` shim. */
+/** The CLI bundled with VS Code or Cursor, for GUI launches whose PATH lacks the optional shim. */
 export function findInstalledVsCodeCli(
   command: string,
   platform: NodeJS.Platform,

@@ -55,7 +55,8 @@ export function HomeChatComposer({
   }
 
   return (
-    <div className="border-t border-border px-4 pt-3 pb-3">
+    // Padded in to the transcript's column, so the composer lines up under the conversation.
+    <div className="border-t border-border px-[max(1rem,calc((100%_-_var(--chat-content-max-width))/2))] pt-2 pb-3">
       <Textarea
         value={draft}
         rows={2}

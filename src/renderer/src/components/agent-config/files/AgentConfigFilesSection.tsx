@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useTranslate } from '@/i18n/use-translate'
 import { validationKindForPath } from '../../../../../shared/agent-config/agent-config-validation'
 import { MachineFileExplorer } from '../../machines/explorer/MachineFileExplorer'
@@ -111,6 +112,16 @@ export function AgentConfigFilesSection(): React.JSX.Element {
             machine={machine}
             startAt={snapshot.agentDir}
             fileOps={fileOps}
+            onShown={() => {}}
+            onAddSshDetails={() =>
+              toast.message(
+                t(
+                  'auto.components.agentConfig.files.addSshDetails',
+                  'Add SSH details for {{machine}} on the Machines page to open its files in your editor.',
+                  { machine: machine.label }
+                )
+              )
+            }
           />
         </div>
       </div>
