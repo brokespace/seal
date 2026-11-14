@@ -20,6 +20,7 @@ test('skills from every source are listed and switched over SSH, a Seal server a
   // A developer machine without sudo cannot host the accounts; CI must never skip them.
   test.skip(unavailable !== null && !process.env.CI, unavailable ?? '')
   expect(unavailable, 'CI must be able to run a real sshd').toBeNull()
+  // Three machines plus a project, each with real agent CLIs and plugin folders to scan.
   test.setTimeout(10 * 60_000)
 
   const suite = await launchHomeChatOnRealMachines(testInfo, testRepoPath)

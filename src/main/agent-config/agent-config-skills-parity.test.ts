@@ -224,8 +224,8 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
     })
 
     it('switches a Claude Code skill by its folder name, in the scope asked for', async () => {
-      const settings = async (relative: string) =>
-        JSON.parse(await readFile(at(relative), 'utf8')) as Record<string, unknown>
+      const settings = async (relative: string): Promise<Record<string, unknown>> =>
+        JSON.parse(await readFile(at(relative), 'utf8'))
       const change = (scope: 'user' | 'local', relative: string, enabled: boolean) =>
         setSkillEnabled(machine.connection, {
           target: target('claude', scope !== 'user'),
