@@ -4,10 +4,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { PageCard } from '@/components/page-layout/PageCard'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import {
-  buildActiveAgents,
-  NO_ACTIVE_AGENTS_FILTER
-} from '../live-sessions/active-agents/active-agents-model'
+import { buildActiveAgents } from '../live-sessions/active-agents/active-agents-model'
 import { useLiveSessionLinks } from '../live-sessions/links/use-live-session-links'
 import { LiveSessionRows } from '../live-sessions/row/LiveSessionRows'
 import { useSessionMachineName } from '../machines/model/use-local-machine-name'
@@ -24,10 +21,7 @@ export function HomeSessionsPanel({
   const t = useTranslate()
   const { links } = useLiveSessionLinks()
   const machineName = useSessionMachineName()
-  const view = useMemo(
-    () => buildActiveAgents(sessions, NO_ACTIVE_AGENTS_FILTER, links, now),
-    [sessions, links, now]
-  )
+  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
   return (
     <PageCard
       title={t('home.overview.sessions.title', 'Sessions')}
