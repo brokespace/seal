@@ -99,6 +99,10 @@ export type LiveSession = {
   pinned?: boolean
   /** Ids this session went by before it was resumed into a new transcript; it is still that session. */
   continues?: string[]
+  /** One sentence on what the agent did or needs, made by the host that owns the session when it stopped. */
+  summary?: string
+  /** That summary is being made. */
+  summaryPending?: true
 }
 
 /** What the user sets on a session in Seal; an absent field is left as it is. */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { buildHomeAttentionItems } from '../../../../shared/home-overview/home-overview-derivations'
-import { homeSessionFromLive } from './seal-home-overview-mapping'
+import { homeSessionFromLive, mergeLiveSessions } from './seal-home-overview-mapping'
 
 function live(id: string, overrides: Partial<LiveSession> = {}): LiveSession {
   return {
@@ -56,6 +56,42 @@ describe('homeSessionFromLive', () => {
     expect(items.map((item) => [item.session.id, item.reason])).toEqual([
       ['asking', 'Which file?'],
       ['failed', 'API Error: 401']
+    ])
+  })
+})
+
+describe('mergeLiveSessions summaries', () => {
+  const pane = (id: string) => ({ ...homeSessionFromLive(live(id)), summary: undefined })
+
+  it('carries a registry session summary onto its own row', () => {
+    const [written, writing] = mergeLiveSessions(
+      [],
+      [
+        live('written', { status: 'waiting-input', summary: 'Needs the staging API key.' }),
+        live('writing', { status: 'waiting-input', summaryPending: true })
+      ]
+    )
+    expect(written.summary).toEqual({ text: 'Needs the staging API key.', pending: false })
+    expect(writing.summary).toEqual({ text: null, pending: true })
+  })
+
+  it('puts a pane summary on the pane row, by pane or by the conversation it runs', () => {
+    const merged = mergeLiveSessions(
+      [pane('local-pane'), pane('server-pane'), pane('other-pane')],
+      [
+        live('a', {
+          inputRoutes: [{ kind: 'seal-pane', paneKey: 'local-pane' }],
+          summary: 'Fixed the login redirect.'
+        }),
+        live('b', { providerSessionId: 'conversation-9', summary: 'Needs approval to deploy.' })
+      ],
+      (paneKey) => (paneKey === 'server-pane' ? 'conversation-9' : undefined)
+    )
+    expect(merged.map((session) => [session.id, session.summary?.text])).toEqual([
+      ['local-pane', 'Fixed the login redirect.'],
+      ['server-pane', 'Needs approval to deploy.'],
+      ['other-pane', undefined],
+      ['b', 'Needs approval to deploy.']
     ])
   })
 })

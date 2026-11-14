@@ -24,11 +24,16 @@ function oneLine(text: string | null | undefined): string {
 // A worktree agent row or a session tab's AgentStatusEntry, which leaves these optional.
 type AgentPreviewSource = Pick<RuntimeWorktreeAgentRow, 'prompt'> & {
   lastAssistantMessage?: string | null
+  statusSummary?: string | null
   toolName?: string | null
   toolInput?: string | null
 }
 
 function lastMessage(agent: AgentPreviewSource): string {
+  // The host's one-sentence summary of a stopped agent fits a phone row better than the raw reply.
+  if (agent.statusSummary) {
+    return oneLine(agent.statusSummary)
+  }
   const message = agent.lastAssistantMessage
   return message ? oneLine(withoutNativeChatVisualDirectiveLines(message)) : ''
 }

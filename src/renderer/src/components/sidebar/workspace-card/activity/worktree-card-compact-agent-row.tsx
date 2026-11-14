@@ -26,6 +26,7 @@ import {
 } from '../../../../../../shared/program-status/presentation'
 import { resolveRowProgramStatus } from '@/lib/program-status/agent-row-presentation'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { useSessionSummary } from '@/components/session-summaries/use-session-summary'
 
 function getCompactAgentPrimary(
   agent: DashboardAgentRowData,
@@ -40,7 +41,8 @@ export function getCompactAgentSecondary(
   now: number,
   lastAssistantMessageOverride?: string,
   presentation: ProgramStatusPresentation = resolveRowProgramStatus(agent).presentation,
-  t?: Translate
+  t?: Translate,
+  sessionSummary?: string
 ): string {
   // Program-reported blocks need user attention before other row details.
   if (presentation.attention) {
@@ -69,8 +71,9 @@ export function getCompactAgentSecondary(
   if (presentation.message) {
     return presentation.message
   }
+  // One line has no room for a second: the host's summary takes the raw last message's place.
   const lastAssistantMessage =
-    lastAssistantMessageOverride ?? agent.entry.lastAssistantMessage?.trim()
+    lastAssistantMessageOverride ?? sessionSummary ?? agent.entry.lastAssistantMessage?.trim()
   if (lastAssistantMessage) {
     return lastAssistantMessage
   }
@@ -158,7 +161,25 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   const held = heldMessageRef.current
   const stableMessage =
     turnHoldable && !currentMessage && held?.turn === turn ? held.message : undefined
-  const secondary = getCompactAgentSecondary(agent, now, stableMessage, presentation, t)
+  // A child row has no conversation of its own to summarize.
+  const summary = useSessionSummary(
+    agent.rowSource === 'subagent'
+      ? null
+      : {
+          paneKey: agent.paneKey,
+          agentType: agent.agentType,
+          providerSessionId: agent.entry.providerSession?.id
+        }
+  )
+  const summaryText = summary?.text ?? undefined
+  const secondary = getCompactAgentSecondary(
+    agent,
+    now,
+    stableMessage,
+    presentation,
+    t,
+    summaryText
+  )
   const { leadingText, trailingText } = getCompactAgentLineOrder(agent, primary, secondary, t)
   const rowTitle = `${leadingText}${trailingText ? ` - ${trailingText}` : ''}`
   const model = agent.entry.model?.trim() ?? ''

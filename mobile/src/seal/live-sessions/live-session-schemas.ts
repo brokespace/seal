@@ -41,7 +41,10 @@ export const liveSessionSchema = z.looseObject({
   startedAt: Timestamp.nullable(),
   alive: z.boolean(),
   inputRoutes: salvagingArray(inputRouteSchema),
-  permission: permissionSchema.nullable()
+  permission: permissionSchema.nullable(),
+  // The host's one-sentence summary; absent on hosts without a utility model.
+  summary: z.string().optional().catch(undefined),
+  summaryPending: z.boolean().optional().catch(undefined)
 })
 
 export const liveSessionSnapshotSchema = z.looseObject({

@@ -258,6 +258,18 @@ export class AgentTransitionDetector {
     return this.panes.get(paneKey)?.phase ?? 'rest'
   }
 
+  /** Panes already tracked, as the seeds a subscriber arriving after attach missed. */
+  trackedPaneSeeds(): Extract<AgentPaneChange, { kind: 'seeded' }>[] {
+    const at = this.deps.now()
+    return [...this.panes].map(([paneKey, { workspace, phase }]) => ({
+      kind: 'seeded',
+      paneKey,
+      workspace,
+      phase,
+      at
+    }))
+  }
+
   /** Use the newest row to match the window's arrival-order projection. */
   latestRow(paneKey: string): AgentStatusIpcPayload | null {
     let latest: AgentStatusIpcPayload | null = null

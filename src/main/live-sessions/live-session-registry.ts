@@ -56,6 +56,7 @@ export class LiveSessionRegistry {
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false
   private releaseSealPanes: (() => void) | null = null
+  private decorator: ((session: LiveSession) => LiveSession) | null = null
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }
 
@@ -249,11 +250,19 @@ export class LiveSessionRegistry {
     this.publish()
   }
 
+  /** Adds what another feature knows about a session (its status summary) before it is published. */
+  setDecorator(decorator: ((session: LiveSession) => LiveSession) | null): void {
+    this.decorator = decorator
+    this.publish()
+  }
+
   private publish(): void {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
+    const decorate = this.decorator
     const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
       .filter((session) => !this.deps.isRemoved?.(session))
       .map((session) => this.deps.annotate?.(session) ?? session)
+      .map((session) => (decorate ? decorate(session) : session))
     const seen = new Set<string>()
     for (const session of merged) {
       if (seen.has(session.id)) {
