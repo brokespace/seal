@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Radio,
   Server,
+  ShieldCheck,
   Sparkles,
   UserRound,
   type LucideIcon
@@ -16,6 +17,7 @@ import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 import { useHostClient } from '../../transport/connection/host-client-hooks'
 import { useLiveSessionsFeed } from '../live-sessions/live-sessions-feed'
 import { liveSessionNeedsAttention } from '../live-sessions/live-session-presentation'
+import { useMcpApprovalsFeed } from '../mcp-approvals/mcp-approvals-feed'
 import { sealPageHref, type SealPage } from '../seal-route-hrefs'
 import { SealScreenFrame } from '../SealScreenFrame'
 
@@ -30,6 +32,7 @@ export function SealHubScreen({ hostId }: { hostId: string }) {
   const { client } = useHostClient(hostId)
   const live = useLiveSessionsFeed(client)
   const waiting = live.sessions.filter(liveSessionNeedsAttention).length
+  const approvals = useMcpApprovalsFeed(client).approvals.length
 
   const entries: HubEntry[] = [
     {
@@ -64,6 +67,17 @@ export function SealHubScreen({ hostId }: { hostId: string }) {
       icon: Sparkles,
       title: t('seal.hub.assistant', 'Assistant'),
       subtitle: t('seal.hub.assistantHint', 'Ask about your sessions and machines')
+    },
+    {
+      page: 'approvals',
+      icon: ShieldCheck,
+      title: t('seal.hub.approvals', 'MCP approvals'),
+      subtitle:
+        approvals > 0
+          ? t('seal.hub.approvalsWaiting', '{{value0}} waiting for your answer', {
+              value0: approvals
+            })
+          : t('seal.hub.approvalsHint', 'Calls from outside assistants that need your OK')
     }
   ]
 
