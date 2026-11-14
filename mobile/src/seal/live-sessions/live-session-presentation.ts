@@ -110,6 +110,7 @@ export function liveTakeOverFailureText(reason: string | undefined, error: strin
       )
     case 'still_running':
       return translate('seal.liveSessions.takeOver.stillRunning', 'The agent process didn’t stop.')
+    case undefined:
     default:
       return error ?? translate('seal.liveSessions.takeOver.failed', 'Something went wrong.')
   }
