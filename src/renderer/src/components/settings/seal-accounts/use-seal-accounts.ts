@@ -3,8 +3,10 @@ import { toast } from 'sonner'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import { SEAL_PROVIDERS } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
+import { hasUsageData } from '../../../../../shared/usage-provider-windows'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
+import { onUsageReadingPushed } from '../../seal-session/usage-reading-pushes'
 
 const POLL_MS = 30_000
 /** A first usage reading follows a sign-in or import by seconds; re-read until it shows. */
@@ -38,12 +40,12 @@ function statusFrom(result: unknown): SealAccountsStatus | null {
 function awaitingFirstReading(status: SealAccountsStatus): string {
   return SEAL_PROVIDERS.flatMap((provider) => status.providers[provider].candidates)
     .filter(
-      ({ kind, launchable, authFailure, health, usage }) =>
+      ({ kind, launchable, authFailure, health, limits }) =>
         kind !== 'api-key' &&
         launchable &&
         !authFailure &&
         health?.state !== 'dead' &&
-        (!usage || (!usage.session && !usage.weekly && !usage.error))
+        (!limits || (!hasUsageData(limits) && !limits.error))
     )
     .map((candidate) => candidate.key)
     .join('\n')
@@ -109,6 +111,8 @@ export function useSealAccounts(target: RuntimeClientTarget): {
       slowWhileUnfocused: true
     })
   }, [])
+
+  useEffect(() => onUsageReadingPushed(() => poll(false)), [])
 
   const awaiting = snapshot ? awaitingFirstReading(snapshot.status) : ''
   const readAt = snapshot?.at ?? 0

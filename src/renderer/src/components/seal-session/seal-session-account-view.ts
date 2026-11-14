@@ -1,19 +1,5 @@
-import type {
-  SealAccountCandidate,
-  SealUsageWindow
-} from '../../../../shared/seal-accounts/seal-account-candidates'
+import type { SealAccountCandidate } from '../../../../shared/seal-accounts/seal-account-candidates'
 import type { SealSessionAssignment } from '../../../../shared/seal-accounts/seal-accounts-status'
-
-/** Percent of a window used as of `readAt`; a window past its reset counts as empty. */
-export function windowUsedPercent(window: SealUsageWindow | null, readAt: number): number | null {
-  if (!window) {
-    return null
-  }
-  if (window.resetsAt !== null && window.resetsAt <= readAt) {
-    return 0
-  }
-  return Math.round(window.usedPercent)
-}
 
 /** Accounts a running session can move to: live subscription logins that launch on its host. */
 export function sessionSwapTargets(

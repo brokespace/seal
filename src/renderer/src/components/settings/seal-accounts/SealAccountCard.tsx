@@ -3,7 +3,6 @@ import { LogIn } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
-import type { SealAutoSwapSettings } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealQuarantineEntry } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import type {
   SealFleetAccount,
@@ -14,13 +13,17 @@ import { Button } from '../../ui/button'
 import { SealAccountCardMenu } from './SealAccountCardMenu'
 import { SealAccountMachines } from './SealAccountMachines'
 import {
+  hasInlineUsage,
+  InlineUsageBars,
+  InlineUsageSkeleton
+} from '../../status-bar/InlineProviderUsage'
+import {
   sealAccountIdentity,
+  sealAccountNotice,
   sealHealthAdvice,
-  sealHealthLabel,
   sealHealthTone,
   sealLoginBillingBadge
 } from './seal-account-presentation'
-import { SealUsageMeter } from './SealUsageMeter'
 
 export type SealAccountCardActions = {
   onUse: () => void
@@ -34,7 +37,6 @@ type SealAccountCardProps = SealAccountCardActions & {
   account: SealFleetAccount
   /** 1-based position in its group; the lowest working account is preferred. */
   rank: number
-  settings: SealAutoSwapSettings
   quarantine: SealQuarantineEntry | undefined
   now: number
   /** Machines other than this one, which a login can be pushed to. */
@@ -65,7 +67,6 @@ const TONE_DOT_CLASS = {
 export function SealAccountCard({
   account,
   rank,
-  settings,
   quarantine,
   now,
   pushTargets,
@@ -80,8 +81,10 @@ export function SealAccountCard({
 }: SealAccountCardProps): React.JSX.Element {
   const t = useTranslate()
   const { candidate } = account
-  const usage = candidate.usage
+  const { limits } = candidate
   const tone = sealHealthTone(candidate.health)
+  const notice = sealAccountNotice(candidate, now, t)
+  const firstReadPending = candidate.usageFetching === true || limits?.status === 'fetching'
   const isLogin = candidate.kind !== 'api-key'
   const identity = sealAccountIdentity(candidate, t)
   const advice = sealHealthAdvice(candidate, t)
@@ -186,14 +189,22 @@ export function SealAccountCard({
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{identity}</p>
             ) : null}
           </div>
-          <span
-            className={cn('flex shrink-0 items-center gap-1.5 pt-0.5 text-xs', TONE_CLASS[tone])}
-            data-slot="seal-account-health"
-            data-health={candidate.health?.state ?? 'ok'}
-          >
-            <span className={cn('size-1.5 rounded-full', TONE_DOT_CLASS[tone])} aria-hidden />
-            {sealHealthLabel(candidate.health, t)}
-          </span>
+          {notice ? (
+            <span
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 pt-0.5 text-xs',
+                TONE_CLASS[notice.tone]
+              )}
+              data-slot="seal-account-health"
+              data-health={notice.state}
+            >
+              <span
+                className={cn('size-1.5 rounded-full', TONE_DOT_CLASS[notice.tone])}
+                aria-hidden
+              />
+              {notice.label}
+            </span>
+          ) : null}
           {tone === 'dead' && candidate.credential === 'login' ? (
             <Button variant="outline" size="xs" onClick={onRelogin}>
               <LogIn />
@@ -224,33 +235,19 @@ export function SealAccountCard({
               : t('seal.accounts.card.apiKeyUsage', 'Pay as you go; no plan limits to track.')}
           </p>
         ) : (
-          <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-            <SealUsageMeter
-              label={t('seal.accounts.window.session', '5h')}
-              window={usage?.session ?? null}
-              threshold={candidate.sessionThreshold ?? settings.sessionThreshold}
-              now={now}
-            />
-            <SealUsageMeter
-              label={t('seal.accounts.window.weekly', '7d')}
-              window={usage?.weekly ?? null}
-              threshold={candidate.weeklyThreshold ?? settings.weeklyThreshold}
-              now={now}
-            />
-            {usage?.models.map((model) => (
-              <SealUsageMeter
-                key={model.name}
-                label={model.name}
-                window={model}
-                threshold={candidate.weeklyThreshold ?? settings.weeklyThreshold}
-                now={now}
-              />
-            ))}
+          // The usage popover's own bars over the same reading, so the two always agree.
+          <div className="max-w-sm" data-slot="seal-account-usage">
+            {hasInlineUsage(limits) ? (
+              <InlineUsageBars limits={limits} isFetching={candidate.usageFetching === true} />
+            ) : firstReadPending ? (
+              <InlineUsageSkeleton />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {t('seal.accounts.card.noUsage', 'No usage reading yet.')}
+              </p>
+            )}
           </div>
         )}
-        {usage?.error && tone !== 'dead' ? (
-          <p className="text-xs text-muted-foreground">{usage.error}</p>
-        ) : null}
         <p className="text-xs text-muted-foreground" data-slot="seal-account-facts">
           {facts.join(' · ')}
         </p>

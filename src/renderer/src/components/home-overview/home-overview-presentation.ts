@@ -3,7 +3,7 @@ import { formatUiNarrowDuration, formatUiNarrowRelativeTime } from '@/i18n/relat
 import type { Translate } from '@/i18n/use-translate'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { homeElapsed } from '../../../../shared/home-overview/home-overview-derivations'
-import type { HomeMachineStatus, HomeUsageWindowKind } from './home-overview-model'
+import type { HomeMachineStatus } from './home-overview-model'
 
 export function homeMachineStatusLabel(status: HomeMachineStatus, t: Translate): string {
   switch (status) {
@@ -15,17 +15,6 @@ export function homeMachineStatusLabel(status: HomeMachineStatus, t: Translate):
       return t('home.overview.machine.offline', 'Offline')
     case 'error':
       return t('home.overview.machine.error', 'Connection failed')
-  }
-}
-
-export function homeUsageWindowLabel(kind: HomeUsageWindowKind, t: Translate): string {
-  switch (kind) {
-    case 'session':
-      return t('home.overview.usage.session', '5h')
-    case 'weekly':
-      return t('home.overview.usage.weekly', 'Week')
-    case 'monthly':
-      return t('home.overview.usage.monthly', 'Month')
   }
 }
 

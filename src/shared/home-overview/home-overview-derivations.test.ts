@@ -1,42 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accountNextReset, homeElapsed, mergeSessionMachines } from './home-overview-derivations'
-import type { HomeAccount } from './home-overview-types'
-
-function account(overrides: Partial<HomeAccount> = {}): HomeAccount {
-  return {
-    id: 'claude:active',
-    provider: 'claude',
-    providerLabel: 'Claude',
-    label: 'me@example.com',
-    active: true,
-    status: 'ok',
-    windows: [],
-    ...overrides
-  }
-}
-
-describe('accountNextReset', () => {
-  it('reports the reset of the window that is near its limit', () => {
-    const near = account({
-      windows: [
-        { kind: 'session', usedPercent: 20, resetsAt: 5_000 },
-        { kind: 'weekly', usedPercent: 85, resetsAt: 50_000 }
-      ]
-    })
-    expect(accountNextReset(near, 1_000)).toBe(50_000)
-  })
-
-  it('reports the earliest future reset otherwise', () => {
-    const relaxed = account({
-      windows: [
-        { kind: 'session', usedPercent: 20, resetsAt: 500 },
-        { kind: 'weekly', usedPercent: 30, resetsAt: 50_000 },
-        { kind: 'monthly', usedPercent: 10, resetsAt: 9_000 }
-      ]
-    })
-    expect(accountNextReset(relaxed, 1_000)).toBe(9_000)
-  })
-})
+import { homeElapsed, mergeSessionMachines } from './home-overview-derivations'
 
 describe('mergeSessionMachines', () => {
   it('adds hosts that only appear on sessions', () => {

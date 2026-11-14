@@ -1,21 +1,8 @@
 import * as z from 'zod'
 import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { ProviderRateLimitsSchema } from '../../accounts/accounts-snapshot'
 
 const Timestamp = z.number().finite()
-
-const usageWindowSchema = z.looseObject({
-  usedPercent: z.number().finite(),
-  resetsAt: Timestamp.nullable()
-})
-
-const accountUsageSchema = z.looseObject({
-  session: usageWindowSchema.nullable(),
-  weekly: usageWindowSchema.nullable(),
-  models: salvagingArray(usageWindowSchema.extend({ name: z.string().min(1) })),
-  planType: z.string().nullable(),
-  updatedAt: Timestamp,
-  error: z.string().nullable()
-})
 
 const candidateSchema = z.looseObject({
   key: z.string().min(1),
@@ -29,7 +16,10 @@ const candidateSchema = z.looseObject({
   active: z.boolean(),
   launchable: z.boolean(),
   authFailure: z.boolean(),
-  usage: accountUsageSchema.nullable(),
+  // The host's own usage reading, the object its usage popover and the accounts tab show.
+  limits: ProviderRateLimitsSchema.nullish(),
+  usageFetching: z.boolean().optional(),
+  rateLimit: z.looseObject({ resetsAt: Timestamp.nullable() }).nullish(),
   sessionThreshold: z.number().nullable(),
   weeklyThreshold: z.number().nullable(),
   nextPollAt: Timestamp.nullish(),
@@ -94,7 +84,6 @@ export const sealAccountsStatusSchema = z.looseObject({
 
 export type SealAccountsStatusRead = z.output<typeof sealAccountsStatusSchema>
 export type SealCandidate = z.output<typeof candidateSchema>
-export type SealUsageWindowRead = z.output<typeof usageWindowSchema>
 export type SealAutoSwapRead = z.output<typeof autoSwapSettingsSchema>
 export type SealSessionAssignmentRead = z.output<typeof sessionAssignmentSchema>
 export type SealLiveSwapMode = NonNullable<SealSessionAssignmentRead['liveSwap']>

@@ -227,6 +227,7 @@ export class RateLimitService extends RateLimitServiceAccountRefresh {
         this.inactiveCodexCache,
         this.inactiveCodexFetching
       ),
+      systemLoginUsage: { ...this.systemLoginUsage },
       antigravityAccounts: this.antigravityAccounts
     }
   }
