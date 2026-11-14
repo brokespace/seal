@@ -134,11 +134,17 @@ enabled = true
 [plugins."paused@openai-curated"]
 enabled = false
 
+[plugins."reviewer@openai-curated"]
+enabled = true
+
 [[skills.config]]
 path = "${path.join(home, '.agents/skills/notes/SKILL.md')}"
 enabled = false
 `,
     '.codex/skills/ops/rollback/SKILL.md': skill('rollback', 'Roll a release back.'),
+    '.codex/skills/a/b/c/d/e/deep-six/SKILL.md': skill('deep-six', 'As deep as Codex reads.'),
+    '.codex/skills/a/b/c/d/e/f/deep-seven/SKILL.md': skill('deep-seven', 'One folder too deep.'),
+    '.codex/skills/.drafts/hidden/SKILL.md': skill('hidden', 'Codex skips dot folders.'),
     '.codex/skills/.system/imagegen/SKILL.md': skill('imagegen', 'Generate images.'),
     '.codex/skills/.system/.codex-system-skills.marker': '821f2ce5c0a6\n',
     '.agents/skills/notes/SKILL.md': skill('notes', 'Keep running notes.'),
@@ -173,6 +179,24 @@ enabled = false
       'idle',
       'Does nothing for now.'
     ),
+    // Codex reads its own manifest first, and a folder named there replaces `skills/`.
+    '.codex/plugins/cache/openai-curated/reviewer/2.0.0/.codex-plugin/plugin.json': json({
+      name: 'reviewer',
+      version: '2.0.0',
+      skills: './review-skills/'
+    }),
+    '.codex/plugins/cache/openai-curated/reviewer/2.0.0/.claude-plugin/plugin.json': json({
+      name: 'reviewer',
+      version: '9.9.9'
+    }),
+    '.codex/plugins/cache/openai-curated/reviewer/2.0.0/review-skills/critique/SKILL.md': skill(
+      'critique',
+      'Critique a change.'
+    ),
+    '.codex/plugins/cache/openai-curated/reviewer/2.0.0/skills/unused/SKILL.md': skill(
+      'unused',
+      'Not in the folder the manifest names.'
+    ),
     'work/app/.agents/skills/repo-check/SKILL.md': skill('repo-check', 'Checks this repository.'),
 
     '.cursor/skills/pr-review/SKILL.md': skill('pr-review', 'Review a pull request.'),
@@ -184,6 +208,16 @@ enabled = false
     '.cursor/plugins/cache/cursor-public/404/cf1324609edb/skills/find/SKILL.md': skill(
       'find',
       'Find a Notion page.'
+    ),
+    // An older download Cursor left behind; the one marked installed is in use.
+    '.cursor/plugins/cache/cursor-public/404/cf1324609edb.installed': '',
+    '.cursor/plugins/cache/cursor-public/404/ffff00000000/.cursor-plugin/plugin.json': json({
+      name: 'notion-workspace',
+      version: '0.1.0'
+    }),
+    '.cursor/plugins/cache/cursor-public/404/ffff00000000/skills/stale/SKILL.md': skill(
+      'stale',
+      'From a download no longer in use.'
     ),
     '.cursor/plugins/cache/cursor-public/650/e32b05b5973d/plugin.json': json({ name: 'aws' }),
     '.cursor/plugins/cache/cursor-public/650/e32b05b5973d/skills/deploy/SKILL.md': skill(

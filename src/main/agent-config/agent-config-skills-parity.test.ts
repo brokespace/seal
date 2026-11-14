@@ -1,4 +1,4 @@
-import { lstat, readFile } from 'node:fs/promises'
+import { lstat, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type {
@@ -108,9 +108,22 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
       })
     })
 
+    it('lists a project-installed Claude Code plugin for the account once the account switches it on', async () => {
+      await writeFile(
+        at('.claude/settings.json'),
+        JSON.stringify({ enabledPlugins: { 'other@local-mkt': true } })
+      )
+      expect(await skills('claude')).toContainEqual([
+        'other@local-mkt 1.0.0 on',
+        'audit',
+        '.claude/plugins/cache/local-mkt/other/1.0.0/skills/audit/SKILL.md'
+      ])
+    })
+
     it('lists what Codex loads: grouped, linked, built-in and plugin skills', async () => {
       const cache = '.codex/plugins/cache/openai-curated'
       const account = [
+        ['user', 'deep-six', '.codex/skills/a/b/c/d/e/deep-six/SKILL.md'],
         ['user', 'rollback', '.codex/skills/ops/rollback/SKILL.md'],
         ['user', 'triage', '.codex/skills/triage/SKILL.md'],
         ['user', 'notes (off)', '.agents/skills/notes/SKILL.md'],
@@ -126,7 +139,12 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
           'deploy',
           `${cache}/toolkit/1.2.0/skills/web/deploy/SKILL.md`
         ],
-        ['paused@openai-curated 0.3.0 off', 'idle', `${cache}/paused/0.3.0/skills/idle/SKILL.md`]
+        ['paused@openai-curated 0.3.0 off', 'idle', `${cache}/paused/0.3.0/skills/idle/SKILL.md`],
+        [
+          'reviewer@openai-curated 2.0.0 on',
+          'critique',
+          `${cache}/reviewer/2.0.0/review-skills/critique/SKILL.md`
+        ]
       ]
       expect(await skills('codex')).toEqual(account)
       expect(await skills('codex', true)).toEqual([
