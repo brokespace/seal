@@ -8,6 +8,7 @@ import { detectLanguage } from '../../../../../shared/editor-language/editor-lan
 import type { MachineFileEntry, MachineId } from '../../../../../shared/machines/machine-types'
 import { MACHINE_PREVIEW_MAX_BYTES } from '../../../../../shared/machines/machine-types'
 import { formatBytes, looksBinary, previewKindFor } from '../model/machine-format'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 type LoadedFile = {
   base64: string
@@ -91,7 +92,7 @@ export function MachineFilePreview({
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err))
+          setError(readIpcErrorMessage(err) ?? String(err))
         }
       })
     return () => {
@@ -111,7 +112,7 @@ export function MachineFilePreview({
         : api.writeFile({ machineId, path, content })
       const error = await write.then(
         () => null,
-        (err: unknown) => (err instanceof Error ? err.message : String(err))
+        (err: unknown) => readIpcErrorMessage(err) ?? String(err)
       )
       setSaving(false)
       if (error) {

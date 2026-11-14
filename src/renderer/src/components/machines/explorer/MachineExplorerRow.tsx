@@ -129,10 +129,10 @@ export const MachineExplorerRow = React.memo(function MachineExplorerRow({
       <span className={cn('min-w-0 flex-1 truncate', entry.name.startsWith('.') && 'opacity-60')}>
         {entry.name}
       </span>
-      <span className="hidden w-20 shrink-0 text-right font-mono text-2xs text-muted-foreground tabular-nums sm:block">
+      <span className="hidden w-20 shrink-0 text-right font-mono text-2xs text-muted-foreground tabular-nums @xs/tree:block">
         {isDir ? '' : formatBytes(entry.size)}
       </span>
-      <span className="hidden w-36 shrink-0 truncate text-right text-2xs text-muted-foreground lg:block">
+      <span className="hidden w-36 shrink-0 truncate text-right text-2xs text-muted-foreground @md/tree:block">
         {formatModified(entry.mtimeMs)}
       </span>
     </div>

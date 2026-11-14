@@ -25,7 +25,7 @@ export function LiveSessionSidePanel({
     <aside
       data-live-session-panel={panel}
       aria-label={title}
-      className="flex w-80 shrink-0 flex-col border-l border-border bg-background"
+      className="flex w-80 max-w-full shrink-0 flex-col border-l border-border bg-background"
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{title}</h2>

@@ -71,6 +71,12 @@ export function buildPluginsState(input: PluginsStateInput): AgentConfigPluginsS
       enabledByScope.set(layer.scope, enabled)
     }
   }
+  // A plugin installed for another project is not installed as far as this one goes.
+  const installsHere = (id: string): AgentConfigPluginInstall[] =>
+    installsOf(installedMap[id]).filter(
+      (install) =>
+        install.scope === 'user' || !input.projectPath || install.projectPath === input.projectPath
+    )
   const descriptions = new Map<string, string>()
   const marketplaces: AgentConfigMarketplace[] = Object.entries(
     isPlainObject(input.marketplaces) ? input.marketplaces : {}
@@ -86,7 +92,7 @@ export function buildPluginsState(input: PluginsStateInput): AgentConfigPluginsS
         name: pluginName,
         description: text(plugin.description),
         version: text(plugin.version) || null,
-        installed: Object.hasOwn(installedMap, `${pluginName}@${name}`)
+        installed: installsHere(`${pluginName}@${name}`).length > 0
       }
     })
     return {
@@ -103,7 +109,7 @@ export function buildPluginsState(input: PluginsStateInput): AgentConfigPluginsS
     ...Object.keys(installedMap),
     ...[...enabledByScope.values()].flatMap((enabled) => Object.keys(enabled))
   ])
-  const plugins = [...ids].toSorted().map((id): AgentConfigPlugin => {
+  const plugins = [...ids].toSorted().flatMap((id): AgentConfigPlugin[] => {
     const enabledIn: AgentConfigPlugin['enabledIn'] = {}
     let enabledBy: AgentConfigScope | null = null
     for (const scope of SCOPES) {
@@ -113,19 +119,21 @@ export function buildPluginsState(input: PluginsStateInput): AgentConfigPluginsS
         enabledBy = scope
       }
     }
-    const installs = installsOf(installedMap[id]).filter(
-      (install) =>
-        install.scope === 'user' || !input.projectPath || install.projectPath === input.projectPath
-    )
-    return {
-      id,
-      ...splitId(id),
-      description: descriptions.get(id) ?? '',
-      installs,
-      enabledIn,
-      enabled: enabledBy ? enabledIn[enabledBy] === true : false,
-      enabledBy
+    const installs = installsHere(id)
+    if (installs.length === 0 && enabledBy === null) {
+      return []
     }
+    return [
+      {
+        id,
+        ...splitId(id),
+        description: descriptions.get(id) ?? '',
+        installs,
+        enabledIn,
+        enabled: enabledBy ? enabledIn[enabledBy] === true : false,
+        enabledBy
+      }
+    ]
   })
   return { plugins, marketplaces }
 }

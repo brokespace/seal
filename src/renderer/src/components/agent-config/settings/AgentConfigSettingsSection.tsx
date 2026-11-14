@@ -79,7 +79,7 @@ export function AgentConfigSettingsSection(): React.JSX.Element {
             }))}
           />
         ) : null}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-48">
           <p className="truncate font-mono text-xs text-muted-foreground" title={layer.path}>
             {layer.path}
             {layer.exists

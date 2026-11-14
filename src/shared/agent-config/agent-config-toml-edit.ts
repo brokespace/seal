@@ -121,8 +121,8 @@ function trailingComment(line: string): string {
   return ''
 }
 
-function removeLines(lines: string[], start: number, end: number): void {
-  // A removed block takes the blank lines after it along, so gaps do not pile up.
+/** Drops a block of lines; the blank lines after it go along, so gaps do not pile up. */
+export function removeTomlLines(lines: string[], start: number, end: number): void {
   let stop = end
   while (stop < lines.length && lines[stop]?.trim() === '') {
     stop += 1
@@ -161,7 +161,7 @@ function applyEdit(
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: `expected` is a parsed TOML document, so everything in it is a TOML value.
     const parent = valueAt(expected, enclosing.full) as AgentConfigTomlValue | undefined
     if (parent === undefined) {
-      removeLines(lines, enclosing.statement.start, enclosing.statement.end)
+      removeTomlLines(lines, enclosing.statement.start, enclosing.statement.end)
     } else {
       rewriteStatement(lines, enclosing.statement, inline(parent))
     }
@@ -174,7 +174,7 @@ function applyEdit(
   } else if (owned.length > 0) {
     const at = owned[0].header
     for (const section of owned.toReversed()) {
-      removeLines(lines, section.header, section.end)
+      removeTomlLines(lines, section.header, section.end)
     }
     if (value !== undefined) {
       lines.splice(at, 0, ...blockLines(path, value), '')

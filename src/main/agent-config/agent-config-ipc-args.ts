@@ -119,6 +119,9 @@ export function editsOf(value: unknown): AgentConfigSettingsEdit[] {
       throw new Error('Unknown edit')
     }
     const path = requireStrings(edit.path, 'path')
-    return edit.remove === true ? { path, remove: true } : { path, value: edit.value }
+    const was = edit.was === undefined ? {} : { was: edit.was }
+    return edit.remove === true
+      ? { path, remove: true, ...was }
+      : { path, value: edit.value, ...was }
   })
 }

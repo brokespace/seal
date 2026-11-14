@@ -147,7 +147,7 @@ export class CodexAccountRegistration {
     )
 
     // Restore this runtime's selection while retaining current validation of other runtimes.
-    this.dependencies.store.updateSettings({
+    this.saveSettings({
       codexManagedAccounts: updatedAccounts,
       activeCodexManagedAccountId: activeSelection.host,
       activeCodexManagedAccountIdsByRuntime: activeSelection
@@ -232,7 +232,7 @@ export class CodexAccountRegistration {
     const settings = this.dependencies.store.getSettings()
     const selection = normalizeCodexRuntimeSelection(settings)
     const targetSelection = getCodexSelectionTargetForAccount(account)
-    this.dependencies.store.updateSettings({
+    this.saveSettings({
       codexManagedAccounts: [...settings.codexManagedAccounts, account],
       activeCodexManagedAccountId: targetSelection.runtime === 'host' ? account.id : selection.host,
       activeCodexManagedAccountIdsByRuntime: setSelectedCodexAccountIdForTarget(
@@ -247,7 +247,7 @@ export class CodexAccountRegistration {
       this.dependencies.runtimeHome.syncForCurrentSelection(targetSelection)
     } catch (error) {
       // Restore settings before caller cleanup removes the failed account's home.
-      this.dependencies.store.updateSettings({
+      this.saveSettings({
         codexManagedAccounts: settings.codexManagedAccounts,
         activeCodexManagedAccountId: settings.activeCodexManagedAccountId,
         activeCodexManagedAccountIdsByRuntime: settings.activeCodexManagedAccountIdsByRuntime
@@ -268,6 +268,11 @@ export class CodexAccountRegistration {
     // Cache outgoing usage without delaying the already-persisted account addition.
     this.startQuotaRefresh(outgoingAccountId, targetSelection)
     return this.dependencies.selection.snapshot()
+  }
+
+  // Seal, the CLI and paired clients change accounts without a window asking, so tell every window.
+  private saveSettings(patch: Parameters<Store['updateSettings']>[0]): void {
+    this.dependencies.store.updateSettings(patch, { notifyListeners: true })
   }
 
   private startQuotaRefresh(

@@ -12,6 +12,7 @@ import {
 import { AddRemoteHostDialog } from '@/components/sidebar/host-admission/ssh/AddRemoteHostDialog'
 import type { MachineConnectionType } from '../../../../../shared/machines/machine-record'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 /** `machineId` adds the other transport to an existing machine (stored, not switched to). */
 export type AddMachineRequest = {
@@ -79,9 +80,7 @@ export function AddMachineDialog({
             ...(request.machineId ? { machineId: request.machineId } : {})
           })
           .then(onAdopted)
-          .catch((error: unknown) =>
-            toast.error(error instanceof Error ? error.message : String(error))
-          )
+          .catch((error: unknown) => toast.error(readIpcErrorMessage(error) ?? String(error)))
       }}
     />
   )

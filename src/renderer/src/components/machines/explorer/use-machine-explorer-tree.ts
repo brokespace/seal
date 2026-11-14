@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MachineId } from '../../../../../shared/machines/machine-types'
 import { listMachineDirectory } from './machine-explorer-source'
 import { flattenExplorerRows, type ExplorerRow, type FolderState } from './machine-explorer-rows'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 type MachineTreeMemory = {
   root: string | null
@@ -23,7 +24,7 @@ function memoryFor(machineId: MachineId, startAt: string | undefined): MachineTr
 }
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return readIpcErrorMessage(error) ?? String(error)
 }
 
 export type MachineExplorerTree = {

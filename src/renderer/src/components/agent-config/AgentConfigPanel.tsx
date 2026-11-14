@@ -147,7 +147,7 @@ export function AgentConfigPanel({
           onValueChange={(value) => isAgentConfigAgentId(value) && state.setAgent(value)}
         >
           <SelectTrigger
-            className="w-48"
+            className="w-64"
             aria-label={t('auto.components.agentConfig.agent', 'Agent')}
           >
             <SelectValue />
@@ -214,9 +214,17 @@ export function AgentConfigPanel({
               setTab(tabs.find((item) => item.id === value)?.id ?? 'documents')
             }
           >
-            <TabsList size="sm" className="max-w-full flex-wrap justify-start">
+            <TabsList
+              size="sm"
+              className="max-w-full flex-wrap justify-start group-data-[orientation=horizontal]/tabs:h-auto"
+            >
               {tabs.map((item) => (
-                <TabsTrigger key={item.id} value={item.id} data-agent-config-tab={item.id}>
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  className="flex-none"
+                  data-agent-config-tab={item.id}
+                >
                   {item.label}
                   {item.count ? (
                     <span className="ml-1 text-2xs text-muted-foreground">{item.count}</span>
