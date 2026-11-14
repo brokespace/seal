@@ -66,8 +66,8 @@ export const CARD_ACTIVITY_PARTS = {
       />
     ) : null
   ),
-  DeleteFailed: part([], (_props, _children, { worktree }) =>
-    worktree.removalError ? <WorktreeCardDeleteFailed error={worktree.removalError} /> : null
+  DeleteFailed: part([], (_props, _children, { deleteFailure }) =>
+    deleteFailure ? <WorktreeCardDeleteFailed error={deleteFailure} /> : null
   ),
   LinearSetupPrompt: part([], (_props, _children, { repo, settings }) => (
     <LinearAgentSkillSetupPrompt

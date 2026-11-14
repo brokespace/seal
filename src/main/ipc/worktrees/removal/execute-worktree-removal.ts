@@ -1,6 +1,8 @@
 import type { Repo } from '../../../../shared/repo-types'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
 import type { RemoveWorktreeResult } from '../../../../shared/worktree/create-types'
+import type { GitWorktreeInfo } from '../../../../shared/worktree/types'
+import { unlockWorktreeForConfirmedRemoval } from '../../../git/worktrees/removal/worktree-unlock'
 import { assertRemovalHostMatchesRepoRow } from '../repo-host-ownership'
 import { isFolderRepo } from '../../../../shared/repo-kind'
 import { assertWorktreeUnlockedForRemoval } from '../../../../shared/worktree/removal'
@@ -61,17 +63,33 @@ export async function executeWorktreeRemoval(
   }
   const localWorktreeGitOptions = getLocalProjectWorktreeGitOptions(store, repo)
   const hasLocalWorktreeGitOptions = Object.keys(localWorktreeGitOptions).length > 0
-  const registeredWorktrees = hasLocalWorktreeGitOptions
-    ? await listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
-    : await listGitWorktreesStrict(repo.path)
+  const listRegistered = (): Promise<GitWorktreeInfo[]> =>
+    hasLocalWorktreeGitOptions
+      ? listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
+      : listGitWorktreesStrict(repo.path)
+  let registeredWorktrees = await listRegistered()
   const removedMeta = resolveWorktreeRemovalMetadata(store, repoId, args.worktreeId, removalHostId)
   const removedPushTarget = removedMeta?.pushTarget
-  const registeredWorktree = findRegisteredDeletableWorktree(
-    repo.path,
-    worktreePath,
-    registeredWorktrees,
-    resolveWorktreeRemovalHomeForHost(removalHostId)
-  )
+  const findRegistered = (): GitWorktreeInfo | null =>
+    findRegisteredDeletableWorktree(
+      repo.path,
+      worktreePath,
+      registeredWorktrees,
+      resolveWorktreeRemovalHomeForHost(removalHostId)
+    )
+  let registeredWorktree = findRegistered()
+  if (
+    args.unlockLockedWorktree === true &&
+    (await unlockWorktreeForConfirmedRemoval(
+      repo.path,
+      registeredWorktree,
+      localWorktreeGitOptions
+    ))
+  ) {
+    // Every later lock check reads a listing, so they must see the released lock.
+    registeredWorktrees = await listRegistered()
+    registeredWorktree = findRegistered()
+  }
   if (args.expectedCheckout) {
     assertNestedWorktreeRemovalApproval(registeredWorktree ? [registeredWorktree] : [], [
       args.expectedCheckout

@@ -6749,10 +6749,8 @@
           "header": {
             "create": {
               "state": {
-                "992cfbc44b": "{{value0}} için yeni worktree oluştur",
                 "3a70acd808": "{{value0}} için çalışma alanları oluşturmadan önce SSH hedefine yeniden bağlanın",
-                "6d022563a8": "Çalışma alanları oluşturmadan önce SSH hedefine yeniden bağlanın",
-                "62e71f2d5d": "{{value0}} için çalışma alanı oluştur"
+                "6d022563a8": "Çalışma alanları oluşturmadan önce SSH hedefine yeniden bağlanın"
               }
             }
           }

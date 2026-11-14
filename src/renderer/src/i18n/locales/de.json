@@ -6772,10 +6772,8 @@
           "header": {
             "create": {
               "state": {
-                "992cfbc44b": "Neuen Worktree für {{value0}} erstellen",
                 "3a70acd808": "SSH-Ziel erneut verbinden, bevor Arbeitsbereiche für {{value0}} erstellt werden",
-                "6d022563a8": "SSH-Ziel erneut verbinden, bevor Arbeitsbereiche erstellt werden",
-                "62e71f2d5d": "Arbeitsbereich für {{value0}} erstellen"
+                "6d022563a8": "SSH-Ziel erneut verbinden, bevor Arbeitsbereiche erstellt werden"
               }
             }
           }
