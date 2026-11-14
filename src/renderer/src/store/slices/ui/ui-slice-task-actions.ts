@@ -9,6 +9,7 @@ import {
 import { PER_REPO_FETCH_LIMIT } from '../../../../../shared/work-items/work-item-pagination'
 import { isGitRepoKind } from '../../../../../shared/repo-kind'
 import { presetToQuery } from './ui-slice-hydration-sanitizers'
+import { readSavedProjectOverviewTarget } from './project-overview-target'
 
 const LINEAR_TASK_PREFETCH_LIMIT = 36
 
@@ -27,6 +28,8 @@ export function createUiTaskActions(set: UISliceSet, get: UISliceGet): Partial<U
     previousViewBeforeMobile: 'terminal',
     previousViewBeforeArtifacts: 'terminal',
     previousViewBeforeSessions: 'terminal',
+    previousViewBeforeProject: 'terminal',
+    projectOverviewTarget: readSavedProjectOverviewTarget(),
     setActiveView: (view) => set({ activeView: view }),
     taskPageData: {},
     taskResumeState: undefined,
