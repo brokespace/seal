@@ -96,10 +96,13 @@ async function codexSkills(env: SkillsEnv, panel: Locator): Promise<void> {
   const docs = await openTab(panel, 'documents')
   const { group, names } = skillGroups(docs)
 
-  await expect.poll(() => names('user:.codex/skills')).toEqual(['rollback', 'triage'])
+  // Codex reads six folders deep and skips dot folders.
+  await expect.poll(() => names('user:.codex/skills')).toEqual(['deep-six', 'rollback', 'triage'])
   expect(await names('user:.agents/skills')).toEqual(['notes', 'shared-kit'])
   expect(await names('plugin:toolkit@openai-curated:1.2.0')).toEqual(['build', 'deploy'])
   expect(await names('plugin:paused@openai-curated:0.3.0')).toEqual(['idle'])
+  // Its manifest names the skills folder, so the usual `skills/` is not read.
+  expect(await names('plugin:reviewer@openai-curated:2.0.0')).toEqual(['critique'])
   expect(await names('builtin')).toEqual(['imagegen'])
   await expect(group('builtin')).toContainText('Built-in skills')
   await expect(group('plugin:paused@openai-curated:0.3.0')).toContainText('the plugin is off')
@@ -194,7 +197,7 @@ export async function projectSkills(env: SkillsEnv, panel: Locator): Promise<voi
   await chooseAgent(page, panel, { id: 'codex', label: 'Codex' })
   const codex = skillGroups(await openTab(panel, 'documents'))
   await expect.poll(() => codex.names('project:.agents/skills')).toEqual(['repo-check'])
-  expect(await codex.names('user:.codex/skills')).toEqual(['rollback', 'triage'])
+  expect(await codex.names('user:.codex/skills')).toEqual(['deep-six', 'rollback', 'triage'])
   await codex.group('project:.agents/skills').scrollIntoViewIfNeeded()
   await shot(`skills-${target.key}-6-project-codex`)
   await chooseAgent(page, panel, { id: 'claude', label: 'Claude Code' })
