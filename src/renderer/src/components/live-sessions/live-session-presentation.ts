@@ -63,20 +63,24 @@ export function liveSessionWaitLabel(session: Pick<LiveSession, 'activity'>): st
   const subagents = runningSubagents(session.activity).length
   const tasks = runningBackgroundTasks(session.activity).length
   const parts = [
-    ...(subagents > 0
-      ? [
-          translate('auto.components.live-sessions.wait.subagents', '{{count}} subagents', {
-            count: subagents
-          })
-        ]
-      : []),
-    ...(tasks > 0
-      ? [
-          translate('auto.components.live-sessions.wait.tasks', '{{count}} background tasks', {
-            count: tasks
-          })
-        ]
-      : [])
+    ...(subagents === 1
+      ? [translate('auto.components.live-sessions.wait.subagent', '1 subagent')]
+      : subagents > 1
+        ? [
+            translate('auto.components.live-sessions.wait.subagents', '{{count}} subagents', {
+              count: subagents
+            })
+          ]
+        : []),
+    ...(tasks === 1
+      ? [translate('auto.components.live-sessions.wait.task', '1 background task')]
+      : tasks > 1
+        ? [
+            translate('auto.components.live-sessions.wait.tasks', '{{count}} background tasks', {
+              count: tasks
+            })
+          ]
+        : [])
   ]
   return parts.length > 0
     ? translate('auto.components.live-sessions.wait.label', 'Waiting on {{what}}', {
@@ -123,24 +127,4 @@ export function liveMessageStateLabel(message: LiveMessage): string {
         message.error ?? translate('auto.components.live-sessions.message.failed', 'Not delivered')
       )
   }
-}
-
-export type MachineGroup = { hostId: string; label: string; sessions: LiveSession[] }
-
-/** This machine first, then SSH hosts by name; sessions keep their most-recent-first order. */
-export function groupByMachine(sessions: readonly LiveSession[]): MachineGroup[] {
-  const groups = new Map<string, MachineGroup>()
-  for (const session of sessions) {
-    const group = groups.get(session.machine.hostId) ?? {
-      hostId: session.machine.hostId,
-      label: session.machine.label,
-      sessions: []
-    }
-    group.sessions.push(session)
-    groups.set(session.machine.hostId, group)
-  }
-  const kindOf = (g: MachineGroup) => g.sessions[0].machine.kind
-  return [...groups.values()].sort((a, b) =>
-    kindOf(a) === kindOf(b) ? a.label.localeCompare(b.label) : kindOf(a) === 'local' ? -1 : 1
-  )
 }

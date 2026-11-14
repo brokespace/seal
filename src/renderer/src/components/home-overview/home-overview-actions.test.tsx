@@ -95,7 +95,7 @@ it('a PR row opens its worktree on its machine', () => {
   expect(navigation.activate).toHaveBeenCalledWith('b', { executionHostId: 'local' })
 })
 
-it('a session whose pane cannot be revealed falls back to Agent sessions', () => {
+it('a session whose pane cannot be revealed opens as an agent session tab', () => {
   navigation.reveal.mockReturnValue(false)
   renderHome()
   fireEvent.click(within(panel('Sessions')).getByText('Nightly eval'))

@@ -24,7 +24,7 @@ export function canTakeOver(session: LiveSession): boolean {
 }
 
 /** Take-over opens on the transport the machine uses now, SSH or Seal server alike. */
-function executionHostOf(machine: LiveSessionMachine): ExecutionHostId {
+export function liveSessionExecutionHost(machine: LiveSessionMachine): ExecutionHostId {
   const current = machine.executionHostId ? parseExecutionHostId(machine.executionHostId) : null
   if (current) {
     return current.id
@@ -38,7 +38,7 @@ export function takeOverWorktreeId(
   machine: LiveSessionMachine,
   cwd: string | null
 ): string | null {
-  const host = executionHostOf(machine)
+  const host = liveSessionExecutionHost(machine)
   const onHost = [...getIndexedWorktreeMap(selectWorktreesByRepo(state) ?? {}).values()].filter(
     (worktree) => getAiVaultResumeWorkspaceExecutionHostId(state, worktree.id) === host
   )
@@ -119,7 +119,7 @@ export async function takeOverLiveSession(session: LiveSession): Promise<boolean
       sessionId: result.providerSessionId,
       cwd: result.cwd,
       codexHome: result.codexHome,
-      executionHostId: executionHostOf(result.machine),
+      executionHostId: liveSessionExecutionHost(result.machine),
       filePath: result.transcriptPath ?? undefined
     },
     commandOverride: state.settings?.agentCmdOverrides?.[result.provider]
