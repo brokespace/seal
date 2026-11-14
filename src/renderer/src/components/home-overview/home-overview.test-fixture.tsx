@@ -12,86 +12,62 @@ import type {
   HomeAutomationsResult,
   HomeMachine,
   HomeOverviewProviders,
-  HomeSession,
   HomeWorkspace
 } from './home-overview-model'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { sampleLiveSession } from '../live-sessions/live-session-sample'
 
 const NOW = Date.now()
 const MIN = 60_000
 
-function session(id: string, overrides: Partial<HomeSession>): HomeSession {
-  return {
-    id,
-    state: 'working',
-    unseen: false,
-    machineId: 'local',
-    machineLabel: 'Local Mac',
-    projectId: 'seal',
-    projectName: 'seal',
-    workspaceName: 'main',
-    title: id,
-    agentType: 'claude',
-    agentLabel: 'Claude',
+const GPU_BOX = {
+  hostId: 'ssh-gpu',
+  label: 'gpu-box',
+  kind: 'remote',
+  machineId: 'machine:gpu'
+} as const
+
+function session(title: string, patch: Partial<LiveSession>): LiveSession {
+  return sampleLiveSession(title, {
+    machine: { hostId: 'local', label: 'Local Mac', kind: 'local' },
+    status: 'working',
     startedAt: NOW - 14 * MIN,
-    stateChangedAt: NOW - 2 * MIN,
-    finishedAt: null,
-    target: {
-      kind: 'orca-pane',
-      reveal: { repoId: 'seal', worktreeId: id, tabId: id, leafId: null }
-    },
-    ...overrides
-  }
+    lastActivityAt: NOW - 2 * MIN,
+    ...patch
+  })
 }
 
-const SESSIONS: HomeSession[] = [
+const SESSIONS: LiveSession[] = [
   session('Add Home overview page', {
-    workspaceName: 'seal/home-overview',
-    model: 'claude-opus-4',
-    account: 'brian@example.com',
-    lastMessage: { role: 'agent', text: 'Wired the sessions provider; running the typecheck now.' }
+    origin: 'seal',
+    lastMessage: 'Wired the sessions provider; running the typecheck now.'
   }),
   session('Rebrand app icons', {
-    state: 'permission',
-    unseen: true,
-    workspaceName: 'seal/rebrand',
-    model: 'claude-sonnet-4',
-    account: 'brian@example.com',
-    askSummary: 'Run `pnpm build:icons`?'
+    origin: 'seal',
+    status: 'needs-permission',
+    statusDetail: 'Run `pnpm build:icons`?'
   }),
   session('Multi-account switcher', {
-    state: 'done',
-    unseen: true,
-    agentType: 'codex',
-    agentLabel: 'Codex',
-    model: 'gpt-5-codex',
-    workspaceName: 'seal/multi-account',
-    finishedAt: NOW - 6 * MIN,
-    lastMessage: { role: 'agent', text: 'Opened PR #12 with the account picker and tests.' }
+    provider: 'codex',
+    status: 'idle',
+    lastMessage: 'Opened PR #12 with the account picker and tests.'
   }),
   session('Train tokenizer', {
-    machineId: 'machine:gpu',
-    machineLabel: 'gpu-box',
-    projectId: 'ml',
-    projectName: 'ml-experiments',
-    workspaceName: 'tokenizer-v2',
-    state: 'waiting',
-    unseen: true,
-    askSummary: 'Which dataset split should I use for validation?',
+    machine: GPU_BOX,
+    project: 'ml-experiments',
+    cwd: '/srv/ml-experiments',
+    status: 'waiting-input',
+    statusDetail: 'Which dataset split should I use for validation?',
     startedAt: NOW - 3 * 60 * MIN
   }),
   session('Nightly eval', {
-    machineId: 'machine:gpu',
-    machineLabel: 'gpu-box',
-    projectId: 'ml',
-    projectName: 'ml-experiments',
-    workspaceName: 'eval',
-    state: 'errored',
-    unseen: true,
-    agentType: 'codex',
-    agentLabel: 'Codex',
-    finishedAt: NOW - 40 * MIN,
-    errorSummary: 'CUDA out of memory',
-    lastMessage: { role: 'agent', text: 'CUDA out of memory while loading checkpoint.' }
+    machine: GPU_BOX,
+    provider: 'codex',
+    project: 'ml-experiments',
+    cwd: '/srv/ml-experiments',
+    status: 'errored',
+    statusDetail: 'CUDA out of memory',
+    lastActivityAt: NOW - 40 * MIN
   })
 ]
 
@@ -207,7 +183,7 @@ function PassThrough({ children }: Children): React.JSX.Element {
 }
 
 function staticProviders(data: {
-  sessions: HomeSession[]
+  sessions: LiveSession[]
   machines: HomeMachine[]
   accounts: HomeAccount[]
   workspaces: HomeWorkspace[]

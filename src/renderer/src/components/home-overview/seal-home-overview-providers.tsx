@@ -23,16 +23,9 @@ import type { HomeOverviewProviders } from './home-overview-model'
 import {
   OrcaMachines,
   orcaHomeOverviewProviders,
-  useOrcaAccounts,
-  useOrcaSessions
+  useOrcaAccounts
 } from './orca-home-overview-providers'
-import {
-  applySealSessionAccounts,
-  homeMachineFromSummary,
-  mergeLiveSessions,
-  mergeSealAccounts,
-  unifySessionMachines
-} from './seal-home-overview-mapping'
+import { homeMachineFromSummary, mergeSealAccounts } from './seal-home-overview-mapping'
 
 type Children = { children: ReactNode }
 
@@ -49,18 +42,7 @@ function useLocalSealAccountsStatus(): SealAccountsStatus | null {
 }
 
 function SealSessions({ children }: Children): React.JSX.Element {
-  const paneSessions = useOrcaSessions()
-  const live = useLiveSessions()
-  const seal = useLocalSealAccountsStatus()
-  const { machines } = useMachinesInventory(getLocalExecutionHostLabel())
-  const sessions = useMemo(
-    () =>
-      unifySessionMachines(
-        mergeLiveSessions(applySealSessionAccounts(paneSessions, seal), live.sessions),
-        machines
-      ),
-    [paneSessions, live.sessions, seal, machines]
-  )
+  const { sessions } = useLiveSessions()
   return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
 }
 
@@ -103,7 +85,7 @@ function SealActions({ children }: Children): React.JSX.Element {
   )
 }
 
-/** Home backed by Seal's live-session registry, machines service and account vault. */
+/** Home's data: the live-session registry, the machines service and the account vault. */
 export const sealHomeOverviewProviders: HomeOverviewProviders = {
   ...orcaHomeOverviewProviders,
   Sessions: SealSessions,

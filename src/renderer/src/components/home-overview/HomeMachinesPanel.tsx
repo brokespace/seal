@@ -2,7 +2,10 @@ import { Monitor, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import type { HomeMachine, HomeMachineStatus, HomeSession } from './home-overview-model'
+import { liveSessionMachineId } from '../../../../shared/live-sessions/live-session-machine-id'
+import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import type { HomeMachine, HomeMachineStatus } from './home-overview-model'
 import { homeMachineStatusLabel } from './home-overview-presentation'
 import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
 
@@ -45,15 +48,17 @@ export function HomeMachinesPanel({
   onOpen
 }: {
   machines: readonly HomeMachine[]
-  sessions: readonly HomeSession[]
+  sessions: readonly LiveSession[]
   onManage: () => void
   onOpen: (machine: HomeMachine) => void
 }): React.JSX.Element {
   const t = useTranslate()
   const activeByMachine = new Map<string, number>()
   for (const session of sessions) {
-    if (session.state !== 'done' && session.state !== 'idle') {
-      activeByMachine.set(session.machineId, (activeByMachine.get(session.machineId) ?? 0) + 1)
+    const group = liveSessionStatusGroup(session.status)
+    if (group === 'attention' || group === 'working') {
+      const machineId = liveSessionMachineId(session.machine)
+      activeByMachine.set(machineId, (activeByMachine.get(machineId) ?? 0) + 1)
     }
   }
   const online = machines.filter((machine) => machine.status === 'online').length

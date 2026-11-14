@@ -1,36 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  accountNextReset,
-  buildHomeAttentionItems,
-  groupHomeSessions,
-  homeElapsed,
-  mergeSessionMachines
-} from './home-overview-derivations'
-import type { HomeAccount, HomeSession } from './home-overview-model'
-
-function session(id: string, overrides: Partial<HomeSession> = {}): HomeSession {
-  return {
-    id,
-    state: 'working',
-    unseen: false,
-    machineId: 'local',
-    machineLabel: 'Local Mac',
-    projectId: 'p1',
-    projectName: 'seal',
-    workspaceName: 'main',
-    title: id,
-    agentType: 'claude',
-    agentLabel: 'Claude',
-    startedAt: 1_000,
-    stateChangedAt: 1_000,
-    finishedAt: null,
-    target: {
-      kind: 'orca-pane',
-      reveal: { repoId: 'p1', worktreeId: 'w1', tabId: 't1', leafId: null }
-    },
-    ...overrides
-  }
-}
+import { accountNextReset, homeElapsed, mergeSessionMachines } from './home-overview-derivations'
+import type { HomeAccount } from './home-overview-model'
 
 function account(overrides: Partial<HomeAccount> = {}): HomeAccount {
   return {
@@ -44,36 +14,6 @@ function account(overrides: Partial<HomeAccount> = {}): HomeAccount {
     ...overrides
   }
 }
-
-describe('groupHomeSessions', () => {
-  it('puts the local machine first and orders sessions by urgency within a project', () => {
-    const groups = groupHomeSessions([
-      session('remote', { machineId: 'ssh:a', machineLabel: 'a' }),
-      session('done', { state: 'done', stateChangedAt: 9_000 }),
-      session('asking', { state: 'permission' }),
-      session('other-project', { projectId: 'p2', projectName: 'orca' })
-    ])
-    expect(groups.map((g) => g.machineId)).toEqual(['local', 'ssh:a'])
-    expect(groups[0].projects.map((p) => p.projectId)).toEqual(['p1', 'p2'])
-    expect(groups[0].projects[0].sessions.map((s) => s.id)).toEqual(['asking', 'done'])
-    expect(groups[0].sessionCount).toBe(3)
-  })
-})
-
-describe('buildHomeAttentionItems', () => {
-  it('lists only sessions blocked on the user or newly errored, each with its reason', () => {
-    const items = buildHomeAttentionItems([
-      session('working'),
-      session('waiting', { state: 'waiting', askSummary: 'Pick a branch name' }),
-      session('seen-error', { state: 'errored', unseen: false }),
-      session('new-error', { state: 'errored', unseen: true, errorSummary: 'API Error: 500' })
-    ])
-    expect(items.map((item) => [item.id, item.reason])).toEqual([
-      ['session:waiting', 'Pick a branch name'],
-      ['session:new-error', 'API Error: 500']
-    ])
-  })
-})
 
 describe('accountNextReset', () => {
   it('reports the reset of the window that is near its limit', () => {
@@ -102,7 +42,17 @@ describe('mergeSessionMachines', () => {
   it('adds hosts that only appear on sessions', () => {
     const merged = mergeSessionMachines(
       [{ id: 'local', label: 'Local Mac', kind: 'local', status: 'online' }],
-      [session('a', { machineId: 'runtime:env', machineLabel: 'cloud' })]
+      [
+        {
+          machine: {
+            hostId: 'env',
+            label: 'cloud',
+            kind: 'remote',
+            connection: 'server',
+            executionHostId: 'runtime:env'
+          }
+        }
+      ]
     )
     expect(merged[1]).toEqual({
       id: 'runtime:env',
