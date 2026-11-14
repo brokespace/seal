@@ -12,6 +12,20 @@ import {
 } from '../../../shared/machines/machine-types'
 import type { MachineConnectionType } from '../../../shared/machines/machine-record'
 import type { MachineView, MachineWorktree } from '../../../shared/machines/machine-view'
+import type {
+  MachineCleanupResult,
+  MachineCleanupScan,
+  MachineCleanupTargetId,
+  MachineDiskMount,
+  MachineDiskUsage,
+  MachineDockerContainerAction,
+  MachineDockerContainers,
+  MachineFolderCompletion,
+  MachineFolderOpenResult,
+  MachineProcessSignal,
+  MachineProcessSignalResult,
+  MachineProcessSnapshot
+} from '../../../shared/machines/machine-resource-types'
 
 export type MachinesApi = {
   getMetrics: (args: { machineId: MachineId }) => Promise<MachineMetrics>
@@ -101,6 +115,46 @@ export type MachinesApi = {
     force?: boolean
     unlock?: boolean
   }) => Promise<MachineWorktree[]>
+  /** The busiest processes by CPU and memory; Linux and macOS machines only. */
+  listProcesses: (args: { machineId: MachineId }) => Promise<MachineProcessSnapshot>
+  signalProcess: (args: {
+    machineId: MachineId
+    pid: number
+    signal: MachineProcessSignal
+    startMarker: string
+  }) => Promise<MachineProcessSignalResult>
+  listDockerContainers: (args: { machineId: MachineId }) => Promise<MachineDockerContainers>
+  dockerContainerAction: (args: {
+    machineId: MachineId
+    containerId: string
+    action: MachineDockerContainerAction
+  }) => Promise<void>
+  listDiskMounts: (args: { machineId: MachineId }) => Promise<MachineDiskMount[]>
+  /** Sizes of what sits directly under `path`; a newer call for the machine cancels this one. */
+  measureDiskUsage: (args: { machineId: MachineId; path: string }) => Promise<MachineDiskUsage>
+  scanCleanup: (args: {
+    machineId: MachineId
+    target: MachineCleanupTargetId
+  }) => Promise<MachineCleanupScan>
+  /** Removes only `itemIds` of the scan `token` names. */
+  runCleanup: (args: {
+    machineId: MachineId
+    token: string
+    itemIds: string[]
+  }) => Promise<MachineCleanupResult>
+  /** Folders matching a typed path; `~` and paths relative to `currentDir` are expanded. */
+  completeFolder: (args: {
+    machineId: MachineId
+    input: string
+    currentDir?: string
+  }) => Promise<MachineFolderCompletion>
+  /** Checks the typed path is a folder and remembers it in the machine's recent folders. */
+  openFolder: (args: {
+    machineId: MachineId
+    input: string
+    currentDir?: string
+  }) => Promise<MachineFolderOpenResult>
+  recentFolders: (args: { machineId: MachineId }) => Promise<string[]>
 }
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -142,5 +196,16 @@ export const machinesApi: MachinesApi = {
   detectCommands: (args) => ipcRenderer.invoke(MACHINE_IPC.detectCommands, args),
   listWorktrees: (args) => ipcRenderer.invoke(MACHINE_IPC.listWorktrees, args),
   createWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.createWorktree, args),
-  removeWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.removeWorktree, args)
+  removeWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.removeWorktree, args),
+  listProcesses: (args) => ipcRenderer.invoke(MACHINE_IPC.listProcesses, args),
+  signalProcess: (args) => ipcRenderer.invoke(MACHINE_IPC.signalProcess, args),
+  listDockerContainers: (args) => ipcRenderer.invoke(MACHINE_IPC.listDockerContainers, args),
+  dockerContainerAction: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerContainerAction, args),
+  listDiskMounts: (args) => ipcRenderer.invoke(MACHINE_IPC.listDiskMounts, args),
+  measureDiskUsage: (args) => ipcRenderer.invoke(MACHINE_IPC.measureDiskUsage, args),
+  scanCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.scanCleanup, args),
+  runCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.runCleanup, args),
+  completeFolder: (args) => ipcRenderer.invoke(MACHINE_IPC.completeFolder, args),
+  openFolder: (args) => ipcRenderer.invoke(MACHINE_IPC.openFolder, args),
+  recentFolders: (args) => ipcRenderer.invoke(MACHINE_IPC.recentFolders, args)
 }
