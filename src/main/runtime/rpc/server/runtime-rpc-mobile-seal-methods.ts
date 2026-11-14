@@ -17,6 +17,7 @@ export const MOBILE_SEAL_RPC_METHODS = [
   'seal.accounts.swapSession',
   'sealMachines.cancelTransfer',
   'sealMachines.createDir',
+  'sealMachines.diskIndex',
   'sealMachines.downloadUrl',
   'sealMachines.list',
   'sealMachines.listDir',

@@ -1,7 +1,8 @@
-import type {
-  MachineDockerContainer,
-  MachineDockerContainerAction,
-  MachineDockerContainers
+import {
+  MACHINE_DOCKER_CONTAINER_ACTIONS,
+  type MachineDockerContainer,
+  type MachineDockerContainerAction,
+  type MachineDockerContainers
 } from '../../../shared/machines/machine-resource-types'
 import type { MachineConnection } from '../connection/machine-connection'
 import { firstErrorLine, runMachineHostScript } from './machine-host-script'
@@ -109,10 +110,12 @@ export async function runMachineDockerContainerAction(
   if (!CONTAINER_ID.test(containerId)) {
     throw new Error('Unknown container')
   }
-  if (action !== 'stop' && action !== 'restart') {
+  if (!MACHINE_DOCKER_CONTAINER_ACTIONS.includes(action)) {
     throw new Error('Unsupported container action')
   }
-  const result = await runMachineHostScript(connection, `docker ${action} ${containerId}`, {
+  // Without --force, so Docker itself refuses to remove a container that is still running.
+  const command = action === 'remove' ? 'rm' : action
+  const result = await runMachineHostScript(connection, `docker ${command} ${containerId}`, {
     timeoutMs: ACTION_TIMEOUT_MS
   })
   if (result.exitCode !== 0) {

@@ -1,134 +1,101 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
+import { PageCard } from '@/components/page-layout/PageCard'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
-import type {
-  MachineDockerContainer,
-  MachineDockerContainerAction,
-  MachineDockerContainers
+import {
+  MACHINE_DOCKER_PRUNE_TARGETS,
+  type MachineDockerContainer,
+  type MachineDockerContainers
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { formatBytes } from '../model/machine-format'
+import { refreshMachineMetrics } from '../model/machine-metrics-store'
+import { MachineCleanupSection } from './MachineCleanupSection'
+import {
+  MachineDockerContainerDialog,
+  type MachineDockerConfirmedAction,
+  type MachineDockerContainerRequest
+} from './MachineDockerContainerDialog'
+import { MachineDockerStorageStats, useMachineDockerStorage } from './MachineDockerStorage'
 import { machineResourceApi, resourceErrorText } from './machine-resource-requests'
 
-const DOCKER_REFRESH_MS = 10_000
+const DOCKER_REFRESH_MS = 5_000
 
-type ContainerRequest = { container: MachineDockerContainer; action: MachineDockerContainerAction }
-
-function ContainerActionDialog({
-  machine,
-  request,
-  onClose,
-  onDone
+function ContainerRow({
+  container,
+  starting,
+  onStart,
+  onAsk
 }: {
-  machine: MachineSummary
-  request: ContainerRequest | null
-  onClose: () => void
-  onDone: () => void
+  container: MachineDockerContainer
+  starting: boolean
+  onStart: () => void
+  onAsk: (action: MachineDockerConfirmedAction) => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [seededFor, setSeededFor] = useState<ContainerRequest | null>(null)
-  if (seededFor !== request) {
-    setSeededFor(request)
-    setBusy(false)
-    setError(null)
-  }
-  const restart = request?.action === 'restart'
-  const names = { name: request?.container.name ?? '', machine: machine.label }
-  const confirm = async (): Promise<void> => {
-    if (!request || busy) {
-      return
-    }
-    setBusy(true)
-    try {
-      await machineResourceApi().dockerContainerAction({
-        machineId: machine.id,
-        containerId: request.container.id,
-        action: request.action
-      })
-      toast.success(
-        restart
-          ? t('auto.components.machines.docker.restarted', 'Restarted {{name}}.', names)
-          : t('auto.components.machines.docker.stopped', 'Stopped {{name}}.', names)
-      )
-      onDone()
-      onClose()
-    } catch (err) {
-      setError(resourceErrorText(err))
-      setBusy(false)
-    }
-  }
   return (
-    <Dialog open={request !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md" data-machine-docker-dialog={request?.action}>
-        <DialogHeader>
-          <DialogTitle>
-            {restart
-              ? t(
-                  'auto.components.machines.docker.restartTitle',
-                  'Restart container {{name}}?',
-                  names
-                )
-              : t('auto.components.machines.docker.stopTitle', 'Stop container {{name}}?', names)}
-          </DialogTitle>
-          <DialogDescription>
-            {restart
-              ? t(
-                  'auto.components.machines.docker.restartDescription',
-                  'Runs docker restart on {{machine}}. The container goes down for a moment and whatever it serves is interrupted.',
-                  names
-                )
-              : t(
-                  'auto.components.machines.docker.stopDescription',
-                  'Runs docker stop on {{machine}}. The container stays stopped, along with whatever it serves, until it is started again.',
-                  names
-                )}
-          </DialogDescription>
-        </DialogHeader>
-        {request ? (
-          <p className="font-mono text-2xs text-muted-foreground [overflow-wrap:anywhere]">
-            {`${request.container.image} · ${request.container.id}`}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="text-xs text-destructive [overflow-wrap:anywhere]" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            {t('auto.components.machines.docker.cancel', 'Cancel')}
-          </Button>
-          <Button
-            type="button"
-            variant={restart ? 'default' : 'destructive'}
-            disabled={busy}
-            onClick={() => void confirm()}
-          >
-            {busy ? <Loader2 className="animate-spin" /> : null}
-            {restart
-              ? t('auto.components.machines.docker.restartConfirm', 'Restart container')
-              : t('auto.components.machines.docker.stopConfirm', 'Stop container')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <li
+      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 px-3 py-1.5 text-xs"
+      data-machine-docker-container={container.running ? 'running' : 'stopped'}
+    >
+      <div className="min-w-40 flex-1">
+        <div className="truncate font-medium">{container.name}</div>
+        <div className="truncate font-mono text-2xs text-muted-foreground">
+          {`${container.image} · ${container.status}`}
+        </div>
+      </div>
+      <div className="shrink-0 text-right font-mono whitespace-nowrap tabular-nums">
+        {container.memUsageBytes === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <>
+            {formatBytes(container.memUsageBytes)}
+            <span className="ml-1 text-muted-foreground">
+              {container.memPercent === null ? '' : `${container.memPercent.toFixed(1)}%`}
+            </span>
+          </>
+        )}
+      </div>
+      <div className="flex shrink-0 gap-1 whitespace-nowrap">
+        {container.running ? (
+          <>
+            <Button type="button" variant="outline" size="xs" onClick={() => onAsk('restart')}>
+              {t('auto.components.machines.docker.restart', 'Restart')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive-chip"
+              size="xs"
+              onClick={() => onAsk('stop')}
+            >
+              {t('auto.components.machines.docker.stop', 'Stop')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button type="button" variant="outline" size="xs" disabled={starting} onClick={onStart}>
+              {starting ? <Loader2 className="animate-spin" /> : null}
+              {t('auto.components.machines.docker.start', 'Start')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive-chip"
+              size="xs"
+              onClick={() => onAsk('remove')}
+            >
+              {t('auto.components.machines.docker.remove', 'Remove')}
+            </Button>
+          </>
+        )}
+      </div>
+    </li>
   )
 }
 
-/** Memory held by Docker containers; absent when the machine has no Docker. */
+/** A machine's Docker containers with what they hold, and what can be done about them. */
 export function MachineDockerSection({
   machine
 }: {
@@ -136,8 +103,10 @@ export function MachineDockerSection({
 }): React.JSX.Element | null {
   const t = useTranslate()
   const [docker, setDocker] = useState<MachineDockerContainers | null>(null)
-  const [request, setRequest] = useState<ContainerRequest | null>(null)
+  const [request, setRequest] = useState<MachineDockerContainerRequest | null>(null)
+  const [starting, setStarting] = useState<ReadonlySet<string>>(new Set())
   const machineId = machine.id
+  const { storage, reload: reloadStorage } = useMachineDockerStorage(machineId)
 
   const load = useCallback(async (): Promise<void> => {
     try {
@@ -153,73 +122,81 @@ export function MachineDockerSection({
     [load]
   )
 
+  const start = async (container: MachineDockerContainer): Promise<void> => {
+    setStarting((previous) => new Set(previous).add(container.id))
+    try {
+      await machineResourceApi().dockerContainerAction({
+        machineId,
+        containerId: container.id,
+        action: 'start'
+      })
+      toast.success(
+        t('auto.components.machines.docker.started', 'Started {{name}}.', { name: container.name })
+      )
+    } catch (err) {
+      toast.error(resourceErrorText(err))
+    }
+    await load()
+    setStarting((previous) => {
+      const next = new Set(previous)
+      next.delete(container.id)
+      return next
+    })
+  }
+
   if (docker === null || docker.state === 'missing') {
     return null
   }
   return (
-    <section className="space-y-1.5" data-machine-docker={docker.state}>
-      <h3 className="text-3xs font-medium tracking-wide text-muted-foreground uppercase">
-        {t('auto.components.machines.docker.title', 'Docker containers')}
-      </h3>
-      {docker.state === 'unreachable' ? (
-        <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{docker.message}</p>
-      ) : docker.containers.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          {t('auto.components.machines.docker.none', 'No containers on this machine.')}
-        </p>
-      ) : (
-        <ul className="divide-y divide-border/60 border-y border-border/60">
-          {docker.containers.map((container) => (
-            <li key={container.id} className="flex items-center gap-3 px-2 py-1.5 text-xs">
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{container.name}</div>
-                <div className="truncate font-mono text-2xs text-muted-foreground">
-                  {`${container.image} · ${container.status}`}
-                </div>
-              </div>
-              <div className="shrink-0 text-right font-mono whitespace-nowrap tabular-nums">
-                {container.memUsageBytes === null ? (
-                  <span className="text-muted-foreground">—</span>
-                ) : (
-                  <>
-                    {formatBytes(container.memUsageBytes)}
-                    <span className="ml-1 text-muted-foreground">
-                      {container.memPercent === null ? '' : `${container.memPercent.toFixed(1)}%`}
-                    </span>
-                  </>
-                )}
-              </div>
-              {container.running ? (
-                <div className="shrink-0 whitespace-nowrap">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    onClick={() => setRequest({ container, action: 'restart' })}
-                  >
-                    {t('auto.components.machines.docker.restart', 'Restart')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive-chip"
-                    size="xs"
-                    className="ml-1"
-                    onClick={() => setRequest({ container, action: 'stop' })}
-                  >
-                    {t('auto.components.machines.docker.stop', 'Stop')}
-                  </Button>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
-      <ContainerActionDialog
+    <div className="space-y-(--page-section-gap)" data-machine-docker={docker.state}>
+      <PageCard title={t('auto.components.machines.docker.title', 'Docker containers')}>
+        {docker.state === 'unreachable' ? (
+          <p className="px-3 py-2.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">
+            {docker.message}
+          </p>
+        ) : docker.containers.length === 0 ? (
+          <p className="px-3 py-2.5 text-xs text-muted-foreground">
+            {t('auto.components.machines.docker.none', 'No containers on this machine.')}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {docker.containers.map((container) => (
+              <ContainerRow
+                key={container.id}
+                container={container}
+                starting={starting.has(container.id)}
+                onStart={() => void start(container)}
+                onAsk={(action) => setRequest({ container, action })}
+              />
+            ))}
+          </ul>
+        )}
+      </PageCard>
+      {docker.state === 'ready' ? (
+        <PageCard title={t('auto.components.machines.docker.pruneTitle', 'Free up Docker space')}>
+          <MachineDockerStorageStats storage={storage} />
+          <div className="border-t border-border">
+            <MachineCleanupSection
+              machine={machine}
+              targets={MACHINE_DOCKER_PRUNE_TARGETS}
+              onCleaned={() => {
+                void load()
+                reloadStorage()
+                void refreshMachineMetrics(machineId)
+              }}
+            />
+          </div>
+        </PageCard>
+      ) : null}
+      <MachineDockerContainerDialog
         machine={machine}
         request={request}
         onClose={() => setRequest(null)}
-        onDone={() => void load()}
+        onDone={() => {
+          void load()
+          reloadStorage()
+        }}
       />
-    </section>
+    </div>
   )
 }

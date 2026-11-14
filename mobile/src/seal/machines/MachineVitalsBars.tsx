@@ -1,14 +1,26 @@
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, Text, View } from 'react-native'
+import { ChevronRight } from 'lucide-react-native'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
-import { colors } from '../../theme/mobile-theme'
+import { colors, pressedStyle } from '../../theme/mobile-theme'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 import type { MobileMachineMetrics } from './machine-reply-schemas'
 import { machineScreenStyles as styles } from './machine-screen-styles'
 import { formatMachineBytes, formatMachineUptime, machineVitals } from './machine-vitals-format'
 
-function VitalBar({ label, percent, value }: { label: string; percent: number; value: string }) {
-  return (
-    <View style={styles.vitalRow} accessible accessibilityLabel={`${label} ${value}`}>
+function VitalBar({
+  label,
+  percent,
+  value,
+  onPress
+}: {
+  label: string
+  percent: number
+  value: string
+  /** Makes the bar a button that opens what is using this resource. */
+  onPress?: () => void
+}) {
+  const bar = (
+    <View style={styles.vitalRow} accessible={!onPress} accessibilityLabel={`${label} ${value}`}>
       <Text style={styles.vitalLabel}>{label}</Text>
       <View style={styles.vitalTrack}>
         <View
@@ -22,17 +34,33 @@ function VitalBar({ label, percent, value }: { label: string; percent: number; v
       <Text style={styles.vitalValue} numberOfLines={1}>
         {value}
       </Text>
+      {onPress ? <ChevronRight size={14} color={colors.textMuted} /> : null}
     </View>
+  )
+  return onPress ? (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => pressed && pressedStyle}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} ${value}`}
+      hitSlop={8}
+    >
+      {bar}
+    </Pressable>
+  ) : (
+    bar
   )
 }
 
 /** Load, memory and disk bars plus uptime; rows the machine does not report are left out. */
 export function MachineVitalsBars({
   metrics,
-  loading
+  loading,
+  onOpenDisk
 }: {
   metrics: MobileMachineMetrics | undefined
   loading: boolean
+  onOpenDisk?: () => void
 }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
@@ -77,6 +105,7 @@ export function MachineVitalsBars({
           label={t('seal.machines.vitals.disk', 'Disk')}
           percent={vitals.diskPercent}
           value={capacity(metrics.diskTotalBytes, metrics.diskAvailableBytes, vitals.diskPercent)}
+          onPress={onOpenDisk}
         />
       ) : null}
       {metrics.uptimeSeconds !== null ? (

@@ -27,6 +27,7 @@ export const ORCAD_CHILD_ENTRY_POINTS = {
   portScanCommandWorker: 'src/main/ports/port-scan-command-worker-entry.ts',
   commandPathDirectoryWorker: 'src/main/ipc/command-path/command-path-directory-worker-entry.ts',
   sessionScanner: 'src/main/ai-vault/scan-service/session-scanner-service-entry.ts',
+  diskUsageIndex: 'src/main/machines/disk-index/disk-usage-index-entry.ts',
   workerThreadChildProcess:
     'src/main/worker-thread-child-process/worker-thread-child-process-entry.ts',
   claudeProfileSetup:

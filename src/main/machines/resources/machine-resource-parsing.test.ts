@@ -204,6 +204,14 @@ describe('Docker listings', () => {
           { kind: 'docker', args: ['image', 'rm', 'sha256:cccccccccccccccc'] }
         ]
       ],
+      'docker-dangling-images': [
+        [
+          'cccccccccccc',
+          300_000_000,
+          true,
+          { kind: 'docker', args: ['image', 'rm', 'sha256:cccccccccccccccc'] }
+        ]
+      ],
       'docker-containers': [
         ['old-job', 4100, false, { kind: 'docker', args: ['container', 'rm', '43b92ff52610'] }]
       ],

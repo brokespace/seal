@@ -1,3 +1,5 @@
+import { uiNumberFormat } from '@/i18n/ui-intl-formatters'
+
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
 export function formatBytes(bytes: number | null | undefined): string {
@@ -12,6 +14,14 @@ export function formatBytes(bytes: number | null | undefined): string {
   }
   const digits = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2
   return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`
+}
+
+// Formatter caches key on option identity, so this must be a module constant.
+const COUNT_FORMAT: Intl.NumberFormatOptions = { maximumFractionDigits: 0 }
+
+/** A whole count with the UI language's digit grouping, e.g. `18,412,907`. */
+export function formatCount(count: number): string {
+  return uiNumberFormat(COUNT_FORMAT).format(count)
 }
 
 /** Used share of a capacity, 0–100, or null when either side is unknown. */
