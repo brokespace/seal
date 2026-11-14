@@ -1,7 +1,8 @@
 import { GitPullRequest } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import type { HomeWorkspace } from './home-overview-model'
-import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 import { countHomeWorkspaces } from './orca-home-workspace-mapping'
 
 const MAX_REVIEW_ROWS = 6
@@ -32,7 +33,7 @@ export function HomeWorkspacesPanel({
     )
     .slice(0, MAX_REVIEW_ROWS)
   return (
-    <HomeOverviewPanel title={t('home.overview.workspaces.title', 'Worktrees & PRs')}>
+    <PageCard title={t('home.overview.workspaces.title', 'Worktrees & PRs')}>
       {workspaces.length === 0 ? (
         <HomeOverviewEmpty>
           {t('home.overview.workspaces.empty', 'No active worktrees.')}
@@ -78,6 +79,6 @@ export function HomeWorkspacesPanel({
           ) : null}
         </>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

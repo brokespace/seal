@@ -4,7 +4,8 @@ import { cn } from '@/lib/class-names'
 import { ACCOUNT_NEAR_LIMIT_PERCENT, accountNextReset } from './home-overview-derivations'
 import type { HomeAccount } from './home-overview-model'
 import { formatHomeCountdown, homeUsageWindowLabel } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 
 function UsageBar({ percent }: { percent: number }): React.JSX.Element {
   const clamped = Math.max(0, Math.min(100, percent))
@@ -90,7 +91,7 @@ export function HomeAccountsPanel({
 }): React.JSX.Element {
   const t = useTranslate()
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.accounts.title', 'Accounts')}
       action={
         <Button variant="ghost" size="xs" onClick={onManage}>
@@ -112,6 +113,6 @@ export function HomeAccountsPanel({
           ))}
         </ul>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

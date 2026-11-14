@@ -3,7 +3,8 @@ import { Folder, Monitor, Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { groupHomeSessions } from './home-overview-derivations'
 import type { HomeSession } from './home-overview-model'
-import { HomeOverviewEmpty, HomeOverviewPanel } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty } from './HomeOverviewRow'
 import { HomeSessionRow } from './HomeSessionRow'
 
 export function HomeSessionsPanel({
@@ -18,7 +19,7 @@ export function HomeSessionsPanel({
   const t = useTranslate()
   const groups = useMemo(() => groupHomeSessions(sessions), [sessions])
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.sessions.title', 'Sessions')}
       action={
         <span className="text-2xs text-muted-foreground tabular-nums">{sessions.length}</span>
@@ -67,6 +68,6 @@ export function HomeSessionsPanel({
           })}
         </div>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

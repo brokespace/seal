@@ -4,7 +4,8 @@ import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { HomeMachine, HomeMachineStatus, HomeSession } from './home-overview-model'
 import { homeMachineStatusLabel } from './home-overview-presentation'
-import { HomeOverviewEmpty, HomeOverviewPanel, HomeOverviewRowButton } from './HomeOverviewPanel'
+import { PageCard } from '@/components/page-layout/PageCard'
+import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
 
 function statusDotClass(status: HomeMachineStatus): string {
   switch (status) {
@@ -58,7 +59,7 @@ export function HomeMachinesPanel({
   }
   const online = machines.filter((machine) => machine.status === 'online').length
   return (
-    <HomeOverviewPanel
+    <PageCard
       title={t('home.overview.machines.title', 'Machines')}
       action={
         <Button variant="ghost" size="xs" onClick={onManage}>
@@ -116,6 +117,6 @@ export function HomeMachinesPanel({
           </ul>
         </>
       )}
-    </HomeOverviewPanel>
+    </PageCard>
   )
 }

@@ -52,6 +52,12 @@ Tokens pair a **surface** with a **foreground** that meets contrast on it; alway
 - Radii derive from `--radius` in `main.css`. Buttons and inputs use `rounded-md`, `Card` uses `rounded-xl`, badges use `rounded-full`. Match the existing primitive's radius; don't introduce a new one.
 - Three elevation levels, no fourth: (1) `border` hairline, the default for almost everything; (2) `shadow-xs` + single-token border for outline buttons and embedded cards; (3) `shadow-floating`, reserved for popovers and popups that escape the editor surface; toasts and bottom-right notification cards use its notice form (`--notice-surface`, `--notice-border`, `shadow-notice`) so they read over chat, editor and terminal. Needing more than floating usually means you want the focus `ring`.
 
+## Page layout
+
+- Every top-level page is built from `src/renderer/src/components/page-layout/`: `Page` (the frame), `PageHeader` (16px semibold title, actions on the right, clear of the window controls), then `PagePanes` (panes that meet the page edges, such as a list beside a detail view) or `PageScrollBody` (scrolling sections and cards). Never hand-write a page frame, header or gutter.
+- Pages use the full width. Gutters and widths are tokens in `main.css`: `--page-gutter` (12px, 20px from `md`), `--page-top-inset`, `--page-section-gap`, `--page-card-min-width` and `--page-readable-max-width`. Only forms and prose take `PageContent width="readable"` (Settings); never cap a whole page with `max-w-*`.
+- Group content with `PageSection` (captioned) and `PageCard` (bordered, caption header, optional action); lay cards out with `PageCardGrid`, which fits as many equal columns as its width allows. Respond to the page's own width with container queries (`@min-[…]/page`), not the viewport: sidebars change it.
+
 ## Components
 
 - Use the primitives in `src/renderer/src/components/ui/` before anything custom. Never reimplement headless behavior; extend the existing wrapper. Keep `data-slot` on roots, merge with `cn()` passing caller `className` last, and use CVA for multiple variants ([conventions](./styleguide/components.md#primitive-conventions)).
