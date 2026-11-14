@@ -75,6 +75,7 @@ async function openPool(): Promise<RelayOriginPool> {
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the mocked origin reads no identity, keypair or wiring members.
   const options = {
     directorUrl: 'https://relay.example',
+    allowedCellOrigins: [edge.cellUrl, hk.cellUrl],
     relayHostId: 'host',
     isCurrent: () => true,
     onStatus: vi.fn(),

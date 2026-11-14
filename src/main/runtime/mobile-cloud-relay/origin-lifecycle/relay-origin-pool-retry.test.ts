@@ -55,6 +55,14 @@ const assignment: RelayAssignment = {
   lease: 'lease'
 }
 
+// The pool follows a director only to cells it was told about.
+const NAMED_CELLS = [
+  assignment.cellUrl,
+  'https://relay-a.example',
+  'https://relay-b.example',
+  ...Array.from({ length: 64 }, (_, epoch) => `https://relay-c${epoch}.example`)
+]
+
 async function poolWithDeadControl(ask: () => Promise<RelayAssignment>) {
   const askedAt: number[] = []
   harness.requestRelayAssignment.mockImplementation(async () => {
@@ -64,6 +72,7 @@ async function poolWithDeadControl(ask: () => Promise<RelayAssignment>) {
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the mocked origin reads no identity, keypair or wiring members.
   const options = {
     directorUrl: 'https://relay.example',
+    allowedCellOrigins: NAMED_CELLS,
     relayHostId: 'host',
     isCurrent: () => true,
     onStatus: vi.fn(),
