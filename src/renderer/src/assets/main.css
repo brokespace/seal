@@ -260,10 +260,10 @@
   --ring: #a1a1a1;
   --terminal-pane-locate: var(--color-blue-600);
   --ai-action-accent: var(--color-violet-500);
-  /* Use one question hue across surfaces, distinct from working-yellow. */
+  /* Use one question hue across surfaces, distinct from working-blue. */
   --agent-question: var(--color-orange-600);
-  /* The working-state yellow every agent working/monitoring glyph paints. */
-  --agent-working: var(--color-yellow-500);
+  /* The working-state blue every agent working/waiting glyph paints: busy, nothing for the user to do. */
+  --agent-working: var(--color-blue-500);
   /* Legible weight for text/glyphs on a tinted --agent-question surface. */
   --agent-question-text: var(--color-orange-700);
   /* Answer card edge and the outline shared by its option tiles, badges, answer field and Skip. */

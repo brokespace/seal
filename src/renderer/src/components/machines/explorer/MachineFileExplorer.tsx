@@ -18,6 +18,7 @@ import {
   type MachineExplorerRowHandlers
 } from './MachineExplorerRow'
 import { MachineFilePreview } from './MachineFilePreview'
+import { MachineGoToFolder } from './MachineGoToFolder'
 import { MachinePromptDialog } from './MachinePromptDialog'
 import type { ExplorerRow } from './machine-explorer-rows'
 import type { MachineExplorerFileOps } from './machine-explorer-source'
@@ -32,13 +33,24 @@ function dropDirFromTarget(target: EventTarget | null): string | null {
   return element?.getAttribute('data-machine-drop-dir') ?? null
 }
 
+export type MachineFolderRequest = { path: string; id: number }
+
 export function MachineFileExplorer({
   machine,
+  homeDir = null,
+  hidden = false,
+  folderRequest = null,
   startAt,
   fileOps
 }: {
   machine: MachineSummary
+  homeDir?: string | null
+  /** Kept mounted behind a resource detail so the tree and its scroll position survive. */
+  hidden?: boolean
+  /** Another part of the page asking the tree to open a folder. */
+  folderRequest?: MachineFolderRequest | null
   startAt?: string
+  /** A tree scoped to one feature's files; it has no jump to arbitrary folders. */
   fileOps?: MachineExplorerFileOps
 }): React.JSX.Element {
   const t = useTranslate()
@@ -54,6 +66,12 @@ export function MachineFileExplorer({
   const [dropDir, setDropDir] = useState<string | null>(null)
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)
   const dropOwnerRef = useRef<HTMLElement | null>(null)
+  const [handledRequest, setHandledRequest] = useState(folderRequest?.id ?? 0)
+  if (folderRequest && folderRequest.id !== handledRequest) {
+    setHandledRequest(folderRequest.id)
+    navigate(folderRequest.path)
+    setPreview(null)
+  }
 
   const root = tree.root
   const attachDropOwner = useOsFileDropOwner<string | null>(dropOwnerRef, {
@@ -165,7 +183,12 @@ export function MachineFileExplorer({
 
   if (!online) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
+      <div
+        className={cn(
+          'flex-1 items-center justify-center p-6 text-sm text-muted-foreground',
+          hidden ? 'hidden' : 'flex'
+        )}
+      >
         {machine.status === 'connecting'
           ? t('auto.components.machines.explorer.connecting', 'Connecting…')
           : t(
@@ -177,7 +200,10 @@ export function MachineFileExplorer({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col" data-machine-explorer={machine.id}>
+    <div
+      className={cn('min-h-0 flex-1 flex-col', hidden ? 'hidden' : 'flex')}
+      data-machine-explorer={machine.id}
+    >
       <MachineExplorerToolbar
         root={root}
         isRemote={isRemote}
@@ -187,6 +213,17 @@ export function MachineFileExplorer({
         refresh={() => refresh()}
         actions={actions}
       />
+      {fileOps ? null : (
+        <MachineGoToFolder
+          machineId={machine.id}
+          currentDir={root}
+          homeDir={homeDir}
+          onOpen={(path) => {
+            navigate(path)
+            setPreview(null)
+          }}
+        />
+      )}
       <div className="flex min-h-0 flex-1">
         <ContextMenu onOpenChange={(open) => !open && setMenuRow(null)}>
           <ContextMenuTrigger asChild>

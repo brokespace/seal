@@ -1,7 +1,7 @@
 import { useAppStore } from '@/store'
 import { revealDashboardAgent } from '@/components/dashboard/reveal-dashboard-agent'
 import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
-import { rememberLiveSessionSelection } from '@/components/live-sessions/live-session-selection'
+import { openLiveSessionView } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { normalizeExecutionHostId } from '../../../../shared/execution-host'
@@ -38,7 +38,7 @@ const sharedActions = {
   }
 } satisfies Partial<HomeOverviewActions>
 
-/** Opens the Agent sessions page on the registry entry for a session, when it has one. */
+/** Opens the session's chat as a tab, when the registry has it. */
 function openLiveSession(session: HomeSession): void {
   const liveId =
     session.target.kind === 'live-session'
@@ -51,9 +51,10 @@ function openLiveSession(session: HomeSession): void {
             )
           )?.id
   if (liveId) {
-    rememberLiveSessionSelection(liveId)
+    openLiveSessionView(liveId)
+    return
   }
-  useAppStore.getState().openSessionsPage()
+  useAppStore.getState().openAgentSessionTabs()
 }
 
 /** Actions for Orca builds without the machines page or live-session registry. */
@@ -71,7 +72,7 @@ export const orcaHomeOverviewActions: HomeOverviewActions = {
 export const sealHomeOverviewActions: HomeOverviewActions = {
   ...sharedActions,
   openSession: (session) => {
-    // A pane on a host that isn't loaded can't be revealed; its transcript is on Agent sessions.
+    // A pane on a host that isn't loaded can't be revealed; its transcript opens as a session tab.
     if (session.target.kind === 'orca-pane' && revealDashboardAgent(session.target.reveal)) {
       return
     }

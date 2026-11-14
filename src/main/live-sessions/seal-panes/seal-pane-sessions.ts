@@ -9,8 +9,14 @@ import type {
   LiveSessionStatus
 } from '../../../shared/live-sessions/live-session-types'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
-import { oneLine } from '../discovery/transcript-summary'
+import { oneLine } from '../discovery/transcript-records'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
+
+const RESTING_ON_SOMETHING: ReadonlySet<LiveSessionStatus> = new Set([
+  'waiting-subagent',
+  'waiting-task',
+  'waiting-input'
+])
 
 export type SealPaneRow = Pick<
   AgentStatusIpcPayload,
@@ -48,9 +54,10 @@ function hookStatus(state: SealPaneRow['state']): LiveSessionStatus {
     case 'blocked':
       return 'needs-permission'
     case 'waiting':
-    case 'done':
-      // A finished turn in a live pane waits for the next prompt.
       return 'waiting-input'
+    case 'done':
+      // A finished turn in a live pane sits at its prompt.
+      return 'idle'
   }
 }
 
@@ -138,7 +145,14 @@ export function mergeSealPanes(
     const route = { kind: 'seal-pane' as const, paneKey: pane.paneKey }
     if (index !== undefined) {
       const found = out[index]
-      const screenAsks = found.statusSource === 'screen' && found.permission !== null
+      // The transcript knows what a quiet pane waits on: its subagents, its background tasks, the user.
+      const transcriptSaysMore =
+        found.statusSource === 'transcript' &&
+        (pane.status === 'idle'
+          ? RESTING_ON_SOMETHING.has(found.status)
+          : pane.status === 'working' && found.status === 'waiting-subagent')
+      const screenAsks =
+        (found.statusSource === 'screen' && found.permission !== null) || transcriptSaysMore
       const named = found.providerSessionId.startsWith('pid-')
         ? {
             id: liveSessionId(found.machine.hostId, pane.provider, pane.providerSessionId),
@@ -151,7 +165,7 @@ export function mergeSealPanes(
         ...named,
         origin: 'seal',
         status: screenAsks ? found.status : pane.status,
-        statusSource: screenAsks ? 'screen' : 'seal-hooks',
+        statusSource: screenAsks ? found.statusSource : 'seal-hooks',
         statusDetail: screenAsks ? found.statusDetail : (pane.statusDetail ?? found.statusDetail),
         lastActivityAt: Math.max(found.lastActivityAt, pane.receivedAt),
         alive: true,

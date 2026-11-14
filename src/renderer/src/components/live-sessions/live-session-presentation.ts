@@ -5,15 +5,25 @@ import type {
   LiveSession,
   LiveSessionStatus
 } from '../../../../shared/live-sessions/live-session-types'
+import {
+  runningBackgroundTasks,
+  runningSubagents
+} from '../../../../shared/live-sessions/live-session-activity'
 
 export function liveSessionDotState(status: LiveSessionStatus): AgentDotState {
   switch (status) {
     case 'working':
       return 'working'
+    case 'waiting-subagent':
+    case 'waiting-task':
+      // Still the agent's move: drawn in the working color, not as something for the user.
+      return 'monitoring'
     case 'waiting-input':
       return 'waiting'
     case 'needs-permission':
       return 'permission'
+    case 'idle':
+      return 'idle'
     case 'errored':
       return 'failed'
     case 'done':
@@ -25,6 +35,18 @@ export function liveSessionStatusLabel(status: LiveSessionStatus): string {
   switch (status) {
     case 'working':
       return translate('auto.components.live-sessions.status.working', 'Working')
+    case 'waiting-subagent':
+      return translate(
+        'auto.components.live-sessions.status.waitingSubagent',
+        'Waiting on subagents'
+      )
+    case 'waiting-task':
+      return translate(
+        'auto.components.live-sessions.status.waitingTask',
+        'Waiting on background tasks'
+      )
+    case 'idle':
+      return translate('auto.components.live-sessions.status.idle', 'Idle')
     case 'waiting-input':
       return translate('auto.components.live-sessions.status.waiting', 'Waiting for input')
     case 'needs-permission':
@@ -36,8 +58,46 @@ export function liveSessionStatusLabel(status: LiveSessionStatus): string {
   }
 }
 
+/** "Waiting on 2 subagents and 1 background task": what a busy-but-quiet session waits on. */
+export function liveSessionWaitLabel(session: Pick<LiveSession, 'activity'>): string | null {
+  const subagents = runningSubagents(session.activity).length
+  const tasks = runningBackgroundTasks(session.activity).length
+  const parts = [
+    ...(subagents === 1
+      ? [translate('auto.components.live-sessions.wait.subagent', '1 subagent')]
+      : subagents > 1
+        ? [
+            translate('auto.components.live-sessions.wait.subagents', '{{count}} subagents', {
+              count: subagents
+            })
+          ]
+        : []),
+    ...(tasks === 1
+      ? [translate('auto.components.live-sessions.wait.task', '1 background task')]
+      : tasks > 1
+        ? [
+            translate('auto.components.live-sessions.wait.tasks', '{{count}} background tasks', {
+              count: tasks
+            })
+          ]
+        : [])
+  ]
+  return parts.length > 0
+    ? translate('auto.components.live-sessions.wait.label', 'Waiting on {{what}}', {
+        what: parts.join(translate('auto.components.live-sessions.wait.and', ' and '))
+      })
+    : null
+}
+
+/** The status in words, naming what a waiting session waits on. */
+export function liveSessionStatusText(session: Pick<LiveSession, 'status' | 'activity'>): string {
+  const waiting = session.status === 'waiting-subagent' || session.status === 'waiting-task'
+  return (waiting ? liveSessionWaitLabel(session) : null) ?? liveSessionStatusLabel(session.status)
+}
+
 export function liveSessionTitle(session: LiveSession): string {
   return (
+    session.customTitle ??
     session.title ??
     session.project ??
     translate('auto.components.live-sessions.untitled', 'New session')
@@ -67,24 +127,4 @@ export function liveMessageStateLabel(message: LiveMessage): string {
         message.error ?? translate('auto.components.live-sessions.message.failed', 'Not delivered')
       )
   }
-}
-
-export type MachineGroup = { hostId: string; label: string; sessions: LiveSession[] }
-
-/** This machine first, then SSH hosts by name; sessions keep their most-recent-first order. */
-export function groupByMachine(sessions: readonly LiveSession[]): MachineGroup[] {
-  const groups = new Map<string, MachineGroup>()
-  for (const session of sessions) {
-    const group = groups.get(session.machine.hostId) ?? {
-      hostId: session.machine.hostId,
-      label: session.machine.label,
-      sessions: []
-    }
-    group.sessions.push(session)
-    groups.set(session.machine.hostId, group)
-  }
-  const kindOf = (g: MachineGroup) => g.sessions[0].machine.kind
-  return [...groups.values()].sort((a, b) =>
-    kindOf(a) === kindOf(b) ? a.label.localeCompare(b.label) : kindOf(a) === 'local' ? -1 : 1
-  )
 }

@@ -5,6 +5,7 @@ import { discoverFiles } from '../../ai-vault/discovery/session-scanner-discover
 import type { AiVaultScanOptions, FileWithMtime } from '../../ai-vault/session-scanner-types'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery-output'
+import { localSubagentFiles } from './local-subagent-files'
 
 export type TranscriptFileRequest = {
   nowMs: number
@@ -13,7 +14,10 @@ export type TranscriptFileRequest = {
   maxReads: number
   headBytes: number
   tailBytes: number
-  /** Transcripts already read at this size: their bytes are skipped. */
+  maxSubagents: number
+  maxSubagentReads: number
+  subagentTailBytes: number
+  /** Transcripts (and subagent transcripts) already read at this size: their bytes are skipped. */
   known: ReadonlyMap<string, number>
   /** Paths whose head was already read: only their tail is read when they grow. */
   headKnown: ReadonlySet<string>
@@ -69,6 +73,7 @@ export function aiVaultTranscriptFiles(
         .sort((a, b) => b.file.mtimeMs - a.file.mtimeMs)
     ].slice(0, request.maxFiles)
     let reads = 0
+    const subagentBudget = { reads: request.maxSubagentReads }
     const out: DiscoveredFile[] = []
     for (const { provider, file } of recent) {
       const size = await sizeOf(file)
@@ -88,6 +93,12 @@ export function aiVaultTranscriptFiles(
         const bytes = await readEnds(file.path, size, request, !request.headKnown.has(file.path))
         listed.head = bytes?.head ?? null
         listed.tail = bytes?.tail ?? null
+      }
+      if (provider === 'claude') {
+        const subagents = await localSubagentFiles(file.path, request, subagentBudget)
+        if (subagents) {
+          listed.subagents = subagents
+        }
       }
       out.push(listed)
     }

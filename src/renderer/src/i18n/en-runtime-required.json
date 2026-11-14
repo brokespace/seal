@@ -348,6 +348,20 @@
           }
         }
       },
+      "machines": {
+        "cleanup": {
+          "confirm_one": "Remove {{count}} item ({{size}})",
+          "confirm_other": "Remove {{count}} items ({{size}})",
+          "items_one": "{{count}} item",
+          "items_other": "{{count}} items",
+          "omitted_one": "{{count}} smaller match is not listed and is left alone.",
+          "omitted_other": "{{count}} smaller matches are not listed and are left alone."
+        },
+        "disk": {
+          "omitted_one": "{{count}} smaller item ({{size}}) is not listed.",
+          "omitted_other": "{{count}} smaller items ({{size}}) are not listed."
+        }
+      },
       "onboarding": {
         "AgentStep": {
           "showMoreAgents": "Show {{value0}} more agents →",

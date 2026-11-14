@@ -1,0 +1,9 @@
+{
+  "agentType": "general-purpose",
+  "isBuiltIn": true,
+  "description": "Audit payments for unhandled rejections",
+  "toolUseId": "toolu_010e4dd1e9d77c7d291be4e9",
+  "spawnDepth": 1,
+  "requestShape": "foreground",
+  "model": "sonnet"
+}

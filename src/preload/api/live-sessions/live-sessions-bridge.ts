@@ -4,6 +4,7 @@ import type {
   LivePermissionAnswer,
   LivePermissionAnswerResult,
   LiveSendRequest,
+  LiveSessionAnnotation,
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot,
   LiveTakeOverResult,
@@ -41,10 +42,14 @@ export type LiveSessionsApi = {
   retry: (args: { messageId: string }) => Promise<LiveMessage | null>
   messages: (args?: { sessionId?: string }) => Promise<LiveMessage[]>
   onMessage: (callback: (message: LiveMessage) => void) => () => void
+  /** The user clicked a session's desktop notification. */
+  onOpen: (callback: (payload: { sessionId: string }) => void) => () => void
   answer: (answer: LivePermissionAnswer) => Promise<LivePermissionAnswerResult>
   takeOver: (args: { sessionId: string }) => Promise<LiveTakeOverResult>
   /** Hide for good; optionally stop the agent and delete its transcript first. */
   remove: (request: LiveRemoveRequest) => Promise<LiveRemoveResult>
+  /** Rename or pin a session in Seal; the registry publishes the change. */
+  annotate: (annotation: LiveSessionAnnotation) => Promise<void>
   /** `hostId` is 'local' or an SSH target id; rejects when that host is not connected. */
   shellIntegration: (args: {
     hostId: string
@@ -70,8 +75,10 @@ export const liveSessionsApi: LiveSessionsApi = {
   retry: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.retry, args),
   messages: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.messages, args),
   onMessage: (callback) => listen(LIVE_SESSION_IPC.message, callback),
+  onOpen: (callback) => listen(LIVE_SESSION_IPC.open, callback),
   answer: (answer) => ipcRenderer.invoke(LIVE_SESSION_IPC.answer, answer),
   takeOver: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.takeOver, args),
   remove: (request) => ipcRenderer.invoke(LIVE_SESSION_IPC.remove, request),
+  annotate: (annotation) => ipcRenderer.invoke(LIVE_SESSION_IPC.annotate, annotation),
   shellIntegration: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.shellIntegration, args)
 }

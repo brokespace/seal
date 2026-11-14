@@ -133,6 +133,26 @@ describe('one card per real conversation', () => {
     ).toEqual(['7f01a62c-a158-4451-a43b-a2e253ed713e'])
   })
 
+  it('keeps one card when a fork and its original were saved in the same instant', () => {
+    expect(
+      assemble(
+        [],
+        [
+          recorded(
+            'claude-2.1.325-error-then-continue.jsonl',
+            '/p/e503cd0b-d59c-4221-a949-3c685cf99554.jsonl',
+            60_000
+          ),
+          recorded(
+            'claude-2.1.325-fork-of-errored.jsonl',
+            '/p/7f01a62c-a158-4451-a43b-a2e253ed713e.jsonl',
+            60_000
+          )
+        ]
+      ).map((s) => s.id)
+    ).toEqual(['e503cd0b-d59c-4221-a949-3c685cf99554'])
+  })
+
   it('pairs a running agent with the transcript it is writing even outside its folder', () => {
     const live = claudeFile(
       '/p/cccccccc-0000-4000-8000-000000000003.jsonl',
