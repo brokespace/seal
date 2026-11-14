@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Bot, Brain, Ellipsis, ListTodo, X } from 'lucide-react'
+import { useAppStore } from '@/store'
+import { ArrowLeft, Bot, Brain, Ellipsis, ListTodo, NotebookText, X } from 'lucide-react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import {
   runningBackgroundTasks,
@@ -29,51 +29,15 @@ import { DROPDOWN_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenu
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { useLiveTranscript, type LiveTranscriptState } from '../use-live-transcript'
+import { recapOpenCount } from '../../../../../shared/session-recap/session-recap-view'
+import { SessionRecapBar } from '../../session-recap/SessionRecapBar'
+import { SessionRecapPanel } from '../../session-recap/SessionRecapPanel'
+import { useSessionRecap, type SessionRecapModel } from '../../session-recap/use-session-recap'
 import { LiveSessionActivityPanel } from './LiveSessionActivityPanel'
+import { PanelButton } from './LiveSessionPanelButton'
 import type { LiveSessionPanel, LiveSessionTabsState } from './live-session-tabs-store'
 
 type Transcript = ReturnType<typeof useLiveTranscript>
-
-function PanelButton({
-  panel,
-  active,
-  count,
-  running,
-  label,
-  onToggle,
-  children
-}: {
-  panel: LiveSessionPanel
-  active: boolean
-  count: number | null
-  /** Something in it is still going: the count is drawn in the working color. */
-  running: boolean
-  label: string
-  onToggle: (panel: LiveSessionPanel) => void
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <Button
-      type="button"
-      variant={active ? 'secondary' : 'ghost'}
-      size="xs"
-      aria-pressed={active}
-      aria-label={label}
-      title={label}
-      data-live-session-panel-toggle={panel}
-      onClick={() => onToggle(panel)}
-    >
-      {children}
-      {/* A split pane has no room for the words. */}
-      <span className="hidden @2xl:inline">{label}</span>
-      {count ? (
-        <span className={cn('tabular-nums', running ? 'text-agent-working' : 'opacity-70')}>
-          {count}
-        </span>
-      ) : null}
-    </Button>
-  )
-}
 
 /** A subagent's own transcript, read-only, in place of its session's chat. */
 function SubagentTranscript({
@@ -118,6 +82,11 @@ export type LiveSessionPaneViewProps = {
   answering: string | null
   composerFocus?: number
   now: number
+  /** The session's recap and what its links do; a view without one shows no recap. */
+  recap?: SessionRecapModel & {
+    onOpenLink: (url: string) => void
+    onOpenSettings?: () => void
+  }
   /** The header's "…" menu; fixtures leave it out. */
   menu?: React.ReactNode
   /** Closes the split this pane sits in. */
@@ -127,7 +96,8 @@ export type LiveSessionPaneViewProps = {
 /** One session's view without its data sources, so fixtures can render it. */
 export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.Element {
   const t = useTranslate()
-  const { session, transcript, panel, openSubagentId } = props
+  const { session, transcript, panel, openSubagentId, recap } = props
+  const [reveal, setReveal] = useState<{ messageId: string; nonce: number } | null>(null)
   const activity = session.activity
   const subagents = activity?.subagents ?? []
   const openSubagent = subagents.find((subagent) => subagent.id === openSubagentId) ?? null
@@ -140,6 +110,15 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
     [transcript.messages]
   )
   const toggle = (next: LiveSessionPanel) => props.onPanel(panel === next ? null : next)
+  const onOpenSubagent = (id: string | null): void => {
+    setReveal(null)
+    props.onOpenSubagent(id)
+  }
+  // A recap item's message lives in the session's own chat, behind any open subagent transcript.
+  const onJump = (messageId: string): void => {
+    props.onOpenSubagent(null)
+    setReveal((last) => ({ messageId, nonce: (last?.nonce ?? 0) + 1 }))
+  }
   return (
     <section
       data-live-session-pane={session.id}
@@ -159,6 +138,19 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
             ) : null}
           </p>
         </div>
+        {recap ? (
+          <PanelButton
+            panel="recap"
+            active={panel === 'recap'}
+            count={recapOpenCount(session.recap)}
+            running={false}
+            attention
+            label={t('seal.sessionRecap.title', 'Recap')}
+            onToggle={toggle}
+          >
+            <NotebookText className="size-3.5" />
+          </PanelButton>
+        ) : null}
         <PanelButton
           panel="subagents"
           active={panel === 'subagents'}
@@ -202,6 +194,14 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
           </Button>
         ) : null}
       </header>
+      {recap ? (
+        <SessionRecapBar
+          view={recap.view}
+          open={panel === 'recap'}
+          now={props.now}
+          onToggle={() => toggle('recap')}
+        />
+      ) : null}
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {openSubagent && props.subagentTranscript ? (
@@ -214,7 +214,7 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
                   type="button"
                   variant="ghost"
                   size="xs"
-                  onClick={() => props.onOpenSubagent(null)}
+                  onClick={() => onOpenSubagent(null)}
                 >
                   <ArrowLeft className="size-3.5" />
                   {t('auto.components.live-sessions.workspace.backToSession', 'Back to session')}
@@ -237,17 +237,30 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
               onAnswer={props.onAnswer}
               answering={props.answering}
               composerFocus={props.composerFocus}
+              reveal={reveal}
             />
           )}
         </div>
-        {panel ? (
+        {panel === 'recap' && recap ? (
+          <SessionRecapPanel
+            view={recap.view}
+            refreshing={recap.refreshing}
+            now={props.now}
+            onRefresh={recap.refresh}
+            onMark={recap.mark}
+            onJump={onJump}
+            onOpenLink={recap.onOpenLink}
+            onOpenSettings={recap.onOpenSettings}
+            onClose={() => props.onPanel(null)}
+          />
+        ) : panel && panel !== 'recap' ? (
           <LiveSessionActivityPanel
             panel={panel}
             provider={session.provider}
             activity={activity}
             reasoning={reasoning}
             openSubagentId={openSubagentId}
-            onOpenSubagent={(id) => props.onOpenSubagent(id === openSubagentId ? null : id)}
+            onOpenSubagent={(id) => onOpenSubagent(id === openSubagentId ? null : id)}
             onClose={() => props.onPanel(null)}
             now={props.now}
           />
@@ -293,6 +306,7 @@ export function LiveSessionPane({
   onCloseSplit?: () => void
 }): React.JSX.Element {
   const transcript = useLiveTranscript(session.id)
+  const recap = useSessionRecap(session.id, session.recap)
   const [panel, setPanel] = useState<LiveSessionPanel | null>(null)
   const [openSubagentId, setOpenSubagentId] = useState<string | null>(null)
   const [handledFocus, setHandledFocus] = useState(0)
@@ -342,6 +356,22 @@ export function LiveSessionPane({
       .then((message) => message && liveSessionRegistryStore.upsertMessage(message))
   }, [])
   const onSend = useCallback((text: string) => sendLiveMessage(session.id, text), [session.id])
+  const recapProps = useMemo(
+    () => ({
+      ...recap,
+      onOpenLink: (url: string) => void window.api.shell.openUrl(url),
+      onOpenSettings: () => {
+        const store = useAppStore.getState()
+        store.openSettingsPage()
+        store.openSettingsTarget({
+          pane: 'accounts',
+          repoId: null,
+          sectionId: 'accounts-cloudflare-ai'
+        })
+      }
+    }),
+    [recap]
+  )
 
   return (
     <LiveSessionPaneView
@@ -359,6 +389,7 @@ export function LiveSessionPane({
       answering={answering}
       composerFocus={composerFocus}
       now={now}
+      recap={recapProps}
       menu={<SessionMenuButton session={session} />}
       onCloseSplit={onCloseSplit}
     />
