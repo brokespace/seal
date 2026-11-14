@@ -17,6 +17,13 @@ export type ActiveAgentsFilter = {
   scope: ActiveAgentsScope | null
 }
 
+/** Every session, as a surface without the toolbar lists them. */
+export const NO_ACTIVE_AGENTS_FILTER: ActiveAgentsFilter = {
+  query: '',
+  chips: new Set(),
+  scope: null
+}
+
 export type ActiveAgentsMachine = {
   hostId: string
   label: string

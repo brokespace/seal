@@ -1,5 +1,10 @@
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../execution-host'
-import type { LiveSessionMachine } from './live-session-types'
+import {
+  LOCAL_EXECUTION_HOST_ID,
+  toRuntimeExecutionHostId,
+  toSshExecutionHostId
+} from '../execution-host'
+import type { MachineSummary } from '../machines/machine-summaries'
+import type { LiveSession, LiveSessionMachine } from './live-session-types'
 
 /** The Seal machine a session runs on: `local`, `machine:<id>`, or (before unification) its host id. */
 export function liveSessionMachineId(machine: LiveSessionMachine): string {
@@ -10,4 +15,28 @@ export function liveSessionMachineId(machine: LiveSessionMachine): string {
     return machine.executionHostId
   }
   return machine.kind === 'local' ? LOCAL_EXECUTION_HOST_ID : toSshExecutionHostId(machine.hostId)
+}
+
+type MachineIdentity = Pick<
+  MachineSummary,
+  'id' | 'executionHostId' | 'sshTargetId' | 'runtimeEnvironmentId'
+>
+
+/** Its sessions on either transport: a merged machine is one machine however Seal reaches it. */
+export function liveSessionsOnMachine<T extends Pick<LiveSession, 'machine'>>(
+  sessions: readonly T[],
+  machine: MachineIdentity
+): T[] {
+  const ids = new Set<string>([machine.id, machine.executionHostId])
+  if (machine.sshTargetId) {
+    ids.add(toSshExecutionHostId(machine.sshTargetId))
+  }
+  if (machine.runtimeEnvironmentId) {
+    ids.add(toRuntimeExecutionHostId(machine.runtimeEnvironmentId))
+  }
+  return sessions.filter(
+    (session) =>
+      ids.has(liveSessionMachineId(session.machine)) ||
+      (session.machine.executionHostId !== undefined && ids.has(session.machine.executionHostId))
+  )
 }
