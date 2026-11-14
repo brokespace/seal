@@ -27,8 +27,9 @@ import { cn } from '@/lib/class-names'
 import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { SshTarget } from '../../../../../shared/ssh-types'
-import { MachineFileExplorer } from '../explorer/MachineFileExplorer'
-import { MachineWorkSection } from '../work/MachineWorkSection'
+import { MachineFileExplorer, type MachineFolderRequest } from '../explorer/MachineFileExplorer'
+import { MachineResourcePanel } from '../resources/MachineResourcePanel'
+import type { MachineResourceKind } from '../resources/machine-resource-requests'
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import type { MachineAgentSession } from '../model/machine-agent-sessions'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
@@ -108,10 +109,16 @@ export function MachineDetail({
   const statusLabel = useMachineStatusLabel()
   const [editing, setEditing] = useState<SshTarget | null>(null)
   const [removing, setRemoving] = useState(false)
+  const [opened, setOpened] = useState<{ machineId: string; kind: MachineResourceKind } | null>(
+    null
+  )
+  const [folderRequest, setFolderRequest] = useState<MachineFolderRequest | null>(null)
   const removal =
     machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
   const homeDir = metrics?.homeDir ?? null
+  // A detail belongs to the machine it was opened on, and needs that machine reachable.
+  const resource = online && opened?.machineId === machine.id ? opened.kind : null
   const canConnect = machine.connection !== 'local' && machine.status !== 'connecting'
   const otherConnection = machine.connection === 'ssh' ? 'server' : 'ssh'
   const canSwitch =
@@ -262,16 +269,41 @@ export function MachineDetail({
       </header>
       {online ? (
         <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
-          <MachineVitalsStrip metrics={metrics} error={metricsError} />
+          <MachineVitalsStrip
+            metrics={metrics}
+            error={metricsError}
+            selected={resource}
+            onSelect={(kind) =>
+              setOpened(resource === kind ? null : { machineId: machine.id, kind })
+            }
+          />
           <AgentSessionList sessions={sessions} />
-          <MachineWorkSection machine={machine} online={online} homeDir={homeDir} />
         </section>
       ) : sessions.length > 0 ? (
         <section className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}>
           <AgentSessionList sessions={sessions} />
         </section>
       ) : null}
-      <MachineFileExplorer key={machine.id} machine={machine} />
+      {resource ? (
+        <MachineResourcePanel
+          key={`${machine.id}:${resource}`}
+          machine={machine}
+          metrics={metrics}
+          kind={resource}
+          onClose={() => setOpened(null)}
+          onReveal={(path) => {
+            setFolderRequest((previous) => ({ path, id: (previous?.id ?? 0) + 1 }))
+            setOpened(null)
+          }}
+        />
+      ) : null}
+      <MachineFileExplorer
+        key={machine.id}
+        machine={machine}
+        homeDir={homeDir}
+        hidden={resource !== null}
+        folderRequest={folderRequest}
+      />
       <MachineEditDialog target={editing} onClose={() => setEditing(null)} onSaved={onChanged} />
       {removal ? (
         <HostRemoveDialog

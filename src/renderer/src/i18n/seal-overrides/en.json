@@ -115,7 +115,10 @@
           "cpu": "CPU",
           "load": "load {{load}}",
           "memory": "RAM",
-          "disk": "Disk"
+          "disk": "Disk",
+          "cpuDetails": "CPU: show the busiest processes",
+          "memoryDetails": "RAM: show what is using memory",
+          "diskDetails": "Disk: show what is taking space"
         },
         "actions": {
           "nameLabel": "Name",
@@ -211,29 +214,172 @@
           "ssh": "SSH",
           "server": "Seal server"
         },
-        "work": {
-          "startAgent": "Start agent",
-          "title": "Agents & worktrees",
-          "repoPlaceholder": "Repository path, e.g. {{path}}",
-          "list": "Worktrees",
-          "terminalHere": "Terminal here",
-          "remove": "Remove worktree",
-          "branchPlaceholder": "New branch name",
-          "create": "New worktree",
-          "removeFailed": "Could not remove worktree",
-          "unlockTitle": "Unlock and delete “{{name}}”?",
-          "forceTitle": "Force delete “{{name}}”?",
-          "unlockBody": "Git locked this worktree so it would not be removed. Seal will override that lock and permanently delete the worktree and every file in it, including uncommitted changes.",
-          "forceSubmodulesBody": "This worktree contains submodules, so Git removes it only when forced. That permanently deletes it and anything in those submodules that was never pushed.",
-          "forceChangesBody": "This worktree has modified or untracked files. Force delete permanently removes it and those files.",
-          "lockReason": "Lock reason: {{reason}}",
-          "forceCancel": "Cancel",
-          "unlockConfirm": "Unlock & Delete",
-          "forceConfirm": "Force Delete"
-        },
         "terminal": {
           "agentTitle": "{{agent}} · {{host}}",
           "title": "Terminal · {{host}}"
+        },
+        "cleanup": {
+          "confirm_one": "Remove {{count}} item ({{size}})",
+          "confirm_other": "Remove {{count}} items ({{size}})",
+          "items_one": "{{count}} item",
+          "items_other": "{{count}} items",
+          "omitted_one": "{{count}} smaller match is not listed and is left alone.",
+          "omitted_other": "{{count}} smaller matches are not listed and are left alone.",
+          "freed": "Freed {{size}} on {{machine}}.",
+          "dialogTitle": "Clean up {{what}} on {{machine}}?",
+          "permanent": "This cannot be undone.",
+          "partial": "Removed {{removed}} items ({{size}}). {{failed}} could not be removed:",
+          "selected": "{{count}} of {{total}} selected",
+          "close": "Close",
+          "cancel": "Cancel",
+          "intro": "Nothing is removed until you review a list and confirm it. Up to {{size}} found so far.",
+          "rescan": "Scan again",
+          "review": "Review…",
+          "dockerImages": {
+            "title": "Unused Docker images",
+            "description": "Images no container uses.",
+            "removal": "Runs docker image rm for each ticked image. Images a container uses are never listed."
+          },
+          "dockerContainers": {
+            "title": "Stopped Docker containers",
+            "description": "Containers that exited or were never started.",
+            "removal": "Runs docker container rm for each ticked container. Files written inside it are deleted. Running containers are never listed."
+          },
+          "dockerVolumes": {
+            "title": "Unused Docker volumes",
+            "description": "Volumes no container references.",
+            "removal": "Runs docker volume rm for each ticked volume. The data stored in it is deleted for good."
+          },
+          "dockerBuildCache": {
+            "title": "Docker build cache",
+            "description": "Layers kept to speed up image builds.",
+            "removal": "Runs docker builder prune --all. The next image builds start from scratch."
+          },
+          "packageCaches": {
+            "title": "Package manager caches",
+            "description": "Download caches of npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun and Homebrew.",
+            "removal": "Deletes each ticked folder. Package managers download what they need again on the next install."
+          },
+          "nodeModules": {
+            "title": "node_modules folders",
+            "description": "Installed dependencies of projects in your home folder.",
+            "removal": "Deletes each ticked folder. Run that project's install again to get it back."
+          },
+          "trash": {
+            "title": "Trash",
+            "description": "Files already moved to the trash.",
+            "removal": "Empties the trash. Nothing in it can be restored afterwards."
+          },
+          "oldLogs": {
+            "title": "Old logs",
+            "description": "Log files nothing has written to for 14 days.",
+            "removal": "Deletes each ticked log file."
+          },
+          "sealCaches": {
+            "title": "Seal leftovers",
+            "description": "Finished job records and temporary files Seal left on this machine.",
+            "removal": "Deletes each ticked item. Jobs that are still running are never listed."
+          }
+        },
+        "disk": {
+          "omitted_one": "{{count}} smaller item ({{size}}) is not listed.",
+          "omitted_other": "{{count}} smaller items ({{size}}) are not listed.",
+          "free": "{{size}} free",
+          "mounts": "Disks",
+          "usageTab": "What's taking space",
+          "cleanupTab": "Clean up",
+          "up": "Parent folder",
+          "path": "Folder being sized",
+          "rescan": "Measure again",
+          "reveal": "Show in files",
+          "sizing": "Measuring… large folders take a while the first time.",
+          "empty": "This folder is empty.",
+          "delete": "Delete…",
+          "incomplete": "Some folders could not be read, so the real total is larger."
+        },
+        "goTo": {
+          "label": "Go to folder",
+          "placeholder": "Go to folder… type a path such as ~/projects, Tab completes",
+          "matches": "Matching folders",
+          "recent": "Recent folders",
+          "more": "More folders match. Keep typing to narrow."
+        },
+        "docker": {
+          "restarted": "Restarted {{name}}.",
+          "stopped": "Stopped {{name}}.",
+          "restartTitle": "Restart container {{name}}?",
+          "stopTitle": "Stop container {{name}}?",
+          "restartDescription": "Runs docker restart on {{machine}}. The container goes down for a moment and whatever it serves is interrupted.",
+          "stopDescription": "Runs docker stop on {{machine}}. The container stays stopped, along with whatever it serves, until it is started again.",
+          "cancel": "Cancel",
+          "restartConfirm": "Restart container",
+          "stopConfirm": "Stop container",
+          "title": "Docker containers",
+          "none": "No containers on this machine.",
+          "restart": "Restart",
+          "stop": "Stop"
+        },
+        "cpu": {
+          "busy": "Busy now",
+          "busyDetail": "all cores, last second",
+          "load": "Load average",
+          "loadDetail": "1, 5 and 15 minutes",
+          "cores": "Cores",
+          "processes": "Processes"
+        },
+        "memory": {
+          "used": "Used",
+          "ofTotal": "of {{total}}",
+          "available": "Available",
+          "swap": "Swap",
+          "noSwap": "None",
+          "noSwapDetail": "no swap configured",
+          "processes": "Processes"
+        },
+        "processes": {
+          "process": "Process",
+          "pid": "PID",
+          "cpu": "CPU",
+          "memory": "Memory",
+          "sealConnection": "Seal connection",
+          "stop": "Stop",
+          "kill": "Force kill",
+          "sessions": "Sessions",
+          "agentInPane": "{{agent}} in tmux {{pane}}",
+          "agentPid": "{{agent}} · pid {{pid}}",
+          "paneProcesses": "{{count}} proc",
+          "killed": "Force killed {{name}} ({{pid}}).",
+          "stopped": "Asked {{name}} ({{pid}}) to stop.",
+          "gone": "{{name}} ({{pid}}) had already exited.",
+          "replaced": "Process {{pid}} is no longer {{name}}: its id now belongs to another process, so nothing was signalled.",
+          "killTitle": "Force kill {{name}}?",
+          "stopTitle": "Stop {{name}}?",
+          "killDescription": "Sends SIGKILL to process {{pid}} on {{machine}}. It ends immediately, with no chance to save or clean up.",
+          "stopDescription": "Sends SIGTERM to process {{pid}} on {{machine}}, asking it to exit. Anything it has not saved is lost.",
+          "owner": "Run by {{user}}",
+          "inPane": "tmux {{pane}}",
+          "connectionWarning": "Seal reaches this machine through this process. Stopping it disconnects Seal from the machine.",
+          "agentWarning": "This is a running {{agent}} session. Stopping it ends the work the agent is doing.",
+          "cancel": "Cancel",
+          "killConfirm": "Force kill",
+          "stopConfirm": "Stop process",
+          "filter": "Filter by name, command, user, or pid",
+          "filterLabel": "Filter processes",
+          "showingTop": "Top {{shown}} of {{total}} processes",
+          "showingMatches": "{{shown}} matching",
+          "paused": "Paused",
+          "live": "Live",
+          "resume": "Resume",
+          "pause": "Pause",
+          "refresh": "Refresh now",
+          "noMatches": "No process matches."
+        },
+        "resources": {
+          "cpuTitle": "CPU: busiest processes",
+          "memoryTitle": "Memory: largest processes",
+          "diskTitle": "Disk: usage and cleanup",
+          "close": "Back to files",
+          "unsupported": "Process, memory and disk details are available for Linux and macOS machines."
         }
       },
       "live-sessions": {
