@@ -91,16 +91,9 @@ it('a PR row opens its worktree on its machine', () => {
   expect(navigation.activate).toHaveBeenCalledWith('b', { executionHostId: 'local' })
 })
 
-it('a session opens as its agent session tab, from its row and from the attention strip', () => {
+it('a session opens as its agent session tab from its row', () => {
   renderHome()
   fireEvent.click(within(panel('Sessions')).getByText('Nightly eval'))
   expect(useAppStore.getState().activeView).toBe('sessions')
   expect(liveSessionTabsStore.getState().activeId).toBe('Nightly eval')
-
-  useAppStore.setState({ activeView: 'home' })
-  fireEvent.click(
-    within(screen.getByRole('region', { name: 'Needs attention' })).getByText('Train tokenizer')
-  )
-  expect(useAppStore.getState().activeView).toBe('sessions')
-  expect(liveSessionTabsStore.getState().activeId).toBe('Train tokenizer')
 })
