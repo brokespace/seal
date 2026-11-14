@@ -2,19 +2,16 @@
 // is exposed so scripts can skip, repeat or corrupt it. Mirrors what a real host (desktop/orcad)
 // and a real phone send; nothing here imports product code.
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { WebSocket, nacl } from './deps.mjs'
+import { WebSocket, jose, nacl } from './deps.mjs'
+import { claimEnrolledHost, relayState } from './relay-state.mjs'
 
 export { WebSocket, nacl }
+export { operatorSecrets, providerRequests, relayState } from './relay-state.mjs'
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 export const b64 = (bytes) => Buffer.from(bytes).toString('base64')
 export const b64url = (bytes) => Buffer.from(bytes).toString('base64url')
 export const sha256B64url = (value) => createHash('sha256').update(value).digest('base64url')
 export const randomToken = () => b64url(randomBytes(32))
-
-export function relayState(stateDir = process.env.SEAL_AUDIT_STATE_DIR ?? '/tmp/seal-audit3') {
-  return JSON.parse(readFileSync(`${stateDir}/relay.json`, 'utf8'))
-}
 
 export function relayOrigin() {
   return process.env.SEAL_AUDIT_RELAY_ORIGIN ?? relayState().origin
@@ -24,9 +21,22 @@ export function wsOrigin(origin) {
   return origin.replace(/^http/, 'ws')
 }
 
-export function newHostKeys() {
-  const pair = nacl.box.keyPair()
+function hostKeys(pair) {
   return { ...pair, publicKeyB64: b64(pair.publicKey), hostId: hostIdOf(pair.publicKey) }
+}
+
+// A key the caller just made up: the relay's allowlist has never heard of it.
+export function newHostKeys() {
+  return hostKeys(nacl.box.keyPair())
+}
+
+// The next unused key of the pool the local relay enrolled (HOST_ALLOWLIST) at start.
+export function enrolledHostKeys() {
+  const host = claimEnrolledHost()
+  return hostKeys({
+    publicKey: new Uint8Array(Buffer.from(host.publicKeyB64, 'base64')),
+    secretKey: new Uint8Array(Buffer.from(host.secretKeyB64, 'base64'))
+  })
 }
 
 export function hostIdOf(publicKey) {
@@ -83,12 +93,13 @@ function answerChallenge(domain, challenge, keys, ephemeralKeyB64) {
     .digest('base64')
 }
 
-// POST /v1/host/challenge + /v1/host/session: proves the X25519 key, returns a 24 h session token.
+export function hostChallenge(origin, keys) {
+  return postJson(origin, '/v1/host/challenge', { v: 1, hostPublicKeyB64: keys.publicKeyB64 })
+}
+
+// POST /v1/host/challenge + /v1/host/session: proves the X25519 key, returns a 1 h session token.
 export async function hostSession(origin, keys) {
-  const challenge = await postJson(origin, '/v1/host/challenge', {
-    v: 1,
-    hostPublicKeyB64: keys.publicKeyB64
-  })
+  const challenge = await hostChallenge(origin, keys)
   if (challenge.status !== 200) {
     throw new Error(`challenge ${challenge.status}`)
   }
@@ -154,20 +165,23 @@ export function openSocket(url, options = {}) {
       queue.push(message)
     }
   })
+  const onClosed = (code, reason) => {
+    state.closed ??= { code, reason }
+    for (const waiter of waiters.splice(0)) {
+      waiter.resolve(null)
+    }
+  }
   ws.on('unexpected-response', (_request, response) => {
     state.upgradeStatus = response.statusCode
     response.resume()
-    state.closed ??= { code: -1, reason: `http ${response.statusCode}` }
-    for (const waiter of waiters.splice(0)) {
-      waiter.resolve(null)
-    }
+    onClosed(-1, `http ${response.statusCode}`)
   })
-  ws.on('close', (code, reason) => {
-    state.closed ??= { code, reason: reason.toString() }
-    for (const waiter of waiters.splice(0)) {
-      waiter.resolve(null)
-    }
-  })
+  // The relay's close frame is its verdict. Local workerd keeps the TCP connection for about 10 s
+  // after sending it, and only then does `ws` emit 'close'.
+  ws.on('open', () =>
+    ws._receiver.on('conclude', (code, reason) => onClosed(code, reason.toString()))
+  )
+  ws.on('close', (code, reason) => onClosed(code, reason.toString()))
   ws.on('error', () => {})
   state.open = (timeoutMs = 8000) =>
     new Promise((resolve) => {
@@ -269,8 +283,8 @@ export async function controlConnect(origin, token, keys, assignmentEpoch, extra
   return { socket, ack, challenge, proofB64 }
 }
 
-// Everything a host does to come online: session, relay token, assignment, control socket.
-export async function hostOnline(origin, keys = newHostKeys()) {
+// Everything an enrolled host does to come online: session, relay token, assignment, control socket.
+export async function hostOnline(origin, keys = enrolledHostKeys()) {
   const session = await hostSession(origin, keys)
   const token = await relayToken(origin, session.sessionToken, keys)
   const assignment = await assign(origin, token.relayToken, keys.hostId)
@@ -279,10 +293,31 @@ export async function hostOnline(origin, keys = newHostKeys()) {
     keys,
     session,
     relayToken: token.relayToken,
+    relayTokenExpiresAt: token.expiresAt,
     assignment,
     control: control.socket,
     ack: control.ack
   }
+}
+
+// Tokens as the relay signs them, for the checks that hold the operator's secrets (or guess them).
+export function signHostSession(secret, hostId, expiresAt) {
+  const signature = createHmac('sha256', secret)
+    .update(`seal-host-session/v1\0${hostId}\0${expiresAt}`)
+    .digest('base64url')
+  return `${hostId}.${expiresAt}.${signature}`
+}
+
+export async function signRelayJwt(privateJwkJson, hostId, ttlSeconds = 300) {
+  const jwk = JSON.parse(privateJwkJson)
+  const now = Math.floor(Date.now() / 1000)
+  return new jose.SignJWT({ prof: `seal:${hostId}`, relayHostId: hostId, purpose: 'host-control' })
+    .setProtectedHeader({ alg: 'ES256', kid: jwk.kid })
+    .setSubject(`seal:${hostId}`)
+    .setAudience('seal-relay')
+    .setIssuedAt(now)
+    .setExpirationTime(now + ttlSeconds)
+    .sign(await jose.importJWK(jwk, 'ES256'))
 }
 
 export async function controlRequest(control, type, body, replyType, timeoutMs = 5000) {
@@ -346,6 +381,17 @@ export function relayAuthFrame(credential) {
   return JSON.stringify({ type: 'relay-auth', v: 1, mode: 'connect', credential })
 }
 
+// One credential presented at a host id: everything the relay lets the caller observe.
+export async function phoneAttempt(origin, hostId, credential = randomToken(), timeoutMs = 4000) {
+  const socket = await phoneOpen(origin, hostId)
+  if (!socket.opened) {
+    return { upgrade: socket.upgradeStatus, hello: null, close: socket.closed }
+  }
+  socket.ws.send(relayAuthFrame(credential))
+  const hello = await socket.nextJson(timeoutMs)
+  return { upgrade: 101, hello, close: await socket.waitClosed(timeoutMs) }
+}
+
 // The host's answer to a conn-open: a data socket presenting the ticket.
 export async function dataAttach(origin, open, generation) {
   const socket = openSocket(`${wsOrigin(origin)}/v1/host/data/${encodeURIComponent(open.connId)}`)
@@ -378,6 +424,9 @@ export async function nextConnOpen(control, timeoutMs = 5000) {
 // A full spliced connection: phone authenticates, host attaches, phone gets relay-hello.
 export async function splice(origin, host, credential) {
   const phone = await phoneOpen(origin, host.keys.hostId)
+  if (!phone.opened) {
+    return { phone, open: null, data: null, hello: null }
+  }
   phone.ws.send(relayAuthFrame(credential))
   const open = await nextConnOpen(host.control)
   if (!open) {
@@ -388,6 +437,20 @@ export async function splice(origin, host, credential) {
   return { phone, open, data, hello }
 }
 
+const VERDICTS = new Set(['blocked', 'VULNERABLE', 'info', 'skipped'])
+
+// One JSON line per check. `info` and `skipped` carry a `reason`.
 export function report(name, verdict, detail = {}) {
+  if (!VERDICTS.has(verdict)) {
+    throw new Error(`unknown verdict ${verdict} for ${name}`)
+  }
+  if (verdict === 'VULNERABLE') {
+    process.exitCode = 1
+  }
   console.log(JSON.stringify({ check: name, verdict, ...detail }))
+}
+
+// Ends the script (its sockets would keep it alive): non-zero if any check was VULNERABLE.
+export function finish() {
+  process.exit(process.exitCode ?? 0)
 }

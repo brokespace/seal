@@ -2,7 +2,22 @@ import { generateKeyPairSync, webcrypto } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import { createServer as createNetServer } from 'node:net'
 import { fileURLToPath } from 'node:url'
+import nacl from 'tweetnacl'
 import { unstable_startWorker } from 'wrangler'
+import { deriveRelayHostId } from '../../../src/main/runtime/mobile-cloud-relay/director/relay-http-client'
+import type { E2EEKeypair } from '../../../src/main/runtime/rpc/server/pairing/e2ee-keypair'
+
+export type HostKeypair = E2EEKeypair
+
+export function newHostKeypair(): HostKeypair {
+  const box = nacl.box.keyPair()
+  return { ...box, publicKeyB64: Buffer.from(box.publicKey).toString('base64') }
+}
+
+/** The HOST_ALLOWLIST value that enrols exactly these keys. */
+export function hostAllowlist(hosts: readonly HostKeypair[]): string {
+  return hosts.map((host) => deriveRelayHostId(host.publicKey)).join(',')
+}
 
 export type ProviderRequest = { path: string; headers: IncomingMessage['headers']; body: string }
 
@@ -102,24 +117,40 @@ async function freePort(): Promise<number> {
   return address.port
 }
 
+/**
+ * The real Worker in local workerd. `enrolled` become its allowlist; `providerOrigin` swaps in the
+ * test entrypoint that sends APNs and FCM traffic to the fake.
+ */
 export async function startSealRelay(
-  vars: Record<string, string>
+  vars: Record<string, string>,
+  options: { enrolled?: readonly HostKeypair[]; providerOrigin?: string; persist?: string } = {}
 ): Promise<{ origin: string; dispose: () => Promise<void> }> {
   const port = await freePort()
+  const bindings = {
+    ...(options.enrolled ? { HOST_ALLOWLIST: hostAllowlist(options.enrolled) } : {}),
+    ...(options.providerOrigin ? { TEST_PUSH_PROVIDER_ORIGIN: options.providerOrigin } : {}),
+    ...vars
+  }
   // Keep the request URL the Worker sees equal to what clients dial (wrangler would rewrite it to the route host).
   const worker = await unstable_startWorker({
     config: fileURLToPath(new URL('../wrangler.toml', import.meta.url)),
+    ...(options.providerOrigin
+      ? { entrypoint: fileURLToPath(new URL('./seal-relay-test-entry.ts', import.meta.url)) }
+      : {}),
     bindings: Object.fromEntries(
-      Object.entries(vars).map(([name, value]) => [name, { type: 'plain_text' as const, value }])
+      Object.entries(bindings).map(([name, value]) => [
+        name,
+        { type: 'plain_text' as const, value }
+      ])
     ),
     dev: {
       server: { hostname: '127.0.0.1', port },
       origin: { hostname: `127.0.0.1:${port}`, secure: false },
       inspector: false,
-      persist: false,
+      persist: options.persist ?? false,
       logLevel: 'warn'
     }
-  })
+  } as Parameters<typeof unstable_startWorker>[0])
   await worker.ready
   const url = await worker.url
   return { origin: url.origin, dispose: () => worker.dispose() }

@@ -14,13 +14,8 @@ export type PushProviders = { apns: ApnsSender | null; fcm: FcmClient | null }
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 
-function providerUrl(env: SealEnv, url: string): string {
-  if (!env.PUSH_PROVIDER_ORIGIN_OVERRIDE) {
-    return url
-  }
-  const parsed = new URL(url)
-  return `${env.PUSH_PROVIDER_ORIGIN_OVERRIDE}/${parsed.hostname}${parsed.pathname}`
-}
+/** Where a provider request really goes. Production sends it as written. */
+export type ProviderUrlRewrite = (url: string) => string
 
 // Workers fetch has no redirect: 'error'; a provider redirect surfaces as a non-2xx error instead.
 async function postToProvider(url: string, headers: Record<string, string>, body: string) {
@@ -39,19 +34,19 @@ async function postToProvider(url: string, headers: Record<string, string>, body
 }
 
 // Production Workers reach APNs over HTTP/2 through Cloudflare's egress; local workerd cannot.
-function fetchApnsTransport(env: SealEnv): ApnsTransport {
+function fetchApnsTransport(rewrite: ProviderUrlRewrite): ApnsTransport {
   return (request) =>
     postToProvider(
-      providerUrl(env, `https://${request.host}${request.path}`),
+      rewrite(`https://${request.host}${request.path}`),
       request.headers,
       request.body
     )
 }
 
-function fetchFcmTransport(env: SealEnv): FcmTransport {
+function fetchFcmTransport(rewrite: ProviderUrlRewrite): FcmTransport {
   return (request) =>
     postToProvider(
-      providerUrl(env, request.url),
+      rewrite(request.url),
       { authorization: `Bearer ${request.accessToken}`, 'content-type': 'application/json' },
       request.body
     )
@@ -68,12 +63,13 @@ const GoogleTokenSchema = z.object({
   expires_in: z.number().optional()
 })
 
-function googleAccessToken(env: SealEnv, account: ServiceAccount): () => Promise<string> {
+function googleAccessToken(
+  rewrite: ProviderUrlRewrite,
+  account: ServiceAccount
+): () => Promise<string> {
   let cached: { token: string; expiresAt: number } | null = null
-  return async () => {
-    if (cached && cached.expiresAt - 60_000 > Date.now()) {
-      return cached.token
-    }
+  let minting: Promise<string> | null = null
+  const mint = async (): Promise<string> => {
     const now = Math.floor(Date.now() / 1000)
     const assertion = await new SignJWT({ scope: FCM_SCOPE })
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
@@ -82,13 +78,14 @@ function googleAccessToken(env: SealEnv, account: ServiceAccount): () => Promise
       .setIssuedAt(now)
       .setExpirationTime(now + 3600)
       .sign(await importPKCS8(account.private_key, 'RS256'))
-    const response = await fetch(providerUrl(env, GOOGLE_TOKEN_URL), {
+    const response = await fetch(rewrite(GOOGLE_TOKEN_URL), {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion
-      })
+      }),
+      signal: AbortSignal.timeout(10_000)
     })
     if (!response.ok) {
       throw new Error(`fcm_access_token_${response.status}`)
@@ -97,9 +94,19 @@ function googleAccessToken(env: SealEnv, account: ServiceAccount): () => Promise
     cached = { token: body.access_token, expiresAt: Date.now() + (body.expires_in ?? 3600) * 1000 }
     return cached.token
   }
+  return async () => {
+    if (cached && cached.expiresAt - 60_000 > Date.now()) {
+      return cached.token
+    }
+    // A burst of sends shares one token exchange instead of each paying for its own.
+    minting ??= mint().finally(() => {
+      minting = null
+    })
+    return minting
+  }
 }
 
-export function createPushProviders(env: SealEnv): PushProviders {
+function createPushProviders(env: SealEnv, rewrite: ProviderUrlRewrite): PushProviders {
   const apns =
     env.APNS_TEAM_ID && env.APNS_KEY_ID && env.APNS_PRIVATE_KEY
       ? new ApnsSender({
@@ -109,7 +116,7 @@ export function createPushProviders(env: SealEnv): PushProviders {
             keyId: env.APNS_KEY_ID,
             keyPem: env.APNS_PRIVATE_KEY
           },
-          transport: fetchApnsTransport(env)
+          transport: fetchApnsTransport(rewrite)
         })
       : null
   let fcm: FcmClient | null = null
@@ -117,10 +124,31 @@ export function createPushProviders(env: SealEnv): PushProviders {
     const account = ServiceAccountSchema.parse(JSON.parse(env.FCM_SERVICE_ACCOUNT_JSON))
     fcm = new FcmClient({
       projectId: account.project_id,
-      accessToken: googleAccessToken(env, account),
-      transport: fetchFcmTransport(env),
+      accessToken: googleAccessToken(rewrite, account),
+      transport: fetchFcmTransport(rewrite),
       ...(env.ANDROID_CHANNEL_ID ? { channelId: env.ANDROID_CHANNEL_ID } : {})
     })
   }
   return { apns, fcm }
+}
+
+let shared: { env: SealEnv; providers: PushProviders } | null = null
+
+/**
+ * One set per isolate, not per host object: every host signs with the same provider keys, so they
+ * share the cached APNs and FCM tokens rather than each minting (and Apple throttling) its own.
+ */
+export function pushProviders(env: SealEnv, rewrite: ProviderUrlRewrite): PushProviders {
+  if (
+    !shared ||
+    shared.env.APNS_PRIVATE_KEY !== env.APNS_PRIVATE_KEY ||
+    shared.env.APNS_KEY_ID !== env.APNS_KEY_ID ||
+    shared.env.APNS_TEAM_ID !== env.APNS_TEAM_ID ||
+    shared.env.APNS_TOPIC !== env.APNS_TOPIC ||
+    shared.env.FCM_SERVICE_ACCOUNT_JSON !== env.FCM_SERVICE_ACCOUNT_JSON ||
+    shared.env.ANDROID_CHANNEL_ID !== env.ANDROID_CHANNEL_ID
+  ) {
+    shared = { env, providers: createPushProviders(env, rewrite) }
+  }
+  return shared.providers
 }

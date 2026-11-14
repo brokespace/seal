@@ -55,6 +55,10 @@ export type EdgeBackend = {
     input: RelayIdentity & { reqId: string; basisConnId: string; owningControlGeneration: number }
   ): Promise<DeviceResumeConfirmed>
   revoke(identity: RelayIdentity, relayDeviceId: string): Promise<void>
+  // Throws RelayStoreError('rate_limit_exceeded') once a host passes `perMinute` of one command kind.
+  consumeRate(identity: RelayIdentity, kind: string, perMinute: number): Promise<void>
+  // Devices of this host that can still connect, not counting `exceptRelayDeviceId`.
+  liveDeviceCount(identity: RelayIdentity, exceptRelayDeviceId: string): Promise<number>
 }
 
 // Where the hello check and the missing-seat answer read the host's assignment from.
@@ -88,7 +92,7 @@ class PostgresAssignments implements AssignmentSource {
 export class StoreBackend implements EdgeBackend {
   private readonly store: RelayCredentialStore
 
-  constructor(database: RelayDatabase, private readonly assignments: AssignmentSource) {
+  constructor(private readonly database: RelayDatabase, private readonly assignments: AssignmentSource) {
     this.store = new RelayCredentialStore(database)
   }
 
@@ -134,6 +138,17 @@ export class StoreBackend implements EdgeBackend {
   }
   revoke(identity: RelayIdentity, relayDeviceId: string) {
     return this.store.revoke(identity, relayDeviceId)
+  }
+  consumeRate(identity: RelayIdentity, kind: string, perMinute: number) {
+    return this.store.consumeRate({ scopeKey: `host:${identity.relayHostId}`, kind, limit: perMinute, windowMs: 60_000 })
+  }
+  async liveDeviceCount(identity: RelayIdentity, exceptRelayDeviceId: string) {
+    const rows = await this.database.query(
+      `SELECT count(*) AS n FROM relay_devices
+       WHERE user_id = ? AND relay_host_id = ? AND relay_device_id <> ? AND revoked_at IS NULL AND current_expires_at > ?`,
+      [identity.userId, identity.relayHostId, exceptRelayDeviceId, Date.now()]
+    )
+    return Number(rows[0]?.n ?? 0)
   }
 }
 
@@ -203,6 +218,10 @@ class SpikeBackend implements EdgeBackend {
   }
   revoke(): never {
     return this.unsupported()
+  }
+  async consumeRate(): Promise<void> {}
+  async liveDeviceCount(): Promise<number> {
+    return 0
   }
 }
 

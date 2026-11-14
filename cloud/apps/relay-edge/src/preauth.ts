@@ -4,34 +4,36 @@
 // their first frame, so until then they are only bounded here.
 import { RELAY_CLOSE_CODE } from '../../../packages/relay-contract/src/close-codes'
 import { RELAY_PROTOCOL_LIMITS } from '../../../packages/relay-contract/src/protocol-limits'
-import type { Env } from './env'
+import { sourceAddressKey } from '../../../../src/shared/source-address-key'
+import { edgeConfig, type Env } from './env'
 import { metric, requestPlace } from './metrics'
 
-// The caller's address as Cloudflare saw it (clients cannot set this header). IPv6 callers are
-// keyed by their /64, which one subscriber usually holds whole.
+// The caller's address as Cloudflare saw it (clients cannot set this header), keyed per IPv6 /64.
 export function sourceKey(request: Request): string {
-  const ip = request.headers.get('cf-connecting-ip')?.trim() ?? ''
-  if (!ip.includes(':')) { return ip || 'unknown' }
-  const [head, tail = ''] = ip.split('::')
-  const left = head ? head.split(':') : []
-  const right = ip.includes('::') && tail ? tail.split(':') : []
-  const groups = ip.includes('::') ? [...left, ...new Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right] : left
-  return `${groups
-    .slice(0, 4)
-    .map((g) => g.toLowerCase().replace(/^0+(?=.)/, ''))
-    .join(':')  }::/64`
+  return sourceAddressKey(request.headers.get('cf-connecting-ip'))
 }
 
-// Counted per source per colo by the Rate Limiting binding. Fails open: a limiter outage must not
-// refuse live users. Without a binding (local spike runs) nothing is limited.
+// Counted per source per colo by the Rate Limiting binding. A limiter outage fails open: it must
+// not refuse live users. A deploy without the binding refuses instead (only spike runs go unlimited).
 export async function admitPreAuth(env: Env, request: Request, kind: 'phone' | 'data' | 'health'): Promise<boolean> {
-  if (!env.PREAUTH_LIMITER) { return true }
+  if (!env.PREAUTH_LIMITER) { return edgeConfig(env).backend === 'spike' }
   try {
     const { success } = await env.PREAUTH_LIMITER.limit({ key: `${kind}:${sourceKey(request)}` })
     if (!success) { metric(env, 'preauth_limited', 1, kind, [], '', requestPlace(request)) }
     return success
   } catch {
     return true
+  }
+}
+
+export const FIRST_FRAME_TIMEOUT_REASON = 'first frame timeout'
+
+// A percent-escape a client mangled is its error (400), not an unhandled exception (500).
+export function decodePathSegment(segment: string): string | null {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return null
   }
 }
 
@@ -43,7 +45,8 @@ export function notOnEdge(): Response {
   server.accept()
   const timer = setTimeout(() => {
     try {
-      server.close(RELAY_CLOSE_CODE.BAD_OUTER_CREDENTIAL, 'first frame timeout')
+      // Not 4401: a socket that sent nothing says nothing about any credential.
+      server.close(RELAY_CLOSE_CODE.PEER_DROPPED, FIRST_FRAME_TIMEOUT_REASON)
     } catch {}
   }, RELAY_PROTOCOL_LIMITS.firstFrameDeadlineMs)
   server.addEventListener(

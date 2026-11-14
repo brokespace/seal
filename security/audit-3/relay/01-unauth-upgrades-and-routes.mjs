@@ -2,17 +2,20 @@
 // Attacker: external, no paired device, no host key.
 // Tries every relay socket and route without a credential: forged/unsigned relay JWTs on the host
 // control upgrade, internal-header spoofing, the shared edge's admin/spike/health routes, and path
-// and method tricks around the Seal router.
+// and method tricks around the Seal router. Every one must be refused without an unhandled error.
 import { createHmac, randomBytes } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
+import { connect } from 'node:net'
 import {
-  openSocket,
-  relayOrigin,
-  wsOrigin,
-  report,
+  finish,
+  freshSourceIp,
   hostOnline,
-  newHostKeys,
-  sleep
+  openSocket,
+  operatorSecrets,
+  relayOrigin,
+  report,
+  setSourceIp,
+  sleep,
+  wsOrigin
 } from '../lib/relay-protocol.mjs'
 
 const origin = relayOrigin()
@@ -21,6 +24,7 @@ const b64u = (value) =>
   Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url')
 
 // A live victim host, so "it reached the host object" is distinguishable from "no such host".
+setSourceIp(freshSourceIp())
 const victim = await hostOnline(origin)
 const victimId = victim.keys.hostId
 const claims = {
@@ -32,29 +36,28 @@ const claims = {
   iat: Math.floor(Date.now() / 1000),
   exp: Math.floor(Date.now() / 1000) + 3600
 }
+const victimHello = {
+  type: 'host-hello',
+  v: 1,
+  relayHostId: victimId,
+  assignmentEpoch: victim.assignment.assignmentEpoch,
+  hostPublicKeyB64: victim.keys.publicKeyB64,
+  appVersion: 'x'
+}
 
 async function tryControl(name, headers) {
   const socket = openSocket(`${ws}/v1/host/control`, { headers })
   const opened = await socket.open()
   if (!opened) {
-    report(`control upgrade: ${name}`, 'blocked', { http: socket.upgradeStatus })
+    report(`control upgrade: ${name}`, socket.upgradeStatus === 401 ? 'blocked' : 'VULNERABLE', {
+      http: socket.upgradeStatus
+    })
     return
   }
-  // Upgraded: see whether the relay talks to us as a host.
-  socket.sendJson({
-    type: 'host-hello',
-    v: 1,
-    relayHostId: victimId,
-    assignmentEpoch: 1,
-    hostPublicKeyB64: victim.keys.publicKeyB64,
-    appVersion: 'x'
-  })
+  // Upgraded: the relay took the token for a host's.
+  socket.sendJson(victimHello)
   const reply = await socket.nextJson(3000)
-  report(`control upgrade: ${name}`, reply?.type === 'host-challenge' ? 'VULNERABLE' : 'blocked', {
-    upgraded: true,
-    reply,
-    close: socket.closed
-  })
+  report(`control upgrade: ${name}`, 'VULNERABLE', { upgraded: true, reply, close: socket.closed })
   socket.ws.terminate()
 }
 
@@ -71,14 +74,19 @@ await tryControl('alg=None (case) JWT', {
   const header = b64u({ alg: 'HS256', typ: 'JWT', kid: 'audit' })
   const body = b64u(claims)
   const keys = ['', 'secret', 'seal-relay']
-  const operatorFile = '/tmp/seal-audit3/operator-secrets.json'
-  if (existsSync(operatorFile)) {
-    keys.push(JSON.parse(readFileSync(operatorFile, 'utf8')).RELAY_JWKS)
+  const jwks = operatorSecrets()?.RELAY_JWKS
+  if (jwks) {
+    keys.push(jwks)
   }
   for (const [index, key] of keys.entries()) {
     const signature = createHmac('sha256', key).update(`${header}.${body}`).digest('base64url')
     await tryControl(`HS256 key-confusion #${index}`, {
       authorization: `Bearer ${header}.${body}.${signature}`
+    })
+  }
+  if (!jwks) {
+    report('control upgrade: HS256 keyed with the public JWKS', 'skipped', {
+      reason: 'start lib/local-relay.mjs with --expose-operator-secrets'
     })
   }
 }
@@ -99,27 +107,23 @@ await tryControl('spoofed x-edge-claims / x-edge-kind, no token', {
     exp: Date.now() + 3600_000
   })
 })
-// A different (attacker) host's valid token, claiming the victim's id in the hello.
+// Another enrolled host's valid token, claiming the victim's id in the hello.
 {
-  const attacker = await hostOnline(origin, newHostKeys())
+  setSourceIp(freshSourceIp())
+  const attacker = await hostOnline(origin)
   const socket = openSocket(`${ws}/v1/host/control`, {
     headers: { authorization: `Bearer ${attacker.relayToken}` }
   })
   await socket.open()
-  socket.sendJson({
-    type: 'host-hello',
-    v: 1,
-    relayHostId: victimId,
-    assignmentEpoch: 1,
-    hostPublicKeyB64: victim.keys.publicKeyB64,
-    appVersion: 'x'
-  })
+  socket.sendJson(victimHello)
   const reply = await socket.nextJson(3000)
-  await socket.waitClosed(2000)
+  const close = await socket.waitClosed(2000)
   report(
     'control: attacker token, victim id+key in hello',
-    reply?.type === 'host-challenge' ? 'VULNERABLE' : 'blocked',
-    { reply, close: socket.closed }
+    reply === null && close?.code === 4401 && victim.control.closed === null
+      ? 'blocked'
+      : 'VULNERABLE',
+    { reply, close, victimControlOpen: victim.control.closed === null }
   )
   attacker.control.ws.terminate()
 }
@@ -136,11 +140,13 @@ await tryControl('spoofed x-edge-claims / x-edge-kind, no token', {
   await socket.open()
   socket.sendJson({ type: 'host-hello', v: 1 })
   const reply = await socket.nextJson(3000)
-  await socket.waitClosed(3000)
+  const close = await socket.waitClosed(3000)
   report(
     'phone socket with spoofed x-edge-* headers',
-    reply?.type === 'relay-hello' && reply.ok === false ? 'blocked' : 'VULNERABLE',
-    { reply, close: socket.closed }
+    reply?.type === 'relay-hello' && reply.ok === false && close?.code === 4401
+      ? 'blocked'
+      : 'VULNERABLE',
+    { reply, close }
   )
 }
 
@@ -181,18 +187,19 @@ const routes = [
   ['GET', '/v1/host/challenge'],
   ['PUT', '/v1/resolve']
 ]
+// The public liveness answer, which carries nothing about any host.
+const PUBLIC = new Set(['/health?x=1'])
 for (const [method, path] of routes) {
   // fetch() normalizes dot segments, so send the raw path on a socket-level request.
   const response = await rawRequest(method, path)
-  const leaked = response.status === 200 && path !== '/health?x=1'
-  report(`route ${method} ${path}`, leaked ? 'VULNERABLE' : 'blocked', {
+  const refused = response.status >= 400 && response.status < 500 && response.body === ''
+  report(`route ${method} ${path}`, refused || PUBLIC.has(path) ? 'blocked' : 'VULNERABLE', {
     http: response.status,
     body: response.body.slice(0, 120)
   })
 }
 
-async function rawRequest(method, path) {
-  const { connect } = await import('node:net')
+function rawRequest(method, path) {
   const url = new URL(origin)
   return new Promise((resolve) => {
     const socket = connect(Number(url.port), url.hostname, () => {
@@ -215,4 +222,4 @@ async function rawRequest(method, path) {
 
 victim.control.ws.terminate()
 await sleep(100)
-process.exit(0)
+finish()

@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // Attacks the headless Seal server (orcad, `seal serve`) on its WS/HTTP port (default 6768).
 // Personas: LAN attacker with no paired device, and a brute-forcer of the pairing credential.
-// Start a local orcad first, e.g.:
-//   ORCA_SERVE_RUNTIME=orcad node <orcad-node-build>/orcad.js --bind 127.0.0.1 --port 6768 --mobile-pairing
+// Start a local orcad first, with no --bind so the default is what gets probed, e.g.:
+//   ORCA_SERVE_RUNTIME=orcad node <orcad-node-build>/orcad.js --port 6768
 // then: ORCAD_URL=http://127.0.0.1:6768 node security/audit-3/orcad/01-preauth-and-pairing.mjs
+// The lockout probe also needs ORCAD_HOST_PUBLIC_KEY_B64, the publicKeyB64 inside the printed pairing URL.
 // Everything here is read-only probing: it never pairs and never runs an RPC method.
-import { WebSocket } from '../lib/deps.mjs'
+import { networkInterfaces } from 'node:os'
+import { PhoneE2EE } from '../../../tests/tools/relay-bench/phone-e2ee-v2-session.mjs'
+import { WebSocket, nacl } from '../lib/deps.mjs'
 import { report } from '../lib/relay-protocol.mjs'
 
 const base = process.env.ORCAD_URL ?? 'http://127.0.0.1:6768'
@@ -24,6 +27,37 @@ if (!(await reachable())) {
     reason: `nothing answering at ${base}; start orcad (see header)`
   })
   process.exit(0)
+}
+
+// ---- default bind ----
+// F10: a server started without --bind listens on loopback only, so this machine's LAN addresses
+// must refuse the port. Skipped when ORCAD_URL is not loopback (the operator chose that address).
+{
+  const { hostname, port } = new URL(base)
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(hostname)) {
+    report('listener reachable beyond loopback', 'skipped', {
+      reason: 'ORCAD_URL is not a loopback address; start orcad without --bind to probe the default'
+    })
+  } else {
+    const lanAddresses = Object.values(networkInterfaces())
+      .flat()
+      .filter((address) => address && !address.internal && address.family === 'IPv4')
+      .map((address) => address.address)
+    const answering = []
+    for (const address of lanAddresses) {
+      try {
+        await fetch(`http://${address}:${port}/`, { signal: AbortSignal.timeout(2000) })
+        answering.push(address)
+      } catch {
+        // Refused or timed out: nothing listens there.
+      }
+    }
+    report(
+      'listener reachable beyond loopback',
+      lanAddresses.length === 0 ? 'skipped' : answering.length > 0 ? 'VULNERABLE' : 'blocked',
+      { probed: lanAddresses, answering }
+    )
+  }
 }
 
 // ---- HTTP surface before any auth ----
@@ -116,7 +150,7 @@ await new Promise((resolve) => {
 
 // ---- pairing credential brute force (entropy demonstration) ----
 // The pairing secret is a 192-bit random token (randomBytes(24) hex), carried in the QR URL.
-// This does not brute-force it; it records why that is infeasible and probes for a lockout.
+// This does not brute-force it; it records why that is infeasible. The lockout probe follows.
 {
   const bits = 192
   const guessesPerSecond = 1000 // optimistic for a single LAN socket honoring the 64-conn cap
@@ -127,38 +161,92 @@ await new Promise((resolve) => {
     expectedSecondsToGuess: seconds.toExponential(2),
     note: 'infeasible; token entropy, not a short PIN, is the control'
   })
-  // Is there a lockout on repeated bad auth from one source? (recon: only a 3/60s UI callback, no lockout)
-  let refusedAt = null
-  for (let i = 0; i < 12; i++) {
-    const ok = await new Promise((resolve) => {
-      const ws = new WebSocket(wsBase, { handshakeTimeout: 2500 })
-      ws.on('open', () => {
-        ws.send(JSON.stringify({ type: 'e2ee_hello' }))
-        ws.send(JSON.stringify({ type: 'e2ee_auth', deviceToken: 'f'.repeat(48) }))
-      })
-      ws.on('message', () => {
-        ws.terminate()
-        resolve(true)
-      })
-      ws.on('close', () => resolve(true))
-      ws.on('error', () => resolve(false))
-      setTimeout(() => {
-        try {
-          ws.terminate()
-        } catch {}
-        resolve(true)
-      }, 2000)
-    })
-    if (!ok) {
-      refusedAt ??= i + 1
+}
+
+// ---- legacy (pre-v2) handshake ----
+// E2EE-01: the fixed host answers nothing to a hello that is not v2 and closes 4001.
+await new Promise((resolve) => {
+  const ws = new WebSocket(wsBase, { handshakeTimeout: 3000 })
+  let done = false
+  const finish = (verdict, detail) => {
+    if (done) {
+      return
     }
+    done = true
+    ws.terminate()
+    report('legacy e2ee_hello accepted', verdict, detail)
+    resolve()
   }
-  report(
-    'lockout after repeated bad pairing-token auth',
-    refusedAt
-      ? 'blocked (connections refused)'
-      : 'info (no lockout; relies on 192-bit entropy + 64-conn cap)',
-    { firstRefusalAtAttempt: refusedAt }
+  ws.on('open', () =>
+    ws.send(
+      JSON.stringify({
+        type: 'e2ee_hello',
+        publicKeyB64: Buffer.from(nacl.box.keyPair().publicKey).toString('base64')
+      })
+    )
   )
+  ws.on('message', (data) =>
+    finish('VULNERABLE', { reply: data.toString().slice(0, 120).replace(/\s+/g, ' ') })
+  )
+  ws.on('close', (code, reason) =>
+    finish('blocked', { close: { code, reason: reason.toString() } })
+  )
+  ws.on('error', (error) => finish('blocked', { error: error.message }))
+  setTimeout(() => finish('blocked', { result: 'no reply' }), 4000)
+})
+
+// ---- lockout on repeated wrong device tokens ----
+// Needs the host's public key (it is in every pairing QR): ORCAD_HOST_PUBLIC_KEY_B64=<base64>.
+{
+  const hostKeyB64 = process.env.ORCAD_HOST_PUBLIC_KEY_B64
+  if (!hostKeyB64) {
+    report('lockout after repeated wrong device tokens', 'skipped', {
+      reason: 'set ORCAD_HOST_PUBLIC_KEY_B64 to the publicKeyB64 in the server’s pairing offer'
+    })
+  } else {
+    // One completed v2 handshake carrying a wrong token; resolves with how the host ended it.
+    const guess = () =>
+      new Promise((resolve) => {
+        const phone = new PhoneE2EE(hostKeyB64)
+        phone.hello.context = {
+          protocol: 'orca-mobile-e2ee',
+          initiator: 'mobile',
+          responder: 'desktop',
+          transport: 'direct'
+        }
+        const ws = new WebSocket(wsBase, { handshakeTimeout: 3000 })
+        let ready = false
+        ws.on('open', () => ws.send(JSON.stringify(phone.hello)))
+        ws.on('message', (data) => {
+          if (ready) {
+            return
+          }
+          ready = true
+          phone.acceptReady(JSON.parse(data.toString()))
+          ws.send(
+            phone.sealText(JSON.stringify({ type: 'e2ee_auth', deviceToken: 'f'.repeat(48) }))
+          )
+        })
+        ws.on('close', (code, reason) => resolve({ code, reason: reason.toString() }))
+        ws.on('error', (error) => resolve({ code: 0, reason: error.message }))
+        setTimeout(() => {
+          ws.terminate()
+          resolve({ code: 0, reason: 'timeout' })
+        }, 4000)
+      })
+    let lockedAt = null
+    const closes = []
+    for (let attempt = 1; attempt <= 8 && lockedAt === null; attempt++) {
+      const close = await guess()
+      closes.push(close.code)
+      if (close.code === 1013) {
+        lockedAt = attempt
+      }
+    }
+    report('lockout after repeated wrong device tokens', lockedAt ? 'blocked' : 'VULNERABLE', {
+      firstRefusalAtAttempt: lockedAt,
+      closes
+    })
+  }
 }
 process.exit(0)

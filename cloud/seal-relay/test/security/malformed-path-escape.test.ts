@@ -1,6 +1,5 @@
 import WebSocket from 'ws'
-import { afterAll, beforeAll, expect, it } from 'vitest'
-import { describePoc } from './poc-opt-in'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   hostSessionToken,
   newHostKeypair,
@@ -9,6 +8,7 @@ import {
 } from './relay-attack-surface'
 
 let relay: RelayUnderTest
+const host = newHostKeypair()
 
 function upgradeStatus(url: string): Promise<number | string> {
   return new Promise((resolve) => {
@@ -19,33 +19,30 @@ function upgradeStatus(url: string): Promise<number | string> {
   })
 }
 
-describePoc('PoC SR-07: a malformed percent-escape makes the Worker throw', () => {
+// SR-07, F7: a mangled percent-escape is the caller's error, not an exception in the Worker.
+describe('malformed percent-escapes', () => {
   beforeAll(async () => {
-    relay = await startRelayUnderTest()
+    relay = await startRelayUnderTest({ enrolled: [host] })
   })
   afterAll(async () => {
     await relay?.dispose()
   })
 
-  it('unauthenticated: /v1/host/data/<bad escape> answers 500 instead of a rejection', async () => {
+  it('answers 400 on the unauthenticated host data path', async () => {
     const base = relay.origin.replace(/^http/, 'ws')
-    expect(await upgradeStatus(`${base}/v1/host/data/%E0%A4%A`)).toBe(500)
-    // Control: a well-formed but unknown connection id is refused cleanly.
-    expect(await upgradeStatus(`${base}/v1/host/data/not-a-connection`)).toBe(429)
+
+    expect(await upgradeStatus(`${base}/v1/host/data/%E0%A4%A`)).toBe(400)
   })
 
-  it('any enrolled host: DELETE /v1/devices/<bad escape> is not rejected cleanly', async () => {
-    const session = await hostSessionToken(relay.origin, newHostKeypair())
-    // A correct handler answers 400/404; decodeURIComponent throwing instead yields a 500 or a
-    // hung request (connection never completes), both of which an authenticated caller can trigger.
-    const outcome = await fetch(`${relay.origin}/v1/devices/%E0%A4%A`, {
+  it('answers 400 on push device removal', async () => {
+    const session = await hostSessionToken(relay.origin, host)
+
+    const response = await fetch(`${relay.origin}/v1/devices/%E0%A4%A`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${session}` },
       signal: AbortSignal.timeout(5000)
-    }).then(
-      (response) => response.status,
-      (error: unknown) => (error instanceof Error ? error.name : 'error')
-    )
-    expect([500, 'TimeoutError']).toContain(outcome)
+    })
+
+    expect(response.status).toBe(400)
   })
 })

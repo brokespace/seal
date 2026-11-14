@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Attacker: external (pre-auth cases) and another relay host (control-socket cases).
-// Malformed and oversized HTTP bodies, paths and WebSocket frames. After every case the script
-// checks that the Worker still answers and that an unrelated victim host is still seated.
+// Attacker: external (pre-auth cases) and another enrolled relay host (control-socket cases).
+// Malformed and oversized HTTP bodies, paths and WebSocket frames. Each must be refused with a
+// 4xx or a close frame; after every case the script also checks that the Worker still answers and
+// that an unrelated victim host is still seated.
 import { connect } from 'node:net'
 import { randomBytes } from 'node:crypto'
 import {
   createInvite,
+  finish,
   freshSourceIp,
   hostOnline,
   openSocket,
@@ -19,6 +21,10 @@ import {
   wsOrigin
 } from '../lib/relay-protocol.mjs'
 
+// The Worker's caps: host-auth and relay JSON bodies, push bodies, and a stalled body's deadline.
+const RELAY_BODY_MAX_BYTES = 4096
+const PUSH_BODY_MAX_BYTES = 16 * 1024
+const BODY_READ_DEADLINE_MS = 10_000
 const origin = relayOrigin()
 const url = new URL(origin)
 setSourceIp(freshSourceIp())
@@ -39,14 +45,16 @@ async function check(name, run, isBad) {
     outcome = { error: String(error) }
   }
   const after = await alive()
-  const bad = after.health !== 200 || !after.victimControlOpen || (isBad?.(outcome) ?? false)
+  const bad =
+    after.health !== 200 || !after.victimControlOpen || 'error' in outcome || isBad(outcome)
   report(name, bad ? 'VULNERABLE' : 'blocked', { ...outcome, ...after })
 }
+const refused = (outcome) => outcome.http < 400 || outcome.http >= 500
 
-// Raw HTTP so that Content-Length, chunking and the path are exactly what we choose.
-// `holdLastMs` delays the final chunk: an answer that only comes after it shows the server waited
-// for (and buffered) the whole body instead of refusing early.
-function raw(head, bodyChunks = [], { timeoutMs = 60000, holdLastMs = 0 } = {}) {
+// Raw HTTP so that Content-Length, chunking and the path are exactly what we choose. The last
+// body chunk is held back for `holdLastMs`: an answer that arrives meanwhile shows the server
+// refused without waiting for (and buffering) the whole body.
+function raw(head, bodyChunks = [], { timeoutMs = 20000, holdLastMs = 0 } = {}) {
   return new Promise((resolve) => {
     const started = Date.now()
     const socket = connect(Number(url.port), url.hostname)
@@ -57,18 +65,21 @@ function raw(head, bodyChunks = [], { timeoutMs = 60000, holdLastMs = 0 } = {}) 
     socket.on('connect', async () => {
       socket.write(head)
       for (const [index, chunk] of bodyChunks.entries()) {
-        if (socket.destroyed) {
+        if (index === bodyChunks.length - 1) {
+          const holdUntil = Date.now() + holdLastMs
+          while (Date.now() < holdUntil && answeredAt === null) {
+            await sleep(20)
+          }
+        }
+        if (socket.destroyed || answeredAt !== null) {
           break
         }
         if (index === bodyChunks.length - 1) {
-          if (holdLastMs > 0) {
-            await sleep(holdLastMs)
-          }
           lastChunkAt = Date.now() - started
         }
         sent += chunk.length
         if (!socket.write(chunk)) {
-          await new Promise((r) => socket.once('drain', r))
+          await Promise.race([new Promise((r) => socket.once('drain', r)), sleep(holdLastMs)])
         }
       }
     })
@@ -79,14 +90,14 @@ function raw(head, bodyChunks = [], { timeoutMs = 60000, holdLastMs = 0 } = {}) 
         socket.end()
       }
     })
-    const done = () =>
+    socket.on('close', () =>
       resolve({
         http: Number(/^HTTP\/1\.1 (\d+)/.exec(data)?.[1] ?? 0),
         bytesSent: sent,
         answeredAtMs: answeredAt,
-        lastChunkSentAtMs: lastChunkAt
+        answeredBeforeBodyEnd: answeredAt !== null && lastChunkAt === null
       })
-    socket.on('close', done)
+    )
     socket.on('error', () => {})
     setTimeout(() => socket.destroy(), timeoutMs)
   })
@@ -106,6 +117,10 @@ function chunked(totalBytes, pieceBytes = 1024 * 1024) {
 }
 
 // ---------------- HTTP bodies ----------------
+// A sender that announces a body and then stalls: judged at the end, it takes the whole deadline.
+const stalled = raw(post('/v1/host/challenge', 'content-length: 200\r\n\r\n'), [
+  Buffer.from('{"v":1,')
+])
 await check(
   'challenge: 17 KiB body with honest Content-Length',
   async () => {
@@ -116,33 +131,58 @@ await check(
     )
     return { http: response.status }
   },
-  (o) => o.http === 200
+  (o) => o.http !== 413
 )
-for (const megabytes of [8, 64]) {
-  // No Content-Length: readJson() only pre-checks that header, then buffers request.text() whole.
-  await check(
-    `challenge: ${megabytes} MiB chunked body, no Content-Length (unauthenticated)`,
-    async () => {
-      const result = await raw(
-        post('/v1/host/challenge', 'transfer-encoding: chunked\r\n\r\n'),
-        chunked(megabytes * 1024 * 1024),
-        { holdLastMs: 3000 }
-      )
-      return {
-        ...result,
-        answeredOnlyAfterWholeBody:
-          result.answeredAtMs !== null && result.answeredAtMs >= result.lastChunkSentAtMs
+// 8 MiB is 2048x the 4 KiB cap; the refusal lands before the body ends, so no huge body is buffered.
+// Only the early refusal matters: flooding a half-closed socket makes workerd report the lost
+// response as 413, 500 or a reset, so the judge accepts any non-2xx answered before the last chunk.
+const accepted = (o) => o.http >= 200 && o.http < 400
+await check(
+  'challenge: 8 MiB chunked body, no Content-Length (unauthenticated)',
+  () =>
+    raw(
+      post('/v1/host/challenge', 'transfer-encoding: chunked\r\n\r\n'),
+      chunked(8 * 1024 * 1024),
+      {
+        holdLastMs: 3000
       }
-    },
-    (o) => o.answeredOnlyAfterWholeBody
+    ),
+  (o) => !o.answeredBeforeBodyEnd || accepted(o)
+)
+for (const [path, maxBytes] of [
+  ['/v1/host/session', RELAY_BODY_MAX_BYTES],
+  ['/v1/resolve', RELAY_BODY_MAX_BYTES],
+  ['/v1/assign', RELAY_BODY_MAX_BYTES],
+  ['/v1/host/relay-token', RELAY_BODY_MAX_BYTES],
+  ['/v1/devices', PUSH_BODY_MAX_BYTES],
+  ['/v1/send', PUSH_BODY_MAX_BYTES]
+]) {
+  // One byte over the route's cap, in small chunks and without a Content-Length to pre-check.
+  const authorization = path.endsWith('/assign') ? victim.relayToken : victim.session.sessionToken
+  await check(
+    `${path}: ${maxBytes + 1} byte chunked body, no Content-Length`,
+    () =>
+      raw(
+        post(path, `authorization: Bearer ${authorization}\r\ntransfer-encoding: chunked\r\n\r\n`),
+        [
+          ...chunked(maxBytes, maxBytes / 4).slice(0, -1),
+          Buffer.from('1\r\n \r\n'),
+          Buffer.from('0\r\n\r\n')
+        ],
+        { holdLastMs: 3000 }
+      ),
+    (o) => !o.answeredBeforeBodyEnd || accepted(o)
   )
 }
-await check('resolve: Content-Length smaller than the body', async () =>
-  raw(
-    post('/v1/resolve', 'content-length: 10\r\n\r\n'),
-    [Buffer.from(`{"v":1,"relayHostId":"${'A'.repeat(16)}","resumeToken":"x"}`)],
-    { timeoutMs: 4000 }
-  )
+await check(
+  'resolve: Content-Length smaller than the body',
+  () =>
+    raw(
+      post('/v1/resolve', 'content-length: 10\r\n\r\n'),
+      [Buffer.from(`{"v":1,"relayHostId":"${'A'.repeat(16)}","resumeToken":"x"}`)],
+      { timeoutMs: 4000 }
+    ),
+  (o) => o.http !== 400
 )
 const bodies = {
   'not JSON': 'hello',
@@ -163,38 +203,38 @@ for (const [label, body] of Object.entries(bodies)) {
     await check(
       `${path}: ${label}`,
       async () => ({ http: (await postJson(origin, path, body)).status }),
-      (o) => o.http >= 500
+      refused
     )
   }
 }
 
 // ---------------- paths ----------------
-for (const path of [
-  '/v1/host/data/%E0%A4%A',
-  '/v1/host/data/%',
-  '/v1/host/data/%ZZ',
-  '/v1/connect/%E0%A4%A',
-  `/v1/host/data/${'A'.repeat(4000)}`,
-  '/v1/host/data/a.b.c.d.e',
-  `/v1/host/data/${'A'.repeat(16)}.99999999999999999999.x`,
-  `/v1/host/data/${'A'.repeat(16)}.-1.x`,
-  `/v1/host/data/${'A'.repeat(16)}.1e0.x`
+// [path, the refusal it must get]: a mangled percent-escape is the client's error (400).
+for (const { path, expected } of [
+  { path: '/v1/host/data/%E0%A4%A', expected: [400] },
+  { path: '/v1/host/data/%', expected: [400] },
+  { path: '/v1/host/data/%ZZ', expected: [400] },
+  { path: '/v1/connect/%E0%A4%A', expected: [429] },
+  { path: `/v1/host/data/${'A'.repeat(4000)}`, expected: [404, 429] },
+  { path: '/v1/host/data/a.b.c.d.e', expected: [404, 429] },
+  { path: `/v1/host/data/${'A'.repeat(16)}.99999999999999999999.x`, expected: [404, 429] },
+  { path: `/v1/host/data/${'A'.repeat(16)}.-1.x`, expected: [404, 429] },
+  { path: `/v1/host/data/${'A'.repeat(16)}.1e0.x`, expected: [404, 429] }
 ]) {
   await check(
     `upgrade ${path.slice(0, 60)}`,
     async () => {
       const socket = openSocket(`${wsOrigin(origin)}${path}`)
       await socket.open()
-      await socket.waitClosed(1500)
-      return { upgrade: socket.upgradeStatus ?? 101, close: socket.closed }
+      socket.ws.terminate()
+      return { upgrade: socket.upgradeStatus ?? 101 }
     },
-    (o) => o.upgrade >= 500
+    (o) => !expected.includes(o.upgrade)
   )
 }
 await check(
   'DELETE /v1/devices/%E0%A4%A with a valid host session',
   async () => {
-    // decodeURIComponent() throws on this path; locally the dev server then hangs instead of answering 500.
     const response = await fetch(`${origin}/v1/devices/%E0%A4%A`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${victim.session.sessionToken}` },
@@ -202,7 +242,7 @@ await check(
     }).catch((error) => ({ status: `no response (${error.name})` }))
     return { http: response.status }
   },
-  (o) => typeof o.http !== 'number' || o.http >= 500
+  (o) => o.http !== 400
 )
 
 // ---------------- phone socket before authentication ----------------
@@ -232,6 +272,8 @@ const phoneFrames = {
   '40 MiB text frame': 'A'.repeat(40 * 1024 * 1024),
   '40 MiB binary frame': Buffer.alloc(40 * 1024 * 1024)
 }
+// Any pre-auth frame ends the socket: a refusal, never a hello, never a socket left parked.
+const notClosed = (o) => o.hello?.ok === true || !o.close
 for (const [label, frame] of Object.entries(phoneFrames)) {
   await check(
     `phone pre-auth: ${label}`,
@@ -241,29 +283,41 @@ for (const [label, frame] of Object.entries(phoneFrames)) {
       const hello = await phone.nextJson(8000).catch(() => 'unparseable')
       return { hello, close: await phone.waitClosed(8000) }
     },
-    (o) => o.hello?.ok === true
+    notClosed
   )
 }
-await check('phone pre-auth: invalid UTF-8 in a text frame', async () => {
-  const phone = await phoneOpen(origin, victim.keys.hostId)
-  // FIN + text opcode, masked, payload 0xC3 0x28 (invalid UTF-8).
-  phone.ws._socket.write(Buffer.from([0x81, 0x82, 0, 0, 0, 0, 0xc3, 0x28]))
-  return { close: await phone.waitClosed(4000) }
-})
-await check('phone pre-auth: reserved opcode / RSV bits', async () => {
-  const phone = await phoneOpen(origin, victim.keys.hostId)
-  phone.ws._socket.write(Buffer.from([0xf3, 0x80, 0, 0, 0, 0]))
-  return { close: await phone.waitClosed(4000) }
-})
-await check('phone pre-auth: declared 2^63-byte frame, never sent', async () => {
-  const phone = await phoneOpen(origin, victim.keys.hostId)
-  phone.ws._socket.write(
-    Buffer.from([0x82, 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0])
-  )
-  return { close: await phone.waitClosed(6000) }
-})
+await check(
+  'phone pre-auth: invalid UTF-8 in a text frame',
+  async () => {
+    const phone = await phoneOpen(origin, victim.keys.hostId)
+    // FIN + text opcode, masked, payload 0xC3 0x28 (invalid UTF-8).
+    phone.ws._socket.write(Buffer.from([0x81, 0x82, 0, 0, 0, 0, 0xc3, 0x28]))
+    return { close: await phone.waitClosed(4000) }
+  },
+  notClosed
+)
+await check(
+  'phone pre-auth: reserved opcode / RSV bits',
+  async () => {
+    const phone = await phoneOpen(origin, victim.keys.hostId)
+    phone.ws._socket.write(Buffer.from([0xf3, 0x80, 0, 0, 0, 0]))
+    return { close: await phone.waitClosed(4000) }
+  },
+  notClosed
+)
+await check(
+  'phone pre-auth: declared 2^63-byte frame, never sent',
+  async () => {
+    const phone = await phoneOpen(origin, victim.keys.hostId)
+    phone.ws._socket.write(
+      Buffer.from([0x82, 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0])
+    )
+    return { close: await phone.waitClosed(6000) }
+  },
+  notClosed
+)
 
-// ---------------- control socket (attacker is a registered host) ----------------
+// ---------------- control socket (attacker is an enrolled host) ----------------
 setSourceIp(freshSourceIp())
 const mallory = await hostOnline(origin)
 const controlFrames = {
@@ -293,18 +347,23 @@ const controlFrames = {
   'nesting 200k deep': '['.repeat(200000),
   '1 MiB + 1 text frame': 'A'.repeat(1024 * 1024 + 1)
 }
+// Mallory may lose her own control socket; what counts is the Worker and the victim (check()).
 for (const [label, frame] of Object.entries(controlFrames)) {
-  await check(`control (mallory): ${label}`, async () => {
-    if (mallory.control.closed) {
-      return { skipped: 'control already closed', close: mallory.control.closed }
-    }
-    mallory.control.ws.send(frame)
-    const reply = await mallory.control.nextJson(1500).catch(() => 'unparseable')
-    return {
-      reply: typeof reply === 'object' ? reply : String(reply).slice(0, 80),
-      close: mallory.control.closed
-    }
-  })
+  await check(
+    `control (mallory): ${label}`,
+    async () => {
+      if (mallory.control.closed) {
+        return { skipped: 'control already closed', close: mallory.control.closed }
+      }
+      mallory.control.ws.send(frame)
+      const reply = await mallory.control.nextJson(1500).catch(() => 'unparseable')
+      return {
+        reply: typeof reply === 'object' ? reply : String(reply).slice(0, 80),
+        close: mallory.control.closed
+      }
+    },
+    () => false
+  )
 }
 // SQL metacharacters must have been bound, not interpolated: mallory's own store still works.
 await check(
@@ -343,5 +402,10 @@ await check(
     (o) => o.phoneClose?.code !== 1009
   )
 }
-await sleep(200)
-process.exit(0)
+
+await check(
+  'challenge: body that stalls after 7 bytes',
+  () => stalled,
+  (o) => refused(o) || o.answeredAtMs > BODY_READ_DEADLINE_MS + 3000
+)
+finish()

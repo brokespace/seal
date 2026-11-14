@@ -7,8 +7,7 @@ const repoRoot = resolve(import.meta.dirname, '../../../../..')
 // code the Worker's own tests do not:
 // mobile/tsconfig.json extends an Expo base config that is not installed here, so esbuild gets an
 // inline one, and the host's workspace package and build-time constants are supplied directly.
-// Run from cloud/seal-relay:
-//   SEAL_SECURITY_POC=1 pnpm exec vitest run --config test/security/audit-1/vitest.poc.config.ts
+// `pnpm test` runs it after the Worker's own config.
 export default defineConfig({
   define: {
     ORCA_FEATURE_WALL_ENABLED: 'true',
@@ -42,7 +41,6 @@ export default defineConfig({
     hookTimeout: 120_000,
     pool: 'forks',
     env: {
-      SEAL_SECURITY_POC_CONFIG: 'phone-and-host',
       ORCA_VITEST_RUNTIME: 'node',
       ORCA_WSL_HOSTS_GATE_STATE: ''
     },

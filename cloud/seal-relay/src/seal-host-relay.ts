@@ -21,10 +21,23 @@ export class SealHostRelay extends HostRelay {
     return { assignmentEpoch: result.assignmentEpoch }
   }
 
-  sealPlacement(cellId: string): SealAssignment | null {
+  /**
+   * Where a paired phone finds this host. Only a phone holding a live resume credential is told;
+   * a host nobody assigned has no tables, and asking must not create them.
+   */
+  async sealResolve(
+    relayHostId: string,
+    resumeToken: string,
+    cellId: string
+  ): Promise<SealAssignment | null> {
+    if (!this.pushed()) {
+      return null
+    }
     const current = this.store.assignment()
-    return current && current.cellId === cellId
-      ? { assignmentEpoch: current.assignmentEpoch }
-      : null
+    if (!current || current.cellId !== cellId) {
+      return null
+    }
+    const found = await this.backend.lookupResume(relayHostId, resumeToken)
+    return found.outcome === 'resume' ? { assignmentEpoch: current.assignmentEpoch } : null
   }
 }

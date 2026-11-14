@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, expect, it } from 'vitest'
-import { describePoc } from './poc-opt-in'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { admitKey } from '../../src/source-rate-limit'
 import {
+  awayFromLimiterWindowEdge,
   newHostKeypair,
   postJson,
   startRelayUnderTest,
@@ -9,7 +10,6 @@ import {
 
 let relay: RelayUnderTest
 
-// Each accepted challenge creates a SealPushHost Durable Object and writes a row to its SQLite storage.
 async function challengeAs(sourceAddress: string): Promise<number> {
   const response = await postJson(
     `${relay.origin}/v1/host/challenge`,
@@ -20,28 +20,32 @@ async function challengeAs(sourceAddress: string): Promise<number> {
   return response.status
 }
 
-describePoc('PoC SR-02: unauthenticated callers create durable relay state without a real limit', () => {
+// SR-02, F3, A1-02: the unauthenticated limiter counts an IPv6 subscriber once, and fails closed.
+describe('host-auth rate limit', () => {
   beforeAll(async () => {
-    relay = await startRelayUnderTest()
+    relay = await startRelayUnderTest({ enrolled: [newHostKeypair()] })
   })
   afterAll(async () => {
     await relay?.dispose()
   })
 
-  it('one address is held to 30 challenges a minute', async () => {
+  it('holds every address of one IPv6 /64 to a single budget of 30 a minute', async () => {
+    await awayFromLimiterWindowEdge()
     const statuses: number[] = []
     for (let i = 0; i < 40; i++) {
-      statuses.push(await challengeAs('2001:db8:aaaa:1::1'))
-    }
-    expect(statuses.filter((status) => status === 200)).toHaveLength(30)
-    expect(statuses.filter((status) => status === 429)).toHaveLength(10)
-  })
-
-  it('rotating addresses inside a single IPv6 /64 is never limited', async () => {
-    const statuses: number[] = []
-    for (let i = 0; i < 120; i++) {
       statuses.push(await challengeAs(`2001:db8:bbbb:1::${(i + 1).toString(16)}`))
     }
-    expect(statuses.every((status) => status === 200)).toBe(true)
+
+    // 403: the callers are strangers. The point is that the 31st is not even looked at.
+    expect(statuses.slice(0, 30)).toEqual(Array.from({ length: 30 }, () => 403))
+    expect(statuses.slice(30)).toEqual(Array.from({ length: 10 }, () => 429))
+    expect(await challengeAs('2001:db8:bbbb:2::1')).toBe(403)
+  })
+
+  it('refuses when the limiter binding is missing or broken', async () => {
+    const broken = { limit: () => Promise.reject(new Error('limiter down')) } as unknown as RateLimit
+
+    expect(await admitKey(undefined, 'any')).toBe(false)
+    expect(await admitKey(broken, 'any')).toBe(false)
   })
 })

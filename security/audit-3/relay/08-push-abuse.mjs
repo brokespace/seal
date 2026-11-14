@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 // Push endpoint abuse (/v1/devices, /v1/send), as: an external attacker with no key, a stranger
-// who registers their own host key, another relay host, and the relay operator.
-// Deliveries go to the fake APNs started by lib/local-relay.mjs, which logs each request, so
-// "the phone was notified" is read from that log. Nothing reaches Apple.
-import { createHmac, randomBytes, randomUUID } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
+// who tries to enrol their own host key, another enrolled relay host, and the relay operator.
+// Deliveries go to the fake APNs started by lib/local-relay.mjs (or the vitest harness), which
+// logs each request, so "the phone was notified" is read from that log. Nothing reaches Apple.
+import { randomBytes, randomUUID } from 'node:crypto'
 import {
+  enrolledHostKeys,
+  finish,
   freshSourceIp,
+  hostChallenge,
   hostSession,
   newHostKeys,
+  operatorSecrets,
+  providerRequests,
   relayOrigin,
   relayState,
   report,
   setSourceIp,
+  signHostSession,
   sleep
 } from '../lib/relay-protocol.mjs'
 
@@ -60,47 +65,63 @@ const send = (session, registrationIds, title, body) =>
     registrationIds,
     notification: notification(title, body)
   })
-function deliveriesTo(token) {
-  return readFileSync(state.pushLog, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line))
-    .filter((entry) => entry.path.endsWith(`/3/device/${token}`))
-}
+const deliveriesTo = (token) =>
+  providerRequests(state.pushLog).filter((entry) => entry.path.endsWith(`/3/device/${token}`))
 
-// ---- victim: brian's host with his phone registered ----
+// ---- victim: an enrolled host (brian) with his phone registered ----
 setSourceIp(freshSourceIp())
-const brianKeys = newHostKeys()
+const brianKeys = enrolledHostKeys()
 const brian = await hostSession(origin, brianKeys)
 const brianPhoneToken = apnsToken()
 const brianRegistration = (await register(brian.sessionToken, brianPhoneToken)).json.registrationId
 
-// ---- external attacker, no key ----
+// ---- a stranger whose key is not on the allowlist ----
+{
+  setSourceIp(freshSourceIp())
+  const stranger = newHostKeys()
+  const challenge = await hostChallenge(origin, stranger)
+  let sessionStatus = null
+  try {
+    await hostSession(origin, stranger)
+    sessionStatus = 200
+  } catch (error) {
+    sessionStatus = Number(/\d+/.exec(String(error.message))?.[0] ?? -1)
+  }
+  report(
+    'stranger key tries to enrol for push (challenge, session)',
+    challenge.status === 403 && sessionStatus === 403 ? 'blocked' : 'VULNERABLE',
+    { challenge: challenge.status, session: sessionStatus }
+  )
+}
+
+// ---- external attacker, no key: forged session tokens ----
 {
   const expires = Date.now() + 3600_000
-  const guesses = {
+  const [, , realSig] = brian.sessionToken.split('.')
+  const tokens = {
     'no token': null,
     'random signature': `${brianKeys.hostId}.${expires}.${randomBytes(32).toString('base64url')}`,
-    'empty-key HMAC': `${brianKeys.hostId}.${expires}.${createHmac('sha256', '').update(`seal-host-session/v1\0${brianKeys.hostId}\0${expires}`).digest('base64url')}`,
-    'expired real token shape': `${brianKeys.hostId}.${Date.now() - 1000}.${brian.sessionToken.split('.')[2]}`,
-    'real signature, later expiry': `${brianKeys.hostId}.${Number(brian.sessionToken.split('.')[1]) + 1}.${brian.sessionToken.split('.')[2]}`
+    'empty-secret HMAC': signHostSession('', brianKeys.hostId, expires),
+    'guessed weak secret': signHostSession('changeme', brianKeys.hostId, expires),
+    'real signature, later expiry': `${brianKeys.hostId}.${Number(brian.sessionToken.split('.')[1]) + 1000}.${realSig}`,
+    'expired real token': `${brianKeys.hostId}.${Date.now() - 1000}.${realSig}`
   }
-  for (const [label, token] of Object.entries(guesses)) {
+  for (const [label, token] of Object.entries(tokens)) {
     const list = await call('GET', '/v1/devices', token)
     const push = await send(token, [brianRegistration], 'x', 'y')
     report(
-      `external: ${label}`,
+      `external forged session: ${label}`,
       list.status === 200 || push.status === 200 ? 'VULNERABLE' : 'blocked',
       { devices: list.status, send: push.status }
     )
   }
 }
 
-// ---- a stranger with a self-generated key ----
+// ---- another enrolled host (mallory) ----
 setSourceIp(freshSourceIp())
-const mallory = await hostSession(origin, newHostKeys())
+const mallory = await hostSession(origin, enrolledHostKeys())
 {
-  // Cross-host: brian's registration id through mallory's session.
+  // mallory sends to, and tries to delete, brian's registrationId.
   const crossSend = await send(
     mallory.sessionToken,
     [brianRegistration],
@@ -114,18 +135,14 @@ const mallory = await hostSession(origin, newHostKeys())
     crossSend.json?.results?.[0]?.status === 'queued' || brianStill === 0
       ? 'VULNERABLE'
       : 'blocked',
-    {
-      send: crossSend.json?.results,
-      deleteHttp: crossDelete.status,
-      brianDevicesLeft: brianStill
-    }
+    { send: crossSend.json?.results, deleteHttp: crossDelete.status, brianDevicesLeft: brianStill }
   )
   // The registration API takes any APNs token. If mallory learns brian's device token (it is not
-  // an authenticator: the relay operator, Apple, and any earlier host the phone paired with hold
-  // it), she registers it under her own host and pushes arbitrary text with the relay's APNs key.
+  // an authenticator: the operator, Apple, and any earlier host the phone paired with hold it),
+  // she registers it under her own host and pushes attacker-chosen text with the relay's APNs key.
   const before = deliveriesTo(brianPhoneToken).length
   const hijack = (await register(mallory.sessionToken, brianPhoneToken)).json.registrationId
-  const pushed = await send(
+  await send(
     mallory.sessionToken,
     [hijack],
     'Seal: session expired',
@@ -134,33 +151,33 @@ const mallory = await hostSession(origin, newHostKeys())
   await sleep(300)
   const arrived = deliveriesTo(brianPhoneToken).slice(before)
   report(
-    "mallory registers brian's APNs token under her own host and pushes attacker-chosen text",
-    arrived.length > 0 ? 'VULNERABLE (needs the device token)' : 'blocked',
+    "an enrolled host registers another phone's APNs token and pushes to it",
+    arrived.length > 0 ? 'info' : 'blocked',
     {
-      result: pushed.json?.results,
+      reason:
+        'the APNs token is not a secret and the relay cannot bind it to a host; enrolment limits this to allowlisted hosts, and the alert is unsigned so a phone can distrust it',
       deliveredAlert: arrived[0] ? JSON.parse(arrived[0].body).aps?.alert : null
     }
   )
 }
 {
-  // Per-host caps: 64 devices and 300 pushes per 15 min. A new key is a new host.
+  // Per-host caps: 64 devices and 300 pushes per 15 min. A new enrolled host is a new quota.
   const tokens = []
   let refusedAt = null
   for (let i = 0; i < 66; i++) {
-    const token = apnsToken()
-    const result = await register(mallory.sessionToken, token)
+    const result = await register(mallory.sessionToken, apnsToken())
     if (result.status === 200) {
-      tokens.push({ token, id: result.json.registrationId })
+      tokens.push(result.json.registrationId)
     } else {
-      refusedAt ??= i + 1 + 1
+      refusedAt ??= i + 1 + 1 // +1 for brian's hijack registration above
     }
   }
-  report('device registrations per host', refusedAt ? 'blocked (cap enforced)' : 'VULNERABLE', {
+  report('device registrations per host (cap 64)', refusedAt ? 'blocked' : 'VULNERABLE', {
     accepted: tokens.length + 1,
     firstRefusalAtRegistration: refusedAt
   })
   const counts = { queued: 0, rate_limited: 0, other: 0 }
-  const batch = tokens.slice(0, 20).map((t) => t.id)
+  const batch = tokens.slice(0, 20)
   for (let i = 0; i < 17; i++) {
     const result = await send(mallory.sessionToken, batch, `spam ${i}`, 'x')
     for (const entry of result.json?.results ?? []) {
@@ -174,85 +191,43 @@ const mallory = await hostSession(origin, newHostKeys())
     }
   }
   report(
-    'pushes per host per 15 min',
-    counts.rate_limited > 0 ? 'blocked (quota enforced per host)' : 'VULNERABLE',
+    'pushes per host per 15 min (quota 300)',
+    counts.rate_limited > 0 ? 'blocked' : 'VULNERABLE',
     counts
-  )
-  // Rotation: fresh keys each get a fresh quota (and a fresh device cap).
-  let extra = 0
-  for (let k = 0; k < 3; k++) {
-    setSourceIp(freshSourceIp())
-    const next = await hostSession(origin, newHostKeys())
-    const ids = []
-    for (const t of tokens.slice(0, 20)) {
-      ids.push((await register(next.sessionToken, t.token)).json.registrationId)
-    }
-    for (let i = 0; i < 5; i++) {
-      const result = await send(next.sessionToken, ids, `rotated ${k}/${i}`, 'x')
-      extra += (result.json?.results ?? []).filter((entry) => entry.status === 'queued').length
-    }
-  }
-  report(
-    'quota after rotating to 3 fresh host keys',
-    extra > 0 ? 'VULNERABLE (quota is per self-issued identity)' : 'blocked',
-    {
-      additionalPushesSameWindow: extra,
-      totalThisWindow: counts.queued + extra,
-      nominalCapPerHost: 300
-    }
   )
 }
 
-// ---- input handling ----
+// ---- input handling: the token must never steer the provider request ----
 {
   const cases = {
-    'ios token with path traversal': {
-      v: 1,
-      deviceId: 'a',
-      platform: 'ios',
-      token: '../../v1/other',
-      apnsEnvironment: 'production'
-    },
-    'ios token with query': {
-      v: 1,
-      deviceId: 'a',
-      platform: 'ios',
-      token: 'abcd?x=1',
-      apnsEnvironment: 'production'
-    },
+    'ios token with path traversal': { platform: 'ios', token: '../../v1/other' },
+    'ios token with query': { platform: 'ios', token: 'abcd?x=1' },
     'apnsEnvironment as a host': {
-      v: 1,
-      deviceId: 'a',
       platform: 'ios',
       token: 'abcd',
       apnsEnvironment: 'attacker.example'
     },
     'android token as URL': {
-      v: 1,
-      deviceId: 'a',
       platform: 'android',
       token: 'http://169.254.169.254/latest/meta-data/aaaaaaaaaaaaaaaa'
     },
-    'extra provider field': {
+    'extra provider field': { platform: 'ios', token: 'abcd', host: 'attacker.example' }
+  }
+  for (const [label, extra] of Object.entries(cases)) {
+    const result = await call('POST', '/v1/devices', mallory.sessionToken, {
       v: 1,
       deviceId: 'a',
-      platform: 'ios',
-      token: 'abcd',
       apnsEnvironment: 'production',
-      host: 'attacker.example'
-    }
-  }
-  for (const [label, body] of Object.entries(cases)) {
-    const result = await call('POST', '/v1/devices', mallory.sessionToken, body)
+      ...extra
+    })
     report(`register: ${label}`, result.status === 200 ? 'VULNERABLE' : 'blocked', {
       http: result.status
     })
   }
+  // The test entry logs each provider request as `/<real hostname>/<path>`, so the hostname the
+  // production code chose is the first path segment.
   const providerHosts = new Set(
-    readFileSync(state.pushLog, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => JSON.parse(line).path.split('/')[1])
+    providerRequests(state.pushLog).map((entry) => entry.path.split('/')[1] ?? entry.path)
   )
   report(
     'provider hosts the Worker called (SSRF check)',
@@ -270,6 +245,31 @@ const mallory = await hostSession(origin, newHostKeys())
   )
 }
 
+// ---- the removed PUSH_PROVIDER_ORIGIN_OVERRIDE must be ignored ----
+if (!state.providerOverrideDecoy) {
+  report('provider override variable is ignored', 'skipped', {
+    reason: 'the relay was started without the decoy; run lib/local-relay.mjs'
+  })
+} else {
+  const before = deliveriesTo(brianPhoneToken).length
+  await send(brian.sessionToken, [brianRegistration], 'override', 'probe')
+  await sleep(300)
+  const toOverride = providerRequests(state.pushLog).filter((entry) =>
+    entry.path.startsWith(state.providerOverrideDecoy)
+  )
+  report(
+    'PUSH_PROVIDER_ORIGIN_OVERRIDE is ignored by the production push path',
+    toOverride.length === 0 && deliveriesTo(brianPhoneToken).length > before
+      ? 'blocked'
+      : 'VULNERABLE',
+    {
+      reason:
+        'the override var points at a decoy path; the production push path must reach the real provider host, never the override',
+      requestsToOverridePath: toOverride.length
+    }
+  )
+}
+
 // ---- what the relay sees of a notification ----
 {
   const secret = `quarterly numbers ${randomUUID()}`
@@ -278,20 +278,27 @@ const mallory = await hostSession(origin, newHostKeys())
   const seen = deliveriesTo(brianPhoneToken).some((entry) => entry.body.includes(secret))
   report(
     'notification title/body cross the relay (and APNs) in plaintext',
-    seen ? 'info (not end-to-end encrypted)' : 'blocked',
-    { plaintextSeenAtProvider: seen }
+    seen ? 'info' : 'blocked',
+    {
+      reason:
+        'by design the push alert is not end-to-end encrypted; keep secrets out of title/body',
+      plaintextSeenAtProvider: seen
+    }
   )
 }
 
 // ---- relay operator (Cloudflare account compromise) ----
-const operatorFile = '/tmp/seal-audit3/operator-secrets.json'
-if (existsSync(operatorFile)) {
-  const { HOST_SESSION_SECRET } = JSON.parse(readFileSync(operatorFile, 'utf8'))
+const secrets = operatorSecrets()
+if (!secrets) {
+  report('operator scenario', 'skipped', {
+    reason: 'start lib/local-relay.mjs with --expose-operator-secrets'
+  })
+} else {
   const expires = Date.now() + 3600_000
-  const forged = `${brianKeys.hostId}.${expires}.${createHmac('sha256', HOST_SESSION_SECRET).update(`seal-host-session/v1\0${brianKeys.hostId}\0${expires}`).digest('base64url')}`
+  const forged = signHostSession(secrets.HOST_SESSION_SECRET, brianKeys.hostId, expires)
   const devices = await call('GET', '/v1/devices', forged)
   const before = deliveriesTo(brianPhoneToken).length
-  const pushed = await send(
+  await send(
     forged,
     devices.json?.devices?.map((d) => d.registrationId) ?? [],
     'Seal security alert',
@@ -300,17 +307,24 @@ if (existsSync(operatorFile)) {
   await sleep(300)
   report(
     "operator forges brian's host session from HOST_SESSION_SECRET and notifies his phone",
-    deliveriesTo(brianPhoneToken).length > before
-      ? 'VULNERABLE (by design: operator is trusted for push)'
-      : 'blocked',
+    deliveriesTo(brianPhoneToken).length > before ? 'info' : 'blocked',
     {
-      devicesListed: devices.json?.devices?.length ?? 0,
-      result: pushed.json?.results
+      reason:
+        'by design the operator holds the signing secret and the APNs key, so push is trusted to the operator; it buys no plaintext and no command authority',
+      devicesListed: devices.json?.devices?.length ?? 0
     }
   )
-} else {
-  report('operator scenario', 'skipped', {
-    reason: 'start lib/local-relay.mjs with --expose-operator-secrets'
-  })
+  // A forged session dated past the 24 h ceiling must be refused even with the real secret.
+  const farFuture = signHostSession(
+    secrets.HOST_SESSION_SECRET,
+    brianKeys.hostId,
+    Date.now() + 48 * 60 * 60 * 1000
+  )
+  const refused = await call('GET', '/v1/devices', farFuture)
+  report(
+    'forged session dated more than 24 h out',
+    refused.status === 401 ? 'blocked' : 'VULNERABLE',
+    { http: refused.status }
+  )
 }
-process.exit(0)
+finish()

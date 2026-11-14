@@ -9,6 +9,10 @@ import { PUSH_LIMITS } from '../../../cloud/packages/push-contract/src/push-limi
 import type { PushHostChallengeResponse } from '../../../cloud/packages/push-contract/src/host-auth-messages'
 import { decodeCanonicalBase64 } from '../../../cloud/apps/push/src/host-auth/canonical-base64'
 import { deriveHostFingerprint } from '../../../cloud/apps/push/src/host-auth/host-fingerprint'
+import { isLowOrderX25519PublicKey } from '../../../src/shared/remote-runtime/e2ee/x25519-low-order-points'
+
+// Shorter than the push contract's day: a leaked session dies sooner, and the host renews on its own.
+export const HOST_SESSION_TTL_MS = 60 * 60 * 1000
 
 // A host proves it holds the X25519 key behind its fingerprint with the push gateway's
 // challenge (the desktop's PushGatewaySession speaks it), then carries a stateless session token.
@@ -31,15 +35,17 @@ export function equalStrings(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
+/** A host key, or null for one that is malformed or makes every sealed challenge predictable. */
+export function decodeHostPublicKey(hostPublicKeyB64: string): Uint8Array | null {
+  const key = decodeCanonicalBase64(hostPublicKeyB64, 32)
+  return key && !isLowOrderX25519PublicKey(key) ? key : null
+}
+
 export function issueHostChallenge(
   gatewayOrigin: string,
-  hostPublicKeyB64: string,
+  hostPublicKey: Uint8Array,
   now = Date.now()
-): IssuedChallenge | null {
-  const hostPublicKey = decodeCanonicalBase64(hostPublicKeyB64, 32)
-  if (!hostPublicKey) {
-    return null
-  }
+): IssuedChallenge {
   const hostFingerprint = deriveHostFingerprint(hostPublicKey)
   const ephemeral = nacl.box.keyPair()
   const challengeNonce = randomBytes(nacl.box.nonceLength)
@@ -100,31 +106,34 @@ export function mintHostSession(
   hostFingerprint: string,
   now = Date.now()
 ): { sessionToken: string; expiresAt: number; hostFingerprint: string } {
-  const expiresAt = now + PUSH_LIMITS.sessionTtlMs
+  const expiresAt = now + HOST_SESSION_TTL_MS
   const sessionToken = `${hostFingerprint}.${expiresAt}.${sessionSignature(secret, hostFingerprint, expiresAt)}`
   return { sessionToken, expiresAt, hostFingerprint }
 }
+
+export type HostSession = { hostFingerprint: string; expiresAt: number }
 
 export function verifyHostSession(
   secret: string,
   token: string | null,
   now = Date.now()
-): string | null {
+): HostSession | null {
   const match = token ? /^([A-Za-z0-9_-]{16})\.(\d{13,16})\.([A-Za-z0-9_-]{43})$/.exec(token) : null
   if (!match) {
     return null
   }
   const [, hostFingerprint, expiresRaw, signature] = match
   const expiresAt = Number(expiresRaw)
-  if (expiresAt <= now) {
+  // The contract's ceiling, not this Worker's shorter TTL: sessions minted before it was shortened run out on their own.
+  if (expiresAt <= now || expiresAt > now + PUSH_LIMITS.sessionTtlMs) {
     return null
   }
   return equalStrings(signature, sessionSignature(secret, hostFingerprint, expiresAt))
-    ? hostFingerprint
+    ? { hostFingerprint, expiresAt }
     : null
 }
 
 export function fingerprintOfPublicKey(hostPublicKeyB64: string): string | null {
-  const key = decodeCanonicalBase64(hostPublicKeyB64, 32)
+  const key = decodeHostPublicKey(hostPublicKeyB64)
   return key ? deriveHostFingerprint(key) : null
 }

@@ -1,18 +1,25 @@
 #!/usr/bin/env node
-// Attacker: another Seal user on the same relay. Anyone can be one: a host account is nothing
-// but an X25519 key the caller generates (see check 1). The attacker ("mallory") holds a fully
-// valid host session, relay JWT and control socket for their own key, and turns them on a victim
-// host ("brian") that shares the Worker.
+// Attacker 1: a stranger with a self-generated X25519 key. The relay serves only the host keys on
+// its allowlist, so the stranger must be refused on every path, even holding validly signed tokens
+// (a host that was taken off the allowlist).
+// Attacker 2: another enrolled host on the same relay ("mallory"), holding a fully valid host
+// session, relay JWT and control socket for her own key, and turning them on a victim host
+// ("brian") that shares the Worker.
 import { randomUUID } from 'node:crypto'
 import {
   controlRequest,
   createInvite,
   dataAttach,
+  finish,
   freshSourceIp,
+  hostChallenge,
   hostOnline,
   installResumeCredential,
+  newHostKeys,
   nextConnOpen,
   openSocket,
+  operatorSecrets,
+  phoneAttempt,
   phoneOpen,
   postJson,
   relayAuthFrame,
@@ -21,6 +28,9 @@ import {
   revokeDevice,
   setSourceIp,
   sha256B64url,
+  signHostSession,
+  signRelayJwt,
+  sourceHeaders,
   splice,
   wsOrigin,
   randomToken
@@ -31,17 +41,92 @@ setSourceIp(freshSourceIp())
 const brian = await hostOnline(origin)
 const brianDevice = await installResumeCredential(brian.control)
 
+// ---- a stranger's key ----
+setSourceIp(freshSourceIp())
+const stranger = newHostKeys()
+{
+  const challenge = await hostChallenge(origin, stranger)
+  // A proof for a challenge the relay never issued: only the enrolment refusal may answer it.
+  const session = await postJson(origin, '/v1/host/session', {
+    v: 1,
+    challengeId: `${stranger.hostId}.${randomUUID()}`,
+    proofB64: Buffer.alloc(32, 1).toString('base64')
+  })
+  report(
+    '1. a stranger with a self-generated key becomes a relay host (no allowlist, no enrollment secret)',
+    challenge.status === 403 && session.status === 403 ? 'blocked' : 'VULNERABLE',
+    { strangerHostId: stranger.hostId, challenge: challenge.status, session: session.status }
+  )
+}
+{
+  // What a host taken off the allowlist still holds: tokens the relay itself signed.
+  const secrets = operatorSecrets()
+  if (!secrets) {
+    report('a host off the allowlist presenting validly signed tokens', 'skipped', {
+      reason: 'start lib/local-relay.mjs with --expose-operator-secrets'
+    })
+  } else {
+    const sessionFor = (hostId) =>
+      signHostSession(secrets.HOST_SESSION_SECRET, hostId, Date.now() + 30 * 60 * 1000)
+    const withSession = async (keys) => {
+      const call = (method, path, body) =>
+        fetch(`${origin}${path}`, {
+          method,
+          headers: {
+            authorization: `Bearer ${sessionFor(keys.hostId)}`,
+            'content-type': 'application/json',
+            ...sourceHeaders()
+          },
+          ...(body ? { body: JSON.stringify(body) } : {})
+        }).then((response) => response.status)
+      return {
+        relayToken: await call('POST', '/v1/host/relay-token', {
+          relayHostId: keys.hostId,
+          hostPublicKeyB64: keys.publicKeyB64
+        }),
+        listDevices: await call('GET', '/v1/devices'),
+        send: await call('POST', '/v1/send', {}),
+        removeDevice: await call('DELETE', `/v1/devices/${randomUUID()}`),
+        mcpTunnel: await call('GET', '/v1/host/mcp')
+      }
+    }
+    const withRelayJwt = async (keys) => {
+      const jwt = await signRelayJwt(secrets.RELAY_JWT_PRIVATE_JWK, keys.hostId)
+      const assign = await postJson(
+        origin,
+        '/v1/assign',
+        { v: 1, relayHostId: keys.hostId },
+        { authorization: `Bearer ${jwt}` }
+      )
+      const control = openSocket(`${wsOrigin(origin)}/v1/host/control`, {
+        headers: { authorization: `Bearer ${jwt}` }
+      })
+      await control.open()
+      control.ws.terminate()
+      return { assign: assign.status, controlUpgrade: control.upgradeStatus ?? 101 }
+    }
+    const delisted = { ...(await withSession(stranger)), ...(await withRelayJwt(stranger)) }
+    // The same forged tokens for an enrolled host are honoured: the refusals above are enrolment.
+    const enrolled = await withRelayJwt(brian.keys)
+    const enrolledDevices = (await withSession(brian.keys)).listDevices
+    report(
+      'a host off the allowlist presenting validly signed tokens',
+      Object.values(delisted).every((status) => status === 403) &&
+        enrolled.assign === 200 &&
+        enrolledDevices === 200
+        ? 'blocked'
+        : 'VULNERABLE',
+      {
+        offAllowlist: delisted,
+        sameTokensForEnrolledHost: { ...enrolled, listDevices: enrolledDevices }
+      }
+    )
+  }
+}
+
+// ---- another enrolled host ----
 setSourceIp(freshSourceIp())
 const mallory = await hostOnline(origin)
-report(
-  '1. a stranger with a self-generated key becomes a relay host (no allowlist, no enrollment secret)',
-  'VULNERABLE (open relay)',
-  {
-    malloryHostId: mallory.keys.hostId,
-    relayJwtIssued: Boolean(mallory.relayToken),
-    controlSeated: mallory.ack?.type === 'host-hello-ack'
-  }
-)
 
 // ---- HTTP: mallory's credentials naming brian ----
 {
@@ -53,7 +138,7 @@ report(
   )
   report(
     "relay token for brian's host id with mallory's session",
-    token.status === 200 ? 'VULNERABLE' : 'blocked',
+    token.status === 403 ? 'blocked' : 'VULNERABLE',
     { http: token.status }
   )
   const assignment = await postJson(
@@ -64,7 +149,7 @@ report(
   )
   report(
     "/v1/assign for brian's host id with mallory's relay JWT",
-    assignment.status === 200 ? 'VULNERABLE' : 'blocked',
+    assignment.status === 403 ? 'blocked' : 'VULNERABLE',
     { http: assignment.status }
   )
   // Session token with brian's fingerprint spliced onto mallory's expiry and signature.
@@ -74,7 +159,7 @@ report(
   })
   report(
     "session token re-labelled with brian's fingerprint",
-    forged.status === 200 ? 'VULNERABLE' : 'blocked',
+    forged.status === 401 ? 'blocked' : 'VULNERABLE',
     { http: forged.status }
   )
 }
@@ -85,7 +170,7 @@ report(
   const stillWorks = await splice(origin, brian, brianDevice.resumeToken)
   report(
     "mallory sends device-revoke for brian's relayDeviceId",
-    stillWorks.hello?.ok === true ? 'blocked (scoped to mallory)' : 'VULNERABLE',
+    stillWorks.hello?.ok === true ? 'blocked' : 'VULNERABLE',
     { reply: revoke?.type, brianPhoneStillConnects: stillWorks.hello?.ok }
   )
   stillWorks.phone.ws.terminate()
@@ -102,23 +187,19 @@ report(
     },
     'device-credential-installed'
   )
-  const phone = await phoneOpen(origin, brian.keys.hostId)
-  phone.ws.send(relayAuthFrame(planted))
-  const hello = await phone.nextJson(2500)
+  const plantedAttempt = await phoneAttempt(origin, brian.keys.hostId, planted, 2500)
   report(
     "credential installed through mallory's control presented at brian's host",
-    hello?.ok === true ? 'VULNERABLE' : 'blocked',
-    { hello }
+    plantedAttempt.hello?.code === 4401 ? 'blocked' : 'VULNERABLE',
+    { hello: plantedAttempt.hello }
   )
   // And mallory's own invite at brian's host.
   const invite = await createInvite(mallory.control)
-  const phone2 = await phoneOpen(origin, brian.keys.hostId)
-  phone2.ws.send(relayAuthFrame(invite.inviteToken))
-  const hello2 = await phone2.nextJson(2500)
+  const inviteAttempt = await phoneAttempt(origin, brian.keys.hostId, invite.inviteToken, 2500)
   report(
     "mallory's invite presented at brian's host",
-    hello2?.ok === true ? 'VULNERABLE' : 'blocked',
-    { hello: hello2 }
+    inviteAttempt.hello?.code === 4401 ? 'blocked' : 'VULNERABLE',
+    { hello: inviteAttempt.hello }
   )
 }
 
@@ -129,16 +210,19 @@ report(
   const own = await phoneOpen(origin, mallory.keys.hostId)
   own.ws.send(relayAuthFrame(invite.inviteToken))
   const open = await nextConnOpen(mallory.control)
-  const forgedConnId = open.connId.replace(mallory.keys.hostId, brian.keys.hostId)
   const data = await dataAttach(
     origin,
-    { connId: forgedConnId, connTicket: open.connTicket },
+    {
+      connId: open.connId.replace(mallory.keys.hostId, brian.keys.hostId),
+      connTicket: open.connTicket
+    },
     mallory.ack.generation
   )
+  const close = await data.waitClosed(3000)
   report(
     "mallory's ticket on a connId rewritten to brian's host id",
-    (await data.waitClosed(15000))?.code === 4401 ? 'blocked' : 'VULNERABLE',
-    { close: data.closed }
+    close?.code === 4401 ? 'blocked' : 'VULNERABLE',
+    { close }
   )
   own.ws.terminate()
 }
@@ -151,22 +235,28 @@ report(
   const squatter = openSocket(`${wsOrigin(origin)}/v1/host/data/${encodeURIComponent(open.connId)}`)
   await squatter.open()
   const real = await dataAttach(origin, open, brian.ack.generation)
-  const hello = await phone.nextJson(12000)
+  const realClose = await real.waitClosed(1500)
+  const hello = realClose ? null : await phone.nextJson(3000)
+  // The next connection gets a fresh connId, so the squatter denied exactly one attempt.
+  const next = await splice(origin, brian, brianDevice.resumeToken)
   report(
     'data socket squatting with a leaked connId (ticket unknown)',
-    hello?.ok === true ? 'blocked' : 'info (denies that one connection; needs the 122-bit connId)',
+    hello?.ok === true ? 'blocked' : next.hello?.ok === true ? 'info' : 'VULNERABLE',
     {
-      phoneHello: hello,
-      realHostDataClose: await real.waitClosed(1000),
-      squatterClose: await squatter.waitClosed(1000)
+      reason:
+        'needs the 122-bit connId the relay sends only to the host; denies that one connection until the 10 s attach deadline, and the phone reconnects',
+      realHostDataClose: realClose,
+      nextConnectionHello: next.hello?.ok ?? null
     }
   )
+  squatter.ws.terminate()
 }
 
 // ---- same-key takeover needs the key ----
 report('host id is 96 bits of SHA-256 over the public key', 'info', {
+  reason: 'arithmetic, not an attack',
   secondPreimageWork: '2^96 key generations to collide with a chosen host id'
 })
 brian.control.ws.terminate()
 mallory.control.ws.terminate()
-process.exit(0)
+finish()
