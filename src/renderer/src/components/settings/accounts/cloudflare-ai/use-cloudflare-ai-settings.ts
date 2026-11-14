@@ -40,6 +40,15 @@ export type CloudflareAiSettingsModel = {
   setSummariesEnabled: (enabled: boolean) => Promise<void>
 }
 
+// React Compiler cannot lower a try/finally written inside the hook.
+async function settling<T>(run: () => Promise<T>, settle: () => void): Promise<T> {
+  try {
+    return await run()
+  } finally {
+    settle()
+  }
+}
+
 /** The utility model on one host. Remount (key by owner) to point it at another. */
 export function useCloudflareAiSettings(owner: RuntimeClientTarget): CloudflareAiSettingsModel {
   const t = useTranslate()
@@ -118,24 +127,25 @@ export function useCloudflareAiSettings(owner: RuntimeClientTarget): CloudflareA
       return false
     }
     setBusy(true)
-    try {
-      const next = await run()
-      if (mounted.current) {
-        setStatus(next)
-        setTestResult(null)
-      }
-      await readSummaries()
-      return true
-    } catch (error) {
-      toast.error(t('seal.cloudflareAi.saveFailed', 'Cloudflare AI settings were not saved.'), {
-        description: error instanceof Error ? error.message : String(error)
-      })
-      return false
-    } finally {
-      if (mounted.current) {
-        setBusy(false)
-      }
-    }
+    return settling(
+      async () => {
+        try {
+          const next = await run()
+          if (mounted.current) {
+            setStatus(next)
+            setTestResult(null)
+          }
+          await readSummaries()
+          return true
+        } catch (error) {
+          toast.error(t('seal.cloudflareAi.saveFailed', 'Cloudflare AI settings were not saved.'), {
+            description: error instanceof Error ? error.message : String(error)
+          })
+          return false
+        }
+      },
+      () => mounted.current && setBusy(false)
+    )
   }
 
   return {
@@ -153,25 +163,27 @@ export function useCloudflareAiSettings(owner: RuntimeClientTarget): CloudflareA
     },
     test: async () => {
       setTesting(true)
-      try {
-        const { result, status: next } = await call<{
-          result: UtilityModelTestResult
-          status: UtilityModelStatus
-        }>('utilityModel.test')
-        if (mounted.current) {
-          setTestResult(result)
-          setStatus(next)
-        }
-        await readSummaries()
-      } catch (error) {
-        toast.error(t('seal.cloudflareAi.testFailed', 'Could not run the Cloudflare AI test.'), {
-          description: error instanceof Error ? error.message : String(error)
-        })
-      } finally {
-        if (mounted.current) {
-          setTesting(false)
-        }
-      }
+      await settling(
+        async () => {
+          try {
+            const { result, status: next } = await call<{
+              result: UtilityModelTestResult
+              status: UtilityModelStatus
+            }>('utilityModel.test')
+            if (mounted.current) {
+              setTestResult(result)
+              setStatus(next)
+            }
+            await readSummaries()
+          } catch (error) {
+            toast.error(
+              t('seal.cloudflareAi.testFailed', 'Could not run the Cloudflare AI test.'),
+              { description: error instanceof Error ? error.message : String(error) }
+            )
+          }
+        },
+        () => mounted.current && setTesting(false)
+      )
     },
     setSummariesEnabled: async (enabled) => {
       try {

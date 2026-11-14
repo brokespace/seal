@@ -41,7 +41,8 @@ export function getCompactAgentSecondary(
   now: number,
   lastAssistantMessageOverride?: string,
   presentation: ProgramStatusPresentation = resolveRowProgramStatus(agent).presentation,
-  t?: Translate
+  t?: Translate,
+  sessionSummary?: string
 ): string {
   // Program-reported blocks need user attention before other row details.
   if (presentation.attention) {
@@ -70,8 +71,9 @@ export function getCompactAgentSecondary(
   if (presentation.message) {
     return presentation.message
   }
+  // One line has no room for a second: the host's summary takes the raw last message's place.
   const lastAssistantMessage =
-    lastAssistantMessageOverride ?? agent.entry.lastAssistantMessage?.trim()
+    lastAssistantMessageOverride ?? sessionSummary ?? agent.entry.lastAssistantMessage?.trim()
   if (lastAssistantMessage) {
     return lastAssistantMessage
   }
@@ -169,13 +171,14 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
           providerSessionId: agent.entry.providerSession?.id
         }
   )
-  // One line has no room for a second: the host's summary takes the raw last message's place.
+  const summaryText = summary?.text ?? undefined
   const secondary = getCompactAgentSecondary(
     agent,
     now,
-    stableMessage ?? summary?.text ?? undefined,
+    stableMessage,
     presentation,
-    t
+    t,
+    summaryText
   )
   const { leadingText, trailingText } = getCompactAgentLineOrder(agent, primary, secondary, t)
   const rowTitle = `${leadingText}${trailingText ? ` - ${trailingText}` : ''}`

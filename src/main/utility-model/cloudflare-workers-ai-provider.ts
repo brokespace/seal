@@ -2,6 +2,7 @@ import type {
   UtilityModelCatalogEntry,
   UtilityModelRequest
 } from '../../shared/utility-model/utility-model-types'
+import { isRecord } from '../home-chat/home-chat-record-guard'
 import { getMainHttpClient } from '../network/http-client'
 import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
 
@@ -14,9 +15,7 @@ const REQUEST_TIMEOUT_MS = 20_000
 const MAX_ERROR_TEXT = 300
 
 function record(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null
+  return isRecord(value) ? value : null
 }
 
 function text(value: unknown): string | null {

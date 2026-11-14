@@ -7,6 +7,7 @@ import {
   CLOUDFLARE_AI_DEFAULT_MODEL
 } from '../../shared/utility-model/utility-model-types'
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
+import { isRecord } from '../home-chat/home-chat-record-guard'
 import type { CloudflareAiCredentials } from './cloudflare-workers-ai-provider'
 
 export type CloudflareAiConfig = {
@@ -36,13 +37,12 @@ export type CloudflareAiSavedStore = {
 const FIELDS = ['accountId', 'apiToken', 'model', 'fallbackModel'] as const
 
 function fieldsOf(value: unknown): CloudflareAiConfigFields {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return {}
   }
-  const source = value as Record<string, unknown>
   const fields: CloudflareAiConfigFields = {}
   for (const key of FIELDS) {
-    const entry = source[key]
+    const entry = value[key]
     if (typeof entry === 'string' && entry.trim()) {
       fields[key] = entry.trim()
     }
