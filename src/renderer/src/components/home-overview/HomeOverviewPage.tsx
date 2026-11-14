@@ -37,10 +37,7 @@ function HomeOverviewContent(): React.JSX.Element {
     () => mergeSessionMachines(providedMachines, sessions),
     [providedMachines, sessions]
   )
-  const attention = useMemo(
-    () => buildHomeAttentionItems({ sessions, accounts, machines }),
-    [sessions, accounts, machines]
-  )
+  const attention = useMemo(() => buildHomeAttentionItems(sessions), [sessions])
   const counts = countSessionsByState(sessions)
   const summary = [
     t('home.overview.summary.working', '{{count}} working', { count: counts.working }),

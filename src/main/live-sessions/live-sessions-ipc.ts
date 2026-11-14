@@ -5,6 +5,7 @@ import type {
   LiveTranscriptCursor
 } from '../../shared/live-sessions/live-session-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
+import { LiveSessionRemoveParams } from '../../shared/live-sessions/live-session-rpc-params'
 import type { LiveSessionService } from './live-session-service'
 import type {
   ShellIntegrationAction,
@@ -138,6 +139,9 @@ export function registerLiveSessionIpc(
     }
     return service.takeOver(args.sessionId)
   })
+  ipcMain.handle(LIVE_SESSION_IPC.remove, (_event, args: unknown) =>
+    service.remove(LiveSessionRemoveParams.parse(args))
+  )
   ipcMain.handle(
     LIVE_SESSION_IPC.shellIntegration,
     (_event, args: { hostId: unknown; action: unknown }) => {

@@ -1,5 +1,6 @@
 import type { HandlerGroup } from '../dispatch/handler-group-manifest'
 
+// Split from handler-group-manifest.ts to keep it under the max-lines limit.
 export const SEAL_ACCOUNT_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'seal-account',

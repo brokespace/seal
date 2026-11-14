@@ -5,7 +5,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator
 } from '@/components/ui/context-menu'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { ExplorerRow } from './machine-explorer-rows'
 import type { MachineFileActions } from './use-machine-file-actions'
 

@@ -1,19 +1,13 @@
-import { Check, ChevronDown, MessageSquarePlus, Sparkles, Trash2, X } from 'lucide-react'
+import { MessageSquarePlus, X } from 'lucide-react'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
-import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '../ui/dropdown-menu'
 import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-api'
 import { HomeChatComposer } from './HomeChatComposer'
+import { HomeChatContextBar } from './HomeChatContextBar'
 import { HomeChatConversation } from './HomeChatConversation'
 import { HomeChatMemoryDialog } from './HomeChatMemoryDialog'
+import { HomeChatThreadList } from './HomeChatThreadList'
 import { useHomeChat } from './use-home-chat'
 
 function HomeChatPanel({
@@ -33,56 +27,30 @@ function HomeChatPanel({
       aria-label={t('homeChat.label', 'Seal assistant')}
     >
       <header className="flex h-11 shrink-0 items-center gap-1 border-b border-border px-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="min-w-0 justify-start">
-              <Sparkles className="size-4 shrink-0 text-muted-foreground" />
-              <span className="truncate text-[13px] font-medium">
-                {active?.title ?? t('homeChat.title', 'Assistant')}
-              </span>
-              {active?.parentChatId && (
-                <Badge variant="referenceLabel">{t('homeChat.worker', 'Worker')}</Badge>
-              )}
-              <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-72">
-            {chats.length === 0 && (
-              <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                {t('homeChat.noChats', 'No chats yet')}
-              </p>
-            )}
-            {chats.map((chat) => (
-              <DropdownMenuItem key={chat.id} onSelect={() => state.select(chat.id)}>
-                <span className="min-w-0 flex-1 truncate">{chat.title}</span>
-                {chat.parentChatId && (
-                  <Badge variant="referenceLabel">{t('homeChat.worker', 'Worker')}</Badge>
-                )}
-                {chat.id === active?.id && <Check className="size-3.5" />}
-              </DropdownMenuItem>
-            ))}
-            {active && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={() => state.remove(active.id)}>
-                  <Trash2 className="size-3.5" />
-                  {t('homeChat.delete', 'Delete this chat')}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <HomeChatThreadList
+          chats={chats}
+          active={active}
+          onSelect={state.select}
+          onRename={state.rename}
+          onDelete={state.remove}
+        />
         <div className="flex-1" />
         <HomeChatMemoryDialog api={api} memoryVersion={state.memoryVersion} />
         <Button
           variant="ghost"
           size="icon-xs"
           onClick={() => void state.newChat()}
-          aria-label={t('homeChat.new', 'New chat')}
+          aria-label={t('homeChat.new', 'New thread')}
         >
           <MessageSquarePlus />
         </Button>
       </header>
+      <HomeChatContextBar
+        chat={active}
+        machines={state.machines}
+        onOpenMachines={state.refreshMachines}
+        onCompact={state.compact}
+      />
 
       {active && active.entries.length > 0 ? (
         <HomeChatConversation
@@ -99,7 +67,7 @@ function HomeChatPanel({
           <p className="text-xs text-muted-foreground">
             {t(
               'homeChat.empty.capabilities',
-              'Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree.'
+              'Ask Seal for anything on this computer or any connected machine: run a command, move files, check on an agent session, switch accounts, or hand coding work to an agent in a worktree.'
             )}
           </p>
         </div>

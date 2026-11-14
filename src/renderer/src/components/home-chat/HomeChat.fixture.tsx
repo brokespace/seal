@@ -3,9 +3,34 @@ import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-ap
 import type { HomeChatMemory } from '../../../../shared/home-chat/home-chat-memory-types'
 import type {
   HomeChat as HomeChatRecord,
+  HomeChatEntry,
+  HomeChatMachineOption,
   HomeChatSettings
 } from '../../../../shared/home-chat/home-chat-types'
 import HomeChat from './HomeChat'
+
+type EntryDraft = HomeChatEntry extends infer E
+  ? E extends HomeChatEntry
+    ? Omit<E, 'ord'>
+    : never
+  : never
+
+function inOrder(entries: EntryDraft[]): HomeChatEntry[] {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: a draft is an entry minus `ord`, which is added here; a spread loses the union.
+  return entries.map((entry, index) => ({ ...entry, ord: index + 1 }) as HomeChatEntry)
+}
+
+const machines: HomeChatMachineOption[] = [
+  { id: 'local', label: 'This computer', kind: 'local', status: 'online' },
+  {
+    id: 'ssh:build-box',
+    label: 'build-box',
+    kind: 'ssh',
+    status: 'online',
+    address: 'ci@10.0.0.12'
+  },
+  { id: 'runtime:tower', label: 'tower', kind: 'runtime', status: 'offline' }
+]
 
 const conversation: HomeChatRecord = {
   id: 'chat-1',
@@ -16,7 +41,18 @@ const conversation: HomeChatRecord = {
   status: 'running',
   createdAt: 1,
   updatedAt: 2,
-  entries: [
+  context: { usedTokens: 148_200, windowTokens: 200_000, compactions: 1 },
+  lastMachine: 'build-box',
+  entries: inOrder([
+    {
+      id: 'c0',
+      rev: 1,
+      at: 1,
+      kind: 'compaction',
+      auto: true,
+      summary:
+        '## Goal\nKeep the build box healthy.\n\n## Done so far\n- Rotated the CI logs on build-box.'
+    },
     {
       id: 'u1',
       rev: 1,
@@ -76,12 +112,17 @@ const conversation: HomeChatRecord = {
       status: 'awaiting-approval',
       approvalReason: 'This deletes /home/ci/.cache/turbo.'
     }
-  ]
+  ])
 }
 
 const settings: HomeChatSettings = {
   defaultBackend: 'claude-code',
-  openai: { baseUrl: 'https://openrouter.ai/api/v1', model: '', apiKeyConfigured: false },
+  openai: {
+    baseUrl: 'https://openrouter.ai/api/v1',
+    model: '',
+    apiKeyConfigured: false,
+    contextWindow: 128_000
+  },
   web: { searchProvider: 'duckduckgo', searxngUrl: '', searchApiKeyConfigured: false }
 }
 
@@ -119,10 +160,15 @@ function fakeHomeChatApi(chats: HomeChatRecord[]): HomeChatApi {
     delete: async () => {},
     send: async () => {},
     stop: async () => {},
+    compact: async () => true,
+    listMachines: async () => machines,
     respondApproval: async () => true,
     getSettings: async () => settings,
     updateSettings: async () => settings,
-    listAccounts: async () => [{ id: null, label: 'Default login' }],
+    listAccounts: async () => [
+      { backend: 'claude-code', id: null, label: 'System login' },
+      { backend: 'codex', id: null, label: 'System login' }
+    ],
     getMemory: async () => memory,
     updateMemory: async () => memory,
     readAttachment: async () => ({ mimeType: 'image/svg+xml', base64: btoa(SCREENSHOT_SVG) }),
@@ -137,7 +183,9 @@ const backgroundWork: HomeChatRecord = {
   id: 'chat-2',
   title: 'Start the dashboard on tower',
   status: 'idle',
-  entries: [
+  context: { usedTokens: 21_400, windowTokens: 200_000, compactions: 0 },
+  lastMachine: 'tower',
+  entries: inOrder([
     {
       id: 'b1',
       rev: 1,
@@ -212,7 +260,7 @@ const backgroundWork: HomeChatRecord = {
       text: 'The build passed and the dashboard is serving on tower at `localhost:5173` (job 3f9a1c2e keeps it running). I removed the screenshot from `/tmp`.',
       streaming: false
     }
-  ]
+  ])
 }
 
 export const conversationWithApproval = defineFixture({
@@ -259,6 +307,18 @@ export const settingsWithWebSearch = defineFixture({
   render: () => <HomeChat className="h-[720px]" />,
   interact: async (frame) => {
     frame.querySelector<HTMLButtonElement>('button[aria-label="Assistant settings"]')?.click()
+    await new Promise((resolve) => setTimeout(resolve, 300))
+  }
+})
+
+export const threadList = defineFixture({
+  width: 520,
+  setup: () => {
+    window.api.homeChat = fakeHomeChatApi([conversation, backgroundWork])
+  },
+  render: () => <HomeChat className="h-[640px]" />,
+  interact: async (frame) => {
+    frame.querySelector<HTMLButtonElement>('button[aria-label="Threads"]')?.click()
     await new Promise((resolve) => setTimeout(resolve, 300))
   }
 })

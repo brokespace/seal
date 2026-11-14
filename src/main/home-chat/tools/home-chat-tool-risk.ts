@@ -91,6 +91,16 @@ export function assessHomeChatToolRisk(
       return { requiresApproval: true, reason: `This deletes ${String(input.path)}.` }
     case 'seal_cli':
       return assessOrcaArgs(Array.isArray(input.args) ? input.args.map(String) : [])
+    case 'take_over_session':
+      return {
+        requiresApproval: true,
+        reason: 'This stops an agent running outside Seal and resumes it in a Seal pane.'
+      }
+    case 'switch_account':
+      return {
+        requiresApproval: true,
+        reason: `This changes the active ${String(input.provider)} account for new sessions.`
+      }
     // Jobs, subagents and routines are the assistant's own; routine runs still hit approvals.
     case 'list_machines':
     case 'job_status':
@@ -106,6 +116,13 @@ export function assessHomeChatToolRisk(
     case 'remember':
     case 'forget':
     case 'load_skill':
+    case 'list_skills':
+    case 'list_sessions':
+    case 'read_session':
+    case 'message_session':
+    case 'start_session':
+    case 'account_usage':
+    case 'open_in_seal':
     case 'spawn_subagent':
     case 'check_subagent':
     case 'message_subagent':

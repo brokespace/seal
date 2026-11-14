@@ -3,6 +3,7 @@ import type { AiVaultScanIssue } from '../../../shared/ai-vault/contracts/ai-vau
 import { AI_VAULT_AGENT_SOURCES } from '../../ai-vault/discovery/session-scanner-agent-sources'
 import { discoverFiles } from '../../ai-vault/discovery/session-scanner-discovery'
 import type { AiVaultScanOptions, FileWithMtime } from '../../ai-vault/session-scanner-types'
+import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery-output'
 
 export type TranscriptFileRequest = {
@@ -16,6 +17,8 @@ export type TranscriptFileRequest = {
   known: ReadonlyMap<string, number>
   /** Paths whose head was already read: only their tail is read when they grow. */
   headKnown: ReadonlySet<string>
+  /** Transcripts running agents own: listed first, whatever their age. */
+  pinned?: readonly { provider: LiveSessionProvider; path: string }[]
 }
 
 /** Finds a host's recent transcripts and reads the bytes a scan needs, in place of the script's `find`. */
@@ -57,11 +60,14 @@ export function aiVaultTranscriptFiles(
     )
     const oldest = request.nowMs - request.maxAgeMinutes * 60_000
     const seen = new Set<string>()
-    const recent = found
-      .flat()
-      .filter(({ file }) => file.mtimeMs >= oldest && !seen.has(file.path) && seen.add(file.path))
-      .sort((a, b) => b.file.mtimeMs - a.file.mtimeMs)
-      .slice(0, request.maxFiles)
+    const pinned = await pinnedFiles(request.pinned ?? [], seen)
+    const recent = [
+      ...pinned,
+      ...found
+        .flat()
+        .filter(({ file }) => file.mtimeMs >= oldest && !seen.has(file.path) && seen.add(file.path))
+        .sort((a, b) => b.file.mtimeMs - a.file.mtimeMs)
+    ].slice(0, request.maxFiles)
     let reads = 0
     const out: DiscoveredFile[] = []
     for (const { provider, file } of recent) {
@@ -87,6 +93,32 @@ export function aiVaultTranscriptFiles(
     }
     return out
   }
+}
+
+async function pinnedFiles(
+  pins: readonly { provider: LiveSessionProvider; path: string }[],
+  seen: Set<string>
+): Promise<{ provider: LiveSessionProvider; file: FileWithMtime }[]> {
+  const out: { provider: LiveSessionProvider; file: FileWithMtime }[] = []
+  for (const { provider, path } of pins) {
+    if (seen.has(path)) {
+      continue
+    }
+    const info = await stat(path).catch(() => null)
+    if (info?.isFile()) {
+      seen.add(path)
+      out.push({
+        provider,
+        file: {
+          path,
+          mtimeMs: info.mtimeMs,
+          modifiedAt: info.mtime.toISOString(),
+          sizeBytes: info.size
+        }
+      })
+    }
+  }
+  return out
 }
 
 async function sizeOf(file: FileWithMtime): Promise<number | null> {

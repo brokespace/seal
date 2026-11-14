@@ -11614,6 +11614,10 @@
             "893c8717f2": "Import from SSH config",
             "50416e3809": "Test connection",
             "004ef87a84": "Add SSH target"
+          },
+          "autoImported": {
+            "label": "Show auto-imported hosts",
+            "description": "{{count}} host(s) that Colima, Lima or OrbStack added to ~/.ssh/config for their own VMs."
           }
         },
         "tasks": {
@@ -20127,8 +20131,8 @@
           "title": "Agent sessions",
           "refresh": "Scan again",
           "scanning": "Looking for sessions",
-          "empty": "No Claude Code or Codex sessions ran in the last 12 hours on this machine or a connected SSH host.",
-          "pick": "Pick a session to open its chat"
+          "pick": "Pick a session to open its chat",
+          "emptyAnyHost": "No Claude Code or Codex sessions are running, or ran in the last 12 hours, on this machine, a connected SSH host or a paired server."
         },
         "LiveSessionsSidebarEntry": {
           "label": "Agent sessions"
@@ -20178,6 +20182,33 @@
           "stillRunning": "The agent process didn’t stop.",
           "noWorkspace": "Open a workspace on {{host}} first; the session reopens in a pane there.",
           "failed": "Could not take over the session. {{reason}}"
+        },
+        "remove": {
+          "select": "Select",
+          "selected": "{{count}} selected",
+          "selectNone": "Select none",
+          "selectAll": "Select all",
+          "removeSelected": "Remove",
+          "done": "Done",
+          "button": "Remove from Seal",
+          "failed": "{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.",
+          "titleOne": "Remove this session from Seal?",
+          "titleMany": "Remove {{count}} sessions from Seal?",
+          "description": "Removed sessions stay hidden, even after Seal rescans. Nothing on disk changes unless you choose to delete transcripts.",
+          "running": "{{count}} still running: Stop and remove ends the agent (and its Seal tmux session) first; Remove from Seal leaves it running where it is.",
+          "deleteFiles": "Also delete transcript files",
+          "deleteWarning": "These are deleted for good; the conversation cannot be resumed afterwards:",
+          "cancel": "Cancel",
+          "hideOnly": "Remove from Seal",
+          "stopAndRemove": "Stop and remove",
+          "removeAndDelete": "Remove and delete"
+        },
+        "idleReap": {
+          "minutes": "{{count}} min",
+          "hours": "{{count}} h",
+          "label": "End idle Seal sessions",
+          "description": "A claude or codex Seal keeps running in its own tmux server (tmux -L seal) ends once no terminal shows it and nothing has happened in it for this long. Sessions you run in your own terminal or tmux are never touched.",
+          "never": "Never"
         }
       }
     },
@@ -25551,8 +25582,6 @@
         "empty": "No account usage yet. Sign in to an agent to track limits."
       },
       "attention": {
-        "machineError": "Connection failed",
-        "accountUsage": "{{provider}} at {{percent}}% of limit",
         "title": "Needs attention",
         "empty": "Nothing is waiting on you."
       },
@@ -25622,8 +25651,8 @@
   },
   "homeChat": {
     "account": {
-      "label": "Claude account",
-      "current": "Current account"
+      "label": "Account",
+      "system": "System login"
     },
     "approval": {
       "approve": "Approve",
@@ -25631,15 +25660,15 @@
       "default": "This action needs your approval."
     },
     "backend": {
-      "claude": "Claude Code",
-      "label": "Backend",
-      "openai": "Model API"
+      "claude": "Claude",
+      "label": "Model source",
+      "openai": "Model API",
+      "codex": "Codex"
     },
-    "delete": "Delete this chat",
     "dismissError": "Dismiss",
     "empty": {
       "title": "Your machines, one chat",
-      "capabilities": "Ask for anything that runs on this computer or your SSH hosts: start a dev server, move files, research something, schedule a check, or hand coding work to an agent in a worktree."
+      "capabilities": "Ask Seal for anything on this computer or any connected machine: run a command, move files, check on an agent session, switch accounts, or hand coding work to an agent in a worktree."
     },
     "label": "Seal assistant",
     "messageLabel": "Message",
@@ -25647,8 +25676,8 @@
       "label": "Model",
       "placeholder": "Model"
     },
-    "new": "New chat",
-    "noChats": "No chats yet",
+    "new": "New thread",
+    "noChats": "No threads yet",
     "notSent": "Not sent",
     "placeholder": "Ask Seal to do something on any of your machines…",
     "send": "Send",
@@ -25662,7 +25691,9 @@
       "model": "Default model",
       "save": "Save",
       "title": "Model API",
-      "openAssistant": "Assistant settings"
+      "openAssistant": "Assistant settings",
+      "contextWindow": "Context window (tokens)",
+      "contextWindowHint": "Seal summarizes older messages for the model before this fills."
     },
     "stop": "Stop",
     "thinking": {
@@ -25670,7 +25701,7 @@
       "done": "Thought for {{duration}}",
       "live": "Thinking…"
     },
-    "title": "Assistant",
+    "title": "Seal assistant",
     "working": "Working…",
     "worker": "Worker",
     "attachment": {
@@ -25710,6 +25741,35 @@
       "searxngUrl": "SearXNG URL",
       "apiKey": "Search API key",
       "apiKeyRequired": "Required for this provider"
+    },
+    "compaction": {
+      "auto": "Earlier messages summarized for the model",
+      "manual": "Earlier messages summarized at your request"
+    },
+    "context": {
+      "thisComputer": "This computer",
+      "machine": "Machine: {{machine}}",
+      "online": "· {{online}} of {{total}} machines online",
+      "machinesTitle": "Machines the assistant can reach",
+      "usage": "{{used}} / {{window}}",
+      "label": "Context: {{usage}} tokens",
+      "title": "Context",
+      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
+      "compactions": "Summaries so far: {{count}}",
+      "compactNow": "Summarize older messages now"
+    },
+    "threads": {
+      "renameLabel": "Thread name",
+      "confirmDelete": "Delete \"{{title}}\"?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "rename": "Rename",
+      "open": "Threads",
+      "title": "Threads",
+      "close": "Close"
+    },
+    "open": {
+      "sessionGone": "That agent session is no longer running."
     }
   },
   "seal": {

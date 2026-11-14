@@ -3,6 +3,7 @@ import {
   MachineHostCancel,
   MachineHostCreateFile,
   MachineHostDownloadUrl,
+  MachineHostExec,
   MachineHostListDir,
   MachineHostPath,
   MachineHostReadChunk,
@@ -10,6 +11,8 @@ import {
   MachineHostWatch,
   MachineHostWriteChunk
 } from '../../../../../shared/rpc-contract/machine-host-params'
+import { MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES } from '../../../../../shared/machines/machine-host-limits'
+import { runLocalShellScript } from '../../../../machines/exec/local-shell-exec'
 import { collectLocalMachineMetrics } from '../../../../machines/metrics/local-machine-metrics'
 import {
   createHostFile,
@@ -115,6 +118,20 @@ export const MACHINE_HOST_METHODS = [
     params: MachineHostDownloadUrl,
     handler: async (params, ctx, emit) =>
       runMachineHostUrlDownload(params.url, params.destination, ctx, emit)
+  }),
+  defineMethod({
+    name: 'machineHost.exec',
+    permission: 'workspace',
+    params: MachineHostExec,
+    handler: async (params) =>
+      runLocalShellScript(params.script, {
+        timeoutMs: params.timeoutMs,
+        maxOutputBytes: MACHINE_HOST_EXEC_MAX_OUTPUT_BYTES,
+        ...(params.cwd ? { cwd: requireHostPath(params.cwd) } : {}),
+        ...(params.stdinBase64 !== undefined
+          ? { stdin: Buffer.from(params.stdinBase64, 'base64') }
+          : {})
+      })
   }),
   defineMethod({
     name: 'machineHost.cancel',

@@ -3,6 +3,7 @@ import type {
   HomeChatAccountOption,
   HomeChatCreateArgs,
   HomeChatEvent,
+  HomeChatMachineOption,
   HomeChatSettings,
   HomeChatSettingsUpdate,
   HomeChatSummary,
@@ -20,6 +21,9 @@ export type HomeChatApi = {
   delete: (args: { chatId: string }) => Promise<void>
   send: (args: { chatId: string; text: string }) => Promise<void>
   stop: (args: { chatId: string }) => Promise<void>
+  /** Summarize older messages for the model now; false when there is nothing to summarize. */
+  compact: (args: { chatId: string }) => Promise<boolean>
+  listMachines: () => Promise<HomeChatMachineOption[]>
   respondApproval: (args: {
     chatId: string
     entryId: string

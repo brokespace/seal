@@ -1,6 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
-import type { ClaudeRateLimitAccountsState } from '../../shared/managed-account-types'
+import type {
+  ClaudeRateLimitAccountsState,
+  CodexManagedAccount
+} from '../../shared/managed-account-types'
 import type {
   HomeChatCreateArgs,
   HomeChatEvent,
@@ -9,12 +12,20 @@ import type {
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
 import type { Repo } from '../../shared/repo-types'
-import { createSealClaudeAccountsProvider } from '../home-chat/home-chat-accounts'
-import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
+import { createHomeChatAccountProvider } from '../home-chat/home-chat-accounts'
 import { HomeChatService } from '../home-chat/home-chat-service'
-import { HomeChatStore } from '../home-chat/home-chat-store'
-import { createDefaultHomeChatMachineProvider } from '../home-chat/machines/home-chat-machine-provider'
+import { HomeChatSettingsStore } from '../home-chat/home-chat-settings-store'
+import {
+  createDefaultHomeChatMachineProvider,
+  SSH_MACHINE_SOURCES
+} from '../home-chat/machines/home-chat-machine-provider'
+import { createPairedRuntimeSource } from '../home-chat/machines/home-chat-runtime-source'
+import { createHomeChatAccountAccess } from '../home-chat/seal/home-chat-account-access'
+import { createHomeChatSessionAccess } from '../home-chat/seal/home-chat-session-access'
+import { HomeChatThreadStore } from '../home-chat/thread/home-chat-thread-store'
 import { runOrcaCli } from '../home-chat/tools/home-chat-orca-cli'
+import { getLiveSessionService } from '../live-sessions/live-session-service-instance'
+import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
 
@@ -33,22 +44,36 @@ function broadcast(event: HomeChatEvent): void {
 
 type AttachmentArgs = { chatId: string; attachmentId: string }
 
-export function registerHomeChatHandlers(
-  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState },
+export type HomeChatHandlerSources = {
+  claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState }
+  codexAccounts: () => readonly CodexManagedAccount[]
   repos: () => Repo[]
-): void {
+}
+
+export function registerHomeChatHandlers(sources: HomeChatHandlerSources): void {
   const rootDir = join(app.getPath('userData'), 'home-chat')
-  const ready = HomeChatStore.open(rootDir).then(async (store) => {
+  const runtimes = createPairedRuntimeSource()
+  const ready = Promise.all([
+    HomeChatThreadStore.open(rootDir),
+    HomeChatSettingsStore.open(rootDir)
+  ]).then(async ([threads, settings]) => {
     const service = new HomeChatService({
       rootDir,
-      store,
-      accounts: createSealClaudeAccountsProvider({
-        candidates: () => getSealAccountManager()?.candidates('claude') ?? null,
-        listAccounts: () => claudeAccounts.listAccounts()
+      threads,
+      settings,
+      accounts: createHomeChatAccountProvider({
+        sealCandidates: (provider) => getSealAccountManager()?.candidates(provider) ?? null,
+        listClaudeAccounts: () => sources.claudeAccounts.listAccounts(),
+        listCodexAccounts: sources.codexAccounts
       }),
-      createMachines: createDefaultHomeChatMachineProvider,
+      createMachines: (machineNotes) =>
+        createDefaultHomeChatMachineProvider(machineNotes, { ...SSH_MACHINE_SOURCES, runtimes }),
       runOrcaCli,
-      repos,
+      repos: sources.repos,
+      seal: {
+        sessions: createHomeChatSessionAccess({ live: getLiveSessionService }),
+        accounts: createHomeChatAccountAccess(getSealAccountManager)
+      },
       emit: broadcast
     })
     await service.start()
@@ -73,6 +98,8 @@ export function registerHomeChatHandlers(
     service.send(args.chatId, args.text)
   )
   handle('homeChat:stop', (service, args: { chatId: string }) => service.stop(args.chatId))
+  handle('homeChat:compact', (service, args: { chatId: string }) => service.compact(args.chatId))
+  handle('homeChat:listMachines', (service) => service.listMachines())
   handle(
     'homeChat:respondApproval',
     (service, args: { chatId: string; entryId: string; approved: boolean }) =>

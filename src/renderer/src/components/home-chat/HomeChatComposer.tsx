@@ -5,11 +5,12 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Textarea } from '../ui/textarea'
-import type {
-  HomeChatAccountOption,
-  HomeChatBackendKind,
-  HomeChatSettings,
-  HomeChatSummary
+import {
+  HOME_CHAT_BACKEND_KINDS,
+  type HomeChatAccountOption,
+  type HomeChatBackendKind,
+  type HomeChatSettings,
+  type HomeChatSummary
 } from '../../../../shared/home-chat/home-chat-types'
 import { HomeChatSettingsPopover } from './HomeChatSettingsPopover'
 import type { HomeChatState } from './use-home-chat'
@@ -75,56 +76,24 @@ export function HomeChatComposer({
           disabled={running}
           onValueChange={(value) =>
             void onUpdate({
-              backend: value === 'openai-compatible' ? 'openai-compatible' : 'claude-code'
+              backend: HOME_CHAT_BACKEND_KINDS.find((kind) => kind === value) ?? 'claude-code',
+              accountId: null
             })
           }
         >
-          <SelectTrigger size="sm" aria-label={t('homeChat.backend.label', 'Backend')}>
+          <SelectTrigger size="sm" aria-label={t('homeChat.backend.label', 'Model source')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="claude-code">
-              {t('homeChat.backend.claude', 'Claude Code')}
-            </SelectItem>
+            <SelectItem value="claude-code">{t('homeChat.backend.claude', 'Claude')}</SelectItem>
+            <SelectItem value="codex">{t('homeChat.backend.codex', 'Codex')}</SelectItem>
             <SelectItem value="openai-compatible">
               {t('homeChat.backend.openai', 'Model API')}
             </SelectItem>
           </SelectContent>
         </Select>
 
-        {backend === 'claude-code' ? (
-          <Select
-            value={chat?.accountId ?? DEFAULT_ACCOUNT_VALUE}
-            disabled={running}
-            onOpenChange={(open) => open && onOpenAccounts()}
-            onValueChange={(value) =>
-              void onUpdate({ accountId: value === DEFAULT_ACCOUNT_VALUE ? null : value })
-            }
-          >
-            <SelectTrigger
-              size="sm"
-              className="max-w-48"
-              aria-label={t('homeChat.account.label', 'Claude account')}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((account) => (
-                <SelectItem
-                  key={account.id ?? DEFAULT_ACCOUNT_VALUE}
-                  value={account.id ?? DEFAULT_ACCOUNT_VALUE}
-                >
-                  {account.id === null
-                    ? t('homeChat.account.current', 'Current account')
-                    : account.label}
-                  {account.detail && (
-                    <span className="text-muted-foreground"> · {account.detail}</span>
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
+        {backend === 'openai-compatible' ? (
           <Input
             key={chat?.id}
             defaultValue={chat?.model ?? ''}
@@ -139,6 +108,40 @@ export function HomeChatComposer({
               }
             }}
           />
+        ) : (
+          <Select
+            value={chat?.accountId ?? DEFAULT_ACCOUNT_VALUE}
+            disabled={running}
+            onOpenChange={(open) => open && onOpenAccounts()}
+            onValueChange={(value) =>
+              void onUpdate({ accountId: value === DEFAULT_ACCOUNT_VALUE ? null : value })
+            }
+          >
+            <SelectTrigger
+              size="sm"
+              className="max-w-48"
+              aria-label={t('homeChat.account.label', 'Account')}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts
+                .filter((account) => account.backend === backend)
+                .map((account) => (
+                  <SelectItem
+                    key={account.id ?? DEFAULT_ACCOUNT_VALUE}
+                    value={account.id ?? DEFAULT_ACCOUNT_VALUE}
+                  >
+                    {account.id === null
+                      ? t('homeChat.account.system', 'System login')
+                      : account.label}
+                    {account.detail && (
+                      <span className="text-muted-foreground"> · {account.detail}</span>
+                    )}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         )}
 
         <HomeChatSettingsPopover settings={settings} onSave={onSaveSettings} />
@@ -150,6 +153,7 @@ export function HomeChatComposer({
             variant="secondary"
             onClick={onStop}
             aria-label={t('homeChat.stop', 'Stop')}
+            data-home-chat-stop
           >
             <Square className="fill-current" />
           </Button>

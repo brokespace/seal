@@ -52,3 +52,14 @@ export type LiveMessageOutboxDeps = {
   log?: (message: string, error?: unknown) => void
   timing?: Partial<typeof DEFAULT_OUTBOX_TIMING>
 }
+
+export function isOutboxItem(item: unknown): item is OutboxItem {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    'messageId' in item &&
+    typeof item.messageId === 'string' &&
+    'sessionId' in item &&
+    typeof item.sessionId === 'string'
+  )
+}

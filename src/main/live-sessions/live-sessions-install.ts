@@ -5,11 +5,13 @@ import type { GlobalSettings } from '../../shared/global-settings-types'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { localAiVaultScanRoots } from '../ai-vault/discovery/ai-vault-scan-roots'
 import { connectedSshHosts, LOCAL_HOST_ID, localHost } from './hosts/live-session-hosts'
+import { connectedRuntimeHosts } from './hosts/connected-runtime-hosts'
 import { aiVaultTranscriptFiles } from './discovery/local-transcript-files'
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
 import { registerLiveSessionIpc } from './live-sessions-ipc'
 import { getLiveSessionService, setLiveSessionService } from './live-session-service-instance'
+import { idleReapMinutes, SealIdleReaper } from './delivery/seal-idle-reaper'
 import {
   runShellIntegration,
   ShellIntegrationSync,
@@ -17,7 +19,7 @@ import {
 } from './shell-integration/shell-integration-hosts'
 
 type LiveSessionSettingsStore = {
-  getSettings(): Pick<GlobalSettings, 'liveSessionsWrapAgents'>
+  getSettings(): Pick<GlobalSettings, 'liveSessionsWrapAgents' | 'liveSessionsIdleReapMinutes'>
   onSettingsChanged(listener: (updates: Partial<GlobalSettings>) => void): unknown
 }
 
@@ -35,7 +37,12 @@ export function installLiveSessions(
     process.platform === 'win32'
       ? null
       : localHost(hostname(), aiVaultTranscriptFiles(localAiVaultScanRoots))
-  const allHosts = () => [...(local ? [local] : []), ...connectedSshHosts()]
+  const userDataPath = app.getPath('userData')
+  const allHosts = () => [
+    ...(local ? [local] : []),
+    ...connectedSshHosts(),
+    ...connectedRuntimeHosts(userDataPath)
+  ]
   const wrapSync = new ShellIntegrationSync(() => wrapAgentsEnabled(store.getSettings()), log)
   store.onSettingsChanged((updates) => {
     if ('liveSessionsWrapAgents' in updates) {
@@ -46,14 +53,19 @@ export function installLiveSessions(
   const sealPanes = createSealPaneAccess(runtime, {
     snapshot: () => agentHookServer.getStatusSnapshot()
   })
+  const reaper = new SealIdleReaper({
+    minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),
+    log
+  })
   const service = new LiveSessionService({
-    userDataPath: app.getPath('userData'),
+    userDataPath,
     hosts: () => {
       const hosts = allHosts()
       wrapSync.reconcile(hosts)
       return hosts
     },
     sealPanes,
+    onHostScanned: (host, sessions) => reaper.onHostScanned(host, sessions),
     log
   })
   registerLiveSessionIpc(service, async (hostId, action) => {
@@ -62,7 +74,7 @@ export function installLiveSessions(
       throw new Error(
         hostId === LOCAL_HOST_ID
           ? 'Shell integration needs macOS or Linux'
-          : 'Connect to this SSH host first'
+          : 'Connect to this host first'
       )
     }
     const status = await runShellIntegration(host, action)
@@ -73,6 +85,8 @@ export function installLiveSessions(
   })
   setLiveSessionService(service)
   service.start()
-  app.on('will-quit', () => service.stop())
+  app.on('will-quit', () => {
+    service.stop()
+  })
   return service
 }

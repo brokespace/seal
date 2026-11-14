@@ -6,8 +6,8 @@ import { REFERENCE_HANDLER_GROUP } from '../references/reference-handler-group'
 import { SERVE_PAIRING_HANDLER_GROUPS } from '../server/serve-pairing-handler-groups'
 import { PLUGIN_HANDLER_GROUPS } from '../plugins/plugin-handler-groups'
 import { HOST_HANDLER_GROUPS } from '../hosts/host-handler-groups'
-import { WORKTREE_HANDLER_GROUPS } from '../workspaces/worktree-handler-groups'
 import { SEAL_ACCOUNT_HANDLER_GROUPS } from '../accounts/seal-account-handler-groups'
+import { WORKTREE_HANDLER_GROUPS } from '../workspaces/worktree-handler-groups'
 
 export type HandlerGroup = {
   name: string

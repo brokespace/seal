@@ -4,7 +4,7 @@ import { translate as t } from '@/i18n/i18n'
 import { revealFloatingWorkspacePanel } from '@/components/floating-terminal/floating-workspace-panel-reveal'
 import { createFloatingWorkspaceTerminalTab } from '@/components/floating-terminal/floating-workspace-tab-creation'
 import { showPlainSshPanel } from '@/ssh/plain-ssh-terminal-panels'
-import type { MachineSummary } from '../model/machine-summaries'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)

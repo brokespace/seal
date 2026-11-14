@@ -182,7 +182,11 @@ export function registerCoreHandlers(
   registerAgentHookHandlers(runtime, { getPtyIdForPaneKey })
   registerCodexConfigSyncHandlers(codexAccounts.runtimeHomeService)
   registerClaudeAccountHandlers(claudeAccounts)
-  registerHomeChatHandlers(claudeAccounts, () => store.getRepos())
+  registerHomeChatHandlers({
+    claudeAccounts,
+    codexAccounts: () => store.getSettings().codexManagedAccounts,
+    repos: () => store.getRepos()
+  })
   registerOpenCodeGoCredentialsHandlers(rateLimits)
   registerMiniMaxCredentialsHandlers(rateLimits)
   registerZcodePlanCredentialsHandlers(rateLimits)

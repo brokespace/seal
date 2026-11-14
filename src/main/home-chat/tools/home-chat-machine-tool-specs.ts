@@ -3,7 +3,7 @@ import { z } from 'zod'
 const machine = z
   .string()
   .describe(
-    'Machine id from list_machines (e.g. "local", "ssh:<id>", "hop:<name>") or its exact label'
+    'Machine id from list_machines ("local", "ssh:<id>", "runtime:<id>", "hop:<name>"), or its name as the user says it (label or host name)'
   )
 
 const jobId = z.string().min(1).describe('Job id returned by run_command')
@@ -12,7 +12,7 @@ const jobId = z.string().min(1).describe('Job id returned by run_command')
 export const HOME_CHAT_MACHINE_TOOLS = {
   list_machines: {
     description:
-      'List every machine Seal can reach: this computer, configured SSH hosts (with any ProxyJump), and machines reached through another machine, with connection state and saved notes. Set probe_load to also measure CPU count and 1-minute load on connected machines.',
+      'List every machine Seal can reach, exactly as its Machines page shows them: this computer, SSH hosts (with any ProxyJump), machines paired through a Seal server, and machines reached through another machine. Each has an id, label, how it is reached, status (online, connecting, offline, error) and saved notes. Set probe_load to also measure CPU count and 1-minute load on online machines.',
     shape: { probe_load: z.boolean().optional() }
   },
   run_command: {
