@@ -19,7 +19,9 @@ const NOW = Date.UTC(2026, 10, 14, 12, 0)
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 
-const responses = vi.hoisted(() => ({ byToken: {} as Record<string, FakeUsageResponse> }))
+const responses = vi.hoisted((): { byToken: Record<string, FakeUsageResponse> } => ({
+  byToken: {}
+}))
 
 vi.mock('../network/proxy-settings', () => ({
   ensureElectronProxyFromEnvironment: async () => {}
@@ -60,14 +62,20 @@ function summary(id: AccountId): ClaudeManagedAccountSummary {
   }
 }
 
+function read(id: AccountId): Promise<ProviderRateLimits> {
+  return fetchActiveClaudeRateLimits({
+    authPreparation: { configDir: id, envPatch: {}, provenance: 'managed' }
+  })
+}
+
 async function readAll(): Promise<Record<AccountId, ProviderRateLimits>> {
-  const readings = {} as Record<AccountId, ProviderRateLimits>
-  for (const id of ACCOUNTS) {
-    readings[id] = await fetchActiveClaudeRateLimits({
-      authPreparation: { configDir: id, envPatch: {}, provenance: 'managed' }
-    })
+  return {
+    work: await read('work'),
+    near: await read('near'),
+    full: await read('full'),
+    throttled: await read('throttled'),
+    revoked: await read('revoked')
   }
-  return readings
 }
 
 /** The accounts as Seal lists them, built from the rate-limit state the usage popover renders. */
