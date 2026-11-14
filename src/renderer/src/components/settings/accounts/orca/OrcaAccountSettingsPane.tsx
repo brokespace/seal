@@ -27,7 +27,7 @@ function accountStatusCopy(
   if (state === 'unconfigured') {
     return t(
       'auto.components.settings.orcaAccount.unavailable',
-      'Orca sign-in is unavailable in this build.'
+      'Seal sign-in is unavailable in this build.'
     )
   }
   if (state === 'local') {
@@ -95,7 +95,7 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-medium">
                 {authStatus?.cloud?.displayName?.trim() ||
-                  t('auto.components.settings.orcaAccount.account', 'Orca account')}
+                  t('auto.components.settings.orcaAccount.account', 'Seal account')}
               </p>
               {connected ? (
                 <Badge variant="outline" className="text-[11px] text-muted-foreground">
@@ -122,7 +122,7 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
             <OrcaSignInButton size="sm" disabled={!canConnect}>
               {authStatus?.state === 'reconnect-required'
                 ? t('auto.components.settings.orcaAccount.signInAgain', 'Sign in again')
-                : t('auto.components.settings.orcaAccount.signIn', 'Sign in to Orca')}
+                : t('auto.components.settings.orcaAccount.signIn', 'Sign in to Seal')}
             </OrcaSignInButton>
           )}
           {connected ? null : <OrcaSignInWaitNotice className="basis-full" />}
@@ -140,7 +140,7 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
                 title={t('auto.components.settings.orcaAccount.artifactsTitle', 'Artifact sharing')}
                 description={t(
                   'auto.components.settings.orcaAccount.artifactsDescription',
-                  'Publish HTML and Markdown files, then manage every shared link from Orca.'
+                  'Publish HTML and Markdown files, then manage every shared link from Seal.'
                 )}
               />
               <AccountBenefit

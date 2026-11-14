@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { PHONE_UPLOAD_MAX_BYTES } from '../../../../src/shared/rpc-contract/phone-transfer-params'
 import { translate } from '../../i18n/mobile-i18n'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
@@ -26,7 +25,7 @@ function errorText(error: unknown): string {
 /** Sends picked phone files to the host one at a time, then hands each to the machine as a transfer. */
 export function useMachineUploads(args: {
   client: RpcClient | null
-  machineId: ExecutionHostId
+  machineId: string
   onCommitted: (transfer: MobileMachineTransfer) => void
 }) {
   const { client, machineId, onCommitted } = args

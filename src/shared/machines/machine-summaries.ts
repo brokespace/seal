@@ -1,42 +1,35 @@
 import {
   LOCAL_EXECUTION_HOST_ID,
   toRuntimeExecutionHostId,
-  toSshExecutionHostId
+  toSshExecutionHostId,
+  type ExecutionHostId
 } from '../execution-host'
-import type { MachineId, MachineOs } from './machine-types'
-import type { SshConnectionState, SshTarget } from '../ssh-types'
-import { isVmToolSshConfigTarget } from '../ssh-target-source'
-import type { PublicKnownRuntimeEnvironment } from '../remote-runtime/host-catalog/runtime-environments'
+import { LOCAL_MACHINE_ID, type MachineId, type MachineOs } from './machine-types'
+import type { MachineView } from './machine-view'
+import type { SshConnectionState } from '../ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../remote-runtime/host-status/runtime-host-status'
 
 export type MachineStatus = 'online' | 'connecting' | 'offline' | 'error'
 
 export type MachineSummary = {
   id: MachineId
-  kind: 'local' | 'ssh' | 'runtime'
+  /** How Seal reaches it now; every feature behaves the same either way. */
+  connection: 'local' | 'ssh' | 'server'
   label: string
-  /** `user@host:port`, or the runtime's machine name. */
+  /** `user@host:port`, or the server's machine name. */
   address: string | null
   status: MachineStatus
   statusDetail: string | null
   os: MachineOs | null
+  /** Stored SSH details, kept even while the machine uses its server. */
   sshTargetId: string | null
+  /** Stored Seal server pairing, kept even while the machine uses SSH. */
   runtimeEnvironmentId: string | null
-  /** SSH host whose Orca runtime is also paired. */
-  hasRuntime: boolean
-}
-
-function sshAddress(target: SshTarget): string {
-  const host = target.host || target.configHost || target.label
-  const user = target.username ? `${target.username}@` : ''
-  const port = target.port && target.port !== 22 ? `:${target.port}` : ''
-  return `${user}${host}${port}`
+  /** Where workspaces and agents for this machine run. */
+  executionHostId: ExecutionHostId
 }
 
 type SshStateInput = Pick<SshConnectionState, 'status' | 'error' | 'remotePlatform'>
-type RuntimeEnvironmentInput = Pick<PublicKnownRuntimeEnvironment, 'id' | 'name'> & {
-  sshAccess?: { sshTargetId: string }
-}
 
 export function sshMachineStatus(state: SshStateInput | undefined): {
   status: MachineStatus
@@ -59,7 +52,7 @@ export function sshMachineStatus(state: SshStateInput | undefined): {
   }
 }
 
-function runtimeStatus(snapshot: RuntimeHostStatusSnapshot | undefined): {
+function serverStatus(snapshot: RuntimeHostStatusSnapshot | undefined): {
   status: MachineStatus
   detail: string | null
 } {
@@ -85,23 +78,44 @@ function osFromPlatform(platform: string | undefined): MachineOs | null {
 export type MachineSummaryInputs = {
   localName: string
   localOs: MachineOs | null
-  sshTargets: readonly SshTarget[]
+  machines: readonly MachineView[]
   sshStates: ReadonlyMap<string, SshStateInput>
-  runtimeEnvironments: readonly RuntimeEnvironmentInput[]
   runtimeStatuses: ReadonlyMap<string, RuntimeHostStatusSnapshot>
 }
 
-/** This computer first, then SSH hosts, then runtimes not already reachable over SSH. */
-export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSummary[] {
-  const runtimeBySshTarget = new Map<string, RuntimeEnvironmentInput>()
-  for (const environment of inputs.runtimeEnvironments) {
-    if (environment.sshAccess?.sshTargetId) {
-      runtimeBySshTarget.set(environment.sshAccess.sshTargetId, environment)
-    }
+export function summarizeMachine(
+  machine: MachineView,
+  inputs: Pick<MachineSummaryInputs, 'sshStates' | 'runtimeStatuses'>
+): MachineSummary {
+  const sshState = machine.ssh ? inputs.sshStates.get(machine.ssh.targetId) : undefined
+  const snapshot = machine.server
+    ? inputs.runtimeStatuses.get(machine.server.environmentId)
+    : undefined
+  const overSsh = machine.connection === 'ssh' && machine.ssh !== null
+  const { status, detail } = overSsh ? sshMachineStatus(sshState) : serverStatus(snapshot)
+  return {
+    id: machine.id,
+    connection: overSsh ? 'ssh' : 'server',
+    label: machine.name,
+    address:
+      machine.ssh?.address ?? snapshot?.status?.machineName ?? machine.server?.endpoint ?? null,
+    status,
+    statusDetail: detail,
+    os: osFromPlatform(sshState?.remotePlatform) ?? osFromPlatform(snapshot?.status?.hostPlatform),
+    sshTargetId: machine.ssh?.targetId ?? null,
+    runtimeEnvironmentId: machine.server?.environmentId ?? null,
+    executionHostId:
+      overSsh || !machine.server
+        ? toSshExecutionHostId(machine.ssh?.targetId ?? machine.recordId)
+        : toRuntimeExecutionHostId(machine.server.environmentId)
   }
+}
+
+/** This computer first, then every machine once, however it connects. */
+export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSummary[] {
   const local: MachineSummary = {
-    id: LOCAL_EXECUTION_HOST_ID,
-    kind: 'local',
+    id: LOCAL_MACHINE_ID,
+    connection: 'local',
     label: inputs.localName,
     address: null,
     status: 'online',
@@ -109,49 +123,7 @@ export function buildMachineSummaries(inputs: MachineSummaryInputs): MachineSumm
     os: inputs.localOs,
     sshTargetId: null,
     runtimeEnvironmentId: null,
-    hasRuntime: false
+    executionHostId: LOCAL_EXECUTION_HOST_ID
   }
-  const ssh = inputs.sshTargets
-    // Server-owned internal hops and VM tools' own hosts are plumbing, not machines the user added.
-    .filter((target) => !target.owner && !isVmToolSshConfigTarget(target))
-    .map((target): MachineSummary => {
-      const state = inputs.sshStates.get(target.id)
-      const { status, detail } = sshMachineStatus(state)
-      return {
-        id: toSshExecutionHostId(target.id),
-        kind: 'ssh',
-        label: target.label || sshAddress(target),
-        address: sshAddress(target),
-        status,
-        statusDetail: detail,
-        os: osFromPlatform(state?.remotePlatform),
-        sshTargetId: target.id,
-        runtimeEnvironmentId: runtimeBySshTarget.get(target.id)?.id ?? null,
-        hasRuntime: runtimeBySshTarget.has(target.id)
-      }
-    })
-    .sort((a, b) => a.label.localeCompare(b.label))
-  const sshIds = new Set(inputs.sshTargets.map((target) => target.id))
-  const runtimes = inputs.runtimeEnvironments
-    .filter(
-      (environment) => !environment.sshAccess || !sshIds.has(environment.sshAccess.sshTargetId)
-    )
-    .map((environment): MachineSummary => {
-      const snapshot = inputs.runtimeStatuses.get(environment.id)
-      const { status, detail } = runtimeStatus(snapshot)
-      return {
-        id: toRuntimeExecutionHostId(environment.id),
-        kind: 'runtime',
-        label: environment.name,
-        address: snapshot?.status?.machineName ?? null,
-        status,
-        statusDetail: detail,
-        os: osFromPlatform(snapshot?.status?.hostPlatform),
-        sshTargetId: null,
-        runtimeEnvironmentId: environment.id,
-        hasRuntime: true
-      }
-    })
-    .sort((a, b) => a.label.localeCompare(b.label))
-  return [local, ...ssh, ...runtimes]
+  return [local, ...inputs.machines.map((machine) => summarizeMachine(machine, inputs))]
 }

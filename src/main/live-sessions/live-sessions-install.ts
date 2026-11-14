@@ -4,8 +4,9 @@ import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { localAiVaultScanRoots } from '../ai-vault/discovery/ai-vault-scan-roots'
-import { connectedSshHosts, LOCAL_HOST_ID, localHost } from './hosts/live-session-hosts'
-import { connectedRuntimeHosts } from './hosts/connected-runtime-hosts'
+import { listLiveSessionMachineSources } from '../machines/machine-services'
+import { connectedMachineHosts, LOCAL_HOST_ID, localHost } from './hosts/live-session-hosts'
+import { runtimeScanRunner } from './hosts/connected-runtime-hosts'
 import { aiVaultTranscriptFiles } from './discovery/local-transcript-files'
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
@@ -40,16 +41,24 @@ export function installLiveSessions(
     return null
   }
   const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
-  // Discovery reads `ps`, tmux and transcripts with a POSIX shell; Windows reaches its SSH hosts only.
+  // Discovery reads `ps`, tmux and transcripts with a POSIX shell; Windows reaches its remote machines only.
   const local =
     process.platform === 'win32'
       ? null
       : localHost(hostname(), aiVaultTranscriptFiles(localAiVaultScanRoots))
   const userDataPath = getAppEnvironment().getPath('userData')
+  const serverScan = runtimeScanRunner(userDataPath)
   const allHosts = () => [
     ...(local ? [local] : []),
-    ...connectedSshHosts(),
-    ...connectedRuntimeHosts(userDataPath)
+    ...connectedMachineHosts(
+      listLiveSessionMachineSources().flatMap((source) => {
+        if (!source.environmentId) {
+          return [source]
+        }
+        const serverRun = serverScan(source.environmentId, source.name)
+        return serverRun ? [{ ...source, serverRun }] : []
+      })
+    )
   ]
   const wrapSync = new ShellIntegrationSync(() => wrapAgentsEnabled(store.getSettings()), log)
   store.onSettingsChanged((updates) => {
@@ -82,7 +91,7 @@ export function installLiveSessions(
       throw new Error(
         hostId === LOCAL_HOST_ID
           ? 'Shell integration needs macOS or Linux'
-          : 'Connect to this host first'
+          : 'Connect to this machine first'
       )
     }
     const status = await runShellIntegration(host, action)

@@ -98,7 +98,13 @@ describe.skipIf(process.platform === 'win32')('a paired server reached through i
     const found = sessions.find((s) => s.providerSessionId === CLAUDE_ID)
     expect(found).toMatchObject({
       id: `runtime:env-1:claude:${CLAUDE_ID}`,
-      machine: { hostId: 'runtime:env-1', label: 'kessel-ml', kind: 'runtime' },
+      machine: {
+        hostId: 'runtime:env-1',
+        label: 'kessel-ml',
+        kind: 'remote',
+        executionHostId: 'runtime:env-1',
+        connection: 'server'
+      },
       alive: true,
       pid,
       transcriptPath,

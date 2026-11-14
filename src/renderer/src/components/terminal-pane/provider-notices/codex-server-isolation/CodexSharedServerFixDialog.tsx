@@ -164,7 +164,7 @@ function ConfirmStopDialog({
           <DialogDescription>
             {t(
               'terminal.codexSharedServerBanner.confirmStopDescription',
-              'This closes any open Codex sessions that share it, including ones outside Orca.'
+              'This closes any open Codex sessions that share it, including ones outside Seal.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -210,7 +210,7 @@ export function CodexSharedServerFixDialog({
           <DialogDescription>
             {t(
               'terminal.codexSharedServerBanner.dialogDescription',
-              'Codex sessions started directly in a terminal share one background server. Orca keeps the Codex sessions it starts separate. When sessions share a server, closing one can end the others, and agent status can be wrong.'
+              'Codex sessions started directly in a terminal share one background server. Seal keeps the Codex sessions it starts separate. When sessions share a server, closing one can end the others, and agent status can be wrong.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -228,12 +228,12 @@ export function CodexSharedServerFixDialog({
             doneLabel={t('terminal.codexSharedServerBanner.turnedOff', 'Turned off')}
             failedLabel={t(
               'terminal.codexSharedServerBanner.turnOffFailed',
-              "Orca couldn't turn this off."
+              "Seal couldn't turn this off."
             )}
             onAction={() => void turnOff.start()}
             note={t(
               'terminal.codexSharedServerBanner.step1Note',
-              'This changes your Codex settings, so it also applies outside Orca.'
+              'This changes your Codex settings, so it also applies outside Seal.'
             )}
           />
           <FixStep
@@ -249,7 +249,7 @@ export function CodexSharedServerFixDialog({
             doneLabel={t('terminal.codexSharedServerBanner.stopped', 'Stopped')}
             failedLabel={t(
               'terminal.codexSharedServerBanner.stopFailed',
-              "Orca couldn't stop the server."
+              "Seal couldn't stop the server."
             )}
             onAction={() => setConfirmStopOpen(true)}
             // Why: with sharing still on, the next Codex restarts the server it just closed sessions to stop.

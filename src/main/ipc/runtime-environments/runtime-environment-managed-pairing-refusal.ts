@@ -55,7 +55,7 @@ export function handleManagedSharedControlRefusal(
       }
       // Lost contact or a foreign answer is not a verdict on the pairing.
       console.warn(
-        '[runtime-environments] Could not re-pair the managed Orca server:',
+        '[runtime-environments] Could not re-pair the managed Seal server:',
         errorMessage(error)
       )
       return 'retry'

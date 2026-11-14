@@ -42,7 +42,7 @@ export function RuntimeSshAccessDialog({
           <DialogDescription>
             {t(
               'auto.components.settings.serverList.sshDialogDescription',
-              'Use this when the server isn’t reachable directly. Orca opens a tunnel through an SSH host.'
+              'Use this when the server isn’t reachable directly. Seal opens a tunnel through an SSH host.'
             )}
           </DialogDescription>
         </DialogHeader>

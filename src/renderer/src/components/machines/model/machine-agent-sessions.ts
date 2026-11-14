@@ -1,4 +1,10 @@
-import type { ExecutionHostId } from '../../../../../shared/execution-host'
+import {
+  toRuntimeExecutionHostId,
+  toSshExecutionHostId,
+  type ExecutionHostId
+} from '../../../../../shared/execution-host'
+import type { MachineId } from '../../../../../shared/machines/machine-types'
+import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import { isFreshNonDoneAgentStatus } from '../../../../../shared/agent-status/contracts/agent-status-freshness'
 import type { AgentStatusEntry } from '../../../../../shared/agent-status/contracts/agent-status-types'
 import { resolveAgentStatusWorktreeId } from '../../../../../shared/agent-status/identity/agent-status-worktree-attribution'
@@ -42,6 +48,28 @@ export function groupLiveAgentSessionsByMachine(
       prompt: entry.prompt
     })
     result.set(machineId, sessions)
+  }
+  return result
+}
+
+/** A merged machine owns workspaces opened through either of its transports. */
+export function groupSessionsByMachine(
+  machines: readonly MachineSummary[],
+  sessionsByHost: ReadonlyMap<ExecutionHostId, MachineAgentSession[]>
+): Map<MachineId, MachineAgentSession[]> {
+  const result = new Map<MachineId, MachineAgentSession[]>()
+  for (const machine of machines) {
+    const hosts = new Set<ExecutionHostId>([machine.executionHostId])
+    if (machine.sshTargetId) {
+      hosts.add(toSshExecutionHostId(machine.sshTargetId))
+    }
+    if (machine.runtimeEnvironmentId) {
+      hosts.add(toRuntimeExecutionHostId(machine.runtimeEnvironmentId))
+    }
+    const sessions = [...hosts].flatMap((host) => sessionsByHost.get(host) ?? [])
+    if (sessions.length > 0) {
+      result.set(machine.id, sessions)
+    }
   }
   return result
 }

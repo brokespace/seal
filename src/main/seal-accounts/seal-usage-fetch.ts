@@ -36,6 +36,11 @@ export function sealUsageFetcher(
       // Reading the default home here would report another account's usage as this one's.
       throw new Error(`No CODEX_HOME for ${candidate.label}`)
     }
-    return fetchCodexRateLimits({ codexHomePath: home, networkProxySettings: settings, signal })
+    return fetchCodexRateLimits({
+      codexHomePath: home,
+      networkProxySettings: settings,
+      signal,
+      preferBackend: true
+    })
   }
 }

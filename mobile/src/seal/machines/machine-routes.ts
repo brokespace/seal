@@ -1,9 +1,9 @@
-import { parseExecutionHostId, type ExecutionHostId } from '../../../../src/shared/execution-host'
 import { firstParam } from '../../navigation/route-param-reader'
+import { parseMobileMachineId } from './machine-reply-schemas'
 
 // Object hrefs: Expo Router encodes the machine id, whose `:` (and any %-escapes) must survive as one segment.
 
-export function machineDetailHref(hostId: string, machineId: ExecutionHostId, path?: string) {
+export function machineDetailHref(hostId: string, machineId: string, path?: string) {
   return {
     pathname: '/h/[hostId]/seal/machines/[machineId]' as const,
     params: { hostId, machineId, ...(path ? { path } : {}) }
@@ -12,7 +12,7 @@ export function machineDetailHref(hostId: string, machineId: ExecutionHostId, pa
 
 export function machineFilePreviewHref(
   hostId: string,
-  machineId: ExecutionHostId,
+  machineId: string,
   path: string,
   size: number
 ) {
@@ -31,14 +31,14 @@ export type MachineRouteParams = {
 
 export function readMachineRoute(params: MachineRouteParams): {
   hostId: string
-  machineId: ExecutionHostId | null
+  machineId: string | null
   path: string
   size: number | null
 } {
   const size = Number(firstParam(params.size))
   return {
     hostId: firstParam(params.hostId),
-    machineId: parseExecutionHostId(firstParam(params.machineId))?.id ?? null,
+    machineId: parseMobileMachineId(firstParam(params.machineId)),
     path: firstParam(params.path),
     size: Number.isFinite(size) && size >= 0 && firstParam(params.size) !== '' ? size : null
   }

@@ -31,13 +31,19 @@ const MAX_REMOTE_ENTRIES_PER_MACHINE = 40
 function machineLine(machine: HomeChatMachineInfo): string {
   const details = [
     `id ${machine.id}`,
-    machine.kind === 'runtime' ? 'Seal server' : machine.kind,
+    machine.kind === 'remote'
+      ? machine.executionHostId?.startsWith('runtime:')
+        ? 'connects via its Seal server'
+        : 'connects over SSH'
+      : machine.kind,
     machine.address,
     machine.via ? `via ${machine.via}` : undefined,
     machine.platform,
     machine.status,
     machine.statusDetail,
-    machine.sealServer && machine.kind !== 'runtime' ? 'also runs a Seal server' : undefined
+    machine.sealServer && !machine.executionHostId?.startsWith('runtime:')
+      ? 'also runs a Seal server'
+      : undefined
   ].filter(Boolean)
   const notes = machine.notes?.trim()
     ? `\n  notes: ${machine.notes.trim().replace(/\n/g, '\n  ')}`

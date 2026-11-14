@@ -180,7 +180,7 @@ export class LiveSessionRegistry {
               run: (script, options) => this.hosts.get(hostId)!.host.run(script, options),
               transcriptFiles: host.transcriptFiles
             },
-            scanLimitsFor(host.machine.kind)
+            scanLimitsFor(host.machine)
           ),
           sessions: [],
           nextScanAt: 0,

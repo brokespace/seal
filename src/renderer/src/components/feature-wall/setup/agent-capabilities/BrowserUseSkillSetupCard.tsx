@@ -29,7 +29,7 @@ export function BrowserUseSkillSetupCard(props: {
       )}
       description={t(
         'auto.components.feature.wall.BrowserUseSkillSetupCard.cbc45022d4',
-        "Enables agents to navigate and verify pages in Orca's browser."
+        "Enables agents to navigate and verify pages in Seal's browser."
       )}
       skillNames={[ORCA_CLI_SKILL_NAME]}
       installed={skill.installed}

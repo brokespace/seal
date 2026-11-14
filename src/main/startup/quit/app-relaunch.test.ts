@@ -47,7 +47,7 @@ describe('relaunchApp', () => {
   it('does not replay native administrator restart arguments before or after consumption', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
     const flag = '--orca-restart-local-terminals-as-administrator'
-    const nativeArgv = ['Orca.exe', '--user-data-dir=C:\\Orca profile', flag]
+    const nativeArgv = ['Seal.exe', '--user-data-dir=C:\\Orca profile', flag]
     process.argv = [...nativeArgv]
     hasSwitchMock.mockImplementation((name: string) => nativeArgv.includes(`--${name}`))
     let nextArgs: string[] | undefined

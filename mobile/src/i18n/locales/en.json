@@ -293,7 +293,7 @@
       "invalidSnapshot": "Invalid accounts snapshot from host",
       "hostNotFound": "Host not found",
       "switchFailed": "Could not switch account",
-      "default": "System default",
+      "systemLogin": "System login",
       "agentLogin": "Use the agent's own login",
       "sessionWindow": "5h",
       "weeklyWindow": "7d",

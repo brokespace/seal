@@ -68,7 +68,7 @@ it('every Home button navigates away or hands off to a real handler', () => {
   }
 })
 
-it('Accounts Manage opens Settings on AI provider accounts', () => {
+it('Accounts Manage opens Settings on Accounts', () => {
   renderHome()
   fireEvent.click(within(panel('Accounts')).getByRole('button', { name: 'Manage' }))
   expect(useAppStore.getState().activeView).toBe('settings')
@@ -79,7 +79,7 @@ it('a machine row opens the Machines page on that machine', () => {
   renderHome()
   fireEvent.click(within(panel('Machines')).getByText('gpu-box'))
   expect(useAppStore.getState().activeView).toBe('machines')
-  expect(getLastSelectedMachineId()).toBe('ssh:gpu')
+  expect(getLastSelectedMachineId()).toBe('machine:gpu')
 })
 
 it('an automation row opens that automation', () => {

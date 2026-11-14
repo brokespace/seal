@@ -1,9 +1,13 @@
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../execution-host'
+import { liveSessionMachineId as machineIdOfLiveSession } from '../live-sessions/live-session-machine-id'
 import type { LiveSession, LiveSessionStatus } from '../live-sessions/live-session-types'
 import type { HomeSession, HomeSessionState } from './home-overview-types'
 
 /** The fields Home reads; providers stay open so a client decoding newer agents still maps them. */
-export type HomeLiveSessionInput = Pick<
+export type HomeLiveSessionInput = Omit<HomeLiveSessionFields, 'machine'> & {
+  machine: Parameters<typeof machineIdOfLiveSession>[0] & { label: string }
+}
+
+type HomeLiveSessionFields = Pick<
   LiveSession,
   | 'id'
   | 'machine'
@@ -34,16 +38,8 @@ function homeStateFromLive(status: LiveSessionStatus, alive: boolean): HomeSessi
   }
 }
 
-export function liveSessionMachineId(session: Pick<LiveSession, 'machine'>): string {
-  switch (session.machine.kind) {
-    case 'local':
-      return LOCAL_EXECUTION_HOST_ID
-    case 'ssh':
-      return toSshExecutionHostId(session.machine.hostId)
-    case 'runtime':
-      // Paired servers already carry their `runtime:<id>` machine id.
-      return session.machine.hostId
-  }
+export function liveSessionMachineId(session: Pick<HomeLiveSessionInput, 'machine'>): string {
+  return machineIdOfLiveSession(session.machine)
 }
 
 /** `labels` carries the caller's localized title and agent name. */

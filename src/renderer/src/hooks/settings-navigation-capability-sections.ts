@@ -51,22 +51,21 @@ export function buildCapabilitySettingsSections(
     },
     {
       id: 'accounts',
-      title: t('auto.hooks.useSettingsNavigationMetadata.f70ac54d38', 'AI Provider Accounts'),
+      title: t('seal.accounts.section.title', 'Accounts'),
       description: t(
-        'auto.hooks.useSettingsNavigationMetadata.b1c2f8b0ac',
-        'Optional account switching and usage setup for Claude, Codex, Gemini, OpenCode Go, MiniMax, and Grok.'
+        'seal.accounts.section.navDescription',
+        'Claude, Codex and API-key accounts, auto-swap, rules and machines, plus usage setup for other providers.'
       ),
       icon: UserCog,
       searchEntries: getAccountsPaneSearchEntries(),
-      group: 'capabilities',
-      badge: t('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
+      group: 'capabilities'
     },
     {
       id: 'orchestration',
       title: t('auto.hooks.useSettingsNavigationMetadata.58a868e8e4', 'Orchestration'),
       description: t(
         'auto.hooks.useSettingsNavigationMetadata.cd50cec5d7',
-        'Coordinate multiple coding agents through Orca.'
+        'Coordinate multiple coding agents through Seal.'
       ),
       icon: Network,
       searchEntries: getOrchestrationPaneSearchEntries({
@@ -82,7 +81,7 @@ export function buildCapabilitySettingsSections(
             title: t('auto.hooks.useSettingsNavigationMetadata.linearTitle', 'Linear'),
             description: t(
               'auto.hooks.useSettingsNavigationMetadata.linearDescription',
-              'How Linear works in Orca, setup checklist, agent skill, and example prompts.'
+              'How Linear works in Seal, setup checklist, agent skill, and example prompts.'
             ),
             icon: LinearIcon,
             searchEntries: getLinearAgentSkillPaneSearchEntries(),
@@ -129,10 +128,10 @@ export function buildSetupSettingsSections(
       ? [
           {
             id: 'orca-account',
-            title: t('auto.components.settings.orcaAccount.title', 'Orca Account'),
+            title: t('auto.components.settings.orcaAccount.title', 'Seal Account'),
             description: t(
               'auto.components.settings.orcaAccount.description',
-              'Share work instantly and reach your desktop from Orca Mobile wherever you are.'
+              'Share work instantly and reach your desktop from Seal Mobile wherever you are.'
             ),
             icon: CircleUserRound,
             searchEntries: getOrcaAccountSettingsSearchEntries(),
@@ -145,7 +144,7 @@ export function buildSetupSettingsSections(
       title: t('auto.hooks.useSettingsNavigationMetadata.ded9e9032f', 'Onboarding checklist'),
       description: t(
         'auto.hooks.useSettingsNavigationMetadata.5f32ac08f3',
-        'Finish the onboarding checklist for core Orca workflows.'
+        'Finish the onboarding checklist for core Seal workflows.'
       ),
       icon: OrcaLogoSettingsIcon,
       searchEntries: [
@@ -157,7 +156,7 @@ export function buildSetupSettingsSections(
           ),
           keywords: [
             t('auto.hooks.useSettingsNavigationMetadata.ea0b1bc7b8', 'setup guide'),
-            t('auto.hooks.useSettingsNavigationMetadata.0505d0df29', 'get started with Orca'),
+            t('auto.hooks.useSettingsNavigationMetadata.0505d0df29', 'get started with Seal'),
             t('auto.hooks.useSettingsNavigationMetadata.724c440e72', 'getting started')
           ]
         }

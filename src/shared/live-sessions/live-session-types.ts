@@ -17,10 +17,15 @@ export type LiveSessionStatus = (typeof LIVE_SESSION_STATUSES)[number]
 export type LiveSessionStatusSource = 'seal-hooks' | 'agent-hooks' | 'screen' | 'transcript'
 
 export type LiveSessionMachine = {
-  /** `local`, the SSH target id, or `runtime:<environmentId>` for a paired remote server. */
+  /** `local`, or the machine's record id (its original SSH target or server id, so ids survive merges). */
   hostId: string
   label: string
-  kind: 'local' | 'ssh' | 'runtime'
+  kind: 'local' | 'remote'
+  /** The unified machine; absent only on sessions saved before machines were unified. */
+  machineId?: string
+  /** Where take-over opens its workspace: the transport the machine uses now. */
+  executionHostId?: string
+  connection?: 'local' | 'ssh' | 'server'
 }
 
 /** How a message reaches the session, in the order delivery tries them. */

@@ -155,7 +155,7 @@ it.each([
     reason: /^grok ACP agent exited/
   },
   {
-    end: 'Orca loses its connection to the agent',
+    end: 'Seal loses its connection to the agent',
     trigger: (rig: AcpAdapterRig) => rig.child().agent.stdin.destroy(),
     closedByOrca: true,
     reason: /^grok ACP connection closed/

@@ -508,7 +508,7 @@ function Assert-OrcaInputAllowed($Process) {
     $ownLevel = [OrcaDesktopWin32]::GetProcessIntegrityLevel($PID)
     # Why: UIPI silently drops input to a higher-integrity process; unknown levels proceed as before.
     if ($targetLevel -lt 0 -or $ownLevel -lt 0 -or $targetLevel -le $ownLevel) { return }
-    throw "target_elevated: $(Get-OrcaAppName $Process) runs as administrator, so Windows blocks input to it from Orca; no input was sent"
+    throw "target_elevated: $(Get-OrcaAppName $Process) runs as administrator, so Windows blocks input to it from Seal; no input was sent"
 }
 
 function Get-OrcaWindowFrame($Process, $RootElement) {

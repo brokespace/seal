@@ -138,7 +138,7 @@ async function createCatalogFixture(root: string) {
   await mkdir(catalog, { recursive: true })
   await writeFile(
     join(catalog, 'orca-catalog.json'),
-    JSON.stringify({ catalogVersion: 2, name: 'Orca Plugins', owner: 'stablyai', plugins })
+    JSON.stringify({ catalogVersion: 2, name: 'Seal Plugins', owner: 'stablyai', plugins })
   )
   await commitRepository(catalog, gitEnvironment)
 

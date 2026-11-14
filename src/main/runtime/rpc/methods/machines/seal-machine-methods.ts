@@ -1,6 +1,9 @@
 import { defineMethod } from '../../core'
-import { parseExecutionHostId } from '../../../../../shared/execution-host'
-import type { MachineFileRead, MachineId } from '../../../../../shared/machines/machine-types'
+import {
+  parseMachineId,
+  type MachineFileRead,
+  type MachineId
+} from '../../../../../shared/machines/machine-types'
 import {
   PHONE_MACHINE_PREVIEW_MAX_BYTES,
   SealMachinesDownloadUrlParams,
@@ -26,10 +29,9 @@ import {
   getMachineServices,
   invalidateMachineParentDir,
   removeMachinePaths,
-  resolveMachineFileSystem,
-  resolveRuntimeMachineFileSystem
+  resolveMachineConnection,
+  resolveMachineFileSystem
 } from '../../../../machines/machine-services'
-import { collectMachineMetrics } from '../../../../machines/metrics/machine-metrics'
 import {
   openMachineFileForPhone,
   uploadStagedToMachine
@@ -43,11 +45,11 @@ import {
 } from '../../../../phone-transfers/phone-transfer-staging'
 
 function machineId(value: string): MachineId {
-  const parsed = parseExecutionHostId(value)
+  const parsed = parseMachineId(value)
   if (!parsed) {
     throw new Error('Unknown machine')
   }
-  return parsed.id
+  return parsed
 }
 
 // The phone's Machines tab: the same local/SSH/server machines and file access the desktop tab has.
@@ -62,8 +64,7 @@ export const SEAL_MACHINE_METHODS = [
     name: 'sealMachines.metrics',
     permission: 'workspace',
     params: SealMachinesIdParams,
-    handler: (params) =>
-      collectMachineMetrics(machineId(params.machineId), resolveRuntimeMachineFileSystem)
+    handler: (params) => resolveMachineConnection(machineId(params.machineId)).metrics()
   }),
   defineMethod({
     name: 'sealMachines.listDir',

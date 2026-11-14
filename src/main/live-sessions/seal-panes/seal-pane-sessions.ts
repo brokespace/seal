@@ -112,7 +112,7 @@ export function sealPanesFromRows(
 const REMOTE_SEAL_MACHINE: LiveSessionMachine = {
   hostId: 'seal-remote',
   label: 'Remote Seal host',
-  kind: 'ssh'
+  kind: 'remote'
 }
 
 /** Seal's hooks know its own panes best; discovery adds what they don't say (machine, liveness, title). */

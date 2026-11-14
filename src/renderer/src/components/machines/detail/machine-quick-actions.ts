@@ -3,16 +3,17 @@ import { useAppStore } from '@/store'
 import { translate as t } from '@/i18n/i18n'
 import { revealFloatingWorkspacePanel } from '@/components/floating-terminal/floating-workspace-panel-reveal'
 import { createFloatingWorkspaceTerminalTab } from '@/components/floating-terminal/floating-workspace-tab-creation'
-import { showPlainSshPanel } from '@/ssh/plain-ssh-terminal-panels'
+import { showMachineTerminalPanel } from '@/ssh/plain-ssh-terminal-panels'
+import { toSshExecutionHostId } from '../../../../../shared/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-/** SSH shells open in a plain terminal panel so they never wait on a workspace or runtime. */
-export function openMachineTerminal(machine: MachineSummary): void {
-  if (machine.kind === 'local') {
+/** Remote shells run over the machine's own connection, so SSH and server machines match. */
+export function openMachineTerminal(machine: MachineSummary, cwd?: string): void {
+  if (machine.connection === 'local') {
     const state = useAppStore.getState()
     if (revealFloatingWorkspacePanel(state)) {
       void createFloatingWorkspaceTerminalTab(useAppStore.getState()).catch((error: unknown) =>
@@ -21,20 +22,31 @@ export function openMachineTerminal(machine: MachineSummary): void {
     }
     return
   }
-  if (machine.sshTargetId) {
-    showPlainSshPanel(machine.sshTargetId, machine.label, 'machine-shell')
-    return
-  }
-  toast.message(
-    t(
-      'auto.components.machines.actions.runtimeTerminal',
-      'Open a workspace on this runtime to start a terminal there.'
-    )
-  )
+  showMachineTerminalPanel(machine.label, { machineId: machine.id, ...(cwd ? { cwd } : {}) })
 }
 
+export function launchMachineAgent(
+  machine: MachineSummary,
+  agent: string,
+  options: { cwd?: string; prompt?: string } = {}
+): void {
+  showMachineTerminalPanel(machine.label, {
+    machineId: machine.id,
+    agent,
+    ...(options.cwd ? { cwd: options.cwd } : {}),
+    ...(options.prompt ? { prompt: options.prompt } : {})
+  })
+}
+
+/** VS Code dials the stored SSH details itself, whichever transport Seal is using. */
 export async function openMachineInEditor(machine: MachineSummary, path: string): Promise<void> {
-  if (machine.kind === 'runtime') {
+  if (machine.connection !== 'local' && !machine.sshTargetId) {
+    toast.message(
+      t(
+        'auto.components.machines.actions.editorNeedsSsh',
+        'Add SSH details to this machine to open it in VS Code. You can edit its files here under Files.'
+      )
+    )
     return
   }
   try {
@@ -42,7 +54,7 @@ export async function openMachineInEditor(machine: MachineSummary, path: string)
       path,
       builtInEditorId: 'vscode',
       connectionId: machine.sshTargetId,
-      ownerHostId: machine.id
+      ownerHostId: machine.sshTargetId ? toSshExecutionHostId(machine.sshTargetId) : 'local'
     })
     if (!result.ok) {
       toast.error(
@@ -67,14 +79,34 @@ export async function openMachineInEditor(machine: MachineSummary, path: string)
 }
 
 export async function connectMachine(machine: MachineSummary): Promise<void> {
-  if (!machine.sshTargetId) {
+  if (machine.connection === 'local') {
     return
   }
   try {
-    if (machine.status === 'error') {
+    if (machine.status === 'error' && machine.connection === 'ssh' && machine.sshTargetId) {
       await window.api.ssh.disconnect({ targetId: machine.sshTargetId }).catch(() => {})
     }
-    await window.api.ssh.connect({ targetId: machine.sshTargetId })
+    await window.api.machines?.connect({ machineId: machine.id })
+  } catch (error) {
+    toast.error(errorText(error))
+  }
+}
+
+export async function switchMachineConnection(
+  machine: MachineSummary,
+  connection: 'ssh' | 'server'
+): Promise<void> {
+  try {
+    // One transport at a time: hang up the one being left before dialing the other.
+    if (connection === 'ssh' && machine.runtimeEnvironmentId) {
+      await window.api.runtimeEnvironments
+        ?.disconnect({ selector: machine.runtimeEnvironmentId })
+        .catch(() => {})
+    } else if (connection === 'server' && machine.sshTargetId) {
+      await window.api.ssh.disconnect({ targetId: machine.sshTargetId }).catch(() => {})
+    }
+    await window.api.machines?.setConnection({ machineId: machine.id, connection })
+    await window.api.machines?.connect({ machineId: machine.id })
   } catch (error) {
     toast.error(errorText(error))
   }

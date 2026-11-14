@@ -94,7 +94,7 @@ function failedText(count: number, t: Translate = translate): SegmentText {
     ),
     tooltip: t(
       'auto.components.status.bar.NativeChatResumeStatusSegment.failedTooltip',
-      'Chats Orca could not resume after the restart. Click for details.'
+      'Chats Seal could not resume after the restart. Click for details.'
     )
   }
 }
@@ -113,7 +113,7 @@ function resumedText(count: number, t: Translate = translate): SegmentText {
     ),
     tooltip: t(
       'auto.components.status.bar.NativeChatResumeStatusSegment.resumedTooltip',
-      'Chats Orca resumed after the restart. Click to see them.'
+      'Chats Seal resumed after the restart. Click to see them.'
     )
   }
 }
@@ -132,7 +132,7 @@ function checkText(count: number, t: Translate = translate): SegmentText {
     ),
     tooltip: t(
       'auto.components.status.bar.NativeChatResumeStatusSegment.checkTooltip',
-      'Chats Orca couldn’t resume, or couldn’t confirm it resumed, after the restart. Click for details.'
+      'Chats Seal couldn’t resume, or couldn’t confirm it resumed, after the restart. Click for details.'
     )
   }
 }

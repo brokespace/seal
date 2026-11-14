@@ -627,10 +627,10 @@ describe('language changes', () => {
     expect(builtMenuItems()[0].label).toBe('Seal DEV (language-test)')
     expect(composeAttentionMock).toHaveBeenCalled()
 
-    mainI18n.addResource('ja', 'translation', 'tray.openOrca', 'Orca を表示')
+    mainI18n.addResource('ja', 'translation', 'tray.openOrca', 'Seal を表示')
     rebuildSystemTrayMenu()
     flushTraySceneMutation()
-    expect(builtMenuItems()[2].label).toBe('Orca を表示')
+    expect(builtMenuItems()[2].label).toBe('Seal を表示')
   })
 
   it('does nothing without a tray or when destroyed before the deferred refresh', async () => {

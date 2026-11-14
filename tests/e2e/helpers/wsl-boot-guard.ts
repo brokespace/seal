@@ -158,7 +158,7 @@ export function watchDistroRunning(
         ) {
           retried = true
           // Loud on purpose: a pattern of these is a runner problem worth chasing.
-          timeline(`RETRYING --terminate: ${distro} still listed and Orca launched nothing since`)
+          timeline(`RETRYING --terminate: ${distro} still listed and Seal launched nothing since`)
           console.warn(`[e9-guard] WARNING: --terminate of ${distro} did not take; retrying once`)
           clearTimeout(grace)
           grace = armGrace()

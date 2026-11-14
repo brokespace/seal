@@ -103,8 +103,8 @@ export const PLUGIN_PLANNED_CONTRIBUTION_POINTS: Readonly<
   agentHarnesses:
     'New coding-agent harnesses described as data: how to launch them and read their status.',
   sidebarCards: 'Declarative left-sidebar cards with fixed layouts whose values a worker updates.',
-  mcpServers: 'MCP server definitions that Orca offers to the agents it launches.',
-  skills: 'Agent skills shipped as files that Orca installs for the agents it launches.'
+  mcpServers: 'MCP server definitions that Seal offers to the agents it launches.',
+  skills: 'Agent skills shipped as files that Seal installs for the agents it launches.'
 }
 
 function reservedList(purpose: string) {
@@ -160,7 +160,7 @@ export const pluginContributesFields = {
   hooks: contributionList(
     pluginHookContributionSchema,
     PLUGIN_HOOK_LIMIT,
-    'Hooks the worker runs before or after Orca acts; Orca waits only on plugins that list one.',
+    'Hooks the worker runs before or after Seal acts; Seal waits only on plugins that list one.',
     PLUGIN_HOOKS_SINCE
   ),
   languagePacks: contributionList(
@@ -226,7 +226,7 @@ export const pluginContributesFields = {
   settings: contributionList(
     pluginSettingContributionSchema,
     PLUGIN_SETTING_LIMIT,
-    'Settings Orca shows under the plugin in Settings; code reads them with `settings.get` (`settings:own`).',
+    'Settings Seal shows under the plugin in Settings; code reads them with `settings.get` (`settings:own`).',
     PLUGIN_PANEL_BRIDGE_SINCE
   ),
   statusBarItems: contributionList(

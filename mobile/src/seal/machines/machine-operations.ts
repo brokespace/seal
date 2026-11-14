@@ -1,5 +1,5 @@
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../src/shared/execution-host'
 import * as z from 'zod'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { PHONE_MACHINE_PREVIEW_MAX_BYTES } from '../../../../src/shared/rpc-contract/seal-machines-params'
 import type { NO_HOST_LIST_INPUT } from '../../host-screen/catalog/host-list-queries'
 import { defineHostQuery } from '../../query/host-query'
@@ -143,8 +143,8 @@ const machineCancelTransfer = bindDeferredRpcOperation(
 // Remote files are copied to the host before the ticket is issued, which can take a while.
 const OPEN_DOWNLOAD_REQUEST = { timeoutMs: 10 * 60_000 }
 
-export function machineQueryTarget(machineId: ExecutionHostId): HostQueryTarget {
-  return { exec: machineId }
+export function machineQueryTarget(machineId: string): HostQueryTarget {
+  return { exec: LOCAL_EXECUTION_HOST_ID, machine: machineId }
 }
 
 export const machinesListQuery = defineHostQuery<
@@ -165,7 +165,7 @@ export const machineMetricsQuery = defineHostQuery({
 
 async function readDirectoryPage(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   path: string,
   offset: number,
   force: boolean
@@ -187,7 +187,7 @@ export function machineDirectoryHasMore(listing: MobileMachineDirListing): boole
 /** `previous` plus its next page, or null when the folder has no more rows. */
 export async function readNextMachineDirectoryPage(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   previous: MobileMachineDirListing
 ): Promise<MobileMachineDirListing | null> {
   if (!machineDirectoryHasMore(previous)) {
@@ -209,7 +209,7 @@ export async function readNextMachineDirectoryPage(
 // A refresh reads as many rows as were shown, so pages the user scrolled through survive it.
 export async function readMachineDirectory(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   path: string,
   previous: MobileMachineDirListing | undefined,
   force: boolean
@@ -260,7 +260,7 @@ export const machineTransfersQuery = defineHostQuery<
 
 export async function createMachineDirectory(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   path: string
 ): Promise<void> {
   machineCreateDir.interpret(await machineCreateDir.request(client, { machineId, path }))
@@ -268,7 +268,7 @@ export async function createMachineDirectory(
 
 export async function renameMachinePath(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   from: string,
   to: string
 ): Promise<void> {
@@ -277,7 +277,7 @@ export async function renameMachinePath(
 
 export async function removeMachinePaths(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   paths: string[]
 ): Promise<void> {
   machineRemove.interpret(await machineRemove.request(client, { machineId, paths }))
@@ -285,7 +285,7 @@ export async function removeMachinePaths(
 
 export async function commitStagedUpload(
   client: RpcClient,
-  machineId: ExecutionHostId,
+  machineId: string,
   destDir: string,
   uploadId: string
 ) {
@@ -294,11 +294,7 @@ export async function commitStagedUpload(
   )
 }
 
-export async function openMachineDownload(
-  client: RpcClient,
-  machineId: ExecutionHostId,
-  path: string
-) {
+export async function openMachineDownload(client: RpcClient, machineId: string, path: string) {
   return machineOpenDownload.interpret(
     await machineOpenDownload.request(client, { machineId, path }, OPEN_DOWNLOAD_REQUEST)
   )
@@ -306,7 +302,7 @@ export async function openMachineDownload(
 
 export async function startMachineUrlDownload(
   client: RpcClient,
-  params: { machineId: ExecutionHostId; url: string; destDir: string; fileName?: string }
+  params: { machineId: string; url: string; destDir: string; fileName?: string }
 ) {
   return machineDownloadUrl.interpret(await machineDownloadUrl.request(client, params))
 }

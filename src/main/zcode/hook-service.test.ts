@@ -101,7 +101,7 @@ describe('ZCodeHookService', () => {
     expect(() => JSON.parse(readFileSync(getZCodeConfigPath(), 'utf-8'))).not.toThrow()
   })
 
-  it('removes only Orca-managed entries and leaves the user their hooks', () => {
+  it('removes only Seal-managed entries and leaves the user their hooks', () => {
     const configPath = getZCodeConfigPath()
     mkdirSync(join(hoisted.home, '.zcode', 'cli'), { recursive: true })
     writeFileSync(

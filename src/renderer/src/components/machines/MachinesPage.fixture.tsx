@@ -1,15 +1,16 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
-import { toRuntimeExecutionHostId, toSshExecutionHostId } from '../../../../shared/execution-host'
+import { toMachineId } from '../../../../shared/machines/machine-types'
+import type { MachineView } from '../../../../shared/machines/machine-view'
 import type {
   MachineFileEntry,
   MachineMetrics,
   MachineTransfer
 } from '../../../../shared/machines/machine-types'
-import type { SshConnectionState, SshTarget } from '../../../../shared/ssh-types'
-import type { PublicKnownRuntimeEnvironment } from '../../../../shared/remote-runtime/host-catalog/runtime-environments'
+import type { SshConnectionState } from '../../../../shared/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
 import MachinesPage from './MachinesPage'
+import { MachinesSettingsPane } from '../settings/machines/MachinesSettingsPane'
 
 const GPU = 'gpu-box'
 const NAS = 'nas'
@@ -119,7 +120,7 @@ const METRICS: Record<string, MachineMetrics> = {
     cpuUsagePercent: null,
     homeDir: '/Users/brian'
   }),
-  [toSshExecutionHostId(GPU)]: metrics({
+  [toMachineId(GPU)]: metrics({
     hostname: 'gpu-box',
     osRelease: 'Ubuntu 24.04.1 LTS',
     cpuCount: 32,
@@ -132,7 +133,7 @@ const METRICS: Record<string, MachineMetrics> = {
     diskAvailableBytes: 1.1 * 1024 ** 4,
     uptimeSeconds: 1_209_600
   }),
-  [toRuntimeExecutionHostId(KESSEL)]: metrics({
+  [toMachineId(KESSEL)]: metrics({
     hostname: 'kessel-ml',
     osRelease: 'Ubuntu 22.04.5 LTS',
     cpuCount: 24,
@@ -149,7 +150,7 @@ const METRICS: Record<string, MachineMetrics> = {
 const TRANSFERS: MachineTransfer[] = [
   {
     id: 't1',
-    machineId: toSshExecutionHostId(GPU),
+    machineId: toMachineId(GPU),
     direction: 'upload',
     label: 'imagenet-mini',
     destination: `${HOME}/datasets`,
@@ -164,7 +165,7 @@ const TRANSFERS: MachineTransfer[] = [
   },
   {
     id: 't2',
-    machineId: toSshExecutionHostId(GPU),
+    machineId: toMachineId(GPU),
     direction: 'url-download',
     label: 'resnet50.safetensors',
     destination: `${HOME}/checkpoints`,
@@ -181,7 +182,7 @@ const TRANSFERS: MachineTransfer[] = [
 
 TRANSFERS.unshift({
   id: 't0',
-  machineId: toRuntimeExecutionHostId(KESSEL),
+  machineId: toMachineId(KESSEL),
   direction: 'upload',
   label: 'llama-8b-q4.gguf',
   destination: `${HOME}/checkpoints`,
@@ -232,13 +233,67 @@ const fakeMachinesApi: MachinesApi = {
   clearFinishedTransfers: async () => {},
   startDrag: () => {},
   onTransferUpdated: () => () => {},
-  onDirChanged: () => () => {}
+  onDirChanged: () => () => {},
+  list: async () => MACHINES,
+  onChanged: () => () => {},
+  setConnection: async ({ machineId }) => machineView(machineId),
+  renameMachine: async ({ machineId }) => machineView(machineId),
+  adopt: async () => MACHINES[0]!,
+  separate: async () => MACHINES,
+  connect: async () => {},
+  shellOpen: async () => ({ ok: false, message: 'Fixture has no shell' }),
+  shellWrite: async () => {},
+  shellResize: async () => {},
+  shellClose: async () => {},
+  onShellEvent: () => () => {},
+  detectCommands: async () => ['claude', 'codex'],
+  listWorktrees: async () => [],
+  createWorktree: async () => [],
+  removeWorktree: async () => []
 }
 
-const TARGETS: SshTarget[] = [
-  { id: GPU, label: 'gpu-box', host: '10.0.0.42', port: 22, username: 'brian' },
-  { id: NAS, label: 'nas', host: 'nas.local', port: 2222, username: 'admin' }
+function sshDetails(targetId: string, host: string, port: number, username: string) {
+  return {
+    targetId,
+    address: `${username}@${host}${port === 22 ? '' : `:${port}`}`,
+    host,
+    username,
+    port,
+    identityFile: null,
+    jumpHost: null
+  }
+}
+
+const MACHINES: MachineView[] = [
+  {
+    id: toMachineId(GPU),
+    recordId: GPU,
+    name: 'gpu-box',
+    connection: 'ssh',
+    ssh: sshDetails(GPU, '10.0.0.42', 22, 'brian'),
+    server: null
+  },
+  {
+    id: toMachineId(KESSEL),
+    recordId: KESSEL,
+    name: 'kessel-ml',
+    connection: 'server',
+    ssh: sshDetails('kessel-ssh', 'kessel-ml', 22, 'brian'),
+    server: { environmentId: KESSEL, name: 'kessel-ml', endpoint: 'ws://kessel-ml:6768' }
+  },
+  {
+    id: toMachineId(NAS),
+    recordId: NAS,
+    name: 'nas',
+    connection: 'ssh',
+    ssh: sshDetails(NAS, 'nas.local', 2222, 'admin'),
+    server: null
+  }
 ]
+
+function machineView(machineId: string): MachineView {
+  return MACHINES.find((machine) => machine.id === machineId) ?? MACHINES[0]!
+}
 
 const STATES = new Map<string, SshConnectionState>([
   [
@@ -262,18 +317,6 @@ const STATES = new Map<string, SshConnectionState>([
   ]
 ])
 
-const KESSEL_RUNTIME: PublicKnownRuntimeEnvironment = {
-  id: KESSEL,
-  name: 'kessel-ml',
-  source: 'manual',
-  createdAt: 1,
-  updatedAt: 1,
-  lastUsedAt: null,
-  runtimeId: 'kessel-runtime',
-  preferredEndpointId: 'default',
-  endpoints: []
-}
-
 const KESSEL_STATUS: RuntimeHostStatusSnapshot = {
   environmentId: KESSEL,
   pairingRevision: 1,
@@ -295,8 +338,6 @@ const KESSEL_STATUS: RuntimeHostStatusSnapshot = {
 
 function installFakes(): void {
   window.api.machines = fakeMachinesApi
-  window.api.ssh.listTargets = async () => TARGETS
-  window.api.runtimeEnvironments.list = async () => [KESSEL_RUNTIME]
   window.api.runtimeEnvironments.getStatusSnapshots = async () => [KESSEL_STATUS]
 }
 
@@ -310,7 +351,7 @@ async function openMachine(frame: HTMLElement, machineId: string): Promise<void>
   await wait(150)
 }
 
-const openGpuBox = (frame: HTMLElement) => openMachine(frame, toSshExecutionHostId(GPU))
+const openGpuBox = (frame: HTMLElement) => openMachine(frame, toMachineId(GPU))
 
 function Page(): React.JSX.Element {
   return (
@@ -333,7 +374,7 @@ export const runtimeMachine = defineFixture({
   store: { sshConnectionStates: STATES },
   setup: installFakes,
   render: () => <Page />,
-  interact: (frame) => openMachine(frame, toRuntimeExecutionHostId(KESSEL))
+  interact: (frame) => openMachine(frame, toMachineId(KESSEL))
 })
 
 function previewFixture(fileName: string) {
@@ -353,3 +394,14 @@ function previewFixture(fileName: string) {
 export const markdownPreview = previewFixture('README.md')
 
 export const imagePreview = previewFixture('loss-curve.png')
+
+export const settingsMachines = defineFixture({
+  width: 860,
+  store: { sshConnectionStates: STATES },
+  setup: installFakes,
+  render: () => (
+    <div style={{ padding: 24 }}>
+      <MachinesSettingsPane sshAddSignal={0} serverAddSignal={0} advanced={null} />
+    </div>
+  )
+})

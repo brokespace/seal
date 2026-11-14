@@ -3,51 +3,75 @@ import type {
   ClaudeRateLimitAccountsState,
   CodexManagedAccount
 } from '../../shared/managed-account-types'
+import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
+import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 
-/** The accounts a thread can answer with; a null id always means the provider's default login. */
+/** The accounts a thread can answer with; a null id always means this computer's own CLI login. */
 export type HomeChatAccountProvider = {
   list: () => Promise<HomeChatAccountOption[]>
-  /** CLAUDE_CONFIG_DIR for the account, or null to run on the default login. */
+  /** CLAUDE_CONFIG_DIR for the account, or null to run on this computer's own `claude` login. */
   claudeConfigDir: (accountId: string | null) => Promise<string | null>
-  /** CODEX_HOME for the account, or null to run on the default login. */
+  /** CODEX_HOME for the account, or null to run on this computer's own `codex` login. */
   codexHome: (accountId: string | null) => Promise<string | null>
 }
 
-/** Backed by the Claude and Codex logins saved in Seal. */
+const BACKENDS = [
+  { backend: 'claude-code', provider: 'claude' },
+  { backend: 'codex', provider: 'codex' }
+] as const
+
+function identityDetail(candidate: SealAccountCandidate): string | undefined {
+  const parts = [candidate.email, candidate.orgName].filter(
+    (part): part is string => Boolean(part) && part !== candidate.label
+  )
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}
+
+/** A saved login a chat can run on by its own folder; keys and tokens need a launch env. */
+function isSavedLogin(candidate: SealAccountCandidate): boolean {
+  return (
+    candidate.kind === 'oauth' &&
+    candidate.localId !== null &&
+    // The system login is already offered under the null id; its saved twin would repeat it.
+    !candidate.systemLogin &&
+    candidate.launchable &&
+    !candidate.disabled &&
+    candidate.health?.state !== 'dead'
+  )
+}
+
+/** Home chat picks from the same Claude and Codex accounts Settings > Accounts lists. */
 export function createHomeChatAccountProvider(source: {
+  /** Seal's accounts for a provider, or null before the account manager has started. */
+  sealCandidates: (provider: SealProvider) => SealAccountCandidate[] | null
   listClaudeAccounts: () => ClaudeRateLimitAccountsState
   listCodexAccounts: () => readonly CodexManagedAccount[]
 }): HomeChatAccountProvider {
-  // A WSL-only login cannot run a process on this host.
-  const codexAccounts = (): CodexManagedAccount[] =>
-    source.listCodexAccounts().filter((account) => account.managedHomeRuntime !== 'wsl')
   return {
-    list: () => {
-      const claude = source.listClaudeAccounts()
-      return Promise.resolve([
-        {
-          backend: 'claude-code' as const,
-          id: null,
-          label: 'Default login',
-          ...(claude.systemDefaultEmail ? { detail: claude.systemDefaultEmail } : {})
-        },
-        ...claude.accounts
-          .filter((account) => !account.needsSignIn)
-          .map((account) => ({
-            backend: 'claude-code' as const,
-            id: account.id,
-            label: account.email,
-            ...(account.organizationName ? { detail: account.organizationName } : {})
-          })),
-        { backend: 'codex' as const, id: null, label: 'Default login' },
-        ...codexAccounts().map((account) => ({
-          backend: 'codex' as const,
-          id: account.id,
-          label: account.email,
-          ...(account.workspaceLabel ? { detail: account.workspaceLabel } : {})
-        }))
-      ])
-    },
+    list: () =>
+      Promise.resolve(
+        BACKENDS.flatMap(({ backend, provider }) => {
+          const candidates = source.sealCandidates(provider) ?? []
+          const system = candidates.find((candidate) => candidate.systemLogin)
+          return [
+            {
+              backend,
+              id: null,
+              label: 'System login',
+              ...(system ? { detail: system.label } : {})
+            },
+            ...candidates.filter(isSavedLogin).map((candidate) => {
+              const detail = identityDetail(candidate)
+              return {
+                backend,
+                id: candidate.localId,
+                label: candidate.label,
+                ...(detail ? { detail } : {})
+              }
+            })
+          ]
+        })
+      ),
     claudeConfigDir: (accountId) => {
       if (accountId === null) {
         return Promise.resolve(null)
@@ -62,7 +86,10 @@ export function createHomeChatAccountProvider(source: {
       if (accountId === null) {
         return Promise.resolve(null)
       }
-      const account = codexAccounts().find((a) => a.id === accountId)
+      // A WSL-only login cannot run a process on this host.
+      const account = source
+        .listCodexAccounts()
+        .find((a) => a.id === accountId && a.managedHomeRuntime !== 'wsl')
       return account
         ? Promise.resolve(account.managedHomePath)
         : Promise.reject(new Error('That Codex account was removed. Pick another account.'))

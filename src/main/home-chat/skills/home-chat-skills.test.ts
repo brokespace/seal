@@ -76,9 +76,9 @@ describe('HomeChatSkills', () => {
         const machine: HomeChatMachine = {
           ...createLocalMachine(),
           info: {
-            id: 'ssh:kessel',
+            id: 'machine:kessel',
             label: 'kessel-ml',
-            kind: 'ssh',
+            kind: 'remote',
             connected: true,
             status: 'online'
           }
@@ -98,7 +98,7 @@ describe('HomeChatSkills', () => {
         const loaded = await skills.load('gpu-check', machine)
         expect(loaded).toContain('Run nvidia-smi and report temperatures.')
         expect(loaded).toContain(join(home, '.claude', 'skills', 'gpu-check', 'thresholds.json'))
-        expect(loaded).toContain('on machine "ssh:kessel"')
+        expect(loaded).toContain('on machine "machine:kessel"')
       } finally {
         process.env.HOME = originalHome
       }

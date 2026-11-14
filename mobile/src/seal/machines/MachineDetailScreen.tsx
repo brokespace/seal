@@ -20,7 +20,6 @@ import {
   Plus,
   Upload
 } from 'lucide-react-native'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { joinMachinePath, machinePathCrumbs } from '../../../../src/shared/machines/machine-paths'
 import { ActionSheetModal } from '../../components/ActionSheetModal'
 import {
@@ -101,7 +100,7 @@ export function MachineDetailScreen({
   path
 }: {
   hostId: string
-  machineId: ExecutionHostId
+  machineId: string
   path: string
 }) {
   useMobileColorScheme()

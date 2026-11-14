@@ -30,7 +30,7 @@ fn main() {
     administrator_status::run_if_requested();
     let launcher = match env::current_exe() {
         Ok(path) => path,
-        Err(error) => fail(&format!("Unable to start the Orca CLI: {error}")),
+        Err(error) => fail(&format!("Unable to start the Seal CLI: {error}")),
     };
     if let Some(config) = launcher
         .parent()
@@ -68,7 +68,7 @@ fn main() {
         .join("index.js");
     if !cli_path.is_file() {
         fail(&format!(
-            "Unable to locate the Orca CLI entrypoint at \"{}\"",
+            "Unable to locate the Seal CLI entrypoint at \"{}\"",
             cli_path.display()
         ));
     }
@@ -99,7 +99,7 @@ fn main() {
 fn run_server_cli(config_path: &Path) -> ! {
     let config = fs::read_to_string(config_path).unwrap_or_else(|error| {
         fail(&format!(
-            "Unable to read the Orca CLI configuration at \"{}\": {error}",
+            "Unable to read the Seal CLI configuration at \"{}\": {error}",
             config_path.display()
         ))
     });
@@ -109,7 +109,7 @@ fn run_server_cli(config_path: &Path) -> ! {
     for path in [&node_path, &cli_path] {
         if !path.is_file() {
             fail(&format!(
-                "Unable to locate \"{}\"; reconnect to the Orca server to refresh the CLI",
+                "Unable to locate \"{}\"; reconnect to the Seal server to refresh the CLI",
                 path.display()
             ));
         }
@@ -138,7 +138,7 @@ fn config_value<'a>(config: &'a str, key: &str, config_path: &Path) -> &'a str {
         })
         .unwrap_or_else(|| {
             fail(&format!(
-                "The Orca CLI configuration at \"{}\" has no {key}",
+                "The Seal CLI configuration at \"{}\" has no {key}",
                 config_path.display()
             ))
         })
@@ -152,7 +152,7 @@ fn run_cli(program: &Path, cli_path: &Path) -> ! {
 
     match command.status() {
         Ok(status) => exit(status.code().unwrap_or(1)),
-        Err(error) => fail(&format!("Unable to start the Orca CLI: {error}")),
+        Err(error) => fail(&format!("Unable to start the Seal CLI: {error}")),
     }
 }
 

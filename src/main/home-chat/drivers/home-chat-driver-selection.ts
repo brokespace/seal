@@ -53,5 +53,5 @@ export async function modelChangeNote(
   }
   const accounts = await sources.accounts.list().catch(() => [])
   const account = accounts.find((option) => option.backend === backend && option.id === accountId)
-  return `Now answering with ${backend === 'codex' ? 'Codex' : 'Claude'} on ${account?.label ?? 'the default login'}.`
+  return `Now answering with ${backend === 'codex' ? 'Codex' : 'Claude'} on ${accountId === null ? 'the system login' : (account?.label ?? 'a removed account')}.`
 }

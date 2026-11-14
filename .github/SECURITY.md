@@ -10,21 +10,21 @@ Only you and the maintainers can see the report. The maintainers may invite you 
 
 Please include:
 
-- the affected component (for example: desktop app, CLI, `orca serve`, SSH relay, mobile app or pairing, runtime RPC, browser pane, agent hooks, Orca Cloud relay)
-- the Orca version or commit, and the operating system
+- the affected component (for example: desktop app, CLI, `seal serve`, SSH relay, mobile app or pairing, runtime RPC, browser pane, agent hooks, Seal Cloud relay)
+- the Seal version or commit, and the operating system
 - steps to reproduce, or a proof of concept
 - the impact: what an attacker could do, and what access they need first (local user, same network, a malicious repository, a malicious web page, a compromised SSH host)
 
 ## Scope
 
-Orca runs agents, terminals and Git against local repositories, remote SSH hosts and paired devices. Examples of what is in scope:
+Seal runs agents, terminals and Git against local repositories, remote SSH hosts and paired devices. Examples of what is in scope:
 
 - secrets or credentials (agent-hook tokens, pairing keys, Git or provider credentials) reaching a process, host or page that should not have them
 - IPC or RPC trust boundaries that a renderer, web page, deep link or remote host can cross
 - command or path injection through repository content, branch names, file names or deep links
-- unauthenticated access to a local or network-reachable Orca service
+- unauthenticated access to a local or network-reachable Seal service
 
-Out of scope: vulnerabilities in third-party agent CLIs, the user's own Git or SSH binaries, or upstream dependencies, unless Orca's use of them makes the problem worse. Please report those to their maintainers.
+Out of scope: vulnerabilities in third-party agent CLIs, the user's own Git or SSH binaries, or upstream dependencies, unless Seal's use of them makes the problem worse. Please report those to their maintainers.
 
 ## Supported Versions
 

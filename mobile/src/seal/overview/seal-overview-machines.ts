@@ -4,14 +4,18 @@ import { defineHostQuery } from '../../query/host-query'
 import type { HostQueryTarget } from '../../query/host-query-key'
 import { defineRpcOperation, runRpcOperation } from '../../transport/rpc/rpc-operation'
 import { rpcResultVariant } from '../../transport/rpc/rpc-operation-result-reader'
+import { withMachineKind } from '../machines/machine-reply-schemas'
 
-const machineSummarySchema = z.looseObject({
-  id: z.string().min(1),
-  kind: z.enum(['local', 'ssh', 'runtime']),
-  label: z.string(),
-  status: z.enum(['online', 'connecting', 'offline', 'error']),
-  statusDetail: z.string().nullable()
-})
+const machineSummarySchema = z.preprocess(
+  withMachineKind,
+  z.looseObject({
+    id: z.string().min(1),
+    kind: z.enum(['local', 'ssh', 'runtime']),
+    label: z.string(),
+    status: z.enum(['online', 'connecting', 'offline', 'error']),
+    statusDetail: z.string().nullable()
+  })
+)
 
 const machineMetricsSchema = z.looseObject({
   loadAverage: z.tuple([z.number(), z.number(), z.number()]).nullable(),

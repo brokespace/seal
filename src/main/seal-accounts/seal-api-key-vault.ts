@@ -49,11 +49,17 @@ export class SealApiKeyVault {
     return hasSecretStore() && getSecretStore().isEncryptionAvailable()
   }
 
+  /** Why keys cannot be stored here, or how weakly they are sealed; null when the OS keychain seals them. */
   protectionGap(): string | null {
-    if (!hasSecretStore()) {
-      return 'No secret store is configured on this host.'
+    if (this.isAvailable()) {
+      return getSecretStore().describeProtectionGap()
     }
-    return getSecretStore().describeProtectionGap()
+    // The store's own notice says secrets go unencrypted; this vault refuses to store them instead.
+    const remedy =
+      process.platform === 'linux'
+        ? 'Install and unlock gnome-keyring or kwallet, or start Seal with --password-store=gnome-libsecret (--password-store=kwallet6 on KDE).'
+        : 'Unlock the login keychain, then restart Seal.'
+    return `Seal cannot reach an OS keychain on this computer, so API keys and setup tokens cannot be added here. Browser and device-code sign-ins still work. ${remedy}`
   }
 
   storedIds(): Set<string> {

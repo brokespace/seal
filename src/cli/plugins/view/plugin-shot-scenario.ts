@@ -45,7 +45,7 @@ function requireLocal(ctx: HandlerContext): void {
   if (process.env.ORCA_CLI_CWD || ctx.client.isRemote) {
     throw refuse(
       'invalid_environment',
-      "shot --scenario runs the plugin's code on this machine and shows it in the Orca on this machine, so it does not reach another host. Run it where Orca and the plugin folder are, without --environment."
+      "shot --scenario runs the plugin's code on this machine and shows it in the Seal on this machine, so it does not reach another host. Run it where Seal and the plugin folder are, without --environment."
     )
   }
 }
@@ -94,7 +94,7 @@ async function resolveFolder(
   const plugins = await callPlugins<PluginHostListEntry[]>(ctx, 'plugins.list')
   const entry = plugins.find((plugin) => plugin.pluginKey === target)
   if (!entry) {
-    throw refuse('plugin_not_found', `Orca has no plugin ${target}.`, [
+    throw refuse('plugin_not_found', `Seal has no plugin ${target}.`, [
       'Pass the plugin folder instead: `orca plugin shot <dir> --scenario <name>`.'
     ])
   }
@@ -110,7 +110,7 @@ async function resolveFolder(
   if (!enclosing || !manifest || folderKey(manifest) !== target) {
     throw refuse(
       'invalid_argument',
-      `Run this inside ${target}'s folder, or pass the folder; Orca does not share where a development folder is.`,
+      `Run this inside ${target}'s folder, or pass the folder; Seal does not share where a development folder is.`,
       [`orca plugin shot <dir> --scenario <name>`]
     )
   }
@@ -208,7 +208,7 @@ export async function takePluginScenarioShot(
   if (reply.replay !== true) {
     throw refuse(
       'runtime_unsupported',
-      'This Orca does not draw shot --scenario previews; update Orca, then run it again.'
+      'This Seal does not draw shot --scenario previews; update Seal, then run it again.'
     )
   }
   const path =

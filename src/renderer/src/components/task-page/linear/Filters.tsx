@@ -95,7 +95,7 @@ export function TaskPageLinearFilters({
                   <TooltipContent side="bottom" sideOffset={6}>
                     {t(
                       'auto.components.TaskPage.linearModeHasWorktreeTooltip',
-                      'Linear tickets linked to an Orca workspace'
+                      'Linear tickets linked to a Seal workspace'
                     )}
                   </TooltipContent>
                 </Tooltip>
@@ -255,7 +255,7 @@ export function TaskPageLinearFilters({
                 linearMode === 'in-orca'
                   ? t(
                       'auto.components.TaskPage.linearHasWorktreeSearchPlaceholder',
-                      'Filter issues linked to an Orca workspace...'
+                      'Filter issues linked to a Seal workspace...'
                     )
                   : t('auto.components.TaskPage.eec0c5c079', 'Search Linear issues...')
               }

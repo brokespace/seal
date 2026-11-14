@@ -1,11 +1,11 @@
 import * as z from 'zod'
-import { parseExecutionHostId } from '../execution-host'
 import type { MachineSummary } from '../machines/machine-summaries'
+import { parseMachineId } from '../machines/machine-types'
 
 const MachineIdParam = z
   .string()
   .min(1)
-  .refine((value) => parseExecutionHostId(value) !== null, 'Unknown machine')
+  .refine((value) => parseMachineId(value) !== null, 'Unknown machine')
 
 const MachinePath = z.string().min(1).max(4096)
 

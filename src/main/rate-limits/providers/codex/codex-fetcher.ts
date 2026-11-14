@@ -188,7 +188,8 @@ export async function fetchCodexRateLimits(
   }
 
   const isWslHome = Boolean(options?.codexHomePath && parseWslUncPath(options.codexHomePath))
-  if (isWslHome) {
+  const triedBackendFirst = isWslHome || options?.preferBackend === true
+  if (triedBackendFirst) {
     const backendResult = await fetchBackendUsage(options)
     if (backendResult) {
       return options?.signal?.aborted ? abortedCodexRateLimitResult() : backendResult
@@ -198,7 +199,7 @@ export async function fetchCodexRateLimits(
   if (options?.codexHomePath && isCodexStateDbBackfillPending(options.codexHomePath)) {
     void startCodexStateDbBackfillRecoveryInBackground(options.codexHomePath)
     // HTTP usage never opens the state DB, so it cannot contend with the backfill (#15741).
-    const backendResult = isWslHome ? null : await fetchBackendUsage(options)
+    const backendResult = triedBackendFirst ? null : await fetchBackendUsage(options)
     if (options?.signal?.aborted) {
       return abortedCodexRateLimitResult()
     }
@@ -207,7 +208,7 @@ export async function fetchCodexRateLimits(
     }
     return codexUnavailable(
       hasCodexStateDbBackfillRecoveryGivenUp(options.codexHomePath)
-        ? `Codex could not rebuild its session index in ${options.codexHomePath}; restart Orca to retry (a codex wrapper that sets CODEX_HOME can cause this)`
+        ? `Codex could not rebuild its session index in ${options.codexHomePath}; restart Seal to retry (a codex wrapper that sets CODEX_HOME can cause this)`
         : 'Codex is rebuilding its session index; usage will refresh when recovery finishes',
       'error'
     )
@@ -237,7 +238,7 @@ export async function fetchCodexRateLimits(
     rpcFailure = codexUnavailable('RPC failed', 'error')
   }
 
-  if (isWslHome) {
+  if (triedBackendFirst) {
     return rpcFailure
   }
   // Interactive Codex keystrokes can accept startup dialogs, including updates; read HTTP usage instead (#17415).

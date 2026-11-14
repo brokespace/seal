@@ -30,7 +30,7 @@ export function removeOrcaCreatedAntigravityTrust(workspacePath: string): void {
       removeRecordedEntry(settingsPath, workspacePath)
     } catch (error) {
       // Why: keep the record so a later removal can retry an unreadable settings file.
-      console.warn('[antigravity-trust] Failed to remove an Orca-created trust entry:', error)
+      console.warn('[antigravity-trust] Failed to remove a Seal-created trust entry:', error)
     }
   }
 }

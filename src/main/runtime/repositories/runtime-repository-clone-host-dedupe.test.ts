@@ -144,7 +144,7 @@ describe('clone reuses only a project on this machine', () => {
       }
       const { controller, repos } = createController([saved])
 
-      await expect(controller.clone(sourceUrl, alias)).rejects.toThrow('is already an Orca project')
+      await expect(controller.clone(sourceUrl, alias)).rejects.toThrow('is already a Seal project')
       expect(repos).toEqual([saved])
       await expect(stat(join(root, 'real', 'source'))).rejects.toThrow()
     })

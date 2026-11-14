@@ -23,10 +23,13 @@ export const liveSessionSchema = z.looseObject({
   // Any provider the host scans, so one added on desktop still lists here.
   provider: z.string().min(1),
   providerSessionId: z.string(),
+  // `ssh`/`runtime` come from hosts that predate unified machines.
   machine: z.looseObject({
     hostId: z.string(),
     label: z.string(),
-    kind: z.enum(['local', 'ssh', 'runtime'])
+    kind: z.enum(['local', 'remote', 'ssh', 'runtime']),
+    machineId: z.string().optional(),
+    executionHostId: z.string().optional()
   }),
   origin: z.enum(['seal', 'external']),
   cwd: z.string().nullable(),

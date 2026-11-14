@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Copy, Edit3, ImageDown, Share2, Trash2 } from 'lucide-react-native'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import {
   isValidMachineFileName,
   joinMachinePath,
@@ -27,7 +26,7 @@ function errorText(error: unknown, fallback: string): string {
 /** Long-press actions for a row, plus the New Folder prompt; every change re-reads `folder`. */
 export function useMachineEntryActions(args: {
   client: RpcClient | null
-  machineId: ExecutionHostId
+  machineId: string
   folder: string
   onChanged: () => void
   onExport: (path: string, intent: MachineFileExportIntent) => void

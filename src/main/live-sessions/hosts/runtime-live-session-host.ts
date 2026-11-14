@@ -26,7 +26,9 @@ export function runtimeLiveSessionHost(
     machine: {
       hostId: toRuntimeExecutionHostId(environment.id),
       label: environment.label,
-      kind: 'runtime'
+      kind: 'remote',
+      executionHostId: toRuntimeExecutionHostId(environment.id),
+      connection: 'server'
     },
     async run(script, options) {
       const timeoutMs = options?.timeoutMs ?? DEFAULT_SCRIPT_TIMEOUT_MS

@@ -12,7 +12,8 @@ import {
   type HomeChatToolContext,
   type HomeChatToolResult
 } from './home-chat-tool-context'
-import { quoteForDialect } from '../machines/home-chat-machine-scripts'
+import { absoluteMachinePath, posixPathWord } from '../machines/home-chat-machine-paths'
+import { powerShellLiteral } from '../machines/home-chat-machine-scripts'
 import { executeAssistantTool } from './home-chat-assistant-tool-handlers'
 import { executeSealTool } from './home-chat-seal-tool-handlers'
 import { transferBetweenMachines } from './home-chat-transfer'
@@ -24,10 +25,10 @@ const DEFAULT_WAIT_SECONDS = 30
 
 const num = (value: unknown): number | undefined => (typeof value === 'number' ? value : undefined)
 
-function outputBlock(output: string, totalBytes: number): string {
+function outputBlock(output: string, totalBytes: number, jobId?: string): string {
   const shown = Buffer.byteLength(output, 'utf8')
-  const note =
-    totalBytes > shown ? `[last ${shown} of ${totalBytes} bytes; job_output reads more]\n` : ''
+  const rest = jobId ? `job_output with job_id ${jobId} reads the rest` : 'job_output reads more'
+  const note = totalBytes > shown ? `[last ${shown} of ${totalBytes} bytes; ${rest}]\n` : ''
   return output.trim()
     ? `\n\noutput (stdout+stderr):\n${note}${clipToolText(output.trimEnd())}`
     : '\n\n(no output)'
@@ -49,7 +50,7 @@ async function runCommand(
   })
   if (result.kind === 'finished') {
     return {
-      text: `exit code ${result.exitCode ?? 'unknown'}${outputBlock(result.output, result.totalBytes)}`,
+      text: `exit code ${result.exitCode ?? 'unknown'}${outputBlock(result.output, result.totalBytes, result.jobId)}`,
       isError: result.exitCode !== 0,
       machine: result.machineLabel
     }
@@ -60,7 +61,7 @@ async function runCommand(
       ? `Started background job ${job.id} on ${job.machineLabel}.`
       : `Still running after ${waitSeconds}s, so it continues as background job ${job.id} on ${job.machineLabel}.`
   return {
-    text: `${lead} A notice will arrive in this chat when it exits; check it with job_status/job_output or stop it with job_kill.${outputBlock(result.output, result.totalBytes)}`,
+    text: `${lead} A notice will arrive in this chat when it exits; check it with job_status/job_output or stop it with job_kill.${outputBlock(result.output, result.totalBytes, job.id)}`,
     isError: false,
     machine: job.machineLabel
   }
@@ -88,7 +89,7 @@ async function jobStatus(
         : report.state === 'lost'
           ? 'lost (the process is gone without an exit code, e.g. the machine rebooted)'
           : 'missing (its folder was removed)'
-  const tail = 'output' in report ? outputBlock(report.output, report.totalBytes) : ''
+  const tail = 'output' in report ? outputBlock(report.output, report.totalBytes, job.id) : ''
   return {
     text: `Job ${job.id} on ${job.machineLabel}: ${state}.${tail}`,
     isError: false,
@@ -129,17 +130,26 @@ async function executeMachineTool(
     case 'read_file': {
       const machine = await ctx.machines.open(str(input.machine))
       const maxBytes = num(input.max_bytes) ?? 200_000
-      const { text, truncated } = await machine.readTextFile(str(input.path), maxBytes)
+      const path = await absoluteMachinePath(machine, str(input.path))
+      const { text, truncated } = await machine.readTextFile(path, maxBytes)
+      if (text.includes('\0')) {
+        return {
+          text: `${path} is a binary file, so its bytes cannot be shown as text. Show it to the user with attach_file, copy it with transfer_file, or inspect it with run_command (file, xxd, strings).`,
+          isError: true,
+          machine: machine.info.label
+        }
+      }
       const suffix = truncated ? `\n… [truncated at ${maxBytes} bytes]` : ''
       return { text: clipToolText(text) + suffix, isError: false, machine: machine.info.label }
     }
     case 'write_file': {
       const machine = await ctx.machines.open(str(input.machine))
       const content = str(input.content)
-      await machine.writeTextFile(str(input.path), content, { append: input.append === true })
+      const path = await absoluteMachinePath(machine, str(input.path))
+      await machine.writeTextFile(path, content, { append: input.append === true })
       const verb = input.append === true ? 'Appended' : 'Wrote'
       return {
-        text: `${verb} ${Buffer.byteLength(content, 'utf8')} bytes to ${str(input.path)}.`,
+        text: `${verb} ${Buffer.byteLength(content, 'utf8')} bytes to ${path}.`,
         isError: false,
         machine: machine.info.label
       }
@@ -159,7 +169,10 @@ async function executeMachineTool(
     }
     case 'delete_path': {
       const machine = await ctx.machines.open(str(input.machine))
-      const path = quoteForDialect(machine.dialect, str(input.path))
+      const path =
+        machine.dialect === 'powershell'
+          ? powerShellLiteral(str(input.path))
+          : posixPathWord(str(input.path))
       const recursive = input.recursive === true
       const command =
         machine.dialect === 'powershell'
@@ -173,7 +186,7 @@ async function executeMachineTool(
       const info = await ctx.services.attachments.importFrom(
         machine,
         ctx.chatId,
-        str(input.path),
+        await absoluteMachinePath(machine, str(input.path)),
         optionalStr(input.name)
       )
       ctx.showAttachment({ ...info, machine: machine.info.label })

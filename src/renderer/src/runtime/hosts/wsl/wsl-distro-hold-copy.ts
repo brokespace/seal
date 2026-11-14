@@ -15,12 +15,12 @@ export function localizedWslDistroHoldMessage(
   return hold.state === 'stopped'
     ? t(
         'wslDistroHold.terminalStopped',
-        "The WSL distro {{distro}} is stopped, so Orca didn't start this terminal. Start the distro, then try again.",
+        "The WSL distro {{distro}} is stopped, so Seal didn't start this terminal. Start the distro, then try again.",
         { distro: hold.distro }
       )
     : t(
         'wslDistroHold.terminalUnverifiable',
-        "Orca couldn't check whether the WSL distro {{distro}} is running, so it didn't start this terminal. Start the distro, then try again.",
+        "Seal couldn't check whether the WSL distro {{distro}} is running, so it didn't start this terminal. Start the distro, then try again.",
         { distro: hold.distro }
       )
 }

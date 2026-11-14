@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { readHostQueryLive, useHostQuery } from '../../query/host-query'
 import { hostQueryKey } from '../../query/host-query-key'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
@@ -17,7 +16,7 @@ import type { MobileMachineDirListing } from './machine-reply-schemas'
 export function useMachineDirectory(args: {
   hostId: string
   client: RpcClient | null
-  machineId: ExecutionHostId
+  machineId: string
   path: string
 }) {
   const { hostId, client, machineId, path } = args

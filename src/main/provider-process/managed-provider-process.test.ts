@@ -112,7 +112,7 @@ describe('managed provider process', () => {
     }
   )
 
-  it('keeps the agent session that launched Orca out of a provider child', () => {
+  it('keeps the agent session that launched Seal out of a provider child', () => {
     vi.stubEnv('CODEX_THREAD_ID', 'parent-thread')
     vi.stubEnv('CODEX_WINDOWS_REGISTERED_CORE', '1')
     vi.stubEnv('CODEX_HOME', '/home/user/.codex')

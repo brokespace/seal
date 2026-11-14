@@ -47,7 +47,7 @@ export function WorktreeCardReviewActions({
           }}
         >
           <MonitorUp className="size-3.5" />
-          {t('auto.components.sidebar.WorktreeCardMeta.2c67730e07', 'Open in Orca')}
+          {t('auto.components.sidebar.WorktreeCardMeta.2c67730e07', 'Open in Seal')}
         </DropdownMenuItem>
       ) : null}
       {onUnlink ? (

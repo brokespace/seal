@@ -108,11 +108,12 @@ async function messageSession(
 }
 
 function hostArgs(info: HomeChatMachineInfo): string[] {
-  const parsed = parseExecutionHostId(info.id)
+  const host = info.executionHostId ?? info.id
+  const parsed = parseExecutionHostId(host)
   if (parsed?.kind === 'runtime') {
     return ['--environment', parsed.environmentId]
   }
-  return info.id === LOCAL_MACHINE_ID ? [] : ['--host', info.id]
+  return host === LOCAL_MACHINE_ID ? [] : ['--host', host]
 }
 
 async function startSession(
@@ -220,7 +221,7 @@ export async function executeSealTool(
       }
       seal.open({ kind: 'take-over', sessionId: session.id })
       return ok(
-        `Seal is stopping the external process and reopening ${session.id} in a Seal pane. Confirm with list_sessions: it should now show "in a Seal pane".`,
+        `Asked Seal's window to stop the external process and reopen ${session.id} in a Seal pane. That needs a workspace open in Seal on ${session.machineLabel}; without one, Seal tells the user and the session stays as it is. Confirm with list_sessions: it should now show "in a Seal pane".`,
         session.machineLabel
       )
     }
@@ -264,13 +265,12 @@ export async function executeSealTool(
     }
     case 'list_skills': {
       const machine = await ctx.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
-      const catalog = await skills.machineCatalog(machine, optionalStr(input.project_path))
+      const catalog = await skills.machineCatalog(machine, optionalStr(input.project_path), true)
       return ok(clipToolText(catalogText(machine.info.label, catalog.entries)), machine.info.label)
     }
     case 'load_skill': {
-      const name = optionalStr(input.machine)
-      const machine = name ? await ctx.machines.open(name) : undefined
-      return ok(clipToolText(await skills.load(str(input.name), machine)), machine?.info.label)
+      const machine = await ctx.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
+      return ok(clipToolText(await skills.load(str(input.name), machine)), machine.info.label)
     }
   }
 }

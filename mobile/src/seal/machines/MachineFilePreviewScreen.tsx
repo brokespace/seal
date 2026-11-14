@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Buffer } from 'buffer/index.js'
 import { ChevronLeft, File, Share2 } from 'lucide-react-native'
-import type { ExecutionHostId } from '../../../../src/shared/execution-host'
 import { machinePathBasename } from '../../../../src/shared/machines/machine-paths'
 import { PHONE_MACHINE_PREVIEW_MAX_BYTES } from '../../../../src/shared/rpc-contract/seal-machines-params'
 import {
@@ -141,7 +140,7 @@ export function MachineFilePreviewScreen({
   size
 }: {
   hostId: string
-  machineId: ExecutionHostId
+  machineId: string
   path: string
   size: number | null
 }) {

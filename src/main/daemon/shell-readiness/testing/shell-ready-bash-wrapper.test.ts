@@ -129,7 +129,7 @@ describePosix('daemon shell-ready bash wrapper', () => {
   )
 
   itWithBash(
-    'dispatches a non-empty preexec_functions against the real command, not Orca hooks',
+    'dispatches a non-empty preexec_functions against the real command, not Seal hooks',
     async () => {
       const { getDaemonBashShellReadyRcfileContent } = await importFreshDaemonBashRcfile()
       // A real callback verifies that chaining preserves the user’s preexec handler.

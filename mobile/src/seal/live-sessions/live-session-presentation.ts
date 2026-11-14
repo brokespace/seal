@@ -127,15 +127,16 @@ export type LiveMachineGroup = {
 export function groupLiveSessions(sessions: readonly LiveSession[]): LiveMachineGroup[] {
   const machines = new Map<string, LiveMachineGroup>()
   for (const session of sessions) {
-    let machine = machines.get(session.machine.hostId)
+    const machineKey = session.machine.machineId ?? session.machine.hostId
+    let machine = machines.get(machineKey)
     if (!machine) {
       machine = {
-        hostId: session.machine.hostId,
+        hostId: machineKey,
         label: session.machine.label,
         kind: session.machine.kind,
         projects: []
       }
-      machines.set(session.machine.hostId, machine)
+      machines.set(machineKey, machine)
     }
     const key = session.cwd ?? session.project ?? ''
     let project = machine.projects.find((entry) => entry.key === key)

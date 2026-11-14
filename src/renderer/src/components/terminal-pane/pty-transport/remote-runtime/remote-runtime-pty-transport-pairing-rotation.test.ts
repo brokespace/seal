@@ -94,7 +94,7 @@ async function installRepairableMain(): Promise<{
   let mainHostKey = 'host-A'
   let reachable = true
   const unreachable = (): Error =>
-    Object.assign(new Error('Could not connect to the remote Orca runtime.'), {
+    Object.assign(new Error('Could not connect to the remote Seal runtime.'), {
       code: 'remote_runtime_unavailable'
     })
   const store = await createCatalogStore()

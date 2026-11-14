@@ -5,7 +5,7 @@ export const VM_ENV_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['vm', 'env', 'doctor'],
     summary: 'Check that this environment can run agents on the workspace',
-    usage: 'orca vm env doctor [--path <worktree>] [--run-setup] [--json]',
+    usage: 'seal vm env doctor [--path <worktree>] [--run-setup] [--json]',
     allowedFlags: [...LOCAL_COMMAND_FLAGS, 'path', 'run-setup'],
     notes: [
       'Runs on the machine you call it from, against the checkout at --path (default: the current directory).',
@@ -14,9 +14,9 @@ export const VM_ENV_COMMAND_SPECS: CommandSpec[] = [
       'Exits 1 when any check fails. Warnings keep ok: true, so read every check before calling the environment clean.'
     ],
     examples: [
-      'orca vm env doctor',
-      'orca vm env doctor --json',
-      'orca vm env doctor --path /workspace/repo --run-setup --json'
+      'seal vm env doctor',
+      'seal vm env doctor --json',
+      'seal vm env doctor --path /workspace/repo --run-setup --json'
     ]
   }
 ]

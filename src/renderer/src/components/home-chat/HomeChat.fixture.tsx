@@ -23,13 +23,13 @@ function inOrder(entries: EntryDraft[]): HomeChatEntry[] {
 const machines: HomeChatMachineOption[] = [
   { id: 'local', label: 'This computer', kind: 'local', status: 'online' },
   {
-    id: 'ssh:build-box',
+    id: 'machine:build-box',
     label: 'build-box',
-    kind: 'ssh',
+    kind: 'remote',
     status: 'online',
     address: 'ci@10.0.0.12'
   },
-  { id: 'runtime:tower', label: 'tower', kind: 'runtime', status: 'offline' }
+  { id: 'machine:tower', label: 'tower', kind: 'remote', status: 'offline' }
 ]
 
 const conversation: HomeChatRecord = {
@@ -166,8 +166,8 @@ function fakeHomeChatApi(chats: HomeChatRecord[]): HomeChatApi {
     getSettings: async () => settings,
     updateSettings: async () => settings,
     listAccounts: async () => [
-      { backend: 'claude-code', id: null, label: 'Default login' },
-      { backend: 'codex', id: null, label: 'Default login' }
+      { backend: 'claude-code', id: null, label: 'System login' },
+      { backend: 'codex', id: null, label: 'System login' }
     ],
     getMemory: async () => memory,
     updateMemory: async () => memory,
