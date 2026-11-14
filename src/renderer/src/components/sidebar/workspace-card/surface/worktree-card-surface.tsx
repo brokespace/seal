@@ -11,6 +11,14 @@ import { DEFAULT_WORKSPACE_CARD_TEMPLATE } from '../template/default-workspace-c
 import { renderWorkspaceCardTemplate } from '../template/render-workspace-card-template'
 import { WorktreeCardTitleStatusProvider } from './worktree-card-title-status'
 
+function pressFocusedCard(event: React.KeyboardEvent<HTMLDivElement>): void {
+  if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
+    return
+  }
+  event.preventDefault()
+  event.currentTarget.click()
+}
+
 export function WorktreeCardSurface({ card }: { card: WorktreeCardController }): React.JSX.Element {
   const {
     worktree,
@@ -89,8 +97,13 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
         titleRenaming && '!border-transparent !bg-transparent !shadow-none !ring-0',
         isDeleting && 'opacity-50 grayscale cursor-not-allowed',
         // Dim disconnected runtimes only; ancestor opacity would make the SSH control’s error tint/spinner illegible.
-        isRuntimeDisconnected && !isDeleting && 'opacity-60'
+        isRuntimeDisconnected && !isDeleting && 'opacity-60',
+        affiliateListMode && 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
       )}
+      // Outside the sidebar's listbox no row carries focus for the card, so the card is the tab stop.
+      role={affiliateListMode ? 'button' : undefined}
+      tabIndex={affiliateListMode ? 0 : undefined}
+      onKeyDown={affiliateListMode ? pressFocusedCard : undefined}
       data-worktree-card-surface="true"
       data-worktree-card-active={
         isActiveSurface && !isLineageDropTarget ? activeSurfaceVariant : undefined
