@@ -16,6 +16,14 @@ vi.mock('../../startup/shell-environment/login-shell-environment', () => ({
   resolveLoginShellEnvironment: async () => process.env
 }))
 
+// What the desktop's machine list needs from Electron: a profile folder and the open windows.
+vi.mock('electron', () => ({
+  app: { getPath: () => join(root, 'profile') },
+  BrowserWindow: { getAllWindows: () => [] }
+}))
+
+type TraceSpan = { name: string; attributes: Record<string, unknown> }
+
 let root = ''
 let programCode = ''
 
@@ -94,6 +102,7 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
   })
@@ -195,5 +204,91 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
       status: { source: 'live', unavailableReason: 'no-program' }
     })
     expect(installedPrograms(home)).toEqual([])
+  })
+
+  it("is started by the keeper from the desktop's own machine list, with nothing connected", async () => {
+    const home = await emptyHome('h6')
+    await sealInstalledAt(packagedResources('Seal.app', programCode), home, 'local')
+    const { setActiveSink } = await import('../../observability/tracer')
+    const { setMachineAccess } = await import('../machine-services')
+    const { desktopMachineAccess } = await import('../registry/machine-registry-service')
+    const { startMachineDiskIndexKeeper } = await import('./machine-disk-index-keeper')
+    const spans: TraceSpan[] = []
+    const firstPassEnded = new Promise<void>((resolve) => {
+      setActiveSink({
+        push: (record) => {
+          // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the tracer hands its sink the span records it built, which have this shape.
+          const span = record as TraceSpan
+          spans.push(span)
+          if (span.attributes.event === 'pass') {
+            resolve()
+          }
+        },
+        flush: () => {},
+        close: () => {}
+      })
+    })
+    setMachineAccess(desktopMachineAccess())
+    // Only the keeper's own wait is skipped; the daemon is started and asked in real time.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    startMachineDiskIndexKeeper({ orcadSidecar: false })
+    await vi.advanceTimersByTimeAsync(30_000)
+    await firstPassEnded
+
+    expect(daemonPids(home)).toHaveLength(1)
+    expect(spans.map((span) => ({ span: span.name, ...span.attributes }))).toEqual([
+      {
+        span: 'machines.disk-index.keeper',
+        event: 'started',
+        pid: process.pid,
+        firstPassInSeconds: 30
+      },
+      {
+        span: 'machines.disk-index.keeper',
+        event: 'pass-began',
+        pass: 1,
+        machines: 'local',
+        otherMachinesConnected: 0,
+        otherMachinesNotConnected: 0
+      },
+      {
+        span: 'machines.disk-index',
+        machineId: 'local',
+        transport: 'local',
+        outcome: 'answering',
+        reason: null,
+        detail: null
+      },
+      {
+        span: 'machines.disk-index.keeper',
+        event: 'pass',
+        pass: 1,
+        machines: 'local answering',
+        otherMachinesNotConnected: 0,
+        errors: null,
+        nextPassInSeconds: 1800
+      }
+    ])
+  })
+
+  it('gives up on a machine that never answers, and writes that down', async () => {
+    vi.resetModules()
+    vi.useFakeTimers()
+    const { createLocalMachineConnection } = await import('../connection/local-machine-connection')
+    const { keepMachineDiskIndex } = await import('./machine-disk-index')
+    const silent: MachineConnection = {
+      ...createLocalMachineConnection(),
+      machineId: 'machine:silent',
+      dialect: () => new Promise<never>(() => {})
+    }
+
+    const keeping = keepMachineDiskIndex(silent)
+    await vi.advanceTimersByTimeAsync(5 * 60_000)
+
+    await expect(keeping).resolves.toMatchObject({ state: 'not-available', asked: true })
+    expect(console.warn).toHaveBeenCalledWith(
+      '[disk-index] local machine machine:silent: the disk index is not available (command-failed): The machine did not answer within 5 minutes of being asked.'
+    )
   })
 })
