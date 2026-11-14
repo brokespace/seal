@@ -1,5 +1,5 @@
 import type { MachineId } from '../../../shared/machines/machine-types'
-import { startSpan } from '../../observability/tracer'
+import { flushActiveSink, startSpan } from '../../observability/tracer'
 import type { MachineTransport } from '../connection/machine-connection'
 import type { DiskIndexFailure } from './machine-disk-live-answer'
 
@@ -10,8 +10,13 @@ export type DiskIndexStartState =
 
 export type DiskIndexKeptState = 'answering' | 'not-available' | 'not-supported'
 
+/** What woke the keeper: its own start, the pass timer, or the watchdog a minute behind it. */
+export type DiskIndexKeeperWake = 'start' | 'timer' | 'watchdog'
+
 export type DiskIndexKeeperEvent =
-  | { event: 'started'; firstPassInMs: number }
+  | { event: 'started' }
+  /** Written before the keeper looks at any machine. `lateMs` is how long after its time it woke. */
+  | { event: 'pass-due'; pass: number; by: DiskIndexKeeperWake; lateMs: number }
   | {
       event: 'pass-began'
       pass: number
@@ -19,6 +24,13 @@ export type DiskIndexKeeperEvent =
       machineIds: readonly MachineId[]
       /** Other machines Seal knows and is not talking to now. */
       notConnected: number
+    }
+  | {
+      event: 'pass-slow'
+      pass: number
+      runningForMs: number
+      /** `step` is what the start was doing when last heard from. */
+      waitingOn: readonly { machineId: MachineId; step: string | null }[]
     }
   | {
       event: 'pass'
@@ -109,21 +121,50 @@ function otherMachines(connected: number, notConnected: number): string {
     : `${connected} other machine(s) connected, ${notConnected} not connected`
 }
 
+/** A pass that woke this late was held back, which is worth a warning. */
+const LATE_WAKE_WARNING_MS = 60_000
+
 /**
- * Records that the keeper is running, and what each pass looked at and found, as
- * `machines.disk-index.keeper` spans. A process with none is not running the keeper; one with the
- * start and no pass never reached its first pass; a pass that began and did not end is still
- * waiting for a machine.
+ * Records that the keeper is running, what woke each pass and how late, and what the pass looked
+ * at and found, as `machines.disk-index.keeper` spans. Each is on disk before the keeper goes on,
+ * so a step that stops the process cannot take the record of the step before it along.
  */
 export function logDiskIndexKeeper(event: DiskIndexKeeperEvent): void {
+  writeKeeperEvent(event)
+  flushActiveSink()
+}
+
+function writeKeeperEvent(event: DiskIndexKeeperEvent): void {
   const span = 'machines.disk-index.keeper'
   if (event.event === 'started') {
-    const firstPassInSeconds = seconds(event.firstPassInMs)
     write(
       span,
-      { event: 'started', pid: process.pid, firstPassInSeconds },
-      `keeper started in process ${process.pid}; first pass in ${firstPassInSeconds} s`,
+      { event: 'started', pid: process.pid },
+      `keeper started in process ${process.pid}`,
       false
+    )
+    return
+  }
+  if (event.event === 'pass-due') {
+    const lateBySeconds = seconds(event.lateMs)
+    write(
+      span,
+      { event: 'pass-due', pass: event.pass, by: event.by, lateBySeconds },
+      `keeper pass ${event.pass} is due (${event.by}; ${lateBySeconds} s late)`,
+      event.by === 'watchdog' || event.lateMs >= LATE_WAKE_WARNING_MS
+    )
+    return
+  }
+  if (event.event === 'pass-slow') {
+    const waitingOn = event.waitingOn
+      .map(({ machineId, step }) => (step ? `${machineId} (${step})` : machineId))
+      .join(', ')
+    const runningForSeconds = seconds(event.runningForMs)
+    write(
+      span,
+      { event: 'pass-slow', pass: event.pass, runningForSeconds, waitingOn: waitingOn || null },
+      `keeper pass ${event.pass} has run for ${runningForSeconds} s and is waiting for: ${waitingOn || 'no machine'}`,
+      true
     )
     return
   }
