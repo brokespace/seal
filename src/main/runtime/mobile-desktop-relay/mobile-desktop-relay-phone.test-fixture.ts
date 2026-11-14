@@ -1,15 +1,7 @@
 import { expect, vi } from 'vitest'
 import WebSocket from 'ws'
 import { z } from 'zod'
-import {
-  decrypt,
-  decryptBytes,
-  deriveSharedKey,
-  encrypt,
-  generateKeyPair,
-  publicKeyFromBase64,
-  publicKeyToBase64
-} from '../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { authenticatePairedE2EEV2TestClient } from '../rpc/mobile/e2ee/paired-e2ee-v2-test-client'
 import { parsePairingCode } from '../../../shared/remote-runtime/pairing/pairing'
 import type { PairingOffer } from '../../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import type { OrcaRuntimeRpcServer } from '../rpc/server/runtime-rpc'
@@ -35,41 +27,21 @@ export async function connectPhone(
   cleanups: (() => Promise<void> | void)[]
 ) {
   const pairing = pair(desktop, 'mobile', name)
-  const keys = generateKeyPair()
-  const sharedKey = deriveSharedKey(keys.secretKey, publicKeyFromBase64(pairing.publicKeyB64))
   const ws = new WebSocket(pairing.endpoint)
   const frames: Frame[] = []
   const binaries: Uint8Array[] = []
-  let authenticated = false
-  const ready = new Promise<void>((resolve) => {
-    ws.on('message', (data: Buffer, isBinary) => {
-      if (isBinary) {
-        binaries.push(decryptBytes(new Uint8Array(data), sharedKey)!)
-        return
-      }
-      const text = data.toString()
-      if (text.includes('e2ee_ready')) {
-        ws.send(
-          encrypt(
-            JSON.stringify({ type: 'e2ee_auth', deviceToken: pairing.deviceToken }),
-            sharedKey
-          )
-        )
-        return
-      }
-      const frame = z.record(z.string(), z.unknown()).parse(JSON.parse(decrypt(text, sharedKey)!))
-      if (!authenticated) {
-        authenticated = frame.type === 'e2ee_authenticated'
-        resolve()
-        return
-      }
-      frames.push(frame)
-    })
+  await new Promise<void>((resolve, reject) => {
+    ws.once('open', () => resolve())
+    ws.once('error', reject)
   })
-  ws.once('open', () =>
-    ws.send(JSON.stringify({ type: 'e2ee_hello', publicKeyB64: publicKeyToBase64(keys.publicKey) }))
+  const client = await authenticatePairedE2EEV2TestClient(ws, {
+    hostPublicKeyB64: pairing.publicKeyB64,
+    deviceToken: pairing.deviceToken
+  })
+  client.onBinary((bytes) => binaries.push(bytes))
+  client.onText((plaintext) =>
+    frames.push(z.record(z.string(), z.unknown()).parse(JSON.parse(plaintext)))
   )
-  await ready
   cleanups.push(() => ws.close())
   const token = pairing.deviceToken
   return {
@@ -86,19 +58,16 @@ export async function connectPhone(
       expectedRuntimeSource?: { sourceId: string; runtimeId: string },
       untrustedScope?: { callerScope: string; clientKind: string }
     ) {
-      ws.send(
-        encrypt(
-          JSON.stringify({
-            ...untrustedScope,
-            id,
-            deviceToken: token,
-            method,
-            params,
-            executionHost: executionHost ?? undefined,
-            ...(expectedRuntimeSource ? { expectedRuntimeSource } : {})
-          }),
-          sharedKey
-        )
+      client.sendText(
+        JSON.stringify({
+          ...untrustedScope,
+          id,
+          deviceToken: token,
+          method,
+          params,
+          executionHost: executionHost ?? undefined,
+          ...(expectedRuntimeSource ? { expectedRuntimeSource } : {})
+        })
       )
     },
     next: (id: string, predicate: (frame: Frame) => boolean = () => true) =>

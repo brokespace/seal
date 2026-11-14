@@ -1,7 +1,11 @@
 import nacl from 'tweetnacl'
 import { describe, expect, it } from 'vitest'
 import { verifyDeviceProof } from '../pairing/device-key-proof'
-import { createMobileE2EEV2Fixture, MOBILE_E2EE_V2_VECTOR } from './mobile-e2ee-v2-fixtures'
+import {
+  createMobileE2EEV2Fixture,
+  MOBILE_E2EE_V2_VECTOR,
+  mobileE2EEV2FixtureX25519
+} from './mobile-e2ee-v2-fixtures'
 import { openMobileE2EEV2Frame } from './mobile-e2ee-v2-framing'
 import { createPairedE2EEClientHandshake } from './paired-e2ee-client-handshake'
 import { NODE_PAIRED_E2EE_PRIMITIVES } from './node/paired-e2ee-node-primitives'
@@ -16,9 +20,8 @@ const keyCredential = {
 function v2Handshake() {
   const fixture = createMobileE2EEV2Fixture()
   const handshake = createPairedE2EEClientHandshake({
-    primitives: { ...NODE_PAIRED_E2EE_PRIMITIVES, deriveSharedKey: () => fixture.sharedSecret },
+    primitives: { ...NODE_PAIRED_E2EE_PRIMITIVES, x25519: mobileE2EEV2FixtureX25519(fixture) },
     hostPublicKeyB64: fixture.ready.desktopPublicKeyB64,
-    framing: 'v2',
     transport: 'relay',
     relayHostId: fixture.hello.context.relayHostId,
     clientKeyPair: { publicKey: new Uint8Array(32).fill(1), secretKey: new Uint8Array(32) },

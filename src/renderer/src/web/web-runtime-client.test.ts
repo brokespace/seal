@@ -1,17 +1,12 @@
 import { pairedRuntimeConnectionFromOffer } from '../../../shared/remote-runtime/pairing/paired-runtime-connection'
 import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
-
-import '../../../shared/remote-runtime/e2ee/paired-e2ee-fixed-key-test-fixture'
 import WebSocket, { WebSocketServer } from 'ws'
 import { WebRuntimeClient } from './web-runtime-client'
 import {
-  decrypt,
-  deriveSharedKey,
-  encrypt,
   generateKeyPair,
-  publicKeyToBase64,
-  encryptBytes as encryptSharedBytes
+  publicKeyToBase64
 } from '../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { DesktopMobileE2EEV2Session } from '../../../main/runtime/rpc/mobile/e2ee/mobile-e2ee-v2-desktop-session'
 import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import '../../../shared/protocol-version'
 
@@ -59,7 +54,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const controller = new AbortController()
@@ -96,7 +91,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
 
@@ -127,7 +122,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
 
@@ -168,7 +163,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
 
@@ -207,7 +202,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const localHandle = { unsubscribe: vi.fn(), sendBinary: vi.fn() }
@@ -277,7 +272,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const handles = Array.from({ length: 3 }, () => ({
@@ -352,7 +347,7 @@ describe('WebRuntimeClient', () => {
         v: 2,
         endpoint: 'ws://127.0.0.1:6768',
         deviceToken: 'token',
-        publicKeyB64: Buffer.alloc(32).toString('base64')
+        publicKeyB64: Buffer.alloc(32, 9).toString('base64')
       })
     )
     const localHandle = { unsubscribe: vi.fn(), sendBinary: vi.fn() }
@@ -413,26 +408,39 @@ describe('WebRuntimeClient', () => {
     const sockets = new Set<WebSocket>()
     wss.on('connection', (socket) => {
       sockets.add(socket)
-      let sharedKey: Uint8Array | null = null
+      let session: DesktopMobileE2EEV2Session | null = null
       let authenticated = false
       socket.on('close', () => sockets.delete(socket))
-      socket.on('message', (data, isBinary) => {
-        if (isBinary || !sharedKey) {
-          const raw = data.toString()
-          const hello = JSON.parse(raw) as { publicKeyB64: string }
-          const clientPublicKey = Uint8Array.from(Buffer.from(hello.publicKeyB64, 'base64'))
-          sharedKey = deriveSharedKey(serverKeys.secretKey, clientPublicKey)
-          socket.send(JSON.stringify({ type: 'e2ee_ready' }))
+      socket.on('message', (data) => {
+        if (!session) {
+          session = DesktopMobileE2EEV2Session.create({
+            hello: JSON.parse(data.toString()),
+            serverSecretKey: serverKeys.secretKey,
+            expectedContext: { transport: 'direct' }
+          })
+          if (!session) {
+            socket.close(4001, 'Invalid e2ee_hello v2')
+            return
+          }
+          socket.send(JSON.stringify(session.ready))
           return
         }
-        const plaintext = decrypt(data.toString(), sharedKey)
+        const plaintext = session.openText(data.toString())
         if (!plaintext) {
           return
         }
         const message = JSON.parse(plaintext) as { id?: string; type?: string }
         if (message.type === 'e2ee_auth') {
           authenticated = true
-          socket.send(encrypt(JSON.stringify({ type: 'e2ee_authenticated' }), sharedKey))
+          socket.send(
+            session.sealText(
+              JSON.stringify({
+                type: 'e2ee_authenticated',
+                v: 2,
+                transcriptHashB64: session.transcriptHashB64
+              })
+            )
+          )
           return
         }
         if (!authenticated || !message.id) {
@@ -445,8 +453,8 @@ describe('WebRuntimeClient', () => {
           result: { type: 'ready' },
           _meta: { runtimeId: 'runtime-web-test' }
         } as RuntimeRpcResponse<unknown> & { streaming: true }
-        socket.send(encrypt(JSON.stringify(response), sharedKey))
-        socket.send(Buffer.from(encryptSharedBytes(frame, sharedKey)), { binary: true })
+        socket.send(session.sealText(JSON.stringify(response)))
+        socket.send(Buffer.from(session.sealBinary(frame)), { binary: true })
       })
     })
     await new Promise<void>((resolve) => wss.once('listening', resolve))
@@ -483,5 +491,68 @@ describe('WebRuntimeClient', () => {
         wss.close((error) => (error ? reject(error) : resolve()))
       })
     }
+  })
+
+  describe('hosts without forward-secret E2EE v2', () => {
+    async function callHost(answerHello: (socket: WebSocket) => void) {
+      vi.stubGlobal('WebSocket', WebSocket)
+      const hellos: unknown[] = []
+      // Bind the dialed 127.0.0.1 address; wildcard binding lets a foreign loopback listener claim this port.
+      const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 })
+      wss.on('connection', (socket) => {
+        socket.on('message', (data) => {
+          hellos.push(JSON.parse(data.toString()))
+          answerHello(socket)
+        })
+      })
+      await new Promise<void>((resolve) => wss.once('listening', resolve))
+      const address = wss.address()
+      if (!address || typeof address !== 'object') {
+        throw new Error('Expected local WebSocket test server address')
+      }
+      const client = new WebRuntimeClient(
+        pairedRuntimeConnectionFromOffer({
+          v: 2,
+          endpoint: `ws://127.0.0.1:${address.port}`,
+          deviceToken: 'token',
+          publicKeyB64: publicKeyToBase64(generateKeyPair().publicKey)
+        })
+      )
+      try {
+        const failure = await client.call('status.get', undefined, { timeoutMs: 5_000 }).then(
+          () => null,
+          (error: unknown) => error
+        )
+        return { failure, hellos }
+      } finally {
+        client.close()
+        for (const socket of wss.clients) {
+          socket.terminate()
+        }
+        await new Promise<void>((resolve, reject) => {
+          wss.close((error) => (error ? reject(error) : resolve()))
+        })
+      }
+    }
+
+    it('stops with an update-the-host failure when the host answers with the old ready', async () => {
+      const { failure, hellos } = await callHost((socket) =>
+        socket.send(JSON.stringify({ type: 'e2ee_ready' }))
+      )
+
+      expect(failure).toMatchObject({ code: 'unauthorized', reason: 'host-outdated' })
+      expect(hellos).toHaveLength(1)
+      expect(hellos[0]).toMatchObject({ type: 'e2ee_hello', v: 2 })
+      expect(hellos[0]).not.toHaveProperty('publicKeyB64')
+    })
+
+    it('stops with an update-the-host failure when the host closes on the hello', async () => {
+      const { failure, hellos } = await callHost((socket) =>
+        socket.close(4001, 'Invalid e2ee_hello v2')
+      )
+
+      expect(failure).toMatchObject({ code: 'unauthorized', reason: 'host-outdated' })
+      expect(hellos).toHaveLength(1)
+    })
   })
 })

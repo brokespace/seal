@@ -2,8 +2,10 @@ import { pairedRuntimeConnectionFromOffer } from '../pairing/paired-runtime-conn
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import WebSocket from 'ws'
 import type { PairingOffer } from '../pairing/mobile-relay-pairing-offer'
-import { decrypt, encrypt } from '../e2ee/node/e2ee-crypto'
-import { createFixedKeyLegacyHandshakeForTest } from '../e2ee/paired-e2ee-fixed-key-test-fixture'
+import {
+  createPairedE2EEV2SessionPairForTest,
+  type PairedE2EEV2SessionPair
+} from '../../../main/runtime/rpc/mobile/e2ee/paired-e2ee-v2-session-pair-test-fixture'
 import { getRemoteRuntimeRequestAdmissionEvidence } from './remote-runtime-prepared-request-admission'
 import type { RemoteRuntimeWebSocketCallbacks } from './remote-runtime-request-websocket'
 
@@ -20,7 +22,7 @@ vi.mock('./remote-runtime-request-websocket', () => ({
       ok: true,
       socket: {
         ws: socket.ws,
-        handshake: createFixedKeyLegacyHandshakeForTest(socket.sharedKey),
+        handshake: socket.pair.handshake,
         cleanup: socket.cleanup
       }
     }
@@ -29,7 +31,7 @@ vi.mock('./remote-runtime-request-websocket', () => ({
 
 type FakeOpenedSocket = {
   ws: WebSocket
-  sharedKey: Uint8Array
+  pair: PairedE2EEV2SessionPair
   cleanup: ReturnType<typeof vi.fn>
   sent: string[]
   callbacks: RemoteRuntimeWebSocketCallbacks
@@ -46,7 +48,7 @@ function createFakeOpenedSocket(callbacks: RemoteRuntimeWebSocketCallbacks): Fak
   } as unknown as WebSocket
   return {
     ws,
-    sharedKey: new Uint8Array(32).fill(opens.length + 1),
+    pair: createPairedE2EEV2SessionPairForTest(),
     cleanup: vi.fn(),
     sent,
     callbacks
@@ -57,21 +59,20 @@ async function authenticate(
   socket: FakeOpenedSocket,
   beforeAuthenticated?: () => void
 ): Promise<void> {
-  socket.callbacks.onFrame(socket.ws, JSON.stringify({ type: 'e2ee_ready' }))
+  socket.callbacks.onFrame(socket.ws, socket.pair.readyText)
   // The auth step is async; a host answers only after the auth frame is on the wire.
   for (let tick = 0; tick < 20 && socket.sent.length === 0; tick++) {
     await Promise.resolve()
   }
   expect(socket.sent).toHaveLength(1)
+  // The host opens frames in order, so the auth frame goes first.
+  expect(socket.pair.host.openText(socket.sent[0]!)).not.toBeNull()
   beforeAuthenticated?.()
-  socket.callbacks.onFrame(
-    socket.ws,
-    encrypt(JSON.stringify({ type: 'e2ee_authenticated' }), socket.sharedKey)
-  )
+  socket.callbacks.onFrame(socket.ws, socket.pair.authenticatedText())
 }
 
-function latestRequestId(socket: FakeOpenedSocket): string {
-  const plaintext = decrypt(socket.sent.at(-1) ?? '', socket.sharedKey)
+function firstRequestId(socket: FakeOpenedSocket): string {
+  const plaintext = socket.pair.host.openText(socket.sent[1] ?? '')
   if (plaintext === null) {
     throw new Error('missing encrypted request')
   }
@@ -144,20 +145,19 @@ describe('RemoteRuntimeRequestConnection stale socket callbacks', () => {
       opens[0]!.callbacks.onError(opens[0]!.ws, new Error('stale socket error') as never)
       opens[0]!.callbacks.onFrame(
         opens[0]!.ws,
-        encrypt(JSON.stringify({ id: 'stale', ok: true, result: {} }), opens[0]!.sharedKey)
+        opens[0]!.pair.host.sealText(JSON.stringify({ id: 'stale', ok: true, result: {} }))
       )
 
-      const requestId = latestRequestId(opens[1]!)
+      const requestId = firstRequestId(opens[1]!)
       opens[1]!.callbacks.onFrame(
         opens[1]!.ws,
-        encrypt(
+        opens[1]!.pair.host.sealText(
           JSON.stringify({
             id: requestId,
             ok: true,
             result: { state: 'ok' },
             _meta: { runtimeId: 'runtime-2' }
-          }),
-          opens[1]!.sharedKey
+          })
         )
       )
 

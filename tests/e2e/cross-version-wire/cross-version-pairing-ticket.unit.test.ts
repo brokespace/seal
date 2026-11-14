@@ -14,7 +14,7 @@ import {
   resolveBaselineReleaseRef
 } from './release-checkout'
 
-// Single-use pairing must survive a downgrade, accept rows an older host made, and stay invisible to old clients.
+// Single-use pairing must survive a downgrade and re-upgrade, accept rows an older host made, and stay invisible to old clients.
 const SUITE_TIMEOUT_MS = 180_000
 const EXCHANGED = 'e'.repeat(48)
 const PRE_TICKET_RELEASE_REF = 'v1.4.253'
@@ -54,7 +54,7 @@ function pairedTicket(registry: DeviceRegistry, name: string) {
 }
 
 describe('cross-version: single-use pairing tickets', () => {
-  it('after a downgrade, exchanged phones keep their own token and older phones their code', () => {
+  it('a downgrade leaves hashed tokens inert; upgrading again keeps exchanged and older phones paired', () => {
     const userDataPath = mkdtempSync(join(tmpdir(), 'orca-xv-ticket-'))
     const current = new DeviceRegistry(userDataPath)
     const exchanged = pairedTicket(current, 'New phone')
@@ -63,9 +63,10 @@ describe('cross-version: single-use pairing tickets', () => {
     const older = pairedTicket(current, 'Old phone')
 
     const released = new ReleasedRegistry(userDataPath)
-    expect(released.validateToken(EXCHANGED)?.deviceId).toBe(exchanged.deviceId)
+    // Only token hashes are stored, which a released build cannot check: downgrading needs a re-pair.
+    expect(released.validateToken(EXCHANGED)).toBeNull()
     expect(released.validateToken(exchanged.token)).toBeNull()
-    expect(released.validateToken(older.token)?.deviceId).toBe(older.deviceId)
+    expect(released.validateToken(older.token)).toBeNull()
     // The released host rewrites the file; upgrading again keeps both working.
     released.updateLastSeen(older.deviceId)
 

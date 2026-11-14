@@ -5,6 +5,7 @@ export type WebRuntimeAuthFailureReason =
   | 'device-revoked'
   | 'device-downgraded'
   | 'insecure-origin'
+  | 'host-outdated'
 
 export class WebRuntimeClientError extends Error {
   constructor(
@@ -30,6 +31,11 @@ function webRuntimeAuthFailureMessage(reason: WebRuntimeAuthFailureReason): stri
       return translate(
         'auto.web.runtimeAuth.insecureOrigin',
         'Orca refused to pair from this page: it is plain http on another machine, so anyone on the network path could replace it and take the pairing code. Open the web client over https, at localhost on this computer, or through an SSH tunnel. To allow it anyway, the server operator can restart Orca with ORCA_ALLOW_INSECURE_WEB_PAIRING=1.'
+      )
+    case 'host-outdated':
+      return translate(
+        'auto.web.runtimeAuth.hostOutdated',
+        'This Orca server does not support the encryption this web client requires. Update Orca on the server, then reload this page. If the server is already up to date, its identity key has changed: pair this browser again.'
       )
     case 'device-downgraded':
       return translate(

@@ -1,4 +1,3 @@
-import { expect } from 'vitest'
 import WebSocket from 'ws'
 import { parsePairingCode } from '../../../../shared/remote-runtime/pairing/pairing'
 import type { RuntimeMobileSessionTabsResult } from '../../../../shared/runtime-session-contracts'
@@ -7,11 +6,9 @@ import type { Repo } from '../../../../shared/repo-types'
 import type { WorktreeMeta } from '../../../../shared/worktree/meta-types'
 import type { HostWorktreeTarget } from '../../../../shared/worktree/host-qualified-identity'
 import {
-  decrypt,
-  deriveSharedKey,
-  encrypt,
-  generateKeyPair
-} from '../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+  authenticatePairedE2EEV2TestClient,
+  type PairedE2EEV2TestClient
+} from '../../rpc/mobile/e2ee/paired-e2ee-v2-test-client'
 
 export const REPO_ID = 'repo-1'
 export const FOLDER_REPO_ID = 'folder-repo-1'
@@ -22,10 +19,7 @@ export const CLIENT_A2_WORKTREE_ID = worktreeId('client-a2')
 export const CLIENT_B_WORKTREE_ID = worktreeId('client-b')
 export const SESSION_WORKTREE_ID = worktreeId('session')
 
-export type PairedSession = {
-  ws: WebSocket
-  sharedKey: Uint8Array
-}
+export type PairedSession = PairedE2EEV2TestClient
 
 export type ResponseReader = {
   next: (
@@ -109,39 +103,19 @@ function connect(endpoint: string): Promise<WebSocket> {
   })
 }
 
-function nextMessage(ws: WebSocket): Promise<string> {
-  return new Promise((resolve) => {
-    ws.once('message', (data) => resolve(typeof data === 'string' ? data : data.toString('utf-8')))
-  })
-}
-
 export async function authenticate(pairingUrl: string): Promise<PairedSession> {
   const pairing = parsePairingCode(pairingUrl)
   if (!pairing) {
     throw new Error('invalid_pairing_url')
   }
-  const ws = await connect(pairing.endpoint)
-  const keys = generateKeyPair()
-  const serverPublicKey = Uint8Array.from(Buffer.from(pairing.publicKeyB64, 'base64'))
-  const sharedKey = deriveSharedKey(keys.secretKey, serverPublicKey)
-  ws.send(
-    JSON.stringify({
-      type: 'e2ee_hello',
-      publicKeyB64: Buffer.from(keys.publicKey).toString('base64')
-    })
-  )
-  expect(JSON.parse(await nextMessage(ws))).toEqual({ type: 'e2ee_ready' })
-  ws.send(
-    encrypt(JSON.stringify({ type: 'e2ee_auth', deviceToken: pairing.deviceToken }), sharedKey)
-  )
-  expect(JSON.parse(decrypt(await nextMessage(ws), sharedKey)!)).toEqual({
-    type: 'e2ee_authenticated'
+  return authenticatePairedE2EEV2TestClient(await connect(pairing.endpoint), {
+    hostPublicKeyB64: pairing.publicKeyB64,
+    deviceToken: pairing.deviceToken
   })
-  return { ws, sharedKey }
 }
 
 export function send(session: PairedSession, request: Record<string, unknown>): void {
-  session.ws.send(encrypt(JSON.stringify(request), session.sharedKey))
+  session.sendText(JSON.stringify(request))
 }
 
 export function createReader(session: PairedSession): ResponseReader {
@@ -152,14 +126,7 @@ export function createReader(session: PairedSession): ResponseReader {
   }
   const queued: Record<string, unknown>[] = []
   const waiters: Waiter[] = []
-  const onMessage = (data: WebSocket.RawData): void => {
-    const plaintext = decrypt(
-      typeof data === 'string' ? data : data.toString('utf-8'),
-      session.sharedKey
-    )
-    if (!plaintext) {
-      return
-    }
+  const onMessage = (plaintext: string): void => {
     const response = JSON.parse(plaintext) as Record<string, unknown>
     const waiterIndex = waiters.findIndex(
       (waiter) => response.id === waiter.id && waiter.predicate(response)
@@ -170,7 +137,7 @@ export function createReader(session: PairedSession): ResponseReader {
     }
     waiters.splice(waiterIndex, 1)[0]?.resolve(response)
   }
-  session.ws.on('message', onMessage)
+  const unsubscribe = session.onText(onMessage)
   return {
     next: (id, predicate = () => true) => {
       const queuedIndex = queued.findIndex((response) => response.id === id && predicate(response))
@@ -180,7 +147,7 @@ export function createReader(session: PairedSession): ResponseReader {
       return new Promise((resolve) => waiters.push({ id, predicate, resolve }))
     },
     dispose: () => {
-      session.ws.off('message', onMessage)
+      unsubscribe()
       queued.length = 0
       waiters.length = 0
     }

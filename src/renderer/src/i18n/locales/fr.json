@@ -1011,6 +1011,7 @@
       "runtimeAuth": {
         "insecureOrigin": "Orca a refusé d'appairer depuis cette page : elle est en http non chiffré sur une autre machine, donc n'importe qui sur le chemin réseau pourrait la remplacer et s'emparer du code d'appairage. Ouvrez le client web en https, à localhost sur cet ordinateur, ou via un tunnel SSH. Pour l'autoriser malgré tout, l'opérateur du serveur peut redémarrer Orca avec ORCA_ALLOW_INSECURE_WEB_PAIRING=1.",
         "deviceDowngraded": "Ce serveur Orca ne prend plus en charge la clé de connexion de ce navigateur (il a peut-être été rétrogradé). Mettez le serveur à jour, ou appairez à nouveau ce navigateur.",
+        "hostOutdated": "Ce serveur Orca ne prend pas en charge le chiffrement requis par ce client web. Mettez Orca à jour sur le serveur, puis rechargez cette page. Si le serveur est déjà à jour, sa clé d’identité a changé : appairez à nouveau ce navigateur.",
         "unauthorized": "Non autorisé. Appairez à nouveau ce client web.",
         "unauthorizedLinkUsedOrExpired": "Non autorisé. Ce lien d'appairage a peut-être expiré ou a déjà été utilisé. Créez un nouveau lien d'appairage dans Orca et ouvrez-le."
       }

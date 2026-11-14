@@ -11,7 +11,11 @@ import {
   openMobileE2EEV2Frame,
   sealMobileE2EEV2Frame
 } from '../../../../../shared/remote-runtime/e2ee/mobile-e2ee-v2-framing'
-import { deriveSharedKey } from '../../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import {
+  COMPRESSED_FRAMES_CLIENT_CAPABILITY,
+  inflateCompressedFrame
+} from '../../../../../shared/remote-runtime/e2ee/paired-e2ee-compressed-frame'
+import { NODE_COMPRESSED_FRAME_CODEC } from '../../../../../shared/remote-runtime/e2ee/node/paired-e2ee-node-compressed-frame'
 import type { RpcBinarySendResult } from '../../transports/rpc-binary-sender'
 import { E2EEChannel } from './e2ee-channel'
 import { deriveMobileE2EEV2KeySchedule } from '../../../../../shared/remote-runtime/e2ee/node/mobile-e2ee-v2-node-key-schedule'
@@ -32,24 +36,26 @@ function createMockWs() {
   }
 }
 
-function hello(): MobileE2EEV2Hello {
+type Transport = 'relay' | 'direct'
+
+function hello(transport: Transport = 'relay'): MobileE2EEV2Hello {
   return {
     type: 'e2ee_hello',
     v: 2,
     clientPublicKeyB64: Buffer.from(client.publicKey).toString('base64'),
     clientNonceB64: Buffer.from(new Uint8Array(32).fill(3)).toString('base64'),
-    capabilities: { framing: [2], payloadKinds: ['text', 'binary'] },
+    capabilities: { framing: [2], payloadKinds: ['text', 'binary'], forwardSecrecy: true },
     context: {
       protocol: 'orca-mobile-e2ee',
       initiator: 'mobile',
       responder: 'desktop',
-      transport: 'relay',
-      relayHostId: 'AbCdEf0123_-xyZ9'
+      transport,
+      ...(transport === 'relay' ? { relayHostId: 'AbCdEf0123_-xyZ9' } : {})
     }
   }
 }
 
-function setup() {
+function setup(transport: Transport = 'relay') {
   const ws = createMockWs()
   const onReady = vi.fn()
   const onError = vi.fn()
@@ -70,24 +76,25 @@ function setup() {
     resolveAuthenticatedDevice,
     onReady,
     onError,
-    transportContext: { transport: 'relay', relayHostId: 'AbCdEf0123_-xyZ9' },
-    requireV2: true
+    transportContext:
+      transport === 'relay' ? { transport, relayHostId: 'AbCdEf0123_-xyZ9' } : { transport }
   })
-  return { ws, channel, onReady, onError, resolveAuthenticatedDevice }
+  return { ws, channel, onReady, onError, resolveAuthenticatedDevice, transport }
 }
 
 function startV2(ctx: ReturnType<typeof setup>) {
-  const clientHello = hello()
+  const clientHello = hello(ctx.transport)
   ctx.channel.handleRawMessage(JSON.stringify(clientHello))
   const ready = JSON.parse(ctx.ws.sent[0]!.data.toString()) as MobileE2EEV2Ready
   const handshake = validateMobileE2EEV2Handshake(clientHello, ready)!
   const schedule = deriveMobileE2EEV2KeySchedule({
-    sharedSecret: deriveSharedKey(client.secretKey, server.publicKey),
+    staticSharedSecret: nacl.scalarMult(client.secretKey, server.publicKey),
+    ephemeralSharedSecret: nacl.scalarMult(client.secretKey, handshake.desktopEphemeralPublicKey),
     transcript: encodeMobileE2EEV2Transcript(handshake),
     clientNonce: handshake.clientNonce,
     desktopNonce: handshake.desktopNonce
   })
-  return { ready, schedule }
+  return { ready, schedule, handshake }
 }
 
 function clientText(
@@ -124,7 +131,8 @@ function openServerFrame(
 
 function authenticate(
   ctx: ReturnType<typeof setup>,
-  schedule: ReturnType<typeof startV2>['schedule']
+  schedule: ReturnType<typeof startV2>['schedule'],
+  clientCapabilities?: readonly string[]
 ) {
   const transcriptHashB64 = Buffer.from(schedule.transcriptHash).toString('base64')
   ctx.channel.handleRawMessage(
@@ -133,7 +141,8 @@ function authenticate(
         type: 'e2ee_auth',
         v: 2,
         transcriptHashB64,
-        deviceToken: 'valid-token'
+        deviceToken: 'valid-token',
+        ...(clientCapabilities ? { clientCapabilities } : {})
       }),
       schedule,
       0n
@@ -217,5 +226,101 @@ describe('E2EEChannel v2', () => {
     expect(openServerFrame(ctx.ws.sent[2]!.data, 'binary', schedule, 1n)).toEqual(
       new Uint8Array([1])
     )
+  })
+
+  it.each(['direct', 'relay'] as const)(
+    'closes a %s socket whose hello is not v2 without answering it',
+    (transport) => {
+      const legacyHellos = [
+        { type: 'e2ee_hello', publicKeyB64: Buffer.from(client.publicKey).toString('base64') },
+        { ...hello(transport), v: 1 }
+      ]
+      for (const legacyHello of legacyHellos) {
+        const ctx = setup(transport)
+        ctx.channel.handleRawMessage(JSON.stringify(legacyHello))
+        expect(ctx.onError).toHaveBeenCalledWith(4001, 'E2EE v2 required')
+        expect(ctx.ws.sent).toHaveLength(0)
+        expect(ctx.onReady).not.toHaveBeenCalled()
+      }
+    }
+  )
+
+  it('refuses a v2 hello that does not ask for forward secrecy', () => {
+    const ctx = setup('direct')
+    const { forwardSecrecy: _forwardSecrecy, ...capabilities } = hello('direct').capabilities
+    ctx.channel.handleRawMessage(JSON.stringify({ ...hello('direct'), capabilities }))
+    expect(ctx.onError).toHaveBeenCalledWith(4001, 'Invalid e2ee_hello v2')
+    expect(ctx.ws.sent).toHaveLength(0)
+  })
+
+  it('refuses a hello whose client key is a low-order point', () => {
+    const ctx = setup('direct')
+    ctx.channel.handleRawMessage(
+      JSON.stringify({
+        ...hello('direct'),
+        // An order-8 point: its X25519 output is all zeros for every host key.
+        clientPublicKeyB64: 'X5yVvKNQjCSx0LFVnIPvWwREXMRYHI6G2CJO3dCfEVc='
+      })
+    )
+    expect(ctx.onError).toHaveBeenCalledWith(4001, 'Invalid e2ee_hello v2')
+    expect(ctx.ws.sent).toHaveLength(0)
+  })
+
+  it('keys each socket with a fresh host key that the host static secret cannot recover', () => {
+    const first = setup()
+    const second = setup()
+    const firstStart = startV2(first)
+    const secondStart = startV2(second)
+    expect(firstStart.ready.desktopEphemeralPublicKeyB64).not.toBe(
+      secondStart.ready.desktopEphemeralPublicKeyB64
+    )
+
+    authenticate(first, firstStart.schedule)
+    const recorded = first.ws.sent[1]!.data
+    expect(openServerFrame(recorded, 'text', firstStart.schedule, 0n)).not.toBeNull()
+
+    // Everything a later thief of the host static secret has: that secret and the recorded handshake.
+    const staticOnly = nacl.scalarMult(server.secretKey, client.publicKey)
+    const thiefSchedule = deriveMobileE2EEV2KeySchedule({
+      staticSharedSecret: staticOnly,
+      ephemeralSharedSecret: nacl.scalarMult(
+        server.secretKey,
+        firstStart.handshake.desktopEphemeralPublicKey
+      ),
+      transcript: encodeMobileE2EEV2Transcript(firstStart.handshake),
+      clientNonce: firstStart.handshake.clientNonce,
+      desktopNonce: firstStart.handshake.desktopNonce
+    })
+    expect(openServerFrame(recorded, 'text', thiefSchedule, 0n)).toBeNull()
+  })
+
+  it('compresses replies to listed bulk methods only, never credential replies or control frames', () => {
+    const ctx = setup('direct')
+    const { schedule } = startV2(ctx)
+    authenticate(ctx, schedule, [COMPRESSED_FRAMES_CLIENT_CAPABILITY])
+    const authenticated = ctx.ws.sent[1]!
+    expect(typeof authenticated.data).toBe('string')
+
+    const bulk = JSON.stringify({ token: 'secret-token', filler: 'a'.repeat(4096) })
+    ctx.channel.onMessage((_request, textReply) => textReply(bulk))
+
+    ctx.channel.handleRawMessage(
+      clientText('{"id":"1","method":"seal.accounts.exportCredential"}', schedule, 1n)
+    )
+    const credentialReply = ctx.ws.sent[2]!
+    expect(typeof credentialReply.data).toBe('string')
+    expect(
+      new TextDecoder().decode(openServerFrame(credentialReply.data, 'text', schedule, 1n)!)
+    ).toBe(bulk)
+
+    ctx.channel.handleRawMessage(clientText('{"id":"2","method":"terminal.read"}', schedule, 2n))
+    const terminalReply = ctx.ws.sent[3]!
+    expect(terminalReply.options).toEqual({ binary: true })
+    const inflated = inflateCompressedFrame(
+      openServerFrame(terminalReply.data, 'binary', schedule, 2n)!,
+      NODE_COMPRESSED_FRAME_CODEC
+    )
+    expect(inflated).toEqual({ kind: 'text', text: bulk })
+    expect(terminalReply.data.length).toBeLessThan(1024)
   })
 })

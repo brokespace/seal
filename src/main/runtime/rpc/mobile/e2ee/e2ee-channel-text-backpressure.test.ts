@@ -1,25 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WebSocket } from 'ws'
-import type { RpcBinarySendResult } from '../../transports/rpc-binary-sender'
 import { E2EEChannel, type E2EEChannelOptions } from './e2ee-channel'
 import {
-  deriveSharedKey,
-  decrypt,
-  decryptBytes,
-  encrypt,
-  generateKeyPair
+  createPairedE2EEClientHandshake,
+  pairedE2EEV2TokenAuth
+} from '../../../../../shared/remote-runtime/e2ee/paired-e2ee-client-handshake'
+import {
+  generateKeyPair,
+  publicKeyToBase64
 } from '../../../../../shared/remote-runtime/e2ee/node/e2ee-crypto'
+import { NODE_PAIRED_E2EE_PRIMITIVES } from '../../../../../shared/remote-runtime/e2ee/node/paired-e2ee-node-primitives'
 import { createMobileE2EEOutboundMemoryBudget } from './mobile-e2ee-outbound-memory-budget'
 
 const trackMock = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../telemetry/client', () => ({ track: trackMock }))
-
-// Legacy terminal.subscribe has no seq/resync: congestion must queue text and binary replies in order, never drop them.
-
-function publicKeyToBase64(key: Uint8Array): string {
-  return Buffer.from(key).toString('base64')
-}
 
 function createMockWs() {
   const sent: (string | Buffer)[] = []
@@ -37,7 +32,6 @@ function createMockWs() {
 
 function setup(overrides?: Partial<E2EEChannelOptions>) {
   const serverKeys = generateKeyPair()
-  const clientKeys = generateKeyPair()
   const ws = createMockWs()
   const onError = vi.fn()
   const channel = new E2EEChannel(ws as unknown as WebSocket, {
@@ -57,21 +51,26 @@ function setup(overrides?: Partial<E2EEChannelOptions>) {
     onError,
     ...overrides
   })
-  const sharedKey = deriveSharedKey(clientKeys.secretKey, serverKeys.publicKey)
+  const client = createPairedE2EEClientHandshake({
+    primitives: NODE_PAIRED_E2EE_PRIMITIVES,
+    hostPublicKeyB64: publicKeyToBase64(serverKeys.publicKey),
+    transport: 'direct'
+  })
+  channel.handleRawMessage(client.helloText())
+  client.acceptReadyText(String(ws.sent[0]))
   channel.handleRawMessage(
-    JSON.stringify({ type: 'e2ee_hello', publicKeyB64: publicKeyToBase64(clientKeys.publicKey) })
+    client.channel.sealText(
+      JSON.stringify(pairedE2EEV2TokenAuth(client.transcriptHashB64()!, 'valid-token'))
+    )
   )
-  channel.handleRawMessage(
-    encrypt(JSON.stringify({ type: 'e2ee_auth', deviceToken: 'valid-token' }), sharedKey)
-  )
-  return { channel, ws, sharedKey, onError }
+  return { channel, ws, client, onError }
 }
 
 function emitReply(ctx: ReturnType<typeof setup>, payload: string): void {
   ctx.channel.onMessage((_plaintext, encryptedReply) => {
     encryptedReply(payload)
   })
-  ctx.channel.handleRawMessage(encrypt('{"id":"x","method":"status.get"}', ctx.sharedKey))
+  ctx.channel.handleRawMessage(ctx.client.channel.sealText('{"id":"x","method":"status.get"}'))
 }
 
 describe('E2EE text reply backpressure', () => {
@@ -104,51 +103,5 @@ describe('E2EE text reply backpressure', () => {
     })
     first.channel.destroy()
     expect(outboundMemoryBudget.evidence().queuedBytes).toBe(0)
-  })
-})
-
-describe('E2EE legacy binary reply backpressure', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    trackMock.mockReset()
-  })
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  function decodeSent(ctx: ReturnType<typeof setup>, frame: string | Buffer): string {
-    return typeof frame === 'string'
-      ? decrypt(frame, ctx.sharedKey)!
-      : `binary:${Buffer.from(decryptBytes(new Uint8Array(frame), ctx.sharedKey)!).toString()}`
-  }
-
-  // Legacy binary terminal frames lack gap detection; loss or reordering corrupts the phone screen.
-  it('holds binary replies in one order with text while the outbound budget is full', () => {
-    const outboundMemoryBudget = createMobileE2EEOutboundMemoryBudget({ maxBufferedBytes: 1_000 })
-    const ctx = setup({ outboundMemoryBudget })
-    const baseline = ctx.ws.sent.length
-    ctx.ws.bufferedAmount = 1_001
-    const accepted: RpcBinarySendResult[] = []
-
-    ctx.channel.onMessage((_plaintext, encryptedReply, encryptedBinaryReply) => {
-      encryptedReply('{"seq":1}')
-      accepted.push(encryptedBinaryReply(Buffer.from('2')))
-      encryptedReply('{"seq":3}')
-      accepted.push(encryptedBinaryReply(Buffer.from('4')))
-    })
-    ctx.channel.handleRawMessage(encrypt('{"id":"x","method":"terminal.subscribe"}', ctx.sharedKey))
-    expect(ctx.ws.sent.length).toBe(baseline)
-
-    ctx.ws.bufferedAmount = 0
-    vi.runOnlyPendingTimers()
-
-    expect(accepted).toEqual([true, true])
-    expect(ctx.ws.sent.slice(baseline).map((frame) => decodeSent(ctx, frame))).toEqual([
-      '{"seq":1}',
-      'binary:2',
-      '{"seq":3}',
-      'binary:4'
-    ])
-    expect(ctx.onError).not.toHaveBeenCalled()
   })
 })

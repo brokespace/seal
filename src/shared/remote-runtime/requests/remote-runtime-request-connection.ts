@@ -169,9 +169,9 @@ export class RemoteRuntimeRequestConnection {
 
   private open(): void {
     const opened = openRemoteRuntimeWebSocket(this.connection, {
-      onClose: (ws) => {
+      onClose: (ws, _code, _reason, message) => {
         if (this.ws === ws) {
-          this.close()
+          this.close(remoteRuntimeUnavailableError(message))
         }
       },
       onError: (ws, error) => {

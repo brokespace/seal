@@ -95,17 +95,6 @@ export function getCleanupRequest(
   return null
 }
 
-export function formatSharedControlCloseMessage(code: number, reason: Buffer): string {
-  const reasonText = reason.toString().trim()
-  if (code !== 1005 && code !== 1006 && reasonText) {
-    return `Remote Orca runtime closed the connection (${code}: ${reasonText}).`
-  }
-  if (code !== 1005 && code !== 1006) {
-    return `Remote Orca runtime closed the connection (${code}).`
-  }
-  return 'Remote Orca runtime closed the connection.'
-}
-
 export function sendSharedControlEncrypted(args: {
   state: SharedControlConnectionState
   ws: WebSocket | null
