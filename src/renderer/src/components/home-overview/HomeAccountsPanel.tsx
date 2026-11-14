@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
-import { hasInlineUsage, InlineUsageBars } from '../status-bar/InlineProviderUsage'
+import { AccountUsageReading } from '../status-bar/AccountUsageReading'
 import type { HomeAccount } from './home-overview-model'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty, HomeOverviewRowButton } from './HomeOverviewRow'
@@ -13,16 +13,6 @@ function AccountRow({
   onOpen: () => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const { limits } = account
-  const pending = account.fetching || limits?.status === 'fetching' || limits?.status === 'idle'
-  // A reading with windows or a failed check is the popover's to describe; the rest has no bars.
-  const statusText = account.needsSignIn
-    ? t('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')
-    : hasInlineUsage(limits)
-      ? null
-      : pending
-        ? t('home.overview.accounts.loading', 'Reading usage…')
-        : t('home.overview.accounts.noUsage', 'No usage reported')
   return (
     <li className="p-1">
       <HomeOverviewRowButton onClick={onOpen} className="block px-2 py-1">
@@ -33,11 +23,13 @@ function AccountRow({
             {account.active ? ` · ${t('home.overview.accounts.active', 'active')}` : ''}
           </span>
         </span>
-        {statusText || !limits ? (
-          <span className="mt-1 block truncate text-2xs text-muted-foreground">{statusText}</span>
+        {account.needsSignIn ? (
+          <span className="mt-1 block truncate text-2xs text-muted-foreground">
+            {t('seal.accounts.home.signInAgain', 'Sign in again in Settings > Accounts')}
+          </span>
         ) : (
           <span className="mt-1.5 block">
-            <InlineUsageBars limits={limits} isFetching={account.fetching} />
+            <AccountUsageReading limits={account.limits} fetching={account.fetching} />
           </span>
         )}
       </HomeOverviewRowButton>

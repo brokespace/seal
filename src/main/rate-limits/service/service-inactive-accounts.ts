@@ -10,8 +10,20 @@ import {
   type InactiveCodexAccountInfo
 } from './service-types'
 import { delayUnlessAborted } from '../../../shared/abort-aware-delay'
+import { AccountReadAdmission } from './account-read-admission'
 
 export abstract class RateLimitServiceInactiveAccounts extends RateLimitServicePolling {
+  protected readonly accountReads = new AccountReadAdmission()
+
+  /** Whether a usage request for this unselected account may go out now; a yes spends its turn. */
+  protected admitsInactiveRead(provider: 'claude' | 'codex', accountId: string): boolean {
+    const cache = provider === 'claude' ? this.inactiveClaudeCache : this.inactiveCodexCache
+    return (
+      !this.isRetryAfterActive(cache.get(accountId) ?? null) &&
+      this.accountReads.admit(`${provider}:${accountId}`, Date.now())
+    )
+  }
+
   async fetchInactiveClaudeAccountsOnOpen(): Promise<void> {
     if (!this.isClaudeOAuthUsageEnabled()) {
       return
@@ -23,8 +35,8 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
     if (this.inactiveClaudeFetching.size > 0) {
       return
     }
-    const accounts = (this.inactiveClaudeAccountsResolver?.() ?? []).filter(
-      (account) => !this.isRetryAfterActive(this.inactiveClaudeCache.get(account.id) ?? null)
+    const accounts = (this.inactiveClaudeAccountsResolver?.() ?? []).filter((account) =>
+      this.admitsInactiveRead('claude', account.id)
     )
     if (accounts.length === 0) {
       return
@@ -84,8 +96,15 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
         return
       }
       const cached = this.inactiveClaudeCache.get(account.id) ?? null
-      this.inactiveClaudeCache.set(account.id, this.applyStalePolicy(fresh, cached))
+      this.inactiveClaudeCache.set(
+        account.id,
+        // A check the endpoint refused must not blank what the account's own sessions report.
+        this.liveClaudeUsageOverFailedCheck(fresh, cached) ??
+          this.applyAccountReading(`claude:profile:${account.id}`, fresh, cached)
+      )
+      this.accountReads.settle(`claude:${account.id}`, fresh.status !== 'error')
     } catch {
+      this.accountReads.settle(`claude:${account.id}`, false)
       // Isolate each account's Keychain/network failure so siblings continue.
       if (superseded()) {
         this.inactiveClaudeCache.delete(account.id)
@@ -143,6 +162,9 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
             continue
           }
         }
+        if (!this.admitsInactiveRead('codex', account.id)) {
+          continue
+        }
         if (await this.readInactiveCodex(account, signal, fetchGeneration)) {
           staggerNextProbe = true
         }
@@ -192,8 +214,17 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
         return true
       }
       const cached = this.inactiveCodexCache.get(account.id) ?? null
-      this.inactiveCodexCache.set(account.id, this.applyStalePolicy(fresh, cached))
+      const provenance = this.getCodexProvenance(
+        { runtime: 'host', wslDistro: null },
+        home.managedHomePath
+      )
+      this.inactiveCodexCache.set(
+        account.id,
+        this.applyAccountReading(`codex:${provenance}`, fresh, cached)
+      )
+      this.accountReads.settle(`codex:${account.id}`, fresh.status !== 'error')
     } catch {
+      this.accountReads.settle(`codex:${account.id}`, false)
       // Isolate per-account failures so sibling previews continue.
       if (superseded()) {
         this.inactiveCodexCache.delete(account.id)
@@ -225,6 +256,7 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
     this.inactiveClaudeAccountsGeneration += 1
     this.inactiveClaudeCache.delete(accountId)
     this.inactiveClaudeFetching.delete(accountId)
+    this.accountReads.forget(`claude:${accountId}`)
     this.pushToRenderer()
   }
 
@@ -276,6 +308,7 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
     // Clear one account without invalidating sibling fetches/results.
     this.inactiveCodexCache.delete(accountId)
     this.inactiveCodexFetching.delete(accountId)
+    this.accountReads.forget(`codex:${accountId}`)
     this.pushToRenderer()
   }
 }

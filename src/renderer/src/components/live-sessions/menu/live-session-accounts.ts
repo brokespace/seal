@@ -1,22 +1,18 @@
-import { useSyncExternalStore } from 'react'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import type { SealSessionAssignment } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapTargets } from '../../seal-session/seal-session-account-view'
 import {
   sealHostSnapshot,
-  subscribeSealHost,
   type SealHostSnapshot
 } from '../../seal-session/seal-session-status-store'
+import { useSealHostSnapshot } from '../../seal-session/use-seal-host-snapshot'
 
 const LOCAL: RuntimeClientTarget = { kind: 'local' }
 
-const subscribeLocal = (listener: () => void): (() => void) => subscribeSealHost(LOCAL, listener)
-const localSnapshot = (): SealHostSnapshot | null => sealHostSnapshot(LOCAL)
-
 /** Seal's accounts on this machine, shared with the tab badges' poll. */
 export function useLocalSealAccounts(): SealHostSnapshot | null {
-  return useSyncExternalStore(subscribeLocal, localSnapshot)
+  return useSealHostSnapshot(LOCAL)
 }
 
 function assignmentIn(
@@ -44,7 +40,7 @@ function assignmentIn(
 
 /** The account record of a session Seal launched in one of its panes on this machine. */
 export function sealAssignmentFor(session: LiveSession): SealSessionAssignment | null {
-  return assignmentIn(localSnapshot(), session)
+  return assignmentIn(sealHostSnapshot(LOCAL), session)
 }
 
 /** `~/.seal/accounts/work` is the account "work"; the provider's own folder names none. */

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useMemo } from 'react'
 import { useAppStore } from '../../store/index'
 import { useTranslate } from '@/i18n/use-translate'
 import { getRuntimeTargetForWorktreeOwner } from '@/lib/files/access/file-owner-runtime-target'
@@ -6,7 +6,8 @@ import type { RuntimeClientTarget } from '../../../../shared/runtime-client-targ
 import type { SealSessionLiveSwapMode } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { SealSessionAccountMenu } from './SealSessionAccountMenu'
 import { sessionForTab } from './seal-session-account-view'
-import { mutateSealHost, sealHostSnapshot, subscribeSealHost } from './seal-session-status-store'
+import { mutateSealHost } from './seal-session-status-store'
+import { useSealHostSnapshot } from './use-seal-host-snapshot'
 
 /** Empty string is the local host; null means the owner is ambiguous, so no badge. */
 function ownerEnvironment(target: RuntimeClientTarget | null): string | null {
@@ -37,11 +38,7 @@ export function SealTabAccountBadge({
           : { kind: 'environment', environmentId: environment },
     [environment]
   )
-  const subscribe = useCallback(
-    (listener: () => void) => (target ? subscribeSealHost(target, listener) : () => {}),
-    [target]
-  )
-  const snapshot = useSyncExternalStore(subscribe, () => (target ? sealHostSnapshot(target) : null))
+  const snapshot = useSealHostSnapshot(target)
   const session = snapshot ? sessionForTab(snapshot.status.sessions, tabId) : null
   if (!target || !snapshot || !session) {
     return null

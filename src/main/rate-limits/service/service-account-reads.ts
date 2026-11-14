@@ -2,33 +2,22 @@ import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
 import { getClaudeProfileRouter } from '../../claude-accounts/profiles/routing/claude-profile-installed-router'
 import { fetchActiveClaudeRateLimits } from '../providers/claude/claude-active-usage-fetch'
 import { fetchCodexRateLimits } from '../providers/codex/codex-fetcher'
-import { RateLimitServiceInactiveAccounts } from './service-inactive-accounts'
-
-/** Whether a good reading is young enough to serve again without another request. */
-function isRecentReading(
-  limits: ProviderRateLimits | null,
-  notWithinMs: number | undefined
-): boolean {
-  return (
-    notWithinMs !== undefined &&
-    limits?.status === 'ok' &&
-    Date.now() - limits.updatedAt < notWithinMs
-  )
-}
+import { RateLimitServiceLiveClaudeUsage } from './service-live-claude-usage'
 
 /** Reads of one unselected account for a caller that keeps its own cadence (Seal's swap poller). */
-export abstract class RateLimitServiceAccountReads extends RateLimitServiceInactiveAccounts {
+export abstract class RateLimitServiceAccountReads extends RateLimitServiceLiveClaudeUsage {
   private systemLoginRead: Partial<Record<'claude' | 'codex', Promise<void>>> = {}
 
   /**
    * The machine's own login while another account is the host's selection, read from its own
    * home into `systemLoginUsage`. `identity` names the login the caller saw there; a reading
-   * kept for another identity is dropped. An automatic read: Retry-After and `notWithinMs` hold.
+   * kept for another identity is dropped. An automatic read: Retry-After and the shared
+   * per-account budget hold.
    */
   async readSystemLoginUsage(
     provider: 'claude' | 'codex',
     identity: string,
-    options: { notWithinMs?: number; preferBackend?: boolean } = {}
+    options: { preferBackend?: boolean } = {}
   ): Promise<ProviderRateLimits | null> {
     const claudeHome = getClaudeProfileRouter()?.systemDefaultHome()
     // Without the login's own home, a read would report whichever account is selected.
@@ -36,16 +25,23 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
       return null
     }
     await this.systemLoginRead[provider]
-    const kept = this.systemLoginUsage[provider]
-    const cached = kept?.identity === identity ? kept.rateLimits : null
-    if (this.isRetryAfterActive(cached) || isRecentReading(cached, options.notWithinMs)) {
+    const slot = `${provider}:system`
+    if (this.systemLoginUsage[provider] && this.systemLoginUsage[provider].identity !== identity) {
+      this.accountReads.forget(slot)
+    }
+    const reading = (): ProviderRateLimits | null => {
+      const kept = this.systemLoginUsage[provider]
+      return kept?.identity === identity ? kept.rateLimits : null
+    }
+    const cached = reading()
+    if (this.isRetryAfterActive(cached) || !this.accountReads.admit(slot, Date.now())) {
       return cached
     }
     const controller = this.beginFetchCycle()
     this.systemLoginUsage[provider] = { identity, rateLimits: cached, isFetching: true }
     this.pushToRenderer()
     const read = (async () => {
-      let next = cached
+      let applied: ProviderRateLimits | null = null
       try {
         const networkProxySettings = this.networkProxySettingsResolver?.()
         const fresh =
@@ -61,13 +57,26 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
                 preferBackend: options.preferBackend
               })
         if (!controller.signal.aborted) {
-          next = this.applyStalePolicy(fresh, cached)
+          // The login's own sessions may have reported while the request was out.
+          const current = reading()
+          const keptKey =
+            provider === 'claude'
+              ? 'claude:system'
+              : `codex:${this.getCodexProvenance({ runtime: 'host', wslDistro: null }, null)}`
+          applied =
+            (provider === 'claude' ? this.liveClaudeUsageOverFailedCheck(fresh, current) : null) ??
+            this.applyAccountReading(keptKey, fresh, current, identity)
+          this.accountReads.settle(slot, fresh.status !== 'error')
         }
       } catch {
-        // The reading kept so far stands.
+        this.accountReads.settle(slot, false)
       } finally {
         this.systemLoginRead[provider] = undefined
-        this.systemLoginUsage[provider] = { identity, rateLimits: next, isFetching: false }
+        this.systemLoginUsage[provider] = {
+          identity,
+          rateLimits: applied ?? reading(),
+          isFetching: false
+        }
         this.finishFetchCycle(controller)
         this.pushToRenderer()
       }
@@ -78,13 +87,10 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
   }
 
   /**
-   * One inactive Claude account read into the shared cache. Serves the cached reading while it
-   * is younger than `notWithinMs` or its Retry-After still binds.
+   * One inactive Claude account read into the shared cache. Serves the cached reading while the
+   * shared per-account budget or its Retry-After holds.
    */
-  protected async readInactiveClaudeAccount(
-    accountId: string,
-    options: { notWithinMs?: number } = {}
-  ): Promise<ProviderRateLimits | null> {
+  protected async readInactiveClaudeAccount(accountId: string): Promise<ProviderRateLimits | null> {
     if (!this.isClaudeOAuthUsageEnabled()) {
       return null
     }
@@ -97,9 +103,8 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
     if (!account) {
       return null
     }
-    const cached = this.inactiveClaudeCache.get(accountId) ?? null
-    if (this.isRetryAfterActive(cached) || isRecentReading(cached, options.notWithinMs)) {
-      return cached
+    if (!this.admitsInactiveRead('claude', accountId)) {
+      return this.inactiveClaudeCache.get(accountId) ?? null
     }
     const controller = this.beginFetchCycle()
     this.inactiveClaudeFetching.add(accountId)
@@ -120,7 +125,7 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
   /** The Codex counterpart of `readInactiveClaudeAccount`. */
   protected async readInactiveCodexAccount(
     accountId: string,
-    options: { notWithinMs?: number; preferBackend?: boolean } = {}
+    options: { preferBackend?: boolean } = {}
   ): Promise<ProviderRateLimits | null> {
     while (this.inactiveCodexFetchInFlight) {
       await this.inactiveReadsIdle()
@@ -131,9 +136,8 @@ export abstract class RateLimitServiceAccountReads extends RateLimitServiceInact
     if (!account) {
       return null
     }
-    const cached = this.inactiveCodexCache.get(accountId) ?? null
-    if (this.isRetryAfterActive(cached) || isRecentReading(cached, options.notWithinMs)) {
-      return cached
+    if (!this.admitsInactiveRead('codex', accountId)) {
+      return this.inactiveCodexCache.get(accountId) ?? null
     }
     const controller = this.beginFetchCycle()
     this.inactiveCodexFetchInFlight = true
