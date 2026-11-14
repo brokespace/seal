@@ -23,6 +23,7 @@ import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 import { SeveredTerminalDaemonBanner } from './SeveredTerminalDaemonBanner'
 import { StalledTerminalDaemonBanner } from './StalledTerminalDaemonBanner'
 import { StartupWorktreeRefreshStatus } from './StartupWorktreeRefreshStatus'
+import { WorktreeCardsUpdateNotice } from './WorktreeCardsUpdateNotice'
 
 const WorktreeMetaDialog = lazyWithRetry(
   () => import('./workspace-card/metadata/WorktreeMetaDialog')
@@ -156,6 +157,7 @@ function Sidebar({
               <StalledTerminalDaemonBanner />
               <LocalGitToolchainScanBanner />
               <StartupWorktreeRefreshStatus />
+              <WorktreeCardsUpdateNotice />
               <WorktreeList
                 scrollOffsetRef={worktreeScrollOffsetRef}
                 scrollAnchorRef={worktreeScrollAnchorRef}

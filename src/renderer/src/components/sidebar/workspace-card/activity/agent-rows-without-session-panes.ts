@@ -1,5 +1,5 @@
-import type { DashboardAgentRow } from '@/components/dashboard/useDashboardData'
-import { applyAgentRowLineage } from '@/components/dashboard/agent-row-lineage'
+import type { DashboardAgentRow } from '@/components/dashboard/rows/dashboard-agent-row'
+import { applyAgentRowLineage } from '@/components/dashboard/rows/agent-row-lineage'
 
 /**
  * A card's inline rows cover pane agents that have no session record. A pane the live-session

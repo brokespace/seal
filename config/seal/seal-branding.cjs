@@ -31,7 +31,7 @@ module.exports = {
   macos: {
     computerUseHelperName: `${productName} Computer Use`,
     computerUseBundleId: `${appId}.computer-use`,
-    terminalHostName: `${productName} Terminal Host`
+    terminalHostName: `${productName} Agents`
   },
   signing: {
     // Seal has no Apple Developer team yet. A release build checks its helpers against this id
