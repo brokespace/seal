@@ -27,7 +27,7 @@ export const BUNDLED_SOURCE_ALLOWLIST = new Map([
   ['src/shared/agent-session-handoff-context.ts', 'omission markers stored in saved chats']
 ])
 
-/** Hook points that put the brand pass into a bundler: [file, text it must contain]. */
+/** Hook points that put the brand pass into a bundler, and this check into `pnpm lint`: [file, text it must contain]. */
 export const BRAND_PASS_HOOKS = [
   ['electron.vite.config.ts', 'sealBrandCopy()'],
   ['vite.web.config.ts', 'sealBrandCopy()'],
@@ -50,6 +50,7 @@ export const BRAND_PASS_HOOKS = [
   ],
   ['config/scripts/remote-host-build/wsl-guest/build-wsl-guest.mjs', 'sealBrandCopyEsbuild()'],
   ['package.json', 'config/seal/brand-copy/build-seal-cli.mjs'],
+  ['config/scripts/preflight/changed-checks/run-lint.mjs', "'seal:rebrand-check:source'"],
   ['config/electron-builder.config.cjs', 'applySealBranding(module.exports)']
 ]
 

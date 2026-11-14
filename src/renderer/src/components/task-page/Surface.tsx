@@ -7,13 +7,14 @@ import { TaskPageJiraIssueDialog } from './jira/creation/IssueDialog'
 import { TaskPageGitLabDialog } from './gitlab/Dialog'
 import { TaskPageLinearConnectDialog } from './linear/ConnectDialog'
 import { TaskPageJiraConnectDialog } from './jira/ConnectDialog'
+import { PageLayout } from '@/components/page-layout/PageLayout'
 export function TaskPageSurface({
   model
 }: {
   model: TaskPageComposerActionsModel
 }): React.JSX.Element {
   return (
-    <div className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-background text-foreground">
+    <PageLayout className="overflow-hidden">
       <TaskPageFrame model={model} />
 
       <TaskPageGitHubIssueDialog model={model} />
@@ -29,6 +30,6 @@ export function TaskPageSurface({
       <TaskPageLinearConnectDialog model={model} />
 
       <TaskPageJiraConnectDialog model={model} />
-    </div>
+    </PageLayout>
   )
 }

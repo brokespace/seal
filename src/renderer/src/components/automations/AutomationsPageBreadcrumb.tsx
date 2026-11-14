@@ -26,7 +26,7 @@ export function AutomationsPageBreadcrumb({
       )}
       className="min-w-0 flex-1"
     >
-      <ol className="flex min-w-0 items-center gap-1 text-sm">
+      <ol className="-ml-1 flex min-w-0 items-center gap-1 text-sm">
         {items.map((item, index) => {
           const current = index === items.length - 1
           return (
@@ -89,7 +89,7 @@ export function AutomationsPageTabs({
   const t = useTranslate()
   const tabClass = (active: boolean): string =>
     cn(
-      '-mb-px flex h-12 items-center gap-1.5 border-b-2 px-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+      '-mb-px flex h-11 items-center gap-1.5 border-b-2 px-2 text-base transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
       active
         ? 'border-foreground font-semibold text-foreground'
         : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -97,7 +97,7 @@ export function AutomationsPageTabs({
   return (
     <nav
       aria-label={t('auto.components.automations.AutomationsPage.77c2778945', 'Automations')}
-      className="flex items-center gap-1"
+      className="-ml-2 flex items-center gap-1"
     >
       <button
         type="button"

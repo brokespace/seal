@@ -225,6 +225,7 @@
     "repro:live-remote-realistic-freeze": "node config/scripts/diagnostics/remote-freeze/live-remote-realistic-freeze-repro.mjs",
     "audit:anti-slop": "node config/scripts/static-analysis/oxlint-contracts/sync-anti-slop-plugin.mjs && bun --smol node_modules/oxlint/bin/oxlint --config config/oxlint-anti-slop.json src config tests mobile --deny-warnings",
     "seal:rebrand-check": "node config/seal/rebrand-check/seal-rebrand-check.mjs",
+    "seal:rebrand-check:source": "node config/seal/rebrand-check/seal-rebrand-check.mjs --source",
     "seal:rebrand-apply": "node config/seal/brand-copy/apply-seal-brand-copy.mjs",
     "seal:regenerate": "node config/seal/upstream-sync/regenerate-generated-files.mjs",
     "seal:sync:resolve": "node config/seal/upstream-sync/resolve-brand-conflicts.mjs",
