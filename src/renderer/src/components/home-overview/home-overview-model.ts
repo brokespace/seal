@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import type { DashboardRevealAgentArgs } from '../../../../shared/dashboard-snapshot'
+import type { SessionSummaryView } from '../../../../shared/session-summaries/session-summary-contracts'
 
 /** Home's session vocabulary; providers map their own lifecycle onto it. */
 export type HomeSessionState = 'working' | 'waiting' | 'permission' | 'errored' | 'done' | 'idle'
@@ -34,6 +35,8 @@ export type HomeSession = {
   askSummary?: string
   /** What went wrong, for errored sessions. */
   errorSummary?: string
+  /** The host's one-sentence summary of a stopped session's last message. */
+  summary?: SessionSummaryView
   target: HomeSessionTarget
 }
 

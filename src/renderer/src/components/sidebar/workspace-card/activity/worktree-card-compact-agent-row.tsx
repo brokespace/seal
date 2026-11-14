@@ -26,6 +26,7 @@ import {
 } from '../../../../../../shared/program-status/presentation'
 import { resolveRowProgramStatus } from '@/lib/program-status/agent-row-presentation'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { useSessionSummary } from '@/components/session-summaries/use-session-summary'
 
 function getCompactAgentPrimary(
   agent: DashboardAgentRowData,
@@ -158,7 +159,24 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
   const held = heldMessageRef.current
   const stableMessage =
     turnHoldable && !currentMessage && held?.turn === turn ? held.message : undefined
-  const secondary = getCompactAgentSecondary(agent, now, stableMessage, presentation, t)
+  // A child row has no conversation of its own to summarize.
+  const summary = useSessionSummary(
+    agent.rowSource === 'subagent'
+      ? null
+      : {
+          paneKey: agent.paneKey,
+          agentType: agent.agentType,
+          providerSessionId: agent.entry.providerSession?.id
+        }
+  )
+  // One line has no room for a second: the host's summary takes the raw last message's place.
+  const secondary = getCompactAgentSecondary(
+    agent,
+    now,
+    stableMessage ?? summary?.text ?? undefined,
+    presentation,
+    t
+  )
   const { leadingText, trailingText } = getCompactAgentLineOrder(agent, primary, secondary, t)
   const rowTitle = `${leadingText}${trailingText ? ` - ${trailingText}` : ''}`
   const model = agent.entry.model?.trim() ?? ''

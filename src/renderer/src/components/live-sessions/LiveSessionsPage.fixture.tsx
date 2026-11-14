@@ -71,7 +71,8 @@ const sessions: LiveSession[] = [
     project: 'api',
     title: 'Add rate limiting to the upload endpoint',
     status: 'waiting-input',
-    lastActivityAt: NOW - 900_000
+    lastActivityAt: NOW - 900_000,
+    summary: 'Needs you to choose a per-user or per-IP limit.'
   }),
   session({
     id: 'e',

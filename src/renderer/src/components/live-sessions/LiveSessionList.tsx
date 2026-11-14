@@ -1,5 +1,7 @@
 import { Laptop, Server } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
+import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
+import { liveSessionSummaryView } from '@/components/session-summaries/session-summary-index'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/class-names'
@@ -13,6 +15,11 @@ import {
   liveSessionStatusLabel,
   liveSessionTitle
 } from './live-session-presentation'
+
+function LiveSessionSummary({ session }: { session: LiveSession }): React.JSX.Element | null {
+  const summary = liveSessionSummaryView(session)
+  return summary ? <SessionSummaryLine summary={summary} className="mt-0.5" /> : null
+}
 
 export function LiveSessionList({
   sessions,
@@ -110,6 +117,7 @@ export function LiveSessionList({
                       </Badge>
                     ) : null}
                   </span>
+                  <LiveSessionSummary session={session} />
                 </span>
               </button>
             ))}
