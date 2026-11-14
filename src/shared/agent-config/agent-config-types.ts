@@ -64,12 +64,14 @@ export type AgentConfigFileRef = {
   error?: string
 }
 
+/** One scope's copy of the agent's main settings file: `settings.json`, `config.toml`, `opencode.json`. */
 export type AgentConfigSettingsLayer = {
   scope: AgentConfigScope
   path: string
+  format: 'json' | 'toml'
   exists: boolean
   error?: string
-  /** Parsed settings; secret-looking `env` values are replaced by the mask. */
+  /** Parsed settings without the MCP servers; secret-looking values are replaced by the mask. */
   value: Record<string, unknown> | null
   maskedPaths: string[]
 }
@@ -178,15 +180,6 @@ export type AgentConfigPluginsState = {
   marketplaces: AgentConfigMarketplace[]
 }
 
-export type AgentConfigCodexLayer = {
-  scope: AgentConfigScope
-  path: string
-  exists: boolean
-  error?: string
-  /** Parsed `config.toml` without its `mcp_servers` table, which the MCP list shows. */
-  value: Record<string, unknown> | null
-}
-
 export type AgentConfigEffectiveEntry = {
   /** Dotted path of the value, e.g. `permissions.allow` or `env.FOO`. */
   key: string
@@ -211,7 +204,6 @@ export type AgentConfigSnapshot = {
   settings: AgentConfigSettingsLayer[]
   mcp: AgentConfigMcpServer[]
   plugins: AgentConfigPluginsState | null
-  codex: AgentConfigCodexLayer[]
   /** The merged view of settings across scopes, with where each value comes from. */
   effective: AgentConfigEffectiveEntry[]
   /** Parts that could not be read, so the page can say so instead of showing them as empty. */
@@ -255,6 +247,11 @@ export type AgentConfigWriteResult = {
 export type AgentConfigJsonEdit =
   | { path: (string | number)[]; value: unknown }
   | { path: (string | number)[]; remove: true }
+
+/** A change to a settings file by key path; the file's format decides how it is applied. */
+export type AgentConfigSettingsEdit =
+  | { path: string[]; value: unknown }
+  | { path: string[]; remove: true }
 
 export type AgentConfigTomlValue =
   | string
@@ -317,7 +314,6 @@ export const AGENT_CONFIG_IPC = {
   testMcpServer: 'agentConfig:testMcpServer',
   setMcpActivation: 'agentConfig:setMcpActivation',
   patchSettings: 'agentConfig:patchSettings',
-  patchCodexConfig: 'agentConfig:patchCodexConfig',
   setPluginEnabled: 'agentConfig:setPluginEnabled',
   runPluginCommand: 'agentConfig:runPluginCommand',
   listBackups: 'agentConfig:listBackups',

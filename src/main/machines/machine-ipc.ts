@@ -29,6 +29,7 @@ import { getMachineRegistry } from './registry/machine-registry-service'
 import { registerMachineRegistryHandlers } from './registry/machine-registry-ipc'
 import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
 import { registerMachineWorkHandlers } from './work/machine-work-ipc'
+import { registerAgentConfigHandlers } from '../agent-config/agent-config-ipc'
 
 type MachineServices = {
   directories: MachineDirectoryService
@@ -113,6 +114,7 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
   registerMachineRegistryHandlers(handle)
   registerMachineShellHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineWorkHandlers(handle)
+  registerAgentConfigHandlers(handle, invalidateParent)
 
   handle(MACHINE_IPC.getMetrics, async (args) => {
     const machineId = machineIdOf(args.machineId)

@@ -51,7 +51,7 @@ export function setFrontmatterFields(
     throw new Error('The front matter is not valid YAML; fix it in the editor first')
   }
   if (!isMap(document.contents)) {
-    document.contents = document.createNode({}) as typeof document.contents
+    document.contents = document.createNode({}) as unknown as typeof document.contents
   }
   for (const [key, value] of Object.entries(fields)) {
     if (value === undefined) {
