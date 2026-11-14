@@ -1,9 +1,10 @@
 import type { SessionSummariesStatus } from '../../../../../../shared/session-summaries/session-summary-contracts'
 import { UTILITY_MODEL_PROVIDERS } from '../../../../../../shared/utility-model/utility-model-provider-catalog'
-import type {
-  UtilityModelCatalogEntry,
-  UtilityModelProviderId,
-  UtilityModelProviderStatus
+import {
+  isUtilityModelProviderId,
+  type UtilityModelCatalogEntry,
+  type UtilityModelProviderId,
+  type UtilityModelProviderStatus
 } from '../../../../../../shared/utility-model/utility-model-types'
 
 type FixtureProvider = Partial<UtilityModelProviderStatus>
@@ -39,8 +40,11 @@ export function stubUtilityModelFixtureHost(host: {
       ...window.api.runtime,
       call: async ({ method, params }) => {
         const provider =
-          typeof params === 'object' && params !== null && 'provider' in params
-            ? (params.provider as UtilityModelProviderId)
+          typeof params === 'object' &&
+          params !== null &&
+          'provider' in params &&
+          isUtilityModelProviderId(params.provider)
+            ? params.provider
             : undefined
         const result =
           method === 'utilityModel.providers'

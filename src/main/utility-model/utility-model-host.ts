@@ -2,6 +2,7 @@ import {
   UTILITY_MODEL_PROVIDER_IDS,
   type UtilityModelProviderId,
   type UtilityModelProviderStatus,
+  type UtilityModelRequest,
   type UtilityModelStatus
 } from '../../shared/utility-model/utility-model-types'
 import type { UtilityModelChoice } from '../../shared/utility-model/utility-model-selection'
@@ -13,7 +14,6 @@ import {
   type UtilityModelProviderSource
 } from './utility-model-provider-sources'
 import { UtilityModelService, type UtilityModelReply } from './utility-model-service'
-import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
 
 /**
  * A utility model as a feature calls it: the provider and models are whoever chose them, the

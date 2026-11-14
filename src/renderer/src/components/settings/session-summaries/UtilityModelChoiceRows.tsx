@@ -7,9 +7,10 @@ import type {
   UtilityModelChoice,
   UtilityModelTask
 } from '../../../../../shared/utility-model/utility-model-selection'
-import type {
-  UtilityModelCatalogEntry,
-  UtilityModelProviderId
+import {
+  isUtilityModelProviderId,
+  type UtilityModelCatalogEntry,
+  type UtilityModelProviderId
 } from '../../../../../shared/utility-model/utility-model-types'
 import { UtilityModelAccountStatus } from '../accounts/utility-model/UtilityModelAccountStatus'
 import { utilityModelFailureText } from '../accounts/utility-model/utility-model-failure-text'
@@ -99,74 +100,66 @@ export function UtilityModelChoiceRows({
         <SettingsRow
           label={providerTitle}
           description={
-            <>
-              {cli
-                ? t(
-                    'seal.summaryModels.provider.cliHelp',
-                    'Runs the {{provider}} CLI once per request, on the account it is signed into. Each run starts an agent process: slower than an API, and it counts against that plan’s limits.',
-                    { provider }
-                  )
-                : t(
-                    'seal.summaryModels.provider.apiHelp',
-                    'Calls {{provider}} with the account saved in Accounts.',
-                    { provider }
-                  )}{' '}
-              <Button
-                variant="link"
-                size="xs"
-                className="h-auto p-0 text-xs"
-                onClick={() => onOpenAccounts(choice.provider)}
-              >
-                {t('seal.summaryModels.provider.openAccounts', 'Open Accounts')}
-              </Button>
-            </>
+            cli
+              ? t(
+                  'seal.summaryModels.provider.cliHelp',
+                  'Runs the {{provider}} CLI once per request, on the account it is signed into. Each run starts an agent process: slower than an API, and it counts against that plan’s limits.',
+                  { provider }
+                )
+              : t(
+                  'seal.summaryModels.provider.apiHelp',
+                  'Calls {{provider}} with the account saved in Accounts.',
+                  { provider }
+                )
           }
           control={
-            <Select
-              value={choice.provider}
-              disabled={disabled}
-              onValueChange={(next) =>
-                next !== choice.provider &&
-                onChange({
-                  provider: next as UtilityModelProviderId,
-                  model: null,
-                  fallbackModel: null
-                })
-              }
-            >
-              <SelectTrigger size="sm" className="min-w-[220px]" aria-label={providerTitle}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {[
-                  {
-                    key: 'api',
-                    heading: t('seal.summaryModels.provider.apiGroup', 'API'),
-                    providers: API_PROVIDERS
-                  },
-                  {
-                    key: 'cli',
-                    heading: t('seal.summaryModels.provider.cliGroup', 'Agent CLI subscription'),
-                    providers: CLI_PROVIDERS
-                  }
-                ].map((group) => (
-                  <SelectGroup key={group.key}>
-                    <SelectLabel>{group.heading}</SelectLabel>
-                    {group.providers.map((entry) => (
-                      <SelectItem key={entry.id} value={entry.id}>
-                        {entry.label}
-                        {notSetUp(entry.id) ? (
-                          <span className="text-muted-foreground">
-                            {' · '}
-                            {t('seal.summaryModels.provider.notSetUp', 'not set up')}
-                          </span>
-                        ) : null}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <Button variant="link" size="xs" onClick={() => onOpenAccounts(choice.provider)}>
+                {t('seal.summaryModels.provider.openAccounts', 'Open Accounts')}
+              </Button>
+              <Select
+                value={choice.provider}
+                disabled={disabled}
+                onValueChange={(next) =>
+                  next !== choice.provider &&
+                  isUtilityModelProviderId(next) &&
+                  onChange({ provider: next, model: null, fallbackModel: null })
+                }
+              >
+                <SelectTrigger size="sm" className="min-w-[220px]" aria-label={providerTitle}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {[
+                    {
+                      key: 'api',
+                      heading: t('seal.summaryModels.provider.apiGroup', 'API'),
+                      providers: API_PROVIDERS
+                    },
+                    {
+                      key: 'cli',
+                      heading: t('seal.summaryModels.provider.cliGroup', 'Agent CLI subscription'),
+                      providers: CLI_PROVIDERS
+                    }
+                  ].map((group) => (
+                    <SelectGroup key={group.key}>
+                      <SelectLabel>{group.heading}</SelectLabel>
+                      {group.providers.map((entry) => (
+                        <SelectItem key={entry.id} value={entry.id}>
+                          {entry.label}
+                          {notSetUp(entry.id) ? (
+                            <span className="text-muted-foreground">
+                              {' · '}
+                              {t('seal.summaryModels.provider.notSetUp', 'not set up')}
+                            </span>
+                          ) : null}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           }
         />
       </SearchableSetting>

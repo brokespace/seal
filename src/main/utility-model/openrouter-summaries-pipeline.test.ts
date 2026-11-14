@@ -25,11 +25,11 @@ const nodeFetch: UtilityModelFetch = (url, init) => fetch(url, init)
 type SeenRequest = { path: string; authorization: string | undefined; body: unknown }
 
 async function readJson(request: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = []
+  request.setEncoding('utf8')
+  let text = ''
   for await (const chunk of request) {
-    chunks.push(chunk as Buffer)
+    text += String(chunk)
   }
-  const text = Buffer.concat(chunks).toString('utf8')
   return text ? JSON.parse(text) : null
 }
 

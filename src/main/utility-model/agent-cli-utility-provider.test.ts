@@ -88,18 +88,26 @@ describe('agent CLI utility provider', () => {
   })
 
   it('runs one CLI at a time', async () => {
-    let running = 0
-    let most = 0
-    const { provider } = providerRunning(async () => {
-      running += 1
-      most = Math.max(most, running)
-      await new Promise((resolve) => setTimeout(resolve, 5))
-      running -= 1
-      return { success: true, rawOutput: 'ok' }
-    })
+    const finish: (() => void)[] = []
+    const { provider, run } = providerRunning(
+      () =>
+        new Promise((resolve) => {
+          finish.push(() => resolve({ success: true, rawOutput: 'ok' }))
+        })
+    )
 
-    await Promise.all([provider.complete('haiku', REQUEST), provider.complete('haiku', REQUEST)])
+    const both = Promise.all([
+      provider.complete('haiku', REQUEST),
+      provider.complete('haiku', REQUEST)
+    ])
+    await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1))
+    await expect(
+      vi.waitFor(() => expect(run).toHaveBeenCalledTimes(2), { timeout: 50 })
+    ).rejects.toThrow()
+    finish[0]()
+    await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(2))
+    finish[1]()
 
-    expect(most).toBe(1)
+    expect(await both).toEqual(['ok', 'ok'])
   })
 })
