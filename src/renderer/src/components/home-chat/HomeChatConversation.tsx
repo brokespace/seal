@@ -107,13 +107,22 @@ export function HomeChatConversation({
   const [awayFromEnd, setAwayFromEnd] = useState(false)
   const rows = useMemo(() => homeChatTranscriptRows(entries), [entries])
 
+  const lastUserId = entries.findLast((entry) => entry.kind === 'user')?.id
+  const followedUserId = useRef(lastUserId)
+
   // Follow new output only while the reader is already at the bottom.
   useLayoutEffect(() => {
     const el = scrollRef.current
+    if (followedUserId.current !== lastUserId) {
+      // The user's own new message returns to the end, where its reply and approvals appear.
+      followedUserId.current = lastUserId
+      stickRef.current = true
+      setAwayFromEnd(false)
+    }
     if (el && stickRef.current) {
       el.scrollTop = el.scrollHeight
     }
-  }, [entries])
+  }, [entries, lastUserId])
 
   // Paced replies and resized panes change the height after their entry arrived.
   useEffect(() => {
