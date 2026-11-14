@@ -1,4 +1,4 @@
-// The helper, signed with the app's own bundle id, that runs the terminal daemon on the pinned Node.
+// The signed `com.stablyai.orca` helper that runs the terminal daemon on the pinned Node.
 const { spawnSync } = require('node:child_process')
 const {
   chmodSync,
