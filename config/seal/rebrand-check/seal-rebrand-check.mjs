@@ -124,7 +124,7 @@ function checkInstallerMetadata() {
       : manifest
     for (const [key, value] of stringLeaves(subject)) {
       if (findBrandMentions(value).length > 0) {
-        fail('installer', `${path} ${key}`, value)
+        fail('installer', [path, key].join(' '), value)
       }
     }
   }

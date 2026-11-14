@@ -10,10 +10,13 @@ import process from 'node:process'
 
 import {
   LOCALE_SURFACES,
+  REMOVED_KEYS_FILE,
   catalogDifference,
   englishCommandKeys,
   mergeCatalogOverlay,
-  rebrandCatalog
+  readRemovedKeys,
+  rebrandCatalog,
+  removedKeyNames
 } from '../brand-copy/seal-brand-catalog.mjs'
 import {
   CODE_EXTENSIONS,
@@ -82,6 +85,21 @@ function restoreCatalogs() {
       const nextOverlay = mergeCatalogOverlay(overlay, catalogDifference(rebranded, shippedNow))
       restored += 1
       console.log(`catalog: ${path} -> upstream (+ ${surface.overlayDir}/${locale}.json)`)
+      if (locale === 'en' && !runtimeRequired) {
+        // Keys this branch deleted from upstream's English file stay deleted in what ships.
+        const removed = new Set([
+          ...readRemovedKeys(root, surface),
+          ...removedKeyNames(JSON.parse(upstreamText), shippedNow)
+        ])
+        console.log(`catalog: ${removed.size} removed upstream keys for ${surface.name}`)
+        if (!dryRun && removed.size > 0) {
+          mkdirSync(join(root, surface.overlayDir), { recursive: true })
+          writeFileSync(
+            join(root, surface.overlayDir, REMOVED_KEYS_FILE),
+            formatCatalog([...removed].toSorted())
+          )
+        }
+      }
       if (!dryRun) {
         if (Object.keys(nextOverlay).length > 0) {
           mkdirSync(dirname(overlayPath), { recursive: true })

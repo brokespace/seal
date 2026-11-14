@@ -148,6 +148,24 @@ export function withoutRemovedKeys(catalog, removedKeys, prefix = '') {
   return kept
 }
 
+function leafKeyNames(catalog, prefix = '', names = new Set()) {
+  for (const [key, value] of Object.entries(catalog)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (isPlainObject(value)) {
+      leafKeyNames(value, path, names)
+    } else {
+      names.add(path.replace(PLURAL_SUFFIX, ''))
+    }
+  }
+  return names
+}
+
+/** Keys of upstream's English catalog that the catalog Seal ships no longer has. */
+export function removedKeyNames(upstreamEnglish, shippedEnglish) {
+  const shipped = leafKeyNames(shippedEnglish)
+  return [...leafKeyNames(upstreamEnglish)].filter((name) => !shipped.has(name))
+}
+
 export function readOverlay(root, surface, locale) {
   const path = join(root, surface.overlayDir, `${locale}.json`)
   return existsSync(path) ? readJson(path) : {}
