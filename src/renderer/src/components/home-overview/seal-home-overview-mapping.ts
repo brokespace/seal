@@ -20,6 +20,7 @@ import {
   liveSessionTitle
 } from '../live-sessions/live-session-presentation'
 import { sessionForTab } from '../seal-session/seal-session-account-view'
+import { sessionSummaryFor, sessionSummaryIndex } from '../session-summaries/session-summary-index'
 import type {
   HomeAccount,
   HomeAccountStatus,
@@ -66,15 +67,25 @@ export function homeSessionFromLive(session: LiveSession): HomeSession {
 
 /**
  * Seal's own panes come from the dashboard (they open the pane); the registry adds sessions running
- * outside Seal. Finished transcripts the registry still remembers stay under Recently finished in
- * Active agents.
+ * outside Seal, and the summaries its hosts made for both. Finished transcripts the registry still
+ * remembers stay under Recently finished in Active agents.
  */
 export function mergeLiveSessions(
   paneSessions: readonly HomeSession[],
-  liveSessions: readonly LiveSession[]
+  liveSessions: readonly LiveSession[],
+  /** The conversation a pane runs, which names it in the registry when the pane is on a paired server. */
+  paneConversation: (paneKey: string) => string | undefined = () => undefined
 ): HomeSession[] {
   const paneKeys = new Set(paneSessions.map((session) => session.id))
-  const merged = [...paneSessions]
+  const summaries = sessionSummaryIndex(liveSessions)
+  const merged = paneSessions.map((session) => {
+    const summary = sessionSummaryFor(summaries, {
+      paneKey: session.id,
+      agentType: session.agentType,
+      providerSessionId: paneConversation(session.id)
+    })
+    return summary ? { ...session, summary } : session
+  })
   for (const live of liveSessions) {
     if (!live.alive && live.status === 'done') {
       continue

@@ -25,7 +25,7 @@ export function LiveSessionRow({
   onPress: (session: LiveSession) => void
 }) {
   const t = useMobileTranslation()
-  const detail = session.permission?.question ?? session.statusDetail
+  const detail = session.permission?.question ?? session.summary ?? session.statusDetail
   return (
     <ListRow
       title={liveSessionTitle(session)}

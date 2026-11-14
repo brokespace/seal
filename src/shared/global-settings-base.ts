@@ -26,6 +26,7 @@ import type { AgentWorkspaceTrustSettings } from './agent-launch/permissions/age
 import type { KeybindingGlobalSettings } from './keybindings/global-settings'
 import type { WorkspaceCleanupPolicySettings } from './workspace-cleanup/workspace-cleanup-policy'
 import type { LiveSessionSettings } from './live-sessions/live-session-settings'
+import type { SessionSummarySettings } from './session-summaries/session-summary-contracts'
 
 /** Settings groups owned by their feature modules and composed into GlobalSettings. */
 export type GlobalSettingsBase = AntigravityChatAuthSettings &
@@ -55,4 +56,5 @@ export type GlobalSettingsBase = AntigravityChatAuthSettings &
   AgentWorkspaceTrustSettings &
   KeybindingGlobalSettings &
   WorkspaceCleanupPolicySettings &
-  LiveSessionSettings
+  LiveSessionSettings &
+  SessionSummarySettings

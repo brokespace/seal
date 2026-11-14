@@ -43,7 +43,7 @@ function session(id: string, overrides: Partial<HomeSession>): HomeSession {
   }
 }
 
-const SESSIONS: HomeSession[] = [
+export const BUSY_HOME_SESSIONS: HomeSession[] = [
   session('Add Home overview page', {
     workspaceName: 'seal/home-overview',
     model: 'claude-opus-4',
@@ -66,7 +66,18 @@ const SESSIONS: HomeSession[] = [
     model: 'gpt-5-codex',
     workspaceName: 'seal/multi-account',
     finishedAt: NOW - 6 * MIN,
-    lastMessage: { role: 'agent', text: 'Opened PR #12 with the account picker and tests.' }
+    lastMessage: {
+      role: 'agent',
+      text: 'I pushed the branch and opened PR #12. It adds the account picker to the composer, a keyboard shortcut, and tests for the switch-on-limit path.'
+    },
+    summary: { text: 'Opened PR #12 with the account picker and its tests.', pending: false }
+  }),
+  session('Fix flaky upload test', {
+    state: 'done',
+    workspaceName: 'seal/upload-retry',
+    finishedAt: NOW - 1 * MIN,
+    lastMessage: { role: 'agent', text: 'The retry now waits for the server to close the stream.' },
+    summary: { text: null, pending: true }
   }),
   session('Train tokenizer', {
     machineId: 'machine:gpu',
@@ -77,6 +88,7 @@ const SESSIONS: HomeSession[] = [
     state: 'waiting',
     unseen: true,
     askSummary: 'Which dataset split should I use for validation?',
+    summary: { text: 'Needs you to pick the validation dataset split.', pending: false },
     startedAt: NOW - 3 * 60 * MIN
   }),
   session('Nightly eval', {
@@ -238,7 +250,7 @@ function staticProviders(data: {
 }
 
 export const BUSY_HOME_PROVIDERS = staticProviders({
-  sessions: SESSIONS,
+  sessions: BUSY_HOME_SESSIONS,
   machines: MACHINES,
   accounts: ACCOUNTS,
   workspaces: WORKSPACES,

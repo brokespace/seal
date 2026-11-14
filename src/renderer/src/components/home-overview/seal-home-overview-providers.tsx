@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react'
 import { useLiveSessions } from '@/components/live-sessions/live-session-registry-store'
+import { useAppStore } from '@/store'
 import {
   useMachineMetricsEntries,
   useMachineMetricsPolling
@@ -53,13 +54,18 @@ function SealSessions({ children }: Children): React.JSX.Element {
   const live = useLiveSessions()
   const seal = useLocalSealAccountsStatus()
   const { machines } = useMachinesInventory(getLocalExecutionHostLabel())
+  const statusByPane = useAppStore((s) => s.agentStatusByPaneKey)
   const sessions = useMemo(
     () =>
       unifySessionMachines(
-        mergeLiveSessions(applySealSessionAccounts(paneSessions, seal), live.sessions),
+        mergeLiveSessions(
+          applySealSessionAccounts(paneSessions, seal),
+          live.sessions,
+          (paneKey) => statusByPane[paneKey]?.providerSession?.id
+        ),
         machines
       ),
-    [paneSessions, live.sessions, seal, machines]
+    [paneSessions, live.sessions, seal, machines, statusByPane]
   )
   return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
 }

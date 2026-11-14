@@ -4,12 +4,9 @@ import { callRuntimeEnvironment } from '../../ipc/runtime-environments/requests/
 import type { LiveSessionHost } from './live-session-hosts'
 import { runtimeLiveSessionHost, type RuntimeEnvironmentCall } from './runtime-live-session-host'
 
-/** The runtime-side scan for a paired server whose last status check answered, or null to skip it. */
-export function runtimeScanRunner(
-  userDataPath: string
-): (environmentId: string, label: string) => LiveSessionHost['run'] | null {
-  // Never wake a stopped WSL host or sleeping VM just to look for agents.
-  const call: RuntimeEnvironmentCall = (environmentId, method, params, timeoutMs) =>
+/** Calls a paired server's runtime without waking a stopped WSL host or sleeping VM for it. */
+export function runtimeEnvironmentCall(userDataPath: string): RuntimeEnvironmentCall {
+  return (environmentId, method, params, timeoutMs) =>
     callRuntimeEnvironment(
       userDataPath,
       environmentId,
@@ -22,6 +19,13 @@ export function runtimeScanRunner(
         preparation: { wslStart: 'never' }
       }
     )
+}
+
+/** The runtime-side scan for a paired server whose last status check answered, or null to skip it. */
+export function runtimeScanRunner(
+  userDataPath: string
+): (environmentId: string, label: string) => LiveSessionHost['run'] | null {
+  const call = runtimeEnvironmentCall(userDataPath)
   return (environmentId, label) => {
     const snapshot = getRuntimeEnvironmentStatusSnapshot(environmentId)
     if (
