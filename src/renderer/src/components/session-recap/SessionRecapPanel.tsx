@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { ChevronRight, ListChecks, MessageCircleQuestion, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import {
   LiveSessionPanelEmpty,
@@ -73,14 +74,20 @@ function Section({
 }
 
 function Folded({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
   return (
-    <Collapsible>
-      <CollapsibleTrigger className="group flex cursor-pointer items-center gap-1 rounded-sm px-3 py-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
-        <ChevronRight className="size-3 transition-transform group-data-[state=open]:rotate-90" />
+    <>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((shown) => !shown)}
+        className="flex cursor-pointer items-center gap-1 rounded-sm px-3 py-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ChevronRight className={cn('size-3 transition-transform', open && 'rotate-90')} />
         {label}
-      </CollapsibleTrigger>
-      <CollapsibleContent>{children}</CollapsibleContent>
-    </Collapsible>
+      </button>
+      {open ? children : null}
+    </>
   )
 }
 

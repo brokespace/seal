@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
+import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
 import {
   runningBackgroundTasks,
   runningSubagents,
@@ -359,7 +360,7 @@ export function LiveSessionPane({
   const recapProps = useMemo(
     () => ({
       ...recap,
-      onOpenLink: (url: string) => void window.api.shell.openUrl(url),
+      onOpenLink: (url: string) => void openAppHttpLink(url),
       onOpenSettings: () => {
         const store = useAppStore.getState()
         store.openSettingsPage()

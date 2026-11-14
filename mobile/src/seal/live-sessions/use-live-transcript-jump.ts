@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useState, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import type { FlatList } from 'react-native'
 import type { LiveTranscriptState } from './use-live-transcript'
 
 /** A recap reaches back at most this far for a message the phone has not loaded. */
 const MAX_EARLIER_PAGES = 12
+/** A jump that has not landed by now is dropped, so a later page cannot move the reader unasked. */
+const JUMP_PATIENCE_MS = 20_000
 
 type Transcript = Pick<LiveTranscriptState, 'messages' | 'hasMore' | 'loadingEarlier'> & {
   loadEarlier: () => Promise<void>
 }
+
+type Target = { messageId: string; pages: number; until: number }
 
 /**
  * Shows one message of a session's transcript at the top of the list, loading earlier pages until
@@ -25,47 +29,55 @@ export function useLiveTranscriptJump<Row>({
   jumpTo: (messageId: string) => void
   onScrollToIndexFailed: (info: { index: number; averageItemLength: number }) => void
 } {
-  const [target, setTarget] = useState<{ messageId: string; pages: number } | null>(null)
+  const target = useRef<Target | null>(null)
   const { messages, hasMore, loadingEarlier, loadEarlier } = transcript
 
-  useEffect(() => {
-    if (!target) {
+  const step = () => {
+    const wanted = target.current
+    if (!wanted) {
       return
     }
-    const index = messages.findIndex((message) => message.id === target.messageId)
+    if (Date.now() > wanted.until) {
+      target.current = null
+      return
+    }
+    const index = messages.findIndex((message) => message.id === wanted.messageId)
     if (index !== -1) {
+      target.current = null
       // Why: a reader sent to an older message must not be pulled back down by the next delta.
       atBottom.current = false
       list.current?.scrollToIndex({ index, animated: false, viewPosition: 0 })
-      setTarget(null)
       return
     }
     if (loadingEarlier) {
       return
     }
-    if (!hasMore || target.pages >= MAX_EARLIER_PAGES) {
-      setTarget(null)
+    if (!hasMore || wanted.pages >= MAX_EARLIER_PAGES) {
+      target.current = null
       return
     }
-    setTarget({ messageId: target.messageId, pages: target.pages + 1 })
+    wanted.pages += 1
     void loadEarlier()
-  }, [target, messages, hasMore, loadingEarlier, loadEarlier, list, atBottom])
+  }
 
-  const jumpTo = useCallback((messageId: string) => setTarget({ messageId, pages: 0 }), [])
+  // Each page that arrives is another chance to land, or the cue to ask for the next one.
+  useEffect(step, [messages, hasMore, loadingEarlier])
+
+  const jumpTo = (messageId: string) => {
+    target.current = { messageId, pages: 0, until: Date.now() + JUMP_PATIENCE_MS }
+    step()
+  }
 
   // Rows are measured as they draw: land near the row, and the retry can then place it exactly.
-  const onScrollToIndexFailed = useCallback(
-    (info: { index: number; averageItemLength: number }) => {
-      list.current?.scrollToOffset({
-        offset: Math.max(0, info.averageItemLength * info.index),
-        animated: false
-      })
-      requestAnimationFrame(() =>
-        list.current?.scrollToIndex({ index: info.index, animated: false, viewPosition: 0 })
-      )
-    },
-    [list]
-  )
+  const onScrollToIndexFailed = (info: { index: number; averageItemLength: number }) => {
+    list.current?.scrollToOffset({
+      offset: Math.max(0, info.averageItemLength * info.index),
+      animated: false
+    })
+    requestAnimationFrame(() =>
+      list.current?.scrollToIndex({ index: info.index, animated: false, viewPosition: 0 })
+    )
+  }
 
   return { jumpTo, onScrollToIndexFailed }
 }

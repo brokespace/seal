@@ -64,7 +64,7 @@ export function SessionRecapBar({
   const questions = recap ? recapItemsByMark(recap.questions, view.marks).open.length : 0
   const actions = recap ? recapItemsByMark(recap.actions, view.marks).open.length : 0
   const news = recapNewCount(view)
-  const Toggle = open ? PanelRightClose : PanelRightOpen
+  const PanelIcon = open ? PanelRightClose : PanelRightOpen
   return (
     <button
       type="button"
@@ -110,7 +110,7 @@ export function SessionRecapBar({
             : recapUpdatedLabel(recap.updatedAt, now, t)}
         </span>
       ) : null}
-      <Toggle className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+      <PanelIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
     </button>
   )
 }
