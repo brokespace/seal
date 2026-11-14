@@ -27,6 +27,8 @@ export type RemoveWorktreeArgs = {
   skipArchive?: boolean
   /** Explicit failed-archive waiver; skipArchive bypasses execution, and force grants neither permission. */
   allowFailedArchiveHook?: boolean
+  /** Explicit, confirmed Unlock & Delete: release Git's lock first. Never implied by `force`. */
+  unlockLockedWorktree?: boolean
   snapshotPruneBatchId?: string
 }
 

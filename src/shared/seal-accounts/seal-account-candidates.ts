@@ -40,6 +40,8 @@ export type SealAccountCandidate = {
   orgName?: string | null
   label: string
   plan: string | null
+  /** A plan seat or metered API usage; null when the provider has not said. */
+  billing?: 'subscription' | 'api' | null
   credential?: SealCredentialKind
   /** This identity is the machine's own `claude`/`codex` login (the row itself, or a saved twin). */
   systemLogin?: boolean

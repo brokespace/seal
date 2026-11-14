@@ -1,4 +1,4 @@
-import { MessageSquarePlus, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, MessageSquarePlus, X } from 'lucide-react'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
@@ -10,23 +10,43 @@ import { HomeChatMemoryDialog } from './HomeChatMemoryDialog'
 import { HomeChatThreadList } from './HomeChatThreadList'
 import { useHomeChat } from './use-home-chat'
 
+type HomeChatProps = {
+  className?: string
+  /** Collapsed to the title bar; the conversation stays mounted so a running turn keeps streaming. */
+  minimized?: boolean
+  /** Shows the minimize control when provided. */
+  onMinimizedChange?: (minimized: boolean) => void
+}
+
 function HomeChatPanel({
   api,
-  className
-}: {
-  api: HomeChatApi
-  className?: string
-}): React.JSX.Element {
+  className,
+  minimized = false,
+  onMinimizedChange
+}: HomeChatProps & { api: HomeChatApi }): React.JSX.Element {
   const t = useTranslate()
   const state = useHomeChat(api)
   const { active, chats } = state
+  const toggleLabel = minimized
+    ? t('homeChat.expand', 'Expand chat')
+    : t('homeChat.minimize', 'Minimize chat')
 
   return (
     <section
-      className={cn('flex min-h-0 flex-col bg-background', className)}
+      className={cn(
+        'flex min-h-0 flex-col bg-background',
+        // Hidden, not unmounted: a running turn keeps streaming and the draft survives.
+        minimized && '[&>*:not(header)]:hidden',
+        className
+      )}
       aria-label={t('homeChat.label', 'Seal assistant')}
     >
-      <header className="flex h-11 shrink-0 items-center gap-1 border-b border-border px-2">
+      <header
+        className={cn(
+          'flex h-11 shrink-0 items-center gap-1 px-2',
+          !minimized && 'border-b border-border'
+        )}
+      >
         <HomeChatThreadList
           chats={chats}
           active={active}
@@ -35,15 +55,38 @@ function HomeChatPanel({
           onDelete={state.remove}
         />
         <div className="flex-1" />
-        <HomeChatMemoryDialog api={api} memoryVersion={state.memoryVersion} />
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => void state.newChat()}
-          aria-label={t('homeChat.new', 'New thread')}
-        >
-          <MessageSquarePlus />
-        </Button>
+        {minimized ? (
+          active?.status === 'running' ? (
+            <span className="px-1 text-xs text-muted-foreground" data-slot="home-chat-running">
+              {t('homeChat.minimizedRunning', 'Working…')}
+            </span>
+          ) : null
+        ) : (
+          <>
+            <HomeChatMemoryDialog api={api} memoryVersion={state.memoryVersion} />
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => void state.newChat()}
+              aria-label={t('homeChat.new', 'New thread')}
+            >
+              <MessageSquarePlus />
+            </Button>
+          </>
+        )}
+        {onMinimizedChange ? (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onMinimizedChange(!minimized)}
+            aria-label={toggleLabel}
+            aria-expanded={!minimized}
+            title={toggleLabel}
+            data-slot="home-chat-minimize"
+          >
+            {minimized ? <ChevronDown /> : <ChevronUp />}
+          </Button>
+        ) : null}
       </header>
       <HomeChatContextBar
         chat={active}
@@ -102,7 +145,7 @@ function HomeChatPanel({
 }
 
 /** Self-contained home-page assistant; renders nothing where the desktop bridge is absent (web client). */
-export default function HomeChat({ className }: { className?: string }): React.JSX.Element | null {
+export default function HomeChat(props: HomeChatProps): React.JSX.Element | null {
   const api = window.api.homeChat
-  return api ? <HomeChatPanel api={api} className={className} /> : null
+  return api ? <HomeChatPanel api={api} {...props} /> : null
 }

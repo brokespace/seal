@@ -6631,10 +6631,8 @@
           "header": {
             "create": {
               "state": {
-                "992cfbc44b": "Créer un nouveau worktree pour {{value0}}",
                 "3a70acd808": "Reconnectez la cible SSH avant de créer des espaces de travail pour {{value0}}",
-                "6d022563a8": "Reconnectez la cible SSH avant de créer des espaces de travail",
-                "62e71f2d5d": "Créer un espace de travail pour {{value0}}"
+                "6d022563a8": "Reconnectez la cible SSH avant de créer des espaces de travail"
               }
             }
           }
