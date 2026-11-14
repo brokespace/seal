@@ -1,9 +1,10 @@
 import type React from 'react'
 import { useState } from 'react'
-import { Check, ChevronDown, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUpToLine, Check, ChevronDown, Pencil, Trash2 } from 'lucide-react'
 import type { GlobalSettings } from '../../../../../shared/global-settings-types'
 import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
 import { OPEN_IN_APPLICATIONS_MAX } from '../../../../../shared/open-in-applications'
+import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
 import {
   DropdownMenu,
@@ -78,6 +79,8 @@ export function shouldCommitOpenInApplicationsDraft(applications: OpenInApplicat
 function OpenInMenuRow({
   application,
   editing,
+  isDefault,
+  onMakeDefault,
   onEditToggle,
   onRemove,
   onChange,
@@ -85,6 +88,9 @@ function OpenInMenuRow({
 }: {
   application: OpenInApplication
   editing: boolean
+  /** The first app is the one single-button surfaces, like a machine's Open in, launch. */
+  isDefault: boolean
+  onMakeDefault: () => void
   onEditToggle: () => void
   onRemove: () => void
   onChange: (updates: Pick<OpenInApplication, 'label' | 'command'>) => void
@@ -110,6 +116,11 @@ function OpenInMenuRow({
               {application.label.trim() ||
                 t('auto.components.settings.OpenInMenuSetting.f79084947b', 'New app')}
             </span>
+            {isDefault ? (
+              <Badge variant="referenceLabel">
+                {t('auto.components.settings.OpenInMenuSetting.default', 'Default')}
+              </Badge>
+            ) : null}
           </div>
           <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
             {application.command.trim() ||
@@ -118,6 +129,22 @@ function OpenInMenuRow({
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {isDefault ? null : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={onMakeDefault}
+              title={t('auto.components.settings.OpenInMenuSetting.makeDefault', 'Make default')}
+              aria-label={t(
+                'auto.components.settings.OpenInMenuSetting.makeDefault',
+                'Make default'
+              )}
+              className="size-7"
+            >
+              <ArrowUpToLine className="size-3.5 text-muted-foreground" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -293,6 +320,10 @@ export function OpenInMenuEditor({
             {t(
               'auto.components.settings.OpenInMenuSetting.9d0413817d',
               "Choose apps available from a workspace's Open in menu."
+            )}{' '}
+            {t(
+              'auto.components.settings.OpenInMenuSetting.defaultHint',
+              'The default app is the editor a machine opens in.'
             )}
           </p>
         </div>
@@ -353,6 +384,10 @@ export function OpenInMenuEditor({
                 key={application.id}
                 application={application}
                 editing={editing}
+                isDefault={index === 0}
+                onMakeDefault={() =>
+                  applyDraft([application, ...draft.filter((entry) => entry.id !== application.id)])
+                }
                 onEditToggle={() =>
                   setEditingIds((current) => {
                     const next = new Set(current)
