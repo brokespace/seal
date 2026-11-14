@@ -50,7 +50,8 @@ A session is running or finished by `isActiveLiveSession`, which every list, bad
 shares. It is running while its process is seen, and also while its status is one only a running
 agent has: the `working` group, `needs-permission` and `waiting-input`. So a prompt or a question
 is never listed under "Recently finished", even on a host whose `ps` cannot list processes or in
-the scan that misses the process. `errored` outlasts its agent: with the process gone it is a
+the scan that misses the process. A prompt that only a leftover hook file reports is dropped once
+the agent is known to be gone (layer 5). `errored` outlasts its agent: with the process gone it is a
 finished session that ended in an error. `your-turn` and `idle` with no process are an agent that
 just quit, and read as finished.
 
@@ -139,7 +140,10 @@ For a session in a tmux pane or a Seal terminal the scan reads the visible scree
   `waiting-input`; a finished turn is `your-turn`. The scan still adds what a hook cannot say
   (running shell, subagent and task waits, a reply that asks).
 - **The agent's hook file** (`agent-hooks`): status the agent wrote itself, when fresher than the
-  transcript.
+  transcript. An agent killed at a prompt never clears its file, so a `needs` state counts only
+  while the agent may still be there: once the host has listed its processes, the agent is not
+  among them and the transcript has gone quiet, the session is `done`. A host whose `ps` cannot
+  list processes proves nothing, and the prompt stands.
 
 ### 6. Did the last reply ask a question?
 
