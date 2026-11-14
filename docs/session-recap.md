@@ -147,12 +147,12 @@ a new title once; one that keeps working on the same thing keeps its title.
 Always incrementally: the previous recap, compacted, plus the messages since `coveredTo`. The
 transcript is never re-read from the start.
 
-| Trigger                                                                         | Rule                                                                                                                                        |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| The session stops (`waiting-input`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one pass per session every 4 minutes; a stop inside that window is picked up when it ends. |
-| He opens the session, or comes back to the window or app                        | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                            |
-| Refresh recap                                                                   | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                  |
-| The transcript shrank (rewritten)                                               | Start over from the recent history.                                                                                                         |
+| Trigger                                                                                      | Rule                                                                                                                                        |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| The session stops (`waiting-input`, `your-turn`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one pass per session every 4 minutes; a stop inside that window is picked up when it ends. |
+| He opens the session, or comes back to the window or app                                     | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                            |
+| Refresh recap                                                                                | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                  |
+| The transcript shrank (rewritten)                                                            | Start over from the recent history.                                                                                                         |
 
 A working session is not recapped on its own: its turn is not a fact yet. A headless server only
 keeps up sessions someone has opened from a client paired to it, so a desktop and a server that
