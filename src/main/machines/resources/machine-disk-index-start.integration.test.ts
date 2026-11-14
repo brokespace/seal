@@ -288,7 +288,7 @@ describe.skipIf(process.platform === 'win32')('starting the disk index from a pa
 
     await expect(keeping).resolves.toMatchObject({ state: 'not-available', asked: true })
     expect(console.warn).toHaveBeenCalledWith(
-      '[disk-index] local machine machine:silent: the disk index is not available (command-failed): The machine did not answer within 5 minutes of being asked.'
+      '[disk-index] local machine machine:silent: the disk index is not available (command-failed): The machine did not answer within 5 minutes of being asked; it was asking which shell the machine has.'
     )
   })
 })
