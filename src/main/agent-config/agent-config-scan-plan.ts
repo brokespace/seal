@@ -85,7 +85,8 @@ export function scanPlan(resolved: ResolvedTarget): ScanPlan {
       {
         tag: 'agent',
         path: projectRoot ? joinRelative(projectRoot, layout.project.dir) : `~/${layout.user.dir}`
-      }
+      },
+      ...(projectRoot ? [{ tag: 'project', path: projectRoot }] : [])
     ],
     skillRoots: [
       ...collections.flatMap((item, index) =>

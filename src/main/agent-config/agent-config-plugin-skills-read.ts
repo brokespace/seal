@@ -14,7 +14,7 @@ import type {
 } from '../../shared/agent-config/agent-config-types'
 import type { MachineConnection } from '../machines/connection/machine-connection'
 import {
-  scanMachineFiles,
+  scanMachineFilesInFull,
   SKILL_SCAN_SKIP_DIRS,
   type MachineFileScanRecord
 } from '../machines/scan/machine-file-scan'
@@ -43,7 +43,7 @@ export async function readPluginSkills(
   resolved: ResolvedTarget,
   inputs: PluginSkillInputs,
   headBytes: number
-): Promise<AgentConfigDocRef[]> {
+): Promise<{ skills: AgentConfigDocRef[]; complete: boolean; cappedFolders: string[] }> {
   const { layout, home, projectRoot } = resolved
   const registry = layout.skills.plugins
   const cursorCache = joinRelative(home, '.cursor/plugins/cache')
@@ -55,9 +55,9 @@ export async function readPluginSkills(
         : []
   const roots = registry === 'cursor' ? [cursorCache] : known.map((folder) => folder.root)
   if (roots.length === 0) {
-    return []
+    return { skills: [], complete: true, cappedFolders: [] }
   }
-  const scan = await scanMachineFiles(await scanRunner(connection), {
+  const scan = await scanMachineFilesInFull(await scanRunner(connection), {
     named: roots.map((root, index) => ({
       tag: `p${index}`,
       root,
@@ -85,8 +85,12 @@ export async function readPluginSkills(
           folder: registry === 'codex' ? latestPluginVersion(folder, tagged(index)) : folder,
           records: tagged(index)
         }))
-  return found.flatMap(({ folder, records }) => {
-    const { bundle, skills } = pluginSkills(folder, records)
-    return skills.map((record) => bundledSkillFromRecord(record, bundle, headBytes))
-  })
+  return {
+    skills: found.flatMap(({ folder, records }) => {
+      const { bundle, skills } = pluginSkills(folder, records)
+      return skills.map((record) => bundledSkillFromRecord(record, bundle, scan.headBytes))
+    }),
+    complete: scan.complete,
+    cappedFolders: roots.filter((_root, index) => scan.capped.includes(`p${index}`))
+  }
 }
