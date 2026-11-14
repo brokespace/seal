@@ -26521,7 +26521,7 @@
         "paused": "Cloudflare’s limit was reached. Summaries resume at {{time}}; nothing else is affected."
       },
       "title": "Cloudflare AI",
-      "subtitle": "A small Workers AI model writes the one-line summary on each agent session. The free plan is enough.",
+      "subtitle": "A small Workers AI model writes the one-line summary and the recap on each agent session. The free plan is enough.",
       "tokensLink": "Get API token",
       "test": {
         "okFallback": "Works: the fallback {{model}} answered in {{ms}} ms.",
@@ -26554,7 +26554,7 @@
       },
       "search": {
         "title": "Cloudflare AI",
-        "description": "Link a Cloudflare Workers AI account for session summaries. Pick the model and turn summaries on or off.",
+        "description": "Link a Cloudflare Workers AI account for session summaries and recaps. Pick the model and turn each on or off.",
         "kw": {
           "cloudflare": "cloudflare",
           "workersAi": "workers ai",
