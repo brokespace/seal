@@ -22,10 +22,11 @@ import type {
   AgentConfigTomlEdit,
   AgentConfigWriteResult
 } from '../../shared/agent-config/agent-config-types'
-import { stringList } from '../../shared/agent-config/agent-config-values'
+import { deepEqual, stringList, valueAtPath } from '../../shared/agent-config/agent-config-values'
 import { machinePathBasename, machinePathDirname } from '../../shared/machines/machine-paths'
 import type { MachineConnection } from '../machines/connection/machine-connection'
 import { readConfigFile, writeConfigFile } from './agent-config-file-io'
+import { forgetLegacyMcpAnswer } from './agent-config-legacy-mcp-answers'
 import {
   assertManagedPath,
   mcpFile,
@@ -210,7 +211,20 @@ export async function patchSettings(
     connection,
     primary.path,
     primary.spec.format === 'toml' ? 'toml' : 'json',
-    () => args.edits,
+    (config) =>
+      args.edits.map(({ was, ...edit }) => {
+        // A list or table is written whole, so one that changed since the page read it would be lost.
+        const stale =
+          was !== undefined &&
+          !hasMask(was) &&
+          !deepEqual(valueAtPath(config, edit.path) ?? null, was)
+        if (stale) {
+          throw new Error(
+            `${edit.path.join('.')} changed on the machine after this page read it. Make your change again.`
+          )
+        }
+        return edit
+      }),
     { private: args.scope !== 'project' }
   )
 }
@@ -274,6 +288,7 @@ export async function setMcpActivation(
     throw new Error(`${resolved.layout.label} does not ask before using project servers`)
   }
   const primary = requirePrimary(resolved, 'local')
+  await forgetLegacyMcpAnswer(connection, resolved, args.name)
   return editFile(
     connection,
     primary.path,

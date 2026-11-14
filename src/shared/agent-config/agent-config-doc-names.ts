@@ -1,3 +1,7 @@
+import {
+  AGENT_CONFIG_NESTED_MAX_DEPTH,
+  AGENT_CONFIG_NESTED_SKIP_DIRS
+} from './agent-config-scan-limits'
 import type { AgentConfigDocKind } from './agent-config-types'
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -15,4 +19,22 @@ export function agentConfigDocNameProblem(kind: AgentConfigDocKind, name: string
   return trimmed.length <= 120 && trimmed.split('/').every((segment) => FILE_SEGMENT.test(segment))
     ? null
     : 'Use letters, digits, dots, dashes and underscores; "/" makes a sub-folder'
+}
+
+/**
+ * Why nested instructions cannot be made in this folder of a project, or null when they can:
+ * `outside` is not a folder below the project root, `unlisted` is one the scan never looks in.
+ */
+export function agentConfigNestedFolderProblem(folder: string): 'outside' | 'unlisted' | null {
+  const segments = folder.trim().replace(/\/+$/, '').split('/')
+  if (
+    segments.some((segment) => segment === '' || segment === '.' || segment === '..') ||
+    /^~|^[A-Za-z]:|\\/.test(folder.trim())
+  ) {
+    return 'outside'
+  }
+  return segments.length >= AGENT_CONFIG_NESTED_MAX_DEPTH ||
+    segments.some((segment) => AGENT_CONFIG_NESTED_SKIP_DIRS.includes(segment))
+    ? 'unlisted'
+    : null
 }

@@ -78,7 +78,12 @@ export function docFromRecord(
     name: typeof declared === 'string' && declared.trim() ? declared.trim() : fileName,
     description: frontmatter.present || skill ? (summary.description ?? '') : '',
     issues: checkable
-      ? validateMarkdownDocument(collection.kind, record.head, machinePathBasename(fileName))
+      ? validateMarkdownDocument(
+          collection.kind,
+          record.head,
+          machinePathBasename(fileName),
+          record.path
+        )
       : []
   }
 }

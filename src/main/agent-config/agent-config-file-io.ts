@@ -117,7 +117,7 @@ function requireValid(path: string, content: string, options: WriteOptions): voi
     kinds.add(byPath)
   }
   const errors = [...kinds]
-    .flatMap((kind) => validateAgentConfigContent(kind, content, options.expectedName))
+    .flatMap((kind) => validateAgentConfigContent(kind, content, options.expectedName, path))
     .filter((issue) => issue.severity === 'error')
   if (errors.length > 0) {
     throw new AgentConfigValidationError(errors)

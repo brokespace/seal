@@ -624,6 +624,7 @@
           "title": "Copy {{name}} to…",
           "mcpDescription": "The server goes straight from one machine’s file to the other’s, stored tokens included.",
           "documentDescription": "A skill is copied with every file in its folder.",
+          "fileDescription": "The file is copied as it is written.",
           "machine": "Machine",
           "place": "Where",
           "account": "The account on that machine",
@@ -631,6 +632,7 @@
           "folder": "Project folder",
           "agent": "Agent",
           "private": "Only for me ({{scope}}), not in the project’s shared file",
+          "nowhere": "No agent keeps this kind of file there. Choose another place.",
           "overwrite": "Replace what is there (it is kept in backups)",
           "confirm": "Copy"
         },
@@ -692,6 +694,7 @@
         "nestedDescription": "The agent reads {{file}} in a folder when it works on files there.",
         "nestedFolder": "Folder, from the project root",
         "nestedInvalid": "Enter a folder inside the project.",
+        "nestedUnlisted": "Instructions are not looked for there: it is a dependency or build folder, or more than five folders deep.",
         "instructionsUser": "What {{agent}} is told in every project on this machine.",
         "instructionsProject": "What {{agent}} is told in this project, including files in sub-folders.",
         "new": "New",

@@ -32,7 +32,7 @@ export function AgentConfigClaudeSettingsForm({
         label={label}
         items={listAt(value, 'permissions', key)}
         placeholder={t('auto.components.agentConfig.example.rule', 'Bash(npm run test:*)')}
-        onChange={(items) => patch([listEdit(['permissions', key], items)])}
+        onChange={(items) => patch([listEdit(value, ['permissions', key], items)])}
       />
     </AgentConfigStackedRow>
   )
@@ -69,11 +69,14 @@ export function AgentConfigClaudeSettingsForm({
                 'Status line command'
               )}
               onCommit={(text) =>
-                patch([
+                patch(
                   text === ''
-                    ? { path: ['statusLine'], remove: true }
-                    : { path: ['statusLine'], value: { type: 'command', command: text } }
-                ])
+                    ? [{ path: ['statusLine'], remove: true }]
+                    : [
+                        { path: ['statusLine', 'type'], value: 'command' },
+                        { path: ['statusLine', 'command'], value: text }
+                      ]
+                )
               }
             />
           }
@@ -128,7 +131,9 @@ export function AgentConfigClaudeSettingsForm({
             label={t('auto.components.agentConfig.settings.directories', 'Additional folders')}
             items={listAt(value, 'permissions', 'additionalDirectories')}
             placeholder={t('auto.components.agentConfig.example.extraFolder', '~/notes')}
-            onChange={(items) => patch([listEdit(['permissions', 'additionalDirectories'], items)])}
+            onChange={(items) =>
+              patch([listEdit(value, ['permissions', 'additionalDirectories'], items)])
+            }
           />
         </AgentConfigStackedRow>
       </SettingsGroup>

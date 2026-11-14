@@ -60,6 +60,24 @@ function accepts(
     : scope.collections.some((collection) => collection.kind === request.doc.kind)
 }
 
+/** The usual move is account to project, or project to account, where some agent takes it. */
+function usualPlace(
+  request: AgentConfigCopyRequest,
+  here: string | undefined,
+  others: readonly string[]
+): string {
+  const scope = request.type === 'mcp' ? request.server.scope : request.doc.scope
+  const order =
+    here !== undefined && scope !== 'user'
+      ? [ACCOUNT, ...others, OTHER]
+      : [...(here === undefined ? [] : [here]), ...others, ACCOUNT]
+  return (
+    order.find((place) =>
+      AGENT_CONFIG_LAYOUTS.some((layout) => accepts(layout, request, place !== ACCOUNT))
+    ) ?? ACCOUNT
+  )
+}
+
 /** Copies a document or a server to another agent, project or machine. */
 export function AgentConfigCopyDialog({
   request,
@@ -83,11 +101,16 @@ export function AgentConfigCopyDialog({
   if (seededFor !== request) {
     setSeededFor(request)
     setMachineId(machine.id)
-    // The usual move is account to project, or project to account.
+    const paths = projects.filter((p) => p.machineId === machine.id).map((p) => p.path)
+    const here = paths.find((path) => path === target.projectPath)
     setPlace(
-      target.projectPath
-        ? ACCOUNT
-        : (projects.find((p) => p.machineId === machine.id)?.path ?? ACCOUNT)
+      request
+        ? usualPlace(
+            request,
+            here,
+            paths.filter((path) => path !== here)
+          )
+        : ACCOUNT
     )
     setOtherPath('')
     setAgent(target.agent)
@@ -166,10 +189,15 @@ export function AgentConfigCopyDialog({
                   'auto.components.agentConfig.copy.mcpDescription',
                   'The server goes straight from one machine’s file to the other’s, stored tokens included.'
                 )
-              : t(
-                  'auto.components.agentConfig.copy.documentDescription',
-                  'A skill is copied with every file in its folder.'
-                )}
+              : request?.doc.kind === 'skill'
+                ? t(
+                    'auto.components.agentConfig.copy.documentDescription',
+                    'A skill is copied with every file in its folder.'
+                  )
+                : t(
+                    'auto.components.agentConfig.copy.fileDescription',
+                    'The file is copied as it is written.'
+                  )}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -209,6 +237,13 @@ export function AgentConfigCopyDialog({
                 {projectsThere.map((project) => (
                   <SelectItem key={project.path} value={project.path}>
                     {project.label}
+                    {projectsThere.some(
+                      (other) => other !== project && other.label === project.label
+                    ) ? (
+                      <span className="ml-1 font-mono text-xs text-muted-foreground">
+                        {project.path}
+                      </span>
+                    ) : null}
                   </SelectItem>
                 ))}
                 <SelectItem value={OTHER}>
@@ -247,6 +282,14 @@ export function AgentConfigCopyDialog({
               </SelectContent>
             </Select>
           </div>
+          {request && agents.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t(
+                'auto.components.agentConfig.copy.nowhere',
+                'No agent keeps this kind of file there. Choose another place.'
+              )}
+            </p>
+          ) : null}
           {canBePrivate ? (
             <label className="flex items-center gap-2 text-xs">
               <Checkbox

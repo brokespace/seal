@@ -82,10 +82,14 @@ export function missingInstructions(
             relative
           }))
         ]
-  const existing = docs
-    .filter((doc) => doc.kind === 'instructions')
-    .map((doc) => doc.path.replaceAll('\\', '/'))
+  const existing = docs.filter((doc) => doc.kind === 'instructions')
+  // A nested or `.claude/` file ends with the root file's name too, so a project compares whole paths.
   return candidates.filter(
-    (candidate) => !existing.some((path) => path.endsWith(`/${candidate.relative}`))
+    (candidate) =>
+      !existing.some((doc) =>
+        homeScope === 'project' && doc.relativePath !== undefined
+          ? doc.relativePath.replaceAll('\\', '/') === candidate.relative
+          : doc.path.replaceAll('\\', '/').endsWith(`/${candidate.relative}`)
+      )
   )
 }

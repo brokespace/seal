@@ -19,6 +19,7 @@ import type {
 } from '../../../../../shared/agent-config/agent-config-types'
 import { detectLanguage } from '../../../../../shared/editor-language/editor-language-detect'
 import { SettingsSegmentedControl } from '../../settings/form-controls/SettingsFormControls'
+import { AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS } from '../agent-config-sheet-placement'
 import { AgentConfigScopeBadge } from '../AgentConfigScopeBadge'
 import { agentConfigApi, agentConfigErrorText } from '../model/agent-config-client'
 import { useAgentConfig } from '../model/agent-config-context'
@@ -97,7 +98,12 @@ export function AgentConfigDocumentSheet({
   const issues = useMemo(
     () =>
       document && loaded && !document.readOnly
-        ? validateAgentConfigContent(document.validation, draft, document.expectedName)
+        ? validateAgentConfigContent(
+            document.validation,
+            draft,
+            document.expectedName,
+            document.path
+          )
         : [],
     [document, draft, loaded]
   )
@@ -166,7 +172,11 @@ export function AgentConfigDocumentSheet({
 
   return (
     <Sheet open={document !== null} onOpenChange={(open) => !open && requestClose()}>
-      <SheetContent className="w-[92vw] sm:max-w-[1100px]" data-agent-config-editor={path ?? ''}>
+      <SheetContent
+        className="w-[92vw] sm:max-w-[1100px]"
+        style={AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS}
+        data-agent-config-editor={path ?? ''}
+      >
         <div className="shrink-0 border-b border-border pr-8">
           <SheetHeader>
             <div className="flex min-w-0 items-center gap-2">

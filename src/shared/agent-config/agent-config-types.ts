@@ -266,9 +266,13 @@ export type AgentConfigJsonEdit =
   | { path: (string | number)[]; remove: true }
 
 /** A change to a settings file by key path; the file's format decides how it is applied. */
-export type AgentConfigSettingsEdit =
+export type AgentConfigSettingsEdit = (
   | { path: string[]; value: unknown }
   | { path: string[]; remove: true }
+) & {
+  /** What the page showed at this path, null for nothing; another value on disk stops the write. */
+  was?: unknown
+}
 
 export type AgentConfigTomlValue =
   | string
