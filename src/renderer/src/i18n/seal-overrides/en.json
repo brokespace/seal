@@ -82,7 +82,6 @@
         },
         "detail": {
           "noSessions": "No agents running on this machine.",
-          "agent": "Agent",
           "back": "All machines",
           "reconnect": "Reconnect",
           "connect": "Connect",
@@ -98,7 +97,8 @@
           "editorOffline": "Connect this machine to open it in an editor.",
           "editorNoHome": "Waiting for this machine to report its home folder.",
           "editorOpenIn": "Open in {{app}}",
-          "editorChoose": "Choose editor"
+          "editorChoose": "Choose editor",
+          "sessions": "Agents on this machine"
         },
         "edit": {
           "saved": "Machine updated"
@@ -536,7 +536,7 @@
           "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
           "chipAttention": "Needs attention",
           "chipWorking": "Working",
-          "chipMine": "This machine",
+          "chipMine": "This computer",
           "chipMineTitle": "Mine, on this machine",
           "search": "Filter by name, project, machine, agent, status",
           "searchLabel": "Filter sessions",
@@ -664,12 +664,9 @@
       "summary": {
         "working": "{{count}} working",
         "waiting": "{{count}} waiting on you",
-        "done": "{{count}} done"
+        "idle": "{{count}} idle"
       },
       "title": "Home",
-      "session": {
-        "you": "You"
-      },
       "sessions": {
         "title": "Sessions",
         "empty": "No agent sessions yet. Start an agent in a workspace and it shows up here."
@@ -683,14 +680,6 @@
         "draftLabel": "draft"
       },
       "nav": "Home",
-      "state": {
-        "working": "Working",
-        "waiting": "Waiting on you",
-        "permission": "Needs permission",
-        "errored": "Errored",
-        "done": "Done",
-        "idle": "Idle"
-      },
       "machine": {
         "online": "Online",
         "connecting": "Connecting",

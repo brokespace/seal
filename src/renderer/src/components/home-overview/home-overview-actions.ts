@@ -1,13 +1,11 @@
 import { useAppStore } from '@/store'
-import { revealDashboardAgent } from '@/components/dashboard/navigation/reveal-dashboard-agent'
-import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
 import { openLiveSessionView } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { normalizeExecutionHostId } from '../../../../shared/execution-host'
 import { parseMachineId } from '../../../../shared/machines/machine-types'
 import type { SettingsNavigationTarget } from '../settings/navigation/settings-navigation-types'
-import type { HomeOverviewActions, HomeSession } from './home-overview-model'
+import type { HomeOverviewActions } from './home-overview-model'
 
 // Setting a target alone only queues the deep link; the page must be opened too.
 function openSettingsPane(target: SettingsNavigationTarget): void {
@@ -38,46 +36,9 @@ const sharedActions = {
   }
 } satisfies Partial<HomeOverviewActions>
 
-/** Opens the session's chat as a tab, when the registry has it. */
-function openLiveSession(session: HomeSession): void {
-  const liveId =
-    session.target.kind === 'live-session'
-      ? session.target.sessionId
-      : liveSessionRegistryStore
-          .getState()
-          .sessions.find((live) =>
-            live.inputRoutes.some(
-              (route) => route.kind === 'seal-pane' && route.paneKey === session.id
-            )
-          )?.id
-  if (liveId) {
-    openLiveSessionView(liveId)
-    return
-  }
-  useAppStore.getState().openAgentSessionTabs()
-}
-
-/** Actions for Orca builds without the machines page or live-session registry. */
-export const orcaHomeOverviewActions: HomeOverviewActions = {
-  ...sharedActions,
-  openSession: (session) => {
-    if (session.target.kind === 'orca-pane') {
-      revealDashboardAgent(session.target.reveal)
-    }
-  },
-  openMachine: () => openSettingsPane({ pane: 'servers', repoId: null }),
-  openMachines: () => openSettingsPane({ pane: 'servers', repoId: null })
-}
-
 export const sealHomeOverviewActions: HomeOverviewActions = {
   ...sharedActions,
-  openSession: (session) => {
-    // A pane on a host that isn't loaded can't be revealed; its transcript opens as a session tab.
-    if (session.target.kind === 'orca-pane' && revealDashboardAgent(session.target.reveal)) {
-      return
-    }
-    openLiveSession(session)
-  },
+  openSession: (session) => openLiveSessionView(session.id),
   openMachine: (machine) => {
     const machineId = parseMachineId(machine.id)
     if (machineId) {

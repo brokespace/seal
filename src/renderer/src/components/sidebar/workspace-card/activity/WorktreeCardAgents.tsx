@@ -1,7 +1,7 @@
 import React, { useCallback, useLayoutEffect, useRef } from 'react'
 import DashboardAgentRow from '@/components/dashboard/DashboardAgentRow'
 import { useNow } from '@/hooks/use-now'
-import { useWorktreeAgentRows } from './useWorktreeAgentRows'
+import { useWorktreeCardAgentRows } from './use-worktree-card-agent-rows'
 import { cn } from '@/lib/class-names'
 import type { DashboardAgentRow as DashboardAgentRowData } from '@/components/dashboard/rows/dashboard-agent-row'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
@@ -29,7 +29,7 @@ const WorktreeCardAgents = React.memo(function WorktreeCardAgents({
   className
 }: Props) {
   useUiLanguageRevision()
-  const selectedAgents = useWorktreeAgentRows(
+  const selectedAgents = useWorktreeCardAgentRows(
     worktreeId,
     precomputedAgents === undefined,
     executionHostId

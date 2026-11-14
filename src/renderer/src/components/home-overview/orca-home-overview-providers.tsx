@@ -13,20 +13,15 @@ import type { HostMemory } from '../../../../shared/process-stats-types'
 import type {
   HomeAutomationsResult,
   HomeMachine,
-  HomeOverviewProviders,
-  HomeSession
+  HomeOverviewProviders
 } from './home-overview-model'
 import {
   HomeAccountsContext,
-  HomeActionsContext,
   HomeAutomationsContext,
   HomeMachinesContext,
-  HomeSessionsContext,
   HomeWorkspacesContext
 } from './home-overview-contexts'
-import { orcaHomeOverviewActions } from './home-overview-actions'
-import { orcaHomeSessionFromCard } from './orca-home-session-mapping'
-import { orcaActiveAccountsByAgent, orcaHomeAccounts } from './orca-home-account-mapping'
+import { orcaHomeAccounts } from './orca-home-account-mapping'
 import { orcaLocalMachine, orcaSshMachines } from './orca-home-machine-mapping'
 import { orcaHomeAutomations, orcaHomeWorkspaces } from './orca-home-workspace-mapping'
 
@@ -38,22 +33,6 @@ const OrcaSnapshotContext = createContext<DashboardSnapshot>(EMPTY_DASHBOARD_SNA
 function OrcaHomeRoot({ children }: { children: ReactNode }): React.JSX.Element {
   const snapshot = useLiveDashboardSnapshot()
   return <OrcaSnapshotContext.Provider value={snapshot}>{children}</OrcaSnapshotContext.Provider>
-}
-
-export function useOrcaSessions(): HomeSession[] {
-  const snapshot = useContext(OrcaSnapshotContext)
-  const live = useAppStore((s) => s.agentStatusByPaneKey)
-  const retained = useAppStore((s) => s.retainedAgentsByPaneKey)
-  const settings = useAppStore((s) => s.settings)
-  return useMemo(() => {
-    const context = {
-      localMachineLabel: getLocalExecutionHostLabel(),
-      activeAccounts: orcaActiveAccountsByAgent(settings)
-    }
-    return snapshot.cards.map((card) =>
-      orcaHomeSessionFromCard(card, live[card.paneKey] ?? retained[card.paneKey]?.entry, context)
-    )
-  }, [snapshot, live, retained, settings])
 }
 
 function useLocalHostMemory(): HostMemory | null {
@@ -146,11 +125,6 @@ function useOrcaAutomations(): HomeAutomationsResult {
 
 type Children = { children: ReactNode }
 
-function OrcaSessions({ children }: Children): React.JSX.Element {
-  const sessions = useOrcaSessions()
-  return <HomeSessionsContext.Provider value={sessions}>{children}</HomeSessionsContext.Provider>
-}
-
 export function OrcaMachines({ children }: Children): React.JSX.Element {
   const machines = useOrcaMachines()
   return <HomeMachinesContext.Provider value={machines}>{children}</HomeMachinesContext.Provider>
@@ -177,21 +151,11 @@ function OrcaAutomations({ children }: Children): React.JSX.Element {
   )
 }
 
-function OrcaActions({ children }: Children): React.JSX.Element {
-  return (
-    <HomeActionsContext.Provider value={orcaHomeOverviewActions}>
-      {children}
-    </HomeActionsContext.Provider>
-  )
-}
-
-/** Home backed by what Orca tracks today; swap pieces as dedicated registries land. */
-export const orcaHomeOverviewProviders: HomeOverviewProviders = {
+/** The parts of Home read from the app store: workspaces, automations, and the web client's machines and accounts. */
+export const orcaHomeOverviewProviders: Omit<HomeOverviewProviders, 'Sessions' | 'Actions'> = {
   Root: OrcaHomeRoot,
-  Sessions: OrcaSessions,
   Machines: OrcaMachines,
   Accounts: OrcaAccounts,
   Workspaces: OrcaWorkspaces,
-  Automations: OrcaAutomations,
-  Actions: OrcaActions
+  Automations: OrcaAutomations
 }
