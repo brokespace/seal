@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useRouter } from 'expo-router'
-import { Shield, LifeBuoy } from 'lucide-react-native'
+import { LifeBuoy } from 'lucide-react-native'
 import { MobileSettingsSection } from './mobile-settings-menu'
 import { mobileSettingsMenuItems } from './mobile-settings-menu-items'
 import { SettingsScreen } from './settings-screen-frame'
@@ -51,18 +51,11 @@ export function SettingsMenuSections({
       <MobileSettingsSection
         items={[
           {
-            id: 'privacyPolicy',
-            label: t('settings.menuScreen.privacyPolicy', 'Privacy Policy'),
-            icon: Shield,
-            external: true,
-            onPress: () => void openExternal('https://orca.dev/privacy')
-          },
-          {
             id: 'support',
             label: t('settings.menuScreen.support', 'Support'),
             icon: LifeBuoy,
             external: true,
-            onPress: () => void openExternal('https://github.com/stablyai/orca/issues')
+            onPress: () => void openExternal('https://github.com/brokespace/seal/issues')
           }
         ]}
       />

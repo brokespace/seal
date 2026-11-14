@@ -96,14 +96,13 @@
       "connecting": "連線中…",
       "invalidPairingCode": "配對碼無效，請從電腦複製後重新貼上",
       "invalidQrCode": "無效的 Seal QR Code",
-      "downloadQrCode": "這是下載碼。請掃描桌面端第 2 步中的配對碼。",
       "openDesktopStep": "在電腦上開啟 Seal",
       "openMobileSettingsStep": "前往「設定」→「行動版」",
       "openSettings": "開啟設定",
       "pairingFailed": "配對失敗：{{error}}",
       "pairingLog": "配對記錄",
       "pasteCodeMessage": "複製電腦上 QR Code 下方顯示的配對碼。",
-      "pasteCodePlaceholder": "orca://pair?code=... 或貼上配對碼",
+      "pasteCodePlaceholder": "seal://pair?code=... 或貼上配對碼",
       "pasteCodeTitle": "貼上配對碼",
       "pasteInstead": "改為貼上配對碼",
       "pastePairingCode": "或貼上配對碼",
@@ -937,9 +936,7 @@
       "backToHosts": "返回主機清單",
       "desktopTooOldBody": "已配對的桌面版版本過舊，無法搭配目前的 Seal Mobile 使用。請更新電腦上的 Seal，再重新連線至此主機。",
       "getVersion": "取得 Seal {{version}}",
-      "mobileTooOldAppStore": "此桌面版需要較新版本的 Seal Mobile。請從 App Store 更新 Seal Mobile，再重新連線至此主機。",
       "mobileTooOldGitHubReleases": "此桌面版需要較新版本的 Seal Mobile。請從 GitHub Releases 更新 Seal Mobile，再重新連線至此主機。",
-      "openAppStore": "開啟 App Store",
       "openGitHubReleases": "開啟 GitHub Releases",
       "refreshRecoveryNote": "如果仍顯示此訊息，請移除此主機並重新配對。",
       "refreshWorkspaceBody": "此主機的工作區快取版本低於桌面版要求的版本。請重新連線至此主機，以下載目前版本。",
@@ -947,7 +944,6 @@
       "updateDesktopTitle": "更新電腦上的 Seal",
       "updateMobileTitle": "更新 Seal Mobile",
       "updateRecoveryNote": "已經更新了嗎？請返回「主機」並重新整理連線。如果仍顯示此訊息，請移除此主機並重新配對。",
-      "workspaceNeedsUpdateAppStore": "此桌面版的行動版工作區需要較新版本的 Seal Mobile。請從 App Store 更新 Seal Mobile，再重新連線至此主機。",
       "workspaceNeedsUpdateGitHubReleases": "此桌面版的行動版工作區需要較新版本的 Seal Mobile。請從 GitHub Releases 更新 Seal Mobile，再重新連線至此主機。"
     },
     "richMarkdownEditor": {
@@ -2750,11 +2746,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "無法開啟連結，請再試一次。",
-      "socialProfile": "Seal 的 X 帳號",
       "sourceCode": "Seal 原始碼",
       "tagline": "助開發者發揮 100 倍效率的開源代理程式 IDE",
-      "title": "關於",
-      "website": "Seal 網站"
+      "title": "關於"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "無法檢查",
@@ -2812,7 +2806,6 @@
       "voice": "語音"
     },
     "menuScreen": {
-      "privacyPolicy": "隱私權政策",
       "support": "支援"
     },
     "nativeChatSettingsScreen": {

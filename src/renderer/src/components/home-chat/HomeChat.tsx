@@ -117,7 +117,7 @@ function HomeChatPanel({
       )}
 
       {state.error && (
-        <div className="mx-3 mb-1 flex items-start gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-destructive">
+        <div className="mx-4 mb-1 flex items-start gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-destructive">
           <span className="min-w-0 flex-1 whitespace-pre-wrap">{state.error}</span>
           <button
             type="button"

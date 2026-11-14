@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Animated, Easing, Text, View } from 'react-native'
-import { OrcaLogo } from '../components/OrcaLogo'
+import { SealLogo } from '../components/SealLogo'
 import type { Translate } from '../i18n/mobile-i18n'
 import { useMobileTranslation } from '../i18n/use-mobile-translation'
 import { colors, radii, spacing, typography } from '../theme/mobile-theme'
@@ -110,7 +110,7 @@ function SampleBanner({
   return (
     <View style={styles.card}>
       <View style={styles.appIcon}>
-        <OrcaLogo size={14} />
+        <SealLogo size={14} />
       </View>
       <View style={styles.cardCopy}>
         <View style={styles.cardMeta}>
