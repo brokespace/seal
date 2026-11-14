@@ -104,7 +104,7 @@ export function GeneralEditorSettingsSection({
           )}
           description={t(
             'auto.components.settings.GeneralEditorSettingsSection.1bec6d8318',
-            'How long Seal waits after your last edit before saving automatically.'
+            'How long Orca waits after your last edit before saving automatically.'
           )}
           keywords={['autosave', 'delay', 'milliseconds']}
           className="flex items-center justify-between gap-4 py-3"
@@ -119,7 +119,7 @@ export function GeneralEditorSettingsSection({
             <p className="text-xs text-muted-foreground">
               {t(
                 'auto.components.settings.GeneralEditorSettingsSection.8112cd6dcf',
-                'How long Seal waits after your last edit before saving automatically. First launch defaults to'
+                'How long Orca waits after your last edit before saving automatically. First launch defaults to'
               )}{' '}
               {DEFAULT_EDITOR_AUTO_SAVE_DELAY_MS}{' '}
               {t('auto.components.settings.GeneralEditorSettingsSection.fc5c5306ff', 'ms.')}

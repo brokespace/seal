@@ -55,10 +55,10 @@ export function buildRemoteSettingsSections(
         }
       : {
           id: 'servers',
-          title: t('auto.hooks.useSettingsNavigationMetadata.de0c2907a1', 'Remote Seal Servers'),
+          title: t('auto.hooks.useSettingsNavigationMetadata.de0c2907a1', 'Remote Orca Servers'),
           description: t(
             'auto.components.settings.Settings.7686cb5c36',
-            'Connect this browser to a saved Seal server.'
+            'Connect this browser to a saved Orca server.'
           ),
           icon: Server,
           searchEntries: [runtimeEnvironmentsSearchEntry],
@@ -141,7 +141,7 @@ export function buildRemoteSettingsSections(
             title: t('auto.hooks.useSettingsNavigationMetadata.pluginsTitle', 'Plugins'),
             description: t(
               'auto.hooks.useSettingsNavigationMetadata.pluginsDescription',
-              'Install and manage Seal plugins (Alpha).'
+              'Install and manage Orca plugins (Alpha).'
             ),
             icon: Blocks,
             searchEntries: getPluginsPaneSearchEntries(),

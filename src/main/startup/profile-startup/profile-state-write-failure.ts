@@ -14,17 +14,17 @@ export function profileStateWriteFailureDialogOptions(error: Error): MessageBoxO
     title: translateMain('profileState.writeFailure.title', 'Saving stopped'),
     message: translateMain(
       'profileState.writeFailure.message',
-      'Seal has stopped saving this profile.'
+      'Orca has stopped saving this profile.'
     ),
     detail:
       profileStateWriterFailureOutcome(error) === 'indeterminate'
         ? translateMain(
             'profileState.writeFailure.indeterminateDetail',
-            'Seal could not confirm whether your most recent change was saved. New changes will not be saved until you restart Seal.'
+            'Orca could not confirm whether your most recent change was saved. New changes will not be saved until you restart Orca.'
           )
         : translateMain(
             'profileState.writeFailure.safeDetail',
-            'Changes saved before this point are safe. New changes will not be saved until you restart Seal.'
+            'Changes saved before this point are safe. New changes will not be saved until you restart Orca.'
           ),
     buttons: [translateMain('profileState.writeFailure.okButton', 'OK')]
   }

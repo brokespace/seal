@@ -82,7 +82,7 @@ async function openAndMoveToOwner(main: TabsDrawnFromMain): Promise<void> {
   await main.settle()
 }
 
-describe('an editor tab Seal moved to the workspace owning its file', () => {
+describe('an editor tab Orca moved to the workspace owning its file', () => {
   it('is still open in that workspace after a restart', async () => {
     installWorkspaceState()
     const main = await drawTabsFromMain(useAppStore)

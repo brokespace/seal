@@ -111,7 +111,7 @@ const LOCALIZED_STEP_COPY: Partial<Record<string, StepCopyThunk>> = {
     ),
     body: translate(
       'auto.components.contextual.tours.contextual.tour.step.copy.browser.logins.body',
-      'Bring your existing logins into Seal to stay signed in immediately.'
+      'Bring your existing logins into Orca to stay signed in immediately.'
     )
   }),
   'browser-extensions-intro': () => ({
@@ -227,7 +227,7 @@ const LOCALIZED_STEP_COPY: Partial<Record<string, StepCopyThunk>> = {
     ),
     body: translate(
       'auto.components.contextual.tours.contextual.tour.step.copy.workspace.creation.project.body',
-      'Seal isolates each task in its own worktree, branched off your base.'
+      'Orca isolates each task in its own worktree, branched off your base.'
     )
   }),
   'workspace-creation-name': () => ({

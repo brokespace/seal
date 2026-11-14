@@ -72,7 +72,7 @@ export function AddRemoteHostSshConfigPicker({
         <DialogDescription>
           {t(
             'auto.components.sidebar.AddRemoteHostDialog.sshConfigPickerImportDescription',
-            'Pick a host to fill the form, or add every new host to Seal’s host list.'
+            'Pick a host to fill the form, or add every new host to Orca’s host list.'
           )}
         </DialogDescription>
       </DialogHeader>
@@ -195,7 +195,7 @@ export function AddRemoteHostSshConfigPicker({
                     >
                       {t(
                         'auto.components.sidebar.AddRemoteHostDialog.sshConfigPickerInOrca',
-                        'In Seal'
+                        'In Orca'
                       )}
                     </Badge>
                   ) : host.previouslyRemoved ? (
@@ -205,7 +205,7 @@ export function AddRemoteHostSshConfigPicker({
                     >
                       {t(
                         'auto.components.sidebar.AddRemoteHostDialog.sshConfigPickerPreviouslyRemoved',
-                        'Removed from Seal'
+                        'Removed from Orca'
                       )}
                     </Badge>
                   ) : null}
@@ -242,7 +242,7 @@ export function AddRemoteHostSshConfigPicker({
             : newHostCount > 0
               ? t(
                   'auto.components.sidebar.AddRemoteHostDialog.sshConfigPickerAddAll',
-                  'Add all {{value0}} to Seal',
+                  'Add all {{value0}} to Orca',
                   { value0: newHostCount }
                 )
               : // Remaining hosts may be saved or tombstoned; copy must not assume either.
@@ -253,7 +253,7 @@ export function AddRemoteHostSshConfigPicker({
                   )
                 : t(
                     'auto.components.sidebar.AddRemoteHostDialog.sshConfigPickerAddAllEmpty',
-                    'Add all to Seal'
+                    'Add all to Orca'
                   )}
         </Button>
         <Button

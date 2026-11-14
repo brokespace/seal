@@ -39,14 +39,14 @@ export function buildConnectionDiagnosticsReport(args: {
     entries
   })
   const lines: string[] = []
-  lines.push('Seal Mobile connection diagnostics')
+  lines.push('Orca Mobile connection diagnostics')
   lines.push(`Generated: ${new Date(now).toISOString()}`)
-  lines.push(`App: Seal Mobile ${args.appVersion} · ${args.platform}`)
+  lines.push(`App: Orca Mobile ${args.appVersion} · ${args.platform}`)
   lines.push(`Bridge protocol: ${args.bridgeProtocolVersion}`)
   const desktopAppVersion =
     args.state === 'connected' ? normalizeHostAppVersion(args.desktopAppVersion) : null
   lines.push(
-    `Host Seal version: ${desktopAppVersion ?? (args.state === 'connected' ? 'unknown' : 'unknown (not currently connected)')}`
+    `Host Orca version: ${desktopAppVersion ?? (args.state === 'connected' ? 'unknown' : 'unknown (not currently connected)')}`
   )
   lines.push(`Host: ${redactConnectionLogText(args.hostName)}`)
   lines.push(

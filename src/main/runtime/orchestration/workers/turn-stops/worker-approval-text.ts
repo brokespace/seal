@@ -29,7 +29,7 @@ export function describeCoordinatorAnswer(
     ? deny
       ? 'You can approve or deny it, with a reason:'
       : 'You can approve it, with a reason:'
-    : `${personOnly ? "The worker's agent lets only a person approve this one." : 'Seal cannot approve this one.'}${deny ? ' You can deny it, with a reason:' : ''}`
+    : `${personOnly ? "The worker's agent lets only a person approve this one." : 'Orca cannot approve this one.'}${deny ? ' You can deny it, with a reason:' : ''}`
   return [
     `The user has been shown ${shown}${chatCoordinator ? '' : where} too; whoever answers first wins. ${how}`,
     ...commands,
@@ -38,14 +38,14 @@ export function describeCoordinatorAnswer(
 }
 
 const CLOSED_BY: Record<NonNullable<WorkerApprovalPayload['outcome']>['by'], string> = {
-  person: 'by a person in Seal',
+  person: 'by a person in Orca',
   coordinator: 'by the coordinator',
   'worker-chat': "in the worker's own chat",
   'worker-terminal': "in the worker's terminal",
   auto: "by the worker's agent on its own (its 2:00 timeout)",
-  'terminal-only': "for Seal; a person must answer it in the worker's terminal",
+  'terminal-only': "for Orca; a person must answer it in the worker's terminal",
   'worker-ended': 'because its worker ended',
-  unknown: 'without an answer Seal can name'
+  unknown: 'without an answer Orca can name'
 }
 
 export function describeApprovalClosed(approval: WorkerApprovalPayload): string {

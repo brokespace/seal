@@ -115,7 +115,7 @@ export function PhoneCarousel(): React.JSX.Element {
           role="img"
           aria-label={t(
             'auto.components.mobile.PhoneCarousel.89c7713645',
-            'Seal Mobile home screen'
+            'Orca Mobile home screen'
           )}
         >
           <HomeSlide tapping={tappingSlide === 0} />

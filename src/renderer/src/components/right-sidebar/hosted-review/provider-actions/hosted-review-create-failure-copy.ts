@@ -133,7 +133,7 @@ function createFailureCopy(
       return detail(
         t(
           'sourceControl.createReviewFailure.reviewLookupUnavailable',
-          'Seal could not confirm whether this branch already has a {{reviewLabel}}. Retry once the {{providerName}} lookup succeeds.',
+          'Orca could not confirm whether this branch already has a {{reviewLabel}}. Retry once the {{providerName}} lookup succeeds.',
           vars
         )
       )

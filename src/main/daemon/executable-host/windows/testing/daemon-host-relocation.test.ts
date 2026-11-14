@@ -90,7 +90,7 @@ beforeEach(() => {
   hostApp.version = '9.9.9'
   installHostApp()
   setProcessProp('platform', 'win32')
-  setProcessProp('execPath', join(installDir, 'Seal.exe'))
+  setProcessProp('execPath', join(installDir, 'Orca.exe'))
   setProcessProp('resourcesPath', join(installDir, 'resources'))
 })
 

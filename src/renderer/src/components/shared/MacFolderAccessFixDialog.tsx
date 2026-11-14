@@ -68,7 +68,7 @@ function allowStepHelper(
   if (canResetPermission(mismatch)) {
     return t(
       'auto.components.shared.MacFolderAccessFixDialog.stepAllowDenied',
-      'Seal is already allowed, but macOS isn’t applying it to the terminal service. Reset asks macOS for the permission again. Click Allow when it prompts.'
+      'Orca is already allowed, but macOS isn’t applying it to the terminal service. Reset asks macOS for the permission again. Click Allow when it prompts.'
     )
   }
   return undefined
@@ -95,12 +95,12 @@ function FixSteps({
             canResetPermission(mismatch)
               ? t(
                   'auto.components.shared.MacFolderAccessFixDialog.stepReallow',
-                  'Re-allow Seal for your {{folder}}',
+                  'Re-allow Orca for your {{folder}}',
                   { folder }
                 )
               : t(
                   'auto.components.shared.MacFolderAccessFixDialog.stepAllow',
-                  'Allow Seal under Files and Folders'
+                  'Allow Orca under Files and Folders'
                 )
           }
           helper={restartState === 'done' ? undefined : allowStepHelper(mismatch, t)}
@@ -109,7 +109,7 @@ function FixSteps({
           done={restartState === 'done'}
           label={t(
             'auto.components.shared.MacFolderAccessFixDialog.stepRestart',
-            'Restart Seal’s terminal service'
+            'Restart Orca’s terminal service'
           )}
           helper={
             restartState === 'done'
@@ -335,7 +335,7 @@ function FolderAccessFix({
           <DialogDescription>
             {t(
               'auto.components.shared.MacFolderAccessFixDialog.lead',
-              'macOS is blocking Seal’s terminal service from this folder.'
+              'macOS is blocking Orca’s terminal service from this folder.'
             )}
           </DialogDescription>
         </DialogHeader>

@@ -70,24 +70,24 @@ const GUIDANCE_BY_ERROR_CLASS: Readonly<
   permission_denied: {
     key: 'runtimeRpc.startupFailure.guidance.permissionDenied',
     fallback:
-      "Seal couldn't write its runtime file. Check permissions on Seal's data folder, then restart."
+      "Orca couldn't write its runtime file. Check permissions on Orca's data folder, then restart."
   },
   storage_unavailable: {
     key: 'runtimeRpc.startupFailure.guidance.storageUnavailable',
-    fallback: 'Your disk may be full or read-only. Free up space, then restart Seal.'
+    fallback: 'Your disk may be full or read-only. Free up space, then restart Orca.'
   },
   invalid_path: {
     key: 'runtimeRpc.startupFailure.guidance.invalidPath',
     fallback:
-      "Seal's data folder may be missing, moved, or at a path that is too long. Restore it or use a shorter path, then restart Seal."
+      "Orca's data folder may be missing, moved, or at a path that is too long. Restore it or use a shorter path, then restart Orca."
   },
   address_in_use: {
     key: 'runtimeRpc.startupFailure.guidance.addressInUse',
-    fallback: 'Another process may be holding the port. Restart Seal to try again.'
+    fallback: 'Another process may be holding the port. Restart Orca to try again.'
   },
   unknown: {
     key: 'runtimeRpc.startupFailure.guidance.unknown',
-    fallback: 'Restart Seal to try again.'
+    fallback: 'Restart Orca to try again.'
   }
 }
 
@@ -100,14 +100,14 @@ function createRuntimeRpcStartupFailureDialogOptions(error: unknown): MessageBox
     defaultId: 0,
     cancelId: 0,
     noLink: true,
-    title: translateMain('runtimeRpc.startupFailure.title', 'Seal CLI unavailable'),
+    title: translateMain('runtimeRpc.startupFailure.title', 'Orca CLI unavailable'),
     message: translateMain(
       'runtimeRpc.startupFailure.message',
-      "Seal couldn't start its local command transport."
+      "Orca couldn't start its local command transport."
     ),
     detail: translateMain(
       'runtimeRpc.startupFailure.detail',
-      'Seal will continue to work, but commands such as seal status, seal terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
+      'Orca will continue to work, but commands such as orca status, orca terminal, and orchestration are unavailable for this session.\n\n{{guidance}}\n\nCause: {{cause}}',
       { cause, guidance: translateMain(key, fallback) }
     )
   }

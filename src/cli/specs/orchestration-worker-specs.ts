@@ -4,9 +4,9 @@ import type { CommandSpec } from '../discovery/command-spec'
 export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['orchestration', 'worker-start'],
-    summary: 'Start one supervised worker on the Run home or a connected Seal server',
+    summary: 'Start one supervised worker on the Run home or a connected Orca server',
     usage:
-      'seal orchestration worker-start (--task <task_id> | --spec <text> | --spec-file <path|->) [--keep-open] [--on <saved-environment>] [--worktree <current|selector|new-child|new-top-level>] (--agent <agent> | --terminal <handle>) [--task-title <text>] [--deps <json_array>] [--parent <task_id>] [--model <id>] [--effort <level>] [--name <name>] [--repo <selector>] [--base-branch <ref>] [--display-name <text>] [--comment <text>] [--setup <run|skip|inherit>] [--retry-of <dispatch_id>] [--timeout-ms <n>] [--run <run_id>] [--from <handle>] [--retry-request <id>] [--json]',
+      'orca orchestration worker-start (--task <task_id> | --spec <text> | --spec-file <path|->) [--keep-open] [--on <saved-environment>] [--worktree <current|selector|new-child|new-top-level>] (--agent <agent> | --terminal <handle>) [--task-title <text>] [--deps <json_array>] [--parent <task_id>] [--model <id>] [--effort <level>] [--name <name>] [--repo <selector>] [--base-branch <ref>] [--display-name <text>] [--comment <text>] [--setup <run|skip|inherit>] [--retry-of <dispatch_id>] [--timeout-ms <n>] [--run <run_id>] [--from <handle>] [--retry-request <id>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'task',
@@ -41,16 +41,16 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
       'When reusing --terminal, pass --worktree for that terminal; current means the coordinator worktree.',
       "Reusing a settled worker's terminal with --terminal before its autoReleaseAt cancels that automatic release; after it, the start is refused while the release runs.",
       'A terminal the user kept open takes --terminal work and stays kept open.',
-      '--agent takes a Seal agent id enabled on the worker server, such as claude, codex, cursor, antigravity, muse, zcode, opencode, or opencode2.',
+      '--agent takes an Orca agent id enabled on the worker server, such as claude, codex, cursor, antigravity, muse, zcode, opencode, or opencode2.',
       '--model supports Claude, Codex, Cursor, Antigravity, Grok, and Muse opaque provider model ids; --effort requires --model. OMP also takes its model roles and selectors (such as @worker or provider/model:level), with --effort as its thinking level. Neither can combine with --terminal. OpenCode model selection requires an existing worktree, a verified execution-host CLI, and an available model; effort is unsupported. Other agents, including zcode, launch with the model from their own config.',
       'Finished workers close on their own unless started with --keep-open; a worker started in a new worktree (new-child or new-top-level) is kept open, so release it when no one will use its chat.',
       'New worktrees use agent-first creation; without --setup, setup runs unless the project turns it off. Repository start-immediately runs setup beside the agent; wait-for-setup gates agent readiness and task input.',
-      'New worktrees without --name get the name Seal gives an unnamed workspace; the receipt names it. Servers older than this change still require --name.',
+      'New worktrees without --name get the name Orca gives an unnamed workspace; the receipt names it. Servers older than this change still require --name.',
       'Creation flags (--name, --repo, --base-branch, --display-name, --comment, --setup) are rejected for current/existing worktrees. Use exact --repo on the selected server; project/host convenience routing remains on worktree create.',
       "How the worker runs follows the user's own setting for new agent tabs; there is no flag for it and no caller needs to ask. A dispatch the setting cannot apply to still starts, so the placement, agent, and launch options passed here are always the ones honoured.",
       'Drive every worker the same way whichever way it was started: the same orchestration verbs, the same handle. Mail, dispatch, worker-show, worker-read and the whole lifecycle behave identically. The start receipt records which one ran, for operators and telemetry.',
-      'Not every worker has a terminal. Read output with worker-read --source auto or --source transcript, which always work; --source terminal is refused when there is none, and seal terminal verbs do not accept every worker handle. Nothing above needs you to know which kind you have — the orchestration verbs cover all of them.',
-      '--on selects only the worker server; the Run and this command remain on the current Seal server.',
+      'Not every worker has a terminal. Read output with worker-read --source auto or --source transcript, which always work; --source terminal is refused when there is none, and orca terminal verbs do not accept every worker handle. Nothing above needs you to know which kind you have — the orchestration verbs cover all of them.',
+      '--on selects only the worker server; the Run and this command remain on the current Orca server.',
       'With --on, use an exact remote selector, new-child or new-top-level (new-child and new-top-level need a remote --repo); new-child nests the server worktree under your workspace, or starts it top-level with a warning when that server is too old to nest across machines. Remote current is invalid.',
       '--retry-of needs --task naming the failed Task (--spec creates a new one) and does not inherit placement; repeat the intended --on/worktree and --agent/terminal choices.',
       '--spec-file reads the spec from a file (relative to the current directory) or stdin (-) on this machine, so quotes and backticks need no shell escaping.',
@@ -61,24 +61,24 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['orchestration', 'worker-show'],
     summary: 'Inspect one supervised worker Dispatch',
-    usage: 'seal orchestration worker-show --dispatch <dispatch_id> [--json]',
+    usage: 'orca orchestration worker-show --dispatch <dispatch_id> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch'],
     notes: [
       'A Dispatch created by orchestration dispatch is shown as unsupervised and reports the exact adopted terminal when its identity is still provable.',
-      'observation.agentWait names a worker parked on a prompt only a human can answer, with the evidence that proved it (hook, prompt-text, or title). Null means Seal looked and found no wait. An absent field means it never looked — an older host, an unverifiable worker identity, an unreadable pane, or an agent probe that did not answer in time — and never means the worker is not waiting. A waiting worker is healthy, not failed.'
+      'observation.agentWait names a worker parked on a prompt only a human can answer, with the evidence that proved it (hook, prompt-text, or title). Null means Orca looked and found no wait. An absent field means it never looked — an older host, an unverifiable worker identity, an unreadable pane, or an agent probe that did not answer in time — and never means the worker is not waiting. A waiting worker is healthy, not failed.'
     ]
   },
   {
     path: ['orchestration', 'worker-read'],
     summary: 'Read bounded output from one supervised worker',
     usage:
-      'seal orchestration worker-read --dispatch <dispatch_id> [--source <auto|transcript|terminal>] [--cursor <cursor>] [--limit <n>] [--json]',
+      'orca orchestration worker-read --dispatch <dispatch_id> [--source <auto|transcript|terminal>] [--cursor <cursor>] [--limit <n>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'source', 'cursor', 'limit'],
     notes: [
       'The default auto source uses an exact hook-reported transcript when available and otherwise returns labeled terminal output.',
       'A Dispatch created by orchestration dispatch reads from its adopted terminal with worker status unsupervised.',
       'Output stays readable after the terminal is released, including an automatic release after worker_done.',
-      'A returned cursor is pinned to the exact source; start a fresh read if Seal reports source_changed.'
+      'A returned cursor is pinned to the exact source; start a fresh read if Orca reports source_changed.'
     ]
   },
   {
@@ -86,11 +86,11 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     destructive: true,
     summary: 'Fence one Dispatch and stop its supervised agent terminal and its helpers',
     usage:
-      'seal orchestration worker-stop --dispatch <dispatch_id> [--retry-request <id>] [--json]',
+      'orca orchestration worker-stop --dispatch <dispatch_id> [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'retry-request'],
     notes: [
       'A Dispatch created by orchestration dispatch is fenced without closing its unsupervised terminal process.',
-      'processAction closed_agent_terminal means Seal issued the close (do not also run terminal close); stop_unknown exits 1 and may still report it when the agent exit was not proven.',
+      'processAction closed_agent_terminal means Orca issued the close (do not also run terminal close); stop_unknown exits 1 and may still report it when the agent exit was not proven.',
       'Also stops every helper it started and theirs, listed in helpers; a helper the user kept open is listed and keeps running.',
       'Never deletes the worktree, setup terminal, configured tabs, or unrelated processes.'
     ]
@@ -102,25 +102,25 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     summary:
       "Allow a worker's permission prompt with a reason, when the user lets coordinators approve",
     usage:
-      'seal orchestration approve --dispatch <dispatch_id> --prompt <approval_id> --reason <text> [--from <handle>] [--retry-request <id>] [--json]',
+      'orca orchestration approve --dispatch <dispatch_id> --prompt <approval_id> --reason <text> [--from <handle>] [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'prompt', 'reason', 'from', 'retry-request'],
     identityFlagRoles: { from: 'caller' },
     notes: [
-      "Refused unless the user turned on Let coordinators approve worker permission prompts in Seal's settings on the machine running the worker; the escalation shows this command only then.",
+      "Refused unless the user turned on Let coordinators approve worker permission prompts in Orca's settings on the machine running the worker; the escalation shows this command only then.",
       "The user still sees Allow and Deny; the first answer wins. A prompt the worker's agent lets only a person approve is refused and stays with the user.",
-      "Seal picks the prompt's own allow-once option, never a standing rule."
+      "Orca picks the prompt's own allow-once option, never a standing rule."
     ]
   },
   {
     path: ['orchestration', 'deny'],
     summary: "Deny a worker's permission prompt with a reason; the worker carries on",
     usage:
-      'seal orchestration deny --dispatch <dispatch_id> --prompt <approval_id> --reason <text> [--from <handle>] [--retry-request <id>] [--json]',
+      'orca orchestration deny --dispatch <dispatch_id> --prompt <approval_id> --reason <text> [--from <handle>] [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'prompt', 'reason', 'from', 'retry-request'],
     identityFlagRoles: { from: 'caller' },
     notes: [
       'The approval id is in the escalation that reported the prompt. Agents can allow one only with orchestration approve, when the user allows it.',
-      "Seal picks the prompt's own refuse-once option, never a standing rule or a stop, and refuses when there is none.",
+      "Orca picks the prompt's own refuse-once option, never a standing rule or a stop, and refuses when there is none.",
       "When the agent's prompt takes no message, the reason reaches the worker as its next mail."
     ]
   },
@@ -128,7 +128,7 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     path: ['orchestration', 'worker-abandon'],
     summary: 'Fence a worker without claiming its process stopped',
     usage:
-      'seal orchestration worker-abandon --dispatch <dispatch_id> [--retry-request <id>] [--json]',
+      'orca orchestration worker-abandon --dispatch <dispatch_id> [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'retry-request'],
     notes: ['Retains all possibly-live resources and performs no process or filesystem action.']
   },
@@ -137,7 +137,7 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     destructive: true,
     summary: 'Release the terminal of one settled supervised worker',
     usage:
-      'seal orchestration worker-release --dispatch <dispatch_id> [--retry-request <id>] [--json]',
+      'orca orchestration worker-release --dispatch <dispatch_id> [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'retry-request'],
     notes: [
       'Post-completion cleanup for a settled (succeeded or failed) worker; closes only the exact coordinator-owned agent terminal of that worker.',
@@ -152,7 +152,7 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     path: ['orchestration', 'worker-keep-open'],
     summary: 'Keep a worker open after it finishes',
     usage:
-      'seal orchestration worker-keep-open --dispatch <dispatch_id> [--retry-request <id>] [--json]',
+      'orca orchestration worker-keep-open --dispatch <dispatch_id> [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'retry-request'],
     notes: [
       'Records a durable user-requested exception; a later explicit worker-release clears it and releases the terminal.',
@@ -168,14 +168,14 @@ export const ORCHESTRATION_WORKER_COMMAND_SPECS: CommandSpec[] = [
     hidden: true,
     summary: 'Keep a worker open after it finishes (old name of worker-keep-open)',
     usage:
-      'seal orchestration worker-retain --dispatch <dispatch_id> [--retry-request <id>] [--json]',
+      'orca orchestration worker-retain --dispatch <dispatch_id> [--retry-request <id>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'dispatch', 'retry-request']
   },
   {
     path: ['orchestration', 'worker-list'],
     summary: 'List supervised worker terminal resource accounting',
     usage:
-      'seal orchestration worker-list [--run <run_id>] [--terminal-state <active|reclaimable|retained|release_pending|release_unknown|released>] [--include-remote] [--on <server>] [--cursor <cursor>] [--limit <1-100>] [--json]',
+      'orca orchestration worker-list [--run <run_id>] [--terminal-state <active|reclaimable|retained|release_pending|release_unknown|released>] [--include-remote] [--on <server>] [--cursor <cursor>] [--limit <1-100>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'run',

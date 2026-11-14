@@ -63,7 +63,7 @@ async function invoke(request: unknown): Promise<BrowserExtensionInvokeReply> {
     )
     return reply
   } catch {
-    return { ok: false, error: 'Seal could not handle this extension call' }
+    return { ok: false, error: 'Orca could not handle this extension call' }
   }
 }
 

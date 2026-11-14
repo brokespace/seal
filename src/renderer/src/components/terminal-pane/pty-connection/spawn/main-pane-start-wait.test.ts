@@ -119,7 +119,7 @@ describe('waitsForMainPaneStart', () => {
 
     showPaneStartFailure(
       pane,
-      "The WSL distro Debian is stopped, so Seal didn't start this terminal. Start the distro, then try again."
+      "The WSL distro Debian is stopped, so Orca didn't start this terminal. Start the distro, then try again."
     )
 
     expect(wslDistroStoppedHoldStore.getState().panes[PANE_KEY]).toMatchObject({

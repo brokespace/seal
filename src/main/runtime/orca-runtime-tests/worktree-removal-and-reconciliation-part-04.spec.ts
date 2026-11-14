@@ -74,7 +74,7 @@ describe('OrcaRuntimeService', () => {
     try {
       await expect(
         runtime.removeManagedWorktree(`id:${worktreeId}`, { force: true })
-      ).rejects.toThrow('isn’t served by Seal’s server')
+      ).rejects.toThrow('isn’t served by Orca’s server')
 
       await expect(lstat(localPath)).resolves.toBeTruthy()
       expect(removeWorktree).not.toHaveBeenCalled()

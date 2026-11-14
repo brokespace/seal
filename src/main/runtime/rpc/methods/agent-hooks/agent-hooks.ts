@@ -10,7 +10,7 @@ export const AGENT_HOOK_METHODS = [
     params: PrepareCodexForWslPaneParams,
     handler: async (params, { runtime, clientKind }) => {
       if (clientKind !== undefined) {
-        throw new Error('Codex hook preparation is only available to the local Seal CLI.')
+        throw new Error('Codex hook preparation is only available to the local Orca CLI.')
       }
       return await prepareManagedWslCodexHomeBeforeShellLaunch({
         env: {

@@ -20,7 +20,7 @@ afterEach(async () => {
 })
 
 describe('Antigravity AI Vault discovery', () => {
-  it("lists Seal's managed chat sessions in their workspace", async () => {
+  it("lists Orca's managed chat sessions in their workspace", async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-antigravity-chat-'))
     tempRoots.push(root)
     const stateDirectory = join(root, 'user-data')

@@ -90,7 +90,7 @@ afterEach(() => {
 })
 
 describe('deriveCodexHookHashes', () => {
-  it("asks Codex in a throwaway home and trusted project holding Seal's entry, then removes both", async () => {
+  it("asks Codex in a throwaway home and trusted project holding Orca's entry, then removes both", async () => {
     const scratches = answerHooksList((scratch) => {
       const home = JSON.parse(readFileSync(join(scratch.home, 'hooks.json'), 'utf-8'))
       expect(Object.keys(home.hooks).sort()).toEqual([...CODEX_EVENTS].sort())
@@ -132,7 +132,7 @@ describe('deriveCodexHookHashes', () => {
       kind: 'refused',
       codexVersion: 'codex-cli 0.170.0',
       failure:
-        "Codex 0.170.0 hashes Seal's status hook differently by its file or position, so Seal does not approve it"
+        "Codex 0.170.0 hashes Orca's status hook differently by its file or position, so Orca does not approve it"
     })
   })
 

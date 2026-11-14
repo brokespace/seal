@@ -1,0 +1,33 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Seal Mobile uygulamasını yükleyin.",
+          "installLead": "Seal Mobile, App Store'da veya Google Play'de yok. Seal deposundan derleyip yükleyin, ardından eşleştirme QR kodu için 2. adıma geçin.",
+          "installGuide": "Kurulum kılavuzunu aç"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Geçersiz eşleştirme kodu. seal://pair?... biçiminde bir URL veya salt eşleştirme verisi bekleniyor."
+    }
+  }
+}

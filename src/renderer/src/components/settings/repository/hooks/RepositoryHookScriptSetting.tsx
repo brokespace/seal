@@ -232,7 +232,7 @@ export function LocalCommandSourceNotice({
             {notice.kind === 'checking'
               ? t(
                   'auto.components.settings.RepositoryHooksSection.7f78e5eea6',
-                  'Local scripts are saved. Seal is still checking orca.yaml before it can recommend which script source to use.'
+                  'Local scripts are saved. Orca is still checking orca.yaml before it can recommend which script source to use.'
                 )
               : t(
                   'auto.components.settings.RepositoryHooksSection.0ce113fd7b',

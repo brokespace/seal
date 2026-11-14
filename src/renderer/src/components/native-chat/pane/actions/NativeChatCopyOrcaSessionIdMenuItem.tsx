@@ -68,18 +68,18 @@ export function NativeChatCopyOrcaSessionIdMenuItem({
     <CopyOrcaIdMenuItem
       resolveOrcaSessionId={resolveOrcaSessionId}
       copy={{
-        label: t('components.native-chat.contextMenu.copyOrcaSessionId', 'Copy Seal Session ID'),
+        label: t('components.native-chat.contextMenu.copyOrcaSessionId', 'Copy Orca Session ID'),
         tooltip: t(
           'components.native-chat.contextMenu.orcaSessionIdTooltip',
-          "Seal's ID for this chat, separate from the agent CLI's own session ID. Agents use it to refer to each other through Seal."
+          "Orca's ID for this chat, separate from the agent CLI's own session ID. Agents use it to refer to each other through Orca."
         ),
         copied: t(
           'components.native-chat.contextMenu.orcaSessionIdCopied',
-          'Seal session ID copied'
+          'Orca session ID copied'
         ),
         failed: t(
           'components.native-chat.contextMenu.orcaSessionIdCopyFailed',
-          'Unable to copy Seal session ID'
+          'Unable to copy Orca session ID'
         )
       }}
     />

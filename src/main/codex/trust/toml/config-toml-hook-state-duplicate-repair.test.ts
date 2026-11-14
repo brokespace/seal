@@ -57,7 +57,7 @@ describe('hook trust recognises Codex quoted hooks.state spellings', () => {
   })
 })
 
-describe('repairing Seal hooks.state duplicates', () => {
+describe('repairing Orca hooks.state duplicates', () => {
   it('fully repairs a file holding both project and hook duplicates', () => {
     const projectPath = '/Users/me/Projects/agentic-WPS'
     const broken = [
@@ -107,7 +107,7 @@ describe('repairing Seal hooks.state duplicates', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it('removes the Seal-shaped copy when it comes before the user table', () => {
+  it('removes the Orca-shaped copy when it comes before the user table', () => {
     const broken = [
       '[projects."/orca-first"]',
       'trust_level = "trusted"',

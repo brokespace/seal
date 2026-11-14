@@ -70,7 +70,7 @@ describe('desktop browser bridge host control', () => {
     setDesktopBrowserBridgeControl(null)
   })
 
-  it("Don't allow turns the host's setting off, and only stops hosts Seal created", () => {
+  it("Don't allow turns the host's setting off, and only stops hosts Orca created", () => {
     const { deps, byId } = setup([userHost, orcaOwnedHost])
 
     expect(disallowDesktopBrowserBridgeHost(userHost.id, deps)).toBe(true)

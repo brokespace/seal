@@ -134,7 +134,7 @@ function headersReceived(
 mocks.tabs.add(TAB)
 afterEach(() => setBrowserSessionRequestDecider(null))
 
-describe('declarativeNetRequest in Seal request handlers', () => {
+describe('declarativeNetRequest in Orca request handlers', () => {
   it('holds requests at startup until enabled blockers have loaded', async () => {
     const extension = blocker([
       { id: 1, condition: { urlFilter: '||ads.example^' }, action: { type: 'block' } }

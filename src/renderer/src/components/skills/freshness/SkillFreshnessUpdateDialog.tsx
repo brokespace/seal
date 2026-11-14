@@ -134,11 +134,11 @@ function DialogHeadline({
         {unsupported === 'connect-host'
           ? t(
               'auto.components.skills.SkillFreshnessUpdateDialog.connectHost',
-              'Connect to this SSH host to check its Seal skills.'
+              'Connect to this SSH host to check its Orca skills.'
             )
           : t(
               'auto.components.skills.SkillFreshnessUpdateDialog.updateServer',
-              'Update Seal on the server to update its Seal skills.'
+              'Update Orca on the server to update its Orca skills.'
             )}
       </p>
     )

@@ -42,22 +42,22 @@ function getBatchDeleteDescription(
   if (scope === 'folder') {
     return t(
       'auto.components.sidebar.DeleteWorktreeDialog.removeBatchFolder',
-      'Remove <target>{{count}} workspaces</target> from Seal. Project folders on disk will not be deleted.',
+      'Remove <target>{{count}} workspaces</target> from Orca. Project folders on disk will not be deleted.',
       {
         count,
         defaultValue_one:
-          'Remove <target>{{count}} workspace</target> from Seal. Project folders on disk will not be deleted.'
+          'Remove <target>{{count}} workspace</target> from Orca. Project folders on disk will not be deleted.'
       }
     )
   }
   if (scope === 'mixed') {
     return t(
       'auto.components.sidebar.DeleteWorktreeDialog.removeBatchMixed',
-      'Remove <target>{{count}} workspaces</target> from Seal. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Seal workspace entry.',
+      'Remove <target>{{count}} workspaces</target> from Orca. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Orca workspace entry.',
       {
         count,
         defaultValue_one:
-          'Remove <target>{{count}} workspace</target> from Seal. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Seal workspace entry.'
+          'Remove <target>{{count}} workspace</target> from Orca. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Orca workspace entry.'
       }
     )
   }
@@ -98,7 +98,7 @@ export function getDeleteWorktreeDialogCopy(
       : args.isFolderWorkspaceDelete
         ? t(
             'auto.components.sidebar.DeleteWorktreeDialog.removeSingleFolderFromOrca',
-            'Removes it from Seal. The folder on disk is kept.'
+            'Removes it from Orca. The folder on disk is kept.'
           )
         : t(
             'auto.components.sidebar.DeleteWorktreeDialog.deleteSingleWorktreeAndBranch',
@@ -129,22 +129,22 @@ export function getDeleteWorktreeLineageDialogDescription(
   if (scope === 'folder') {
     return t(
       'auto.components.sidebar.DeleteWorktreeDialog.removeWithChildrenFolder',
-      'Remove <target/> and <descendants>{{count}} child workspaces</descendants> from Seal. Project folders on disk will not be deleted.',
+      'Remove <target/> and <descendants>{{count}} child workspaces</descendants> from Orca. Project folders on disk will not be deleted.',
       {
         count,
         defaultValue_one:
-          'Remove <target/> and <descendants>{{count}} child workspace</descendants> from Seal. Project folders on disk will not be deleted.'
+          'Remove <target/> and <descendants>{{count}} child workspace</descendants> from Orca. Project folders on disk will not be deleted.'
       }
     )
   }
   if (scope === 'mixed') {
     return t(
       'auto.components.sidebar.DeleteWorktreeDialog.removeWithChildrenMixed',
-      'Remove <target/> and <descendants>{{count}} child workspaces</descendants> from Seal. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Seal workspace entry.',
+      'Remove <target/> and <descendants>{{count}} child workspaces</descendants> from Orca. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Orca workspace entry.',
       {
         count,
         defaultValue_one:
-          'Remove <target/> and <descendants>{{count}} child workspace</descendants> from Seal. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Seal workspace entry.'
+          'Remove <target/> and <descendants>{{count}} child workspace</descendants> from Orca. Git worktrees will also be removed from git and disk; folder workspaces will only remove the Orca workspace entry.'
       }
     )
   }

@@ -16,4 +16,9 @@ config.resolver.extraNodeModules = {
   'react-native': path.join(projectRoot, 'node_modules', 'react-native')
 }
 
+// Seal: rebrand modules and catalogs before Expo's transform worker sees them.
+process.env.SEAL_METRO_UPSTREAM_TRANSFORM_WORKER = config.transformerPath
+config.transformerPath =
+  require.resolve('../config/seal/brand-copy/seal-brand-metro-transform-worker.cjs')
+
 module.exports = config

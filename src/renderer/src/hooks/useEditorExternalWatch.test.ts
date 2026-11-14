@@ -232,7 +232,7 @@ describe('createExternalWatchEventHandler tombstone coalescing', () => {
     dispose()
   })
 
-  it('still suppresses the watcher echo from Seal self-writes', async () => {
+  it('still suppresses the watcher echo from Orca self-writes', async () => {
     vi.mocked(useAppStore.getState).mockReturnValue({
       ...createTestStore().getState(),
       openFiles: [fileNotes],
@@ -444,7 +444,7 @@ describe('createExternalWatchEventHandler tombstone coalescing', () => {
     dispose()
   })
 
-  it('does not mark a dirty tab for the echo of Seal’s own save', async () => {
+  it('does not mark a dirty tab for the echo of Orca’s own save', async () => {
     const dirtyFile = {
       ...fileNotes,
       isDirty: true

@@ -37,7 +37,7 @@ export function reportCliChatResumeTerminalChanged(source: CliChatResumeSource):
   toast.error(
     translate(
       'components.native-chat.resumeInNewChat.terminalChanged',
-      'The terminal running {{agent}} changed before it closed, so Seal left it open. Try again.',
+      'The terminal running {{agent}} changed before it closed, so Orca left it open. Try again.',
       { agent: agentLabel(source.agent) }
     )
   )
@@ -105,7 +105,7 @@ export async function reportCliChatResumeFailure(
     toast.error(
       translate(
         'components.native-chat.resumeInNewChat.terminalExitUnproven',
-        "Seal closed {{agent}}'s terminal but couldn't confirm it stopped, so the chat didn't open. Check the host connection, then open the conversation from Session History.",
+        "Orca closed {{agent}}'s terminal but couldn't confirm it stopped, so the chat didn't open. Check the host connection, then open the conversation from Session History.",
         values
       )
     )

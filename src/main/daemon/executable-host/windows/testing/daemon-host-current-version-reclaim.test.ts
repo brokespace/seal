@@ -42,7 +42,7 @@ function stubWriterLiveness(): void {
 function seedStaging(name: string): string {
   const staging = join(versionRoot, name)
   mkdirSync(join(staging, 'resources'), { recursive: true })
-  writeFileSync(join(staging, 'Seal.exe'), 'partial-exe')
+  writeFileSync(join(staging, 'Orca.exe'), 'partial-exe')
   return staging
 }
 
@@ -61,7 +61,7 @@ function useInstall(dir: string): void {
     exit: () => {},
     getAppMetrics: () => []
   })
-  setProcessProp('execPath', join(installDir, 'Seal.exe'))
+  setProcessProp('execPath', join(installDir, 'Orca.exe'))
   setProcessProp('resourcesPath', join(installDir, 'resources'))
 }
 
@@ -76,9 +76,9 @@ function selectedBuild(): string {
 function seedLeftovers(): { staleBuild: string; staging: string; legacyExe: string } {
   const staleBuild = join(versionRoot, 'build-stale-000000000000')
   mkdirSync(join(staleBuild, 'resources'), { recursive: true })
-  writeFileSync(join(staleBuild, 'Seal.exe'), 'stale-exe')
+  writeFileSync(join(staleBuild, 'Orca.exe'), 'stale-exe')
   const staging = seedStaging(daemonHostStagingName(DEAD_WRITER_PID, '0123456789ab'))
-  const legacyExe = join(versionRoot, 'Seal.exe')
+  const legacyExe = join(versionRoot, 'Orca.exe')
   writeFileSync(legacyExe, 'legacy-exe')
   return { staleBuild, staging, legacyExe }
 }
@@ -119,9 +119,9 @@ describe('current-version daemon-host staging cleanup', () => {
 
     expect(existsSync(staging)).toBe(false)
     expect(existsSync(staleBuild)).toBe(true)
-    expect(existsSync(join(selected, 'Seal.exe'))).toBe(true)
+    expect(existsSync(join(selected, 'Orca.exe'))).toBe(true)
     expect(existsSync(legacyExe)).toBe(true)
-    expect(materializeRelocatedDaemonHost()?.execPath).toBe(join(selected, 'Seal.exe'))
+    expect(materializeRelocatedDaemonHost()?.execPath).toBe(join(selected, 'Orca.exe'))
   })
 
   it('uses staging writer evidence independently of unverifiable daemon pid evidence', () => {
@@ -169,7 +169,7 @@ describe('current-version daemon-host staging cleanup', () => {
 
     prune([])
 
-    expect(existsSync(join(kept, 'Seal.exe'))).toBe(true)
+    expect(existsSync(join(kept, 'Orca.exe'))).toBe(true)
     expect(existsSync(abandoned)).toBe(false)
   })
 })

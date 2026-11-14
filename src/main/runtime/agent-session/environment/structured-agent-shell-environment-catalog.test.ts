@@ -148,7 +148,7 @@ it('retires a producer on effective Refresh before new publication and fences la
 })
 
 it.each([true, false])(
-  'keeps the agent session that launched Seal out of a chat agent environment (inherit shell: %s)',
+  'keeps the agent session that launched Orca out of a chat agent environment (inherit shell: %s)',
   async (inheritAll) => {
     const parentSession = { CODEX_THREAD_ID: 'parent-thread', CODEX_WINDOWS_REGISTERED_CORE: '1' }
     const resolvers = createStructuredAgentEnvironmentResolvers({

@@ -61,13 +61,13 @@ describe('Codex hook trust memo', () => {
     memoizeCodexHookAnswer(codexPath, fingerprint(), COMMAND, {
       kind: 'refused',
       codexVersion: 'codex-cli 0.127.0',
-      failure: 'Codex 0.127.0 is too old for Seal status; update Codex'
+      failure: 'Codex 0.127.0 is too old for Orca status; update Codex'
     })
 
     expect(read()).toEqual({
       kind: 'refused',
       codexVersion: 'codex-cli 0.127.0',
-      failure: 'Codex 0.127.0 is too old for Seal status; update Codex'
+      failure: 'Codex 0.127.0 is too old for Orca status; update Codex'
     })
     expect(readMemoizedVersionAnswer('codex-cli 0.127.0', COMMAND)?.kind).toBe('refused')
     expect(readEveryMemoizedCodexHookHashes()).toEqual([])
@@ -84,7 +84,7 @@ describe('Codex hook trust memo', () => {
     ])
   })
 
-  it('drops hashes that are not strings, and events Seal does not hook', () => {
+  it('drops hashes that are not strings, and events Orca does not hook', () => {
     writeFileSync(
       getCodexHookTrustMemoPath(),
       JSON.stringify({

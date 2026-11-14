@@ -41,7 +41,7 @@ const SCOPE_MESSAGES: Record<ExternalAutomationScopeCode, string> = {
   [EXTERNAL_AUTOMATION_SCOPE_CODES.authorityNotSupported]:
     'External automation managers are available only on this computer and its SSH hosts.',
   [EXTERNAL_AUTOMATION_SCOPE_CODES.targetHidden]:
-    'Seal runs on that host, so it does not expose external automations.'
+    'Orca runs on that host, so it does not expose external automations.'
 }
 
 /** Trailing : <code> survives Electron IPC and older runtimes that preserve only the message, matching owner conflicts. */

@@ -211,7 +211,7 @@ const UNAVAILABLE_TEXT: Record<AddressUnavailableReason, string> = {
     'unavailable (one-off pairing-code connection; save it with `orca environment add --name <name> --pairing-code <code>`)',
   'unverifiable-row': "unavailable (this row's host or identity can't be verified)",
   'duplicate-folder-id':
-    'unavailable (several folder workspaces share this id; remove one in the Seal app and add its folder again)'
+    'unavailable (several folder workspaces share this id; remove one in the Orca app and add its folder again)'
 }
 
 /** `environment:` and `address:` lines, each on its own line. */
