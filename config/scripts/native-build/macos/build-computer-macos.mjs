@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import sealBranding from '../../../seal/seal-branding.cjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '../../../..')
 const packagePath = path.join(repoRoot, 'native', 'computer-use-macos')
@@ -14,7 +15,7 @@ const entitlementsPath = path.join(
   'build',
   'entitlements.computer-use.mac.plist'
 )
-const bundleId = process.env.ORCA_COMPUTER_MACOS_BUNDLE_ID ?? 'com.brokespace.seal.computer-use'
+const bundleId = process.env.ORCA_COMPUTER_MACOS_BUNDLE_ID ?? sealBranding.macos.computerUseBundleId
 const displayName = 'Seal Computer Use'
 const signingIdentity = resolveSigningIdentity()
 const universalTriples = ['arm64-apple-macosx', 'x86_64-apple-macosx']

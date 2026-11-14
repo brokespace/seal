@@ -188,7 +188,7 @@ describe('configureOrcaUserDataPathEnv', () => {
     expect(configuredUserDataPath).toBe('/tmp/current-orca-user-data')
   })
 
-  it('drops a runtime source inherited from the Seal terminal that started this Seal', async () => {
+  it('drops a runtime source inherited from the Orca terminal that started this Orca', async () => {
     const { app } = await import('electron')
     const { configureOrcaUserDataPathEnv } = await import('./configure-process')
     const saved = { ...process.env }

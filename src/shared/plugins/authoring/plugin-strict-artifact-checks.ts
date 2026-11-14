@@ -158,7 +158,7 @@ export function strictPluginArtifactWarnings(
     }
     const count = parsed.ignoredProtectedStrings
     return [
-      `contributes.languagePacks "${pack.locale}" (${pack.path}): ${count} protected ${count === 1 ? 'string is' : 'strings are'} ignored; Seal always shows its own text for security dialogs`
+      `contributes.languagePacks "${pack.locale}" (${pack.path}): ${count} protected ${count === 1 ? 'string is' : 'strings are'} ignored; Orca always shows its own text for security dialogs`
     ]
   })
 }

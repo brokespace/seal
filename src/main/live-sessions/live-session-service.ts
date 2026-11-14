@@ -5,6 +5,7 @@ import type {
   LivePermissionAnswer,
   LivePermissionAnswerResult,
   LiveSendRequest,
+  LiveSessionAnnotation,
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot,
   LiveTranscriptCursor,
@@ -27,6 +28,7 @@ import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
 import { LiveSessionRemovals, removeFromHost } from './delivery/session-removal'
+import { LiveSessionAnnotations } from './live-session-annotations'
 
 export type LiveSessionServiceDeps = {
   userDataPath: string
@@ -53,14 +55,20 @@ export class LiveSessionService {
   private readonly outbox: LiveMessageOutbox
   private readonly messageListeners = new Set<(message: LiveMessage) => void>()
   private readonly removals: LiveSessionRemovals
+  private readonly annotations: LiveSessionAnnotations
 
   constructor(deps: LiveSessionServiceDeps) {
+    this.annotations = new LiveSessionAnnotations(
+      join(deps.userDataPath, 'live-sessions', 'annotations.json'),
+      deps.log
+    )
     this.removals = new LiveSessionRemovals(
       join(deps.userDataPath, 'live-sessions', 'removed.json'),
       deps.log
     )
     this.registry = new LiveSessionRegistry({
       isRemoved: (session) => this.removals.has(session.id),
+      annotate: (session) => this.annotations.apply(session),
       localMachine: { hostId: LOCAL_HOST_ID, label: hostname(), kind: 'local' },
       hosts: deps.hosts,
       sealPanes: () => deps.sealPanes?.panes() ?? [],
@@ -99,10 +107,14 @@ export class LiveSessionService {
     this.registry.subscribe((event) => {
       if (event.type === 'remove' && event.replacedBy) {
         this.outbox.renameSession(event.sessionId, event.replacedBy)
+        this.annotations.move(event.sessionId, event.replacedBy)
+        this.registry.republish()
       }
     })
-    // Removed sessions must not flash back in before the list is read.
-    void this.removals.load().finally(() => this.registry.start())
+    // Removed sessions must not flash back in, nor renamed ones lose their name, before both are read.
+    void Promise.allSettled([this.removals.load(), this.annotations.load()]).then(() =>
+      this.registry.start()
+    )
     void this.outbox.start()
   }
 
@@ -189,6 +201,16 @@ export class LiveSessionService {
     return result
   }
 
+  /** Renames or pins a session in Seal. */
+  async annotate(annotation: LiveSessionAnnotation): Promise<void> {
+    await this.annotations.load()
+    this.annotations.set({
+      ...annotation,
+      sessionId: this.registry.currentId(annotation.sessionId)
+    })
+    this.registry.republish()
+  }
+
   /** Hides sessions for good; stops them and deletes their transcripts first when asked. */
   async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
     const result: LiveRemoveResult = { removed: [], failed: [] }
@@ -211,7 +233,10 @@ export class LiveSessionService {
         result.failed.push({ sessionId, reason: 'failed', error: message })
       }
     }
-    this.removals.add(result.removed, Date.now())
+    if (!request.keep) {
+      this.removals.add(result.removed, Date.now())
+      this.annotations.forget(result.removed)
+    }
     this.registry.republish()
     for (const hostId of hostIds) {
       void this.registry.refresh(hostId)

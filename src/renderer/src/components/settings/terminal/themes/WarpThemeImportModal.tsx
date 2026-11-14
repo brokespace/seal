@@ -88,11 +88,11 @@ export function WarpThemeImportModal({
             {mode === 'yaml'
               ? t(
                   'auto.components.settings.WarpThemeImportModal.yaml_description',
-                  'Import theme YAML files (Warp format) as Seal terminal themes.'
+                  'Import theme YAML files (Warp format) as Orca terminal themes.'
                 )
               : t(
                   'auto.components.settings.WarpThemeImportModal.description',
-                  'Import Warp themes as Seal terminal themes.'
+                  'Import Warp themes as Orca terminal themes.'
                 )}
           </DialogDescription>
         </DialogHeader>
@@ -233,7 +233,7 @@ export function WarpThemeImportModal({
                 <p>
                   {t(
                     'auto.components.settings.WarpThemeImportModal.builtin_themes_hint',
-                    "Warp's preloaded themes are part of the Warp app and can't be read from disk. Seal already includes most of them, like Dracula, Gruvbox, Solarized, and Tokyo Night."
+                    "Warp's preloaded themes are part of the Warp app and can't be read from disk. Orca already includes most of them, like Dracula, Gruvbox, Solarized, and Tokyo Night."
                   )}
                 </p>
               ) : null}

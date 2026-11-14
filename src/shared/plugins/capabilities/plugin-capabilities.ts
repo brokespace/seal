@@ -79,7 +79,7 @@ export const PLUGIN_CAPABILITY_DESCRIPTIONS: Record<PluginCapabilityKind, string
   'workspace:read':
     'Read your projects and workspaces (names, branches, paths and agent status) and the terminals in them, and get notified when they change',
   'workspace:write':
-    'Open and rename your workspaces, hide projects from the sidebar or show them again, focus their terminals, open their files in Seal, and run its built-in commands',
+    'Open and rename your workspaces, hide projects from the sidebar or show them again, focus their terminals, open their files in Orca, and run its built-in commands',
   'agent:read': 'Get notified when agent status changes',
   'agent:launch': 'Start and resume agents in your workspaces, local and SSH',
   'terminal:send':
@@ -95,9 +95,9 @@ export const PLUGIN_CAPABILITY_DESCRIPTIONS: Record<PluginCapabilityKind, string
   'automation:read':
     'Read your automations: their names, prompts, agents, projects, workspaces and schedules',
   'automation:write':
-    'Create automations that start agents in your projects on a schedule, even when the plugin is not running, and change or delete them (Seal asks you first for ones the plugin did not create, and before it changes what one with extra agent settings runs)',
+    'Create automations that start agents in your projects on a schedule, even when the plugin is not running, and change or delete them (Orca asks you first for ones the plugin did not create, and before it changes what one with extra agent settings runs)',
   'history:read':
-    "Read the list of your past agent sessions on this computer, from the history files of the coding agents Seal supports, including running WSL distributions on Windows (not SSH or other machines, Antigravity IDE conversations or subagent transcripts): each session's title, which is often the start of its first message, agent, workspace, branch, times, and message and token counts; never the conversation itself"
+    "Read the list of your past agent sessions on this computer, from the history files of the coding agents Orca supports, including running WSL distributions on Windows (not SSH or other machines, Antigravity IDE conversations or subagent transcripts): each session's title, which is often the start of its first message, agent, workspace, branch, times, and message and token counts; never the conversation itself"
 }
 
 /** Canonicalize order, duplicates and field order so equivalent grants preserve consent across manifest formatting changes. */

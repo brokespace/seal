@@ -126,7 +126,7 @@ export function MobilePairingSetupSection({
         <p className="text-xs text-muted-foreground">
           {t(
             'auto.components.settings.MobilePairingSetupSection.overview',
-            'Generate a QR code, then scan it in Seal Mobile under Pair Desktop.'
+            'Generate a QR code, then scan it in Orca Mobile under Pair Desktop.'
           )}
         </p>
       </div>

@@ -12,6 +12,8 @@ import {
   summarizedDivider
 } from './live-transcript-cleanup'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import { unrecordedReasoning, withReasoningSpan } from './live-transcript-reasoning'
+import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 /** Raw bytes of one range of a transcript and the file's size when read. */
 export type TranscriptRange = { bytes: Buffer; size: number }
@@ -97,21 +99,31 @@ export function completeLines(
   return { lines, end: start + at }
 }
 
+export type TranscriptDecodeOptions = {
+  /** Reading a subagent's own transcript, where every record is a sidechain record. */
+  subagent?: boolean
+}
+
 export function decodeTranscriptLines(
   provider: LiveSessionProvider,
-  lines: TranscriptLine[]
+  lines: TranscriptLine[],
+  options: TranscriptDecodeOptions = {}
 ): NativeChatMessage[] {
   const decode = provider === 'claude' ? decodeClaudeTranscriptLine : decodeCodexTranscriptLine
   return lines.flatMap(({ offset, text }) => {
-    const kind = classifyLiveTranscriptRecord(provider, text)
+    const kind = classifyLiveTranscriptRecord(provider, text, options)
     if (kind === 'hidden') {
       return []
     }
     // Offsets are the same in every read of the file, so they key messages across reconnects.
     const id = `o${offset}`
-    const decoded = kind === 'summarized' ? summarizedDivider(id, null) : decode(text, id)
+    const record = parseJsonRecord(text)
+    const decoded =
+      kind === 'summarized'
+        ? summarizedDivider(id, null)
+        : (decode(text, id) ?? (record ? unrecordedReasoning(provider, record, id) : null))
     return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => ({
-      ...message,
+      ...(record ? withReasoningSpan(message, record) : message),
       transcriptOffset: offset,
       transcriptOrder: offset
     }))
@@ -127,7 +139,8 @@ export async function readTranscriptPage(
   provider: LiveSessionProvider,
   sessionId: string,
   before: number | null,
-  limit: number
+  limit: number,
+  options: TranscriptDecodeOptions = {}
 ): Promise<LiveTranscriptPage> {
   const probe = await source.read(0, 0)
   const end = before === null ? probe.size : Math.min(before, probe.size)
@@ -150,7 +163,7 @@ export async function readTranscriptPage(
       continue
     }
     const firstLine = from > 0 ? lines[0].offset : 0
-    messages = [...decodeTranscriptLines(provider, lines), ...messages]
+    messages = [...decodeTranscriptLines(provider, lines, options), ...messages]
     start = firstLine
     chunk = firstChunk
   }
@@ -174,7 +187,8 @@ export type ForwardRead = {
 export async function readTranscriptForward(
   source: TranscriptSource,
   provider: LiveSessionProvider,
-  cursor: number
+  cursor: number,
+  options: TranscriptDecodeOptions = {}
 ): Promise<ForwardRead> {
   let chunk = Math.min(FORWARD_CHUNK, source.maxRead)
   for (;;) {
@@ -185,7 +199,7 @@ export async function readTranscriptForward(
     const { lines, end } = completeLines(bytes, cursor, false)
     if (lines.length > 0 || end > cursor || bytes.length < chunk || cursor + bytes.length >= size) {
       return {
-        messages: decodeTranscriptLines(provider, lines),
+        messages: decodeTranscriptLines(provider, lines, options),
         lines,
         cursor: end,
         size,

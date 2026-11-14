@@ -5,6 +5,7 @@ import { ORCAD_MIGRATION_METHODS } from './orcad/orcad-migration'
 import { SESSION_TERMINAL_SCROLLBACK_METHODS } from './terminal/session-terminal-scrollback'
 import { AI_VAULT_METHODS } from './history/ai-vault'
 import { LIVE_SESSION_METHODS } from './live-sessions/live-sessions'
+import { SESSION_SUMMARY_METHODS } from './live-sessions/session-summaries'
 import { AUTOMATION_METHODS } from './automations/automations'
 import { REPO_METHODS } from './projects/repo'
 import { WORKTREE_METHODS } from './workspaces/worktree'
@@ -30,6 +31,7 @@ import { ACCOUNT_METHODS } from './accounts/accounts'
 import { ANTIGRAVITY_ACCOUNT_METHODS } from './accounts/antigravity-accounts'
 import { SEAL_ACCOUNT_METHODS } from './accounts/seal-accounts'
 import { USAGE_CREDENTIAL_METHODS } from './accounts/usage-credentials'
+import { UTILITY_MODEL_METHODS } from './accounts/utility-model'
 import { PREFLIGHT_METHODS } from './preflight/preflight'
 import { COMPUTER_METHODS } from './computer/computer'
 import { SESSION_TAB_METHODS } from './session-tabs/session-tabs'
@@ -132,6 +134,8 @@ export const ALL_RPC_METHODS = [
   ...ANTIGRAVITY_ACCOUNT_METHODS,
   ...SEAL_ACCOUNT_METHODS,
   ...USAGE_CREDENTIAL_METHODS,
+  ...UTILITY_MODEL_METHODS,
+  ...SESSION_SUMMARY_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,
   ...SESSION_TAB_METHODS,

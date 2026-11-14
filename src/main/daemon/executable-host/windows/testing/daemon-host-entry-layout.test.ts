@@ -28,7 +28,7 @@ beforeEach(() => {
   cpSync(nestedEntry, directEntry)
   process.env.LOCALAPPDATA = join(tempDir, 'localAppData')
   setProcessProp('platform', 'win32')
-  setProcessProp('execPath', join(installDir, 'Seal.exe'))
+  setProcessProp('execPath', join(installDir, 'Orca.exe'))
   setProcessProp('resourcesPath', join(installDir, 'resources'))
   setAppEnvironment({
     getPath: () => join(tempDir, 'userData'),

@@ -4,7 +4,7 @@ import { generateId } from '../generated-id'
 import { RemoteOwnedWorkerState } from '../../../../../shared/orchestration/remote-owned-wire'
 import type { PeerRunRow } from './peer-run-store'
 
-describe("a paired Seal's Run: its queue home", () => {
+describe("a paired Orca's Run: its queue home", () => {
   let db: OrchestrationDb
   let peerRun: PeerRunRow
 

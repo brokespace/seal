@@ -123,7 +123,7 @@ async function readManifestDir(
     return {
       pluginKey,
       rootDir,
-      error: `requires Seal ${manifest.engines.orca} (this is ${hostVersion})`,
+      error: `requires Orca ${manifest.engines.orca} (this is ${hostVersion})`,
       isDev
     }
   }

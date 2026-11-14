@@ -1,5 +1,6 @@
 import { liveSessionMachineId as machineIdOfLiveSession } from '../live-sessions/live-session-machine-id'
 import type { LiveSession, LiveSessionStatus } from '../live-sessions/live-session-types'
+import { liveSessionSummaryView } from '../session-summaries/live-session-summary-view'
 import type { HomeSession, HomeSessionState } from './home-overview-types'
 
 /** The fields Home reads; providers stay open so a client decoding newer agents still maps them. */
@@ -21,12 +22,19 @@ type HomeLiveSessionFields = Pick<
 > & {
   provider: string
   permission: { question: string } | null
+  summary?: string
+  summaryPending?: boolean
 }
 
 function homeStateFromLive(status: LiveSessionStatus, alive: boolean): HomeSessionState {
   switch (status) {
     case 'working':
+    case 'waiting-subagent':
+    case 'waiting-task':
+      // Waiting on its own subagents or background commands is work in progress, not a wait on the user.
       return alive ? 'working' : 'done'
+    case 'idle':
+      return alive ? 'idle' : 'done'
     case 'waiting-input':
       return alive ? 'waiting' : 'done'
     case 'needs-permission':
@@ -53,6 +61,7 @@ export function homeSessionFromLive(
   const askSummary =
     session.permission?.question ??
     (state === 'waiting' || state === 'permission' ? session.statusDetail : null)
+  const summary = liveSessionSummaryView(session)
   return {
     id: session.id,
     state,
@@ -71,6 +80,7 @@ export function homeSessionFromLive(
     finishedAt: state === 'done' ? session.lastActivityAt : null,
     ...(askSummary ? { askSummary } : {}),
     ...(state === 'errored' && session.statusDetail ? { errorSummary: session.statusDetail } : {}),
+    ...(summary ? { summary } : {}),
     target: { kind: 'live-session', sessionId: session.id }
   }
 }

@@ -13,7 +13,6 @@ import { SetupGuideSidebarEntry } from './SetupGuideSidebarEntry'
 import { SidebarTaskNavButton } from './SidebarTaskNavButton'
 import { SidebarHomeNavButton } from '../home-overview/SidebarHomeNavButton'
 import { SidebarMachinesNavButton } from './SidebarMachinesNavButton'
-import { LiveSessionsSidebarEntry } from '../live-sessions/LiveSessionsSidebarEntry'
 import { HideSidebarMenu } from './sidebar-nav-controls'
 import { useTranslate } from '@/i18n/use-translate'
 import { lazyWithRetry } from '@/app-shell/startup/lazy-with-retry'
@@ -124,7 +123,6 @@ const SidebarNav = React.memo(function SidebarNav() {
       <SetupGuideSidebarEntry />
       <SidebarTaskNavButton />
       <SidebarMachinesNavButton />
-      <LiveSessionsSidebarEntry />
       {showArtifactsButton ? (
         <ContextMenu>
           <ContextMenuTrigger asChild>
@@ -245,7 +243,7 @@ const SidebarNav = React.memo(function SidebarNav() {
                   strokeWidth={mobileActive ? 2.25 : 1.75}
                 />
                 <span className="min-w-0 flex-1 truncate">
-                  {t('auto.components.sidebar.SidebarNav.1b5c41caee', 'Seal Mobile')}
+                  {t('auto.components.sidebar.SidebarNav.1b5c41caee', 'Orca Mobile')}
                 </span>
                 {mobileOnboardingBadge.visible ? (
                   <span className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">

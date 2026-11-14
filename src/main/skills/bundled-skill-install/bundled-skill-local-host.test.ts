@@ -45,7 +45,7 @@ describe('localBundledSkillInput', () => {
     expect(workspace.providerRootOverrides).toEqual({})
   })
 
-  it("reads past a CLAUDE_CONFIG_DIR Seal injected, as the app's account router does", async () => {
+  it("reads past a CLAUDE_CONFIG_DIR Orca injected, as the app's account router does", async () => {
     const injected = join(USER_DATA, 'claude-profiles', 'work')
     vi.stubEnv('CLAUDE_CONFIG_DIR', injected)
     vi.stubEnv(CLAUDE_INJECTED_CONFIG_DIR_ENV, injected)

@@ -90,7 +90,7 @@ export function SkillSharedLinkRow({
         toast.error(
           t(
             'auto.components.skills.SkillSharedLinkRow.deleteFailed',
-            'Seal could not delete this from the Cloud.'
+            'Orca could not delete this from the Cloud.'
           )
         )
         return

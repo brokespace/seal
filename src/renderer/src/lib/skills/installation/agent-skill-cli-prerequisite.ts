@@ -8,9 +8,9 @@ type EnsureOrcaCliAvailableOptions = {
   registrationPromptDelayMs?: number
 }
 
-export const CLI_PREREQUISITE_REGISTRATION_TOAST = 'Seal needs to register its CLI on PATH.'
+export const CLI_PREREQUISITE_REGISTRATION_TOAST = 'Orca needs to register its CLI on PATH.'
 export const CLI_PREREQUISITE_REGISTRATION_TOAST_DESCRIPTION =
-  'Approve the system prompt so skill setup can use the Seal CLI command.'
+  'Approve the system prompt so skill setup can use the Orca CLI command.'
 
 export function isOrcaCliAvailableOnPath(status: CliInstallStatus | null | undefined): boolean {
   return status?.state === 'installed' && status.pathConfigured === true
@@ -50,7 +50,7 @@ export async function ensureOrcaCliAvailableForAgentSkillTerminal({
         ? formatCliUserFacingDetail(error.message) || error.message
         : translate(
             'auto.lib.agent.skill.cli.prerequisite.8d6eedf97e',
-            'Failed to register the Seal CLI in PATH.'
+            'Failed to register the Orca CLI in PATH.'
           )
     )
     return null
@@ -76,14 +76,14 @@ function showCliPrerequisiteWarning(status: CliInstallStatus): void {
     toast.warning(
       translate(
         'auto.lib.agent.skill.cli.prerequisite.2db0bd7515',
-        'Seal CLI registration is unavailable'
+        'Orca CLI registration is unavailable'
       ),
       {
         description:
           formatCliUserFacingDetail(status.detail) ||
           translate(
             'auto.lib.agent.skill.cli.prerequisite.15cbedc3e3',
-            'Install the Seal CLI before running agent skill setup.'
+            'Install the Orca CLI before running agent skill setup.'
           )
       }
     )
@@ -94,14 +94,14 @@ function showCliPrerequisiteWarning(status: CliInstallStatus): void {
     toast.warning(
       translate(
         'auto.lib.agent.skill.cli.prerequisite.e99d7dc36f',
-        'Seal CLI registration needs attention'
+        'Orca CLI registration needs attention'
       ),
       {
         description:
           formatCliUserFacingDetail(status.detail) ||
           translate(
             'auto.lib.agent.skill.cli.prerequisite.15cbedc3e3',
-            'Install the Seal CLI before running agent skill setup.'
+            'Install the Orca CLI before running agent skill setup.'
           )
       }
     )
@@ -112,7 +112,7 @@ function showCliPrerequisiteWarning(status: CliInstallStatus): void {
     toast.warning(
       translate(
         'auto.lib.agent.skill.cli.prerequisite.windowsPathUnknown',
-        'Seal could not check your Windows user PATH'
+        'Orca could not check your Windows user PATH'
       ),
       {
         description:
@@ -131,14 +131,14 @@ function showCliPrerequisiteWarning(status: CliInstallStatus): void {
     toast.warning(
       translate(
         'auto.lib.agent.skill.cli.prerequisite.79371593b0',
-        'Seal CLI is not visible on PATH yet'
+        'Orca CLI is not visible on PATH yet'
       ),
       {
         description:
           formatCliUserFacingDetail(status.detail) ||
           translate(
             'auto.lib.agent.skill.cli.prerequisite.0f116999f1',
-            'Restart your shell or add the Seal CLI directory to PATH before setup.'
+            'Restart your shell or add the Orca CLI directory to PATH before setup.'
           )
       }
     )

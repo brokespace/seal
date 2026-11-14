@@ -54,11 +54,11 @@ export function MobileSettingsPane(): React.JSX.Element {
         <SearchableSetting
           title={t(
             'auto.components.settings.MobileSettingsPane.49089c92b3',
-            'Show Seal Mobile button'
+            'Show Orca Mobile button'
           )}
           description={t(
             'auto.components.settings.MobileSettingsPane.682293cadf',
-            'Show the Seal Mobile button at the top of the left sidebar.'
+            'Show the Orca Mobile button at the top of the left sidebar.'
           )}
           keywords={getMobileSidebarShortcutSearchEntry().keywords}
         >
@@ -66,11 +66,11 @@ export function MobileSettingsPane(): React.JSX.Element {
           <SettingsSwitchRow
             label={t(
               'auto.components.settings.MobileSettingsPane.49089c92b3',
-              'Show Seal Mobile button'
+              'Show Orca Mobile button'
             )}
             description={t(
               'auto.components.settings.MobileSettingsPane.d4f2b65f30',
-              'Show the Seal Mobile shortcut in the sidebar.'
+              'Show the Orca Mobile shortcut in the sidebar.'
             )}
             checked={showMobileButton}
             onChange={() => updateSettings({ showMobileButton: !showMobileButton })}

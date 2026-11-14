@@ -233,7 +233,7 @@ export function getHostSetupUnavailableDetail(
   if (host.health === 'blocked') {
     return t(
       'auto.components.settings.RepositoryPane.hostSetupBlockedVersion',
-      'Seal server version is incompatible'
+      'Orca server version is incompatible'
     )
   }
   if (host.kind !== 'runtime') {
@@ -251,7 +251,7 @@ export function getHostSetupUnavailableDetail(
   ) {
     return t(
       'auto.components.settings.RepositoryPane.hostSetupMissingCapability',
-      'Update Seal on this host to set up projects'
+      'Update Orca on this host to set up projects'
     )
   }
   return null

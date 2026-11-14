@@ -94,7 +94,7 @@ describe('filterAiVaultSessions', () => {
     const projectSession = { ...baseSession, id: 'claude:project', cwd: '/repo/project' }
     const otherSession = { ...baseSession, id: 'claude:other', cwd: '/repo/other' }
     const sessionProjectById = new Map([
-      [projectSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Seal' }],
+      [projectSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Orca' }],
       [otherSession.id, { kind: 'repo' as const, key: 'project:other', label: 'Other' }]
     ])
 
@@ -114,9 +114,9 @@ describe('filterAiVaultSessions', () => {
 
   it('matches repo: queries against resolved project labels before folder fallback', () => {
     const sessionProjectById = new Map([
-      [baseSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Canonical Seal' }]
+      [baseSession.id, { kind: 'repo' as const, key: 'project:orca', label: 'Canonical Orca' }]
     ])
-    const projectLabelByKey = new Map([['project:orca', 'Canonical Seal']])
+    const projectLabelByKey = new Map([['project:orca', 'Canonical Orca']])
 
     expect(
       filterAiVaultSessions([baseSession], {
@@ -189,7 +189,7 @@ describe('deriveAiVaultScopeSessionPaths', () => {
             projects: [
               {
                 id: 'orca',
-                displayName: 'Seal',
+                displayName: 'Orca',
                 badgeColor: '#2563eb',
                 sourceRepoIds: ['repo1', 'repo2'],
                 createdAt: 1,

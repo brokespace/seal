@@ -148,7 +148,7 @@ function BundledLinearAgentSkillInstallCta({
                 : replacePaths
                   ? t(
                       'auto.components.settings.AgentSkillSetupPanel.replaceWithOrcaCopy',
-                      "Replace with Seal's copy"
+                      "Replace with Orca's copy"
                     )
                   : action.kind === 'run' && action.changes
                     ? bundledSkillSetupActionLabel(action.changes, t)

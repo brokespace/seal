@@ -68,7 +68,7 @@ export function agentStateLabel(state: AgentDotState): string {
 // Match desktop's compact row: name then message, else message → prompt → state; Stop leads while ending the turn.
 export function agentDisplayLabel(row: RuntimeWorktreeAgentRow, now: number): string {
   const name = row.conversationName?.trim()
-  const message = row.lastAssistantMessage?.trim()
+  const message = row.statusSummary?.trim() || row.lastAssistantMessage?.trim()
   if (row.state === 'working' && row.mainAgent?.stopping === true) {
     const stopping = translate('worktree.agentRowDisplay.stopping', 'Stopping…')
     return name ? `${stopping} · ${name}` : stopping

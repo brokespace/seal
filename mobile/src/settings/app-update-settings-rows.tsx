@@ -84,7 +84,7 @@ export function AppUpdateSettingsRows(props: {
   const versionRow = available ? (
     <ListRow
       key="version"
-      title={t('settings.appUpdateSettingsRows.updateToVersion', 'Update to Seal {{version}}', {
+      title={t('settings.appUpdateSettingsRows.updateToVersion', 'Update to Orca {{version}}', {
         version: available.version
       })}
       accessory={

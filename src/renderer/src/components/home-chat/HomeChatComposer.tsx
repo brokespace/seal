@@ -55,7 +55,7 @@ export function HomeChatComposer({
   }
 
   return (
-    <div className="border-t border-border px-3 pt-2 pb-3">
+    <div className="border-t border-border px-4 pt-3 pb-3">
       <Textarea
         value={draft}
         rows={2}

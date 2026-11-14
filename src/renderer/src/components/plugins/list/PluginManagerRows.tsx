@@ -72,7 +72,7 @@ export function installedPluginControls(
     tone = 'destructive'
     description = t(
       'auto.components.settings.PluginSettingsRow.killListMessage',
-      "Seal's safety list disabled this plugin: {{value0}}",
+      "Orca's safety list disabled this plugin: {{value0}}",
       { value0: plugin.blockedByKillList.reason }
     )
   } else if (kind === 'invalid' && plugin.error) {
@@ -238,7 +238,7 @@ export function installedPluginControls(
         ) : plugin.bundled ? (
           <DropdownMenuItem disabled>
             <Trash2 />
-            {t('auto.components.settings.PluginManagerRows.bundledWithOrca', 'Bundled with Seal')}
+            {t('auto.components.settings.PluginManagerRows.bundledWithOrca', 'Bundled with Orca')}
           </DropdownMenuItem>
         ) : null}
       </MoreButton>

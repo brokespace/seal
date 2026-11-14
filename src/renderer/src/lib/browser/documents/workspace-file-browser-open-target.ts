@@ -8,22 +8,22 @@ import { translate } from '@/i18n/i18n'
 
 /** Still the answer for flows that need a real `file://` URL (e.g. dropping a file on a browser pane). */
 export const REMOTE_FILE_BROWSER_UNSUPPORTED_MESSAGE =
-  'Open in Seal Browser is only available for local files.'
+  'Open in Orca Browser is only available for local files.'
 export const TWIN_FILE_BROWSER_UNSUPPORTED_MESSAGE =
-  'This project is on more than one host, so Seal cannot tell which copy to open.'
+  'This project is on more than one host, so Orca cannot tell which copy to open.'
 
 /** Localized lazily: a module constant would freeze the language at import time. */
 export function remoteFileBrowserUnsupportedMessage(): string {
   return translate(
     'renderer.lib.filePreview.remoteFileUnsupported',
-    'Open in Seal Browser is only available for local files.'
+    'Open in Orca Browser is only available for local files.'
   )
 }
 
 export function twinFileBrowserUnsupportedMessage(): string {
   return translate(
     'renderer.lib.filePreview.twinFileUnsupported',
-    'This project is on more than one host, so Seal cannot tell which copy to open.'
+    'This project is on more than one host, so Orca cannot tell which copy to open.'
   )
 }
 

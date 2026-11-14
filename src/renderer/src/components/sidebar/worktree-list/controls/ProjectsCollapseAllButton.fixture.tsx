@@ -33,7 +33,7 @@ function AnnouncedProjects() {
           announceProjectCollapse('repo:orca')
         }}
       >
-        Seal
+        Orca
       </Button>
       <ContextualTourOverlay />
     </div>

@@ -52,7 +52,11 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
           line({
             type: 'assistant',
             timestamp: now,
-            message: { role: 'assistant', content: [{ type: 'text', text: 'Done.' }] }
+            message: {
+              role: 'assistant',
+              stop_reason: 'end_turn',
+              content: [{ type: 'text', text: 'Done.' }]
+            }
           })
       )
       const codexDir = join(home, '.codex/sessions/2026/11/13')
@@ -81,7 +85,7 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
         [`local:claude:${CLAUDE_ID}`]: {
           project: 'app',
           title: 'Fix the login bug',
-          status: 'waiting-input'
+          status: 'idle'
         },
         [`local:codex:${CODEX_ID}`]: {
           project: 'api',
@@ -104,6 +108,114 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
         title: 'Fix the login bug',
         status: 'working'
       })
+    }
+  )
+
+  it.each([
+    ['the script', () => undefined],
+    ['AI Vault discovery', viaAiVault]
+  ])(
+    "reads a session's subagent transcripts through %s and follows one as it finishes",
+    async (_, source) => {
+      const dir = join(home, '.claude/projects/-srv-app')
+      const subagents = join(dir, CLAUDE_ID, 'subagents')
+      await mkdir(subagents, { recursive: true })
+      const at = '2026-11-13T10:00:00.000Z'
+      const launch = {
+        type: 'tool_use',
+        id: 'toolu_01launch',
+        name: 'Agent',
+        input: {
+          description: 'Map the routes',
+          prompt: 'List every route.',
+          run_in_background: true
+        }
+      }
+      await writeFile(
+        join(dir, `${CLAUDE_ID}.jsonl`),
+        line({
+          type: 'user',
+          cwd: '/srv/app',
+          timestamp: at,
+          message: { content: 'Map the app' }
+        }) +
+          line({ type: 'assistant', timestamp: at, message: { content: [launch] } }) +
+          line({
+            type: 'user',
+            timestamp: at,
+            toolUseResult: { isAsync: true, status: 'async_launched', agentId: 'a1b2c3' },
+            message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_01launch' }] }
+          }) +
+          line({
+            type: 'assistant',
+            timestamp: at,
+            message: { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Started.' }] }
+          })
+      )
+      const subagentFile = join(subagents, 'agent-a1b2c3.jsonl')
+      const reading = {
+        type: 'tool_use',
+        id: 'toolu_01read',
+        name: 'Read',
+        input: { file_path: '/srv/app/routes.ts' }
+      }
+      await writeFile(
+        subagentFile,
+        line({
+          type: 'user',
+          isSidechain: true,
+          timestamp: at,
+          message: { content: 'List every route.' }
+        }) +
+          line({
+            type: 'assistant',
+            isSidechain: true,
+            timestamp: at,
+            message: { content: [reading] }
+          })
+      )
+      await writeFile(
+        join(subagents, 'agent-a1b2c3.meta.json'),
+        JSON.stringify({
+          description: 'Map the routes',
+          toolUseId: 'toolu_01launch',
+          requestShape: 'background'
+        })
+      )
+
+      const scanner = new HostSessionScanner(localHost('test', source()), LOCAL_SCAN_LIMITS)
+      const ours = async () => {
+        const result = await scanner.scan((await stat(subagentFile)).mtimeMs)
+        const session = result.sessions.find((s) => s.transcriptPath?.startsWith(home))
+        return [
+          session?.status,
+          session?.activity?.subagents.map((s) => [s.id, s.title, s.status, s.activity])
+        ]
+      }
+      expect(await ours()).toEqual([
+        'waiting-subagent',
+        [['a1b2c3', 'Map the routes', 'running', 'Read: routes.ts']]
+      ])
+
+      await appendFile(
+        subagentFile,
+        line({
+          type: 'assistant',
+          isSidechain: true,
+          timestamp: '2026-11-13T10:02:00.000Z',
+          message: { content: [{ type: 'text', text: 'There are 12 routes.' }] }
+        }) +
+          line({
+            type: 'attachment',
+            isSidechain: true,
+            timestamp: '2026-11-13T10:02:00.000Z',
+            attachment: { type: 'hook_success', hookEvent: 'SubagentStop' }
+          })
+      )
+      expect(await ours()).toEqual([
+        'idle',
+        [['a1b2c3', 'Map the routes', 'completed', 'There are 12 routes.']]
+      ])
     }
   )
 })

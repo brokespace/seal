@@ -95,7 +95,10 @@ export function SkillInstallDialog({
     const shareId = parseSkillShareId(value)
     if (!shareId) {
       setError(
-        translate('auto.components.skills.install.enterShareLink', 'Enter a Seal skill share link.')
+        translate(
+          'auto.components.skills.install.enterShareLink',
+          'Enter an Orca skill share link.'
+        )
       )
       return
     }
@@ -217,7 +220,7 @@ export function SkillInstallDialog({
           operation.status === 'reconnect-required'
             ? t(
                 'auto.components.skills.install.reconnectBeforeInstalling',
-                'Reconnect your Seal account before installing.'
+                'Reconnect your Orca account before installing.'
               )
             : operation.message
         )
@@ -232,7 +235,7 @@ export function SkillInstallDialog({
       setError(
         t(
           'auto.components.skills.install.requestedVersionVerificationFailed',
-          'Installation failed before Seal could verify the requested version.'
+          'Installation failed before Orca could verify the requested version.'
         )
       )
     } finally {

@@ -114,7 +114,7 @@ export function SessionHistoryServerRow({
         dimmed
         checked={false}
         disabled
-        status={t('sessionHistory.settings.serverTooOld', 'Needs a newer version of Seal.')}
+        status={t('sessionHistory.settings.serverTooOld', 'Needs a newer version of Orca.')}
         action={{
           label: t('sessionHistory.settings.updateServer', 'Update server'),
           onClick: openServerSettings

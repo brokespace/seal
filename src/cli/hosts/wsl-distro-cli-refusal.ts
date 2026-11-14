@@ -18,5 +18,5 @@ export function readableWslDistroCliRefusal(message: string): string {
   if (!distro) {
     return message
   }
-  return `${message.slice(0, start)}Seal couldn't reach ${path}. The WSL distro ${distro} may be stopped, and Seal doesn't start a stopped distro for this. Start ${distro} (for example, open a terminal in it), then try again.`
+  return `${message.slice(0, start)}Orca couldn't reach ${path}. The WSL distro ${distro} may be stopped, and Orca doesn't start a stopped distro for this. Start ${distro} (for example, open a terminal in it), then try again.`
 }

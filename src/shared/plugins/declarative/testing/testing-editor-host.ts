@@ -268,7 +268,7 @@ export function mockEditorHost(
           if (error) {
             reject(new Error(`editor.flush failed: ${JSON.stringify(error)}`))
           } else if (lostEdit) {
-            reject(new Error("Seal would not save: the editor's newest edit was too large"))
+            reject(new Error("Orca would not save: the editor's newest edit was too large"))
           } else {
             resolve()
           }

@@ -196,7 +196,7 @@ describe('resolveCodexSessionResumeProvenance', () => {
     return { homePath, rolloutPath }
   }
 
-  it('starts fresh for a rollout file that really exists under a home Seal no longer trusts', async () => {
+  it('starts fresh for a rollout file that really exists under a home Orca no longer trusts', async () => {
     const sessionId = '019f81b9-19a9-7651-a8d1-352d9420bd11'
     const removed = writeRollout(sessionId)
     const trusted = mkdtempSync(join(tmpdir(), 'orca-codex-resume-provenance-'))

@@ -73,6 +73,7 @@
                   "when": "ws.isSparse",
                   "props": { "hasHoverDetails": "=vars.hoverDetails && !ws.isRenaming" }
                 },
+                { "el": "LiveSessionsBadge" },
                 {
                   "el": "Row",
                   "when": "vars.titleIndicators",

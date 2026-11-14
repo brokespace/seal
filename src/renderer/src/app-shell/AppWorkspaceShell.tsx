@@ -36,7 +36,9 @@ const MachinesPage = lazy(() => import('../components/machines/MachinesPage'))
 const ArtifactsPage = lazy(() => import('../components/artifacts/ArtifactsPage'))
 const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
-const LiveSessionsPage = lazy(() => import('../components/live-sessions/LiveSessionsPage'))
+const LiveSessionWorkspace = lazy(
+  () => import('../components/live-sessions/workspace/LiveSessionWorkspace')
+)
 const Terminal = lazy(() => import('../components/Terminal'))
 
 type WorktreeSidebarScrollRefs = {
@@ -116,7 +118,7 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
       {activeView === 'activity' ? <ActivityPrototypePage /> : null}
       {activeView === 'space' ? <WorkspaceSpacePage /> : null}
       {activeView === 'mobile' ? <MobilePage /> : null}
-      {activeView === 'sessions' ? <LiveSessionsPage /> : null}
+      {activeView === 'sessions' ? <LiveSessionWorkspace /> : null}
       {activeView === 'terminal' && creationLayoutActive && activePendingCreationId ? (
         <PendingCreationSurface
           creationId={activePendingCreationId}
@@ -254,7 +256,7 @@ export function AppWorkspaceShell(props: {
                       title={t('auto.App.b7a714db1e', 'This page hit an error.')}
                       description={t(
                         'auto.App.03a14f6b5b',
-                        'Retry the page or navigate to another Seal surface.'
+                        'Retry the page or navigate to another Orca surface.'
                       )}
                     >
                       <ActivePage layout={layout} />

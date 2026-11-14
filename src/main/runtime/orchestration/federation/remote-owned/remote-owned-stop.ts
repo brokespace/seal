@@ -54,7 +54,7 @@ function settleUnansweredStop(
     dispatchId,
     state: 'stop_requested',
     server,
-    next: `${server} did not answer, so its worker may still run there. Its Task is settled here, so it can be retried, and the stop is owed: this Seal sends it again until ${server} confirms the worker stopped.`
+    next: `${server} did not answer, so its worker may still run there. Its Task is settled here, so it can be retried, and the stop is owed: this Orca sends it again until ${server} confirms the worker stopped.`
   }
 }
 

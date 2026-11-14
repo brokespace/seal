@@ -36,11 +36,11 @@ export function MobileRelayMintFailureNotice({
   }, [busy])
   const visibleBusy = busy && showBusyFeedback
   const title = visibleBusy
-    ? t('auto.components.mobile.MobileRelayMintFailureNotice.retryingTitle', 'Retrying Seal Relay…')
+    ? t('auto.components.mobile.MobileRelayMintFailureNotice.retryingTitle', 'Retrying Orca Relay…')
     : providerMissing
       ? t(
           'auto.components.mobile.MobileRelayMintFailureNotice.unavailableTitle',
-          'Seal Relay isn’t available on this desktop.'
+          'Orca Relay isn’t available on this desktop.'
         )
       : t(
           'auto.components.mobile.MobileRelayMintFailureNotice.title',
@@ -59,7 +59,7 @@ export function MobileRelayMintFailureNotice({
       : failure.code === 'relay_rate_limited'
         ? t(
             'auto.components.mobile.MobileRelayMintFailureNotice.rateLimitedBody',
-            'Seal Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
+            'Orca Relay is busy. Wait a minute and retry, or use LAN to pair over Tailscale or the same Wi‑Fi.'
           )
         : failure.code === 'relay_clock_skew' && failure.clockOffsetMs !== undefined
           ? relayClockSkewMessage(failure.clockOffsetMs, t)

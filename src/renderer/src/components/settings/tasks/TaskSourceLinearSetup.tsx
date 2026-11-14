@@ -50,7 +50,7 @@ export function TaskSourceLinearSetup({
           title={t('auto.components.settings.TaskSourceLinearSetup.connectTitle', 'Connect Linear')}
           description={t(
             'auto.components.settings.TaskSourceLinearSetup.connectDescription',
-            'Add a Personal API key so Seal can browse issues and open workspaces with ticket context.'
+            'Add a Personal API key so Orca can browse issues and open workspaces with ticket context.'
           )}
           action={
             <Button

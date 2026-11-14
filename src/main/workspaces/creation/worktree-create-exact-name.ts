@@ -16,7 +16,7 @@ export function exactNameBranchConflict(
 ): 'local' | 'remote' | null {
   if (kind === 'unknown') {
     throw new WorktreeCreateExactNameTakenError(
-      `Seal couldn't confirm branch "${branchName}" is free. Nothing was created.`
+      `Orca couldn't confirm branch "${branchName}" is free. Nothing was created.`
     )
   }
   return kind
@@ -54,6 +54,6 @@ export async function exactNameLateCollision(
     return error
   }
   return new WorktreeCreateExactNameTakenError(
-    `Branch "${args.branchName}" appeared before Seal could create it. Nothing was created.`
+    `Branch "${args.branchName}" appeared before Orca could create it. Nothing was created.`
   )
 }

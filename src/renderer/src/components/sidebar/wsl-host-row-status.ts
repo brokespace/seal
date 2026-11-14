@@ -97,7 +97,7 @@ export function getWslHostsPausedShortLabel(t: Translate = translate): string {
 export function getWslHostServerFilesMissingLabel(t: Translate = translate): string {
   return t(
     'auto.components.sidebar.wslHostRowStatus.serverFilesMissing',
-    'This build of Seal can’t run WSL hosts (server files missing).'
+    'This build of Orca can’t run WSL hosts (server files missing).'
   )
 }
 

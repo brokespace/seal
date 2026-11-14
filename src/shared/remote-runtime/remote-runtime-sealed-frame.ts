@@ -34,9 +34,9 @@ export function acceptSealedReady(
 export type SealedFrameFailure = 'undecryptable' | 'corrupt_compressed' | 'unexpected_binary'
 
 export const SEALED_FRAME_FAILURE_MESSAGES: Record<SealedFrameFailure, string> = {
-  undecryptable: 'Remote Seal runtime returned an undecryptable frame.',
-  corrupt_compressed: 'Remote Seal runtime returned a corrupt compressed frame.',
-  unexpected_binary: 'Remote Seal runtime returned an unexpected binary frame.'
+  undecryptable: 'Remote Orca runtime returned an undecryptable frame.',
+  corrupt_compressed: 'Remote Orca runtime returned a corrupt compressed frame.',
+  unexpected_binary: 'Remote Orca runtime returned an unexpected binary frame.'
 }
 
 type FailedFrame = { kind: 'failed'; failure: SealedFrameFailure }

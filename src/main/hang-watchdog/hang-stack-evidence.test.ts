@@ -39,7 +39,7 @@ it('retains observed stacks when five equal callers have no stack above twenty p
 
 it('requires a main section terminator independently of report truncation', () => {
   const prefix =
-    '    12 Thread_10 DispatchQueue_1: com.apple.main-thread (serial)\n    + 12 appMain  (in Seal) + 1\n    +   12 kevent  (in libsystem_kernel.dylib) + 2\n'
+    '    12 Thread_10 DispatchQueue_1: com.apple.main-thread (serial)\n    + 12 appMain  (in Orca) + 1\n    +   12 kevent  (in libsystem_kernel.dylib) + 2\n'
   expect(reduceNativeHangSample(prefix)).toMatchObject({
     mainThreadIdentified: true,
     mainSectionComplete: false,
@@ -47,7 +47,7 @@ it('requires a main section terminator independently of report truncation', () =
       {
         frames: [
           { name: 'kevent', module: 'libsystem_kernel.dylib' },
-          { name: 'appMain', module: 'Seal' }
+          { name: 'appMain', module: 'Orca' }
         ],
         count: 12
       }

@@ -12,14 +12,14 @@ export function gpuFallbackRestartOptions(): MessageBoxOptions {
     ],
     defaultId: 0,
     cancelId: 1,
-    title: translateMain('gpuFallback.restartPrompt.title', 'Restart Seal in Safe Graphics Mode?'),
+    title: translateMain('gpuFallback.restartPrompt.title', 'Restart Orca in Safe Graphics Mode?'),
     message: translateMain(
       'gpuFallback.restartPrompt.message',
-      "Seal's graphics process has crashed repeatedly."
+      "Orca's graphics process has crashed repeatedly."
     ),
     detail: translateMain(
       'gpuFallback.restartPrompt.detail',
-      'Safe graphics mode disables hardware acceleration and WebGL for this Seal version. Terminals and 3D content may render more slowly. Keep Running leaves graphics settings unchanged.'
+      'Safe graphics mode disables hardware acceleration and WebGL for this Orca version. Terminals and 3D content may render more slowly. Keep Running leaves graphics settings unchanged.'
     )
   }
 }

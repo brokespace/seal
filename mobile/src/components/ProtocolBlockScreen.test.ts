@@ -75,9 +75,9 @@ describe('ProtocolBlockScreen', () => {
   it('tells a host without a bundle, or without this screen, the desktop is too old', () => {
     for (const reason of ['bundle-unavailable', 'page-route-unlisted'] as const) {
       const output = render({ kind: 'blocked', reason })
-      expect(output).toContain('Update Seal on your computer')
+      expect(output).toContain('Update Orca on your computer')
       expect(output).toContain(
-        'This paired desktop app is too old for your current Seal Mobile app. Update Seal on your computer, then try this host again.'
+        'This paired desktop app is too old for your current Orca Mobile app. Update Orca on your computer, then try this host again.'
       )
       expect(output).not.toContain('does not include the mobile workspace')
       expect(primaryActionUrl()).toBe(RELEASES_URL)
@@ -90,7 +90,7 @@ describe('ProtocolBlockScreen', () => {
       reason: 'bundle-shell-too-old',
       schemaVersion: 2
     })
-    expect(output).toContain('Update Seal Mobile')
+    expect(output).toContain('Update Orca Mobile')
     expect(output).toContain(
       "This desktop's mobile workspace needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again."
     )
@@ -112,7 +112,7 @@ describe('ProtocolBlockScreen', () => {
     )
     // An app update cannot replace a stale cache, so no download link is offered.
     expect(output).not.toContain('Open GitHub Releases')
-    expect(output).not.toContain('Update Seal')
+    expect(output).not.toContain('Update Orca')
     // Back to hosts is the only button left, and it is not a download.
     expect(pressableCount()).toBe(1)
     expect(output).toContain('Back to hosts')
@@ -129,8 +129,8 @@ describe('ProtocolBlockScreen', () => {
       hostProtocolVersion: 1,
       requiredHostProtocolVersion: 2
     })
-    expect(output).toContain('Update Seal on your computer')
-    expect(output).toContain('This paired desktop app is too old for your current Seal Mobile app')
+    expect(output).toContain('Update Orca on your computer')
+    expect(output).toContain('This paired desktop app is too old for your current Orca Mobile app')
     expect(primaryActionUrl()).toBe(RELEASES_URL)
   })
 
@@ -145,14 +145,14 @@ describe('ProtocolBlockScreen', () => {
         { kind: 'blocked', reason: 'bundle-shell-too-old', schemaVersion: 2 },
         release
       )
-      expect(output).toContain('Get Seal 0.0.52')
+      expect(output).toContain('Get Orca 0.0.52')
       expect(output).not.toContain('Open GitHub Releases')
       expect(primaryActionUrl()).toBe(release.url)
     })
 
     it('leaves the desktop wall on the desktop releases', () => {
       const output = render({ kind: 'blocked', reason: 'bundle-unavailable' }, release)
-      expect(output).not.toContain('Get Seal')
+      expect(output).not.toContain('Get Orca')
       expect(primaryActionUrl()).toBe(RELEASES_URL)
     })
   })
@@ -166,7 +166,7 @@ describe('ProtocolBlockScreen', () => {
         null
       )
       expect(output).toContain('Open GitHub Releases')
-      expect(output).not.toContain('Get Seal')
+      expect(output).not.toContain('Get Orca')
       expect(primaryActionUrl()).toBe(RELEASES_URL)
     }
   )

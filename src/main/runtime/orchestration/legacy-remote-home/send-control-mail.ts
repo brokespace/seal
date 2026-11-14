@@ -104,7 +104,7 @@ export function federatedControlMailRefusal(
   if (protocolVersion < ORCHESTRATION_FEDERATION_CONTROL_MAIL_PROTOCOL_VERSION) {
     return {
       code: 'capability_unsupported',
-      message: `Federated Dispatch ${dispatchId} does not support coordinator control mail; start a fresh worker after updating its Seal server.`
+      message: `Federated Dispatch ${dispatchId} does not support coordinator control mail; start a fresh worker after updating its Orca server.`
     }
   }
   if (workerState() !== 'ready') {
