@@ -38,6 +38,7 @@ export type CloudflareAiSettingsModel = {
   forget: () => Promise<void>
   test: () => Promise<void>
   setSummariesEnabled: (enabled: boolean) => Promise<void>
+  setRecapEnabled: (enabled: boolean) => Promise<void>
 }
 
 // React Compiler cannot lower a try/finally written inside the hook.
@@ -148,6 +149,17 @@ export function useCloudflareAiSettings(owner: RuntimeClientTarget): CloudflareA
     )
   }
 
+  const toggle = async (method: string, enabled: boolean, failed: string): Promise<void> => {
+    try {
+      const next = await call<SessionSummariesStatus>(method, { enabled })
+      if (mounted.current) {
+        setSummaries(next)
+      }
+    } catch (error) {
+      toast.error(failed, { description: error instanceof Error ? error.message : String(error) })
+    }
+  }
+
   return {
     status,
     summaries,
@@ -185,20 +197,17 @@ export function useCloudflareAiSettings(owner: RuntimeClientTarget): CloudflareA
         () => mounted.current && setTesting(false)
       )
     },
-    setSummariesEnabled: async (enabled) => {
-      try {
-        const next = await call<SessionSummariesStatus>('sessionSummaries.setEnabled', { enabled })
-        if (mounted.current) {
-          setSummaries(next)
-        }
-      } catch (error) {
-        toast.error(
-          t('seal.sessionSummaries.toggleFailed', 'Could not change session summaries.'),
-          {
-            description: error instanceof Error ? error.message : String(error)
-          }
-        )
-      }
-    }
+    setSummariesEnabled: (enabled) =>
+      toggle(
+        'sessionSummaries.setEnabled',
+        enabled,
+        t('seal.sessionSummaries.toggleFailed', 'Could not change session summaries.')
+      ),
+    setRecapEnabled: (enabled) =>
+      toggle(
+        'sessionRecap.setEnabled',
+        enabled,
+        t('seal.sessionRecap.toggleFailed', 'Could not change session recaps.')
+      )
   }
 }

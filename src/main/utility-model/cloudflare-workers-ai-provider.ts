@@ -83,9 +83,10 @@ export function createCloudflareWorkersAiProvider(
     path: string,
     init: RequestInit,
     signal: AbortSignal | undefined,
-    model?: string
+    model?: string,
+    timeoutMs = REQUEST_TIMEOUT_MS
   ): Promise<unknown> => {
-    const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    const timeout = AbortSignal.timeout(timeoutMs)
     let response: Response
     try {
       response = await fetchImpl(`${base}${path}`, {
@@ -134,7 +135,8 @@ export function createCloudflareWorkersAiProvider(
           })
         },
         signal,
-        model
+        model,
+        request.timeoutMs
       )
       const reply = replyText(body)
       if (reply === null) {

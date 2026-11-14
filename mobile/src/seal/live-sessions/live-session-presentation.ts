@@ -1,5 +1,6 @@
 import type { AgentDotState } from '../../worktree/agent-row-display'
 import { translate } from '../../i18n/mobile-i18n'
+import { liveSessionLabel } from '../../../../src/shared/session-recap/live-session-label'
 import type { LiveMessage, LiveSession } from './live-session-schemas'
 
 export function liveSessionDotState(status: LiveSession['status']): AgentDotState {
@@ -45,7 +46,7 @@ export function liveSessionStatusLabel(status: LiveSession['status']): string {
 }
 
 export function liveSessionTitle(session: LiveSession): string {
-  return session.title ?? session.project ?? translate('seal.liveSessions.untitled', 'New session')
+  return liveSessionLabel(session) ?? translate('seal.liveSessions.untitled', 'New session')
 }
 
 export function liveSessionProviderLabel(session: Pick<LiveSession, 'provider'>): string {

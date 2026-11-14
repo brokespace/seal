@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
 import { NativeChatApprovalCard } from '../native-chat/prompts/NativeChatApprovalCard'
+import type { NativeChatMessageListHandle } from '../native-chat/messages/actions/use-native-chat-reveal-latest'
 import type { NativeChatDeliveryNotice } from '../native-chat/messages/rows/NativeChatMessageRow'
 import type { NativeChatLiveSession } from '../native-chat/session/terminal/read/native-chat-live-session-contract'
 import type { NativeChatOlderPageResult } from '../native-chat/viewport/history/native-chat-pagination'
@@ -23,6 +24,8 @@ export type LiveSessionChatProps = {
   answering: string | null
   /** Changes when a menu asked to type here; the field takes focus. */
   composerFocus?: number
+  /** A message to bring into view; a new `nonce` asks again for the same one. */
+  reveal?: { messageId: string; nonce: number } | null
 }
 
 export function LiveSessionChat({
@@ -33,9 +36,16 @@ export function LiveSessionChat({
   onRetry,
   onAnswer,
   answering,
-  composerFocus
+  composerFocus,
+  reveal
 }: LiveSessionChatProps): React.JSX.Element {
   const t = useTranslate()
+  const listRef = useRef<NativeChatMessageListHandle>(null)
+  useEffect(() => {
+    if (reveal) {
+      listRef.current?.revealMessage(reveal.messageId)
+    }
+  }, [reveal])
   // Waiting on its own subagents or background tasks is still the agent's turn.
   const working = liveSessionStatusGroup(session.status) === 'working'
   const chat = useMemo<NativeChatLiveSession>(
@@ -94,6 +104,7 @@ export function LiveSessionChat({
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <NativeChatMessageList
+          ref={listRef}
           session={chat}
           isWorking={working}
           expandSignal={false}

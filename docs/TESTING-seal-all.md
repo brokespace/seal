@@ -201,6 +201,20 @@ switch on its row picks the one Seal uses. See [machines.md](machines.md).
 - [ ] Turning **Session summaries** off removes the lines and stops requests; turning it on brings back cached sentences without new requests.
 - [ ] After the daily free allocation is used up, Home → Sessions says "Summaries paused" and the section says when they resume (00:00 UTC); nothing else changes.
 
+### Session recap
+
+Design: [session-recap.md](./session-recap.md). Needs the Cloudflare AI account above.
+
+- [ ] A session you have not named takes a short title from its recap in the sidebar, the session header and on the phone, and keeps it while the work stays on the same thing. Renaming it in Seal, or with `/rename` in Claude Code, always wins, and removing your name brings the recap title back.
+- [ ] Let an agent finish a turn that asks you something or tells you to do something: the row gets a badge with the open question and action item counts, on desktop and on the phone.
+- [ ] Open the session: the bar under the header says where it stands; clicking it (or **Recap**) opens the panel with goal, where it stands, questions, action items, what you asked, what the agent did, decisions, and files, PRs and links.
+- [ ] Clicking an item scrolls the transcript to its message, including one far enough back that it was not loaded.
+- [ ] Tick an action item and dismiss a question: both move under "done or dismissed", the badge drops, the state is still there after restarting Seal, and the phone shows the same.
+- [ ] Leave, let the agent do more, come back: "Since you last looked" lists what it did, and new questions and action items carry "New".
+- [ ] **Refresh recap** updates it and the footer's "Updated" text; with nothing new it rebuilds from recent history and keeps your ticks.
+- [ ] On the phone, the banner above the transcript opens the recap sheet; ticking there shows on the desktop within a moment.
+- [ ] Turning **Session recaps** off (Settings → Accounts → Cloudflare AI) removes titles, badges and the bar and stops requests, while one-line summaries keep working.
+
 ### Cross-cutting
 
 - [ ] Everything above also works with the Mac connected to the Linux server (remote host), and in a folder (non-git) workspace where relevant.

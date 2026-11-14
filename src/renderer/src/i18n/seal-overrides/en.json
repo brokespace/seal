@@ -1255,7 +1255,7 @@
         "paused": "Cloudflare’s limit was reached. Summaries resume at {{time}}; nothing else is affected."
       },
       "title": "Cloudflare AI",
-      "subtitle": "A small Workers AI model writes the one-line summary on each agent session. The free plan is enough.",
+      "subtitle": "A small Workers AI model writes the one-line summary and the recap on each agent session. The free plan is enough.",
       "tokensLink": "Get API token",
       "test": {
         "okFallback": "Works: the fallback {{model}} answered in {{ms}} ms.",
@@ -1288,14 +1288,15 @@
       },
       "search": {
         "title": "Cloudflare AI",
-        "description": "Link a Cloudflare Workers AI account for session summaries. Pick the model and turn summaries on or off.",
+        "description": "Link a Cloudflare Workers AI account for session summaries and recaps. Pick the model and turn each on or off.",
         "kw": {
           "cloudflare": "cloudflare",
           "workersAi": "workers ai",
           "summary": "summary",
           "summaries": "summaries",
           "model": "model",
-          "apiToken": "api token"
+          "apiToken": "api token",
+          "recap": "recap"
         }
       },
       "saveFailed": "Cloudflare AI settings were not saved.",
@@ -1309,6 +1310,70 @@
         "modelNotFound": "{{model}} does not exist on Workers AI.",
         "badResponse": "Cloudflare answered unexpectedly: {{message}}"
       }
+    },
+    "sessionRecap": {
+      "title": "Recap",
+      "badgeQuestions": "Questions for you: {{count}}",
+      "badgeActions": "Your action items: {{count}}",
+      "barLabel": "Recap",
+      "writing": "Reading the session…",
+      "barNews": "{{count}} new",
+      "updating": "Updating…",
+      "jump": "Show in the conversation",
+      "tick": "Done: {{item}}",
+      "new": "New",
+      "restore": "Bring back: {{item}}",
+      "restoreTitle": "Bring back",
+      "dismiss": "Dismiss: {{item}}",
+      "dismissTitle": "Dismiss",
+      "openLink": "Open {{label}} in the browser",
+      "openLinkTitle": "Open in the browser",
+      "allSettled": "Nothing open.",
+      "settled": "{{count}} done or dismissed",
+      "goal": "Goal",
+      "standing": "Where it stands",
+      "news": "Since you last looked",
+      "newsSince": "Your last visit was {{age}} ago.",
+      "questions": "Questions for you",
+      "actions": "Your action items",
+      "ignored": "Asked but not addressed",
+      "asked": "What you asked",
+      "earlier": "{{count}} earlier",
+      "did": "What the agent did",
+      "decisions": "Decisions",
+      "references": "Files, PRs and links",
+      "partial": "recent history only",
+      "refresh": "Refresh recap",
+      "openSettings": "Open settings",
+      "updatedNow": "Updated just now",
+      "updatedAgo": "Updated {{age}} ago",
+      "kind": {
+        "question": "Question",
+        "action": "To do",
+        "decision": "Decision",
+        "ignored": "Not addressed",
+        "asked": "Asked",
+        "inProgress": "In progress",
+        "blocked": "Blocked",
+        "done": "Done"
+      },
+      "state": {
+        "pausedUntil": "Cloudflare’s free limit for today is used up. The recap resumes at {{time}}.",
+        "paused": "Cloudflare’s free limit for today is used up. The recap resumes when it resets.",
+        "overBudget": "Today’s share of the free Cloudflare allocation for recaps is used. It resets at midnight UTC.",
+        "failedWhy": "The last update failed: {{reason}}",
+        "failed": "The last update failed.",
+        "unavailable": "Recaps are off, or no Cloudflare Workers AI account is set up on this computer.",
+        "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
+        "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
+        "stale": "The session has moved on since this was written."
+      },
+      "setting": {
+        "title": "Session recaps",
+        "searchDescription": "Keep a recap of each agent session: goal, open questions, action items.",
+        "description": "Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Only your messages and the agent’s replies are sent, never tool output."
+      },
+      "toggleFailed": "Could not change session recaps."
     }
   },
   "components": {

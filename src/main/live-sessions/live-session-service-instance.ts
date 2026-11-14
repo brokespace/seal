@@ -2,7 +2,7 @@ import type { LiveSessionService } from './live-session-service'
 
 let instance: LiveSessionService | null = null
 
-/** The running live-session service; null before startup and in orcad, which has no Electron app. */
+/** The running live-session service; null before the host starts it. */
 export function getLiveSessionService(): LiveSessionService | null {
   return instance
 }

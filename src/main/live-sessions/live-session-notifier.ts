@@ -2,6 +2,7 @@ import type {
   LiveSession,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
+import { liveSessionLabel } from '../../shared/session-recap/live-session-label'
 import {
   liveSessionNotice,
   type LiveSessionNotice
@@ -22,7 +23,7 @@ export type LiveSessionNotifierDeps = {
 
 function describe(session: LiveSession, kind: LiveSessionNotice): LiveSessionNotification {
   const agent = session.provider === 'claude' ? 'Claude Code' : 'Codex'
-  const name = session.customTitle ?? session.title ?? session.project ?? agent
+  const name = liveSessionLabel(session) ?? agent
   const where = `${agent} on ${session.machine.label}`
   const detail =
     kind === 'finished'
