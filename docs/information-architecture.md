@@ -61,15 +61,15 @@ A machine is called what the Machines tab calls it, everywhere. This computer is
 
 ## Canonical homes
 
-| Entity                             | Canonical home                                                                                    | Other surfaces link to it by                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Machine                            | **Machines tab**                                                                                  | Machine headings in Active agents and Home; the Home machines panel opens the tab.                  |
-| Project                            | **Projects** in the sidebar                                                                       | Home and the palette open the project there.                                                        |
-| Workspace                          | **Projects** in the sidebar. The **workspace board** is the same cards arranged by workflow lane. | Machines lists a machine's workspaces and opens them; the palette jumps to them.                    |
-| Agent session                      | **Active agents** in the sidebar (the list) and **session tabs** (the view)                       | Badges on project rows and workspace cards; rows on Home and Machines; the palette; CLI; Home chat. |
-| Subagents, background tasks, todos | The session view's activity panel                                                                 | The status pill (`waiting-subagent`, `waiting-task`) and the row's detail line.                     |
-| Terminal                           | The workspace's tabs                                                                              | Machines counts them; a Seal-launched session's menu jumps to its pane.                             |
-| Work item                          | **Tasks** page                                                                                    | Workspace cards show the linked issue or PR.                                                        |
+| Entity                             | Canonical home                                                                                    | Other surfaces link to it by                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Machine                            | **Machines tab**                                                                                  | Machine headings in Active agents and Home; the Home machines panel opens the tab.                                    |
+| Project                            | **Projects** in the sidebar                                                                       | Home and the palette open the project there.                                                                          |
+| Workspace                          | **Projects** in the sidebar. The **workspace board** is the same cards arranged by workflow lane. | Home lists recent ones and the palette jumps to them; both open the workspace in Projects.                            |
+| Agent session                      | **Active agents** in the sidebar (the list) and **session tabs** (the view)                       | Badges on project rows and workspace cards; rows on Home and Machines; the palette; CLI; Home chat.                   |
+| Subagents, background tasks, todos | The session view's activity panel                                                                 | The status pill (`waiting-subagent`, `waiting-task`) and the row's detail line.                                       |
+| Terminal                           | The workspace's tabs                                                                              | A Seal-launched session's menu jumps to its pane; the Machines tab's Terminal button opens a new one on that machine. |
+| Work item                          | **Tasks** page                                                                                    | Workspace cards show the linked issue or PR.                                                                          |
 
 ### Shared building blocks
 
