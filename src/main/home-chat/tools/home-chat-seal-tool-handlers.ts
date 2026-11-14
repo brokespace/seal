@@ -265,13 +265,12 @@ export async function executeSealTool(
     }
     case 'list_skills': {
       const machine = await ctx.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
-      const catalog = await skills.machineCatalog(machine, optionalStr(input.project_path))
+      const catalog = await skills.machineCatalog(machine, optionalStr(input.project_path), true)
       return ok(clipToolText(catalogText(machine.info.label, catalog.entries)), machine.info.label)
     }
     case 'load_skill': {
-      const name = optionalStr(input.machine)
-      const machine = name ? await ctx.machines.open(name) : undefined
-      return ok(clipToolText(await skills.load(str(input.name), machine)), machine?.info.label)
+      const machine = await ctx.machines.open(optionalStr(input.machine) ?? LOCAL_MACHINE_ID)
+      return ok(clipToolText(await skills.load(str(input.name), machine)), machine.info.label)
     }
   }
 }
