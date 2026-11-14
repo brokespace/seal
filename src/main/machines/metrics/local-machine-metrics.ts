@@ -1,5 +1,5 @@
 import os from 'node:os'
-import { statfs } from 'node:fs/promises'
+import { readFile, statfs } from 'node:fs/promises'
 import type { MachineMetrics, MachineOs } from '../../../shared/machines/machine-types'
 
 function localOs(): MachineOs | null {
@@ -33,6 +33,24 @@ function cpuUsageSincePrevious(cpus: os.CpuInfo[]): number | null {
   return Math.min(100, Math.max(0, (1 - (current.idle - previous.idle) / totalDelta) * 100))
 }
 
+/** os.version() is a kernel build string off Windows; this is the name a person knows the release by. */
+async function readOsRelease(): Promise<string> {
+  if (process.platform === 'linux') {
+    const text = await readFile('/etc/os-release', 'utf8').catch(() => '')
+    return text.match(/^PRETTY_NAME="?([^"\n]+)"?$/m)?.[1]?.trim() || os.release()
+  }
+  if (process.platform === 'darwin') {
+    const plist = await readFile('/System/Library/CoreServices/SystemVersion.plist', 'utf8').catch(
+      () => ''
+    )
+    const version = plist.match(/<key>ProductVersion<\/key>\s*<string>([^<]+)<\/string>/)?.[1]
+    return version ? `macOS ${version}` : os.release()
+  }
+  return os.version?.() || os.release()
+}
+
+let osRelease: Promise<string> | null = null
+
 export async function collectLocalMachineMetrics(now = Date.now()): Promise<MachineMetrics> {
   const home = os.homedir()
   const cpus = os.cpus()
@@ -41,7 +59,7 @@ export async function collectLocalMachineMetrics(now = Date.now()): Promise<Mach
   return {
     hostname: os.hostname(),
     os: localOs(),
-    osRelease: os.version?.() || os.release(),
+    osRelease: await (osRelease ??= readOsRelease()),
     arch: os.arch(),
     cpuCount: cpus.length || null,
     cpuModel: cpus[0]?.model?.trim() || null,

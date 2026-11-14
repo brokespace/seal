@@ -149,6 +149,14 @@ function checkToolList(
   }
 }
 
+/** OpenCode names an agent after its file and takes `tools` as a table of switches. */
+export function subagentNamedByFile(path: string | undefined): boolean {
+  return (
+    path !== undefined &&
+    /\/(?:\.config\/opencode|\.opencode)\/agents?\//.test(path.replaceAll('\\', '/'))
+  )
+}
+
 /**
  * What is wrong with a markdown document of this kind. `expectedName` is the folder (skill) or
  * file (subagent) name the declared name should match. Errors stop a save; warnings do not.
@@ -156,7 +164,8 @@ function checkToolList(
 export function validateMarkdownDocument(
   kind: AgentConfigDocKind,
   content: string,
-  expectedName?: string
+  expectedName?: string,
+  path?: string
 ): AgentConfigIssue[] {
   if (kind === 'instructions') {
     return []
@@ -176,11 +185,14 @@ export function validateMarkdownDocument(
       : []
   }
   const { data } = frontmatter
-  if (kind === 'skill' || kind === 'subagent') {
+  const namedByFile = kind === 'subagent' && subagentNamedByFile(path)
+  if ((kind === 'skill' || kind === 'subagent') && !namedByFile) {
     checkName(data, expectedName, kind, issues)
   }
   checkDescription(data, needsFrontmatter, issues)
-  checkToolList(data, kind === 'subagent' ? 'tools' : 'allowed-tools', issues)
+  if (!namedByFile) {
+    checkToolList(data, kind === 'subagent' ? 'tools' : 'allowed-tools', issues)
+  }
   if (needsFrontmatter && frontmatter.body.trim() === '') {
     issues.push(issue('warning', 'There are no instructions under the front matter'))
   }

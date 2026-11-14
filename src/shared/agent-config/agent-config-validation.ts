@@ -179,7 +179,8 @@ export function validateCodexConfig(value: Record<string, unknown>): AgentConfig
 export function validateAgentConfigContent(
   kind: AgentConfigValidationKind,
   content: string,
-  expectedName?: string
+  expectedName?: string,
+  path?: string
 ): AgentConfigIssue[] {
   switch (kind) {
     case 'json':
@@ -217,7 +218,7 @@ export function validateAgentConfigContent(
     case 'command':
     case 'prompt':
     case 'rule':
-      return validateMarkdownDocument(kind, content, expectedName)
+      return validateMarkdownDocument(kind, content, expectedName, path)
   }
 }
 

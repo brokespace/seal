@@ -114,6 +114,10 @@ export function SealEditAccountDialog({
                 </Label>
                 <Input
                   id="seal-edit-session"
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
                   inputMode="numeric"
                   value={session}
                   placeholder={t('seal.accounts.edit.useDefault', 'Auto-swap default')}
@@ -126,6 +130,10 @@ export function SealEditAccountDialog({
                 </Label>
                 <Input
                   id="seal-edit-weekly"
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
                   inputMode="numeric"
                   value={weekly}
                   placeholder={t('seal.accounts.edit.useDefault', 'Auto-swap default')}

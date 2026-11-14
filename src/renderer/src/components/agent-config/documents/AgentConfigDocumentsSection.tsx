@@ -8,8 +8,11 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
-import type { AgentConfigCollection } from '../../../../../shared/agent-config/agent-config-catalog'
-import { agentConfigDocNameProblem } from '../../../../../shared/agent-config/agent-config-doc-names'
+import type { AgentConfigCollection } from '../../../../../shared/agent-config/agent-config-layout-types'
+import {
+  agentConfigDocNameProblem,
+  agentConfigNestedFolderProblem
+} from '../../../../../shared/agent-config/agent-config-doc-names'
 import type {
   AgentConfigDocRef,
   AgentConfigScope
@@ -32,6 +35,7 @@ import {
   type AgentConfigDocumentRowActions
 } from './AgentConfigDocumentRow'
 import { AgentConfigDocumentSheet, type AgentConfigOpenDocument } from './AgentConfigDocumentSheet'
+import { AgentConfigSkillGroups } from './AgentConfigSkillGroups'
 import {
   agentConfigKindNoun,
   agentConfigKindTitle,
@@ -72,10 +76,13 @@ export function AgentConfigDocumentsSection(): React.JSX.Element {
     validate: (value: string) => agentConfigDocNameProblem(kind, value)
   })
   const ref = (doc: AgentConfigDocRef) => ({ kind: doc.kind, scope: doc.scope, path: doc.path })
+  // A command or prompt is listed by its place in the collection, sub-folder included.
   const entryName = (doc: AgentConfigDocRef): string =>
     doc.directory
       ? machinePathBasename(doc.directory)
-      : machinePathBasename(doc.path).replace(/\.[^.]+$/, '')
+      : doc.kind === 'subagent'
+        ? machinePathBasename(doc.path).replace(/\.[^.]+$/, '')
+        : doc.name
 
   const createInstructions = (scope: AgentConfigScope, relative: string): void => {
     void apply(() =>
@@ -192,10 +199,17 @@ export function AgentConfigDocumentsSection(): React.JSX.Element {
           label: t('auto.components.agentConfig.nestedFolder', 'Folder, from the project root'),
           placeholder: t('auto.components.agentConfig.example.subfolder', 'packages/api'),
           initialValue: '',
-          validate: (value) =>
-            /^[^/\\][^\\]*$/.test(value) && !value.split('/').includes('..')
-              ? null
-              : t('auto.components.agentConfig.nestedInvalid', 'Enter a folder inside the project.')
+          validate: (value) => {
+            const problem = agentConfigNestedFolderProblem(value)
+            return problem === 'outside'
+              ? t('auto.components.agentConfig.nestedInvalid', 'Enter a folder inside the project.')
+              : problem === 'unlisted'
+                ? t(
+                    'auto.components.agentConfig.nestedUnlisted',
+                    'Instructions are not looked for there: it is a dependency or build folder, or more than five folders deep.'
+                  )
+                : null
+          }
         }
       ],
       onSubmit: async ([folder]) => {
@@ -273,41 +287,45 @@ export function AgentConfigDocumentsSection(): React.JSX.Element {
             ))}
       </SettingsGroup>
 
-      {scopeLayout.collections.map((collection) => {
-        const docs = snapshot.docs.filter((doc) => inCollection(doc, collection))
-        return (
-          <SettingsGroup
-            key={collection.dir}
-            title={agentConfigKindTitle(collection.kind, t)}
-            description={
-              <span className="font-mono">{`${homeScope === 'user' ? '~/' : ''}${collection.dir}`}</span>
-            }
-            action={
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-agent-config-new={collection.kind}
-                onClick={() => create(collection)}
-              >
-                <Plus />
-                {t('auto.components.agentConfig.new', 'New')}
-              </Button>
-            }
-          >
-            {docs.length === 0
-              ? emptyRow(t('auto.components.agentConfig.noneHere', 'Nothing here yet.'))
-              : docs.map((doc) => (
-                  <AgentConfigDocumentRow
-                    key={doc.path}
-                    doc={doc}
-                    showScope={false}
-                    actions={actions}
-                  />
-                ))}
-          </SettingsGroup>
-        )
-      })}
+      <AgentConfigSkillGroups actions={actions} onCreate={create} />
+
+      {scopeLayout.collections
+        .filter((collection) => collection.kind !== 'skill')
+        .map((collection) => {
+          const docs = snapshot.docs.filter((doc) => inCollection(doc, collection))
+          return (
+            <SettingsGroup
+              key={collection.dir}
+              title={agentConfigKindTitle(collection.kind, t)}
+              description={
+                <span className="font-mono">{`${homeScope === 'user' ? '~/' : ''}${collection.dir}`}</span>
+              }
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  data-agent-config-new={collection.kind}
+                  onClick={() => create(collection)}
+                >
+                  <Plus />
+                  {t('auto.components.agentConfig.new', 'New')}
+                </Button>
+              }
+            >
+              {docs.length === 0
+                ? emptyRow(t('auto.components.agentConfig.noneHere', 'Nothing here yet.'))
+                : docs.map((doc) => (
+                    <AgentConfigDocumentRow
+                      key={doc.path}
+                      doc={doc}
+                      showScope={false}
+                      actions={actions}
+                    />
+                  ))}
+            </SettingsGroup>
+          )
+        })}
 
       <AgentConfigDocumentSheet document={open} onClose={() => setOpen(null)} />
       <MachinePromptDialog request={prompt} onClose={() => setPrompt(null)} />

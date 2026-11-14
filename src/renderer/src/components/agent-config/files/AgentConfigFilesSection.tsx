@@ -5,7 +5,7 @@ import { validationKindForPath } from '../../../../../shared/agent-config/agent-
 import { MachineFileExplorer } from '../../machines/explorer/MachineFileExplorer'
 import type { MachineExplorerFileOps } from '../../machines/explorer/machine-explorer-source'
 import { SettingsBadge } from '../../settings/form-controls/SettingsFormControls'
-import { SettingsGroup } from '../../settings/section-layout/SettingsGroup'
+import { SettingsGroup, SettingsGroupHeader } from '../../settings/section-layout/SettingsGroup'
 import { AgentConfigScopeBadge } from '../AgentConfigScopeBadge'
 import {
   AgentConfigDocumentSheet,
@@ -90,21 +90,17 @@ export function AgentConfigFilesSection(): React.JSX.Element {
         ))}
       </SettingsGroup>
 
-      <div className="space-y-2">
-        <div>
-          <h4 className="text-sm font-medium">
-            {t('auto.components.agentConfig.files.browse', 'Browse the folder')}
-          </h4>
-          <p className="text-xs text-muted-foreground">
-            {t(
-              'auto.components.agentConfig.files.browseDescription',
-              'Everything under {{path}}, including files Seal has no form for.',
-              { path: snapshot.agentDir }
-            )}
-          </p>
-        </div>
+      <div className="space-y-3">
+        <SettingsGroupHeader
+          title={t('auto.components.agentConfig.files.browse', 'Browse the folder')}
+          description={t(
+            'auto.components.agentConfig.files.browseDescription',
+            'Everything under {{path}}, including files Seal has no form for.',
+            { path: snapshot.agentDir }
+          )}
+        />
         <div
-          className="flex h-[420px] overflow-hidden rounded-md border border-border"
+          className="flex h-[420px] overflow-hidden rounded-xl border border-border shadow-xs"
           data-agent-config-explorer=""
         >
           <MachineFileExplorer

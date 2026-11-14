@@ -1,4 +1,4 @@
-import type { AgentConfigMcpCodec } from './agent-config-catalog'
+import type { AgentConfigMcpCodec } from './agent-config-layout-types'
 import type { AgentConfigMcpDraft, AgentConfigMcpTransport } from './agent-config-types'
 import { isPlainObject, stringList, stringRecord } from './agent-config-values'
 

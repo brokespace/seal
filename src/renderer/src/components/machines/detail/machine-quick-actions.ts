@@ -4,9 +4,10 @@ import { revealFloatingWorkspacePanel } from '@/components/floating-terminal/flo
 import { createFloatingWorkspaceTerminalTab } from '@/components/floating-terminal/floating-workspace-tab-creation'
 import { showMachineTerminalPanel } from '@/ssh/plain-ssh-terminal-panels'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return readIpcErrorMessage(error) ?? String(error)
 }
 
 /** Remote shells run over the machine's own connection, so SSH and server machines match. */

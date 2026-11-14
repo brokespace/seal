@@ -27,7 +27,8 @@ function loadLabel(machine: HomeMachine, t: Translate): string | null {
   if (machine.load !== undefined) {
     parts.push(
       t('home.overview.machines.load', 'CPU {{percent}}%', {
-        percent: Math.round(machine.load * 100)
+        // Load per core passes 1 on a busy host; the Machines tab caps the same reading at 100%.
+        percent: Math.min(100, Math.round(machine.load * 100))
       })
     )
   }

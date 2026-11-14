@@ -1,12 +1,13 @@
 import { effectiveConfig } from '../../shared/agent-config/agent-config-effective'
-import { parseJsonObject } from '../../shared/agent-config/agent-config-json-edit'
+import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-layout-types'
 import {
   listMcpServers,
   markShadowedServers
 } from '../../shared/agent-config/agent-config-mcp-servers'
 import { maskConfigValue } from '../../shared/agent-config/agent-config-secrets'
-import { parseTomlObject } from '../../shared/agent-config/agent-config-toml-edit'
+import { isSkillSwitchedOff } from '../../shared/agent-config/agent-config-skill-switches'
 import type {
+  AgentConfigDocRef,
   AgentConfigFileRef,
   AgentConfigMcpServer,
   AgentConfigSettingsLayer,
@@ -19,10 +20,19 @@ import {
   valueAtPath
 } from '../../shared/agent-config/agent-config-values'
 import type { MachineConnection } from '../machines/connection/machine-connection'
-import { scanMachineFiles, type MachineFileScanRecord } from '../machines/scan/machine-file-scan'
-import { docFromRecord, instructionsFromRecord } from './agent-config-doc-refs'
+import {
+  MACHINE_SCAN_MAX_TREE_FILES,
+  scanMachineFilesInFull,
+  type MachineFileScanRecord
+} from '../machines/scan/machine-file-scan'
+import {
+  bundledSkillFromRecord,
+  docFromRecord,
+  instructionsFromRecord
+} from './agent-config-doc-refs'
 import { scanRunner } from './agent-config-file-io'
 import {
+  isInside,
   joinRelative,
   mcpFiles,
   primaryFile,
@@ -30,22 +40,10 @@ import {
   scopeRoot,
   type ResolvedTarget
 } from './agent-config-locations'
+import { readPluginSkills } from './agent-config-plugin-skills-read'
 import { readPluginsState } from './agent-config-plugins-read'
 import { SCAN_HEAD_BYTES, scanPlan, type ScanPlan } from './agent-config-scan-plan'
-
-const MAX_CONFIG_BYTES = 48 * 1024 * 1024
-
-type Parsed = { value: Record<string, unknown> | null; error?: string; exists: boolean }
-
-function parseConfig(path: string, text: string | null): Parsed {
-  if (text === null) {
-    return { value: null, exists: false }
-  }
-  const parsed = path.endsWith('.toml') ? parseTomlObject(text) : parseJsonObject(text)
-  return parsed.ok
-    ? { value: parsed.value, exists: true }
-    : { value: null, error: parsed.error, exists: true }
-}
+import { ConfigTexts, parseConfig, type ParsedConfig } from './agent-config-scanned-config'
 
 function withoutPath(
   value: Record<string, unknown>,
@@ -59,32 +57,6 @@ function withoutPath(
   return rest.length > 0 && isPlainObject(child)
     ? { ...others, [key]: withoutPath(child, rest) }
     : others
-}
-
-/** Reads whole files in as few round trips as possible: small ones already came with the scan. */
-class ConfigTexts {
-  private readonly cache = new Map<string, Promise<string | null>>()
-
-  constructor(
-    private readonly connection: MachineConnection,
-    private readonly records: readonly MachineFileScanRecord[]
-  ) {}
-
-  read(path: string): Promise<string | null> {
-    let pending = this.cache.get(path)
-    if (!pending) {
-      const record = this.records.find((item) => item.path === path)
-      pending = !record
-        ? Promise.resolve(null)
-        : record.bytes <= SCAN_HEAD_BYTES && Buffer.byteLength(record.head) === record.bytes
-          ? Promise.resolve(record.head)
-          : this.connection.files
-              .readFile(path, MAX_CONFIG_BYTES)
-              .then((read) => read.data.toString('utf8'))
-      this.cache.set(path, pending)
-    }
-    return pending
-  }
 }
 
 function activationOf(
@@ -102,22 +74,44 @@ function activationOf(
   return approved ? 'approved' : 'pending'
 }
 
+/** Codex, the agent that reads grouped skills, skips folders whose name starts with a dot. */
+function isInHiddenSkillGroup(path: string, collection: AgentConfigCollection): boolean {
+  if (collection.shape !== 'skill-folders' || !collection.recursive) {
+    return false
+  }
+  const normalized = path.replaceAll('\\', '/')
+  const start = normalized.indexOf(`/${collection.dir}/`)
+  return (
+    start !== -1 &&
+    normalized
+      .slice(start + collection.dir.length + 2)
+      .split('/')
+      .some((folder) => folder.startsWith('.'))
+  )
+}
+
 /** Everything Settings shows for one agent on one machine, or for one project of it. */
 export async function buildAgentConfigSnapshot(
   connection: MachineConnection,
   target: AgentConfigTarget
 ): Promise<AgentConfigSnapshot> {
   const draft = resolveTarget(target, '~')
-  const { request, collections, instructions, files } = scanPlan(draft)
-  const scan = await scanMachineFiles(await scanRunner(connection), request)
+  const { request, collections, builtinSkillDirs, instructions, files } = scanPlan(draft)
+  const scan = await scanMachineFilesInFull(await scanRunner(connection), request)
   const resolved = resolveTarget(target, scan.home)
   const { layout, projectRoot } = resolved
   const texts = new ConfigTexts(connection, scan.records)
   const warnings: string[] = []
+  if (projectRoot && !scan.dirs.some((dir) => dir.tag === 'project')) {
+    warnings.push(
+      `The project folder ${projectRoot} is not on this machine any more. Creating a file here makes the folder again.`
+    )
+  }
   const tagged = (tag: string): MachineFileScanRecord[] =>
     scan.records.filter((record) => record.tag === tag)
 
-  const docs = [
+  const builtinRoots = builtinSkillDirs.map((dir) => joinRelative(scan.home, dir))
+  const ownDocs = [
     ...instructions.flatMap((item, index) =>
       tagged(`i${index}`).map((record) => instructionsFromRecord(record, item.scope, projectRoot))
     ),
@@ -128,14 +122,24 @@ export async function buildAgentConfigSnapshot(
       )
       .map((record) => instructionsFromRecord(record, 'project', projectRoot)),
     ...collections.flatMap((item, index) =>
-      tagged(`c${index}`).map((record) =>
-        docFromRecord(record, item.scope, item.collection, SCAN_HEAD_BYTES)
+      tagged(`c${index}`)
+        // The agent's own skills can sit inside the account's folder; they are listed apart.
+        .filter(
+          (record) =>
+            !builtinRoots.some((root) => isInside(root, record.path)) &&
+            !isInHiddenSkillGroup(record.path, item.collection)
+        )
+        .map((record) => docFromRecord(record, item.scope, item.collection, scan.headBytes))
+    ),
+    ...builtinRoots.flatMap((_root, index) =>
+      tagged(`b${index}`).map((record) =>
+        bundledSkillFromRecord(record, { kind: 'builtin' }, scan.headBytes)
       )
     )
   ]
 
-  const parsedByPath = new Map<string, Parsed>()
-  const parsedAt = async (path: string): Promise<Parsed> => {
+  const parsedByPath = new Map<string, ParsedConfig>()
+  const parsedAt = async (path: string): Promise<ParsedConfig> => {
     const known = parsedByPath.get(path)
     if (known) {
       return known
@@ -230,9 +234,48 @@ export async function buildAgentConfigSnapshot(
       : server
   )
 
-  const plugins = layout.features.plugins
+  const claudePlugins = layout.features.plugins
     ? await readPluginsState(connection, scan.home, parsedAt, rawSettings, projectRoot)
     : null
+  const pluginSkills = await readPluginSkills(
+    connection,
+    resolved,
+    {
+      claude: claudePlugins,
+      userSettings: rawSettings.find((layer) => layer.scope === 'user')?.value ?? null
+    },
+    SCAN_HEAD_BYTES
+  ).catch((error: unknown) => {
+    warnings.push(
+      `Plugin skills could not be listed: ${error instanceof Error ? error.message : String(error)}`
+    )
+    return { skills: [], complete: true, cappedFolders: [] }
+  })
+  const cappedFolders = [
+    ...[...(request.skillRoots ?? []), ...(request.trees ?? [])]
+      .filter((folder) => scan.capped.includes(folder.tag))
+      .map((folder) => folder.dir),
+    ...pluginSkills.cappedFolders
+  ]
+  for (const folder of cappedFolders) {
+    warnings.push(
+      `Only the first ${MACHINE_SCAN_MAX_TREE_FILES} entries found in ${folder} are listed.`
+    )
+  }
+  if (!scan.complete || !pluginSkills.complete) {
+    warnings.push(
+      'This machine has more files here than one answer can carry, so some of the list is missing.'
+    )
+  }
+  const settingsLayers = rawSettings.map((layer) => layer.value)
+  const docs = [...ownDocs, ...pluginSkills.skills].map((doc): AgentConfigDocRef =>
+    doc.kind === 'skill' &&
+    // Claude Code's overrides name the account's and project's skills, not a plugin's.
+    !(layout.skills.switch === 'claude-overrides' && doc.bundle) &&
+    isSkillSwitchedOff(layout.skills.switch, settingsLayers, doc)
+      ? { ...doc, disabled: true }
+      : doc
+  )
 
   return {
     target,
@@ -245,7 +288,7 @@ export async function buildAgentConfigSnapshot(
     files: fileRefs,
     settings,
     mcp,
-    plugins,
+    plugins: claudePlugins?.state ?? null,
     effective: effectiveConfig(settings, { mergeLists: layout.id === 'claude' }),
     warnings
   }

@@ -51,7 +51,10 @@ export function HomeChatAttachment({
   return (
     <div className="overflow-hidden rounded-md border border-border text-xs">
       {src && (
-        <img src={src} alt={entry.name} className="max-h-96 w-full bg-muted/40 object-contain" />
+        // Shrinks to fit but never stretches: a small image stays sharp at its own size.
+        <div className="bg-muted/40">
+          <img src={src} alt={entry.name} className="mx-auto block max-h-96 max-w-full" />
+        </div>
       )}
       <div className="flex min-w-0 items-center gap-2 px-2.5 py-1.5">
         <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />

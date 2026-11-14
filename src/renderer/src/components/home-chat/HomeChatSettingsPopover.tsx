@@ -84,7 +84,7 @@ export function HomeChatSettingsPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent side="top" align="start" className="w-80">
-        <div className="scrollbar-sleek max-h-[75vh] space-y-3 overflow-y-auto">
+        <div className="scrollbar-sleek max-h-[75vh] space-y-3 overflow-y-auto p-3">
           <div className="space-y-0.5">
             <p className="text-sm font-medium">{t('homeChat.settings.title', 'Model API')}</p>
             <p className="text-xs text-muted-foreground">

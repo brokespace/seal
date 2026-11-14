@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useTranslate } from '@/i18n/use-translate'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 export type MachinePromptField = {
   id: string
@@ -67,7 +68,7 @@ export function MachinePromptDialog({
       await request.onSubmit(trimmed)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(readIpcErrorMessage(err) ?? String(err))
       setBusy(false)
     }
   }

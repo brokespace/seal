@@ -1,6 +1,10 @@
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { fixtureHomeFiles } from '../../../src/main/agent-config/testing/agent-config-fixture-trees'
+import {
+  SKILL_FIXTURE_LINKS,
+  skillFixtureFiles
+} from '../../../src/main/agent-config/testing/agent-config-skill-fixture-trees'
 import type { Target } from '../home-chat-tools/tool-case-types'
 
 export const ECHO_MCP_TOKEN = 'tok-echo-secret-7'
@@ -37,6 +41,29 @@ function writeLoginPath(target: Target, extraPath: string | null): void {
   target.sh(`cat >> ${file}`, `export PATH=${shellQuote(dirs.join(':'))}:"$PATH"\n`)
 }
 
+function writeOnMachine(target: Target, files: Record<string, string>): void {
+  const script = Object.entries(files)
+    .map(([relative, content]) => {
+      const file = shellQuote(`${target.home}/${relative}`)
+      const encoded = Buffer.from(content).toString('base64')
+      return `mkdir -p "$(dirname ${file})" && printf %s ${encoded} | base64 -d > ${file}`
+    })
+    .join('\n')
+  target.sh('sh -s', `set -e\n${script}\n`)
+}
+
+/** Adds the skills a real account collects: plugins, built-ins, grouped and linked folders. */
+export function seedSkillSources(target: Target): void {
+  writeOnMachine(target, skillFixtureFiles(target.home))
+  const links = Object.entries(SKILL_FIXTURE_LINKS)
+    .map(
+      ([link, to]) =>
+        `mkdir -p "$(dirname ${shellQuote(`${target.home}/${link}`)})" && ln -sfn ${shellQuote(`${target.home}/${to}`)} ${shellQuote(`${target.home}/${link}`)}`
+    )
+    .join('\n')
+  target.sh('sh -s', `set -e\n${links}\nchmod 600 ~/.codex/config.toml\n`)
+}
+
 /**
  * Leaves the account the way Claude Code and Codex would: the same tree the unit fixtures use.
  * `realCliPath` puts real agent CLIs on PATH; without it a shim named `claude` stands in.
@@ -59,14 +86,7 @@ export function seedAgentConfig(target: Target, realCliPath: string | null): voi
     'seal-mkt/plugins/greeter/commands/greet.md': 'Say hello.\n',
     ...(realCliPath ? {} : { 'bin/claude': CLAUDE_SHIM })
   }
-  const script = Object.entries(files)
-    .map(([relative, content]) => {
-      const file = shellQuote(`${target.home}/${relative}`)
-      const encoded = Buffer.from(content).toString('base64')
-      return `mkdir -p "$(dirname ${file})" && printf %s ${encoded} | base64 -d > ${file}`
-    })
-    .join('\n')
-  target.sh('sh -s', `set -e\n${script}\n`)
+  writeOnMachine(target, files)
   target.sh(
     'chmod 600 ~/.claude.json ~/.codex/config.toml && chmod 755 ~/bin/* ~/.claude/skills/deploy-app/scripts/deploy.sh'
   )

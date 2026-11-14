@@ -19,6 +19,7 @@ import type {
 } from '../../../../../shared/agent-config/agent-config-types'
 import { detectLanguage } from '../../../../../shared/editor-language/editor-language-detect'
 import { SettingsSegmentedControl } from '../../settings/form-controls/SettingsFormControls'
+import { AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS } from '../agent-config-sheet-placement'
 import { AgentConfigScopeBadge } from '../AgentConfigScopeBadge'
 import { agentConfigApi, agentConfigErrorText } from '../model/agent-config-client'
 import { useAgentConfig } from '../model/agent-config-context'
@@ -30,6 +31,8 @@ export type AgentConfigOpenDocument = {
   /** Folder or file name the document's declared name should match. */
   expectedName?: string
   scope?: AgentConfigScope
+  /** A plugin's or the agent's own file: shown, not saved. */
+  readOnly?: boolean
 }
 
 type ViewMode = 'edit' | 'split' | 'preview'
@@ -61,6 +64,7 @@ export function AgentConfigDocumentSheet({
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const path = document?.path ?? null
   const markdown = path !== null && /\.(md|mdc)$/i.test(path)
+  const readOnly = document?.readOnly === true
 
   const load = useCallback(() => {
     if (!path) {
@@ -93,8 +97,13 @@ export function AgentConfigDocumentSheet({
 
   const issues = useMemo(
     () =>
-      document && loaded
-        ? validateAgentConfigContent(document.validation, draft, document.expectedName)
+      document && loaded && !document.readOnly
+        ? validateAgentConfigContent(
+            document.validation,
+            draft,
+            document.expectedName,
+            document.path
+          )
         : [],
     [document, draft, loaded]
   )
@@ -102,7 +111,7 @@ export function AgentConfigDocumentSheet({
   const dirty = loaded !== null && draft !== loaded.content
 
   const save = async (content: string): Promise<void> => {
-    if (!document || !loaded || saving) {
+    if (!document || !loaded || saving || document.readOnly) {
       return
     }
     setSaving(true)
@@ -154,6 +163,7 @@ export function AgentConfigDocumentSheet({
         relativePath={document?.title ?? ''}
         content={draft}
         language={detectLanguage(path ?? '', draft)}
+        readOnly={readOnly}
         onContentChange={setDraft}
         onSave={(content) => void save(content)}
       />
@@ -162,7 +172,11 @@ export function AgentConfigDocumentSheet({
 
   return (
     <Sheet open={document !== null} onOpenChange={(open) => !open && requestClose()}>
-      <SheetContent className="w-[92vw] sm:max-w-[1100px]" data-agent-config-editor={path ?? ''}>
+      <SheetContent
+        className="w-[92vw] sm:max-w-[1100px]"
+        style={AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS}
+        data-agent-config-editor={path ?? ''}
+      >
         <div className="shrink-0 border-b border-border pr-8">
           <SheetHeader>
             <div className="flex min-w-0 items-center gap-2">
@@ -199,14 +213,19 @@ export function AgentConfigDocumentSheet({
             />
           ) : null}
           <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {loaded && !loaded.exists
+            {readOnly
               ? t(
-                  'auto.components.agentConfig.editor.newFile',
-                  'This file does not exist yet; saving creates it.'
+                  'auto.components.agentConfig.editor.readOnly',
+                  'Read-only: this file is replaced when its plugin or the agent updates. Copy the skill to change it.'
                 )
-              : dirty
-                ? t('auto.components.agentConfig.editor.unsaved', 'Unsaved changes')
-                : ''}
+              : loaded && !loaded.exists
+                ? t(
+                    'auto.components.agentConfig.editor.newFile',
+                    'This file does not exist yet; saving creates it.'
+                  )
+                : dirty
+                  ? t('auto.components.agentConfig.editor.unsaved', 'Unsaved changes')
+                  : ''}
           </span>
           {dirty ? (
             <Button
@@ -219,15 +238,17 @@ export function AgentConfigDocumentSheet({
               {t('auto.components.agentConfig.editor.revert', 'Revert')}
             </Button>
           ) : null}
-          <Button
-            type="button"
-            size="sm"
-            disabled={!dirty || blocked || saving}
-            onClick={() => void save(draft)}
-          >
-            {saving ? <Loader2 className="animate-spin" /> : <Save />}
-            {t('auto.components.agentConfig.editor.save', 'Save')}
-          </Button>
+          {readOnly ? null : (
+            <Button
+              type="button"
+              size="sm"
+              disabled={!dirty || blocked || saving}
+              onClick={() => void save(draft)}
+            >
+              {saving ? <Loader2 className="animate-spin" /> : <Save />}
+              {t('auto.components.agentConfig.editor.save', 'Save')}
+            </Button>
+          )}
         </div>
 
         {confirmDiscard ? (

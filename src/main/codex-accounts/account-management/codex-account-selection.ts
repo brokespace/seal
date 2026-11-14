@@ -83,7 +83,7 @@ export class CodexAccountSelection {
     const nextActiveId =
       settings.activeCodexManagedAccountId === accountId ? null : nextSelection.host
 
-    this.dependencies.store.updateSettings({
+    this.saveSettings({
       codexManagedAccounts: nextAccounts,
       activeCodexManagedAccountId: nextActiveId,
       activeCodexManagedAccountIdsByRuntime: nextSelection
@@ -137,7 +137,7 @@ export class CodexAccountSelection {
       accountId,
       effectiveTarget
     )
-    this.dependencies.store.updateSettings({
+    this.saveSettings({
       activeCodexManagedAccountId:
         effectiveTarget?.runtime === 'wsl' ? nextSelection.host : accountId,
       activeCodexManagedAccountIdsByRuntime: nextSelection
@@ -187,7 +187,7 @@ export class CodexAccountSelection {
       }
     })
     if (changed) {
-      this.dependencies.store.updateSettings({ codexManagedAccounts: accounts })
+      this.saveSettings({ codexManagedAccounts: accounts })
     }
   }
 
@@ -204,13 +204,18 @@ export class CodexAccountSelection {
     if (!changed) {
       return
     }
-    this.dependencies.store.updateSettings({
+    this.saveSettings({
       activeCodexManagedAccountId: nextSelection.host,
       activeCodexManagedAccountIdsByRuntime: nextSelection
     })
     if (selection.host !== null && nextSelection.host === null) {
       this.dependencies.lifecycle.onHostSystemDefaultSelected?.()
     }
+  }
+
+  // Seal, the CLI and paired clients change accounts without a window asking, so tell every window.
+  private saveSettings(patch: Parameters<Store['updateSettings']>[0]): void {
+    this.dependencies.store.updateSettings(patch, { notifyListeners: true })
   }
 
   private startQuotaRefresh(

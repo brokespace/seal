@@ -1,4 +1,4 @@
-import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigCollection } from '../../shared/agent-config/agent-config-layout-types'
 import { agentConfigDocNameProblem } from '../../shared/agent-config/agent-config-doc-names'
 import {
   newDocumentContent,
@@ -76,6 +76,16 @@ function collectionOf(resolved: ResolvedTarget, ref: DocumentRef): Placed {
   return found
 }
 
+/** The folder kind a document is copied out of; a plugin's or the agent's own skill counts too. */
+function sourceCollection(resolved: ResolvedTarget, ref: DocumentRef): AgentConfigCollection {
+  const skills = resolved.layout.user.collections.find((collection) => collection.kind === 'skill')
+  if (ref.kind !== 'skill' || !skills || machinePathBasename(ref.path) !== 'SKILL.md') {
+    return collectionOf(resolved, ref).collection
+  }
+  assertManagedPath(resolved, ref.path)
+  return skills
+}
+
 function documentPath(placed: Placed, name: string): { path: string; directory: string | null } {
   if (placed.collection.shape === 'skill-folders') {
     const directory = joinMachinePath(placed.dir, name)
@@ -85,6 +95,12 @@ function documentPath(placed: Placed, name: string): { path: string; directory: 
     path: joinRelative(placed.dir, `${name}${placed.collection.extension}`),
     directory: null
   }
+}
+
+/** A copy or a new name stays in the grouping folder the document is in. */
+function besideDocument(placed: Placed, ref: DocumentRef): Placed {
+  const group = machinePathDirname(machinePathDirname(ref.path) ?? '')
+  return placed.collection.shape === 'skill-folders' && group ? { ...placed, dir: group } : placed
 }
 
 async function requireMissing(
@@ -183,7 +199,7 @@ export async function duplicateDocument(
   args: { target: AgentConfigTarget; ref: DocumentRef; newName: string }
 ): Promise<AgentConfigWriteResult> {
   const resolved = await resolve(connection, args.target)
-  const placed = collectionOf(resolved, args.ref)
+  const placed = besideDocument(collectionOf(resolved, args.ref), args.ref)
   const name = requireName(args.ref.kind, args.newName)
   const { path, directory } = documentPath(placed, name)
   await requireMissing(connection, directory ?? path, `a ${args.ref.kind}`)
@@ -210,7 +226,7 @@ export async function renameDocument(
     throw new Error('Agents look for instructions under a fixed name')
   }
   const resolved = await resolve(connection, args.target)
-  const placed = collectionOf(resolved, args.ref)
+  const placed = besideDocument(collectionOf(resolved, args.ref), args.ref)
   const name = requireName(args.ref.kind, args.newName)
   const { path, directory } = documentPath(placed, name)
   await requireMissing(connection, directory ?? path, `a ${args.ref.kind}`)
@@ -271,17 +287,17 @@ export async function copyDocument(
     })
     return { path, backupPath: written.backupPath }
   }
-  const placed = collectionOf(from, args.ref)
+  const sourceKind = sourceCollection(from, args.ref)
   const target = collections(to, args.toScope, args.ref.kind).find(
-    (candidate) => candidate.collection.extension === placed.collection.extension
+    (candidate) => candidate.collection.extension === sourceKind.extension
   )
   if (!target) {
     throw new Error(`${to.layout.label} has no ${args.ref.kind}s there in this format`)
   }
   const name =
-    placed.collection.shape === 'skill-folders'
+    sourceKind.shape === 'skill-folders'
       ? machinePathBasename(machinePathDirname(args.ref.path) ?? args.ref.path)
-      : collectionEntryName(args.ref.path, placed.collection)
+      : collectionEntryName(args.ref.path, sourceKind)
   const { path, directory } = documentPath(target, name)
   if (!directory) {
     const content = (await readConfigFile(source, args.ref.path)).content

@@ -3,6 +3,7 @@ import { translate as t } from '@/i18n/i18n'
 import { showOpenFailureToast } from '@/components/sidebar/workspace-actions/open/worktree-open-failure-toast'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { SshTarget } from '../../../../../shared/ssh-types'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 /** The `~/.ssh/config` entry that gives an editor a custom-port machine by alias. */
 export function machineSshConfigEntry(
@@ -37,6 +38,6 @@ export async function copyMachineSshConfigEntry(machine: MachineSummary): Promis
       )
     )
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : String(error))
+    toast.error(readIpcErrorMessage(error) ?? String(error))
   }
 }

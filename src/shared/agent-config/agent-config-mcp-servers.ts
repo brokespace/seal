@@ -1,4 +1,4 @@
-import type { AgentConfigMcpCodec } from './agent-config-catalog'
+import type { AgentConfigMcpCodec } from './agent-config-layout-types'
 import {
   mcpCodec,
   mcpEntryIssue,
