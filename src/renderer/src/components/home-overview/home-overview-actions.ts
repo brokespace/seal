@@ -1,5 +1,4 @@
 import { useAppStore } from '@/store'
-import { openLiveSessionView } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { normalizeExecutionHostId } from '../../../../shared/execution-host'
@@ -38,7 +37,6 @@ const sharedActions = {
 
 export const sealHomeOverviewActions: HomeOverviewActions = {
   ...sharedActions,
-  openSession: (session) => openLiveSessionView(session.id),
   openMachine: (machine) => {
     const machineId = parseMachineId(machine.id)
     if (machineId) {

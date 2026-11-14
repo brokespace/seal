@@ -256,9 +256,12 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
       }
       const interrupted = contentText(content).startsWith('[Request interrupted')
       if (interrupted || claudePromptText(record)) {
-        // A subagent that blocks its turn cannot outlive it.
+        // A subagent that blocks its turn cannot outlive it. A re-folded prompt is older than
+        // what its own turn launched, and must leave that running.
+        const at = timeOf(record)
         for (const agent of state.agents.values()) {
-          if (!agent.background && agent.status === 'running') {
+          const launchedBefore = at === null || agent.startedAt === null || agent.startedAt <= at
+          if (!agent.background && agent.status === 'running' && launchedBefore) {
             agent.status = interrupted ? 'stopped' : 'completed'
           }
         }

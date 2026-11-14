@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import type {
   LiveSession,
   LiveSessionInputRoute,
@@ -8,15 +7,24 @@ import type {
   LiveSessionStatusSource
 } from '../../../shared/live-sessions/live-session-types'
 import type { DiscoveredPane, DiscoveredProcess, DiscoveryOutput } from './discovery-output'
-import { parseAgentScreen, type AgentScreen } from './agent-screen'
+import { parseAgentScreen } from './agent-screen'
+import { withAgentScreen } from './agent-screen-status'
 import type { TranscriptSummary } from './transcript-summary'
 import type { LiveTodo } from '../../../shared/live-sessions/live-session-activity'
 import type { ClaudeActivityState } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
-import { restingStatus, turnStatus, withBackgroundWait } from './session-status'
+import { pendingCallStatus, turnStatus, withBackgroundWait } from './session-status'
+import { toolProcessStarts } from './agent-tool-processes'
+import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import { codexHelperThreads, sessionActivityOf } from './session-activity'
-import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
-import { agentProcesses, codexHomeOf, processBinary, sessionIdFromArgs } from './agent-processes'
+import { hookStatus, parseHookStates } from './agent-hook-states'
+import {
+  agentProcesses,
+  approvalModeFromArgs,
+  codexHomeOf,
+  processBinary,
+  sessionIdFromArgs
+} from './agent-processes'
 import { conversations, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
@@ -30,16 +38,6 @@ export type SummarizedTranscript = {
   subagents?: SubagentFileSummary[]
   /** Codex: the newest `update_plan`. */
   codexPlan?: LiveTodo[] | null
-}
-
-/** A SISomewhere-format hook state file (`~/.config/sisomewhere/agents/<id>.json`). */
-type HookState = {
-  provider: LiveSessionProvider
-  providerSessionId: string
-  state: string
-  detail: string | null
-  updatedMs: number
-  pid: number | null
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -63,60 +61,10 @@ export function projectOf(cwd: string | null): string | null {
   return parts.at(-1) ?? null
 }
 
-export function parseHookStates(files: { path: string; text: string }[]): HookState[] {
-  return files.flatMap(({ path, text }): HookState[] => {
-    const raw = parseJsonRecord(text)
-    if (!raw) {
-      return []
-    }
-    const provider = raw.provider === 'codex' ? 'codex' : raw.provider ? null : 'claude'
-    if (!provider || (raw.provider && raw.provider !== provider)) {
-      return []
-    }
-    const fileId = (path.split('/').pop() ?? '').replace(/\.json$/, '')
-    const id = typeof raw.id === 'string' && raw.id ? raw.id : fileId.replace(/^codex-/, '')
-    const updated = typeof raw.updated === 'number' ? raw.updated * 1000 : 0
-    return [
-      {
-        provider,
-        providerSessionId: id,
-        state: typeof raw.state === 'string' ? raw.state : '',
-        detail: typeof raw.detail === 'string' && raw.detail ? raw.detail : null,
-        updatedMs: updated,
-        pid: typeof raw.pid === 'number' ? raw.pid : null
-      }
-    ]
-  })
-}
-
-function hookStatus(
-  state: string,
-  running: boolean,
-  summary: TranscriptSummary | undefined
-): LiveSessionStatus | null {
-  switch (state) {
-    case 'working':
-      return 'working'
-    case 'needs':
-      return 'needs-permission'
-    case 'done':
-    case 'idle':
-      return running ? restingStatus(summary) : 'done'
-    default:
-      return null
-  }
-}
-
 /** The provider config folder a transcript lives under: `<dir>/projects/…` or `<dir>/sessions/…`. */
 export function configDirOf(provider: LiveSessionProvider, path: string | null): string | null {
   const at = path?.lastIndexOf(provider === 'claude' ? '/projects/' : '/sessions/') ?? -1
   return at > 0 ? path!.slice(0, at) : null
-}
-
-export function permissionPromptId(paneId: string, screen: AgentScreen): string {
-  const approval = screen.approval!
-  const facts = [paneId, approval.question, ...approval.options.map((o) => o.label)]
-  return createHash('sha256').update(facts.join('\n')).digest('hex').slice(0, 16)
 }
 
 type Claim = {
@@ -188,7 +136,7 @@ function pairProcesses(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins'>>
+    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children'>>
   transcripts: SummarizedTranscript[]
   nowMs: number
 }): LiveSession[] {
@@ -207,6 +155,7 @@ export function assembleHostSessions(input: {
       ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
     }
   }
+  const toolStarts = toolProcessStarts(output, now)
   const sessions: LiveSession[] = []
   // A Codex helper thread writes its own rollout, but it is its session's subagent, not a session.
   const helpers = codexHelperThreads(input.transcripts)
@@ -257,25 +206,33 @@ export function assembleHostSessions(input: {
       nowMs: now
     })
     ;({ status, statusDetail } = withBackgroundWait({ status, statusDetail }, summary, activity))
-    let permission: LiveSession['permission'] = null
-    if (screen?.approval && pane && running) {
-      status = 'needs-permission'
-      statusSource = 'screen'
-      statusDetail = screen.approval.question
-      permission = {
-        promptId: permissionPromptId(pane.paneId, screen),
-        question: screen.approval.question,
-        options: screen.approval.options.map(({ id, label }) => ({ id, label }))
+    // The transcript cannot tell a running command from one a prompt holds; the process list can.
+    const fromProcesses =
+      status === 'working' && process
+        ? pendingCallStatus(summary, {
+            processStarts: toolStarts(process.pid, provider),
+            approvalMode: summary?.approvalMode ?? approvalModeFromArgs(process.args),
+            nowMs: now
+          })
+        : null
+    if (fromProcesses) {
+      status = fromProcesses
+      statusSource = 'process'
+      if (fromProcesses === 'needs-permission' && statusDetail) {
+        statusDetail = `Allow ${statusDetail}?`
       }
-    } else if (screen && running && status === 'needs-permission' && screen.promptBox) {
-      // The dialog is gone from the screen: whatever asked has been answered.
-      status = 'working'
-      statusSource = 'screen'
+    }
+    let permission: LiveSession['permission'] = null
+    if (screen && pane && running) {
+      ;({ status, statusSource, statusDetail, permission } = withAgentScreen(
+        { status, statusSource, statusDetail },
+        { screen, paneId: pane.paneId, summary }
+      ))
     }
     if (status !== 'working' && status !== 'needs-permission' && statusDetail === 'Thinking') {
       statusDetail = null
     }
-    if (status === 'idle' || status === 'done') {
+    if (isRestingLiveSessionStatus(status) || status === 'done') {
       statusDetail = summary?.detail === 'Interrupted' ? 'Interrupted' : null
     }
     const inputRoutes: LiveSessionInputRoute[] = []

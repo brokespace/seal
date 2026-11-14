@@ -11,6 +11,26 @@ export type DiscoveredProcess = {
   cwd: string | null
 }
 
+/** What a process under an agent is, as far as its command line shows without leaving the host. */
+export type DiscoveredChildKind =
+  /** Claude Code's Bash tool: a shell that sources `shell-snapshots/…` and runs the command. */
+  | 'snapshot'
+  /** Codex's sandbox around a command (`codex-linux-sandbox`, `bwrap`, `sandbox-exec`). */
+  | 'sandbox'
+  | 'shell'
+  | 'other'
+
+/** A process running under an agent (or under a Codex app-server, which runs its commands). */
+export type DiscoveredChild = {
+  pid: number
+  ppid: number
+  /** How long it has run, from `ps -o etime`. */
+  elapsedMs: number
+  kind: DiscoveredChildKind
+  /** The executable's name, without its path or arguments. */
+  command: string
+}
+
 export type DiscoveredPane = {
   socket: string
   paneId: string
@@ -47,6 +67,8 @@ export type DiscoveryOutput = {
   hostNowMs: number | null
   uname: string | null
   processes: DiscoveredProcess[]
+  /** Processes under the agents; null when the host listed none (an older script, no `ps`). */
+  children: DiscoveredChild[] | null
   panes: DiscoveredPane[]
   /** Raw hook state files (SISomewhere-compatible), keyed by path. */
   hookStates: { path: string; text: string }[]
@@ -57,6 +79,23 @@ export type DiscoveryOutput = {
   files: DiscoveredFile[]
   /** The script ran to its end; a cut-off scan must not drop sessions. */
   complete: boolean
+}
+
+const CHILD_KINDS: Partial<Record<string, DiscoveredChildKind>> = {
+  snapshot: 'snapshot',
+  sandbox: 'sandbox',
+  shell: 'shell',
+  other: 'other'
+}
+
+/** `ps -o etime`: `[[dd-]hh:]mm:ss`. */
+export function parseElapsedTime(etime: string): number | null {
+  const m = /^(?:(?:(\d+)-)?(\d+):)?(\d+):(\d+)$/.exec(etime.trim())
+  if (!m) {
+    return null
+  }
+  const [days, hours, minutes, seconds] = m.slice(1).map((part) => Number(part ?? 0))
+  return (((days * 24 + hours) * 60 + minutes) * 60 + seconds) * 1000
 }
 
 const PIN_KINDS: Partial<Record<string, TranscriptPinKind>> = {
@@ -89,6 +128,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
     hostNowMs: null,
     uname: null,
     processes: [],
+    children: null,
     panes: [],
     hookStates: [],
     claudeSessions: [],
@@ -134,6 +174,24 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         const proc = m ? processes.get(Number(m[1])) : undefined
         if (m && proc) {
           proc.cwd = m[2]
+        }
+        break
+      }
+      case 'CHILDREN':
+        out.children ??= []
+        break
+      case 'CHILD': {
+        const m = /^(\d+) (\d+) (\S+) (\w+) (.*)$/.exec(rest)
+        const elapsedMs = m ? parseElapsedTime(m[3]) : null
+        const kind = m ? CHILD_KINDS[m[4]] : undefined
+        if (m && elapsedMs !== null && kind) {
+          ;(out.children ??= []).push({
+            pid: Number(m[1]),
+            ppid: Number(m[2]),
+            elapsedMs,
+            kind,
+            command: m[5].trim()
+          })
         }
         break
       }

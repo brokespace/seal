@@ -1,4 +1,14 @@
-import { appendFile, mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import {
+  appendFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  writeFile
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -85,7 +95,7 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
         [`local:claude:${CLAUDE_ID}`]: {
           project: 'app',
           title: 'Fix the login bug',
-          status: 'idle'
+          status: 'your-turn'
         },
         [`local:codex:${CODEX_ID}`]: {
           project: 'api',
@@ -213,9 +223,75 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
           })
       )
       expect(await ours()).toEqual([
-        'idle',
+        'your-turn',
         [['a1b2c3', 'Map the routes', 'completed', 'There are 12 routes.']]
       ])
     }
   )
+
+  // A stand-in agent (a process named `claude`) with a real child process, read by the real `ps`.
+  it('tells a command running under an agent process from a call that waits for approval', async () => {
+    const root = await realpath(home)
+    const cwd = join(root, 'work')
+    const projects = join(root, '.claude/projects', cwd.replace(/[^A-Za-z0-9]/g, '-'))
+    const snapshots = join(root, '.claude/shell-snapshots')
+    await Promise.all([cwd, projects, snapshots].map((dir) => mkdir(dir, { recursive: true })))
+    // Claude Code's Bash tool runs `bash -c 'source ~/.claude/shell-snapshots/… && eval <command>'`.
+    await writeFile(join(snapshots, 'run.sh'), 'sleep 60\n')
+    await writeFile(
+      join(root, 'agent.sh'),
+      `bash "${join(snapshots, 'run.sh')}" &\necho $! > "${join(root, 'child.pid')}"\nwait\nsleep 60\n`
+    )
+    // ast-grep-ignore: test-no-wall-clock -- the call is aged against real processes, whose start times `ps` reports on the real clock
+    const called = new Date(Date.now() - 10_000).toISOString()
+    await writeFile(
+      join(projects, `${CLAUDE_ID}.jsonl`),
+      line({ type: 'permission-mode', permissionMode: 'default' }) +
+        line({ type: 'user', cwd, timestamp: called, message: { content: 'Run the migration' } }) +
+        line({
+          type: 'assistant',
+          timestamp: called,
+          message: {
+            role: 'assistant',
+            stop_reason: 'tool_use',
+            content: [
+              {
+                type: 'tool_use',
+                id: 'toolu_01run',
+                name: 'Bash',
+                input: { command: './migrate.sh' }
+              }
+            ]
+          }
+        })
+    )
+    const agent = spawn(
+      'bash',
+      ['-c', 'exec -a claude bash "$1"', 'agent', join(root, 'agent.sh')],
+      {
+        cwd,
+        stdio: 'ignore'
+      }
+    )
+    try {
+      const childPid = await vi.waitFor(async () =>
+        Number((await readFile(join(root, 'child.pid'), 'utf8')).trim())
+      )
+      const scanner = new HostSessionScanner(localHost('test'), LOCAL_SCAN_LIMITS)
+      const ours = async () => {
+        // ast-grep-ignore: test-no-wall-clock -- the scan reads real processes on the real clock
+        const { sessions } = await scanner.scan(Date.now())
+        const session = sessions.find((s) => s.transcriptPath?.startsWith(root))
+        return [session?.pid, session?.status, session?.statusSource]
+      }
+      expect(await ours()).toEqual([agent.pid, 'running-shell', 'process'])
+
+      process.kill(childPid)
+      await vi.waitFor(async () =>
+        expect(await ours()).toEqual([agent.pid, 'needs-permission', 'process'])
+      )
+    } finally {
+      agent.kill('SIGKILL')
+    }
+  })
 })

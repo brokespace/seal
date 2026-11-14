@@ -59,6 +59,7 @@ export function liveSummaryKey(sessionId: string): string {
 /** Stopped for its user, or parked on a subagent or background task: the moments a summary describes. */
 const SUMMARIZED_STATUSES: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-input',
+  'your-turn',
   'idle',
   'waiting-subagent',
   'waiting-task'

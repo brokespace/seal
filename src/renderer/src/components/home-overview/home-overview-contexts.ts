@@ -20,7 +20,6 @@ export const HomeAutomationsContext = createContext<HomeAutomationsResult>({
   status: 'loading'
 })
 export const HomeActionsContext = createContext<HomeOverviewActions>({
-  openSession: noop,
   openMachine: noop,
   openMachines: noop,
   openAccountsSettings: noop,

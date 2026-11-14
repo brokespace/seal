@@ -16,6 +16,8 @@ export function liveSessionStatusLabel(status: LiveSessionStatus): string {
   switch (status) {
     case 'working':
       return translate('auto.components.live-sessions.status.working', 'Working')
+    case 'running-shell':
+      return translate('auto.components.live-sessions.status.runningShell', 'Running shell')
     case 'waiting-subagent':
       return translate(
         'auto.components.live-sessions.status.waitingSubagent',
@@ -26,16 +28,18 @@ export function liveSessionStatusLabel(status: LiveSessionStatus): string {
         'auto.components.live-sessions.status.waitingTask',
         'Waiting on background tasks'
       )
+    case 'your-turn':
+      return translate('auto.components.live-sessions.status.yourTurn', 'Waiting on you')
     case 'idle':
       return translate('auto.components.live-sessions.status.idle', 'Idle')
     case 'waiting-input':
-      return translate('auto.components.live-sessions.status.waiting', 'Waiting for input')
+      return translate('auto.components.live-sessions.status.waiting', 'Asking you a question')
     case 'needs-permission':
-      return translate('auto.components.live-sessions.status.permission', 'Needs permission')
+      return translate('auto.components.live-sessions.status.permission', 'Waiting for approval')
     case 'errored':
-      return translate('auto.components.live-sessions.status.errored', 'Errored')
+      return translate('auto.components.live-sessions.status.errored', 'Error')
     case 'done':
-      return translate('auto.components.live-sessions.status.done', 'Done')
+      return translate('auto.components.live-sessions.status.done', 'Ended')
   }
 }
 
