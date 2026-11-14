@@ -7,6 +7,7 @@ import { localSshdUnavailableReason, startLocalSshdMachines } from './helpers/lo
 import { createRestartSession } from './helpers/orca-restart'
 import { seedIsolatedSshConfig } from './helpers/ssh-config-host-picker'
 import { waitForSessionReady } from './helpers/store'
+import type { MachineId } from '../../src/shared/machines/machine-types'
 
 const SSH_ALIAS = 'seal-e2e-editor-box'
 const SSH_USER = 'sealedit'
@@ -17,7 +18,7 @@ const OPEN_IN_APPLICATIONS = [
   { id: 'missing', label: 'Missing editor', command: 'seal-e2e-missing-editor' }
 ]
 
-type MachineRow = { id: string; ssh: boolean; server: boolean }
+type MachineRow = { id: MachineId; ssh: boolean; server: boolean }
 
 async function listMachines(page: Page): Promise<MachineRow[]> {
   return page.evaluate(async () =>
@@ -38,7 +39,7 @@ async function connectRemoteMachines(page: Page): Promise<void> {
 }
 
 /** Selects the machine and waits until its files are listed. */
-async function showMachine(page: Page, machineId: string): Promise<string> {
+async function showMachine(page: Page, machineId: MachineId): Promise<string> {
   await page.locator(`[data-machines-page] [data-machine-id="${machineId}"]`).click()
   await expect(page.locator(`[data-machine-explorer="${machineId}"]`)).toBeVisible({
     timeout: 120_000
@@ -48,7 +49,7 @@ async function showMachine(page: Page, machineId: string): Promise<string> {
     page.locator(`[data-machine-explorer="${machineId}"] [role=treeitem]`).first()
   ).toBeVisible({ timeout: 60_000 })
   return page.evaluate(
-    async (id) => (await window.api.machines!.listDir({ machineId: id as 'local' })).path,
+    async (id) => (await window.api.machines!.listDir({ machineId: id })).path,
     machineId
   )
 }

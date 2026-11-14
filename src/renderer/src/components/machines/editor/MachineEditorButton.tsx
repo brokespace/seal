@@ -65,8 +65,7 @@ export function MachineEditorButton({
           <Button
             type="button"
             variant="outline"
-            size="sm"
-            className="px-1.5"
+            size="icon-sm"
             disabled={disabled}
             aria-label={t('auto.components.machines.editor.choose', 'Choose editor')}
           >
