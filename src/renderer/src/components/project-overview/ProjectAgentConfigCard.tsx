@@ -2,6 +2,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { ProjectAgentConfigPanel } from '@/components/settings/agent-config/RepositoryAgentConfigSection'
+import { getRepositoryAgentConfigSectionId } from '@/components/settings/repository/repository-settings-targets'
 import type { Repo } from '../../../../shared/repo-types'
 import { openProjectSettings } from './project-overview-actions'
 
@@ -20,7 +21,7 @@ export function ProjectAgentConfigCard({ repo }: { repo: Repo }): React.JSX.Elem
           variant="ghost"
           size="xs"
           data-project-overview-edit-config
-          onClick={() => openProjectSettings(repo)}
+          onClick={() => openProjectSettings(repo, getRepositoryAgentConfigSectionId(repo.id))}
         >
           {t('seal.projectOverview.config.editInSettings', 'Edit in settings')}
         </Button>

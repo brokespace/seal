@@ -14,10 +14,10 @@ export function openProjectWorkspace(worktree: Worktree): void {
   )
 }
 
-/** The project's pane in Settings, where its agent configuration is edited. */
-export function openProjectSettings(repo: Repo): void {
+/** The project's pane in Settings, at one of its sections when given. */
+export function openProjectSettings(repo: Repo, sectionId?: string): void {
   const state = useAppStore.getState()
-  state.openSettingsTarget({ pane: 'repo', repoId: repo.id })
+  state.openSettingsTarget({ pane: 'repo', repoId: repo.id, ...(sectionId ? { sectionId } : {}) })
   state.openSettingsPage()
 }
 
