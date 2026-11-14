@@ -1,4 +1,3 @@
-import { useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
@@ -40,68 +39,54 @@ export function useMachineExplorerEditor({
   const t = useTranslate()
   const applications = useAppStore((s) => s.settings?.openInApplications ?? NO_OPEN_IN_APPLICATIONS)
   const plan = planMachineEditorOpen(machine, applications)
-  const latest = useRef({ rows, showFolder, showFile, onAddSshDetails })
-  latest.current = { rows, showFolder, showFile, onAddSshDetails }
-
-  const open = useCallback(
-    (target: MachineEditorTarget, choice: MachineEditorChoice) => {
-      const openBuiltIn = ({ path, kind }: MachineEditorTarget): void => {
-        if (kind === 'folder') {
-          latest.current.showFolder(path)
-          return
-        }
-        const row = latest.current.rows.find(
-          (entry) => entry.type === 'entry' && entry.path === path
-        )
-        latest.current.showFile(
-          path,
-          row?.type === 'entry'
-            ? row.entry
-            : {
-                name: machinePathBasename(path),
-                kind: 'file',
-                isDirectoryLike: false,
-                size: 0,
-                mtimeMs: 0
-              }
-        )
-      }
-      if (choice === 'seal') {
-        openBuiltIn(target)
+  const open = (target: MachineEditorTarget, choice: MachineEditorChoice): void => {
+    const openBuiltIn = ({ path, kind }: MachineEditorTarget): void => {
+      if (kind === 'folder') {
+        showFolder(path)
         return
       }
-      void openMachinePathInEditor(
-        machine,
-        target,
-        { openBuiltIn, addSshDetails: () => latest.current.onAddSshDetails() },
-        choice.applicationId
+      const row = rows.find((entry) => entry.type === 'entry' && entry.path === path)
+      showFile(
+        path,
+        row?.type === 'entry'
+          ? row.entry
+          : {
+              name: machinePathBasename(path),
+              kind: 'file',
+              isDirectoryLike: false,
+              size: 0,
+              mtimeMs: 0
+            }
       )
-    },
-    [machine]
-  )
+    }
+    if (choice === 'seal') {
+      openBuiltIn(target)
+      return
+    }
+    void openMachinePathInEditor(
+      machine,
+      target,
+      { openBuiltIn, addSshDetails: onAddSshDetails },
+      choice.applicationId
+    )
+  }
 
-  const openRow = useCallback(
-    (row: EntryRow) =>
-      open({ path: row.path, kind: row.entry.isDirectoryLike ? 'folder' : 'file' }, {}),
-    [open]
-  )
+  const openRow = (row: EntryRow): void =>
+    open({ path: row.path, kind: row.entry.isDirectoryLike ? 'folder' : 'file' }, {})
 
-  const openCurrentFolder = useCallback(
-    (choice: MachineEditorChoice) => {
-      if (root === null) {
-        toast.error(
-          rootError ??
-            t(
-              'auto.components.machines.editor.filesLoading',
-              'Still loading this machine’s files. Try again in a moment.'
-            )
-        )
-        return
-      }
-      open({ path: root, kind: 'folder' }, choice)
-    },
-    [open, root, rootError, t]
-  )
+  const openCurrentFolder = (choice: MachineEditorChoice): void => {
+    if (root === null) {
+      toast.error(
+        rootError ??
+          t(
+            'auto.components.machines.editor.filesLoading',
+            'Still loading this machine’s files. Try again in a moment.'
+          )
+      )
+      return
+    }
+    open({ path: root, kind: 'folder' }, choice)
+  }
 
   return {
     label:
