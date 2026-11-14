@@ -211,6 +211,18 @@ function brandedStrings(path, code) {
   return [...new Set(strings)].filter((text) => findBrandMentions(text).length > 0)
 }
 
+function builtStrings(path, code) {
+  if (path.endsWith('.html')) {
+    return code.split('\n').filter((line) => findBrandMentions(line).length > 0)
+  }
+  if (path.endsWith('.json')) {
+    return stringLeaves(JSON.parse(code))
+      .map(([, value]) => value)
+      .filter((text) => findBrandMentions(text).length > 0)
+  }
+  return brandedStrings(path, code)
+}
+
 const NOT_SHIPPED = /\.test\.|\/testing\/|\.test-fixture\.|__fixtures__|\.fixture\.|test-support/
 
 /** Upstream names the brand pass leaves in bundled source; returns the allowlisted ones. */
@@ -265,16 +277,13 @@ function checkBuiltOutput(allowedSourceStrings) {
     allowed.some((known) => known.includes(text) || (known.length >= 20 && text.includes(known)))
   let scanned = 0
   for (const dir of dirs) {
-    for (const path of walk(dir, new Set(['.js', '.mjs', '.cjs', '.html']))) {
+    for (const path of walk(dir, new Set(['.js', '.mjs', '.cjs', '.html', '.json']))) {
       const code = read(path)
       if (!code.includes(branding.upstreamProductName)) {
         continue
       }
       scanned += 1
-      const strings = path.endsWith('.html')
-        ? code.split('\n').filter((line) => findBrandMentions(line).length > 0)
-        : brandedStrings(path, code)
-      for (const text of strings) {
+      for (const text of builtStrings(path, code)) {
         if (!isAllowed(normalizeCopy(text))) {
           fail('built', path, text)
         }

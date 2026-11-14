@@ -1,4 +1,4 @@
-// esbuild adapter for the Seal brand pass (orcad server bundles, WSL guest programs).
+// esbuild adapter for the Seal brand pass (orcad server bundles, WSL guest programs, mobile web app).
 import { readFile } from 'node:fs/promises'
 import { extname } from 'node:path'
 
@@ -41,4 +41,14 @@ export function sealBrandCopyEsbuild({ root = REPO_ROOT } = {}) {
       })
     }
   }
+}
+
+let repoPass = null
+
+/** A catalog file as Seal ships it, for build steps that copy catalogs without bundling them. */
+export async function readShippedCatalogText(file) {
+  repoPass ??= createSealBrandPass(REPO_ROOT)
+  const text = await readFile(file, 'utf8')
+  const catalogPath = repoPass.catalogPath(file)
+  return catalogPath ? repoPass.brandCatalogText(catalogPath, text) : text
 }

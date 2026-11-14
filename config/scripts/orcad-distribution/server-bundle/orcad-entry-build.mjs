@@ -198,6 +198,7 @@ export function buildOrcadLauncher(outfile) {
     target: ORCAD_COMPAT_BUILD_TARGET,
     format: 'cjs',
     outfile,
+    plugins: [sealBrandCopyEsbuild()],
     metafile: true,
     minify: true,
     sourcemap: false,

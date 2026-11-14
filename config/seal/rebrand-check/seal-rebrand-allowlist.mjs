@@ -102,7 +102,16 @@ export const USER_VISIBLE_TEXT_FILES = [
 export const DOCS_SITE_CONTENT = 'docs/site/content'
 
 /** Build outputs scanned when present. */
-export const BUILT_OUTPUT_DIRS = ['out/main', 'out/preload', 'out/renderer', 'out/cli']
+export const BUILT_OUTPUT_DIRS = [
+  'out/main',
+  'out/preload',
+  'out/renderer',
+  'out/cli',
+  'out/mobile-web',
+  'out/orcad',
+  'out/relay',
+  'out/shared'
+]
 
 /** Lines in those files that name upstream on purpose. */
 export const TEXT_LINE_ALLOWLIST = [
@@ -117,5 +126,7 @@ export const BUILT_COPY_ALLOWLIST = [
   // Thrown by a build stub (config/build-plugins/sucrase-unused-transformers.ts), never shown.
   /^this sucrase transform is not bundled in Orca$/,
   // Engineering notes in src/main/runtime/agent-state-rules/*.json; the app reads the rules only.
-  /\b(?:pane|session title|rest sign|settles?)\b/
+  /\b(?:pane|session title|rest sign|settles?)\b/,
+  // Manifest of the chat-visuals plugin an agent loads; agent-facing like the skill it carries.
+  /^Teaches an Orca chat agent /
 ]
