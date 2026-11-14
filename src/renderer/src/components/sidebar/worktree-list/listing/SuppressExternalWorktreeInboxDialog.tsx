@@ -59,7 +59,7 @@ export default function SuppressExternalWorktreeInboxDialog({
           >
             {t(
               'auto.components.sidebar.SuppressExternalWorktreeInboxDialog.8c0b2e7a41',
-              'Open Non-Seal worktrees settings'
+              'Open Non-Orca worktrees settings'
             )}
           </button>
         </div>

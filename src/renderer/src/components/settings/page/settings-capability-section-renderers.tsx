@@ -172,7 +172,7 @@ export function renderOrchestrationSettingsSection(
       title={t('auto.components.settings.Settings.00c3a7950d', 'Orchestration')}
       description={t(
         'auto.components.settings.Settings.475980f53d',
-        'Coordinate multiple coding agents through Seal.'
+        'Coordinate multiple coding agents through Orca.'
       )}
       searchEntries={navigation.getSectionSearchEntries('orchestration')}
     >
@@ -194,7 +194,7 @@ export function renderLinearSettingsSection(
       title={t('auto.components.settings.Settings.linearTitle', 'Linear')}
       description={t(
         'auto.components.settings.Settings.linearDescription',
-        'How Linear works in Seal, setup checklist, agent skill, and example prompts.'
+        'How Linear works in Orca, setup checklist, agent skill, and example prompts.'
       )}
       searchEntries={navigation.getSectionSearchEntries('linear')}
     >

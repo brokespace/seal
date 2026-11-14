@@ -121,7 +121,7 @@ export function SkillBundleInstallReview(props: {
           <p className="text-xs leading-5 text-muted-foreground">
             {t(
               'auto.components.skills.SkillBundleInstallReview.01c5a11e12',
-              'Seal will keep these local copies by default. Select only the copies you want to discard and replace.'
+              'Orca will keep these local copies by default. Select only the copies you want to discard and replace.'
             )}
           </p>
           <div className="space-y-2">

@@ -30,7 +30,7 @@ export async function switchRuntimeGitBranch(
       throw new Error(
         translate(
           'sourceControl.branchPicker.updateHost',
-          'Update Seal on {{host}} to switch branches from here.',
+          'Update Orca on {{host}} to switch branches from here.',
           { host: hostLabel }
         )
       )

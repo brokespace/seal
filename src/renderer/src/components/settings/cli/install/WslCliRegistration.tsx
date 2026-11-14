@@ -248,11 +248,11 @@ export function WslCliRegistration({
               {isEnabled
                 ? t(
                     'auto.components.settings.WslCliRegistration.d8216eb22e',
-                    'This removes the WSL shell command. Seal itself remains installed on Windows.'
+                    'This removes the WSL shell command. Orca itself remains installed on Windows.'
                   )
                 : t(
                     'auto.components.settings.WslCliRegistration.7ee4e52b99',
-                    'Seal will register {{value0}} so the command works from WSL terminals.',
+                    'Orca will register {{value0}} so the command works from WSL terminals.',
                     { value0: status?.commandPath ?? commandName }
                   )}
             </DialogDescription>

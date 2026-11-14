@@ -68,7 +68,7 @@ describe('orcad profile CLI launcher', () => {
   )
 
   it.skipIf(process.platform === 'win32')(
-    "passes a person's own Seal settings through, adding only the profile",
+    "passes a person's own Orca settings through, adding only the profile",
     async () => {
       const path = join(roots.install, ...ORCAD_CLI_ENTRY_FILENAME.split('/'))
       await mkdir(dirname(path), { recursive: true })

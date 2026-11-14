@@ -246,7 +246,7 @@ describe('deployAndLaunchWslOrcad across an app update (E1)', () => {
       outcome: 'installed-not-activated',
       fullVersion: '1.5.0+ab',
       code: 'orcad_activation_policy_refused',
-      reason: 'newer Seal ran this host'
+      reason: 'newer Orca ran this host'
     }
 
     function withRecord(record: OrcadActivationRecord): void {
@@ -268,7 +268,7 @@ describe('deployAndLaunchWslOrcad across an app update (E1)', () => {
       reprobe: async () => readiness
     })
 
-    it('serves a newer build another Seal activated instead of deploying over it', async () => {
+    it('serves a newer build another Orca activated instead of deploying over it', async () => {
       withRecord(newer)
       mocks.deploy.mockResolvedValue(policyRefused)
       mocks.adoptRunning.mockResolvedValueOnce(adoptedAs('2.0.0+cd', NEWER_READINESS))

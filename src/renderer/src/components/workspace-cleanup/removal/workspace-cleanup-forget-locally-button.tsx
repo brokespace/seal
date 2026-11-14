@@ -20,7 +20,7 @@ export function WorkspaceCleanupForgetLocallyButton({
   onForget: (candidate: WorkspaceCleanupCandidate) => void
 }): React.JSX.Element {
   const t = useTranslate()
-  const label = t('auto.components.sidebar.ForgetSshWorkspaceDialog.forget', 'Remove from Seal')
+  const label = t('auto.components.sidebar.ForgetSshWorkspaceDialog.forget', 'Remove from Orca')
   return (
     <Tooltip>
       <TooltipTrigger asChild>

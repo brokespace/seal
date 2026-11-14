@@ -1,0 +1,33 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "安裝 Seal Mobile。",
+          "installLead": "Seal Mobile 未在 App Store 或 Google Play 上架。請從 Seal 存放庫建置並安裝，然後繼續第 2 步取得配對 QR 碼。",
+          "installGuide": "開啟安裝指南"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "配對碼無效。需要 seal://pair?... URL 或原始配對資料。"
+    }
+  }
+}

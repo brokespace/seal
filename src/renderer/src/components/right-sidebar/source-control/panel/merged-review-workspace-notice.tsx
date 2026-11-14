@@ -60,7 +60,7 @@ export function SourceControlMergedReviewNotice({
   } else if (readiness.kind === 'head-unverified') {
     message = t(
       'auto.components.right.sidebar.SourceControl.mergedReviewHeadMoved',
-      '{{review}} is merged, but Seal could not confirm that it includes this branch’s current commits.',
+      '{{review}} is merged, but Orca could not confirm that it includes this branch’s current commits.',
       { review: label }
     )
   } else if (worktree.isMainWorktree) {

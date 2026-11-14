@@ -165,7 +165,7 @@ function moveAutomationRunsToBlob(payload: OrcadMigrationCatalogPayload): {
   const maxBytes = ORCAD_MIGRATION_BLOB_KIND_CONTRACTS['automation-run-history'].maxBytes
   if (bytes.length > maxBytes) {
     throw new Error(
-      `This SSH host's automation run history is too large to move to its Seal server ` +
+      `This SSH host's automation run history is too large to move to its Orca server ` +
         `(${formatKib(bytes.length)}, limit ${formatKib(maxBytes)}). Delete automations you no ` +
         `longer need from this host's projects; their run history goes with them. Then reconnect. ` +
         `(orcad_migration_automation_run_history_too_large)`

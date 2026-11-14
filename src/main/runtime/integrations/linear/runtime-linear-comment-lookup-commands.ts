@@ -70,7 +70,7 @@ export class RuntimeLinearCommentLookupCommands extends RuntimeLinearWriteResult
     }
     if (isLinearAuthError(error)) {
       return linearError('linear_auth_expired', 'Linear authentication expired.', {
-        nextSteps: ['Reconnect Linear from Seal settings.']
+        nextSteps: ['Reconnect Linear from Orca settings.']
       })
     }
     return toLinearAccessError(error)

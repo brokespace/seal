@@ -40,7 +40,7 @@ function isLegacyDesktopSpeechSetupReply(reply: RpcResponse): boolean {
 function speechlessServerMessage(): string {
   return translate(
     'dictation.setup.serverUpdateRequired',
-    'Update Seal on this server to use voice dictation.'
+    'Update Orca on this server to use voice dictation.'
   )
 }
 
@@ -136,7 +136,7 @@ export async function fetchDictationSetup(
     throw new Error(
       translate(
         'dictation.setup.desktopUpdateRequired',
-        'Update the paired desktop Seal app to use mobile voice settings.'
+        'Update the paired desktop Orca app to use mobile voice settings.'
       )
     )
   }

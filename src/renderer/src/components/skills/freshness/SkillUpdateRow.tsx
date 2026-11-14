@@ -48,7 +48,7 @@ function ChoiceLine({
           />
           {t(
             'auto.components.skills.SkillUpdateRow.replaceWithOrca',
-            "Replace with Seal's copy (keeps a backup)"
+            "Replace with Orca's copy (keeps a backup)"
           )}
         </label>
       ) : null}

@@ -186,7 +186,7 @@ async function harness() {
     applyConsent: async ({ pluginKey, reviewedFingerprint }) => {
       consents[pluginKey] = reviewedFingerprint
     },
-    executionHost: 'the Seal host (build-box)',
+    executionHost: 'the Orca host (build-box)',
     caller: { kind: 'local-cli' }
   }
   const lock = async () => (await readPluginLockfile(getUserPluginsDir(userDataPath))).plugins

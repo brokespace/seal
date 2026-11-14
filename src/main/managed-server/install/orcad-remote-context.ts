@@ -72,8 +72,8 @@ export async function resolveOrcadRemoteContext<Target extends OrcadHostTarget =
   if (!host) {
     throw new OrcadHostUnsupportedError(
       isWslOrcadHostTarget(target)
-        ? 'Seal’s server doesn’t support this WSL distro’s platform. Use an x64 or arm64 Linux distro.'
-        : 'Seal’s server doesn’t support this SSH host’s platform.'
+        ? 'Orca’s server doesn’t support this WSL distro’s platform. Use an x64 or arm64 Linux distro.'
+        : 'Orca’s server doesn’t support this SSH host’s platform.'
     )
   }
   const remote = { conn: connection, host, signal }

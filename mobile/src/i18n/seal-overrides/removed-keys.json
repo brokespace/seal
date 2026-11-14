@@ -1,0 +1,10 @@
+[
+  "accounts.screen.default",
+  "app.pairScan.downloadQrCode",
+  "components.protocolBlockScreen.mobileTooOldAppStore",
+  "components.protocolBlockScreen.openAppStore",
+  "components.protocolBlockScreen.workspaceNeedsUpdateAppStore",
+  "settings.aboutScreen.socialProfile",
+  "settings.aboutScreen.website",
+  "settings.menuScreen.privacyPolicy"
+]

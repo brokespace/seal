@@ -133,7 +133,7 @@ export async function mountPanel(
     } else if (event === PLUGIN_DECLARATIVE_MESSAGES.persist) {
       const parsed = pluginDeclarativePersistPayloadSchema.safeParse(payload)
       if (!parsed.success) {
-        errors.push({ kind: 'refused', message: 'persisted state Seal would not store' })
+        errors.push({ kind: 'refused', message: 'persisted state Orca would not store' })
         return
       }
       for (const entry of parsed.data.entries) {

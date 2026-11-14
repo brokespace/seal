@@ -69,7 +69,7 @@ export function renderServeService(input: ServeServiceInput): ServeServiceSpec {
   const argv = [input.command, ...serveServiceArgs(input)]
   if (manager === 'launchd') {
     const name = suffix ? `${SERVE_LAUNCHD_LABEL_PREFIX}.${suffix}` : SERVE_LAUNCHD_LABEL_PREFIX
-    const logPath = join(input.homeDir, 'Library', 'Logs', 'Seal', `${name}.log`)
+    const logPath = join(input.homeDir, 'Library', 'Logs', 'Orca', `${name}.log`)
     return {
       manager,
       name,

@@ -95,13 +95,13 @@ export function AzureDevOpsIntegrationCard(): React.JSX.Element {
                 </span>{' '}
                 {t(
                   'auto.components.settings.token.source.control.integration.cards.7bd345e3f6',
-                  'only when Seal cannot derive the API base URL from the git remote.'
+                  'only when Orca cannot derive the API base URL from the git remote.'
                 )}
               </>
             ) : (
               t(
                 'auto.components.settings.token.source.control.integration.cards.40f678df73',
-                'Azure DevOps credentials are configured but could not authenticate. Check the token, API base URL, and repository permissions, then restart Seal if environment variables changed.'
+                'Azure DevOps credentials are configured but could not authenticate. Check the token, API base URL, and repository permissions, then restart Orca if environment variables changed.'
               )
             )}
           </p>
@@ -214,13 +214,13 @@ export function GiteaIntegrationCard(): React.JSX.Element {
                 </span>{' '}
                 {t(
                   'auto.components.settings.token.source.control.integration.cards.60708f23da',
-                  'only when Seal cannot derive the API URL from the remote.'
+                  'only when Orca cannot derive the API URL from the remote.'
                 )}
               </>
             ) : (
               t(
                 'auto.components.settings.token.source.control.integration.cards.19fb419c12',
-                'Gitea credentials are configured but could not authenticate. Check the token, API base URL, and repository permissions, then restart Seal if environment variables changed.'
+                'Gitea credentials are configured but could not authenticate. Check the token, API base URL, and repository permissions, then restart Orca if environment variables changed.'
               )
             )}
           </p>

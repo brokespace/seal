@@ -38,7 +38,7 @@ describe('merged review head equivalence (real Git)', () => {
     repoPath = mkdtempSync(join(tmpdir(), 'orca-merged-review-equivalence-'))
     git('init', '--quiet')
     git('symbolic-ref', 'HEAD', 'refs/heads/main')
-    git('config', 'user.name', 'Seal Test')
+    git('config', 'user.name', 'Orca Test')
     git('config', 'user.email', 'orca@example.test')
     git('config', 'commit.gpgSign', 'false')
     git('config', 'core.hooksPath', '.git/no-hooks')

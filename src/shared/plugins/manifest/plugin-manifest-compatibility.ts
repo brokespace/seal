@@ -16,7 +16,7 @@ export function pluginManifestCompatibilityError(raw: unknown, hostVersion: stri
   // Why only the leading floor: a later range grammar (`>=1.6.0 <2`) must still name the gap here.
   const floor = typeof range === 'string' ? /^\s*(>=\d+\.\d+\.\d+)/.exec(range)?.[1] : undefined
   if (typeof range === 'string' && floor && !satisfiesOrcaEngineRange(hostVersion, floor)) {
-    return `requires Seal ${range} (this is ${hostVersion})`
+    return `requires Orca ${range} (this is ${hostVersion})`
   }
   const version = 'manifestVersion' in raw ? raw.manifestVersion : undefined
   if (
@@ -24,7 +24,7 @@ export function pluginManifestCompatibilityError(raw: unknown, hostVersion: stri
     Number.isInteger(version) &&
     version > PLUGIN_MANIFEST_VERSION_CURRENT
   ) {
-    return `requires Seal support for manifest format ${version} (this is ${hostVersion})`
+    return `requires Orca support for manifest format ${version} (this is ${hostVersion})`
   }
   return null
 }
@@ -37,5 +37,5 @@ export function pluginCatalogReleaseCompatibilityError(
 ): string | null {
   return satisfiesOrcaEngineRange(hostVersion, `>=${release.minimumOrca}`)
     ? null
-    : `requires Seal >=${release.minimumOrca} (this is ${hostVersion})`
+    : `requires Orca >=${release.minimumOrca} (this is ${hostVersion})`
 }

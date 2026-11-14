@@ -18,7 +18,7 @@ function getSystemNotificationSettingsCopy(
       ),
       failureDescription: translate(
         'auto.components.settings.notification.settings.copy.macFailureDescription',
-        'Enable Allow notifications for Seal in System Settings.'
+        'Enable Allow notifications for Orca in System Settings.'
       )
     }
   }
@@ -31,7 +31,7 @@ function getSystemNotificationSettingsCopy(
       ),
       failureDescription: translate(
         'auto.components.settings.notification.settings.copy.windowsFailureDescription',
-        'Enable notifications for Seal in Windows Settings.'
+        'Enable notifications for Orca in Windows Settings.'
       )
     }
   }
@@ -96,7 +96,7 @@ export async function sendNotificationSettingsTestNotification(
         {
           description: translate(
             'auto.components.settings.NotificationsPane.115437bc35',
-            'If no macOS banner appeared, enable Allow notifications for Seal.'
+            'If no macOS banner appeared, enable Allow notifications for Orca.'
           ),
           action: {
             label: translate(
@@ -144,7 +144,7 @@ export async function sendNotificationSettingsTestNotification(
         {
           description: translate(
             'auto.components.settings.NotificationsPane.4676a95bc3',
-            'Check your desktop notification settings for Seal.'
+            'Check your desktop notification settings for Orca.'
           )
         }
       )

@@ -43,7 +43,7 @@ describe('Pi session changes', () => {
     const harness = createPi(async () => {
       attempts += 1
       if (attempts === 3) {
-        throw new Error('Seal restarting')
+        throw new Error('Orca restarting')
       }
       return { ok: true }
     })

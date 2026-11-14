@@ -78,11 +78,11 @@ export function CliSkillSetupTerminal(): React.JSX.Element {
         title={t('auto.components.feature.tips.CliSkillSetupTerminal.84e9576dac', 'Skill setup')}
         ariaLabel={t(
           'auto.components.feature.tips.CliSkillSetupTerminal.43b60ec5c3',
-          'Seal CLI and orchestration skill install terminal'
+          'Orca CLI and orchestration skill install terminal'
         )}
         description={t(
           'auto.components.feature.tips.CliSkillSetupTerminal.1953e90447',
-          'Press Enter to install the Seal CLI orchestration skill for your agents.'
+          'Press Enter to install the Orca CLI orchestration skill for your agents.'
         )}
         terminalHeightPx={280}
         terminalTopMarginPx={8}

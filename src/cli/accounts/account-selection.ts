@@ -155,7 +155,7 @@ function antigravityAccounts(ctx: HandlerContext): ProviderAccounts {
     if (!(await supportsAntigravityAccounts(ctx))) {
       throw new RuntimeClientError(
         'incompatible_runtime',
-        'Update or restart this Seal host to manage Antigravity accounts.'
+        'Update or restart this Orca host to manage Antigravity accounts.'
       )
     }
     return client.call<AntigravityAccountState>('accounts.antigravityList', target)

@@ -109,7 +109,7 @@ describe.skipIf(process.platform === 'win32')('runtime transport', () => {
 
     expect(error).toMatchObject({ code: 'runtime_unavailable' })
     expect(formatCliError(error)).toBe(
-      'The Seal runtime changed while the request was in flight.\nNext step: Retry the command.'
+      'The Orca runtime changed while the request was in flight.\nNext step: Retry the command.'
     )
   })
 
@@ -324,7 +324,7 @@ describe.skipIf(process.platform === 'win32')('runtime transport', () => {
     await vi.runAllTimersAsync()
     expect(await response).toMatchObject({
       code: 'runtime_unavailable',
-      message: 'Seal closed the connection before responding.'
+      message: 'Orca closed the connection before responding.'
     })
     expect(vi.getTimerCount()).toBe(0)
   })

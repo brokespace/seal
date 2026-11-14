@@ -16,12 +16,12 @@ export function getBrowserLinkRoutingDescription(
   if (modifierInverts) {
     return t(
       'auto.components.settings.BrowserLinkRoutingSetting.descriptionBase',
-      'Open http(s) links from anywhere in Seal in its built-in browser. Sign-in pages still open in your system browser.'
+      'Open http(s) links from anywhere in Orca in its built-in browser. Sign-in pages still open in your system browser.'
     )
   }
   return t(
     'auto.components.settings.BrowserLinkRoutingSetting.description',
-    'Open http(s) links from anywhere in Seal in its built-in browser. Sign-in pages and {{shortcut}} always use your system browser.',
+    'Open http(s) links from anywhere in Orca in its built-in browser. Sign-in pages and {{shortcut}} always use your system browser.',
     { shortcut: getBrowserLinkRoutingShortcutLabel(platform) }
   )
 }
@@ -38,7 +38,7 @@ export function getLinkRoutingModifierTitle(
       )
     : t(
         'auto.components.settings.BrowserLinkRoutingModifierSetting.titleOrca',
-        'Hold Shift to open in Seal'
+        'Hold Shift to open in Orca'
       )
 }
 
@@ -57,12 +57,12 @@ export function getLinkRoutingModifierDescription(
   return openLinksInApp
     ? t(
         'auto.components.settings.BrowserLinkRoutingModifierSetting.descriptionSystem',
-        'Links open in Seal, so {{chord}}+click sends one to your system browser instead.',
+        'Links open in Orca, so {{chord}}+click sends one to your system browser instead.',
         { chord }
       )
     : t(
         'auto.components.settings.BrowserLinkRoutingModifierSetting.descriptionOrca',
-        "Links open in your system browser. When enabled, {{chord}}+click opens one in Seal's built-in browser instead.",
+        "Links open in your system browser. When enabled, {{chord}}+click opens one in Orca's built-in browser instead.",
         { chord }
       )
 }
