@@ -19,6 +19,15 @@ import {
 import type { MachineWorktree } from '../../../../../shared/machines/machine-view'
 import { launchMachineAgent, openMachineTerminal } from '../detail/machine-quick-actions'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import {
+  classifyMachineWorktreeRemovalRefusal,
+  machineWorktreeRemovalWaiver
+} from '../../../../../shared/machines/machine-worktree-removal-refusal'
+import { readIpcErrorDetail } from '@/runtime/errors/ipc-error'
+import {
+  MachineWorktreeForceRemoveDialog,
+  type MachineWorktreeForceRemoveRequest
+} from './MachineWorktreeForceRemoveDialog'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -114,6 +123,7 @@ export function MachineWorkSection({
   const [branch, setBranch] = useState('')
   const [worktrees, setWorktrees] = useState<MachineWorktree[] | null>(null)
   const [busy, setBusy] = useState(false)
+  const [forceRequest, setForceRequest] = useState<MachineWorktreeForceRemoveRequest | null>(null)
   if (machine.connection === 'local' || !online) {
     return null
   }
@@ -144,10 +154,38 @@ export function MachineWorkSection({
       return next
     })
   }
-  const remove = (worktree: MachineWorktree): Promise<void> =>
-    run(async () =>
-      machines?.removeWorktree({ machineId: machine.id, repoPath: repo, path: worktree.path })
-    )
+  const remove = async (
+    path: string,
+    label: string,
+    waiver: { force?: true; unlock?: true } = {}
+  ): Promise<void> => {
+    setBusy(true)
+    try {
+      const next = await machines?.removeWorktree({
+        machineId: machine.id,
+        repoPath: repo,
+        path,
+        ...waiver
+      })
+      if (next) {
+        setWorktrees(next)
+      }
+    } catch (error) {
+      const detail = readIpcErrorDetail(error) ?? errorText(error)
+      const refusal = classifyMachineWorktreeRemovalRefusal(detail)
+      // Why: a refusal the waiver already answered is a real failure, not another question.
+      if (refusal && !(waiver.force && (refusal.kind !== 'locked' || waiver.unlock))) {
+        setForceRequest({ path, label, refusal })
+      } else {
+        toast.error(t('auto.components.machines.work.removeFailed', 'Could not remove worktree'), {
+          description: detail,
+          duration: Infinity
+        })
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <section className="space-y-2" data-machine-work>
@@ -215,7 +253,12 @@ export function MachineWorkSection({
                     size="icon-xs"
                     aria-label={t('auto.components.machines.work.remove', 'Remove worktree')}
                     disabled={busy}
-                    onClick={() => void remove(worktree)}
+                    onClick={() =>
+                      void remove(
+                        worktree.path,
+                        worktree.branch ?? machinePathBasename(worktree.path)
+                      )
+                    }
                   >
                     <Trash2 />
                   </Button>
@@ -243,6 +286,14 @@ export function MachineWorkSection({
           </form>
         </div>
       ) : null}
+      <MachineWorktreeForceRemoveDialog
+        request={forceRequest}
+        onCancel={() => setForceRequest(null)}
+        onConfirm={(request) => {
+          setForceRequest(null)
+          void remove(request.path, request.label, machineWorktreeRemovalWaiver(request.refusal))
+        }}
+      />
     </section>
   )
 }
