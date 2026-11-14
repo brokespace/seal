@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { sampleLiveSession as session } from '../live-session-sample'
+import { sampleLiveSession as session } from '../live-session.test-fixture'
 import { linkLiveSessions, liveSessionBadges, type LiveSessionLink } from './live-session-links'
 
 const BUILD_BOX = { hostId: 'ssh-1', label: 'build-box', kind: 'remote' } as const

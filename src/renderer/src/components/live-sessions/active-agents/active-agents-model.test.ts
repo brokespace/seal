@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionLink } from '../links/live-session-links'
-import { sampleLiveSession as session, SAMPLE_NOW as NOW } from '../live-session-sample'
+import { sampleLiveSession as session, SAMPLE_NOW as NOW } from '../live-session.test-fixture'
 import { buildActiveAgents, type ActiveAgentsFilter } from './active-agents-model'
 
 const HOUR = 3_600_000
