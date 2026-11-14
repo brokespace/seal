@@ -22,6 +22,13 @@ export function machineFilePreviewHref(
   }
 }
 
+export function machineDiskHref(hostId: string, machineId: string, path?: string) {
+  return {
+    pathname: '/h/[hostId]/seal/machines/[machineId]/disk' as const,
+    params: { hostId, machineId, ...(path ? { path } : {}) }
+  }
+}
+
 export type MachineRouteParams = {
   hostId?: string | string[]
   machineId?: string | string[]

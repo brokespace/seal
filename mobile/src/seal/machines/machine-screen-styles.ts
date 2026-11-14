@@ -150,6 +150,24 @@ export const machineScreenStyles = themedStyleSheet(() => ({
     color: colors.textMuted,
     fontSize: 11
   },
+  diskMount: {
+    gap: spacing.xs
+  },
+  diskSize: {
+    color: colors.textSecondary,
+    fontSize: typography.metaSize,
+    fontVariant: ['tabular-nums']
+  },
+  diskTotal: {
+    color: colors.textPrimary,
+    fontSize: typography.metaSize,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums']
+  },
+  diskNotes: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md
+  },
   footerStatus: {
     paddingVertical: spacing.lg,
     alignItems: 'center'

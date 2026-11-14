@@ -3,6 +3,7 @@ import type {
   MachineDiskUsage,
   MachineDiskUsageEntry
 } from '../../../shared/machines/machine-resource-types'
+import { isHiddenDiskMount } from '../../../shared/machines/machine-disk-mount-rules'
 import { machinePathBasename } from '../../../shared/machines/machine-paths'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import type { MachineConnection } from '../connection/machine-connection'
@@ -23,18 +24,6 @@ const PSEUDO_FILESYSTEMS = new Set([
   'run',
   'efivarfs'
 ])
-const HIDDEN_MOUNT_PREFIXES = [
-  '/dev',
-  '/run',
-  '/sys',
-  '/proc',
-  '/snap/',
-  '/var/snap/',
-  '/boot/efi',
-  '/var/lib/docker/',
-  '/var/lib/kubelet/',
-  '/private/var/vm'
-]
 
 function isBrowsableMount(mount: MachineDiskMount): boolean {
   if (mount.totalBytes <= 0 || PSEUDO_FILESYSTEMS.has(mount.filesystem)) {
@@ -43,12 +32,7 @@ function isBrowsableMount(mount: MachineDiskMount): boolean {
   if (mount.filesystem.startsWith('map ') || mount.filesystem === 'overlay') {
     return mount.mount === '/'
   }
-  if (mount.mount.startsWith('/System/Volumes/')) {
-    return false
-  }
-  return !HIDDEN_MOUNT_PREFIXES.some(
-    (prefix) => mount.mount === prefix.replace(/\/$/, '') || mount.mount.startsWith(prefix)
-  )
+  return !isHiddenDiskMount(mount.mount)
 }
 
 /** `df -Pk` rows a person would recognise as a disk, one per filesystem. */

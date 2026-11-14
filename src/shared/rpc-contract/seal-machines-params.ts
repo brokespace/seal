@@ -59,4 +59,19 @@ export const SealMachinesDownloadUrlParams = z
 
 export const SealMachinesTransferIdParams = z.object({ transferId: z.string().min(1) }).strict()
 
+export const MachineDiskIndexRequestSchema = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('status') }).strict(),
+  z.object({ op: z.literal('list'), path: MachinePath }).strict(),
+  z
+    .object({ op: z.literal('largest'), kind: z.enum(['files', 'folders']), mount: MachinePath })
+    .strict(),
+  z.object({ op: z.literal('rescan') }).strict(),
+  z.object({ op: z.literal('setMountIndexed'), mount: MachinePath, indexed: z.boolean() }).strict(),
+  z.object({ op: z.literal('setProtectedFolders'), included: z.boolean() }).strict()
+])
+
+export const SealMachinesDiskIndexParams = z
+  .object({ machineId: MachineIdParam, request: MachineDiskIndexRequestSchema })
+  .strict()
+
 export type SealMachinesListResult = { machines: MachineSummary[] }

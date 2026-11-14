@@ -1,8 +1,11 @@
 import {
   MACHINE_CLEANUP_TARGETS,
-  type MachineCleanupTargetId
+  MACHINE_DOCKER_CONTAINER_ACTIONS,
+  type MachineCleanupTargetId,
+  type MachineDockerContainerAction
 } from '../../../shared/machines/machine-resource-types'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
+import { MachineDiskIndexRequestSchema } from '../../../shared/rpc-contract/seal-machines-params'
 import type { MachineConnection } from '../connection/machine-connection'
 import {
   machineIdOf,
@@ -12,7 +15,8 @@ import {
 } from '../machine-ipc-args'
 import { getMachineRegistry } from '../registry/machine-registry-service'
 import { MachineCleanupRunner } from './machine-cleanup-runner'
-import { listMachineDiskMounts, measureMachineDiskUsage } from './machine-disk-usage'
+import { readMachineDockerStorage } from './machine-docker-cleanup-scan'
+import { queryMachineDiskIndex } from './machine-disk-index'
 import {
   listMachineDockerContainers,
   runMachineDockerContainerAction
@@ -21,7 +25,7 @@ import { probeMachineProcesses } from './machine-process-probe'
 import { signalMachineProcess } from './machine-process-signal'
 
 const cleanups = new MachineCleanupRunner()
-const usageScans = new Map<string, AbortController>()
+const listings = new Map<string, AbortController>()
 
 async function connected(machineId: unknown): Promise<MachineConnection> {
   const connection = getMachineRegistry().connection(machineIdOf(machineId))
@@ -35,6 +39,14 @@ function cleanupTargetOf(value: unknown): MachineCleanupTargetId {
     throw new Error('Unknown cleanup target')
   }
   return target
+}
+
+function dockerActionOf(value: unknown): MachineDockerContainerAction {
+  const action = MACHINE_DOCKER_CONTAINER_ACTIONS.find((known) => known === value)
+  if (!action) {
+    throw new Error('Unsupported container action')
+  }
+  return action
 }
 
 export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar): void {
@@ -58,29 +70,29 @@ export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar):
     runMachineDockerContainerAction(
       await connected(args.machineId),
       requireString(args.containerId, 'containerId'),
-      args.action === 'restart' ? 'restart' : 'stop'
+      dockerActionOf(args.action)
     )
   )
 
-  handle(MACHINE_IPC.listDiskMounts, async (args) =>
-    listMachineDiskMounts(await connected(args.machineId))
+  handle(MACHINE_IPC.dockerStorage, async (args) =>
+    readMachineDockerStorage(await connected(args.machineId))
   )
 
-  // A newer drill-down for the same machine replaces the one still walking the previous folder.
-  handle(MACHINE_IPC.measureDiskUsage, async (args) => {
+  // A newer drill-down for the same machine replaces the one still reading the previous folder.
+  handle(MACHINE_IPC.diskIndex, async (args) => {
     const connection = await connected(args.machineId)
-    usageScans.get(connection.machineId)?.abort()
+    const request = MachineDiskIndexRequestSchema.parse(args.request)
+    if (request.op !== 'list') {
+      return queryMachineDiskIndex(connection, request)
+    }
+    listings.get(connection.machineId)?.abort()
     const controller = new AbortController()
-    usageScans.set(connection.machineId, controller)
+    listings.set(connection.machineId, controller)
     try {
-      return await measureMachineDiskUsage(
-        connection,
-        requireString(args.path, 'path'),
-        controller.signal
-      )
+      return await queryMachineDiskIndex(connection, request, controller.signal)
     } finally {
-      if (usageScans.get(connection.machineId) === controller) {
-        usageScans.delete(connection.machineId)
+      if (listings.get(connection.machineId) === controller) {
+        listings.delete(connection.machineId)
       }
     }
   })

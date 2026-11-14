@@ -218,7 +218,6 @@
           "close": "Close",
           "cancel": "Cancel",
           "intro": "Nothing is removed until you review a list and confirm it. Up to {{size}} found so far.",
-          "rescan": "Scan again",
           "review": "Review…",
           "dockerImages": {
             "title": "Unused Docker images",
@@ -264,6 +263,11 @@
             "title": "Seal leftovers",
             "description": "Finished job records and temporary files Seal left on this machine.",
             "removal": "Deletes each ticked item. Jobs that are still running are never listed."
+          },
+          "dockerDanglingImages": {
+            "title": "Dangling Docker images",
+            "description": "Untagged image layers left behind by rebuilds and pulls.",
+            "removal": "Runs docker image rm for each ticked image, like docker image prune. Tagged images and images a container uses are never listed."
           }
         },
         "disk": {
@@ -275,12 +279,48 @@
           "cleanupTab": "Clean up",
           "up": "Parent folder",
           "path": "Folder being sized",
-          "rescan": "Measure again",
           "reveal": "Show in files",
-          "sizing": "Measuring… large folders take a while the first time.",
           "empty": "This folder is empty.",
           "delete": "Delete…",
-          "incomplete": "Some folders could not be read, so the real total is larger."
+          "incomplete": "Some folders could not be read, so the real total is larger.",
+          "dockerStorage": "Docker storage",
+          "filesTab": "Largest files",
+          "foldersTab": "Largest folders",
+          "largest": {
+            "filesIntro": "The largest files on {{mount}}.",
+            "foldersIntro": "Folders on {{mount}} by the size of the files directly inside them, not counting subfolders.",
+            "age": "As of {{age}} ago.",
+            "noIndex": "This list comes from the background index, which this disk does not have yet.",
+            "none": "Nothing has been indexed here yet.",
+            "direct": "{{formatted}} files"
+          },
+          "index": {
+            "network": "Network disk, not indexed.",
+            "removable": "Removable disk, not indexed.",
+            "excluded": "Left out of the index.",
+            "virtual": "Not a real disk, not indexed.",
+            "firstScan": "First scan in progress.",
+            "waiting": "Waiting for its first scan.",
+            "age": "Indexed {{age}} ago",
+            "files": "{{formatted}} files",
+            "unreadable": "{{formatted}} folders could not be read",
+            "scanning": "Scanning {{mount}}: {{files}} files, {{size}} so far",
+            "rescanning": "Checking {{mount}} for changes: {{percent}}%",
+            "next": "Checks for changes again in {{time}}",
+            "exclude": "Stop indexing",
+            "include": "Index this disk",
+            "noNode": "This machine has no Node.js 20 or newer, so there is no background index: folders are measured when you open them, which is slow on big disks.",
+            "failed": "The background index could not be started on this machine, so folders are measured when you open them.",
+            "protected": "Desktop, Documents, Downloads and iCloud folders are left out, because reading them makes macOS ask for permission.",
+            "includeProtected": "Include them"
+          },
+          "entry": {
+            "unreadable": "no access",
+            "notIndexed": "not indexed",
+            "pending": "not measured yet"
+          },
+          "listingAge": "Folder sizes are from the index, {{age}} old. Files are listed as they are now.",
+          "loading": "Reading this folder…"
         },
         "goTo": {
           "label": "Go to folder",
@@ -302,7 +342,22 @@
           "title": "Docker containers",
           "none": "No containers on this machine.",
           "restart": "Restart",
-          "stop": "Stop"
+          "stop": "Stop",
+          "removeTitle": "Remove container {{name}}?",
+          "removeDescription": "Runs docker rm on {{machine}}. The container and every file written inside it are deleted for good. Its image and named volumes stay.",
+          "removeConfirm": "Remove container",
+          "removed": "Removed {{name}}.",
+          "start": "Start",
+          "remove": "Remove",
+          "started": "Started {{name}}.",
+          "pruneTitle": "Free up Docker space",
+          "storage": {
+            "images": "Images",
+            "containers": "Containers",
+            "volumes": "Volumes",
+            "buildCache": "Build cache",
+            "reclaimable": "{{size}} can be freed"
+          }
         },
         "cpu": {
           "busy": "Busy now",
@@ -352,11 +407,6 @@
           "filterLabel": "Filter processes",
           "showingTop": "Top {{shown}} of {{total}} processes",
           "showingMatches": "{{shown}} matching",
-          "paused": "Paused",
-          "live": "Live",
-          "resume": "Resume",
-          "pause": "Pause",
-          "refresh": "Refresh now",
           "noMatches": "No process matches."
         },
         "resources": {
