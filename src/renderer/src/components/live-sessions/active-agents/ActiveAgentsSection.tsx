@@ -14,8 +14,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
 import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
-import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
-import { liveSessionMenuEffects, openLiveSessionView } from '../menu/live-session-menu-effects'
+import { liveSessionMenuEffects, openLiveSessionFromRow } from '../menu/live-session-menu-effects'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
 import { ActiveAgentsGroups, type ActiveAgentsRowState } from './ActiveAgentsGroups'
 import { ActiveAgentsToolbar } from './ActiveAgentsToolbar'
@@ -25,11 +24,8 @@ import {
   visibleSessionIds
 } from './active-agents-model'
 import { activeAgentsFilterStore, useActiveAgentsFilter } from './active-agents-filter-store'
-import {
-  isLiveSessionUnread,
-  liveSessionMarksStore,
-  useLiveSessionMarks
-} from '../live-session-marks-store'
+import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
+import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
 
 const MACHINE_KEY = 'active-agents:machine:'
@@ -45,17 +41,13 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const t = useTranslate()
   const registry = useLiveSessions()
   const { links } = useLiveSessionLinks()
-  const accounts = useLocalSealAccounts()
+  const sharedRowState = useLiveSessionRowState()
   const filter = useActiveAgentsFilter()
   const marks = useLiveSessionMarks()
   const tabs = useLiveSessionTabs()
   const now = useLiveSessionClock()
   const collapsedGroups = useAppStore((state) => state.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((state) => state.toggleCollapsedGroup)
-  const showingSessions = useAppStore((state) => state.activeView === 'sessions')
-  const activeWorktreeId = useAppStore((state) =>
-    state.activeView === 'terminal' ? state.activeWorktreeId : null
-  )
   const list = useRef<HTMLDivElement>(null)
   const anchor = useRef<string | null>(null)
 
@@ -109,12 +101,6 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     }
   }, [reveal])
 
-  const onOpen = useCallback(
-    (session: LiveSession, event: React.MouseEvent | React.KeyboardEvent) => {
-      openLiveSessionView(session.id, event.type === 'dblclick' ? 'tab' : 'preview')
-    },
-    []
-  )
   const onPick = useCallback(
     (session: LiveSession, range: boolean) => {
       const from = range && anchor.current ? order.indexOf(anchor.current) : -1
@@ -134,31 +120,12 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   )
   const tabStop = tabs.activeId && order.includes(tabs.activeId) ? tabs.activeId : order[0]
   const rowState = useCallback(
-    (session: LiveSession): ActiveAgentsRowState => {
-      const link = links.get(session.id)
-      return {
-        workspaceName: link?.name ?? null,
-        account: liveSessionAccountLabel(session, accounts),
-        unread: isLiveSessionUnread(session, marks.seenAt),
-        current: showingSessions && (session.id === tabs.activeId || session.id === tabs.splitId),
-        highlighted:
-          marks.highlighted.has(session.id) ||
-          (activeWorktreeId !== null && link?.worktreeId === activeWorktreeId),
-        picked: marks.picked ? marks.picked.has(session.id) : null,
-        tabStop: session.id === tabStop
-      }
-    },
-    [
-      links,
-      accounts,
-      marks.seenAt,
-      marks.highlighted,
-      marks.picked,
-      showingSessions,
-      tabs,
-      activeWorktreeId,
-      tabStop
-    ]
+    (session: LiveSession): ActiveAgentsRowState => ({
+      ...sharedRowState(session),
+      picked: marks.picked ? marks.picked.has(session.id) : null,
+      tabStop: session.id === tabStop
+    }),
+    [sharedRowState, marks.picked, tabStop]
   )
 
   const focusRow = (sessionId: string | undefined): void => {
@@ -314,7 +281,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
               now={now}
               onToggleMachine={(hostId) => toggleCollapsedGroup(MACHINE_KEY + hostId)}
               onToggleFinished={() => toggleCollapsedGroup(FINISHED_OPEN_KEY)}
-              onOpen={onOpen}
+              onOpen={openLiveSessionFromRow}
               onPick={onPick}
             />
           </div>
