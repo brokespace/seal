@@ -36,14 +36,22 @@ function percent(text: string | undefined): number | null {
   return Number.isFinite(value) ? value : null
 }
 
-export const DOCKER_CONTAINERS_SCRIPT = `
-command -v docker >/dev/null 2>&1 || { echo "@missing"; return 0; }
-if ! listed=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' 2>&1); then
-  printf '@unreachable %s\\n' "$(printf '%s' "$listed" | head -n 1)"
-  return 0
-fi
-echo "@ready"
-printf '%s\\n' "$listed" | sed 's/^/@c\t/'
+/** Defines `seal_docker_list`, which fails when Docker is missing or does not answer. */
+export const DOCKER_CONTAINER_LIST_FUNCTION = `
+seal_docker_list() {
+  command -v docker >/dev/null 2>&1 || { echo "@missing"; return 1; }
+  if ! seal_docker_listed=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' 2>&1); then
+    printf '@unreachable %s\\n' "$(printf '%s' "$seal_docker_listed" | head -n 1)"
+    return 1
+  fi
+  echo "@ready"
+  printf '%s\\n' "$seal_docker_listed" | sed 's/^/@c\t/'
+}
+`
+
+const DOCKER_CONTAINERS_SCRIPT = `
+${DOCKER_CONTAINER_LIST_FUNCTION}
+seal_docker_list || return 0
 docker stats --no-stream --format '{{.ID}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}' 2>/dev/null | sed 's/^/@s\t/'
 `
 

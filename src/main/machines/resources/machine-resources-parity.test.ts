@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process'
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { existsSync } from 'node:fs'
@@ -9,12 +9,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { MachineConnection } from '../connection/machine-connection'
 import { MachineDirectoryService } from '../listing/machine-directory-service'
 import { completeMachineFolder } from '../listing/machine-folder-completion'
+import { fakeNvidiaSmiScript, NVIDIA_SMI_FIXTURES } from '../testing/fake-nvidia-smi'
 import {
   createInProcessServerConnection,
   createLoopbackSshConnection
 } from '../testing/machine-transport-test-doubles'
 import { MachineCleanupRunner } from './machine-cleanup-runner'
 import { listMachineDiskMounts, measureMachineDiskUsage } from './machine-disk-usage'
+import { collectMachineMetricsWithGpus } from './machine-gpu-readings'
 import { probeMachineProcesses } from './machine-process-probe'
 import { signalMachineProcess } from './machine-process-signal'
 
@@ -74,6 +76,9 @@ async function put(file: string, bytes: number): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true })
   await writeFile(file, randomBytes(bytes))
 }
+
+// The stand-in sits at the end of PATH, so a real nvidia-smi on this host would answer instead.
+const hasRealNvidiaSmi = spawnSync('sh', ['-c', 'command -v nvidia-smi']).status === 0
 
 function busyLoop(prelude: string, ...args: string[]): ChildProcess {
   return spawn('/bin/sh', ['-c', `${prelude}while :; do :; done`, ...args], { stdio: 'ignore' })
@@ -136,6 +141,68 @@ describe.skipIf(process.platform !== 'linux').each(cases)(
         stubborn.kill('SIGKILL')
       }
     })
+
+    it.skipIf(hasRealNvidiaSmi)(
+      'reads the GPUs and stops an idle process that is on one',
+      async () => {
+        const bin = path.join(home, 'bin')
+        await mkdir(bin, { recursive: true })
+        const job = spawn('sleep', ['300'], { stdio: 'ignore' })
+        await writeFile(
+          path.join(bin, 'nvidia-smi'),
+          fakeNvidiaSmiScript(NVIDIA_SMI_FIXTURES.twoWithMig),
+          { mode: 0o755 }
+        )
+        await writeFile(
+          path.join(bin, 'nvidia-smi.apps'),
+          [
+            `GPU-8f1d2c3b-4a5e-6f70-8192-a3b4c5d6e7f8, ${job.pid}, 8840, python`,
+            'always:GPU-0b9a8c7d-6e5f-4a3b-2c1d-0e9f8a7b6c5d, 4194000, [N/A], python3',
+            ''
+          ].join('\n')
+        )
+        try {
+          const snapshot = await probeMachineProcesses(machine, { gpus: true })
+          const metrics = await collectMachineMetricsWithGpus(machine)
+
+          expect(
+            snapshot.gpu?.gpus.map((gpu) => [gpu.index, gpu.name, gpu.utilizationPercent, gpu.mig])
+          ).toEqual([
+            [0, 'NVIDIA GeForce RTX 3090', 34, false],
+            [1, 'NVIDIA A100-SXM4-80GB', null, true]
+          ])
+          expect(metrics.gpus).toEqual(snapshot.gpu?.gpus)
+          expect(snapshot.gpu?.processes).toEqual([
+            {
+              pid: job.pid,
+              gpuIndex: 0,
+              memoryBytes: 8840 * 1024 ** 2,
+              name: 'python',
+              container: null
+            },
+            { pid: 4194000, gpuIndex: 1, memoryBytes: null, name: 'python3', container: null }
+          ])
+
+          const listed = snapshot.processes.find((process) => process.pid === job.pid)
+          expect(listed).toMatchObject({ name: 'sleep', command: 'sleep 300' })
+          const exited = once(job, 'exit')
+          expect(
+            await signalMachineProcess(machine, {
+              pid: job.pid!,
+              signal: 'TERM',
+              startMarker: listed!.startMarker
+            })
+          ).toEqual({ outcome: 'sent' })
+          expect(await exited).toEqual([null, 'SIGTERM'])
+        } finally {
+          job.kill('SIGKILL')
+          await rm(bin, { recursive: true })
+        }
+
+        const without = await probeMachineProcesses(machine, { gpus: true })
+        expect(without.gpu).toEqual({ gpus: [], processes: [] })
+      }
+    )
 
     it('refuses to signal init or a process group', async () => {
       for (const pid of [1, 0, -1]) {

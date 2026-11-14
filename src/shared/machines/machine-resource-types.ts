@@ -1,3 +1,4 @@
+import type { MachineGpuSnapshot } from './machine-gpu-types'
 import type { MachineId } from './machine-types'
 
 export type MachineProcessAgent = 'claude' | 'codex'
@@ -44,6 +45,8 @@ export type MachineProcessSnapshot = {
   cpuBusyPercent: number | null
   /** Null when the host reports no swap figures. */
   swap: MachineSwapUsage | null
+  /** Present only when GPU readings were asked for; their processes are then always in `processes`. */
+  gpu?: MachineGpuSnapshot
   collectedAt: number
 }
 
