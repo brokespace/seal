@@ -3,7 +3,6 @@ import {
   getRootProjectHeaderOccurrenceKey
 } from '../drag/root-project-header-drop'
 import React from 'react'
-import { ChevronDown } from 'lucide-react'
 import { ProjectHeaderHostLabel, ProjectHeaderHostTooltip } from './ProjectHeaderHostLabel'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import { cn } from '@/lib/class-names'
@@ -26,6 +25,12 @@ import { getSidebarHeaderVisual } from './header-visuals'
 import { resolveProjectGroupHeaderColor } from './project-header-color'
 import { ProjectHeaderActions } from './ProjectHeaderActions'
 import {
+  PROJECT_HEADER_OVERVIEW_CURRENT_CLASS,
+  ProjectHeaderFold,
+  ProjectHeaderName,
+  SectionHeaderCollapseGlyph
+} from './ProjectHeaderOverview'
+import {
   getProjectGroupHeaderPaddingLeft,
   WORKTREE_SECTION_HEADER_PADDING_LEFT
 } from './indentation'
@@ -43,11 +48,7 @@ import {
   RepoHeaderCreateWorkspaceButton,
   RepoHeaderProjectActionsMenu
 } from './repo-header-project-actions'
-import {
-  handleRepoHeaderCollapseAffordancePointerDown,
-  shouldIgnoreRepoHeaderToggle,
-  toggleSectionHeaderCollapse
-} from './header-event-guards'
+import { shouldIgnoreRepoHeaderToggle, toggleSectionHeaderCollapse } from './header-event-guards'
 import { getWorktreeOptionId } from './option-dom'
 import type { SectionHeaderRowContext } from './section-header-row-context'
 import type { Translate } from '@/i18n/use-translate'
@@ -167,10 +168,18 @@ export function renderWorktreeSectionHeaderRow(
   const isHeaderCollapsed = ctx.collapsedGroups.has(collapseKey)
   const toggleHeader = (event: React.MouseEvent | React.KeyboardEvent): void =>
     toggleSectionHeaderCollapse(event, collapseKey, ctx)
+  // A project's header opens its overview; its chevron and Space fold it. Other headers still fold.
+  const overviewRepo = isRepoHeader ? row.repo : undefined
+  const activateHeader = (event: React.MouseEvent | React.KeyboardEvent): void =>
+    overviewRepo && !('key' in event && event.key === ' ')
+      ? ctx.projectActions.onOpenProjectOverview(overviewRepo)
+      : toggleHeader(event)
   // Why: repo/project/status/pinned share compact section chrome; flat "All" stays a simple label.
   const showHeaderCollapseAffordance =
     row.count > 0 &&
     (isRepoHeader || isProjectGroupHeader || headerWorkspaceStatus !== null || isPinnedHeader)
+  const foldsOnClick = showHeaderCollapseAffordance && !overviewRepo
+  const fold = { label, collapsed: isHeaderCollapsed, onToggle: toggleHeader }
   return (
     <div
       key={vItem.key}
@@ -202,7 +211,7 @@ export function renderWorktreeSectionHeaderRow(
           role="button"
           tabIndex={0}
           aria-label={hostContext ? `${label} — ${hostContext.label}` : undefined}
-          aria-expanded={showHeaderCollapseAffordance ? !isHeaderCollapsed : undefined}
+          aria-expanded={foldsOnClick ? !isHeaderCollapsed : undefined}
           data-root-project-header-key={rootProjectHeaderKey}
           data-root-project-header-host={rootProjectHeaderKey ? (row.hostId ?? '') : undefined}
           data-root-project-header-section-end={
@@ -247,7 +256,8 @@ export function renderWorktreeSectionHeaderRow(
             isPinnedHeader &&
               ctx.pinDragOver &&
               'rounded-md bg-worktree-sidebar-accent ring-1 ring-worktree-sidebar-ring/40',
-            row.repo && 'overflow-hidden'
+            row.repo && 'overflow-hidden',
+            overviewRepo && PROJECT_HEADER_OVERVIEW_CURRENT_CLASS
           )}
           style={{
             // Why: non-project headers like "All" are flat-list labels; don't reserve project hierarchy indent.
@@ -288,7 +298,7 @@ export function renderWorktreeSectionHeaderRow(
           }
           onClick={(event) => {
             if (!shouldIgnoreRepoHeaderToggle(event)) {
-              toggleHeader(event)
+              activateHeader(event)
             }
           }}
           onKeyDown={(e) => {
@@ -297,7 +307,7 @@ export function renderWorktreeSectionHeaderRow(
             }
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
-              toggleHeader(e)
+              activateHeader(e)
             }
           }}
         >
@@ -332,7 +342,7 @@ export function renderWorktreeSectionHeaderRow(
 
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                <div className="min-w-0 truncate text-[13px] font-semibold leading-4">{label}</div>
+                <ProjectHeaderName repo={overviewRepo} label={label} />
                 {hostContext ? <ProjectHeaderHostLabel context={hostContext} /> : null}
                 <RepoForkIndicator upstream={row.repo?.upstream} />
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />
@@ -346,23 +356,9 @@ export function renderWorktreeSectionHeaderRow(
             </div>
           </div>
 
-          <ProjectHeaderActions>
-            {showHeaderCollapseAffordance ? (
-              <div
-                className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
-                data-repo-header-collapse-affordance=""
-                aria-hidden
-                onPointerDown={handleRepoHeaderCollapseAffordancePointerDown}
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  toggleHeader(event)
-                }}
-              >
-                <ChevronDown
-                  className={cn('size-3.5 transition-transform', isHeaderCollapsed && '-rotate-90')}
-                />
-              </div>
+          <ProjectHeaderActions className={overviewRepo ? 'can-hover:right-7' : undefined}>
+            {foldsOnClick ? (
+              <SectionHeaderCollapseGlyph collapsed={isHeaderCollapsed} onToggle={toggleHeader} />
             ) : null}
 
             {isProjectGroupHeader && !row.repo && projectGroupIdForHeader ? (
@@ -407,6 +403,7 @@ export function renderWorktreeSectionHeaderRow(
               />
             ) : null}
           </ProjectHeaderActions>
+          {overviewRepo && showHeaderCollapseAffordance ? <ProjectHeaderFold {...fold} /> : null}
         </div>
       </ProjectHeaderHostTooltip>
     </div>

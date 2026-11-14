@@ -27,8 +27,25 @@ export function stopRepoHeaderMenuEvent(event: React.SyntheticEvent<HTMLElement>
   event.stopPropagation()
 }
 
+// A press that begins on an action and slides off it lands its click on the header itself.
+let lastPressTarget: EventTarget | null = null
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      lastPressTarget = event.target
+    },
+    true
+  )
+}
+
 export function shouldIgnoreRepoHeaderToggle(event: React.SyntheticEvent<HTMLElement>): boolean {
-  return isRepoHeaderActionTarget(event.target, event.currentTarget)
+  const pressTarget = event.type === 'click' ? lastPressTarget : null
+  lastPressTarget = null
+  return (
+    isRepoHeaderActionTarget(event.target, event.currentTarget) ||
+    isRepoHeaderActionTarget(pressTarget, event.currentTarget)
+  )
 }
 
 // Alt/Option-click toggles all projects and Pinned together.
