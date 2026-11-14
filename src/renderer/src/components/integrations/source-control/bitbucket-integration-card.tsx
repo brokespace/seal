@@ -259,7 +259,7 @@ function BitbucketCardNote(props: {
       <p className="text-xs text-muted-foreground">
         {t(
           'auto.components.settings.bitbucket.integration.card.envManaged',
-          'Configured via environment variables. Unset the ORCA_BITBUCKET_* variables to manage this credential in Seal.'
+          'Configured via environment variables. Unset the ORCA_BITBUCKET_* variables to manage this credential in Orca.'
         )}
       </p>
     )
@@ -274,7 +274,7 @@ function BitbucketCardNote(props: {
             )
           : t(
               'auto.components.settings.token.source.control.integration.cards.6154b02093',
-              'Bitbucket credentials are configured but could not authenticate. Check the token and repository permissions, then restart Seal if environment variables changed.'
+              'Bitbucket credentials are configured but could not authenticate. Check the token and repository permissions, then restart Orca if environment variables changed.'
             )}
       </p>
     )
@@ -284,7 +284,7 @@ function BitbucketCardNote(props: {
       <p className="text-xs text-muted-foreground">
         {t(
           'auto.components.settings.bitbucket.integration.card.storedCredential',
-          'Saved in Seal on this machine. ORCA_BITBUCKET_* environment variables take precedence when set.'
+          'Saved in Orca on this machine. ORCA_BITBUCKET_* environment variables take precedence when set.'
         )}
       </p>
     )

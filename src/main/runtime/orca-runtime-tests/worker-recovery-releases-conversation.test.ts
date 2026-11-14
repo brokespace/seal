@@ -15,7 +15,7 @@ const SESSION = { key: 'session_id', id: 'grok-session-1' } as const
 const DEAD_PANE_KEY = 'crashed-reopen-tab:44444444-4444-4444-8444-444444444444'
 
 describe('worker terminal recovery after a crash', () => {
-  it('lets the conversation of a worker whose terminal died with Seal be reopened', async () => {
+  it('lets the conversation of a worker whose terminal died with Orca be reopened', async () => {
     // A restored hook row from before the crash; this agent reports no process to probe.
     const hookRows = new Map<string, AgentStatusIpcPayload>([
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the resume guards read only paneKey, providerSession and the observation clocks.

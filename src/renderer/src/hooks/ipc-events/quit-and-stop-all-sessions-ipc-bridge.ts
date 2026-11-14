@@ -14,7 +14,7 @@ function showStopAllFailure(): void {
   toast.error(
     translate(
       'quitAndStopAllSessions.failed',
-      "Couldn't stop every terminal session, so Seal stayed open."
+      "Couldn't stop every terminal session, so Orca stayed open."
     )
   )
 }

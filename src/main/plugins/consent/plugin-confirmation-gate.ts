@@ -16,7 +16,7 @@ export function createPluginConfirmationGate(now: () => number = Date.now) {
     question: () => Promise<PluginActionConfirmation>
   ): Promise<PluginActionConfirmation> {
     if (asking.has(pluginId)) {
-      throw new PluginHostCallError('rate_limited', 'Seal is already asking about this plugin')
+      throw new PluginHostCallError('rate_limited', 'Orca is already asking about this plugin')
     }
     const wait = (quietUntil.get(pluginId) ?? 0) - now()
     if (wait > 0) {

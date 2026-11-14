@@ -149,10 +149,10 @@ export function assertUniqueFolderWorkspaceId(
     path: folder.folderPath,
     selector: null
   }))
-  const repair = `Remove one of these folder workspaces in the Seal app and add its folder again so it gets its own id.`
+  const repair = `Remove one of these folder workspaces in the Orca app and add its folder again so it gets its own id.`
   throw new WorkspaceSelectorAmbiguousError(
     [
-      `Folder workspace id "${folderId}" belongs to ${rows.length} folder workspaces in this Seal, so no selector can name one of them:`,
+      `Folder workspace id "${folderId}" belongs to ${rows.length} folder workspaces in this Orca, so no selector can name one of them:`,
       ...choiceLines(candidates),
       `${outcome} ${repair}`
     ].join('\n'),

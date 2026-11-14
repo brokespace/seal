@@ -730,21 +730,6 @@
         }
       }
     },
-    "68e24bdc5ee7": {
-      "name": "jiraConnection",
-      "ordinal": 44,
-      "value": {
-        "connected": false,
-        "credentialError": {
-          "$rpc": "null"
-        },
-        "selection": {
-          "$rpc": "null"
-        },
-        "sites": [],
-        "unavailableReason": "Update Seal desktop to browse Jira on mobile."
-      }
-    },
     "714d4b3547ff": {
       "name": "projectRepoNotInOrca",
       "ordinal": 20,
@@ -1064,6 +1049,21 @@
       "name": "error",
       "ordinal": 44,
       "value": "ui.get#1 rejected"
+    },
+    "a20a93879807": {
+      "name": "jiraConnection",
+      "ordinal": 44,
+      "value": {
+        "connected": false,
+        "credentialError": {
+          "$rpc": "null"
+        },
+        "selection": {
+          "$rpc": "null"
+        },
+        "sites": [],
+        "unavailableReason": "Update Orca desktop to browse Jira on mobile."
+      }
     },
     "a4b7901e0372": {
       "name": "linear.status#1",
@@ -2072,7 +2072,7 @@
             "394fb5675266",
             "d50362207233",
             "9d27c74981a1",
-            "68e24bdc5ee7",
+            "a20a93879807",
             "d53e8fa810a5",
             "c32aa6b83185",
             "32b1c27f9f78"
@@ -2135,7 +2135,7 @@
             "394fb5675266",
             "d50362207233",
             "9d27c74981a1",
-            "68e24bdc5ee7",
+            "a20a93879807",
             "42c4d0584b72",
             "c32aa6b83185",
             "32b1c27f9f78"
@@ -2198,7 +2198,7 @@
             "394fb5675266",
             "d50362207233",
             "9d27c74981a1",
-            "68e24bdc5ee7",
+            "a20a93879807",
             "4fe7877fc963",
             "c32aa6b83185",
             "32b1c27f9f78"

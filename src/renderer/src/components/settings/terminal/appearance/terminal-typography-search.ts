@@ -185,7 +185,7 @@ export const getTerminalCursorSearchEntries = createLocalizedCatalog(() => [
     title: translate('auto.components.settings.terminal.search.990137dab4', 'Cursor shape'),
     description: translate(
       'auto.components.settings.terminal.search.275a9d6395',
-      'Default cursor appearance for Seal terminal panes.'
+      'Default cursor appearance for Orca terminal panes.'
     ),
     keywords: [
       ...translateSearchKeyword('auto.components.settings.terminal.search.f66a7cf715', 'terminal'),

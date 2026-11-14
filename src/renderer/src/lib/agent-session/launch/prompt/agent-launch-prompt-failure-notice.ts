@@ -6,7 +6,7 @@ import type { TuiAgent } from '../../../../../../shared/agent-launch/catalog/tui
 export function notifyAgentLaunchPromptNotSent(agent: TuiAgent, content?: string): void {
   const message = translate(
     'agentLaunch.terminalPromptFailed',
-    'Seal opened a terminal for {{value0}}, but could not pass it your prompt. Send the prompt in that terminal.',
+    'Orca opened a terminal for {{value0}}, but could not pass it your prompt. Send the prompt in that terminal.',
     { value0: structuredAgentLabel(agent) }
   )
   if (content === undefined) {

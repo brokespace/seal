@@ -65,25 +65,17 @@
         "startedAt": 2550
       }
     },
-    "30d95f5a0a8a": {
-      "name": "toast",
-      "ordinal": 16,
-      "value": {
-        "durationMs": 3000,
-        "message": "Open Seal on the host to wake sleeping agents."
-      }
-    },
     "38b377793c34": {
       "name": "ensure-session-tabs",
       "ordinal": 5,
       "value": {}
     },
-    "445766cb4048": {
+    "4319ba45c158": {
       "name": "toast",
       "ordinal": 9,
       "value": {
         "durationMs": 3000,
-        "message": "Open Seal on the host to wake sleeping agents."
+        "message": "Open Orca on the host to wake sleeping agents."
       }
     },
     "4669e4d646e8": {
@@ -179,6 +171,14 @@
       "name": "clear-delayed-action-timers",
       "ordinal": 4,
       "value": {}
+    },
+    "9a856559977e": {
+      "name": "toast",
+      "ordinal": 16,
+      "value": {
+        "durationMs": 3000,
+        "message": "Open Orca on the host to wake sleeping agents."
+      }
     },
     "a509dd4610b2": {
       "name": "fetch-terminals",
@@ -316,7 +316,7 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259"
           ]
         }
@@ -337,7 +337,7 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259",
             "a509dd4610b2"
           ]
@@ -360,7 +360,7 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259",
             "a509dd4610b2",
             "6c4561ecc9ee",
@@ -385,12 +385,12 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259",
             "a509dd4610b2",
             "6c4561ecc9ee",
             "63abf3b998b3",
-            "30d95f5a0a8a"
+            "9a856559977e"
           ]
         }
       },
@@ -411,12 +411,12 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259",
             "a509dd4610b2",
             "6c4561ecc9ee",
             "63abf3b998b3",
-            "30d95f5a0a8a"
+            "9a856559977e"
           ]
         }
       },
@@ -437,12 +437,12 @@
             "95c8385db422",
             "38b377793c34",
             "4669e4d646e8",
-            "445766cb4048",
+            "4319ba45c158",
             "ba45b883b259",
             "a509dd4610b2",
             "6c4561ecc9ee",
             "63abf3b998b3",
-            "30d95f5a0a8a",
+            "9a856559977e",
             "650e3aedd38c",
             "b86ad4df402e"
           ]

@@ -52,7 +52,7 @@ export const pluginCommandContributionSchema = z
     }),
     action: pluginCommandIdSchema.optional().meta({
       ...pluginFieldDoc(
-        'Built-in Seal action this command runs. A command with an action is declarative and never starts the plugin worker; one without needs `main`.',
+        'Built-in Orca action this command runs. A command with an action is declarative and never starts the plugin worker; one without needs `main`.',
         PLUGIN_SCHEMA_SINCE_V1,
         ['view.tasks']
       ),
@@ -62,7 +62,7 @@ export const pluginCommandContributionSchema = z
     }),
     replaces: pluginCommandIdSchema.optional().meta({
       ...pluginFieldDoc(
-        'Built-in Seal action this worker command runs in place of, from its shortcut, the palette or a menu. To also run Seal’s own, the command calls `commands.run` with the action (`workspace:write`); that never reaches a replacement. If the worker fails or takes over 2 s, Seal runs its own. The person sees it before approving and can turn it off in Settings; when two plugins replace one action, the one installed first does.',
+        'Built-in Orca action this worker command runs in place of, from its shortcut, the palette or a menu. To also run Orca’s own, the command calls `commands.run` with the action (`workspace:write`); that never reaches a replacement. If the worker fails or takes over 2 s, Orca runs its own. The person sees it before approving and can turn it off in Settings; when two plugins replace one action, the one installed first does.',
         PLUGIN_COMMAND_REPLACES_SINCE,
         ['view.tasks']
       ),

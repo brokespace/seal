@@ -1,0 +1,33 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Installez Seal Mobile.",
+          "installLead": "Seal Mobile n'est pas disponible sur l'App Store ni sur Google Play. Compilez-le et installez-le depuis le dépôt Seal, puis passez à l'étape 2 pour le QR d'appairage.",
+          "installGuide": "Ouvrir le guide d'installation"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Code d’appairage invalide. Une URL seal://pair?... ou des données d’appairage brutes sont attendues."
+    }
+  }
+}

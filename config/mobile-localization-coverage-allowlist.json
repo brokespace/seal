@@ -2,7 +2,7 @@
   {
     "filePath": "mobile/app/mobile-onboarding.tsx",
     "kind": "jsx-text",
-    "text": "Seal",
+    "text": "Orca",
     "dynamic": false,
     "count": 1
   },
@@ -191,7 +191,7 @@
   {
     "filePath": "mobile/src/home/MobileHomeTopBar.tsx",
     "kind": "jsx-text",
-    "text": "Seal",
+    "text": "Orca",
     "dynamic": false,
     "count": 1
   },
@@ -212,7 +212,7 @@
   {
     "filePath": "mobile/src/onboarding/NotificationOnboardingPreview.tsx",
     "kind": "jsx-text",
-    "text": "Seal",
+    "text": "Orca",
     "dynamic": false,
     "count": 1
   },
@@ -303,7 +303,7 @@
   {
     "filePath": "mobile/src/settings/about-screen.tsx",
     "kind": "jsx-text",
-    "text": "Seal",
+    "text": "Orca",
     "dynamic": false,
     "count": 1
   },

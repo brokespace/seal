@@ -157,7 +157,7 @@ beforeAll(async () => {
     join(extensionDir, 'manifest.json'),
     JSON.stringify({
       manifest_version: 3,
-      name: 'Seal native messaging probe',
+      name: 'Orca native messaging probe',
       version: '1.0.0',
       permissions: ['nativeMessaging'],
       background: { service_worker: 'worker.js' }
@@ -278,7 +278,7 @@ describe('chrome.runtime native messaging in a real Electron session', () => {
     expect(readStatus().presentationCalls).toEqual([])
   })
 
-  it('kills a host whose port is still open when Seal quits', async () => {
+  it('kills a host whose port is still open when Orca quits', async () => {
     await expect.poll(() => readStatus().lingering).toBeDefined()
     const pid = readStatus().lingering?.message?.pid ?? 0
     expect(isRunning(pid)).toBe(true)

@@ -153,7 +153,7 @@ export class PluginPanelController {
       return {
         ok: false,
         code: 'not_permitted',
-        error: 'this method is only available in the Seal desktop app'
+        error: 'this method is only available in the Orca desktop app'
       }
     }
     const admissionRefusal = userMethod

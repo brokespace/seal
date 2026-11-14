@@ -68,7 +68,7 @@ export async function mountWorker(module: WorkerModule, options: MountWorkerOpti
   if (typeof activate !== 'function') {
     throw new TypeError(
       typeof module.activate === 'function'
-        ? 'mountWorker: the module exports activate by name, but Seal calls the default export: write `export default function activate(orca)`'
+        ? 'mountWorker: the module exports activate by name, but Orca calls the default export: write `export default function activate(orca)`'
         : 'mountWorker: the module has no default-exported activate(orca) function'
     )
   }
@@ -123,7 +123,7 @@ export async function mountWorker(module: WorkerModule, options: MountWorkerOpti
     /** Delivers an event as Orca would, and resolves once every handler has finished. */
     async emit(event: string, payload: unknown): Promise<void> {
       if (!isEventName(event)) {
-        throw new Error(`emit: "${event}" is not an event Seal sends to workers`)
+        throw new Error(`emit: "${event}" is not an event Orca sends to workers`)
       }
       if (!subscribed.has(event)) {
         throw new Error(`emit: "${event}" never arrives: it is not in contributes.events`)
@@ -131,7 +131,7 @@ export async function mountWorker(module: WorkerModule, options: MountWorkerOpti
       const parsed = PLUGIN_EVENT_PAYLOAD_SCHEMAS[event].safeParse(payload)
       if (!parsed.success) {
         throw new TypeError(
-          `emit: that ${event} payload is not one Seal sends: ${parsed.error.issues[0]?.message ?? ''}`
+          `emit: that ${event} payload is not one Orca sends: ${parsed.error.issues[0]?.message ?? ''}`
         )
       }
       const handlers = tables.events.get(PLUGIN_V1_EVENT_ALIASES.get(event) ?? event) ?? []
@@ -143,7 +143,7 @@ export async function mountWorker(module: WorkerModule, options: MountWorkerOpti
        *  same fields `next` may change, and the same checks on what it returns. */
       async fire(event: string, payload: unknown): Promise<HookDecision> {
         if (!isPluginHookName(event)) {
-          throw new Error(`hooks.fire: "${event}" is not a hook Seal runs`)
+          throw new Error(`hooks.fire: "${event}" is not a hook Orca runs`)
         }
         if (!hooked.has(event)) {
           throw new Error(`hooks.fire: "${event}" never runs: it is not in contributes.hooks`)
@@ -151,7 +151,7 @@ export async function mountWorker(module: WorkerModule, options: MountWorkerOpti
         const parsed = PLUGIN_HOOK_SPECS[event].payload.safeParse(payload)
         if (!parsed.success) {
           throw new TypeError(
-            `hooks.fire: that ${event} event is not one Seal sends: ${parsed.error.issues[0]?.message ?? ''}`
+            `hooks.fire: that ${event} event is not one Orca sends: ${parsed.error.issues[0]?.message ?? ''}`
           )
         }
         const outcome = await runPluginHookChain({

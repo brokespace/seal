@@ -222,7 +222,7 @@ const CAPABILITIES = [
   },
   {
     key: 'components.onboarding.integrations.capabilities.browseIssues',
-    fallback: 'Browse GitHub issues and pull requests in the Tasks view without leaving Seal'
+    fallback: 'Browse GitHub issues and pull requests in the Tasks view without leaving Orca'
   },
   {
     key: 'components.onboarding.integrations.capabilities.reviewStatus',
@@ -230,7 +230,7 @@ const CAPABILITIES = [
   },
   {
     key: 'components.onboarding.integrations.capabilities.managePullRequests',
-    fallback: 'Read, comment on, and merge pull requests without leaving Seal'
+    fallback: 'Read, comment on, and merge pull requests without leaving Orca'
   }
 ] as const
 

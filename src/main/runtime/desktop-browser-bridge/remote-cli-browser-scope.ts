@@ -48,7 +48,7 @@ export function captureRemoteCliBrowserRevocation(): (webContentsId?: number) =>
     if (active?.revoked?.aborted) {
       throw new BrowserError(
         DESKTOP_BROWSER_BRIDGE_UNAVAILABLE_CODE,
-        'The Seal desktop stopped sharing its browser before this command ran.'
+        'The Orca desktop stopped sharing its browser before this command ran.'
       )
     }
     // Routing may be disabled and the guest remounted while this command queues.
@@ -136,7 +136,7 @@ export function boundRemoteCliBrowserWork<T>(
       interrupt(
         new BrowserError(
           DESKTOP_BROWSER_BRIDGE_UNAVAILABLE_CODE,
-          'The Seal desktop stopped sharing its browser while this command ran.'
+          'The Orca desktop stopped sharing its browser while this command ran.'
         )
       )
     timer = setTimeout(

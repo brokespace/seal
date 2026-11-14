@@ -158,7 +158,7 @@ export async function jiraListIssuesForTarget(
         JIRA_CURRENT_SPRINT_RUNTIME_CAPABILITY,
         translate(
           'auto.runtime.jira.currentSprintNeedsUpdate',
-          'Update the remote Seal server to filter preset issues by current sprint.'
+          'Update the remote Orca server to filter preset issues by current sprint.'
         )
       )
     }

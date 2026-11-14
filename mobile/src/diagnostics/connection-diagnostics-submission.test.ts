@@ -4,7 +4,7 @@ import { boundConnectionDiagnosticsReport } from './connection-diagnostics-submi
 describe('submitConnectionDiagnostics', () => {
   it('preserves the newest complete events when bounding a UTF-8 report', () => {
     const report = [
-      'Seal Mobile connection diagnostics',
+      'Orca Mobile connection diagnostics',
       'State: reconnecting',
       '',
       'Recent connection history (3 events, oldest first):',
@@ -23,7 +23,7 @@ describe('submitConnectionDiagnostics', () => {
 
   it('retains a bounded form of the newest event when that event exceeds the budget', () => {
     const report = [
-      'Seal Mobile connection diagnostics',
+      'Orca Mobile connection diagnostics',
       'State: reconnecting',
       '',
       'Recent connection history (2 events, oldest first):',

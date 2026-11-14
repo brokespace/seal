@@ -187,7 +187,7 @@ export function BitbucketCredentialsDialog({
           <DialogDescription>
             {t(
               'auto.components.settings.bitbucket.credentials.dialog.description',
-              'Use a Bitbucket Cloud credential to browse pull requests and build statuses. Seal verifies it before saving.'
+              'Use a Bitbucket Cloud credential to browse pull requests and build statuses. Orca verifies it before saving.'
             )}
           </DialogDescription>
         </DialogHeader>
@@ -195,7 +195,7 @@ export function BitbucketCredentialsDialog({
           <p className="text-xs text-muted-foreground">
             {t(
               'auto.components.settings.bitbucket.credentials.dialog.environmentManaged',
-              'Bitbucket is already configured through ORCA_BITBUCKET_* environment variables, which take precedence. Unset them to save a credential in Seal.'
+              'Bitbucket is already configured through ORCA_BITBUCKET_* environment variables, which take precedence. Unset them to save a credential in Orca.'
             )}
           </p>
         ) : (

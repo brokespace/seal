@@ -9,7 +9,7 @@ import { buildPluginListEntries } from './plugin-list-entries'
 function listing(pluginKey: string, extra: Partial<PluginMarketplaceHostListing> = {}) {
   const value: PluginMarketplaceHostListing = {
     marketplaceSourceId: 'official',
-    marketplaceName: 'Seal Official Plugins',
+    marketplaceName: 'Orca Official Plugins',
     marketplaceOwner: 'stablyai',
     marketplaceCommit: 'abc123',
     pluginKey,
@@ -70,20 +70,20 @@ function catalog(id: string, url: string): PluginMarketplaceHostSourceState {
 describe('plugin list entries', () => {
   it("adds the publisher to a community plugin that shares an official one's name", () => {
     const community = {
-      ...installed('vale-c.catppuccin', 'Catppuccin for Seal'),
+      ...installed('vale-c.catppuccin', 'Catppuccin for Orca'),
       publisher: 'vale-c',
       official: false
     }
     const { installed: mine, available } = buildPluginListEntries(
       [community],
       [
-        listing('stablyai.orca-catppuccin-theme', { name: 'Catppuccin for Seal' }),
-        listing('vale-c.catppuccin', { name: 'Catppuccin for Seal', official: false })
+        listing('stablyai.orca-catppuccin-theme', { name: 'Catppuccin for Orca' }),
+        listing('vale-c.catppuccin', { name: 'Catppuccin for Orca', official: false })
       ]
     )
-    expect(mine[0]?.name).toBe('Catppuccin for Seal (vale-c)')
+    expect(mine[0]?.name).toBe('Catppuccin for Orca (vale-c)')
     expect(mine[0]?.nameShowsPublisher).toBe(true)
-    expect(available.map((entry) => entry.name)).toEqual(['Catppuccin for Seal'])
+    expect(available.map((entry) => entry.name)).toEqual(['Catppuccin for Orca'])
     expect(available[0]?.nameShowsPublisher).toBeUndefined()
   })
 
@@ -162,7 +162,7 @@ describe('plugin list entries', () => {
     expect(joined?.updateVersion).toBe('2.0.0')
   })
 
-  it('does not offer an update this Seal is too old to run', () => {
+  it('does not offer an update this Orca is too old to run', () => {
     const plugin = fromCatalog(installed('acme.notes', 'Notes'), 'https://official.invalid/c.git')
     const sources = [catalog('official', 'https://official.invalid/c.git')]
     const newer = listing('acme.notes', {

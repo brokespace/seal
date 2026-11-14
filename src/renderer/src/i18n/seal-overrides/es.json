@@ -1,0 +1,33 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Instala Seal Mobile.",
+          "installLead": "Seal Mobile no está en la App Store ni en Google Play. Compílalo e instálalo desde el repositorio de Seal y luego continúa al paso 2 para ver el QR de emparejamiento.",
+          "installGuide": "Abrir guía de instalación"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "Código de emparejamiento no válido. Se esperaba una URL seal://pair?... o datos de emparejamiento sin URL."
+    }
+  }
+}

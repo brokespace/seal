@@ -158,7 +158,7 @@ export function TerminalThemeCatalogSection({
   const pickerDescription = isLightTarget
     ? t(
         'auto.components.settings.TerminalThemeSections.d56af60e6f',
-        'Choose the theme used when Seal is in light mode.'
+        'Choose the theme used when Orca is in light mode.'
       )
     : t(
         'auto.components.settings.TerminalThemeSections.7add204bd5',

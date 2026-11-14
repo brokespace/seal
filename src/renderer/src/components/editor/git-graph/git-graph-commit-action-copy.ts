@@ -13,11 +13,11 @@ export function gitGraphActionMessage(result: GitCommitActionResult): string | u
   const message = result.message && displayIpcErrorMessage(result.message)
   if (
     message ===
-    "Seal couldn't create the branch. Check this repository in a terminal, then try again."
+    "Orca couldn't create the branch. Check this repository in a terminal, then try again."
   ) {
     return translate(
       'gitGraph.createBranchFailed',
-      "Seal couldn't create the branch. Check this repository in a terminal, then try again."
+      "Orca couldn't create the branch. Check this repository in a terminal, then try again."
     )
   }
   if (message === 'Commit or stash your changes, then try again.') {

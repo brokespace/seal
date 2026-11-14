@@ -45,7 +45,7 @@ afterEach(async () => {
 })
 
 describe('scanAiVaultSessions', () => {
-  it('indexes Codex sessions from Seal runtime homes with resumable commands', async () => {
+  it('indexes Codex sessions from Orca runtime homes with resumable commands', async () => {
     const root = await mkdtemp(join(tmpdir(), 'orca-ai-vault-codex-runtime-'))
     tempRoots.push(root)
     const roots = isolatedScanRoots(root)

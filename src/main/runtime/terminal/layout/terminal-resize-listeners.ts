@@ -64,7 +64,7 @@ export abstract class OrcaRuntimeWithSubscribeToTerminalResize extends OrcaRunti
     const errorContext = describeTerminalExitCause(cause)
     // A person closing the pane leaves the task unowned; any other end is the agent's exit.
     const stop = isDeliberateTerminalExit(cause)
-      ? { reason: 'lost' as const, cause: 'it was closed in Seal' }
+      ? { reason: 'lost' as const, cause: 'it was closed in Orca' }
       : { reason: 'exited' as const, cause: errorContext }
     const settledLocally = this.failActiveDispatchAndReport(handle, paneKey ?? undefined, {
       error: errorContext,

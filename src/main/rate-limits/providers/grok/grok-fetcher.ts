@@ -295,7 +295,7 @@ export async function fetchGrokRateLimits(
     // Missing auth returned earlier; this stored session refreshes on next Grok use, so do not request login (#8497).
     return result(
       'error',
-      'Grok sign-in expired — run grok on the computer running Seal; sign in if prompted. No chat message is needed.',
+      'Grok sign-in expired — run grok on the computer running Orca; sign in if prompted. No chat message is needed.',
       { failureKind: 'delegated-refresh-required', source: 'oauth' }
     )
   }

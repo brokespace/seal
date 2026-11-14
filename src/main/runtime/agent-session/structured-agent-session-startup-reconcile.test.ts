@@ -66,7 +66,7 @@ function startupRuntime(log = recordingStructuredAgentSessionLogger()) {
   return runtime
 }
 
-it('finishes startup over records a newer Seal wrote, reads them, and writes nothing', async () => {
+it('finishes startup over records a newer Orca wrote, reads them, and writes nothing', async () => {
   const { path, sessionId } = await seedChat({ newer: true })
   const bytes = await readFile(path)
   const log = recordingStructuredAgentSessionLogger()

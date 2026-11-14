@@ -106,7 +106,7 @@ export async function saveNodeDistMirrorAndRetry(
           ? error.message
           : translate(
               'auto.components.settings.nodeDistMirrorDialog.saveFailed',
-              'Seal couldn’t save the mirror.'
+              'Orca couldn’t save the mirror.'
             )
     }
   }

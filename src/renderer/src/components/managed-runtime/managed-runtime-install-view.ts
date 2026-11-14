@@ -110,7 +110,7 @@ function settledView(
       t('components.managed-runtime.external', 'Uses the copy of {{agent}} found on this host.', {
         agent
       }),
-      state.available ? t('components.managed-runtime.installManaged', "Install Seal's copy") : null
+      state.available ? t('components.managed-runtime.installManaged', "Install Orca's copy") : null
     )
   }
   if (state.installedVersion !== null) {

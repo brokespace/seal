@@ -1,0 +1,33 @@
+{
+  "auto": {
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    },
+    "components": {
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "settings": {
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "Seal Mobile을 설치하세요.",
+          "installLead": "Seal Mobile은 App Store나 Google Play에 없습니다. Seal 저장소에서 빌드해 설치한 다음 2단계로 이동해 페어링 QR을 확인하세요.",
+          "installGuide": "설치 가이드 열기"
+        }
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "잘못된 페어링 코드입니다. seal://pair?... URL 또는 원시 페어링 데이터가 필요합니다."
+    }
+  }
+}

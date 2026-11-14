@@ -119,7 +119,7 @@ describe('rich Markdown HTML superscript links', () => {
     }
   })
 
-  it('renders inert live DOM while exposing link semantics through Seal context', () => {
+  it('renders inert live DOM while exposing link semantics through Orca context', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const source = '<sup><a href="https://example.com">[12]</a></sup>'

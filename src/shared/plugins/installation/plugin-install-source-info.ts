@@ -63,7 +63,7 @@ function trustee(source: PluginInstallSourceInfo): string {
 export function pluginInstallSourceLines(source: PluginInstallSourceInfo): string[] {
   const lines: string[] = []
   if (source.kind === 'local-path') {
-    lines.push(`Source: the folder ${source.path ?? '(unknown)'} on the Seal host.`)
+    lines.push(`Source: the folder ${source.path ?? '(unknown)'} on the Orca host.`)
   } else {
     const at = source.commit ? ` at commit ${source.commit.slice(0, 12)}` : ''
     const ref = source.ref && source.ref !== source.commit ? ` (${source.ref})` : ''
@@ -71,7 +71,7 @@ export function pluginInstallSourceLines(source: PluginInstallSourceInfo): strin
   }
   if (source.catalog) {
     lines.push(
-      `Listed by: ${source.catalog.name || source.catalog.url}${source.catalog.official ? " (Seal's official catalog)" : ''}.`
+      `Listed by: ${source.catalog.name || source.catalog.url}${source.catalog.official ? " (Orca's official catalog)" : ''}.`
     )
   }
   if (source.publisher) {
@@ -82,8 +82,8 @@ export function pluginInstallSourceLines(source: PluginInstallSourceInfo): strin
   }
   lines.push(
     source.kind === 'local-path'
-      ? 'Make sure you trust this folder: Seal has not checked it, so only install it if you trust where it came from.'
-      : `Make sure you trust ${trustee(source)}: this plugin is not from Seal and Seal has not checked this repository, so only install it if you trust ${trustee(source)}.`
+      ? 'Make sure you trust this folder: Orca has not checked it, so only install it if you trust where it came from.'
+      : `Make sure you trust ${trustee(source)}: this plugin is not from Orca and Orca has not checked this repository, so only install it if you trust ${trustee(source)}.`
   )
   return lines
 }

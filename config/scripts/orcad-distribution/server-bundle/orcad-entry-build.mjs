@@ -4,6 +4,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, join } from 'node:path'
 import { ORCAD_SERVER_ENTRY_FILENAME } from '../../../../src/shared/orcad-artifacts.ts'
+import { sealBrandCopyEsbuild } from '../../../seal/brand-copy/seal-brand-esbuild-plugin.mjs'
 
 const root = join(import.meta.dirname, '../../..', '..')
 const { turnedOnDarkBuildDefines } = createRequire(import.meta.url)(
@@ -74,7 +75,7 @@ const jsoncParserEsm = {
 }
 
 // Every orcad bundle (server, children, CLI) must share these, or one ships a UMD build that cannot load (#33592).
-export const ORCAD_BUNDLE_PLUGINS = [jsoncParserEsm, externalNativeAddons]
+export const ORCAD_BUNDLE_PLUGINS = [jsoncParserEsm, externalNativeAddons, sealBrandCopyEsbuild()]
 
 // One non-ASCII character makes V8 store the ~11MB bundle as ~21MB two-byte text; esbuild escapes strings but leaves regex/tagged-template literals.
 export function findNonAsciiSource(source) {
@@ -197,6 +198,7 @@ export function buildOrcadLauncher(outfile) {
     target: ORCAD_COMPAT_BUILD_TARGET,
     format: 'cjs',
     outfile,
+    plugins: [sealBrandCopyEsbuild()],
     metafile: true,
     minify: true,
     sourcemap: false,

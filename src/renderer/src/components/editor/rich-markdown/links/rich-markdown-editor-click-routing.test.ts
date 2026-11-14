@@ -113,7 +113,7 @@ describe('rich markdown URL click and middle-click routing', () => {
     const editor = new Editor({
       element: document.body.appendChild(document.createElement('div')),
       extensions: createRichMarkdownExtensions({ codec }),
-      content: encodeRawMarkdownHtmlForRichEditor('Read [Seal](https://orca.dev/docs)', codec),
+      content: encodeRawMarkdownHtmlForRichEditor('Read [Orca](https://orca.dev/docs)', codec),
       contentType: 'markdown'
     })
     editors.push(editor)
@@ -124,7 +124,7 @@ describe('rich markdown URL click and middle-click routing', () => {
     return { editor, anchor }
   }
 
-  it('opens external URLs in Seal on plain click without modifier keys', () => {
+  it('opens external URLs in Orca on plain click without modifier keys', () => {
     const { editor, anchor } = createUrlEditor()
     const event = new MouseEvent('click', { button: 0 })
     Object.defineProperty(event, 'target', { value: anchor })

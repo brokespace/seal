@@ -202,7 +202,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
           <WhatItem
             text={t(
               'auto.components.settings.EphemeralVmsPane.whatScaffold',
-              'Writes the recipe & scripts for your provider — connected over a Seal server or SSH.'
+              'Writes the recipe & scripts for your provider — connected over an Orca server or SSH.'
             )}
           />
           <WhatItem

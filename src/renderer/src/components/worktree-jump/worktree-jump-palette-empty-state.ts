@@ -62,7 +62,7 @@ export function getWorktreeJumpPaletteEmptyState(
     ),
     subtitle: t(
       'auto.components.WorktreeJumpPalette.f7fda8d562',
-      'Create a worktree or open a tab in Seal to get started.'
+      'Create a worktree or open a tab in Orca to get started.'
     )
   }
 }

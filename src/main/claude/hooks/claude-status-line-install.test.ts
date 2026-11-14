@@ -42,7 +42,7 @@ describe('Claude statusLine by resolved version', () => {
 
   const readSettings = () => JSON.parse(readFileSync(settingsPath, 'utf-8'))
 
-  it('removes Seal statusLine on a downgrade and re-adds it after the upgrade', () => {
+  it('removes Orca statusLine on a downgrade and re-adds it after the upgrade', () => {
     const service = new ClaudeHookService()
     service.install({ claudeVersion: '2.1.261' })
     expect(readSettings().statusLine?.command).toContain('claude-statusline')

@@ -53,7 +53,7 @@ function fakeSession(): FakeSession {
         listeners.splice(index, 1)
       }
     }),
-    getUserAgent: () => 'Mozilla/5.0 Seal',
+    getUserAgent: () => 'Mozilla/5.0 Orca',
     setUserAgent: vi.fn(),
     setPermissionRequestHandler: vi.fn(),
     setPermissionCheckHandler: vi.fn(),
@@ -98,7 +98,7 @@ vi.mock('../../identity/requests/browser-session-ua', () => ({
   installBrowserSessionUserAgentPolicy: vi.fn(() => vi.fn())
 }))
 vi.mock('../../identity/browser-process-user-agent', () => ({
-  getBrowserProcessUserAgentIdentity: () => ({ mode: 'clean', userAgent: 'Mozilla/5.0 Seal' })
+  getBrowserProcessUserAgentIdentity: () => ({ mode: 'clean', userAgent: 'Mozilla/5.0 Orca' })
 }))
 vi.mock('../../webauthn/browser-webauthn-access', () => ({
   allowsBrowserWebAuthnPermission: () => false,

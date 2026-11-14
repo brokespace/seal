@@ -6,7 +6,7 @@ import type { LinearIssue } from '../../../../../../shared/linear/issue-types'
 export const referenceRepo: Repo = {
   id: 'repo',
   path: '/repo',
-  displayName: 'Seal',
+  displayName: 'Orca',
   badgeColor: '',
   addedAt: 1,
   gitRemoteIdentity: {

@@ -27,7 +27,7 @@ export function OrcaProfileSignOutConfirmDialog({
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>
-            {t('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Seal?')}
+            {t('auto.components.orca.profiles.signout.confirm.title', 'Sign out of Orca?')}
           </DialogTitle>
           <DialogDescription>
             {t(

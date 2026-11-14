@@ -12,21 +12,21 @@ export function serveSignalExitError(
   if (!signal) {
     return new RuntimeClientError(
       'runtime_serve_failed',
-      'Seal serve exited without reporting an exit code or signal.'
+      'Orca serve exited without reporting an exit code or signal.'
     )
   }
   if (platform !== 'darwin' || signal !== 'SIGABRT') {
-    return new RuntimeClientError('runtime_serve_failed', `Seal serve exited via ${signal}.`)
+    return new RuntimeClientError('runtime_serve_failed', `Orca serve exited via ${signal}.`)
   }
   // Why: the startup abort happens inside +[NSApplication sharedApplication], before any of our JS
   // runs, so the parent CLI is the only place it can be explained. We only see the signal, never the
   // phase, so the cause is offered as the likely one rather than asserted.
   return new MacServeStartupAbortError(
     'runtime_serve_failed',
-    'Seal serve aborted with SIGABRT on macOS. This most often happens at application startup, when the process cannot register with Launch Services (_RegisterApplication / +[NSApplication sharedApplication]) before any Seal JavaScript runs. That is common in sandboxed agent environments, SSH sessions without a GUI login, and CI. Confirm the crashing frame in the crash report; this is not the Electron UTF-8 write abort (electron/electron#51871).',
+    'Orca serve aborted with SIGABRT on macOS. This most often happens at application startup, when the process cannot register with Launch Services (_RegisterApplication / +[NSApplication sharedApplication]) before any Orca JavaScript runs. That is common in sandboxed agent environments, SSH sessions without a GUI login, and CI. Confirm the crashing frame in the crash report; this is not the Electron UTF-8 write abort (electron/electron#51871).',
     {
       nextSteps: [
-        'If a desktop Seal is already running, use `orca status` / `orca` against that instance instead of `orca serve`.',
+        'If a desktop Orca is already running, use `orca status` / `orca` against that instance instead of `orca serve`.',
         'Re-run `orca serve` outside a sandboxed or restricted environment, with a macOS desktop login active. Later `orca serve` runs from this same environment refuse for 30 minutes; pass --force to try anyway.',
         `Look for a crash report at ${MAC_CRASH_REPORT_GLOB}. If the crashing frame is _RegisterApplication, this is the startup-registration abort.`
       ]

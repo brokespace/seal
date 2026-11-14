@@ -21,7 +21,7 @@ vi.mock('electron', () => ({
     isReady: () => true,
     exit: vi.fn(),
     on: vi.fn(),
-    name: 'Seal'
+    name: 'Orca'
   },
   dialog: { showMessageBox }
 }))

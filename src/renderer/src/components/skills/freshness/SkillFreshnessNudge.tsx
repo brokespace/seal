@@ -111,17 +111,17 @@ export function SkillFreshnessNudge(): null {
       names.size === 1
         ? translate(
             'auto.components.skills.SkillFreshnessNudge.titleOne',
-            'An installed Seal skill is out of date'
+            'An installed Orca skill is out of date'
           )
         : translate(
             'auto.components.skills.SkillFreshnessNudge.title',
-            '{{count}} installed Seal skills are out of date',
-            { count: names.size, defaultValue_one: '{{count}} installed Seal skill is out of date' }
+            '{{count}} installed Orca skills are out of date',
+            { count: names.size, defaultValue_one: '{{count}} installed Orca skill is out of date' }
           ),
       {
         description: translate(
           'auto.components.skills.SkillFreshnessNudge.description',
-          'Update {{value0}} so agents follow the current instructions for this version of Seal.',
+          'Update {{value0}} so agents follow the current instructions for this version of Orca.',
           { value0: outdatedNames }
         ),
         // Keep the nudge until action; quitting records no dismissal, allowing one prompt next launch.

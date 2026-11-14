@@ -35,7 +35,7 @@ export type PluginDeclarativeIssue = { source: 'plugin' | 'orca' | 'load'; messa
 function invalidTreeMessage(): string {
   return translate(
     'auto.components.rightSidebar.PluginDeclarativePanel.invalidTree',
-    'The panel sent a layout Seal cannot show.'
+    'The panel sent a layout Orca cannot show.'
   )
 }
 

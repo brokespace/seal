@@ -38,9 +38,9 @@ export function ensureWindowsRendererRuntimeFiles(isServeMode: boolean): boolean
     return true
   }
   const message =
-    `Seal's installation is incomplete: ${fileName} is missing, empty, or in use. ` +
-    'If Seal is updating, wait for the installer to finish, then open Seal again. ' +
-    'Otherwise, reinstall Seal.'
+    `Orca's installation is incomplete: ${fileName} is missing, empty, or in use. ` +
+    'If Orca is updating, wait for the installer to finish, then open Orca again. ' +
+    'Otherwise, reinstall Orca.'
   console.error(`[startup] ${message}`)
   handleMainProcessPreflightFailure(new Error(message))
   return false

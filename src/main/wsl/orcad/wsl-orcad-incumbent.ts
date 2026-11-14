@@ -72,7 +72,7 @@ const DEFAULT_DEPENDENCIES: WslOrcadIncumbentDependencies = {
       distro: target.distro,
       remotePort,
       localPort: 0,
-      label: `Seal server in WSL: ${target.label} (update check)`
+      label: `Orca server in WSL: ${target.label} (update check)`
     }),
   census: requestOrcadTerminalCensus
 }

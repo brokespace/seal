@@ -26,6 +26,10 @@ import {
 import { MOBILE_WEB_PAGE_ROUTES } from './mobile-web-page-routes.mjs'
 import { reactNativeSvgWebPlugin } from './react-native-svg-web-plugin.mjs'
 import {
+  readShippedCatalogText,
+  sealBrandCopyEsbuild
+} from '../../../seal/brand-copy/seal-brand-esbuild-plugin.mjs'
+import {
   ROUTE_ENTRY_NAMESPACE,
   entryStaticClosure,
   isScriptOutput,
@@ -313,7 +317,8 @@ export function mobileWebAppBuildOptions(
       ),
       lucideBarrelPlugin,
       reactNativeSvgWebPlugin,
-      hairlineDevicePixelPlugin
+      hairlineDevicePixelPlugin,
+      sealBrandCopyEsbuild()
     ],
     resolveExtensions: [
       '.web.tsx',
@@ -474,7 +479,7 @@ export async function readLocaleCatalogs(directory = localeCatalogDir) {
     names.map(async (name) => {
       // Minify: the host sends and the phone keeps the parsed object, not the source layout.
       const bytes = Buffer.from(
-        JSON.stringify(JSON.parse(await readFile(join(directory, name), 'utf8'))),
+        JSON.stringify(JSON.parse(await readShippedCatalogText(join(directory, name)))),
         'utf8'
       )
       const sha256 = sha256Hex(bytes)

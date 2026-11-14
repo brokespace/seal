@@ -334,19 +334,19 @@ function TerminalContextMenuItems({
           copy={{
             label: t(
               'components.terminalPane.TerminalContextMenu.copyOrcaSessionId',
-              'Copy Seal Session ID'
+              'Copy Orca Session ID'
             ),
             tooltip: t(
               'components.terminalPane.TerminalContextMenu.orcaSessionIdTooltip',
-              "Seal's ID for this agent, separate from the agent CLI's own session ID. Agents use it to refer to each other through Seal."
+              "Orca's ID for this agent, separate from the agent CLI's own session ID. Agents use it to refer to each other through Orca."
             ),
             copied: t(
               'components.terminalPane.TerminalContextMenu.orcaSessionIdCopied',
-              'Seal session ID copied'
+              'Orca session ID copied'
             ),
             failed: t(
               'components.terminalPane.TerminalContextMenu.orcaSessionIdCopyFailed',
-              'Unable to copy Seal session ID'
+              'Unable to copy Orca session ID'
             )
           }}
         />

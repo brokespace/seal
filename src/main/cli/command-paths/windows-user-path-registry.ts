@@ -93,7 +93,7 @@ export class WindowsUserPathRegistryReader {
       if (!key || typeof key !== 'object') {
         return {
           state: 'unknown',
-          detail: 'Seal could not read the Windows user PATH registry key.'
+          detail: 'Orca could not read the Windows user PATH registry key.'
         }
       }
 
@@ -120,7 +120,7 @@ export class WindowsUserPathRegistryReader {
     } catch {
       return {
         state: 'unknown',
-        detail: 'Seal could not read the Windows user PATH registry value.'
+        detail: 'Orca could not read the Windows user PATH registry value.'
       }
     }
   }

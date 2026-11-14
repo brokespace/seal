@@ -27,7 +27,7 @@ vi.mock('../../ui/tooltip', () => ({
 
 const listing: PluginMarketplaceHostListing = {
   marketplaceSourceId: 'official',
-  marketplaceName: 'Seal Official Plugins',
+  marketplaceName: 'Orca Official Plugins',
   marketplaceOwner: 'stablyai',
   marketplaceCommit: 'c',
   pluginKey: 'stablyai.orca-minimal-icons',
@@ -50,7 +50,7 @@ const manifest = pluginManifestSchema.parse({
   manifestVersion: 1,
   id: 'orca-minimal-icons',
   publisher: 'stablyai',
-  name: 'Seal Minimal Icons',
+  name: 'Orca Minimal Icons',
   version: '1.0.0',
   engines: { orca: '>=1.0.0' },
   pluginApi: 1,
@@ -61,7 +61,7 @@ const manifest = pluginManifestSchema.parse({
 
 const preview: PluginMarketplaceHostInstallPreview = {
   marketplaceSourceId: 'official',
-  marketplaceName: 'Seal Official Plugins',
+  marketplaceName: 'Orca Official Plugins',
   marketplaceOwner: 'stablyai',
   marketplaceCommit: 'c',
   pluginKey: listing.pluginKey,

@@ -60,7 +60,7 @@ export function validateOmittedPublisherFloor(
   ctx.addIssue({
     code: 'custom',
     path: ['engines', 'orca'],
-    message: `must be at least >=${PLUGIN_DERIVED_PUBLISHER_SINCE} when publisher is left out, because older Seal requires publisher`
+    message: `must be at least >=${PLUGIN_DERIVED_PUBLISHER_SINCE} when publisher is left out, because older Orca requires publisher`
   })
 }
 
@@ -88,7 +88,7 @@ export function validateSourceModuleEntryFloor(
     ctx.addIssue({
       code: 'custom',
       path: ['engines', 'orca'],
-      message: `must be at least >=${PLUGIN_SOURCE_MODULES_SINCE} when a panel or editor entry is a .ts, .tsx, .mts or .jsx file, because older Seal does not transpile it`
+      message: `must be at least >=${PLUGIN_SOURCE_MODULES_SINCE} when a panel or editor entry is a .ts, .tsx, .mts or .jsx file, because older Orca does not transpile it`
     })
   }
   const main = manifest.main?.toLowerCase()
@@ -105,7 +105,7 @@ export function validateSourceModuleEntryFloor(
     ctx.addIssue({
       code: 'custom',
       path: ['engines', 'orca'],
-      message: `must be at least >=${PLUGIN_SOURCE_MODULES_SINCE} when main is a .ts or .mts file, because older Seal does not transpile it`
+      message: `must be at least >=${PLUGIN_SOURCE_MODULES_SINCE} when main is a .ts or .mts file, because older Orca does not transpile it`
     })
   }
 }

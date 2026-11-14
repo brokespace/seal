@@ -12,12 +12,12 @@ export function showBlockedNotificationFallbackToast(): void {
   toast.warning(
     translate(
       'auto.lib.blocked.notification.fallback.de50bef680',
-      'macOS is blocking Seal notifications'
+      'macOS is blocking Orca notifications'
     ),
     {
       description: translate(
         'auto.components.onboarding.mac.notification.permission.card.721d2bedb6',
-        'Turn on Allow notifications for Seal in System Settings.'
+        'Turn on Allow notifications for Orca in System Settings.'
       ),
       action: {
         label: translate(

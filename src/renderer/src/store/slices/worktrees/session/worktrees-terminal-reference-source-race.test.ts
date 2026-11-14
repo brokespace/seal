@@ -27,7 +27,7 @@ it('rejects delayed terminal confirmation after remote identity changes', async 
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -85,7 +85,7 @@ it('rejects delayed terminal confirmation after account identity changes', async
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -134,7 +134,7 @@ it('rejects delayed terminal confirmation after path identity changes', async ()
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -183,7 +183,7 @@ it('rejects delayed terminal confirmation after removed identity changes', async
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -229,7 +229,7 @@ it('rejects delayed terminal confirmation after instance identity changes', asyn
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -289,7 +289,7 @@ it('rejects delayed terminal confirmation after head identity changes', async ()
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -335,7 +335,7 @@ it('rejects delayed terminal confirmation after credentials identity changes', a
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {
@@ -382,7 +382,7 @@ it('keeps delayed review confirmation after a cosmetic repo rename', async () =>
   const repo: Repo = {
     id: 'repo',
     path: '/repo',
-    displayName: 'Seal',
+    displayName: 'Orca',
     addedAt: 0,
     badgeColor: '',
     gitRemoteIdentity: {

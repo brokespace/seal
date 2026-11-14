@@ -78,7 +78,7 @@ export function useOwnedSkillShares(): OwnedSkillShares {
       setError(
         translate(
           'auto.components.settings.shareSkills.revokeFailed',
-          'Seal could not revoke this link.'
+          'Orca could not revoke this link.'
         )
       )
     } finally {

@@ -41,7 +41,7 @@ export function ArtifactsSettingsPane({
             description: isWebClient
               ? t(
                   'auto.components.settings.artifacts.enableStepWebDescription',
-                  'Open Settings → Artifacts in the Seal desktop app on the host device and enable publishing.'
+                  'Open Settings → Artifacts in the Orca desktop app on the host device and enable publishing.'
                 )
               : t(
                   'auto.components.settings.artifacts.enableStepDescription',
@@ -67,7 +67,7 @@ export function ArtifactsSettingsPane({
     },
     {
       key: 'manage',
-      title: t('auto.components.settings.artifacts.manageStepTitle', 'Manage it in Seal'),
+      title: t('auto.components.settings.artifacts.manageStepTitle', 'Manage it in Orca'),
       description: t(
         'auto.components.settings.artifacts.manageStepDescription',
         'Open Artifacts from the sidebar to preview or remove links.'
@@ -118,14 +118,14 @@ export function ArtifactsSettingsPane({
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {t(
                   'auto.components.settings.artifacts.signInDescription',
-                  'Use your Seal account to upload artifacts and manage their public links.'
+                  'Use your Orca account to upload artifacts and manage their public links.'
                 )}
               </p>
             </div>
             <OrcaSignInButton size="sm" disabled={authStatus?.configured !== true}>
               {authStatus?.state === 'reconnect-required'
                 ? t('auto.components.settings.artifacts.signInAgain', 'Sign in again')
-                : t('auto.components.settings.artifacts.signIn', 'Sign in to Seal')}
+                : t('auto.components.settings.artifacts.signIn', 'Sign in to Orca')}
             </OrcaSignInButton>
             <OrcaSignInWaitNotice className="basis-full" />
           </section>

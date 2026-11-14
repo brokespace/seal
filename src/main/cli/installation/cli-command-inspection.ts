@@ -50,7 +50,7 @@ export class CliCommandInspection extends CliInstallLocation {
               supported: true,
               state: 'stale',
               currentTarget: managedTarget,
-              detail: `${commandPath} contains an older Seal launcher.`
+              detail: `${commandPath} contains an older Orca launcher.`
             })
           }
         }
@@ -62,7 +62,7 @@ export class CliCommandInspection extends CliInstallLocation {
           supported: true,
           state: 'conflict',
           currentTarget: null,
-          detail: `${commandPath} exists but is not a Seal symlink.`
+          detail: `${commandPath} exists but is not an Orca symlink.`
         })
       }
 
@@ -101,8 +101,8 @@ export class CliCommandInspection extends CliInstallLocation {
         detail: isInstalled
           ? `Registered at ${commandPath}.`
           : isManagedStaleTarget
-            ? `${commandPath} points to an older Seal launcher.`
-            : `${commandPath} points to a non-Seal launcher.`
+            ? `${commandPath} points to an older Orca launcher.`
+            : `${commandPath} points to a non-Orca launcher.`
       })
     } catch (error) {
       if (isMissingError(error)) {
@@ -113,7 +113,7 @@ export class CliCommandInspection extends CliInstallLocation {
           supported: true,
           state: 'not_installed',
           currentTarget: null,
-          detail: `Register ${commandPath} to use Seal from the terminal.`
+          detail: `Register ${commandPath} to use Orca from the terminal.`
         })
       }
       throw error
@@ -211,7 +211,7 @@ export class CliCommandInspection extends CliInstallLocation {
           supported: true,
           state: 'conflict',
           currentTarget: null,
-          detail: `${commandPath} exists but is not a Seal launcher script.`
+          detail: `${commandPath} exists but is not an Orca launcher script.`
         })
       }
 
@@ -250,7 +250,7 @@ export class CliCommandInspection extends CliInstallLocation {
           supported: true,
           state: 'not_installed',
           currentTarget: null,
-          detail: `Register ${commandPath} to use Seal from Command Prompt or PowerShell.`
+          detail: `Register ${commandPath} to use Orca from Command Prompt or PowerShell.`
         })
       }
       throw error

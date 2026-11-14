@@ -99,7 +99,7 @@ export function useWorkspaceCopyStatus({
                 ? error.message
                 : translate(
                     'sourceControl.branchPicker.statusFailed',
-                    "Seal couldn't read this checkout's changes. Refresh Source Control before switching."
+                    "Orca couldn't read this checkout's changes. Refresh Source Control before switching."
                   )
           })
         }

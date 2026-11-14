@@ -14,8 +14,8 @@ export function getNativeFileDropRejectionMessage(data: NativeFileDropRejectedPa
       description: describeDropTempCopyFailure(data.commonReason),
       title: translate(
         'auto.hooks.useGlobalFileDrop.nativeDropTempCopyFailed',
-        "Seal couldn't copy {{count}} dropped files.",
-        { count: data.pathCount, defaultValue_one: "Seal couldn't copy {{count}} dropped file." }
+        "Orca couldn't copy {{count}} dropped files.",
+        { count: data.pathCount, defaultValue_one: "Orca couldn't copy {{count}} dropped file." }
       )
     }
   }
@@ -28,7 +28,7 @@ export function getNativeFileDropRejectionMessage(data: NativeFileDropRejectedPa
       ),
       title: translate(
         'auto.hooks.useGlobalFileDrop.nativeDropUnresolvedPaths',
-        "Seal couldn't read a path for the dropped files."
+        "Orca couldn't read a path for the dropped files."
       )
     }
   }

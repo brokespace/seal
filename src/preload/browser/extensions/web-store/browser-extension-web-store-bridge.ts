@@ -40,7 +40,7 @@ export function installChromeWebStoreBridge(): void {
         )
         return reply
       } catch {
-        return { error: 'Seal could not handle this request' }
+        return { error: 'Orca could not handle this request' }
       }
     },
     onEvent: (handler) => {

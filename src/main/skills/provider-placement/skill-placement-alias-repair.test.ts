@@ -61,7 +61,7 @@ afterEach(async () => {
 })
 
 describe('skill provider alias reconciliation', () => {
-  it('repairs a broken Seal-owned alias', async () => {
+  it('repairs a broken Orca-owned alias', async () => {
     const value = await fixture()
     const providerRoot = join(value.root, 'provider')
     const placementPath = join(providerRoot, 'private-skill')

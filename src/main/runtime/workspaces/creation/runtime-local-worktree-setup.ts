@@ -117,7 +117,7 @@ export async function prepareRuntimeLocalWorktreeSetup(args: {
       } catch (error) {
         console.error(`[hooks] Failed to prepare setup runner for ${worktreePath}:`, error)
         if (isFolderRepo(repo)) {
-          const failed = `Setup did not run: Seal could not write its setup file in ${worktreePath}.`
+          const failed = `Setup did not run: Orca could not write its setup file in ${worktreePath}.`
           warning = warning ? `${warning} Also ${failed}` : failed
         }
       }

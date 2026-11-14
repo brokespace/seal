@@ -26,12 +26,17 @@ export const BRAND_ATTRIBUTION_ALLOWLIST = [
 // Prose compounds such as "non-Orca worktrees" or "Windows-Orca-CLI".
 const PROSE_HYPHEN_PREFIX = /(?:^|[^A-Za-z])(?:non|Non|não|Windows)-$/
 
+// Source literals are read raw, where a line break before the name is the two characters `\n`.
+const ESCAPED_WHITESPACE_PREFIX = /(?:^|[^\\])(?:\\\\)*\\[nrt]$/
+
 function isBrandMatch(text, index) {
   const before = text[index - 1]
+  const lead = text.slice(Math.max(0, index - 9), index)
   if (
     before !== undefined &&
     NON_PROSE_PREFIX.test(before) &&
-    !PROSE_HYPHEN_PREFIX.test(text.slice(Math.max(0, index - 9), index))
+    !PROSE_HYPHEN_PREFIX.test(lead) &&
+    !ESCAPED_WHITESPACE_PREFIX.test(lead)
   ) {
     return false
   }

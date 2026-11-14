@@ -20,7 +20,7 @@ export function initializeNewOrcaProfileState(
   userDataPath = getProfileUserDataPath()
 ): void {
   if (!isSqliteAvailable()) {
-    throw new Error('Creating profile state requires the bundled Seal runtime.')
+    throw new Error('Creating profile state requires the bundled Orca runtime.')
   }
   const admission = acquireProfileStateRuntimeAdmission(userDataPath)
   try {

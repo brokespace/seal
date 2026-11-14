@@ -14,9 +14,9 @@ import type * as StoreHelpersNamespace from '@/store/testing/app-store-test-fixt
 import type * as CapabilitiesNamespace from '@/runtime/hosts/capabilities/local-runtime-capabilities'
 
 const USER_AGENT: Record<LaunchClient, string> = {
-  darwin: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Seal',
-  linux: 'Mozilla/5.0 (X11; Linux x86_64) Seal',
-  win32: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Seal'
+  darwin: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Orca',
+  linux: 'Mozilla/5.0 (X11; Linux x86_64) Orca',
+  win32: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Orca'
 }
 
 type StoreHelpers = typeof StoreHelpersNamespace

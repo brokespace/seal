@@ -153,7 +153,7 @@ export class RuntimeLegacyWorkerTerminalRecoveryPersistence {
               {
                 from: candidate.terminalHandle,
                 reason: 'lost',
-                cause: 'its terminal was gone when Seal restarted',
+                cause: 'its terminal was gone when Orca restarted',
                 lastOutput,
                 settled
               },

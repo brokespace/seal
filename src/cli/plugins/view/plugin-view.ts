@@ -84,7 +84,7 @@ export function resolveLocalShotPath(ctx: HandlerContext, value: string): string
   if (process.env.ORCA_CLI_CWD) {
     throw new RuntimeClientError(
       'invalid_environment',
-      'orca plugin shot writes the PNG on the machine that runs it, but this shell forwards orca to the Seal host. Run it on the machine that should keep the image.'
+      'orca plugin shot writes the PNG on the machine that runs it, but this shell forwards orca to the Orca host. Run it on the machine that should keep the image.'
     )
   }
   return isAbsolute(value) ? value : resolve(ctx.cwd, value)
@@ -135,7 +135,7 @@ async function shoot(
   if (params.acts && !reply.actions) {
     throw new RuntimeClientError(
       'runtime_unsupported',
-      'This Seal does not run shot --act (it captured without acting); update Seal, then run it again.'
+      'This Orca does not run shot --act (it captured without acting); update Orca, then run it again.'
     )
   }
   const path = outFor(reply.panelId)
@@ -184,7 +184,7 @@ export function formatPluginShot(shot: PluginShotSaved, requestedTheme?: string)
     ...(shot.notes ?? []).map((note) => `  note: ${note}.`),
     ...(requestedTheme && !shot.themeApplied
       ? [
-          `  note: ${requestedTheme} was not applied (${shot.themeReason ?? 'Seal could not paint it'}); it shows ${shot.theme}.`
+          `  note: ${requestedTheme} was not applied (${shot.themeReason ?? 'Orca could not paint it'}); it shows ${shot.theme}.`
         ]
       : []),
     ...(shot.settled
@@ -260,7 +260,7 @@ export const PLUGIN_VIEW_HANDLERS: Record<string, CommandHandler> = {
       ctx,
       result,
       result.kind === 'panel'
-        ? `Showing ${result.title} (${result.pluginKey}/${result.panelId}) in Seal's right sidebar.`
+        ? `Showing ${result.title} (${result.pluginKey}/${result.panelId}) in Orca's right sidebar.`
         : `Opened ${result.filePath} in ${result.title} (${result.pluginKey}/${result.editorId}).`
     )
   },

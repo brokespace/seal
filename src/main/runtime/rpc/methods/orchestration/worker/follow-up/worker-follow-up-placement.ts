@@ -74,7 +74,7 @@ export async function reopenWorkerTerminal(
     case 'held_elsewhere':
       throw new OrchestrationError(
         'worker_unreachable',
-        "The worker's conversation is open somewhere Seal cannot reach; nothing was sent."
+        "The worker's conversation is open somewhere Orca cannot reach; nothing was sent."
       )
     case 'no_resume_command':
       // Refused before anything spawned, so a fresh agent cannot duplicate it.
@@ -83,7 +83,7 @@ export async function reopenWorkerTerminal(
     case 'create_failed':
       throw new OrchestrationError(
         'worker_reopen_failed',
-        `Seal could not reopen the worker's ${session.agent} conversation (${resumed.reason}).`
+        `Orca could not reopen the worker's ${session.agent} conversation (${resumed.reason}).`
       )
   }
 }
@@ -129,7 +129,7 @@ export async function reopenWorkerChat(
   if (!identity || !host) {
     throw new OrchestrationError(
       'worker_not_restartable',
-      `Worker ${handle} has no chat Seal can reopen; start a new worker with worker-start.`
+      `Worker ${handle} has no chat Orca can reopen; start a new worker with worker-start.`
     )
   }
   // A `/clear` moved the conversation on; reopen the session that runs it now.

@@ -39,19 +39,19 @@ const copy = {
   'outcome-unknown': () =>
     translate(
       'chat.rewind.outcomeUnknown',
-      "Seal couldn't confirm whether the conversation went back to an earlier message. It checks before your next message is sent."
+      "Orca couldn't confirm whether the conversation went back to an earlier message. It checks before your next message is sent."
     ),
   refused: () =>
     translate(
       'chat.rewind.refused',
-      "Seal couldn't go back to this message. Check the conversation before continuing."
+      "Orca couldn't go back to this message. Check the conversation before continuing."
     ),
   unavailable: () =>
     translate('chat.rewind.unavailable', 'Wait for the chat to finish connecting.'),
   'returned-unknown': () =>
     translate(
       'chat.rewind.outcomeUnknownReturned',
-      "Seal couldn't confirm whether the conversation went back to this message. Your message is back in the composer, and Seal checks the conversation before your next message is sent."
+      "Orca couldn't confirm whether the conversation went back to this message. Your message is back in the composer, and Orca checks the conversation before your next message is sent."
     ),
   timeout: () =>
     translate(

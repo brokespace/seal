@@ -7,7 +7,7 @@ describe('browser window close guard', () => {
     vi.unstubAllGlobals()
   })
 
-  it('replaces the native close with a non-replaceable request to Seal', () => {
+  it('replaces the native close with a non-replaceable request to Orca', () => {
     const nativeClose = vi.fn()
     const requestClose = vi.fn()
     vi.stubGlobal('window', { close: nativeClose })

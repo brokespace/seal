@@ -55,7 +55,7 @@ describe('remote runtime terminal data subscriptions', () => {
       vi.fn()
     )
 
-    await expect(subscriptionPromise).rejects.toThrow('Remote Seal runtime closed the connection.')
+    await expect(subscriptionPromise).rejects.toThrow('Remote Orca runtime closed the connection.')
 
     resolveSubscribe({ unsubscribe, sendBinary })
     await Promise.resolve()

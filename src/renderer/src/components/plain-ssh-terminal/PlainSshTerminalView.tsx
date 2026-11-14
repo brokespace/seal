@@ -40,17 +40,17 @@ export function plainSshOpenFailureText(
     case 'unknown-target':
       return translate(
         'auto.components.plainSshTerminal.unknownTarget',
-        'This SSH host is no longer saved in Seal.'
+        'This SSH host is no longer saved in Orca.'
       )
     case 'not-blocked':
       return translate(
         'auto.components.plainSshTerminal.notBlocked',
-        'Seal can reach this host again, so use its terminals instead. Plain SSH is only for while Seal can’t set up on the host.'
+        'Orca can reach this host again, so use its terminals instead. Plain SSH is only for while Orca can’t set up on the host.'
       )
     case 'already-open':
       return translate(
         'auto.components.plainSshTerminal.alreadyOpen',
-        'Another Seal window already has a plain SSH terminal open to this host.'
+        'Another Orca window already has a plain SSH terminal open to this host.'
       )
     case 'cancelled':
       return translate(
@@ -196,7 +196,7 @@ export function PlainSshTerminalView({
         kind: 'failed',
         message: translate(
           'auto.components.plainSshTerminal.terminalUnavailable',
-          'Seal couldn’t open a terminal here.'
+          'Orca couldn’t open a terminal here.'
         )
       })
       return

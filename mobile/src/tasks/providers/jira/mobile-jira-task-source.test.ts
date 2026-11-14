@@ -11,7 +11,7 @@ const issue: JiraIssue = {
   siteId: 'site-a',
   description: 'A description',
   labels: ['mobile'],
-  project: { id: 'p', key: 'ORCA', name: 'Seal' },
+  project: { id: 'p', key: 'ORCA', name: 'Orca' },
   issueType: { id: 'task', name: 'Task' },
   status: { id: 'open', name: 'Open', categoryKey: 'new', categoryName: 'To Do' },
   updatedAt: '2026-01-01T00:00:00Z',

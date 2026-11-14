@@ -36,18 +36,18 @@ function getRemoveProjectDescription(
   if (scope === 'checkout') {
     return t(
       'auto.components.settings.RepositoryPane.removeProjectCheckout',
-      'Remove this checkout from Seal. Other checkouts of this project stay.'
+      'Remove this checkout from Orca. Other checkouts of this project stay.'
     )
   }
   if (scope === 'split-project') {
     return t(
       'auto.components.settings.RepositoryPane.removeProjectKeepCheckouts',
-      'Remove this project from Seal. Checkouts that have their own settings stay.'
+      'Remove this project from Orca. Checkouts that have their own settings stay.'
     )
   }
   return t(
     'auto.components.settings.RepositoryPane.removeProjectAllHosts',
-    'Remove this project from Seal on all configured hosts.'
+    'Remove this project from Orca on all configured hosts.'
   )
 }
 

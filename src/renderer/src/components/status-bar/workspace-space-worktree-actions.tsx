@@ -57,7 +57,7 @@ export function WorkspaceSpaceWorktreeMenuItems({
               : !canOpenWorkspace
                 ? t(
                     'workspaceSpace.delete.unmanaged',
-                    'This workspace is no longer managed by Seal.'
+                    'This workspace is no longer managed by Orca.'
                   )
                 : t(
                     'workspaceSpace.delete.unavailable',

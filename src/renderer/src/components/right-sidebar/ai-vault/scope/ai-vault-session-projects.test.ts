@@ -37,7 +37,7 @@ const baseSession: AiVaultSession = {
 describe('buildAiVaultProjectContext', () => {
   it('uses durable worktree project ids before repo fallback', () => {
     const repo = makeRepo({ id: 'repo-1', displayName: 'Legacy Repo', path: '/Users/ada/orca' })
-    const project = makeProject({ id: 'project-1', displayName: 'Canonical Seal' })
+    const project = makeProject({ id: 'project-1', displayName: 'Canonical Orca' })
     const worktree = makeWorktree({
       id: 'wt-1',
       repoId: repo.id,
@@ -61,12 +61,12 @@ describe('buildAiVaultProjectContext', () => {
     expect(context.sessionProjectById.get(baseSession.id)).toMatchObject({
       kind: 'repo',
       key: 'project:project-1',
-      label: 'Canonical Seal'
+      label: 'Canonical Orca'
     })
   })
 
   it('inherits setup project ids for legacy worktrees without project metadata', () => {
-    const repo = makeRepo({ id: 'repo-1', displayName: 'Seal Repo', path: '/repo/orca' })
+    const repo = makeRepo({ id: 'repo-1', displayName: 'Orca Repo', path: '/repo/orca' })
     const worktree = makeWorktree({
       id: 'wt-legacy',
       repoId: repo.id,
@@ -78,7 +78,7 @@ describe('buildAiVaultProjectContext', () => {
       repos: [repo],
       worktrees: [worktree],
       projectHostSetupProjection: makeProjection({
-        projects: [makeProject({ id: 'github:stablyai/orca', displayName: 'Canonical Seal' })],
+        projects: [makeProject({ id: 'github:stablyai/orca', displayName: 'Canonical Orca' })],
         setups: [
           makeSetup({
             repoId: repo.id,
@@ -96,7 +96,7 @@ describe('buildAiVaultProjectContext', () => {
     expect(context.sessionProjectById.get(session.id)).toMatchObject({
       kind: 'repo',
       key: 'project:github:stablyai/orca',
-      label: 'Canonical Seal'
+      label: 'Canonical Orca'
     })
   })
 
@@ -305,7 +305,7 @@ function makeRepo(overrides: Partial<Repo>): Repo {
   return {
     id: 'repo-1',
     path: '/Users/ada/orca',
-    displayName: 'Seal',
+    displayName: 'Orca',
     badgeColor: '#737373',
     addedAt: 1,
     ...overrides
@@ -331,7 +331,7 @@ function makeSetup(overrides: Partial<ProjectHostSetup>): ProjectHostSetup {
     hostId: 'local',
     repoId: 'repo-1',
     path: '/Users/ada/orca',
-    displayName: 'Seal',
+    displayName: 'Orca',
     setupState: 'ready',
     setupMethod: 'legacy-repo',
     createdAt: 1,

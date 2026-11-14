@@ -47,7 +47,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.connectionLostBody',
-          'The connection to the server dropped. Seal is retrying automatically, and terminals resume when it returns.'
+          'The connection to the server dropped. Orca is retrying automatically, and terminals resume when it returns.'
         )
       }
     case 'server-restarting':
@@ -60,7 +60,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.serverRestartingBody',
-          'Seal reconnects when the server is back, and terminals resume then.'
+          'Orca reconnects when the server is back, and terminals resume then.'
         )
       }
     case 'stream-stalled':
@@ -72,7 +72,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.streamStalledBody',
-          "{{server}} stopped sending this terminal's output. Seal is reattaching it automatically.",
+          "{{server}} stopped sending this terminal's output. Orca is reattaching it automatically.",
           server
         )
       }
@@ -85,7 +85,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.sessionEndedBody',
-          "{{server}} closed this terminal's stream. Seal is reattaching it automatically.",
+          "{{server}} closed this terminal's stream. Orca is reattaching it automatically.",
           server
         )
       }
@@ -98,7 +98,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.reattachingBody',
-          'Seal is reattaching this terminal to {{server}} automatically.',
+          'Orca is reattaching this terminal to {{server}} automatically.',
           server
         )
       }
@@ -112,7 +112,7 @@ export function remoteRuntimeRecoveryCopy(
         ),
         body: t(
           'auto.components.terminal.pane.TerminalRemoteRuntimeReconnectBanner.waitingBody',
-          'Seal reattaches this terminal when the server offers it again or the connection changes. Reconnect to try now.'
+          'Orca reattaches this terminal when the server offers it again or the connection changes. Reconnect to try now.'
         )
       }
   }

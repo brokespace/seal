@@ -52,7 +52,7 @@ export async function launchProfileStateRecovery(
     } catch {
       throw new RuntimeClientError(
         'runtime_error',
-        'Seal recovery returned an invalid response. Inspect retained recovery artifacts before retrying.'
+        'Orca recovery returned an invalid response. Inspect retained recovery artifacts before retrying.'
       )
     }
     const result = profileStateRecoveryResponseSchema.safeParse(parsed)
@@ -67,7 +67,7 @@ export async function launchProfileStateRecovery(
   }
   throw new RuntimeClientError(
     'runtime_error',
-    'Seal recovery did not complete successfully. Inspect retained recovery artifacts before retrying.',
+    'Orca recovery did not complete successfully. Inspect retained recovery artifacts before retrying.',
     {
       exitCode: response.code,
       signal: response.signal,

@@ -78,7 +78,7 @@ export async function startRemoteOwnedWorker(
   if (params.terminal) {
     throw new OrchestrationError(
       'invalid_argument',
-      '--terminal names a terminal on this Seal, so it cannot be used with --on. No effects were applied.',
+      '--terminal names a terminal on this Orca, so it cannot be used with --on. No effects were applied.',
       { effectsApplied: false }
     )
   }
@@ -166,7 +166,7 @@ export async function startRemoteOwnedWorker(
       // A reset already removed the reservation; a re-made pairing keeps it, so a later start of the Task there is refused here.
       throw new OrchestrationError(
         'run_not_found',
-        `Run ${run.id} was reset, or its pairing with ${server.name} re-made, while this start was waiting, so this Seal records nothing for the worker it started there (Dispatch ${started.data.dispatchId}).`,
+        `Run ${run.id} was reset, or its pairing with ${server.name} re-made, while this start was waiting, so this Orca records nothing for the worker it started there (Dispatch ${started.data.dispatchId}).`,
         { server: server.name }
       )
     }

@@ -121,7 +121,7 @@ export function formatOrchestrationCheckText(
 
 export function formatUnacknowledgedDeliveryNotice(deliveryId: string | null | undefined): string {
   return deliveryId
-    ? `\nThis Seal version does not acknowledge batches automatically. After handling every message, rerun this check with --ack ${deliveryId}.`
+    ? `\nThis Orca version does not acknowledge batches automatically. After handling every message, rerun this check with --ack ${deliveryId}.`
     : ''
 }
 

@@ -141,7 +141,7 @@ export async function openTerminalForDeclinedChat(
       ? declined()
       : translate(
           'components.native-chat.structuredSessionTerminalNotVisible',
-          "Seal opened {{value0}} in a terminal, but couldn't show it here when the launch finished. Your chat draft was kept.",
+          "Orca opened {{value0}} in a terminal, but couldn't show it here when the launch finished. Your chat draft was kept.",
           { value0: structuredAgentLabel(args.plan.agent) }
         )
   )

@@ -128,7 +128,7 @@ export function MobilePairingConnectionOptions({
           onSelect={() => onChange('automatic')}
           title={t(
             'auto.components.settings.MobilePairingConnectionOptions.anywhereTitle',
-            'Seal Relay'
+            'Orca Relay'
           )}
           description={t(
             'auto.components.settings.MobilePairingConnectionOptions.anywhereDescriptionNoAccount',

@@ -118,7 +118,7 @@ export async function preparePluginPastSession(
     }
     throw new PluginHostCallError(
       'action_failed',
-      'Seal could not prepare this session to resume',
+      'Orca could not prepare this session to resume',
       undefined,
       error instanceof PluginHostCallError ? (error.detail ?? error.message) : String(error),
       { cause: error }

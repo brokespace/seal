@@ -107,7 +107,7 @@ export function renderMobileEmulatorSettingsSection(
       title={t('auto.components.settings.Settings.129ae9859c', 'Mobile emulator')}
       description={t(
         'auto.components.settings.Settings.01f9d36292',
-        'Configure mobile emulator support for Seal and coding agents.'
+        'Configure mobile emulator support for Orca and coding agents.'
       )}
       searchEntries={navigation.getSectionSearchEntries('mobile-emulator')}
     >

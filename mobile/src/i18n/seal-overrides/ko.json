@@ -1,0 +1,7 @@
+{
+  "app": {
+    "pairScan": {
+      "pasteCodePlaceholder": "seal://pair?code=... 또는 코드 붙여넣기"
+    }
+  }
+}

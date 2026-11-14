@@ -57,7 +57,7 @@ describe('hermes startup plans', () => {
     expect(unwrapPosixShellScript(plan?.launchCommand)).toContain("'--profile' 'chat'")
   })
 
-  it('keeps Seal ownership of the Hermes startup query and TUI mode', () => {
+  it('keeps Orca ownership of the Hermes startup query and TUI mode', () => {
     const plan = buildAgentStartupPlan({
       agent: 'hermes',
       prompt: 'automation prompt',

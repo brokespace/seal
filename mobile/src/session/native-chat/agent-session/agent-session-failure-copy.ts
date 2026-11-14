@@ -122,19 +122,19 @@ const COPY: Record<AgentSessionFailureCopyId, (values: AgentSessionFailureCopyVa
   hostFault: (values) =>
     translate(
       'session.failure.hostFault',
-      "Seal ran into a problem, so this didn't go through.",
+      "Orca ran into a problem, so this didn't go through.",
       values
     ),
   hostFaultTryAgain: (values) =>
     translate(
       'session.failure.hostFaultTryAgain',
-      "Seal ran into a problem, so this didn't go through. Try again.",
+      "Orca ran into a problem, so this didn't go through. Try again.",
       values
     ),
   hostStopped: (values) =>
     translate(
       'session.failure.hostStopped',
-      '{{agent}} never finished starting, so Seal stopped it.',
+      '{{agent}} never finished starting, so Orca stopped it.',
       values
     ),
   providerRateLimited: (values) =>

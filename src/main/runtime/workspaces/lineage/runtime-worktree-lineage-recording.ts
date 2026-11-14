@@ -143,7 +143,7 @@ export function recordCreatedWorktreeLineage(
     warnings.push({
       code: 'LINEAGE_PARENT_CONTEXT_MISSING',
       message:
-        'Worktree created, but Seal could not record lineage because instance identity was unavailable.',
+        'Worktree created, but Orca could not record lineage because instance identity was unavailable.',
       details: {
         childHasInstanceId: Boolean(childInstanceId),
         parentHasInstanceId: Boolean(parentInstanceId),
@@ -217,7 +217,7 @@ function recordCrossStoreLineage(
           {
             code: 'LINEAGE_PARENT_CONTEXT_MISSING',
             message:
-              'Worktree created, but Seal could not record its parent on another machine for this workspace.'
+              'Worktree created, but Orca could not record its parent on another machine for this workspace.'
           }
         ]
   }

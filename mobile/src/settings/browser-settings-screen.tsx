@@ -18,7 +18,7 @@ function linkModeOptions(t: Translate): PickerOption<MobileTerminalLinkOpenMode>
   return [
     {
       value: 'orca-browser',
-      label: t('settings.browserSettingsScreen.desktopBrowser', 'Seal browser on desktop'),
+      label: t('settings.browserSettingsScreen.desktopBrowser', 'Orca browser on desktop'),
       subtitle: t(
         'settings.browserSettingsScreen.desktopBrowserDescription',
         'Open in the streamed browser from your paired desktop.'

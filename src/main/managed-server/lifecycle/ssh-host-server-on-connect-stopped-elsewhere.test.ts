@@ -7,7 +7,7 @@ import {
 } from '../activation/orcad-activation-record'
 import { planManagedOrcadAutoUpdate } from './orcad-managed-update-decision'
 
-describe('redeploying a host another desktop stopped, across Seal versions', () => {
+describe('redeploying a host another desktop stopped, across Orca versions', () => {
   const servedBy = (appVersion: string, active: string): OrcadActivationRecord => ({
     schemaVersion: 1,
     active,

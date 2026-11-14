@@ -84,7 +84,7 @@ function applyTrayImage(): void {
         tray.setToolTip(
           devIndicator
             ? `${baseTooltip()} - ${translateMain('tray.activityWaitingSuffix', 'activity waiting')}`
-            : translateMain('tray.activityWaiting', 'Seal - activity waiting')
+            : translateMain('tray.activityWaiting', 'Orca - activity waiting')
         )
         return
       } catch (error) {
@@ -253,7 +253,7 @@ function buildTrayMenu(opts: SystemTrayOptions): Menu {
         ] satisfies Electron.MenuItemConstructorOptions[])
       : []),
     {
-      label: translateMain('tray.openOrca', 'Open Seal'),
+      label: translateMain('tray.openOrca', 'Open Orca'),
       click: safeMenuAction(() => opts.onOpen())
     },
     { type: 'separator' },

@@ -257,7 +257,7 @@ export function AddProjectHostSubmenu({
                     <span className="text-[11px] text-muted-foreground">
                       {t(
                         'auto.components.sidebar.AddRepoHostSelector.addRemoteServerDetail',
-                        'Pair with Seal running on another computer.'
+                        'Pair with Orca running on another computer.'
                       )}
                     </span>
                   </span>
@@ -279,7 +279,7 @@ export function AddProjectHostSubmenu({
                       <span className="text-[11px] text-muted-foreground">
                         {t(
                           'auto.components.sidebar.AddRepoHostSelector.addWslHostDetail',
-                          'Run a Seal server inside a WSL 2 distro. Experimental.'
+                          'Run an Orca server inside a WSL 2 distro. Experimental.'
                         )}
                       </span>
                     </span>

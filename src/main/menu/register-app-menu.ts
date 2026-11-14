@@ -113,12 +113,12 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
   }
 
   const featureTourItem: Electron.MenuItemConstructorOptions = {
-    label: translateMain('menu.exploreOrca', 'Explore Seal'),
+    label: translateMain('menu.exploreOrca', 'Explore Orca'),
     click: (_menuItem, window) => onOpenFeatureTour(window)
   }
 
   const setupGuideItem: Electron.MenuItemConstructorOptions = {
-    label: translateMain('menu.gettingStarted', 'Getting Started with Seal'),
+    label: translateMain('menu.gettingStarted', 'Getting Started with Orca'),
     click: (_menuItem, window) => onOpenSetupGuide(window)
   }
 
@@ -130,13 +130,13 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
   const macAppMenu: Electron.MenuItemConstructorOptions = {
     label: options.appMenuLabel ?? app.name,
     submenu: [
-      labeledAppMenuRole('about', 'menu.about', 'About Seal'),
+      labeledAppMenuRole('about', 'menu.about', 'About Orca'),
       checkForUpdatesItem,
       settingsItem,
       { type: 'separator' },
       labeledAppMenuRole('services', 'menu.services', 'Services'),
       { type: 'separator' },
-      labeledAppMenuRole('hide', 'menu.hide', 'Hide Seal'),
+      labeledAppMenuRole('hide', 'menu.hide', 'Hide Orca'),
       labeledAppMenuRole('hideOthers', 'menu.hideOthers', 'Hide Others'),
       labeledAppMenuRole('unhide', 'menu.unhide', 'Show All'),
       { type: 'separator' },
@@ -228,7 +228,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
         click: () => onToggleAppearance('showAutomationsButton')
       },
       {
-        label: translateMain('menu.showMobileButton', 'Show Seal Mobile Button'),
+        label: translateMain('menu.showMobileButton', 'Show Orca Mobile Button'),
         type: 'checkbox',
         checked: appearance.showMobileButton,
         click: () => onToggleAppearance('showMobileButton')
@@ -288,7 +288,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
         ? []
         : ([
             { type: 'separator' },
-            labeledAppMenuRole('about', 'menu.about', 'About Seal'),
+            labeledAppMenuRole('about', 'menu.about', 'About Orca'),
             checkForUpdatesItem
           ] satisfies Electron.MenuItemConstructorOptions[]))
     ]

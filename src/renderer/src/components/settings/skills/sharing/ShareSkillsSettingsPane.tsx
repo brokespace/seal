@@ -64,13 +64,13 @@ export function ShareSkillsSettingsPane(): React.JSX.Element {
         title={t('auto.components.settings.shareSkills.linkTitle', 'Unlisted skill links')}
         description={t(
           'auto.components.settings.shareSkills.linkDescription',
-          'Shared bundles are not searchable or listed in Seal. The link is the credential, so send it only to people you trust.'
+          'Shared bundles are not searchable or listed in Orca. The link is the credential, so send it only to people you trust.'
         )}
       >
         <SettingsSwitchRow
           label={t(
             'auto.components.settings.shareSkills.allowAgentPublishing',
-            'Allow agents and the Seal CLI to publish skill links'
+            'Allow agents and the Orca CLI to publish skill links'
           )}
           description={
             isWebClient
@@ -110,11 +110,11 @@ export function ShareSkillsSettingsPane(): React.JSX.Element {
                 {isWebClient
                   ? t(
                       'auto.components.settings.shareSkills.signInWebDescription',
-                      'Publishing and link management are available in the Seal desktop app.'
+                      'Publishing and link management are available in the Orca desktop app.'
                     )
                   : t(
                       'auto.components.settings.shareSkills.signInDescription',
-                      'Use your Seal account to publish bundles and manage their links. Recipients do not need an account.'
+                      'Use your Orca account to publish bundles and manage their links. Recipients do not need an account.'
                     )}
               </p>
             </div>
@@ -122,7 +122,7 @@ export function ShareSkillsSettingsPane(): React.JSX.Element {
               <OrcaSignInButton size="sm" disabled={authStatus?.configured !== true}>
                 {authStatus?.state === 'reconnect-required'
                   ? t('auto.components.settings.shareSkills.signInAgain', 'Sign in again')
-                  : t('auto.components.settings.shareSkills.signIn', 'Sign in to Seal')}
+                  : t('auto.components.settings.shareSkills.signIn', 'Sign in to Orca')}
               </OrcaSignInButton>
             ) : null}
             {!isWebClient ? <OrcaSignInWaitNotice className="basis-full" /> : null}

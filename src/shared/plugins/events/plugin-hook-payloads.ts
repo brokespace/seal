@@ -132,7 +132,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: ['text', 'enter'],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'Text Seal, the CLI or a plugin is about to send to a terminal. A person typing (on the desktop, a phone or a paired client) is never hooked, and prompts Seal submits to an agent take `agent.prompt.before` instead. Writes to one terminal stay in order while a hook decides. Rewrite `text` or `enter` with `next`, or return `{ deny }` to refuse the send.'
+      'Text Orca, the CLI or a plugin is about to send to a terminal. A person typing (on the desktop, a phone or a paired client) is never hooked, and prompts Orca submits to an agent take `agent.prompt.before` instead. Writes to one terminal stay in order while a hook decides. Rewrite `text` or `enter` with `next`, or return `{ deny }` to refuse the send.'
   },
   'workspace.create.before': {
     payload: workspaceCreateBeforeHookPayloadSchema,
@@ -148,7 +148,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: [],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'A worktree or folder workspace was created. Observe only: Seal does not wait for it, and results are ignored.'
+      'A worktree or folder workspace was created. Observe only: Orca does not wait for it, and results are ignored.'
   },
   'agent.launch.before': {
     payload: agentLaunchBeforeHookPayloadSchema,
@@ -156,7 +156,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: ['command', 'env'],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'Seal is about to start an agent CLI in a terminal, from any launcher (new tab, workspace create, CLI, automation, orchestration). Change `command` or add `env` with `next`, or return `{ deny }` to refuse the launch. Restores of saved sessions are not hooked.'
+      'Orca is about to start an agent CLI in a terminal, from any launcher (new tab, workspace create, CLI, automation, orchestration). Change `command` or add `env` with `next`, or return `{ deny }` to refuse the launch. Restores of saved sessions are not hooked.'
   },
   'agent.prompt.before': {
     payload: agentPromptBeforeHookPayloadSchema,
@@ -164,7 +164,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: ['prompt'],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'Seal is about to submit a prompt to an agent in a terminal: a launch prompt, an orchestration dispatch, an issue or task prompt, or `orca terminal send` to an agent. A prompt a person submits is never hooked, and writes to one terminal stay in order while it decides. Rewrite `prompt` with `next`, or return `{ deny }` to refuse it.'
+      'Orca is about to submit a prompt to an agent in a terminal: a launch prompt, an orchestration dispatch, an issue or task prompt, or `orca terminal send` to an agent. A prompt a person submits is never hooked, and writes to one terminal stay in order while it decides. Rewrite `prompt` with `next`, or return `{ deny }` to refuse it.'
   },
   'agent.tool.before': {
     payload: agentToolBeforeHookPayloadSchema,
@@ -172,7 +172,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: ['input'],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'An agent in a Seal terminal is about to run a tool. Claude Code waits for the answer: return `{ deny }` to refuse the call (the agent sees the reason) or change `input` with `next`; the person is still asked as usual. Other agents only report the call, so their results are ignored. Agents on SSH or WSL hosts are not hooked yet.'
+      'An agent in an Orca terminal is about to run a tool. Claude Code waits for the answer: return `{ deny }` to refuse the call (the agent sees the reason) or change `input` with `next`; the person is still asked as usual. Other agents only report the call, so their results are ignored. Agents on SSH or WSL hosts are not hooked yet.'
   },
   'agent.tool.after': {
     payload: agentToolAfterHookPayloadSchema,
@@ -180,7 +180,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: [],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'An agent in a Seal terminal finished a tool call (successfully or not). Observe only: Seal does not wait for it.'
+      'An agent in an Orca terminal finished a tool call (successfully or not). Observe only: Orca does not wait for it.'
   },
   'editor.save.before': {
     payload: editorSaveBeforeHookPayloadSchema,
@@ -188,7 +188,7 @@ export const PLUGIN_HOOK_SPECS = {
     mutable: ['text'],
     deadlineMs: PLUGIN_HOOK_DEFAULT_DEADLINE_MS,
     summary:
-      'The person is about to save a text file from a Seal editor tab (an explicit save, not autosave). Change `text` with `next` (format on save) or return `{ deny }` to refuse the save, which shows your reason. Edits made while the hook ran stay unsaved.'
+      'The person is about to save a text file from an Orca editor tab (an explicit save, not autosave). Change `text` with `next` (format on save) or return `{ deny }` to refuse the save, which shows your reason. Edits made while the hook ran stay unsaved.'
   }
 } satisfies Record<PluginHookName, PluginHookSpec>
 

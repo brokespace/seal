@@ -16,7 +16,7 @@ export function readMetadata(userDataPath: string): RuntimeMetadata {
     if (!metadata || !findTransport(metadata, 'unix', 'named-pipe') || !metadata.authToken) {
       throw new RuntimeClientError(
         'runtime_unavailable',
-        `Seal runtime metadata is incomplete at ${metadataPath}`
+        `Orca runtime metadata is incomplete at ${metadataPath}`
       )
     }
     return metadata
@@ -26,7 +26,7 @@ export function readMetadata(userDataPath: string): RuntimeMetadata {
     }
     throw new RuntimeClientError(
       'runtime_unavailable',
-      `Could not read Seal runtime metadata at ${metadataPath}. Start the Seal app first.`
+      `Could not read Orca runtime metadata at ${metadataPath}. Start the Orca app first.`
     )
   }
 }
@@ -63,7 +63,7 @@ export function getPlatformUserDataPath(
     if (!appData) {
       throw new RuntimeClientError(
         'runtime_unavailable',
-        'APPDATA is not set, so the Seal runtime metadata path cannot be resolved.'
+        'APPDATA is not set, so the Orca runtime metadata path cannot be resolved.'
       )
     }
     return join(appData, APP_PRODUCT_NAME)

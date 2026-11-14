@@ -39,7 +39,7 @@ export default function AboutScreen({
     <SettingsScreen title={t('settings.aboutScreen.title', 'About')} onBack={onBack}>
       <View style={styles.brand}>
         <SealLogo size={28} />
-        <Text style={styles.brandName}>Seal</Text>
+        <Text style={styles.brandName}>Orca</Text>
         <Text style={styles.brandSub}>
           {t('settings.aboutScreen.tagline', 'Open-source agent IDE for 100x builders')}
         </Text>
@@ -50,7 +50,7 @@ export default function AboutScreen({
           key="source"
           title="brokespace/seal"
           leading={<GithubIcon size={18} />}
-          accessibilityLabel={t('settings.aboutScreen.sourceCode', 'Seal source code')}
+          accessibilityLabel={t('settings.aboutScreen.sourceCode', 'Orca source code')}
           onPress={() => openLink('https://github.com/brokespace/seal')}
         />
       </SettingsSection>

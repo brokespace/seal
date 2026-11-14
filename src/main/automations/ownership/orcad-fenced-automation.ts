@@ -6,7 +6,7 @@ import { isManagedOrcadSshTarget } from '../../ssh/targets/ssh-target-runtime-ow
 import { moveProjectToManagedHostFirst } from '../../../shared/managed-orcad-ssh-owner'
 import { listOrcadMigrationCutoverChainForTarget } from '../../persistence/migrating-orcad-catalog/cutover-journals/orcad-migration-cutover-journal'
 
-export const ORCAD_FENCED_AUTOMATION = "This automation now runs on its SSH host's Seal server."
+export const ORCAD_FENCED_AUTOMATION = "This automation now runs on its SSH host's Orca server."
 
 /** While a move is in flight, or once it took this row, any desktop write would break or duplicate it. Rows Move anyway left behind stay listed, skipped by managedOrcadHostOf. */
 export function isOrcadFencedAutomation(

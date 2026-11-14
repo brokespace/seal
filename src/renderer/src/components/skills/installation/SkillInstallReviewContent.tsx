@@ -36,7 +36,7 @@ export function SkillShareLinkInputForm({
       }}
     >
       <Label htmlFor="skill-share-link">
-        {t('auto.components.skills.SkillInstallReviewContent.93eb0fe8c7', 'Seal skill link')}
+        {t('auto.components.skills.SkillInstallReviewContent.93eb0fe8c7', 'Orca skill link')}
       </Label>
       <Input
         id="skill-share-link"
@@ -179,7 +179,7 @@ export function SkillInstallReview({
             )}
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            {t('auto.components.skills.SkillInstallReviewContent.2a31912f14', 'Seal found')}{' '}
+            {t('auto.components.skills.SkillInstallReviewContent.2a31912f14', 'Orca found')}{' '}
             {result?.conflict?.kind ||
               destinationPreview?.currentState ||
               t('auto.components.skills.SkillInstallReviewContent.37d990b94c', 'changed')}{' '}

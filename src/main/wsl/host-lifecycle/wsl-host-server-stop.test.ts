@@ -44,16 +44,16 @@ function steps(overrides: Partial<WslHostServerStopSteps> = {}) {
 }
 
 describe('stopWslHostServer', () => {
-  it('keeps a server another Seal shares: only this desktop lets go, nothing ends', async () => {
+  it('keeps a server another Orca shares: only this desktop lets go, nothing ends', async () => {
     const { all, order } = steps({
       peerDesktops: vi.fn(async (): Promise<WslHostPeerDesktops> => ({
         kind: 'shared',
-        names: ['Seal Dev']
+        names: ['Orca Dev']
       }))
     })
     await expect(stopWslHostServer(all)).resolves.toEqual({
       stopped: true,
-      keptForOtherDesktops: ['Seal Dev']
+      keptForOtherDesktops: ['Orca Dev']
     })
     expect(order).toEqual(['closeBridge'])
   })
@@ -67,7 +67,7 @@ describe('stopWslHostServer', () => {
     await expect(stopWslHostServer(all)).resolves.toMatchObject({
       stopped: false,
       verdict: 'unverifiable',
-      reason: expect.stringContaining('another Seal on this computer')
+      reason: expect.stringContaining('another Orca on this computer')
     })
     expect(order).toEqual(['closeBridge'])
   })

@@ -61,7 +61,7 @@ export function VoiceVocabularySetting({
       toast.error(
         t(
           'components.settings.voice.vocabulary.repoSaveFailed',
-          "Couldn't save the repo's terms. The host running this repo may need a Seal update."
+          "Couldn't save the repo's terms. The host running this repo may need an Orca update."
         )
       )
     }

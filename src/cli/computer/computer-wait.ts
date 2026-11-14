@@ -151,7 +151,7 @@ async function assertDisabledStateSupported(
     // Why: without the trait every element reads as enabled, so the wait would pass at once.
     throw new RuntimeClientError(
       'unsupported_capability',
-      `The ${result.provider} computer-use provider on this host does not report disabled elements, so --enabled cannot be checked. Update Seal on that host, or wait with --text instead.`
+      `The ${result.provider} computer-use provider on this host does not report disabled elements, so --enabled cannot be checked. Update Orca on that host, or wait with --text instead.`
     )
   }
 }

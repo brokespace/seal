@@ -75,7 +75,7 @@ export function writeWriteAheadRuntimes(
     // Why: never overwrite records this build cannot read (corrupt, or from a newer build); they
     // may be the only trace of a VM. Refuse new records instead, before their create starts.
     if (runtimes.length > 0) {
-      throw new Error(`Could not update Seal ephemeral VM provisioning records at ${path}.`)
+      throw new Error(`Could not update Orca ephemeral VM provisioning records at ${path}.`)
     }
     return
   }

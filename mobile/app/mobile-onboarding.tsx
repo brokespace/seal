@@ -156,7 +156,7 @@ function MobileOnboardingFlow({
     <SafeAreaView style={styles.container}>
       <View style={styles.brandRow}>
         <SealLogo size={22} />
-        <Text style={styles.brandName}>Seal</Text>
+        <Text style={styles.brandName}>Orca</Text>
         {steps.length > 1 ? (
           <View
             accessible

@@ -91,6 +91,6 @@ describe('runtime environment sidecar across a downgrade', () => {
   it('fails closed on an unreadable sidecar instead of dropping a pinned host key', () => {
     linked()
     writeFileSync(getRuntimeEnvironmentSidecarPath(userDataPath), '{not json')
-    expect(() => listEnvironments(userDataPath)).toThrow('Seal environment links')
+    expect(() => listEnvironments(userDataPath)).toThrow('Orca environment links')
   })
 })

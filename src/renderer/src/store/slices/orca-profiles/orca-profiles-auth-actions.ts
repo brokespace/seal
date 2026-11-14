@@ -62,7 +62,7 @@ export const createOrcaProfilesAuthActions: StateCreator<
         }
         return result
       } catch (err) {
-        console.error('Failed to create Seal cloud profile:', err)
+        console.error('Failed to create Orca cloud profile:', err)
         toast.error(
           translate('auto.store.slices.orca.profiles.f0c9e11a6d', 'Failed to create cloud profile'),
           {
@@ -102,7 +102,7 @@ export const createOrcaProfilesAuthActions: StateCreator<
           toast.error(
             translate(
               'auto.store.slices.orca.profiles.8b8fa73174',
-              'Seal Cloud sign-in is not configured'
+              'Orca Cloud sign-in is not configured'
             ),
             {
               description: result.auth.setupMessage
@@ -124,7 +124,7 @@ export const createOrcaProfilesAuthActions: StateCreator<
         }
         return result
       } catch (err) {
-        console.error('Failed to connect Seal profile:', err)
+        console.error('Failed to connect Orca profile:', err)
         if (
           attempt >= appliedConnectAttempt &&
           get().orcaProfileAuthStatus?.state !== 'connected'
@@ -167,7 +167,7 @@ export const createOrcaProfilesAuthActions: StateCreator<
         }
         return result
       } catch (err) {
-        console.error('Failed to refresh Seal profile auth:', err)
+        console.error('Failed to refresh Orca profile auth:', err)
         toast.error(
           translate('auto.store.slices.orca.profiles.2f6c78a039', 'Failed to refresh profile auth'),
           {
@@ -190,12 +190,12 @@ export const createOrcaProfilesAuthActions: StateCreator<
         })
         if (result.auth.state !== 'connected') {
           toast.success(
-            translate('auto.store.slices.orca.profiles.a37b5e6d37', 'Signed out of Seal')
+            translate('auto.store.slices.orca.profiles.a37b5e6d37', 'Signed out of Orca')
           )
         }
         return result
       } catch (err) {
-        console.error('Failed to sign out of Seal profile:', err)
+        console.error('Failed to sign out of Orca profile:', err)
         toast.error(translate('auto.store.slices.orca.profiles.83600521e7', 'Failed to sign out'), {
           description: err instanceof Error ? err.message : String(err)
         })
@@ -230,7 +230,7 @@ export const createOrcaProfilesAuthActions: StateCreator<
         }
         return result
       } catch (err) {
-        console.error('Failed to switch Seal profile org:', err)
+        console.error('Failed to switch Orca profile org:', err)
         toast.error(
           translate('auto.store.slices.orca.profiles.76deec8f58', 'Failed to switch organization'),
           {

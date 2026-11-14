@@ -30,7 +30,7 @@ describe('web runtime environment identity', () => {
 
     await expect(
       globals.window.api.runtimeEnvironments.resolve({ selector: 'web-server-a' })
-    ).rejects.toThrow('Unknown Seal runtime environment: web-server-a')
+    ).rejects.toThrow('Unknown Orca runtime environment: web-server-a')
   })
 
   it('keeps old selectors only when re-pairing proves the same server key', async () => {
@@ -259,7 +259,7 @@ describe('web runtime environment identity', () => {
     ).resolves.toMatchObject({
       ok: false,
       kind: 'environment-save-failed',
-      message: 'Seal verified the host but could not save it. Check browser storage and try again.'
+      message: 'Orca verified the host but could not save it. Check browser storage and try again.'
     })
     await expect(globals.window.api.runtimeEnvironments.list()).resolves.toMatchObject([
       { id: 'web-server-a' }

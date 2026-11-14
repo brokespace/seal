@@ -103,7 +103,7 @@ describe.skipIf(process.platform === 'win32')('the fixes the old wrapper was bui
     }
   })
 
-  itWithZsh('refuses an inherited ZDOTDIR that is a Seal wrapper dir (#15258)', async () => {
+  itWithZsh('refuses an inherited ZDOTDIR that is an Orca wrapper dir (#15258)', async () => {
     // Older parents can supply stale ORCA_ORIG_ZDOTDIR without passing through Node's ownership check.
     const home = makeZshHome({ '.zshrc': 'export ORCA_TEST_FROM_ZSHRC=1\n' })
     const foreign = join(home, 'other-terminal', 'zsh')

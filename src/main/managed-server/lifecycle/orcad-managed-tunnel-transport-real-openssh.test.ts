@@ -132,7 +132,7 @@ describe.skipIf(!REAL_OPENSSH_TEST_ENABLED)(
       }
     }, 30_000)
 
-    it('takes back a persisted port an older Seal’s forward left on the master', async () => {
+    it('takes back a persisted port an older Orca’s forward left on the master', async () => {
       const persisted = await freePort()
       mux('forward', persisted, orcadPort)
       expect(await dial(persisted)).toBe(true)

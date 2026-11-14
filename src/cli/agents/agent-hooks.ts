@@ -119,7 +119,7 @@ async function updateRunningRuntime(client: RuntimeClient, enabled: boolean): Pr
     if (status.legacyPidRunning) {
       throw new RuntimeClientError(
         'runtime_error',
-        'Seal is running but unavailable. Retry when it responds, or stop Seal before changing agent hooks offline.'
+        'Orca is running but unavailable. Retry when it responds, or stop Orca before changing agent hooks offline.'
       )
     }
     return false

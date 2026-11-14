@@ -44,9 +44,9 @@ function blockRemedy(verdict: BlockedVerdict): BlockRemedy {
 function blockTitle(remedy: BlockRemedy, t: Translate): string {
   switch (remedy) {
     case 'update-mobile':
-      return t('components.protocolBlockScreen.updateMobileTitle', 'Update Seal Mobile')
+      return t('components.protocolBlockScreen.updateMobileTitle', 'Update Orca Mobile')
     case 'update-desktop':
-      return t('components.protocolBlockScreen.updateDesktopTitle', 'Update Seal on your computer')
+      return t('components.protocolBlockScreen.updateDesktopTitle', 'Update Orca on your computer')
     case 'refresh-bundle':
       return t(
         'components.protocolBlockScreen.refreshWorkspaceTitle',
@@ -65,18 +65,18 @@ function blockBody(verdict: BlockedVerdict, remedy: BlockRemedy, t: Translate): 
   if (verdict.reason === 'mobile-too-old') {
     return t(
       'components.protocolBlockScreen.mobileTooOldGitHubReleases',
-      'This desktop needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again.'
+      'This desktop needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again.'
     )
   }
   if (remedy === 'update-mobile') {
     return t(
       'components.protocolBlockScreen.workspaceNeedsUpdateGitHubReleases',
-      "This desktop's mobile workspace needs a newer Seal Mobile app. Update Seal Mobile from GitHub Releases, then try this host again."
+      "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again."
     )
   }
   return t(
     'components.protocolBlockScreen.desktopTooOldBody',
-    'This paired desktop app is too old for your current Seal Mobile app. Update Seal on your computer, then try this host again.'
+    'This paired desktop app is too old for your current Orca Mobile app. Update Orca on your computer, then try this host again.'
   )
 }
 
@@ -92,7 +92,7 @@ export function ProtocolBlockScreen({ verdict }: Props) {
   }
   const mobileAction = mobileUpdate
     ? {
-        label: t('components.protocolBlockScreen.getVersion', 'Get Seal {{version}}', {
+        label: t('components.protocolBlockScreen.getVersion', 'Get Orca {{version}}', {
           version: mobileUpdate.version
         }),
         url: mobileUpdate.url

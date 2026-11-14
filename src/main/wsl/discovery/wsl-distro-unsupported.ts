@@ -47,7 +47,7 @@ export function wslUnsupportedDistroFixMessage(error: unknown): string | null {
   }
   if (error instanceof RemoteNodeRuntimeSelfTestError && NIXOS_STUB_LOADER.test(error.output)) {
     return (
-      'NixOS can’t run Seal’s Node runtime as it is. Turn on nix-ld ' +
+      'NixOS can’t run Orca’s Node runtime as it is. Turn on nix-ld ' +
       '(programs.nix-ld.enable = true; in configuration.nix), run nixos-rebuild switch, ' +
       `then reconnect. (exit ${error.exitStatus ?? 'unknown'}: ${error.output})`
     )

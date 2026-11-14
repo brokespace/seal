@@ -45,7 +45,7 @@ async function assertUniqueIdMutationSupported(client: RuntimeClient): Promise<v
   ) {
     throw new RuntimeClientError(
       'incompatible_runtime',
-      'This Seal cannot change folder workspaces from the CLI safely. Update Seal on the computer that owns the folder workspace. Nothing was changed.'
+      'This Orca cannot change folder workspaces from the CLI safely. Update Orca on the computer that owns the folder workspace. Nothing was changed.'
     )
   }
 }
@@ -157,6 +157,6 @@ async function removeFolderWorkspace(
 export function refuseFolderWorkspaceActivation(folderId: string): never {
   throw new RuntimeClientError(
     'invalid_argument',
-    `Activating a folder workspace from the CLI is not supported yet. Open it from the Seal sidebar, or inspect it with orca worktree show --worktree ${folderWorkspaceKey(folderId)} --json.`
+    `Activating a folder workspace from the CLI is not supported yet. Open it from the Orca sidebar, or inspect it with orca worktree show --worktree ${folderWorkspaceKey(folderId)} --json.`
   )
 }

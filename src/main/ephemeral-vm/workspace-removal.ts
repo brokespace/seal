@@ -197,7 +197,7 @@ export async function removeRecipeWorkspace(
         !(await waitForCheckoutGone(ports, environmentId, params.worktree, waitForRemoval))
       ) {
         throw new Error(
-          'The checkout is still being removed. Its environment was not destroyed; destroy it from Settings > Cloud VMs in Seal once removal finishes.'
+          'The checkout is still being removed. Its environment was not destroyed; destroy it from Settings > Cloud VMs in Orca once removal finishes.'
         )
       }
       checkoutResult = { ...removed, removed: true }
@@ -222,7 +222,7 @@ export async function removeRecipeWorkspace(
   if (cleaned.status !== 'cleaned') {
     throw new RecipeWorkspaceRemovalError(
       'recipe_host_destroy_failed',
-      `${cleaned.cleanupLastError ?? 'Environment destroy failed.'} The environment (runtime ${runtime.id}) may still be running; retry the cleanup from Settings > Cloud VMs in Seal.`,
+      `${cleaned.cleanupLastError ?? 'Environment destroy failed.'} The environment (runtime ${runtime.id}) may still be running; retry the cleanup from Settings > Cloud VMs in Orca.`,
       { runtimeId: runtime.id }
     )
   }

@@ -82,7 +82,7 @@ describe('agent.launch.before at the spawn', () => {
     expect(decided.env).toMatchObject({ FOO: '1', WSLENV: 'USERPROFILE/p:FOO' })
   })
 
-  it('keeps Seal’s own variables out of a plugin’s reach', async () => {
+  it('keeps Orca’s own variables out of a plugin’s reach', async () => {
     const outcome = await runPluginHookChain({
       event: 'agent.launch.before',
       payload: {

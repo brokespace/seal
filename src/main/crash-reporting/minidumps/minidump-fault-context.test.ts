@@ -111,7 +111,7 @@ describe('minidump fault context', () => {
           { start: 0x4ffen, bytes: Buffer.from('9090cc0f0b', 'hex') }
         ],
         platformId: VER_PLATFORM_WIN32_NT,
-        modules: [{ base: 0x4000n, size: 0x2000, name: 'Seal.exe' }]
+        modules: [{ base: 0x4000n, size: 0x2000, name: 'Orca.exe' }]
       })
     )
     expect(signature?.fault).toEqual({ codeBytes: 'cc0f0b' })

@@ -130,12 +130,12 @@ const automationDeleteParams = z.strictObject({ automationId })
 const automationDeleteResult = z.object({ deleted: z.boolean(), reason: refusal })
 
 const CONFIRMS =
-  'Seal first asks the person about an automation this plugin did not create (or created before it was removed or disabled); if they decline or cannot be asked, or it changes while they are asked, nothing changes and `reason` says why.'
+  'Orca first asks the person about an automation this plugin did not create (or created before it was removed or disabled); if they decline or cannot be asked, or it changes while they are asked, nothing changes and `reason` says why.'
 
 export const PLUGIN_AUTOMATION_API = {
   'automation.list': spec({
     summary:
-      "Lists the automations this Seal schedules, at most 200, with each one's prompt cut to 4096 characters.",
+      "Lists the automations this Orca schedules, at most 200, with each one's prompt cut to 4096 characters.",
     since: 8,
     scope: 'any-workspace',
     capability: 'automation:read',
@@ -146,7 +146,7 @@ export const PLUGIN_AUTOMATION_API = {
   }),
   'automation.create': spec({
     summary:
-      "Creates an automation that starts `agent` with `prompt` on `schedule`, even when the plugin is not running, with the person's settings for that agent; Seal's Automations page shows it as created by the plugin.",
+      "Creates an automation that starts `agent` with `prompt` on `schedule`, even when the plugin is not running, with the person's settings for that agent; Orca's Automations page shows it as created by the plugin.",
     since: 8,
     scope: 'any-workspace',
     capability: 'automation:write',
@@ -156,7 +156,7 @@ export const PLUGIN_AUTOMATION_API = {
     result: automationCreateResult
   }),
   'automation.update': spec({
-    summary: `Changes an automation's name, prompt, schedule, time zone or whether it is enabled. ${CONFIRMS} Seal also asks before a new prompt or schedule, or resuming, for any automation whose runs use extra agent settings the person chose.`,
+    summary: `Changes an automation's name, prompt, schedule, time zone or whether it is enabled. ${CONFIRMS} Orca also asks before a new prompt or schedule, or resuming, for any automation whose runs use extra agent settings the person chose.`,
     since: 8,
     scope: 'any-workspace',
     capability: 'automation:write',

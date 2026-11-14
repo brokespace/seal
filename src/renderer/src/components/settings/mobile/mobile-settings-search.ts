@@ -49,11 +49,11 @@ export const getMobileSidebarShortcutSearchEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
       'auto.components.settings.mobile.settings.search.b305668a18',
-      'Show Seal Mobile button'
+      'Show Orca Mobile button'
     ),
     description: translate(
       'auto.components.settings.mobile.settings.search.682293cadf',
-      'Show the Seal Mobile button at the top of the left sidebar.'
+      'Show the Orca Mobile button at the top of the left sidebar.'
     ),
     keywords: [
       ...translateSearchKeyword(

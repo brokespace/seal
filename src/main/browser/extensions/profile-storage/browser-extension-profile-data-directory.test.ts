@@ -28,8 +28,8 @@ async function openStoresAs(orcaProfileId: string) {
   return { sync, state, dnr }
 }
 
-describe('browser extension data per Seal profile', () => {
-  it('keeps one Seal profile’s "default" browser profile data from another', async () => {
+describe('browser extension data per Orca profile', () => {
+  it('keeps one Orca profile’s "default" browser profile data from another', async () => {
     const personal = await openStoresAs('local-default')
     personal.sync.write('default', EXTENSION, { token: 'personal-secret' })
     personal.state.update('default', EXTENSION, (current) => ({

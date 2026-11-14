@@ -170,23 +170,23 @@ function HostRemoveDialogBody({
     target.kind === 'wsl'
       ? t(
           'auto.components.sidebar.HostRemoveDialog.wslHostEndsTerminalsUnlessShared',
-          'Removes {{value0}} from Seal. Unless another Seal that’s open on this computer is using it, this also ends its open terminals and stops Seal’s server in that distro. Files in the distro are untouched.',
+          'Removes {{value0}} from Orca. Unless another Orca that’s open on this computer is using it, this also ends its open terminals and stops Orca’s server in that distro. Files in the distro are untouched.',
           { value0: label }
         )
       : target.kind === 'runtime'
         ? t(
             'auto.components.sidebar.HostRemoveDialog.4d5e6f7a8b',
-            'This opens the Seal servers settings where you can remove this server.'
+            'This opens the Orca servers settings where you can remove this server.'
           )
         : hasWorkspaces
           ? t(
               'auto.components.sidebar.HostRemoveDialog.hostKeepsWorkspaces',
-              'Removes {{host}} and its credentials from this computer. Its {{count}} workspaces stay in Seal — remote files are not touched.',
+              'Removes {{host}} and its credentials from this computer. Its {{count}} workspaces stay in Orca — remote files are not touched.',
               {
                 host: label,
                 count: workspaceCount,
                 defaultValue_one:
-                  'Removes {{host}} and its credentials from this computer. Its {{count}} workspace stays in Seal — remote files are not touched.'
+                  'Removes {{host}} and its credentials from this computer. Its {{count}} workspace stays in Orca — remote files are not touched.'
               }
             )
           : t(
@@ -196,8 +196,8 @@ function HostRemoveDialogBody({
 
   const deleteOptionLabel = t(
     'auto.components.sidebar.HostRemoveDialog.alsoRemoveWorkspaces',
-    'Also remove these {{count}} workspaces from Seal',
-    { count: workspaceCount, defaultValue_one: 'Also remove this workspace from Seal' }
+    'Also remove these {{count}} workspaces from Orca',
+    { count: workspaceCount, defaultValue_one: 'Also remove this workspace from Orca' }
   )
 
   return (
@@ -249,7 +249,7 @@ function HostRemoveDialogBody({
                   <span className="mt-0.5 block text-muted-foreground">
                     {t(
                       'auto.components.sidebar.HostRemoveDialog.alsoForgetLocalHint',
-                      'Clears them from Seal only. Remote files, worktrees, and branches are left untouched.'
+                      'Clears them from Orca only. Remote files, worktrees, and branches are left untouched.'
                     )}
                   </span>
                 </span>

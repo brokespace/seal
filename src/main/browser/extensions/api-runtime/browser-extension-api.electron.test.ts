@@ -213,7 +213,7 @@ beforeAll(async () => {
     join(extensionDir, 'manifest.json'),
     JSON.stringify({
       manifest_version: 3,
-      name: 'Seal API probe',
+      name: 'Orca API probe',
       version: '1.0.0',
       permissions: ['tabs', 'webNavigation', 'storage'],
       // A module worker under a policy that limits connect-src: the wrapper must still reach main.

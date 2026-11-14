@@ -38,7 +38,7 @@ export function notifyHostTabSplitRefused(source: WebRuntimeSplitSource): void {
     disconnected
       ? translate(
           'auto.runtime.webRuntimeSession.remoteHostDisconnected',
-          'The workspace is not connected to a remote Seal host.'
+          'The workspace is not connected to a remote Orca host.'
         )
       : translate(
           'auto.runtime.webRuntimeSession.splitSourceUnpublished',

@@ -128,7 +128,7 @@ describe('system SSH forward process', () => {
     vi.useRealTimers()
   })
 
-  it('keeps the port error when nothing Seal orphaned holds the port', async () => {
+  it('keeps the port error when nothing Orca orphaned holds the port', async () => {
     const server = createFakeServer()
     server.listen.mockImplementation(() => {
       queueMicrotask(() =>

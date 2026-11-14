@@ -163,7 +163,7 @@ describe('resolveWindowShortcutAction', () => {
     ).toBeNull()
   })
 
-  it('keeps Seal-first active in terminal context but lets Terminal-first pass risky app chords', () => {
+  it('keeps Orca-first active in terminal context but lets Terminal-first pass risky app chords', () => {
     const macWorktreePalette = {
       code: 'KeyK',
       key: 'k',

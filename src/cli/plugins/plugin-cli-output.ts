@@ -30,7 +30,7 @@ export function resolveLocalPluginPath(
   if (process.env.ORCA_CLI_CWD) {
     throw new RuntimeClientError(
       'invalid_environment',
-      `orca plugin ${command} works on the files of the machine that runs it, but this shell forwards orca to the Seal host. Write and check the plugin files on this machine directly, or run the command on the Seal host.`
+      `orca plugin ${command} works on the files of the machine that runs it, but this shell forwards orca to the Orca host. Write and check the plugin files on this machine directly, or run the command on the Orca host.`
     )
   }
   return isAbsolute(value) ? value : resolve(ctx.cwd, value)

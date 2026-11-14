@@ -63,7 +63,7 @@ export async function callRemoteOwnedServer(
       const why =
         current?.state === 'closed'
           ? `The pairing with ${server.name} was re-made, so it no longer runs Run ${link.run_id}'s workers.`
-          : `Run ${link.run_id} was reset on this Seal, so nothing more goes to ${server.name} for it.`
+          : `Run ${link.run_id} was reset on this Orca, so nothing more goes to ${server.name} for it.`
       throw new OrchestrationError('remote_link_closed', `${why} No effects were applied.`, {
         effectsApplied: false
       })

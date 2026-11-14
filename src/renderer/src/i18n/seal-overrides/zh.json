@@ -1,0 +1,41 @@
+{
+  "auto": {
+    "components": {
+      "settings": {
+        "RepositoryHooksSection": {
+          "d88b6ff88f": "仅 orca.yaml"
+        },
+        "repository": {
+          "search": {
+            "9cad92fe77": "orca.yaml 挂钩"
+          }
+        },
+        "RuntimeHostAccessForm": {
+          "accessLinkPlaceholder": "seal://pair?code=..."
+        }
+      },
+      "sidebar": {
+        "AddRemoteHostDialog": {
+          "pairingCodePlaceholder": "seal://pair?code=..."
+        }
+      },
+      "mobile": {
+        "MobileHero": {
+          "installHeading": "安装 Seal Mobile。",
+          "installLead": "Seal Mobile 未在 App Store 或 Google Play 上架。请从 Seal 仓库构建并安装，然后继续第 2 步获取配对二维码。",
+          "installGuide": "打开安装指南"
+        }
+      }
+    },
+    "web": {
+      "WebConnect": {
+        "27393856e4": "seal://pair?code=..."
+      }
+    }
+  },
+  "runtime": {
+    "remoteServerPairingErrors": {
+      "invalidPairingCode": "配对码无效。需要 seal://pair?... URL 或原始配对数据"
+    }
+  }
+}

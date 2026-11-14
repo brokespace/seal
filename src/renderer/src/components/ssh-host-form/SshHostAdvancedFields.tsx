@@ -156,7 +156,7 @@ export function SshHostAdvancedFields({
                 <p className="text-muted-foreground">
                   {t(
                     'auto.components.settings.SshTargetForm.reconnectOnLaunchHelp',
-                    'When off, Seal leaves this host, and any Seal server reached through it, disconnected at launch until you connect it.'
+                    'When off, Orca leaves this host, and any Orca server reached through it, disconnected at launch until you connect it.'
                   )}
                 </p>
               </div>
@@ -178,13 +178,13 @@ export function SshHostAdvancedFields({
               <Label className="text-xs font-medium">
                 {t(
                   'auto.components.settings.SshTargetForm.allowRemoteCliControl',
-                  'Allow this host to control Seal browser tabs in its workspaces'
+                  'Allow this host to control Orca browser tabs in its workspaces'
                 )}
               </Label>
               <p className="text-muted-foreground">
                 {t(
                   'auto.components.settings.SshTargetForm.allowRemoteCliControlHelp',
-                  "On by default for new hosts. Agents and seal commands on this host can open, read and use Seal browser tabs on this desktop, only in this host's workspaces and only while it is connected. Tabs it controls show its name. Terminals started on this host by an older Seal also need this on to run seal orchestration commands. It cannot read your files, clipboard or cookies."
+                  "On by default for new hosts. Agents and orca commands on this host can open, read and use Orca browser tabs on this desktop, only in this host's workspaces and only while it is connected. Tabs it controls show its name. Terminals started on this host by an older Orca also need this on to run orca orchestration commands. It cannot read your files, clipboard or cookies."
                 )}
               </p>
             </div>
@@ -199,7 +199,7 @@ export function SshHostAdvancedFields({
               }
               aria-label={t(
                 'auto.components.settings.SshTargetForm.allowRemoteCliControl',
-                'Allow this host to control Seal browser tabs in its workspaces'
+                'Allow this host to control Orca browser tabs in its workspaces'
               )}
             />
           </div>

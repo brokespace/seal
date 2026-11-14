@@ -16,11 +16,11 @@ export function CodeHostSetupSteps(
   const connectionDescription = props.unavailable
     ? t(
         'auto.components.settings.TasksPane.connectionCheckUnavailable',
-        "Seal couldn't check this connection. Try again, or open Integrations for setup details."
+        "Orca couldn't check this connection. Try again, or open Integrations for setup details."
       )
     : t(
         'auto.components.settings.TasksPane.connectCodeHostDescription',
-        'Install and authenticate the CLI under Integrations so Seal can load issues.'
+        'Install and authenticate the CLI under Integrations so Orca can load issues.'
       )
 
   return (

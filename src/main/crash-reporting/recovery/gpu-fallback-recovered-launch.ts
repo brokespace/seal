@@ -15,7 +15,7 @@ export function gpuFallbackRecoveredLaunchOptions(): MessageBoxOptions {
     title: translateMain('gpuFallback.recoveredLaunch.title', 'Safe Graphics Mode is Active'),
     message: translateMain(
       'gpuFallback.recoveredLaunch.message',
-      'Seal recovered in Safe Graphics Mode.'
+      'Orca recovered in Safe Graphics Mode.'
     ),
     detail: translateMain(
       'gpuFallback.recoveredLaunch.detail',

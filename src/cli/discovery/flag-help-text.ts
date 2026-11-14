@@ -1,22 +1,22 @@
 export const FLAG_HELP_TEXT: Record<string, string> = {
   'external-worktree-visibility':
-    '--external-worktree-visibility show|hide|inherit  Override or inherit non-Seal worktree visibility',
+    '--external-worktree-visibility show|hide|inherit  Override or inherit non-Orca worktree visibility',
   agent: '--agent <id>          Launch a known TUI agent in the first terminal',
   'agent-wait': "--agent-wait           Add each agent row's terminal wait verdict to JSON output",
   'base-branch': '--base-branch <ref>    Base branch/ref to create the worktree from',
   command: '--command <text>       Command to run in the terminal on startup',
-  comment: '--comment <text>       Comment stored in Seal metadata',
+  comment: '--comment <text>       Comment stored in Orca metadata',
   cursor: '--cursor <n>           Line cursor from a previous read (returns only new output)',
   action: '--action <name>       Secondary accessibility action name',
-  activate: '--activate             Reveal the new worktree in the Seal app',
+  activate: '--activate             Reveal the new worktree in the Orca app',
   app: '--app <app>            App name, bundle ID, or pid:N',
   'allow-system-shortcut':
     '--allow-system-shortcut Send a quit, log out or lock shortcut that is refused by default',
   direction:
     '--direction <dir>      Direction: up|down|left|right for scroll, horizontal|vertical for split',
-  'display-name': '--display-name <name>  Override the Seal display name',
+  'display-name': '--display-name <name>  Override the Orca display name',
   environment:
-    "--environment <selector> Run against a saved paired Seal server (id or name), or `local` for this machine's own Seal over ORCA_ENVIRONMENT/ORCA_PAIRING_CODE; terminal handles belong to the server that issued them",
+    "--environment <selector> Run against a saved paired Orca server (id or name), or `local` for this machine's own Orca over ORCA_ENVIRONMENT/ORCA_PAIRING_CODE; terminal handles belong to the server that issued them",
   'pairing-code':
     '--pairing-code <code>  Run against a remote Seal server using a seal://pair?... code',
   'element-index': '--element-index <n>   Element index from get-app-state',
@@ -28,7 +28,7 @@ export const FLAG_HELP_TEXT: Record<string, string> = {
     '--retry-request <id>  Reissue an earlier request by its ID; replays its result instead of repeating it',
   force:
     '--force                Force worktree removal when supported; does not force branch deletion',
-  focus: '--focus                Reveal the created terminal session in Seal',
+  focus: '--focus                Reveal the created terminal session in Orca',
   for: '--for exit|tui-idle    Wait condition to satisfy',
   'from-element-index': '--from-element-index <n> Source element index from get-app-state',
   'from-x': '--from-x <x>           Source window-local x coordinate',
@@ -106,7 +106,7 @@ export const FLAG_HELP_TEXT: Record<string, string> = {
   timezone: '--timezone <tz>       IANA timezone for the automation',
   enabled: '--enabled              Enable the automation',
   disabled: '--disabled             Disable the automation',
-  current: '--current              Use the current Seal worktree linked Linear issue',
+  current: '--current              Use the current Orca worktree linked Linear issue',
   comments: '--comments             Include threaded Linear comments',
   children: '--children             Include recursive child issues',
   depth: '--depth <n>            Child issue depth for --children/--full',
@@ -133,7 +133,7 @@ export const FLAG_HELP_TEXT: Record<string, string> = {
   expression: '--expression <js>     JavaScript expression to evaluate',
   amount: '--amount <pixels>      Scroll distance in pixels',
   index: '--index <n>            Tab index to switch to',
-  page: '--page <id>            Stable browser page id from `seal tab list --json`',
+  page: '--page <id>            Stable browser page id from `orca tab list --json`',
   'expect-url':
     '--expect-url <url>     Fail before acting unless the page is at this exact absolute URL',
   profile: '--profile <id>        Browser profile id',

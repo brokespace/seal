@@ -43,7 +43,7 @@ const FEATURE_TIP_COPY: Record<
     title: () =>
       translate(
         'auto.components.feature.tips.feature.tip.copy.3eacedec93',
-        'Let agents drive Seal with the Seal CLI'
+        'Let agents drive Orca with the Orca CLI'
       ),
     description: () =>
       translate(
