@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
-import { activeAgentsFilterStore } from '@/components/live-sessions/active-agents/active-agents-filter-store'
 import {
   buildActiveAgents,
   NO_ACTIVE_AGENTS_FILTER
 } from '@/components/live-sessions/active-agents/active-agents-model'
 import { useLiveSessionLinks } from '@/components/live-sessions/links/use-live-session-links'
-import { showActiveAgents } from '@/components/live-sessions/menu/live-session-menu-effects'
+import { showScopeInActiveAgents } from '@/components/live-sessions/links/show-scope-in-active-agents'
 import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
 import { LiveSessionRows } from '@/components/live-sessions/row/LiveSessionRows'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
@@ -47,15 +46,13 @@ export function ProjectAgentsCard({
               variant="ghost"
               size="xs"
               data-project-overview-filter-agents
-              onClick={() => {
-                // The sidebar badge's own filter, so both lead to the same list.
-                activeAgentsFilterStore.setScope({
-                  kind: 'project',
-                  id: repo.id,
-                  label: repo.displayName
-                })
-                showActiveAgents()
-              }}
+              // The sidebar badge's own click, so both lead to the same list and leave the page up.
+              onClick={() =>
+                showScopeInActiveAgents(
+                  { kind: 'project', id: repo.id, label: repo.displayName },
+                  view.machines[0]?.sessions[0]?.id
+                )
+              }
             >
               {t('seal.projectOverview.agents.showInActiveAgents', 'Show in Active agents')}
             </Button>

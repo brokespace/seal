@@ -69,9 +69,10 @@ it('an agent opens as its session', () => {
   expect(liveSessionTabsStore.getState().activeId).toBe('Pick a dataset')
 })
 
-it("Show in Active agents narrows the sidebar's list to this project", () => {
+it("Show in Active agents narrows the sidebar's list to this project and stays on the page", () => {
   renderInApp(<ProjectAgentsCard repo={repo} sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByRole('button', { name: 'Show in Active agents' }))
+  expect(useAppStore.getState().activeView).toBe('project')
   expect(activeAgentsFilterStore.getState().scope).toEqual({
     kind: 'project',
     id: 'repo-1',
