@@ -31,6 +31,7 @@ describe('a macOS process listing', () => {
     '@swapmac total = 2048.00M  used = 512.00M  free = 1536.00M  (encrypted)',
     '@p\t812\t41.5\t\t0\t/Users/brian/.local/bin/claude\tmain:1.0\t  812   790  41.5  3.2 524288 brian                            Sat Nov 14 09:12:44 2026 claude --resume',
     '@p\t790\t0.0\t\t1\t-zsh\t\t  790     1   0.0  0.1   8192 brian                            Sat Nov  7 08:00:01 2026 -zsh',
+    '@pane\tmain:1.0\t790\t41.5\t532480\t2',
     '@total 412'
   ].join('\n')
 
@@ -40,6 +41,9 @@ describe('a macOS process listing', () => {
       totalProcesses: 412,
       cpuBusyPercent: null,
       swap: { totalBytes: 2048 * 1024 ** 2, usedBytes: 512 * 1024 ** 2 },
+      tmuxPanes: [
+        { pane: 'main:1.0', pid: 790, cpuPercent: 41.5, rssBytes: 532480 * 1024, processCount: 2 }
+      ],
       processes: [
         {
           pid: 812,

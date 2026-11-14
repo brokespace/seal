@@ -1,7 +1,8 @@
 import type {
   MachineProcess,
   MachineProcessSnapshot,
-  MachineSwapUsage
+  MachineSwapUsage,
+  MachineTmuxPaneUsage
 } from '../../../shared/machines/machine-resource-types'
 import { processProvider } from '../../live-sessions/discovery/agent-processes'
 import type { MachineConnection } from '../connection/machine-connection'
@@ -57,11 +58,14 @@ END {
   }
   for (i = 1; i <= n; i++) {
     pid = order[i]
-    if (!(pid in pick)) continue
     q = pid; guard = 0; tm = ""
     while ((q in ppid) && q > 1 && guard++ < 64) { if (q in pane) { tm = pane[q]; break } q = ppid[q] }
+    if (tm != "") { panecpu[tm] += cpuv[pid]; panerss[tm] += rssv[pid]; panen[tm]++ }
+    # Agents and pane shells are listed however idle they are, so sessions map to a process.
+    if (!(pid in pick) && !(pid in pane) && line[pid] !~ /claude|codex/) continue
     printf "@p\t%s\t%.1f\t%s\t%s\t%s\t%s\t%s\n", pid, cpuv[pid], ((pid in st) ? "t" st[pid] : ""), ((pid in chain) ? 1 : 0), name[pid], tm, line[pid]
   }
+  for (pid in pane) if (pane[pid] in panen) printf "@pane\t%s\t%s\t%.1f\t%d\t%d\n", pane[pid], pid, panecpu[pane[pid]], panerss[pane[pid]], panen[pane[pid]]
   print "@total " n
   if (tot2 > tot1) printf "@busy %.1f\n", (1 - (idle2 - idle1) / (tot2 - tot1)) * 100
 }`
@@ -148,6 +152,7 @@ export function parseMachineProcessProbe(
   collectedAt: number
 ): MachineProcessSnapshot {
   const processes: MachineProcess[] = []
+  const tmuxPanes: MachineTmuxPaneUsage[] = []
   let totalProcesses = 0
   let cpuBusyPercent: number | null = null
   let swap: MachineSwapUsage | null = null
@@ -157,6 +162,15 @@ export function parseMachineProcessProbe(
       if (parsed) {
         processes.push(parsed)
       }
+    } else if (line.startsWith('@pane\t')) {
+      const [pane, pid, cpu, rssKb, count] = line.split('\t').slice(1)
+      tmuxPanes.push({
+        pane,
+        pid: Number(pid),
+        cpuPercent: Number(cpu) || 0,
+        rssBytes: (Number(rssKb) || 0) * 1024,
+        processCount: Number(count) || 0
+      })
     } else if (line.startsWith('@total ')) {
       totalProcesses = Number(line.slice('@total '.length)) || 0
     } else if (line.startsWith('@busy ')) {
@@ -169,7 +183,8 @@ export function parseMachineProcessProbe(
       swap = parseMacSwap(line)
     }
   }
-  return { processes, totalProcesses, cpuBusyPercent, swap, collectedAt }
+  tmuxPanes.sort((a, b) => a.pane.localeCompare(b.pane))
+  return { processes, tmuxPanes, totalProcesses, cpuBusyPercent, swap, collectedAt }
 }
 
 export async function probeMachineProcesses(

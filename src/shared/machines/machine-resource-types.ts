@@ -24,9 +24,21 @@ export type MachineProcess = {
 
 export type MachineSwapUsage = { totalBytes: number; usedBytes: number }
 
+/** Everything running under one tmux pane, added up. */
+export type MachineTmuxPaneUsage = {
+  /** `session:window.pane` */
+  pane: string
+  /** The pane's own process, usually a shell. */
+  pid: number
+  cpuPercent: number
+  rssBytes: number
+  processCount: number
+}
+
 export type MachineProcessSnapshot = {
-  /** The busiest processes by CPU and by memory, merged; not every process on the host. */
+  /** The busiest processes by CPU and by memory, plus agents and tmux pane shells; not every process. */
   processes: MachineProcess[]
+  tmuxPanes: MachineTmuxPaneUsage[]
   totalProcesses: number
   /** Whole-machine busy share over the sample window; null where the host does not report it. */
   cpuBusyPercent: number | null
