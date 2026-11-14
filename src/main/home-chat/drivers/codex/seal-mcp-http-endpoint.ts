@@ -6,10 +6,10 @@ import {
   homeChatToolJsonSchema,
   type HomeChatToolName
 } from '../../tools/home-chat-tool-definitions'
+import { answerMcpRequest, isMcpRecord } from '../../../seal-mcp/protocol/mcp-json-rpc-server'
 
 export const SEAL_MCP_TOKEN_ENV = 'SEAL_HOME_CHAT_MCP_TOKEN'
 const MAX_BODY_BYTES = 8 * 1024 * 1024
-const FALLBACK_PROTOCOL_VERSION = '2025-03-26'
 
 export type SealMcpToolAnswer = { text: string; isError: boolean }
 
@@ -20,9 +20,9 @@ export type SealMcpEndpoint = {
   close: () => Promise<void>
 }
 
-type Rec = Record<string, unknown>
-const isRec = (value: unknown): value is Rec =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+const isRec = isMcpRecord
+
+const MCP_SERVER_INFO = { name: 'seal', version: '1.0.0' }
 
 function toolList(): unknown[] {
   return Object.entries(HOME_CHAT_TOOLS).map(([name, spec]) => ({
@@ -31,44 +31,6 @@ function toolList(): unknown[] {
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: name is a key of HOME_CHAT_TOOLS.
     inputSchema: homeChatToolJsonSchema(name as HomeChatToolName)
   }))
-}
-
-async function answer(
-  request: Rec,
-  callTool: (name: string, args: unknown) => Promise<SealMcpToolAnswer>
-): Promise<Rec | null> {
-  const { id, method } = request
-  // Notifications carry no id and get no reply.
-  if (id === undefined || id === null) {
-    return null
-  }
-  const params = isRec(request.params) ? request.params : {}
-  const result = (value: unknown): Rec => ({ jsonrpc: '2.0', id, result: value })
-  switch (method) {
-    case 'initialize':
-      return result({
-        protocolVersion:
-          typeof params.protocolVersion === 'string'
-            ? params.protocolVersion
-            : FALLBACK_PROTOCOL_VERSION,
-        capabilities: { tools: {} },
-        serverInfo: { name: 'seal', version: '1.0.0' }
-      })
-    case 'ping':
-      return result({})
-    case 'tools/list':
-      return result({ tools: toolList() })
-    case 'tools/call': {
-      const reply = await callTool(String(params.name), params.arguments)
-      return result({ content: [{ type: 'text', text: reply.text }], isError: reply.isError })
-    }
-    default:
-      return {
-        jsonrpc: '2.0',
-        id,
-        error: { code: -32601, message: `Method not found: ${String(method)}` }
-      }
-  }
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -122,7 +84,15 @@ export async function openSealMcpEndpoint(
       const parsed: unknown = JSON.parse(await readBody(req))
       const requests = Array.isArray(parsed) ? parsed.filter(isRec) : isRec(parsed) ? [parsed] : []
       const replies = (
-        await Promise.all(requests.map((request) => answer(request, callTool)))
+        await Promise.all(
+          requests.map((request) =>
+            answerMcpRequest(request, {
+              serverInfo: MCP_SERVER_INFO,
+              listTools: toolList,
+              callTool
+            })
+          )
+        )
       ).filter((reply) => reply !== null)
       if (replies.length === 0) {
         send(res, 202)
