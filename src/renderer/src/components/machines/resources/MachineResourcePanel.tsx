@@ -1,7 +1,9 @@
 import React from 'react'
 import { X } from 'lucide-react'
+import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { MachineDiskDetail } from './MachineDiskDetail'
@@ -35,7 +37,12 @@ export function MachineResourcePanel({
       aria-label={title}
       data-machine-resource-panel={kind}
     >
-      <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5 md:px-5">
+      <header
+        className={cn(
+          'flex shrink-0 items-center gap-2 border-b border-border py-1.5',
+          PAGE_GUTTER_X
+        )}
+      >
         <h3 className="min-w-0 flex-1 truncate text-xs font-semibold">{title}</h3>
         <Button
           type="button"
@@ -48,7 +55,12 @@ export function MachineResourcePanel({
           {t('auto.components.machines.resources.close', 'Back to files')}
         </Button>
       </header>
-      <div className="scrollbar-sleek @container min-h-0 flex-1 overflow-y-auto px-3 py-3 md:px-5">
+      <div
+        className={cn(
+          'scrollbar-sleek @container min-h-0 flex-1 overflow-y-auto py-3',
+          PAGE_GUTTER_X
+        )}
+      >
         {metrics?.os === 'win32' ? (
           <p className="text-sm text-muted-foreground">
             {t(
