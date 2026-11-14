@@ -226,7 +226,7 @@ export function AgentConfigMcpSheet({
               id="agent-config-mcp-name"
               autoFocus={!server}
               value={form.name}
-              className="font-mono text-xs"
+              variant="code"
               onChange={(event) => set({ name: event.target.value })}
             />
           )}
@@ -268,7 +268,7 @@ export function AgentConfigMcpSheet({
                 <Input
                   id="agent-config-mcp-command"
                   value={form.command}
-                  className="font-mono text-xs"
+                  variant="code"
                   placeholder={t('auto.components.agentConfig.example.command', 'npx')}
                   onChange={(event) => set({ command: event.target.value })}
                 />
@@ -280,7 +280,7 @@ export function AgentConfigMcpSheet({
                   id="agent-config-mcp-args"
                   value={form.args}
                   rows={3}
-                  className="font-mono text-xs"
+                  variant="code"
                   placeholder={t('auto.components.agentConfig.example.args', '-y\n@scope/server')}
                   onChange={(event) => set({ args: event.target.value })}
                 />,
@@ -306,7 +306,7 @@ export function AgentConfigMcpSheet({
                 <Input
                   id="agent-config-mcp-url"
                   value={form.url}
-                  className="font-mono text-xs"
+                  variant="code"
                   placeholder={t(
                     'auto.components.agentConfig.example.url',
                     'https://example.com/mcp'
