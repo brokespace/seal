@@ -18,6 +18,7 @@ import type { MachineConnection } from '../connection/machine-connection'
 import { ServerMachineConnection } from '../connection/server-machine-connection'
 import { SshMachineConnection } from '../connection/ssh-machine-connection'
 import { openSystemSshMachineShell } from '../connection/system-ssh-machine-shell'
+import type { MachineAccess } from '../machine-services'
 import { createRuntimeMachineChannel } from '../runtime/runtime-machine-channel'
 import { MachineRegistry, type MachineRegistryEnvironment } from './machine-registry'
 import { readMachineStore, writeMachineStore } from './machine-store'
@@ -115,6 +116,15 @@ export function getMachineRegistry(): MachineRegistry {
     setDirectSshConnectPolicy((targetId) => created.connectsOverSsh(targetId))
   }
   return registry
+}
+
+/** How the desktop reaches machines: through its registry, which always holds this computer. */
+export function desktopMachineAccess(): MachineAccess {
+  return {
+    views: () => getMachineRegistry().list(),
+    connection: (machineId) => getMachineRegistry().connection(machineId),
+    liveSessionSources: () => getMachineRegistry().liveSessionSources()
+  }
 }
 
 /** Every machine with a usable transport, this computer first. */
