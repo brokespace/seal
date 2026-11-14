@@ -221,7 +221,7 @@ export async function executeSealTool(
       }
       seal.open({ kind: 'take-over', sessionId: session.id })
       return ok(
-        `Seal is stopping the external process and reopening ${session.id} in a Seal pane. Confirm with list_sessions: it should now show "in a Seal pane".`,
+        `Asked Seal's window to stop the external process and reopen ${session.id} in a Seal pane. That needs a workspace open in Seal on ${session.machineLabel}; without one, Seal tells the user and the session stays as it is. Confirm with list_sessions: it should now show "in a Seal pane".`,
         session.machineLabel
       )
     }
