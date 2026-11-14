@@ -145,9 +145,8 @@ export function MachineProcessList({
               </Button>
               <Button
                 type="button"
-                variant="ghost"
+                variant="destructive-chip"
                 size="xs"
-                className="text-destructive hover:text-destructive"
                 onClick={() => onSignal(process, 'KILL')}
               >
                 {t('auto.components.machines.processes.kill', 'Force kill')}

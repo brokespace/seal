@@ -164,13 +164,13 @@ export function MachineGoToFolder({
 
   return (
     <div className="relative shrink-0 border-b border-border px-2 py-1" data-machine-go-to-folder>
-      <div className="relative">
-        <CornerDownLeft className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex items-center gap-1.5">
+        <CornerDownLeft className="size-3 shrink-0 text-muted-foreground" />
         <Input
           ref={inputRef}
           density="compact"
           variant="code"
-          className="pl-7"
+          className="min-w-0 flex-1"
           value={value}
           spellCheck={false}
           autoComplete="off"

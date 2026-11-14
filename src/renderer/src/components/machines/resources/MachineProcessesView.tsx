@@ -67,11 +67,11 @@ export function MachineProcessesView({
       {children}
       <div>
         <div className="flex items-center gap-2 pb-2">
-          <div className="relative min-w-0 flex-1 sm:max-w-64">
-            <Search className="pointer-events-none absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:max-w-64">
+            <Search className="size-3 shrink-0 text-muted-foreground" />
             <Input
               density="compact"
-              className="pl-7"
+              className="min-w-0 flex-1"
               value={filter}
               placeholder={t(
                 'auto.components.machines.processes.filter',

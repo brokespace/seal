@@ -212,8 +212,8 @@ describe.skipIf(process.platform !== 'linux').each(cases)(
       const oldLog = path.join(home, '.npm', '_logs', 'old.log')
       await put(oldLog, 10_000)
       await put(path.join(home, '.npm', '_logs', 'fresh.log'), 10_000)
-      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      await utimes(oldLog, monthAgo, monthAgo)
+      const longAgo = new Date('2024-01-01T00:00:00Z')
+      await utimes(oldLog, longAgo, longAgo)
       const cleanups = new MachineCleanupRunner()
 
       const modules = await cleanups.scan(machine, 'node-modules')

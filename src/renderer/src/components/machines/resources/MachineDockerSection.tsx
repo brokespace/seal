@@ -201,9 +201,9 @@ export function MachineDockerSection({
                   </Button>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="destructive-chip"
                     size="xs"
-                    className="ml-1 text-destructive hover:text-destructive"
+                    className="ml-1"
                     onClick={() => setRequest({ container, action: 'stop' })}
                   >
                     {t('auto.components.machines.docker.stop', 'Stop')}
