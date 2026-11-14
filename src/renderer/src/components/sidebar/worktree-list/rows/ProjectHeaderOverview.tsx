@@ -13,8 +13,11 @@ import {
 import { REPO_HEADER_ACTION_BUTTON_CLASS } from './repo-header-action-button-class'
 
 /** The header marks itself current while its project's overview is the page on screen. */
-export const PROJECT_HEADER_OVERVIEW_CURRENT_CLASS =
-  'has-[[data-project-overview-current]]:rounded-md has-[[data-project-overview-current]]:bg-worktree-sidebar-accent'
+export const PROJECT_HEADER_OVERVIEW_CURRENT_CLASS = cn(
+  'has-[[data-project-overview-current]]:rounded-md has-[[data-project-overview-current]]:bg-worktree-sidebar-accent',
+  // The hover actions cover the name with the header's own background, so they follow the highlight.
+  '[&:has([data-project-overview-current])_[data-repo-header-actions]]:bg-worktree-sidebar-accent'
+)
 
 /** A header's label. A project's is current while its overview is the page on screen. */
 export function ProjectHeaderName({
