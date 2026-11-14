@@ -29,7 +29,7 @@ export function ActiveAgentsToolbar(props: ActiveAgentsToolbarProps): React.JSX.
   const chipLabel: Record<ActiveAgentsChip, string> = {
     attention: t('auto.components.live-sessions.sidebar.chipAttention', 'Needs attention'),
     working: t('auto.components.live-sessions.sidebar.chipWorking', 'Working'),
-    mine: t('auto.components.live-sessions.sidebar.chipMine', 'This machine')
+    mine: t('auto.components.live-sessions.sidebar.chipMine', 'This computer')
   }
   const chipTitle: Partial<Record<ActiveAgentsChip, string>> = {
     mine: t('auto.components.live-sessions.sidebar.chipMineTitle', 'Mine, on this machine')

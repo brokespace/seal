@@ -6,20 +6,24 @@ import { getGeneralPaneSearchEntries } from '@/components/settings/general/gener
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations/integrations-search'
 import { getLinearAgentSkillPaneSearchEntries } from '@/components/settings/skills/linear/linear-agent-skill-search'
 import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile/mobile-settings-search'
+import { getMcpSettingsSearchEntries } from '@/components/settings/mcp/mcp-settings-search'
 import { getOrcaAccountSettingsSearchEntries } from '@/components/settings/accounts/orca/orca-account-settings-search'
 import { OrcaLogoSettingsIcon } from '@/components/settings/page/orca-logo-settings-icon'
 import { getOrchestrationPaneSearchEntries } from '@/components/settings/orchestration/orchestration-search'
 import { getVoicePaneSearchEntries } from '@/components/settings/voice/voice-pane-search'
+import { getWorkspaceCleanupSettingsSearchEntries } from '@/components/settings/workspace-cleanup/workspace-cleanup-settings-search'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsNavSection } from '@/components/settings/navigation/settings-navigation-types'
 import {
   Blocks,
   Bot,
+  BrushCleaning,
   CircleUserRound,
   Mic,
   MousePointerClick,
   Network,
+  Plug,
   SlidersHorizontal,
   Smartphone,
   UserCog
@@ -174,6 +178,21 @@ export function buildSetupSettingsSections(
       searchEntries: getGeneralPaneSearchEntries({ includeProjectRuntime: isLocalWindowsHost }),
       group: 'setup'
     },
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'workspace-cleanup',
+            title: t('components.settings.workspaceCleanup.title', 'Workspace Cleanup'),
+            description: t(
+              'components.settings.workspaceCleanup.description',
+              "Remove workspaces you're done with. Before removing anything, Orca checks again for unsaved work."
+            ),
+            icon: BrushCleaning,
+            searchEntries: getWorkspaceCleanupSettingsSearchEntries(),
+            group: 'setup'
+          }
+        ]
+      : []),
     {
       id: 'integrations',
       title: t('auto.hooks.useSettingsNavigationMetadata.2b043783ef', 'Integrations'),
@@ -196,6 +215,17 @@ export function buildSetupSettingsSections(
             ),
             icon: Smartphone,
             searchEntries: getMobileSettingsPaneSearchEntries(),
+            group: 'setup'
+          },
+          {
+            id: 'mcp',
+            title: t('seal.mcp.title', 'MCP'),
+            description: t(
+              'seal.mcp.description',
+              'Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server.'
+            ),
+            icon: Plug,
+            searchEntries: getMcpSettingsSearchEntries(),
             group: 'setup'
           }
         ]

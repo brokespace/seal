@@ -37,6 +37,11 @@ export function openLiveSessionView(
   liveSessionMarksStore.reveal(id)
 }
 
+/** A click on a session's row, on any surface: a preview tab, kept on double-click. */
+export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
+  openLiveSessionView(session.id, event?.type === 'dblclick' ? 'tab' : 'preview')
+}
+
 /**
  * Where links to the former Agent sessions page land: the open session tabs, or the session that
  * most needs a look, with Active agents unfolded in the sidebar.

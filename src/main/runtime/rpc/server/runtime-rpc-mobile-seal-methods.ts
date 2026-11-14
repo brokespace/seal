@@ -45,5 +45,10 @@ export const MOBILE_SEAL_RPC_METHODS = [
   'homeChat.stop',
   'homeChat.unwatch',
   'homeChat.update',
-  'homeChat.watch'
+  'homeChat.watch',
+  // A phone can answer an MCP approval; minting or changing client tokens stays off the phone.
+  'sealMcp.listApprovals',
+  'sealMcp.respondApproval',
+  'sealMcp.unwatch',
+  'sealMcp.watchApprovals'
 ] as const

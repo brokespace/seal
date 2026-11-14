@@ -26,6 +26,9 @@
   "accounts.hostSignIn.verifying",
   "accounts.hostSignIn.waiting",
   "accounts.remoteScopeAccountsAddHere",
+  "agentsSidebarIntro.migrated.description",
+  "agentsSidebarIntro.migrated.dismiss",
+  "agentsSidebarIntro.migrated.title",
   "auto.components.UnexpectedSignoutCard.5a1c8d3e6f",
   "auto.components.UnexpectedSignoutCard.7b4d9e1f2a",
   "auto.components.mobile.MobileHero.0d9b33299e",
@@ -127,6 +130,8 @@
   "auto.hooks.useSettingsNavigationMetadata.94a5afe910",
   "auto.hooks.useSettingsNavigationMetadata.b1c2f8b0ac",
   "auto.hooks.useSettingsNavigationMetadata.f70ac54d38",
+  "dashboard.sidebar.closeActivity",
+  "dashboard.sidebar.openActivity",
   "settings.accounts.claudeRemoveFolder",
   "settings.terminal.windows.administratorDocumentation"
 ]

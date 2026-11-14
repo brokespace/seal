@@ -1,16 +1,17 @@
 import { createContext } from 'react'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type {
   HomeAccount,
   HomeAutomationsResult,
   HomeMachine,
   HomeOverviewActions,
-  HomeSession,
   HomeWorkspace
 } from './home-overview-model'
 
 const noop = (): void => {}
 
-export const HomeSessionsContext = createContext<readonly HomeSession[]>([])
+/** The live-session registry's sessions: Home lists the records Active agents lists. */
+export const HomeSessionsContext = createContext<readonly LiveSession[]>([])
 export const HomeMachinesContext = createContext<readonly HomeMachine[]>([])
 export const HomeAccountsContext = createContext<readonly HomeAccount[]>([])
 export const HomeWorkspacesContext = createContext<readonly HomeWorkspace[]>([])

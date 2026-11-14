@@ -124,17 +124,3 @@ export function orcaHomeAccounts(
   )
   return accounts
 }
-
-/** Session account attribution: the active managed account email per agent type. */
-export function orcaActiveAccountsByAgent(
-  settings: Partial<OrcaAccountSettings> | null
-): Record<string, string | undefined> {
-  const find = (
-    accounts: readonly { id: string; email: string }[] | undefined,
-    id: string | null | undefined
-  ): string | undefined => (id ? accounts?.find((account) => account.id === id)?.email : undefined)
-  return {
-    claude: find(settings?.claudeManagedAccounts, settings?.activeClaudeManagedAccountId),
-    codex: find(settings?.codexManagedAccounts, settings?.activeCodexManagedAccountId)
-  }
-}

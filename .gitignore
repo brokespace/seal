@@ -102,6 +102,8 @@ docs/**
 !docs/live-sessions-*.md
 !docs/home-chat-architecture.md
 !docs/session-recap.md
+!docs/mcp.md
+!docs/information-architecture.md
 !docs/TESTING-seal-all.md
 !docs/upstream-sync.md
 !docs/STYLEGUIDE.md

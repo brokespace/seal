@@ -1,35 +1,9 @@
 import { useEffect, useState } from 'react'
-import type { AgentDotState } from '@/components/AgentStateDot'
 import { formatUiNarrowDuration, formatUiNarrowRelativeTime } from '@/i18n/relative-time-format'
 import type { Translate } from '@/i18n/use-translate'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { homeElapsed } from '../../../../shared/home-overview/home-overview-derivations'
-import type {
-  HomeMachineStatus,
-  HomeSessionState,
-  HomeUsageWindowKind
-} from './home-overview-model'
-
-export function homeSessionDotState(state: HomeSessionState): AgentDotState {
-  return state === 'errored' ? 'failed' : state
-}
-
-export function homeSessionStateLabel(state: HomeSessionState, t: Translate): string {
-  switch (state) {
-    case 'working':
-      return t('home.overview.state.working', 'Working')
-    case 'waiting':
-      return t('home.overview.state.waiting', 'Waiting on you')
-    case 'permission':
-      return t('home.overview.state.permission', 'Needs permission')
-    case 'errored':
-      return t('home.overview.state.errored', 'Errored')
-    case 'done':
-      return t('home.overview.state.done', 'Done')
-    case 'idle':
-      return t('home.overview.state.idle', 'Idle')
-  }
-}
+import type { HomeMachineStatus, HomeUsageWindowKind } from './home-overview-model'
 
 export function homeMachineStatusLabel(status: HomeMachineStatus, t: Translate): string {
   switch (status) {

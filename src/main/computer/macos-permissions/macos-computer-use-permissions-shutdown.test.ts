@@ -251,4 +251,34 @@ describe('computer-use setup cancellation', () => {
     })
     expect(setupLaunches()).toEqual([['--permission', 'accessibility']])
   })
+
+  it('leaves System Settings closed when an agent asks for a granted permission', async () => {
+    mocks.peek.mockResolvedValue({
+      ...denied,
+      permissions: [
+        { id: 'accessibility', status: 'granted' },
+        { id: 'screenshots', status: 'not-granted' }
+      ]
+    })
+    const { permissions } = await loadModules()
+    await expect(
+      permissions.openComputerUsePermissions('accessibility', { skipGranted: true })
+    ).resolves.toMatchObject({ launchedHelper: false, openedSettings: false })
+    expect(setupLaunches()).toEqual([])
+    await permissions.openComputerUsePermissions('screenshots', { skipGranted: true })
+    expect(setupLaunches()).toEqual([['--permission', 'screenshots']])
+  })
+
+  it('refuses setup behind the lock screen without opening System Settings', async () => {
+    mocks.peek.mockResolvedValue({ ...denied, sessionLocked: true })
+    const { permissions } = await loadModules()
+    await expect(
+      permissions.openComputerUsePermissions('accessibility', { skipGranted: true })
+    ).rejects.toMatchObject({ code: 'screen_locked' })
+    await expect(permissions.openComputerUsePermissions()).rejects.toMatchObject({
+      code: 'screen_locked'
+    })
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(setupLaunches()).toEqual([])
+  })
 })

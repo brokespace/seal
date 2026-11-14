@@ -18,7 +18,7 @@ import { getMachineRegistry } from '../machines/registry/machine-registry-servic
 import type { MachineView } from '../../shared/machines/machine-view'
 import { summarizeMachine, type MachineSummary } from '../../shared/machines/machine-summaries'
 import { getRegisteredSshState } from '../ssh/targets/ssh-target-registry'
-import { getRuntimeEnvironmentStatusSnapshot } from './runtime-environments/runtime-environment-request-connections'
+import { getRuntimeEnvironmentStatusSnapshot } from './runtime-environments/connections/runtime-environment-request-connections'
 
 export const HOME_CHAT_EVENT_CHANNEL = 'homeChat:event'
 
