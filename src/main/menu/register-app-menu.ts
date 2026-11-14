@@ -130,13 +130,13 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
   const macAppMenu: Electron.MenuItemConstructorOptions = {
     label: options.appMenuLabel ?? app.name,
     submenu: [
-      labeledAppMenuRole('about', 'menu.about', 'About Orca'),
+      labeledAppMenuRole('about', 'menu.about', 'About Seal'),
       checkForUpdatesItem,
       settingsItem,
       { type: 'separator' },
       labeledAppMenuRole('services', 'menu.services', 'Services'),
       { type: 'separator' },
-      labeledAppMenuRole('hide', 'menu.hide', 'Hide Orca'),
+      labeledAppMenuRole('hide', 'menu.hide', 'Hide Seal'),
       labeledAppMenuRole('hideOthers', 'menu.hideOthers', 'Hide Others'),
       labeledAppMenuRole('unhide', 'menu.unhide', 'Show All'),
       { type: 'separator' },
@@ -288,7 +288,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
         ? []
         : ([
             { type: 'separator' },
-            labeledAppMenuRole('about', 'menu.about', 'About Orca'),
+            labeledAppMenuRole('about', 'menu.about', 'About Seal'),
             checkForUpdatesItem
           ] satisfies Electron.MenuItemConstructorOptions[]))
     ]

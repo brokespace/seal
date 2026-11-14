@@ -110,15 +110,18 @@ export const FeatureInteractionIdParam = z.custom<FeatureInteractionId>(isFeatur
 })
 
 export const TopLevelViewSchema = z.enum([
+  'home',
   'terminal',
   'settings',
   'tasks',
   'activity',
   'automations',
+  'machines',
   'space',
   'skills',
   'artifacts',
-  'mobile'
+  'mobile',
+  'sessions'
 ])
 
 export const UiUpdateFields = z

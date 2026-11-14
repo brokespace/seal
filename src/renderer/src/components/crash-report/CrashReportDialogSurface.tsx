@@ -279,7 +279,7 @@ export function CrashReportDialogSurface({
                 <div className="mt-1 text-muted-foreground">
                   {new Date(report.createdAt).toLocaleString(intlLocale)} · {report.platform}{' '}
                   {report.arch} ·{' '}
-                  {t('auto.components.crash.report.CrashReportDialog.835037edc9', 'Orca')}{' '}
+                  {t('auto.components.crash.report.CrashReportDialog.835037edc9', 'Seal')}{' '}
                   {report.appVersion}
                 </div>
               </div>

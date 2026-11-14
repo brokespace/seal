@@ -2,15 +2,18 @@ import type { TopLevelView } from './ui-chrome-types'
 
 // Exhaustive keys make new views update every persistence/IPC validator.
 const TOP_LEVEL_VIEW_LOOKUP: Record<TopLevelView, true> = {
+  home: true,
   terminal: true,
   settings: true,
   tasks: true,
   activity: true,
   automations: true,
+  machines: true,
   space: true,
   skills: true,
   artifacts: true,
-  mobile: true
+  mobile: true,
+  sessions: true
 }
 
 export function isTopLevelView(value: unknown): value is TopLevelView {

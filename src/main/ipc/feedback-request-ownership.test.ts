@@ -6,6 +6,10 @@ vi.mock('electron', () => ({
   app: { getVersion: () => '1.2.3-test' },
   net: { fetch: fetchMock }
 }))
+vi.mock('../upstream-service-policy', () => ({
+  isUpstreamFeedbackEnabled: () => true,
+  SEAL_ISSUES_URL: 'https://example.test/issues'
+}))
 
 import { submitFeedback } from './feedback'
 import { FEEDBACK_API_URL, postFeedback, type FeedbackSubmitBody } from './feedback-request'
