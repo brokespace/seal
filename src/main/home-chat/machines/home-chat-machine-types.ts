@@ -55,6 +55,8 @@ export type HomeChatMachine = {
   readonly dialect: HomeChatShellDialect
   /** Run a script; quoting is the machine's job, so any text is safe to pass. */
   exec: (script: string, options: HomeChatExecOptions) => Promise<HomeChatExecResult>
+  /** The account's home folder, where commands start and relative paths are rooted. */
+  homeDir: () => Promise<string>
   readTextFile: (path: string, maxBytes: number) => Promise<{ text: string; truncated: boolean }>
   writeTextFile: (path: string, content: string, options: { append: boolean }) => Promise<void>
   /** Stream a file on this machine to a path on the local machine. */

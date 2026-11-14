@@ -1,3 +1,5 @@
+import { mkdir, stat } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import type { MachineConnection } from '../../machines/connection/machine-connection'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import type { MachineSummary } from '../../../shared/machines/machine-summaries'
@@ -61,6 +63,7 @@ export async function createUnifiedMachine(
         ...(options.signal ? { signal: options.signal } : {}),
         ...(options.stdin !== undefined ? { stdin: options.stdin } : {})
       }),
+    homeDir: () => files.homeDir(),
     readTextFile: async (path, maxBytes) => {
       const { size, data } = await files.readFile(path, maxBytes)
       return { text: data.toString('utf8'), truncated: size > data.length }
@@ -81,17 +84,21 @@ export async function createUnifiedMachine(
       await files.writeFile(path, Buffer.concat([base, Buffer.from(content, 'utf8')]))
     },
     downloadTo: async (remotePath, localPath) => {
-      const stat = await files.stat(remotePath)
+      const { size } = await files.stat(remotePath)
+      await mkdir(dirname(localPath), { recursive: true })
       const session = await files.openTransferSession(new AbortController().signal)
       try {
-        await session.downloadFile(remotePath, localPath, stat.size, () => {})
+        await session.downloadFile(remotePath, localPath, size, () => {})
       } finally {
         session.close()
       }
     },
     uploadFrom: async (localPath, remotePath) => {
-      const { stat } = await import('node:fs/promises')
       const size = (await stat(localPath)).size
+      const dir = parentDir(remotePath)
+      if (dir) {
+        await files.createDir(dir).catch(() => {})
+      }
       const session = await files.openTransferSession(new AbortController().signal)
       try {
         await session.uploadFile(localPath, remotePath, size, () => {})

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,12 +15,18 @@ import { executeHomeChatTool } from './home-chat-tool-executor'
 let root: string
 let originalHome: string | undefined
 let runtime: HomeChatAssistantRuntime
+let originalShell: string | undefined
 let wakes: RecordedWake[]
+
+const LOGIN_SHELLS = ['/bin/sh', '/bin/bash', '/bin/zsh', '/usr/bin/fish'].filter((shell) =>
+  existsSync(shell)
+)
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'home-chat-jobs-'))
   // Jobs live under ~/.seal/jobs on the target machine.
   originalHome = process.env.HOME
+  originalShell = process.env.SHELL
   process.env.HOME = root
   const local = createLocalMachine()
   ;({ runtime, wakes } = createTestHomeChatRuntime(join(root, 'state'), {
@@ -32,6 +39,7 @@ beforeEach(async () => {
 afterEach(async () => {
   runtime.dispose()
   process.env.HOME = originalHome
+  process.env.SHELL = originalShell
   await rm(root, { recursive: true, force: true })
 })
 
@@ -53,6 +61,19 @@ describe.skipIf(process.platform === 'win32')('run_command background jobs', () 
     expect(result.isError).toBe(true)
     expect(result.text).toMatch(/^exit code 3/)
     expect(result.text).toContain('hello')
+  })
+
+  it.each(LOGIN_SHELLS)('runs a command when the login shell is %s', async (shell) => {
+    process.env.SHELL = shell
+    const result = await executeHomeChatTool(
+      'run_command',
+      {
+        machine: 'local',
+        command: 'v="two  words"; printf \'%s|%s\\n\' "$v" \'$HOME *\'; echo oops >&2; exit 4'
+      },
+      testToolContext(runtime)
+    )
+    expect(result.text).toBe('exit code 4\n\noutput (stdout+stderr):\ntwo  words|$HOME *\noops')
   })
 
   it('keeps a slow command running and reports into the chat when it exits', async () => {

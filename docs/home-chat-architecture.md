@@ -173,6 +173,15 @@ nothing fails with the list of known machines, so the model can correct itself.
 `machineHost.exec` is new. The runtime RPC had files, metrics and processes, but no way to run a
 one-off command, which is why the first design could not act on a paired server.
 
+Every script Seal writes itself (the job launcher, file reads and writes, deletes, skill discovery,
+session scans) is POSIX `sh` and is run by `/bin/sh`, never by the user's login shell: zsh does
+not split an unquoted `$var` into words and fish cannot parse `sh` at all. The login shell is used
+for two things only: its environment (`PATH` and the like), and running the command the model
+asked for, which is handed to it as one argument. Scripts never rely on word splitting, and file
+content travels as a quoted here-document or on stdin. A path may be absolute, relative to the
+home folder, or start with `~`; `machines/home-chat-machine-paths.ts` resolves it the same way on
+every kind of machine.
+
 ## Skills and instructions
 
 `skills/home-chat-skills.ts` and `skills/home-chat-machine-catalog.ts` find, on this computer and
@@ -267,6 +276,17 @@ answer. From there:
   Codex 0.169.0) with a fake provider API: one tool call through Seal's MCP tools, a second turn
   that resumed the session, and no CLI process left after either turn. Those runs are not in the
   test suite because they need the CLIs installed.
+
+- `tests/e2e/home-chat-tools-real-machines.spec.ts` runs every tool in the registry in the real
+  app against real machines, and fails when a tool has no case. The machines are this computer,
+  three accounts behind a real `sshd` whose login shells are zsh, bash and fish, and a paired
+  headless Seal server; the app and the server run with zsh as their login shell. Only the model
+  is scripted: an OpenAI-compatible endpoint asks for each tool with the JSON arguments a model
+  sends. The cases cover quotes, `$variables`, new lines, unicode, globs, paths with spaces,
+  output larger than a reply holds, exit codes, stderr, timeouts and binary files. It writes a
+  tool by machine pass/fail matrix as a test attachment. It needs Linux and passwordless `sudo`
+  (to create the accounts), so it runs in CI and is skipped on a developer's machine without them.
+  macOS is not covered by it: the zsh accounts stand in for a Mac's default shell.
 
 ## Limits
 

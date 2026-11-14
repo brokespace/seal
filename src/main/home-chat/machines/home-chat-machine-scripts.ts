@@ -1,4 +1,5 @@
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
+import { posixPathWord } from './home-chat-machine-paths'
 import type { HomeChatMachineLoad, HomeChatShellDialect } from './home-chat-machine-types'
 
 export function powerShellLiteral(value: string): string {
@@ -19,7 +20,7 @@ export function scriptWithCwd(
   }
   return dialect === 'powershell'
     ? `Set-Location -LiteralPath ${powerShellLiteral(cwd)}\n${script}`
-    : `cd ${quotePosixShell(cwd)} || exit 1\n${script}`
+    : `cd ${posixPathWord(cwd)} || exit 1\n${script}`
 }
 
 export function posixLoadProbeScript(): string {

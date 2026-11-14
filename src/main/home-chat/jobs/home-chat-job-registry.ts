@@ -37,6 +37,8 @@ export type HomeChatJobRunResult =
       output: string
       totalBytes: number
       machineLabel: string
+      /** Set when the log is longer than `output`: the job is kept so the rest can be read. */
+      jobId?: string
     }
   | { kind: 'background'; job: HomeChatJob; output: string; totalBytes: number }
 
@@ -115,18 +117,6 @@ export class HomeChatJobRegistry {
       throw new Error('Stopped by the user; the command was killed.')
     }
     const report = parseLaunchResult(result)
-    if (report.state === 'exited') {
-      return {
-        kind: 'finished',
-        exitCode: report.exitCode,
-        output: report.output,
-        totalBytes: report.totalBytes,
-        machineLabel: machine.info.label
-      }
-    }
-    if (report.state !== 'running') {
-      throw new Error('The command did not start; check the working directory and machine.')
-    }
     const job: HomeChatJob = {
       id,
       chatId: args.chatId,
@@ -136,6 +126,29 @@ export class HomeChatJobRegistry {
       ...(args.cwd ? { cwd: args.cwd } : {}),
       startedAt: Date.now(),
       state: 'running'
+    }
+    if (report.state === 'exited') {
+      const kept = report.totalBytes > TAIL_BYTES
+      if (kept) {
+        this.jobs.set(id, {
+          ...job,
+          state: 'exited',
+          exitCode: report.exitCode,
+          endedAt: Date.now()
+        })
+        this.save()
+      }
+      return {
+        kind: 'finished',
+        exitCode: report.exitCode,
+        output: report.output,
+        totalBytes: report.totalBytes,
+        machineLabel: machine.info.label,
+        ...(kept ? { jobId: id } : {})
+      }
+    }
+    if (report.state !== 'running') {
+      throw new Error('The command did not start; check the working directory and machine.')
     }
     this.jobs.set(id, job)
     this.save()
