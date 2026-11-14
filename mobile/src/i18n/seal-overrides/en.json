@@ -336,7 +336,10 @@
       "accountsHint": "Usage, auto-swap and switching",
       "assistant": "Assistant",
       "assistantHint": "Ask about your sessions and machines",
-      "title": "Seal"
+      "title": "Seal",
+      "approvals": "MCP approvals",
+      "approvalsWaiting": "{{value0}} waiting for your answer",
+      "approvalsHint": "Calls from outside assistants that need your OK"
     },
     "overview": {
       "machineConnecting": "Connecting",
@@ -355,6 +358,19 @@
       "accounts": "Accounts",
       "noAccounts": "No accounts set up for auto-swap.",
       "manageAccounts": "Manage accounts"
+    },
+    "mcpApprovals": {
+      "headingOnMachine": "{{value0}} wants {{value1}} on {{value2}}",
+      "heading": "{{value0}} wants {{value1}}",
+      "metaRelay": "Came through the Seal relay · expires in {{value0}}s",
+      "meta": "Over {{value0}} · expires in {{value1}}s",
+      "deny": "Deny",
+      "approve": "Approve",
+      "alreadySettled": "That call had already expired or been answered.",
+      "title": "MCP approvals",
+      "loading": "Loading",
+      "emptyTitle": "Nothing is waiting",
+      "emptyMessage": "When an MCP client asks to run a command or do something destructive, it waits here for your answer."
     }
   }
 }

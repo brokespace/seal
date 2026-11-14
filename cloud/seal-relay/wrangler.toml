@@ -41,9 +41,17 @@ class_name = "SpliceRelay"
 name = "PUSH_HOSTS"
 class_name = "SealPushHost"
 
+[[durable_objects.bindings]]
+name = "MCP_TUNNEL"
+class_name = "SealMcpTunnel"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["SealHostRelay", "SpliceRelay", "SealPushHost"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["SealMcpTunnel"]
 
 # Unauthenticated phone/data upgrades and host-auth handshakes, per source IP per colo.
 [[ratelimits]]
@@ -55,6 +63,12 @@ simple = { limit = 120, period = 60 }
 name = "HOST_AUTH_LIMITER"
 namespace_id = "7302"
 simple = { limit = 30, period = 60 }
+
+# Public MCP requests, per source IP per host per colo. The host applies its own per-client limits.
+[[ratelimits]]
+name = "MCP_LIMITER"
+namespace_id = "7303"
+simple = { limit = 300, period = 60 }
 
 [vars]
 EDGE_BACKEND = "object"

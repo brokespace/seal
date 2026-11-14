@@ -6,6 +6,7 @@ import { getGeneralPaneSearchEntries } from '@/components/settings/general/gener
 import { getIntegrationsPaneSearchEntries } from '@/components/settings/integrations/integrations-search'
 import { getLinearAgentSkillPaneSearchEntries } from '@/components/settings/skills/linear/linear-agent-skill-search'
 import { getMobileSettingsPaneSearchEntries } from '@/components/settings/mobile/mobile-settings-search'
+import { getMcpSettingsSearchEntries } from '@/components/settings/mcp/mcp-settings-search'
 import { getOrcaAccountSettingsSearchEntries } from '@/components/settings/accounts/orca/orca-account-settings-search'
 import { OrcaLogoSettingsIcon } from '@/components/settings/page/orca-logo-settings-icon'
 import { getOrchestrationPaneSearchEntries } from '@/components/settings/orchestration/orchestration-search'
@@ -20,6 +21,7 @@ import {
   Mic,
   MousePointerClick,
   Network,
+  Plug,
   SlidersHorizontal,
   Smartphone,
   UserCog
@@ -196,6 +198,17 @@ export function buildSetupSettingsSections(
             ),
             icon: Smartphone,
             searchEntries: getMobileSettingsPaneSearchEntries(),
+            group: 'setup'
+          },
+          {
+            id: 'mcp',
+            title: t('seal.mcp.title', 'MCP'),
+            description: t(
+              'seal.mcp.description',
+              'Let MCP clients such as Claude Code, Codex and Cursor drive this Seal server.'
+            ),
+            icon: Plug,
+            searchEntries: getMcpSettingsSearchEntries(),
             group: 'setup'
           }
         ]
