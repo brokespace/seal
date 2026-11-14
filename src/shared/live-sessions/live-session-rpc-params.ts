@@ -45,5 +45,12 @@ export const LiveSessionHostRunParams = z.object({
 export const LiveSessionRemoveParams = z.object({
   sessionIds: z.array(SessionId).min(1).max(500),
   stop: z.boolean(),
-  deleteTranscripts: z.boolean()
+  deleteTranscripts: z.boolean(),
+  keep: z.boolean().optional()
+})
+
+export const LiveSessionAnnotateParams = z.object({
+  sessionId: SessionId,
+  customTitle: z.string().max(200).nullish(),
+  pinned: z.boolean().optional()
 })

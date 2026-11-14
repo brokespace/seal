@@ -17,7 +17,7 @@ import { restingStatus, turnStatus, withBackgroundWait } from './session-status'
 import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import { agentProcesses, codexHomeOf, processBinary, sessionIdFromArgs } from './agent-processes'
-import { conversationTranscripts, distinctSessions } from './session-identity'
+import { conversations, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
   path: string
@@ -210,9 +210,11 @@ export function assembleHostSessions(input: {
   const sessions: LiveSession[] = []
   // A Codex helper thread writes its own rollout, but it is its session's subagent, not a session.
   const helpers = codexHelperThreads(input.transcripts)
+  const found = conversations(input.transcripts.filter((t) => !t.summary.parentSessionId))
+  const earlierOf = new Map(found.map((c) => [c.transcript, c.earlier]))
   for (const { process, transcript } of pairProcesses(
     agentProcesses(output.processes),
-    conversationTranscripts(input.transcripts.filter((t) => !t.summary.parentSessionId)),
+    found.map((c) => c.transcript),
     claudeSessionByPid,
     ownedPaths,
     now - FRESH_WRITE_MS
@@ -293,6 +295,9 @@ export function assembleHostSessions(input: {
       inputRoutes.push({ kind: 'resume' })
     }
     const cwd = summary?.cwd ?? process?.cwd ?? null
+    const continues = (transcript ? (earlierOf.get(transcript) ?? []) : []).map((id) =>
+      liveSessionId(machine.hostId, provider, id)
+    )
     sessions.push({
       id: liveSessionId(machine.hostId, provider, providerSessionId),
       provider,
@@ -315,7 +320,8 @@ export function assembleHostSessions(input: {
       permission,
       activity,
       lastMessage: summary?.lastMessage ?? null,
-      configDir: configDirOf(provider, transcript?.path ?? null)
+      configDir: configDirOf(provider, transcript?.path ?? null),
+      ...(continues.length > 0 ? { continues } : {})
     })
   }
   return distinctSessions(sessions)

@@ -10,13 +10,13 @@ import type {
 } from '../../../shared/live-sessions/live-session-types'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
 import { oneLine } from '../discovery/transcript-records'
+import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 
 const RESTING_ON_SOMETHING: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-subagent',
   'waiting-task',
   'waiting-input'
 ])
-import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 
 export type SealPaneRow = Pick<
   AgentStatusIpcPayload,

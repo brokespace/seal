@@ -95,6 +95,18 @@ export type LiveSession = {
   customTitle?: string | null
   /** The provider config folder it runs under (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`), which names its account. */
   configDir?: string | null
+  /** The user pinned it to the top of its machine in Seal. */
+  pinned?: boolean
+  /** Ids this session went by before it was resumed into a new transcript; it is still that session. */
+  continues?: string[]
+}
+
+/** What the user sets on a session in Seal; an absent field is left as it is. */
+export type LiveSessionAnnotation = {
+  sessionId: string
+  /** Null or blank goes back to the agent's own title. */
+  customTitle?: string | null
+  pinned?: boolean
 }
 
 export type LiveSessionRegistrySnapshot = {
@@ -193,6 +205,8 @@ export type LiveRemoveRequest = {
   /** End a running agent (and its Seal tmux pane) before hiding it. */
   stop: boolean
   deleteTranscripts: boolean
+  /** Only stop: the session stays in Seal, ended, so it can be resumed or removed later. */
+  keep?: boolean
 }
 
 export type LiveRemoveResult = {

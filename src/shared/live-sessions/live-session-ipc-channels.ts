@@ -10,6 +10,7 @@ export const LIVE_SESSION_IPC = {
   answer: 'liveSessions:answer',
   takeOver: 'liveSessions:takeOver',
   remove: 'liveSessions:remove',
+  annotate: 'liveSessions:annotate',
   shellIntegration: 'liveSessions:shellIntegration',
   /** main → renderer: LiveSessionRegistryEvent */
   event: 'liveSessions:event',

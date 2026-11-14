@@ -2,6 +2,7 @@ import {
   LiveSessionAnswerParams,
   LiveSessionHostRunParams,
   LiveSessionTakeOverParams,
+  LiveSessionAnnotateParams,
   LiveSessionRemoveParams,
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
@@ -162,5 +163,11 @@ export const LIVE_SESSION_METHODS = [
     permission: 'workspace',
     params: LiveSessionRemoveParams,
     handler: (request) => service().remove(request)
+  }),
+  defineMethod({
+    name: 'liveSessions.annotate',
+    permission: 'workspace',
+    params: LiveSessionAnnotateParams,
+    handler: (annotation) => service().annotate(annotation)
   })
 ]

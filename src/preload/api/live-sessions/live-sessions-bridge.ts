@@ -4,6 +4,7 @@ import type {
   LivePermissionAnswer,
   LivePermissionAnswerResult,
   LiveSendRequest,
+  LiveSessionAnnotation,
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot,
   LiveTakeOverResult,
@@ -45,6 +46,8 @@ export type LiveSessionsApi = {
   takeOver: (args: { sessionId: string }) => Promise<LiveTakeOverResult>
   /** Hide for good; optionally stop the agent and delete its transcript first. */
   remove: (request: LiveRemoveRequest) => Promise<LiveRemoveResult>
+  /** Rename or pin a session in Seal; the registry publishes the change. */
+  annotate: (annotation: LiveSessionAnnotation) => Promise<void>
   /** `hostId` is 'local' or an SSH target id; rejects when that host is not connected. */
   shellIntegration: (args: {
     hostId: string
@@ -73,5 +76,6 @@ export const liveSessionsApi: LiveSessionsApi = {
   answer: (answer) => ipcRenderer.invoke(LIVE_SESSION_IPC.answer, answer),
   takeOver: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.takeOver, args),
   remove: (request) => ipcRenderer.invoke(LIVE_SESSION_IPC.remove, request),
+  annotate: (annotation) => ipcRenderer.invoke(LIVE_SESSION_IPC.annotate, annotation),
   shellIntegration: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.shellIntegration, args)
 }
