@@ -51,6 +51,14 @@ export type TextGenerationOperation =
   | 'jira-issue-summary'
   | 'conversation-name'
   | 'dictation-cleanup'
+  /** One of Seal's own chores (a session summary), run on the agent's account. */
+  | 'utility-completion'
+
+/** The prompt is text to work on, not a repo task: the agent gets no tools and answers in prose. */
+export const PROSE_TEXT_OPERATIONS: ReadonlySet<TextGenerationOperation> = new Set([
+  'dictation-cleanup',
+  'utility-completion'
+])
 
 export type CommitMessageGenerationTarget =
   | { kind: 'local'; cwd: string; env?: NodeJS.ProcessEnv; wslDistro?: string; laneId?: string }

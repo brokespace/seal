@@ -18,6 +18,7 @@ const SETTINGS_NAV_TARGETS = [
   'workspace-cleanup',
   'integrations',
   'accounts',
+  'session-summaries',
   'browser',
   'git',
   'tasks',

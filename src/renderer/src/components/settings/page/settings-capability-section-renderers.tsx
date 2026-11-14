@@ -6,6 +6,7 @@ import { matchesSettingsSearch } from '../search/settings-search'
 import { SealAccountsPage } from '../seal-accounts/SealAccountsPage'
 import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
+import { SessionSummariesSettingsPane } from '../session-summaries/SessionSummariesSettingsPane'
 import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'
 import { AgentsPane } from '../agents/AgentsPane'
 import { AgentDefaultSurfaceSection } from '../agents/surfaces/AgentDefaultSurfaceSection'
@@ -177,6 +178,45 @@ export function renderAccountsSettingsSection(
             />
           )}
         </div>
+      )}
+    </SettingsSection>
+  )
+}
+
+export function renderSessionSummariesSettingsSection(
+  context: SettingsRenderContext,
+  t: Translate = translate
+): React.JSX.Element {
+  const { model, navigation, view } = context
+  const { target } = model.settingsHostScope
+  const environmentId = target.kind === 'environment' ? target.environmentId : null
+  return (
+    <SettingsSection
+      id="session-summaries"
+      title={t('seal.summaryModels.section.title', 'Session summaries & recaps')}
+      description={t(
+        'seal.summaryModels.section.description',
+        'Seal can write a one-line summary and a longer recap of every agent session. Choose whether each runs, and the provider and model that writes it.'
+      )}
+      searchEntries={navigation.getSectionSearchEntries('session-summaries')}
+    >
+      {!view.isSectionMounted('session-summaries') ? null : !model.settingsHostScope.available ? (
+        <SettingsHostScopeUnavailableNotice />
+      ) : (
+        <SessionSummariesSettingsPane
+          key={getProviderAccountsOwnerKey(target)}
+          host={{
+            owner: target,
+            label:
+              environmentId === null
+                ? null
+                : (model.runtimeEnvironments.find((entry) => entry.id === environmentId)?.name ??
+                  t(
+                    'auto.components.settings.AccountsPane.remoteServerFallback',
+                    'the remote server'
+                  ))
+          }}
+        />
       )}
     </SettingsSection>
   )

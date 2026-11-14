@@ -59,7 +59,7 @@ export function SessionSummariesPausedNote(): React.JSX.Element | null {
       <TooltipContent side="bottom" className="max-w-72">
         {t(
           'seal.sessionSummaries.pausedDetail',
-          'Cloudflare’s free limit for today is used up. New summaries resume at {{time}}.',
+          'The model provider’s limit was reached. New summaries resume at {{time}}.',
           { time }
         )}
       </TooltipContent>

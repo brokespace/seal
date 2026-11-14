@@ -8,9 +8,10 @@ import {
   captureAgentGenerationFailureOutput,
   type AgentGenerationFailureOutput
 } from './agent-failure-output'
-import type {
-  InternalTextGenerationResult,
-  TextGenerationOperation
+import {
+  PROSE_TEXT_OPERATIONS,
+  type InternalTextGenerationResult,
+  type TextGenerationOperation
 } from '../source-control-text-generation-types'
 import { parseOpenCodeGenerationOutput } from '../../../shared/opencode-generation-output'
 import { parseAntigravityGenerationOutput } from '../../../shared/antigravity-generation-stream'
@@ -29,12 +30,12 @@ import {
 const OPERATIONS_WITHOUT_STDOUT_DETAIL: ReadonlySet<TextGenerationOperation> = new Set([
   'branch-name',
   'conversation-name',
-  'dictation-cleanup'
+  ...PROSE_TEXT_OPERATIONS
 ])
 
 /** The agent's answer without CLI framing; dictated text keeps the lines and markers Git text drops. */
 export function cleanAgentAnswer(raw: string, operation: TextGenerationOperation): string {
-  return cleanGeneratedText(raw, operation === 'dictation-cleanup' ? 'prose' : 'git')
+  return cleanGeneratedText(raw, PROSE_TEXT_OPERATIONS.has(operation) ? 'prose' : 'git')
 }
 
 type AgentCliFailureOptions = {
@@ -95,7 +96,8 @@ const EMPTY_RESULT_FAILURES = {
 const UNCODED_EMPTY_RESULT_NAMES = {
   'branch-name': 'branch name',
   'conversation-name': 'chat name',
-  'dictation-cleanup': 'cleanup'
+  'dictation-cleanup': 'cleanup',
+  'utility-completion': 'reply'
 } as const
 
 export function emptyResultFailure(
@@ -106,7 +108,8 @@ export function emptyResultFailure(
   if (
     operation === 'branch-name' ||
     operation === 'conversation-name' ||
-    operation === 'dictation-cleanup'
+    operation === 'dictation-cleanup' ||
+    operation === 'utility-completion'
   ) {
     // Background rename failures are stored as English rename errors, outside the coded result path.
     const name = UNCODED_EMPTY_RESULT_NAMES[operation]

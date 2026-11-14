@@ -38,7 +38,12 @@ describe('UtilityModelService', () => {
     const first = await service.complete(REQUEST)
     const second = await service.complete(REQUEST)
 
-    expect(first).toEqual({ text: 'ok', model: FALLBACK, usedFallback: true })
+    expect(first).toEqual({
+      text: 'ok',
+      provider: 'cloudflare-workers-ai',
+      model: FALLBACK,
+      usedFallback: true
+    })
     expect(second.model).toBe(FALLBACK)
     expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
       PRIMARY,
@@ -113,6 +118,71 @@ describe('UtilityModelService', () => {
       pausedUntil: null,
       lastFailure: null
     })
+  })
+
+  it("answers from the next model when a limit is one model's own, and rests that model", async () => {
+    const { service, provider, clock } = serviceWith(async (model) => {
+      if (model === PRIMARY) {
+        throw new UtilityModelError('rate-limited', 'temporarily rate-limited upstream', {
+          model,
+          modelScoped: true,
+          retryAfterMs: 30_000
+        })
+      }
+      return 'ok'
+    })
+
+    const first = await service.complete(REQUEST)
+    const second = await service.complete(REQUEST)
+    clock.now = MORNING + 30_000
+    await service.complete(REQUEST)
+
+    expect(first).toMatchObject({ model: FALLBACK, usedFallback: true })
+    expect(second.model).toBe(FALLBACK)
+    expect(service.health().pausedUntil).toBeNull()
+    expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
+      PRIMARY,
+      FALLBACK,
+      FALLBACK,
+      PRIMARY,
+      FALLBACK
+    ])
+  })
+
+  it('holds the provider only once every model is resting', async () => {
+    const { service, provider } = serviceWith(async (model) => {
+      throw new UtilityModelError('rate-limited', 'temporarily rate-limited upstream', {
+        model,
+        modelScoped: true,
+        retryAfterMs: model === PRIMARY ? 30_000 : 90_000
+      })
+    })
+
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+    await expect(service.complete(REQUEST)).rejects.toMatchObject({ kind: 'rate-limited' })
+
+    expect(service.health().pausedUntil).toBe(MORNING + 30_000)
+    expect(provider.complete).toHaveBeenCalledTimes(2)
+  })
+
+  it("tries the caller's model and fallback before the provider's own", async () => {
+    const { service, provider } = serviceWith(async (model) => {
+      if (model !== PRIMARY) {
+        throw new UtilityModelError('model-not-found', 'No such model', { model })
+      }
+      return 'ok'
+    })
+
+    const reply = await service.complete(REQUEST, undefined, {
+      choice: { model: 'vendor/chosen', fallbackModel: 'vendor/spare' }
+    })
+
+    expect(reply).toMatchObject({ model: PRIMARY, usedFallback: true })
+    expect(vi.mocked(provider.complete).mock.calls.map(([model]) => model)).toEqual([
+      'vendor/chosen',
+      'vendor/spare',
+      PRIMARY
+    ])
   })
 
   it('reports not-configured without a provider', async () => {
