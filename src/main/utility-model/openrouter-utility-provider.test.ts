@@ -180,9 +180,9 @@ describe('OpenRouter provider', () => {
             pricing: { prompt: '0', completion: '0' }
           },
           {
-            id: 'image/only',
-            name: 'Image',
-            architecture: { output_modalities: ['image'] },
+            id: 'music/clips',
+            name: 'Music',
+            architecture: { output_modalities: ['text', 'audio'] },
             pricing: { prompt: '0', completion: '0' }
           }
         ]

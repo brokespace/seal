@@ -85,7 +85,7 @@ function isFree(id: string, pricing: Record<string, unknown> | null): boolean {
   )
 }
 
-/** OpenRouter's public catalog: every model that answers in text, free ones first. */
+/** OpenRouter's public catalog: every model that answers in text only, free ones first. */
 export async function listOpenRouterModels(
   options: {
     apiKey?: string | null
@@ -106,7 +106,8 @@ export async function listOpenRouterModels(
     const model = record(entry)
     const id = text(model?.id)
     const output = record(model?.architecture)?.output_modalities
-    if (!id || (Array.isArray(output) && !output.includes('text'))) {
+    // A model that also returns audio or images is no fit for a one-line text chore.
+    if (!id || (Array.isArray(output) && output.some((kind) => kind !== 'text'))) {
       return []
     }
     return [{ id, description: text(model?.name), free: isFree(id, record(model?.pricing)) }]
