@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { getAppEnvironment } from '../../../shared/app-environment'
 import { getRuntimeEnvironmentStatusSnapshots } from '../../ipc/runtime-environments/runtime-environment-request-connections'
 import {
   createRuntimeMachineChannel,
@@ -14,14 +14,14 @@ export function createPairedRuntimeSource(): HomeChatRuntimeSource {
   const channel = (environmentId: string): RuntimeMachineChannel => {
     let existing = channels.get(environmentId)
     if (!existing) {
-      existing = createRuntimeMachineChannel(app.getPath('userData'), environmentId)
+      existing = createRuntimeMachineChannel(getAppEnvironment().getPath('userData'), environmentId)
       channels.set(environmentId, existing)
     }
     return existing
   }
   return {
     environments: () =>
-      listEnvironments(app.getPath('userData')).map((environment) => ({
+      listEnvironments(getAppEnvironment().getPath('userData')).map((environment) => ({
         id: environment.id,
         name: environment.name,
         ...(environment.sshAccess ? { sshAccess: environment.sshAccess } : {})
