@@ -100,14 +100,13 @@
       "connecting": "Подключение…",
       "invalidPairingCode": "Неверный код сопряжения — скопируйте его с компьютера и вставьте ещё раз",
       "invalidQrCode": "Неверный QR-код Seal",
-      "downloadQrCode": "Это код для скачивания. Отсканируйте код сопряжения на шаге 2 на компьютере.",
       "openDesktopStep": "Откройте Seal на компьютере",
       "openMobileSettingsStep": "Перейдите в «Настройки → Мобильный доступ»",
       "openSettings": "Открыть настройки",
       "pairingFailed": "Не удалось выполнить сопряжение: {{error}}",
       "pairingLog": "Журнал сопряжения",
       "pasteCodeMessage": "Скопируйте код, показанный под QR-кодом на компьютере.",
-      "pasteCodePlaceholder": "orca://pair?code=... или вставьте код",
+      "pasteCodePlaceholder": "seal://pair?code=... или вставьте код",
       "pasteCodeTitle": "Вставить код сопряжения",
       "pasteInstead": "Вставить код",
       "pastePairingCode": "Или вставить код сопряжения",
@@ -1017,9 +1016,7 @@
       "backToHosts": "Вернуться к серверам",
       "desktopTooOldBody": "Версия Seal на сопряжённом компьютере устарела и несовместима с текущей версией Seal Mobile. Обновите Seal на компьютере, затем снова подключитесь к этому серверу.",
       "getVersion": "Скачать Seal {{version}}",
-      "mobileTooOldAppStore": "Для работы с Seal на этом компьютере нужна более новая версия Seal Mobile. Обновите Seal Mobile через App Store, затем снова подключитесь к этому серверу.",
       "mobileTooOldGitHubReleases": "Для работы с Seal на этом компьютере нужна более новая версия Seal Mobile. Обновите Seal Mobile через GitHub Releases, затем снова подключитесь к этому серверу.",
-      "openAppStore": "Открыть App Store",
       "openGitHubReleases": "Открыть GitHub Releases",
       "refreshRecoveryNote": "Если сообщение не исчезнет, удалите этот сервер и выполните сопряжение заново.",
       "refreshWorkspaceBody": "Версия рабочего пространства этого сервера в кэше старее той, которую ожидает Seal на компьютере. Подключитесь к этому серверу заново, чтобы загрузить актуальную версию.",
@@ -1027,7 +1024,6 @@
       "updateDesktopTitle": "Обновите Seal на компьютере",
       "updateMobileTitle": "Обновите Seal Mobile",
       "updateRecoveryNote": "Уже обновили? Вернитесь в раздел «Серверы» и обновите подключение. Если сообщение не исчезнет, удалите этот сервер и выполните сопряжение заново.",
-      "workspaceNeedsUpdateAppStore": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Seal Mobile. Обновите Seal Mobile через App Store, затем снова подключитесь к этому серверу.",
       "workspaceNeedsUpdateGitHubReleases": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Seal Mobile. Обновите Seal Mobile через GitHub Releases, затем снова подключитесь к этому серверу."
     },
     "richMarkdownEditor": {
@@ -2894,11 +2890,9 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Не удалось открыть ссылку. Повторите попытку.",
-      "socialProfile": "Seal в X",
       "sourceCode": "Исходный код Seal",
       "tagline": "IDE с открытым кодом и агентами: разработка в 100 раз быстрее",
-      "title": "О приложении",
-      "website": "Сайт Seal"
+      "title": "О приложении"
     },
     "appUpdateSettingsRows": {
       "checkFailed": "Не удалось проверить",
@@ -2962,7 +2956,6 @@
       "voice": "Голос"
     },
     "menuScreen": {
-      "privacyPolicy": "Политика конфиденциальности",
       "support": "Поддержка"
     },
     "nativeChatSettingsScreen": {

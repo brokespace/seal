@@ -1,7 +1,13 @@
 import type { ExecutionHostId } from '../../../src/shared/execution-host'
 
 // `exec` is always set: workspace ids collide across servers, as in composeWorktreeHostIdentity.
-export type HostQueryTarget = { exec: ExecutionHostId; worktree?: string; repo?: string }
+export type HostQueryTarget = {
+  exec: ExecutionHostId
+  worktree?: string
+  repo?: string
+  /** Seal machines are not execution hosts on unified hosts (`machine:<id>`). */
+  machine?: string
+}
 
 export type HostQueryParams = Readonly<Record<string, string | number | boolean | null>>
 

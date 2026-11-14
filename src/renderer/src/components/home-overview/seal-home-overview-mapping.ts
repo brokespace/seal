@@ -3,40 +3,22 @@ import {
   toRuntimeExecutionHostId,
   toSshExecutionHostId
 } from '../../../../shared/execution-host'
-import type {
-  LiveSession,
-  LiveSessionStatus
-} from '../../../../shared/live-sessions/live-session-types'
-import { liveSessionMachineId as machineIdOfLiveSession } from '../../../../shared/live-sessions/live-session-machine-id'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { homeSessionFromLive as homeSessionFromLiveFields } from '../../../../shared/home-overview/home-live-session-mapping'
 import type { MachineMetrics } from '../../../../shared/machines/machine-types'
 import { SEAL_PROVIDERS } from '../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
 import {
+  machineLoad,
+  machineMemoryUsedPercent
+} from '../../../../shared/home-overview/home-machine-readings'
+import {
   liveSessionProviderLabel,
   liveSessionTitle
 } from '../live-sessions/live-session-presentation'
 import { sessionForTab } from '../seal-session/seal-session-account-view'
-import type { HomeAccount, HomeMachine, HomeSession, HomeSessionState } from './home-overview-model'
-
-function homeStateFromLive(status: LiveSessionStatus, alive: boolean): HomeSessionState {
-  switch (status) {
-    case 'working':
-      return alive ? 'working' : 'done'
-    case 'waiting-input':
-      return alive ? 'waiting' : 'done'
-    case 'needs-permission':
-      return alive ? 'permission' : 'done'
-    case 'errored':
-      return 'errored'
-    case 'done':
-      return 'done'
-  }
-}
-
-export function liveSessionMachineId(session: Pick<LiveSession, 'machine'>): string {
-  return machineIdOfLiveSession(session.machine)
-}
+import type { HomeAccount, HomeMachine, HomeSession } from './home-overview-model'
 
 /** Pane sessions name the execution host they run on; home groups by machine, whichever transport. */
 export function unifySessionMachines(
@@ -68,32 +50,10 @@ export function unifySessionMachines(
 }
 
 export function homeSessionFromLive(session: LiveSession): HomeSession {
-  const state = homeStateFromLive(session.status, session.alive)
-  const machineId = liveSessionMachineId(session)
-  const project = session.project ?? session.cwd ?? session.machine.label
-  const askSummary =
-    session.permission?.question ??
-    (state === 'waiting' || state === 'permission' ? session.statusDetail : null)
-  return {
-    id: session.id,
-    state,
-    // The registry keeps no read state: an agent still running after an error has not been dealt with.
-    unseen: state === 'errored' && session.alive,
-    machineId,
-    machineLabel: session.machine.label,
-    projectId: `${machineId}:${session.cwd ?? project}`,
-    projectName: project,
-    workspaceName: session.project ?? '',
+  return homeSessionFromLiveFields(session, {
     title: liveSessionTitle(session),
-    agentType: session.provider,
-    agentLabel: liveSessionProviderLabel(session),
-    startedAt: session.startedAt ?? session.lastActivityAt,
-    stateChangedAt: session.lastActivityAt,
-    finishedAt: state === 'done' ? session.lastActivityAt : null,
-    ...(askSummary ? { askSummary } : {}),
-    ...(state === 'errored' && session.statusDetail ? { errorSummary: session.statusDetail } : {}),
-    target: { kind: 'live-session', sessionId: session.id }
-  }
+    agentLabel: liveSessionProviderLabel(session)
+  })
 }
 
 /**
@@ -120,25 +80,13 @@ export function mergeLiveSessions(
   return merged
 }
 
-function percentOf(used: number, total: number): number {
-  return Math.max(0, Math.min(100, (used / total) * 100))
-}
-
 export function homeMachineFromSummary(
   summary: MachineSummary,
   metrics: MachineMetrics | null | undefined,
   localLabel: string
 ): HomeMachine {
-  let load: number | undefined
-  if (metrics?.loadAverage && metrics.cpuCount) {
-    load = metrics.loadAverage[0] / metrics.cpuCount
-  } else if (metrics?.cpuUsagePercent != null) {
-    load = metrics.cpuUsagePercent / 100
-  }
-  const memoryUsedPercent =
-    metrics?.memTotalBytes && metrics.memAvailableBytes != null
-      ? percentOf(metrics.memTotalBytes - metrics.memAvailableBytes, metrics.memTotalBytes)
-      : undefined
+  const load = machineLoad(metrics)
+  const memoryUsedPercent = machineMemoryUsedPercent(metrics)
   return {
     id: summary.id,
     label: summary.connection === 'local' ? localLabel : summary.label,

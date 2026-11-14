@@ -3,7 +3,7 @@ import type { AgentDotState } from '@/components/AgentStateDot'
 import { formatUiNarrowDuration, formatUiNarrowRelativeTime } from '@/i18n/relative-time-format'
 import type { Translate } from '@/i18n/use-translate'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
-import { homeElapsed } from './home-overview-derivations'
+import { homeElapsed } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeMachineStatus, HomeSessionState } from './home-overview-model'
 
 export function homeSessionDotState(state: HomeSessionState): AgentDotState {

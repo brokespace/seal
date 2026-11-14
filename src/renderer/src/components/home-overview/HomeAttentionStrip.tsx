@@ -1,6 +1,6 @@
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { useTranslate } from '@/i18n/use-translate'
-import type { HomeAttentionItem } from './home-overview-derivations'
+import type { HomeAttentionItem } from '../../../../shared/home-overview/home-overview-derivations'
 import type { HomeOverviewActions } from './home-overview-model'
 import { homeSessionDotState, homeSessionStateLabel } from './home-overview-presentation'
 
