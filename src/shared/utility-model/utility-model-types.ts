@@ -12,6 +12,8 @@ export type UtilityModelMessage = {
 export type UtilityModelRequest = {
   messages: UtilityModelMessage[]
   maxTokens: number
+  /** How long the provider may take; a long reply needs more than the default. */
+  timeoutMs?: number
 }
 
 export const UTILITY_MODEL_FAILURE_KINDS = [

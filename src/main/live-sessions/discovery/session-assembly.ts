@@ -321,7 +321,8 @@ export function assembleHostSessions(input: {
       activity,
       lastMessage: summary?.lastMessage ?? null,
       configDir: configDirOf(provider, transcript?.path ?? null),
-      ...(continues.length > 0 ? { continues } : {})
+      ...(continues.length > 0 ? { continues } : {}),
+      ...(summary?.titleNamed ? { titleNamed: true as const } : {})
     })
   }
   return distinctSessions(sessions)

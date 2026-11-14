@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 export type LiveSessionOpenMode = 'preview' | 'tab' | 'split'
-export type LiveSessionPanel = 'subagents' | 'tasks' | 'reasoning'
+export type LiveSessionPanel = 'recap' | 'subagents' | 'tasks' | 'reasoning'
 export type LiveSessionFocusTarget = LiveSessionPanel | 'composer' | 'permission'
 
 export type LiveSessionTabsState = {
@@ -154,7 +154,7 @@ export class LiveSessionTabsStore {
     })
   }
 
-  /** Ask a session's open view to show its subagents, tasks, reasoning, composer or permission card. */
+  /** Ask a session's open view to show its recap, subagents, tasks, reasoning, composer or permission card. */
   focus(sessionId: string, target: LiveSessionFocusTarget): void {
     this.set({ focus: { sessionId, target, nonce: ++this.nonce } })
   }

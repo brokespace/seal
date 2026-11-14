@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Circle, CircleDot, FileText, X } from 'lucide-react'
+import { Check, ChevronRight, Circle, CircleDot, FileText } from 'lucide-react'
 import { AgentStateDot, type AgentDotState } from '@/components/AgentStateDot'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -16,6 +16,14 @@ import type { LiveSessionProvider } from '../../../../../shared/live-sessions/li
 import type { NativeChatMessage } from '../../../../../shared/native-chat/native-chat-types'
 import { nativeChatReasoningHeadline } from '../../../../../shared/native-chat/transcript/native-chat-reasoning-row'
 import type { LiveSessionPanel } from './live-session-tabs-store'
+import {
+  LiveSessionPanelEmpty as Empty,
+  LiveSessionPanelSectionTitle as SectionTitle,
+  LiveSessionSidePanel
+} from './LiveSessionSidePanel'
+
+/** The panels that read the session's own activity; its recap has a panel of its own. */
+export type LiveSessionActivityPanelKind = Exclude<LiveSessionPanel, 'recap'>
 
 function runDotState(status: LiveSubagentStatus): AgentDotState {
   switch (status) {
@@ -41,18 +49,6 @@ export function liveRunStatusLabel(status: LiveSubagentStatus, t: Translate): st
     case 'stopped':
       return t('auto.components.live-sessions.activity.stopped', 'Stopped')
   }
-}
-
-function Empty({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <p className="px-3 py-2 text-xs text-muted-foreground">{children}</p>
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <h3 className="px-3 pt-3 pb-1 text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
-      {children}
-    </h3>
-  )
 }
 
 function SubagentRow({
@@ -222,7 +218,7 @@ function ReasoningItem({ message }: { message: NativeChatMessage }): React.JSX.E
 }
 
 export type LiveSessionActivityPanelProps = {
-  panel: LiveSessionPanel
+  panel: LiveSessionActivityPanelKind
   provider: LiveSessionProvider
   activity: LiveSessionActivity | undefined
   /** The transcript's reasoning rows read so far, oldest first. */
@@ -249,106 +245,88 @@ export function LiveSessionActivityPanel({
   const subagents = activity?.subagents ?? []
   const tasks = activity?.tasks ?? []
   const todos = activity?.todos ?? []
-  const titles: Record<LiveSessionPanel, string> = {
+  const titles: Record<LiveSessionActivityPanelKind, string> = {
     subagents: t('auto.components.live-sessions.activity.subagents', 'Subagents'),
     tasks: t('auto.components.live-sessions.activity.tasks', 'Tasks'),
     reasoning: t('auto.components.live-sessions.activity.reasoning', 'Reasoning')
   }
   return (
-    <aside
-      data-live-session-panel={panel}
-      aria-label={titles[panel]}
-      className="flex w-80 shrink-0 flex-col border-l border-border bg-background"
-    >
-      <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-        <h2 className="flex-1 text-sm font-semibold">{titles[panel]}</h2>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          onClick={onClose}
-          aria-label={t('auto.components.live-sessions.activity.close', 'Close panel')}
-        >
-          <X className="size-3.5" />
-        </Button>
-      </header>
-      <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto pb-3">
-        {panel === 'subagents' ? (
-          subagents.length > 0 ? (
-            <ul className="flex flex-col gap-0.5 p-1">
-              {subagents.map((subagent) => (
-                <SubagentRow
-                  key={subagent.id}
-                  subagent={subagent}
-                  now={now}
-                  open={subagent.id === openSubagentId}
-                  onOpen={onOpenSubagent}
-                />
+    <LiveSessionSidePanel panel={panel} title={titles[panel]} onClose={onClose}>
+      {panel === 'subagents' ? (
+        subagents.length > 0 ? (
+          <ul className="flex flex-col gap-0.5 p-1">
+            {subagents.map((subagent) => (
+              <SubagentRow
+                key={subagent.id}
+                subagent={subagent}
+                now={now}
+                open={subagent.id === openSubagentId}
+                onOpen={onOpenSubagent}
+              />
+            ))}
+          </ul>
+        ) : (
+          <Empty>
+            {t(
+              'auto.components.live-sessions.activity.noSubagents',
+              'This session has not started any subagents.'
+            )}
+          </Empty>
+        )
+      ) : null}
+      {panel === 'tasks' ? (
+        <>
+          <SectionTitle>
+            {t('auto.components.live-sessions.activity.backgroundTasks', 'Background tasks')}
+          </SectionTitle>
+          {tasks.length > 0 ? (
+            <ul>
+              {tasks.map((task) => (
+                <TaskRow key={task.id} task={task} now={now} />
               ))}
             </ul>
           ) : (
             <Empty>
               {t(
-                'auto.components.live-sessions.activity.noSubagents',
-                'This session has not started any subagents.'
+                'auto.components.live-sessions.activity.noTasks',
+                'No background commands or tasks.'
               )}
             </Empty>
-          )
-        ) : null}
-        {panel === 'tasks' ? (
-          <>
-            <SectionTitle>
-              {t('auto.components.live-sessions.activity.backgroundTasks', 'Background tasks')}
-            </SectionTitle>
-            {tasks.length > 0 ? (
-              <ul>
-                {tasks.map((task) => (
-                  <TaskRow key={task.id} task={task} now={now} />
-                ))}
-              </ul>
-            ) : (
-              <Empty>
-                {t(
-                  'auto.components.live-sessions.activity.noTasks',
-                  'No background commands or tasks.'
-                )}
-              </Empty>
-            )}
-            <SectionTitle>
-              {provider === 'codex'
-                ? t('auto.components.live-sessions.activity.plan', 'Plan')
-                : t('auto.components.live-sessions.activity.todos', 'To-dos')}
-            </SectionTitle>
-            {todos.length > 0 ? (
-              <ul>
-                {keyedTodos(todos).map(({ key, todo }) => (
-                  <TodoRow key={key} todo={todo} />
-                ))}
-              </ul>
-            ) : (
-              <Empty>
-                {t('auto.components.live-sessions.activity.noTodos', 'The agent keeps no list.')}
-              </Empty>
-            )}
-          </>
-        ) : null}
-        {panel === 'reasoning' ? (
-          reasoning.length > 0 ? (
-            <ul className="flex flex-col pt-1">
-              {reasoning.map((message) => (
-                <ReasoningItem key={message.id} message={message} />
+          )}
+          <SectionTitle>
+            {provider === 'codex'
+              ? t('auto.components.live-sessions.activity.plan', 'Plan')
+              : t('auto.components.live-sessions.activity.todos', 'To-dos')}
+          </SectionTitle>
+          {todos.length > 0 ? (
+            <ul>
+              {keyedTodos(todos).map(({ key, todo }) => (
+                <TodoRow key={key} todo={todo} />
               ))}
             </ul>
           ) : (
             <Empty>
-              {t(
-                'auto.components.live-sessions.activity.noReasoning',
-                'No reasoning in the part of the transcript read so far.'
-              )}
+              {t('auto.components.live-sessions.activity.noTodos', 'The agent keeps no list.')}
             </Empty>
-          )
-        ) : null}
-      </div>
-    </aside>
+          )}
+        </>
+      ) : null}
+      {panel === 'reasoning' ? (
+        reasoning.length > 0 ? (
+          <ul className="flex flex-col pt-1">
+            {reasoning.map((message) => (
+              <ReasoningItem key={message.id} message={message} />
+            ))}
+          </ul>
+        ) : (
+          <Empty>
+            {t(
+              'auto.components.live-sessions.activity.noReasoning',
+              'No reasoning in the part of the transcript read so far.'
+            )}
+          </Empty>
+        )
+      ) : null}
+    </LiveSessionSidePanel>
   )
 }
