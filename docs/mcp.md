@@ -227,8 +227,11 @@ background job can only be followed by the client that started it. Account tools
 - `commands`: every command waits as well.
 
 Over the relay, destructive calls **always** wait, whatever the client's policy says. A waiting
-call shows in the Seal desktop app (a prompt on any screen, and in Settings → MCP), on a paired
-phone (Seal → MCP approvals, with a notification), and in `seal mcp approvals`. The prompt names
+call belongs to the Seal server that received it, and is answered there: in the desktop app (a
+prompt on any screen for the app's own server, and Settings → MCP for it or for a paired server
+picked there), on a paired phone (Seal → MCP approvals, with a notification), or with
+`seal mcp approvals`. A headless server has no desktop prompt of its own, so its calls are answered
+from the phone, from Settings → MCP on a desktop paired with it, or from the CLI. The prompt names
 the client, the transport, the tool, the machine and the arguments. A call that is not answered in
 120 seconds is declined. A client can have 5 calls waiting at most. Revoking a client declines what
 it has waiting and stops its calls in progress.
