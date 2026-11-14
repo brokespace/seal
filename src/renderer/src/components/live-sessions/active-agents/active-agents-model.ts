@@ -1,9 +1,12 @@
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import {
-  compareLiveSessions,
   isActiveLiveSession,
   liveSessionStatusGroup
 } from '../../../../../shared/live-sessions/live-session-status'
+import {
+  groupLiveSessionsByMachine,
+  type LiveSessionMachineGroup
+} from '../../../../../shared/live-sessions/live-session-summary'
 import type { LiveSessionLink } from '../links/live-session-links'
 
 export type ActiveAgentsChip = 'attention' | 'working' | 'mine'
@@ -17,12 +20,14 @@ export type ActiveAgentsFilter = {
   scope: ActiveAgentsScope | null
 }
 
-export type ActiveAgentsMachine = {
-  hostId: string
-  label: string
-  kind: LiveSession['machine']['kind']
-  sessions: LiveSession[]
+/** Every session, as a surface without the toolbar lists them. */
+export const NO_ACTIVE_AGENTS_FILTER: ActiveAgentsFilter = {
+  query: '',
+  chips: new Set(),
+  scope: null
 }
+
+export type ActiveAgentsMachine = LiveSessionMachineGroup<LiveSession>
 
 export type ActiveAgentsView = {
   machines: ActiveAgentsMachine[]
@@ -83,10 +88,6 @@ function passes(
   return matchesQuery(session, link, words)
 }
 
-function order(a: LiveSession, b: LiveSession): number {
-  return Number(b.pinned === true) - Number(a.pinned === true) || compareLiveSessions(a, b)
-}
-
 /** Machines (this one first), each with its sessions: pinned, then needs-attention, working, idle. */
 export function buildActiveAgents(
   sessions: readonly LiveSession[],
@@ -95,7 +96,7 @@ export function buildActiveAgents(
   now: number
 ): ActiveAgentsView {
   const words = filter.query.toLowerCase().split(/\s+/).filter(Boolean)
-  const machines = new Map<string, ActiveAgentsMachine>()
+  const running: LiveSession[] = []
   const finished: LiveSession[] = []
   let activeCount = 0
   for (const session of sessions) {
@@ -112,22 +113,10 @@ export function buildActiveAgents(
       finished.push(session)
       continue
     }
-    const machine = machines.get(session.machine.hostId) ?? {
-      hostId: session.machine.hostId,
-      label: session.machine.label,
-      kind: session.machine.kind,
-      sessions: []
-    }
-    machine.sessions.push(session)
-    machines.set(session.machine.hostId, machine)
-  }
-  for (const machine of machines.values()) {
-    machine.sessions.sort(order)
+    running.push(session)
   }
   return {
-    machines: [...machines.values()].sort((a, b) =>
-      a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'local' ? -1 : 1
-    ),
+    machines: groupLiveSessionsByMachine(running),
     finished: finished.sort((a, b) => b.lastActivityAt - a.lastActivityAt),
     activeCount
   }
