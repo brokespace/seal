@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { Page } from '@stablyai/playwright-test'
+import { expect, type Page } from '@stablyai/playwright-test'
 import {
   startFakeChatCompletionsServer,
   type FakeChatCompletionsServer,
@@ -23,6 +23,15 @@ export type ToolOutcome = {
   status: HomeChatToolStatus
   /** Seal stopped and asked the user before running it. */
   askedApproval: boolean
+}
+
+type TurnState = {
+  /** Tool cards that were waiting for the user's approval, now answered. */
+  waiting: string[]
+  idle: boolean
+  finished: boolean
+  errors: string[]
+  tools: { id: string; tool: string; status: HomeChatToolStatus }[]
 }
 
 type Run = { steps: readonly ToolStep[]; finished: boolean; stepError?: unknown }
@@ -103,10 +112,10 @@ export async function startHomeChatToolDriver(): Promise<HomeChatToolDriver> {
         text: `tool-run:${id}`
       })
       const asked = new Set<string>()
-      const deadline = Date.now() + (options.timeoutMs ?? 120_000)
-      for (;;) {
-        const state = await page.evaluate(
-          async ({ chat, approve, done }) => {
+      const done = `tool-run-finished:${id}`
+      const readTurn = (): Promise<TurnState> =>
+        page.evaluate(
+          async ({ chat, approve, doneText }) => {
             const thread = await window.api.homeChat!.get({ chatId: chat })
             const entries = thread?.entries ?? []
             const waiting = entries.flatMap((entry) =>
@@ -120,14 +129,14 @@ export async function startHomeChatToolDriver(): Promise<HomeChatToolDriver> {
               })
             }
             const ask = entries.findLastIndex(
-              (entry) => entry.kind === 'user' && entry.text.includes(done.slice(-36))
+              (entry) => entry.kind === 'user' && entry.text.includes(doneText.slice(-36))
             )
             const after = ask === -1 ? [] : entries.slice(ask + 1)
             return {
               waiting,
-              status: thread?.status,
+              idle: thread?.status === 'idle',
               finished: after.some(
-                (entry) => entry.kind === 'assistant' && entry.text.includes(done)
+                (entry) => entry.kind === 'assistant' && entry.text.includes(doneText)
               ),
               errors: after.flatMap((entry) => (entry.kind === 'error' ? [entry.text] : [])),
               tools: after.flatMap((entry) =>
@@ -137,47 +146,55 @@ export async function startHomeChatToolDriver(): Promise<HomeChatToolDriver> {
               )
             }
           },
-          { chat: chatId, approve: options.approve !== false, done: `tool-run-finished:${id}` }
+          { chat: chatId, approve: options.approve !== false, doneText: done }
         )
-        state.waiting.forEach((entryId) => asked.add(entryId))
-        if (state.errors.length > 0) {
-          throw new Error(`The assistant turn failed: ${state.errors.join('; ')}`)
-        }
-        if (state.finished && state.status === 'idle') {
-          if (run.stepError) {
-            throw run.stepError
+      let state: TurnState = { waiting: [], idle: false, finished: false, errors: [], tools: [] }
+      await expect
+        .poll(
+          async () => {
+            state = await readTurn()
+            state.waiting.forEach((entryId) => asked.add(entryId))
+            if (state.errors.length > 0) {
+              return 'failed'
+            }
+            return state.finished && state.idle ? 'finished' : JSON.stringify(state.tools)
+          },
+          {
+            timeout: options.timeoutMs ?? 120_000,
+            intervals: [150],
+            message: 'the assistant turn did not finish; tools so far'
           }
-          const last = model.requests.findLast((request) =>
-            request.messages.some((message) => message.content?.includes(`tool-run:${id}`))
-          )
-          const messages = last?.messages ?? []
-          const askIndex = messages.findLastIndex((message) =>
-            (message.content ?? '').includes(`tool-run:${id}`)
-          )
-          const turn = messages.slice(askIndex + 1)
-          const answers = toolAnswers(turn)
-          const asks = turn.flatMap((message) => message.tool_calls ?? [])
-          // The thread shows no card for report_progress, so cards are matched to calls by name.
-          const cards = [...state.tools]
+        )
+        .toMatch(/^(finished|failed)$/)
+      if (state.errors.length > 0) {
+        throw new Error(`The assistant turn failed: ${state.errors.join('; ')}`)
+      }
+      if (run.stepError) {
+        throw run.stepError
+      }
+      const last = model.requests.findLast((request) =>
+        request.messages.some((message) => message.content?.includes(`tool-run:${id}`))
+      )
+      const messages = last?.messages ?? []
+      const askIndex = messages.findLastIndex((message) =>
+        (message.content ?? '').includes(`tool-run:${id}`)
+      )
+      const turn = messages.slice(askIndex + 1)
+      const answers = toolAnswers(turn)
+      const asks = turn.flatMap((message) => message.tool_calls ?? [])
+      // The thread shows no card for report_progress, so cards are matched to calls by name.
+      const cards = [...state.tools]
+      return {
+        chatId,
+        outcomes: asks.map((ask, index) => {
+          const card = cards[0]?.tool === ask.function.name ? cards.shift() : undefined
           return {
-            chatId,
-            outcomes: asks.map((ask, index) => {
-              const card = cards[0]?.tool === ask.function.name ? cards.shift() : undefined
-              return {
-                tool: ask.function.name,
-                text: answers[index] ?? '',
-                status: card?.status ?? 'ok',
-                askedApproval: card ? asked.has(card.id) : false
-              }
-            })
+            tool: ask.function.name,
+            text: answers[index] ?? '',
+            status: card?.status ?? 'ok',
+            askedApproval: card ? asked.has(card.id) : false
           }
-        }
-        if (Date.now() > deadline) {
-          throw new Error(
-            `The assistant turn did not finish in time; tools so far: ${JSON.stringify(state.tools)}`
-          )
-        }
-        await new Promise((resolve) => setTimeout(resolve, 150))
+        })
       }
     }
   }

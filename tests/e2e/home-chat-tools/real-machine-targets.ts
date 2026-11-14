@@ -2,7 +2,12 @@ import { execFileSync } from 'node:child_process'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { userInfo } from 'node:os'
-import type { ElectronApplication, Page, TestInfo } from '@stablyai/playwright-test'
+import {
+  expect,
+  type ElectronApplication,
+  type Page,
+  type TestInfo
+} from '@stablyai/playwright-test'
 import { startHomeChatToolDriver } from '../helpers/home-chat-tool-driver'
 import { launchHeadlessPairedRuntimeHost } from '../helpers/headless-paired-runtime-host'
 import { startLocalSshdMachines, type LocalSshdUser } from '../helpers/local-sshd-machines'
@@ -94,38 +99,33 @@ async function listMachineRows(page: Page): Promise<MachineRow[]> {
 
 /** All targets are one host, so Seal merges an SSH entry with the server; the suite needs them apart. */
 async function keepMachinesSeparate(page: Page, expected: number): Promise<void> {
-  const deadline = Date.now() + 60_000
-  for (;;) {
-    const rows = await listMachineRows(page)
-    const merged = rows.filter((row) => row.ssh && row.server)
-    for (const row of merged) {
-      await page.evaluate((machineId) => window.api.machines!.separate({ machineId }), row.id)
-    }
-    if (merged.length === 0 && rows.length === expected) {
-      return
-    }
-    if (Date.now() > deadline) {
-      throw new Error(`Expected ${expected} separate machines, found ${JSON.stringify(rows)}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250))
-  }
+  await expect
+    .poll(
+      async () => {
+        const rows = await listMachineRows(page)
+        const merged = rows.filter((row) => row.ssh && row.server)
+        for (const row of merged) {
+          await page.evaluate((machineId) => window.api.machines!.separate({ machineId }), row.id)
+        }
+        return { merged: merged.length, machines: rows.length }
+      },
+      { timeout: 60_000 }
+    )
+    .toEqual({ merged: 0, machines: expected })
 }
 
 async function waitUntilOnline(page: Page, labels: readonly string[]): Promise<void> {
-  const deadline = Date.now() + 120_000
-  for (;;) {
-    const machines = await page.evaluate(() => window.api.homeChat!.listMachines())
-    const offline = labels.filter(
-      (label) => machines.find((machine) => machine.label === label)?.status !== 'online'
+  await expect
+    .poll(
+      async () => {
+        const machines = await page.evaluate(() => window.api.homeChat!.listMachines())
+        return labels.filter(
+          (label) => machines.find((machine) => machine.label === label)?.status !== 'online'
+        )
+      },
+      { timeout: 120_000, message: 'machines still not online' }
     )
-    if (offline.length === 0) {
-      return
-    }
-    if (Date.now() > deadline) {
-      throw new Error(`Machines never came online: ${offline.join(', ')}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
+    .toEqual([])
 }
 
 export type RealMachineSuite = { env: ToolEnv; dispose: () => Promise<void> }

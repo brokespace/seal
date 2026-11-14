@@ -52,6 +52,7 @@ test('every Home assistant tool works on this computer, over SSH and through a S
   // A developer machine without sudo cannot host the accounts; CI must never skip them.
   test.skip(unavailable !== null && !process.env.CI, unavailable ?? '')
   expect(unavailable, 'CI must be able to run a real sshd').toBeNull()
+  // Thirty-three tools on five machines, each a real assistant turn; a healthy run takes two minutes.
   test.setTimeout(30 * 60_000)
 
   const only = (process.env.SEAL_HOME_CHAT_TOOL_FILTER ?? '').split(',').filter(Boolean)
