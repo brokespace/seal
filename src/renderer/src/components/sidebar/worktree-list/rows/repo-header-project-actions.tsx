@@ -8,6 +8,7 @@ import {
   EyeOff,
   FolderInput,
   FolderTree,
+  LayoutDashboard,
   Plus,
   // `Shapes` is lucide-react's own export name; exempted in config/oxlint-anti-slop.json.
   Shapes,
@@ -72,6 +73,7 @@ function getWorktreeVisibilityMenuLabel(
 export type RepoHeaderProjectActions = {
   getWorktreeVisibilityDefaults: (repo: Repo) => WorktreeVisibilityDefaults | undefined
   onOpenRepoSettings: (projectId: string, sectionId?: string) => void
+  onOpenProjectOverview: (repo: Repo) => void
   onOpenWorktreeVisibility: (repo: Repo) => void
   onCreateGroupFromRepo: (repo: Repo) => void
   onMoveProjectToGroup: (repo: Repo, groupId: string) => void
@@ -139,6 +141,10 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
         onClick={stopRepoHeaderMenuEvent}
         onKeyDown={stopRepoHeaderMenuEvent}
       >
+        <DropdownMenuItem onSelect={() => actions.onOpenProjectOverview(repo)}>
+          <LayoutDashboard className="size-3.5" />
+          {t('seal.projectOverview.sidebar.open', 'Project Overview')}
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo.id)}>
           <SlidersHorizontal className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.2cdffbc728', 'Project Settings')}

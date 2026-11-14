@@ -93,6 +93,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
       getWorktreeVisibilityDefaults: (repo) =>
         getRepoOwnerWorktreeVisibilityDefaults(repo, settings, worktreeVisibilityDefaultsByHost),
       onOpenRepoSettings: handleOpenRepoSettings,
+      onOpenProjectOverview: (repo) => useAppStore.getState().openProjectOverview(repo),
       onOpenWorktreeVisibility: handleOpenWorktreeVisibility,
       onCreateGroupFromRepo: handleCreateGroupFromRepo,
       onMoveProjectToGroup: handleMoveProjectToGroup,
