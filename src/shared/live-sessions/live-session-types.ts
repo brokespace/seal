@@ -73,6 +73,10 @@ export type LiveSession = {
   transcriptPath: string | null
   inputRoutes: LiveSessionInputRoute[]
   permission: LiveSessionPermissionPrompt | null
+  /** One sentence on what the agent did or needs, made by the host that owns the session when it stopped. */
+  summary?: string
+  /** That summary is being made. */
+  summaryPending?: true
 }
 
 export type LiveSessionRegistrySnapshot = {

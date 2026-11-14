@@ -22,6 +22,7 @@ import {
 } from './runtime-worktree-summary-paths'
 import type { RuntimeTerminalTitleEvidence } from './runtime-worktree-ps-activity'
 import type { RuntimeWorktreeAgentSource } from './runtime-worktree-agent-source'
+import { paneStatusSummary } from '../../../session-summaries/session-summaries-instance'
 
 type OrchestrationDisplay = {
   taskTitle?: string | null
@@ -54,6 +55,8 @@ export function attachRuntimeWorktreeAgentRows(args: {
   conversationName?: (source: RuntimeWorktreeAgentSource) => string | null
   /** The desktop window's Agents-list verdicts; null when no window has published them. */
   agentList?: AgentListPublication | null
+  /** The host's session summary for a pane's agent; defaults to the installed summaries. */
+  statusSummary?: (paneKey: string) => string | null
 }): void {
   const { rowSources } = args
   const now = Date.now()
@@ -99,6 +102,10 @@ export function attachRuntimeWorktreeAgentRows(args: {
     }
     if (source.children !== undefined || source.subagents !== undefined) {
       row.subagentObservation = isAgentStatusFresh(row, now) ? 'live' : 'unverifiable'
+    }
+    const statusSummary = (args.statusSummary ?? paneStatusSummary)(source.paneKey)
+    if (statusSummary) {
+      row.statusSummary = statusSummary
     }
     const activity = args.agentList && agentListVerdict(args.agentList, source)
     if (activity) {
