@@ -23,7 +23,7 @@ import { translateWorkspaceStatusHeaderLabel } from '../../workspace-board-statu
 import { getVirtualRowTransform } from '../viewport/virtual-rows'
 import { getSidebarHeaderVisual } from './header-visuals'
 import { resolveProjectGroupHeaderColor } from './project-header-color'
-import { ProjectHeaderActions } from './ProjectHeaderActions'
+import { ProjectHeaderActions, projectHeaderBadgeRoomClassName } from './ProjectHeaderActions'
 import {
   PROJECT_HEADER_OVERVIEW_CURRENT_CLASS,
   ProjectHeaderFold,
@@ -317,7 +317,9 @@ export function renderWorktreeSectionHeaderRow(
             data-project-group-header-drag-handle={isDraggableProjectGroupHeader ? '' : undefined}
             className={cn(
               'flex min-w-0 flex-1 items-center gap-1.5 self-stretch',
-              hostContext && 'can-hover:pr-18',
+              hostContext
+                ? 'can-hover:pr-18'
+                : projectHeaderBadgeRoomClassName(Boolean(overviewRepo)),
               (isDraggableRepoHeader || isDraggableProjectGroupHeader) &&
                 'cursor-grab active:cursor-grabbing'
             )}
