@@ -1,5 +1,6 @@
 import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
+import { PageHeader } from '@/components/page-layout/PageLayout'
 import { AutomationOwnerConflictNotice } from './hosts/AutomationOwnerConflictNotice'
 import { AutomationsPageBreadcrumb } from './AutomationsPageBreadcrumb'
 import type { AutomationHostRecoveryAction } from './hosts/automation-host-status-descriptors'
@@ -31,30 +32,28 @@ export function AutomationsPageTopBar({
   const t = useTranslate()
   return (
     <>
-      <header
-        className="flex shrink-0 items-center px-3 pb-3 md:px-5"
-        style={{ paddingRight: 'max(0.75rem, var(--window-controls-width, 0px))' }}
-      >
-        {pageView === 'runs' || pageView === 'run' ? (
-          <AutomationsPageBreadcrumb
-            current={pageView}
-            onBackToAutomations={showAutomationsList}
-            onBackToRuns={showRunsDashboard}
-            automationName={runPageOrigin === 'automation' ? selectedAutomationName : undefined}
-            onBackToAutomation={showAutomationDetails}
-          />
-        ) : isDetailOpen && selectedAutomationName ? (
-          <AutomationsPageBreadcrumb
-            current="automation"
-            automationName={selectedAutomationName}
-            onBackToAutomations={showAutomationsList}
-          />
-        ) : (
-          <h1 className="truncate text-base font-semibold leading-8">
-            {t('auto.components.automations.AutomationsPage.77c2778945', 'Automations')}
-          </h1>
-        )}
-      </header>
+      <PageHeader
+        topOfWindow
+        title={
+          pageView === 'runs' || pageView === 'run' ? (
+            <AutomationsPageBreadcrumb
+              current={pageView}
+              onBackToAutomations={showAutomationsList}
+              onBackToRuns={showRunsDashboard}
+              automationName={runPageOrigin === 'automation' ? selectedAutomationName : undefined}
+              onBackToAutomation={showAutomationDetails}
+            />
+          ) : isDetailOpen && selectedAutomationName ? (
+            <AutomationsPageBreadcrumb
+              current="automation"
+              automationName={selectedAutomationName}
+              onBackToAutomations={showAutomationsList}
+            />
+          ) : (
+            t('auto.components.automations.AutomationsPage.77c2778945', 'Automations')
+          )
+        }
+      />
       <AutomationOwnerConflictNotice
         notice={ownerNotice}
         className="mx-4 mb-2"

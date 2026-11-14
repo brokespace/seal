@@ -1,5 +1,6 @@
 import { Fragment, useContext, useMemo } from 'react'
 import { useTranslate } from '@/i18n/use-translate'
+import { PageHeader, PageLayout, PageScrollContent } from '@/components/page-layout/PageLayout'
 import {
   buildHomeAttentionItems,
   countSessionsByState,
@@ -48,17 +49,14 @@ function HomeOverviewContent(): React.JSX.Element {
   ].join(' · ')
 
   return (
-    <div className="scrollbar-sleek flex min-h-0 flex-1 flex-col overflow-y-auto bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-8 pt-6 pb-16">
-        <header className="flex items-baseline justify-between gap-4">
-          <h1 className="text-xl font-semibold text-foreground">
-            {t('home.overview.title', 'Home')}
-          </h1>
-          <p className="text-xs text-muted-foreground tabular-nums">{summary}</p>
-        </header>
+    <PageLayout data-home-page>
+      <PageHeader title={t('home.overview.title', 'Home')}>
+        <p className="shrink-0 text-xs text-muted-foreground tabular-nums">{summary}</p>
+      </PageHeader>
+      <PageScrollContent className="gap-4">
         <HomeChatSlot />
         <HomeAttentionStrip items={attention} actions={actions} />
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
           <HomeSessionsPanel sessions={sessions} now={now} onOpen={actions.openSession} />
           <div className="flex flex-col gap-4">
             <HomeMachinesPanel
@@ -81,8 +79,8 @@ function HomeOverviewContent(): React.JSX.Element {
             />
           </div>
         </div>
-      </div>
-    </div>
+      </PageScrollContent>
+    </PageLayout>
   )
 }
 
