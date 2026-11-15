@@ -105,7 +105,8 @@ test('GPUs, their history and their processes show on the Machines page, and a G
   // A developer machine without sudo cannot host the accounts; CI must never skip them.
   test.skip(unavailable !== null && !process.env.CI, unavailable ?? '')
   expect(unavailable, 'CI must be able to run a real sshd').toBeNull()
-  test.setTimeout(15 * 60_000)
+  // Three sshd accounts, a paired Seal server and the app start first; a healthy run takes ninety seconds.
+  test.setTimeout(10 * 60_000)
 
   const shotsDir = process.env.SEAL_MACHINES_GPU_SHOTS_DIR ?? testInfo.outputPath('shots')
   mkdirSync(shotsDir, { recursive: true })
