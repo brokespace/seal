@@ -22,6 +22,11 @@ export type ActiveAgentsView = {
 /** `collapsedGroups` key of the whole section; machines and the finished group add their own. */
 export const ACTIVE_AGENTS_COLLAPSE_KEY = 'active-agents'
 
+/** The section's own fold keys; unlike project group keys, they mean the same under every Projects grouping. */
+export function isActiveAgentsCollapseKey(key: string): boolean {
+  return key === ACTIVE_AGENTS_COLLAPSE_KEY || key.startsWith(`${ACTIVE_AGENTS_COLLAPSE_KEY}:`)
+}
+
 export const RECENTLY_FINISHED_MS = 24 * 60 * 60 * 1000
 
 function inScope(scope: ActiveAgentsScope | null, link: LiveSessionLink | undefined): boolean {

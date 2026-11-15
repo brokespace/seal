@@ -68,6 +68,13 @@ export function estimateRenderRowSize(
   return 116
 }
 
+/** Virtual items are in scroll coordinates; rows are placed in their own box, which starts below the sections sharing the scroll container. */
+export function toRowBoxVirtualItem(item: VirtualItem, scrollMargin: number): VirtualItem {
+  return scrollMargin === 0
+    ? item
+    : { ...item, start: item.start - scrollMargin, end: item.end - scrollMargin }
+}
+
 export function getVirtualRowTransform(start: number): string {
   return `translateY(${start}px)`
 }

@@ -47,7 +47,9 @@ it('keeps a notice row slot stable across repeated remeasures', () => {
       firstHeaderIndex: -1,
       scrollRef: { current: scroller },
       scrollOffsetRef: { current: 0 },
-      programmaticScrollMarks: marks
+      programmaticScrollMarks: marks,
+      scrollElement: null,
+      scrollAnchorRef: { current: null }
     })
   })
   const { virtualizer } = result.current

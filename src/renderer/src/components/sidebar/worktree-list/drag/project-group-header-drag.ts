@@ -1,7 +1,3 @@
-import {
-  requestVirtualizedScrollAnchorRecord,
-  supersedeVirtualizedScrollAnchorRestore
-} from '@/hooks/requestVirtualizedScrollAnchorRecord'
 import { measureRootProjectHeaderDragRects } from './root-project-header-drop'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -20,6 +16,12 @@ import {
 } from './project-group-header-drag-contract'
 import { createProjectGroupHeaderDragSession } from './project-group-header-drag-start'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  haveWorktreeRowsMoved,
+  measureWorktreeRowsAutoscrollView,
+  scrollWorktreeRowsForDrag,
+  measureWorktreeRowsViewTop
+} from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
 
@@ -54,6 +56,7 @@ export function useProjectGroupHeaderDrag({
 
   const dragSessionRef = useRef<ProjectGroupHeaderDragSession | null>(null)
 
+  const rowsGeometryKeyRef = useRef<string | null>(null)
   const refreshHeaderRects = useCallback(() => {
     const container = getContainerRef.current()
     const session = dragSessionRef.current
@@ -88,7 +91,8 @@ export function useProjectGroupHeaderDrag({
         scrollTop: container.scrollTop,
         rects: session.headerRects,
         sidebarProjectGroupHeaderIds: session.sidebarProjectGroupHeaderIds,
-        contentBottom: container.scrollHeight
+        contentBottom: container.scrollHeight,
+        viewTop: measureWorktreeRowsViewTop(container)
       })
     },
     []
@@ -172,16 +176,13 @@ export function useProjectGroupHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: container.getBoundingClientRect(),
-        scrollTop: container.scrollTop,
-        scrollHeight: container.scrollHeight,
-        clientHeight: container.clientHeight,
+        ...measureWorktreeRowsAutoscrollView(container),
         elapsedMs: frameTime - previousFrameTime
       })
       if (autoscroll) {
-        supersedeVirtualizedScrollAnchorRestore(container, autoscroll.scrollTop)
-        container.scrollTop = autoscroll.scrollTop
-        requestVirtualizedScrollAnchorRecord(container)
+        scrollWorktreeRowsForDrag(container, autoscroll.scrollTop)
+      }
+      if (haveWorktreeRowsMoved(container, rowsGeometryKeyRef)) {
         refreshHeaderRects()
       }
 

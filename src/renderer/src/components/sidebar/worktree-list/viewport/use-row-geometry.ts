@@ -158,7 +158,9 @@ export function useWorktreeRowGeometry(args: {
         if (!first || !last) {
           return false
         }
-        const top = rect.top + first.start + frame.before
+        // Measurements are scroll coordinates, and the first row sits at the content box's top.
+        const originY = rect.top - (measurements[0]?.start ?? 0)
+        const top = originY + first.start + frame.before
         let trailing = 0
         let parent = frame.parent
         while (parent !== null) {
@@ -168,7 +170,7 @@ export function useWorktreeRowGeometry(args: {
           }
           parent = ancestor.parent
         }
-        const bottom = rect.top + last.end - projection.frames[frame.end].after - trailing
+        const bottom = originY + last.end - projection.frames[frame.end].after - trailing
         return isReorderInsideFolderBounds(point, {
           left: rect.left + frame.left + 4,
           right: rect.right - frame.right,

@@ -8,6 +8,7 @@ import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor
 import { buildLineageRowProjection } from '../listing/lineage-row-projection'
 import type { RenderRow } from '../listing/render-row'
 import { repo, worktree } from '../grouping/worktree-list-groups-test-fixtures'
+import { NO_SCROLL_SECTION_INSETS } from './scroll-section-insets'
 import { revealElementInScrollContainer } from '../navigation/worktree-sidebar-reveal'
 import { useVirtualRowMeasurementSync } from './use-row-measurement'
 import { useWorktreeSidebarScrollSuppression } from './use-scroll-suppression'
@@ -90,6 +91,7 @@ function setup(interior = false) {
     return element
   }
   const mounted = mount('b')
+  const rowConnectedAtCleanup: boolean[] = []
   const virtualizer = {
     elementsCache: new Map(),
     getTotalSize: () => model.totalSize,
@@ -102,7 +104,11 @@ function setup(interior = false) {
         size: model.sizes.get(id) ?? 1000,
         lane: 0
       })),
-    measureElement: () => {},
+    measureElement: (node: Element | null) => {
+      if (!node) {
+        rowConnectedAtCleanup.push(mounted.isConnected)
+      }
+    },
     isScrolling: false,
     scrollOffset: null,
     scrollToIndex: () => {
@@ -126,10 +132,11 @@ function setup(interior = false) {
         stickyRangeStartIndexRef: { current: 0 },
         rowIndexByKey: projection.rowIndexByKey,
         restoreSignal: projection.restoreSignal,
-        programmaticScrollMarks: marks
+        programmaticScrollMarks: marks,
+        scrollSectionInsets: NO_SCROLL_SECTION_INSETS
       } as unknown as WorktreeListVirtualizer
       const input = useWorktreeSidebarScrollSuppression(scrollRef)
-      useVirtualRowMeasurementSync({
+      const { measureVirtualRowElement } = useVirtualRowMeasurementSync({
         renderRows: rows,
         virtualization,
         scrollRef,
@@ -137,7 +144,7 @@ function setup(interior = false) {
         scrollAnchorRef,
         shouldSkipScrollAnchorRestore: input.shouldSkipScrollAnchorRestore
       })
-      return input
+      return { ...input, measureVirtualRowElement }
     },
     {
       initialProps: {
@@ -148,8 +155,18 @@ function setup(interior = false) {
     }
   )
   act(() => requestVirtualizedScrollAnchorRecord(scroller))
-  return { scroller, model, mount, mounted, view }
+  return { scroller, model, mount, mounted, rowConnectedAtCleanup, view }
 }
+
+it('sweeps a row removed at rest out of measurement once React has taken its node out', async () => {
+  const { mounted, rowConnectedAtCleanup, view } = setup()
+  rowConnectedAtCleanup.length = 0
+  // React detaches a row's ref while its node is still in the list, and removes the node right after.
+  view.result.current.measureVirtualRowElement(null)
+  mounted.remove()
+  await Promise.resolve()
+  expect(rowConnectedAtCleanup).toEqual([true, false])
+})
 
 it('leaves height-only scroll correction to the virtualizer instead of restoring an older DOM position', () => {
   const { scroller, model, view } = setup()

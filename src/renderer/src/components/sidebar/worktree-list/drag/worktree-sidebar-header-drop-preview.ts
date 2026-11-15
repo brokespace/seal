@@ -25,12 +25,15 @@ export function computeWorktreeSidebarHeaderDropPreview<
   getId: (rect: TRect) => string
   // Measured scroll-content bottom bounds live snap slots; geometry-only tests may omit it.
   contentBottom?: number
+  // Scroll offset of the first row pixel on screen, when a pinned section header covers the list's top.
+  viewTop?: number
 }): WorktreeSidebarHeaderDropPreview | null {
   if (args.rects.length === 0 || args.headerCount === 0) {
     return null
   }
 
   const localY = args.pointerY - args.containerTop + args.scrollTop
+  const viewTop = args.viewTop ?? args.scrollTop
   // Bound every preview branch, including estimated edge slots, by real list content.
   if (args.contentBottom !== undefined && localY > args.contentBottom) {
     return null
@@ -60,7 +63,7 @@ export function computeWorktreeSidebarHeaderDropPreview<
   if (boundaryDrop.kind === 'drop') {
     return {
       dropIndex: boundaryDrop.dropIndex,
-      dropIndicatorY: Math.max(args.scrollTop, boundaryDrop.indicatorY)
+      dropIndicatorY: Math.max(viewTop, boundaryDrop.indicatorY)
     }
   }
 
@@ -77,7 +80,7 @@ export function computeWorktreeSidebarHeaderDropPreview<
 
     return {
       dropIndex,
-      dropIndicatorY: Math.max(args.scrollTop, indicatorY)
+      dropIndicatorY: Math.max(viewTop, indicatorY)
     }
   }
 
@@ -88,7 +91,7 @@ export function computeWorktreeSidebarHeaderDropPreview<
   }
   return {
     dropIndex: boundary.dropIndex,
-    dropIndicatorY: Math.max(args.scrollTop, boundary.indicatorY)
+    dropIndicatorY: Math.max(viewTop, boundary.indicatorY)
   }
 }
 

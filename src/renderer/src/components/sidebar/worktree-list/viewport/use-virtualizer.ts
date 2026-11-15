@@ -18,6 +18,9 @@ import type { RenderRow } from '../listing/render-row'
 import { WORKTREE_SIDEBAR_REVEAL_TOP_INSET } from '../navigation/worktree-sidebar-reveal'
 import type { ProgrammaticScrollMarks } from '@/hooks/programmatic-scroll-marks'
 import { createSidebarSmoothReveal } from './sidebar-smooth-reveal'
+import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
+import { getScrollSectionContainerProps, getScrollSectionMargin } from './scroll-section-insets'
+import { useScrollSectionInsets } from './use-scroll-section-insets'
 
 export type WorktreeListVirtualizer = ReturnType<typeof useWorktreeListVirtualizer>
 
@@ -29,8 +32,22 @@ export function useWorktreeListVirtualizer(args: {
   scrollRef: React.RefObject<HTMLDivElement | null>
   scrollOffsetRef: React.MutableRefObject<number>
   programmaticScrollMarks: ProgrammaticScrollMarks
+  scrollElement: HTMLElement | null
+  scrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
 }) {
   const { renderRows, firstHeaderIndex, scrollRef, scrollOffsetRef } = args
+  const scrollSectionInsets = useScrollSectionInsets({
+    scrollElement: args.scrollElement,
+    scrollOffsetRef,
+    scrollAnchorRef: args.scrollAnchorRef,
+    programmaticScrollMarks: args.programmaticScrollMarks
+  })
+  const scrollContainerProps = useMemo(() => {
+    const sectionProps = getScrollSectionContainerProps(scrollSectionInsets)
+    // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
+    const style: React.CSSProperties = { overflowAnchor: 'none', ...sectionProps.style }
+    return { ...sectionProps, style }
+  }, [scrollSectionInsets])
   const stickyHeaderIndexes = useMemo(() => getStickyHeaderIndexes(renderRows), [renderRows])
   const activeStickyHeaderIndexRef = useRef<number | null>(null)
   const activeStickyHostIndexRef = useRef<number | null>(null)
@@ -145,8 +162,10 @@ export function useWorktreeListVirtualizer(args: {
     ),
     overscan: 10,
     gap: WORKTREE_SIDEBAR_VIRTUAL_ROW_GAP,
+    // Why: sections sharing this scroll container sit above the rows, so row offsets start below them.
+    scrollMargin: getScrollSectionMargin(scrollSectionInsets),
     // Why: the sticky group header lives inside the virtual list, so scroll math needs the same top inset as the DOM reveal.
-    scrollPaddingStart: WORKTREE_SIDEBAR_REVEAL_TOP_INSET,
+    scrollPaddingStart: WORKTREE_SIDEBAR_REVEAL_TOP_INSET + scrollSectionInsets.pinned,
     // Why: seed scrollOffset from the ref (not 0) so the first getVirtualItems() after remount picks the right rows.
     initialOffset: () => scrollOffsetRef.current,
     scrollToFn: smoothReveal.scrollTo,
@@ -156,6 +175,8 @@ export function useWorktreeListVirtualizer(args: {
 
   return {
     virtualizer,
+    scrollSectionInsets,
+    scrollContainerProps,
     smoothScrollRevision,
     programmaticScrollMarks: args.programmaticScrollMarks,
     rowIndexByKey: args.projection.rowIndexByKey,
