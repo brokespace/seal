@@ -51,11 +51,11 @@ export function hookStatus(
   gone: boolean
 ): LiveSessionStatus | null {
   switch (state) {
+    // An agent killed mid-turn or at its prompt never clears the file; it speaks for no one then.
     case 'working':
-      return 'working'
+      return gone ? null : 'working'
     case 'needs':
-      // An agent killed at its prompt never clears the file; the prompt went with it.
-      return gone ? 'done' : 'needs-permission'
+      return gone ? null : 'needs-permission'
     case 'done':
     case 'idle':
       return running ? restingStatus(summary) : 'done'

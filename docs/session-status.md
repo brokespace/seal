@@ -140,10 +140,11 @@ For a session in a tmux pane or a Seal terminal the scan reads the visible scree
   `waiting-input`; a finished turn is `your-turn`. The scan still adds what a hook cannot say
   (running shell, subagent and task waits, a reply that asks).
 - **The agent's hook file** (`agent-hooks`): status the agent wrote itself, when fresher than the
-  transcript. An agent killed at a prompt never clears its file, so a `needs` state counts only
-  while the agent may still be there: once the host has listed its processes, the agent is not
-  among them and the transcript has gone quiet, the session is `done`. A host whose `ps` cannot
-  list processes proves nothing, and the prompt stands.
+  transcript. An agent killed mid-turn or at a prompt never clears its file, so a `working` or
+  `needs` state counts only while the agent may still be there. Once the host's `ps` has listed
+  its processes (`@@PS`), the agent is not among them and the transcript has gone quiet, the file
+  is ignored and the session reads as its transcript says: `done`. A host whose `ps` cannot list
+  processes proves nothing, and the hook stands.
 
 ### 6. Did the last reply ask a question?
 
