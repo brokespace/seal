@@ -50,7 +50,8 @@ function SessionTab({
         }
       }}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        // Enter and Space on the close button are its own, not the tab's.
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault()
           liveSessionTabsStore.activate(sessionId)
         }
