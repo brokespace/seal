@@ -63,7 +63,7 @@ export function MachineEditorButton({
           ) : (
             <Code />
           )}
-          <span className="hidden sm:inline">
+          <span data-machine-editor-label="" className="hidden sm:inline">
             {plan.kind === 'external'
               ? t('auto.components.machines.editor.openInApp', 'Open in {{app}}', {
                   app: plan.application.label

@@ -638,6 +638,8 @@
           "loading": "Looking for sessions",
           "closeSplit": "Close split",
           "backToSession": "Back to session",
+          "backToProject": "Back to {{project}}",
+          "backToProjectOverview": "Back to project overview",
           "subagentOf": "Subagent: {{title}}",
           "goneTab": "Session ended",
           "closeTab": "Close tab",
@@ -2062,7 +2064,8 @@
       "agents": {
         "title": "Agents",
         "showInActiveAgents": "Show in Active agents",
-        "empty": "No agents are running in this project. Start one with New agent."
+        "active": "{{count}} active",
+        "empty": "No agents are active in this project. Start one with New agent."
       },
       "changes": {
         "inProgress": "{{operation}} in progress",
@@ -2071,13 +2074,14 @@
         "files_other": "{{count}} files changed",
         "reading": "Reading…",
         "unavailable": "Status unavailable",
+        "lastRead": "as of {{age}} ago",
+        "lastReadHint": "Git could not be read just now. This is its last answer.",
         "clean": "Clean",
         "aheadBehind": "{{ahead}} ahead of and {{behind}} behind {{upstream}}",
         "upstream": "upstream",
         "title": "Changes",
-        "refresh": "Refresh changes",
         "empty": "No workspaces to check.",
-        "more": "Showing the {{shown}} most recent of {{total}} workspaces.",
+        "more": "Showing the first {{shown}} of {{total}} workspaces.",
         "staged": "{{count}} staged",
         "untracked": "{{count}} untracked",
         "nothingUncommitted": "Nothing uncommitted"
@@ -2140,7 +2144,8 @@
       "sidebar": {
         "expand": "Expand {{project}}",
         "collapse": "Collapse {{project}}",
-        "open": "Project Overview"
+        "open": "Project Overview",
+        "openOverview": "Open project overview"
       }
     }
   },

@@ -25,7 +25,13 @@ export function LiveSessionRows({
 }): React.JSX.Element {
   const rowState = useLiveSessionRowState()
   return (
-    <div role="listbox" aria-label={label} className="flex min-w-0 flex-col">
+    // A list on its page, not a popup: Escape and arrow keys stay with the page around it.
+    <div
+      role="listbox"
+      data-focus-behavior="page"
+      aria-label={label}
+      className="flex min-w-0 flex-col"
+    >
       {sessions.map((session) => (
         <LiveSessionRow
           key={session.id}

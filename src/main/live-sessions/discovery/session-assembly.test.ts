@@ -227,4 +227,69 @@ describe('assembleHostSessions', () => {
     )
     expect(session).toMatchObject({ status: 'needs-permission', statusSource: 'agent-hooks' })
   })
+
+  it('ends a session whose hook outlived its agent, unless the host cannot list processes', () => {
+    const id = '88888888-8888-4888-8888-888888888888'
+    const statusWith = (state: string, processesListed: boolean) =>
+      assembleHostSessions({
+        machine,
+        output: {
+          processes: [],
+          panes: [],
+          hookStates: [
+            {
+              path: '/h/a.json',
+              text: JSON.stringify({ id, state, updated: (NOW - 600_000) / 1000 })
+            }
+          ],
+          hostNowMs: NOW,
+          processesListed
+        },
+        transcripts: [transcript(id, '/srv/app', 600_000, 'tool-pending')],
+        nowMs: NOW
+      })[0].status
+    expect(statusWith('needs', true)).toBe('done')
+    expect(statusWith('working', true)).toBe('done')
+    expect(statusWith('needs', false)).toBe('needs-permission')
+    expect(statusWith('working', false)).toBe('working')
+  })
+
+  it('keeps an unanswered question waiting on the user when its agent is not seen', () => {
+    const id = '99999999-9999-4999-8999-999999999999'
+    const sessionWith = (
+      phase: SummarizedTranscript['summary']['phase'],
+      hookState: string | null,
+      processesListed = true
+    ) =>
+      assembleHostSessions({
+        machine,
+        output: {
+          processes: [],
+          panes: [],
+          hookStates: hookState
+            ? [
+                {
+                  path: '/h/a.json',
+                  text: JSON.stringify({ id, state: hookState, updated: (NOW - 600_000) / 1000 })
+                }
+              ]
+            : [],
+          hostNowMs: NOW,
+          processesListed
+        },
+        transcripts: [transcript(id, '/srv/app', 600_000, phase)],
+        nowMs: NOW
+      })[0]
+    expect(sessionWith('input-requested', null)).toMatchObject({
+      alive: false,
+      status: 'waiting-input',
+      inputRoutes: [{ kind: 'resume' }]
+    })
+    expect(sessionWith('input-requested', 'idle').status).toBe('waiting-input')
+    // A host that lists no processes cannot say the agent is gone, so its hook file still counts.
+    expect(sessionWith('input-requested', 'needs', false).status).toBe('waiting-input')
+    expect(sessionWith('input-requested', 'working', false).status).toBe('waiting-input')
+    // Answered: the transcript moved on to a turn that ended.
+    expect(sessionWith('turn-ended', null).status).toBe('done')
+  })
 })

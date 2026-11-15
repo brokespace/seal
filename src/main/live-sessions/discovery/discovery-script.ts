@@ -47,8 +47,10 @@ CLAUDE_ROOTS="$HOME/.claude
 \${CLAUDE_CONFIG_DIR:-}"
 CODEX_ROOTS="$HOME/.codex
 \${CODEX_HOME:-}"
-ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
+ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print } END { if (NR) print "@@PS" }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 while read -r pid ppid tty args; do
+  # The listing ends by saying ps listed processes at all: no agent among them means none runs.
+  [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
   echo "@@PROC $pid $ppid $tty $args"
   AGENTS="$AGENTS$pid "
   cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)

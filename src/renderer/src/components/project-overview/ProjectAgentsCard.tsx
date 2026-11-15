@@ -51,7 +51,15 @@ export function ProjectAgentsCard({
               {t('seal.projectOverview.agents.showInActiveAgents', 'Show in Active agents')}
             </Button>
           ) : null}
-          <span className="text-2xs text-muted-foreground tabular-nums">{view.activeCount}</span>
+          {/* Recently finished has its own count below, so this one says it leaves them out. */}
+          <span
+            data-project-overview-agents-count
+            className="text-2xs text-muted-foreground tabular-nums"
+          >
+            {t('seal.projectOverview.agents.active', '{{count}} active', {
+              count: view.activeCount
+            })}
+          </span>
         </span>
       }
     >
@@ -59,7 +67,7 @@ export function ProjectAgentsCard({
         <HomeOverviewEmpty>
           {t(
             'seal.projectOverview.agents.empty',
-            'No agents are running in this project. Start one with New agent.'
+            'No agents are active in this project. Start one with New agent.'
           )}
         </HomeOverviewEmpty>
       ) : (

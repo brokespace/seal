@@ -1,8 +1,11 @@
-import { X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
+import { Button } from '@/components/ui/button'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
+import { resolveProjectOverviewRepo } from '@/components/project-overview/project-overview-model'
 import { cn } from '@/lib/class-names'
+import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
@@ -12,6 +15,7 @@ import {
   liveSessionTitle
 } from '../live-session-presentation'
 import { useLiveSessions } from '../live-session-registry-store'
+import { closeLiveSessionView } from '../menu/live-session-menu-effects'
 import { CONTEXT_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
 import { LiveSessionPane } from './LiveSessionPane'
 import { liveSessionTabsStore, useLiveSessionTabs } from './live-session-tabs-store'
@@ -42,11 +46,12 @@ function SessionTab({
       onDoubleClick={() => liveSessionTabsStore.keep(sessionId)}
       onAuxClick={(event) => {
         if (event.button === 1) {
-          liveSessionTabsStore.close(sessionId)
+          closeLiveSessionView(sessionId)
         }
       }}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        // Enter and Space on the close button are its own, not the tab's.
+        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault()
           liveSessionTabsStore.activate(sessionId)
         }
@@ -70,7 +75,7 @@ function SessionTab({
         aria-label={t('auto.components.live-sessions.workspace.closeTab', 'Close tab')}
         onClick={(event) => {
           event.stopPropagation()
-          liveSessionTabsStore.close(sessionId)
+          closeLiveSessionView(sessionId)
         }}
         className={cn(
           'flex size-4 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
@@ -94,6 +99,37 @@ function SessionTab({
   )
 }
 
+/** The way back to the project overview a session was opened from; every other origin is in the sidebar. */
+function BackToProjectOverview(): React.JSX.Element {
+  const t = useTranslate()
+  const project = useAppStore((s) => resolveProjectOverviewRepo(s.repos, s.projectOverviewTarget))
+  const back = useAppStore((s) => s.closeAgentSessionTabs)
+  const label = project
+    ? t('auto.components.live-sessions.workspace.backToProject', 'Back to {{project}}', {
+        project: project.displayName
+      })
+    : t('auto.components.live-sessions.workspace.backToProjectOverview', 'Back to project overview')
+  return (
+    // In a narrow column the label gives way to the tabs; the arrow stays.
+    <div className="flex h-8 min-w-9 items-center border-r border-border px-1">
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        data-live-session-back-to-project
+        aria-label={label}
+        title={label}
+        onClick={back}
+        className="max-w-56 min-w-0 shrink justify-start overflow-hidden"
+      >
+        <ArrowLeft className="size-3.5 shrink-0" />
+        {/* Too little room for a letter and its ellipsis would cut a glyph in half. */}
+        <span className="min-w-0 truncate @max-[10rem]/session-tabs:hidden">{label}</span>
+      </Button>
+    </div>
+  )
+}
+
 function Notice({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="flex min-w-0 flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
@@ -111,28 +147,36 @@ export default function LiveSessionWorkspace(): React.JSX.Element {
   const byId = new Map(registry.sessions.map((session) => [session.id, session]))
   const active = tabs.activeId ? (byId.get(tabs.activeId) ?? null) : null
   const split = tabs.splitId ? (byId.get(tabs.splitId) ?? null) : null
+  const openedFromProject = useAppStore((s) => s.previousViewBeforeSessions === 'project')
 
   return (
     <main
       data-live-session-workspace
       className="relative flex h-full min-h-0 flex-1 flex-col bg-background text-foreground"
     >
-      {tabs.tabs.length > 0 ? (
+      {openedFromProject || tabs.tabs.length > 0 ? (
         <div
-          role="tablist"
-          aria-label={t('auto.components.live-sessions.workspace.tabs', 'Open agent sessions')}
-          className="scrollbar-sleek flex shrink-0 overflow-x-auto border-b border-border bg-muted/40"
+          className="@container/session-tabs flex shrink-0 border-b border-border bg-muted/40"
           style={{ paddingRight: 'var(--window-controls-width, 0px)' }}
         >
-          {tabs.tabs.map((sessionId) => (
-            <SessionTab
-              key={sessionId}
-              sessionId={sessionId}
-              session={byId.get(sessionId) ?? null}
-              active={sessionId === tabs.activeId || sessionId === tabs.splitId}
-              preview={sessionId === tabs.previewId}
-            />
-          ))}
+          {openedFromProject ? <BackToProjectOverview /> : null}
+          {tabs.tabs.length > 0 ? (
+            <div
+              role="tablist"
+              aria-label={t('auto.components.live-sessions.workspace.tabs', 'Open agent sessions')}
+              className="scrollbar-sleek flex min-w-20 flex-1 overflow-x-auto"
+            >
+              {tabs.tabs.map((sessionId) => (
+                <SessionTab
+                  key={sessionId}
+                  sessionId={sessionId}
+                  session={byId.get(sessionId) ?? null}
+                  active={sessionId === tabs.activeId || sessionId === tabs.splitId}
+                  preview={sessionId === tabs.previewId}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
       <div className="flex min-h-0 flex-1">

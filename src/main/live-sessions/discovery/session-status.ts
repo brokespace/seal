@@ -44,6 +44,11 @@ export function turnStatus(
   if (turn?.phase === 'errored') {
     return 'errored'
   }
+  // The transcript holds a question until an answer or the end of the turn is written after it,
+  // so an unseen process (a host that lists none, a scan that missed it) does not end it.
+  if (turn?.phase === 'input-requested') {
+    return 'waiting-input'
+  }
   if (!running) {
     return 'done'
   }
@@ -57,7 +62,6 @@ export function turnStatus(
       return !turn.settled && sinceLastWriteMs < UNSETTLED_REPLY_MS
         ? 'working'
         : restingStatus(turn)
-    case 'input-requested':
     case 'unknown':
     case undefined:
       return restingStatus(turn)

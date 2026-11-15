@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store'
 import { getRepoExecutionHostId } from '../../../../../../shared/execution-host'
 import type { Repo } from '../../../../../../shared/repo-types'
+import type { WorktreeSidebarHeaderDrag } from '../drag/use-header-drag'
 import {
   handleRepoHeaderCollapseAffordancePointerDown,
   stopRepoHeaderKeyboardToggle
@@ -19,15 +21,23 @@ export const PROJECT_HEADER_OVERVIEW_CURRENT_CLASS = cn(
   '[&:has([data-project-overview-current])_[data-repo-header-actions]]:bg-worktree-sidebar-accent'
 )
 
-/** A header's label. A project's is current while its overview is the page on screen. */
+/** A header's label. A project's is the link to its overview, current while that is the page on screen. */
 export function ProjectHeaderName({
   repo,
-  label
+  label,
+  drag
 }: {
   /** Absent on headers with no overview (groups, status sections); they only show the label. */
   repo: Repo | undefined
   label: string
+  drag: Pick<WorktreeSidebarHeaderDrag, 'repoDrag' | 'projectGroupDrag'>
 }): React.JSX.Element {
+  const t = useTranslate()
+  // While a header is dragged, every name gives the cursor back to the drag.
+  const dragging = Boolean(
+    drag.repoDrag.state.draggingRepoId || drag.projectGroupDrag.state.draggingGroupId
+  )
+  const [tooltipOpen, setTooltipOpen] = useState(false)
   const hostId = repo ? getRepoExecutionHostId(repo) : null
   const current = useAppStore(
     (s) =>
@@ -35,15 +45,31 @@ export function ProjectHeaderName({
       s.projectOverviewTarget?.repoId === repo?.id &&
       s.projectOverviewTarget?.hostId === hostId
   )
-  return (
+  const name = (
     <div
       data-project-overview-link={repo?.id}
       data-project-overview-current={current ? '' : undefined}
       aria-current={current ? 'page' : undefined}
-      className="min-w-0 truncate text-[13px] font-semibold leading-4"
+      className={cn(
+        // A drag on the header moves the project; it must not start a text selection.
+        'min-w-0 truncate text-[13px] font-semibold leading-4 select-none',
+        // The row around the name keeps the grab cursor, so the name itself has to say it opens.
+        repo && !dragging && 'cursor-pointer hover:underline'
+      )}
     >
       {label}
     </div>
+  )
+  if (!repo) {
+    return name
+  }
+  return (
+    <Tooltip open={tooltipOpen && !dragging} onOpenChange={setTooltipOpen}>
+      <TooltipTrigger asChild>{name}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={4}>
+        {t('seal.projectOverview.sidebar.openOverview', 'Open project overview')}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

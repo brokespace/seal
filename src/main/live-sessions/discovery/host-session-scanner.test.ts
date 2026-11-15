@@ -7,6 +7,7 @@ import {
   realpath,
   rm,
   stat,
+  utimes,
   writeFile
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -293,5 +294,45 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
     } finally {
       agent.kill('SIGKILL')
     }
+  })
+
+  // No agent runs for this session, and the real `ps` says so.
+  it('ends a session whose approval hook outlived its agent', async () => {
+    const root = await realpath(home)
+    const projects = join(root, '.claude/projects/-srv-app')
+    const hooks = join(root, '.config/sisomewhere/agents')
+    await Promise.all([projects, hooks].map((dir) => mkdir(dir, { recursive: true })))
+    // ast-grep-ignore: test-no-wall-clock -- the scan ages the transcript's real mtime on the real clock
+    const leftAt = Date.now() - 600_000
+    const file = join(projects, `${CLAUDE_ID}.jsonl`)
+    await writeFile(
+      file,
+      line({
+        type: 'user',
+        cwd: '/srv/app',
+        timestamp: new Date(leftAt).toISOString(),
+        message: { content: 'Run the migration' }
+      }) +
+        line({
+          type: 'assistant',
+          timestamp: new Date(leftAt).toISOString(),
+          message: {
+            role: 'assistant',
+            stop_reason: 'tool_use',
+            content: [
+              { type: 'tool_use', id: 'toolu_01run', name: 'Bash', input: { command: './go.sh' } }
+            ]
+          }
+        })
+    )
+    await utimes(file, leftAt / 1000, leftAt / 1000)
+    await writeFile(
+      join(hooks, `${CLAUDE_ID}.json`),
+      JSON.stringify({ id: CLAUDE_ID, state: 'needs', updated: Math.floor(leftAt / 1000) })
+    )
+    const scanner = new HostSessionScanner(localHost('test'), LOCAL_SCAN_LIMITS)
+    // ast-grep-ignore: test-no-wall-clock -- the scan reads real processes on the real clock
+    const { sessions } = await scanner.scan(Date.now())
+    expect(sessions.find((s) => s.transcriptPath === file)?.status).toBe('done')
   })
 })

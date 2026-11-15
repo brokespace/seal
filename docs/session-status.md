@@ -26,8 +26,9 @@ Machines, the session view, mobile, the CLI and the Home chat tools all read the
 | `idle`             | Idle                          | grey         | Nobody's        | It runs, but has had no turn yet.                                    |
 | `done`             | Ended                         | grey         | Nobody's        | Its process is gone.                                                 |
 
-The order of the table is the order of every list (`compareLiveSessions`): what blocks on you
-first, then what is busy, then what rests.
+The order of the table is the order of every list of running sessions (`compareLiveSessions`):
+what blocks on you first, then what is busy, then what rests. "Recently finished" is ordered by
+last activity alone.
 
 Colors are existing tokens from `src/renderer/src/assets/main.css`; `LiveSessionStatusDot` is the
 one component that draws them, in two sizes (`lg` on Home cards, `sm` in the sidebar and pills):
@@ -45,6 +46,28 @@ one component that draws them, in two sizes (`lg` on Home cards, `sm` in the sid
 Groups (`liveSessionStatusGroup`) are unchanged in number: `attention` (approval, question, error),
 `working` (working, running shell, both waits), `idle` (`your-turn`, `idle`), `finished` (`done`).
 The Home header counts them as "N working · N blocked on you · N waiting on you · N idle".
+
+A session is running or finished by `isActiveLiveSession`, which every list, badge and count
+shares. It is running while its process is seen, and also while its status is one only a running
+agent has: the `working` group, `needs-permission` and `waiting-input`. So a prompt or a question
+is never listed under "Recently finished", even on a host whose `ps` cannot list processes or in
+the scan that misses the process. A prompt that only a leftover hook file reports is dropped once
+the agent is known to be gone (layer 5). `errored` outlasts its agent: with the process gone it is a
+finished session that ended in an error. `your-turn` and `idle` with no process are an agent that
+just quit, and read as finished.
+
+A question asked through the question tool also outlasts its agent. The transcript holds it open
+until an answer or the end of the turn is written after it, so the session stays `waiting-input`
+for as long as the transcript says so, whether or not a process is seen, and whatever the agent's
+hook file says (layer 5). With no process seen, Seal offers to answer by resuming the session once
+the transcript has been quiet for 2 minutes; until then the agent may still be there, and a resume
+next to it would fork the conversation. A turn that only ended on a question (layer 6) is over in
+the transcript, so once its process is gone it reads as finished like any other ended turn.
+
+"Process gone" means no process is seen and the transcript was last written more than 2 minutes
+ago (`FRESH_WRITE_MS`). A transcript written more recently belongs to a running agent even if `ps`
+missed it, so for those 2 minutes a session with no process still reads as its transcript says: a
+pending call as `working`, an ended turn as `your-turn`, or as `waiting-input` when its reply asks.
 
 `statusDetail` says what the status is about: the command or file (`Bash: pnpm test`), the call a
 prompt holds (`Allow Bash: rm -rf build?`), the question asked, the error. `statusSource` says
@@ -67,12 +90,13 @@ The newest turn of the session's own log: Claude Code's `~/.claude/projects/**.j
 | A tool call with no result                                                               | `tool-pending`       | `working`, refined by layers 3–4          |
 | `AskUserQuestion` / `ExitPlanMode` (Claude), `request_user_input` (Codex) with no result | `input-requested`    | `waiting-input`, detail is the question   |
 | Codex approval request event                                                             | `approval-requested` | `needs-permission`                        |
-| End of turn (`turn_duration`, `stop_hook_summary`, `task_complete`)                      | `turn-ended`         | `your-turn`, or `waiting-input` (layer 5) |
+| End of turn (`turn_duration`, `stop_hook_summary`, `task_complete`)                      | `turn-ended`         | `your-turn`, or `waiting-input` (layer 6) |
 | End of turn right after an API error record, `turn_aborted` with an error                | `errored`            | `errored`                                 |
 | No turn at all                                                                           | `unknown`            | `idle`                                    |
-| Process gone                                                                             |                      | `done`                                    |
+| Process gone, and the newest turn neither failed nor is an unanswered question           |                      | `done`                                    |
 
-A reply with no end-of-turn record is still `working` for 5 seconds: a tool call may follow.
+A reply with no end-of-turn record is still `working` for 5 seconds: a tool call may follow. For
+`ExitPlanMode` the detail is the fixed text "Plan ready for review".
 
 ### 2. Subagents and background tasks
 
@@ -130,8 +154,18 @@ For a session in a tmux pane or a Seal terminal the scan reads the visible scree
   a wait on a tool that is not a question tool, is `needs-permission`; a wait on a question is
   `waiting-input`; a finished turn is `your-turn`. The scan still adds what a hook cannot say
   (running shell, subagent and task waits, a reply that asks).
-- **The agent's hook file** (`agent-hooks`): status the agent wrote itself, when fresher than the
-  transcript.
+- **The agent's hook file** (`agent-hooks`): status the agent wrote itself. It counts unless it
+  was written more than 2 minutes before the transcript's last write (`HOOK_STALE_MS`). An agent
+  killed mid-turn or at a prompt never clears its file, so a `working` or `needs` state counts
+  only while the agent may still be there. Once the host's `ps` has listed its processes
+  (`@@PS`), the agent is not among them and the transcript has gone quiet, the file is ignored
+  and the session reads as its transcript says. A host whose `ps` cannot list processes proves
+  nothing, and the hook stands. A `done` or `idle` state reads as the ended turn does (layer 6),
+  or `done` with the process gone.
+- A question the transcript holds open outranks the hook file altogether. The agent's hooks fire
+  around the question tool like around any other call, so the file says `working` or `needs`
+  until the answer, and `done` or `idle` if it was left from an earlier turn; none of them says
+  what the agent waits on.
 
 ### 6. Did the last reply ask a question?
 
@@ -176,25 +210,34 @@ notification from firing for a turn that is still running.
 
 Read top to bottom; the first row that matches wins.
 
-| #   | Signal                                                                 | Status                               | Source       |
-| --- | ---------------------------------------------------------------------- | ------------------------------------ | ------------ |
-| 1   | Approval dialog on screen                                              | `needs-permission`                   | `screen`     |
-| 2   | Other dialog on screen while the turn is busy                          | `needs-permission`                   | `screen`     |
-| 3   | Seal pane hook says a permission or question is pending                | `needs-permission` / `waiting-input` | `seal-hooks` |
-| 4   | Transcript: the turn failed                                            | `errored`                            | `transcript` |
-| 5   | Process gone                                                           | `done`                               | `transcript` |
-| 6   | Transcript: question tool pending                                      | `waiting-input`                      | `transcript` |
-| 7   | Transcript: subagent launch pending                                    | `waiting-subagent`                   | `transcript` |
-| 8   | Pending shell call, its command process is running for 3 s             | `running-shell`                      | `process`    |
-| 9   | Pending shell or edit call, nothing running, past the prompt threshold | `needs-permission`                   | `process`    |
-| 10  | Transcript: turn in progress                                           | `working`                            | `transcript` |
-| 11  | Turn ended, interrupt hint on screen                                   | `working`                            | `screen`     |
-| 12  | Turn ended, background subagents running                               | `waiting-subagent`                   | `transcript` |
-| 13  | Turn ended, background commands running                                | `waiting-task`                       | `transcript` |
-| 14  | Turn ended, reply ends in a question                                   | `waiting-input`                      | `transcript` |
-| 15  | Turn ended, reply unclear, classifier says ASKS                        | `waiting-input`                      | `classifier` |
-| 16  | Turn ended                                                             | `your-turn`                          | `transcript` |
-| 17  | No turn yet                                                            | `idle`                               | `transcript` |
+| #   | Signal                                                                 | Status                               | Source        |
+| --- | ---------------------------------------------------------------------- | ------------------------------------ | ------------- |
+| 1   | Approval dialog on screen                                              | `needs-permission`                   | `screen`      |
+| 2   | Other dialog on screen while the turn is busy                          | `needs-permission`                   | `screen`      |
+| 3   | Seal pane hook says a permission or question is pending                | `needs-permission` / `waiting-input` | `seal-hooks`  |
+| 4   | Transcript: question tool pending, with or without a process           | `waiting-input`                      | `transcript`  |
+| 5   | Agent hook file says a prompt is pending, agent not known to be gone   | `needs-permission`                   | `agent-hooks` |
+| 6   | Agent hook file says working, agent not known to be gone               | `working`, refined by rows 9–11      | `agent-hooks` |
+| 7   | Transcript: the turn failed                                            | `errored`                            | `transcript`  |
+| 8   | Process gone                                                           | `done`                               | `transcript`  |
+| 9   | Transcript: subagent launch pending                                    | `waiting-subagent`                   | `transcript`  |
+| 10  | Pending shell call, its command process is running for 3 s             | `running-shell`                      | `process`     |
+| 11  | Pending shell or edit call, nothing running, past the prompt threshold | `needs-permission`                   | `process`     |
+| 12  | Transcript: turn in progress                                           | `working`                            | `transcript`  |
+| 13  | Turn ended, interrupt hint on screen                                   | `working`                            | `screen`      |
+| 14  | Turn ended, background subagents running                               | `waiting-subagent`                   | `transcript`  |
+| 15  | Turn ended, background commands running                                | `waiting-task`                       | `transcript`  |
+| 16  | Turn ended, reply ends in a question                                   | `waiting-input`                      | `transcript`  |
+| 17  | Turn ended, reply unclear, classifier says ASKS                        | `waiting-input`                      | `classifier`  |
+| 18  | Turn ended                                                             | `your-turn`                          | `transcript`  |
+| 19  | No turn yet                                                            | `idle`                               | `transcript`  |
+
+"Process gone" is no process seen and a transcript quiet for 2 minutes. Row 6 keeps the source
+`agent-hooks` unless row 10 or 11 refines it, which report `process`.
+
+An agent hook file that says `done` or `idle` says the turn is over, with source `agent-hooks`.
+While the agent runs, an ended turn reads as rows 14–18 read it, and any other newest turn as
+`idle`: a pending call, and a failed turn too. With the process gone it reads `done`.
 
 ## Older clients
 
@@ -209,6 +252,15 @@ for the new sources (`live-session-status-compat.ts`).
   inferred from the process tree after 5–20 s rather than read at once, and a prompt that holds a
   subagent launch reads as `waiting-subagent`.
 - A host whose `ps` cannot list processes gets no `running-shell`; such a session stays `working`.
+- An agent killed while its question was open never writes an end to its transcript, so the
+  session keeps asking until it is answered, removed from Seal, or its transcript is 12 hours old
+  and leaves the scan.
+- On a host whose `ps` cannot list processes, an agent whose transcript has been quiet for 2
+  minutes cannot be told from one that is gone, so Seal offers to resume it: at a question, and
+  also while its hook file says it works or waits at a prompt. Answering there starts a second
+  process on the same conversation.
+- A `done` or `idle` hook file written after a failed turn hides the error: the session reads
+  `idle` while its agent runs and `done` after, not `errored`.
 - Providers other than Claude Code and Codex have no session record; they keep their pane status.
 
 ## How this was verified

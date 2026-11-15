@@ -67,6 +67,8 @@ export type DiscoveryOutput = {
   hostNowMs: number | null
   uname: string | null
   processes: DiscoveredProcess[]
+  /** The host's `ps` listed its processes, so an agent missing from `processes` is not running. */
+  processesListed: boolean
   /** Processes under the agents; null when the host listed none (an older script, no `ps`). */
   children: DiscoveredChild[] | null
   panes: DiscoveredPane[]
@@ -128,6 +130,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
     hostNowMs: null,
     uname: null,
     processes: [],
+    processesListed: false,
     children: null,
     panes: [],
     hookStates: [],
@@ -177,6 +180,9 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         }
         break
       }
+      case 'PS':
+        out.processesListed = true
+        break
       case 'CHILDREN':
         out.children ??= []
         break

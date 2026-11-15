@@ -36,6 +36,30 @@ describe('project overview navigation', () => {
     expect(store.getState().activeView).toBe('tasks')
   })
 
+  it('a session opened from an overview that a session opened leads out, not round', () => {
+    const store = createUIStore()
+    store.getState().setActiveView('home')
+    store.getState().openAgentSessionTabs()
+    store.getState().openProjectOverview(shop)
+    store.getState().openAgentSessionTabs()
+
+    store.getState().closeAgentSessionTabs()
+    expect(store.getState().activeView).toBe('project')
+    store.getState().closeProjectOverview()
+    expect(store.getState().activeView).toBe('home')
+  })
+
+  it('opening the overview again from a session it opened keeps the way out', () => {
+    const store = createUIStore()
+    store.getState().setActiveView('home')
+    store.getState().openProjectOverview(shop)
+    store.getState().openAgentSessionTabs()
+    store.getState().openProjectOverview(shop)
+
+    store.getState().closeProjectOverview()
+    expect(store.getState().activeView).toBe('home')
+  })
+
   it('a new window starts with the project the last one showed', () => {
     createUIStore().getState().openProjectOverview(shop)
     expect(createUIStore().getState().projectOverviewTarget).toEqual({
