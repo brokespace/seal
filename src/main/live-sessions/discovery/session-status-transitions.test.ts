@@ -417,6 +417,33 @@ const CODEX: Transitions[] = [
     ]
   },
   {
+    session: 'two commands Codex left running in background terminals',
+    fixture: 'live-codex-two-terminals',
+    steps: [
+      {
+        when: 'Codex ended its turn with both running',
+        host: { records: 12, listsProcesses: true, children: CODEX_COMMAND('00:20') },
+        shows: 'waiting-task',
+        detail: 'Waiting on 2 background tasks'
+      },
+      {
+        when: 'one was killed and Codex wrote that it ended',
+        host: { records: 13, listsProcesses: true, children: CODEX_COMMAND('01:20') },
+        shows: 'waiting-task',
+        detail: 'Waiting on 1 background task'
+      },
+      {
+        when: 'the other ended while another session runs a command under the shared app-server',
+        host: {
+          listsProcesses: true,
+          processes: [CODEX_APP_SERVER],
+          children: CODEX_SHELL('00:05')
+        },
+        shows: 'your-turn'
+      }
+    ]
+  },
+  {
     session: 'a Codex turn that failed',
     fixture: 'live-codex-failed-turn',
     steps: [

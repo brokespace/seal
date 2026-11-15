@@ -262,8 +262,8 @@ export function sessionActivityOf(input: {
     lastActivityAt: helper.summary.lastAt ?? helper.mtimeMs,
     transcriptPath: helper.path
   }))
-  // The rollout does not record a terminal that ends unpolled: one counts while the agent runs and
-  // a command still runs under it (or the host cannot say).
+  // A terminal the rollout still holds counts while the agent runs and a command still runs under
+  // it (or the host cannot say).
   const live = running && input.backgroundShells !== 'none'
   const tasks: LiveBackgroundTask[] = [...(transcript.codexTerminals?.running.values() ?? [])].map(
     (terminal) => ({

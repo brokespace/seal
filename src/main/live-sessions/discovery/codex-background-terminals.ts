@@ -68,11 +68,26 @@ function stillRunning(output: unknown): string | null {
   return null
 }
 
+/** The terminal a finished command ran in: Codex writes this when one ends, polled or not, in or after its turn. */
+function endedTerminal(payload: TranscriptRecord | null): string | null {
+  const item = rec(payload?.item)
+  if (item?.type !== 'CommandExecution') {
+    return null
+  }
+  const id = item.process_id
+  return typeof id === 'string' || typeof id === 'number' ? String(id) : null
+}
+
 /** Folds a rollout's records, oldest first; reading the same records again changes nothing. */
 export function foldCodexTerminals(state: CodexTerminalState, records: TranscriptRecord[]): void {
   for (const record of records) {
     const payload = rec(record.payload)
     const kind = str(payload?.type)
+    const ended = record.type === 'event_msg' && kind === 'item_completed' && endedTerminal(payload)
+    if (ended) {
+      state.running.delete(ended)
+      continue
+    }
     const callId = str(payload?.call_id)
     if (record.type !== 'response_item' || !payload || !callId) {
       continue

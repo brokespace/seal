@@ -131,14 +131,14 @@ from a window eight times the tail it keeps and drops those records first
 
 ### Background work
 
-| Agent  | What is tracked                                                              | It ends when                                                                     |
-| ------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Claude | `Bash` with `run_in_background`, or a command Claude moved to the background | a `<task-notification>` with a `<status>`; or the agent has nothing left running |
-| Claude | `Monitor` (a watch on a command or a file)                                   | its closing notification, its timeout, or (a command) nothing left running       |
-| Claude | `Agent` / `Task` launched in the background, `Workflow`                      | its notification; a subagent also by its own transcript going quiet              |
-| Claude | `ScheduleWakeup`                                                             | the wake-up fires, or a minute after it was due                                  |
-| Codex  | `exec_command` handed back with "Process running with session ID N"          | a `write_stdin` poll sees it exit; or no command runs under the agent any more   |
-| Codex  | helper threads (`spawn_agent`)                                               | the helper's own rollout ends its turn                                           |
+| Agent  | What is tracked                                                              | It ends when                                                                                                                                       |
+| ------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude | `Bash` with `run_in_background`, or a command Claude moved to the background | a `<task-notification>` with a `<status>`; or the agent has nothing left running                                                                   |
+| Claude | `Monitor` (a watch on a command or a file)                                   | its closing notification, its timeout, or (a command) nothing left running                                                                         |
+| Claude | `Agent` / `Task` launched in the background, `Workflow`                      | its notification; a subagent also by its own transcript going quiet                                                                                |
+| Claude | `ScheduleWakeup`                                                             | the wake-up fires, or a minute after it was due                                                                                                    |
+| Codex  | `exec_command` handed back with "Process running with session ID N"          | Codex writes that the command ended (`CommandExecution` completed); a `write_stdin` poll sees it exit; or no command runs under the agent any more |
+| Codex  | helper threads (`spawn_agent`)                                               | the helper's own rollout ends its turn                                                                                                             |
 
 A `<task-notification>` without a `<status>` is a progress event (a Monitor line, a "still
 running" check-in). It names a task that is running and never ends it.
@@ -347,9 +347,9 @@ than some clients on the wire. A client that sends its capabilities without
   work is over, and cannot tell a quiet agent from one that is gone: a wait stands until its notice
   is read, and a question stands until its transcript is 12 hours old and leaves the scan.
 - Codex runs commands under a shared `codex app-server`, so a command there counts for every Codex
-  session on the machine. A background terminal that exited without being polled keeps its session
-  in `waiting-task` while any other Codex command still runs under that app-server, and the count
-  of tasks can include it.
+  session on the machine. A Codex that does not write a command's end to its rollout (0.169 does)
+  keeps a background terminal that exited unpolled in `waiting-task` while any other Codex command
+  still runs under that app-server.
 - Codex's context compaction writes no record Seal reads; it runs inside a turn, so the session
   reads `working` from the turn itself.
 - A Codex turn that hit a stream error and then completed reads as completed: the error was a
