@@ -81,6 +81,10 @@ export function normalizeKimiEvent(
     toolInput: snapshot.toolInput,
     lastAssistantMessage: snapshot.lastAssistantMessage,
     lastAssistantMessageIsToolOutput: snapshot.lastAssistantMessageIsToolOutput,
-    interrupted
+    interrupted,
+    mainAgent:
+      eventName === 'StopFailure'
+        ? { state: 'done', outcome: 'failure', stateStartedAt: Date.now() }
+        : undefined
   })
 }
