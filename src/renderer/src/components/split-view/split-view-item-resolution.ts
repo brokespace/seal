@@ -5,6 +5,7 @@ import {
   selectWorktreesByRepo
 } from '@/store/workspaces/catalog/workspace-record-fields'
 import { resolveProjectOverviewRepo } from '@/components/project-overview/project-overview-model'
+import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { isWorktreeRetiredByRemoval } from '../../../../shared/worktree/removal/removal-visibility'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
@@ -49,16 +50,18 @@ export function resolveSplitViewItem(
           : null
       }
       const worktree = getIndexedWorktreeMap(selectWorktreesByRepo(state)).get(item.worktreeId)
-      return worktree && !isWorktreeRetiredByRemoval(worktree)
-        ? {
-            kind: 'workspace',
-            title: worktree.displayName,
-            projectName:
-              state.repos.find((repo) => repo.id === worktree.repoId)?.displayName ?? null,
-            isFolder: false,
-            repoId: worktree.repoId
-          }
-        : null
+      if (!worktree || isWorktreeRetiredByRemoval(worktree)) {
+        return null
+      }
+      const repo = state.repos.find((candidate) => candidate.id === worktree.repoId)
+      return {
+        kind: 'workspace',
+        title: worktree.displayName,
+        // A folder project is its one workspace; naming both would say the same thing twice.
+        projectName: repo && isGitRepoKind(repo) ? repo.displayName : null,
+        isFolder: false,
+        repoId: worktree.repoId
+      }
     }
     case 'session': {
       const session = sessions.find((candidate) => candidate.id === item.sessionId)
