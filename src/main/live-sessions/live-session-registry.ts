@@ -16,6 +16,11 @@ export type LiveSessionRegistryDeps = {
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
   subscribeSealPanes?: (onChange: () => void) => () => void
+  /**
+   * Has the pane's host check its agent process. A killed agent fires no hook, so its pane would
+   * keep its last status; the host drops the pane's row once it finds the process gone.
+   */
+  confirmSealPaneAgent?: (paneKey: string) => void
   /** Sessions the user removed from Seal; never published. */
   isRemoved?: (session: LiveSession) => boolean
   /** Adds what the user set on a session in Seal (its name, its pin). */
@@ -43,6 +48,8 @@ type HostState = {
 const HOST_SYNC_MS = 5_000
 const MAX_IDLE_STRETCH = 2
 const MAX_FAILURE_STRETCH = 4
+/** A machine that failed this many scans in a row no longer vouches for what its sessions do. */
+const UNREACHABLE_AFTER_FAILURES = 3
 
 /**
  * Every Claude Code and Codex session on every connected machine, whether Seal started it or not.
@@ -228,6 +235,12 @@ export class LiveSessionRegistry {
       state.failures++
       this.deps.log?.(`[live-sessions] scan of ${hostId} failed`, error)
       this.setHostError(hostId, error instanceof Error ? error.message : String(error))
+      // Its sessions' last statuses would stand for as long as it stays silent; they leave the
+      // list as they do when it disconnects, and its error stays to say why.
+      if (state.failures === UNREACHABLE_AFTER_FAILURES && state.sessions.length > 0) {
+        state.sessions = []
+        this.publish()
+      }
     } finally {
       state.scanning = false
       const base = state.host.machine.kind === 'local' ? this.intervals.local : this.intervals.ssh
@@ -266,7 +279,12 @@ export class LiveSessionRegistry {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
     const decorate = this.decorator
     const now = this.now()
-    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
+    const merged = mergeSealPanes(
+      discovered,
+      this.deps.sealPanes(),
+      this.deps.localMachine,
+      this.deps.confirmSealPaneAgent
+    )
       .filter((session) => !this.deps.isRemoved?.(session))
       .map((session) =>
         this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)

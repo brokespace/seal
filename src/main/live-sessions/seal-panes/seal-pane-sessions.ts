@@ -10,6 +10,7 @@ import type {
 } from '../../../shared/live-sessions/live-session-types'
 import { isAgentStatusHeldOpenByChildWork } from '../../../shared/agent-status/lifecycle/agent-lead-status-fold'
 import { agentVerdictDisplayMark } from '../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
+import { AGENT_STATUS_STALE_AFTER_MS } from '../../../shared/agent-status/contracts/agent-status-freshness'
 import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/agent-question-answered-intent'
 import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
@@ -46,6 +47,8 @@ export type SealPaneRow = Pick<
   | 'workingMode'
   | 'interrupted'
   | 'mainAgent'
+  | 'restoredUnconfirmed'
+  | 'evidenceObservedAt'
 >
 
 export type SealPane = {
@@ -61,6 +64,8 @@ export type SealPane = {
   prompt: string | null
   receivedAt: number
   permission: LiveSessionPermissionPrompt | null
+  /** Its hooks went quiet mid-turn, or were last heard by an earlier run of Seal: they no longer say what the agent does now. */
+  silent: boolean
 }
 
 /** What a pane waits on: a hook reports a question and a permission request alike as `waiting`. */
@@ -140,9 +145,18 @@ export function permissionFromPendingPrompt(
   }
 }
 
+function wentSilent(row: SealPaneRow, now: number): boolean {
+  return (
+    row.restoredUnconfirmed === true ||
+    (row.state !== 'done' &&
+      now - (row.evidenceObservedAt ?? row.receivedAt) > AGENT_STATUS_STALE_AFTER_MS)
+  )
+}
+
 export function sealPanesFromRows(
   rows: SealPaneRow[],
-  pendingPrompt: (paneKey: string, agent: LiveSessionProvider) => PendingPrompt | null
+  pendingPrompt: (paneKey: string, agent: LiveSessionProvider) => PendingPrompt | null,
+  now: number
 ): SealPane[] {
   return rows.flatMap((row) => {
     const provider: LiveSessionProvider | null =
@@ -169,7 +183,8 @@ export function sealPanesFromRows(
         transcriptPath: row.providerSession?.transcriptPath ?? null,
         prompt: row.prompt ? oneLine(row.prompt, 80) : null,
         receivedAt: row.receivedAt,
-        permission
+        permission,
+        silent: wentSilent(row, now)
       }
     ]
   })
@@ -186,11 +201,17 @@ const REMOTE_SEAL_MACHINE: LiveSessionMachine = {
  * behind when it stopped come from the agent itself: its transcript, its processes, its own state.
  */
 function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
+  if (pane.silent) {
+    return true
+  }
   if (found.statusSource === 'screen') {
     return found.permission !== null
   }
   if (found.statusSource === 'classifier') {
     return false
+  }
+  if (endedWithoutHook(pane, found)) {
+    return true
   }
   // Claude's own word on a prompt or a turn its hooks did not announce (a wake-up, a compaction).
   const agentSays =
@@ -212,11 +233,30 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
   }
 }
 
+/** How much later than a pane's last hook its transcript must record the end of the turn. */
+const TURN_END_AFTER_HOOK_MS = 3_000
+
+/**
+ * A turn cut short fires no Stop hook (Esc, a crash): the pane's last hook still says a tool runs,
+ * and the transcript, written after it, says the turn is over. Both clocks are this machine's.
+ */
+function endedWithoutHook(pane: SealPane, found: LiveSession): boolean {
+  return (
+    pane.status === 'working' &&
+    pane.connectionId === null &&
+    found.statusSource === 'transcript' &&
+    (found.status === 'your-turn' || found.status === 'errored') &&
+    found.lastActivityAt - pane.receivedAt > TURN_END_AFTER_HOOK_MS
+  )
+}
+
 /** Seal's hooks know its own panes best; discovery adds what they don't say (machine, liveness, title). */
 export function mergeSealPanes(
   discovered: LiveSession[],
   panes: SealPane[],
-  localMachine: LiveSessionMachine
+  localMachine: LiveSessionMachine,
+  /** Told of each pane whose session discovery finds with no process running it. */
+  onUnseenAgent?: (paneKey: string) => void
 ): LiveSession[] {
   const out = [...discovered]
   for (const pane of panes) {
@@ -236,6 +276,9 @@ export function mergeSealPanes(
     if (index !== undefined) {
       const found = out[index]
       const fromDiscovery = discoveryKnowsMore(pane, found)
+      if (!found.alive) {
+        onUnseenAgent?.(pane.paneKey)
+      }
       const named = found.providerSessionId.startsWith('pid-')
         ? {
             id: liveSessionId(found.machine.hostId, pane.provider, pane.providerSessionId),

@@ -41,7 +41,8 @@ const pane: SealPane = {
   transcriptPath: null,
   prompt: 'Deploy it',
   receivedAt: 1000,
-  permission: null
+  permission: null,
+  silent: false
 }
 
 describe('mergeSealPanes', () => {
@@ -67,7 +68,7 @@ describe('sealPanesFromRows', () => {
   const statusOf = (
     patch: Partial<SealPaneRow>,
     prompt: Parameters<typeof sealPanesFromRows>[1] = () => null
-  ) => sealPanesFromRows([row(patch)], prompt).map((p) => [p.status, p.statusDetail])
+  ) => sealPanesFromRows([row(patch)], prompt, 2000).map((p) => [p.status, p.statusDetail])
 
   it('reads a finished turn as waiting on the user', () => {
     expect(statusOf({ state: 'done' })).toEqual([['your-turn', null]])
@@ -135,8 +136,92 @@ describe('what a pane row says of a turn that stopped', () => {
     ]
   ])('a turn that %s', (_, patch, status, detail) => {
     expect(
-      sealPanesFromRows([row(patch)], () => null).map((p) => [p.status, p.statusDetail])
+      sealPanesFromRows([row(patch)], () => null, 2000).map((p) => [p.status, p.statusDetail])
     ).toEqual([[status, detail]])
+  })
+})
+
+describe('a pane whose hooks no longer speak for its agent', () => {
+  const HOUR = 60 * 60_000
+  const row = (patch: Partial<SealPaneRow>): SealPaneRow => ({
+    paneKey: 'tab-1:0',
+    state: 'working',
+    agentType: 'codex',
+    providerSession: { key: 'session_id', id: '0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b', cwd: '/w' },
+    receivedAt: 10 * HOUR,
+    stateStartedAt: 10 * HOUR,
+    connectionId: null,
+    prompt: 'Deploy it',
+    ...patch
+  })
+  const silent = (patch: Partial<SealPaneRow>, now: number) =>
+    sealPanesFromRows([row(patch)], () => null, now)[0].silent
+
+  it.each<[string, Partial<SealPaneRow>, number, boolean]>([
+    ['a tool hook heard a minute ago', {}, 10 * HOUR + 60_000, false],
+    ['a tool hook heard 31 minutes ago, and nothing since', {}, 10 * HOUR + 31 * 60_000, true],
+    ['a prompt left open for 31 minutes', { state: 'waiting' }, 10 * HOUR + 31 * 60_000, true],
+    ['a finished turn, however old', { state: 'done' }, 20 * HOUR, false],
+    ['a row saved by the last run of Seal', { restoredUnconfirmed: true }, 10 * HOUR, true],
+    [
+      'a row replayed on reconnect, by when it was first seen',
+      { receivedAt: 10 * HOUR + 40 * 60_000, evidenceObservedAt: 10 * HOUR },
+      10 * HOUR + 41 * 60_000,
+      true
+    ]
+  ])('%s', (_, patch, now, expected) => {
+    expect(silent(patch, now)).toBe(expected)
+  })
+
+  it('shows what discovery reads instead, and asks the host to check the agent is there', () => {
+    const asked: string[] = []
+    const shown = mergeSealPanes(
+      [
+        {
+          ...discovered,
+          providerSessionId: pane.providerSessionId,
+          status: 'done',
+          statusSource: 'transcript',
+          alive: false,
+          pid: null
+        }
+      ],
+      [{ ...pane, status: 'waiting-input', silent: true }],
+      local,
+      (paneKey) => asked.push(paneKey)
+    ).map((s) => [s.status, s.statusSource])
+    expect({ shown, asked }).toEqual({ shown: [['done', 'transcript']], asked: ['tab-1:0'] })
+  })
+})
+
+describe('a turn cut short without a Stop hook', () => {
+  const remote = { hostId: 'ssh-1', label: 'gpu-box', kind: 'remote' } as const
+  const interrupted = (patch: Partial<SealPane>, lastActivityAt: number) =>
+    mergeSealPanes(
+      [
+        {
+          ...discovered,
+          machine: patch.connectionId ? remote : local,
+          status: 'your-turn',
+          statusSource: 'transcript',
+          statusDetail: 'Interrupted',
+          lastActivityAt
+        }
+      ],
+      [{ ...pane, status: 'working', receivedAt: 60_000, ...patch }],
+      local
+    ).map((s) => [s.status, s.statusDetail])
+
+  it('ends when the transcript records the interrupt after the last hook', () => {
+    expect(interrupted({}, 90_000)).toEqual([['your-turn', 'Interrupted']])
+  })
+
+  it('keeps working while the hook is the newer of the two', () => {
+    expect(interrupted({}, 59_000)).toEqual([['working', null]])
+  })
+
+  it('keeps working on a remote pane, whose transcript is stamped by another clock', () => {
+    expect(interrupted({ connectionId: 'ssh-1' }, 90_000)).toEqual([['working', null]])
   })
 })
 

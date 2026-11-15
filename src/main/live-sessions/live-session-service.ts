@@ -37,6 +37,7 @@ export type LiveSessionServiceDeps = {
     panes: () => SealPane[]
     input: SealPaneInput
     subscribe: (onChange: () => void) => () => void
+    confirmAgent?: (paneKey: string) => void
   }
   onHostScanned?: LiveSessionRegistryDeps['onHostScanned']
   log?: (message: string, error?: unknown) => void
@@ -73,6 +74,7 @@ export class LiveSessionService {
       hosts: deps.hosts,
       sealPanes: () => deps.sealPanes?.panes() ?? [],
       subscribeSealPanes: deps.sealPanes?.subscribe,
+      confirmSealPaneAgent: deps.sealPanes?.confirmAgent,
       onHostScanned: deps.onHostScanned,
       log: deps.log
     })

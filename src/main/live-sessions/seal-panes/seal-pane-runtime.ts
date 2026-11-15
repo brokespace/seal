@@ -10,7 +10,12 @@ import { sealPanesFromRows, type SealPane } from './seal-pane-sessions'
 
 export type SealPaneHookRows = {
   snapshot(): AgentStatusIpcPayload[]
+  /** Probes the pane's agent process; a pane whose agent has exited gives up its status row. */
+  checkAgentPresence(paneKey: string): Promise<unknown>
 }
+
+/** One agent-process check per pane in this long. */
+const AGENT_CHECK_MS = 15_000
 
 /** Seal panes reuse Orca's own pane writer: it waits through approvals and fences replaced processes. */
 export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPaneHookRows) {
@@ -30,6 +35,8 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
     }
   }
 
+  const agentChecks = new Map<string, number>()
+
   const panes = (): SealPane[] => {
     const latest = new Map<string, AgentStatusIpcPayload>()
     for (const row of rows.snapshot()) {
@@ -38,7 +45,7 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
         latest.set(row.paneKey, row)
       }
     }
-    return sealPanesFromRows([...latest.values()], pendingPrompt)
+    return sealPanesFromRows([...latest.values()], pendingPrompt, Date.now())
   }
 
   const input: SealPaneInput = {
@@ -93,6 +100,19 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
   return {
     panes,
     input,
+    confirmAgent: (paneKey: string) => {
+      const now = Date.now()
+      if (now - (agentChecks.get(paneKey) ?? -Infinity) < AGENT_CHECK_MS) {
+        return
+      }
+      for (const [key, at] of agentChecks) {
+        if (now - at >= AGENT_CHECK_MS) {
+          agentChecks.delete(key)
+        }
+      }
+      agentChecks.set(paneKey, now)
+      void rows.checkAgentPresence(paneKey).catch(() => null)
+    },
     subscribe: (onChange: () => void) => runtime.agentTransitions.subscribe(() => onChange())
   }
 }

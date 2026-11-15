@@ -28,19 +28,30 @@ function transcript(fixture: string, sessionId: string, ageMs: number): Discover
 
 /** A machine whose processes, transcripts and Seal panes the test changes between scans. */
 function machine() {
-  const state: { running: boolean; files: DiscoveredFile[]; panes: SealPane[] } = {
+  const state: {
+    running: boolean
+    files: DiscoveredFile[]
+    panes: SealPane[]
+    /** The machine stopped answering: its scans fail. */
+    down: boolean
+  } = {
     running: false,
     files: [],
-    panes: []
+    panes: [],
+    down: false
   }
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
-    run: async () =>
-      [
+    run: async () => {
+      if (state.down) {
+        throw new Error('ssh: connect to host dev-box: Connection timed out')
+      }
+      return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
         ...(state.running ? ['@@PROC 4100 1 pts/3 claude', '@@CWD 4100 /srv/shop'] : []),
         '@@DONE'
-      ].join('\n'),
+      ].join('\n')
+    },
     transcriptFiles: async () => state.files
   }
   const events: LiveSessionRegistryEvent[] = []
@@ -73,7 +84,8 @@ const sealPane: SealPane = {
   transcriptPath: `${DIR}/${WORKING}.jsonl`,
   prompt: 'Why does checkout double-charge when the cart has a coupon?',
   receivedAt: NOW - 1_000,
-  permission: null
+  permission: null,
+  silent: false
 }
 
 describe('one row per agent session', () => {
@@ -147,5 +159,29 @@ describe('one row per agent session', () => {
       'Failing build',
       true
     ])
+  })
+})
+
+describe('a machine that stops answering', () => {
+  it('stops vouching for its sessions after three failed scans, and shows them again once it answers', async () => {
+    const { state, registry } = machine()
+    state.running = true
+    state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
+    const shown = async () => {
+      await registry.refresh()
+      const { sessions, hostErrors } = registry.getSnapshot()
+      return { statuses: sessions.map((s) => s.status), error: hostErrors.local ?? null }
+    }
+    expect(await shown()).toEqual({ statuses: ['working'], error: null })
+
+    state.down = true
+    const timedOut = 'ssh: connect to host dev-box: Connection timed out'
+    // One or two lost scans are a hiccup: the last reading stands.
+    expect(await shown()).toEqual({ statuses: ['working'], error: timedOut })
+    expect(await shown()).toEqual({ statuses: ['working'], error: timedOut })
+    expect(await shown()).toEqual({ statuses: [], error: timedOut })
+
+    state.down = false
+    expect(await shown()).toEqual({ statuses: ['working'], error: null })
   })
 })
