@@ -67,7 +67,7 @@ export function ProjectAgentsCard({
         <HomeOverviewEmpty>
           {t(
             'seal.projectOverview.agents.empty',
-            'No agents are running in this project. Start one with New agent.'
+            'No agents are active in this project. Start one with New agent.'
           )}
         </HomeOverviewEmpty>
       ) : (

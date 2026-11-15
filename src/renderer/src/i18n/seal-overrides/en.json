@@ -2033,7 +2033,7 @@
         "title": "Agents",
         "showInActiveAgents": "Show in Active agents",
         "active": "{{count}} active",
-        "empty": "No agents are running in this project. Start one with New agent."
+        "empty": "No agents are active in this project. Start one with New agent."
       },
       "changes": {
         "inProgress": "{{operation}} in progress",
