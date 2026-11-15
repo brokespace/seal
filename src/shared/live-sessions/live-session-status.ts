@@ -79,6 +79,25 @@ export function isRestingLiveSessionStatus(status: LiveSessionStatus): boolean {
   return status === 'your-turn' || status === 'idle'
 }
 
+/** Parked on work running behind a finished turn; the agent picks itself up when it reports. */
+export function isWaitingOnBackgroundWork(status: LiveSessionStatus): boolean {
+  return status === 'waiting-subagent' || status === 'waiting-task'
+}
+
+/** The turn is the agent's own and still going. */
+export function isTurnRunningLiveSessionStatus(status: LiveSessionStatus): boolean {
+  return status === 'working' || status === 'running-shell'
+}
+
+/** The turn has stopped, for its user or on background work: what a summary and a recap describe. */
+export function isSettledLiveSessionStatus(status: LiveSessionStatus): boolean {
+  return (
+    status === 'waiting-input' ||
+    isRestingLiveSessionStatus(status) ||
+    isWaitingOnBackgroundWork(status)
+  )
+}
+
 /** The dot every surface draws for a status, on desktop and mobile. */
 export function liveSessionDotState(status: LiveSessionStatus): AgentListStatus {
   return DOTS[status]
