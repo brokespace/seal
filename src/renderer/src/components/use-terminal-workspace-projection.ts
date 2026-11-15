@@ -9,6 +9,7 @@ import { useContextualTour } from './contextual-tours/use-contextual-tour'
 import { findFocusedSplitLandingGroup } from '@/store/slices/tabs/split-landing-groups'
 import type { TerminalWorkspaceStoreController } from './use-terminal-workspace-store-bindings'
 import { useWorktreeFiles } from './terminal/use-worktree-files'
+import { selectPaneWorkspaceTerminalTabIds } from './split-view/visible-workspace-terminal-tabs'
 
 // Read every render: the titlebar strip can mount after this host. A hook result is never memoized.
 function useTitlebarTabsTarget(): HTMLElement | null {
@@ -31,18 +32,25 @@ export function useTerminalWorkspaceProjection(controller: TerminalWorkspaceStor
     openFiles,
     renderedActiveWorktreeId,
     tabsByWorktree,
+    visibleWorkspacePanes,
     workspaceSessionReady
   } = controller
+  const paneTerminalTabIds = useAppStore((state) =>
+    selectPaneWorkspaceTerminalTabIds(state, visibleWorkspacePanes)
+  )
   const foregroundTerminalTabIds = useMemo(() => {
     const ids = new Set<string>()
     if (activeView === 'terminal' && activeTabType === 'terminal' && activeTabId) {
       ids.add(activeTabId)
     }
+    for (const tabId of paneTerminalTabIds ? paneTerminalTabIds.split('\n') : []) {
+      ids.add(tabId)
+    }
     for (const portal of activityTerminalPortals) {
       ids.add(portal.tabId)
     }
     return Array.from(ids)
-  }, [activeTabId, activeTabType, activeView, activityTerminalPortals])
+  }, [activeTabId, activeTabType, activeView, activityTerminalPortals, paneTerminalTabIds])
 
   useEffect(() => {
     setForegroundTerminalTabIds(foregroundTerminalTabIds)

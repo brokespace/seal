@@ -42,6 +42,7 @@ import { PlainSshTerminalPanels } from './components/plain-ssh-terminal/PlainSsh
 import { PluginShotReplayMount } from './components/plugins/view/PluginShotReplayMount'
 import { AddToChatPointMenuHost } from './components/native-chat/selection-quotes/AddToChatMenu'
 import { installActiveWorktreeRemovalSuccessor } from './lib/workspace/activation/active-worktree-removal-successor'
+import { installSplitViewNavigationSettle } from './components/split-view/split-view-navigation-settle'
 import { subscribeHomeChatOpenRequests } from './components/home-chat/home-chat-open-target'
 
 function App(): React.JSX.Element {
@@ -66,6 +67,7 @@ function App(): React.JSX.Element {
   useGlobalKeybindings({ layout, floatingWorkspace })
   // App owns active-selection removal; the Space window only mirrors selection.
   useEffect(() => installActiveWorktreeRemovalSuccessor(), [])
+  useEffect(() => installSplitViewNavigationSettle(), [])
   useEffect(() => subscribeHomeChatOpenRequests(), [])
 
   // Portaled sheets/dialogs live outside .app-layout and need root offsets to clear Windows/Linux controls.

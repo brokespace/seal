@@ -15,6 +15,12 @@ import { parseMachineId } from '../../../../../shared/machines/machine-types'
 import { rememberMachineSelection } from '../../machines/model/machine-selection'
 import { mutateSealHost } from '../../seal-session/seal-session-status-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
+import {
+  closeItemInSplitView,
+  openItemsInSplitView,
+  revealItemInSplitView
+} from '../../split-view/split-view-commands'
+import { splitViewStore } from '../../split-view/split-view-store'
 import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
@@ -35,13 +41,23 @@ export function openLiveSessionView(
 ): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
   const ui = useAppStore.getState()
+  liveSessionMarksStore.reveal(id)
+  if (mode === 'split') {
+    openItemsInSplitView([{ kind: 'session', sessionId: id }], 'right')
+    return
+  }
+  const inGrid = splitViewStore.hasLayout()
   liveSessionTabsStore.open(
     id,
-    mode,
+    // The grid owns previews while it exists: replacing the tabs' preview here would close a
+    // session that may be a chip in another pane.
+    inGrid ? 'tab' : mode,
     ui.activeView === 'project' ? overviewProjectKey(ui.projectOverviewTarget) : undefined
   )
   ui.openAgentSessionTabs()
-  liveSessionMarksStore.reveal(id)
+  if (inGrid) {
+    revealItemInSplitView({ kind: 'session', sessionId: id }, mode === 'tab')
+  }
 }
 
 function overviewProjectKey(target: ProjectOverviewTarget | null): string | undefined {
@@ -50,6 +66,13 @@ function overviewProjectKey(target: ProjectOverviewTarget | null): string | unde
 
 /** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
 export function closeLiveSessionView(sessionId: string): void {
+  if (splitViewStore.hasLayout()) {
+    // The grid picks the next focus; a visit to a project's overview does not end here.
+    if (!closeItemInSplitView({ kind: 'session', sessionId })) {
+      liveSessionTabsStore.close(sessionId)
+    }
+    return
+  }
   const before = liveSessionTabsStore.getState()
   liveSessionTabsStore.close(sessionId)
   const ui = useAppStore.getState()

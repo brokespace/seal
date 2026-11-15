@@ -636,7 +636,6 @@
         "workspace": {
           "actions": "Session actions",
           "loading": "Looking for sessions",
-          "closeSplit": "Close split",
           "backToSession": "Back to session",
           "backToProject": "Back to {{project}}",
           "backToProjectOverview": "Back to project overview",
@@ -2146,6 +2145,45 @@
         "collapse": "Collapse {{project}}",
         "open": "Project Overview",
         "openOverview": "Open project overview"
+      }
+    },
+    "splitView": {
+      "error": {
+        "title": "Split view hit an error.",
+        "description": "Retry, or close panes from the sidebar to return to a single view."
+      },
+      "drop": {
+        "left": "Split left",
+        "right": "Split right",
+        "up": "Split up",
+        "down": "Split down",
+        "tab": "Add as tab",
+        "open": "Open"
+      },
+      "pane": {
+        "restore": "Restore panes",
+        "maximize": "Maximize pane",
+        "close": "Close pane",
+        "tabs": "Tabs in this pane"
+      },
+      "placeholder": {
+        "close": "Close",
+        "loading": "Loading {{name}}",
+        "workspaceUnavailable": "This workspace is not available.",
+        "projectUnavailable": "This project is not available."
+      },
+      "menu": {
+        "right": "Right",
+        "down": "Down",
+        "left": "Left",
+        "up": "Up",
+        "asTab": "As a tab",
+        "openInSplitView": "Open in split view",
+        "moveToNewPane": "Move to new pane"
+      },
+      "item": {
+        "project": "Project",
+        "workspace": "Workspace"
       }
     }
   },

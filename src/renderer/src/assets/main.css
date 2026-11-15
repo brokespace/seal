@@ -1391,6 +1391,16 @@ html.native-shell .app-layout {
   -webkit-app-region: drag;
 }
 
+/* A workspace's tab strip inside a split-view pane is not at the window's top: it must not drag the window. */
+[data-workspace-surface-pane-id] [data-terminal-focus-release-surface='true'] {
+  -webkit-app-region: no-drag;
+}
+
+/* The grid layer is click-through for workspace slots; its splitters still take the pointer. */
+.split-view-layer .tab-group-split-resize-handle {
+  pointer-events: auto;
+}
+
 /* Temporarily disable Electron drag regions while xterm owns focus so chrome clicks can release terminal zoom. */
 :root[data-regular-terminal-input-focused] .titlebar,
 :root[data-regular-terminal-input-focused] .titlebar-left,

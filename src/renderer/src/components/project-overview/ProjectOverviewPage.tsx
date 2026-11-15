@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { FolderSearch } from 'lucide-react'
 import { useAppStore } from '@/store'
+import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
@@ -138,17 +139,28 @@ function ProjectOverviewMissing({ onClose }: { onClose: () => void }): React.JSX
   )
 }
 
-/** One project at a glance: where it lives, its code, its agents and how they are configured. */
-export default function ProjectOverviewPage(): React.JSX.Element {
-  const target = useAppStore((s) => s.projectOverviewTarget)
+/** A project's overview without the page around it: the page draws it, and so does a split-view pane. */
+export function ProjectOverviewBody({
+  target,
+  onClose
+}: {
+  target: ProjectOverviewTarget | null
+  onClose: () => void
+}): React.JSX.Element {
   const repos = useAppStore((s) => s.repos)
-  const close = useAppStore((s) => s.closeProjectOverview)
   const repo = useMemo(() => resolveProjectOverviewRepo(repos, target), [repos, target])
-  useMobilePageEscape(close)
   return repo ? (
     // A different project starts every card over instead of showing the last one's data.
     <ProjectOverview key={`${getRepoExecutionHostId(repo)}\n${repo.id}`} repo={repo} />
   ) : (
-    <ProjectOverviewMissing onClose={close} />
+    <ProjectOverviewMissing onClose={onClose} />
   )
+}
+
+/** One project at a glance: where it lives, its code, its agents and how they are configured. */
+export default function ProjectOverviewPage(): React.JSX.Element {
+  const target = useAppStore((s) => s.projectOverviewTarget)
+  const close = useAppStore((s) => s.closeProjectOverview)
+  useMobilePageEscape(close)
+  return <ProjectOverviewBody target={target} onClose={close} />
 }

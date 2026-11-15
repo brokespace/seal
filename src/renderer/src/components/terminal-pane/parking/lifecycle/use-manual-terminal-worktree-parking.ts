@@ -39,10 +39,10 @@ export function combineTerminalWorktreeParkIds(
   return new Set([...automaticIds, ...manualIds])
 }
 
-export function useManualTerminalWorktreeParking(args: {
-  activeView: string
-  renderedActiveWorktreeId: string | null
-}): ReadonlySet<string> {
+/** `visibleWorkspaces` is keyed by the worktree ids on screen; showing one ends its manual park. */
+export function useManualTerminalWorktreeParking(
+  visibleWorkspaces: ReadonlyMap<string, unknown>
+): ReadonlySet<string> {
   const [manuallyParkedWorktreeIds, setManuallyParkedWorktreeIds] = useState<ReadonlySet<string>>(
     () => new Set()
   )
@@ -91,12 +91,10 @@ export function useManualTerminalWorktreeParking(args: {
   }, [parkWorktree])
 
   useEffect(() => {
-    const revealedWorktreeId = args.renderedActiveWorktreeId
-    if (args.activeView !== 'terminal' || !revealedWorktreeId) {
-      return
+    for (const revealedWorktreeId of visibleWorkspaces.keys()) {
+      setManuallyParkedWorktreeIds((current) => removeWorktreeId(current, revealedWorktreeId))
     }
-    setManuallyParkedWorktreeIds((current) => removeWorktreeId(current, revealedWorktreeId))
-  }, [args.activeView, args.renderedActiveWorktreeId])
+  }, [visibleWorkspaces])
 
   return manuallyParkedWorktreeIds
 }

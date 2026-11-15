@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
-import { ArrowLeft, Bot, Ellipsis, ListTodo, NotebookText, X } from 'lucide-react'
+import { ArrowLeft, Bot, Ellipsis, ListTodo, NotebookText } from 'lucide-react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Button } from '@/components/ui/button'
 import {
@@ -91,8 +91,6 @@ export type LiveSessionPaneViewProps = {
   }
   /** The header's "…" menu; fixtures leave it out. */
   menu?: React.ReactNode
-  /** Closes the split this pane sits in. */
-  onCloseSplit?: () => void
 }
 
 /** One session's view without its data sources, so fixtures can render it. */
@@ -173,17 +171,6 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
           <ListTodo className="size-3.5" />
         </PanelButton>
         {props.menu}
-        {props.onCloseSplit ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={props.onCloseSplit}
-            aria-label={t('auto.components.live-sessions.workspace.closeSplit', 'Close split')}
-          >
-            <X className="size-3.5" />
-          </Button>
-        ) : null}
       </header>
       {recap ? (
         <SessionRecapBar
@@ -286,14 +273,12 @@ export function LiveSessionPane({
   session,
   messages,
   focus,
-  now,
-  onCloseSplit
+  now
 }: {
   session: LiveSession
   messages: ReadonlyMap<string, LiveMessage>
   focus: LiveSessionTabsState['focus']
   now: number
-  onCloseSplit?: () => void
 }): React.JSX.Element {
   const transcript = useLiveTranscript(session.id)
   const recap = useSessionRecap(session.id, session.recap)
@@ -377,7 +362,6 @@ export function LiveSessionPane({
       now={now}
       recap={recapProps}
       menu={<SessionMenuButton session={session} />}
-      onCloseSplit={onCloseSplit}
     />
   )
 }

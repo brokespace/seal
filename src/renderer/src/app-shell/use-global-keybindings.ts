@@ -65,7 +65,7 @@ export function useGlobalKeybindings(args: {
     pluginCommands,
     setFloatingTerminalOpen: floatingWorkspace.setOpenWithFocus,
     terminalShortcutPolicy,
-    workspaceChromeActive: layout.workspaceChromeActive
+    workspaceChromeActive: layout.workspaceCommandsActive
   }
   const shortcutStateRef = useRef(shortcutState)
   // Mirror committed state before discrete key events; render-phase writes could leak discarded renders.
