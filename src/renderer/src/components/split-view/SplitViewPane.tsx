@@ -14,6 +14,7 @@ import {
   placeItemsInSplitView,
   toggleSplitViewPaneMaximized
 } from './split-view-commands'
+import { ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 import { SPLIT_VIEW_PANE_ATTRIBUTE } from './split-view-pane-size'
 import { useSplitView } from './split-view-store'
 import { activeSplitViewItem, splitViewItemKey } from './split-view-types'
@@ -31,9 +32,11 @@ function paneTabCommands(paneId: string): ItemTabCommands {
   }
 }
 
-/** A press or focus on a tab is that tab's own business: it activates on click. */
-function landsOnTab(target: EventTarget): boolean {
-  return target instanceof Element && target.closest('[role="tab"], button') !== null
+const STRIP_CONTROL_SELECTOR = `[${ITEM_TAB_STRIP_ATTRIBUTE}] [role="tab"], [${ITEM_TAB_STRIP_ATTRIBUTE}] button`
+
+/** A press or focus on a tab or a strip button is its own business: it acts on the pane itself. */
+function landsOnStripControl(target: EventTarget): boolean {
+  return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
 }
 
 const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
@@ -109,12 +112,12 @@ export function SplitViewPane({
         !placement.touchesLeftEdge && !placement.suppressLeftBorder && 'border-l border-border'
       )}
       onPointerDownCapture={(event) => {
-        if (!landsOnTab(event.target)) {
+        if (!landsOnStripControl(event.target)) {
           focusSplitViewPane(paneId)
         }
       }}
       onFocusCapture={(event) => {
-        if (!landsOnTab(event.target)) {
+        if (!landsOnStripControl(event.target)) {
           focusSplitViewPane(paneId)
         }
       }}
