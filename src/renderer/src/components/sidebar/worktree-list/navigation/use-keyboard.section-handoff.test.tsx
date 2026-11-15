@@ -151,6 +151,16 @@ it('switches to no project row when a held key carries the cursor into the secti
   }
 })
 
+it('stops scrolling to the project row it left when the cursor moves on to the section above', () => {
+  render(<SidebarList activeWorktreeId="middle" onEnterAgents={() => true} />)
+
+  fireEvent.keyDown(list(), { key: 'ArrowUp', repeat: true })
+  expect(useAppStore.getState().pendingRevealWorktree?.worktreeId).toBe('top')
+  fireEvent.keyDown(list(), { key: 'ArrowUp', repeat: true })
+
+  expect(useAppStore.getState().pendingRevealWorktree).toBeNull()
+})
+
 it('takes the cursor from the section above on its first project row', () => {
   render(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
 

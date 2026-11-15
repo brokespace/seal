@@ -116,6 +116,8 @@ export function useWorktreeListKeyboardNavigation(args: {
       ) {
         // A held key switches only where it stops, and it left these rows: a later switch would pull focus into the terminal.
         dropPreview()
+        // The row it left may still be waiting to be scrolled to, which would carry the list away from the cursor.
+        useAppStore.getState().clearPendingRevealWorktreeId()
         return
       }
       goToRow(step.row, isRepeat, selectInList)
