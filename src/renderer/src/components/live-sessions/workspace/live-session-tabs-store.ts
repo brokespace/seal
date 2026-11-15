@@ -14,6 +14,8 @@ export type LiveSessionTabsState = {
   previewId: string | null
   /** Something a menu asked a session's view to show; `nonce` tells repeats apart. */
   focus: { sessionId: string; target: LiveSessionFocusTarget; nonce: number } | null
+  /** Open tabs that were opened from a project's overview, which closing the last of them leads back to. */
+  fromProject: string[]
 }
 
 const STORAGE_KEY = 'seal.liveSessionTabs.v1'
@@ -22,7 +24,28 @@ const EMPTY: LiveSessionTabsState = {
   activeId: null,
   splitId: null,
   previewId: null,
-  focus: null
+  focus: null,
+  fromProject: []
+}
+
+/**
+ * Whether closing `sessionId` ends a visit that began on a project's overview: no tab is left, or
+ * the closed tab filled the view alone and was the last one opened from the overview.
+ */
+export function closesProjectVisit(
+  before: LiveSessionTabsState,
+  after: LiveSessionTabsState,
+  sessionId: string
+): boolean {
+  if (after.tabs.length === 0) {
+    return true
+  }
+  return (
+    before.activeId === sessionId &&
+    before.splitId === null &&
+    before.fromProject.includes(sessionId) &&
+    after.fromProject.length === 0
+  )
 }
 
 function restore(): LiveSessionTabsState {
@@ -65,21 +88,26 @@ export class LiveSessionTabsStore {
 
   readonly getState = (): LiveSessionTabsState => this.state
 
-  open(sessionId: string, mode: LiveSessionOpenMode = 'preview'): void {
+  open(sessionId: string, mode: LiveSessionOpenMode = 'preview', fromProject = false): void {
     const { tabs, previewId, activeId, splitId } = this.state
+    const marked = (replaced?: string): string[] => {
+      const kept = this.state.fromProject.filter((id) => id !== replaced)
+      return fromProject && !kept.includes(sessionId) ? [...kept, sessionId] : kept
+    }
     if (mode === 'split') {
       const withTab = tabs.includes(sessionId) ? tabs : [...tabs, sessionId]
       if (activeId === null || activeId === sessionId) {
-        this.set({ tabs: withTab, activeId: sessionId })
+        this.set({ tabs: withTab, activeId: sessionId, fromProject: marked() })
       } else {
-        this.set({ tabs: withTab, splitId: sessionId })
+        this.set({ tabs: withTab, splitId: sessionId, fromProject: marked() })
       }
       return
     }
     if (tabs.includes(sessionId)) {
       this.set({
         activeId: splitId === sessionId ? activeId : sessionId,
-        previewId: mode === 'tab' && previewId === sessionId ? null : previewId
+        previewId: mode === 'tab' && previewId === sessionId ? null : previewId,
+        fromProject: marked()
       })
       return
     }
@@ -89,14 +117,16 @@ export class LiveSessionTabsStore {
         tabs: tabs.map((id) => (id === previewId ? sessionId : id)),
         activeId: sessionId,
         splitId: splitId === previewId ? null : splitId,
-        previewId: sessionId
+        previewId: sessionId,
+        fromProject: marked(previewId)
       })
       return
     }
     this.set({
       tabs: [...tabs, sessionId],
       activeId: sessionId,
-      previewId: mode === 'preview' ? sessionId : previewId
+      previewId: mode === 'preview' ? sessionId : previewId,
+      fromProject: marked()
     })
   }
 
@@ -113,7 +143,7 @@ export class LiveSessionTabsStore {
   }
 
   close(sessionId: string): void {
-    const { tabs, activeId, splitId, previewId } = this.state
+    const { tabs, activeId, splitId, previewId, fromProject } = this.state
     const index = tabs.indexOf(sessionId)
     if (index === -1) {
       return
@@ -130,7 +160,8 @@ export class LiveSessionTabsStore {
       tabs: rest,
       activeId: nextActive,
       splitId: nextSplit === nextActive ? null : nextSplit,
-      previewId: previewId === sessionId ? null : previewId
+      previewId: previewId === sessionId ? null : previewId,
+      fromProject: fromProject.filter((id) => id !== sessionId)
     })
   }
 
@@ -140,7 +171,7 @@ export class LiveSessionTabsStore {
 
   /** The same session under the id its transcript gave it keeps its tab. */
   rename(fromSessionId: string, toSessionId: string): void {
-    const { tabs, activeId, splitId, previewId, focus } = this.state
+    const { tabs, activeId, splitId, previewId, focus, fromProject } = this.state
     if (!tabs.includes(fromSessionId)) {
       return
     }
@@ -150,7 +181,8 @@ export class LiveSessionTabsStore {
       activeId: swap(activeId),
       splitId: swap(splitId) === swap(activeId) ? null : swap(splitId),
       previewId: swap(previewId),
-      focus: focus?.sessionId === fromSessionId ? { ...focus, sessionId: toSessionId } : focus
+      focus: focus?.sessionId === fromSessionId ? { ...focus, sessionId: toSessionId } : focus,
+      fromProject: [...new Set(fromProject.map((id) => swap(id)!))]
     })
   }
 

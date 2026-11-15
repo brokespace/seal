@@ -18,6 +18,7 @@ import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
 import {
+  closesProjectVisit,
   liveSessionTabsStore,
   type LiveSessionFocusTarget,
   type LiveSessionOpenMode
@@ -32,9 +33,24 @@ export function openLiveSessionView(
   mode: LiveSessionOpenMode = 'preview'
 ): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
-  liveSessionTabsStore.open(id, mode)
-  useAppStore.getState().openAgentSessionTabs()
+  const ui = useAppStore.getState()
+  liveSessionTabsStore.open(id, mode, ui.activeView === 'project')
+  ui.openAgentSessionTabs()
   liveSessionMarksStore.reveal(id)
+}
+
+/** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
+export function closeLiveSessionView(sessionId: string): void {
+  const before = liveSessionTabsStore.getState()
+  liveSessionTabsStore.close(sessionId)
+  const ui = useAppStore.getState()
+  if (
+    ui.activeView === 'sessions' &&
+    ui.previousViewBeforeSessions === 'project' &&
+    closesProjectVisit(before, liveSessionTabsStore.getState(), sessionId)
+  ) {
+    ui.closeAgentSessionTabs()
+  }
 }
 
 /** A click on a session's row, on any surface: a preview tab, kept on double-click. */

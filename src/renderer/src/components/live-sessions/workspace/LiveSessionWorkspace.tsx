@@ -15,6 +15,7 @@ import {
   liveSessionTitle
 } from '../live-session-presentation'
 import { useLiveSessions } from '../live-session-registry-store'
+import { closeLiveSessionView } from '../menu/live-session-menu-effects'
 import { CONTEXT_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
 import { LiveSessionPane } from './LiveSessionPane'
 import { liveSessionTabsStore, useLiveSessionTabs } from './live-session-tabs-store'
@@ -45,7 +46,7 @@ function SessionTab({
       onDoubleClick={() => liveSessionTabsStore.keep(sessionId)}
       onAuxClick={(event) => {
         if (event.button === 1) {
-          liveSessionTabsStore.close(sessionId)
+          closeLiveSessionView(sessionId)
         }
       }}
       onKeyDown={(event) => {
@@ -73,7 +74,7 @@ function SessionTab({
         aria-label={t('auto.components.live-sessions.workspace.closeTab', 'Close tab')}
         onClick={(event) => {
           event.stopPropagation()
-          liveSessionTabsStore.close(sessionId)
+          closeLiveSessionView(sessionId)
         }}
         className={cn(
           'flex size-4 shrink-0 items-center justify-center rounded-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
