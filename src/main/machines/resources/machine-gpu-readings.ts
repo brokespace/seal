@@ -12,6 +12,8 @@ import { runMachineHostScript } from './machine-host-script'
 
 const READ_TIMEOUT_MS = 20_000
 const NO_GPU_RECHECK_MS = 60_000
+/** How long a machine's metrics wait for its GPUs before going out with the previous readings. */
+const OVERVIEW_WAIT_MS = 2_000
 const MIB = 1024 ** 2
 const PROCESS_NAME_MAX_CHARS = 200
 
@@ -235,30 +237,52 @@ export async function readMachineGpus(connection: MachineConnection): Promise<Ma
   return parseMachineGpus(result.stdout)
 }
 
-const recheckAt = new Map<MachineId, number>()
+type OverviewGpus = {
+  latest: MachineGpu[]
+  reading: Promise<void> | null
+  /** Zero once the machine has shown a GPU: it is then read every time. */
+  recheckAt: number
+}
+
+const overviewByMachine = new Map<MachineId, OverviewGpus>()
+
+async function readOverviewGpus(connection: MachineConnection, state: OverviewGpus): Promise<void> {
+  const seenBefore = state.recheckAt === 0
+  try {
+    state.latest = (await connection.dialect()) === 'posix' ? await readMachineGpus(connection) : []
+  } catch {
+    state.latest = []
+  }
+  // A machine where no GPU has been seen is asked again only once a minute, so it pays next to nothing.
+  state.recheckAt = state.latest.length > 0 || seenBefore ? 0 : Date.now() + NO_GPU_RECHECK_MS
+  state.reading = null
+}
 
 /**
- * A machine where no GPU has been seen is asked again only once a minute, so most machines pay
- * next to nothing. One that has shown a GPU is read every time, so a failed read costs one sample.
+ * The GPUs for a machine's overview. A read that is slow hands back the previous readings and
+ * finishes on its own, so a driver that hangs holds up the machine's other metrics only briefly.
  */
 async function overviewGpus(connection: MachineConnection): Promise<MachineGpu[]> {
+  if (!connection.isConnected()) {
+    return []
+  }
   const { machineId } = connection
-  if (!connection.isConnected() || Date.now() < (recheckAt.get(machineId) ?? 0)) {
-    return []
+  const state = overviewByMachine.get(machineId) ?? { latest: [], reading: null, recheckAt: -1 }
+  overviewByMachine.set(machineId, state)
+  if (!state.reading && Date.now() >= state.recheckAt) {
+    state.reading = readOverviewGpus(connection, state)
   }
-  const known = recheckAt.get(machineId) === 0
-  try {
-    const gpus = (await connection.dialect()) === 'posix' ? await readMachineGpus(connection) : []
-    if (gpus.length > 0 || !known) {
-      recheckAt.set(machineId, gpus.length > 0 ? 0 : Date.now() + NO_GPU_RECHECK_MS)
-    }
-    return gpus
-  } catch {
-    if (!known) {
-      recheckAt.set(machineId, Date.now() + NO_GPU_RECHECK_MS)
-    }
-    return []
+  if (state.reading) {
+    let timer: NodeJS.Timeout | undefined
+    await Promise.race([
+      state.reading,
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, OVERVIEW_WAIT_MS)
+      })
+    ])
+    clearTimeout(timer)
   }
+  return state.latest
 }
 
 /** The machine's metrics with its GPUs; a GPU read that fails never fails the metrics. */
