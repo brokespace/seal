@@ -12,7 +12,11 @@ import {
   shouldStepNativeChatAskAnswer
 } from '../../native-chat/native-chat-agent-support'
 import type { AgentSessionAdapter, AgentSessionChatRuntime } from './agent-session-adapter'
-import { AGENT_SESSION_AGENT_IDS, type AgentSessionAgentId } from './agent-session-agent-ids'
+import {
+  AGENT_SESSION_AGENT_IDS,
+  isAgentSessionAgentId,
+  type AgentSessionAgentId
+} from './agent-session-agent-ids'
 
 /**
  * The structured runtime behind each agent's chat. Mirrors the main-only runtime catalog
@@ -83,13 +87,12 @@ function adapterOf(agent: AgentSessionAgentId): AgentSessionAdapter {
   }
 }
 
+// oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: one entry is built per id in AGENT_SESSION_AGENT_IDS, the union the record is keyed by.
 export const AGENT_SESSION_ADAPTERS = Object.fromEntries(
   AGENT_SESSION_AGENT_IDS.map((agent) => [agent, adapterOf(agent)])
 ) as Readonly<Record<AgentSessionAgentId, AgentSessionAdapter>>
 
 /** The adapter of `agent`, or null when Seal's session code does not know the agent. */
 export function agentSessionAdapter(agent: string | null | undefined): AgentSessionAdapter | null {
-  return agent != null && Object.hasOwn(AGENT_SESSION_ADAPTERS, agent)
-    ? AGENT_SESSION_ADAPTERS[agent as AgentSessionAgentId]
-    : null
+  return isAgentSessionAgentId(agent) ? AGENT_SESSION_ADAPTERS[agent] : null
 }
