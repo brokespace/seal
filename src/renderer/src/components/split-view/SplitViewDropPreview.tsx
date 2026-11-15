@@ -39,7 +39,11 @@ export function SplitViewDropPreview(): React.JSX.Element | null {
     <div
       aria-hidden="true"
       data-split-view-drop-preview={preview.kind}
-      className="pointer-events-none fixed z-[9999]"
+      className={cn(
+        'pointer-events-none fixed',
+        // The drag ghost (z-index 2147483000) hangs by the pointer, right over the insertion bar.
+        preview.kind === 'insert' ? 'z-[2147483001]' : 'z-[9999]'
+      )}
       style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
     >
       {preview.kind === 'insert' ? (
