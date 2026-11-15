@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
+import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
@@ -34,9 +35,17 @@ export function openLiveSessionView(
 ): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
   const ui = useAppStore.getState()
-  liveSessionTabsStore.open(id, mode, ui.activeView === 'project')
+  liveSessionTabsStore.open(
+    id,
+    mode,
+    ui.activeView === 'project' ? overviewProjectKey(ui.projectOverviewTarget) : undefined
+  )
   ui.openAgentSessionTabs()
   liveSessionMarksStore.reveal(id)
+}
+
+function overviewProjectKey(target: ProjectOverviewTarget | null): string | undefined {
+  return target ? `${target.hostId}\n${target.repoId}` : undefined
 }
 
 /** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
@@ -47,7 +56,12 @@ export function closeLiveSessionView(sessionId: string): void {
   if (
     ui.activeView === 'sessions' &&
     ui.previousViewBeforeSessions === 'project' &&
-    closesProjectVisit(before, liveSessionTabsStore.getState(), sessionId)
+    closesProjectVisit(
+      before,
+      liveSessionTabsStore.getState(),
+      sessionId,
+      overviewProjectKey(ui.projectOverviewTarget)
+    )
   ) {
     ui.closeAgentSessionTabs()
   }

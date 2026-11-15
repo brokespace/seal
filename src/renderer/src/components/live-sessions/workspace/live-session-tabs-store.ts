@@ -14,8 +14,8 @@ export type LiveSessionTabsState = {
   previewId: string | null
   /** Something a menu asked a session's view to show; `nonce` tells repeats apart. */
   focus: { sessionId: string; target: LiveSessionFocusTarget; nonce: number } | null
-  /** Open tabs that were opened from a project's overview, which closing the last of them leads back to. */
-  fromProject: string[]
+  /** The project whose overview each open tab was opened from: closing the last of them leads back to it. */
+  fromProject: Readonly<Record<string, string>>
 }
 
 const STORAGE_KEY = 'seal.liveSessionTabs.v1'
@@ -25,27 +25,36 @@ const EMPTY: LiveSessionTabsState = {
   splitId: null,
   previewId: null,
   focus: null,
-  fromProject: []
+  fromProject: {}
 }
 
 /**
- * Whether closing `sessionId` ends a visit that began on a project's overview: no tab is left, or
- * the closed tab filled the view alone and was the last one opened from the overview.
+ * Whether closing `sessionId` ends a visit that began on `project`'s overview: no tab is left, or
+ * the closed tab filled the view alone and was the last one opened from that overview.
  */
 export function closesProjectVisit(
   before: LiveSessionTabsState,
   after: LiveSessionTabsState,
-  sessionId: string
+  sessionId: string,
+  project: string | undefined
 ): boolean {
   if (after.tabs.length === 0) {
     return true
   }
   return (
+    project !== undefined &&
     before.activeId === sessionId &&
     before.splitId === null &&
-    before.fromProject.includes(sessionId) &&
-    after.fromProject.length === 0
+    before.fromProject[sessionId] === project &&
+    !Object.values(after.fromProject).includes(project)
   )
+}
+
+function without(
+  marks: Readonly<Record<string, string>>,
+  sessionId: string | undefined
+): Record<string, string> {
+  return Object.fromEntries(Object.entries(marks).filter(([id]) => id !== sessionId))
 }
 
 function restore(): LiveSessionTabsState {
@@ -88,12 +97,13 @@ export class LiveSessionTabsStore {
 
   readonly getState = (): LiveSessionTabsState => this.state
 
-  open(sessionId: string, mode: LiveSessionOpenMode = 'preview', fromProject = false): void {
+  /** `fromProject` names the project whose overview the session is opened from, if any. */
+  open(sessionId: string, mode: LiveSessionOpenMode = 'preview', fromProject?: string): void {
     const { tabs, previewId, activeId, splitId } = this.state
-    const marked = (replaced?: string): string[] => {
-      const kept = this.state.fromProject.filter((id) => id !== replaced)
-      return fromProject && !kept.includes(sessionId) ? [...kept, sessionId] : kept
-    }
+    const marked = (replaced?: string): Record<string, string> => ({
+      ...without(this.state.fromProject, replaced),
+      ...(fromProject === undefined ? {} : { [sessionId]: fromProject })
+    })
     if (mode === 'split') {
       const withTab = tabs.includes(sessionId) ? tabs : [...tabs, sessionId]
       if (activeId === null || activeId === sessionId) {
@@ -161,7 +171,7 @@ export class LiveSessionTabsStore {
       activeId: nextActive,
       splitId: nextSplit === nextActive ? null : nextSplit,
       previewId: previewId === sessionId ? null : previewId,
-      fromProject: fromProject.filter((id) => id !== sessionId)
+      fromProject: without(fromProject, sessionId)
     })
   }
 
@@ -182,7 +192,9 @@ export class LiveSessionTabsStore {
       splitId: swap(splitId) === swap(activeId) ? null : swap(splitId),
       previewId: swap(previewId),
       focus: focus?.sessionId === fromSessionId ? { ...focus, sessionId: toSessionId } : focus,
-      fromProject: [...new Set(fromProject.map((id) => swap(id)!))]
+      fromProject: Object.fromEntries(
+        Object.entries(fromProject).map(([id, project]) => [swap(id)!, project])
+      )
     })
   }
 
