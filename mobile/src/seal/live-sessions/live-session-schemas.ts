@@ -19,6 +19,44 @@ const permissionSchema = z.looseObject({
   options: salvagingArray(z.looseObject({ id: z.string().min(1), label: z.string() }))
 })
 
+const surfaceSchema = z.discriminatedUnion('kind', [
+  z.looseObject({ kind: z.literal('chat'), sessionId: z.string().min(1), tabId: z.string() }),
+  z.looseObject({ kind: z.literal('cli'), paneKey: z.string().min(1) }),
+  z.looseObject({ kind: z.literal('external') })
+])
+
+const capabilitiesSchema = z.looseObject({
+  send: z.boolean(),
+  answer: z.enum(['full', 'options', 'none']),
+  transcript: z.boolean(),
+  recap: z.boolean(),
+  context: z.enum(['exact', 'estimated', 'none']),
+  switchSurface: z.looseObject({ toChat: z.boolean(), toCli: z.boolean() }),
+  takeOver: z.boolean()
+})
+
+const TokenCount = z.number().finite()
+
+const contextSchema = z.looseObject({
+  usedTokens: TokenCount,
+  windowTokens: TokenCount,
+  percentage: z.number().finite(),
+  estimated: z.boolean(),
+  rows: salvagingArray(
+    z.looseObject({
+      name: z.string(),
+      tokens: TokenCount,
+      percentage: z.number().finite(),
+      deferred: z.literal(true).optional()
+    })
+  ),
+  autoCompactAtTokens: TokenCount.optional().catch(undefined),
+  model: z.string().optional().catch(undefined),
+  compactions: z.number().finite().optional().catch(undefined),
+  lastCompactedAt: Timestamp.optional().catch(undefined),
+  updatedAt: Timestamp.optional().catch(undefined)
+})
+
 export const liveSessionSchema = z.looseObject({
   id: z.string().min(1),
   // Any provider the host scans, so one added on desktop still lists here.
@@ -49,7 +87,16 @@ export const liveSessionSchema = z.looseObject({
   // The name set in Seal, and whether `title` is one set in the agent: both outrank the recap's title.
   customTitle: z.string().nullish().catch(undefined),
   titleNamed: z.boolean().optional().catch(undefined),
-  recap: liveSessionRecapBriefSchema.optional().catch(undefined)
+  recap: liveSessionRecapBriefSchema.optional().catch(undefined),
+  // Absent on hosts whose registry predates them; a shape this build can't read is dropped, not fatal.
+  surface: surfaceSchema.optional().catch(undefined),
+  capabilities: capabilitiesSchema.optional().catch(undefined),
+  workspace: z
+    .looseObject({ worktreeId: z.string().min(1), projectKey: z.string() })
+    .optional()
+    .catch(undefined),
+  context: contextSchema.optional().catch(undefined),
+  model: z.string().optional().catch(undefined)
 })
 
 export const liveSessionSnapshotSchema = z.looseObject({

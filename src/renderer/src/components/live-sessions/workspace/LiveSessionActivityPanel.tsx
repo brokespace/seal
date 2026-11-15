@@ -11,7 +11,7 @@ import type {
   LiveSubagentStatus,
   LiveTodo
 } from '../../../../../shared/live-sessions/live-session-activity'
-import type { LiveSessionProvider } from '../../../../../shared/live-sessions/live-session-types'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionPanel } from './live-session-tabs-store'
 import {
   LiveSessionPanelEmpty as Empty,
@@ -175,7 +175,7 @@ function keyedTodos<T extends { content: string }>(
 
 export type LiveSessionActivityPanelProps = {
   panel: LiveSessionActivityPanelKind
-  provider: LiveSessionProvider
+  provider: LiveSession['provider']
   activity: LiveSessionActivity | undefined
   /** The subagent whose transcript is showing. */
   openSubagentId: string | null
