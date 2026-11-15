@@ -54,12 +54,13 @@ export function resolveSplitViewItem(
         return null
       }
       const repo = state.repos.find((candidate) => candidate.id === worktree.repoId)
+      const isFolder = repo !== undefined && !isGitRepoKind(repo)
       return {
         kind: 'workspace',
         title: worktree.displayName,
         // A folder project is its one workspace; naming both would say the same thing twice.
-        projectName: repo && isGitRepoKind(repo) ? repo.displayName : null,
-        isFolder: false,
+        projectName: repo && !isFolder ? repo.displayName : null,
+        isFolder,
         repoId: worktree.repoId
       }
     }
