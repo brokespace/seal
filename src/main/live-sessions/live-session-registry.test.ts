@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LiveSessionRegistryEvent } from '../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery/discovery-output'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
@@ -204,24 +204,29 @@ describe('a machine that stops answering', () => {
 })
 
 describe('a Seal pane whose status changes between scans', () => {
+  afterEach(() => vi.useRealTimers())
+
   it('reads its machine again at once, not a scan later', async () => {
-    const started = Date.now()
-    const { state, registry, paneChanged } = machine(() => NOW + Date.now() - started)
+    vi.useFakeTimers()
+    vi.setSystemTime(NOW)
+    const { state, registry, paneChanged } = machine(() => Date.now())
     const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
-    state.running = true
     const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
+    state.running = true
     state.files = [transcript(recorded, WORKING, 0, 7)]
     state.panes = [{ ...sealPane, status: 'your-turn' }]
     registry.start()
     try {
-      await vi.waitFor(() => expect(shown()).toEqual(['waiting-task']))
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(shown()).toEqual(['waiting-task'])
 
       // The command ends and wakes Claude, which answers and stops again.
       state.files = [transcript(recorded, WORKING, 0)]
       paneChanged([{ ...sealPane, status: 'working' }])
       paneChanged([{ ...sealPane, status: 'your-turn' }])
       // The scan that read the command as running is a minute from its next.
-      await vi.waitFor(() => expect(shown()).toEqual(['your-turn']), { timeout: 5_000 })
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(shown()).toEqual(['your-turn'])
     } finally {
       registry.stop()
     }
