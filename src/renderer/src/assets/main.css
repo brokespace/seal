@@ -1391,9 +1391,10 @@ html.native-shell .app-layout {
   -webkit-app-region: drag;
 }
 
-/* A workspace's tab strip inside a split-view pane is not at the window's top: it must not drag the window. */
+/* A workspace's tab strip inside a split-view pane is not at the window's top: it must not drag the window, and a drag from its empty space must not select text in the panes around it. */
 [data-workspace-surface-pane-id] [data-terminal-focus-release-surface='true'] {
   -webkit-app-region: no-drag;
+  user-select: none;
 }
 
 /* The grid layer is click-through for workspace slots; its splitters still take the pointer. */
