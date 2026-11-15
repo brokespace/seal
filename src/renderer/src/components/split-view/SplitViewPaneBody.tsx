@@ -151,7 +151,8 @@ export function SplitViewPaneBody({
   return (
     <div
       data-split-view-pane-body={item.kind}
-      className="pointer-events-auto relative flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground"
+      tabIndex={-1}
+      className="pointer-events-auto relative flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground outline-none"
     >
       {item.kind === 'session' ? (
         <div className="flex min-h-0 flex-1">

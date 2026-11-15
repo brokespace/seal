@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Maximize2, Minimize2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/class-names'
@@ -36,6 +36,32 @@ function landsOnTab(target: EventTarget): boolean {
   return target instanceof Element && target.closest('[role="tab"], button') !== null
 }
 
+const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
+
+/**
+ * Focusing a pane by shortcut or by navigation leaves keyboard focus where it was, which may be
+ * a terminal or a composer in a pane that just lost focus; keys must not keep going there.
+ */
+function takeKeyboardFocusFromOtherPanes(paneId: string, pane: HTMLElement): void {
+  const owner = document.activeElement
+  const content = owner instanceof HTMLElement ? owner.closest(PANE_CONTENT_SELECTOR) : null
+  if (
+    !(owner instanceof HTMLElement) ||
+    !content ||
+    content === pane ||
+    content.getAttribute('data-workspace-surface-pane-id') === paneId
+  ) {
+    return
+  }
+  const body = pane.querySelector<HTMLElement>('[data-split-view-pane-body]')
+  if (body) {
+    body.focus({ preventScroll: true })
+  } else {
+    // A workspace's terminal or editor takes focus by itself once its pane is the focused one.
+    owner.blur()
+  }
+}
+
 /** One rectangle of the grid: its strip of tabs, and the active one's content. */
 export function SplitViewPane({
   paneId,
@@ -53,6 +79,12 @@ export function SplitViewPane({
   const resolved = useResolvedSplitViewItem(active)
   const title = useSplitViewItemTitle(active, resolved)
   const commands = useMemo(() => paneTabCommands(paneId), [paneId])
+  const paneRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (focused && paneRef.current) {
+      takeKeyboardFocusFromOtherPanes(paneId, paneRef.current)
+    }
+  }, [focused, paneId])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')
@@ -60,6 +92,7 @@ export function SplitViewPane({
 
   return (
     <div
+      ref={paneRef}
       role="group"
       aria-label={title}
       {...{ [SPLIT_VIEW_PANE_ATTRIBUTE]: paneId }}
