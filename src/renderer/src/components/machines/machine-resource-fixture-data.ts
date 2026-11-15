@@ -4,8 +4,10 @@ import type {
   MachineCleanupTargetId,
   MachineProcess
 } from '../../../../shared/machines/machine-resource-types'
-import type { MachineFileEntry } from '../../../../shared/machines/machine-types'
+import type { MachineGpu } from '../../../../shared/machines/machine-gpu-types'
+import type { MachineFileEntry, MachineId } from '../../../../shared/machines/machine-types'
 import { fakeDiskIndexReply } from './machine-disk-index-fixture-data'
+import { fakeGpuSnapshot, GPU_PROCESSES } from './machine-gpu-fixture-data'
 
 const now = Date.now()
 const GB = 1024 ** 3
@@ -100,18 +102,20 @@ type MachineResourceApi = Pick<
 /** A busy training box: enough for every resource detail and the folder input to have content. */
 export function fakeMachineResourceApi(
   home: string,
-  homeEntries: readonly MachineFileEntry[]
+  homeEntries: readonly MachineFileEntry[],
+  gpusOf: (machineId: MachineId) => MachineGpu[] = () => []
 ): MachineResourceApi {
   return {
-    listProcesses: async () => ({
-      processes: PROCESSES,
+    listProcesses: async ({ machineId, gpus }) => ({
+      processes: gpus ? [...GPU_PROCESSES, ...PROCESSES.slice(1)] : PROCESSES,
+      ...(gpus ? { gpu: fakeGpuSnapshot(gpusOf(machineId)) } : {}),
       tmuxPanes: [
         { pane: 'train:0.0', pid: 4100, cpuPercent: 381.2, rssBytes: 42e9, processCount: 6 }
       ],
       totalProcesses: 412,
       cpuBusyPercent: 82.4,
       swap: { totalBytes: 8 * 1024 ** 3, usedBytes: 1.5 * 1024 ** 3 },
-      collectedAt: now
+      collectedAt: Date.now()
     }),
     signalProcess: async () => ({ outcome: 'sent' }),
     listDockerContainers: async () => ({

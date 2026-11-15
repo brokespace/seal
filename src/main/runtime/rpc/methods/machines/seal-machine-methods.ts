@@ -37,6 +37,7 @@ import {
   ensureMachineDiskIndex,
   queryMachineDiskIndex
 } from '../../../../machines/resources/machine-disk-index'
+import { collectMachineMetricsWithGpus } from '../../../../machines/resources/machine-gpu-readings'
 import {
   openMachineFileForPhone,
   uploadStagedToMachine
@@ -71,7 +72,7 @@ export const SEAL_MACHINE_METHODS = [
     params: SealMachinesIdParams,
     handler: async (params) => {
       const connection = resolveMachineConnection(machineId(params.machineId))
-      const metrics = await connection.metrics()
+      const metrics = await collectMachineMetricsWithGpus(connection)
       ensureMachineDiskIndex(connection)
       return metrics
     }

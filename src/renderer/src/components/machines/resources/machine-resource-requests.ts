@@ -8,7 +8,7 @@ import type {
 } from '../../../../../shared/machines/machine-disk-index-types'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
 
-export type MachineResourceKind = 'cpu' | 'memory' | 'disk'
+export type MachineResourceKind = 'cpu' | 'memory' | 'disk' | 'gpu'
 
 export function machineResourceApi(): NonNullable<typeof window.api.machines> {
   const api = window.api.machines

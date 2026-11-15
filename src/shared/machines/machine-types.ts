@@ -1,3 +1,5 @@
+import type { MachineGpu } from './machine-gpu-types'
+
 /** `local`, or `machine:<record id>` whichever transport the machine uses. */
 export type MachineId = 'local' | `machine:${string}`
 
@@ -44,6 +46,8 @@ export type MachineMetrics = {
   diskMount: string | null
   uptimeSeconds: number | null
   homeDir: string | null
+  /** Absent on a machine with no GPU that Seal can read. */
+  gpus?: MachineGpu[]
   collectedAt: number
 }
 

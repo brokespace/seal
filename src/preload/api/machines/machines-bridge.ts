@@ -118,8 +118,8 @@ export type MachinesApi = {
     force?: boolean
     unlock?: boolean
   }) => Promise<MachineWorktree[]>
-  /** The busiest processes by CPU and memory; Linux and macOS machines only. */
-  listProcesses: (args: { machineId: MachineId }) => Promise<MachineProcessSnapshot>
+  /** The busiest processes by CPU and memory; `gpus` adds GPU readings and the processes on them. */
+  listProcesses: (args: { machineId: MachineId; gpus?: boolean }) => Promise<MachineProcessSnapshot>
   signalProcess: (args: {
     machineId: MachineId
     pid: number

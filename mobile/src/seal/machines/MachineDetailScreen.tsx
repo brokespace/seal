@@ -177,6 +177,7 @@ export function MachineDetailScreen({
           metrics={metrics.data}
           loading={metrics.isFetching}
           onOpenDisk={() => router.push(machineDiskHref(hostId, machineId, folder))}
+          eachGpu
         />
       ) : null}
       <MachinePathCrumbs path={folder} onOpen={openCrumb} />
