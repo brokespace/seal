@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isEscapeHandledAbovePage } from '@/lib/overlay-interaction/hover-layer-escape'
 
 function isEditableElement(target: EventTarget | null): target is HTMLElement {
   return (
@@ -15,7 +16,11 @@ export function useMobilePageEscape(onClose: () => void): void {
     // Why: the Escape that closed the page above this one (Settings) is still travelling when this page mounts.
     const listeningSince = performance.now()
     function onKeyDown(event: KeyboardEvent): void {
-      if (event.key !== 'Escape' || event.defaultPrevented || event.timeStamp < listeningSince) {
+      if (
+        event.key !== 'Escape' ||
+        isEscapeHandledAbovePage(event) ||
+        event.timeStamp < listeningSince
+      ) {
         return
       }
       const target = event.target

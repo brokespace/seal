@@ -1,6 +1,4 @@
-import { RefreshCw } from 'lucide-react'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
-import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import {
   HomeOverviewEmpty,
@@ -132,20 +130,7 @@ export function ProjectChangesCard({
   const changes = useProjectGitChanges(worktrees)
   const shown = worktrees.slice(0, PROJECT_CHANGES_MAX_WORKTREES)
   return (
-    <PageCard
-      title={t('seal.projectOverview.changes.title', 'Changes')}
-      action={
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t('seal.projectOverview.changes.refresh', 'Refresh changes')}
-          onClick={changes.reload}
-        >
-          <RefreshCw />
-        </Button>
-      }
-    >
+    <PageCard title={t('seal.projectOverview.changes.title', 'Changes')}>
       {shown.length === 0 ? (
         <HomeOverviewEmpty>
           {t('seal.projectOverview.changes.empty', 'No workspaces to check.')}
@@ -166,7 +151,7 @@ export function ProjectChangesCard({
         <p className="border-t border-border px-3 py-2 text-2xs text-muted-foreground">
           {t(
             'seal.projectOverview.changes.more',
-            'Showing the {{shown}} most recent of {{total}} workspaces.',
+            'Showing the first {{shown}} of {{total}} workspaces.',
             { shown: shown.length, total: worktrees.length }
           )}
         </p>

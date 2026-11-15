@@ -92,9 +92,17 @@ export function liveSessionStatusRank(status: LiveSessionStatus): number {
   return RANK[status]
 }
 
-/** Still running, or stopped with a turn the user has to look at. */
+/** A prompt or a question holds the agent until the user answers; a failure outlasts its agent. */
+function isBlockedOnUserNow(status: LiveSessionStatus): boolean {
+  return status === 'needs-permission' || status === 'waiting-input'
+}
+
+/**
+ * Still running: its process is there, or its status is one only a running agent has. A host that
+ * cannot list processes still reports a busy or blocked agent, which must not read as finished.
+ */
 export function isActiveLiveSession(session: Pick<LiveSession, 'alive' | 'status'>): boolean {
-  return session.alive || GROUPS[session.status] === 'working'
+  return session.alive || GROUPS[session.status] === 'working' || isBlockedOnUserNow(session.status)
 }
 
 /** Needs-attention first, then working, then idle; newest activity first inside each. */

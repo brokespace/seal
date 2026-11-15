@@ -14,33 +14,44 @@ import { useProjectOverviewLoad, type ProjectOverviewLoad } from './use-project-
 export const PROJECT_CHANGES_MAX_WORKTREES = 12
 export const PROJECT_RECENT_COMMITS = 8
 
+/** A `git status` per workspace is cheap next to an agent's own work, and edits show within a few seconds. */
+const PROJECT_CHANGES_LIVE_MS = 5_000
+
 /** Null for a workspace whose machine is not reachable right now. */
 export type ProjectChangeSummaries = ReadonlyMap<string, GitChangeSummary | null>
 
-/** `git status` of the project's workspaces, each read on the machine that holds it. */
+/** `git status` of the project's workspaces, each read on the machine that holds it, kept live. */
 export function useProjectGitChanges(
   worktrees: readonly Worktree[]
-): ProjectOverviewLoad<ProjectChangeSummaries> & { reload: () => void } {
+): ProjectOverviewLoad<ProjectChangeSummaries> {
   const targets = worktrees.slice(0, PROJECT_CHANGES_MAX_WORKTREES)
-  const key = targets.map((worktree) => `${getWorktreeHostIdentity(worktree)}@${worktree.head}`)
-  return useProjectOverviewLoad(key.join('\n'), async (signal) => {
-    const repos = useAppStore.getState().repos
-    const entries = await Promise.all(
-      targets.map(async (worktree): Promise<[string, GitChangeSummary | null]> => {
-        const context = resolveDeleteTargetGitContext(worktree, repos)
-        if (!context) {
-          return [worktree.id, null]
-        }
-        try {
-          const status = await getRuntimeGitStatus(context, { admissionTier: 'background', signal })
-          return [worktree.id, status.readError ? null : summarizeGitChanges(status)]
-        } catch {
-          return [worktree.id, null]
-        }
-      })
-    )
-    return new Map(entries)
-  })
+  // Keyed by which workspaces, not their order or head: the repeat picks up a commit, and a list
+  // that is re-sorted or gains a workspace keeps the rows it has already read.
+  return useProjectOverviewLoad(
+    targets.map(getWorktreeHostIdentity).sort().join('\n'),
+    async (signal) => {
+      const repos = useAppStore.getState().repos
+      const entries = await Promise.all(
+        targets.map(async (worktree): Promise<[string, GitChangeSummary | null]> => {
+          const context = resolveDeleteTargetGitContext(worktree, repos)
+          if (!context) {
+            return [worktree.id, null]
+          }
+          try {
+            const status = await getRuntimeGitStatus(context, {
+              admissionTier: 'background',
+              signal
+            })
+            return [worktree.id, status.readError ? null : summarizeGitChanges(status)]
+          } catch {
+            return [worktree.id, null]
+          }
+        })
+      )
+      return new Map(entries)
+    },
+    { liveMs: PROJECT_CHANGES_LIVE_MS, keepLast: true }
+  )
 }
 
 /** The latest commits on a checkout: the project's code timeline. */

@@ -1,6 +1,7 @@
 import { Copy, Ellipsis, FolderOpen, Plus, SlidersHorizontal, SquareTerminal } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/class-names'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +72,13 @@ export function ProjectOverviewHeaderActions({
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div
+      className={cn(
+        'flex max-w-full shrink-0 flex-wrap items-center gap-2',
+        // The editor's label follows the page's width, not the window's: the sidebar takes its share.
+        '[&_[data-machine-editor-label]]:hidden @min-[28rem]/project-header:[&_[data-machine-editor-label]]:inline'
+      )}
+    >
       <span title={createState.disabled ? createState.tooltip : undefined}>
         <Button
           type="button"

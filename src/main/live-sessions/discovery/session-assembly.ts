@@ -136,7 +136,7 @@ function pairProcesses(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children'>>
+    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed'>>
   transcripts: SummarizedTranscript[]
   nowMs: number
 }): LiveSession[] {
@@ -192,7 +192,9 @@ export function assembleHostSessions(input: {
     let statusSource: LiveSessionStatusSource = 'transcript'
     let statusDetail = summary?.detail ?? null
     const hookFresh = hook && hook.updatedMs >= lastWrite - HOOK_STALE_MS
-    const fromHook = hookFresh ? hookStatus(hook.state, running, summary) : null
+    const fromHook = hookFresh
+      ? hookStatus(hook.state, running, summary, output.processesListed === true && !running)
+      : null
     if (fromHook) {
       status = fromHook
       statusSource = 'agent-hooks'

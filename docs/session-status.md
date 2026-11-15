@@ -46,6 +46,15 @@ Groups (`liveSessionStatusGroup`) are unchanged in number: `attention` (approval
 `working` (working, running shell, both waits), `idle` (`your-turn`, `idle`), `finished` (`done`).
 The Home header counts them as "N working · N blocked on you · N waiting on you · N idle".
 
+A session is running or finished by `isActiveLiveSession`, which every list, badge and count
+shares. It is running while its process is seen, and also while its status is one only a running
+agent has: the `working` group, `needs-permission` and `waiting-input`. So a prompt or a question
+is never listed under "Recently finished", even on a host whose `ps` cannot list processes or in
+the scan that misses the process. A prompt that only a leftover hook file reports is dropped once
+the agent is known to be gone (layer 5). `errored` outlasts its agent: with the process gone it is a
+finished session that ended in an error. `your-turn` and `idle` with no process are an agent that
+just quit, and read as finished.
+
 `statusDetail` says what the status is about: the command or file (`Bash: pnpm test`), the call a
 prompt holds (`Allow Bash: rm -rf build?`), the question asked, the error. `statusSource` says
 which signal decided: `seal-hooks`, `agent-hooks`, `screen`, `process`, `transcript`,
@@ -131,7 +140,11 @@ For a session in a tmux pane or a Seal terminal the scan reads the visible scree
   `waiting-input`; a finished turn is `your-turn`. The scan still adds what a hook cannot say
   (running shell, subagent and task waits, a reply that asks).
 - **The agent's hook file** (`agent-hooks`): status the agent wrote itself, when fresher than the
-  transcript.
+  transcript. An agent killed mid-turn or at a prompt never clears its file, so a `working` or
+  `needs` state counts only while the agent may still be there. Once the host's `ps` has listed
+  its processes (`@@PS`), the agent is not among them and the transcript has gone quiet, the file
+  is ignored and the session reads as its transcript says: `done`. A host whose `ps` cannot list
+  processes proves nothing, and the hook stands.
 
 ### 6. Did the last reply ask a question?
 

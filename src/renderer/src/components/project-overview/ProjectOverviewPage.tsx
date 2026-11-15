@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { FolderSearch } from 'lucide-react'
 import { useAppStore } from '@/store'
-import { selectWorktreesByRepo } from '@/store/workspaces/catalog/workspace-record-fields'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { PageCardGrid } from '@/components/page-layout/PageCard'
@@ -28,7 +27,6 @@ import type { Repo } from '../../../../shared/repo-types'
 import {
   projectLiveSessions,
   projectRegistrations,
-  projectWorktrees,
   resolveProjectOverviewRepo
 } from './project-overview-model'
 import { ProjectAgentConfigCard } from './ProjectAgentConfigCard'
@@ -41,11 +39,11 @@ import { ProjectPullRequestsCard } from './ProjectPullRequestsCard'
 import { ProjectReadmeCard } from './ProjectReadmeCard'
 import { ProjectUsageCard } from './ProjectUsageCard'
 import { ProjectWorkspacesCard } from './ProjectWorkspacesCard'
+import { useProjectWorktrees } from './use-project-worktrees'
 
 function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   const now = useHomeNow()
   const repos = useAppStore((s) => s.repos)
-  const repoWorktrees = useAppStore((s) => selectWorktreesByRepo(s)[repo.id])
   const { sessions: allSessions } = useLiveSessions()
   const { links } = useLiveSessionLinks()
   const { machines } = useMachinesInventory(useLocalMachineName())
@@ -53,10 +51,7 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   const hostId = getRepoExecutionHostId(repo)
   const machine = machines.find((item) => item.executionHostId === hostId) ?? null
   const registrations = useMemo(() => projectRegistrations(repos, repo.id), [repos, repo.id])
-  const worktrees = useMemo(
-    () => projectWorktrees(repoWorktrees, repo, repos),
-    [repoWorktrees, repo, repos]
-  )
+  const worktrees = useProjectWorktrees(repo)
   const mainWorktree = worktrees.find((worktree) => worktree.isMainWorktree) ?? worktrees[0] ?? null
   const sessions = useMemo(
     () => projectLiveSessions(allSessions, links, repo.id),
@@ -70,9 +65,10 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
   return (
     <PageLayout data-project-overview={repo.id}>
       <PageHeader
-        className="@container/project-header"
+        // The actions drop under the name once a narrow page leaves the name no room beside them.
+        className="@container/project-header flex-wrap gap-y-2"
         title={
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-40 flex-1 items-center gap-2">
             <RepoIconGlyph
               repoIcon={repo.repoIcon}
               color={repo.badgeColor}

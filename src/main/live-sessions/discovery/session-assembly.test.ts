@@ -227,4 +227,30 @@ describe('assembleHostSessions', () => {
     )
     expect(session).toMatchObject({ status: 'needs-permission', statusSource: 'agent-hooks' })
   })
+
+  it('ends a session whose hook outlived its agent, unless the host cannot list processes', () => {
+    const id = '88888888-8888-4888-8888-888888888888'
+    const statusWith = (state: string, processesListed: boolean) =>
+      assembleHostSessions({
+        machine,
+        output: {
+          processes: [],
+          panes: [],
+          hookStates: [
+            {
+              path: '/h/a.json',
+              text: JSON.stringify({ id, state, updated: (NOW - 600_000) / 1000 })
+            }
+          ],
+          hostNowMs: NOW,
+          processesListed
+        },
+        transcripts: [transcript(id, '/srv/app', 600_000, 'tool-pending')],
+        nowMs: NOW
+      })[0].status
+    expect(statusWith('needs', true)).toBe('done')
+    expect(statusWith('working', true)).toBe('done')
+    expect(statusWith('needs', false)).toBe('needs-permission')
+    expect(statusWith('working', false)).toBe('working')
+  })
 })

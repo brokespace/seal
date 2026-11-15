@@ -108,7 +108,8 @@ function withoutHiddenProjectRows(
   return kept ?? rows
 }
 
-function addVisibleLineageAncestors(
+/** Puts each row's lineage ancestors ahead of it, so a parent stands where its first child ranks. */
+export function addVisibleLineageAncestors(
   worktrees: Worktree[],
   ancestorByIdentity: ReadonlyMap<string, Worktree>,
   lineageById: Record<string, WorktreeLineage>,

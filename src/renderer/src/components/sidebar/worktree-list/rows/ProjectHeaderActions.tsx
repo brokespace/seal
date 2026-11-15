@@ -12,6 +12,16 @@ export const PROJECT_HEADER_ACTIONS_CLASS_NAME = cn(
   'has-[button[aria-expanded=true]]:pointer-events-auto has-[button[aria-expanded=true]]:opacity-100'
 )
 
+/**
+ * Title padding that keeps the sessions badge clear of the hover actions, which otherwise cover the
+ * end of the title: two buttons left of a project's fold chevron, up to three on other headers.
+ */
+export function projectHeaderBadgeRoomClassName(beforeFold: boolean): string {
+  return beforeFold
+    ? 'can-hover:has-[[data-live-sessions-badge]]:pr-11'
+    : 'can-hover:has-[[data-live-sessions-badge]]:pr-17'
+}
+
 export function ProjectHeaderActions({
   className,
   ...props
