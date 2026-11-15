@@ -11,7 +11,7 @@ import type { RuntimeNavigationTarget } from '../../../shared/runtime-navigation
 import type { TerminalSurfaceCloseTarget } from '../../../shared/workspace-layout/terminal-surfaces/terminal-surface-close-target'
 import type { ClipboardImageThumbnail } from '../../../shared/clipboard-image'
 import type { ReadClipboardTextOptions } from '../../../shared/clipboard-text'
-import type { SplitViewWindowActionId } from '../../../shared/keybindings/definitions-split-view'
+import type { SplitViewActionId } from '../../../shared/keybindings/definitions-split-view'
 import type {
   AgentPaneActivityReply,
   AgentPaneActivityRequest
@@ -185,8 +185,8 @@ export const uiClipboardAndWindowControlsApi = {
   setSplitViewShowing: (showing: boolean): void => {
     ipcRenderer.send('ui:setSplitViewShowing', showing)
   },
-  onSplitViewShortcut: (callback: (actionId: SplitViewWindowActionId) => void): (() => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, actionId: SplitViewWindowActionId) =>
+  onSplitViewShortcut: (callback: (actionId: SplitViewActionId) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, actionId: SplitViewActionId) =>
       callback(actionId)
     ipcRenderer.on('ui:splitViewShortcut', listener)
     return () => ipcRenderer.removeListener('ui:splitViewShortcut', listener)

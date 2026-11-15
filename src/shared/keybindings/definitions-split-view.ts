@@ -2,16 +2,10 @@ import type { KeybindingActionId, KeybindingDefinition } from './types'
 import { platformBindings } from './definitions-support'
 
 /** Reach the app from any focus: main intercepts them ahead of editors and embedded pages. */
-export const SPLIT_VIEW_WINDOW_ACTION_IDS = [
+export const SPLIT_VIEW_ACTION_IDS = [
   'splitView.focusNextPane',
   'splitView.focusPreviousPane',
-  'splitView.toggleMaximize'
-] as const satisfies readonly KeybindingActionId[]
-
-export type SplitViewWindowActionId = (typeof SPLIT_VIEW_WINDOW_ACTION_IDS)[number]
-
-export const SPLIT_VIEW_ACTION_IDS = [
-  ...SPLIT_VIEW_WINDOW_ACTION_IDS,
+  'splitView.toggleMaximize',
   'splitView.moveTabRight',
   'splitView.moveTabDown',
   'splitView.closePane'

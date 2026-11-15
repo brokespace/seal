@@ -204,7 +204,10 @@ const MAIN_PROCESS_INTERCEPTED_ACTIONS: Partial<
   'tab.openQuickCommandsMenu': 'afterBrowserChords',
   'splitView.focusNextPane': 'afterBrowserChords',
   'splitView.focusPreviousPane': 'afterBrowserChords',
-  'splitView.toggleMaximize': 'afterBrowserChords'
+  'splitView.toggleMaximize': 'afterBrowserChords',
+  'splitView.moveTabRight': 'afterBrowserChords',
+  'splitView.moveTabDown': 'afterBrowserChords',
+  'splitView.closePane': 'afterBrowserChords'
 }
 
 export function isKeybindingInterceptedByMainProcess(definition: KeybindingDefinition): boolean {

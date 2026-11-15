@@ -1,7 +1,7 @@
 import type { AgentSessionAttachmentClipboardTarget } from '../../../shared/agent-session/agent-session-attachments'
 import type { ClipboardImageThumbnail } from '../../../shared/clipboard-image'
 import type { ReadClipboardTextOptions } from '../../../shared/clipboard-text'
-import type { SplitViewWindowActionId } from '../../../shared/keybindings/definitions-split-view'
+import type { SplitViewActionId } from '../../../shared/keybindings/definitions-split-view'
 import type {
   RichMarkdownContextMenuCommandPayload,
   RichMarkdownContextMenuTableTarget
@@ -62,7 +62,7 @@ export type UiWindowApi = {
   setShortcutRecorderFocused: (focused: boolean) => void
   /** Main takes the split-view chords from the focused surface only while the grid is on screen. */
   setSplitViewShowing: (showing: boolean) => void
-  onSplitViewShortcut: (callback: (actionId: SplitViewWindowActionId) => void) => () => void
+  onSplitViewShortcut: (callback: (actionId: SplitViewActionId) => void) => () => void
   onRichMarkdownContextCommand: (
     callback: (payload: RichMarkdownContextMenuCommandPayload) => void
   ) => () => void

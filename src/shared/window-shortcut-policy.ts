@@ -3,10 +3,7 @@ import {
   isKeybindingAllowedInTerminal,
   isKeybindingPotentialTerminalConflict
 } from './keybindings/effective'
-import {
-  SPLIT_VIEW_WINDOW_ACTION_IDS,
-  type SplitViewWindowActionId
-} from './keybindings/definitions-split-view'
+import { SPLIT_VIEW_ACTION_IDS, type SplitViewActionId } from './keybindings/definitions-split-view'
 import { keybindingMatchesAction, matchKeybindingDigitIndex } from './keybindings/matching'
 import type {
   KeybindingActionId,
@@ -50,7 +47,7 @@ export type WindowShortcutAction =
   | { type: 'jumpToTabIndex'; index: number }
   | { type: 'worktreeHistoryNavigate'; direction: 'back' | 'forward' }
   | { type: 'dictationKeyDown' }
-  | { type: 'splitViewShortcut'; actionId: SplitViewWindowActionId }
+  | { type: 'splitViewShortcut'; actionId: SplitViewActionId }
 
 function platformPrimaryModifier(
   input: Pick<WindowShortcutInput, 'meta' | 'control'>,
@@ -268,7 +265,7 @@ export function resolveWindowShortcutAction(
     return { type: 'toggleQuickCommandsMenu' }
   }
 
-  const splitViewActionId = SPLIT_VIEW_WINDOW_ACTION_IDS.find((actionId) =>
+  const splitViewActionId = SPLIT_VIEW_ACTION_IDS.find((actionId) =>
     keybindingMatchesAction(actionId, input, platform, keybindings, options)
   )
   if (splitViewActionId) {
