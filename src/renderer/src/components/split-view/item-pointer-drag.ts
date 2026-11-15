@@ -3,7 +3,10 @@ import {
   setSidebarPointerDragDocumentStyles,
   updateSidebarDragPreviewPosition
 } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
-import { swallowNextClickOnDragHandle } from '@/components/sidebar/worktree-list/drag/header-drag-click-swallow'
+import {
+  swallowClickAfterNextRelease,
+  swallowNextClickOnDragHandle
+} from '@/components/sidebar/worktree-list/drag/header-drag-click-swallow'
 import {
   beginSplitViewDrag,
   commitSplitViewDrop,
@@ -86,10 +89,7 @@ export function startItemPointerDrag(
       key.preventDefault()
       key.stopPropagation()
       finish()
-      // The release that ends a cancelled drag is not a click on the row it started from.
-      window.addEventListener('pointerup', () => swallowNextClickOnDragHandle(source), {
-        once: true
-      })
+      swallowClickAfterNextRelease(source)
     }
   }
 

@@ -24,7 +24,10 @@ import {
   measureWorktreeRowsViewTop
 } from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
-import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
+import {
+  swallowClickAfterNextRelease,
+  swallowNextClickOnDragHandle
+} from './header-drag-click-swallow'
 import { useHeaderDragGrabbingCursor } from './use-header-drag-grabbing-cursor'
 import type { Repo } from '../../../../../../shared/repo-types'
 
@@ -149,7 +152,9 @@ export function useRepoHeaderDrag({
         // Pointer cancellation or unmount may already have released capture.
       }
       if (session.promoted) {
-        swallowNextClickOnDragHandle(session.handleEl)
+        // Ended by a key, the release is still to come.
+        const swallow = release ? swallowNextClickOnDragHandle : swallowClickAfterNextRelease
+        swallow(session.handleEl)
       }
       const paneTookDrop =
         commit && release && session.paneDrop?.commit(release.clientX, release.clientY)
