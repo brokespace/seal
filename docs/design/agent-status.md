@@ -194,31 +194,33 @@ stateDiagram-v2
 
 ### Transitions
 
-| From                               | Event                                                                                                                                          | To                                    |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `idle`, `your-turn`, `errored`     | user prompt; scheduled wake-up fires; background work reports and the agent resumes                                                            | `working`                             |
-| `working`                          | foreground command running for 3 s                                                                                                             | `running-shell`                       |
-| `working`                          | shell call 5 s with no process, edit 8 s with no result (20 s in `auto` mode)                                                                  | `needs-permission`                    |
-| `working`                          | approval dialog on screen; registry `waiting`; pane hook `PermissionRequest`                                                                   | `needs-permission`                    |
-| `needs-permission`                 | answered in Seal, in the terminal, or on another device: the result is written, the dialog leaves the screen, or the registry leaves `waiting` | `working`                             |
-| `working`                          | question tool call pending                                                                                                                     | `waiting-input`                       |
-| `working`                          | subagent launch pending (`Agent`, `Task`, `wait_agent`)                                                                                        | `waiting-subagent`                    |
-| `working`                          | turn ends; nothing left running; reply tells                                                                                                   | `your-turn`                           |
-| `working`                          | turn ends; reply asks (wording, or the classifier)                                                                                             | `waiting-input`                       |
-| `working`                          | turn ends; background subagents still run                                                                                                      | `waiting-subagent`                    |
-| `working`                          | turn ends; background commands, monitors, workflows or a wake-up remain                                                                        | `waiting-task`                        |
-| `working`                          | turn fails (API error, `StopFailure`, `turn_aborted` with an error)                                                                            | `errored`                             |
-| `working`                          | interrupted (Esc, Ctrl-C)                                                                                                                      | `your-turn`, detail `Interrupted`     |
-| `waiting-task`, `waiting-subagent` | the work reports and the agent takes a turn                                                                                                    | `working`                             |
-| `waiting-task`, `waiting-subagent` | the work ended and nothing else runs (its notice, or confirmation it is gone)                                                                  | `your-turn`                           |
-| `waiting-task`                     | killed outside the agent                                                                                                                       | `your-turn`                           |
-| any but `errored`                  | the agent's process is gone and the transcript is quiet for 2 minutes                                                                          | `done`                                |
-| `waiting-input` (question tool)    | process gone, on a host that cannot list processes                                                                                             | stays `waiting-input`                 |
-| `errored`                          | process gone; a `done` or `idle` hook arrives                                                                                                  | stays `errored`                       |
-| any                                | the machine stops answering for three scans in a row                                                                                           | not shown, machine marked unreachable |
+| From                               | Event                                                                                                                                               | To                                    |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `idle`, `your-turn`, `errored`     | user prompt; scheduled wake-up fires; background work reports and the agent resumes                                                                 | `working`                             |
+| `working`                          | foreground command running for 3 s                                                                                                                  | `running-shell`                       |
+| `working`                          | shell call 5 s with no process, edit 8 s with no result (20 s in `auto` mode)                                                                       | `needs-permission`                    |
+| `working`                          | approval dialog on screen; registry `waiting`; pane hook `PermissionRequest`                                                                        | `needs-permission`                    |
+| `needs-permission`                 | answered in Seal, in the terminal, or on another device: the result is written, the dialog leaves the screen, or the registry leaves `waiting`      | `working`                             |
+| `working`                          | question tool call pending                                                                                                                          | `waiting-input`                       |
+| `working`                          | subagent launch pending (`Agent`, `Task`, `wait_agent`)                                                                                             | `waiting-subagent`                    |
+| `working`                          | turn ends; nothing left running; reply tells                                                                                                        | `your-turn`                           |
+| `working`                          | turn ends; reply asks (wording, or the classifier)                                                                                                  | `waiting-input`                       |
+| `working`                          | turn ends; background subagents still run                                                                                                           | `waiting-subagent`                    |
+| `working`                          | turn ends; background commands, monitors, workflows or a wake-up remain                                                                             | `waiting-task`                        |
+| `working`                          | turn fails (API error, `StopFailure`, `turn_aborted` with an error)                                                                                 | `errored`                             |
+| `working`                          | interrupted (Esc, Ctrl-C)                                                                                                                           | `your-turn`, detail `Interrupted`     |
+| `waiting-task`, `waiting-subagent` | the work reports and the agent takes a turn                                                                                                         | `working`                             |
+| `waiting-task`, `waiting-subagent` | the work ended and nothing else runs (its notice, or confirmation it is gone)                                                                       | `your-turn`                           |
+| `waiting-task`                     | killed outside the agent                                                                                                                            | `your-turn`                           |
+| any but `errored`                  | the agent's process, seen by an earlier scan, is off the host's process list; or no process was ever seen and the transcript is quiet for 2 minutes | `done`                                |
+| `waiting-input` (question tool)    | process gone, on a host that cannot list processes                                                                                                  | stays `waiting-input`                 |
+| `errored`                          | process gone; a `done` or `idle` hook arrives                                                                                                       | stays `errored`                       |
+| any                                | the machine stops answering for three scans in a row                                                                                                | not shown, machine marked unreachable |
 
 `done` needs the process to be gone, not merely unseen. A transcript written in the last 2 minutes
-(`FRESH_WRITE_MS`) belongs to a running agent even if `ps` missed it. A prompt or a question is
+(`FRESH_WRITE_MS`) belongs to a running agent even if `ps` missed it, unless a scan paired that
+transcript with a process which the host's list no longer shows and nothing was written since: that
+agent exited, and its session ends at the next scan. A prompt or a question is
 written to the transcript once and then nothing more until it is answered, so a quiet transcript
 does not end it: only a host that listed its processes (`@@PS`) and has nobody left holding the
 session does. A Codex thread held open by a shared `codex app-server` is still held.

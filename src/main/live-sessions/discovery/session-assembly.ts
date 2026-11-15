@@ -41,6 +41,8 @@ export type SummarizedTranscript = {
   codexPlan?: LiveTodo[] | null
   /** Codex: the background terminals its rollout left running, folded scan after scan. */
   codexTerminals?: CodexTerminalState
+  /** The agent process an earlier scan paired with it, and that scan's time on the host's clock. */
+  agent?: { pid: number; seenAtMs: number }
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -117,6 +119,7 @@ export function assembleHostSessions(input: {
     }
   }
   const commandsUnder = toolProcesses(output, now)
+  const listedPids = new Set(output.processes.map((p) => p.pid))
   const sessions: LiveSession[] = []
   // A Codex helper thread writes its own rollout, but it is its session's subagent, not a session.
   const helpers = codexHelperThreads(input.transcripts)
@@ -144,12 +147,21 @@ export function assembleHostSessions(input: {
       ...(transcript?.subagents ?? []).map((sub) => sub.mtimeMs),
       ...helperThreads.map((helper) => helper.mtimeMs)
     )
-    const running = process !== null || now - lastWrite < FRESH_WRITE_MS
+    // One Codex app-server holds many threads open but pairs with one; the rest still have it.
+    const heldOpen = transcript !== null && openTranscripts.has(transcript.path)
+    // The process seen writing it is off the host's list and nothing wrote since: it exited,
+    // however fresh its last write.
+    const last = transcript?.agent
+    const exited =
+      last !== undefined &&
+      output.processesListed === true &&
+      !heldOpen &&
+      !listedPids.has(last.pid) &&
+      lastWrite <= last.seenAtMs
+    const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
     const pane = process?.tty ? panesByTty.get(process.tty) : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
     const hook = hooks.get(`${provider}:${providerSessionId}`)
-    // One Codex app-server holds many threads open but pairs with one; the rest still have it.
-    const heldOpen = transcript !== null && openTranscripts.has(transcript.path)
     const gone = output.processesListed === true && !running && !heldOpen
     const commands = process ? commandsUnder(process.pid, provider) : null
     // The registry speaks for the process's current conversation only.

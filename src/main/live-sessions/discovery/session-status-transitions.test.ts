@@ -20,6 +20,8 @@ type Step = {
 type Transitions = { session: string; fixture: string; steps: Step[] }
 
 const GONE: ScanOptions = { alive: false, listsProcesses: true, quietMs: 10 * 60_000 }
+/** Its process left the host's list seconds after its last write. */
+const KILLED: ScanOptions = { alive: false, listsProcesses: true }
 
 // One scanner follows each session from scan to scan. Claude transcripts were recorded from Claude
 // Code 2.1.325 (docs/design/agent-status.md says how); `records` is how much of one was written.
@@ -246,7 +248,7 @@ const CLAUDE: Transitions[] = [
         host: { alive: false, quietMs: 10 * 60_000 },
         shows: 'waiting-input'
       },
-      { when: 'Claude was killed with the question open', host: GONE, shows: 'done' }
+      { when: 'Claude was killed with the question open', host: KILLED, shows: 'done' }
     ]
   },
   {
@@ -264,7 +266,7 @@ const CLAUDE: Transitions[] = [
         host: { quietMs: 30_000, registry: { state: 'busy' }, children: [] },
         shows: 'working'
       },
-      { when: 'Claude was killed at the prompt', host: GONE, shows: 'done' }
+      { when: 'Claude was killed at the prompt', host: KILLED, shows: 'done' }
     ]
   },
   {
@@ -346,7 +348,7 @@ const CODEX: Transitions[] = [
         },
         shows: 'needs-permission'
       },
-      { when: 'Codex was killed', host: GONE, shows: 'done' }
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
     ]
   },
   {
@@ -354,7 +356,7 @@ const CODEX: Transitions[] = [
     fixture: 'live-codex-ask-pending',
     steps: [
       { when: 'the question is up', host: {}, shows: 'waiting-input' },
-      { when: 'Codex was killed', host: GONE, shows: 'done' }
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
     ]
   },
   {
@@ -383,7 +385,7 @@ const CODEX: Transitions[] = [
         host: { listsProcesses: true, children: [] },
         shows: 'your-turn'
       },
-      { when: 'Codex was killed', host: GONE, shows: 'done' }
+      { when: 'Codex was killed', host: KILLED, shows: 'done' }
     ]
   },
   {
