@@ -32,7 +32,7 @@ export function TerminalSurface({
       <TerminalTitlebarTabs controller={controller} />
       <TerminalSplitWorkspaceSurfaces controller={controller} />
       <TerminalLegacyWorkspaceSurface controller={controller} />
-      {/* Sized to the whole workbench, so it would cover other panes. */}
+      {/* Sized to the whole workbench; in split view each workspace pane draws its own. */}
       <WslHostStoppedWorkspaceNotice
         worktreeId={splitViewShowing ? null : renderedActiveWorktreeId}
       />

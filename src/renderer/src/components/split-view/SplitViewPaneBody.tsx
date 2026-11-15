@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
+import { WslHostStoppedWorkspaceNotice } from '@/components/wsl-host-stopped/WslHostStoppedWorkspaceNotice'
 import { useTranslate } from '@/i18n/use-translate'
 import { requestBackgroundTerminalWorktreeMount } from '../terminal/background-terminal-worktree-mount'
 import { registerTabGroupBody } from '../tab-group/tab-group-body-geometry'
@@ -80,6 +81,8 @@ function WorkspaceSlot({
           {t('seal.splitView.placeholder.workspaceUnavailable', 'This workspace is not available.')}
         </Placeholder>
       )}
+      {/* The workbench's own copy is sized to the whole main area; here it stays in its pane. */}
+      <WslHostStoppedWorkspaceNotice worktreeId={worktreeId} />
     </div>
   )
 }
