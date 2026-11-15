@@ -44,11 +44,9 @@ export function useWorktreeListVirtualizer(args: {
   })
   const scrollContainerProps = useMemo(() => {
     const sectionProps = getScrollSectionContainerProps(scrollSectionInsets)
-    return {
-      ...sectionProps,
-      // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
-      style: { overflowAnchor: 'none', ...sectionProps.style } as React.CSSProperties
-    }
+    // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
+    const style: React.CSSProperties = { overflowAnchor: 'none', ...sectionProps.style }
+    return { ...sectionProps, style }
   }, [scrollSectionInsets])
   const stickyHeaderIndexes = useMemo(() => getStickyHeaderIndexes(renderRows), [renderRows])
   const activeStickyHeaderIndexRef = useRef<number | null>(null)

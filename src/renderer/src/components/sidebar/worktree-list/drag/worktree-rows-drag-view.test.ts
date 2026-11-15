@@ -8,7 +8,7 @@ import {
   measureWorktreeRowsViewTop
 } from './worktree-rows-drag-view'
 
-const LIST_RECT = { left: 0, right: 280, top: 100, bottom: 600 } as DOMRect
+const LIST_RECT = new DOMRect(0, 100, 280, 500)
 
 /** A 2000px list whose rows start below a 300px Active agents section and the 32px Projects header. */
 function list(scrollTop: number, insets = { leading: 300, pinned: 32 }): HTMLElement {
