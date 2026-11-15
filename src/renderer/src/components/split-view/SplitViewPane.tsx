@@ -39,17 +39,18 @@ function landsOnTab(target: EventTarget): boolean {
 const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
 
 /**
- * Focusing a pane by shortcut or by navigation leaves keyboard focus where it was, which may be
- * a terminal or a composer in a pane that just lost focus; keys must not keep going there.
+ * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
+ * it in the pane that lost focus, and closing the tab that held it leaves it nowhere.
  */
-function takeKeyboardFocusFromOtherPanes(paneId: string, pane: HTMLElement): void {
-  const owner = document.activeElement
-  const content = owner instanceof HTMLElement ? owner.closest(PANE_CONTENT_SELECTOR) : null
+function bringKeyboardFocusIntoPane(paneId: string, pane: HTMLElement): void {
+  const active = document.activeElement
+  const owner = active instanceof HTMLElement && active !== document.body ? active : null
+  const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
   if (
-    !(owner instanceof HTMLElement) ||
-    !content ||
-    content === pane ||
-    content.getAttribute('data-workspace-surface-pane-id') === paneId
+    owner &&
+    (!content ||
+      content === pane ||
+      content.getAttribute('data-workspace-surface-pane-id') === paneId)
   ) {
     return
   }
@@ -58,7 +59,7 @@ function takeKeyboardFocusFromOtherPanes(paneId: string, pane: HTMLElement): voi
     body.focus({ preventScroll: true })
   } else {
     // A workspace's terminal or editor takes focus by itself once its pane is the focused one.
-    owner.blur()
+    owner?.blur()
   }
 }
 
@@ -84,12 +85,13 @@ export function SplitViewPane({
   const resolved = useResolvedSplitViewItem(active)
   const title = useSplitViewItemTitle(active, resolved)
   const commands = useMemo(() => paneTabCommands(paneId), [paneId])
+  const activeKey = pane?.activeKey ?? null
   const paneRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (focused && paneRef.current) {
-      takeKeyboardFocusFromOtherPanes(paneId, paneRef.current)
+      bringKeyboardFocusIntoPane(paneId, paneRef.current)
     }
-  }, [focused, paneId])
+  }, [focused, paneId, activeKey])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')
@@ -120,7 +122,7 @@ export function SplitViewPane({
       <ItemTabStrip
         paneId={paneId}
         tabs={pane?.tabs ?? []}
-        activeKey={pane?.activeKey ?? null}
+        activeKey={activeKey}
         label={t('seal.splitView.pane.tabs', 'Tabs in this pane')}
         commands={commands}
         className={cn(
