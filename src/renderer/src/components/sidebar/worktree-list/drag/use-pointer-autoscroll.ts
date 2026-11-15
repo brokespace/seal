@@ -5,6 +5,7 @@ import {
 import { useCallback } from 'react'
 import type React from 'react'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import { measureWorktreeRowsAutoscrollRect } from './worktree-rows-drag-view'
 import type { WorktreeDragRuntime } from './use-runtime'
 import type { WorktreeDragSession } from './use-session'
 import type { WorktreePointerDrag } from './row-state'
@@ -41,7 +42,7 @@ export function useWorktreePointerDragAutoscroll(args: {
       pointerAutoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: drag.currentX, clientY: drag.currentY },
-        containerRect: container.getBoundingClientRect(),
+        containerRect: measureWorktreeRowsAutoscrollRect(container),
         scrollTop: container.scrollTop,
         scrollHeight: container.scrollHeight,
         clientHeight: container.clientHeight,

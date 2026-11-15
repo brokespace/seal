@@ -1,3 +1,5 @@
+import { readScrollSectionLayout } from '../viewport/scroll-section-insets'
+
 function getHeaderDragNumberAttribute(element: HTMLElement, attribute: string): number | undefined {
   const rawValue = element.getAttribute(attribute)
   if (rawValue === null) {
@@ -22,9 +24,12 @@ export function measureSidebarHeaderDragRect(
     virtualRow && virtualRowStart !== undefined
       ? virtualRowStart + rect.top - virtualRow.getBoundingClientRect().top
       : rect.top - containerRect.top + container.scrollTop
+  // Section ends are estimated from the first row; rows start below the sections sharing the scroll container.
+  const { margin } = readScrollSectionLayout(container)
+  const sectionEnd = getHeaderDragNumberAttribute(element, sectionEndAttribute)
   return {
     top,
     bottom: top + rect.height,
-    sectionBottom: getHeaderDragNumberAttribute(element, sectionEndAttribute)
+    sectionBottom: sectionEnd === undefined ? undefined : sectionEnd + margin
   }
 }

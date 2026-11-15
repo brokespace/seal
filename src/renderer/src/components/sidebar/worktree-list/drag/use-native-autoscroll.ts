@@ -5,6 +5,7 @@ import {
 import { useCallback } from 'react'
 import type React from 'react'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import { measureWorktreeRowsAutoscrollRect } from './worktree-rows-drag-view'
 import { getPointerDropStatusTarget } from './status-target'
 import type { WorktreeDropCommitContext } from './drop-commit-context'
 import type { WorktreeDragRuntime } from './use-runtime'
@@ -44,7 +45,7 @@ export function useWorktreeNativeDragAutoscroll(args: {
       nativeAutoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point,
-        containerRect: container.getBoundingClientRect(),
+        containerRect: measureWorktreeRowsAutoscrollRect(container),
         scrollTop: container.scrollTop,
         scrollHeight: container.scrollHeight,
         clientHeight: container.clientHeight,

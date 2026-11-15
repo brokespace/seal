@@ -20,6 +20,10 @@ import {
 } from './project-header-drag-contract'
 import { createProjectHeaderDragSession } from './project-header-drag-start'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  measureWorktreeRowsAutoscrollRect,
+  measureWorktreeRowsViewTop
+} from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
 import type { Repo } from '../../../../../../shared/repo-types'
@@ -97,7 +101,8 @@ export function useRepoHeaderDrag({
         scrollTop: container.scrollTop,
         rects: session.headerRects,
         sidebarRepoHeaderIds: session.sidebarRepoHeaderIds,
-        contentBottom: container.scrollHeight
+        contentBottom: container.scrollHeight,
+        viewTop: measureWorktreeRowsViewTop(container)
       })
     },
     []
@@ -185,7 +190,7 @@ export function useRepoHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: container.getBoundingClientRect(),
+        containerRect: measureWorktreeRowsAutoscrollRect(container),
         scrollTop: container.scrollTop,
         scrollHeight: container.scrollHeight,
         clientHeight: container.clientHeight,

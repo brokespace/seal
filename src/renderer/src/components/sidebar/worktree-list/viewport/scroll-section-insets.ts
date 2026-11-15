@@ -41,6 +41,19 @@ export function resolveScrollTopAfterLeadingResize(args: {
   return Math.min(scrollTop, Math.max(0, next.leading - next.pinned))
 }
 
+/** The insets the rows are laid out with now, read back from the scroll container. */
+export function readScrollSectionLayout(scrollContainer: HTMLElement): {
+  margin: number
+  pinned: number
+} {
+  const read = (variable: string): number =>
+    Number.parseFloat(scrollContainer.style.getPropertyValue(variable)) || 0
+  return {
+    margin: read(SCROLL_SECTION_MARGIN_VARIABLE),
+    pinned: read(SCROLL_SECTION_STICKY_INSET_VARIABLE)
+  }
+}
+
 export function getScrollSectionStyleVariables(
   insets: ScrollSectionInsets
 ): Record<string, string> {

@@ -17,6 +17,7 @@ import {
   type HostHeaderRect
 } from './host-header-drag-dom'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
+import { measureWorktreeRowsViewTop } from './worktree-rows-drag-view'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
 
 export type HostDragState = {
@@ -111,7 +112,7 @@ export function useHostHeaderDrag({
           : Math.max(0, rects[insertBefore].top - INDICATOR_GAP_PX)
       return {
         dropIndex: insertBefore,
-        dropIndicatorY: Math.max(container.scrollTop, rawIndicatorY)
+        dropIndicatorY: Math.max(measureWorktreeRowsViewTop(container), rawIndicatorY)
       }
     },
     []

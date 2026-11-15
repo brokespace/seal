@@ -20,6 +20,10 @@ import {
 } from './project-group-header-drag-contract'
 import { createProjectGroupHeaderDragSession } from './project-group-header-drag-start'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
+import {
+  measureWorktreeRowsAutoscrollRect,
+  measureWorktreeRowsViewTop
+} from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
 
@@ -88,7 +92,8 @@ export function useProjectGroupHeaderDrag({
         scrollTop: container.scrollTop,
         rects: session.headerRects,
         sidebarProjectGroupHeaderIds: session.sidebarProjectGroupHeaderIds,
-        contentBottom: container.scrollHeight
+        contentBottom: container.scrollHeight,
+        viewTop: measureWorktreeRowsViewTop(container)
       })
     },
     []
@@ -172,7 +177,7 @@ export function useProjectGroupHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: container.getBoundingClientRect(),
+        containerRect: measureWorktreeRowsAutoscrollRect(container),
         scrollTop: container.scrollTop,
         scrollHeight: container.scrollHeight,
         clientHeight: container.clientHeight,
