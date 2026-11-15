@@ -258,7 +258,8 @@ describe('assembleHostSessions', () => {
     const id = '99999999-9999-4999-8999-999999999999'
     const sessionWith = (
       phase: SummarizedTranscript['summary']['phase'],
-      hookState: string | null
+      hookState: string | null,
+      processesListed = true
     ) =>
       assembleHostSessions({
         machine,
@@ -274,7 +275,7 @@ describe('assembleHostSessions', () => {
               ]
             : [],
           hostNowMs: NOW,
-          processesListed: true
+          processesListed
         },
         transcripts: [transcript(id, '/srv/app', 600_000, phase)],
         nowMs: NOW
@@ -284,8 +285,10 @@ describe('assembleHostSessions', () => {
       status: 'waiting-input',
       inputRoutes: [{ kind: 'resume' }]
     })
-    expect(sessionWith('input-requested', 'needs').status).toBe('waiting-input')
     expect(sessionWith('input-requested', 'idle').status).toBe('waiting-input')
+    // A host that lists no processes cannot say the agent is gone, so its hook file still counts.
+    expect(sessionWith('input-requested', 'needs', false).status).toBe('waiting-input')
+    expect(sessionWith('input-requested', 'working', false).status).toBe('waiting-input')
     // Answered: the transcript moved on to a turn that ended.
     expect(sessionWith('turn-ended', null).status).toBe('done')
   })

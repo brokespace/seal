@@ -192,9 +192,12 @@ export function assembleHostSessions(input: {
     let statusSource: LiveSessionStatusSource = 'transcript'
     let statusDetail = summary?.detail ?? null
     const hookFresh = hook && hook.updatedMs >= lastWrite - HOOK_STALE_MS
-    const fromHook = hookFresh
-      ? hookStatus(hook.state, running, summary, output.processesListed === true && !running)
-      : null
+    // A question the transcript holds open is what the agent waits on, whatever its hooks wrote
+    // around the call: the file says "working" or "needs" until the answer, and never "asked".
+    const fromHook =
+      hookFresh && summary?.phase !== 'input-requested'
+        ? hookStatus(hook.state, running, summary, output.processesListed === true && !running)
+        : null
     if (fromHook) {
       status = fromHook
       statusSource = 'agent-hooks'

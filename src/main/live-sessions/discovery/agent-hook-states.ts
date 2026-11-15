@@ -58,8 +58,7 @@ export function hookStatus(
       return gone ? null : 'needs-permission'
     case 'done':
     case 'idle':
-      // A question the transcript still holds outlasts the agent, as it does without a hook.
-      return running || summary?.phase === 'input-requested' ? restingStatus(summary) : 'done'
+      return running ? restingStatus(summary) : 'done'
     default:
       return null
   }
