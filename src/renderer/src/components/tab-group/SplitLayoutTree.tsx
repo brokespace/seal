@@ -157,6 +157,8 @@ export function ResizeHandle({
 
   return (
     <div
+      role="separator"
+      aria-orientation={isHorizontal ? 'vertical' : 'horizontal'}
       className={`tab-group-split-resize-handle ${
         isHorizontal ? 'is-vertical' : 'is-horizontal'
       }${dragging ? ' is-dragging' : ''}`}

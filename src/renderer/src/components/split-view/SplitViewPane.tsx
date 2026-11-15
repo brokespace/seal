@@ -133,7 +133,7 @@ export function SplitViewPane({
           // The focused pane is told apart by a line and by strength, not by color alone.
           focused
             ? "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-[2px] before:bg-tab-active-indicator before:content-['']"
-            : '[&_[role=tablist]]:opacity-60'
+            : '[&_[role=tab][aria-selected=true]]:text-muted-foreground'
         )}
         after={
           <div className="flex shrink-0 items-center gap-0.5 px-1">
