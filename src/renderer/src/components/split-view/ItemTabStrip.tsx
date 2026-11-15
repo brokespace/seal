@@ -9,6 +9,7 @@ import {
   liveSessionStatusText
 } from '@/components/live-sessions/live-session-presentation'
 import { revealTabStripSlot } from '@/components/tab-bar/tab-strip-slot-geometry'
+import { bindTabStripContentResizeObservers } from '@/components/tab-bar/tab-strip-content-resize-observers'
 import { scrollTabStripOnWheel } from '@/components/tab-bar/tab-strip-wheel-scroll'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
@@ -200,13 +201,20 @@ export function ItemTabStrip({
 }): React.JSX.Element {
   const listRef = useRef<HTMLDivElement>(null)
   const hasTabs = tabs.length > 0
-  // The tab a pane shows may sit past the edge of a strip that overflows.
+  // The tab a pane shows may sit past the edge of a strip that overflows, or that got narrower.
   useEffect(() => {
     const list = listRef.current
-    const selected = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-    if (list && selected) {
-      revealTabStripSlot(list, selected)
+    if (!list) {
+      return undefined
     }
+    const reveal = (): void => {
+      const selected = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+      if (selected) {
+        revealTabStripSlot(list, selected)
+      }
+    }
+    reveal()
+    return bindTabStripContentResizeObservers(list, reveal)
   }, [activeKey, tabs.length])
   // As in a workspace's tab strip: no scrollbar, and the wheel scrolls it sideways.
   useEffect(() => {

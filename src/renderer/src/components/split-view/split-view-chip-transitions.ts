@@ -124,12 +124,22 @@ export function splitViewFocusAfterClose(
   return candidates.find(canResolve) ?? candidates[0] ?? null
 }
 
-/** Pane ids in tree order (first child before second), which reads left to right, top to bottom. */
-export function neighbourSplitViewPane(state: SplitViewState, step: 1 | -1): string | null {
+/** The next pane that can take focus, in tree order: left to right, top to bottom. */
+export function neighbourSplitViewPane(
+  state: SplitViewState,
+  step: 1 | -1,
+  canFocus: (paneId: string) => boolean = () => true
+): string | null {
   const paneIds = splitViewPaneIds(state.layout)
   const index = state.focusedPaneId ? paneIds.indexOf(state.focusedPaneId) : -1
-  if (paneIds.length < 2 || index === -1) {
+  if (index === -1) {
     return null
   }
-  return paneIds[(index + step + paneIds.length) % paneIds.length]
+  for (let hop = 1; hop < paneIds.length; hop++) {
+    const paneId = paneIds[(index + step * hop + paneIds.length * hop) % paneIds.length]
+    if (canFocus(paneId)) {
+      return paneId
+    }
+  }
+  return null
 }

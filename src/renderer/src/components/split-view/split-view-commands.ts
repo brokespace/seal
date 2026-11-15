@@ -145,7 +145,13 @@ export function focusSplitViewPaneOfWorkspace(worktreeId: string): void {
 }
 
 export function focusNeighbourSplitViewPane(step: 1 | -1): void {
-  const paneId = neighbourSplitViewPane(splitViewStore.getState(), step)
+  const state = splitViewStore.getState()
+  // A workspace or project that is gone cannot become the current item, so focus passes over it.
+  const paneId = neighbourSplitViewPane(state, step, (candidate) => {
+    const item = activeSplitViewItem(state, candidate)
+    const isSession = item?.kind === 'session'
+    return !item || isSession || resolveSplitViewItem(item, useAppStore.getState(), []) !== null
+  })
   if (paneId) {
     focusSplitViewPane(paneId)
   }
