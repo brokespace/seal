@@ -117,6 +117,7 @@ export function useVirtualRowMeasurementSync(args: {
     scrollElementRef: scrollRef,
     scrollOffsetRef,
     shouldSkipRestore: shouldSkipScrollAnchorRestore,
+    topInset: virtualization.scrollSectionInsets.pinned,
     totalSize,
     virtualizer
   })

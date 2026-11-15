@@ -11,6 +11,7 @@ import {
   getScrollSectionMargin,
   NO_SCROLL_SECTION_INSETS,
   resolveScrollTopAfterLeadingResize,
+  resolveScrollTopBeforeLeadingResize,
   type ScrollSectionInsets
 } from './scroll-section-insets'
 
@@ -52,39 +53,62 @@ export function useScrollSectionInsets(args: {
     if (typeof ResizeObserver === 'undefined') {
       return
     }
+    let settledScrollTop = scrollElement.scrollTop
+    const recordSettledScrollTop = (): void => {
+      const now = measure(hosts)
+      const known = insetsRef.current
+      // A scroll event ahead of the resize callback reports the browser's clamp, not where the user was.
+      if (now.leading === known.leading && now.pinned === known.pinned) {
+        settledScrollTop = scrollElement.scrollTop
+      }
+    }
+    scrollElement.addEventListener('scroll', recordSettledScrollTop, { passive: true })
     const observer = new ResizeObserver(() => {
       const previous = insetsRef.current
       const next = measure(hosts)
       if (!apply(next)) {
         return
       }
-      const before = scrollElement.scrollTop
+      const current = scrollElement.scrollTop
+      const before = resolveScrollTopBeforeLeadingResize({
+        scrollTop: current,
+        maxScrollTop: scrollElement.scrollHeight - scrollElement.clientHeight,
+        lastKnownScrollTop: settledScrollTop
+      })
       const target = resolveScrollTopAfterLeadingResize({ scrollTop: before, previous, next })
-      if (target !== before) {
+      if (target !== current) {
         programmaticScrollMarks.mark(target)
         scrollElement.scrollTop = target
       }
       const scrolledBy = scrollElement.scrollTop - before
       const anchor = scrollAnchorRef.current
       if (anchor) {
-        // The anchor row moved with the sections above it; keep its recorded viewport offset true.
+        // The anchor row moved with the sections above it; keep its recorded offset from the pinned header true.
         anchor.offset +=
-          scrolledBy - (getScrollSectionMargin(next) - getScrollSectionMargin(previous))
+          scrolledBy +
+          (next.pinned - previous.pinned) -
+          (getScrollSectionMargin(next) - getScrollSectionMargin(previous))
         if (anchor.scrollTop !== undefined) {
           anchor.scrollTop = scrollElement.scrollTop
         }
       }
       scrollOffsetRef.current = scrollElement.scrollTop
+      settledScrollTop = scrollElement.scrollTop
       // Why sync: rows must take their new offsets in the frame that moved the sections.
-      flushSync(() => setInsets(next))
-      if (scrolledBy !== 0) {
-        // The native scroll event arrives a frame late; the virtualizer needs the offset now.
-        scrollElement.dispatchEvent(new Event('scroll'))
-      }
+      flushSync(() => {
+        setInsets(next)
+        if (scrolledBy !== 0) {
+          // Why one render: rows laid out with the new margin and the stale offset would be measured out of view.
+          scrollElement.dispatchEvent(new Event('scroll'))
+        }
+      })
     })
     observer.observe(hosts.leading)
     observer.observe(hosts.pinnedHeader)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      scrollElement.removeEventListener('scroll', recordSettledScrollTop)
+    }
   }, [hosts, programmaticScrollMarks, scrollAnchorRef, scrollElement, scrollOffsetRef])
 
   return hosts ? insets : NO_SCROLL_SECTION_INSETS

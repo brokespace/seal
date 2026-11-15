@@ -16,6 +16,16 @@ export function getScrollSectionMargin(insets: ScrollSectionInsets): number {
   return insets.leading + insets.pinned
 }
 
+/** Where the viewport was before the sections resized: a shrinking section lets the browser clamp scrollTop first. */
+export function resolveScrollTopBeforeLeadingResize(args: {
+  scrollTop: number
+  maxScrollTop: number
+  lastKnownScrollTop: number
+}): number {
+  const { scrollTop, maxScrollTop, lastKnownScrollTop } = args
+  return scrollTop >= maxScrollTop - 1 ? Math.max(scrollTop, lastKnownScrollTop) : scrollTop
+}
+
 /** Keep what the user is looking at in place when the sections above the rows change height. */
 export function resolveScrollTopAfterLeadingResize(args: {
   scrollTop: number

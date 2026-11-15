@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { resolveScrollTopAfterLeadingResize } from './scroll-section-insets'
+import {
+  resolveScrollTopAfterLeadingResize,
+  resolveScrollTopBeforeLeadingResize
+} from './scroll-section-insets'
 
 describe('resolveScrollTopAfterLeadingResize', () => {
   it('keeps the rows in place when a section above them grows while they are being read', () => {
@@ -50,5 +53,33 @@ describe('resolveScrollTopAfterLeadingResize', () => {
         next: { leading: 36, pinned: 32 }
       })
     ).toBe(4)
+  })
+})
+
+describe('resolveScrollTopBeforeLeadingResize', () => {
+  it('recovers the position the browser clamped away when a section shrank at the end of the list', () => {
+    const before = resolveScrollTopBeforeLeadingResize({
+      scrollTop: 2753,
+      maxScrollTop: 2753,
+      lastKnownScrollTop: 2793
+    })
+    expect(before).toBe(2793)
+    expect(
+      resolveScrollTopAfterLeadingResize({
+        scrollTop: before,
+        previous: { leading: 776, pinned: 32 },
+        next: { leading: 736, pinned: 32 }
+      })
+    ).toBe(2753)
+  })
+
+  it('trusts the live position away from the end of the list', () => {
+    expect(
+      resolveScrollTopBeforeLeadingResize({
+        scrollTop: 1500,
+        maxScrollTop: 2753,
+        lastKnownScrollTop: 1620
+      })
+    ).toBe(1500)
   })
 })
