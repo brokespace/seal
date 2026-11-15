@@ -68,6 +68,7 @@ async function expectTwoWorkspacePanes(
 
 test('a workspace dropped on the main area splits it, resizes, and is restored after a restart', async (// oxlint-disable-next-line no-empty-pattern -- Playwright's second fixture arg is testInfo; the first must be an object destructure to opt out of the default fixture set.
 {}, testInfo) => {
+  // Two full app launches with a quit between them.
   test.setTimeout(300_000)
   const session = createRestartSession(testInfo)
   let firstApp: ElectronApplication | null = null
