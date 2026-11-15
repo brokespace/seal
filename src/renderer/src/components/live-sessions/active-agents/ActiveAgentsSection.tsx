@@ -299,8 +299,6 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
             data-focus-behavior="page"
             aria-multiselectable={marks.picked !== null}
             aria-label={title}
-            // Why: an always-mounted list is page content, not a popup that owns Escape and arrow keys.
-            data-focus-behavior="page"
             {...SIDEBAR_KEYBOARD_SECTION_PROPS}
             onKeyDown={onListKeyDown}
             className="flex flex-col pb-1 outline-none"
