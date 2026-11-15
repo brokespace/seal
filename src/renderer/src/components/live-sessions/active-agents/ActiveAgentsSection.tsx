@@ -12,6 +12,11 @@ import {
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
 import { SIDEBAR_STICKY_SECTION_HEADER_CLASS } from '@/components/sidebar/sidebar-scroll-sections'
+import {
+  offerSidebarSectionKeyboardCursor,
+  SIDEBAR_KEYBOARD_SECTION_PROPS,
+  useSidebarSectionKeyboardEntry
+} from '@/components/sidebar/sidebar-section-keyboard-handoff'
 import { ProjectsCollapseAllButton } from '@/components/sidebar/worktree-list/controls/ProjectsCollapseAllButton'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
@@ -135,18 +140,31 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       rowIn(list.current, sessionId)?.focus()
     }
   }
+  // Arrow keys run through the whole sidebar list: the Projects rows hand the cursor back here.
+  useSidebarSectionKeyboardEntry(
+    () => list.current,
+    (edge) => {
+      const sessionId = edge === 'first' ? order[0] : order.at(-1)
+      focusRow(sessionId)
+      return sessionId !== undefined
+    },
+    open
+  )
   const onListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     const row =
       event.target instanceof HTMLElement
         ? event.target.closest<HTMLElement>('[data-live-session-row]')
         : null
     const at = row ? order.indexOf(row.dataset.liveSessionRow ?? '') : -1
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
-      focusRow(order[Math.min(at + 1, order.length - 1)])
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      focusRow(order[Math.max(at - 1, 0)])
+      const next = at + (event.key === 'ArrowDown' ? 1 : -1)
+      // Past its own ends the cursor moves to the neighbouring section, or stays when there is none.
+      if (at === -1 || (next >= 0 && next < order.length)) {
+        focusRow(order[Math.max(0, Math.min(next, order.length - 1))])
+      } else {
+        offerSidebarSectionKeyboardCursor(list.current, event.key === 'ArrowDown' ? 'down' : 'up')
+      }
     } else if (event.key === 'Home') {
       event.preventDefault()
       focusRow(order[0])
@@ -255,6 +273,9 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
             role="listbox"
             aria-multiselectable={marks.picked !== null}
             aria-label={title}
+            // Why: an always-mounted list is page content, not a popup that owns Escape and arrow keys.
+            data-focus-behavior="page"
+            {...SIDEBAR_KEYBOARD_SECTION_PROPS}
             onKeyDown={onListKeyDown}
             className="flex flex-col pb-1 outline-none"
           >

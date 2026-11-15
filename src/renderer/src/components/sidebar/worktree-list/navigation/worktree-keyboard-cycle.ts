@@ -132,8 +132,7 @@ export function resolveCycledWorktreeId(args: {
   return worktreeIds[nextIndex] ?? null
 }
 
-/** The rendered row one keyboard step lands on, in exact sidebar order. */
-export function resolveCycledWorkspaceRow(args: {
+type CycledWorkspaceStepArgs = {
   rows: readonly HostSectionRow[]
   pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy
   activeWorktreeId: string | null
@@ -142,7 +141,12 @@ export function resolveCycledWorkspaceRow(args: {
   navHistory: readonly WorktreeNavHistoryEntry[]
   navHistoryIndex: number
   direction: 'up' | 'down'
-}): RenderedWorkspaceRow | null {
+}
+
+/** One keyboard step in exact sidebar order; `wrapped` when it ran off one end and landed on the other. */
+export function resolveCycledWorkspaceStep(
+  args: CycledWorkspaceStepArgs
+): { row: RenderedWorkspaceRow; wrapped: boolean } | null {
   const worktreeRows = getCyclableWorktreeRows(args.rows, args.pinnedDisplayPolicy)
   const anchorWorktreeId = resolveCycleAnchorWorktreeId({
     activeWorktreeId: args.activeWorktreeId,
@@ -150,24 +154,41 @@ export function resolveCycledWorkspaceRow(args: {
     navHistoryIndex: args.navHistoryIndex,
     worktreeIds: worktreeRows.map((row) => row.worktree.id)
   })
+  const identities = worktreeRows.map(getCyclableRowIdentity)
+  const activeIdentity = resolveActiveCycleIdentity({
+    rows: worktreeRows,
+    activeWorktreeId: anchorWorktreeId,
+    activeWorkspaceExecutionHostId: resolveCycleAnchorExecutionHostId({
+      anchorWorktreeId,
+      activeWorktreeId: args.activeWorktreeId,
+      activeWorkspaceExecutionHostId: args.activeWorkspaceExecutionHostId,
+      lastActiveWorkspace: args.lastActiveWorkspace
+    })
+  })
   const nextIdentity = resolveCycledWorktreeId({
-    worktreeIds: worktreeRows.map(getCyclableRowIdentity),
-    activeWorktreeId: resolveActiveCycleIdentity({
-      rows: worktreeRows,
-      activeWorktreeId: anchorWorktreeId,
-      activeWorkspaceExecutionHostId: resolveCycleAnchorExecutionHostId({
-        anchorWorktreeId,
-        activeWorktreeId: args.activeWorktreeId,
-        activeWorkspaceExecutionHostId: args.activeWorkspaceExecutionHostId,
-        lastActiveWorkspace: args.lastActiveWorkspace
-      })
-    }),
+    worktreeIds: identities,
+    activeWorktreeId: activeIdentity,
     direction: args.direction
   })
-  if (nextIdentity === null) {
+  const row =
+    nextIdentity === null
+      ? undefined
+      : worktreeRows.find((candidate) => getCyclableRowIdentity(candidate) === nextIdentity)
+  if (!row) {
     return null
   }
-  return worktreeRows.find((row) => getCyclableRowIdentity(row) === nextIdentity) ?? null
+  const from = activeIdentity === null ? -1 : identities.indexOf(activeIdentity)
+  return {
+    row,
+    wrapped: from !== -1 && from === (args.direction === 'down' ? identities.length - 1 : 0)
+  }
+}
+
+/** The rendered row one keyboard step lands on, in exact sidebar order. */
+export function resolveCycledWorkspaceRow(
+  args: CycledWorkspaceStepArgs
+): RenderedWorkspaceRow | null {
+  return resolveCycledWorkspaceStep(args)?.row ?? null
 }
 
 /** A held arrow previews its row as active before the workspace switch commits. */

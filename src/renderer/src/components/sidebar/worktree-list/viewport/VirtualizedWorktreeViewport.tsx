@@ -37,6 +37,7 @@ import type { RepoHeaderProjectActions } from '../rows/repo-header-project-actio
 import { getRepoOwnerWorktreeVisibilityDefaults } from '../../../../store/slices/worktrees/listing/worktree-visibility-defaults-by-host'
 import { renderWorktreeVirtualRow } from '../rows/virtual-row-dispatch'
 import { SidebarScrollSectionSlots } from '../../sidebar-scroll-sections'
+import { SIDEBAR_KEYBOARD_SECTION_PROPS } from '../../sidebar-section-keyboard-handoff'
 import { cn } from '@/lib/class-names'
 
 const EMPTY_HOST_OPTIONS: NonNullable<VirtualizedWorktreeViewportProps['hostOptions']> = []
@@ -387,6 +388,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
         <div
           role="presentation"
           data-worktree-sidebar-content
+          {...SIDEBAR_KEYBOARD_SECTION_PROPS}
           className="relative w-full"
           style={{ height: `${virtualization.virtualizer.getTotalSize()}px` }}
         >
