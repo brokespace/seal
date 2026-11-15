@@ -36,8 +36,10 @@ it('puts both sections in the one scroll container, ahead of the project rows', 
   const [container, ...others] = scrollContainers()
   expect(others).toEqual([])
   const order = [
-    ...container.querySelectorAll('[data-agents], [data-projects-header], [data-project-rows]')
-  ].map((element) => Object.keys((element as HTMLElement).dataset)[0])
+    ...container.querySelectorAll<HTMLElement>(
+      '[data-agents], [data-projects-header], [data-project-rows]'
+    )
+  ].map((element) => Object.keys(element.dataset)[0])
   expect(order).toEqual(['agents', 'projectsHeader', 'projectRows'])
 })
 

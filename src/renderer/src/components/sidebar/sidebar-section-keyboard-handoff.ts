@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useEffectEvent } from 'react'
 
 const SECTION_ATTRIBUTE = 'data-sidebar-keyboard-section'
 const SCROLL_CONTAINER_SELECTOR = '[data-worktree-sidebar]'
@@ -35,17 +35,15 @@ export function useSidebarSectionKeyboardEntry(
   // Sections that mount and unmount their row container re-subscribe on this.
   mounted: unknown = true
 ): void {
-  const onEnterRef = useRef(onEnter)
-  onEnterRef.current = onEnter
-  const getSectionRef = useRef(getSection)
-  getSectionRef.current = getSection
+  const resolveSection = useEffectEvent(getSection)
+  const enter = useEffectEvent(onEnter)
   useEffect(() => {
-    const section = getSectionRef.current()
+    const section = resolveSection()
     if (!section) {
       return
     }
     const handle = (event: Event): void => {
-      if (event instanceof CustomEvent && onEnterRef.current(event.detail)) {
+      if (event instanceof CustomEvent && enter(event.detail)) {
         event.preventDefault()
       }
     }
