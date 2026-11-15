@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { useAppStore } from '@/store'
 import {
   getRuntimeGitHistory,
@@ -29,6 +28,13 @@ export type ProjectChangeReading = {
 /** Null for a workspace git has not answered for yet: its machine is not reachable, or git fails. */
 export type ProjectChangeSummaries = ReadonlyMap<string, ProjectChangeReading | null>
 
+/**
+ * The last answer each workspace gave. A read that fails (a rebase rewriting `.git`, a machine that
+ * dropped off) is no reason to forget it: the row keeps it and says how old it is. Kept for the
+ * app's run, not the page's, so leaving the page and coming back while git still fails shows it too.
+ */
+const lastGoodChanges = new Map<string, ProjectChangeReading>()
+
 async function readGitChanges(
   worktree: Worktree,
   repos: readonly Repo[],
@@ -51,25 +57,22 @@ export function useProjectGitChanges(
   worktrees: readonly Worktree[]
 ): ProjectOverviewLoad<ProjectChangeSummaries> {
   const targets = worktrees.slice(0, PROJECT_CHANGES_MAX_WORKTREES)
-  // A read that fails (a rebase holding the index, a machine that dropped off) is no reason to
-  // forget what the workspace last said: the row keeps it and says how old it is.
-  const lastGood = useRef(new Map<string, ProjectChangeReading>())
   // Keyed by which workspaces, not their order or head: the repeat picks up a commit, and a list
   // that is re-sorted or gains a workspace keeps the rows it has already read.
   return useProjectOverviewLoad(
     targets.map(getWorktreeHostIdentity).sort().join('\n'),
     async (signal) => {
       const repos = useAppStore.getState().repos
-      const kept = lastGood.current
       const entries = await Promise.all(
         targets.map(async (worktree): Promise<[string, ProjectChangeReading | null]> => {
+          const identity = getWorktreeHostIdentity(worktree)
           const summary = await readGitChanges(worktree, repos, signal)
           if (summary) {
             const reading = { summary, readAt: Date.now(), failedAt: null }
-            kept.set(worktree.id, reading)
+            lastGoodChanges.set(identity, reading)
             return [worktree.id, reading]
           }
-          const last = kept.get(worktree.id)
+          const last = lastGoodChanges.get(identity)
           return [worktree.id, last ? { ...last, failedAt: Date.now() } : null]
         })
       )
