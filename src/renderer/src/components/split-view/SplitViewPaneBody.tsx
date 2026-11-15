@@ -124,15 +124,18 @@ export function SplitViewPaneBody({
   paneId,
   item,
   resolved,
-  title
+  title,
+  shown
 }: {
   paneId: string
   item: SplitViewItem | null
   resolved: ResolvedSplitViewItem | null
   title: string
+  shown: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  if (!item) {
+  // A workspace out of sight follows the hidden-workspace rules: no slot asks to load it.
+  if (!item || (item.kind === 'workspace' && !shown)) {
     return <div className="flex-1" />
   }
   const close = (): void => closeSplitViewItems(new Set([splitViewItemKey(item)]))

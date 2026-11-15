@@ -30,5 +30,7 @@ export function fitSplitViewZoneToPane(zone: SplitViewZone, paneId: string | nul
       : `[${SPLIT_VIEW_PANE_ATTRIBUTE}="${CSS.escape(paneId)}"]`
   const pane = document.querySelector(selector)
   // A pane that is not drawn (another one is maximized) has no size to judge.
-  return pane ? fitSplitViewZoneToSize(zone, pane.getBoundingClientRect()) : zone
+  return pane && pane.getClientRects().length > 0
+    ? fitSplitViewZoneToSize(zone, pane.getBoundingClientRect())
+    : zone
 }

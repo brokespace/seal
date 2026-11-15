@@ -65,10 +65,13 @@ function takeKeyboardFocusFromOtherPanes(paneId: string, pane: HTMLElement): voi
 /** One rectangle of the grid: its strip of tabs, and the active one's content. */
 export function SplitViewPane({
   paneId,
-  placement
+  placement,
+  shown
 }: {
   paneId: string
   placement: SplitLayoutLeafPlacement
+  /** False while another pane is drawn alone (maximized, or a main area too narrow for two). */
+  shown: boolean
 }): React.JSX.Element {
   const t = useTranslate()
   const state = useSplitView()
@@ -153,7 +156,13 @@ export function SplitViewPane({
           </div>
         }
       />
-      <SplitViewPaneBody paneId={paneId} item={active} resolved={resolved} title={title} />
+      <SplitViewPaneBody
+        paneId={paneId}
+        item={active}
+        resolved={resolved}
+        title={title}
+        shown={shown}
+      />
     </div>
   )
 }

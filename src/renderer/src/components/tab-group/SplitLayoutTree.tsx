@@ -183,6 +183,14 @@ type SplitLayoutTreeProps = {
   onRatioChange: (nodePath: string, ratio: number) => void
   onResizeStart?: () => void
   onResizeEnd?: () => void
+  /** Draws this leaf alone over the whole tree; the others stay mounted, out of the layout. */
+  soloLeafId?: string | null
+}
+
+function hasLeaf(node: TabGroupLayoutNode, groupId: string): boolean {
+  return node.type === 'leaf'
+    ? node.groupId === groupId
+    : hasLeaf(node.first, groupId) || hasLeaf(node.second, groupId)
 }
 
 function SplitLayoutNode({
@@ -201,44 +209,63 @@ function SplitLayoutNode({
 
   const isHorizontal = node.direction === 'horizontal'
   const ratio = node.ratio ?? 0.5
+  const solo = tree.soloLeafId ?? null
+  // The side holding the solo leaf takes the whole node, with the edges the node itself has.
+  const soloSide = solo === null ? null : hasLeaf(node.first, solo) ? 'first' : 'second'
+  const sideStyle = (side: 'first' | 'second', share: number): React.CSSProperties =>
+    soloSide === null
+      ? { flex: `${share} 1 0%` }
+      : soloSide === side
+        ? { flex: '1 1 0%' }
+        : { display: 'none' }
 
   return (
     <div
       className="flex flex-1 min-w-0 min-h-0 overflow-hidden"
       style={{ flexDirection: isHorizontal ? 'row' : 'column' }}
     >
-      <div className="flex min-w-0 min-h-0 overflow-hidden" style={{ flex: `${ratio} 1 0%` }}>
+      <div className="flex min-w-0 min-h-0 overflow-hidden" style={sideStyle('first', ratio)}>
         <SplitLayoutNode
           {...tree}
           node={node.first}
           nodePath={nodePath.length > 0 ? `${nodePath}.first` : 'first'}
-          placement={{
-            ...placement,
-            touchesRightEdge: isHorizontal ? false : placement.touchesRightEdge,
-            touchesBottomEdge: isHorizontal ? placement.touchesBottomEdge : false,
-            // The resize handle owns the inner seam; pane borders would stack into extra lines.
-            suppressRightBorder: isHorizontal ? true : placement.suppressRightBorder,
-            suppressBottomBorder: isHorizontal ? placement.suppressBottomBorder : true
-          }}
+          placement={
+            soloSide === 'first'
+              ? placement
+              : {
+                  ...placement,
+                  touchesRightEdge: isHorizontal ? false : placement.touchesRightEdge,
+                  touchesBottomEdge: isHorizontal ? placement.touchesBottomEdge : false,
+                  // The resize handle owns the inner seam; pane borders would stack into extra lines.
+                  suppressRightBorder: isHorizontal ? true : placement.suppressRightBorder,
+                  suppressBottomBorder: isHorizontal ? placement.suppressBottomBorder : true
+                }
+          }
         />
       </div>
-      <ResizeHandle
-        direction={node.direction}
-        onResizeStart={() => tree.onResizeStart?.()}
-        onResizeEnd={tree.onResizeEnd}
-        onRatioChange={(ratio) => tree.onRatioChange(nodePath, ratio)}
-      />
-      <div className="flex min-w-0 min-h-0 overflow-hidden" style={{ flex: `${1 - ratio} 1 0%` }}>
+      {soloSide === null ? (
+        <ResizeHandle
+          direction={node.direction}
+          onResizeStart={() => tree.onResizeStart?.()}
+          onResizeEnd={tree.onResizeEnd}
+          onRatioChange={(ratio) => tree.onRatioChange(nodePath, ratio)}
+        />
+      ) : null}
+      <div className="flex min-w-0 min-h-0 overflow-hidden" style={sideStyle('second', 1 - ratio)}>
         <SplitLayoutNode
           {...tree}
           node={node.second}
           nodePath={nodePath.length > 0 ? `${nodePath}.second` : 'second'}
-          placement={{
-            ...placement,
-            touchesTopEdge: isHorizontal ? placement.touchesTopEdge : false,
-            touchesLeftEdge: isHorizontal ? false : placement.touchesLeftEdge,
-            suppressLeftBorder: isHorizontal ? true : placement.suppressLeftBorder
-          }}
+          placement={
+            soloSide === 'second'
+              ? placement
+              : {
+                  ...placement,
+                  touchesTopEdge: isHorizontal ? placement.touchesTopEdge : false,
+                  touchesLeftEdge: isHorizontal ? false : placement.touchesLeftEdge,
+                  suppressLeftBorder: isHorizontal ? true : placement.suppressLeftBorder
+                }
+          }
         />
       </div>
     </div>

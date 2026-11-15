@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react'
-import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
+import { useCallback, useLayoutEffect, useRef } from 'react'
 import { SplitLayoutTree, type SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
 import { resizeSplitViewPanes } from './split-view-commands'
@@ -33,24 +32,25 @@ export default function SplitViewLayer(): React.JSX.Element | null {
     }
   }, [])
 
-  const showsOnePane = narrow || state.maximizedPaneId !== null
-  const layout = useMemo(
-    (): TabGroupLayoutNode | null =>
-      showsOnePane && state.focusedPaneId
-        ? { type: 'leaf', groupId: state.focusedPaneId }
-        : state.layout,
-    [showsOnePane, state.focusedPaneId, state.layout]
-  )
+  const { layout } = state
+  // Maximized or too narrow: the focused pane alone. The others stay mounted, so a session keeps
+  // its draft and its place in the transcript.
+  const soloPaneId = narrow || state.maximizedPaneId !== null ? state.focusedPaneId : null
   // The geometry registry measures on resize; a pane that only changed place must be re-read.
   useLayoutEffect(() => {
     measureAllTabGroupBodies()
-  }, [layout])
+  }, [layout, soloPaneId])
 
   const renderLeaf = useCallback(
     (paneId: string, placement: SplitLayoutLeafPlacement) => (
-      <SplitViewPane key={paneId} paneId={paneId} placement={placement} />
+      <SplitViewPane
+        key={paneId}
+        paneId={paneId}
+        placement={placement}
+        shown={soloPaneId === null || soloPaneId === paneId}
+      />
     ),
-    []
+    [soloPaneId]
   )
 
   if (!layout) {
@@ -64,6 +64,7 @@ export default function SplitViewLayer(): React.JSX.Element | null {
     >
       <SplitLayoutTree
         layout={layout}
+        soloLeafId={soloPaneId}
         rootTouchesBottomEdge
         renderLeaf={renderLeaf}
         onRatioChange={resizeSplitViewPanes}
