@@ -153,7 +153,28 @@ const STATIC_TITLE_COPY = {
     translate(
       'keybindings.title.terminalSwitchInputSource',
       'Switch input source / language (native)'
-    )
+    ),
+  'splitView.focusNextPane': () =>
+    translate('seal.keybindings.title.splitViewFocusNextPane', 'Split view: focus next pane'),
+  'splitView.focusPreviousPane': () =>
+    translate(
+      'seal.keybindings.title.splitViewFocusPreviousPane',
+      'Split view: focus previous pane'
+    ),
+  'splitView.toggleMaximize': () =>
+    translate('seal.keybindings.title.splitViewToggleMaximize', 'Split view: maximize / restore'),
+  'splitView.moveTabRight': () =>
+    translate(
+      'seal.keybindings.title.splitViewMoveTabRight',
+      'Split view: move tab to a pane on the right'
+    ),
+  'splitView.moveTabDown': () =>
+    translate(
+      'seal.keybindings.title.splitViewMoveTabDown',
+      'Split view: move tab to a pane below'
+    ),
+  'splitView.closePane': () =>
+    translate('seal.keybindings.title.splitViewClosePane', 'Split view: close pane')
 } satisfies Record<StaticKeybindingActionId, () => string>
 
 const GROUP_COPY = {
@@ -167,6 +188,7 @@ const GROUP_COPY = {
   Settings: () => translate('keybindings.group.settings', 'Settings'),
   'Terminal Panes': () => translate('keybindings.group.3492a954c8', 'Terminal panes'),
   Chat: () => translate('keybindings.group.chat', 'Chat'),
+  'Split view': () => translate('seal.keybindings.group.splitView', 'Split view'),
   Agents: () => translate('keybindings.group.agents', 'Agents')
 } satisfies Record<string, () => string>
 

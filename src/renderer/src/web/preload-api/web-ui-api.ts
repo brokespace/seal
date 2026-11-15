@@ -281,6 +281,8 @@ export function createWebUiApi(): NonNullable<Partial<PreloadApi>['ui']> {
     setTerminalInputFocused: () => {},
     setFloatingFocus: () => {},
     setShortcutRecorderFocused: () => {},
+    setSplitViewShowing: () => {},
+    onSplitViewShortcut: () => noopUnsubscribe,
     onRichMarkdownContextCommand: () => noopUnsubscribe,
     onFullscreenChanged: () => noopUnsubscribe,
     minimize: () => {},

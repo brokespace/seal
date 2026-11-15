@@ -24,6 +24,7 @@ import {
   type PhysicalModifierToken
 } from '../../../shared/keybindings'
 import { PLUGIN_COMMAND_ALIAS_ACTION_IDS } from '../../../shared/plugins/contributions/plugin-command-actions'
+import { SPLIT_VIEW_ACTION_IDS } from '../../../shared/keybindings/definitions-split-view'
 import {
   ModifierDoubleTapDetector,
   toModifierDoubleTapEvent
@@ -41,6 +42,9 @@ import type { FloatingWorkspacePanelState } from './use-floating-workspace-panel
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/keyboard/app-keyboard-router'
 import { textInputOwnsComposition } from '../../../shared/text-input-shortcut-policy'
 import { isAgentTerminalPreviewTarget } from '../components/dashboard/terminal-preview/agent-terminal-preview-target'
+
+// A handler that returns false leaves the key to whatever has focus.
+const APP_HANDLER_ACTION_IDS = [...PLUGIN_COMMAND_ALIAS_ACTION_IDS, ...SPLIT_VIEW_ACTION_IDS]
 
 /** Register window listeners once; each key event reads the latest committed shortcut state through a ref. */
 export function useGlobalKeybindings(args: {
@@ -238,7 +242,7 @@ export function useGlobalKeybindings(args: {
       ) {
         return
       }
-      for (const actionId of PLUGIN_COMMAND_ALIAS_ACTION_IDS) {
+      for (const actionId of APP_HANDLER_ACTION_IDS) {
         if (matchAppShortcut(actionId) && handlers.get(actionId)?.()) {
           return
         }

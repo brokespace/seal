@@ -2185,6 +2185,19 @@
         "project": "Project",
         "workspace": "Workspace"
       }
+    },
+    "keybindings": {
+      "title": {
+        "splitViewFocusNextPane": "Split view: focus next pane",
+        "splitViewFocusPreviousPane": "Split view: focus previous pane",
+        "splitViewToggleMaximize": "Split view: maximize / restore",
+        "splitViewMoveTabRight": "Split view: move tab to a pane on the right",
+        "splitViewMoveTabDown": "Split view: move tab to a pane below",
+        "splitViewClosePane": "Split view: close pane"
+      },
+      "group": {
+        "splitView": "Split view"
+      }
     }
   },
   "components": {

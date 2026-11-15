@@ -3,6 +3,10 @@ import {
   isKeybindingAllowedInTerminal,
   isKeybindingPotentialTerminalConflict
 } from './keybindings/effective'
+import {
+  SPLIT_VIEW_WINDOW_ACTION_IDS,
+  type SplitViewWindowActionId
+} from './keybindings/definitions-split-view'
 import { keybindingMatchesAction, matchKeybindingDigitIndex } from './keybindings/matching'
 import type {
   KeybindingActionId,
@@ -46,6 +50,7 @@ export type WindowShortcutAction =
   | { type: 'jumpToTabIndex'; index: number }
   | { type: 'worktreeHistoryNavigate'; direction: 'back' | 'forward' }
   | { type: 'dictationKeyDown' }
+  | { type: 'splitViewShortcut'; actionId: SplitViewWindowActionId }
 
 function platformPrimaryModifier(
   input: Pick<WindowShortcutInput, 'meta' | 'control'>,
@@ -263,6 +268,13 @@ export function resolveWindowShortcutAction(
     return { type: 'toggleQuickCommandsMenu' }
   }
 
+  const splitViewActionId = SPLIT_VIEW_WINDOW_ACTION_IDS.find((actionId) =>
+    keybindingMatchesAction(actionId, input, platform, keybindings, options)
+  )
+  if (splitViewActionId) {
+    return { type: 'splitViewShortcut', actionId: splitViewActionId }
+  }
+
   // Only explicitly allowlisted actions may intercept; leave readline/terminal chords such as Ctrl+R/U/E to the renderer/PTTY.
   return null
 }
@@ -309,6 +321,8 @@ export function getWindowShortcutActionId(action: WindowShortcutAction): Keybind
       return 'workspace.selectByIndex'
     case 'jumpToTabIndex':
       return 'tab.selectByIndex'
+    case 'splitViewShortcut':
+      return action.actionId
   }
 }
 

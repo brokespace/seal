@@ -18,6 +18,7 @@ import type { Store } from '../../persistence/loading-store/store'
 import type { CreateMainWindowOptions } from './main-window-contracts'
 import type { MainWindowFocusLifecycle } from './main-window-focus-lifecycle'
 import { sendResolvedWindowShortcutAction } from './main-window-shortcut-actions'
+import { installSplitViewShowingMirror, isSplitViewShowingIn } from './split-view-showing-mirror'
 import { isMacAppPasteInput } from '../editing/mac-app-paste-input'
 import { dictationShortcutMode } from '../../../shared/dictation-shortcut-mode'
 import {
@@ -33,6 +34,7 @@ export function installMainWindowShortcutRouting(args: {
 }): void {
   const { focus, mainWindow, opts, store } = args
   const doubleTapDetector = new ModifierDoubleTapDetector()
+  installSplitViewShowingMirror()
 
   const dispatchResolvedWindowShortcutAction = (
     event: Electron.Event,
@@ -60,6 +62,11 @@ export function installMainWindowShortcutRouting(args: {
 
     // Floating-panel ownership routes index jumps to its renderer tabs instead of the main workspace.
     if (focus.isFloatingPanelFocused() && isIndexJump) {
+      return false
+    }
+
+    // With no grid on screen the chords stay with what has focus: an editor's multi-cursor, a TUI.
+    if (action.type === 'splitViewShortcut' && !isSplitViewShowingIn(mainWindow.webContents)) {
       return false
     }
 
@@ -99,7 +106,9 @@ export function installMainWindowShortcutRouting(args: {
       return true
     }
 
-    if (action.type === 'toggleQuickCommandsMenu' && isAutoRepeat) {
+    const actsOncePerPress =
+      action.type === 'toggleQuickCommandsMenu' || action.type === 'splitViewShortcut'
+    if (actsOncePerPress && isAutoRepeat) {
       event.preventDefault()
       return true
     }

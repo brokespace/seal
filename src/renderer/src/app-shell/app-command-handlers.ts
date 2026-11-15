@@ -11,10 +11,15 @@ import {
   getRenderedLineageChipKeys,
   resolveChildWorkspacesToggleGroupKey
 } from '../components/sidebar/workspace-card/identity/child-workspaces-toggle-target'
+import {
+  canRunSplitViewShortcut,
+  runSplitViewShortcut
+} from '../components/split-view/split-view-shortcuts'
 import { requestTerminalTabRename } from '../components/tab-bar/terminal-tab-rename-request'
 import { useAppStore } from '../store/index'
 import type { usePluginCommands } from '@/store/plugins/catalog/plugin-contribution-catalog'
 import { isGitRepoKind } from '../../../shared/repo-kind'
+import { SPLIT_VIEW_ACTION_IDS } from '../../../shared/keybindings/definitions-split-view'
 import { openPluginsSettings } from '@/components/settings/navigation/open-plugins-settings'
 import { resolveActiveTabRenameTarget } from './active-tab-rename-target'
 import { createPluginsSettingsShortcutHandler } from './plugin-settings-shortcut-handler'
@@ -277,6 +282,11 @@ export function createAppCommandHandlers(
           : revealRightSidebarTab('sidebar.sourceControl.toggle', 'source-control')
     ],
     ['sidebar.checks.toggle', () => revealRightSidebarTab('sidebar.checks.toggle', 'checks')],
-    ['sidebar.ports.toggle', () => revealRightSidebarTab('sidebar.ports.toggle', 'ports')]
+    ['sidebar.ports.toggle', () => revealRightSidebarTab('sidebar.ports.toggle', 'ports')],
+    ...SPLIT_VIEW_ACTION_IDS.map((actionId): [KeybindingActionId, () => boolean] => [
+      actionId,
+      () =>
+        canRunSplitViewShortcut() ? claim(actionId, () => runSplitViewShortcut(actionId)) : false
+    ])
   ])
 }

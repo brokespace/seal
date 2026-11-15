@@ -12,6 +12,7 @@ import type { BrowserPageTabShortcut } from '../../../../../shared/browser-page-
 import type { ResolveRenderer } from '../../browser-guest-renderer-target'
 import { matchesGuestTabShortcut } from './browser-guest-tab-shortcut'
 import { textInputOwnsComposition } from '../../../../../shared/text-input-shortcut-policy'
+import { isSplitViewShowingIn } from '../../../../window/main-window/split-view-showing-mirror'
 
 export type ShouldForwardDictationShortcut = () => boolean
 export type IsMobileEmulatorEnabled = () => boolean
@@ -88,9 +89,13 @@ export function forwardGuestShortcutInput(
     forwardBrowserPageZoom(event, action.direction)
     return true
   }
+  // With no grid on screen the page keeps the split-view chords.
+  const forwardsSplitView =
+    action?.type === 'splitViewShortcut' && isSplitViewShowingIn(resolveRenderer(browserTabId))
   if (input.isAutoRepeat) {
     if (
       forwardsDictation ||
+      forwardsSplitView ||
       matchesPlugins ||
       // Why: Orca claims a held tab chord on every repeat but acts once, so repeats never reach the page.
       matchesGuestTabShortcut(
@@ -237,6 +242,11 @@ export function forwardGuestShortcutInput(
       return false
     }
     renderer.send('ui:dictationKeyDown')
+  } else if (action?.type === 'splitViewShortcut') {
+    if (!forwardsSplitView) {
+      return false
+    }
+    renderer.send('ui:splitViewShortcut', action.actionId)
   } else if (
     matchesPlugins ||
     matchesGuestTabShortcut(
