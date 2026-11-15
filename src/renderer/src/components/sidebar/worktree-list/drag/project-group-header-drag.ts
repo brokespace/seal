@@ -24,6 +24,7 @@ import {
 } from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
 import { swallowNextClickOnDragHandle } from './header-drag-click-swallow'
+import { useHeaderDragGrabbingCursor } from './use-header-drag-grabbing-cursor'
 
 // Virtualized rows can unmount during drag; pointer events and cached model indices keep drops stable.
 
@@ -282,19 +283,7 @@ export function useProjectGroupHeaderDrag({
     sessionArmed
   ])
 
-  useEffect(() => {
-    if (state.draggingGroupId === null) {
-      return
-    }
-    const body = document.body
-    const { cursor: prevCursor, userSelect: prevUserSelect } = body.style
-    body.style.cursor = 'grabbing'
-    body.style.userSelect = 'none'
-    return () => {
-      body.style.cursor = prevCursor
-      body.style.userSelect = prevUserSelect
-    }
-  }, [state.draggingGroupId])
+  useHeaderDragGrabbingCursor(state.draggingGroupId !== null)
 
   const onHandlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>, groupId: string) => {

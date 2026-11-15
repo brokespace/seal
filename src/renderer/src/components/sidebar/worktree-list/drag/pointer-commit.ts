@@ -1,4 +1,7 @@
 import { getWorktreeReorderDropPoint } from './worktree-lineage-drag-drop'
+import { workspaceSplitViewItem } from '../../../split-view/split-view-commands'
+import { commitSplitViewDrop } from '../../../split-view/split-view-drop-target'
+import { splitViewItemKey } from '../../../split-view/split-view-types'
 import {
   getWorkspaceKanbanSidebarDropGroups,
   getWorkspaceKanbanSidebarDropTarget,
@@ -78,6 +81,17 @@ export function commitWorktreePointerDrop(args: PointerDropCommitArgs): void {
       ),
       groups: getWorkspaceKanbanSidebarDropGroups()
     })
+  } else if (
+    // A pane took the cards: nothing in the sidebar reorders.
+    commitSplitViewDrop(
+      event.clientX,
+      event.clientY,
+      drag.draggedIds.map(workspaceSplitViewItem),
+      splitViewItemKey(workspaceSplitViewItem(drag.worktreeId))
+    )
+  ) {
+    ctx.clearWorktreeDrag()
+    return
   } else {
     const preferredStatusTarget = ctx.getEligibleLineageDropTarget(
       ctx.scrollRef.current

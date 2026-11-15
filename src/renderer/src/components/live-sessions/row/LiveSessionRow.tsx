@@ -28,6 +28,10 @@ import {
 import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
+import { isSidebarPointerDragBlocked } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
+import { startItemPointerDrag } from '@/components/split-view/item-pointer-drag'
+import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
 
 export type LiveSessionRowProps = {
   session: LiveSession
@@ -55,7 +59,17 @@ export type LiveSessionRowProps = {
 }
 
 function defaultMenu(session: LiveSession, kit: LiveSessionMenuKit): React.ReactNode {
-  return <LiveSessionMenuItems session={session} kit={kit} />
+  return (
+    <>
+      <SplitViewPlacementMenu
+        menuKind={kit === CONTEXT_MENU_KIT ? 'context' : 'dropdown'}
+        intent="open"
+        onPlace={(zone) => openItemsInSplitView([{ kind: 'session', sessionId: session.id }], zone)}
+      />
+      <kit.Separator />
+      <LiveSessionMenuItems session={session} kit={kit} />
+    </>
+  )
 }
 
 const TONES = {
@@ -126,6 +140,15 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
               data-status-group={group}
               data-current={props.current ? 'true' : undefined}
               data-highlighted={props.highlighted ? 'true' : undefined}
+              onPointerDown={(event) => {
+                // Dragged onto the main area, a session lands in a split-view pane.
+                if (!isSidebarPointerDragBlocked(event.target, event.currentTarget)) {
+                  startItemPointerDrag(event, event.currentTarget, {
+                    kind: 'session',
+                    sessionId: session.id
+                  })
+                }
+              }}
               onClick={(event) => {
                 if (picked !== null || event.metaKey || event.ctrlKey || event.shiftKey) {
                   props.onPick(session, event.shiftKey)
