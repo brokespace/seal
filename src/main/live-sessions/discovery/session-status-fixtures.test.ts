@@ -1,14 +1,17 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
-import type { LiveSessionHost } from '../hosts/live-session-hosts'
-import type { DiscoveredFile } from './discovery-output'
-import { HostSessionScanner, LOCAL_SCAN_LIMITS } from './host-session-scanner'
+import {
+  CLAUDE_DIR,
+  CLAUDE_SHELL,
+  CODEX_APP_SERVER,
+  CODEX_SHELL,
+  FIXTURES,
+  scan,
+  sourcedStatusOf,
+  statusOf
+} from './session-scan.test-fixture'
 
-const FIXTURES = join(__dirname, '__fixtures__')
-const CLAUDE_DIR = '/home/dev/.claude/projects/-srv-shop'
-const CODEX_DIR = '/home/dev/.codex/sessions/2026/11/13'
 const RULE = '\u2500'.repeat(40)
 const PERMISSION_SCREEN = [
   `\u256d${RULE}\u256e`,
@@ -20,129 +23,7 @@ const PERMISSION_SCREEN = [
   `\u2570${RULE}\u256f`
 ].join('\n')
 
-function lastWriteOf(text: string): number {
-  const stamps = [...text.matchAll(/"timestamp":"([^"]+)"/g)].map((m) => Date.parse(m[1]))
-  return Math.max(...stamps)
-}
-
-function fixtureFile(name: string): DiscoveredFile {
-  const text = readFileSync(join(FIXTURES, `${name}.jsonl`), 'utf8')
-  const provider = /^(live-)?codex/.test(name) ? 'codex' : 'claude'
-  const id = /"payload":\{"id":"([^"]+)"/.exec(text)?.[1]
-  const file: DiscoveredFile = {
-    provider,
-    path:
-      provider === 'claude'
-        ? `${CLAUDE_DIR}/${name}.jsonl`
-        : `${CODEX_DIR}/rollout-2026-11-13T10-00-00-${id}.jsonl`,
-    size: Buffer.byteLength(text),
-    mtimeMs: lastWriteOf(text),
-    head: text,
-    tail: text
-  }
-  const subagents = join(FIXTURES, `${name}.subagents`)
-  if (existsSync(subagents)) {
-    file.subagents = readdirSync(subagents)
-      .filter((entry) => entry.endsWith('.jsonl'))
-      .map((entry) => {
-        const tail = readFileSync(join(subagents, entry), 'utf8')
-        return {
-          path: `${CLAUDE_DIR}/${name}/subagents/${entry}`,
-          size: Buffer.byteLength(tail),
-          mtimeMs: lastWriteOf(tail),
-          meta: readFileSync(join(subagents, entry.replace(/\.jsonl$/, '.meta.json')), 'utf8'),
-          tail
-        }
-      })
-  }
-  return file
-}
-
-type ScanOptions = {
-  /** The agent process is running (default) or gone. */
-  alive?: boolean
-  /** How long ago the transcript was last written. */
-  quietMs?: number
-  /** What its tmux pane shows. */
-  screen?: string
-  /** Other transcripts on the host (Codex helper threads). */
-  beside?: string[]
-  /** What `ps` lists under the agents, as `pid ppid etime kind command`; absent when the host lists nothing. */
-  children?: string[]
-  /** Other agent processes on the host, as `pid ppid tty args`. */
-  processes?: string[]
-}
-
-function fixtureHost(
-  names: string[],
-  options: ScanOptions
-): { host: LiveSessionHost; now: number } {
-  const files = names.map(fixtureFile)
-  const [main] = files
-  const now = Math.max(...files.map((f) => f.mtimeMs)) + (options.quietMs ?? 20_000)
-  const binary = main.provider
-  const lines = [`@@NOW ${Math.floor(now / 1000)}`]
-  if (options.alive !== false) {
-    lines.push(
-      `@@PROC 4100 1 pts/3 ${binary}`,
-      '@@CWD 4100 /srv/shop',
-      `@@PIN 4100 open ${main.provider} ${main.path}`
-    )
-  }
-  for (const process of options.processes ?? []) {
-    lines.push(`@@PROC ${process}`)
-  }
-  if (options.children) {
-    lines.push('@@CHILDREN', ...options.children.map((child) => `@@CHILD ${child}`))
-  }
-  if (options.screen) {
-    lines.push(
-      '@@TMUX /tmp/tmux-1000/default\t%4\t/dev/pts/3\t900\tmain:0.0',
-      `@@SCREEN /tmp/tmux-1000/default\t%4 ${Buffer.from(options.screen).toString('base64')}`
-    )
-  }
-  lines.push('@@DONE')
-  return {
-    now,
-    host: {
-      machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
-      run: async () => lines.join('\n'),
-      transcriptFiles: async () => files
-    }
-  }
-}
-
-async function scan(name: string, options: ScanOptions = {}): Promise<LiveSession[]> {
-  const { host, now } = fixtureHost([name, ...(options.beside ?? [])], options)
-  return (await new HostSessionScanner(host, LOCAL_SCAN_LIMITS).scan(now)).sessions
-}
-
-async function statusOf(name: string, options: ScanOptions = {}) {
-  const [session] = await scan(name, options)
-  return [session.status, session.statusDetail]
-}
-
-async function sourcedStatusOf(name: string, options: ScanOptions = {}) {
-  const [session] = await scan(name, options)
-  return [session.status, session.statusSource, session.statusDetail]
-}
-
 const screenOf = (name: string) => readFileSync(join(FIXTURES, `${name}.screen`), 'utf8')
-
-/** Claude Code's Bash tool: a shell that sources the session's snapshot, then the command. */
-const CLAUDE_SHELL = (etime: string) => [
-  `4200 4100 ${etime} snapshot bash`,
-  '4201 4200 00:01 other sleep'
-]
-/** Codex 0.169 runs commands from its shared app-server, inside its sandbox. */
-const CODEX_APP_SERVER =
-  '4300 4100 ? /home/dev/.codex/packages/app-server-daemon/releases/0.169.0/codex app-server --listen unix://'
-const CODEX_SHELL = (etime: string) => [
-  '4301 4300 20:00 other codex-code-mode-host',
-  `4310 4300 ${etime} sandbox codex-linux-sandbox`,
-  `4311 4310 ${etime} sandbox bwrap`,
-  `4313 4311 ${etime} shell sh`
-]
 
 describe('status of a Claude Code session, from its transcript, process and screen', () => {
   it('working: a tool call has no result yet', async () => {

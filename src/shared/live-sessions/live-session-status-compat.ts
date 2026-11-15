@@ -30,7 +30,9 @@ export function legacyLiveSessionStatus(status: LiveSessionStatus): LiveSessionS
 function legacySession(session: LiveSession): LiveSession {
   const status = legacyLiveSessionStatus(session.status)
   const statusSource =
-    session.statusSource === 'process' || session.statusSource === 'classifier'
+    session.statusSource === 'process' ||
+    session.statusSource === 'classifier' ||
+    session.statusSource === 'agent-state'
       ? 'transcript'
       : session.statusSource
   return status === session.status && statusSource === session.statusSource
