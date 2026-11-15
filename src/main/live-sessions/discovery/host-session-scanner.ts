@@ -114,6 +114,7 @@ export class HostSessionScanner {
       machine: this.host.machine,
       output,
       transcripts,
+      unreadPaths: new Set([...listed].filter((path) => !this.cache.has(path))),
       nowMs
     })
     for (const session of sessions) {

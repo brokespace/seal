@@ -96,6 +96,7 @@ export function assembleHostSessions(input: {
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
     Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed'>>
   transcripts: SummarizedTranscript[]
+  unreadPaths?: ReadonlySet<string>
   nowMs: number
 }): LiveSession[] {
   const { machine, output } = input
@@ -130,7 +131,8 @@ export function assembleHostSessions(input: {
     found.map((c) => c.transcript),
     claudeSessionByPid,
     ownedPaths,
-    now - FRESH_WRITE_MS
+    now - FRESH_WRITE_MS,
+    input.unreadPaths
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider

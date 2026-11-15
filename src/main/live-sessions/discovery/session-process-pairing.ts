@@ -15,7 +15,9 @@ export function pairProcesses(
   transcripts: SummarizedTranscript[],
   claudeSessionByPid: ReadonlyMap<number, string>,
   ownedPaths: ReadonlyMap<number, ReadonlySet<string>>,
-  freshSince: number
+  freshSince: number,
+  /** Transcripts the host listed but this scan's read budget has not reached yet. */
+  unread: ReadonlySet<string> = new Set()
 ): ProcessClaim[] {
   const free = new Set(transcripts)
   const claims: ProcessClaim[] = []
@@ -31,6 +33,12 @@ export function pairProcesses(
       (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
       sessionIdFromArgs(process.args)
     const owned = ownedPaths.get(process.pid)
+    // Its own transcript is still to be read: shown then, not as idle or under another session.
+    if (
+      [...unread].some((path) => owned?.has(path) || (named && path.endsWith(`${named}.jsonl`)))
+    ) {
+      continue
+    }
     const match =
       (named
         ? [...free].find(

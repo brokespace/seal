@@ -480,3 +480,21 @@ describe.each([
     )
   })
 })
+
+// A machine that just connected reads a few transcripts per scan (SSH_SCAN_LIMITS).
+it.each([
+  [
+    'Claude Code',
+    'live-claude-background-command-running',
+    { registry: { state: 'shell' } },
+    'waiting-task'
+  ],
+  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'waiting-task']
+] as const)(
+  'a running %s session shows once its transcript is read, never as idle before',
+  async (_, fixture, host, shows) => {
+    const scanOnce = recordedSession(fixture)
+    expect(await scanOnce({ ...host, unread: true })).toBeUndefined()
+    expect((await scanOnce(host)).status).toBe(shows)
+  }
+)

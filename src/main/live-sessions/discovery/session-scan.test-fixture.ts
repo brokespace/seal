@@ -43,6 +43,8 @@ export type ScanOptions = {
   hook?: { state: string; agoMs?: number }
   /** A process other than the session's own holds its transcript open (a Codex app-server). */
   heldOpenBy?: number
+  /** The transcript is listed but over the scan's read budget (a machine just connected). */
+  unread?: boolean
 }
 
 function fixtureFile(name: string, options: ScanOptions = {}): DiscoveredFile {
@@ -61,8 +63,12 @@ function fixtureFile(name: string, options: ScanOptions = {}): DiscoveredFile {
     // A read that starts mid-file is larger than the scanner's tail, which then drops its first line.
     size: options.readFrom ? LOCAL_SCAN_LIMITS.tailBytes + 1 : Buffer.byteLength(text),
     mtimeMs: lastWriteOf(text),
-    head: text,
-    tail: options.readFrom ? `\n${written.slice(options.readFrom).join('\n')}\n` : text
+    head: options.unread ? null : text,
+    tail: options.unread
+      ? null
+      : options.readFrom
+        ? `\n${written.slice(options.readFrom).join('\n')}\n`
+        : text
   }
   const subagents = join(FIXTURES, `${name}.subagents`)
   if (existsSync(subagents)) {
