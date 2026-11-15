@@ -195,13 +195,6 @@ function SplitLayoutNode({
   nodePath: string
   placement: SplitLayoutLeafPlacement
 }): React.JSX.Element {
-  const { onRatioChange, onResizeStart, onResizeEnd } = tree
-  const commitRatio = useCallback(
-    (ratio: number) => onRatioChange(nodePath, ratio),
-    [nodePath, onRatioChange]
-  )
-  const startResize = useCallback(() => onResizeStart?.(), [onResizeStart])
-
   if (node.type === 'leaf') {
     return tree.renderLeaf(node.groupId, placement)
   }
@@ -231,9 +224,9 @@ function SplitLayoutNode({
       </div>
       <ResizeHandle
         direction={node.direction}
-        onResizeStart={startResize}
-        onResizeEnd={onResizeEnd}
-        onRatioChange={commitRatio}
+        onResizeStart={() => tree.onResizeStart?.()}
+        onResizeEnd={tree.onResizeEnd}
+        onRatioChange={(ratio) => tree.onRatioChange(nodePath, ratio)}
       />
       <div className="flex min-w-0 min-h-0 overflow-hidden" style={{ flex: `${1 - ratio} 1 0%` }}>
         <SplitLayoutNode

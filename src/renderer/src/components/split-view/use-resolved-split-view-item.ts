@@ -4,6 +4,10 @@ import { useAppStore } from '@/store/index'
 import { useLiveSessions } from '@/components/live-sessions/live-session-registry-store'
 import { liveSessionTitle } from '@/components/live-sessions/live-session-presentation'
 import { useTranslate } from '@/i18n/use-translate'
+import {
+  selectFolderWorkspaces,
+  selectWorktreesByRepo
+} from '@/store/workspaces/catalog/workspace-record-fields'
 import { resolveSplitViewItem, type ResolvedSplitViewItem } from './split-view-item-resolution'
 import type { SplitViewItem } from './split-view-types'
 
@@ -11,8 +15,8 @@ export function useResolvedSplitViewItem(item: SplitViewItem | null): ResolvedSp
   const { sessions } = useLiveSessions()
   const catalog = useAppStore(
     useShallow((state) => ({
-      worktreesByRepo: state.worktreesByRepo,
-      folderWorkspaces: state.folderWorkspaces,
+      worktreesByRepo: selectWorktreesByRepo(state),
+      folderWorkspaces: selectFolderWorkspaces(state),
       repos: state.repos
     }))
   )
@@ -37,12 +41,10 @@ export function useSplitViewItemTitle(
   if (resolved?.kind === 'project') {
     return resolved.repo.displayName
   }
-  switch (item?.kind) {
-    case 'session':
-      return t('auto.components.live-sessions.workspace.goneTab', 'Session ended')
-    case 'project':
-      return t('seal.splitView.item.project', 'Project')
-    default:
-      return t('seal.splitView.item.workspace', 'Workspace')
+  if (item?.kind === 'session') {
+    return t('auto.components.live-sessions.workspace.goneTab', 'Session ended')
   }
+  return item?.kind === 'project'
+    ? t('seal.splitView.item.project', 'Project')
+    : t('seal.splitView.item.workspace', 'Workspace')
 }

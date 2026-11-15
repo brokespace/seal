@@ -1,4 +1,6 @@
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
+import { getDropIndicatorClasses } from '../tab-bar/drop-indicator'
 import TabGroupDropOverlay from '../tab-group/TabGroupDropOverlay'
 import {
   useSplitViewDropPreview,
@@ -41,7 +43,7 @@ export function SplitViewDropPreview(): React.JSX.Element | null {
       style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
     >
       {preview.kind === 'insert' ? (
-        <div className="absolute inset-0 bg-blue-500" />
+        <div className={cn('absolute inset-0', getDropIndicatorClasses('left'))} />
       ) : (
         <TabGroupDropOverlay zone="center" fillContainer label={label} />
       )}
