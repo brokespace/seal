@@ -9,6 +9,7 @@ import {
   liveSessionStatusText
 } from '@/components/live-sessions/live-session-presentation'
 import { revealTabStripSlot } from '@/components/tab-bar/tab-strip-slot-geometry'
+import { scrollTabStripOnWheel } from '@/components/tab-bar/tab-strip-wheel-scroll'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { ItemTabMenu } from './ItemTabMenu'
@@ -210,17 +211,7 @@ export function ItemTabStrip({
   // As in a workspace's tab strip: no scrollbar, and the wheel scrolls it sideways.
   useEffect(() => {
     const list = listRef.current
-    if (!list) {
-      return
-    }
-    const onWheel = (event: WheelEvent): void => {
-      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-        event.preventDefault()
-        list.scrollLeft += event.deltaY
-      }
-    }
-    list.addEventListener('wheel', onWheel, { passive: false })
-    return () => list.removeEventListener('wheel', onWheel)
+    return list ? scrollTabStripOnWheel(list) : undefined
   }, [hasTabs])
   return (
     <div

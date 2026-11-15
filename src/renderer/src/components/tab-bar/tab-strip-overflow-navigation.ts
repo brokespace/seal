@@ -21,6 +21,7 @@ import {
   updateTabStripDockAvailability,
   type ActiveTabDockSide
 } from './tab-strip-slot-geometry'
+import { scrollTabStripOnWheel } from './tab-strip-wheel-scroll'
 import { motionSafeScrollBehavior } from '@/hooks/usePrefersReducedMotion'
 import { useTabDragActive } from '../tab-group/tab-drag-context'
 
@@ -124,15 +125,7 @@ export function useTabStripOverflowNavigation({
     if (!el) {
       return
     }
-    const onWheel = (e: WheelEvent): void => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault()
-        el.scrollLeft += e.deltaY
-        updateTabStripOverflowState()
-      }
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
+    return scrollTabStripOnWheel(el, updateTabStripOverflowState)
   }, [updateTabStripOverflowState])
 
   useEffect(() => {
