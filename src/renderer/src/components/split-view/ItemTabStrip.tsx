@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { CircleDashed, Folder, GitBranch, X } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
@@ -7,6 +8,7 @@ import {
   liveSessionDotState,
   liveSessionStatusText
 } from '@/components/live-sessions/live-session-presentation'
+import { revealTabStripSlot } from '@/components/tab-bar/tab-strip-slot-geometry'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { ItemTabMenu } from './ItemTabMenu'
@@ -195,6 +197,31 @@ export function ItemTabStrip({
   className?: string
   style?: React.CSSProperties
 }): React.JSX.Element {
+  const listRef = useRef<HTMLDivElement>(null)
+  const hasTabs = tabs.length > 0
+  // The tab a pane shows may sit past the edge of a strip that overflows.
+  useEffect(() => {
+    const list = listRef.current
+    const selected = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+    if (list && selected) {
+      revealTabStripSlot(list, selected)
+    }
+  }, [activeKey, tabs.length])
+  // As in a workspace's tab strip: no scrollbar, and the wheel scrolls it sideways.
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) {
+      return
+    }
+    const onWheel = (event: WheelEvent): void => {
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+        event.preventDefault()
+        list.scrollLeft += event.deltaY
+      }
+    }
+    list.addEventListener('wheel', onWheel, { passive: false })
+    return () => list.removeEventListener('wheel', onWheel)
+  }, [hasTabs])
   return (
     <div
       {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: paneId ?? '' }}
@@ -205,12 +232,13 @@ export function ItemTabStrip({
       style={style}
     >
       {before}
-      {tabs.length > 0 ? (
+      {hasTabs ? (
         <div
+          ref={listRef}
           role="tablist"
           aria-label={label}
           onKeyDown={moveTabFocus}
-          className="scrollbar-sleek flex min-w-20 flex-1 overflow-x-auto"
+          className="scrollbar-none flex min-w-20 flex-1 overflow-x-auto overflow-y-hidden"
         >
           {tabs.map((tab) => {
             const key = splitViewItemKey(tab.item)
