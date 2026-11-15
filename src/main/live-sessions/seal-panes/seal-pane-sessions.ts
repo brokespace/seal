@@ -8,16 +8,27 @@ import type {
   LiveSessionProvider,
   LiveSessionStatus
 } from '../../../shared/live-sessions/live-session-types'
+import { isAgentStatusHeldOpenByChildWork } from '../../../shared/agent-status/lifecycle/agent-lead-status-fold'
+import { agentVerdictDisplayMark } from '../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
 import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/agent-question-answered-intent'
 import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
 import { oneLine } from '../discovery/transcript-records'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 
-const RESTING_ON_SOMETHING: ReadonlySet<LiveSessionStatus> = new Set([
+/** What a finished turn may still rest on, which a Stop hook does not say. */
+const RESTS_ON: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-subagent',
   'waiting-task',
-  'waiting-input'
+  'waiting-input',
+  'errored'
+])
+
+/** What a turn at work may be doing, which a tool hook does not say. */
+const WORKS_ON: ReadonlySet<LiveSessionStatus> = new Set([
+  'waiting-subagent',
+  'waiting-task',
+  'running-shell'
 ])
 
 export type SealPaneRow = Pick<
@@ -32,6 +43,9 @@ export type SealPaneRow = Pick<
   | 'connectionId'
   | 'prompt'
   | 'toolName'
+  | 'workingMode'
+  | 'interrupted'
+  | 'mainAgent'
 >
 
 export type SealPane = {
@@ -67,16 +81,46 @@ function waitingStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSess
 }
 
 function hookStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSessionStatus {
-  switch (row.state) {
+  if (row.state === 'blocked') {
+    return 'needs-permission'
+  }
+  if (row.state === 'waiting') {
+    return waitingStatus(row, prompt)
+  }
+  // A failed turn stays news while what it left running goes on.
+  if (agentVerdictDisplayMark(row) === 'failed') {
+    return 'errored'
+  }
+  if (row.state === 'done') {
+    // A finished turn in a live pane sits at its prompt.
+    return 'your-turn'
+  }
+  // The turn ended and the host still counts work under it: shells and monitors, or agents.
+  if (row.workingMode === 'monitoring') {
+    return 'waiting-task'
+  }
+  return isAgentStatusHeldOpenByChildWork(row) ? 'waiting-subagent' : 'working'
+}
+
+function hookDetail(
+  row: SealPaneRow,
+  status: LiveSessionStatus,
+  permission: LiveSessionPermissionPrompt | null
+): string | null {
+  switch (status) {
     case 'working':
-      return 'working'
-    case 'blocked':
-      return 'needs-permission'
-    case 'waiting':
-      return waitingStatus(row, prompt)
-    case 'done':
-      // A finished turn in a live pane sits at its prompt.
-      return 'your-turn'
+      return row.toolName ?? null
+    case 'waiting-input':
+      return 'Question for you'
+    case 'your-turn':
+      return agentVerdictDisplayMark(row) === 'interrupted' ? 'Interrupted' : null
+    case 'needs-permission':
+      return (
+        permission?.question ??
+        (row.state === 'waiting' && row.toolName ? `Allow ${row.toolName}?` : null)
+      )
+    default:
+      return null
   }
 }
 
@@ -120,13 +164,7 @@ export function sealPanesFromRows(
         providerSessionId: id,
         connectionId: row.connectionId,
         status,
-        statusDetail:
-          status === 'working' && row.toolName
-            ? row.toolName
-            : status === 'waiting-input'
-              ? 'Question for you'
-              : (permission?.question ??
-                (row.state === 'waiting' && row.toolName ? `Allow ${row.toolName}?` : null)),
+        statusDetail: hookDetail(row, status, permission),
         cwd: row.providerSession?.cwd ?? null,
         transcriptPath: row.providerSession?.transcriptPath ?? null,
         prompt: row.prompt ? oneLine(row.prompt, 80) : null,
@@ -141,6 +179,37 @@ const REMOTE_SEAL_MACHINE: LiveSessionMachine = {
   hostId: 'seal-remote',
   label: 'Remote Seal host',
   kind: 'remote'
+}
+
+/**
+ * A pane's hooks say when a turn starts, asks and stops. What it runs meanwhile and what it left
+ * behind when it stopped come from the agent itself: its transcript, its processes, its own state.
+ */
+function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
+  if (found.statusSource === 'screen') {
+    return found.permission !== null
+  }
+  if (found.statusSource === 'classifier') {
+    return false
+  }
+  // Claude's own word on a prompt or a turn its hooks did not announce (a wake-up, a compaction).
+  const agentSays =
+    found.statusSource === 'agent-state' &&
+    (found.status === 'working' ||
+      found.status === 'needs-permission' ||
+      found.status === 'waiting-input')
+  switch (pane.status) {
+    case 'your-turn':
+      return RESTS_ON.has(found.status) || agentSays
+    case 'working':
+      return WORKS_ON.has(found.status) || (agentSays && found.status !== 'working')
+    case 'waiting-task':
+    case 'waiting-subagent':
+      // Which kind of work, and how much of it.
+      return found.status === 'waiting-subagent' || found.status === 'waiting-task'
+    default:
+      return false
+  }
 }
 
 /** Seal's hooks know its own panes best; discovery adds what they don't say (machine, liveness, title). */
@@ -166,16 +235,7 @@ export function mergeSealPanes(
     const route = { kind: 'seal-pane' as const, paneKey: pane.paneKey }
     if (index !== undefined) {
       const found = out[index]
-      // The transcript knows what a quiet pane waits on (its subagents, its background tasks, an
-      // answer), and with the process list, that a working one runs a shell command.
-      const transcriptSaysMore =
-        (found.statusSource === 'transcript' || found.statusSource === 'process') &&
-        (pane.status === 'your-turn'
-          ? RESTING_ON_SOMETHING.has(found.status)
-          : pane.status === 'working' &&
-            (found.status === 'waiting-subagent' || found.status === 'running-shell'))
-      const screenAsks =
-        (found.statusSource === 'screen' && found.permission !== null) || transcriptSaysMore
+      const fromDiscovery = discoveryKnowsMore(pane, found)
       const named = found.providerSessionId.startsWith('pid-')
         ? {
             id: liveSessionId(found.machine.hostId, pane.provider, pane.providerSessionId),
@@ -187,9 +247,12 @@ export function mergeSealPanes(
         ...found,
         ...named,
         origin: 'seal',
-        status: screenAsks ? found.status : pane.status,
-        statusSource: screenAsks ? found.statusSource : 'seal-hooks',
-        statusDetail: screenAsks ? found.statusDetail : (pane.statusDetail ?? found.statusDetail),
+        status: fromDiscovery ? found.status : pane.status,
+        statusSource: fromDiscovery ? found.statusSource : 'seal-hooks',
+        statusDetail:
+          fromDiscovery || (pane.statusDetail === null && found.status === pane.status)
+            ? found.statusDetail
+            : pane.statusDetail,
         lastActivityAt: Math.max(found.lastActivityAt, pane.receivedAt),
         alive: true,
         inputRoutes: [route, ...found.inputRoutes.filter((r) => r.kind !== 'resume')],
