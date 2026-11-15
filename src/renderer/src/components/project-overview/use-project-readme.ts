@@ -35,6 +35,6 @@ export function useProjectReadme(
       const bytes = Uint8Array.from(atob(file.contentBase64), (char) => char.charCodeAt(0))
       return { path, text: new TextDecoder().decode(bytes), truncated: file.truncated }
     },
-    README_LIVE_MS
+    { liveMs: README_LIVE_MS }
   )
 }

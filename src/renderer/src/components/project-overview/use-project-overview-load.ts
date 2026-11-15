@@ -11,12 +11,14 @@ type Settled<T> = { key: string; value: ProjectOverviewLoad<T> }
 /**
  * One read for a card. `key` names what is being read: a new key starts over, and the answer to an
  * old key is dropped. Null waits (the project's machine is not known yet). With `liveMs` the read
- * repeats for as long as the page is showing, so the card needs no refresh control.
+ * repeats for as long as the page is showing, so the card needs no refresh control. `keepLast` is
+ * for an answer that holds one entry per item of a list: when the list changes, the entries already
+ * read stay on screen while the new key is read, instead of the whole card starting over.
  */
 export function useProjectOverviewLoad<T>(
   key: string | null,
   load: (signal: AbortSignal) => Promise<T>,
-  liveMs?: number
+  { liveMs, keepLast = false }: { liveMs?: number; keepLast?: boolean } = {}
 ): ProjectOverviewLoad<T> {
   const [settled, setSettled] = useState<Settled<T> | null>(null)
   // `load` is a fresh closure each render; `key` says when its inputs changed.
@@ -76,5 +78,6 @@ export function useProjectOverviewLoad<T>(
     }
   }, [key, liveMs])
 
-  return settled && settled.key === key ? settled.value : { status: 'loading' }
+  const current = settled?.key === key || (keepLast && settled?.value.status === 'ready')
+  return settled && current ? settled.value : { status: 'loading' }
 }

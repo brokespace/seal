@@ -25,9 +25,10 @@ export function useProjectGitChanges(
   worktrees: readonly Worktree[]
 ): ProjectOverviewLoad<ProjectChangeSummaries> {
   const targets = worktrees.slice(0, PROJECT_CHANGES_MAX_WORKTREES)
-  // The repeat picks up a new commit; keying on the head would blank every row for a moment.
+  // Keyed by which workspaces, not their order or head: the repeat picks up a commit, and a list
+  // that is re-sorted or gains a workspace keeps the rows it has already read.
   return useProjectOverviewLoad(
-    targets.map(getWorktreeHostIdentity).join('\n'),
+    targets.map(getWorktreeHostIdentity).sort().join('\n'),
     async (signal) => {
       const repos = useAppStore.getState().repos
       const entries = await Promise.all(
@@ -49,7 +50,7 @@ export function useProjectGitChanges(
       )
       return new Map(entries)
     },
-    PROJECT_CHANGES_LIVE_MS
+    { liveMs: PROJECT_CHANGES_LIVE_MS, keepLast: true }
   )
 }
 
