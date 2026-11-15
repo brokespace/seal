@@ -51,7 +51,10 @@ function parseLayout(value: unknown, seen: Set<string>): TabGroupLayoutNode | nu
   }
   if (value.type === 'leaf') {
     const groupId = value.groupId
-    if (typeof groupId !== 'string' || groupId.length === 0 || seen.has(groupId)) {
+    // An id such as `__proto__` would read a pane off Object.prototype.
+    const usable =
+      typeof groupId === 'string' && groupId.length > 0 && !(groupId in Object.prototype)
+    if (!usable || seen.has(groupId)) {
       return null
     }
     seen.add(groupId)
