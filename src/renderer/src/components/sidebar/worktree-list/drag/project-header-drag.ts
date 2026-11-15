@@ -1,7 +1,3 @@
-import {
-  requestVirtualizedScrollAnchorRecord,
-  supersedeVirtualizedScrollAnchorRestore
-} from '@/hooks/requestVirtualizedScrollAnchorRecord'
 import { measureRootProjectHeaderDragRects } from './root-project-header-drop'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -21,7 +17,9 @@ import {
 import { createProjectHeaderDragSession } from './project-header-drag-start'
 import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
 import {
-  measureWorktreeRowsAutoscrollRect,
+  haveWorktreeRowsMoved,
+  measureWorktreeRowsAutoscrollView,
+  scrollWorktreeRowsForDrag,
   measureWorktreeRowsViewTop
 } from './worktree-rows-drag-view'
 import { hasPointerBeenReleased } from './header-drag-pointer-release'
@@ -71,6 +69,7 @@ export function useRepoHeaderDrag({
 
   const dragSessionRef = useRef<ProjectHeaderDragSession | null>(null)
 
+  const rowsGeometryKeyRef = useRef<string | null>(null)
   const refreshHeaderRects = useCallback(() => {
     const container = getContainerRef.current()
     const session = dragSessionRef.current
@@ -190,16 +189,13 @@ export function useRepoHeaderDrag({
       autoscrollLastFrameTimeRef.current = frameTime
       const autoscroll = getWorktreeSidebarDragAutoscroll({
         point: { clientX: 0, clientY: session.latestPointerY },
-        containerRect: measureWorktreeRowsAutoscrollRect(container),
-        scrollTop: container.scrollTop,
-        scrollHeight: container.scrollHeight,
-        clientHeight: container.clientHeight,
+        ...measureWorktreeRowsAutoscrollView(container),
         elapsedMs: frameTime - previousFrameTime
       })
       if (autoscroll) {
-        supersedeVirtualizedScrollAnchorRestore(container, autoscroll.scrollTop)
-        container.scrollTop = autoscroll.scrollTop
-        requestVirtualizedScrollAnchorRecord(container)
+        scrollWorktreeRowsForDrag(container, autoscroll.scrollTop)
+      }
+      if (haveWorktreeRowsMoved(container, rowsGeometryKeyRef)) {
         refreshHeaderRects()
       }
 

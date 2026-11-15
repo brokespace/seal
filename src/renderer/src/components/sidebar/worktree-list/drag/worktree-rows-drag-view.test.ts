@@ -2,14 +2,15 @@
 import { expect, it } from 'vitest'
 import { getScrollSectionContainerProps } from '../viewport/scroll-section-insets'
 import { measureSidebarHeaderDragRect } from './sidebar-header-drag-geometry'
+import { getWorktreeSidebarDragAutoscroll } from './worktree-sidebar-drag-autoscroll'
 import {
-  measureWorktreeRowsAutoscrollRect,
+  measureWorktreeRowsAutoscrollView,
   measureWorktreeRowsViewTop
 } from './worktree-rows-drag-view'
 
 const LIST_RECT = { left: 0, right: 280, top: 100, bottom: 600 } as DOMRect
 
-/** A list whose rows start below a 300px Active agents section and the 32px Projects header. */
+/** A 2000px list whose rows start below a 300px Active agents section and the 32px Projects header. */
 function list(scrollTop: number, insets = { leading: 300, pinned: 32 }): HTMLElement {
   const element = document.createElement('div')
   const { style, ...attributes } = getScrollSectionContainerProps(insets)
@@ -19,13 +20,26 @@ function list(scrollTop: number, insets = { leading: 300, pinned: 32 }): HTMLEle
   for (const [name, value] of Object.entries(attributes)) {
     element.setAttribute(name, String(value))
   }
-  Object.defineProperty(element, 'scrollTop', { value: scrollTop })
+  Object.defineProperties(element, {
+    scrollTop: { value: scrollTop },
+    scrollHeight: { value: 2000 },
+    clientHeight: { value: 500 }
+  })
   element.getBoundingClientRect = () => LIST_RECT
   return element
 }
 
+/** One 16ms frame with the pointer held at `clientY`. */
+function autoscrollFrom(scrollTop: number, clientY: number): number | undefined {
+  return getWorktreeSidebarDragAutoscroll({
+    point: { clientX: 140, clientY },
+    ...measureWorktreeRowsAutoscrollView(list(scrollTop)),
+    elapsedMs: 16
+  })?.scrollTop
+}
+
 it('starts the upward autoscroll zone below the Projects header once it is pinned over the rows', () => {
-  expect(measureWorktreeRowsAutoscrollRect(list(300))).toEqual({
+  expect(measureWorktreeRowsAutoscrollView(list(300)).containerRect).toEqual({
     left: 0,
     right: 280,
     top: 132,
@@ -34,7 +48,16 @@ it('starts the upward autoscroll zone below the Projects header once it is pinne
 })
 
 it('keeps the autoscroll zone at the list top while Active agents is still on screen', () => {
-  expect(measureWorktreeRowsAutoscrollRect(list(299)).top).toBe(100)
+  expect(measureWorktreeRowsAutoscrollView(list(299)).containerRect.top).toBe(100)
+})
+
+it('stops scrolling up where Projects begins, with the pointer held on its pinned header', () => {
+  expect(autoscrollFrom(310, 110)).toBe(300)
+  expect(autoscrollFrom(300, 110)).toBeUndefined()
+})
+
+it('leaves a list resting above Projects where it is when a drag reaches its top edge', () => {
+  expect(autoscrollFrom(120, 100)).toBeUndefined()
 })
 
 it('keeps a drop line clear of the Projects header, at rest and pinned', () => {
