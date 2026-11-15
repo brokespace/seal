@@ -7,7 +7,7 @@ import {
 import {
   confirmLiveTabSessions,
   resolveReattachPtyIds,
-  selectRevealTerminalTabIds,
+  selectGroupActiveTerminalTabIds,
   selectSleepingTabIds
 } from '../terminal/terminal-worktree-prewarm-targets'
 
@@ -19,17 +19,20 @@ import {
  */
 export async function resolveReattachableTabIds(worktreeId: string): Promise<string[] | null> {
   const state = useAppStore.getState()
-  const tabs = state.tabsByWorktree[worktreeId] ?? []
-  const revealTabIds = selectRevealTerminalTabIds(state, worktreeId)
-  if (!tabs.some((tab) => revealTabIds.has(tab.id))) {
-    // A workspace with no tab group shows nothing until focus opens it.
-    return (state.groupsByWorktree[worktreeId] ?? []).length > 0 ? [] : null
+  // A workspace with no tab group shows nothing until focus opens it.
+  if ((state.groupsByWorktree[worktreeId] ?? []).length === 0) {
+    return null
   }
   // Restricting the surface drops a simulator's overlay and loses its local state.
   if (
     (state.unifiedTabsByWorktree[worktreeId] ?? []).some((tab) => tab.contentType === 'simulator')
   ) {
     return null
+  }
+  const tabs = state.tabsByWorktree[worktreeId] ?? []
+  const revealTabIds = selectGroupActiveTerminalTabIds(state, worktreeId)
+  if (revealTabIds.size === 0) {
+    return []
   }
   const sleepingTabIds = selectSleepingTabIds(state, worktreeId)
   const isTabLive = (tabId: string): boolean => hasRegisteredRuntimeTerminalTab(tabId, worktreeId)
@@ -48,6 +51,10 @@ export async function resolveReattachableTabIds(worktreeId: string): Promise<str
     isSessionConfirmedLive: (tab) =>
       areTabSessionsConfirmed(resolveReattachPtyIds(tab, state), confirmedPtyIdsByTabId.get(tab.id))
   })
+  // One tab group left blank beside a loaded one would read as broken.
+  if (!plan || [...revealTabIds].some((tabId) => !plan.allowedTabIds.has(tabId))) {
+    return null
+  }
   // A mount request that names a sleeping tab asks its agent to wake.
-  return plan ? [...plan.allowedTabIds].filter((tabId) => !isTabSleeping(tabId)) : null
+  return [...plan.allowedTabIds].filter((tabId) => !isTabSleeping(tabId))
 }

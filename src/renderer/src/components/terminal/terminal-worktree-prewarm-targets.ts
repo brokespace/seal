@@ -5,17 +5,23 @@ import { parkedTerminalTabCoverage } from '../terminal-pane/parking/output-watch
 import type { AppState } from '@/store/types'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 
-export function selectRevealTerminalTabIds(state: AppState, worktreeId: string): Set<string> {
-  const revealTabIds = new Set<string>()
+/** The terminals a workspace's tab groups have in front. */
+export function selectGroupActiveTerminalTabIds(state: AppState, worktreeId: string): Set<string> {
+  const tabIds = new Set<string>()
   const unifiedTabById = new Map(
     (state.unifiedTabsByWorktree[worktreeId] ?? []).map((tab) => [tab.id, tab])
   )
   for (const group of state.groupsByWorktree[worktreeId] ?? []) {
     const tab = group.activeTabId ? unifiedTabById.get(group.activeTabId) : undefined
     if (tab?.contentType === 'terminal') {
-      revealTabIds.add(tab.entityId)
+      tabIds.add(tab.entityId)
     }
   }
+  return tabIds
+}
+
+export function selectRevealTerminalTabIds(state: AppState, worktreeId: string): Set<string> {
+  const revealTabIds = selectGroupActiveTerminalTabIds(state, worktreeId)
   const rememberedTabId = state.activeTabIdByWorktree[worktreeId]
   if (revealTabIds.size === 0 && rememberedTabId) {
     revealTabIds.add(rememberedTabId)
