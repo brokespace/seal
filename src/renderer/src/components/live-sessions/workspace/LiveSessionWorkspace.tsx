@@ -117,7 +117,7 @@ function BackToProjectOverview(): React.JSX.Element {
         data-live-session-back-to-project
         aria-label={label}
         onClick={back}
-        className="max-w-56 min-w-0 justify-start overflow-hidden"
+        className="max-w-56 min-w-0 shrink justify-start overflow-hidden"
       >
         <ArrowLeft className="size-3.5 shrink-0" />
         <span className="min-w-0 truncate">{label}</span>
