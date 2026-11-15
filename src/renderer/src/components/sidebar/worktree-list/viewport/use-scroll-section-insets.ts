@@ -63,7 +63,7 @@ export function useScrollSectionInsets(args: {
       }
     }
     scrollElement.addEventListener('scroll', recordSettledScrollTop, { passive: true })
-    const observer = new ResizeObserver(() => {
+    const sync = (): void => {
       const previous = insetsRef.current
       const next = measure(hosts)
       if (!apply(next)) {
@@ -102,11 +102,23 @@ export function useScrollSectionInsets(args: {
           scrollElement.dispatchEvent(new Event('scroll'))
         }
       })
-    })
-    observer.observe(hosts.leading)
-    observer.observe(hosts.pinnedHeader)
+    }
+    const resizeObserver = new ResizeObserver(sync)
+    resizeObserver.observe(hosts.leading)
+    resizeObserver.observe(hosts.pinnedHeader)
+    // Why also on mutation: a shrinking section clamps scrollTop, and that scroll event reaches the rows a frame ahead of the resize callback.
+    const mutationObserver = new MutationObserver(sync)
+    for (const host of [hosts.leading, hosts.pinnedHeader]) {
+      mutationObserver.observe(host, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true
+      })
+    }
     return () => {
-      observer.disconnect()
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
       scrollElement.removeEventListener('scroll', recordSettledScrollTop)
     }
   }, [hosts, programmaticScrollMarks, scrollAnchorRef, scrollElement, scrollOffsetRef])
