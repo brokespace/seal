@@ -122,6 +122,8 @@ Workspaces in the sidebar keep their execution host id: `ssh:<target>` for SSH, 
 
 On a machine's page the **CPU**, **RAM** and **Disk** meters are buttons. Each opens a detail view in place of the file browser; **Back to files** returns. They work on Linux and macOS machines, over SSH and over a Seal server alike. Windows machines show a notice instead.
 
+A machine with GPUs has a fourth meter, **GPU**, and shows its GPUs in the Machines list, on Home and on the phone. Its detail lists each GPU's readings and the processes using a GPU, with the same **Stop** and **Force kill** as the CPU detail. See [Machines: GPUs](./machines-gpu.md).
+
 Every host script runs through `runMachineHostScript` (`resources/machine-host-script.ts`): the login shell is asked only to start `sh -s`, and the script arrives on stdin. That keeps the scripts POSIX `sh` whatever the login shell is (bash, zsh, fish), and no value is ever word-split by it.
 
 | View | Shows                                                                                                                                                                                         | Actions                                                                                                                                                         |
@@ -209,3 +211,4 @@ The chevron next to the button picks another app, or Seal's editor, for one open
 | `src/main/machines/connection/machine-connection-parity.test.ts` | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers |
 | `src/main/machines/resources/machine-resources-parity.test.ts`   | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)  |
 | `src/main/machines/resources/machine-resource-parsing.test.ts`   | Linux and macOS probe output, secret masking, cleanup path guards                                                                         |
+| `src/main/machines/resources/machine-gpu-readings.test.ts`       | GPU readings and GPU processes from `nvidia-smi`, `rocm-smi` and `ioreg` output; see [Machines: GPUs](./machines-gpu.md#tests)            |
