@@ -2170,7 +2170,9 @@
         "close": "Close",
         "loading": "Loading {{name}}",
         "workspaceUnavailable": "This workspace is not available.",
-        "projectUnavailable": "This project is not available."
+        "projectUnavailable": "This project is not available.",
+        "load": "Load",
+        "paused": "{{name}} starts when you focus this pane."
       },
       "menu": {
         "right": "Right",

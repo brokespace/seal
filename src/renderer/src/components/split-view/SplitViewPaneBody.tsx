@@ -1,33 +1,42 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
 import { WslHostStoppedWorkspaceNotice } from '@/components/wsl-host-stopped/WslHostStoppedWorkspaceNotice'
 import { useTranslate } from '@/i18n/use-translate'
+import { useAppStore } from '@/store/index'
 import { requestBackgroundTerminalWorktreeMount } from '../terminal/background-terminal-worktree-mount'
 import { registerTabGroupBody } from '../tab-group/tab-group-body-geometry'
+import { resolveReattachableTabIds } from './pane-workspace-reattach'
 import { useWorkspaceSurfaceInPane } from './pane-workspace-surfaces'
-import { closeSplitViewItems } from './split-view-commands'
+import { closeSplitViewItems, focusSplitViewPane } from './split-view-commands'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { splitViewItemKey, type SplitViewItem } from './split-view-types'
 
 function Placeholder({
   children,
-  onClose
+  onClose,
+  onLoad
 }: {
   children: React.ReactNode
   onClose?: () => void
+  onLoad?: () => void
 }): React.JSX.Element {
   const t = useTranslate()
   return (
     <div
-      data-split-view-placeholder={onClose ? 'unavailable' : 'loading'}
+      data-split-view-placeholder={onClose ? 'unavailable' : onLoad ? 'paused' : 'loading'}
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center text-sm text-muted-foreground"
     >
       <p>{children}</p>
       {onClose ? (
         <Button type="button" variant="outline" size="sm" onClick={onClose}>
           {t('seal.splitView.placeholder.close', 'Close')}
+        </Button>
+      ) : null}
+      {onLoad ? (
+        <Button type="button" variant="outline" size="sm" onClick={onLoad}>
+          {t('seal.splitView.placeholder.load', 'Load')}
         </Button>
       ) : null}
     </div>
@@ -54,17 +63,34 @@ function WorkspaceSlot({
   const t = useTranslate()
   const slotRef = useRef<HTMLDivElement>(null)
   const surfaceShown = useWorkspaceSurfaceInPane(worktreeId)
+  // Before the saved session is back there are no tabs to ask the daemon about.
+  const sessionReady = useAppStore((state) => state.workspaceSessionReady)
+  const [awaitsFocus, setAwaitsFocus] = useState(false)
 
   useLayoutEffect(
     () => (slotRef.current ? registerTabGroupBody(paneId, slotRef.current) : undefined),
     [paneId]
   )
-  // A workspace this run has not activated has no surface yet; mount it without activating it.
+  // A workspace this run has not activated has no surface yet; mount it without activating it,
+  // and only the terminals that reattach: showing a workspace never starts a shell.
   useEffect(() => {
-    if (available && !surfaceShown) {
-      requestBackgroundTerminalWorktreeMount({ worktreeId })
+    if (!available || surfaceShown || !sessionReady) {
+      return
     }
-  }, [available, surfaceShown, worktreeId])
+    let stale = false
+    void resolveReattachableTabIds(worktreeId).then((tabIds) => {
+      if (stale) {
+        return
+      }
+      setAwaitsFocus(tabIds === null)
+      if (tabIds) {
+        requestBackgroundTerminalWorktreeMount({ worktreeId, tabIds })
+      }
+    })
+    return () => {
+      stale = true
+    }
+  }, [available, sessionReady, surfaceShown, worktreeId])
 
   return (
     <div
@@ -72,7 +98,13 @@ function WorkspaceSlot({
       data-split-view-workspace-slot={worktreeId}
       className="relative min-h-0 min-w-0 flex-1"
     >
-      {surfaceShown ? null : available ? (
+      {surfaceShown ? null : available && awaitsFocus ? (
+        <Placeholder onLoad={() => focusSplitViewPane(paneId)}>
+          {t('seal.splitView.placeholder.paused', '{{name}} starts when you focus this pane.', {
+            name: title
+          })}
+        </Placeholder>
+      ) : available ? (
         <Placeholder>
           {t('seal.splitView.placeholder.loading', 'Loading {{name}}', { name: title })}
         </Placeholder>
@@ -107,6 +139,7 @@ export function SplitViewPaneBody({
   if (item.kind === 'workspace') {
     return (
       <WorkspaceSlot
+        key={item.worktreeId}
         paneId={paneId}
         worktreeId={item.worktreeId}
         available={resolved !== null}
