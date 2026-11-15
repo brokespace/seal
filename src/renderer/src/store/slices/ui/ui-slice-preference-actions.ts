@@ -41,6 +41,7 @@ import {
   WORKSPACE_BOARD_COLUMN_WIDTH_DEFAULT
 } from '../../../../../shared/workspace-statuses'
 import { createHostWorkspaceStatusActions } from './ui-slice-host-workspace-statuses'
+import { isActiveAgentsCollapseKey } from '../../../components/live-sessions/active-agents/active-agents-model'
 
 /** Builds preference defaults and setters for the UI slice, leaving durable writes to the persistence layer. */
 export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Partial<UISlice> {
@@ -50,10 +51,12 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     setSidebarBody: (body) => set({ sidebarBody: body }),
 
     groupBy: 'repo',
-    // Why: group keys are mode-specific, so clear collapsed state on mode switch — stale keys are meaningless and accumulate.
+    // Why: project group keys are mode-specific, so clear them on mode switch — stale keys are meaningless and accumulate.
     setGroupBy: (g) => {
-      window.api.ui.set({ groupBy: g, collapsedGroups: [] }).catch(console.error)
-      set({ groupBy: g, collapsedGroups: new Set<string>() })
+      // Active agents shares the list but not the grouping; regrouping Projects must not unfold it.
+      const collapsedGroups = new Set([...get().collapsedGroups].filter(isActiveAgentsCollapseKey))
+      window.api.ui.set({ groupBy: g, collapsedGroups: [...collapsedGroups] }).catch(console.error)
+      set({ groupBy: g, collapsedGroups })
     },
 
     sortBy: 'recent',
