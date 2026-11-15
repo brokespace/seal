@@ -125,7 +125,12 @@ function hookDetail(
         permission?.question ??
         (row.state === 'waiting' && row.toolName ? `Allow ${row.toolName}?` : null)
       )
-    default:
+    case 'errored':
+    case 'running-shell':
+    case 'waiting-subagent':
+    case 'waiting-task':
+    case 'idle':
+    case 'done':
       return null
   }
 }
