@@ -53,12 +53,12 @@ export function runSplitViewShortcut(actionId: SplitViewActionId): void {
 
 /**
  * Main takes these chords ahead of editors, terminals and embedded pages, so it has to know when
- * the grid is on screen; otherwise it would swallow them. Returns the unsubscribe.
+ * they would run; otherwise it would swallow them. Returns the unsubscribe.
  */
 export function reportSplitViewShowingToMain(): () => void {
   let reported: boolean | null = null
   const report = (): void => {
-    const showing = isSplitViewShowing()
+    const showing = canRunSplitViewShortcut()
     if (showing !== reported) {
       reported = showing
       window.api.ui.setSplitViewShowing(showing)
