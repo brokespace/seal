@@ -2074,6 +2074,8 @@
         "files_other": "{{count}} files changed",
         "reading": "Reading…",
         "unavailable": "Status unavailable",
+        "lastRead": "as of {{age}} ago",
+        "lastReadHint": "Git could not be read just now. This is its last answer.",
         "clean": "Clean",
         "aheadBehind": "{{ahead}} ahead of and {{behind}} behind {{upstream}}",
         "upstream": "upstream",
