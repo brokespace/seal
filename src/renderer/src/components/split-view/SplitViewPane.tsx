@@ -66,12 +66,14 @@ function takeKeyboardFocusFromOtherPanes(paneId: string, pane: HTMLElement): voi
 export function SplitViewPane({
   paneId,
   placement,
-  shown
+  shown,
+  canMaximize
 }: {
   paneId: string
   placement: SplitLayoutLeafPlacement
   /** False while another pane is drawn alone (maximized, or a main area too narrow for two). */
   shown: boolean
+  canMaximize: boolean
 }): React.JSX.Element {
   const t = useTranslate()
   const state = useSplitView()
@@ -130,18 +132,24 @@ export function SplitViewPane({
         )}
         after={
           <div className="flex shrink-0 items-center gap-0.5 px-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              data-split-view-pane-action="maximize"
-              aria-label={maximizeLabel}
-              aria-pressed={maximized}
-              title={maximizeLabel}
-              onClick={() => toggleSplitViewPaneMaximized(paneId)}
-            >
-              {maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-            </Button>
+            {canMaximize ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                data-split-view-pane-action="maximize"
+                aria-label={maximizeLabel}
+                aria-pressed={maximized}
+                title={maximizeLabel}
+                onClick={() => toggleSplitViewPaneMaximized(paneId)}
+              >
+                {maximized ? (
+                  <Minimize2 className="size-3.5" />
+                ) : (
+                  <Maximize2 className="size-3.5" />
+                )}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="ghost"

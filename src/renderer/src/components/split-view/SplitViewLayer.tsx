@@ -36,6 +36,8 @@ export default function SplitViewLayer(): React.JSX.Element | null {
   // Maximized or too narrow: the focused pane alone. The others stay mounted, so a session keeps
   // its draft and its place in the transcript.
   const soloPaneId = narrow || state.maximizedPaneId !== null ? state.focusedPaneId : null
+  // Nothing to maximize over: one pane, or a main area that already shows one alone.
+  const canMaximize = layout?.type === 'split' && (!narrow || state.maximizedPaneId !== null)
   // The geometry registry measures on resize; a pane that only changed place must be re-read.
   useLayoutEffect(() => {
     measureAllTabGroupBodies()
@@ -48,9 +50,10 @@ export default function SplitViewLayer(): React.JSX.Element | null {
         paneId={paneId}
         placement={placement}
         shown={soloPaneId === null || soloPaneId === paneId}
+        canMaximize={canMaximize}
       />
     ),
-    [soloPaneId]
+    [soloPaneId, canMaximize]
   )
 
   if (!layout) {

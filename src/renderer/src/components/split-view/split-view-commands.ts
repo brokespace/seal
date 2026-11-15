@@ -297,6 +297,11 @@ export function closeOtherSplitViewItems(paneId: string, key: string): void {
 }
 
 export function toggleSplitViewPaneMaximized(paneId?: string): void {
+  const { layout, maximizedPaneId } = splitViewStore.getState()
+  // One pane already shows alone: maximizing would only be seen once the window widens.
+  if (maximizedPaneId === null && (layout?.type !== 'split' || splitViewStore.isNarrow())) {
+    return
+  }
   if (splitViewStore.update((state) => toggleSplitViewMaximize(state, paneId))) {
     navigateToFocusedChip()
   }
