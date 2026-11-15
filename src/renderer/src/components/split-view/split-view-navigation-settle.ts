@@ -3,6 +3,7 @@ import type { AppState } from '@/store/types'
 import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
 import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { registerRemovedActiveWorktreeTakeover } from '@/lib/workspace/activation/active-worktree-removal-takeover'
+import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import {
   selectFolderWorkspaces,
   selectWorktreesByRepo
@@ -34,6 +35,8 @@ export function installSplitViewNavigationSettle(): () => void {
   // Only an item this run saw exist can be pruned, so a slow catalog never empties a restored grid.
   const seenKeys = new Set<string>()
   let scheduled = false
+  // Undefined while no creation surface covers the grid.
+  let workspaceBeforeCreation: string | null | undefined
 
   const pruneVanishedItems = (): void => {
     const state = useAppStore.getState()
@@ -63,13 +66,23 @@ export function installSplitViewNavigationSettle(): () => void {
       return
     }
     pruneVanishedItems()
+    const app = useAppStore.getState()
+    if (selectWorktreeCreationSurfaceShown(app)) {
+      workspaceBeforeCreation ??= app.activeWorktreeId
+    }
     if (!isSplitViewShowing()) {
       return
     }
     const state = splitViewStore.getState()
-    const current = currentSplitViewItem()
+    const focused = state.focusedPaneId ? activeSplitViewItem(state, state.focusedPaneId) : null
+    // A cancelled creation leaves the terminal view on the last workspace, which nobody opened.
+    const creationCancelled =
+      workspaceBeforeCreation !== undefined &&
+      app.activeView === 'terminal' &&
+      app.activeWorktreeId === workspaceBeforeCreation
+    workspaceBeforeCreation = undefined
+    const current = creationCancelled ? null : currentSplitViewItem()
     if (!current) {
-      const focused = state.focusedPaneId ? activeSplitViewItem(state, state.focusedPaneId) : null
       if (focused) {
         navigateToSplitViewItem(focused)
       }
