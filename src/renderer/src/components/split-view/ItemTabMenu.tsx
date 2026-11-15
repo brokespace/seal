@@ -48,7 +48,11 @@ export function ItemTabMenu({
           >
             {t('auto.components.tab.bar.SortableTabContextMenu.8d16f9cd30', 'Close Others')}
           </ContextMenuItem>
-          <CloseSplitPaneMenuItem menuKind="context" onCloseSplitPane={commands.closePane} />
+          <CloseSplitPaneMenuItem
+            menuKind="context"
+            onCloseSplitPane={commands.closePane}
+            label={t('seal.splitView.pane.close', 'Close pane')}
+          />
         </>
       ) : null}
       {resolved?.kind === 'session' ? (
