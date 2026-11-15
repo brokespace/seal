@@ -122,6 +122,15 @@ function paneKeys(paneId: string | null): string[] {
   return current ? [splitViewItemKey(current)] : []
 }
 
+/** The chip a pane, or single view, has in front. */
+function shownKey(paneId: string | null): string | null {
+  if (paneId !== null) {
+    return splitViewStore.getState().panes[paneId]?.activeKey ?? null
+  }
+  const current = currentSplitViewItem()
+  return current ? splitViewItemKey(current) : null
+}
+
 function resolveStripDrop(strip: HTMLElement, x: number, paneId: string | null): ResolvedDrop {
   const stripRect = strip.getBoundingClientRect()
   const tabs = [...strip.querySelectorAll<HTMLElement>(`[${ITEM_TAB_KEY_ATTRIBUTE}]`)]
@@ -186,7 +195,12 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   if (leavesNothing) {
     zone = 'center'
   }
-  if (zone === 'center' && [...dragged].every((key) => held.includes(key))) {
+  // Dropped where it already shows, nothing would change; a tab behind another comes forward.
+  if (
+    zone === 'center' &&
+    [...dragged].every((key) => held.includes(key)) &&
+    dragged.has(shownKey(paneId) ?? '')
+  ) {
     return null
   }
   const half = { ...rect, left: rect.left, top: rect.top, width: rect.width, height: rect.height }
