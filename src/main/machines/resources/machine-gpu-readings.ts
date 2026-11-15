@@ -115,7 +115,7 @@ function parseRocmGpus(lines: string[], firstIndex: number): MachineGpu[] {
     if (!card || typeof value !== 'object' || value === null) {
       continue
     }
-    const entries = Object.entries(value as Record<string, unknown>)
+    const entries: [string, unknown][] = Object.entries(value)
     const text = (...names: RegExp[]): string | undefined => {
       for (const name of names) {
         const match = entries.find(([entry]) => name.test(entry))
