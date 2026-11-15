@@ -62,12 +62,12 @@ for as long as the transcript says so, whether or not a process is seen, and wha
 hook file says (layer 5). With no process seen, Seal offers to answer by resuming the session once
 the transcript has been quiet for 2 minutes; until then the agent may still be there, and a resume
 next to it would fork the conversation. A turn that only ended on a question (layer 6) is over in
-the transcript, so with no process it reads as finished like any other ended turn.
+the transcript, so once its process is gone it reads as finished like any other ended turn.
 
 "Process gone" means no process is seen and the transcript was last written more than 2 minutes
 ago (`FRESH_WRITE_MS`). A transcript written more recently belongs to a running agent even if `ps`
 missed it, so for those 2 minutes a session with no process still reads as its transcript says: a
-pending call as `working`, an ended turn as `your-turn`.
+pending call as `working`, an ended turn as `your-turn`, or as `waiting-input` when its reply asks.
 
 `statusDetail` says what the status is about: the command or file (`Bash: pnpm test`), the call a
 prompt holds (`Allow Bash: rm -rf build?`), the question asked, the error. `statusSource` says
@@ -232,8 +232,12 @@ Read top to bottom; the first row that matches wins.
 | 18  | Turn ended                                                             | `your-turn`                          | `transcript`  |
 | 19  | No turn yet                                                            | `idle`                               | `transcript`  |
 
-"Process gone" is no process seen and a transcript quiet for 2 minutes. An agent hook file that
-says `done` or `idle` gives the same statuses as rows 8 and 14–19, with source `agent-hooks`.
+"Process gone" is no process seen and a transcript quiet for 2 minutes. Row 6 keeps the source
+`agent-hooks` unless row 10 or 11 refines it, which report `process`.
+
+An agent hook file that says `done` or `idle` says the turn is over, with source `agent-hooks`.
+While the agent runs, an ended turn reads as rows 14–18 read it, and any other newest turn as
+`idle`: a pending call, and a failed turn too. With the process gone it reads `done`.
 
 ## Older clients
 
@@ -251,9 +255,12 @@ for the new sources (`live-session-status-compat.ts`).
 - An agent killed while its question was open never writes an end to its transcript, so the
   session keeps asking until it is answered, removed from Seal, or its transcript is 12 hours old
   and leaves the scan.
-- On a host whose `ps` cannot list processes, an agent that has sat at its question for 2 minutes
-  cannot be told from one that is gone, so Seal offers to resume it. Answering there starts a
-  second process on the same conversation.
+- On a host whose `ps` cannot list processes, an agent whose transcript has been quiet for 2
+  minutes cannot be told from one that is gone, so Seal offers to resume it: at a question, and
+  also while its hook file says it works or waits at a prompt. Answering there starts a second
+  process on the same conversation.
+- A `done` or `idle` hook file written after a failed turn hides the error: the session reads
+  `idle` while its agent runs and `done` after, not `errored`.
 - Providers other than Claude Code and Codex have no session record; they keep their pane status.
 
 ## How this was verified
