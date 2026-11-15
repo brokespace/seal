@@ -92,7 +92,9 @@ function renderHostHeaderVirtualRow(
       className={cn(
         'left-0 right-0 z-30 bg-worktree-sidebar',
         hasHeaderTopSpacing && !isActiveStickyHost && 'pt-1',
-        isActiveStickyHost ? 'sticky -top-px' : 'absolute top-0'
+        isActiveStickyHost
+          ? 'sticky top-[calc(var(--sidebar-sticky-inset,0px)-1px)]'
+          : 'absolute top-0'
       )}
       style={isActiveStickyHost ? undefined : { transform: getVirtualRowTransform(vItem.start) }}
     >

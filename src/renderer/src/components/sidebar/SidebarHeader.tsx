@@ -24,7 +24,6 @@ const SidebarHeader = React.memo(function SidebarHeader({
       : t('dashboard.sidebar.workspaces', 'Workspaces')
   return (
     <SidebarSectionHeader
-      className="mt-2"
       title={sidebarTitle}
       section={groupBy === 'repo' ? 'projects' : 'workspaces'}
       tourTarget={groupBy === 'repo' ? 'projects-collapse-all' : undefined}

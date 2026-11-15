@@ -55,7 +55,10 @@ export function useVirtualRowMeasurementSync(args: {
   const activeStickyIndexes = getActiveStickyIndexesForScroll({
     rows: renderRows,
     rangeStartIndex: virtualization.stickyRangeStartIndexRef.current,
-    scrollOffset: virtualizer.scrollOffset ?? scrollOffsetRef.current,
+    // Group headers pin below the Projects header, and only once the rows reach it.
+    scrollOffset:
+      (virtualizer.scrollOffset ?? scrollOffsetRef.current) +
+      virtualization.scrollSectionInsets.pinned,
     stickyHeaderIndexes: virtualization.stickyHeaderIndexes,
     virtualItems
   })

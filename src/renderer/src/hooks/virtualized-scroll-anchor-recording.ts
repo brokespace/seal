@@ -42,7 +42,8 @@ export function findVirtualizedDomScrollAnchor<TItemElement extends Element>({
   return {
     fallbackKeys: visibleItems.slice(1).map((item) => item.key),
     key: firstVisible.key,
-    offset: Math.min(firstVisible.rect.height, Math.max(0, scrollRect.top - firstVisible.rect.top)),
+    // Negative when content above the rows shares the scroller and the first row starts below the viewport top.
+    offset: Math.min(firstVisible.rect.height, scrollRect.top - firstVisible.rect.top),
     scrollTop: scrollElement.scrollTop
   }
 }
@@ -71,7 +72,7 @@ export function getVirtualizedScrollAnchorForOffset<TRow>({
       .filter((row): row is TRow => row != null)
       .map(getRowKey),
     key: getRowKey(row),
-    offset: Math.max(0, scrollTop - firstVisible.start),
+    offset: scrollTop - firstVisible.start,
     scrollTop
   }
 }

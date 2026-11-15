@@ -1,4 +1,5 @@
 import { GROUP_HEADER_ROW_HEIGHT } from '../viewport/virtual-rows'
+import { getSidebarStickyInset } from '../../sidebar-scroll-sections'
 import { motionSafeScrollBehavior } from '@/hooks/usePrefersReducedMotion'
 import {
   requestVirtualizedScrollAnchorRecord,
@@ -8,6 +9,11 @@ import {
 const WORKTREE_REVEAL_TOP_CLEARANCE = 6
 export const WORKTREE_SIDEBAR_REVEAL_TOP_INSET =
   GROUP_HEADER_ROW_HEIGHT + WORKTREE_REVEAL_TOP_CLEARANCE
+
+/** Rows reveal below both the pinned Projects header and the sticky group header under it. */
+function getRevealTopInset(container: HTMLElement): number {
+  return WORKTREE_SIDEBAR_REVEAL_TOP_INSET + getSidebarStickyInset(container)
+}
 
 export type SidebarRevealScroll = (top: number, behavior: ScrollBehavior) => void
 
@@ -81,11 +87,11 @@ export function getRevealBoundsVisibility(
   container: HTMLElement,
   bounds: SidebarRevealBounds
 ): 'full' | 'partial' | 'hidden' {
-  if (getScrollTopToRevealBounds(container, bounds, WORKTREE_SIDEBAR_REVEAL_TOP_INSET) === null) {
+  const topInset = getRevealTopInset(container)
+  if (getScrollTopToRevealBounds(container, bounds, topInset) === null) {
     return 'full'
   }
-  const viewportTop =
-    container.scrollTop + Math.min(container.clientHeight, WORKTREE_SIDEBAR_REVEAL_TOP_INSET)
+  const viewportTop = container.scrollTop + Math.min(container.clientHeight, topInset)
   const viewportBottom = container.scrollTop + container.clientHeight
   return bounds.end > viewportTop && bounds.start < viewportBottom ? 'partial' : 'hidden'
 }
@@ -105,11 +111,7 @@ export function revealElementInScrollContainer(
   if (!bounds) {
     return false
   }
-  const nextScrollTop = getScrollTopToRevealBounds(
-    container,
-    bounds,
-    WORKTREE_SIDEBAR_REVEAL_TOP_INSET
-  )
+  const nextScrollTop = getScrollTopToRevealBounds(container, bounds, getRevealTopInset(container))
   if (nextScrollTop === null) {
     supersedeVirtualizedScrollAnchorRestore(container)
     requestVirtualizedScrollAnchorRecord(container)

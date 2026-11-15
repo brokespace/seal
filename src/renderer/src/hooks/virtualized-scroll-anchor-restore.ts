@@ -58,7 +58,8 @@ export function runVirtualizedScrollAnchorRestore<
   }
   // Preserve within-row offset only for the same/rekeyed row; a fallback names a different row.
   const followedRow = resolvedKey === followedKey
-  const offset = hasExactKey || followedRow ? anchor.offset : 0
+  // A fallback row still keeps the gap the anchor had above it.
+  const offset = hasExactKey || followedRow ? anchor.offset : Math.min(0, anchor.offset)
   // A rekey can shrink the row, such as a dissolved lineage group; clamp its preserved offset.
   const offsetWithinRow = (rowHeight: number): number =>
     followedRow ? Math.min(rowHeight, offset) : offset

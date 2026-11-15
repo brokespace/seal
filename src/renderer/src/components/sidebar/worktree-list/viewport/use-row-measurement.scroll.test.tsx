@@ -8,6 +8,7 @@ import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor
 import { buildLineageRowProjection } from '../listing/lineage-row-projection'
 import type { RenderRow } from '../listing/render-row'
 import { repo, worktree } from '../grouping/worktree-list-groups-test-fixtures'
+import { NO_SCROLL_SECTION_INSETS } from './scroll-section-insets'
 import { revealElementInScrollContainer } from '../navigation/worktree-sidebar-reveal'
 import { useVirtualRowMeasurementSync } from './use-row-measurement'
 import { useWorktreeSidebarScrollSuppression } from './use-scroll-suppression'
@@ -126,7 +127,8 @@ function setup(interior = false) {
         stickyRangeStartIndexRef: { current: 0 },
         rowIndexByKey: projection.rowIndexByKey,
         restoreSignal: projection.restoreSignal,
-        programmaticScrollMarks: marks
+        programmaticScrollMarks: marks,
+        scrollSectionInsets: NO_SCROLL_SECTION_INSETS
       } as unknown as WorktreeListVirtualizer
       const input = useWorktreeSidebarScrollSuppression(scrollRef)
       useVirtualRowMeasurementSync({

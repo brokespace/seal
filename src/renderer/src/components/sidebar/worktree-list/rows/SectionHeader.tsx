@@ -199,7 +199,9 @@ export function renderWorktreeSectionHeaderRow(
           ? cn(
               'sticky z-20 bg-worktree-sidebar',
               // Why: when a host card is pinned, the group tier pins flush beneath it, not at the viewport top.
-              args.hasStickyHost ? 'top-[35px]' : '-top-px'
+              args.hasStickyHost
+                ? 'top-[calc(var(--sidebar-sticky-inset,0px)+35px)]'
+                : 'top-[calc(var(--sidebar-sticky-inset,0px)-1px)]'
             )
           : 'absolute top-0'
       )}

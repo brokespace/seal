@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
+import { SIDEBAR_STICKY_SECTION_HEADER_CLASS } from '@/components/sidebar/sidebar-scroll-sections'
 import { ProjectsCollapseAllButton } from '@/components/sidebar/worktree-list/controls/ProjectsCollapseAllButton'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
@@ -37,7 +38,7 @@ function rowIn(list: HTMLElement | null, sessionId: string): HTMLElement | null 
   return list?.querySelector(`[data-live-session-row="${CSS.escape(sessionId)}"]`) ?? null
 }
 
-/** Every agent session on every machine, below Projects: the one place session rows live. */
+/** Every agent session on every machine, the sidebar list's first section: the one place session rows live. */
 const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const t = useTranslate()
   const registry = useLiveSessions()
@@ -174,14 +175,9 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     return null
   }
   return (
-    <section
-      data-testid="active-agents"
-      data-open={open}
-      aria-label={title}
-      className="flex min-h-0 flex-col border-t border-worktree-sidebar-border"
-    >
+    <section data-testid="active-agents" data-open={open} aria-label={title}>
       <SidebarSectionHeader
-        className="mt-1"
+        className={SIDEBAR_STICKY_SECTION_HEADER_CLASS}
         title={title}
         section="active-agents"
         toggle={
@@ -245,7 +241,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
         }
       />
       {open ? (
-        <div className="flex min-h-0 flex-1 flex-col px-2 pb-1">
+        <div className="px-2 pb-1">
           <ActiveAgentsToolbar
             scope={scope}
             picked={marks.picked}
@@ -260,7 +256,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
             aria-multiselectable={marks.picked !== null}
             aria-label={title}
             onKeyDown={onListKeyDown}
-            className="scrollbar-sleek flex min-h-0 flex-1 flex-col overflow-y-auto pb-1 outline-none"
+            className="flex flex-col pb-1 outline-none"
           >
             {empty ? (
               <p className="px-1.5 py-1 text-2xs text-muted-foreground">
