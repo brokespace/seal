@@ -296,6 +296,11 @@ A pane is silent when its row was restored at startup and not confirmed since, o
 `done` and has had no hook evidence for 30 minutes (`AGENT_STATUS_STALE_AFTER_MS`). A silent pane
 speaks for nothing; the scan decides.
 
+A hook reaches Seal before the next scan does, so a pane that takes another status is ahead of what
+discovery last read of its session (a prompt just answered, a background command that just ended).
+The registry republishes on every hook, and on a change of status it reads the pane's machine again
+within half a second instead of waiting for its next scan (`SealPaneStatusChanges`).
+
 ## Lifecycle cases
 
 | Case                                        | What happens                                                                                                                                                                                                                                                                           |
@@ -364,6 +369,11 @@ than some clients on the wire. A client that sends its capabilities without
   rows alone (`runtime-worktree-sidebar-status.ts`); it does not yet read the pane's session. The
   phone's session rows do.
 - Mobile labels a wait without its count ("Waiting on background tasks").
+- The per-agent rows inside a workspace card and in the agent dashboard (`worktree-agent-rows.ts`,
+  `agent-row-dot-state.ts`) are built from pane hook rows alone. Where discovery knew more than the
+  hooks, such a row can read `done` or `idle` while the card's dot, the tab and the session say a
+  background wait.
+- A machine that disconnects leaves the list with its sessions; they are not shown as disconnected.
 
 ## How this is verified
 

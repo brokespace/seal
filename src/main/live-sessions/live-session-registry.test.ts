@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { LiveSessionRegistryEvent } from '../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery/discovery-output'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
@@ -14,8 +14,14 @@ const WORKING = '04186322-14da-4a67-890c-c5f4a754e99f'
 const ERRORED = 'e503cd0b-d59c-4221-a949-3c685cf99554'
 const FORK = '7f01a62c-a158-4451-a43b-a2e253ed713e'
 
-function transcript(fixture: string, sessionId: string, ageMs: number): DiscoveredFile {
-  const text = readFileSync(join(__dirname, fixture), 'utf8')
+function transcript(
+  fixture: string,
+  sessionId: string,
+  ageMs: number,
+  records = Infinity
+): DiscoveredFile {
+  const lines = readFileSync(join(__dirname, fixture), 'utf8').split('\n')
+  const text = lines.slice(0, records).join('\n')
   return {
     provider: 'claude',
     path: `${DIR}/${sessionId}.jsonl`,
@@ -27,7 +33,7 @@ function transcript(fixture: string, sessionId: string, ageMs: number): Discover
 }
 
 /** A machine whose processes, transcripts and Seal panes the test changes between scans. */
-function machine() {
+function machine(clock: () => number = () => NOW) {
   const state: {
     running: boolean
     files: DiscoveredFile[]
@@ -55,12 +61,23 @@ function machine() {
     transcriptFiles: async () => state.files
   }
   const events: LiveSessionRegistryEvent[] = []
+  const paneListeners = new Set<() => void>()
   const registry = new LiveSessionRegistry({
     localMachine: host.machine,
     hosts: () => [host],
     sealPanes: () => state.panes,
-    now: () => NOW
+    subscribeSealPanes: (onChange) => {
+      paneListeners.add(onChange)
+      return () => paneListeners.delete(onChange)
+    },
+    intervalsMs: { local: 60_000, ssh: 60_000 },
+    now: clock
   })
+  /** A hook event changed a pane. */
+  const paneChanged = (panes: SealPane[]) => {
+    state.panes = panes
+    paneListeners.forEach((listener) => listener())
+  }
   registry.subscribe((event) => events.push(event))
   const rows = async () => {
     await registry.refresh()
@@ -70,7 +87,7 @@ function machine() {
     events.flatMap((e) =>
       e.type === 'remove' && e.replacedBy ? [[e.sessionId, e.replacedBy]] : []
     )
-  return { state, registry, rows, replaced }
+  return { state, registry, rows, replaced, paneChanged }
 }
 
 const sealPane: SealPane = {
@@ -183,5 +200,30 @@ describe('a machine that stops answering', () => {
 
     state.down = false
     expect(await shown()).toEqual({ statuses: ['working'], error: null })
+  })
+})
+
+describe('a Seal pane whose status changes between scans', () => {
+  it('reads its machine again at once, not a scan later', async () => {
+    const started = Date.now()
+    const { state, registry, paneChanged } = machine(() => NOW + Date.now() - started)
+    const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
+    state.running = true
+    const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
+    state.files = [transcript(recorded, WORKING, 0, 7)]
+    state.panes = [{ ...sealPane, status: 'your-turn' }]
+    registry.start()
+    try {
+      await vi.waitFor(() => expect(shown()).toEqual(['waiting-task']))
+
+      // The command ends and wakes Claude, which answers and stops again.
+      state.files = [transcript(recorded, WORKING, 0)]
+      paneChanged([{ ...sealPane, status: 'working' }])
+      paneChanged([{ ...sealPane, status: 'your-turn' }])
+      // The scan that read the command as running is a minute from its next.
+      await vi.waitFor(() => expect(shown()).toEqual(['your-turn']), { timeout: 5_000 })
+    } finally {
+      registry.stop()
+    }
   })
 })
