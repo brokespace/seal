@@ -108,7 +108,11 @@ export function useWorktreeListKeyboardNavigation(args: {
       if (
         selectInList &&
         step.wrapped &&
-        offerSidebarSectionKeyboardCursor(getWorktreeRowsSection(scrollRef.current), direction)
+        offerSidebarSectionKeyboardCursor(
+          getWorktreeRowsSection(scrollRef.current),
+          direction,
+          isRepeat
+        )
       ) {
         // A held key switches only where it stops, and it left these rows: a later switch would pull focus into the terminal.
         dropPreview()
@@ -133,7 +137,7 @@ export function useWorktreeListKeyboardNavigation(args: {
   // Arrow keys run through the whole sidebar list: a neighbouring section hands the cursor to these rows.
   useSidebarSectionKeyboardEntry(
     () => getWorktreeRowsSection(scrollRef.current),
-    (edge) => {
+    (edge, held) => {
       const list = scrollRef.current
       const ordered = getRenderedWorkspaceRowsInSidebarOrder(rows, pinnedDisplayPolicy)
       const row = edge === 'first' ? ordered[0] : ordered.at(-1)
@@ -143,7 +147,7 @@ export function useWorktreeListKeyboardNavigation(args: {
       list.focus({ preventScroll: true })
       list.setAttribute('data-keyboard-navigation', '')
       markDirectScrollInput()
-      goToRow(row, false, true)
+      goToRow(row, held, true)
       return true
     }
   )

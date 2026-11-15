@@ -11,10 +11,11 @@ export const SIDEBAR_KEYBOARD_SECTION_PROPS = { [SECTION_ATTRIBUTE]: '' }
 /** Which of its rows a section takes the cursor on. */
 export type SidebarSectionEntryEdge = 'first' | 'last'
 
-/** At a section's own first or last row, offer the arrow-key cursor to the next section that way; the list's two ends meet. */
+/** At a section's own first or last row, offer the arrow-key cursor to the next section that way; the list's two ends meet. `held` is the key auto-repeating. */
 export function offerSidebarSectionKeyboardCursor(
   from: Element | null,
-  direction: 'up' | 'down'
+  direction: 'up' | 'down',
+  held: boolean
 ): boolean {
   const sections = Array.from(
     from?.closest(SCROLL_CONTAINER_SELECTOR)?.querySelectorAll(`[${SECTION_ATTRIBUTE}]`) ?? []
@@ -29,7 +30,7 @@ export function offerSidebarSectionKeyboardCursor(
     const candidate = sections.at((index + step * distance) % sections.length)
     // A section accepts by cancelling; one with no rows to land on passes the offer along.
     const accepted = !candidate?.dispatchEvent(
-      new CustomEvent(ENTER_EVENT, { bubbles: true, cancelable: true, detail: edge })
+      new CustomEvent(ENTER_EVENT, { bubbles: true, cancelable: true, detail: { edge, held } })
     )
     if (accepted) {
       return true
@@ -41,7 +42,7 @@ export function offerSidebarSectionKeyboardCursor(
 /** Take the cursor a neighbouring section offers; return false when there is no row to land on. */
 export function useSidebarSectionKeyboardEntry(
   getSection: () => Element | null,
-  onEnter: (edge: SidebarSectionEntryEdge) => boolean
+  onEnter: (edge: SidebarSectionEntryEdge, held: boolean) => boolean
 ): void {
   // Why not useEffectEvent: React 19.2 never refreshes it inside React.memo components, which both sections are.
   const resolveSection = useLatestHandler(getSection)
@@ -52,7 +53,7 @@ export function useSidebarSectionKeyboardEntry(
       if (
         event instanceof CustomEvent &&
         event.target === resolveSection() &&
-        enter(event.detail)
+        enter(event.detail.edge, event.detail.held)
       ) {
         event.preventDefault()
       }

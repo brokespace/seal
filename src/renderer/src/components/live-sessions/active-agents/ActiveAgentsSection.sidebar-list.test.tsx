@@ -90,7 +90,7 @@ it('moves the arrow-key cursor from its last agent into the section after it', a
   expect(onEnterProjects).not.toHaveBeenCalled()
 
   fireEvent.keyDown(last, { key: 'ArrowDown' })
-  expect(onEnterProjects.mock.calls).toEqual([['first']])
+  expect(onEnterProjects.mock.calls).toEqual([['first', false]])
 })
 
 it('wraps the cursor from its first agent to the end of the list', async () => {
@@ -101,7 +101,18 @@ it('wraps the cursor from its first agent to the end of the list', async () => {
 
   fireEvent.keyDown(first, { key: 'ArrowUp' })
 
-  expect(onEnterProjects.mock.calls).toEqual([['last']])
+  expect(onEnterProjects.mock.calls).toEqual([['last', false]])
+})
+
+it('tells the section it hands the cursor to that the key is being held', async () => {
+  const onEnterProjects = vi.fn(() => true)
+  await renderList(onEnterProjects)
+  const [, last] = agentRows()
+  last.focus()
+
+  fireEvent.keyDown(last, { key: 'ArrowDown', repeat: true })
+
+  expect(onEnterProjects.mock.calls).toEqual([['first', true]])
 })
 
 it('keeps the cursor on its last agent when the section after it has no row to take it', async () => {
@@ -118,7 +129,7 @@ it('takes the cursor back on its last agent from the section after it', async ()
   await renderList(() => true)
   const projectRows = document.querySelector('[data-project-rows]')
 
-  expect(offerSidebarSectionKeyboardCursor(projectRows, 'up')).toBe(true)
+  expect(offerSidebarSectionKeyboardCursor(projectRows, 'up', false)).toBe(true)
 
   expect(document.activeElement).toBe(agentRows()[1])
 })
@@ -131,7 +142,7 @@ it('saves its fold with the project folds and leaves the cursor to Projects whil
   expect(saveUi.mock.calls).toEqual([[{ collapsedGroups: ['active-agents'] }]])
   expect(agentRows()).toEqual([])
   expect(
-    offerSidebarSectionKeyboardCursor(document.querySelector('[data-project-rows]'), 'up')
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-project-rows]'), 'up', false)
   ).toBe(false)
 })
 

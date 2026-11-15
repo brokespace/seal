@@ -174,7 +174,11 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       if (at === -1 || (next >= 0 && next < order.length)) {
         focusRow(order[Math.max(0, Math.min(next, order.length - 1))])
       } else {
-        offerSidebarSectionKeyboardCursor(list.current, event.key === 'ArrowDown' ? 'down' : 'up')
+        offerSidebarSectionKeyboardCursor(
+          list.current,
+          event.key === 'ArrowDown' ? 'down' : 'up',
+          event.repeat
+        )
       }
     } else if (event.key === 'Home') {
       event.preventDefault()

@@ -102,7 +102,7 @@ it('hands the cursor to the section above instead of wrapping from the first pro
 
   fireEvent.keyDown(list(), { key: 'ArrowUp' })
 
-  expect(onEnterAgents.mock.calls).toEqual([['last']])
+  expect(onEnterAgents.mock.calls).toEqual([['last', false]])
   expect(activatedWorktreeIds()).toEqual([])
 })
 
@@ -112,7 +112,7 @@ it('wraps from the last project row to the top of the list, the first row of the
 
   fireEvent.keyDown(list(), { key: 'ArrowDown' })
 
-  expect(onEnterAgents.mock.calls).toEqual([['first']])
+  expect(onEnterAgents.mock.calls).toEqual([['first', false]])
   expect(activatedWorktreeIds()).toEqual([])
 })
 
@@ -155,11 +155,28 @@ it('takes the cursor from the section above on its first project row', () => {
   render(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
 
   expect(
-    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down')
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down', false)
   ).toBe(true)
 
   expect(activatedWorktreeIds()).toEqual(['top'])
   expect(document.activeElement).toBe(list())
+})
+
+it('previews the first project row, and switches where the key stops, when a held key brings the cursor in', () => {
+  vi.useFakeTimers()
+  try {
+    useAppStore.setState({ activeWorktreeId: 'bottom' })
+    render(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
+
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down', true)
+    fireEvent.keyDown(list(), { key: 'ArrowDown', repeat: true })
+    expect(activatedWorktreeIds()).toEqual([])
+    vi.advanceTimersByTime(1000)
+
+    expect(activatedWorktreeIds()).toEqual(['middle'])
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 it('takes the cursor on project rows that mounted after the list did', () => {
@@ -169,7 +186,7 @@ it('takes the cursor on project rows that mounted after the list did', () => {
   view.rerender(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
 
   expect(
-    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down')
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down', false)
   ).toBe(true)
 
   expect(activatedWorktreeIds()).toEqual(['top'])
@@ -183,7 +200,7 @@ it('takes the cursor on the rows of the latest render', () => {
   view.rerender(<SidebarList activeWorktreeId="middle" onEnterAgents={onEnterAgents} />)
 
   expect(
-    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down')
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down', false)
   ).toBe(true)
 
   expect(activatedWorktreeIds()).toEqual(['top'])
