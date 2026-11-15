@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { EllipsisVertical, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -42,6 +42,15 @@ export function AgentConfigPluginsSection(): React.JSX.Element | null {
   const [lastRun, setLastRun] = useState<AgentConfigCommandResult | null>(null)
   const [confirm, setConfirm] = useState<AgentConfigConfirmRequest | null>(null)
   const [prompt, setPrompt] = useState<MachinePromptRequest | null>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+  // The result lands under a long list, and what the CLI said last is what matters.
+  useEffect(() => {
+    const pre = outputRef.current?.querySelector('pre')
+    if (pre) {
+      pre.scrollTop = pre.scrollHeight
+    }
+    outputRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [lastRun])
   const plugins = snapshot.plugins
   if (!plugins) {
     return null
@@ -191,6 +200,7 @@ export function AgentConfigPluginsSection(): React.JSX.Element | null {
                   {plugin.installs.map((install) => (
                     <DropdownMenuItem
                       key={`update:${install.scope}:${install.projectPath ?? ''}`}
+                      disabled={running !== null}
                       onSelect={() =>
                         void run(
                           { kind: 'update', plugin: plugin.id, scope: install.scope },
@@ -203,31 +213,36 @@ export function AgentConfigPluginsSection(): React.JSX.Element | null {
                       })}
                     </DropdownMenuItem>
                   ))}
-                  {plugin.enabledIn[writeScope] !== undefined && writeScope !== 'user' ? (
-                    <DropdownMenuItem
-                      onSelect={() =>
-                        void apply(() =>
-                          agentConfigApi().setPluginEnabled({
-                            target,
-                            scope: writeScope,
-                            plugin: plugin.id,
-                            enabled: null
-                          })
-                        )
-                      }
-                    >
-                      {t(
-                        'auto.components.agentConfig.plugins.inherit',
-                        'Stop overriding in {{scope}}',
-                        { scope: agentConfigScopeLabel(writeScope, t) }
-                      )}
-                    </DropdownMenuItem>
-                  ) : null}
+                  {/* A scope that is not the one being changed can be the one that decides. */}
+                  {(homeScope === 'user' ? [] : (['project', 'local'] as const))
+                    .filter((scope) => plugin.enabledIn[scope] !== undefined)
+                    .map((scope) => (
+                      <DropdownMenuItem
+                        key={`inherit:${scope}`}
+                        onSelect={() =>
+                          void apply(() =>
+                            agentConfigApi().setPluginEnabled({
+                              target,
+                              scope,
+                              plugin: plugin.id,
+                              enabled: null
+                            })
+                          )
+                        }
+                      >
+                        {t(
+                          'auto.components.agentConfig.plugins.inherit',
+                          'Stop overriding in {{scope}}',
+                          { scope: agentConfigScopeLabel(scope, t) }
+                        )}
+                      </DropdownMenuItem>
+                    ))}
                   <DropdownMenuSeparator />
                   {plugin.installs.map((install) => (
                     <DropdownMenuItem
                       key={`uninstall:${install.scope}:${install.projectPath ?? ''}`}
                       variant="destructive"
+                      disabled={running !== null}
                       onSelect={() => uninstall(plugin, install.scope)}
                     >
                       {t(
@@ -298,6 +313,7 @@ export function AgentConfigPluginsSection(): React.JSX.Element | null {
 
       {lastRun ? (
         <div
+          ref={outputRef}
           className="space-y-1 rounded-md border border-border bg-muted/30 p-3 font-mono text-xs"
           data-agent-config-command-output={lastRun.ok ? 'ok' : 'failed'}
         >

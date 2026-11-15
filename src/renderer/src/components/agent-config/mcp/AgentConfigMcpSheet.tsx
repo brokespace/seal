@@ -37,6 +37,7 @@ import {
   recordFromPairs,
   type AgentConfigPair
 } from '../AgentConfigPairsField'
+import { AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS } from '../agent-config-sheet-placement'
 import { agentConfigApi, agentConfigErrorText } from '../model/agent-config-client'
 import { useAgentConfig } from '../model/agent-config-context'
 import { agentConfigScopeHint, agentConfigScopeLabel } from '../model/agent-config-scope-labels'
@@ -111,7 +112,10 @@ export function AgentConfigMcpSheet({
   const scopes = agentConfigMcpScopes(layout, Boolean(target.projectPath))
   const place = scopes.find((item) => item.scope === scope) ?? scopes[0]
   const codec = mcpCodec(place?.codec ?? 'generic')
-  const set = (change: Partial<Form>): void => setForm((previous) => ({ ...previous, ...change }))
+  const set = (change: Partial<Form>): void => {
+    setError(null)
+    setForm((previous) => ({ ...previous, ...change }))
+  }
   const draft = {
     name: form.name.trim(),
     transport: form.transport,
@@ -174,7 +178,7 @@ export function AgentConfigMcpSheet({
 
   return (
     <Sheet open={edit !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent data-agent-config-mcp-form>
+      <SheetContent style={AGENT_CONFIG_SHEET_BELOW_WINDOW_CONTROLS} data-agent-config-mcp-form>
         <div className="shrink-0 border-b border-border pr-8">
           <SheetHeader>
             <SheetTitle>

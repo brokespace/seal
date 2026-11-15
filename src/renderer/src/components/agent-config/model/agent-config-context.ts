@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-catalog'
+import type { AgentConfigLayout } from '../../../../../shared/agent-config/agent-config-layout-types'
 import type {
   AgentConfigScope,
   AgentConfigSnapshot,

@@ -45,7 +45,8 @@ export function useSessionRecap(
         LOCAL_TARGET,
         method,
         { sessionId, ...params },
-        { suppressFeatureInteraction: true, timeoutMs }
+        // No feature-interaction tag: these methods take strict params and reject the extra key.
+        { timeoutMs }
       ).then(
         (view) => {
           if (asked === latest.current) {
@@ -67,10 +68,13 @@ export function useSessionRecap(
 
   const rev = brief?.rev
   const updating = brief?.updating === true
+  const hadBrief = useRef(false)
   useEffect(() => {
-    if (rev !== undefined) {
+    // A pass that ends without a recap takes the brief away again: read why it ended.
+    if (rev !== undefined || hadBrief.current) {
       void read('sessionRecap.get', {})
     }
+    hadBrief.current = rev !== undefined
   }, [read, rev, updating])
 
   const refresh = useCallback(() => {

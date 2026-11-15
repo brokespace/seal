@@ -102,7 +102,7 @@ export function MachineDetail({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="md:hidden"
+          className="@2xl/machines:hidden"
           aria-label={t('auto.components.machines.detail.back', 'All machines')}
           onClick={onBack}
         >
@@ -154,7 +154,7 @@ export function MachineDetail({
             onClick={() => openMachineTerminal(machine)}
           >
             <SquareTerminal />
-            <span className="hidden sm:inline">
+            <span className="hidden @md/machines:inline">
               {t('auto.components.machines.detail.terminal', 'Terminal')}
             </span>
           </Button>
@@ -267,7 +267,12 @@ export function MachineDetail({
         hidden={resource !== null}
         folderRequest={folderRequest}
       />
-      <MachineEditDialog target={editing} onClose={() => setEditing(null)} onSaved={onChanged} />
+      <MachineEditDialog
+        machineId={machine.id}
+        target={editing}
+        onClose={() => setEditing(null)}
+        onSaved={onChanged}
+      />
       {removal ? (
         <HostRemoveDialog
           open={removing}

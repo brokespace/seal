@@ -72,10 +72,11 @@ export function AgentConfigHooksField({ value, patch }: SettingsFormProps): Reac
           : group
       )
       .filter((group) => group.hooks.length > 0)
+    const was = hooks[row.event] ?? null
     patch([
       groups.length === 0
-        ? { path: ['hooks', row.event], remove: true }
-        : { path: ['hooks', row.event], value: groups }
+        ? { path: ['hooks', row.event], remove: true, was }
+        : { path: ['hooks', row.event], value: groups, was }
     ])
   }
   const add = (): void => {
@@ -91,7 +92,7 @@ export function AgentConfigHooksField({ value, patch }: SettingsFormProps): Reac
         : groups.map((group, index) =>
             index === at ? { ...group, hooks: [...group.hooks, hook] } : group
           )
-    patch([{ path: ['hooks', event], value: next }])
+    patch([{ path: ['hooks', event], value: next, was: hooks[event] ?? null }])
     setCommand('')
   }
 
@@ -104,7 +105,7 @@ export function AgentConfigHooksField({ value, patch }: SettingsFormProps): Reac
           data-agent-config-hook={row.event}
         >
           <span className="w-32 shrink-0 truncate text-xs">{row.event}</span>
-          <span className="w-24 shrink-0 truncate font-mono text-xs text-muted-foreground">
+          <span className="w-36 shrink-0 truncate font-mono text-xs text-muted-foreground">
             {row.matcher || '*'}
           </span>
           <span
@@ -147,7 +148,7 @@ export function AgentConfigHooksField({ value, patch }: SettingsFormProps): Reac
           placeholder={t('auto.components.agentConfig.settings.hookMatcher', 'tools (optional)')}
           aria-label={t('auto.components.agentConfig.settings.hookMatcherLabel', 'Tool matcher')}
           variant="code"
-          className="h-7 w-24 shrink-0"
+          className="h-7 w-36 shrink-0"
           onChange={(change) => setMatcher(change.target.value)}
         />
         <Input

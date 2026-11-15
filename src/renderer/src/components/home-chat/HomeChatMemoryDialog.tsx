@@ -15,6 +15,9 @@ import type { HomeChatApi } from '../../../../preload/api/home-chat/home-chat-ap
 import type { HomeChatMemory } from '../../../../shared/home-chat/home-chat-memory-types'
 import { HomeChatMachineNotes, HomeChatMemoryItems } from './HomeChatMemorySections'
 
+// Kept mounted while hidden, so an item typed but not yet added survives a tab switch.
+const KEPT_TAB_CLASS = 'data-[state=inactive]:hidden'
+
 /** What the assistant remembers across chats, editable by the user. */
 export function HomeChatMemoryDialog({
   api,
@@ -99,7 +102,7 @@ export function HomeChatMemoryDialog({
                 </TabsTrigger>
                 <TabsTrigger value="journal">{t('homeChat.memory.journal', 'Journal')}</TabsTrigger>
               </TabsList>
-              <TabsContent value="rules">
+              <TabsContent value="rules" forceMount className={KEPT_TAB_CLASS}>
                 <HomeChatMemoryItems
                   items={memory.rules}
                   placeholder={t(
@@ -110,7 +113,7 @@ export function HomeChatMemoryDialog({
                   onChange={(rules) => update({ rules })}
                 />
               </TabsContent>
-              <TabsContent value="facts">
+              <TabsContent value="facts" forceMount className={KEPT_TAB_CLASS}>
                 <HomeChatMemoryItems
                   items={memory.facts}
                   placeholder={t(
@@ -127,7 +130,7 @@ export function HomeChatMemoryDialog({
                   onChange={(machines) => update({ machines })}
                 />
               </TabsContent>
-              <TabsContent value="journal">
+              <TabsContent value="journal" forceMount className={KEPT_TAB_CLASS}>
                 <HomeChatMemoryItems
                   items={memory.journal}
                   showDates

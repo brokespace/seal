@@ -27,7 +27,7 @@ import {
   resolveMachineFileSystem as resolveFileSystem,
   setMachineAccess
 } from './machine-services'
-import { getMachineRegistry } from './registry/machine-registry-service'
+import { desktopMachineAccess, getMachineRegistry } from './registry/machine-registry-service'
 import { registerMachineRegistryHandlers } from './registry/machine-registry-ipc'
 import { registerMachineShellHandlers } from './shell/machine-shell-ipc'
 import { registerMachineWorkHandlers } from './work/machine-work-ipc'
@@ -73,11 +73,7 @@ function handle(channel: string, handler: MachineInvokeHandler): void {
 
 export function registerMachineHandlers(getMainWindow: () => BrowserWindow | null): void {
   currentGetMainWindow = getMainWindow
-  setMachineAccess({
-    views: () => getMachineRegistry().list(),
-    connection: (machineId) => getMachineRegistry().connection(machineId),
-    liveSessionSources: () => getMachineRegistry().liveSessionSources()
-  })
+  setMachineAccess(desktopMachineAccess())
   unsubscribeRendererEvents?.()
   const offDirs = onMachineDirChanged((event) => sendToRenderer(MACHINE_IPC.dirChanged, event))
   const offTransfers = onMachineTransferUpdated((transfer) =>

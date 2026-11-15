@@ -4,6 +4,7 @@ import {
   SessionRecapRefreshParams,
   SessionRecapSetEnabledParams
 } from '../../../../../shared/rpc-contract/session-recap-params'
+import { getLiveSessionService } from '../../../../live-sessions/live-session-service-instance'
 import type { LiveSessionRecaps } from '../../../../session-recap/live-session-recaps'
 import { requireSessionSummariesHost } from '../../../../session-summaries/session-summaries-instance'
 import { defineMethod } from '../../core'
@@ -34,7 +35,12 @@ export const SESSION_RECAP_METHODS = [
     name: 'sessionRecap.mark',
     permission: 'workspace',
     params: SessionRecapMarkParams,
-    handler: async ({ sessionId, itemId, mark }) => recaps().mark(sessionId, itemId, mark)
+    handler: async ({ sessionId, itemId, mark }) => {
+      const view = recaps().mark(sessionId, itemId, mark)
+      // Row badges and other clients read the open counts off the registry, not this reply.
+      getLiveSessionService()?.registry.republish()
+      return view
+    }
   }),
   defineMethod({
     name: 'sessionRecap.setEnabled',

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useLayoutEffect, useRef } from 'react'
 import { cn } from '@/lib/class-names'
 import { machinePathCrumbs } from '../../../../../shared/machines/machine-paths'
 
@@ -14,8 +14,17 @@ export function MachinePathCrumbs({
   onOpen: (path: string) => void
   className?: string
 }): React.JSX.Element {
+  const navRef = useRef<HTMLElement>(null)
+  // A deep path overflows; the current folder is at the end and must stay in view.
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (nav) {
+      nav.scrollLeft = nav.scrollWidth
+    }
+  }, [path])
   return (
     <nav
+      ref={navRef}
       className={cn(
         'scrollbar-none flex min-w-0 flex-1 items-center overflow-x-auto px-1 font-mono text-xs',
         className

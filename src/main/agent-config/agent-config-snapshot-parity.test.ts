@@ -136,7 +136,10 @@ describe.skipIf(process.platform !== 'linux').each(AGENT_CONFIG_TRANSPORTS)(
           ['instructions', 'project', 'packages/api/CLAUDE.md'],
           ['skill', 'project', 'lint-fix'],
           ['subagent', 'project', 'tester'],
-          ['command', 'project', 'ship']
+          ['command', 'project', 'ship'],
+          // A project runs with the account's skills as well.
+          ['skill', 'user', 'Broken Skill'],
+          ['skill', 'user', 'deploy-app']
         ]
       )
       expect(

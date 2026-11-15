@@ -10,9 +10,10 @@ import {
 } from '../../../../../shared/machines/machine-paths'
 import type { MachinePromptRequest } from './MachinePromptDialog'
 import type { MachineExplorerFileOps } from './machine-explorer-source'
+import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+  return readIpcErrorMessage(error) ?? String(error)
 }
 
 function machinesApi(): NonNullable<typeof window.api.machines> {

@@ -69,6 +69,15 @@ export function machineOsLabel(os: MachineOs | null): string | null {
   }
 }
 
+/** Hosts report a release that may already name the OS ("macOS 14.5", "Microsoft Windows 11 Pro"). */
+function machineOsFact(os: MachineOs | null, release: string | null): string {
+  const label = machineOsLabel(os)
+  if (label && release?.toLowerCase().includes(label.toLowerCase())) {
+    return release
+  }
+  return [label, release].filter(Boolean).join(' ')
+}
+
 /** Compact used-share bar; amber past 75% and red past 90% so pressure stands out in a list. */
 export function MachineMeter({
   label,
@@ -189,7 +198,7 @@ export function MachineVitalsStrip({
       : `${formatBytes(total - available)} / ${formatBytes(total)}`
   const facts = [
     metrics?.hostname,
-    [machineOsLabel(metrics?.os ?? null), metrics?.osRelease].filter(Boolean).join(' '),
+    machineOsFact(metrics?.os ?? null, metrics?.osRelease ?? null),
     metrics?.arch,
     metrics?.cpuCount
       ? t('auto.components.machines.vitals.cores', '{{count}} cores', { count: metrics.cpuCount })
