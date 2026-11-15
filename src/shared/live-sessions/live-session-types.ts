@@ -7,7 +7,7 @@ export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
 
 /**
- * What a session is doing and whose move it is; `docs/session-status.md` has the signals behind each.
+ * What a session is doing and whose move it is; `docs/design/agent-status.md` has the signals behind each.
  *
  * working           the agent is generating or calling tools
  * running-shell     a shell command the agent started is still running (looks paused, is busy)

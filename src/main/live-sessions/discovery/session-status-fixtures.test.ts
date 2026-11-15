@@ -234,7 +234,7 @@ describe('status of a Codex session, from its rollout and process', () => {
 })
 
 // Transcripts, screens and process trees recorded from real Claude Code 2.1.325 and Codex 0.169.0
-// sessions (see docs/session-status.md); only paths and prompts were rewritten.
+// sessions (see docs/design/agent-status.md); only paths and prompts were rewritten.
 describe('status of recorded Claude Code sessions, where the transcript alone cannot tell', () => {
   it('running shell: the Bash call has no result and the shell it started still runs', async () => {
     expect(
