@@ -60,5 +60,9 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function useMachineGpuHistory(machineId: MachineId): ReadonlyMap<number, MachineGpuHistory> {
-  return useSyncExternalStore(subscribe, () => histories.get(machineId)?.byGpu ?? NO_HISTORY)
+  return useSyncExternalStore(subscribe, () => {
+    const history = histories.get(machineId)
+    // Samples from before a long pause are not drawn while the next one is on its way.
+    return history && Date.now() - history.lastAt <= HISTORY_GAP_MS ? history.byGpu : NO_HISTORY
+  })
 }

@@ -9,12 +9,14 @@ import type {
   MachineProcessSignal
 } from '../../../../../shared/machines/machine-resource-types'
 import { formatBytes } from '../model/machine-format'
+import { formatGpuIndexes } from '../model/machine-gpu-format'
 import { MACHINE_AGENT_NAMES } from './machine-agent-names'
 
 export type MachineProcessSort = 'cpu' | 'memory' | 'gpu'
 
 /** What one process holds on the machine's GPUs, added up over every GPU it is on. */
 export type MachineProcessGpuUse = {
+  /** In order, each once. */
   gpuIndexes: number[]
   memoryBytes: number | null
   container: MachineGpuContainer | null
@@ -29,13 +31,24 @@ const BESIDE_GPU = '@max-lg:hidden'
 
 function Tag({
   icon,
+  title,
+  whole = false,
   children
 }: {
   icon?: React.ReactNode
+  title?: string
+  /** Never shortened: the name beside it gives way instead. */
+  whole?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <span className="inline-flex max-w-40 min-w-0 items-center gap-1 rounded border border-border px-1 text-3xs leading-4 text-muted-foreground [&>svg]:size-2.5 [&>svg]:shrink-0">
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded border border-border px-1 text-3xs leading-4 text-muted-foreground [&>svg]:size-2.5 [&>svg]:shrink-0',
+        whole ? 'shrink-0' : 'max-w-40 min-w-0'
+      )}
+      title={title}
+    >
       {icon}
       <span className="truncate">{children}</span>
     </span>
@@ -140,13 +153,22 @@ export function MachineProcessList({
                       {t('auto.components.machines.processes.sealConnection', 'Seal connection')}
                     </Tag>
                   ) : null}
-                  {gpu?.gpuIndexes.map((index) => (
-                    <Tag key={index} icon={<Gpu />}>
-                      {t('auto.components.machines.gpu.index', 'GPU {{index}}', { index })}
+                  {gpu && gpu.gpuIndexes.length > 0 ? (
+                    <Tag icon={<Gpu />} whole>
+                      {t('auto.components.machines.gpu.index', 'GPU {{index}}', {
+                        index: formatGpuIndexes(gpu.gpuIndexes)
+                      })}
                     </Tag>
-                  ))}
+                  ) : null}
                   {gpu?.container ? (
-                    <Tag icon={<Container />}>
+                    <Tag
+                      icon={<Container />}
+                      title={t(
+                        'auto.components.machines.gpu.inContainer',
+                        'In Docker container {{container}}',
+                        { container: gpu.container.name ?? gpu.container.id.slice(0, 12) }
+                      )}
+                    >
                       {gpu.container.name ?? gpu.container.id.slice(0, 12)}
                     </Tag>
                   ) : null}

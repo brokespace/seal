@@ -201,8 +201,7 @@ test('GPUs, their history and their processes show on the Machines page, and a G
       await expect(idle).not.toContainText('Fan')
 
       const trainingRow = panel.locator(`[data-machine-process="${training}"]`)
-      await expect(trainingRow).toContainText('GPU 0')
-      await expect(trainingRow).toContainText('GPU 1')
+      await expect(trainingRow).toContainText('GPU 0, 1')
       // 70516 MiB on one GPU and 70510 MiB on the other.
       await expect(trainingRow).toContainText('138 GB')
       await expect(trainingRow).toContainText('sleep 900')

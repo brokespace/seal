@@ -16,6 +16,8 @@ import { MachineResourceStat, MachineResourceStats } from './MachineResourceStat
 function GpuTotals({ gpus }: { gpus: readonly MachineGpu[] }): React.JSX.Element {
   const t = useTranslate()
   const summary = summarizeMachineGpus(gpus)
+  // A MIG card reports no utilization, so it is not part of the average.
+  const reporting = gpus.filter((gpu) => gpu.utilizationPercent !== null).length
   const limits = gpus.map((gpu) => gpu.powerLimitWatts)
   const powerLimit = limits.every((limit) => limit !== null)
     ? limits.reduce((total, limit) => total + limit, 0)
@@ -28,10 +30,14 @@ function GpuTotals({ gpus }: { gpus: readonly MachineGpu[] }): React.JSX.Element
       <MachineResourceStat
         label={t('auto.components.machines.gpu.utilization', 'Utilization')}
         value={formatGpuPercent(summary.utilizationPercent)}
-        detail={t('auto.components.machines.gpu.average', 'average of {{count}} GPUs', {
-          count: gpus.length,
-          defaultValue_one: '{{count}} GPU'
-        })}
+        detail={
+          reporting === 0
+            ? undefined
+            : t('auto.components.machines.gpu.average', 'average of {{count}} GPUs', {
+                count: reporting,
+                defaultValue_one: '{{count}} GPU'
+              })
+        }
       />
       <MachineResourceStat
         label={t('auto.components.machines.gpu.memoryUsed', 'Memory used')}

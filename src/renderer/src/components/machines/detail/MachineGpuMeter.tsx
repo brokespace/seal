@@ -7,7 +7,7 @@ import {
 } from '../../../../../shared/machines/machine-gpu-types'
 import { formatGpuReadings, formatGpuSummary } from '../model/machine-gpu-format'
 import { machineGpuMemoryPercent } from '../model/machine-gpu-history'
-import { machineMeterTone } from '../model/machine-meter-tone'
+import { MACHINE_METER_TRACK, machineMeterTone } from '../model/machine-meter-tone'
 
 /** A row holds eight GPUs; a machine with more wraps onto the next row. */
 const CELLS_PER_ROW = 8
@@ -22,7 +22,7 @@ function Bar({
   className: string
 }): React.JSX.Element {
   return (
-    <div className={cn('overflow-hidden rounded-full bg-muted', className)}>
+    <div className={cn('overflow-hidden rounded-full', MACHINE_METER_TRACK, className)}>
       <div
         className={cn('h-full rounded-full transition-[width] duration-500', tone)}
         style={{ width: `${percent ?? 0}%` }}

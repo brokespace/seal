@@ -31,6 +31,24 @@ export function formatGpuSummary(summary: MachineGpuSummary): string {
     .join(' · ')
 }
 
+/** `0–3, 6`: the GPUs a process is on, with runs of neighbours folded so eight fit in one tag. */
+export function formatGpuIndexes(indexes: readonly number[]): string {
+  const runs: string[] = []
+  for (let start = 0; start < indexes.length;) {
+    let end = start
+    while (indexes[end + 1] === indexes[end] + 1) {
+      end++
+    }
+    runs.push(
+      end > start + 1
+        ? `${indexes[start]}–${indexes[end]}`
+        : indexes.slice(start, end + 1).join(', ')
+    )
+    start = end + 1
+  }
+  return runs.join(', ')
+}
+
 /** Everything one GPU reports, for the hover text of its compact cell. */
 export function formatGpuReadings(gpu: MachineGpu): string {
   return [

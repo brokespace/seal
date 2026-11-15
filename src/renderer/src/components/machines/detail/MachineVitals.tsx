@@ -5,7 +5,11 @@ import type { MachineMetrics, MachineOs } from '../../../../../shared/machines/m
 import { cpuLoadPercent, formatBytes, formatUptime, usedPercent } from '../model/machine-format'
 import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
 import type { MachineResourceKind } from '../resources/machine-resource-requests'
-import { machineMeterTone, type MachineMeterTone } from '../model/machine-meter-tone'
+import {
+  MACHINE_METER_TRACK,
+  machineMeterTone,
+  type MachineMeterTone
+} from '../model/machine-meter-tone'
 import { MachineGpuMeter } from './MachineGpuMeter'
 
 function statusDotClass(status: MachineStatus): string {
@@ -95,7 +99,11 @@ export function MachineMeter({
         )}
       </div>
       <div
-        className={cn('overflow-hidden rounded-full bg-muted', compact ? 'h-1 flex-1' : 'h-1.5')}
+        className={cn(
+          'overflow-hidden rounded-full',
+          MACHINE_METER_TRACK,
+          compact ? 'h-1 flex-1' : 'h-1.5'
+        )}
         role="meter"
         aria-label={label}
         aria-valuemin={0}
@@ -198,7 +206,7 @@ export function MachineVitalsStrip({
       <div
         className={cn(
           'grid gap-4',
-          gpus.length > 0 ? 'grid-cols-2 @xl:grid-cols-4' : 'grid-cols-3'
+          gpus.length > 0 ? 'grid-cols-2 @3xl:grid-cols-4' : 'grid-cols-3'
         )}
       >
         <MeterButton
