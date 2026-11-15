@@ -190,3 +190,8 @@ export const CODEX_SHELL = (etime: string) => [
   `4311 4310 ${etime} sandbox bwrap`,
   `4313 4311 ${etime} shell sh`
 ]
+/** Codex's own terminal process runs a unified-exec command as a plain shell under it. */
+export const CODEX_COMMAND = (etime: string) => [
+  `4400 ${AGENT_PID} ${etime} shell bash`,
+  '4401 4400 00:01 other sleep'
+]

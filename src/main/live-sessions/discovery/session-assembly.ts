@@ -25,6 +25,7 @@ import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { hookStatus, parseHookStates } from './agent-hook-states'
 import { agentProcesses, approvalModeFromArgs, codexHomeOf, processBinary } from './agent-processes'
 import { pairProcesses } from './session-process-pairing'
+import type { CodexTerminalState } from './codex-background-terminals'
 import { conversations, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
@@ -38,6 +39,8 @@ export type SummarizedTranscript = {
   subagents?: SubagentFileSummary[]
   /** Codex: the newest `update_plan`. */
   codexPlan?: LiveTodo[] | null
+  /** Codex: the background terminals its rollout left running, folded scan after scan. */
+  codexTerminals?: CodexTerminalState
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -188,10 +191,10 @@ export function assembleHostSessions(input: {
       running,
       turnOpen: status === 'working',
       backgroundShells:
-        claudeRegistryBackgroundShells(registry) ??
-        (provider === 'claude' && !registry?.state
-          ? leftoverCommands(commands, summary, status)
-          : null),
+        provider === 'codex'
+          ? commands && (commands.length > 0 ? 'running' : 'none')
+          : (claudeRegistryBackgroundShells(registry) ??
+            (registry?.state ? null : leftoverCommands(commands, summary, status))),
       nowMs: now
     })
     ;({ status, statusDetail } = withBackgroundWait({ status, statusDetail }, summary, activity))

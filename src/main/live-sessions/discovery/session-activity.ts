@@ -262,9 +262,21 @@ export function sessionActivityOf(input: {
     lastActivityAt: helper.summary.lastAt ?? helper.mtimeMs,
     transcriptPath: helper.path
   }))
+  // The rollout does not record a terminal that ends unpolled: one counts while the agent runs and
+  // a command still runs under it (or the host cannot say).
+  const live = running && input.backgroundShells !== 'none'
+  const tasks: LiveBackgroundTask[] = [...(transcript.codexTerminals?.running.values() ?? [])].map(
+    (terminal) => ({
+      id: terminal.sessionId,
+      label: terminal.command ?? 'Background terminal',
+      status: live ? 'running' : running ? 'completed' : 'stopped',
+      startedAt: terminal.startedAt,
+      summary: null
+    })
+  )
   return {
     subagents: newestFirst(subagents, (s) => s.lastActivityAt ?? 0),
-    tasks: [],
+    tasks: newestFirst(tasks, (t) => t.startedAt ?? 0),
     todos: transcript.codexPlan ?? []
   }
 }

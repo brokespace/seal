@@ -3,6 +3,8 @@ import type { LiveSessionStatus } from '../../../shared/live-sessions/live-sessi
 import {
   CLAUDE_SHELL,
   CODEX_APP_SERVER,
+  CODEX_COMMAND,
+  CODEX_SHELL,
   recordedSession,
   type ScanOptions
 } from './session-scan.test-fixture'
@@ -353,6 +355,65 @@ const CODEX: Transitions[] = [
     steps: [
       { when: 'the question is up', host: {}, shows: 'waiting-input' },
       { when: 'Codex was killed', host: GONE, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a command Codex left running in a background terminal',
+    fixture: 'live-codex-background-terminal',
+    steps: [
+      {
+        when: 'the command runs',
+        host: { records: 6, children: CODEX_COMMAND('00:01') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'Codex ended its turn with the command still running',
+        host: { listsProcesses: true, children: CODEX_COMMAND('00:20') },
+        shows: 'waiting-task',
+        detail: 'Waiting on 1 background task'
+      },
+      {
+        when: 'an hour on',
+        host: { listsProcesses: true, children: CODEX_COMMAND('1:00:00'), quietMs: 60 * 60_000 },
+        shows: 'waiting-task'
+      },
+      { when: 'on a host that lists no processes', host: {}, shows: 'waiting-task' },
+      {
+        when: 'the command was killed outside Codex',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn'
+      },
+      { when: 'Codex was killed', host: GONE, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a command Codex polled until it exited',
+    fixture: 'live-codex-terminal-polled',
+    steps: [
+      {
+        when: 'the command outlived its call and Codex thinks',
+        host: { records: 7, children: CODEX_COMMAND('00:30') },
+        shows: 'working'
+      },
+      {
+        when: 'Codex polls it',
+        host: { records: 8, children: CODEX_COMMAND('00:31') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'the poll saw it exit and the turn ended',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn'
+      },
+      {
+        when: 'another command runs under the shared app-server',
+        host: {
+          listsProcesses: true,
+          processes: [CODEX_APP_SERVER],
+          children: CODEX_SHELL('00:05')
+        },
+        shows: 'your-turn'
+      }
     ]
   },
   {
