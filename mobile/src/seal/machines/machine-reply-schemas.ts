@@ -48,6 +48,19 @@ export const machineListSchema = z.looseObject({
   )
 })
 
+const machineGpuSchema = z.looseObject({
+  index: z.number().int().nonnegative(),
+  name: z.string().catch(''),
+  utilizationPercent: nullableNumber,
+  memoryUsedBytes: nullableNumber,
+  memoryTotalBytes: nullableNumber,
+  temperatureC: nullableNumber,
+  powerDrawWatts: nullableNumber
+})
+
+// Absent from hosts that predate GPU readings and from machines with no GPU.
+export const machineGpusSchema = z.array(machineGpuSchema).catch([])
+
 export const machineMetricsSchema = z.looseObject({
   hostname: nullableString,
   os: machineOs,
@@ -64,6 +77,7 @@ export const machineMetricsSchema = z.looseObject({
   diskMount: nullableString,
   uptimeSeconds: nullableNumber,
   homeDir: nullableString,
+  gpus: machineGpusSchema,
   collectedAt: z.number().catch(0)
 })
 

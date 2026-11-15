@@ -1,6 +1,7 @@
 import { View } from 'react-native'
 import {
   machineDiskUsedPercent,
+  machineGpuUtilizationPercent,
   machineLoad,
   machineMemoryUsedPercent
 } from '../../../../src/shared/home-overview/home-machine-readings'
@@ -30,7 +31,7 @@ function statusColor(status: SealMachineSummary['status']): string {
   }
 }
 
-/** A machine with its status dot and, once its own read lands, a CPU · memory · disk line. */
+/** A machine with its status dot and, once its own read lands, a CPU · memory · disk · GPU line. */
 export function SealOverviewMachineRow({
   hostId,
   client,
@@ -71,6 +72,13 @@ export function SealOverviewMachineRow({
         value2: percent(machineDiskUsedPercent(metrics.data))
       }
     )
+    const gpu = machineGpuUtilizationPercent(metrics.data)
+    if (gpu !== undefined) {
+      subtitle = t('seal.overview.machineGpuReading', '{{readings}} · GPU {{value}}', {
+        readings: subtitle,
+        value: percent(gpu)
+      })
+    }
   } else if (metrics.isError) {
     subtitle = t('seal.overview.metricsUnavailable', 'Metrics unavailable')
   } else {

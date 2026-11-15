@@ -51,7 +51,7 @@ function dockerActionOf(value: unknown): MachineDockerContainerAction {
 
 export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar): void {
   handle(MACHINE_IPC.listProcesses, async (args) =>
-    probeMachineProcesses(await connected(args.machineId))
+    probeMachineProcesses(await connected(args.machineId), { gpus: args.gpus === true })
   )
 
   handle(MACHINE_IPC.signalProcess, async (args) =>

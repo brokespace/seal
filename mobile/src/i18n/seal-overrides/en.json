@@ -233,7 +233,10 @@
         "cpu": "CPU",
         "memory": "Memory",
         "disk": "Disk",
-        "uptime": "Up {{uptime}}"
+        "uptime": "Up {{uptime}}",
+        "gpuCount": "GPU ×{{count}}",
+        "gpu": "GPU",
+        "gpuIndex": "GPU {{index}}"
       },
       "list": {
         "loadFailed": "Unable to load machines",
@@ -389,7 +392,8 @@
       "noMachines": "No machines yet.",
       "accounts": "Accounts",
       "noAccounts": "No accounts set up for auto-swap.",
-      "manageAccounts": "Manage accounts"
+      "manageAccounts": "Manage accounts",
+      "machineGpuReading": "{{readings}} · GPU {{value}}"
     },
     "mcpApprovals": {
       "headingOnMachine": "{{value0}} wants {{value1}} on {{value2}}",

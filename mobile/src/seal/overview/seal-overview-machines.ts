@@ -4,7 +4,7 @@ import { defineHostQuery } from '../../query/host-query'
 import type { HostQueryTarget } from '../../query/host-query-key'
 import { defineRpcOperation, runRpcOperation } from '../../transport/rpc/rpc-operation'
 import { rpcResultVariant } from '../../transport/rpc/rpc-operation-result-reader'
-import { withMachineKind } from '../machines/machine-reply-schemas'
+import { machineGpusSchema, withMachineKind } from '../machines/machine-reply-schemas'
 
 const machineSummarySchema = z.preprocess(
   withMachineKind,
@@ -25,6 +25,7 @@ const machineMetricsSchema = z.looseObject({
   memAvailableBytes: z.number().nullable(),
   diskTotalBytes: z.number().nullable(),
   diskAvailableBytes: z.number().nullable(),
+  gpus: machineGpusSchema,
   collectedAt: z.number()
 })
 

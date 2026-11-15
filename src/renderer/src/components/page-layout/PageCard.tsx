@@ -52,7 +52,7 @@ export function PageCard({
       className={cn('min-w-0 rounded-xl border border-border bg-card', className)}
     >
       <header className="flex h-9 items-center justify-between gap-2 border-b border-border px-3">
-        <h2 className={CAPTION_CLASS}>{title}</h2>
+        <h2 className={cn('whitespace-nowrap', CAPTION_CLASS)}>{title}</h2>
         {action}
       </header>
       {children}

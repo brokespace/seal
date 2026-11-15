@@ -11,6 +11,8 @@ export type HomeMachine = LiveSessionMachineIdentity & {
   /** 1-minute load average divided by core count (1 = fully busy); absent when unknown. */
   load?: number
   memoryUsedPercent?: number
+  /** Mean utilization across the machine's GPUs; absent on a machine with none. */
+  gpuUtilizationPercent?: number
   error?: string
 }
 
