@@ -9,3 +9,15 @@ export function splitViewWorkspacesOnView(activeView: string): ReadonlyMap<strin
     activeView === 'terminal' || activeView === 'sessions' || activeView === 'project'
   return showsItems && splitViewStore.hasLayout() ? splitViewStore.getVisibleWorkspaces() : null
 }
+
+/** Calls back when panes put a different set of workspaces on screen, which no app state records. */
+export function subscribeSplitViewWorkspaces(onChange: () => void): () => void {
+  let last = splitViewStore.getVisibleWorkspaces()
+  return splitViewStore.subscribe(() => {
+    const next = splitViewStore.getVisibleWorkspaces()
+    if (next !== last) {
+      last = next
+      onChange()
+    }
+  })
+}
