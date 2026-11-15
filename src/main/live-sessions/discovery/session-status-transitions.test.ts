@@ -6,6 +6,7 @@ import {
   CODEX_COMMAND,
   CODEX_SHELL,
   recordedSession,
+  scan,
   type ScanOptions
 } from './session-scan.test-fixture'
 
@@ -521,3 +522,16 @@ it.each([
     expect((await scanOnce(host)).status).toBe(shows)
   }
 )
+
+it('a Claude started where an earlier session ended is a new session, not that one running again', async () => {
+  const started = '7c1d2e3f-0a1b-4c2d-8e3f-4a5b6c7d8e9f'
+  const sessions = await scan('claude-idle', {
+    unpinned: true,
+    listsProcesses: true,
+    registry: { state: 'idle', sessionId: started }
+  })
+  expect(sessions.map((s) => [s.providerSessionId === started, s.alive]).sort()).toEqual([
+    [false, false],
+    [true, true]
+  ])
+})

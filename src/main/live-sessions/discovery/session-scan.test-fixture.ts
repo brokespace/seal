@@ -38,13 +38,21 @@ export type ScanOptions = {
   /** The host's `ps` listed its processes, so an agent it does not show is gone. */
   listsProcesses?: boolean
   /** Claude Code's own registry entry for the agent, written `afterWriteMs` after the transcript. */
-  registry?: { state: ClaudeRegistryState; waitingFor?: string; afterWriteMs?: number }
+  registry?: {
+    state: ClaudeRegistryState
+    waitingFor?: string
+    afterWriteMs?: number
+    /** The conversation Claude says it is in, when not this transcript's. */
+    sessionId?: string
+  }
   /** The session's SISomewhere hook file, written `agoMs` before the scan. */
   hook?: { state: string; agoMs?: number }
   /** A process other than the session's own holds its transcript open (a Codex app-server). */
   heldOpenBy?: number
   /** The transcript is listed but over the scan's read budget (a machine just connected). */
   unread?: boolean
+  /** The agent holds no transcript open (a Claude that has not written its own yet). */
+  unpinned?: boolean
 }
 
 function fixtureFile(name: string, options: ScanOptions = {}): DiscoveredFile {
@@ -104,11 +112,10 @@ function hostOutput(
     .replace(/\.jsonl$/, '')
   const lines = [`@@NOW ${Math.floor(now / 1000)}`]
   if (options.alive !== false) {
-    lines.push(
-      `@@PROC ${AGENT_PID} 1 pts/3 ${main.provider}`,
-      `@@CWD ${AGENT_PID} /srv/shop`,
-      `@@PIN ${AGENT_PID} open ${main.provider} ${main.path}`
-    )
+    lines.push(`@@PROC ${AGENT_PID} 1 pts/3 ${main.provider}`, `@@CWD ${AGENT_PID} /srv/shop`)
+    if (!options.unpinned) {
+      lines.push(`@@PIN ${AGENT_PID} open ${main.provider} ${main.path}`)
+    }
   }
   for (const process of options.processes ?? []) {
     lines.push(`@@PROC ${process}`)
@@ -132,7 +139,7 @@ function hostOutput(
     const { state, waitingFor, afterWriteMs = 100 } = options.registry
     const entry = {
       pid: AGENT_PID,
-      sessionId,
+      sessionId: options.registry.sessionId ?? sessionId,
       status: state,
       ...(waitingFor ? { waitingFor } : {}),
       statusUpdatedAt: main.mtimeMs + afterWriteMs

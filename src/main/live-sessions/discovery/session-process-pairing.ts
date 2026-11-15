@@ -28,10 +28,11 @@ export function pairProcesses(
     return t ?? null
   }
   const pending: typeof processes = []
+  const unwritten: ProcessClaim[] = []
   for (const process of processes) {
-    const named =
-      (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
-      sessionIdFromArgs(process.args)
+    const registered =
+      process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined
+    const named = registered ?? sessionIdFromArgs(process.args)
     const owned = ownedPaths.get(process.pid)
     // Its own transcript is still to be read: shown then, not as idle or under another session.
     if (
@@ -50,6 +51,10 @@ export function pairProcesses(
         .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     if (match) {
       claims.push({ process, transcript: take(match) })
+    } else if (registered) {
+      // Claude names its conversation before it writes one: an earlier session's transcript in
+      // the same folder is not this agent's.
+      unwritten.push({ process, transcript: null })
     } else {
       pending.push(process)
     }
@@ -72,6 +77,7 @@ export function pairProcesses(
       bare[0].transcript = take(fresh[0])
     }
   }
+  claims.push(...unwritten)
   for (const transcript of free) {
     claims.push({ process: null, transcript })
   }
