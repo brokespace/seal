@@ -6,6 +6,7 @@ import {
 import { resolveDeleteTargetGitContext } from '@/components/sidebar/workspace-actions/deletion/use-delete-worktree-status-hydration'
 import type { GitHistoryItem } from '../../../../shared/git/history/git-history-types'
 import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
+import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { summarizeGitChanges, type GitChangeSummary } from './project-overview-model'
 import { useProjectOverviewLoad, type ProjectOverviewLoad } from './use-project-overview-load'
@@ -17,8 +18,39 @@ export const PROJECT_RECENT_COMMITS = 8
 /** A `git status` per workspace is cheap next to an agent's own work, and edits show within a few seconds. */
 const PROJECT_CHANGES_LIVE_MS = 5_000
 
-/** Null for a workspace whose machine is not reachable right now. */
-export type ProjectChangeSummaries = ReadonlyMap<string, GitChangeSummary | null>
+export type ProjectChangeReading = {
+  summary: GitChangeSummary
+  readAt: number
+  /** When git last failed to answer since `readAt`; null while the summary is the current answer. */
+  failedAt: number | null
+}
+
+/** Null for a workspace git has not answered for yet: its machine is not reachable, or git fails. */
+export type ProjectChangeSummaries = ReadonlyMap<string, ProjectChangeReading | null>
+
+/**
+ * The last answer each workspace gave. A read that fails (a rebase rewriting `.git`, a machine that
+ * dropped off) is no reason to forget it: the row keeps it and says how old it is. Kept for the
+ * app's run, not the page's, so leaving the page and coming back while git still fails shows it too.
+ */
+const lastGoodChanges = new Map<string, ProjectChangeReading>()
+
+async function readGitChanges(
+  worktree: Worktree,
+  repos: readonly Repo[],
+  signal: AbortSignal
+): Promise<GitChangeSummary | null> {
+  const context = resolveDeleteTargetGitContext(worktree, repos)
+  if (!context) {
+    return null
+  }
+  try {
+    const status = await getRuntimeGitStatus(context, { admissionTier: 'background', signal })
+    return status.readError ? null : summarizeGitChanges(status)
+  } catch {
+    return null
+  }
+}
 
 /** `git status` of the project's workspaces, each read on the machine that holds it, kept live. */
 export function useProjectGitChanges(
@@ -32,20 +64,16 @@ export function useProjectGitChanges(
     async (signal) => {
       const repos = useAppStore.getState().repos
       const entries = await Promise.all(
-        targets.map(async (worktree): Promise<[string, GitChangeSummary | null]> => {
-          const context = resolveDeleteTargetGitContext(worktree, repos)
-          if (!context) {
-            return [worktree.id, null]
+        targets.map(async (worktree): Promise<[string, ProjectChangeReading | null]> => {
+          const identity = getWorktreeHostIdentity(worktree)
+          const summary = await readGitChanges(worktree, repos, signal)
+          if (summary) {
+            const reading = { summary, readAt: Date.now(), failedAt: null }
+            lastGoodChanges.set(identity, reading)
+            return [worktree.id, reading]
           }
-          try {
-            const status = await getRuntimeGitStatus(context, {
-              admissionTier: 'background',
-              signal
-            })
-            return [worktree.id, status.readError ? null : summarizeGitChanges(status)]
-          } catch {
-            return [worktree.id, null]
-          }
+          const last = lastGoodChanges.get(identity)
+          return [worktree.id, last ? { ...last, failedAt: Date.now() } : null]
         })
       )
       return new Map(entries)

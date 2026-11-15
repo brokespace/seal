@@ -84,8 +84,11 @@ test('project name opens the overview, the chevron folds, and agents open and st
     .poll(() => getStoreState<string>(orcaPage, 'activeView'), { timeout: 10_000 })
     .toBe('sessions')
 
-  // Back on the overview, New agent opens the composer for this project.
-  await header.locator('[data-project-overview-link]').click()
+  // Closing the tab it opened leads back to the overview, where New agent opens the composer.
+  await orcaPage
+    .locator(`[data-live-session-tab="local:claude:${SESSION_ID}"]`)
+    .getByRole('button', { name: 'Close tab' })
+    .click()
   await expect(page).toBeVisible()
   await page.locator('[data-project-overview-new-agent]').click()
   await expect

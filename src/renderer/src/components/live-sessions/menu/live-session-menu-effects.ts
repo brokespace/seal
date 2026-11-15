@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
+import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
@@ -18,6 +19,7 @@ import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
 import {
+  closesProjectVisit,
   liveSessionTabsStore,
   type LiveSessionFocusTarget,
   type LiveSessionOpenMode
@@ -32,9 +34,37 @@ export function openLiveSessionView(
   mode: LiveSessionOpenMode = 'preview'
 ): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
-  liveSessionTabsStore.open(id, mode)
-  useAppStore.getState().openAgentSessionTabs()
+  const ui = useAppStore.getState()
+  liveSessionTabsStore.open(
+    id,
+    mode,
+    ui.activeView === 'project' ? overviewProjectKey(ui.projectOverviewTarget) : undefined
+  )
+  ui.openAgentSessionTabs()
   liveSessionMarksStore.reveal(id)
+}
+
+function overviewProjectKey(target: ProjectOverviewTarget | null): string | undefined {
+  return target ? `${target.hostId}\n${target.repoId}` : undefined
+}
+
+/** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
+export function closeLiveSessionView(sessionId: string): void {
+  const before = liveSessionTabsStore.getState()
+  liveSessionTabsStore.close(sessionId)
+  const ui = useAppStore.getState()
+  if (
+    ui.activeView === 'sessions' &&
+    ui.previousViewBeforeSessions === 'project' &&
+    closesProjectVisit(
+      before,
+      liveSessionTabsStore.getState(),
+      sessionId,
+      overviewProjectKey(ui.projectOverviewTarget)
+    )
+  ) {
+    ui.closeAgentSessionTabs()
+  }
 }
 
 /** A click on a session's row, on any surface: a preview tab, kept on double-click. */

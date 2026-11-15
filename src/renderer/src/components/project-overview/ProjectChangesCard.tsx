@@ -4,11 +4,16 @@ import {
   HomeOverviewEmpty,
   HomeOverviewRowButton
 } from '@/components/home-overview/HomeOverviewRow'
+import { formatHomeDuration } from '@/components/home-overview/home-overview-presentation'
 import { branchName } from '@/lib/source-control/branches/branch-name'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { openProjectWorkspace } from './project-overview-actions'
 import { isCleanGitChangeSummary, type GitChangeSummary } from './project-overview-model'
-import { PROJECT_CHANGES_MAX_WORKTREES, useProjectGitChanges } from './use-project-git'
+import {
+  PROJECT_CHANGES_MAX_WORKTREES,
+  useProjectGitChanges,
+  type ProjectChangeReading
+} from './use-project-git'
 
 function changeParts(summary: GitChangeSummary, t: Translate): string[] {
   const parts: string[] = []
@@ -57,16 +62,19 @@ function breakdownParts(summary: GitChangeSummary, t: Translate): string[] {
 
 function ChangeRow({
   worktree,
-  summary
+  reading
 }: {
   worktree: Worktree
-  summary: GitChangeSummary | null | undefined
+  reading: ProjectChangeReading | null | undefined
 }): React.JSX.Element {
   const t = useTranslate()
+  const summary = reading?.summary
+  // Git failed on the latest read: the row still shows its last answer, and how old that is.
+  const age = reading?.failedAt ? formatHomeDuration(reading.readAt, reading.failedAt) : null
   let detail: React.ReactNode
-  if (summary === undefined) {
+  if (reading === undefined) {
     detail = t('seal.projectOverview.changes.reading', 'Reading…')
-  } else if (summary === null) {
+  } else if (!summary) {
     detail = t('seal.projectOverview.changes.unavailable', 'Status unavailable')
   } else if (isCleanGitChangeSummary(summary)) {
     detail = t('seal.projectOverview.changes.clean', 'Clean')
@@ -115,7 +123,23 @@ function ChangeRow({
           </span>
         ) : null}
       </span>
-      <span className="truncate text-2xs text-muted-foreground">{detail}</span>
+      <span className="flex min-w-0 gap-1 text-2xs text-muted-foreground">
+        <span className="min-w-0 truncate">{detail}</span>
+        {age ? (
+          // Outside the truncated part: a narrow card must not cut the age off an old answer.
+          <span
+            data-project-overview-changes-age
+            className="shrink-0"
+            title={t(
+              'seal.projectOverview.changes.lastReadHint',
+              'Git could not be read just now. This is its last answer.'
+            )}
+          >
+            {'· '}
+            {t('seal.projectOverview.changes.lastRead', 'as of {{age}} ago', { age })}
+          </span>
+        ) : null}
+      </span>
     </HomeOverviewRowButton>
   )
 }
@@ -141,7 +165,7 @@ export function ProjectChangesCard({
             <li key={worktree.id}>
               <ChangeRow
                 worktree={worktree}
-                summary={changes.status === 'ready' ? changes.data.get(worktree.id) : undefined}
+                reading={changes.status === 'ready' ? changes.data.get(worktree.id) : undefined}
               />
             </li>
           ))}
