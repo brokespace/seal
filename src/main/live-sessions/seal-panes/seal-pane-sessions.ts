@@ -15,6 +15,7 @@ import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/ag
 import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
 import { oneLine } from '../discovery/transcript-records'
+import { isWaitingOnBackgroundWork } from '../../../shared/live-sessions/live-session-status'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 
 /** What a finished turn may still rest on, which a Stop hook does not say. */
@@ -219,18 +220,14 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
     (found.status === 'working' ||
       found.status === 'needs-permission' ||
       found.status === 'waiting-input')
-  switch (pane.status) {
-    case 'your-turn':
-      return RESTS_ON.has(found.status) || agentSays
-    case 'working':
-      return WORKS_ON.has(found.status) || (agentSays && found.status !== 'working')
-    case 'waiting-task':
-    case 'waiting-subagent':
-      // Which kind of work, and how much of it.
-      return found.status === 'waiting-subagent' || found.status === 'waiting-task'
-    default:
-      return false
+  if (pane.status === 'your-turn') {
+    return RESTS_ON.has(found.status) || agentSays
   }
+  if (pane.status === 'working') {
+    return WORKS_ON.has(found.status) || (agentSays && found.status !== 'working')
+  }
+  // Which kind of work, and how much of it.
+  return isWaitingOnBackgroundWork(pane.status) && isWaitingOnBackgroundWork(found.status)
 }
 
 /** How much later than a pane's last hook its transcript must record the end of the turn. */
