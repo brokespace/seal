@@ -46,26 +46,30 @@ function callOf(
 }
 
 /**
- * The terminal an output hands back still running: named in the header above the command's own
- * output (a function call), or in the chunk a cell prints as JSON.
+ * What an output says of its command: the terminal it hands back still running, or that it exited.
+ * Read from the header above the command's own output (a function call), or from the chunk a
+ * cell prints as JSON. A poll the user interrupted says neither, and its command runs on.
  */
-function stillRunning(output: unknown): string | null {
+function outcomeOf(output: unknown): { running: string | null; exited: boolean } {
   const parts = typeof output === 'string' ? [output] : Array.isArray(output) ? output : []
   for (const part of parts) {
     const text = typeof part === 'string' ? part : str(rec(part)?.text)
     if (!text) {
       continue
     }
-    const header = /^Process running with session ID (\d+)$/m.exec(text.split('\nOutput:', 1)[0])
-    if (header) {
-      return header[1]
-    }
+    const header = text.split('\nOutput:', 1)[0]
     const chunk = text.startsWith('{') ? jsonField(text) : null
-    if (typeof chunk?.session_id === 'number') {
-      return String(chunk.session_id)
+    const running =
+      /^Process running with session ID (\d+)$/m.exec(header)?.[1] ??
+      (typeof chunk?.session_id === 'number' ? String(chunk.session_id) : null)
+    if (running) {
+      return { running, exited: false }
+    }
+    if (/^Process exited with code -?\d+$/m.test(header) || typeof chunk?.exit_code === 'number') {
+      return { running: null, exited: true }
     }
   }
-  return null
+  return { running: null, exited: false }
 }
 
 /** The terminal a finished command ran in: Codex writes this when one ends, polled or not, in or after its turn. */
@@ -104,7 +108,7 @@ export function foldCodexTerminals(state: CodexTerminalState, records: Transcrip
       continue
     }
     state.calls.delete(callId)
-    const sessionId = stillRunning(payload.output)
+    const { running: sessionId, exited } = outcomeOf(payload.output)
     if (sessionId) {
       const had = state.running.get(sessionId)
       state.running.set(sessionId, {
@@ -112,8 +116,7 @@ export function foldCodexTerminals(state: CodexTerminalState, records: Transcrip
         command: had?.command ?? (call.command ? oneLine(call.command, 80) : null),
         startedAt: had?.startedAt ?? call.at
       })
-    } else if (call.polls) {
-      // The poll came back without it: the command exited, or Codex no longer has it.
+    } else if (call.polls && exited) {
       state.running.delete(call.polls)
     }
   }

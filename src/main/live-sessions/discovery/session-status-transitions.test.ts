@@ -446,6 +446,29 @@ const CODEX: Transitions[] = [
     ]
   },
   {
+    session: 'a command Codex was polling when the user interrupted',
+    fixture: 'live-codex-poll-interrupted',
+    steps: [
+      {
+        when: 'Codex polls the command',
+        host: { records: 8, children: CODEX_COMMAND('00:31') },
+        shows: 'running-shell'
+      },
+      {
+        when: 'Esc ended the turn and the command runs on in its terminal',
+        host: { records: 10, listsProcesses: true, children: CODEX_COMMAND('01:00') },
+        shows: 'waiting-task',
+        detail: 'Waiting on 1 background task'
+      },
+      {
+        when: 'the command ended',
+        host: { listsProcesses: true, children: [] },
+        shows: 'your-turn',
+        detail: 'Interrupted'
+      }
+    ]
+  },
+  {
     session: 'a Codex turn that failed',
     fixture: 'live-codex-failed-turn',
     steps: [
