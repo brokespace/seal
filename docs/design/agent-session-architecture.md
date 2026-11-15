@@ -79,7 +79,7 @@ Non-goals:
 - Rewriting the structured host, the journal, the hook server or the providers.
 - Changing the Home chat assistant. It is a different product (Seal's own assistant with its own threads). It only shares the message row and, after this work, the context indicator.
 - Changing what multi-pane owns (panes, split layout, drop zones). See section 15.
-- Renaming internal `orca` identifiers, paths or environment variables.
+- Renaming the internal identifiers, paths or environment variables that keep upstream's name.
 
 ## 3. Decision summary
 
@@ -101,7 +101,7 @@ Non-goals:
 ## 4. Target architecture
 
 ```text
-                      per-agent adapter (one file per agent, mostly data)
+                per-agent adapter (one table, read from upstream's catalogs)
                  ┌──────────────────────┬──────────────────────┐
                  │                      │                      │
         structured source         pane source           external source
@@ -134,8 +134,8 @@ Non-goals:
 export type LiveSession = {
   id: string // unchanged: `${hostId}:${agent}:${providerSessionId}`
   provider: AgentSessionAgentId // widened from 'claude' | 'codex' to every agent with an adapter
-  surface: AgentSessionSurface // new: where it runs and how it opens
-  capabilities: AgentSessionCapabilityFlags // new: what this session can do, from adapter + host
+  surface?: AgentSessionSurface // new: where it runs and how it opens
+  capabilities?: AgentSessionCapabilityFlags // new: what this session can do, from adapter + host
   workspace?: { worktreeId: string; projectKey: string } // new: set by the link step (section 5.3)
   context?: NativeChatContextUsageSummary // new: section 7
   model?: string // new
@@ -169,6 +169,8 @@ export type AgentSessionCapabilityFlags = {
 ```
 
 `origin` (`'seal' | 'external'`) stays for existing readers. `surface` is the precise field new code reads.
+
+`surface` and `capabilities` are optional in the frozen type (W0). Phase 0 changes no producer, and a record from a server that predates W1 does not carry them. A reader that finds them absent falls back to `origin` and to today's behaviour. W1 may make both required once every producer sets them, including the federation path for old servers; that change is agreed in advance and needs no new round with W0's owner.
 
 ### 4.2 Identity and joins
 
@@ -208,8 +210,9 @@ export type AgentSessionAdapter = {
     evidenceOf?: (row: AgentStatusIpcPayload) => Partial<AgentSessionStatusEvidence>
     /** How a prompt is answered in the terminal: structured answers, option keys, or not at all. */
     answers: 'ask-steps' | 'option-keys' | 'none'
-    /** Argument vector that resumes a session in a terminal, if the agent can. */
-    resumeArgv?: (providerSessionId: string) => string[]
+    /** Argument vector that resumes a session in a terminal, if the agent can. Null when this
+     *  session cannot be resumed from what is known (Pi resumes by its session file). */
+    resumeArgv?: (providerSessionId: string, transcriptPath?: string | null) => string[] | null
   }
 
   /** External: how to find sessions nobody started through Seal. Claude and Codex today. */
@@ -230,6 +233,10 @@ export type AgentSessionAdapter = {
 ```
 
 The registry asks the adapter table, never a hard-coded `claude | codex` test. Adding an agent is one adapter file plus, if the agent is new to Seal altogether, upstream's own registration (TUI config, hook installer). The six or more existing agent catalogs (`TuiAgent`, display names, `tui-agent-config`, hook targets, native-chat support, the structured runtime catalog, the ACP registry) are upstream-owned and stay. The adapter table reads them and is the only catalog Seal's session code consults; `LIVE_SESSION_PROVIDERS`, `ConnectorAgent` checks in the delivery path and the notifier's hard-coded names are replaced by it.
+
+As built in Phase 0 (`src/shared/live-sessions/adapters/`): `agent-session-agent-ids.ts` holds `AgentSessionAgentId`, which is upstream's `AGENT_HOOK_TARGETS` plus the four plugin agents (OpenCode, OpenCode 2, Pi, OMP), 27 ids in all. `agent-session-adapter.ts` holds the type above with `AgentSessionStatusEvidence`, `AgentTranscriptLocator` and `AgentSessionContextSample`. `agent-session-adapters.ts` holds the table, `AGENT_SESSION_ADAPTERS`, and the lookup `agentSessionAdapter(agent)`. The table is one file, not one file per agent, because every entry is read from upstream's catalogs and a file per agent would restate them: `label` from `TUI_AGENT_DISPLAY_NAMES` (Claude keeps "Claude Code", the name rows and notifications use today), `cli.answers` and `transcript` from `native-chat-agent-support.ts`, `cli.resumeArgv` from `getAgentResumeArgv`. The one fact it states itself is `chat.runtime`, because upstream's runtime catalog is main-only; W1 checks it against that catalog when it attaches the main-only parts.
+
+The main-only parts are not in the shared table: `cli.sessionOf` (the default, `extractAgentProviderSession`, applies), `cli.evidenceOf`, and `discovery` for Claude and Codex (process match, transcript locator, resume command live in `src/main/live-sessions/discovery` and `delivery` today). W1 attaches them in `src/main/live-sessions/adapters/`. `transcript.usageOf` is W5's; it adds one function per agent in a new file under `src/shared/live-sessions/adapters/` and one line in the table, which is agreed in advance. Until W1, `LIVE_SESSION_PROVIDERS` stays as the list of agents the registry admits, and `liveSessionProviderOf(agent)` is how code that knows only Claude and Codex steps aside for any other agent.
 
 ### 4.4 The three sources
 
@@ -303,7 +310,7 @@ The registry runs wherever agents run: in the desktop app for the local machine,
 | Local                             | All three sources in process.                                                                                                                                                                                            |
 | Paired Seal server                | New: the desktop subscribes to the server's `liveSessions.watch` and merges its records, rewriting `machine` to the desktop's machine record. Sending and answering go to the server's `liveSessions.send` and `answer`. |
 | Paired server too old to federate | Today's path: the discovery script through `liveSessions.hostRun`. External sessions only. The row for the machine says the server needs an update for chats to be listed.                                               |
-| SSH only                          | Today's path: the discovery script over SSH, plus pane rows for CLI tabs the desktop runs there.                                                                                                                         |
+| SSH only                          | Today's path: the discovery script over SSH. Spike S2 found no pane rows there: the desktop runs no CLI tabs on an SSH-only machine, only the floating machine shell, which has no hooks.                                |
 
 Precedent for the fallback exists: `desktop-session-summaries.ts` asks the server for its summaries and summarises locally when the server answers `method_not_found`. Summaries and recaps follow the same rule after this work: the machine that owns the record decorates it, and the desktop fills in only what the owner left empty.
 
@@ -446,20 +453,23 @@ The contract between the registry side and the view side (owned by workstream W0
 
 ```ts
 // src/shared/live-sessions/agent-session-chat-source.ts (new)
-export type AgentSessionChatSource = {
+export type AgentSessionChatSource<ComposerTransport> = {
   sessionId: string // record id
   messages: {
-    page(before?: string): Promise<LiveTranscriptPage>
+    page(before?: LiveTranscriptCursor): Promise<LiveTranscriptPage>
     watch(onDelta: (d: LiveTranscriptDelta) => void): () => void
   }
   pending: { list(): LiveSessionPendingMessage[]; retry(messageId: string): void } // the outbox
   prompt: LiveSessionPermissionPrompt | null
   answer(promptId: string, answer: AgentSessionPromptAnswer): Promise<void>
-  /** The composer transport the existing composer already accepts in place of a terminal. */
-  composer: NativeChatStructuredComposerTransport
+  /** The composer transport the existing composer already accepts in place of a terminal:
+   *  NativeChatStructuredComposerTransport on desktop, the phone composer's own on the phone. */
+  composer: ComposerTransport
   capabilities: AgentSessionCapabilityFlags
 }
 ```
+
+As frozen in Phase 0, the type takes the composer transport as a parameter because `NativeChatStructuredComposerTransport` is a renderer type that shared code cannot import; W4 uses `AgentSessionChatSource<NativeChatStructuredComposerTransport>`. `page` takes a `LiveTranscriptCursor` (a byte offset, as the registry's transcript calls do), `AgentSessionPromptAnswer` is the structured host's `AgentSessionPromptResponse`, and `LiveSessionPendingMessage` is the outbox's `LiveMessage`.
 
 `NativeChatComposer` already runs without a terminal when it is given a `structuredTransport` and `targetPtyId={null}` (`composer/submit/native-chat-structured-composer-transport.ts`). The external source supplies that transport; controls the session cannot support are hidden by the capability flags, not by a second composer. The view is mounted with the same providers as the project chat (appearance root, link handling, file-link existence, image owner, row actions, find, context menu, font shortcuts, subagent transcripts, empty state, turn timing), which is what `LiveSessionChat` lacks today.
 
@@ -519,6 +529,8 @@ Alternative to test first (spike S1 in section 14): host an external session as 
 | Kiro                                                                                | No                        | Yes                   | No                           | No                                      | No (approvals invisible)         | No                        | No              | None                                                        | Yes        | No                 |
 | Amp, Command Code                                                                   | No                        | No (pane id used)     | No                           | No                                      | Weak                             | No                        | No              | None                                                        | No         | No                 |
 
+The adapter table has an entry for each agent above (27 ids: Qoder is two, `qoder` and `qoder-cn`). Two agents that upstream can resume and whose hook payloads it can read, MiMo Code and Prime Agent, are not in this table and have no adapter yet; adding one is a line in `agent-session-agent-ids.ts`.
+
 Consequences for the list surfaces: an agent with no transcript decoder still gets a row with status, title (first prompt), and a one-line summary from its hook's last assistant message. It gets no recap and no chat view; opening it focuses its terminal tab. An agent with no working directory in its hooks is attached to its tab's workspace (rule 1 in section 5.3), which is always known for a CLI in Seal.
 
 ## 7. Context and compaction indicator
@@ -548,14 +560,14 @@ export type NativeChatContextUsageSummary = {
 
 Data sources:
 
-| Session                 | Used tokens                                                                                                                                                                                                                                                                  | Window                                                                                              | Auto-compact threshold                                                                                                            | Compactions                                    |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Claude chat             | Exact: the SDK context report (`claude-context-usage.ts`); estimated between reports from the last assistant message's usage                                                                                                                                                 | The report's `rawMaxTokens`, else the SDK's `modelUsage[].contextWindow`, else 1M for `[1m]` models | `autoCompactAtTokens` from the report. It is parsed today and dropped before the ring; pass it through.                           | `compact_boundary` events                      |
-| Codex chat              | Exact: `tokenUsage.last.totalTokens` from `thread/tokenUsage/updated`                                                                                                                                                                                                        | `modelContextWindow` from the same notification                                                     | Unknown (no reader for Codex's auto-compact setting). Shows usage without a compaction distance.                                  | `thread/compacted`                             |
-| ACP chat                | Whatever the agent reports through the structured `contextUsage` capability                                                                                                                                                                                                  | Same                                                                                                | Unknown                                                                                                                           | If reported                                    |
-| Claude CLI and external | Last main-thread assistant record's `message.usage` in the transcript (input, cache read, cache creation, output). The decoder drops it today; keep it. For CLI in Seal, the status line payload's `context_window` is a second source that Seal receives and ignores today. | The model's window: `[1m]` hint, else the per-model default table shared with Home chat             | Unknown from the transcript. Shown as "estimated" against a default fraction of the window only if Brian wants that (question 6). | `isCompactSummary` records, `PostCompact` hook |
-| Codex CLI and external  | `event_msg` `token_count` records' `last_token_usage.total_tokens` in the rollout. Not decoded today; reuse `parseCodexUsageRecord`.                                                                                                                                         | From the record if present (unverified), else the default table                                     | Unknown                                                                                                                           | `compacted` and `context_compacted` records    |
-| Other CLI agents        | None                                                                                                                                                                                                                                                                         | None                                                                                                | None                                                                                                                              | None. The indicator is not shown.              |
+| Session                 | Used tokens                                                                                                                                                                                                                                                                                     | Window                                                                                                                                                          | Auto-compact threshold                                                                                                            | Compactions                                                                                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude chat             | Exact: the SDK context report (`claude-context-usage.ts`); estimated between reports from the last assistant message's usage                                                                                                                                                                    | The report's `rawMaxTokens`, else the SDK's `modelUsage[].contextWindow`, else 1M for `[1m]` models                                                             | `autoCompactAtTokens` from the report. It is parsed today and dropped before the ring; pass it through.                           | `compact_boundary` events                                                                                                                             |
+| Codex chat              | Exact: `tokenUsage.last.totalTokens` from `thread/tokenUsage/updated`                                                                                                                                                                                                                           | `modelContextWindow` from the same notification                                                                                                                 | Unknown (no reader for Codex's auto-compact setting). Shows usage without a compaction distance.                                  | `thread/compacted`                                                                                                                                    |
+| ACP chat                | Whatever the agent reports through the structured `contextUsage` capability                                                                                                                                                                                                                     | Same                                                                                                                                                            | Unknown                                                                                                                           | If reported                                                                                                                                           |
+| Claude CLI and external | Last main-thread assistant record's `message.usage` in the transcript (input, cache read, cache creation, output). The decoder drops it today; keep it. For CLI in Seal, the status line payload's `context_window` is a second source that Seal receives and ignores today.                    | The model's window: `[1m]` hint, else the per-model default table shared with Home chat                                                                         | Unknown from the transcript. Shown as "estimated" against a default fraction of the window only if Brian wants that (question 6). | `isCompactSummary` records, `PostCompact` hook                                                                                                        |
+| Codex CLI and external  | `event_msg` `token_count` records' `info.last_token_usage.total_tokens` in the rollout, from the last record whose `info` is not null. Not decoded today. Read it directly: `parseCodexUsageRecord` is a billing-delta parser and returns nothing for the record after a compaction (spike S4). | `info.model_context_window` of the same record: Codex's effective window (95% of the model's), the same number Codex chat reports. Unknown when null (spike S4) | Unknown                                                                                                                           | Top-level `compacted` records (current Codex also writes an `item_completed` `ContextCompaction` for the same compaction; counting both counts twice) |
+| Other CLI agents        | None                                                                                                                                                                                                                                                                                            | None                                                                                                                                                            | None                                                                                                                              | None. The indicator is not shown.                                                                                                                     |
 
 The registry puts the latest value on the record (`context`), so lists and the phone can show it without opening the transcript.
 
@@ -618,14 +630,14 @@ Chat already works on a paired Seal server (`runtime:<environmentId>`): the prov
 
 A remote machine has the same functionality as the local one when it runs the Seal server, because then the same code runs there. So the rule is: every SSH machine gets the Seal server (section 10), and chat runs through it. For the hosts where it cannot, chat still opens, with the best transport available:
 
-| Host                                                        | Chat transport                                                                                                                                                                                  | Difference from local                                                                                                            |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Local                                                       | Structured                                                                                                                                                                                      | None                                                                                                                             |
-| SSH machine with the Seal server (the default)              | Structured, on the server, through the SSH tunnel                                                                                                                                               | None. Sessions keep running when the laptop disconnects.                                                                         |
-| SSH machine without the server (install failed or declined) | Bridge: the agent's CLI is started in a terminal tab that opens in chat view. Same view, same composer. Available for agents whose transcript can be read over SSH (Claude, Codex, OpenClaude). | No queue, rewind, fork or exact context numbers. A banner in the chat offers "Install Seal server on this machine" for the rest. |
-| Subfolder of a workspace                                    | Structured, started in that folder. Remove the client-side `custom-start-directory` refusal and pass the folder as the launch directory, as floating workspaces do.                             | None                                                                                                                             |
-| Local Windows project running in WSL                        | Bridge now. Structured through the distribution's own Seal server when `experimentalWslHosts` graduates; that work is upstream's and is not duplicated here.                                    | As for SSH without the server                                                                                                    |
-| Native Windows                                              | Structured for every agent that supports it (already the case). Antigravity stays CLI-only on Windows, with the reason shown.                                                                   | None for Claude and Codex                                                                                                        |
+| Host                                                        | Chat transport                                                                                                                                                                                                                                                                                      | Difference from local                                                                                                            |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Local                                                       | Structured                                                                                                                                                                                                                                                                                          | None                                                                                                                             |
+| SSH machine with the Seal server (the default)              | Structured, on the server, through the SSH tunnel                                                                                                                                                                                                                                                   | None. Sessions keep running when the laptop disconnects.                                                                         |
+| SSH machine without the server (install failed or declined) | Bridge: the agent's CLI is started in a terminal tab that opens in chat view. Same view, same composer. Available for agents whose transcript can be read over SSH (Claude, Codex, OpenClaude). Spike S2: this terminal tab does not exist today (no PTY provider for an SSH host); see section 17. | No queue, rewind, fork or exact context numbers. A banner in the chat offers "Install Seal server on this machine" for the rest. |
+| Subfolder of a workspace                                    | Structured, started in that folder. Remove the client-side `custom-start-directory` refusal and pass the folder as the launch directory, as floating workspaces do.                                                                                                                                 | None                                                                                                                             |
+| Local Windows project running in WSL                        | Bridge now. Structured through the distribution's own Seal server when `experimentalWslHosts` graduates; that work is upstream's and is not duplicated here.                                                                                                                                        | As for SSH without the server                                                                                                    |
+| Native Windows                                              | Structured for every agent that supports it (already the case). Antigravity stays CLI-only on Windows, with the reason shown.                                                                                                                                                                       | None for Claude and Codex                                                                                                        |
 
 The launcher change is one function: where `resolveStructuredNativeChatSupport` returns a blocker for `remote-execution-host` or `project-runtime`, the route falls back to "CLI in chat view" if `canToggleNativeChat` allows it for that agent and host, and the menu row stays a normal "Chat" row. `chatUnavailableLabel` keeps only the reasons that are real: the agent has no chat, the agent is not installed on the host, the check failed.
 
@@ -961,6 +973,25 @@ These are created by W0 and then frozen. A change goes through W0's owner.
 | `serverInstall` on the machine record                                                                       | `src/shared/machines/machine-record.ts`                                     | W7                                                                                      | W6 (banner), W9 |
 | Status entry points                                                                                         | `src/shared/live-sessions/live-session-status.ts`                           | Status-sweep work                                                                       | W1              |
 
+What Phase 0 froze, and where it differs from the sketches in sections 4, 6 and 7. Phase 1 builders read the files, not the sketches.
+
+| File                                                                        | Exports                                                                                                                                                                                                                                               | Notes for consumers                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/live-sessions/live-session-types.ts`                            | `LiveSession` (new: `surface?`, `capabilities?`, `workspace?`, `context?`, `model?`; `provider: AgentSessionAgentId`), `AgentSessionSurface`, `AgentSessionCapabilityFlags`, `LiveSessionInputRoute` with `structured` first, `liveSessionProviderOf` | `surface` and `capabilities` are optional until W1 fills them (section 4.1). `LIVE_SESSION_PROVIDERS` and `LiveSessionProvider` stay until W1: they are the agents the registry admits and discovery finds. `LiveTakeOverResult.provider` stays Claude or Codex, because take over is for external sessions.                                                                                                     |
+| `src/shared/live-sessions/adapters/agent-session-agent-ids.ts`              | `AGENT_SESSION_AGENT_IDS`, `AgentSessionAgentId`, `isAgentSessionAgentId`                                                                                                                                                                             | 27 ids (section 6.5).                                                                                                                                                                                                                                                                                                                                                                                            |
+| `src/shared/live-sessions/adapters/agent-session-adapter.ts`                | `AgentSessionAdapter`, `AgentSessionChatRuntime`, `AgentSessionStatusEvidence`, `AgentTranscriptLocator`, `AgentSessionContextSample`                                                                                                                 | `cli.resumeArgv(providerSessionId, transcriptPath?)` may return null. Every field of `AgentSessionContextSample` is optional: a record may carry only used tokens, only a model, or only a compaction mark, and the window may be unknown. `AgentSessionStatusEvidence` lists the evidence of section 4.6; W1 matches it to the status module's own input type when that lands and may replace it with an alias. |
+| `src/shared/live-sessions/adapters/agent-session-adapters.ts`               | `AGENT_SESSION_ADAPTERS`, `agentSessionAdapter(agent)`                                                                                                                                                                                                | Shared, pure parts only (section 4.3).                                                                                                                                                                                                                                                                                                                                                                           |
+| `src/shared/live-sessions/agent-session-chat-source.ts`                     | `AgentSessionChatSource<ComposerTransport>`, `AgentSessionPromptAnswer`, `LiveSessionPendingMessage`                                                                                                                                                  | Section 6.2.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `src/shared/native-chat/native-chat-context-usage-summary.ts`               | `NativeChatContextUsageSummary` with `autoCompactAtTokens?`, `model?`, `compactions?`, `lastCompactedAt?`, `updatedAt?`                                                                                                                               | Nothing fills or reads the new fields yet. Thresholds are W5's.                                                                                                                                                                                                                                                                                                                                                  |
+| `src/shared/machines/machine-record.ts`                                     | `MachineServerInstallSchema`, `MachineServerInstall`, `MachineRecord.serverInstall?`                                                                                                                                                                  | A value the schema cannot read is dropped, never fatal to the machines file.                                                                                                                                                                                                                                                                                                                                     |
+| `src/renderer/src/components/live-sessions/open/open-agent-session.ts`      | `openAgentSession(sessionId, mode)`, `AgentSessionOpenMode`                                                                                                                                                                                           | Modes are today's `'preview' \| 'tab' \| 'split'`.                                                                                                                                                                                                                                                                                                                                                               |
+| `src/renderer/src/components/live-sessions/links/use-workspace-sessions.ts` | `useWorkspaceSessions(worktreeId)`, `useUnassignedSessions()`                                                                                                                                                                                         | Both return running and ended sessions in the registry's order; rows sort and split them (`compareLiveSessions`, `isActiveLiveSession`). `worktreeId` is a git worktree's id or a folder workspace's key.                                                                                                                                                                                                        |
+| `mobile/src/seal/live-sessions/live-session-schemas.ts`                     | `liveSessionSchema` accepts `surface`, `capabilities`, `workspace`, `context`, `model`                                                                                                                                                                | Each is optional, and a shape the phone cannot read is dropped without losing the session.                                                                                                                                                                                                                                                                                                                       |
+
+Phase 0 changed no behaviour. Where widening `provider` did not compile, the code steps aside for an agent that is not Claude or Codex: transcripts read as empty (`LiveTranscriptStreams.source`), take over answers `not_resumable`, the Seal pane route answers `unavailable` and `not_answerable`, and "Copy resume command" has no command for an agent Session History cannot resume. No registry lists such an agent before W1, so none of these can be reached yet. W1 replaces each with the adapter's answer, and W3 disables "Copy resume command" when the adapter has no `resumeArgv`.
+
+Before any source emits the `structured` route, W1 adds its branch in `SessionInputRoutes.attempt` and in the answer path: today a route kind that code does not know falls through to the headless resume command.
+
 ### 14.4 Workstreams
 
 Each workstream lists what it owns. Files not listed belong to nobody in this plan and are not edited.
@@ -973,14 +1004,209 @@ Delivers: the types and the adapter table with an entry for every agent in secti
 
 Spikes, each answered in writing in this document before Phase 1 starts:
 
-| Spike | Question                                                                                                                                                         | Decides                                                                         |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| S1    | Can a Seal-owned structured adapter attach to a conversation whose process the host does not own (history from the transcript, live tail, input through routes)? | Whether W4 adds a tab type or reuses `agent-session`                            |
-| S2    | Do hook events reach the desktop for a CLI tab on an SSH-only machine (no server, no WSL relay)?                                                                 | Whether CLI rows on SSH-only machines have hook status or only discovery status |
-| S3    | A systemd-enabled Docker SSH image that runs a user manager with linger in CI and in a cloud agent VM                                                            | W7's test fixture                                                               |
-| S4    | Does a Codex rollout's `token_count` record carry the model's context window?                                                                                    | W5's window source for Codex CLI sessions                                       |
+| Spike | Question                                                                                                                                                         | Decides                                                                         | Answer                                                                                                            |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| S1    | Can a Seal-owned structured adapter attach to a conversation whose process the host does not own (history from the transcript, live tail, input through routes)? | Whether W4 adds a tab type or reuses `agent-session`                            | It can be made to run, but not safely. W4 adds the `external-agent-session` tab type.                             |
+| S2    | Do hook events reach the desktop for a CLI tab on an SSH-only machine (no server, no WSL relay)?                                                                 | Whether CLI rows on SSH-only machines have hook status or only discovery status | No. Discovery status only. There is also no CLI tab on such a machine today, only the floating machine shell.     |
+| S3    | A systemd-enabled Docker SSH image that runs a user manager with linger in CI and in a cloud agent VM                                                            | W7's test fixture                                                               | Works in a cloud agent VM (run). Expected to work in CI (not run). The recipe is in the appendix.                 |
+| S4    | Does a Codex rollout's `token_count` record carry the model's context window?                                                                                    | W5's window source for Codex CLI sessions                                       | Yes, at `payload.info.model_context_window`. It is Codex's effective window, the number Codex chat already shows. |
+
+The answers in full follow the acceptance line below.
 
 Acceptance: `pnpm tc` and `pnpm lint` pass; no behaviour change in the app (tester: the existing golden specs for tab launch and session restore pass); the four spike answers are written down.
+
+##### Spike answers
+
+All four were run on Linux, in a cloud agent VM, against `origin/seal/all` at `51496ea453d`. Each lists what was run, what was only read in code, and what was not checked.
+
+**S1. Attaching a structured adapter to a process the host does not own**
+
+Answer: the host accepts such an adapter without edits, but its lifecycle then acts on a process it does not own. W4 does not build on it and adds the `external-agent-session` tab type, as section 6.3 plans.
+
+Run: a scratch test built the real `StructuredAgentSessionHost`, record store and journal database with a fake adapter whose `acquire` starts no process (5 cases, all ran; the findings are the values they logged).
+
+| What was tried                                                                                                                                                                                                        | Result                                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Attach with `adopt` and a Codex rollout, history import, tail writes through the event sink, `host.send`, an approval answered with `host.respondToPrompt`, a queued send released when the tail wrote the turn's end | All worked.                                                                                                                                        |
+| Close the tab while a turn written by the tail was running                                                                                                                                                            | The lease was released, the journal marked the turn `interrupted` although nothing was interrupted, and later tail writes were refused (`closed`). |
+| Quit while such a turn was running                                                                                                                                                                                    | A "continue after restart" offer was recorded for it.                                                                                              |
+| Record the external agent's real pid as the lease owner, then restart the host and attach again                                                                                                                       | The host sent the process SIGTERM (a `sleep 600` stand-in ended with `signal: SIGTERM`).                                                           |
+| Idle sweep with an adapter that cannot say whether it is idle                                                                                                                                                         | The session was closed after 30 minutes.                                                                                                           |
+
+Read in code: an SSH-only machine has no structured host to attach to (`structuredAgentSessionTargetForHost` returns null for it), so a second view would be needed there in any case. A registry id contains `:` and is not a valid structured session id (`SESSION_ID_PATTERN`). One adapter is registered per agent id, and a record made under a new agent id could not continue into a real Claude or Codex chat. Routes never return a provider item id, so an attached send could only be `admitted`, never `accepted`.
+
+Decides:
+
+- W1: the registry stays the only record of external sessions. Nothing writes them into the structured record store or journal, and an external session's pid is never given to the structured host as a lease owner.
+- W4: add the tab type. Its chat view reads from the registry and sends through `liveSessions.*`; closing it never goes through `host.close`. Turning an external session into a chat stays the existing adoption path (stop the terminal writer, wait for its exit, then resume). Budget for the tab type from the files that mention `'simulator'` today: 44 upstream-owned non-test files outside the simulator's own folders.
+- W9: `RuntimeMobileSessionAgentTab` needs a structured session id and has no member for the simulator tab, so the phone needs its own contract member or a registry-backed view for external sessions.
+
+Not checked: macOS and Windows; the renderer, RPC and phone side of an attach; reopening an attached session after close; a real transcript tailer or input route (the adapter was a fake).
+
+**S2. Hook events from a CLI on an SSH-only machine**
+
+Answer: none reach the desktop. Two things are missing, and the first changes more than the status source.
+
+1. There is no CLI tab on an SSH-only machine. The desktop has only a local PTY provider, so `pty:spawn` for an SSH host fails with `PtyHostNotDispatchableError` (`src/main/ipc/pty/provider/registry.ts`). The one terminal there is the floating machine shell (`machines:shellOpen`), which has no tab and no pane key and cannot be reattached after a window reload.
+2. That shell has no hook path. It gets no hook port, token or pane key, Seal installs no hooks in the remote home, and nothing forwards the desktop's loopback hook endpoint to the host.
+
+Run: an E2E spec against a loopback sshd under a throwaway account, with the machine added the way the Machines page adds it (`connection: 'ssh'`), and a stub `claude` that runs Seal's real Claude hook script. It passed twice with the same results.
+
+| Check                                                                        | Result                                                                                                                             |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Control: a local pane                                                        | Has the hook variables and `ORCA_PANE_KEY`; the hook script produced a row in the main snapshot and the renderer store.            |
+| `pty.spawn` with the SSH connection                                          | Fails: `No PTY provider for connection …`.                                                                                         |
+| `machines.shellOpen` with `agent: 'claude'`                                  | Works over SSH. The remote agent's environment has no `ORCA_*` or `SEAL_*` variable.                                               |
+| Hooks in the remote home                                                     | None installed; the hook script exits at its missing-coordinates guard without posting.                                            |
+| Hook rows for the remote session                                             | None in 10 seconds, in main or renderer.                                                                                           |
+| Reverse forward                                                              | The sshd debug log shows no `tcpip-forward` or `streamlocal-forward` request from Seal's session (a control `ssh -R` did log one). |
+| What discovery lists                                                         | One `external` session on the right machine, `statusSource: "transcript"`, `inputRoutes: []`.                                      |
+| A hook posted with the desktop's real port and token from the remote account | Accepted, and filed under the local machine with a `seal-pane` route to a pane that does not exist.                                |
+
+Read in code: `installRemoteManagedAgentHooks` and `ingestRemote` are called only by the WSL relay; `src` has no reverse forward (`forwardIn`, `-R`); upstream's SSH relay no longer has a client; a paired Seal server runs its own hook server, hook install and registry on its own host. `mergeSealPanes` files a pane with a non-null connection under the placeholder `seal-remote` machine, not the real one.
+
+Decides:
+
+- W1: an SSH-only machine has one source, discovery. There is no pane-source branch for it (section 4.7's "plus pane rows for CLI tabs the desktop runs there" does not exist today). Any later remote hook path must stamp the connection and map it to the real machine.
+- W3: a CLI on an SSH-only machine is an `external` row with status from the transcript or the process list at scan cadence. Outside tmux it has no input route until its process ends, so no send and no prompt answer. There is no pane to open.
+- W6: the bridge fallback of section 9.2 for SSH machines without the server cannot be "a terminal tab that opens in chat view", because that tab does not exist. This needs a decision from the plan's owner before W6 builds it (see section 17).
+- W7: the server is the only existing way to get hook status on a remote machine. Without it Seal writes nothing to the remote home.
+
+Not checked: a real remote host (the sshd shared the desktop's loopback, so the missing path is shown by the missing variables, the missing hook install and the missing forward request); the system-ssh transport, Windows and macOS; an agent inside tmux on the host (from code it would get `screen` status and a `tmux` route); opening a terminal tab from the UI in a workspace on that machine (the spawn was called through the preload API; the renderer has a handler for this error in `ipc-pty-connect.ts`); the legacy relay bridge and a paired server were not run, and the relay stayed off.
+
+**S3. A systemd Docker SSH host with a lingering user manager**
+
+Answer: it works in a cloud agent VM once Docker is installed there, without `--privileged`. CI was not run; the same flags are expected to work on the `ubuntu-24.04` runners the Docker SSH job uses.
+
+The image is the existing `tests/e2e/fixtures/docker-ssh-host` Dockerfile plus one layer (`systemd`, `systemd-sysv`, `libpam-systemd`, `dbus`, `dbus-user-session`, `polkitd`, a non-root user `seal`) and an entrypoint that writes the SSH key and a per-container machine id and then becomes systemd. The files are in the appendix.
+
+Run flags, each tried:
+
+| Flags                                                                                | Result                                                                                                                                 |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `--security-opt writable-cgroups=true --tmpfs /run --tmpfs /run/lock`                | Works. No added capability, private cgroup namespace. Needs Docker Engine 28 or newer. First choice.                                   |
+| `--cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw --tmpfs /run --tmpfs /run/lock` | Works. Second choice, for older Docker on cgroup v2. Gives root in the container write access to the host's cgroup tree.               |
+| None, `--tmpfs` only, `--cap-add SYS_ADMIN` alone                                    | systemd exits 255.                                                                                                                     |
+| `--privileged`                                                                       | Works, but the container's systemd then writes its sysctls into the host kernel. Not to be used on a developer machine or an agent VM. |
+
+Run, on the first-choice flags (the second choice passed the same checks):
+
+| Claim                                                                      | Result                                                                                                                                                                                                                                                                                   |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A user manager answers over a real SSH login as a non-root user            | `systemctl --user show-environment` exits 0; `XDG_RUNTIME_DIR=/run/user/1100`.                                                                                                                                                                                                           |
+| A user unit is written and enabled over SSH without root                   | `systemctl --user enable --now` exits 0; the unit is `active` and answers on loopback.                                                                                                                                                                                                   |
+| Linger without root                                                        | `loginctl enable-linger` exits 0 with polkit present. Without polkit it is refused (`Could not enable linger: Access denied`, exit 1), which is the `linger: false` case of section 10.3; the user manager still works, and it stops about 10 seconds after the last SSH session closes. |
+| After `docker restart`, and after `docker stop` and `start`, with no login | The unit is `active` about 200 ms after start with `loginctl list-sessions` empty, and answers on loopback.                                                                                                                                                                              |
+| `Restart=on-failure`                                                       | After `kill -9` the unit is `active` again with `NRestarts=1`.                                                                                                                                                                                                                           |
+| Cost                                                                       | 27 MB more than the plain image; about 0.55 s from `docker run` to the first SSH login against about 0.32 s.                                                                                                                                                                             |
+| Nothing public besides sshd                                                | Listeners: port 22, and the test unit on loopback. Node 22.23.4 and git work as in the plain image.                                                                                                                                                                                      |
+
+Docker in the VM: it was not installed. `apt-get install docker.io docker-buildx iptables` and `sudo dockerd --group ubuntu` in a tmux session worked with the default storage driver (Docker 29.1.3, cgroup v2). The VM's own init is `tini`, so a loopback sshd cannot stand in for the systemd cases.
+
+Decides for W7:
+
+- Commit the appendix's two files under `tests/e2e/fixtures/docker-ssh-host-systemd/`. Keep polkit in the default build; build with `--build-arg POLKIT=` for the host that refuses linger.
+- The helper picks the flags from the Docker server version (28 or newer: the first choice; else the second), waits for SSH and then for `systemctl is-system-running` to print `running`.
+- The plain helper cannot be reused as it is: it hard-codes the `sshd -D` command, the `root` user, an ephemeral host port and `kill -HUP 1`. The systemd host needs a pinned host port (the ephemeral one changes on `docker restart`, which T7.2 does), test repositories seeded outside `/tmp` (emptied at boot), and `systemctl reload ssh`. That is a new helper file, `tests/e2e/helpers/docker-ssh-host-systemd-target.ts`, added to W7's owned files below.
+- Specs named `tests/e2e/ssh-orcad-*.spec.ts` are picked up by the existing `orcad-ssh-docker` job without workflow edits. Pull-request source routing lists helper names one by one, so a change to the new helper or fixture alone selects those specs only once a routing entry is added. Skip, with the reason, when Docker is unreachable or `docker info` does not report cgroup v2.
+- Report as not run, never as passed: every systemd case on a machine without Docker, every CI claim until a CI run exists, and T7.10.
+
+Not checked: CI itself (AppArmor's `docker-default` profile, Docker's `systemd` cgroup driver, Docker 28.0.4 and kernel 7.0 were not reproduced; if systemd does not reach `running` there, add `--security-opt apparmor=unconfined` before considering `--privileged`); the product's own install path, which does not exist yet (the unit was a stand-in Node server installed by hand); arm64, Docker Desktop, rootless Docker and podman; distributions other than Debian 12.
+
+**S4. The context window in a Codex rollout**
+
+Answer: yes. Every `token_count` record whose `info` is not null carries `payload.info.model_context_window`, an integer or `null`. It is Codex's effective window (the model's window times `effective_context_window_percent`, 95 by default), and it is the same number the app-server sends as `tokenUsage.modelContextWindow`, which Codex chat already shows.
+
+Run: no committed fixture has a `token_count` record, so the real `codex` 0.169.0 binary was run against a local mock model provider with an isolated `CODEX_HOME`. Token counts are synthetic; the record shape and the window are the binary's.
+
+| Run                                                 | Window in `token_count`     |
+| --------------------------------------------------- | --------------------------- |
+| `gpt-6.1-sol`, three turns                          | 258400 on all three records |
+| `gpt-6.1-terra`                                     | 475000                      |
+| `gpt-6.1-sol` with `-c model_context_window=100000` | 95000                       |
+| An unknown model name                               | 258400                      |
+| Auto-compaction forced twice                        | 258400 on all nine records  |
+
+A record as written (`rate_limits` shortened):
+
+```json
+{
+  "timestamp": "2026-11-15T21:29:42.151Z",
+  "ordinal": 16,
+  "type": "event_msg",
+  "payload": {
+    "type": "token_count",
+    "info": {
+      "total_token_usage": {
+        "input_tokens": 12000,
+        "cached_input_tokens": 4000,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 50,
+        "reasoning_output_tokens": 10,
+        "total_tokens": 12050
+      },
+      "last_token_usage": {
+        "input_tokens": 12000,
+        "cached_input_tokens": 4000,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 50,
+        "reasoning_output_tokens": 10,
+        "total_tokens": 12050
+      },
+      "last_usage_includes_reasoning": true,
+      "model_context_window": 258400
+    },
+    "rate_limits": "(trimmed)"
+  }
+}
+```
+
+The record right after an auto-compaction (cumulative totals unchanged, `last_token_usage.total_tokens` is Codex's estimate of the new context size):
+
+```json
+{
+  "timestamp": "2026-11-15T21:29:42.391Z",
+  "ordinal": 29,
+  "type": "event_msg",
+  "payload": {
+    "type": "token_count",
+    "info": {
+      "total_token_usage": {
+        "input_tokens": 36000,
+        "cached_input_tokens": 8000,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 100,
+        "reasoning_output_tokens": 20,
+        "total_tokens": 36100
+      },
+      "last_token_usage": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 13241
+      },
+      "last_usage_includes_reasoning": true,
+      "model_context_window": 258400
+    },
+    "rate_limits": "(trimmed)"
+  }
+}
+```
+
+Read in upstream source (`openai/codex`, tag `rust-v0.169.0`): `TokenUsageInfo.model_context_window` is `Option<i64>` and is always serialised; `TokenCountEvent.info` is optional; the field exists since 0.31.0 and `token_count` is written to rollouts since 0.32.0; after a compaction Codex writes a `token_count` whose `last_token_usage.total_tokens` is its own estimate of the new context size.
+
+Decides for W5:
+
+- For Codex CLI and external sessions, used tokens are `info.last_token_usage.total_tokens` and the window is `info.model_context_window` of the same record, from the last `token_count` whose `info` is not null. Read the window per record: it changes when the model changes.
+- When the window is null or not positive, it is unknown, as in Codex chat (`readCodexContextUsage`). Do not fall back to `task_started.model_context_window`; it comes from the same function.
+- Do not reuse `parseCodexUsageRecord`. It is a billing-delta parser with state: over the rollout with two compactions it returned 5 events for 9 records and nothing for the two records after a compaction. The read is two fields and needs no state.
+- The record carries no model name; that is on the preceding `turn_context` record.
+- Count top-level `compacted` records as compactions. Current Codex also writes an `item_completed` `ContextCompaction` for the same compaction and no `context_compacted`.
+- No fixture exists. The tester adds `token_count` lines to the stub's rollout from the two records above.
+
+Not checked: a real model turn; the interactive TUI (`codex exec` was run; both use the same core code); `info: null` and a null window inside `info` (both rest on the upstream types); the record Codex writes when the window is exceeded. Section 7 also names a "per-model default table shared with Home chat" for Claude; no such table exists (Home chat has three per-driver constants), so W5 decides that row's fallback.
 
 #### W1 Registry sources (Phase 1)
 
@@ -1123,7 +1349,7 @@ Test plan:
 
 #### W7 Seal server on SSH machines (Phase 1)
 
-Owns: `src/main/machines/**`, `src/shared/machines/**`, `components/machines/**` except `MachineSessionList.tsx` and `machine-live-sessions.ts`, `src/main/managed-server/service/**` (new, Seal-owned), `tests/e2e/fixtures/docker-ssh-host-systemd/**` (new). Upstream seams: `src/main/managed-server/install/orcad-remote-launch.ts`, `orcad-remote-runtime-control.ts`, `orcad-host-transport.ts` (the launch strategy), `src/main/orcad/host-lifecycle/idle-exit/orcad-managed-idle-exit.ts` (service mode), `src/main/ipc/ssh/ssh-connect-flow.ts` and `src/main/ssh/host-server/ssh-direct-connect-policy.ts` (policy and fallback), `src/cli/runtime/serve-service-unit.ts` (parameters).
+Owns: `src/main/machines/**`, `src/shared/machines/**`, `components/machines/**` except `MachineSessionList.tsx` and `machine-live-sessions.ts`, `src/main/managed-server/service/**` (new, Seal-owned), `tests/e2e/fixtures/docker-ssh-host-systemd/**` (new), `tests/e2e/helpers/docker-ssh-host-systemd-target.ts` (new; spike S3 showed the plain helper cannot start this image). Upstream seams: `src/main/managed-server/install/orcad-remote-launch.ts`, `orcad-remote-runtime-control.ts`, `orcad-host-transport.ts` (the launch strategy), `src/main/orcad/host-lifecycle/idle-exit/orcad-managed-idle-exit.ts` (service mode), `src/main/ipc/ssh/ssh-connect-flow.ts` and `src/main/ssh/host-server/ssh-direct-connect-policy.ts` (policy and fallback), `src/cli/runtime/serve-service-unit.ts` (parameters).
 
 Delivers: section 10: the Add machine checkbox and record field, the probe, the stable launcher, the four launch strategies, linger, the fallback to plain SSH with the reason, the notice and "Retry install", "Remove Seal server", background reconnect after an app update, and the migration behaviour for existing machines.
 
@@ -1161,7 +1387,7 @@ Test plan (needs a real SSH target: the Docker hosts, or the loopback sshd where
 
 Owns: `components/live-sessions/open/**`, `components/live-sessions/chat/**` (new: external source, session header), `components/live-sessions/workspace/**`, `components/live-sessions/LiveSessionChat.tsx`, `LiveSessionComposer.tsx`, `LiveSessionAppSurface.tsx`, `use-live-transcript.ts`, `live-session-send.ts`, `live-session-pending-rows.ts`, `app-shell/AppWorkspaceShell.tsx` (the `sessions` branch only), the `sessions` view actions in `store/slices/ui`. Upstream seams: the new tab content type (the files the `simulator` type touches: `src/shared/tab-types.ts`, the workspace-session and workspace-layout schemas and commands, `runtime-mobile-session-tab-contracts.ts`, tab-bar item model and projection, `TabGroupPanel`, the pane overlay layers, main session-tab publication) and the header slot of `NativeChatView`.
 
-Delivers: sections 6.2 and 6.3. `openAgentSession` resolving to the chat tab, the terminal tab or the external tab; the external source over the registry IPC; the shared session header; migration of open session tabs; deletion of the sessions view, its strip and store, the thin pane, chat and composer. If spike S1 succeeded, the external tab is an `agent-session` tab through the attach adapter and no tab type is added.
+Delivers: sections 6.2 and 6.3. `openAgentSession` resolving to the chat tab, the terminal tab or the external tab; the external source over the registry IPC; the shared session header; migration of open session tabs; deletion of the sessions view, its strip and store, the thin pane, chat and composer. Spike S1 decided against the attach adapter (section 14.4, W0): the external tab is the new `external-agent-session` tab type.
 
 Acceptance: a session row opens a tab in its workspace for all three surfaces; preview and keep; the external session tab has the full composer with unsupported controls hidden, the prompt card, find, links, image viewer, font zoom, footer, context indicator, recap, subagents and tasks; sending and retrying work over every route; the tab reorders, splits, closes and is restored after relaunch like any tab; an ended session's tab shows its transcript; there is no `sessions` view left and no caller of `openLiveSessionView`. The rows of section 13 marked W4.
 
@@ -1234,16 +1460,16 @@ Acceptance: every row of section 13 re-verified in the real app with evidence, o
 
 ### 14.5 Known overlaps and how they are avoided
 
-| Shared place                                      | Who touches it                                                                           | Rule                                                              |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `src/shared/live-sessions/live-session-types.ts`  | W0 only                                                                                  | Frozen after Phase 0.                                             |
-| Seal locale overlays                              | All                                                                                      | One key block per workstream; resolve by keeping both blocks.     |
-| `components/tab-bar/**`                           | W6 (launch menu files), W4 (item model and projection), multi-pane build (drag and drop) | File-level split as listed; W4 waits for the multi-pane merge.    |
-| `components/live-sessions/links/**`               | W3 in Phase 1, W8 in Phase 2                                                             | W8 changes only `use-workspace-sessions.ts`.                      |
-| `src/main/live-sessions/**`                       | W1; W2 (`transcripts/**`, notifier); W8 (`workspace-link/**`)                            | Sub-folder ownership as listed.                                   |
-| `src/main/live-sessions/live-session-registry.ts` | W1; W8 adds one decorator call                                                           | W8's call site is agreed in W0 as a hook in the publish pipeline. |
-| `components/machines/**`                          | W7; W9 (two session-list files)                                                          | As listed.                                                        |
-| `.gitignore` (`docs/design/`)                     | This pull request, multi-pane design pull request                                        | Both un-ignore `docs/design/`; keep both lines on merge.          |
+| Shared place                                      | Who touches it                                                                           | Rule                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/live-sessions/live-session-types.ts`  | W0 only                                                                                  | Frozen after Phase 0.                                                                                                                                                                                                                                                                                                                                         |
+| Seal locale overlays                              | All                                                                                      | One key block per workstream; resolve by keeping both blocks.                                                                                                                                                                                                                                                                                                 |
+| `components/tab-bar/**`                           | W6 (launch menu files), W4 (item model and projection), multi-pane build (drag and drop) | File-level split as listed; W4 waits for the multi-pane merge.                                                                                                                                                                                                                                                                                                |
+| `components/live-sessions/links/**`               | W3 in Phase 1, W8 in Phase 2                                                             | W8 changes only `use-workspace-sessions.ts`.                                                                                                                                                                                                                                                                                                                  |
+| `src/main/live-sessions/**`                       | W1; W2 (`transcripts/**`, notifier); W8 (`workspace-link/**`)                            | Sub-folder ownership as listed.                                                                                                                                                                                                                                                                                                                               |
+| `src/main/live-sessions/live-session-registry.ts` | W1; W8 adds one decorator call                                                           | W8's call site is agreed in W0 as a hook in the publish pipeline: an optional `link?: (session: LiveSession) => LiveSession` on `LiveSessionRegistryDeps`, called in `publish()` after `annotate` and before the decorator. It returns the session with `workspace` set, or unchanged. W1 leaves that position free; W8 adds the dependency and the one call. |
+| `components/machines/**`                          | W7; W9 (two session-list files)                                                          | As listed.                                                                                                                                                                                                                                                                                                                                                    |
+| `.gitignore` (`docs/design/`)                     | This pull request, multi-pane design pull request                                        | Both un-ignore `docs/design/`; keep both lines on merge.                                                                                                                                                                                                                                                                                                      |
 
 ## 15. Coordination with other work in flight
 
@@ -1283,18 +1509,127 @@ Verified in code at `51496ea453d` and, where noted, in the running app:
 - The card template seam, the composer's transport seam, the registry's publish pipeline and the existing server-summaries fallback (code).
 - All line counts in section 12.
 
+Resolved in Phase 0 by the spikes (answers and evidence in section 14.4, W0), run on Linux in a cloud agent VM:
+
+| Unknown                                                                  | Answer                                                                                                                               | How it was checked                                                                                                             |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Whether the structured host can attach to a process it does not own (S1) | It runs, but the host then closes, interrupts and after a restart signals a process it does not own. Not used; W4 adds the tab type. | A scratch test against the real host, record store and journal with a process-less adapter; the rest read in code.             |
+| Hook delivery for CLI tabs on SSH-only machines (S2)                     | None. Such a machine has no CLI tab at all, only the floating machine shell, and discovery is its one source.                        | An E2E spec against a loopback sshd with Seal's real hook script, run twice; the sshd debug log; code. Not a real remote host. |
+| A systemd user manager with linger inside a container (S3)               | Works without `--privileged` in a cloud agent VM after installing Docker.                                                            | Built and run: SSH login, user unit, linger, restart, stop and start, `kill -9`. CI was not run.                               |
+| Whether Codex rollouts carry the context window (S4)                     | Yes: `payload.info.model_context_window`, Codex's effective window.                                                                  | Rollouts written by the real 0.169.0 binary against a mock provider; upstream source. No real model turn.                      |
+
+Phase 0 also verified: `pnpm tc`, `pnpm lint` and the changed-file checks pass; eight existing E2E spec files (tab launch from the tab bar, agent TUI launch, quit and relaunch, shell after agent exit, active view restore, project overview, sidebar agent row identity, sidebar workspace rows) gave the same results on the build before and the build after, 8 passed and 6 skipped by their own platform or build conditions in both.
+
 Not verified, and assigned:
 
-| Unknown                                                                                                                                                    | Resolved by    |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Whether the structured host can attach to a process it does not own                                                                                        | W0, S1         |
-| Hook delivery for CLI tabs on SSH-only machines                                                                                                            | W0, S2         |
-| A systemd user manager with linger inside a container                                                                                                      | W0, S3         |
-| Whether Codex rollouts carry the context window                                                                                                            | W0, S4         |
-| The status-sweep module's final entry points (its branch was not pushed)                                                                                   | W1             |
-| How the desktop receives hook rows for terminals on a paired server today, and their dedupe with federated records                                         | W1             |
-| `launchctl bootstrap` from an SSH session without a GUI login                                                                                              | W7             |
-| Whether every Windows build has the process start-time addon structured providers need                                                                     | W6             |
-| What Brian's machine records (kessel-ml, 2299) contain on disk                                                                                             | W7, with Brian |
-| Why one capture of the `+` menu listed five agents with chat off and only Claude and Codex with chat on (the capture's PATH changed between the two shots) | W6             |
-| ACP agents' context usage reports                                                                                                                          | W5             |
+| Unknown                                                                                                                                                                                                                                                                                                                                                                                                                                     | Resolved by                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| The bridge fallback for SSH machines without the server (section 9.2, T6.5 and W6's acceptance line) assumes a terminal tab that does not exist there (S2). W0's proposal, not a decision: in Phase 1 W6 keeps the chat action on such a machine explained and tied to "Install Seal server", and the chat view of a CLI started through the machine shell is taken up with W4's external tab, launching inside tmux where the host has it. | The plan's owner and Brian, before W6 builds that part |
+| The systemd fixture's run flags on the CI runners (AppArmor, Docker 28, the `systemd` cgroup driver)                                                                                                                                                                                                                                                                                                                                        | W7, on its first CI run                                |
+| The window fallback for Claude CLI and external sessions: section 7 names a per-model default table shared with Home chat, and none exists                                                                                                                                                                                                                                                                                                  | W5                                                     |
+| `chat.runtime` in the shared adapter table against the main-only runtime catalog, and `AgentSessionStatusEvidence` against the status module's input type                                                                                                                                                                                                                                                                                   | W1                                                     |
+| The status-sweep module's final entry points (its branch was not pushed)                                                                                                                                                                                                                                                                                                                                                                    | W1                                                     |
+| How the desktop receives hook rows for terminals on a paired server today, and their dedupe with federated records                                                                                                                                                                                                                                                                                                                          | W1                                                     |
+| `launchctl bootstrap` from an SSH session without a GUI login                                                                                                                                                                                                                                                                                                                                                                               | W7                                                     |
+| Whether every Windows build has the process start-time addon structured providers need                                                                                                                                                                                                                                                                                                                                                      | W6                                                     |
+| What Brian's machine records (kessel-ml, 2299) contain on disk                                                                                                                                                                                                                                                                                                                                                                              | W7, with Brian                                         |
+| Why one capture of the `+` menu listed five agents with chat off and only Claude and Codex with chat on (the capture's PATH changed between the two shots)                                                                                                                                                                                                                                                                                  | W6                                                     |
+| ACP agents' context usage reports                                                                                                                                                                                                                                                                                                                                                                                                           | W5                                                     |
+
+## Appendix: the systemd SSH host fixture from spike S3
+
+W7 commits these two files under `tests/e2e/fixtures/docker-ssh-host-systemd/`. The first lines of the Dockerfile are those of the plain fixture, so the layers are shared.
+
+`Dockerfile`:
+
+```dockerfile
+FROM node:22.23.4-bookworm@sha256:2bd396628eceb5c999a6e43731fab69d5fb98b94ba9d9d90b5f64575c5178765 AS patched-node
+FROM node:22-bookworm@sha256:5647be709086c696ff32edaaf1c70cd26d1da6ab2b39c32f3c7b4c4a31957e37
+
+COPY --from=patched-node /usr/local/bin/node /usr/local/bin/node
+
+# Why: immutable snapshot inputs keep the SSH/Git fixture identical across rebuild dates.
+RUN sed -i \
+      -e 's|http://deb.debian.org/debian-security|https://snapshot.debian.org/archive/debian-security/20260713T000000Z|' \
+      -e 's|http://deb.debian.org/debian|https://snapshot.debian.org/archive/debian/20260713T000000Z|' \
+      /etc/apt/sources.list.d/debian.sources \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      git=1:2.39.5-0+deb12u3 \
+      openssh-server=1:9.2p1-2+deb12u10 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /run/sshd /root/.ssh \
+    && chmod 700 /root/.ssh
+
+# uid 1000 is the node image's `node` user, so the SSH user is seal (1100).
+# polkitd lets a user enable linger for itself; POLKIT= builds the host that refuses it.
+# The systemd package bakes one machine-id into the image; it is removed so each container gets its own.
+ARG POLKIT=polkitd=122-3
+ARG SYSTEMD_VERSION=252.39-1~deb12u2
+RUN apt-get -o Acquire::Check-Valid-Until=false update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      systemd=${SYSTEMD_VERSION} \
+      systemd-sysv=${SYSTEMD_VERSION} \
+      libpam-systemd=${SYSTEMD_VERSION} \
+      dbus=1.14.10-1~deb12u1 \
+      dbus-user-session=1.14.10-1~deb12u1 \
+      ${POLKIT} \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 1100 --create-home --shell /bin/bash seal \
+    && install -d -m 700 -o seal -g seal /home/seal/.ssh \
+    && systemctl set-default multi-user.target \
+    && systemctl enable ssh.service \
+    && systemctl mask \
+      console-getty.service getty.target systemd-firstboot.service \
+      apt-daily.timer apt-daily-upgrade.timer dpkg-db-backup.timer \
+      e2scrub_all.timer e2scrub_reap.service fstrim.timer \
+    && rm -f /etc/machine-id /var/lib/dbus/machine-id
+
+COPY fixture-init /usr/local/sbin/seal-fixture-init
+RUN chmod 755 /usr/local/sbin/seal-fixture-init
+
+# systemd reads this to know it runs in a container; SIGRTMIN+3 is its clean-shutdown signal.
+ENV container=docker
+STOPSIGNAL SIGRTMIN+3
+EXPOSE 22
+ENTRYPOINT ["/usr/local/sbin/seal-fixture-init"]
+```
+
+`fixture-init`, the entrypoint. systemd does not pass the container's environment to services, so the per-test inputs are applied here before it starts:
+
+```sh
+#!/bin/sh
+set -eu
+
+# Written before systemd starts, so the id is stable across restarts.
+if [ -n "${MACHINE_ID:-}" ]; then
+  printf '%s\n' "$MACHINE_ID" > /etc/machine-id
+elif [ ! -s /etc/machine-id ]; then
+  tr -d '-' < /proc/sys/kernel/random/uuid > /etc/machine-id
+fi
+
+add_key() {
+  # $1 home, $2 owner
+  file="$1/.ssh/authorized_keys"
+  install -d -m 700 -o "$2" -g "$2" "$1/.ssh"
+  touch "$file"
+  grep -qxF "$AUTHORIZED_KEY" "$file" || printf '%s\n' "$AUTHORIZED_KEY" >> "$file"
+  chown "$2:$2" "$file"
+  chmod 600 "$file"
+}
+
+if [ -n "${AUTHORIZED_KEY:-}" ]; then
+  add_key /root root
+  add_key /home/seal seal
+fi
+
+# FIXTURE_LINGER=1 is the host that already lingers; leave it unset to test that Seal enables linger.
+if [ "${FIXTURE_LINGER:-}" = "1" ]; then
+  mkdir -p /var/lib/systemd/linger
+  : > /var/lib/systemd/linger/seal
+fi
+
+exec /lib/systemd/systemd
+```
+
+Start it with `docker run -d -p 127.0.0.1:<port>:22 -e AUTHORIZED_KEY=<public key> <flags> <image>`, where the flags are the first or second choice from the S3 table. Checks that need no login: `docker exec -u seal -e XDG_RUNTIME_DIR=/run/user/1100 <container> systemctl --user is-active <unit>` and `docker exec <container> loginctl show-user seal -p Linger`; `loginctl list-sessions --no-legend` printing nothing proves no login happened.
