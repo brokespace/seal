@@ -31,6 +31,8 @@ export function ItemTabMenu({
         <SplitViewPlacementMenu
           menuKind="context"
           intent="move"
+          // A pane's only tab has nothing to split from.
+          disabled={tabCount <= 1}
           onPlace={(zone) => zone !== 'center' && moveToNewPane(item, zone)}
         />
       ) : null}

@@ -44,10 +44,12 @@ const EDGES: readonly SplitViewZone[] = ['right', 'down', 'left', 'up']
 export function SplitViewPlacementMenu({
   menuKind,
   intent,
+  disabled,
   onPlace
 }: {
   menuKind: 'context' | 'dropdown'
   intent: 'open' | 'move'
+  disabled?: boolean
   onPlace: (zone: SplitViewZone) => void
 }): React.JSX.Element {
   const t = useTranslate()
@@ -68,7 +70,7 @@ export function SplitViewPlacementMenu({
   }
   return (
     <Sub>
-      <SubTrigger data-split-view-placement-menu={intent}>
+      <SubTrigger data-split-view-placement-menu={intent} disabled={disabled}>
         <Columns2 className="size-3.5" />
         {intent === 'open'
           ? t('seal.splitView.menu.openInSplitView', 'Open in split view')
