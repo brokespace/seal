@@ -2,7 +2,6 @@ import { defaultRangeExtractor } from '@tanstack/react-virtual'
 import type { Range, VirtualItem } from '@tanstack/react-virtual'
 import { PINNED_GROUP_KEY } from '../../../../../../shared/sidebar-list/sections/group-keys'
 import type { RenderRow } from '../listing/render-row'
-import { SCROLL_SECTION_MARGIN_VARIABLE } from './scroll-section-insets'
 
 export const GROUP_HEADER_ROW_HEIGHT = 28
 // Why: HostSectionHeader wraps its h-8 (32px) card in pt-1 (4px), so the row is 36px.
@@ -69,13 +68,15 @@ export function estimateRenderRowSize(
   return 116
 }
 
-/** Row offsets are scroll coordinates; the rows' own box starts below the sections sharing the scroll container. */
-export function getVirtualRowOffset(start: number): string {
-  return `calc(${start}px - var(${SCROLL_SECTION_MARGIN_VARIABLE}, 0px))`
+/** Virtual items are in scroll coordinates; rows are placed in their own box, which starts below the sections sharing the scroll container. */
+export function toRowBoxVirtualItem(item: VirtualItem, scrollMargin: number): VirtualItem {
+  return scrollMargin === 0
+    ? item
+    : { ...item, start: item.start - scrollMargin, end: item.end - scrollMargin }
 }
 
 export function getVirtualRowTransform(start: number): string {
-  return `translateY(${getVirtualRowOffset(start)})`
+  return `translateY(${start}px)`
 }
 
 export function getVirtualRowIndex(element: Element): number | null {

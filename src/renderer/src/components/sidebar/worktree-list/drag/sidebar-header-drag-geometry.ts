@@ -20,12 +20,12 @@ export function measureSidebarHeaderDragRect(
   const virtualRowStart = virtualRow
     ? getHeaderDragNumberAttribute(virtualRow, 'data-worktree-virtual-row-start')
     : undefined
+  // Row starts and estimated section ends count from the first row; rows start below the sections sharing the scroll container.
+  const { margin } = readScrollSectionLayout(container)
   const top =
     virtualRow && virtualRowStart !== undefined
-      ? virtualRowStart + rect.top - virtualRow.getBoundingClientRect().top
+      ? margin + virtualRowStart + rect.top - virtualRow.getBoundingClientRect().top
       : rect.top - containerRect.top + container.scrollTop
-  // Section ends are estimated from the first row; rows start below the sections sharing the scroll container.
-  const { margin } = readScrollSectionLayout(container)
   const sectionEnd = getHeaderDragNumberAttribute(element, sectionEndAttribute)
   return {
     top,

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { expect, it } from 'vitest'
-import { getScrollSectionStyleVariables } from '../viewport/scroll-section-insets'
+import { getScrollSectionContainerProps } from '../viewport/scroll-section-insets'
 import { measureSidebarHeaderDragRect } from './sidebar-header-drag-geometry'
 import {
   measureWorktreeRowsAutoscrollRect,
@@ -12,8 +12,12 @@ const LIST_RECT = { left: 0, right: 280, top: 100, bottom: 600 } as DOMRect
 /** A list whose rows start below a 300px Active agents section and the 32px Projects header. */
 function list(scrollTop: number, insets = { leading: 300, pinned: 32 }): HTMLElement {
   const element = document.createElement('div')
-  for (const [name, value] of Object.entries(getScrollSectionStyleVariables(insets))) {
+  const { style, ...attributes } = getScrollSectionContainerProps(insets)
+  for (const [name, value] of Object.entries(style)) {
     element.style.setProperty(name, value)
+  }
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, String(value))
   }
   Object.defineProperty(element, 'scrollTop', { value: scrollTop })
   element.getBoundingClientRect = () => LIST_RECT
@@ -42,13 +46,18 @@ it('clamps a drop line to the scroll offset in a list with no section above its 
   expect(measureWorktreeRowsViewTop(list(1000, { leading: 0, pinned: 0 }))).toBe(1000)
 })
 
-it('ends a project section below the sections sharing the list, where its header is measured', () => {
+it('measures a project header and its section in scroll coordinates, below the sections sharing the list', () => {
   const container = list(0)
+  const row = document.createElement('div')
+  row.setAttribute('data-worktree-virtual-row', '')
+  row.setAttribute('data-worktree-virtual-row-start', '250')
   const header = document.createElement('div')
   header.setAttribute('data-section-end', '382')
-  container.append(header)
+  row.append(header)
+  container.append(row)
 
-  expect(
-    measureSidebarHeaderDragRect(header, container, LIST_RECT, 'data-section-end').sectionBottom
-  ).toBe(714)
+  const rect = measureSidebarHeaderDragRect(header, container, LIST_RECT, 'data-section-end')
+
+  expect(rect.top).toBe(582)
+  expect(rect.sectionBottom).toBe(714)
 })

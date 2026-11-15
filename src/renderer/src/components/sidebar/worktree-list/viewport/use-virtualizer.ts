@@ -19,7 +19,7 @@ import { WORKTREE_SIDEBAR_REVEAL_TOP_INSET } from '../navigation/worktree-sideba
 import type { ProgrammaticScrollMarks } from '@/hooks/programmatic-scroll-marks'
 import { createSidebarSmoothReveal } from './sidebar-smooth-reveal'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
-import { getScrollSectionMargin, getScrollSectionStyleVariables } from './scroll-section-insets'
+import { getScrollSectionContainerProps, getScrollSectionMargin } from './scroll-section-insets'
 import { useScrollSectionInsets } from './use-scroll-section-insets'
 
 export type WorktreeListVirtualizer = ReturnType<typeof useWorktreeListVirtualizer>
@@ -42,14 +42,14 @@ export function useWorktreeListVirtualizer(args: {
     scrollAnchorRef: args.scrollAnchorRef,
     programmaticScrollMarks: args.programmaticScrollMarks
   })
-  const scrollStyle = useMemo<React.CSSProperties>(
-    () => ({
+  const scrollContainerProps = useMemo(() => {
+    const sectionProps = getScrollSectionContainerProps(scrollSectionInsets)
+    return {
+      ...sectionProps,
       // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
-      overflowAnchor: 'none',
-      ...getScrollSectionStyleVariables(scrollSectionInsets)
-    }),
-    [scrollSectionInsets]
-  )
+      style: { overflowAnchor: 'none', ...sectionProps.style } as React.CSSProperties
+    }
+  }, [scrollSectionInsets])
   const stickyHeaderIndexes = useMemo(() => getStickyHeaderIndexes(renderRows), [renderRows])
   const activeStickyHeaderIndexRef = useRef<number | null>(null)
   const activeStickyHostIndexRef = useRef<number | null>(null)
@@ -178,7 +178,7 @@ export function useWorktreeListVirtualizer(args: {
   return {
     virtualizer,
     scrollSectionInsets,
-    scrollStyle,
+    scrollContainerProps,
     smoothScrollRevision,
     programmaticScrollMarks: args.programmaticScrollMarks,
     rowIndexByKey: args.projection.rowIndexByKey,

@@ -39,6 +39,8 @@ import { renderWorktreeVirtualRow } from '../rows/virtual-row-dispatch'
 import { SidebarScrollSectionSlots } from '../../sidebar-scroll-sections'
 import { SIDEBAR_KEYBOARD_SECTION_PROPS } from '../../sidebar-section-keyboard-handoff'
 import { cn } from '@/lib/class-names'
+import { toRowBoxVirtualItem } from './virtual-rows'
+import { getScrollSectionMargin } from './scroll-section-insets'
 
 const EMPTY_HOST_OPTIONS: NonNullable<VirtualizedWorktreeViewportProps['hostOptions']> = []
 
@@ -351,6 +353,8 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     onRowPointerDown: handleWorktreeRowPointerDown
   })
 
+  const scrollMargin = getScrollSectionMargin(virtualization.scrollSectionInsets)
+
   return (
     <div
       data-worktree-sidebar-container
@@ -382,7 +386,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
         onDragOver={nativeDrag.handleWorktreeDragOver}
         onDrop={nativeDrag.handleWorktreeDrop}
         className="worktree-sidebar-scrollbar h-full overflow-y-auto overflow-x-hidden pl-1 scrollbar-sleek outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset pt-px"
-        style={virtualization.scrollStyle}
+        {...virtualization.scrollContainerProps}
       >
         <SidebarScrollSectionSlots />
         <div
@@ -394,11 +398,19 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
         >
           {renderWorktreeSidebarDropIndicators({
             headerDrag,
-            worktreeDragState: runtime.worktreeDragState
+            worktreeDragState: runtime.worktreeDragState,
+            scrollMargin
           })}
           {virtualItems.map((vItem) => {
             const row = renderRows[vItem.index]
-            return row ? renderWorktreeVirtualRow(rowContext, row, vItem, t) : null
+            return row
+              ? renderWorktreeVirtualRow(
+                  rowContext,
+                  row,
+                  toRowBoxVirtualItem(vItem, scrollMargin),
+                  t
+                )
+              : null
           })}
         </div>
       </div>

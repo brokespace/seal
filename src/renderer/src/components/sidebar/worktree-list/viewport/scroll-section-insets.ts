@@ -5,9 +5,10 @@ export type ScrollSectionInsets = {
   pinned: number
 }
 
-/** Set on the scroll container; rows and pinned group headers position themselves against them. */
-export const SCROLL_SECTION_MARGIN_VARIABLE = '--sidebar-scroll-margin'
-export const SCROLL_SECTION_STICKY_INSET_VARIABLE = '--sidebar-sticky-inset'
+/** Set on the scroll container; pinned group headers stick below it. */
+const SCROLL_SECTION_STICKY_INSET_VARIABLE = '--sidebar-sticky-inset'
+// Why an attribute: an inherited variable would restyle every element in the list whenever a section above the rows resizes.
+const SCROLL_SECTION_MARGIN_ATTRIBUTE = 'data-sidebar-scroll-margin'
 
 export const NO_SCROLL_SECTION_INSETS: ScrollSectionInsets = { leading: 0, pinned: 0 }
 
@@ -46,19 +47,21 @@ export function readScrollSectionLayout(scrollContainer: HTMLElement): {
   margin: number
   pinned: number
 } {
-  const read = (variable: string): number =>
-    Number.parseFloat(scrollContainer.style.getPropertyValue(variable)) || 0
   return {
-    margin: read(SCROLL_SECTION_MARGIN_VARIABLE),
-    pinned: read(SCROLL_SECTION_STICKY_INSET_VARIABLE)
+    margin: Number(scrollContainer.getAttribute(SCROLL_SECTION_MARGIN_ATTRIBUTE)) || 0,
+    pinned:
+      Number.parseFloat(
+        scrollContainer.style.getPropertyValue(SCROLL_SECTION_STICKY_INSET_VARIABLE)
+      ) || 0
   }
 }
 
-export function getScrollSectionStyleVariables(
-  insets: ScrollSectionInsets
-): Record<string, string> {
+export function getScrollSectionContainerProps(insets: ScrollSectionInsets): {
+  style: Record<string, string>
+  [SCROLL_SECTION_MARGIN_ATTRIBUTE]: number
+} {
   return {
-    [SCROLL_SECTION_MARGIN_VARIABLE]: `${getScrollSectionMargin(insets)}px`,
-    [SCROLL_SECTION_STICKY_INSET_VARIABLE]: `${insets.pinned}px`
+    style: { [SCROLL_SECTION_STICKY_INSET_VARIABLE]: `${insets.pinned}px` },
+    [SCROLL_SECTION_MARGIN_ATTRIBUTE]: getScrollSectionMargin(insets)
   }
 }

@@ -1,3 +1,4 @@
+import { readScrollSectionLayout } from '../viewport/scroll-section-insets'
 import type { DraggedWorktreeCopies } from './dragged-worktree-copies'
 import type { WorktreeDragGroup } from './worktree-manual-order'
 import type { WorktreeDragUnitGroup } from './worktree-drag-units'
@@ -138,6 +139,8 @@ export function getWorktreeSidebarDragRectsForGroup(
   groupKey: string
 ): WorktreeSidebarDragRect[] {
   const containerRect = container.getBoundingClientRect()
+  // Row starts count from the first row; rows start below the sections sharing the scroll container.
+  const { margin } = readScrollSectionLayout(container)
   const rects: WorktreeSidebarDragRect[] = []
   container.querySelectorAll<HTMLElement>('[data-worktree-drag-id]').forEach((element) => {
     if (element.getAttribute('data-worktree-drag-group-key') !== groupKey) {
@@ -155,7 +158,7 @@ export function getWorktreeSidebarDragRectsForGroup(
     const virtualRowStart = getWorktreeVirtualRowStart(virtualRow)
     const top =
       virtualRow && virtualRowStart !== null
-        ? virtualRowStart + rect.top - virtualRow.getBoundingClientRect().top
+        ? margin + virtualRowStart + rect.top - virtualRow.getBoundingClientRect().top
         : rect.top - containerRect.top + container.scrollTop
     rects.push({
       worktreeId,
