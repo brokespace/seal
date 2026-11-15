@@ -22,7 +22,7 @@ import {
   revealItemInSplitView
 } from '../../split-view/split-view-commands'
 import { splitViewStore } from '../../split-view/split-view-store'
-import { splitViewItemKey } from '../../split-view/split-view-types'
+import { findSplitViewPaneOfKey, splitViewItemKey } from '../../split-view/split-view-types'
 import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
@@ -90,6 +90,21 @@ export function closeLiveSessionView(sessionId: string): void {
   ) {
     ui.closeAgentSessionTabs()
   }
+}
+
+/** "Open in new tab": a kept tab. In the grid it lands beside the focused pane's preview. */
+function openLiveSessionInNewTab(sessionId: string): void {
+  const id = liveSessionRegistryStore.currentId(sessionId)
+  const item = { kind: 'session', sessionId: id } as const
+  const key = splitViewItemKey(item)
+  const grid = splitViewStore.getState()
+  if (grid.layout && findSplitViewPaneOfKey(grid, key) === null) {
+    liveSessionMarksStore.reveal(id)
+    openItemsInSplitView([item], 'center')
+    return
+  }
+  openLiveSessionView(id, 'tab')
+  keepSplitViewItem(key)
 }
 
 /** A click on a session's row, on any surface: a preview tab, kept on double-click. */
@@ -201,7 +216,8 @@ function openMachine(session: LiveSession): void {
 
 /** The one implementation every session menu, shortcut and palette entry runs. */
 export const liveSessionMenuEffects: LiveSessionMenuEffects = {
-  open: openLiveSessionView,
+  open: (sessionId, mode) =>
+    mode === 'tab' ? openLiveSessionInNewTab(sessionId) : openLiveSessionView(sessionId, mode),
   focus: focusLiveSessionView,
   askRename: (session) => liveSessionDialogStore.show({ kind: 'rename', session }),
   askMessage: (session) => liveSessionDialogStore.show({ kind: 'message', session }),
