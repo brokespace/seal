@@ -110,6 +110,8 @@ export function useWorktreeListKeyboardNavigation(args: {
         step.wrapped &&
         offerSidebarSectionKeyboardCursor(getWorktreeRowsSection(scrollRef.current), direction)
       ) {
+        // A held key switches only where it stops, and it left these rows: a later switch would pull focus into the terminal.
+        dropPreview()
         return
       }
       goToRow(step.row, isRepeat, selectInList)
@@ -121,6 +123,7 @@ export function useWorktreeListKeyboardNavigation(args: {
       pinnedDisplayPolicy,
       focusedWorktree,
       focusedWorkspaceExecutionHostId,
+      dropPreview,
       goToRow,
       previewRef,
       scrollRef

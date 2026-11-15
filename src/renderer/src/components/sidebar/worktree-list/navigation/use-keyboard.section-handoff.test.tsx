@@ -134,6 +134,23 @@ it('moves between project rows without involving the section above', () => {
   expect(activatedWorktreeIds()).toEqual(['top'])
 })
 
+it('switches to no project row when a held key carries the cursor into the section above', () => {
+  vi.useFakeTimers()
+  try {
+    useAppStore.setState({ activeWorktreeId: 'middle' })
+    render(<SidebarList activeWorktreeId="middle" onEnterAgents={() => true} />)
+
+    fireEvent.keyDown(list(), { key: 'ArrowUp', repeat: true })
+    fireEvent.keyDown(list(), { key: 'ArrowUp', repeat: true })
+    vi.advanceTimersByTime(1000)
+    fireEvent.keyUp(window, { key: 'ArrowUp' })
+
+    expect(activatedWorktreeIds()).toEqual([])
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
 it('takes the cursor from the section above on its first project row', () => {
   render(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
 
