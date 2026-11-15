@@ -55,6 +55,12 @@ the agent is known to be gone (layer 5). `errored` outlasts its agent: with the 
 finished session that ended in an error. `your-turn` and `idle` with no process are an agent that
 just quit, and read as finished.
 
+A question asked through the question tool also outlasts its agent. The transcript holds it open
+until an answer or the end of the turn is written after it, so the session stays `waiting-input`
+for as long as the transcript says so, whether or not a process is seen. Answering it from Seal
+resumes the session. A turn that only ended on a question (layer 6) is over in the transcript, so
+with no process it reads as finished like any other ended turn.
+
 `statusDetail` says what the status is about: the command or file (`Bash: pnpm test`), the call a
 prompt holds (`Allow Bash: rm -rf build?`), the question asked, the error. `statusSource` says
 which signal decided: `seal-hooks`, `agent-hooks`, `screen`, `process`, `transcript`,
@@ -79,7 +85,7 @@ The newest turn of the session's own log: Claude Code's `~/.claude/projects/**.j
 | End of turn (`turn_duration`, `stop_hook_summary`, `task_complete`)                      | `turn-ended`         | `your-turn`, or `waiting-input` (layer 5) |
 | End of turn right after an API error record, `turn_aborted` with an error                | `errored`            | `errored`                                 |
 | No turn at all                                                                           | `unknown`            | `idle`                                    |
-| Process gone                                                                             |                      | `done`                                    |
+| Process gone, and the newest turn is not an unanswered question                          |                      | `done`                                    |
 
 A reply with no end-of-turn record is still `working` for 5 seconds: a tool call may follow.
 
@@ -143,8 +149,10 @@ For a session in a tmux pane or a Seal terminal the scan reads the visible scree
   transcript. An agent killed mid-turn or at a prompt never clears its file, so a `working` or
   `needs` state counts only while the agent may still be there. Once the host's `ps` has listed
   its processes (`@@PS`), the agent is not among them and the transcript has gone quiet, the file
-  is ignored and the session reads as its transcript says: `done`. A host whose `ps` cannot list
-  processes proves nothing, and the hook stands.
+  is ignored and the session reads as its transcript says: `done`, or `waiting-input` when the
+  transcript still holds an unanswered question. A host whose `ps` cannot list processes proves
+  nothing, and the hook stands. A `done` or `idle` left in the file does not end a question the
+  transcript still holds.
 
 ### 6. Did the last reply ask a question?
 
@@ -195,8 +203,8 @@ Read top to bottom; the first row that matches wins.
 | 2   | Other dialog on screen while the turn is busy                          | `needs-permission`                   | `screen`     |
 | 3   | Seal pane hook says a permission or question is pending                | `needs-permission` / `waiting-input` | `seal-hooks` |
 | 4   | Transcript: the turn failed                                            | `errored`                            | `transcript` |
-| 5   | Process gone                                                           | `done`                               | `transcript` |
-| 6   | Transcript: question tool pending                                      | `waiting-input`                      | `transcript` |
+| 5   | Transcript: question tool pending, with or without a process           | `waiting-input`                      | `transcript` |
+| 6   | Process gone                                                           | `done`                               | `transcript` |
 | 7   | Transcript: subagent launch pending                                    | `waiting-subagent`                   | `transcript` |
 | 8   | Pending shell call, its command process is running for 3 s             | `running-shell`                      | `process`    |
 | 9   | Pending shell or edit call, nothing running, past the prompt threshold | `needs-permission`                   | `process`    |
@@ -222,6 +230,9 @@ for the new sources (`live-session-status-compat.ts`).
   inferred from the process tree after 5–20 s rather than read at once, and a prompt that holds a
   subagent launch reads as `waiting-subagent`.
 - A host whose `ps` cannot list processes gets no `running-shell`; such a session stays `working`.
+- An agent killed while its question was open never writes an end to its transcript, so the
+  session keeps asking until it is answered, removed from Seal, or its transcript is 12 hours old
+  and leaves the scan.
 - Providers other than Claude Code and Codex have no session record; they keep their pane status.
 
 ## How this was verified

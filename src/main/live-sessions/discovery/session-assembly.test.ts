@@ -253,4 +253,40 @@ describe('assembleHostSessions', () => {
     expect(statusWith('needs', false)).toBe('needs-permission')
     expect(statusWith('working', false)).toBe('working')
   })
+
+  it('keeps an unanswered question waiting on the user when its agent is not seen', () => {
+    const id = '99999999-9999-4999-8999-999999999999'
+    const sessionWith = (
+      phase: SummarizedTranscript['summary']['phase'],
+      hookState: string | null
+    ) =>
+      assembleHostSessions({
+        machine,
+        output: {
+          processes: [],
+          panes: [],
+          hookStates: hookState
+            ? [
+                {
+                  path: '/h/a.json',
+                  text: JSON.stringify({ id, state: hookState, updated: (NOW - 600_000) / 1000 })
+                }
+              ]
+            : [],
+          hostNowMs: NOW,
+          processesListed: true
+        },
+        transcripts: [transcript(id, '/srv/app', 600_000, phase)],
+        nowMs: NOW
+      })[0]
+    expect(sessionWith('input-requested', null)).toMatchObject({
+      alive: false,
+      status: 'waiting-input',
+      inputRoutes: [{ kind: 'resume' }]
+    })
+    expect(sessionWith('input-requested', 'needs').status).toBe('waiting-input')
+    expect(sessionWith('input-requested', 'idle').status).toBe('waiting-input')
+    // Answered: the transcript moved on to a turn that ended.
+    expect(sessionWith('turn-ended', null).status).toBe('done')
+  })
 })
