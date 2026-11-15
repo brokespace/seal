@@ -1,8 +1,10 @@
-import type {
-  LiveSession,
-  LiveTranscriptCursor,
-  LiveTranscriptDelta,
-  LiveTranscriptPage
+import {
+  liveSessionProviderOf,
+  type LiveSession,
+  type LiveSessionProvider,
+  type LiveTranscriptCursor,
+  type LiveTranscriptDelta,
+  type LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
@@ -43,9 +45,12 @@ export class LiveTranscriptStreams {
   }
 
   /** `transcriptId` is a session id, or a subagent's (`subagentTranscriptId`): its own transcript. */
-  source(
-    transcriptId: string
-  ): { source: TranscriptSource; session: LiveSession; decode: TranscriptDecodeOptions } | null {
+  source(transcriptId: string): {
+    source: TranscriptSource
+    session: LiveSession
+    provider: LiveSessionProvider
+    decode: TranscriptDecodeOptions
+  } | null {
     const { sessionId, subagentId } = parseSubagentTranscriptId(transcriptId)
     const session = this.sessions.get(sessionId)
     const host = session ? this.sessions.host(session.machine.hostId) : null
@@ -55,11 +60,13 @@ export class LiveTranscriptStreams {
         ? session?.transcriptPath
         : session?.activity?.subagents.find((subagent) => subagent.id === subagentId)
             ?.transcriptPath
-    if (!session || !path || !host) {
+    const provider = session ? liveSessionProviderOf(session.provider) : null
+    if (!session || !path || !host || !provider) {
       return null
     }
     return {
       session,
+      provider,
       source: transcriptSourceFor(host, path),
       decode: { subagent: subagentId !== null }
     }
@@ -74,14 +81,7 @@ export class LiveTranscriptStreams {
     if (!found) {
       return { sessionId, messages: [], cursor: 0, start: 0, more: false }
     }
-    return readTranscriptPage(
-      found.source,
-      found.session.provider,
-      sessionId,
-      before,
-      limit,
-      found.decode
-    )
+    return readTranscriptPage(found.source, found.provider, sessionId, before, limit, found.decode)
   }
 
   /** Everything written from `cursor` to the file's end, for a reader that keeps its own place. */
@@ -94,12 +94,7 @@ export class LiveTranscriptStreams {
     let at = cursor
     // Bounded: a transcript that outgrows this many reads is picked up from here next time.
     for (let reads = 0; found && reads < MAX_SINCE_READS; reads++) {
-      const read = await readTranscriptForward(
-        found.source,
-        found.session.provider,
-        at,
-        found.decode
-      )
+      const read = await readTranscriptForward(found.source, found.provider, at, found.decode)
       if (read.shrank) {
         return { messages: [], cursor, shrank: true }
       }
@@ -134,7 +129,7 @@ export class LiveTranscriptStreams {
         try {
           const read = await readTranscriptForward(
             found.source,
-            found.session.provider,
+            found.provider,
             cursor,
             found.decode
           )

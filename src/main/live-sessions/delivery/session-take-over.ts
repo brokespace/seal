@@ -1,6 +1,7 @@
-import type {
-  LiveSession,
-  LiveTakeOverResult
+import {
+  liveSessionProviderOf,
+  type LiveSession,
+  type LiveTakeOverResult
 } from '../../../shared/live-sessions/live-session-types'
 import { codexHomeOf } from '../discovery/agent-processes'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
@@ -31,7 +32,8 @@ export async function takeOverSession(
     return { ok: false, reason: 'not_external' }
   }
   // Without the transcript's id there is nothing for `--resume` to reopen.
-  if (session.providerSessionId.startsWith('pid-')) {
+  const provider = liveSessionProviderOf(session.provider)
+  if (!provider || session.providerSessionId.startsWith('pid-')) {
     return { ok: false, reason: 'not_resumable' }
   }
   if (session.alive && session.pid !== null) {
@@ -42,7 +44,7 @@ export async function takeOverSession(
   }
   return {
     ok: true,
-    provider: session.provider,
+    provider,
     providerSessionId: session.providerSessionId,
     cwd: session.cwd,
     machine: session.machine,
