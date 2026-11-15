@@ -5,6 +5,7 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import type { SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import { ItemTabStrip, type ItemTabCommands } from './ItemTabStrip'
+import { focusWorkspacePaneContent } from './pane-workspace-keyboard-focus'
 import {
   closeOtherSplitViewItems,
   closeSplitViewItems,
@@ -45,7 +46,11 @@ const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-s
  * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
  * it in the pane that lost focus, and closing the tab that held it leaves it nowhere.
  */
-function bringKeyboardFocusIntoPane(paneId: string, pane: HTMLElement): void {
+function bringKeyboardFocusIntoPane(
+  paneId: string,
+  pane: HTMLElement,
+  worktreeId: string | null
+): void {
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null
   const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
@@ -60,9 +65,11 @@ function bringKeyboardFocusIntoPane(paneId: string, pane: HTMLElement): void {
   const body = pane.querySelector<HTMLElement>('[data-split-view-pane-body]')
   if (body) {
     body.focus({ preventScroll: true })
-  } else {
-    // A workspace's terminal or editor takes focus by itself once its pane is the focused one.
-    owner?.blur()
+    return
+  }
+  owner?.blur()
+  if (worktreeId) {
+    focusWorkspacePaneContent(paneId, worktreeId)
   }
 }
 
@@ -89,12 +96,13 @@ export function SplitViewPane({
   const title = useSplitViewItemTitle(active, resolved)
   const commands = useMemo(() => paneTabCommands(paneId), [paneId])
   const activeKey = pane?.activeKey ?? null
+  const worktreeId = active?.kind === 'workspace' ? active.worktreeId : null
   const paneRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (focused && paneRef.current) {
-      bringKeyboardFocusIntoPane(paneId, paneRef.current)
+      bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId)
     }
-  }, [focused, paneId, activeKey])
+  }, [focused, paneId, activeKey, worktreeId])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')

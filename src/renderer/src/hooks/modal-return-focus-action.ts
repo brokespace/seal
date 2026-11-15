@@ -19,6 +19,17 @@ export type ModalReturnFocusAction =
   | { kind: 'surface' }
   | { kind: 'none' }
 
+/** Where keyboard input goes in each kind of workspace content, first match wins. */
+export const WORKSPACE_FOCUS_SELECTORS = {
+  editor: [
+    '.monaco-editor textarea',
+    '.rich-markdown-editor[contenteditable="true"]',
+    '.markdown-preview'
+  ],
+  simulator: ['[data-orca-emulator-frame="true"] [tabindex]'],
+  surface: ['.xterm-helper-textarea', '.monaco-editor textarea']
+} as const satisfies Record<string, readonly string[]>
+
 // Route webContents focus through browser requests; use surface-specific DOM focus elsewhere so hidden xterm cannot steal it.
 export function resolveModalReturnFocusAction(
   captured: ModalReturnFocusSurface | null
