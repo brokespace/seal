@@ -147,7 +147,9 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     if (row) {
       // Why not the browser's focus scroll: it cannot see the header pinned over the rows.
       row.focus({ preventScroll: true })
-      revealInSidebarScrollSection(row, pinned.current)
+      // The first row brings the label above it into view, as at the top of a list of its own.
+      const target = sessionId === order[0] ? (list.current ?? row) : row
+      revealInSidebarScrollSection(target, pinned.current)
     }
   }
   // Arrow keys run through the whole sidebar list: the Projects rows hand the cursor back here.
