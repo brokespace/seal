@@ -1,3 +1,4 @@
+import { summarizeMachineGpus, type MachineGpuReadings } from '../machines/machine-gpu-types'
 import type { MachineMetrics } from '../machines/machine-types'
 
 type LoadReadings = Pick<MachineMetrics, 'loadAverage' | 'cpuCount' | 'cpuUsagePercent'>
@@ -33,4 +34,11 @@ export function machineDiskUsedPercent(
   return metrics?.diskTotalBytes && metrics.diskAvailableBytes != null
     ? percentOf(metrics.diskTotalBytes - metrics.diskAvailableBytes, metrics.diskTotalBytes)
     : undefined
+}
+
+/** Mean utilization across the machine's GPUs; undefined with no GPU, or none that reports it. */
+export function machineGpuUtilizationPercent(
+  metrics: { gpus?: readonly MachineGpuReadings[] } | null | undefined
+): number | undefined {
+  return summarizeMachineGpus(metrics?.gpus ?? []).utilizationPercent ?? undefined
 }

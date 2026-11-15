@@ -8,6 +8,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineId, MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import { MachineGpuListMeter } from '../detail/MachineGpuMeter'
 import {
   MachineMeter,
   MachineStatusDot,
@@ -96,6 +97,7 @@ function MachineListItem({
             />
           </div>
         ) : null}
+        {showMeters && metrics.gpus?.length ? <MachineGpuListMeter gpus={metrics.gpus} /> : null}
       </button>
     </li>
   )

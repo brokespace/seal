@@ -39,6 +39,13 @@ function loadLabel(machine: HomeMachine, t: Translate): string | null {
       })
     )
   }
+  if (machine.gpuUtilizationPercent !== undefined) {
+    parts.push(
+      t('home.overview.machines.gpu', 'GPU {{percent}}%', {
+        percent: Math.round(machine.gpuUtilizationPercent)
+      })
+    )
+  }
   return parts.length > 0 ? parts.join(' · ') : null
 }
 

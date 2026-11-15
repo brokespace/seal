@@ -7,10 +7,11 @@ import { cn } from '@/lib/class-names'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { MachineDiskDetail } from './MachineDiskDetail'
+import { MachineGpuDetail } from './MachineGpuDetail'
 import { MachineCpuDetail, MachineMemoryDetail } from './MachineProcessDetails'
 import type { MachineResourceKind } from './machine-resource-requests'
 
-/** What a CPU, RAM or Disk meter opens: who is using that resource, and what can be done about it. */
+/** What a CPU, RAM, Disk or GPU meter opens: who is using that resource, and what can be done about it. */
 export function MachineResourcePanel({
   machine,
   metrics,
@@ -30,7 +31,9 @@ export function MachineResourcePanel({
       ? t('auto.components.machines.resources.cpuTitle', 'CPU: busiest processes')
       : kind === 'memory'
         ? t('auto.components.machines.resources.memoryTitle', 'Memory: largest processes')
-        : t('auto.components.machines.resources.diskTitle', 'Disk: usage and cleanup')
+        : kind === 'gpu'
+          ? t('auto.components.machines.resources.gpuTitle', 'GPU: readings and processes')
+          : t('auto.components.machines.resources.diskTitle', 'Disk: usage and cleanup')
   return (
     <section
       className="flex min-h-0 flex-1 flex-col"
@@ -72,6 +75,8 @@ export function MachineResourcePanel({
           <MachineCpuDetail machine={machine} metrics={metrics} />
         ) : kind === 'memory' ? (
           <MachineMemoryDetail machine={machine} metrics={metrics} />
+        ) : kind === 'gpu' ? (
+          <MachineGpuDetail machine={machine} metrics={metrics} />
         ) : (
           <MachineDiskDetail machine={machine} metrics={metrics} onReveal={onReveal} />
         )}

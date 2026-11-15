@@ -165,6 +165,9 @@ switch on its row picks the one Seal uses. See [machines.md](machines.md).
 - [ ] File explorer on local, SSH and paired-runtime machines: browse, upload (drag in), download/drag out, URL download, rename, delete, new folder, previews (image, PDF, markdown, code); transfers panel shows progress.
 - [ ] A Windows SSH host reports stats and supports URL download.
 - [ ] A terminal opens on every machine, over SSH or the Seal server.
+- [ ] GPUs ([details](./machines-gpu.md)): a machine with NVIDIA GPUs (kessel-ml) shows a cell per GPU and `N GPUs · % · used / total` in the Machines list, a **GPU** meter on its page, and `GPU %` on Home and on the phone; a machine without a GPU shows none of it. Compare the figures with `nvidia-smi` on the machine.
+- [ ] The **GPU** detail shows a card per GPU (utilization, memory, temperature, power, fan, clocks) whose lines grow without anything being pressed, and stays readable with 8 GPUs in a narrow window.
+- [ ] The GPU detail lists every process `nvidia-smi` lists, with its GPUs, GPU memory, user, command line and, inside Docker, its container. **Stop** asks first and sends SIGTERM; **Force kill** asks first and sends SIGKILL; the row leaves the list. Check with `nvidia-smi` and `ps` on the machine.
 
 ### Multi-account
 
