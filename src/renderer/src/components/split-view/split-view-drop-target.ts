@@ -13,18 +13,18 @@ import {
 } from './split-view-commands'
 import { selectItemViewShown } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
+import {
+  SPLIT_VIEW_DROP_AREA_ATTRIBUTE,
+  SPLIT_VIEW_PANE_ATTRIBUTE,
+  fitSplitViewZoneToSize
+} from './split-view-pane-size'
 import { splitViewItemKey, type SplitViewItem, type SplitViewZone } from './split-view-types'
 
-/** Marks the main content area: the one implicit pane of single view, and the bounds of every drop. */
-export const SPLIT_VIEW_DROP_AREA_ATTRIBUTE = 'data-split-view-drop-area'
-export const SPLIT_VIEW_PANE_ATTRIBUTE = 'data-split-view-pane-id'
 /** On a strip: its pane id, or empty for the agent-session page's strip in single view. */
 export const ITEM_TAB_STRIP_ATTRIBUTE = 'data-item-tab-strip'
 export const ITEM_TAB_KEY_ATTRIBUTE = 'data-item-tab-key'
 
 const EDGE_SHARE = 0.3
-const MIN_SPLIT_WIDTH_PX = 2 * 240
-const MIN_SPLIT_HEIGHT_PX = 2 * 160
 
 type Rect = { left: number; top: number; width: number; height: number }
 
@@ -177,17 +177,12 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   }
   const paneId = mode === 'grid' ? pane.getAttribute(SPLIT_VIEW_PANE_ATTRIBUTE) : null
   const rect = pane.getBoundingClientRect()
-  let zone: SplitViewZone = resolveDropZone(rect, { x, y }, EDGE_SHARE)
-  const horizontal = zone === 'left' || zone === 'right'
+  let zone = fitSplitViewZoneToSize(resolveDropZone(rect, { x, y }, EDGE_SHARE), rect)
   const dragged = new Set(items.map(splitViewItemKey))
   const held = paneKeys(paneId)
   const leavesNothing = held.every((key) => dragged.has(key))
-  // Too small to halve, or nothing would be left to split from: the drop adds tabs instead.
-  if (
-    zone !== 'center' &&
-    (leavesNothing ||
-      (horizontal ? rect.width < MIN_SPLIT_WIDTH_PX : rect.height < MIN_SPLIT_HEIGHT_PX))
-  ) {
+  // Nothing would be left to split from: the drop adds tabs instead.
+  if (leavesNothing) {
     zone = 'center'
   }
   if (zone === 'center' && [...dragged].every((key) => held.includes(key))) {

@@ -14,7 +14,7 @@ import {
   placeItemsInSplitView,
   toggleSplitViewPaneMaximized
 } from './split-view-commands'
-import { SPLIT_VIEW_PANE_ATTRIBUTE } from './split-view-drop-target'
+import { SPLIT_VIEW_PANE_ATTRIBUTE } from './split-view-pane-size'
 import { useSplitView } from './split-view-store'
 import { activeSplitViewItem, splitViewItemKey } from './split-view-types'
 import { SplitViewPaneBody } from './SplitViewPaneBody'

@@ -21,6 +21,7 @@ import {
   setSplitViewRatio,
   toggleSplitViewMaximize
 } from './split-view-layout-transitions'
+import { fitSplitViewZoneToPane } from './split-view-pane-size'
 import { createSplitViewPaneId, splitViewStore } from './split-view-store'
 import {
   activeSplitViewItem,
@@ -216,6 +217,11 @@ export function placeItemsInSplitView(
   }
   const newPaneId = createSplitViewPaneId()
   const seedPaneId = createSplitViewPaneId()
+  const before = splitViewStore.getState()
+  const zone = fitSplitViewZoneToPane(
+    place.zone,
+    before.layout ? (place.paneId ?? before.focusedPaneId) : null
+  )
   splitViewStore.update((state) => {
     let seeded = state
     let paneId = place.paneId ?? state.focusedPaneId
@@ -232,7 +238,7 @@ export function placeItemsInSplitView(
     return placeSplitViewItems(
       seeded,
       items,
-      { paneId, zone: place.zone, index: place.index },
+      { paneId, zone, index: place.index },
       { newPaneId, activeKey }
     )
   })
