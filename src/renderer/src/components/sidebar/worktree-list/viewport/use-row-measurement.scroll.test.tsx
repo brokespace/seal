@@ -158,14 +158,14 @@ function setup(interior = false) {
   return { scroller, model, mount, mounted, rowConnectedAtCleanup, view }
 }
 
-it('drops removed rows from measurement only after React has taken their nodes out', async () => {
+it('sweeps a row removed at rest out of measurement once React has taken its node out', async () => {
   const { mounted, rowConnectedAtCleanup, view } = setup()
   rowConnectedAtCleanup.length = 0
   // React detaches a row's ref while its node is still in the list, and removes the node right after.
   view.result.current.measureVirtualRowElement(null)
   mounted.remove()
   await Promise.resolve()
-  expect(rowConnectedAtCleanup).toEqual([false])
+  expect(rowConnectedAtCleanup).toEqual([true, false])
 })
 
 it('leaves height-only scroll correction to the virtualizer instead of restoring an older DOM position', () => {

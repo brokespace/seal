@@ -76,8 +76,11 @@ export function useVirtualRowMeasurementSync(args: {
   const measureVirtualRowElement = useCallback(
     (element: HTMLDivElement | null) => {
       if (!element) {
-        // Why later: React detaches the ref before it removes the node, and a removed row still observed reports 0px and trips the ResizeObserver loop error.
-        queueMicrotask(() => virtualizer.measureElement(null))
+        virtualizer.measureElement(null)
+        if (!virtualizer.isScrolling) {
+          // Why again: React removes the node after detaching its ref, and at rest no later removal sweeps it out; a removed row still observed reports 0px and trips the ResizeObserver loop error.
+          queueMicrotask(() => virtualizer.measureElement(null))
+        }
         return
       }
       if (!isCurrentVirtualRowElement(element)) {
