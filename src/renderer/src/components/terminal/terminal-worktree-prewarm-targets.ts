@@ -51,3 +51,23 @@ export function resolveReattachPtyIds(tab: TerminalTab, state: AppState): string
     pane.ptyId ? [pane.ptyId] : []
   )
 }
+
+/** Each tab's sessions the daemon confirms alive. */
+export async function confirmLiveTabSessions(
+  tabs: readonly TerminalTab[],
+  state: AppState
+): Promise<Map<string, ReadonlySet<string>>> {
+  const confirmedByTab = await Promise.all(
+    tabs.map(async (tab) => {
+      // Mounting reconnects every leaf, so each leaf's session must be live, not just the tab's.
+      const ptyIds = resolveReattachPtyIds(tab, state)
+      const answers = await Promise.all(
+        ptyIds.map((ptyId) => window.api.pty.hasPty(ptyId).catch(() => null))
+      )
+      // Only an authoritative true counts: null (unknown, remote runtime) must not authorize a reattach.
+      const confirmed = new Set(ptyIds.filter((_ptyId, index) => answers[index] === true))
+      return [tab.id, confirmed] as const
+    })
+  )
+  return new Map(confirmedByTab)
+}

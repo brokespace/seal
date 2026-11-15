@@ -5,7 +5,10 @@ import { ProjectOverviewBody } from '@/components/project-overview/ProjectOvervi
 import { WslHostStoppedWorkspaceNotice } from '@/components/wsl-host-stopped/WslHostStoppedWorkspaceNotice'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
-import { requestBackgroundTerminalWorktreeMount } from '../terminal/background-terminal-worktree-mount'
+import {
+  canAdmitTerminalTabsForStartup,
+  requestBackgroundTerminalWorktreeMount
+} from '../terminal/background-terminal-worktree-mount'
 import { registerTabGroupBody } from '../tab-group/tab-group-body-geometry'
 import { resolveReattachableTabIds } from './pane-workspace-reattach'
 import { useWorkspaceSurfaceInPane } from './pane-workspace-surfaces'
@@ -63,8 +66,8 @@ function WorkspaceSlot({
   const t = useTranslate()
   const slotRef = useRef<HTMLDivElement>(null)
   const surfaceShown = useWorkspaceSurfaceInPane(worktreeId)
-  // Before the saved session is back there are no tabs to ask the daemon about.
-  const sessionReady = useAppStore((state) => state.workspaceSessionReady)
+  // Until startup publishes PTY ownership, a hidden mount could duplicate shells.
+  const sessionReady = useAppStore(canAdmitTerminalTabsForStartup)
   const [awaitsFocus, setAwaitsFocus] = useState(false)
 
   useLayoutEffect(

@@ -21,6 +21,7 @@ import { TERMINAL_TAB_COLD_PARK_DELAY_MS } from '../terminal-pane/parking/retent
 import type { TerminalColdActivationController } from '../terminal-cold-activation'
 import { hasRetainedWorkspaceTerminalFrames } from './terminal-worktree-retained-frames'
 import {
+  confirmLiveTabSessions,
   resolveReattachPtyIds,
   scheduleTerminalPrewarmStage,
   selectRevealTerminalTabIds,
@@ -251,19 +252,7 @@ export function useTerminalWorktreePrewarm(controller: TerminalColdActivationCon
     const confirmSessionsThenLease = (worktreeId: string, tabs: readonly TerminalTab[]): void => {
       const token = Symbol(worktreeId)
       livenessChecks.set(worktreeId, token)
-      const state = useAppStore.getState()
-      void Promise.all(
-        tabs.map(async (tab) => {
-          // Mounting reconnects every leaf, so each leaf's session must be live, not just the tab's.
-          const ptyIds = resolveReattachPtyIds(tab, state)
-          const answers = await Promise.all(
-            ptyIds.map((ptyId) => window.api.pty.hasPty(ptyId).catch(() => null))
-          )
-          // Only an authoritative true counts: null (unknown, remote runtime) must not authorize a reattach.
-          const confirmed = new Set(ptyIds.filter((_ptyId, index) => answers[index] === true))
-          return [tab.id, confirmed] as const
-        })
-      ).then((confirmedByTab) => {
+      void confirmLiveTabSessions(tabs, useAppStore.getState()).then((confirmedPtyIdsByTabId) => {
         if (livenessChecks.get(worktreeId) !== token) {
           return
         }
@@ -273,7 +262,7 @@ export function useTerminalWorktreePrewarm(controller: TerminalColdActivationCon
           return
         }
         // The second pass re-resolves each tab's leaves; any change since the check fails confirmation.
-        lease(worktreeId, clients.has('hover'), new Map(confirmedByTab))
+        lease(worktreeId, clients.has('hover'), confirmedPtyIdsByTabId)
         setHeldTerminalPrewarmWorktrees(leases.keys())
       })
     }
