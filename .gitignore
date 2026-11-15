@@ -120,6 +120,8 @@ docs/**
 !docs/mobile-terminal-shortcut-bar.md
 !docs/security/
 !docs/security/**
+!docs/design/
+!docs/design/multi-pane-workspace.md
 
 .stably/*
 !.stably/docs/
