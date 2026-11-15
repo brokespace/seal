@@ -298,6 +298,9 @@ export function useRepoHeaderDrag({
     sessionArmed
   ])
 
+  // An unmount in the middle of a drag skips endDrag; the main area must not stay in its drag state.
+  useEffect(() => () => dragSessionRef.current?.paneDrop?.end(), [])
+
   useHeaderDragGrabbingCursor(state.draggingRepoId !== null)
 
   const onHandlePointerDown = useCallback((event: React.PointerEvent<HTMLElement>, repo: Repo) => {
