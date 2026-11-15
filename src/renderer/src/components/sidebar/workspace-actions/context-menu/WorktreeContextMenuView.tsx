@@ -184,7 +184,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
             intent="open"
             onPlace={(zone) =>
               openItemsInSplitView(
-                activeContextWorktrees.map((target) => workspaceSplitViewItem(target.id)),
+                activeContextWorktrees.map((target) => workspaceSplitViewItem(target)),
                 zone
               )
             }

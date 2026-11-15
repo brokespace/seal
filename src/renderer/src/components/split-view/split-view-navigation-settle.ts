@@ -128,7 +128,7 @@ export function installSplitViewNavigationSettle(): () => void {
   })
   // The removed workspace's successor comes from the grid, never from outside it.
   const stopTakingOver = registerRemovedActiveWorktreeTakeover((worktreeId) => {
-    const key = splitViewItemKey(workspaceSplitViewItem(worktreeId))
+    const key = splitViewItemKey(workspaceSplitViewItem({ id: worktreeId }))
     if (!gridItems().some((item) => splitViewItemKey(item) === key)) {
       return false
     }

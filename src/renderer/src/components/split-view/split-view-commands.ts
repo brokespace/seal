@@ -14,6 +14,7 @@ import {
   splitViewKeysOtherThan,
   splitViewPaneKeys
 } from './split-view-chip-transitions'
+import { normalizeExecutionHostId } from '../../../../shared/execution-host'
 import { resolveSplitViewItem } from './split-view-item-resolution'
 import {
   placeSplitViewItems,
@@ -32,8 +33,12 @@ import {
   type SplitViewZone
 } from './split-view-types'
 
-export function workspaceSplitViewItem(worktreeId: string): SplitViewItem {
-  return { kind: 'workspace', worktreeId, hostId: null }
+/** The pane item for a workspace, as the host that lists it knows it. */
+export function workspaceSplitViewItem(workspace: {
+  id: string
+  hostId?: string | null
+}): SplitViewItem {
+  return { kind: 'workspace', worktreeId: workspace.id, hostId: workspace.hostId ?? null }
 }
 
 /** What the main area is about: the active workspace, the active session tab, or the open project. */
@@ -43,7 +48,12 @@ export function currentSplitViewItem(): SplitViewItem | null {
     return null
   }
   if (state.activeView === 'terminal') {
-    return state.activeWorktreeId ? workspaceSplitViewItem(state.activeWorktreeId) : null
+    return state.activeWorktreeId
+      ? workspaceSplitViewItem({
+          id: state.activeWorktreeId,
+          hostId: state.activeWorkspaceExecutionHostId
+        })
+      : null
   }
   if (state.activeView === 'sessions') {
     const sessionId = liveSessionTabsStore.getState().activeId
@@ -69,13 +79,16 @@ function canResolve(item: SplitViewItem): boolean {
 export function navigateToSplitViewItem(item: SplitViewItem): void {
   const state = useAppStore.getState()
   switch (item.kind) {
-    case 'workspace':
+    case 'workspace': {
+      const executionHostId = normalizeExecutionHostId(item.hostId)
       // Focusing a pane must not scroll the sidebar or drop its filters.
       activateAndRevealWorkspace(item.worktreeId, {
         revealInSidebar: false,
-        clearSidebarFilters: false
+        clearSidebarFilters: false,
+        ...(executionHostId ? { executionHostId } : {})
       })
       return
+    }
     case 'session':
       liveSessionTabsStore.adopt([item.sessionId])
       liveSessionTabsStore.activate(item.sessionId)

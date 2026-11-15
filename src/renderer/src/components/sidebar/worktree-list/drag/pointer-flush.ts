@@ -6,7 +6,7 @@ import {
   isWorkspaceKanbanSidebarDropPointInBoard,
   updateWorkspaceKanbanSidebarDropTargetVisual
 } from '../../workspace-board/drag/workspace-kanban-sidebar-drop'
-import { workspaceSplitViewItem } from '../../../split-view/split-view-commands'
+import { worktreeDragPaneItems } from './worktree-drag-pane-items'
 import { canDropOnSplitView, trackSplitViewDrop } from '../../../split-view/split-view-drop-target'
 import { updateSidebarDragPreviewPosition } from './worktree-sidebar-pointer-drag-dom'
 import { getPointerDropStatusTarget, shouldPreferSidebarStatusDropTarget } from './status-target'
@@ -129,11 +129,7 @@ export function flushWorktreePointerDragFrame(args: WorktreePointerDragFrameArgs
   if (isWorkspaceKanbanSidebarDropPointInBoard(drag.currentX, drag.currentY)) {
     args.onWorkspaceBoardDragPreviewCommit()
   }
-  const overPane = trackSplitViewDrop(
-    drag.currentX,
-    drag.currentY,
-    drag.draggedIds.map(workspaceSplitViewItem)
-  )
+  const overPane = trackSplitViewDrop(drag.currentX, drag.currentY, worktreeDragPaneItems(drag))
   if (boardTarget.status || boardTarget.isPinDrop || overPane) {
     drag.reorderIntent = null
     drag.latestStatusDropTarget = null

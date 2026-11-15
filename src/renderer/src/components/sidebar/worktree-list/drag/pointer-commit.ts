@@ -10,6 +10,7 @@ import {
 } from '../../workspace-board/drag/workspace-kanban-sidebar-drop'
 import { resolveWorkspaceKanbanCardDropCommitTarget } from '../../workspace-board/drag/workspace-kanban-card-pointer-drag-dom'
 import { getFullDropIndexForWorktreeDragUnit } from './worktree-drag-units'
+import { worktreeDragPaneItems } from './worktree-drag-pane-items'
 import { resolveWorktreeSidebarStatusDropCommitTarget } from './worktree-sidebar-drop-preview'
 import { getPointerDropStatusTarget, shouldPreferSidebarStatusDropTarget } from './status-target'
 import type {
@@ -86,8 +87,8 @@ export function commitWorktreePointerDrop(args: PointerDropCommitArgs): void {
     commitSplitViewDrop(
       event.clientX,
       event.clientY,
-      drag.draggedIds.map(workspaceSplitViewItem),
-      splitViewItemKey(workspaceSplitViewItem(drag.worktreeId))
+      worktreeDragPaneItems(drag),
+      splitViewItemKey(workspaceSplitViewItem({ id: drag.worktreeId }))
     )
   ) {
     ctx.clearWorktreeDrag()
