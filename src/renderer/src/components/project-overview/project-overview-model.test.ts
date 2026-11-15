@@ -89,7 +89,7 @@ describe('projectWorktrees', () => {
     expect(listed(worktrees, local, [local], 'manual')).toEqual(['ws-2', 'main', 'ws-10'])
   })
 
-  it('lists a child workspace right after its parent, where the sidebar nests it', () => {
+  it('lists a child workspace right after its parent, the pair where the sidebar puts it', () => {
     const worktrees = [
       makeWorktree('alpha', 'alpha'),
       makeWorktree('bravo', 'bravo', { instanceId: 'bravo-1' }),
@@ -105,7 +105,15 @@ describe('projectWorktrees', () => {
       capture: { source: 'manual-action', confidence: 'explicit' },
       createdAt: 1
     }
+    // By name the child ranks ahead of its parent, and the sidebar lifts the parent to it.
     expect(listed(worktrees, local, [local], 'name', { bravo: childOfDelta })).toEqual([
+      'alpha',
+      'delta',
+      'bravo',
+      'charlie'
+    ])
+    // A hand-made order keeps the parent's own place.
+    expect(listed(worktrees, local, [local], 'manual', { bravo: childOfDelta })).toEqual([
       'alpha',
       'charlie',
       'delta',

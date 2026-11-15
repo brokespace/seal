@@ -19,6 +19,7 @@ import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualif
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { buildWorktreeOccurrencePlan } from '../../../../shared/worktree-occurrence-plan'
+import { addVisibleLineageAncestors } from '../../../../shared/sidebar-list/selection/visible-worktrees'
 import type { LiveSessionLink } from '../live-sessions/links/live-session-links'
 
 type ProjectTarget = { repoId: string; hostId: string }
@@ -95,7 +96,7 @@ const PROJECT_SECTION = 'project'
 
 /**
  * A registration's workspaces, in the sidebar's order for its project: ranked the same, the main
- * checkout first unless the order is manual, a child after its parent, an unranked row last. A
+ * checkout first unless the order is manual, a family where the sidebar puts it, an unranked row last. A
  * project on two machines keeps both machines' rows in one list, so each row goes to the
  * registration the sidebar files it under.
  */
@@ -108,13 +109,30 @@ export function projectWorktrees(
   const rank = new Map(order.ranked.map((identity, index) => [identity, index]))
   const rankOf = (worktree: Worktree): number =>
     rank.get(getWorktreeHostIdentity(worktree)) ?? order.ranked.length
+  const listed = registrationWorktrees(
+    worktrees,
+    repo,
+    repos,
+    new Map(repos.map((item) => [item.id, item]))
+  ).sort((a, b) => rankOf(a) - rankOf(b))
+  const inList = new Set(listed.map(getWorktreeHostIdentity))
+  // Every machine's live rows, as in the sidebar: a twin elsewhere can make a parent ambiguous.
+  const everyRow = new Map(
+    (worktrees ?? [])
+      .filter((worktree) => !worktree.isArchived)
+      .map((worktree) => [getWorktreeHostIdentity(worktree), worktree])
+  )
   const rows = orderMainWorktreeFirst(
-    registrationWorktrees(
-      worktrees,
-      repo,
-      repos,
-      new Map(repos.map((item) => [item.id, item]))
-    ).sort((a, b) => rankOf(a) - rankOf(b)),
+    // Outside Manual the sidebar lifts a parent to the place of its first-ranked child.
+    order.sortBy === 'manual'
+      ? listed
+      : addVisibleLineageAncestors(
+          listed,
+          everyRow,
+          order.lineageById,
+          null,
+          order.lineageParents
+        ).filter((worktree) => inList.has(getWorktreeHostIdentity(worktree))),
     order.sortBy
   )
   const plan = buildWorktreeOccurrencePlan({
@@ -123,8 +141,7 @@ export function projectWorktrees(
     childrenByParentIdentity: getSidebarLineageChildren(
       rows,
       order.lineageById,
-      // Every machine's rows, as in the sidebar: a twin elsewhere can make a parent ambiguous.
-      new Map((worktrees ?? []).map((worktree) => [getWorktreeHostIdentity(worktree), worktree])),
+      everyRow,
       [],
       order.lineageParents
     ),
