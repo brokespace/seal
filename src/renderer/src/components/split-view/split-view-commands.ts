@@ -141,14 +141,9 @@ export function focusNeighbourSplitViewPane(step: 1 | -1): void {
  * Where navigation lands: the pane that holds the item gets focus and shows it; otherwise it
  * opens in the focused pane as a preview chip. A session preview it replaces closes its tab too.
  */
-export function revealItemInSplitView(item: SplitViewItem, keep = false): void {
+export function revealItemInSplitView(item: SplitViewItem): void {
   const before = splitViewStore.getState()
-  const key = splitViewItemKey(item)
-  const changed = splitViewStore.update((state) => {
-    const revealed = revealSplitViewItem(state, item)
-    return keep ? keepSplitViewChip(revealed, key) : revealed
-  })
-  if (!changed) {
+  if (!splitViewStore.update((state) => revealSplitViewItem(state, item))) {
     return
   }
   const after = new Set(

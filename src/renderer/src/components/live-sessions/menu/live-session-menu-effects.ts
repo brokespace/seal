@@ -17,10 +17,12 @@ import { mutateSealHost } from '../../seal-session/seal-session-status-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import {
   closeItemInSplitView,
+  keepSplitViewItem,
   openItemsInSplitView,
   revealItemInSplitView
 } from '../../split-view/split-view-commands'
 import { splitViewStore } from '../../split-view/split-view-store'
+import { splitViewItemKey } from '../../split-view/split-view-types'
 import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
@@ -56,7 +58,7 @@ export function openLiveSessionView(
   )
   ui.openAgentSessionTabs()
   if (inGrid) {
-    revealItemInSplitView({ kind: 'session', sessionId: id }, mode === 'tab')
+    revealItemInSplitView({ kind: 'session', sessionId: id })
   }
 }
 
@@ -92,7 +94,17 @@ export function closeLiveSessionView(sessionId: string): void {
 
 /** A click on a session's row, on any surface: a preview tab, kept on double-click. */
 export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
-  openLiveSessionView(session.id, event?.type === 'dblclick' ? 'tab' : 'preview')
+  const keep = event?.type === 'dblclick'
+  openLiveSessionView(session.id, keep ? 'tab' : 'preview')
+  if (keep) {
+    // In the grid every open is a preview; only the double-click asks to keep it.
+    keepSplitViewItem(
+      splitViewItemKey({
+        kind: 'session',
+        sessionId: liveSessionRegistryStore.currentId(session.id)
+      })
+    )
+  }
 }
 
 /**
