@@ -14,7 +14,14 @@ import type { SplitViewItem } from './split-view-types'
 type CatalogState = Pick<AppState, 'worktreesByRepo' | 'folderWorkspaces' | 'repos'>
 
 export type ResolvedSplitViewItem =
-  | { kind: 'workspace'; title: string; isFolder: boolean; repoId: string | null }
+  | {
+      kind: 'workspace'
+      title: string
+      /** Tells apart workspaces of the same name, such as every project's `main`. */
+      projectName: string | null
+      isFolder: boolean
+      repoId: string | null
+    }
   | { kind: 'session'; session: LiveSession }
   | { kind: 'project'; repo: Repo }
 
@@ -32,7 +39,13 @@ export function resolveSplitViewItem(
           (workspace) => workspace.id === scope.folderWorkspaceId
         )
         return folder
-          ? { kind: 'workspace', title: folder.name, isFolder: true, repoId: null }
+          ? {
+              kind: 'workspace',
+              title: folder.name,
+              projectName: null,
+              isFolder: true,
+              repoId: null
+            }
           : null
       }
       const worktree = getIndexedWorktreeMap(selectWorktreesByRepo(state)).get(item.worktreeId)
@@ -40,6 +53,8 @@ export function resolveSplitViewItem(
         ? {
             kind: 'workspace',
             title: worktree.displayName,
+            projectName:
+              state.repos.find((repo) => repo.id === worktree.repoId)?.displayName ?? null,
             isFolder: false,
             repoId: worktree.repoId
           }

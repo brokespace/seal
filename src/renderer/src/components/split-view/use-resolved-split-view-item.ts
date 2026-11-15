@@ -29,7 +29,7 @@ export function useSplitViewItemTitle(
 ): string {
   const t = useTranslate()
   if (resolved?.kind === 'workspace') {
-    return resolved.title
+    return resolved.projectName ? `${resolved.projectName} / ${resolved.title}` : resolved.title
   }
   if (resolved?.kind === 'session') {
     return liveSessionTitle(resolved.session)
