@@ -15,11 +15,20 @@ export const PROJECT_HEADER_ACTIONS_CLASS_NAME = cn(
 /**
  * Title padding that keeps the sessions badge clear of the hover actions, which otherwise cover the
  * end of the title: two buttons left of a project's fold chevron, up to three on other headers.
+ * Only in the states that show the actions (above), so a resting header gives its name the room.
  */
 export function projectHeaderBadgeRoomClassName(beforeFold: boolean): string {
   return beforeFold
-    ? 'can-hover:has-[[data-live-sessions-badge]]:pr-11'
-    : 'can-hover:has-[[data-live-sessions-badge]]:pr-17'
+    ? cn(
+        'can-hover:group-hover:has-[[data-live-sessions-badge]]:pr-11',
+        'can-hover:group-has-[[data-repo-header-actions]_:focus-visible]:has-[[data-live-sessions-badge]]:pr-11',
+        'can-hover:group-has-[[data-repo-header-actions]_button[aria-expanded=true]]:has-[[data-live-sessions-badge]]:pr-11'
+      )
+    : cn(
+        'can-hover:group-hover:has-[[data-live-sessions-badge]]:pr-17',
+        'can-hover:group-has-[[data-repo-header-actions]_:focus-visible]:has-[[data-live-sessions-badge]]:pr-17',
+        'can-hover:group-has-[[data-repo-header-actions]_button[aria-expanded=true]]:has-[[data-live-sessions-badge]]:pr-17'
+      )
 }
 
 export function ProjectHeaderActions({
