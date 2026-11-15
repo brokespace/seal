@@ -86,6 +86,10 @@ export function startItemPointerDrag(
       key.preventDefault()
       key.stopPropagation()
       finish()
+      // The release that ends a cancelled drag is not a click on the row it started from.
+      window.addEventListener('pointerup', () => swallowNextClickOnDragHandle(source), {
+        once: true
+      })
     }
   }
 
