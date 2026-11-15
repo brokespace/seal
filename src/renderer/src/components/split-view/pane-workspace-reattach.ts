@@ -1,7 +1,5 @@
 import { useAppStore } from '@/store/index'
 import { hasRegisteredRuntimeTerminalTab } from '@/runtime/hosted-terminals/mounted-surfaces/mounted-terminal-tab-registry'
-import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
-import { canWatcherCoverParkedTerminalTab } from '../terminal-pane/parking/output-watchers/parked-terminal-tab-coverage'
 import {
   areTabSessionsConfirmed,
   planTerminalPrewarmTabMount
@@ -35,24 +33,17 @@ export async function resolveReattachableTabIds(worktreeId: string): Promise<str
   }
   const sleepingTabIds = selectSleepingTabIds(state, worktreeId)
   const isTabLive = (tabId: string): boolean => hasRegisteredRuntimeTerminalTab(tabId, worktreeId)
-  const isTabRestorable = (tab: TerminalTab): boolean =>
-    canWatcherCoverParkedTerminalTab(worktreeId, tab)
   const isTabSleeping = (tabId: string): boolean => sleepingTabIds.has(tabId)
   const confirmedPtyIdsByTabId = await confirmLiveTabSessions(
-    tabs.filter(
-      (tab) =>
-        revealTabIds.has(tab.id) &&
-        !isTabLive(tab.id) &&
-        !isTabSleeping(tab.id) &&
-        isTabRestorable(tab)
-    ),
+    tabs.filter((tab) => revealTabIds.has(tab.id) && !isTabLive(tab.id) && !isTabSleeping(tab.id)),
     state
   )
   const plan = planTerminalPrewarmTabMount({
     tabs,
     revealTabIds,
     isTabLive,
-    isTabRestorable,
+    // A pane keeps what it mounts on screen, so nothing here has to be parkable again.
+    isTabRestorable: () => true,
     isTabSleeping,
     isSessionConfirmedLive: (tab) =>
       areTabSessionsConfirmed(resolveReattachPtyIds(tab, state), confirmedPtyIdsByTabId.get(tab.id))
