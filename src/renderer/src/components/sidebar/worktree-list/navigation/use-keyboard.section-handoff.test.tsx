@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render } from '@testing-library/react'
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import type { HostSectionRow } from '../../../../../../shared/sidebar-list/hosts/host-section-rows'
@@ -45,17 +45,21 @@ function AgentRows({
   return <div ref={rows} data-agent-rows {...SIDEBAR_KEYBOARD_SECTION_PROPS} />
 }
 
-/** The sidebar's one list: an agents section, then the project rows this hook navigates. */
-function SidebarList({
+/** The sidebar's one list: an agents section, then the project rows this hook navigates. Memoized like the real viewport. */
+const SidebarList = memo(function SidebarList({
   activeWorktreeId,
-  onEnterAgents
+  onEnterAgents,
+  projectRowsMounted = true,
+  rows = ROWS
 }: {
   activeWorktreeId: string
   onEnterAgents?: (edge: SidebarSectionEntryEdge) => boolean
+  projectRowsMounted?: boolean
+  rows?: HostSectionRow[]
 }): React.JSX.Element {
   const scrollRef = useRef<HTMLDivElement>(null)
   const { handleContainerKeyDown } = useWorktreeListKeyboardNavigation({
-    rows: ROWS,
+    rows,
     activeWorktreeId,
     activeWorkspaceExecutionHostId: null,
     pinnedDisplayPolicy: 'single-location',
@@ -66,10 +70,12 @@ function SidebarList({
   return (
     <div ref={scrollRef} data-worktree-sidebar tabIndex={0} onKeyDown={handleContainerKeyDown}>
       {onEnterAgents ? <AgentRows onEnter={onEnterAgents} /> : null}
-      <div data-worktree-sidebar-content {...SIDEBAR_KEYBOARD_SECTION_PROPS} />
+      {projectRowsMounted ? (
+        <div data-worktree-sidebar-content {...SIDEBAR_KEYBOARD_SECTION_PROPS} />
+      ) : null}
     </div>
   )
-}
+})
 
 function list(): HTMLElement {
   return document.querySelector<HTMLElement>('[data-worktree-sidebar]')!
@@ -100,6 +106,16 @@ it('hands the cursor to the section above instead of wrapping from the first pro
   expect(activatedWorktreeIds()).toEqual([])
 })
 
+it('wraps from the last project row to the top of the list, the first row of the section above', () => {
+  const onEnterAgents = vi.fn(() => true)
+  render(<SidebarList activeWorktreeId="bottom" onEnterAgents={onEnterAgents} />)
+
+  fireEvent.keyDown(list(), { key: 'ArrowDown' })
+
+  expect(onEnterAgents.mock.calls).toEqual([['first']])
+  expect(activatedWorktreeIds()).toEqual([])
+})
+
 it('wraps to the last project row when the section above has no row to take the cursor', () => {
   render(<SidebarList activeWorktreeId="top" onEnterAgents={() => false} />)
 
@@ -127,4 +143,31 @@ it('takes the cursor from the section above on its first project row', () => {
 
   expect(activatedWorktreeIds()).toEqual(['top'])
   expect(document.activeElement).toBe(list())
+})
+
+it('takes the cursor on project rows that mounted after the list did', () => {
+  const view = render(
+    <SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} projectRowsMounted={false} />
+  )
+  view.rerender(<SidebarList activeWorktreeId="bottom" onEnterAgents={() => true} />)
+
+  expect(
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down')
+  ).toBe(true)
+
+  expect(activatedWorktreeIds()).toEqual(['top'])
+})
+
+it('takes the cursor on the rows of the latest render', () => {
+  const onEnterAgents = (): boolean => true
+  const view = render(
+    <SidebarList activeWorktreeId="middle" onEnterAgents={onEnterAgents} rows={[ROWS[2]]} />
+  )
+  view.rerender(<SidebarList activeWorktreeId="middle" onEnterAgents={onEnterAgents} />)
+
+  expect(
+    offerSidebarSectionKeyboardCursor(document.querySelector('[data-agent-rows]'), 'down')
+  ).toBe(true)
+
+  expect(activatedWorktreeIds()).toEqual(['top'])
 })

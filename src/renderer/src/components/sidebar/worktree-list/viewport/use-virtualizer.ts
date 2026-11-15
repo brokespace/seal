@@ -46,9 +46,7 @@ export function useWorktreeListVirtualizer(args: {
     () => ({
       // Why: TanStack Virtual owns scroll correction; native overflow anchoring fights it and causes jumps.
       overflowAnchor: 'none',
-      ...getScrollSectionStyleVariables(scrollSectionInsets),
-      // Focus and scrollIntoView must land rows below the pinned section header.
-      scrollPaddingTop: scrollSectionInsets.pinned
+      ...getScrollSectionStyleVariables(scrollSectionInsets)
     }),
     [scrollSectionInsets]
   )

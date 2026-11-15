@@ -41,7 +41,7 @@ export function ActiveAgentsToolbar(props: ActiveAgentsToolbarProps): React.JSX.
           data-active-agents-bulk
           className="flex flex-wrap items-center gap-1 rounded-md border border-worktree-sidebar-border px-1.5 py-1"
         >
-          <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+          <span className="flex-1 shrink-0 text-2xs whitespace-nowrap text-muted-foreground">
             {t('auto.components.live-sessions.sidebar.pickedCount', '{{count}} selected', {
               count: pickedSessions.length
             })}

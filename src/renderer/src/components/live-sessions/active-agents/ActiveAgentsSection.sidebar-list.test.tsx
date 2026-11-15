@@ -93,6 +93,17 @@ it('moves the arrow-key cursor from its last agent into the section after it', a
   expect(onEnterProjects.mock.calls).toEqual([['first']])
 })
 
+it('wraps the cursor from its first agent to the end of the list', async () => {
+  const onEnterProjects = vi.fn(() => true)
+  await renderList(onEnterProjects)
+  const [first] = agentRows()
+  first.focus()
+
+  fireEvent.keyDown(first, { key: 'ArrowUp' })
+
+  expect(onEnterProjects.mock.calls).toEqual([['last']])
+})
+
 it('keeps the cursor on its last agent when the section after it has no row to take it', async () => {
   await renderList(() => false)
   const last = agentRows()[1]

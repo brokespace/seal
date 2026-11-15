@@ -11,7 +11,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
-import { SIDEBAR_STICKY_SECTION_HEADER_CLASS } from '@/components/sidebar/sidebar-scroll-sections'
+import {
+  revealInSidebarScrollSection,
+  SIDEBAR_STICKY_SECTION_HEADER_CLASS
+} from '@/components/sidebar/sidebar-scroll-sections'
 import {
   offerSidebarSectionKeyboardCursor,
   SIDEBAR_KEYBOARD_SECTION_PROPS,
@@ -56,6 +59,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   const collapsedGroups = useAppStore((state) => state.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((state) => state.toggleCollapsedGroup)
   const list = useRef<HTMLDivElement>(null)
+  const pinned = useRef<HTMLDivElement>(null)
   const anchor = useRef<string | null>(null)
 
   const open = !collapsedGroups.has(ACTIVE_AGENTS_COLLAPSE_KEY)
@@ -98,9 +102,12 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
         toggle(key)
       }
     }
-    const frame = requestAnimationFrame(() =>
-      rowIn(list.current, reveal.sessionId)?.scrollIntoView({ block: 'nearest' })
-    )
+    const frame = requestAnimationFrame(() => {
+      const row = rowIn(list.current, reveal.sessionId)
+      if (row) {
+        revealInSidebarScrollSection(row, pinned.current)
+      }
+    })
     const fade = setTimeout(() => liveSessionMarksStore.highlight([]), 4000)
     return () => {
       cancelAnimationFrame(frame)
@@ -136,8 +143,11 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   )
 
   const focusRow = (sessionId: string | undefined): void => {
-    if (sessionId) {
-      rowIn(list.current, sessionId)?.focus()
+    const row = sessionId ? rowIn(list.current, sessionId) : null
+    if (row) {
+      // Why not the browser's focus scroll: it cannot see the header pinned over the rows.
+      row.focus({ preventScroll: true })
+      revealInSidebarScrollSection(row, pinned.current)
     }
   }
   // Arrow keys run through the whole sidebar list: the Projects rows hand the cursor back here.
@@ -147,8 +157,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       const sessionId = edge === 'first' ? order[0] : order.at(-1)
       focusRow(sessionId)
       return sessionId !== undefined
-    },
-    open
+    }
   )
   const onListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     const row =
@@ -159,7 +168,7 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
       const next = at + (event.key === 'ArrowDown' ? 1 : -1)
-      // Past its own ends the cursor moves to the neighbouring section, or stays when there is none.
+      // Past its own ends the cursor moves on through the sidebar list, or stays when no other section has a row.
       if (at === -1 || (next >= 0 && next < order.length)) {
         focusRow(order[Math.max(0, Math.min(next, order.length - 1))])
       } else {
@@ -194,80 +203,89 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   }
   return (
     <section data-testid="active-agents" data-open={open} aria-label={title}>
-      <SidebarSectionHeader
-        className={SIDEBAR_STICKY_SECTION_HEADER_CLASS}
-        title={title}
-        section="active-agents"
-        toggle={
-          <>
-            <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
-              {view.activeCount}
-            </span>
-            {!registry.loaded ? (
-              <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
-            ) : null}
-            <span data-active-agents-toggle className="flex shrink-0">
-              <ProjectsCollapseAllButton
-                allCollapsed={!open}
-                onToggle={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
-                label={
-                  open
-                    ? t('auto.components.live-sessions.sidebar.collapse', 'Collapse active agents')
-                    : t('auto.components.live-sessions.sidebar.expand', 'Expand active agents')
-                }
-                pinned={!open}
-              />
-            </span>
-          </>
-        }
-        actions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                data-active-agents-menu
-                aria-label={t(
-                  'auto.components.live-sessions.sidebar.options',
-                  'Active agents options'
-                )}
-              >
-                <Ellipsis className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => void window.api.liveSessions?.refresh()}>
-                {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
-              >
-                {marks.picked
-                  ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
-                  : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={openAgentSettings}>
-                {t(
-                  'auto.components.live-sessions.sidebar.settings',
-                  'Idle sessions and notifications…'
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        }
-      />
+      {/* The scope and bulk actions stay in reach with the header while the rows scroll. */}
+      <div ref={pinned} className={SIDEBAR_STICKY_SECTION_HEADER_CLASS}>
+        <SidebarSectionHeader
+          title={title}
+          section="active-agents"
+          toggle={
+            <>
+              <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
+                {view.activeCount}
+              </span>
+              {!registry.loaded ? (
+                <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
+              ) : null}
+              <span data-active-agents-toggle className="flex shrink-0">
+                <ProjectsCollapseAllButton
+                  allCollapsed={!open}
+                  onToggle={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
+                  label={
+                    open
+                      ? t(
+                          'auto.components.live-sessions.sidebar.collapse',
+                          'Collapse active agents'
+                        )
+                      : t('auto.components.live-sessions.sidebar.expand', 'Expand active agents')
+                  }
+                  pinned={!open}
+                />
+              </span>
+            </>
+          }
+          actions={
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  data-active-agents-menu
+                  aria-label={t(
+                    'auto.components.live-sessions.sidebar.options',
+                    'Active agents options'
+                  )}
+                >
+                  <Ellipsis className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void window.api.liveSessions?.refresh()}>
+                  {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
+                >
+                  {marks.picked
+                    ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
+                    : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={openAgentSettings}>
+                  {t(
+                    'auto.components.live-sessions.sidebar.settings',
+                    'Idle sessions and notifications…'
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          }
+        />
+        {open ? (
+          <div className="px-2">
+            <ActiveAgentsToolbar
+              scope={scope}
+              picked={marks.picked}
+              pickedSessions={pickedSessions}
+              onClearScope={() => activeAgentsScopeStore.setScope(null)}
+              onBulk={(danger, sessions) => liveSessionMenuEffects.confirm(danger, sessions)}
+              onStopPicking={() => liveSessionMarksStore.setPicked(null)}
+            />
+          </div>
+        ) : null}
+      </div>
       {open ? (
         <div className="px-2 pb-1">
-          <ActiveAgentsToolbar
-            scope={scope}
-            picked={marks.picked}
-            pickedSessions={pickedSessions}
-            onClearScope={() => activeAgentsScopeStore.setScope(null)}
-            onBulk={(danger, sessions) => liveSessionMenuEffects.confirm(danger, sessions)}
-            onStopPicking={() => liveSessionMarksStore.setPicked(null)}
-          />
           <div
             ref={list}
             role="listbox"

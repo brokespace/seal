@@ -13,6 +13,7 @@ export type SidebarScrollSectionHosts = {
 // -top-px covers the scroll container's 1px top padding, where rows would otherwise show through.
 export const SIDEBAR_STICKY_SECTION_HEADER_CLASS = 'sticky -top-px z-40 bg-worktree-sidebar'
 const PINNED_HEADER_SELECTOR = '[data-sidebar-scroll-pinned-header]'
+const LEADING_SELECTOR = '[data-sidebar-scroll-leading]'
 
 const SidebarScrollSectionHostsContext = createContext<SidebarScrollSectionHosts | undefined>(
   undefined
@@ -82,4 +83,22 @@ export function SidebarScrollSectionSlots(): React.JSX.Element | null {
 export function getSidebarStickyInset(scrollContainer: Element): number {
   const header = scrollContainer.querySelector<HTMLElement>(PINNED_HEADER_SELECTOR)
   return header?.offsetHeight ?? 0
+}
+
+/** Scroll an element of a leading section fully into the list, clear of the section header pinned over it. */
+export function revealInSidebarScrollSection(element: HTMLElement, pinned: Element | null): void {
+  const scroller = element.closest(LEADING_SELECTOR)?.parentElement
+  if (!scroller) {
+    element.scrollIntoView?.({ block: 'nearest' })
+    return
+  }
+  const view = scroller.getBoundingClientRect()
+  // The header is pinned at the top of the list by the time the element gets there.
+  const top = view.top + (pinned?.getBoundingClientRect().height ?? 0)
+  const rect = element.getBoundingClientRect()
+  if (rect.top < top) {
+    scroller.scrollTop -= top - rect.top
+  } else if (rect.bottom > view.bottom) {
+    scroller.scrollTop += Math.min(rect.bottom - view.bottom, rect.top - top)
+  }
 }
