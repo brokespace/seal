@@ -2150,7 +2150,8 @@
     "splitView": {
       "error": {
         "title": "Split view hit an error.",
-        "description": "Retry, or close panes from the sidebar to return to a single view."
+        "description": "Retry, or close the other panes to return to a single view.",
+        "leave": "Close other panes"
       },
       "drop": {
         "left": "Split left",

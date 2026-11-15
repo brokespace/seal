@@ -301,6 +301,19 @@ export function closeSplitViewItems(keys: ReadonlySet<string>): void {
   navigateToFocusedChip()
 }
 
+/** Back to a single view of the focused pane's item. */
+export function leaveSplitView(): void {
+  const state = splitViewStore.getState()
+  const kept = state.focusedPaneId ? state.panes[state.focusedPaneId]?.activeKey : null
+  closeSplitViewItems(
+    new Set(
+      Object.values(state.panes)
+        .flatMap((pane) => pane.tabs.map((tab) => splitViewItemKey(tab.item)))
+        .filter((key) => key !== kept)
+    )
+  )
+}
+
 export function closeSplitViewPane(paneId: string): void {
   closeSplitViewItems(new Set(splitViewPaneKeys(splitViewStore.getState(), paneId)))
 }

@@ -11,6 +11,7 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { leaveSplitView } from '../components/split-view/split-view-commands'
 import { SplitViewDropPreview } from '../components/split-view/SplitViewDropPreview'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
@@ -283,8 +284,12 @@ export function AppWorkspaceShell(props: {
                       title={t('seal.splitView.error.title', 'Split view hit an error.')}
                       description={t(
                         'seal.splitView.error.description',
-                        'Retry, or close panes from the sidebar to return to a single view.'
+                        'Retry, or close the other panes to return to a single view.'
                       )}
+                      action={{
+                        label: t('seal.splitView.error.leave', 'Close other panes'),
+                        run: leaveSplitView
+                      }}
                     >
                       <SplitViewLayer />
                     </RecoverableRenderErrorBoundary>
