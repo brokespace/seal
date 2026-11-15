@@ -20,6 +20,7 @@ import {
 } from './split-view-pane-size'
 import { splitViewItemKey, type SplitViewItem, type SplitViewZone } from './split-view-types'
 
+const SPLIT_VIEW_DRAG_ATTRIBUTE = 'data-split-view-drag'
 /** On a strip: its pane id, or empty for the agent-session page's strip in single view. */
 export const ITEM_TAB_STRIP_ATTRIBUTE = 'data-item-tab-strip'
 export const ITEM_TAB_KEY_ATTRIBUTE = 'data-item-tab-key'
@@ -234,8 +235,11 @@ export function commitSplitViewDrop(
 /** Lets the pointer through embedded pages for the length of a drag. Returns the end of it. */
 export function beginSplitViewDrag(): () => void {
   const releaseWebviews = acquireWebviewsDragPassthrough()
+  // Hover cards open under a held pointer too, and one under it would take the drop.
+  document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, true)
   return () => {
     releaseWebviews()
+    document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, false)
     setPreview(null)
   }
 }

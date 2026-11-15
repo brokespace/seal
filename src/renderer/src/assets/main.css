@@ -1401,6 +1401,11 @@ html.native-shell .app-layout {
   pointer-events: auto;
 }
 
+/* A hover card that opens under a row being dragged to a pane would take the drop. */
+body[data-split-view-drag] [data-slot='hover-card-content'] {
+  display: none;
+}
+
 /* Temporarily disable Electron drag regions while xterm owns focus so chrome clicks can release terminal zoom. */
 :root[data-regular-terminal-input-focused] .titlebar,
 :root[data-regular-terminal-input-focused] .titlebar-left,
