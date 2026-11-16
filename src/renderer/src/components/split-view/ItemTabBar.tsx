@@ -21,6 +21,7 @@ import {
   useSplitViewDropPreview
 } from './split-view-drop-target'
 import { splitViewItemKey, type SplitViewTab } from './split-view-types'
+import { useSelectedTabKeptInNarrowingStrip } from './use-selected-tab-kept-in-narrowing-strip'
 
 function moveTabFocus(event: React.KeyboardEvent<HTMLDivElement>): void {
   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
@@ -81,6 +82,7 @@ export function ItemTabBar({
     // Names the strip, so one that changes hands starts over.
     worktreeId: groupId
   })
+  useSelectedTabKeptInNarrowingStrip(navigation, activeKey)
   const dragScroll = useTabStripDragScrollHandlers(navigation.scrollTabStrip, {
     start: navigation.tabStripOverflowState.canScrollStart,
     end: navigation.tabStripOverflowState.canScrollEnd
