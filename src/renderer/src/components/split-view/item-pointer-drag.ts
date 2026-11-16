@@ -77,12 +77,12 @@ export function startItemPointerDrag(
     trackSplitViewDrop(move.clientX, move.clientY, items)
   }
   const onUp = (up: PointerEvent): void => {
-    const dragged = drag !== null
-    finish()
-    if (dragged) {
+    if (drag) {
       swallowNextClickOnDragHandle(source)
+      // Before the drag ends: ending it brings back a hover card that would cover the drop.
       commitSplitViewDrop(up.clientX, up.clientY, items, splitViewItemKey(item))
     }
+    finish()
   }
   const onKeyDown = (key: KeyboardEvent): void => {
     if (key.key === 'Escape' && drag) {
