@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { CloudflareAiCredentials } from '../../utility-model/cloudflare-workers-ai-provider'
 import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
+import { askLiveRecapModel } from './recap-live-model.test-fixture'
 import {
   addToRecapCassette,
   loadRecapBaseline,
@@ -55,23 +56,6 @@ let credentials: CloudflareAiCredentials | undefined
 /** False while a live run has no checked credential, or once a live request went unanswered. */
 let sound = !live
 
-const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
-
-/** The real endpoint, asked again when it is busy or down: a fallback's reply must not stand in for the first model's. */
-async function askLive(url: string, init: RequestInit): Promise<Response> {
-  for (let attempt = 0; ; attempt++) {
-    const response = await fetch(url, init).catch(() => null)
-    const answered = response !== null && response.status < 500 && response.status !== 429
-    if (answered || attempt === 3 || init.signal?.aborted) {
-      if (response === null) {
-        throw new Error('Workers AI could not be reached')
-      }
-      return response
-    }
-    await pause(2000 * 2 ** attempt)
-  }
-}
-
 describe('recap scenarios', () => {
   beforeAll(async () => {
     if (pendingPath && repliesPath) {
@@ -110,8 +94,8 @@ describe('recap scenarios', () => {
   for (const scenario of scenarios) {
     for (const surface of scenario.surfaces) {
       const unrecorded = scenario.pending ? ' (not recorded yet)' : ''
-      // A live scenario waits on up to a dozen real requests, one after the other.
       const timeout = live ? 15 * 60_000 : undefined
+      // A live scenario waits on up to a dozen real requests, one after the other.
       it(`${scenario.id}@${surface}: ${scenario.title}${unrecorded}`, { timeout }, async () => {
         const recorded: RecapCassetteEntry[] = []
         const model = new RecapScenarioModel({
@@ -119,7 +103,7 @@ describe('recap scenarios', () => {
           cassette: await loadRecapCassette(scenario.id),
           ...(live
             ? {
-                live: askLive,
+                live: askLiveRecapModel,
                 onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry)
               }
             : {})

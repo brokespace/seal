@@ -1,6 +1,10 @@
 // How a judge model is scored against the labels: each question on its own, its threshold set on
 // the tune split for a bounded loss, and the combined standing reported on the held-out split.
-import type { RecapJudgedItem, RecapRequestStanding } from './recap-judge-labels.test-fixture'
+import {
+  RECAP_REQUEST_STANDINGS,
+  type RecapJudgedItem,
+  type RecapRequestStanding
+} from './recap-judge-labels.test-fixture'
 import type { RecapJudgeAnswers } from './recap-judge-models.test-fixture'
 import {
   RECAP_JUDGE_QUESTION_IDS,
@@ -179,9 +183,15 @@ export function scoreRecapJudge(judged: readonly RecapJudged[]): RecapJudgeScore
     const standing = recapShownStanding(found.answers, cuts)
     row[standing] = (row[standing] ?? 0) + 1
   }
-  const questions = Object.fromEntries(
-    RECAP_JUDGE_QUESTION_IDS.map((id) => [id, questionScore(id, tune, heldOut, cuts[id])])
-  ) as Record<RecapJudgeQuestionId, RecapJudgeQuestionScore>
+  const question = (id: RecapJudgeQuestionId): RecapJudgeQuestionScore =>
+    questionScore(id, tune, heldOut, cuts[id])
+  const questions = {
+    done: question('done'),
+    did_part: question('did_part'),
+    declined: question('declined'),
+    withdrawn: question('withdrawn'),
+    left_undone: question('left_undone')
+  }
   return {
     items: {
       tune: tune.length,
@@ -244,7 +254,7 @@ export function recapJudgeReportMarkdown(
   const failures = Object.entries(spend.failed).map(([kind, times]) => `${kind} ×${times}`)
   const named = (ids: readonly string[]): string =>
     ids.length === 0 ? 'none' : ids.map((id) => `\`${id}\``).join(', ')
-  const truths = Object.keys(score.shown) as RecapRequestStanding[]
+  const truths = RECAP_REQUEST_STANDINGS.filter((truth) => score.shown[truth])
   const columns: RecapShownStanding[] = [
     'addressed',
     'partly',

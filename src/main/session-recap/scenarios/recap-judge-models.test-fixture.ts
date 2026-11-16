@@ -144,17 +144,29 @@ export function recapJudgeAnswersIn(
   const first = Array.isArray(choices) ? jsonRecord(choices[0]) : null
   const reply = jsonText(result?.response) ?? jsonText(jsonRecord(first?.message)?.content)
   const given = model.kind === 'decision' ? jsonRecord(result?.answers) : written(reply ?? '')
-  const answers: Partial<RecapJudgeAnswers> = {}
-  for (const id of RECAP_JUDGE_QUESTION_IDS) {
+  const scale = model.kind === 'decision' ? 1 : 100
+  const answer = (id: RecapJudgeQuestionId): number | null => {
     const value =
       model.kind === 'decision' ? count(jsonRecord(given?.[id])?.noul) : count(given?.[id])
-    const scale = model.kind === 'decision' ? 1 : 100
-    if (value === null || value < 0 || value > scale) {
-      return null
-    }
-    answers[id] = value / scale
+    return value === null || value < 0 || value > scale ? null : value / scale
   }
-  return answers as RecapJudgeAnswers
+  const [done, didPart, declined, withdrawn, leftUndone] = [
+    answer('done'),
+    answer('did_part'),
+    answer('declined'),
+    answer('withdrawn'),
+    answer('left_undone')
+  ]
+  if (
+    done === null ||
+    didPart === null ||
+    declined === null ||
+    withdrawn === null ||
+    leftUndone === null
+  ) {
+    return null
+  }
+  return { done, did_part: didPart, declined, withdrawn, left_undone: leftUndone }
 }
 
 export type RecapJudgeCall =
