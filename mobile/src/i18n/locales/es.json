@@ -4,7 +4,6 @@
       "agentLogin": "Usar el inicio de sesión del propio agente",
       "connecting": "Conectando al host…",
       "connectingTo": "Conectando a {{name}}…",
-      "default": "Predeterminado del sistema",
       "fableWindow": "Fable",
       "hostNotFound": "Host no encontrado",
       "invalidSnapshot": "Instantánea de cuentas del host no válida",
@@ -17,7 +16,8 @@
       "switchFailed": "No se pudo cambiar de cuenta",
       "title": "Cuentas",
       "useReset": "Usar un restablecimiento",
-      "weeklyWindow": "7d"
+      "weeklyWindow": "7d",
+      "default": "Predeterminado del sistema"
     }
   },
   "agentHistory": {
@@ -99,21 +99,21 @@
       "connecting": "Conectando…",
       "invalidPairingCode": "No es un código de emparejamiento válido; cópialo de tu ordenador y vuelve a pegarlo.",
       "invalidQrCode": "No es un código QR de Orca válido",
-      "downloadQrCode": "Ese es el código de descarga. Escanea el código de emparejamiento del paso 2 en tu ordenador.",
       "openDesktopStep": "Abre Orca en tu ordenador",
       "openMobileSettingsStep": "Ve a Ajustes → Móvil",
       "openSettings": "Abrir Ajustes",
       "pairingFailed": "Error de emparejamiento: {{error}}",
       "pairingLog": "Registro de emparejamiento",
       "pasteCodeMessage": "Copia el código que aparece debajo del QR en tu ordenador.",
-      "pasteCodePlaceholder": "orca://pair?code=... o pega el código",
       "pasteCodeTitle": "Pegar código de emparejamiento",
       "pasteInstead": "Pegar código en su lugar",
       "pastePairingCode": "O pegar código de emparejamiento",
       "scanCodeStep": "Escanea el código QR",
       "title": "Emparejar con un escritorio",
       "tryAgain": "Reintentar",
-      "codeNoLongerValid": "Este código de emparejamiento caducó, ya se usó o se reemplazó. Muestra un código nuevo en tu ordenador y vuelve a escanear."
+      "codeNoLongerValid": "Este código de emparejamiento caducó, ya se usó o se reemplazó. Muestra un código nuevo en tu ordenador y vuelve a escanear.",
+      "downloadQrCode": "Ese es el código de descarga. Escanea el código de emparejamiento del paso 2 en tu ordenador.",
+      "pasteCodePlaceholder": "orca://pair?code=... o pega el código"
     },
     "terminalSettings": {
       "defaultText": "Predeterminado (100%)",
@@ -138,33 +138,6 @@
       "textSizeHeading": "TAMAÑO DEL TEXTO",
       "textSizePickerTitle": "Tamaño del texto del terminal",
       "title": "Terminal"
-    }
-  },
-  "appMove": {
-    "play": {
-      "title": "Orca ya está en Google Play",
-      "description": "Esta app sigue funcionando, pero las actualizaciones ahora llegan desde Google Play. El cambio lleva unos minutos.",
-      "installTitle": "Instala Orca desde Google Play",
-      "installDescription": "Puedes hacerlo ahora, estés donde estés.",
-      "openGooglePlay": "Abrir Google Play",
-      "cantUseGooglePlay": "No puedo usar Google Play"
-    },
-    "download": {
-      "title": "Descarga la nueva app de Orca",
-      "description": "Esta app sigue funcionando, pero las actualizaciones y correcciones de seguridad ahora llegan a través de la nueva app. El cambio lleva unos minutos.",
-      "installTitle": "Descarga la nueva app",
-      "installDescription": "Si tu teléfono lo pide, permite que tu navegador instale apps.",
-      "download": "Descargar",
-      "keepThisVersion": "Seguir usando esta versión",
-      "keepThisVersionNote": "Te perderás las correcciones de seguridad. Te lo recordaremos en una semana."
-    },
-    "pairTitle": "Emparéjala con tu equipo",
-    "pairDescription": "En Orca en tu equipo, ve a Ajustes → Móvil y escanea el código.",
-    "deleteTitle": "Elimina esta app",
-    "deleteDescription": "Cuando la nueva app muestre tus agentes. Hasta entonces, sigue usando esta.",
-    "dataKept": "Tus agentes, chats y espacios de trabajo se guardan en tu equipo, así que los verás todos en la nueva app.",
-    "banner": {
-      "seeHowToSwitch": "Mira cómo cambiar"
     }
   },
   "browser": {
@@ -1011,11 +984,7 @@
       "backToHosts": "Volver a hosts",
       "desktopTooOldBody": "La aplicación del escritorio emparejado es demasiado antigua para tu versión actual de Orca Mobile. Actualiza Orca en tu equipo y vuelve a intentarlo con este host.",
       "getVersion": "Obtener Orca {{version}}",
-      "mobileTooOldAppStore": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
-      "mobileTooOldGooglePlay": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde Google Play y vuelve a intentarlo con este host.",
       "mobileTooOldGitHubReleases": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host.",
-      "openAppStore": "Abrir App Store",
-      "openGooglePlay": "Abrir Google Play",
       "openGitHubReleases": "Abrir GitHub Releases",
       "refreshRecoveryNote": "Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
       "refreshWorkspaceBody": "La versión en caché del espacio de trabajo de este host es anterior a la que espera el escritorio. Vuelve a conectarte a este host para descargar la versión actual.",
@@ -1023,9 +992,10 @@
       "updateDesktopTitle": "Actualiza Orca en tu equipo",
       "updateMobileTitle": "Actualiza Orca Mobile",
       "updateRecoveryNote": "¿Ya has actualizado? Vuelve a Hosts y actualiza la conexión. Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
-      "workspaceNeedsUpdateAppStore": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
-      "workspaceNeedsUpdateGooglePlay": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde Google Play y vuelve a intentarlo con este host.",
-      "workspaceNeedsUpdateGitHubReleases": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host."
+      "workspaceNeedsUpdateGitHubReleases": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host.",
+      "mobileTooOldAppStore": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
+      "openAppStore": "Abrir App Store",
+      "workspaceNeedsUpdateAppStore": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL de la imagen",
@@ -2859,10 +2829,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "No se pudo abrir el enlace. Vuelve a intentarlo.",
-      "socialProfile": "Orca en X",
       "sourceCode": "Código fuente de Orca",
       "tagline": "IDE de código abierto con agentes para creadores 100x",
       "title": "Acerca de",
+      "socialProfile": "Orca en X",
       "website": "Sitio web de Orca"
     },
     "appUpdateSettingsRows": {
@@ -2926,8 +2896,8 @@
       "voice": "Voz"
     },
     "menuScreen": {
-      "privacyPolicy": "Política de privacidad",
-      "support": "Soporte"
+      "support": "Soporte",
+      "privacyPolicy": "Política de privacidad"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Elige cómo se abren en este dispositivo las sesiones de agentes compatibles (Claude, Codex y otros agentes con funciones de chat). La terminal muestra la CLI tal cual; la interfaz de chat ofrece una vista como la de la app de escritorio. También puedes cambiar la vista de cada sesión desde el menú que aparece al mantenerla pulsada.",

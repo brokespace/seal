@@ -15,6 +15,15 @@
         "ownerSilent": "The device that started this sign-in stopped answering.",
         "superseded": "An account change on this host stopped the sign-in. Start it again."
       }
+    },
+    "rename": {
+      "action": "Rename",
+      "cancel": "Cancel",
+      "description": "Only the name Orca shows changes. Leave it blank to show {{email}}.",
+      "label": "Display name",
+      "reset": "Reset to default",
+      "save": "Save",
+      "title": "Rename account"
     }
   },
   "agentLaunch": {
@@ -2386,14 +2395,14 @@
       "alreadyPairedWslHost": "This server is already paired as \"{{name}}\". Orca manages it as a WSL host, so its pairing cannot be replaced here.",
       "hostSaveFailed": "Orca verified the host but could not save it. Check local settings storage and try again.",
       "idNeedsNewerOrca": "A server with this id already exists in a format that needs a newer version of Orca.",
-      "invalidPairingCode": "Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload.",
       "managedDeployment": "Orca runs this server on an SSH host for you; its pairing cannot be replaced or removed here. To decommission it, run `orca environment stop --environment <name> --yes` or use Settings > Orca on your SSH hosts; for a host that is gone, run `orca environment forget --environment <name> --yes`.",
       "nameTaken": "A server named \"{{name}}\" already exists.",
       "repairCloudWorkspace": "This server belongs to a cloud workspace, which pairs it again when it resumes.",
       "repairSaveFailed": "Orca verified the server but could not save the new pairing. Check local settings storage and try again.",
       "selfPairingCode": "This pairing code is for this Orca itself. Generate the code on the other computer instead.",
       "sshAccessChangePending": "This server's SSH access change didn't finish. Retry or cancel it under Settings > Remote Orca Servers > SSH access for paired servers before replacing its pairing or removing it.",
-      "sshAccessLinked": "Unlink this server's SSH access under Settings > Remote Orca Servers > SSH access for paired servers before replacing its pairing or removing it."
+      "sshAccessLinked": "Unlink this server's SSH access under Settings > Remote Orca Servers > SSH access for paired servers before replacing its pairing or removing it.",
+      "invalidPairingCode": "Invalid pairing code. Expected an orca://pair?... URL or bare pairing payload."
     }
   },
   "runtimeRpc": {
@@ -2418,6 +2427,10 @@
     }
   },
   "settings": {
+    "accounts": {
+      "claudeRemoveProfile": "Orca deletes this account's own Claude folder and the sign-in saved in it on {{host}}. Your System default login and chat history shared with it stay. If it is selected, the next Claude you start uses System default.",
+      "codexRemoveHome": "Orca deletes this account's Codex folder on {{host}}, including its sign-in, MCP logins and any Codex history stored only in that folder. This cannot be undone. If it is selected, the next Codex you start uses System default."
+    },
     "agents": {
       "defaultSurfaceKeptChat_one": "{{agents}} stays as a chat, as you set.",
       "defaultSurfaceKeptChat_other": "{{agents}} stay as chats, as you set.",

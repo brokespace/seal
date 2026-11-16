@@ -26,6 +26,19 @@ import {
   DesktopBrowserBridgeAttachParams,
   DesktopBrowserBridgeResultParams
 } from '../browser/client-hosting/desktop-browser-bridge-protocol'
+import {
+  LiveSessionAnnotateParams,
+  LiveSessionAnswerParams,
+  LiveSessionHostRunParams,
+  LiveSessionMessagesParams,
+  LiveSessionRemoveParams,
+  LiveSessionRetryParams,
+  LiveSessionSendParams,
+  LiveSessionTakeOverParams,
+  LiveSessionTranscriptParams,
+  LiveSessionUnwatchParams,
+  LiveSessionWatchTranscriptParams
+} from '../live-sessions/live-session-rpc-params'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
 import { MobileWebBundleLocaleCatalogParamsSchema } from '../mobile-web-bundle/locale-catalog-contract'
 import { OrcadMigrationBlobChunkRequestSchema } from '../orcad-migration/orcad-migration-blob-transfer'
@@ -35,6 +48,10 @@ import {
   WorkerApprovalsSubscribeParams
 } from '../orchestration/orchestration-crew'
 import { PeerRunCancelParams } from '../orchestration/remote-owned-wire'
+import {
+  PairedDevicesListParamsSchema,
+  PairedDevicesRevokeParamsSchema
+} from '../paired-device-admin-contract'
 import {
   OrcadDeclareClientParamsSchema,
   OrcadPeerDesktopsParamsSchema
@@ -335,6 +352,16 @@ import {
   WorkItemsCount,
   WorkItemsList
 } from './github/github-repo-work-item-params'
+import {
+  HomeChatAttachUploadParams,
+  HomeChatAttachmentParams,
+  HomeChatCreateParams,
+  HomeChatIdParams,
+  HomeChatRespondApprovalParams,
+  HomeChatSendParams,
+  HomeChatUnwatchParams,
+  HomeChatUpdateParams
+} from './home-chat-params'
 import { EnvironmentDoctorParams } from './host-management/environment-doctor-params'
 import {
   ManagedRuntimeAgentParams,
@@ -417,6 +444,21 @@ import {
 } from './linear/linear-params'
 import { CreateProject } from './linear/linear-project-create-params'
 import { LinkPreviewGetParams } from './link-preview/link-preview-params'
+import {
+  MachineHostCancel,
+  MachineHostCreateFile,
+  MachineHostDownloadUrl,
+  MachineHostExec,
+  MachineHostListDir,
+  MachineHostPath,
+  MachineHostReadChunk,
+  MachineHostRename,
+  MachineHostShell,
+  MachineHostShellInput,
+  MachineHostShellResize,
+  MachineHostWatch,
+  MachineHostWriteChunk
+} from './machine-host-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat/native-chat-params'
 import {
   NotificationGetMissedSinceParams,
@@ -487,6 +529,13 @@ import {
 import { WorkerStartParams } from './orchestration/orchestration-worker-start-params'
 import { WorkerDispatchParams as WorkerDispatchParamsOfOrchestrationWorkerStopParams } from './orchestration/orchestration-worker-stop-params'
 import {
+  PhoneDownloadIdParams,
+  PhoneDownloadReadParams,
+  PhoneUploadAppendParams,
+  PhoneUploadBeginParams,
+  PhoneUploadIdParams
+} from './phone-transfer-params'
+import {
   PluginCatalogAddParams,
   PluginCatalogRemoveParams,
   PluginDevEmitParams,
@@ -550,6 +599,66 @@ import {
 } from './projects/repo-params'
 import { ReferenceFind, ReferenceList } from './references/reference-params'
 import { BrowserTarget, ExpectUrlBrowserTarget } from './rpc-param-primitives'
+import {
+  SealAccountsAddApiKeyParams,
+  SealAccountsAddSetupTokenParams,
+  SealAccountsApplyFleetConfigParams,
+  SealAccountsChooseNextLaunchParams,
+  SealAccountsCredentialFreshnessParams,
+  SealAccountsDismissNoticeParams,
+  SealAccountsExportCredentialParams,
+  SealAccountsImportCredentialParams,
+  SealAccountsImportSystemLoginParams,
+  SealAccountsPickParams,
+  SealAccountsPinWorkspaceParams,
+  SealAccountsRemoveAccountParams,
+  SealAccountsRemoveApiKeyParams,
+  SealAccountsReorderParams,
+  SealAccountsSetAutoSwapParams,
+  SealAccountsSetConfigParams,
+  SealAccountsSetPolicyParams,
+  SealAccountsSetProfileParams,
+  SealAccountsSetSessionLiveSwapParams,
+  SealAccountsSignInCancelParams,
+  SealAccountsSignInStartParams,
+  SealAccountsSignInSubmitCodeParams,
+  SealAccountsSignInWaitParams,
+  SealAccountsStatusParams,
+  SealAccountsSwapParams,
+  SealAccountsSwapSessionParams,
+  SealAccountsSyncFleetParams
+} from './seal-accounts-params'
+import {
+  SealMachinesDiskIndexParams,
+  SealMachinesDownloadUrlParams,
+  SealMachinesIdParams,
+  SealMachinesListDirParams,
+  SealMachinesPathParams,
+  SealMachinesReadFileParams,
+  SealMachinesRemoveParams,
+  SealMachinesRenameParams,
+  SealMachinesTransferIdParams,
+  SealMachinesUploadStagedParams
+} from './seal-machines-params'
+import {
+  SealMcpApprovalRespondParams,
+  SealMcpAuditListParams,
+  SealMcpClientCreateParams,
+  SealMcpClientIdParams,
+  SealMcpMessageParams,
+  SealMcpSettingsUpdateParams,
+  SealMcpUnwatchParams
+} from './seal-mcp-params'
+import {
+  SessionRecapGetParams,
+  SessionRecapMarkParams,
+  SessionRecapRefreshParams,
+  SessionRecapSetEnabledParams
+} from './session-recap-params'
+import {
+  SessionSummariesSetEnabledParams,
+  SessionSummariesSetModelsParams
+} from './session-summaries-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs/session-tabs-params'
 import {
   ActivateTab,
@@ -744,6 +853,12 @@ import {
   TerminalUpdateViewport
 } from './terminal/terminal-viewport-schemas-params'
 import { UpdaterCheckParams } from './updater/updater-params'
+import {
+  UtilityModelProviderParams,
+  UtilityModelSetCloudflareParams,
+  UtilityModelSetOpenRouterParams,
+  UtilityModelTestParams
+} from './utility-model-params'
 import {
   WorkspaceCleanupPreviewParams,
   WorkspaceCleanupReportUnsavedEditorsParams,
@@ -1267,6 +1382,20 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.updateMRState': UpdateMrState,
   'gitlab.workItemByPath': WorkItemByPath,
   'gitlab.workItemDetails': WorkItemDetailsOfGitlabParams,
+  'homeChat.attachUpload': HomeChatAttachUploadParams,
+  'homeChat.create': HomeChatCreateParams,
+  'homeChat.delete': HomeChatIdParams,
+  'homeChat.get': HomeChatIdParams,
+  'homeChat.list': null,
+  'homeChat.listAccounts': null,
+  'homeChat.openAttachmentDownload': HomeChatAttachmentParams,
+  'homeChat.readAttachment': HomeChatAttachmentParams,
+  'homeChat.respondApproval': HomeChatRespondApprovalParams,
+  'homeChat.send': HomeChatSendParams,
+  'homeChat.stop': HomeChatIdParams,
+  'homeChat.unwatch': HomeChatUnwatchParams,
+  'homeChat.update': HomeChatUpdateParams,
+  'homeChat.watch': null,
   'host.declareClient': OrcadDeclareClientParamsSchema,
   'host.gitBash.isAvailable': null,
   'host.peerDesktops': OrcadPeerDesktopsParamsSchema,
@@ -1357,6 +1486,36 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
   'linkPreview.get': LinkPreviewGetParams,
+  'liveSessions.annotate': LiveSessionAnnotateParams,
+  'liveSessions.answer': LiveSessionAnswerParams,
+  'liveSessions.hostRun': LiveSessionHostRunParams,
+  'liveSessions.list': null,
+  'liveSessions.messages': LiveSessionMessagesParams,
+  'liveSessions.remove': LiveSessionRemoveParams,
+  'liveSessions.retry': LiveSessionRetryParams,
+  'liveSessions.send': LiveSessionSendParams,
+  'liveSessions.takeOver': LiveSessionTakeOverParams,
+  'liveSessions.transcript': LiveSessionTranscriptParams,
+  'liveSessions.unwatch': LiveSessionUnwatchParams,
+  'liveSessions.watch': null,
+  'liveSessions.watchTranscript': LiveSessionWatchTranscriptParams,
+  'machineHost.cancel': MachineHostCancel,
+  'machineHost.createDir': MachineHostPath,
+  'machineHost.createFile': MachineHostCreateFile,
+  'machineHost.downloadUrl': MachineHostDownloadUrl,
+  'machineHost.exec': MachineHostExec,
+  'machineHost.homeDir': null,
+  'machineHost.listDir': MachineHostListDir,
+  'machineHost.metrics': null,
+  'machineHost.readChunk': MachineHostReadChunk,
+  'machineHost.remove': MachineHostPath,
+  'machineHost.rename': MachineHostRename,
+  'machineHost.shell': MachineHostShell,
+  'machineHost.shellInput': MachineHostShellInput,
+  'machineHost.shellResize': MachineHostShellResize,
+  'machineHost.stat': MachineHostPath,
+  'machineHost.watch': MachineHostWatch,
+  'machineHost.writeChunk': MachineHostWriteChunk,
   'managedRuntime.cancel': ManagedRuntimeCancelParams,
   'managedRuntime.install': ManagedRuntimeAgentParams,
   'managedRuntime.remove': ManagedRuntimeAgentParams,
@@ -1455,8 +1614,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'pairing.delegatedMobileDevice.sync': DelegatedMobileDeviceSyncParamsSchema,
   'pairing.exchangeTicket': ExchangePairingTicketParamsSchema,
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
+  'pairing.listDevices': PairedDevicesListParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
   'pairing.registerDeviceKey': RegisterDeviceKeyParamsSchema,
+  'pairing.revokeDevices': PairedDevicesRevokeParamsSchema,
+  'phoneTransfer.abortUpload': PhoneUploadIdParams,
+  'phoneTransfer.appendUpload': PhoneUploadAppendParams,
+  'phoneTransfer.beginUpload': PhoneUploadBeginParams,
+  'phoneTransfer.endDownload': PhoneDownloadIdParams,
+  'phoneTransfer.read': PhoneDownloadReadParams,
   'plugins.catalogAdd': PluginCatalogAddParams,
   'plugins.catalogList': null,
   'plugins.catalogRemove': PluginCatalogRemoveParams,
@@ -1537,6 +1703,59 @@ export const RPC_PARAMS_BY_METHOD = {
   'runtime.clientEvents.subscribe': ClientEventsSubscribeParams,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
   'runtimeEnvironment.wakeRecipeVm': RecipeVmWakeParams,
+  'seal.accounts.addApiKey': SealAccountsAddApiKeyParams,
+  'seal.accounts.addSetupToken': SealAccountsAddSetupTokenParams,
+  'seal.accounts.applyFleetConfig': SealAccountsApplyFleetConfigParams,
+  'seal.accounts.chooseNextLaunch': SealAccountsChooseNextLaunchParams,
+  'seal.accounts.credentialFreshness': SealAccountsCredentialFreshnessParams,
+  'seal.accounts.dismissNotice': SealAccountsDismissNoticeParams,
+  'seal.accounts.exportCredential': SealAccountsExportCredentialParams,
+  'seal.accounts.importCredential': SealAccountsImportCredentialParams,
+  'seal.accounts.importSystemLogin': SealAccountsImportSystemLoginParams,
+  'seal.accounts.pick': SealAccountsPickParams,
+  'seal.accounts.pinWorkspace': SealAccountsPinWorkspaceParams,
+  'seal.accounts.removeAccount': SealAccountsRemoveAccountParams,
+  'seal.accounts.removeApiKey': SealAccountsRemoveApiKeyParams,
+  'seal.accounts.reorder': SealAccountsReorderParams,
+  'seal.accounts.setAutoSwap': SealAccountsSetAutoSwapParams,
+  'seal.accounts.setConfig': SealAccountsSetConfigParams,
+  'seal.accounts.setPolicy': SealAccountsSetPolicyParams,
+  'seal.accounts.setProfile': SealAccountsSetProfileParams,
+  'seal.accounts.setSessionLiveSwap': SealAccountsSetSessionLiveSwapParams,
+  'seal.accounts.signInCancel': SealAccountsSignInCancelParams,
+  'seal.accounts.signInStart': SealAccountsSignInStartParams,
+  'seal.accounts.signInSubmitCode': SealAccountsSignInSubmitCodeParams,
+  'seal.accounts.signInWait': SealAccountsSignInWaitParams,
+  'seal.accounts.status': SealAccountsStatusParams,
+  'seal.accounts.swap': SealAccountsSwapParams,
+  'seal.accounts.swapSession': SealAccountsSwapSessionParams,
+  'seal.accounts.syncFleet': SealAccountsSyncFleetParams,
+  'sealMachines.cancelTransfer': SealMachinesTransferIdParams,
+  'sealMachines.createDir': SealMachinesPathParams,
+  'sealMachines.diskIndex': SealMachinesDiskIndexParams,
+  'sealMachines.downloadUrl': SealMachinesDownloadUrlParams,
+  'sealMachines.list': null,
+  'sealMachines.listDir': SealMachinesListDirParams,
+  'sealMachines.listTransfers': null,
+  'sealMachines.metrics': SealMachinesIdParams,
+  'sealMachines.openDownload': SealMachinesPathParams,
+  'sealMachines.readFile': SealMachinesReadFileParams,
+  'sealMachines.remove': SealMachinesRemoveParams,
+  'sealMachines.rename': SealMachinesRenameParams,
+  'sealMachines.uploadStaged': SealMachinesUploadStagedParams,
+  'sealMcp.createClient': SealMcpClientCreateParams,
+  'sealMcp.listApprovals': null,
+  'sealMcp.listAudit': SealMcpAuditListParams,
+  'sealMcp.listMachines': null,
+  'sealMcp.message': SealMcpMessageParams,
+  'sealMcp.removeClient': SealMcpClientIdParams,
+  'sealMcp.respondApproval': SealMcpApprovalRespondParams,
+  'sealMcp.revokeClient': SealMcpClientIdParams,
+  'sealMcp.status': null,
+  'sealMcp.unwatch': SealMcpUnwatchParams,
+  'sealMcp.updateSettings': SealMcpSettingsUpdateParams,
+  'sealMcp.watch': null,
+  'sealMcp.watchApprovals': null,
   'session.readTerminalScrollback': SessionReadTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
@@ -1552,6 +1771,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
   'session.tabs.updatePaneLayout': UpdatePaneLayout,
+  'sessionRecap.get': SessionRecapGetParams,
+  'sessionRecap.mark': SessionRecapMarkParams,
+  'sessionRecap.refresh': SessionRecapRefreshParams,
+  'sessionRecap.setEnabled': SessionRecapSetEnabledParams,
+  'sessionSummaries.list': null,
+  'sessionSummaries.setEnabled': SessionSummariesSetEnabledParams,
+  'sessionSummaries.setModels': SessionSummariesSetModelsParams,
+  'sessionSummaries.status': null,
   'settings.get': null,
   'settings.getAgentLaunch': null,
   'settings.getTerminalQuickCommands': null,
@@ -1675,6 +1902,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'updater.download': null,
   'updater.getStatus': null,
   'updater.install': null,
+  'utilityModel.clearCloudflare': null,
+  'utilityModel.clearOpenRouter': null,
+  'utilityModel.listModels': UtilityModelProviderParams,
+  'utilityModel.providers': UtilityModelProviderParams,
+  'utilityModel.setCloudflare': UtilityModelSetCloudflareParams,
+  'utilityModel.setOpenRouter': UtilityModelSetOpenRouterParams,
+  'utilityModel.status': null,
+  'utilityModel.test': UtilityModelTestParams,
   'workspaceCleanup.preview': WorkspaceCleanupPreviewParams,
   'workspaceCleanup.report': null,
   'workspaceCleanup.reportUnsavedEditors': WorkspaceCleanupReportUnsavedEditorsParams,

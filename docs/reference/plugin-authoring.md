@@ -623,15 +623,15 @@ Warnings do not fail the check. Run it in CI for the plugin and catalog reposito
 
 It also reads the host calls in the code the worker, panel and editor entries ship (their
 imports and `<script src>` files, literal `orca.host.call('name')` names only, as bundlers keep
-them; comments are ignored). A call fails the check when this Orca has no such method
+them; comments are ignored). A call fails the check when this Seal has no such method
 (unreleased or misspelled), unless the plugin calls `orca.host.has` anywhere, or when it is
 still proposed, unless the plugin checks that name with a literal `orca.host.has('name')`; then
 it is a warning. A method newer than your
 `engines.orca` or one that surface cannot call is a warning, because a text scan cannot see
 guards or which code a surface runs: raise `engines.orca` to the release it names, or guard the
 call with `orca.host.has(name)`. Guards count plugin-wide, not per call. A deprecated method is
-a warning starting `deprecated host method <name>`. The Orca plugin directory runs this
-against the latest Orca release, so a method that release does not have holds your listing
+a warning starting `deprecated host method <name>`. The Seal plugin directory runs this
+against the latest Seal release, so a method that release does not have holds your listing
 until it ships, and it shows you the warnings. Each minor's first release is in the
 [host API reference](plugin-host-api.md#stability-and-deprecation).
 

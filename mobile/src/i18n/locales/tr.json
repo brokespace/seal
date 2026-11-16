@@ -4,7 +4,6 @@
       "agentLogin": "Ajanın kendi oturum açma bilgilerini kullan",
       "connecting": "Sunucuya bağlanılıyor…",
       "connectingTo": "{{name}} ile bağlantı kuruluyor…",
-      "default": "Sistem varsayılanı",
       "fableWindow": "Fable",
       "hostNotFound": "Sunucu bulunamadı",
       "invalidSnapshot": "Sunucudan gelen hesap anlık görüntüsü geçersiz",
@@ -17,7 +16,8 @@
       "switchFailed": "Hesap değiştirilemedi",
       "title": "Hesaplar",
       "useReset": "Sıfırlama hakkını kullan",
-      "weeklyWindow": "7g"
+      "weeklyWindow": "7g",
+      "default": "Sistem varsayılanı"
     }
   },
   "agentHistory": {
@@ -97,21 +97,21 @@
       "connecting": "Bağlanılıyor…",
       "invalidPairingCode": "Geçerli bir eşleştirme kodu değil — bilgisayarınızdan kopyalayıp yeniden yapıştırın",
       "invalidQrCode": "Geçerli bir Orca QR kodu değil",
-      "downloadQrCode": "Bu indirme kodu. Bilgisayarınızdaki 2. adımda bulunan eşleştirme kodunu tarayın.",
       "openDesktopStep": "Bilgisayarınızda Orca'yı açın",
       "openMobileSettingsStep": "Ayarlar → Mobil bölümüne gidin",
       "openSettings": "Ayarları Aç",
       "pairingFailed": "Eşleştirme yapılamadı: {{error}}",
       "pairingLog": "Eşleştirme günlüğü",
       "pasteCodeMessage": "Bilgisayarınızda QR kodunun altında gösterilen kodu kopyalayın.",
-      "pasteCodePlaceholder": "orca://pair?code=... veya kodu yapıştırın",
       "pasteCodeTitle": "Eşleştirme kodunu yapıştır",
       "pasteInstead": "Bunun yerine kod yapıştır",
       "pastePairingCode": "Veya eşleştirme kodunu yapıştır",
       "scanCodeStep": "QR kodunu tarayın",
       "title": "Masaüstüyle eşleştir",
       "tryAgain": "Tekrar Dene",
-      "codeNoLongerValid": "Bu eşleştirme kodunun süresi doldu, kod zaten kullanıldı veya değiştirildi. Bilgisayarınızda yeni bir kod gösterip tekrar tarayın."
+      "codeNoLongerValid": "Bu eşleştirme kodunun süresi doldu, kod zaten kullanıldı veya değiştirildi. Bilgisayarınızda yeni bir kod gösterip tekrar tarayın.",
+      "downloadQrCode": "Bu indirme kodu. Bilgisayarınızdaki 2. adımda bulunan eşleştirme kodunu tarayın.",
+      "pasteCodePlaceholder": "orca://pair?code=... veya kodu yapıştırın"
     },
     "terminalSettings": {
       "defaultText": "Varsayılan (%100)",
@@ -134,33 +134,6 @@
       "textSizeHeading": "METİN BOYUTU",
       "textSizePickerTitle": "Terminal metin boyutu",
       "title": "Terminal"
-    }
-  },
-  "appMove": {
-    "play": {
-      "title": "Orca artık Google Play'de",
-      "description": "Bu uygulama çalışmaya devam ediyor, ancak güncellemeler artık Google Play üzerinden geliyor. Geçiş birkaç dakika sürer.",
-      "installTitle": "Orca'yı Google Play'den yükleyin",
-      "installDescription": "Bunu şimdi, nerede olursanız olun yapabilirsiniz.",
-      "openGooglePlay": "Google Play'i aç",
-      "cantUseGooglePlay": "Google Play'i kullanamıyorum"
-    },
-    "download": {
-      "title": "Yeni Orca uygulamasını edinin",
-      "description": "Bu uygulama çalışmaya devam ediyor, ancak güncellemeler ve güvenlik düzeltmeleri artık yeni uygulama üzerinden geliyor. Geçiş birkaç dakika sürer.",
-      "installTitle": "Yeni uygulamayı indirin",
-      "installDescription": "Telefonunuz sorarsa tarayıcınızın uygulama yüklemesine izin verin.",
-      "download": "İndir",
-      "keepThisVersion": "Bu sürümü kullanmaya devam et",
-      "keepThisVersionNote": "Güvenlik düzeltmelerini kaçıracaksınız. Size bir hafta sonra hatırlatacağız."
-    },
-    "pairTitle": "Bilgisayarınızla eşleştirin",
-    "pairDescription": "Bilgisayarınızdaki Orca'da Ayarlar → Mobil bölümüne gidin ve kodu tarayın.",
-    "deleteTitle": "Bu uygulamayı silin",
-    "deleteDescription": "Yeni uygulama ajanlarınızı gösterdiğinde. O zamana kadar bunu kullanmaya devam edin.",
-    "dataKept": "Ajanlarınız, sohbetleriniz ve çalışma alanlarınız bilgisayarınızda kayıtlı, bu yüzden hepsini yeni uygulamada göreceksiniz.",
-    "banner": {
-      "seeHowToSwitch": "Nasıl geçiş yapılır"
     }
   },
   "browser": {
@@ -973,11 +946,7 @@
       "backToHosts": "Sunucular bölümüne dön",
       "desktopTooOldBody": "Eşleştirilmiş bu masaüstü uygulaması, mevcut Orca Mobile sürümünüz için çok eski. Bilgisayarınızdaki Orca'yı güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
       "getVersion": "Orca {{version}} Sürümünü İndir",
-      "mobileTooOldAppStore": "Bu masaüstü uygulaması, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
-      "mobileTooOldGooglePlay": "Bu masaüstü uygulaması, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı Google Play üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
       "mobileTooOldGitHubReleases": "Bu masaüstü uygulaması, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı GitHub Releases üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
-      "openAppStore": "App Store'u Aç",
-      "openGooglePlay": "Google Play'i Aç",
       "openGitHubReleases": "GitHub Releases Sayfasını Aç",
       "refreshRecoveryNote": "Bu mesaj görünmeye devam ederse bu sunucuyu kaldırıp yeniden eşleştirin.",
       "refreshWorkspaceBody": "Bu sunucu için önbelleğe alınan çalışma alanı, masaüstü uygulamasının beklediğinden daha eski. Güncel sürümü indirmek için bu sunucuya yeniden bağlanın.",
@@ -985,9 +954,10 @@
       "updateDesktopTitle": "Bilgisayarınızdaki Orca'yı güncelleyin",
       "updateMobileTitle": "Orca Mobile'ı güncelleyin",
       "updateRecoveryNote": "Zaten güncellediniz mi? Sunucular bölümüne dönüp bağlantıyı yenileyin. Bu mesaj görünmeye devam ederse bu sunucuyu kaldırıp yeniden eşleştirin.",
-      "workspaceNeedsUpdateAppStore": "Bu masaüstü uygulamasının mobil çalışma alanı, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
-      "workspaceNeedsUpdateGooglePlay": "Bu masaüstü uygulamasının mobil çalışma alanı, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı Google Play üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
-      "workspaceNeedsUpdateGitHubReleases": "Bu masaüstü uygulamasının mobil çalışma alanı, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı GitHub Releases üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin."
+      "workspaceNeedsUpdateGitHubReleases": "Bu masaüstü uygulamasının mobil çalışma alanı, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı GitHub Releases üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
+      "mobileTooOldAppStore": "Bu masaüstü uygulaması, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin.",
+      "openAppStore": "App Store'u Aç",
+      "workspaceNeedsUpdateAppStore": "Bu masaüstü uygulamasının mobil çalışma alanı, Orca Mobile'ın daha yeni bir sürümünü gerektiriyor. Orca Mobile'ı App Store üzerinden güncelleyin, ardından bu sunucuya bağlanmayı tekrar deneyin."
     },
     "richMarkdownEditor": {
       "imageUrl": "Görsel URL'si",
@@ -2789,10 +2759,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Bağlantı açılamadı. Yeniden deneyin.",
-      "socialProfile": "X'te Orca",
       "sourceCode": "Orca kaynak kodu",
       "tagline": "100 kat daha üretken geliştiriciler için açık kaynaklı ajan IDE'si",
       "title": "Hakkında",
+      "socialProfile": "X'te Orca",
       "website": "Orca web sitesi"
     },
     "appUpdateSettingsRows": {
@@ -2853,8 +2823,8 @@
       "voice": "Ses"
     },
     "menuScreen": {
-      "privacyPolicy": "Gizlilik Politikası",
-      "support": "Destek"
+      "support": "Destek",
+      "privacyPolicy": "Gizlilik Politikası"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Desteklenen ajan oturumlarının (Claude, Codex ve sohbet destekli diğer ajanlar) bu cihazda nasıl açılacağını seçin. Terminal, CLI'yi olduğu gibi gösterir; Sohbet Arayüzü ise masaüstü uygulamasındaki gibi bir sohbet arayüzü sunar. Her oturumun görünümünü, oturuma uzun basınca açılan menüden ayrıca değiştirebilirsiniz.",

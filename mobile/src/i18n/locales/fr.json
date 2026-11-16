@@ -4,7 +4,6 @@
       "agentLogin": "Utiliser l'authentification de l'agent",
       "connecting": "Connexion à l'hôte…",
       "connectingTo": "Connexion à {{name}}…",
-      "default": "Valeur par défaut du système",
       "fableWindow": "Fable",
       "hostNotFound": "Hôte introuvable",
       "invalidSnapshot": "État des comptes invalide reçu de l'hôte",
@@ -17,7 +16,8 @@
       "switchFailed": "Impossible de changer de compte",
       "title": "Comptes",
       "useReset": "Utiliser une réinitialisation",
-      "weeklyWindow": "7 j"
+      "weeklyWindow": "7 j",
+      "default": "Valeur par défaut du système"
     }
   },
   "agentHistory": {
@@ -99,21 +99,21 @@
       "connecting": "Connexion…",
       "invalidPairingCode": "Code d'appairage invalide — copiez-le depuis votre ordinateur et collez-le à nouveau.",
       "invalidQrCode": "QR code Orca invalide",
-      "downloadQrCode": "C’est le code de téléchargement. Scannez le code d’association à l’étape 2 sur votre ordinateur.",
       "openDesktopStep": "Ouvrez Orca sur votre ordinateur",
       "openMobileSettingsStep": "Allez dans Paramètres → Mobile",
       "openSettings": "Ouvrir les paramètres",
       "pairingFailed": "Échec de l'appairage : {{error}}",
       "pairingLog": "Journal d'appairage",
       "pasteCodeMessage": "Copiez le code affiché sous le QR code sur votre ordinateur.",
-      "pasteCodePlaceholder": "orca://pair?code=... ou collez le code",
       "pasteCodeTitle": "Coller le code d'appairage",
       "pasteInstead": "Coller plutôt le code",
       "pastePairingCode": "Ou coller le code d'appairage",
       "scanCodeStep": "Scannez le QR code",
       "title": "Appairer un ordinateur",
       "tryAgain": "Réessayer",
-      "codeNoLongerValid": "Ce code d'appairage a expiré, a déjà été utilisé ou a été remplacé. Affichez un nouveau code sur votre ordinateur et scannez à nouveau."
+      "codeNoLongerValid": "Ce code d'appairage a expiré, a déjà été utilisé ou a été remplacé. Affichez un nouveau code sur votre ordinateur et scannez à nouveau.",
+      "downloadQrCode": "C’est le code de téléchargement. Scannez le code d’association à l’étape 2 sur votre ordinateur.",
+      "pasteCodePlaceholder": "orca://pair?code=... ou collez le code"
     },
     "terminalSettings": {
       "defaultText": "Par défaut (100 %)",
@@ -138,33 +138,6 @@
       "textSizeHeading": "TAILLE DU TEXTE",
       "textSizePickerTitle": "Taille du texte du terminal",
       "title": "Terminal"
-    }
-  },
-  "appMove": {
-    "play": {
-      "title": "Orca est maintenant sur Google Play",
-      "description": "Cette app fonctionne toujours, mais les mises à jour arrivent désormais par Google Play. Le changement ne prend que quelques minutes.",
-      "installTitle": "Installez Orca depuis Google Play",
-      "installDescription": "Vous pouvez le faire dès maintenant, où que vous soyez.",
-      "openGooglePlay": "Ouvrir Google Play",
-      "cantUseGooglePlay": "Je ne peux pas utiliser Google Play"
-    },
-    "download": {
-      "title": "Installez la nouvelle app Orca",
-      "description": "Cette app fonctionne toujours, mais les mises à jour et correctifs de sécurité arrivent désormais par la nouvelle app. Le changement ne prend que quelques minutes.",
-      "installTitle": "Téléchargez la nouvelle app",
-      "installDescription": "Si votre téléphone le demande, autorisez votre navigateur à installer des apps.",
-      "download": "Télécharger",
-      "keepThisVersion": "Continuer avec cette version",
-      "keepThisVersionNote": "Vous ne recevrez plus les correctifs de sécurité. Nous vous le rappellerons dans une semaine."
-    },
-    "pairTitle": "Appairez-la avec votre ordinateur",
-    "pairDescription": "Dans Orca sur votre ordinateur, allez dans Paramètres → Mobile et scannez le code.",
-    "deleteTitle": "Supprimez cette app",
-    "deleteDescription": "Une fois que la nouvelle app affiche vos agents. D'ici là, continuez d'utiliser celle-ci.",
-    "dataKept": "Vos agents, discussions et espaces de travail sont enregistrés sur votre ordinateur : vous les retrouverez tous dans la nouvelle app.",
-    "banner": {
-      "seeHowToSwitch": "Voir comment changer"
     }
   },
   "browser": {
@@ -1011,11 +984,7 @@
       "backToHosts": "Retour aux hôtes",
       "desktopTooOldBody": "La version d'Orca sur cet ordinateur appairé est trop ancienne pour votre version actuelle d'Orca Mobile. Mettez Orca à jour sur votre ordinateur, puis réessayez de vous connecter à cet hôte.",
       "getVersion": "Obtenir Orca {{version}}",
-      "mobileTooOldAppStore": "Cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte.",
-      "mobileTooOldGooglePlay": "Cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis Google Play, puis réessayez de vous connecter à cet hôte.",
       "mobileTooOldGitHubReleases": "Cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte.",
-      "openAppStore": "Ouvrir l'App Store",
-      "openGooglePlay": "Ouvrir Google Play",
       "openGitHubReleases": "Ouvrir GitHub Releases",
       "refreshRecoveryNote": "Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
       "refreshWorkspaceBody": "La version de l'espace de travail en cache pour cet hôte est antérieure à celle attendue par l'ordinateur. Reconnectez-vous à cet hôte pour télécharger la version actuelle.",
@@ -1023,9 +992,10 @@
       "updateDesktopTitle": "Mettre à jour Orca sur votre ordinateur",
       "updateMobileTitle": "Mettre à jour Orca Mobile",
       "updateRecoveryNote": "Déjà à jour ? Revenez à l'écran Hôtes et actualisez la connexion. Si ce message persiste, supprimez cet hôte et appairez-le à nouveau.",
-      "workspaceNeedsUpdateAppStore": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte.",
-      "workspaceNeedsUpdateGooglePlay": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis Google Play, puis réessayez de vous connecter à cet hôte.",
-      "workspaceNeedsUpdateGitHubReleases": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte."
+      "workspaceNeedsUpdateGitHubReleases": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis GitHub Releases, puis réessayez de vous connecter à cet hôte.",
+      "mobileTooOldAppStore": "Cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte.",
+      "openAppStore": "Ouvrir l'App Store",
+      "workspaceNeedsUpdateAppStore": "L'espace de travail mobile de cet ordinateur nécessite une version plus récente d'Orca Mobile. Mettez Orca Mobile à jour depuis l'App Store, puis réessayez de vous connecter à cet hôte."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL de l'image",
@@ -2859,10 +2829,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Impossible d'ouvrir le lien. Réessayez.",
-      "socialProfile": "Orca sur X",
       "sourceCode": "Code source d'Orca",
       "tagline": "IDE open source avec agents pour les développeurs 100x",
       "title": "À propos",
+      "socialProfile": "Orca sur X",
       "website": "Site web d'Orca"
     },
     "appUpdateSettingsRows": {
@@ -2926,8 +2896,8 @@
       "voice": "Voix"
     },
     "menuScreen": {
-      "privacyPolicy": "Politique de confidentialité",
-      "support": "Assistance"
+      "support": "Assistance",
+      "privacyPolicy": "Politique de confidentialité"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Choisissez comment ouvrir sur cet appareil les sessions des agents compatibles (Claude, Codex et les autres agents prenant en charge le chat). Le mode « Terminal » affiche la CLI brute ; Chat UI affiche une interface de chat similaire à celle de l'application pour ordinateur. Vous pouvez toujours changer l'affichage de chaque session via son menu accessible par un appui long.",

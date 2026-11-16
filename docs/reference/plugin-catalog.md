@@ -128,10 +128,10 @@ One thing the release adds to Seal.
 
 ## Categories
 
-Orca's plugin browser folds related `categories` slugs into one filter and shows an unknown slug as its own. Pick the slug for what the plugin adds:
+Seal's plugin browser folds related `categories` slugs into one filter and shows an unknown slug as its own. Pick the slug for what the plugin adds:
 
 - **Languages:** `languages`, `syntaxes`, `syntax`. Syntax highlighting and grammars for programming languages.
-- **Translations:** `language-packs`, `localization`, `i18n`, `translations`. Language packs that show Orca's interface in another language.
+- **Translations:** `language-packs`, `localization`, `i18n`, `translations`. Language packs that show Seal's interface in another language.
 
 ## One repository can hold many plugins
 

@@ -4,7 +4,6 @@
       "agentLogin": "Agent 自体のログイン情報を使用",
       "connecting": "ホストに接続中…",
       "connectingTo": "「{{name}}」に接続中…",
-      "default": "システムのデフォルト",
       "fableWindow": "Fable",
       "hostNotFound": "ホストが見つかりません",
       "invalidSnapshot": "ホストからのアカウントスナップショットが無効です",
@@ -17,7 +16,8 @@
       "switchFailed": "アカウントを切り替えられませんでした",
       "title": "アカウント",
       "useReset": "リセット枠を使用",
-      "weeklyWindow": "7日"
+      "weeklyWindow": "7日",
+      "default": "システムのデフォルト"
     }
   },
   "agentHistory": {
@@ -97,21 +97,21 @@
       "connecting": "接続中…",
       "invalidPairingCode": "ペアリングコードが無効です。コンピュータからコピーして、もう一度貼り付けてください。",
       "invalidQrCode": "Orca の有効な QR コードではありません",
-      "downloadQrCode": "これはダウンロード用のコードです。デスクトップのステップ2にあるペアリングコードをスキャンしてください。",
       "openDesktopStep": "コンピュータで Orca を開く",
       "openMobileSettingsStep": "「設定」→「モバイル」を開く",
       "openSettings": "設定を開く",
       "pairingFailed": "ペアリングに失敗しました：{{error}}",
       "pairingLog": "ペアリングログ",
       "pasteCodeMessage": "コンピュータの QR コードの下に表示されているコードをコピーしてください。",
-      "pasteCodePlaceholder": "orca://pair?code=... またはコードを貼り付け",
       "pasteCodeTitle": "ペアリングコードを貼り付け",
       "pasteInstead": "代わりにコードを貼り付け",
       "pastePairingCode": "またはペアリングコードを貼り付け",
       "scanCodeStep": "QR コードをスキャン",
       "title": "デスクトップのペアリング",
       "tryAgain": "再試行",
-      "codeNoLongerValid": "このペアリングコードは期限切れ、使用済み、または置き換え済みです。デスクトップで新しいコードを表示して、もう一度スキャンしてください。"
+      "codeNoLongerValid": "このペアリングコードは期限切れ、使用済み、または置き換え済みです。デスクトップで新しいコードを表示して、もう一度スキャンしてください。",
+      "downloadQrCode": "これはダウンロード用のコードです。デスクトップのステップ2にあるペアリングコードをスキャンしてください。",
+      "pasteCodePlaceholder": "orca://pair?code=... またはコードを貼り付け"
     },
     "terminalSettings": {
       "defaultText": "標準（100%）",
@@ -134,33 +134,6 @@
       "textSizeHeading": "テキストサイズ",
       "textSizePickerTitle": "ターミナルのテキストサイズ",
       "title": "ターミナル"
-    }
-  },
-  "appMove": {
-    "play": {
-      "title": "Orca は Google Play で配信中です",
-      "description": "このアプリは引き続き使えますが、今後のアップデートは Google Play から配信されます。移行は数分で完了します。",
-      "installTitle": "Google Play から Orca をインストール",
-      "installDescription": "今すぐ、どこからでもインストールできます。",
-      "openGooglePlay": "Google Play を開く",
-      "cantUseGooglePlay": "Google Play を使えない"
-    },
-    "download": {
-      "title": "新しい Orca アプリを入手",
-      "description": "このアプリは引き続き使えますが、今後のアップデートとセキュリティ修正は新しいアプリで配信されます。移行は数分で完了します。",
-      "installTitle": "新しいアプリをダウンロード",
-      "installDescription": "確認が表示されたら、ブラウザにアプリのインストールを許可してください。",
-      "download": "ダウンロード",
-      "keepThisVersion": "このバージョンを使い続ける",
-      "keepThisVersionNote": "セキュリティ修正は届かなくなります。1 週間後にもう一度お知らせします。"
-    },
-    "pairTitle": "コンピュータとペアリング",
-    "pairDescription": "コンピュータの Orca で「設定」→「モバイル」を開き、コードをスキャンしてください。",
-    "deleteTitle": "このアプリを削除",
-    "deleteDescription": "新しいアプリに Agent が表示されたら削除してください。それまではこのアプリを使い続けてください。",
-    "dataKept": "Agent、チャット、ワークスペースはコンピュータに保存されているので、新しいアプリでもすべて表示されます。",
-    "banner": {
-      "seeHowToSwitch": "移行方法を見る"
     }
   },
   "browser": {
@@ -969,11 +942,7 @@
       "backToHosts": "ホストに戻る",
       "desktopTooOldBody": "ペアリング済みのデスクトップアプリは、現在の Orca Mobile に対応していない古いバージョンです。コンピュータの Orca を更新して、このホストへの接続を再試行してください。",
       "getVersion": "Orca {{version}} を入手",
-      "mobileTooOldAppStore": "このデスクトップには、より新しいバージョンの Orca Mobile が必要です。App Store から Orca Mobile を更新して、このホストへの接続を再試行してください。",
-      "mobileTooOldGooglePlay": "このデスクトップには、より新しいバージョンの Orca Mobile が必要です。Google Play から Orca Mobile を更新して、このホストへの接続を再試行してください。",
       "mobileTooOldGitHubReleases": "このデスクトップには、より新しいバージョンの Orca Mobile が必要です。GitHub Releases から Orca Mobile を更新して、このホストへの接続を再試行してください。",
-      "openAppStore": "App Store を開く",
-      "openGooglePlay": "Google Play を開く",
       "openGitHubReleases": "GitHub Releases を開く",
       "refreshRecoveryNote": "このメッセージが表示され続ける場合は、このホストを削除して、再度ペアリングしてください。",
       "refreshWorkspaceBody": "このホスト用にキャッシュされたワークスペースは、デスクトップが必要とするバージョンより古くなっています。このホストに再接続して、最新のワークスペースをダウンロードしてください。",
@@ -981,9 +950,10 @@
       "updateDesktopTitle": "コンピュータの Orca を更新",
       "updateMobileTitle": "Orca Mobile を更新",
       "updateRecoveryNote": "すでに更新済みですか？「ホスト」に戻り、接続を更新してください。このメッセージが表示され続ける場合は、このホストを削除して、再度ペアリングしてください。",
-      "workspaceNeedsUpdateAppStore": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Orca Mobile が必要です。App Store から Orca Mobile を更新して、このホストへの接続を再試行してください。",
-      "workspaceNeedsUpdateGooglePlay": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Orca Mobile が必要です。Google Play から Orca Mobile を更新して、このホストへの接続を再試行してください。",
-      "workspaceNeedsUpdateGitHubReleases": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Orca Mobile が必要です。GitHub Releases から Orca Mobile を更新して、このホストへの接続を再試行してください。"
+      "workspaceNeedsUpdateGitHubReleases": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Orca Mobile が必要です。GitHub Releases から Orca Mobile を更新して、このホストへの接続を再試行してください。",
+      "mobileTooOldAppStore": "このデスクトップには、より新しいバージョンの Orca Mobile が必要です。App Store から Orca Mobile を更新して、このホストへの接続を再試行してください。",
+      "openAppStore": "App Store を開く",
+      "workspaceNeedsUpdateAppStore": "このデスクトップのモバイルワークスペースには、より新しいバージョンの Orca Mobile が必要です。App Store から Orca Mobile を更新して、このホストへの接続を再試行してください。"
     },
     "richMarkdownEditor": {
       "imageUrl": "画像 URL",
@@ -2785,10 +2755,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "リンクを開けませんでした。再試行してください。",
-      "socialProfile": "Orca の X アカウント",
       "sourceCode": "Orca のソースコード",
       "tagline": "100 倍の生産性を目指す開発者向けのオープンソース Agent IDE",
       "title": "Orca について",
+      "socialProfile": "Orca の X アカウント",
       "website": "Orca のウェブサイト"
     },
     "appUpdateSettingsRows": {
@@ -2849,8 +2819,8 @@
       "voice": "音声"
     },
     "menuScreen": {
-      "privacyPolicy": "プライバシーポリシー",
-      "support": "サポート"
+      "support": "サポート",
+      "privacyPolicy": "プライバシーポリシー"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "対応する Agent セッション（Claude、Codex など、チャットに対応した Agent）をこのデバイスで開く際の表示方法を選択してください。「ターミナル」では CLI をそのまま表示し、「Chat UI」ではデスクトップアプリと同様のチャット画面を表示します。各セッションの表示方法は、長押しメニューから個別に切り替えられます。",

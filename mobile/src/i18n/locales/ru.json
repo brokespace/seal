@@ -4,7 +4,6 @@
       "agentLogin": "Использовать учётную запись самого агента",
       "connecting": "Подключение к серверу…",
       "connectingTo": "Подключение к {{name}}…",
-      "default": "Как в системе",
       "fableWindow": "Fable",
       "hostNotFound": "Сервер не найден",
       "invalidSnapshot": "Некорректные данные учётных записей от сервера",
@@ -17,7 +16,8 @@
       "switchFailed": "Не удалось переключить учётную запись",
       "title": "Учётные записи",
       "useReset": "Сбросить лимиты",
-      "weeklyWindow": "7 дн."
+      "weeklyWindow": "7 дн.",
+      "default": "Как в системе"
     }
   },
   "agentHistory": {
@@ -101,21 +101,21 @@
       "connecting": "Подключение…",
       "invalidPairingCode": "Неверный код сопряжения — скопируйте его с компьютера и вставьте ещё раз",
       "invalidQrCode": "Неверный QR-код Orca",
-      "downloadQrCode": "Это код для скачивания. Отсканируйте код сопряжения на шаге 2 на компьютере.",
       "openDesktopStep": "Откройте Orca на компьютере",
       "openMobileSettingsStep": "Перейдите в «Настройки → Мобильный доступ»",
       "openSettings": "Открыть настройки",
       "pairingFailed": "Не удалось выполнить сопряжение: {{error}}",
       "pairingLog": "Журнал сопряжения",
       "pasteCodeMessage": "Скопируйте код, показанный под QR-кодом на компьютере.",
-      "pasteCodePlaceholder": "orca://pair?code=... или вставьте код",
       "pasteCodeTitle": "Вставить код сопряжения",
       "pasteInstead": "Вставить код",
       "pastePairingCode": "Или вставить код сопряжения",
       "scanCodeStep": "Отсканируйте QR-код",
       "title": "Сопряжение с компьютером",
       "tryAgain": "Повторить попытку",
-      "codeNoLongerValid": "Этот код сопряжения истёк, уже использован или был заменён. Покажите новый код на компьютере и отсканируйте его снова."
+      "codeNoLongerValid": "Этот код сопряжения истёк, уже использован или был заменён. Покажите новый код на компьютере и отсканируйте его снова.",
+      "downloadQrCode": "Это код для скачивания. Отсканируйте код сопряжения на шаге 2 на компьютере.",
+      "pasteCodePlaceholder": "orca://pair?code=... или вставьте код"
     },
     "terminalSettings": {
       "defaultText": "По умолчанию (100%)",
@@ -142,33 +142,6 @@
       "textSizeHeading": "РАЗМЕР ТЕКСТА",
       "textSizePickerTitle": "Размер текста терминала",
       "title": "Терминал"
-    }
-  },
-  "appMove": {
-    "play": {
-      "title": "Orca теперь в Google Play",
-      "description": "Это приложение продолжит работать, но обновления теперь выходят в Google Play. Переход займёт несколько минут.",
-      "installTitle": "Установите Orca из Google Play",
-      "installDescription": "Это можно сделать прямо сейчас, где бы вы ни были.",
-      "openGooglePlay": "Открыть Google Play",
-      "cantUseGooglePlay": "Я не могу пользоваться Google Play"
-    },
-    "download": {
-      "title": "Новое приложение Orca",
-      "description": "Это приложение продолжит работать, но обновления и исправления безопасности теперь выходят в новом приложении. Переход займёт несколько минут.",
-      "installTitle": "Скачайте новое приложение",
-      "installDescription": "Если телефон спросит, разрешите браузеру устанавливать приложения.",
-      "download": "Скачать",
-      "keepThisVersion": "Продолжить с этой версией",
-      "keepThisVersionNote": "Вы не будете получать исправления безопасности. Мы напомним через неделю."
-    },
-    "pairTitle": "Подключите его к компьютеру",
-    "pairDescription": "В Orca на компьютере откройте «Настройки» → «Мобильный доступ» и отсканируйте код.",
-    "deleteTitle": "Удалите это приложение",
-    "deleteDescription": "Когда в новом приложении появятся ваши агенты. А до тех пор пользуйтесь этим.",
-    "dataKept": "Ваши агенты, чаты и рабочие пространства хранятся на компьютере, поэтому вы увидите их все в новом приложении.",
-    "banner": {
-      "seeHowToSwitch": "Как перейти"
     }
   },
   "browser": {
@@ -1049,11 +1022,7 @@
       "backToHosts": "Вернуться к серверам",
       "desktopTooOldBody": "Версия Orca на сопряжённом компьютере устарела и несовместима с текущей версией Orca Mobile. Обновите Orca на компьютере, затем снова подключитесь к этому серверу.",
       "getVersion": "Скачать Orca {{version}}",
-      "mobileTooOldAppStore": "Для работы с Orca на этом компьютере нужна более новая версия Orca Mobile. Обновите Orca Mobile через App Store, затем снова подключитесь к этому серверу.",
-      "mobileTooOldGooglePlay": "Для работы с Orca на этом компьютере нужна более новая версия Orca Mobile. Обновите Orca Mobile через Google Play, затем снова подключитесь к этому серверу.",
       "mobileTooOldGitHubReleases": "Для работы с Orca на этом компьютере нужна более новая версия Orca Mobile. Обновите Orca Mobile через GitHub Releases, затем снова подключитесь к этому серверу.",
-      "openAppStore": "Открыть App Store",
-      "openGooglePlay": "Открыть Google Play",
       "openGitHubReleases": "Открыть GitHub Releases",
       "refreshRecoveryNote": "Если сообщение не исчезнет, удалите этот сервер и выполните сопряжение заново.",
       "refreshWorkspaceBody": "Версия рабочего пространства этого сервера в кэше старее той, которую ожидает Orca на компьютере. Подключитесь к этому серверу заново, чтобы загрузить актуальную версию.",
@@ -1061,9 +1030,10 @@
       "updateDesktopTitle": "Обновите Orca на компьютере",
       "updateMobileTitle": "Обновите Orca Mobile",
       "updateRecoveryNote": "Уже обновили? Вернитесь в раздел «Серверы» и обновите подключение. Если сообщение не исчезнет, удалите этот сервер и выполните сопряжение заново.",
-      "workspaceNeedsUpdateAppStore": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Orca Mobile. Обновите Orca Mobile через App Store, затем снова подключитесь к этому серверу.",
-      "workspaceNeedsUpdateGooglePlay": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Orca Mobile. Обновите Orca Mobile через Google Play, затем снова подключитесь к этому серверу.",
-      "workspaceNeedsUpdateGitHubReleases": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Orca Mobile. Обновите Orca Mobile через GitHub Releases, затем снова подключитесь к этому серверу."
+      "workspaceNeedsUpdateGitHubReleases": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Orca Mobile. Обновите Orca Mobile через GitHub Releases, затем снова подключитесь к этому серверу.",
+      "mobileTooOldAppStore": "Для работы с Orca на этом компьютере нужна более новая версия Orca Mobile. Обновите Orca Mobile через App Store, затем снова подключитесь к этому серверу.",
+      "openAppStore": "Открыть App Store",
+      "workspaceNeedsUpdateAppStore": "Для мобильного рабочего пространства этого компьютера нужна более новая версия Orca Mobile. Обновите Orca Mobile через App Store, затем снова подключитесь к этому серверу."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL изображения",
@@ -2929,10 +2899,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Не удалось открыть ссылку. Повторите попытку.",
-      "socialProfile": "Orca в X",
       "sourceCode": "Исходный код Orca",
       "tagline": "IDE с открытым кодом и агентами: разработка в 100 раз быстрее",
       "title": "О приложении",
+      "socialProfile": "Orca в X",
       "website": "Сайт Orca"
     },
     "appUpdateSettingsRows": {
@@ -2999,8 +2969,8 @@
       "voice": "Голос"
     },
     "menuScreen": {
-      "privacyPolicy": "Политика конфиденциальности",
-      "support": "Поддержка"
+      "support": "Поддержка",
+      "privacyPolicy": "Политика конфиденциальности"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Выберите, как на этом устройстве открываются сессии поддерживаемых агентов (Claude, Codex и других агентов с поддержкой чата). В терминале отображается CLI в исходном виде, а в интерфейсе чата — чат, как в приложении для компьютера. Режим отдельной сессии можно изменить через меню, которое открывается долгим нажатием.",
