@@ -156,7 +156,8 @@ export class LiveTranscriptStreams {
           failures = 0
         } catch (error) {
           failures++
-          if (failures === 1) {
+          // A watch closed while its read was out has nobody to tell.
+          if (failures === 1 && !stopped) {
             this.log?.(`[live-sessions] transcript read for ${sessionId} failed`, error)
           }
         }

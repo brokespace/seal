@@ -62,7 +62,7 @@ export function watchJournalTranscript(
       failures = 0
     } catch (error) {
       failures++
-      if (failures === 1) {
+      if (failures === 1 && !stopped) {
         options?.log?.(`[live-sessions] journal read for ${sessionId} failed`, error)
       }
     }
