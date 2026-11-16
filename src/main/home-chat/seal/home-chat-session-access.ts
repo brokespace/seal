@@ -1,12 +1,18 @@
 import { randomUUID } from 'node:crypto'
 import { liveSessionMachineId } from '../../../shared/live-sessions/live-session-machine-id'
+import { isActiveLiveSession } from '../../../shared/live-sessions/live-session-status'
 import type {
+  AgentSessionSurface,
   LiveMessage,
   LiveSession,
   LiveSessionRegistrySnapshot,
   LiveSessionStatus,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
+import {
+  liveSessionPlaceOf,
+  type LiveSessionPlace
+} from '../../../shared/live-sessions/live-session-workspace-groups'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 
 const MAX_MESSAGE_CHARS = 1_500
@@ -20,14 +26,20 @@ export type HomeChatSessionSummary = {
   /** Seal machine id: `local` or `machine:<id>`. */
   machineId: string
   machineLabel: string
-  /** Runs in a Seal pane, or was found running outside Seal. */
-  origin: 'seal' | 'external'
-  project: string | null
+  /** A Seal chat, an agent in a Seal pane, or a session found running outside Seal. */
+  surface: AgentSessionSurface['kind']
   cwd: string | null
+  /** The project and workspace it is listed under, as `seal sessions list` shows them. */
+  place: LiveSessionPlace
+  /** The Seal workspace its registry linked it to; null when it is listed by its folder. */
+  worktreeId: string | null
   title: string | null
   status: LiveSessionStatus
   statusDetail: string | null
   lastActivityAt: number
+  /** Still running, or a chat that takes the next message: what a list shows by default. */
+  active: boolean
+  /** Its agent process runs; a chat at rest has none. */
   alive: boolean
   canTakeOver: boolean
 }
@@ -41,12 +53,15 @@ export type HomeChatSessionDelivery = {
 /** The agent sessions Seal tracks: on this computer, SSH hosts and paired Seal servers. */
 export type HomeChatSessionAccess = {
   list: () => Promise<{ sessions: HomeChatSessionSummary[]; errors: string[] }>
+  /** The id a session goes by now: a new chat or agent gets another once its agent names it. */
+  currentId: (sessionId: string) => string
   transcript: (sessionId: string, limit: number) => Promise<string>
   send: (sessionId: string, text: string) => Promise<HomeChatSessionDelivery>
 }
 
 /** The slice of the live-session service the assistant uses. */
 export type HomeChatLiveSessions = {
+  registry: { currentId: (sessionId: string) => string }
   snapshot: () => LiveSessionRegistrySnapshot
   refresh: () => Promise<void>
   transcriptPage: (sessionId: string, before: null, limit?: number) => Promise<LiveTranscriptPage>
@@ -60,15 +75,17 @@ function summarize(session: LiveSession): HomeChatSessionSummary {
     agent: session.provider,
     machineId: liveSessionMachineId(session.machine),
     machineLabel: session.machine.label,
-    origin: session.origin,
-    project: session.project,
+    surface: session.surface.kind,
     cwd: session.cwd,
+    place: liveSessionPlaceOf(session),
+    worktreeId: session.workspace?.worktreeId ?? null,
     title: session.title,
     status: session.status,
     statusDetail: session.statusDetail,
     lastActivityAt: session.lastActivityAt,
+    active: isActiveLiveSession(session),
     alive: session.alive,
-    canTakeOver: session.origin === 'external' && !session.providerSessionId.startsWith('pid-')
+    canTakeOver: session.capabilities.takeOver
   }
 }
 
@@ -79,7 +96,7 @@ function blockText(block: NativeChatMessage['blocks'][number]): string {
   return block.type === 'tool-call' ? `[ran ${block.name}]` : ''
 }
 
-export function renderSessionTranscript(messages: readonly NativeChatMessage[]): string {
+function renderSessionTranscript(messages: readonly NativeChatMessage[]): string {
   const lines = messages.flatMap((message) => {
     const text = message.blocks.map(blockText).filter(Boolean).join('\n').trim()
     if (!text) {
@@ -122,6 +139,7 @@ export function createHomeChatSessionAccess(deps: {
         errors: Object.entries(snapshot.hostErrors).map(([host, error]) => `${host}: ${error}`)
       }
     },
+    currentId: (sessionId) => deps.live()?.registry.currentId(sessionId) ?? sessionId,
     transcript: async (sessionId, limit) =>
       renderSessionTranscript(
         (await requireLive().transcriptPage(sessionId, null, limit)).messages

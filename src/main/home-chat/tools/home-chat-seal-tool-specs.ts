@@ -7,9 +7,10 @@ const provider = z.enum(['claude', 'codex'])
 export const HOME_CHAT_SEAL_TOOLS = {
   list_sessions: {
     description:
-      'List the Claude Code and Codex agent sessions Seal can see on every machine (or one machine): id, agent, machine, project folder, title, status (working, running-shell = a shell command it started is still running, waiting-subagent, waiting-task, waiting-input = it asked the user a question, needs-permission = a tool or command waits for approval, your-turn = it finished its turn and waits for the next message, idle = not given anything yet, done = ended, errored), what it is doing, last activity, and whether it runs in a Seal pane or was found running outside Seal. Use it before messaging or taking over a session.',
+      'List the agent sessions Seal tracks on every machine (or one machine or project), of every agent: id, agent, machine, folder, project, title, status (working, running-shell = a shell command it started is still running, waiting-subagent, waiting-task, waiting-input = it asked the user a question, needs-permission = a tool or command waits for approval, your-turn = it finished its turn and waits for the next message, idle = not given anything yet, done = ended, errored), what it is doing, last activity, and whether it is a Seal chat, runs in a Seal pane or was found running outside Seal. Use it before messaging or taking over a session.',
     shape: {
       machine: z.string().optional().describe('Only this machine (id or label)'),
+      project: z.string().optional().describe('Only this project (name or key)'),
       include_done: z.boolean().optional().describe('Also list finished sessions (default false)')
     }
   },
@@ -20,7 +21,7 @@ export const HOME_CHAT_SEAL_TOOLS = {
   },
   message_session: {
     description:
-      "Send a message to a running agent session as if the user typed it. Seal delivers it through the session's own input (its Seal pane, the Codex queue, a tmux pane, or a headless resume) and reports whether it was delivered. The session answers in its own transcript: read it with read_session.",
+      'Send a message to an agent session as if the user typed it. A Seal chat gets it as a normal chat message; any other session through its own input (its Seal pane, the Codex queue, a tmux pane, or a headless resume). Seal reports whether it was delivered. The session answers in its own transcript: read it with read_session.',
     shape: { session_id: sessionId, text: z.string().min(1) }
   },
   take_over_session: {
@@ -55,7 +56,7 @@ export const HOME_CHAT_SEAL_TOOLS = {
   },
   open_in_seal: {
     description:
-      "Show something in the Seal window for the user: a top-level view (home, machines, sessions, tasks, activity, automations, skills, settings), a machine's page (id = machine id), or another assistant thread (id = thread id). To focus a workspace or terminal use seal_cli (`worktree switch`, `terminal switch`).",
+      "Show something in the Seal window for the user: a top-level view (home, machines, tasks, automations, skills, settings), the agent sessions in the sidebar (sessions or activity), a machine's page (id = machine id), or another assistant thread (id = thread id). To focus a workspace or terminal use seal_cli (`worktree switch`, `terminal switch`).",
     shape: {
       target: z.enum([
         'home',
