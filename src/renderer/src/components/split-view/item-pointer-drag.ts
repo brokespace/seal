@@ -19,7 +19,7 @@ const DRAG_THRESHOLD_PX = 4
 
 /**
  * One pointer drag for things that only ever land in panes: Active agents rows and tabs in an
- * item strip. Call from the source's pointer-down. Esc and window blur cancel.
+ * item strip. Call from the source's pointer-down. Esc, window blur and a missed release cancel.
  */
 export function startItemPointerDrag(
   event: { button: number; clientX: number; clientY: number },
@@ -49,6 +49,11 @@ export function startItemPointerDrag(
     }
   }
   const onMove = (move: PointerEvent): void => {
+    // A release the window never saw (over a guest page, or outside) arrives as a buttonless move.
+    if (move.buttons === 0) {
+      finish()
+      return
+    }
     if (!drag) {
       if (Math.hypot(move.clientX - startX, move.clientY - startY) < DRAG_THRESHOLD_PX) {
         return
