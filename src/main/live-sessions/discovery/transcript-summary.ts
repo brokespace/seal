@@ -30,7 +30,8 @@ export type TranscriptPhase =
 /**
  * A pending call the process list can read further: a `shell` command shows as a process while it
  * runs, and an `edit` is instant, so either one standing with nothing running waits on an approval.
- * A `shell-wait` resumes a command started by an earlier call (Codex's `wait` on a yielded cell).
+ * A `shell-wait` waits on a command an earlier call started and left running (Codex's `wait` on
+ * a yielded cell, Claude's `TaskOutput`): the turn is blocked on work in the background.
  */
 export type PendingCallKind = 'shell' | 'edit' | 'shell-wait'
 

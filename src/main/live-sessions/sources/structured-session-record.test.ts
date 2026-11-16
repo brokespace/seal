@@ -132,6 +132,19 @@ describe('a chat as the registry lists it', () => {
     [
       'an ended turn with a background task still running',
       { summary: { ...SETTLED, backgroundTasks: [{ id: 't1', kind: 'command' }] } },
+      'your-turn',
+      '1 background task still running'
+    ],
+    [
+      'a running turn waiting on the output of a background task',
+      {
+        summary: {
+          ...RUNNING,
+          toolName: 'TaskOutput',
+          backgroundTasks: [{ id: 't1', kind: 'command' }]
+        },
+        toolInFlight: { name: 'TaskOutput' }
+      },
       'waiting-task',
       null
     ],

@@ -1,11 +1,11 @@
 import type { AgentSessionStatusSummary } from '../../../shared/agent-session/agent-session-wire'
 import type { AgentSessionStatusEvidence } from '../../../shared/live-sessions/adapters/agent-session-adapter'
 import {
-  runningBackgroundTasks,
   runningSubagents,
   type LiveSessionActivity
 } from '../../../shared/live-sessions/live-session-activity'
 import { isShellActivityToolCall } from '../../../shared/native-chat/tools/native-chat-tool-icon'
+import { isClaudeBackgroundWaitTool } from '../discovery/claude-transcript-phase'
 import type { StructuredSessionRequest } from './structured-session-prompts'
 
 /** A tool call the running turn has not finished. */
@@ -39,7 +39,10 @@ export function structuredSessionEvidence(
     // An agent that died mid-turn failed its turn too, as the chat's own row shows it.
     turnFailed: summary.turnOutcome === 'failure' || summary.turnOutcome === 'interruption',
     runningSubagents: runningSubagents(facts.activity).length,
-    runningBackgroundTasks: runningBackgroundTasks(facts.activity).length,
+    waitsOnBackgroundTask:
+      turnRunning &&
+      facts.toolInFlight !== null &&
+      isClaudeBackgroundWaitTool(facts.toolInFlight.name),
     hadTurn: summary.status !== null,
     ended: facts.ended
   }

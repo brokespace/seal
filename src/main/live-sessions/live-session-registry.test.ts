@@ -298,7 +298,7 @@ describe('a Seal pane whose status changes between scans', () => {
     vi.useFakeTimers()
     vi.setSystemTime(NOW)
     const { state, registry, paneChanged } = machine(() => Date.now())
-    const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
+    const shown = () => registry.getSnapshot().sessions.map((s) => [s.status, s.statusDetail])
     const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
     state.running = true
     state.cwd = '/tmp/cc-home/work'
@@ -307,7 +307,7 @@ describe('a Seal pane whose status changes between scans', () => {
     registry.start()
     try {
       await vi.advanceTimersByTimeAsync(1_000)
-      expect(shown()).toEqual(['waiting-task'])
+      expect(shown()).toEqual([['your-turn', '1 background task still running']])
 
       // The command ends and wakes Claude, which answers and stops again.
       state.files = [transcript(recorded, WORKING, 0)]
@@ -315,7 +315,7 @@ describe('a Seal pane whose status changes between scans', () => {
       paneChanged([{ ...sealPane, status: 'your-turn' }])
       // The scan that read the command as running is a minute from its next.
       await vi.advanceTimersByTimeAsync(1_000)
-      expect(shown()).toEqual(['your-turn'])
+      expect(shown()).toEqual([['your-turn', null]])
     } finally {
       registry.stop()
     }

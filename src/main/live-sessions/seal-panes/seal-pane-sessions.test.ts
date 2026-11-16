@@ -192,7 +192,7 @@ describe('what a pane row says of a turn that stopped', () => {
     [
       'left a watcher running',
       { state: 'working', workingMode: 'monitoring', mainAgent: done },
-      'waiting-task',
+      'your-turn',
       null
     ],
     ['left a subagent running', { state: 'working', mainAgent: done }, 'waiting-subagent', null],
@@ -315,9 +315,7 @@ describe('what discovery adds to a Seal pane', () => {
 
   // [the pane's hooks, what discovery read and from where, what shows and whose word it is]
   it.each<[Status, Status, Source, Status, Source]>([
-    // A Stop hook does not say what the turn left running, asked, or died of.
-    ['your-turn', 'waiting-task', 'transcript', 'waiting-task', 'transcript'],
-    ['your-turn', 'waiting-task', 'agent-state', 'waiting-task', 'agent-state'],
+    // A Stop hook does not say which subagents the turn left running, what it asked, or what it died of.
     ['your-turn', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
     ['your-turn', 'waiting-input', 'transcript', 'waiting-input', 'transcript'],
     ['your-turn', 'errored', 'transcript', 'errored', 'transcript'],
@@ -336,15 +334,17 @@ describe('what discovery adds to a Seal pane', () => {
     ['working', 'needs-permission', 'process', 'working', 'seal-hooks'],
     ['working', 'your-turn', 'transcript', 'working', 'seal-hooks'],
     ['working', 'errored', 'transcript', 'working', 'seal-hooks'],
-    // The hook's inventory says work runs; discovery says which kind.
-    ['waiting-task', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
-    ['waiting-task', 'your-turn', 'transcript', 'waiting-task', 'seal-hooks'],
+    // A wait on a background task belongs to a turn the hook saw end.
+    ['your-turn', 'waiting-task', 'transcript', 'your-turn', 'seal-hooks'],
+    // The hook's inventory says subagents run; discovery says how many.
+    ['waiting-subagent', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
+    ['waiting-subagent', 'your-turn', 'transcript', 'waiting-subagent', 'seal-hooks'],
     // A prompt and a failure are the hooks' to report.
     ['needs-permission', 'working', 'transcript', 'needs-permission', 'seal-hooks'],
     ['waiting-input', 'your-turn', 'transcript', 'waiting-input', 'seal-hooks'],
     ['errored', 'your-turn', 'transcript', 'errored', 'seal-hooks'],
     // A guess never outranks a hook.
-    ['your-turn', 'waiting-task', 'classifier', 'your-turn', 'seal-hooks']
+    ['your-turn', 'waiting-subagent', 'classifier', 'your-turn', 'seal-hooks']
   ])('hooks say %s, discovery read %s from %s: shows %s', (hooks, read, from, shows, word) => {
     expect(merged(hooks, read, from)).toEqual([shows, word])
   })

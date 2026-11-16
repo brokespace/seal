@@ -1,7 +1,11 @@
 import type { AgentSessionStatusSummary } from '../../../shared/agent-session/agent-session-wire'
 import { agentSessionProviderHandleChainHead } from '../../../shared/agent-session/lifecycle/agent-session-provider-handle'
 import type { AgentSessionRecord } from '../../../shared/agent-session/lifecycle/agent-session-record'
-import type { LiveTodo } from '../../../shared/live-sessions/live-session-activity'
+import {
+  backgroundLeftoverLabel,
+  type LiveSessionActivity,
+  type LiveTodo
+} from '../../../shared/live-sessions/live-session-activity'
 import { liveSessionStatusFromEvidence } from '../../../shared/live-sessions/live-session-status'
 import type {
   LiveSession,
@@ -98,7 +102,8 @@ function earlierIds(facts: StructuredSessionFacts, providerSessionId: string): s
 function statusDetail(
   status: LiveSessionStatus,
   summary: StructuredSessionSummary,
-  permission: LiveSessionPermissionPrompt | null
+  permission: LiveSessionPermissionPrompt | null,
+  activity: LiveSessionActivity
 ): string | null {
   switch (status) {
     case 'working':
@@ -108,7 +113,7 @@ function statusDetail(
     case 'your-turn':
       return summary.turnOutcome === 'cancellation' || summary.turnOutcome === 'superseded'
         ? 'Interrupted'
-        : null
+        : backgroundLeftoverLabel(activity)
     case 'needs-permission':
       return permission?.question ?? null
     case 'errored':
@@ -167,7 +172,7 @@ export function structuredLiveSession(facts: StructuredSessionFacts): LiveSessio
       : {}),
     status,
     statusSource: 'seal-hooks',
-    statusDetail: statusDetail(status, summary, permission),
+    statusDetail: statusDetail(status, summary, permission, activity),
     lastActivityAt: summary.updatedAt,
     startedAt: record.createdAt,
     alive,
