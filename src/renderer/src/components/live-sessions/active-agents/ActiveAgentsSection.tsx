@@ -164,6 +164,10 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
     }
   )
   const onListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    // A row's open menu is drawn outside the list; its keys reach here through React and are the menu's.
+    if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) {
+      return
+    }
     const row =
       event.target instanceof HTMLElement
         ? event.target.closest<HTMLElement>('[data-live-session-row]')
