@@ -23,6 +23,19 @@ export function isSplitViewShowing(): boolean {
   return splitViewStore.hasLayout() && selectItemViewShown(useAppStore.getState())
 }
 
+/**
+ * A workspace in a pane other than the focused one is on screen without owning the keyboard, so
+ * content that takes focus when it mounts must ask first.
+ */
+export function canWorkspaceTakeKeyboardFocus(worktreeId: string | null | undefined): boolean {
+  const paneId = worktreeId ? splitViewStore.getVisibleWorkspaces().get(worktreeId) : undefined
+  return (
+    paneId === undefined ||
+    paneId === splitViewStore.getState().focusedPaneId ||
+    !isSplitViewShowing()
+  )
+}
+
 export function useSplitViewShowing(): boolean {
   const hasLayout = useSplitViewHasLayout()
   const itemViewShown = useAppStore(selectItemViewShown)
