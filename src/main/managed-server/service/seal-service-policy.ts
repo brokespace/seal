@@ -4,16 +4,20 @@ import type { MachineServerInstall } from '../../../shared/machines/machine-reco
 export type SealServerKeeper = NonNullable<MachineServerInstall['manager']>
 export type SealServiceManager = Exclude<SealServerKeeper, 'detached'>
 
-/** `prefer: 'pm2'` is the advanced option: PM2 ahead of the native manager. */
-export type SealServiceWish = { prefer?: 'pm2' }
+/** `prefer` is the advanced option: that manager ahead of the one Seal would pick. launchd is used only when preferred. */
+export type SealServiceWish = { prefer?: SealServiceManager }
 
 export type SealServiceOutcome = {
   /** `detached` when no manager works: started on connect, stops when idle. */
   manager: SealServerKeeper
-  /** systemd only: false when enabling linger was refused. */
+  /** systemd only: what logind answered; absent when it did not answer, which is not a refusal. */
   linger?: boolean
   /** pm2 only: whether the user's own `pm2 startup` is configured; null when it cannot be told. */
   startsAtBoot?: boolean | null
+  /** The account the host names itself (`id -un`). */
+  hostUser?: string
+  /** macOS: launchd was asked for, but no one is logged in at the screen, so it holds no user service. */
+  launchdNeedsLogin?: true
 }
 
 type Wishes = (sshTargetId: string) => SealServiceWish | null

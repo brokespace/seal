@@ -8,11 +8,14 @@ import type { SealServiceWish } from './seal-service-policy'
 function probe(answer: Partial<SealServiceProbe>): SealServiceProbe {
   return {
     platform: 'linux',
+    user: 'dev',
     systemdUser: false,
     launchctl: false,
+    guiSession: false,
     pm2: false,
     installed: null,
     registered: false,
+    ownServe: null,
     linger: null,
     pm2StartsAtBoot: null,
     ...answer
@@ -21,50 +24,57 @@ function probe(answer: Partial<SealServiceProbe>): SealServiceProbe {
 
 const wished: SealServiceWish = {}
 const pm2First: SealServiceWish = { prefer: 'pm2' }
+const systemdFirst: SealServiceWish = { prefer: 'systemd-user' }
+const launchdFirst: SealServiceWish = { prefer: 'launchd' }
+const mac: Partial<SealServiceProbe> = { platform: 'darwin', launchctl: true, guiSession: true }
+const macNobodyLoggedIn: Partial<SealServiceProbe> = { ...mac, guiSession: false }
 
 describe('selectSealServiceCandidates', () => {
   it.each<[string, Partial<SealServiceProbe>, SealServiceWish | null, string[]]>([
     ['linux, user systemd', { systemdUser: true }, wished, ['systemd-user', 'detached']],
     [
-      'linux, user systemd and pm2',
+      'linux, user systemd and pm2: pm2 first',
       { systemdUser: true, pm2: true },
       wished,
-      ['systemd-user', 'pm2', 'detached']
+      ['pm2', 'systemd-user', 'detached']
     ],
     ['linux, pm2 only (container)', { pm2: true }, wished, ['pm2', 'detached']],
     ['linux, neither', {}, wished, ['detached']],
-    ['macOS', { platform: 'darwin', launchctl: true }, wished, ['launchd', 'detached']],
-    [
-      'macOS with pm2',
-      { platform: 'darwin', launchctl: true, pm2: true },
-      wished,
-      ['launchd', 'pm2', 'detached']
-    ],
-    [
-      'a systemctl on macOS is not the native manager',
-      { platform: 'darwin', systemdUser: true, launchctl: true },
-      wished,
-      ['launchd', 'detached']
-    ],
-    [
-      'a launchctl on linux is not the native manager',
-      { launchctl: true, pm2: true },
-      wished,
-      ['pm2', 'detached']
-    ],
+    ['macOS: launchd is not automatic', mac, wished, ['detached']],
+    ['macOS with pm2', { ...mac, pm2: true }, wished, ['pm2', 'detached']],
+    ['a systemctl on macOS is not a manager', { ...mac, systemdUser: true }, wished, ['detached']],
     ['another unix with pm2', { platform: 'other', pm2: true }, wished, ['pm2', 'detached']],
     [
-      'pm2 preferred',
+      'systemd preferred over pm2',
       { systemdUser: true, pm2: true },
-      pm2First,
-      ['pm2', 'systemd-user', 'detached']
+      systemdFirst,
+      ['systemd-user', 'pm2', 'detached']
     ],
     ['pm2 preferred but absent', { systemdUser: true }, pm2First, ['systemd-user', 'detached']],
+    ['launchd preferred', { ...mac, pm2: true }, launchdFirst, ['launchd', 'pm2', 'detached']],
     [
-      'the installed manager wins over the native one',
-      { systemdUser: true, pm2: true, installed: 'pm2', registered: true },
+      'launchd preferred on linux, where a launchctl is not a manager',
+      { launchctl: true, guiSession: true, pm2: true },
+      launchdFirst,
+      ['pm2', 'detached']
+    ],
+    [
+      'launchd preferred, nobody logged in at the screen: pm2 does not stand in',
+      { ...macNobodyLoggedIn, pm2: true },
+      launchdFirst,
+      ['detached']
+    ],
+    [
+      'launchd installed, nobody logged in at the screen: pm2 does not replace it',
+      { ...macNobodyLoggedIn, pm2: true, installed: 'launchd' },
       wished,
-      ['pm2', 'systemd-user', 'detached']
+      ['detached']
+    ],
+    [
+      'the installed manager wins over the automatic order',
+      { systemdUser: true, pm2: true, installed: 'systemd-user', registered: true },
+      wished,
+      ['systemd-user', 'pm2', 'detached']
     ],
     [
       'the installed manager wins over the preference',
@@ -95,6 +105,27 @@ describe('selectSealServiceCandidates', () => {
       { systemdUser: true, installed: 'pm2' },
       null,
       ['detached']
+    ],
+    [
+      'the user’s own seal serve service: no second server',
+      {
+        systemdUser: true,
+        pm2: true,
+        ownServe: { manager: 'systemd-user', name: 'seal-serve.service' }
+      },
+      pm2First,
+      ['detached']
+    ],
+    [
+      'the user’s own seal serve service beside an installed one: the marker stays the truth',
+      {
+        systemdUser: true,
+        installed: 'systemd-user',
+        registered: true,
+        ownServe: { manager: 'systemd-user', name: 'seal-serve.service' }
+      },
+      null,
+      ['systemd-user', 'detached']
     ]
   ])('%s', (_name, answer, wish, expected) => {
     expect(selectSealServiceCandidates(probe(answer), wish)).toEqual(expected)

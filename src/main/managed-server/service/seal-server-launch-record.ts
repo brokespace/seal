@@ -1,6 +1,7 @@
 /** The stable launcher a service manager runs, and the launch record naming the slot it starts. */
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import { SEAL_SERVER_SERVICE_ENV } from '../../../shared/orcad-managed-launch-env'
+import { SEAL_MANAGED_SERVICE_PORT } from '../../../shared/orcad-managed-runtime'
 import {
   joinRemotePath,
   remoteDirname,
@@ -41,6 +42,11 @@ export function writeSealServerLauncherCommand(): string {
     `( umask 077; mkdir -p "$seal_bin" && ${printLinesCommand(LAUNCHER_LINES)} > ${temp} && ` +
     `chmod 700 ${temp} && mv -f ${temp} ${SEAL_SERVICE_LAUNCHER_WORD} )`
   )
+}
+
+/** Without a record the launcher exits 0: a manager that still holds the service then starts nothing. */
+export function dropSealServerLaunchRecordCommand(managedRoot: string): string {
+  return `${sealServiceBinAssignment(managedRoot)} rm -f ${SEAL_SERVICE_LAUNCH_RECORD_WORD}`
 }
 
 export function sealServiceManagedRoot(host: RemoteHostPlatform, remoteInstallDir: string): string {
@@ -88,7 +94,8 @@ export function sealServiceLaunchTail(
     `${SEAL_SERVER_SERVICE_ENV}=1`,
     ...(manager === 'pm2' ? [] : ['exec']),
     `"$orcad_runtime" $orcad_runtime_flags ${parts.runtimeV8Flags} ${parts.entry}`,
-    `--json --bind ${quotePosixShell(spec.bindHost)} --port ${String(spec.port)}`
+    // Not `spec.port`: a start at boot must never take the port a user's own `seal serve` is pinned to.
+    `--json --bind ${quotePosixShell(spec.bindHost)} --port ${String(SEAL_MANAGED_SERVICE_PORT)}`
   ].join(' ')
   const beforeLoginEnv = [
     // A slot removed since the launch leaves nothing to keep running.

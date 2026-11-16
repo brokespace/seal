@@ -1,4 +1,4 @@
-/** Shell pieces that ask systemd, launchd or PM2 to hold, restart or drop the service. */
+/** Shell pieces that ask systemd, launchd or PM2 to hold, restart or drop the user service. */
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import {
   SEAL_SERVICE_LAUNCHD_LABEL,
@@ -24,25 +24,27 @@ export const SEAL_LINGER_ANSWER =
 
 export const SEAL_LAUNCHD_UID = 'seal_uid=$(id -u);'
 
-/** A GUI login loads the agent into `gui/`; an SSH-only bootstrap put it in `user/`. */
-function launchdTarget(domain: 'gui' | 'user'): string {
-  return `"${domain}/$seal_uid/${SEAL_SERVICE_LAUNCHD_LABEL}"`
-}
+/** The one launchd domain Seal uses, as `seal serve service install` does; it exists only while the user is logged in at the screen. Needs `SEAL_LAUNCHD_UID`. */
+export const SEAL_LAUNCHD_DOMAIN_WORD = '"gui/$seal_uid"'
+
+const LAUNCHD_SERVICE_WORD = `"gui/$seal_uid/${SEAL_SERVICE_LAUNCHD_LABEL}"`
 
 /** Needs `SEAL_LAUNCHD_UID`. */
-export const SEAL_LAUNCHD_LOADED_FUNCTION =
-  `seal_launchd_loaded() { launchctl print ${launchdTarget('gui')} >/dev/null 2>&1 || ` +
-  `launchctl print ${launchdTarget('user')} >/dev/null 2>&1; };`
+export const SEAL_LAUNCHD_LOADED_FUNCTION = `seal_launchd_loaded() { launchctl print ${LAUNCHD_SERVICE_WORD} >/dev/null 2>&1; };`
 
 const LAUNCHD_BOOTOUT_WAIT_TRIES = 50
 
 /** bootout returns before a running instance is gone, and a bootstrap straight after fails with EIO. */
 export const SEAL_LAUNCHD_BOOTOUT =
   `${SEAL_LAUNCHD_UID} ${SEAL_LAUNCHD_LOADED_FUNCTION} ` +
-  `launchctl bootout ${launchdTarget('gui')} >/dev/null 2>&1; ` +
-  `launchctl bootout ${launchdTarget('user')} >/dev/null 2>&1; ` +
+  `launchctl bootout ${LAUNCHD_SERVICE_WORD} >/dev/null 2>&1; ` +
   `seal_tries=0; while seal_launchd_loaded && [ "$seal_tries" -lt ${LAUNCHD_BOOTOUT_WAIT_TRIES} ]; ` +
   'do sleep 0.1; seal_tries=$((seal_tries + 1)); done;'
+
+/** Needs `SEAL_LAUNCHD_UID`. The enable clears an earlier `launchctl disable`, which would refuse the bootstrap. */
+export const SEAL_LAUNCHD_BOOTSTRAP =
+  `launchctl enable ${LAUNCHD_SERVICE_WORD} >/dev/null 2>&1; ` +
+  `launchctl bootstrap ${SEAL_LAUNCHD_DOMAIN_WORD} ${SEAL_SERVICE_LAUNCHD_PLIST_WORD}`
 
 /** Any pm2 command spawns the daemon, so liveness is read from its pid file instead. */
 export const SEAL_PM2_LIVE_FUNCTION =
@@ -93,11 +95,10 @@ export function sealServiceRestartCommand(manager: SealServiceManager): string {
         `systemctl --user restart ${SEAL_SERVICE_SYSTEMD_UNIT}`
       )
     case 'launchd':
-      // After a reboot without a login the agent is in neither domain; RunAtLoad starts it on bootstrap.
+      // An agent that was booted out since the login is not loaded; RunAtLoad starts it on bootstrap.
       return (
-        `${SEAL_LAUNCHD_UID} launchctl kickstart -k ${launchdTarget('gui')} 2>/dev/null || ` +
-        `launchctl kickstart -k ${launchdTarget('user')} 2>/dev/null || ` +
-        `launchctl bootstrap "user/$seal_uid" ${SEAL_SERVICE_LAUNCHD_PLIST_WORD}`
+        `${SEAL_LAUNCHD_UID} launchctl kickstart -k ${LAUNCHD_SERVICE_WORD} 2>/dev/null || ` +
+        `{ ${SEAL_LAUNCHD_BOOTSTRAP}; }`
       )
     case 'pm2':
       // A fresh daemon has forgotten the entry; the daemon keeps the directory it was spawned in.

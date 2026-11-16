@@ -59,6 +59,8 @@ WantedBy=default.target
   <string>/Users/dev &amp; co/.orca-remote/bin/seal-server.log</string>
   <key>AbandonProcessGroup</key>
   <true/>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
 </dict>
 </plist>
 `)

@@ -8,7 +8,10 @@ import {
 import { OrcadFenceLostError } from '../activation/orcad-activation-fence-scope'
 import { isWslOrcadHostTarget, type OrcadHostTransport } from '../install/orcad-host-transport'
 import type { OrcadLaunchSpec } from '../install/orcad-remote-launch'
-import { sealServiceManagedRoot } from './seal-server-launch-record'
+import {
+  dropSealServerLaunchRecordCommand,
+  sealServiceManagedRoot
+} from './seal-server-launch-record'
 import {
   parseSealServiceInstallAnswer,
   SEAL_ENABLE_LINGER_COMMAND,
@@ -29,6 +32,7 @@ import {
   parseSealLinger,
   parseSealServiceAnswer,
   parseSealServiceProbe,
+  sealDetachedOutcome,
   sealServiceOutcome,
   sealServiceProbeCommand
 } from './seal-service-probe'
@@ -136,6 +140,18 @@ async function keepRunningWith(
   return null
 }
 
+/** A manager that still holds the service would otherwise start the recorded slot beside the detached server. */
+async function dropLaunchRecord(run: SealServiceRemoteRun, managedRoot: string): Promise<void> {
+  try {
+    await run(dropSealServerLaunchRecordCommand(managedRoot))
+  } catch (error) {
+    if (endsTheLaunch(error)) {
+      throw error
+    }
+    console.warn(`[seal-service] the launch record could not be removed: ${errorMessage(error)}`)
+  }
+}
+
 /**
  * The host's marker is the truth: a host that has a service is launched through it by every desktop.
  * A host without one gets a service only when the machine registry wishes it. Null keeps the detached launch.
@@ -153,10 +169,21 @@ export async function resolveSealServiceLaunch(
   }
   const wish = sealServiceWish(targetId)
   const probe = await probeHost(run, managedRoot)
-  if (!probe?.installed && wish === null) {
+  if (probe && !probe.installed && wish === null) {
     return null
   }
+  if (probe?.ownServe && !probe.installed) {
+    console.info(
+      `[seal-service] ${probe.ownServe.name} already keeps a Seal server running on this host; no service is registered beside it`
+    )
+  }
   const kept = probe && (await keepRunningWith(run, managedRoot, probe, wish))
-  reportSealServiceOutcome(targetId, kept?.outcome ?? { manager: 'detached' })
+  // An unanswered probe may hide a marker.
+  if (!kept && (!probe || probe.installed)) {
+    await dropLaunchRecord(run, managedRoot)
+  }
+  if (probe?.installed || wish !== null) {
+    reportSealServiceOutcome(targetId, kept?.outcome ?? sealDetachedOutcome(probe, wish))
+  }
   return kept ? { service: kept.manager } : null
 }

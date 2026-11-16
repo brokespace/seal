@@ -3,7 +3,6 @@ import { printLinesCommand, writeSealServerLauncherCommand } from './seal-server
 import {
   SEAL_SERVICE_LAUNCH_RECORD_WORD,
   SEAL_SERVICE_LAUNCHD_AGENTS_DIR_WORD,
-  SEAL_SERVICE_LAUNCHD_LABEL,
   SEAL_SERVICE_LAUNCHD_PLIST_WORD,
   SEAL_SERVICE_LAUNCHER_WORD,
   SEAL_SERVICE_MANAGER_MARKER_WORD,
@@ -15,6 +14,7 @@ import {
 } from './seal-service-host-layout'
 import {
   SEAL_LAUNCHD_BOOTOUT,
+  SEAL_LAUNCHD_BOOTSTRAP,
   SEAL_LINGER_ANSWER,
   SEAL_PM2_SAVE_FUNCTION,
   SEAL_SYSTEMD_USER_SESSION,
@@ -42,9 +42,7 @@ function registerCommand(manager: SealServiceManager, managedRoot: string): stri
     case 'launchd':
       return (
         `${writeFileCommand(renderSealServiceLaunchAgent(managedRoot), SEAL_SERVICE_LAUNCHD_AGENTS_DIR_WORD, SEAL_SERVICE_LAUNCHD_PLIST_WORD)} && ` +
-        // Clears an earlier `launchctl disable`, which would refuse the bootstrap.
-        `{ ${SEAL_LAUNCHD_BOOTOUT} launchctl enable "user/$seal_uid/${SEAL_SERVICE_LAUNCHD_LABEL}" >/dev/null 2>&1; ` +
-        `launchctl bootstrap "user/$seal_uid" ${SEAL_SERVICE_LAUNCHD_PLIST_WORD}; }`
+        `{ ${SEAL_LAUNCHD_BOOTOUT} ${SEAL_LAUNCHD_BOOTSTRAP}; }`
       )
     case 'pm2':
       // PM2 refuses a second start under the same name.

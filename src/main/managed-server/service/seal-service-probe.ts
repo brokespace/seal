@@ -1,4 +1,5 @@
 /** One remote command that tells which service managers the host has and which one holds the server. */
+import { OWN_SEAL_SERVE_ANSWER, parseOwnSealServe } from './own-seal-serve-probe'
 import {
   SEAL_SERVICE_LAUNCHER_WORD,
   SEAL_SERVICE_MANAGER_MARKER_WORD,
@@ -7,14 +8,15 @@ import {
   sealServiceBinAssignment
 } from './seal-service-host-layout'
 import {
+  SEAL_LAUNCHD_DOMAIN_WORD,
   SEAL_LAUNCHD_LOADED_FUNCTION,
   SEAL_LAUNCHD_UID,
   SEAL_LINGER_ANSWER,
   SEAL_PM2_LIVE_FUNCTION,
   SEAL_SYSTEMD_USER_SESSION
 } from './seal-service-manager-commands'
-import type { SealServiceProbe } from './seal-service-manager-selection'
-import type { SealServiceManager, SealServiceOutcome } from './seal-service-policy'
+import { sealLaunchdNeedsLogin, type SealServiceProbe } from './seal-service-manager-selection'
+import type { SealServiceManager, SealServiceOutcome, SealServiceWish } from './seal-service-policy'
 
 const MANAGERS: readonly SealServiceManager[] = ['systemd-user', 'launchd', 'pm2']
 
@@ -27,10 +29,11 @@ export function sealServiceProbeCommand(managedRoot?: string): string {
     SEAL_LAUNCHD_LOADED_FUNCTION,
     SEAL_PM2_LIVE_FUNCTION,
     'seal_flag() { if "$@" >/dev/null 2>&1; then echo 1; else echo 0; fi; };',
-    'seal_user=$(id -un 2>/dev/null);',
+    'seal_user=$(id -un 2>/dev/null); echo "user=$seal_user";',
     'echo "platform=$(uname -s 2>/dev/null)";',
     'echo "systemd=$(seal_flag systemctl --user show-environment)";',
     'echo "launchctl=$(seal_flag command -v launchctl)";',
+    `echo "gui=$(seal_flag launchctl print ${SEAL_LAUNCHD_DOMAIN_WORD})";`,
     'echo "pm2=$(seal_flag command -v pm2)";',
     `seal_marker=$(head -n 1 ${SEAL_SERVICE_MANAGER_MARKER_WORD} 2>/dev/null); echo "marker=$seal_marker";`,
     'case "$seal_marker" in',
@@ -39,6 +42,7 @@ export function sealServiceProbeCommand(managedRoot?: string): string {
     `pm2) seal_held=$(seal_pm2_live && seal_flag pm2 describe ${SEAL_SERVICE_NAME} || echo 0);;`,
     '*) seal_held=0;; esac;',
     `[ -x ${SEAL_SERVICE_LAUNCHER_WORD} ] || seal_held=0; echo "registered=$seal_held";`,
+    OWN_SEAL_SERVE_ANSWER,
     SEAL_LINGER_ANSWER,
     // `pm2 startup` installs a system unit, an init script or a per-user launchd agent.
     'seal_boot=; if [ "$(uname -s 2>/dev/null)" = Darwin ]; then',
@@ -81,27 +85,48 @@ export function parseSealServiceProbe(output: string): SealServiceProbe | null {
   const marker = answer.get('marker')
   return {
     platform: uname === 'Linux' ? 'linux' : uname === 'Darwin' ? 'darwin' : 'other',
+    user: answer.get('user') || null,
     systemdUser: answer.get('systemd') === '1',
     launchctl: answer.get('launchctl') === '1',
+    guiSession: answer.get('gui') === '1',
     pm2: answer.get('pm2') === '1',
     installed: MANAGERS.find((manager) => manager === marker) ?? null,
     registered: answer.get('registered') === '1',
+    ownServe: parseOwnSealServe(answer.get('own_serve')),
     linger: parseSealLinger(answer.get('linger')),
     pm2StartsAtBoot: flag(answer.get('pm2_startup'))
   }
 }
 
+function hostUserOf(host: Pick<SealServiceProbe, 'user'>): Pick<SealServiceOutcome, 'hostUser'> {
+  return host.user ? { hostUser: host.user } : {}
+}
+
 /** What the machine registry records for a host kept by `manager`. */
 export function sealServiceOutcome(
   manager: SealServiceManager,
-  host: Pick<SealServiceProbe, 'linger' | 'pm2StartsAtBoot'>
+  host: Pick<SealServiceProbe, 'user' | 'linger' | 'pm2StartsAtBoot'>
 ): SealServiceOutcome {
+  const kept = { manager, ...hostUserOf(host) }
   switch (manager) {
     case 'systemd-user':
-      return { manager, linger: host.linger === true }
+      // Logind not answering is not a refusal: the outcome then says nothing about linger.
+      return host.linger === null ? kept : { ...kept, linger: host.linger }
     case 'pm2':
-      return { manager, startsAtBoot: host.pm2StartsAtBoot }
+      return { ...kept, startsAtBoot: host.pm2StartsAtBoot }
     case 'launchd':
-      return { manager }
+      return kept
+  }
+}
+
+/** What the machine registry records for a host where no manager holds the server. */
+export function sealDetachedOutcome(
+  probe: SealServiceProbe | null,
+  wish: SealServiceWish | null
+): SealServiceOutcome {
+  return {
+    manager: 'detached',
+    ...(probe ? hostUserOf(probe) : {}),
+    ...(probe && sealLaunchdNeedsLogin(probe, wish) ? { launchdNeedsLogin: true } : {})
   }
 }

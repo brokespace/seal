@@ -78,7 +78,7 @@ export async function readSealServiceState(
   return probe?.installed && probe.registered ? sealServiceOutcome(probe.installed, probe) : null
 }
 
-/** False when the host answered and has no manager the server could be registered with. */
+/** False when the host answered and no manager would be given the server; a restart would then change nothing. */
 export async function hasSealServiceManager(
   conn: RemoteInstallTransport,
   wish: SealServiceWish,

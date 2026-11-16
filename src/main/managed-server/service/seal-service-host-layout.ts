@@ -1,4 +1,4 @@
-/** Names and host paths of the service that keeps a managed Seal server running. */
+/** Names and host paths of the user service that keeps a managed Seal server running. */
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import { RELAY_REMOTE_DIR } from '../install/remote-install-root'
 

@@ -8,6 +8,9 @@ import type { OrcadStaleLockEvidence } from './orcad-stale-lock-reclaim'
 
 export const ORCAD_MANAGED_REMOTE_PORT = 6_768
 
+/** Seal: asked for by a managed server that runs as a service; clear of 6768–6799, where a user's own `seal serve` is pinned or falls back. */
+export const SEAL_MANAGED_SERVICE_PORT = 16_768
+
 /** Refused because terminals are, or may be, still running on the host. */
 export type OrcadManagedRefusal = {
   outcome: 'refused'
