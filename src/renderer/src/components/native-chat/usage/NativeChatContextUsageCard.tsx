@@ -20,11 +20,6 @@ const STATE_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
   critical: 'text-destructive'
 }
 
-const BAR_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
-  near: '[&>[data-slot=progress-indicator]]:bg-status-warning',
-  critical: '[&>[data-slot=progress-indicator]]:bg-destructive'
-}
-
 /** What the ring says beside itself; a state that needs no words has none. */
 export function contextUsageStateText(
   state: NativeChatContextUsageState,
@@ -39,7 +34,8 @@ export function contextUsageStateText(
       return t('seal.contextIndicator.compacting', 'Compacting…')
     case 'compacted':
       return t('seal.contextIndicator.compacted', 'Compacted')
-    default:
+    case 'unknown':
+    case 'normal':
       return null
   }
 }
@@ -155,11 +151,7 @@ export function NativeChatContextUsageCard({
                     amounts
                   )}
             </p>
-            <Progress
-              value={filled}
-              aria-label={label}
-              className={cn('my-2 h-1.5', BAR_TONE[state])}
-            />
+            <Progress value={filled} aria-label={label} className="my-2 h-1.5" />
             {usage.model ? <p className="truncate">{usage.model}</p> : null}
           </>
         ) : (
