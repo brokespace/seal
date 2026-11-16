@@ -1,6 +1,9 @@
 import type { AgentStatusIpcPayload } from '../../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { PendingPrompt } from '../../../shared/agent-status/contracts/agent-pending-prompt'
-import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import {
+  liveSessionProviderOf,
+  type LiveSessionProvider
+} from '../../../shared/live-sessions/live-session-types'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { TerminalAgentPromptAnswers } from '../../runtime/terminal/input/terminal-agent-prompt-answer'
 import { createLaunchedAgentWriteGuard } from '../../runtime/terminal/wait/launched-agent-write-guard'
@@ -49,7 +52,11 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
   }
 
   const input: SealPaneInput = {
-    async send(paneKey, agent, text, requestId, signal) {
+    async send(paneKey, sessionAgent, text, requestId, signal) {
+      const agent = liveSessionProviderOf(sessionAgent)
+      if (!agent) {
+        return { outcome: 'unavailable', reason: `Seal cannot type into a ${sessionAgent} pane` }
+      }
       const bound = bindPane(runtime, paneKey)
       if (!bound) {
         return { outcome: 'unavailable', reason: 'The Seal pane is closed' }
@@ -68,7 +75,11 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
       // `unknown` may have written bytes: only the transcript may decide from here.
       return { outcome: 'sent' }
     },
-    async answer(paneKey, agent, answer, signal) {
+    async answer(paneKey, sessionAgent, answer, signal) {
+      const agent = liveSessionProviderOf(sessionAgent)
+      if (!agent) {
+        return { ok: false, reason: 'not_answerable' }
+      }
       const guard = createLaunchedAgentWriteGuard(runtime, agent, {
         unprovableHost: 'write-unless-shell'
       })

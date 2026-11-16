@@ -1,10 +1,18 @@
 // The live-session registry's public contract: plain JSON, shared by main, preload, renderer and RPC.
 import type { LiveSessionRecapBrief } from '../session-recap/session-recap-types'
+import type { NativeChatContextUsageSummary } from '../native-chat/native-chat-context-usage-summary'
 import type { NativeChatMessage } from '../native-chat/native-chat-types'
+import type { AgentSessionAgentId } from './adapters/agent-session-agent-ids'
 import type { LiveSessionActivity } from './live-session-activity'
 
+/** The agents discovery finds outside Seal, and the only ones the registry admits so far. */
 export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
+
+/** `agent` as one of those, or null: code that knows only Claude and Codex steps aside for the rest. */
+export function liveSessionProviderOf(agent: string): LiveSessionProvider | null {
+  return LIVE_SESSION_PROVIDERS.find((provider) => provider === agent) ?? null
+}
 
 /**
  * What a session is doing and whose move it is; `docs/design/agent-status.md` has the signals behind each.
@@ -63,6 +71,8 @@ export type LiveSessionMachine = {
 
 /** How a message reaches the session, in the order delivery tries them. */
 export type LiveSessionInputRoute =
+  /** A chat's structured host: the same host calls its own composer makes. */
+  | { kind: 'structured'; sessionId: string }
   /** A Seal (Orca) terminal pane, through the runtime's own prompt writer. */
   | { kind: 'seal-pane'; paneKey: string }
   /** Codex's own queue (`codex queue`): a real user turn, after any running one, never in a draft. */
@@ -71,6 +81,31 @@ export type LiveSessionInputRoute =
   | { kind: 'tmux'; target: string; socket?: string }
   /** No live terminal: the provider CLI resumes the session headless in the background. */
   | { kind: 'resume' }
+
+/** Where a session runs and how it opens. */
+export type AgentSessionSurface =
+  /** The structured host owns the process. */
+  | { kind: 'chat'; sessionId: string; tabId: string }
+  /** A Seal terminal pane owns the process. */
+  | { kind: 'cli'; paneKey: string }
+  /** Started outside Seal. */
+  | { kind: 'external' }
+
+/** What one session can do, from its agent's adapter and its host; views hide what is missing. */
+export type AgentSessionCapabilityFlags = {
+  /** A message can be delivered. */
+  send: boolean
+  /** Free text and multi-select, option ids only, or view only. */
+  answer: 'full' | 'options' | 'none'
+  /** Message history can be read on this host. */
+  transcript: boolean
+  recap: boolean
+  context: 'exact' | 'estimated' | 'none'
+  /** Adopt into chat, fork into the CLI. */
+  switchSurface: { toChat: boolean; toCli: boolean }
+  /** External sessions only. */
+  takeOver: boolean
+}
 
 export type LiveSessionPermissionOption = { id: string; label: string }
 
@@ -84,7 +119,7 @@ export type LiveSessionPermissionPrompt = {
 export type LiveSession = {
   /** `<hostId>:<provider>:<providerSessionId>`; stable across rescans and restarts. */
   id: string
-  provider: LiveSessionProvider
+  provider: AgentSessionAgentId
   providerSessionId: string
   machine: LiveSessionMachine
   /** Launched from Seal (an Orca pane) or found running outside it. */
@@ -126,6 +161,14 @@ export type LiveSession = {
   titleNamed?: true
   /** Its rolling recap in brief: the title a row shows and what is still open for the user. */
   recap?: LiveSessionRecapBrief
+  /** Absent from registries that do not set it yet; `origin` is the fallback. */
+  surface?: AgentSessionSurface
+  /** Absent from registries that do not set it yet. */
+  capabilities?: AgentSessionCapabilityFlags
+  /** The workspace it belongs to, set by the registry's link step. */
+  workspace?: { worktreeId: string; projectKey: string }
+  context?: NativeChatContextUsageSummary
+  model?: string
 }
 
 /** What the user sets on a session in Seal; an absent field is left as it is. */

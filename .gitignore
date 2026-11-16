@@ -111,6 +111,8 @@ docs/**
 !docs/information-architecture.md
 !docs/TESTING-seal-all.md
 !docs/upstream-sync.md
+!docs/design/
+!docs/design/agent-session-architecture.md
 !docs/STYLEGUIDE.md
 !docs/development.md
 !docs/styleguide/

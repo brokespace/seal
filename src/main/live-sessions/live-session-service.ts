@@ -262,8 +262,8 @@ export class LiveSessionService {
     const out: UserText[] = []
     let cursor = from
     for (let i = 0; i < MAX_CONFIRM_READS; i++) {
-      const read = await readTranscriptForward(found.source, found.session.provider, cursor)
-      out.push(...userTextsOf(found.session.provider, read.lines))
+      const read = await readTranscriptForward(found.source, found.provider, cursor)
+      out.push(...userTextsOf(found.provider, read.lines))
       if (read.cursor === cursor || read.cursor >= read.size) {
         break
       }
