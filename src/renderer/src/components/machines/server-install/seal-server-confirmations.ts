@@ -61,10 +61,25 @@ function lingerText(t: Translate): string {
   )
 }
 
+function pm2Text(t: Translate): string {
+  return t(
+    'seal.machineServer.installDialog.pm2',
+    'With PM2, Seal adds the server to PM2’s process list, which PM2 keeps in ~/.pm2.'
+  )
+}
+
+function diskIndexText(t: Translate, name: string): string {
+  return t(
+    'seal.machineServer.installDialog.diskIndex',
+    'With or without the server, the Machines page keeps folder sizes for {{name}} in ~/.seal/disk-index, where a background helper updates them.',
+    { name }
+  )
+}
+
 function laterRemovalText(t: Translate): string {
   return t(
     'seal.machineServer.installDialog.laterRemoval',
-    'Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
+    'Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
   )
 }
 
@@ -93,7 +108,7 @@ export function sealServerInstallConfirmation(
         ? [
             t(
               'seal.machineServer.keepRunningDialog.ownCommand',
-              'Seal runs “seal serve service install” on {{name}} over SSH. That command registers the server you run there as a user service (systemd on Linux, launchd on macOS) and restarts the server once.',
+              'Seal runs “seal serve service install” on {{name}} over SSH. That command registers the server you run there as a user service (systemd on Linux, launchd on macOS). The server that runs now is not stopped: the service takes over when it ends, for example when the machine restarts.',
               { name }
             ),
             t(
@@ -121,6 +136,7 @@ export function sealServerInstallConfirmation(
                 'Seal registers the server that already runs on {{name}} as a user service and restarts the server once. The service is PM2 when the machine has PM2, otherwise a systemd user service.',
                 { name }
               ),
+              pm2Text(t),
               lingerText(t),
               laterRemovalText(t)
             ]
@@ -141,7 +157,7 @@ export function sealServerInstallConfirmation(
       ),
       t(
         'seal.machineServer.installDialog.serverData',
-        'Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings) and ~/.seal/disk-index (folder sizes for the Machines page), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}, keeping a .bak copy of each settings file it changes.',
+        'Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}, keeping a .bak copy of each settings file it changes.',
         { name }
       ),
       options.moveAnyway
@@ -152,7 +168,9 @@ export function sealServerInstallConfirmation(
           )
         : null,
       ...serviceTexts(t, options.manager ?? 'auto'),
+      pm2Text(t),
       lingerText(t),
+      diskIndexText(t, name),
       laterRemovalText(t)
     ]
   )
@@ -205,7 +223,7 @@ export function sealServerRemovalConfirmation(
       ),
       t(
         'seal.machineServer.remove.stays',
-        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
+        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
       ),
       t(
         'seal.machineServer.remove.terminals',
