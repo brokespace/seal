@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Maximize2, Minimize2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/class-names'
@@ -40,26 +40,41 @@ function landsOnStripControl(target: EventTarget): boolean {
   return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
 }
 
+/** React hands a pane the events of its menus too, which are drawn outside it. */
+function isInPane(event: React.SyntheticEvent<HTMLElement>): boolean {
+  return event.target instanceof Node && event.currentTarget.contains(event.target)
+}
+
+function landsOnTab(target: EventTarget): boolean {
+  return (
+    target instanceof Element &&
+    target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}] [role="tab"]`) !== null &&
+    target.closest('button') === null
+  )
+}
+
 const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
 
 /**
  * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
- * it in the pane that lost focus, and closing the tab that held it leaves it nowhere.
+ * it in the pane that lost focus, and closing the tab that held it leaves it nowhere. A tab
+ * pressed with the pointer asks for it outright, wherever it was.
  */
 function bringKeyboardFocusIntoPane(
   paneId: string,
   pane: HTMLElement,
-  worktreeId: string | null
+  worktreeId: string | null,
+  tabPressed: boolean
 ): void {
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null
   const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
-  if (
-    owner &&
-    (!content ||
-      content === pane ||
-      content.getAttribute('data-workspace-surface-pane-id') === paneId)
-  ) {
+  const inThisPane =
+    content === pane || content?.getAttribute('data-workspace-surface-pane-id') === paneId
+  const stays = tabPressed
+    ? inThisPane && owner !== null && !landsOnStripControl(owner)
+    : owner !== null && (!content || inThisPane)
+  if (stays) {
     return
   }
   const body = pane.querySelector<HTMLElement>('[data-split-view-pane-body]')
@@ -100,11 +115,14 @@ export function SplitViewPane({
   const paneRef = useRef<HTMLDivElement>(null)
   // A tab closed anywhere takes its close button away, and the keyboard with it.
   const tabCount = Object.values(state.panes).reduce((count, each) => count + each.tabs.length, 0)
+  const tabPressedRef = useRef(false)
+  const [tabPresses, setTabPresses] = useState(0)
   useEffect(() => {
     if (focused && paneRef.current) {
-      bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId)
+      bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId, tabPressedRef.current)
     }
-  }, [focused, paneId, activeKey, worktreeId, tabCount])
+    tabPressedRef.current = false
+  }, [focused, paneId, activeKey, worktreeId, tabCount, tabPresses])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')
@@ -122,13 +140,26 @@ export function SplitViewPane({
         !placement.touchesLeftEdge && !placement.suppressLeftBorder && 'border-l border-border'
       )}
       onPointerDownCapture={(event) => {
-        if (!landsOnStripControl(event.target)) {
+        if (isInPane(event) && !landsOnStripControl(event.target)) {
           focusSplitViewPane(paneId)
         }
       }}
       onFocusCapture={(event) => {
-        if (!landsOnStripControl(event.target)) {
+        if (isInPane(event) && !landsOnStripControl(event.target)) {
           focusSplitViewPane(paneId)
+        }
+      }}
+      onMouseDownCapture={(event) => {
+        // A press on the strip leaves the keyboard where it is; the tab's content gets it instead.
+        if (landsOnStripControl(event.target)) {
+          event.preventDefault()
+        }
+      }}
+      onClick={(event) => {
+        // detail is 0 for Enter and Space, which keep the keyboard on the tab.
+        if (event.detail > 0 && landsOnTab(event.target)) {
+          tabPressedRef.current = true
+          setTabPresses((count) => count + 1)
         }
       }}
     >

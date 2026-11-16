@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store/index'
+import { hasVisibleOverlay } from '@/lib/overlay-interaction/visible-overlay'
 import type { SplitViewActionId } from '../../../../shared/keybindings/definitions-split-view'
 import {
   closeSplitViewPane,
@@ -10,9 +11,13 @@ import { isSplitViewShowing } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
 import { activeSplitViewItem, type SplitViewEdge } from './split-view-types'
 
-/** False leaves the key to what has focus: no grid is on screen, or a dialog is over it. */
-export function canRunSplitViewShortcut(): boolean {
+function isSplitViewOnScreen(): boolean {
   return isSplitViewShowing() && useAppStore.getState().activeModal === 'none'
+}
+
+/** False leaves the key to what has focus: no grid is on screen, or a dialog or menu is over it. */
+export function canRunSplitViewShortcut(): boolean {
+  return isSplitViewOnScreen() && !hasVisibleOverlay({ ignoreDismissed: true })
 }
 
 function moveFocusedTabToNewPane(edge: SplitViewEdge): void {
@@ -58,7 +63,8 @@ export function runSplitViewShortcut(actionId: SplitViewActionId): void {
 export function reportSplitViewShowingToMain(): () => void {
   let reported: boolean | null = null
   const report = (): void => {
-    const showing = canRunSplitViewShortcut()
+    // Stores only: an open dialog is not in them, and is checked when the chord arrives.
+    const showing = isSplitViewOnScreen()
     if (showing !== reported) {
       reported = showing
       window.api.ui.setSplitViewShowing(showing)
