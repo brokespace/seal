@@ -51,6 +51,29 @@ function refuseCardDrag(event: React.DragEvent): void {
   event.stopPropagation()
 }
 
+function dropClick(click: MouseEvent): void {
+  click.stopPropagation()
+}
+
+// Why: a press on a row released on the card around it is, to the browser, a click on that card.
+function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
+  event.stopPropagation()
+  const rows = event.currentTarget
+  const onRelease = (release: PointerEvent): void => {
+    window.removeEventListener('pointerdown', forget, true)
+    if (release.target instanceof Node && rows.contains(release.target)) {
+      return
+    }
+    window.addEventListener('click', dropClick, { capture: true, once: true })
+    // The click follows its release at once; a later one is not this press's.
+    window.setTimeout(() => window.removeEventListener('click', dropClick, true), 0)
+  }
+  // A press that never reports its release must not claim the next one.
+  const forget = (): void => window.removeEventListener('pointerup', onRelease, true)
+  window.addEventListener('pointerup', onRelease, { capture: true, once: true })
+  window.addEventListener('pointerdown', forget, { capture: true, once: true })
+}
+
 /** One workspace's sessions on its card: a full row each, then the ended ones behind one line. */
 export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): React.JSX.Element {
   const t = useTranslate()
@@ -93,7 +116,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
       className={cn('flex min-w-0 flex-col', props.className)}
       onClick={keepFromCard}
       onDoubleClick={keepFromCard}
-      onPointerDown={keepFromCard}
+      onPointerDown={keepPressFromCard}
       onMouseDown={keepFromCard}
       onContextMenu={keepFromCard}
       onDragStart={refuseCardDrag}
