@@ -42,6 +42,17 @@ function rows(value: unknown): Row[] {
   return Array.isArray(value) ? value : []
 }
 
+function isRow(value: unknown): value is Row {
+  return typeof value === 'object' && value !== null
+}
+
+function row(value: unknown): Row {
+  if (!isRow(value)) {
+    throw new Error('The seeded profile holds no such record')
+  }
+  return value
+}
+
 /** Pins the seeded folder workspace and editor tab, and returns the tab's id. */
 function pinSeededWorkspaceAndTab(
   userDataDir: string,
@@ -50,12 +61,8 @@ function pinSeededWorkspaceAndTab(
 ): string {
   return mutateStoppedProfileState(userDataDir, (state) => {
     const folder = rows(state.folderWorkspaces).find((row) => row.connectionId === targetId)
-    const sessions = state.workspaceSessionsByHostId as Record<string, Row>
-    const tabsByWorktree = sessions[toSshExecutionHostId(targetId)]!.unifiedTabs as Record<
-      string,
-      Row[]
-    >
-    const tab = tabsByWorktree[worktreeId]![0]!
+    const session = row(row(state.workspaceSessionsByHostId)[toSshExecutionHostId(targetId)])
+    const tab = row(rows(row(session.unifiedTabs)[worktreeId])[0])
     folder!.isPinned = true
     tab.isPinned = true
     return String(tab.id)
