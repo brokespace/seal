@@ -27,6 +27,11 @@ const PHONE_HOST = {
   endpoint: 'ws://e2e',
   lastConnected: 1
 }
+declare global {
+  // The page's end of the shell's frames, installed by this helper's init script.
+  var __phoneShellDeliver: ((json: string) => void) | undefined
+}
+
 const POST_BINDING = '__phoneShellPost'
 const VIEWPORT = { width: 390, height: 844 }
 
@@ -186,10 +191,7 @@ export async function openPhoneWebPage(
         delivery = delivery.then(async () => {
           await page
             ?.evaluate((frame) => {
-              // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: installed by this helper's init script.
-              ;(
-                globalThis as unknown as { __phoneShellDeliver: (json: string) => void }
-              ).__phoneShellDeliver(frame)
+              globalThis.__phoneShellDeliver?.(frame)
             }, json)
             .catch(() => undefined)
         })
