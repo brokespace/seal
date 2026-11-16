@@ -3,6 +3,7 @@ import { SplitLayoutTree, type SplitLayoutLeafPlacement } from '../tab-group/Spl
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
 import { ItemTabDragLayer } from './ItemTabDragLayer'
 import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
+import { PaneTabOrderGuard } from './pane-tab-key-order'
 import { resizeSplitViewPanes } from './split-view-commands'
 import { splitViewStore, useSplitView, useSplitViewNarrow } from './split-view-store'
 import { SplitViewPane } from './SplitViewPane'
@@ -81,6 +82,7 @@ export default function SplitViewLayer(): React.JSX.Element | null {
           onResizeEnd={returnKeyboardAfterResize}
         />
       </ItemTabDragLayer>
+      <PaneTabOrderGuard edge="exit" />
     </div>
   )
 }

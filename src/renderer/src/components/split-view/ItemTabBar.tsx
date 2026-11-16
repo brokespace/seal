@@ -13,6 +13,7 @@ import { cn } from '@/lib/class-names'
 import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTab } from './ItemTab'
+import { bridgeTabKeyFromItemStrip } from './pane-tab-key-order'
 import {
   ITEM_TAB_ROW_ATTRIBUTE,
   ITEM_TAB_STRIP_ATTRIBUTE,
@@ -95,6 +96,7 @@ export function ItemTabBar({
       {...(keepsFocus ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
       className={cn(TAB_STRIP_ROW_CLASSES, '@container/session-tabs flex items-stretch', className)}
       style={style}
+      onKeyDown={bridgeTabKeyFromItemStrip}
     >
       {before}
       <div {...{ [ITEM_TAB_ROW_ATTRIBUTE]: '' }} className={TAB_STRIP_CONTAINER_CLASSES}>

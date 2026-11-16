@@ -12,7 +12,6 @@ import {
   keepKeyboardOnStripControl,
   landsOnStripControl
 } from './pane-keyboard-focus'
-import { bridgeTabKeyFromPaneStrip } from './pane-tab-key-order'
 import {
   closeOtherSplitViewItems,
   closeSplitViewItems,
@@ -122,11 +121,6 @@ export function SplitViewPane({
         // A press on the strip leaves the keyboard where it is; the tab's content gets it instead.
         if (landsOnStrip(event.target)) {
           event.preventDefault()
-        }
-      }}
-      onKeyDown={(event) => {
-        if (isInPane(event)) {
-          bridgeTabKeyFromPaneStrip(event, paneId)
         }
       }}
       onClick={(event) => {
