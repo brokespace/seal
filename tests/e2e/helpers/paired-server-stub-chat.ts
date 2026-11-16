@@ -57,13 +57,6 @@ export async function expectOneChat(
   return listing.sessions[0]!
 }
 
-export function activeAgentRows(page: Page, hostId: string): ReturnType<Page['locator']> {
-  return page
-    .getByTestId('active-agents')
-    .locator(`[data-active-agents-machine="${hostId}"]`)
-    .getByRole('option')
-}
-
 /**
  * Installs the stub and a Seal server on the fixture's host, opens the server's workspace and
  * sends `prompt` in a new chat there. The stub keeps a turn whose prompt says "slow" open for a

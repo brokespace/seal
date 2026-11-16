@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Page } from '@stablyai/playwright-test'
 import { expect } from './helpers/orca-app'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 import { orcaCliResult } from './helpers/compiled-orca-cli'
 import { SUPPORTED, openStubChat, test } from './helpers/structured-claude-stub'
 import type {
@@ -152,10 +153,9 @@ test.describe('live sessions chat record', () => {
 
     await expect(chat.reply).toBeVisible({ timeout: 30_000 })
     await expectListed(listedAs(id, 'your-turn', { alive: true, lastMessage: 'Stub reply.' }))
-    // Active agents lists the chat under the provider's id only.
-    const activeAgents = page.getByTestId('active-agents')
-    await expect(activeAgents.locator(`[data-live-session-row="${id}"]`)).toHaveCount(1)
-    await expect(activeAgents.locator(`[data-live-session-row="${provisionalId}"]`)).toHaveCount(0)
+    // The sidebar lists the chat under the provider's id only.
+    await expect(sidebarSessionRow(page, id)).toHaveCount(1)
+    await expect(sidebarSessionRow(page, provisionalId)).toHaveCount(0)
     await shot('chat-finished')
 
     await chat.tab.locator('[data-tab-close-button="true"]').click()

@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { expect } from './helpers/orca-app'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 import { orcaCliResult } from './helpers/compiled-orca-cli'
 import {
   configureDiscoverableStubAgentClis,
@@ -97,8 +98,7 @@ test.describe('live sessions: a CLI session continued in Chat', () => {
     // The scan has found the CLI's process and transcript too: one record from the pane and the scan.
     await expectListed({ ...inPane, pid: cli.pid, status: 'your-turn' })
 
-    const activeAgents = page.getByTestId('active-agents')
-    const row = activeAgents.locator(`[data-live-session-row="${id}"]`)
+    const row = sidebarSessionRow(page, id)
     await row.click({ button: 'right' })
     await page.getByRole('menuitem', { name: 'Pin to top' }).click()
     await expect(row.getByLabel('Pinned')).toBeVisible()

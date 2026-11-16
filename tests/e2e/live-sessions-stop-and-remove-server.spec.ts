@@ -3,12 +3,8 @@ import { stopAndRemoveFromRow } from './helpers/live-session-stop-and-remove'
 import { expect, test } from './helpers/orca-app'
 import { skipUnlessManagedDockerHost, withManagedHost } from './helpers/orcad-managed-workspace'
 import { callEnvironment } from './helpers/paired-host-terminal'
-import {
-  activeAgentRows,
-  expectOneChat,
-  listMachine,
-  startServerStubChat
-} from './helpers/paired-server-stub-chat'
+import { expectOneChat, listMachine, startServerStubChat } from './helpers/paired-server-stub-chat'
+import { sidebarMachineSessionRows } from './helpers/sidebar-session-row'
 
 skipUnlessManagedDockerHost()
 test.skip(process.platform === 'win32', 'The Docker SSH host uses POSIX tooling')
@@ -28,7 +24,7 @@ test('a chat at work on a Seal server leaves the list within two seconds of "Sto
     expect(agentRuns()).toBe('yes')
 
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
-    const row = activeAgentRows(page, hostId)
+    const row = sidebarMachineSessionRows(page, hostId)
     await expect(row).toHaveCount(1)
     await stopAndRemoveFromRow(page, row, testInfo)
 

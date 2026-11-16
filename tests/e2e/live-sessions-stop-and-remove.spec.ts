@@ -13,6 +13,7 @@ import {
 } from './helpers/discoverable-stub-agent-cli'
 import { getGoldenStubAgentLaunchEnv } from './helpers/golden-stub-agent'
 import { stopAndRemoveFromRow } from './helpers/live-session-stop-and-remove'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 import { ensureTerminalVisible, waitForActiveWorktree, waitForSessionReady } from './helpers/store'
 import {
   openStubChat,
@@ -78,8 +79,7 @@ test.describe('a Claude CLI at work in a Seal pane', () => {
       .poll(record, { timeout: 60_000 })
       .toEqual([{ status: 'working', alive: true, pid: claude.pid }])
 
-    await orcaPage.locator('[data-live-sessions-badge="worktree"]').click()
-    const row = orcaPage.getByTestId('active-agents').locator(`[data-live-session-row="${id}"]`)
+    const row = sidebarSessionRow(orcaPage, id)
     await expect(row).toHaveCount(1)
     await stopAndRemoveFromRow(orcaPage, row, testInfo)
 
@@ -123,7 +123,7 @@ chatTest.describe('a chat at work', () => {
       )!
       expect(runs(agent.pid)).toBe(true)
 
-      const row = page.getByTestId('active-agents').locator(`[data-live-session-row="${id}"]`)
+      const row = sidebarSessionRow(page, id)
       await expect(row).toHaveCount(1)
       await stopAndRemoveFromRow(page, row, testInfo)
 

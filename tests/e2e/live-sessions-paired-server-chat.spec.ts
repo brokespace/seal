@@ -9,11 +9,11 @@ import {
 } from './helpers/orcad-managed-workspace'
 import { callEnvironment } from './helpers/paired-host-terminal'
 import {
-  activeAgentRows,
   expectOneChat,
   SERVER_STUB_REQUESTS,
   startServerStubChat
 } from './helpers/paired-server-stub-chat'
+import { sidebarMachineSessionRows } from './helpers/sidebar-session-row'
 
 skipUnlessManagedDockerHost()
 test.skip(process.platform === 'win32', 'The Docker SSH host uses POSIX tooling')
@@ -69,8 +69,8 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     expect(said(history.messages)).toEqual([`user:${FIRST_PROMPT}`, 'assistant:Stub reply.'])
 
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
-    await expect(activeAgentRows(page, hostId)).toHaveCount(1)
-    await expect(activeAgentRows(page, hostId)).toContainText(FIRST_PROMPT)
+    await expect(sidebarMachineSessionRows(page, hostId)).toHaveCount(1)
+    await expect(sidebarMachineSessionRows(page, hostId)).toContainText(FIRST_PROMPT)
     await page.screenshot({ path: testInfo.outputPath('active-agents-before-restart.png') })
 
     page = await relaunchManagedApp(fixture)
@@ -82,12 +82,12 @@ test('a chat on a Seal server is listed and read under its machine, and again af
       lastMessage: 'Stub reply.'
     })
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
-    await expect(activeAgentRows(page, hostId)).toHaveCount(1)
-    await expect(activeAgentRows(page, hostId)).toContainText(FIRST_PROMPT)
+    await expect(sidebarMachineSessionRows(page, hostId)).toHaveCount(1)
+    await expect(sidebarMachineSessionRows(page, hostId)).toContainText(FIRST_PROMPT)
     await page.screenshot({ path: testInfo.outputPath('active-agents-after-restart.png') })
 
     // Opening the row shows the conversation, read from the server and followed as it grows.
-    await activeAgentRows(page, hostId).click()
+    await sidebarMachineSessionRows(page, hostId).click()
     const transcript = page.locator(`[data-live-session-pane="${relisted.id}"]`)
     await expect(transcript).toContainText('Stub reply.', { timeout: 60_000 })
     await page.screenshot({ path: testInfo.outputPath('server-chat-transcript.png') })

@@ -3,6 +3,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from './helpers/orca-app'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 import { orcaCliResult } from './helpers/compiled-orca-cli'
 import {
   configureDiscoverableStubAgentClis,
@@ -158,10 +159,9 @@ test('a Claude and a Codex CLI in Seal panes are each one session, scan after sc
     }
     expect(notOnce).toEqual([])
   }
-  // The workspace's badge narrows Active agents to the sessions in its folder: the two stubs.
-  const activeAgents = orcaPage.getByTestId('active-agents')
-  const rows = activeAgents.locator('[data-live-session-row]')
-  const row = (id: string) => activeAgents.locator(`[data-live-session-row="${id}"]`)
+  // The workspace's card lists the sessions in its folder: the two stubs.
+  const rows = orcaPage.locator('[data-workspace-session-rows] [data-live-session-row]')
+  const row = (id: string) => sidebarSessionRow(orcaPage, id)
 
   // Claude names its session as it starts. Codex names none before its first turn: until then
   // the scan lists its process, and that row must be the only one.
@@ -171,9 +171,6 @@ test('a Claude and a Codex CLI in Seal panes are each one session, scan after sc
   await acrossTwoScans()
   expect(await paneRecords(claude)).toEqual([expectedPaneRecord(claude)])
   expect(await codexProcess()).toEqual([codex.pid])
-  const badge = orcaPage.locator('[data-live-sessions-badge="worktree"]')
-  await expect(badge).toHaveText('2')
-  await badge.click()
   await expect(rows).toHaveCount(2)
   await expect(row(`local:claude:${claude.sessionId}`)).toHaveCount(1)
   await shot(orcaPage, testInfo, 'before-first-prompt')
