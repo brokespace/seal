@@ -25,7 +25,7 @@ import { LiveSessionSummaries } from './live-session-summaries'
 import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
 import { sessionPaneWorkspaceId } from './session-pane-workspace'
 import { SessionSummarizer } from './session-summarizer'
-import { createSessionTitleWriteThrough } from './session-title-write-through'
+import { createSessionTitleWriteThrough } from './session-title-write-through-install'
 import { unrefTimer } from './unref-timer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
@@ -159,6 +159,7 @@ export class SessionSummariesHost {
       const titles = createSessionTitleWriteThrough({
         liveSessions,
         renameCliTab: (paneKey, title) => renameCliSessionTab(runtime, paneKey, title, log),
+        owedNamesPath: join(this.options.userDataPath, 'session-summaries', 'owed-chat-names.json'),
         log
       })
       liveSessions.registry.setDecorator((session) => this.decorate(session))

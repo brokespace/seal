@@ -4,9 +4,7 @@ import type {
   LiveSession,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
-import type { LiveSessionService } from '../live-sessions/live-session-service'
-import { getStructuredAgentSessionHost } from '../native-chat/agent-session-wire/host/structured-agent-session-registry'
-import { followStructuredChatNames } from './structured-chat-name-feed'
+import type { OwedChatNames } from './owed-chat-names'
 import { unrefTimer } from './unref-timer'
 
 type ChatName = { name: string | null; user: boolean }
@@ -23,7 +21,9 @@ export type SessionTitleWriteThroughDeps = {
   /** Saves the session's custom title in Seal (the annotation). */
   annotate: (sessionId: string, customTitle: string | null) => void
   /** Waits out the backoff before a chat is asked again to take a name. */
-  setTimer?: (run: () => void, delayMs: number) => { cancel: () => void }
+  setTimer?: typeof unrefTimer
+  /** Row names their chats have not taken; kept across restarts when saved. */
+  owed?: OwedChatNames
   log?: (message: string, error?: unknown) => void
 }
 
@@ -78,10 +78,12 @@ export class SessionTitleWriteThrough {
   /** Renames of ours in flight, by chat. */
   private readonly renaming = new Map<string, number>()
   private readonly setTimer: NonNullable<SessionTitleWriteThroughDeps['setTimer']>
+  private readonly owed: OwedChatNames
   private stopWatchingChats: (() => void) | null = null
 
   constructor(private readonly deps: SessionTitleWriteThroughDeps) {
     this.setTimer = deps.setTimer ?? unrefTimer
+    this.owed = deps.owed ?? new Map()
   }
 
   observe(event: LiveSessionRegistryEvent): void {
@@ -161,14 +163,33 @@ export class SessionTitleWriteThrough {
     const chat = this.deps.chatName(chatSessionId)
     if (!chat) {
       row.unheld = true
+      if (before?.unheld && before.owner === row.owner && before.title !== row.title) {
+        // Renamed while its chat is out of reach: whatever name the chat has by then is older.
+        this.owe(chatSessionId, row.title)
+      }
       return
     }
     const name = userGivenName(chat)
+    const owed = this.owed.get(chatSessionId)
+    // A chat renamed while its row was not listed is newer than the row; an owed name is not.
+    const rowIsNewer =
+      owed?.title === row.title && (owed.chatHad === undefined || owed.chatHad === name)
+    if (row.title !== null && row.title !== name && (name === null || rowIsNewer)) {
+      this.sendToChat(row, chatSessionId)
+      return
+    }
+    this.owed.delete(chatSessionId)
     if (name !== null) {
       this.nameRow(row, name)
-    } else if (row.title !== null) {
-      // A row named before row names reached chats.
-      this.sendToChat(row, chatSessionId)
+    }
+  }
+
+  private owe(chatSessionId: string, title: string | null, chatHad?: string | null): void {
+    if (title === null) {
+      this.owed.delete(chatSessionId)
+    } else {
+      const had = chatHad === undefined ? {} : { chatHad }
+      this.owed.set(chatSessionId, { chatSessionId, title, ...had })
     }
   }
 
@@ -187,6 +208,7 @@ export class SessionTitleWriteThrough {
         this.firstSighting(chatSessionId, { recordId: known.recordId, title: known.title, owner })
       } else if (!known.unsent || (name !== null && name !== known.unsent.chatHad)) {
         this.dropUnsent(known)
+        this.owed.delete(chatSessionId)
         this.nameRow(known, name)
       }
     }
@@ -215,6 +237,7 @@ export class SessionTitleWriteThrough {
       const chatHad = userGivenName(this.deps.chatName(chatSessionId))
       known.unsent = { chatHad, attempts: 1, cancelRetry: null }
     }
+    this.owe(chatSessionId, known.title, known.unsent?.chatHad)
     this.renameChat(known, chatSessionId, known.unsent ?? null)
   }
 
@@ -259,11 +282,12 @@ export class SessionTitleWriteThrough {
     const name = userGivenName(this.deps.chatName(chatSessionId))
     if (applied || name === known.title || (name !== null && name !== unsent.chatHad)) {
       delete known.unsent
+      this.owed.delete(chatSessionId)
       return
     }
     if (unsent.attempts >= MAX_ATTEMPTS) {
       this.deps.log?.(
-        `[session-titles] a chat did not take its row's name in ${MAX_ATTEMPTS} attempts; the row keeps it`,
+        `[session-titles] a chat did not take its row's name in ${MAX_ATTEMPTS} attempts; the row keeps it and the next start writes it again`,
         error
       )
       return
@@ -278,55 +302,5 @@ export class SessionTitleWriteThrough {
       unsent.attempts++
       this.renameChat(known, chatSessionId, unsent)
     }, delayMs).cancel
-  }
-}
-
-/** Session titles on this host, written through to the chats and terminal tabs that own them. */
-export function createSessionTitleWriteThrough(options: {
-  liveSessions: Pick<LiveSessionService, 'annotate' | 'subscribe' | 'snapshot'>
-  /** The pane's worktree and tab, to rename its terminal tab. */
-  renameCliTab: (paneKey: string, title: string | null) => void
-  log?: (message: string, error?: unknown) => void
-}): { dispose: () => void } {
-  const { liveSessions, log } = options
-  let chatNames: ReturnType<typeof followStructuredChatNames> | null = null
-  const titles = new SessionTitleWriteThrough({
-    chatName: (chatSessionId) => {
-      const record = getStructuredAgentSessionHost()?.deps.store.getRecord(chatSessionId)
-      return record
-        ? {
-            name: record.conversationName ?? null,
-            user: record.conversationNameSource === 'user'
-          }
-        : null
-    },
-    renameChat: async (chatSessionId, name) => {
-      const host = getStructuredAgentSessionHost()
-      return (await host?.setUserConversationName(chatSessionId, name, 'rename'))?.applied === true
-    },
-    subscribeChatNames: (listener) => {
-      chatNames = followStructuredChatNames(listener, log)
-      return chatNames.stop
-    },
-    renameCliTab: options.renameCliTab,
-    annotate: (sessionId, customTitle) =>
-      void liveSessions
-        .annotate({ sessionId, customTitle })
-        .catch((error: unknown) => log?.('[session-titles] saving a session title failed', error)),
-    setTimer: unrefTimer,
-    log
-  })
-  const observe = (event: LiveSessionRegistryEvent): void => {
-    // The structured host is installed and replaced without notice; every registry event checks.
-    chatNames?.follow()
-    titles.observe(event)
-  }
-  observe({ type: 'snapshot', snapshot: liveSessions.snapshot() })
-  const release = liveSessions.subscribe(observe)
-  return {
-    dispose: () => {
-      release()
-      titles.dispose()
-    }
   }
 }

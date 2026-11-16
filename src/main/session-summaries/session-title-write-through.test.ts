@@ -6,10 +6,9 @@ import type {
   LiveSessionAnnotation,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
-import {
-  createSessionTitleWriteThrough,
-  SessionTitleWriteThrough
-} from './session-title-write-through'
+import type { OwedChatName } from './owed-chat-names'
+import { SessionTitleWriteThrough } from './session-title-write-through'
+import { createSessionTitleWriteThrough } from './session-title-write-through-install'
 
 type SavedName = { conversationName?: string; conversationNameSource?: 'user' }
 
@@ -79,7 +78,8 @@ const settle = () => new Promise<void>((resolve) => setImmediate(resolve))
 
 type ChatName = { name: string | null; user: boolean }
 
-function harness(chats: Record<string, ChatName> = {}) {
+/** `owed` outlives the harness, as the saved file outlives a run of Seal. */
+function harness(chats: Record<string, ChatName> = {}, owed = new Map<string, OwedChatName>()) {
   const calls: unknown[][] = []
   const names = new Map(Object.entries(chats))
   const listeners = new Set<(chatSessionId: string) => void>()
@@ -128,6 +128,7 @@ function harness(chats: Record<string, ChatName> = {}) {
         }
       }
     },
+    owed,
     log: (message, error) => void logs.push([message, error])
   })
   return {
@@ -490,6 +491,50 @@ describe('SessionTitleWriteThrough', () => {
     await settle()
 
     expect(h.calls).toEqual([['renameChat', 'chat-1', 'Ship it']])
+  })
+
+  it('keeps a row name its chat never took across a restart, and writes it to the chat again', async () => {
+    const owed = new Map<string, OwedChatName>()
+    const before = harness({ 'chat-1': { name: 'Ship it', user: true } }, owed)
+    before.see(CHAT, 'Ship it')
+    before.outcomes.push(new Error('store busy'))
+    before.see(CHAT, 'Fix the build')
+    await settle()
+    before.titles.dispose()
+
+    const restarted = harness({}, owed)
+    restarted.see(CHAT, 'Fix the build')
+    restarted.nameChat('chat-1', 'Ship it')
+    await settle()
+
+    expect(restarted.calls).toEqual([['renameChat', 'chat-1', 'Fix the build']])
+  })
+
+  it('keeps a row renamed while this host did not hold its chat, whatever the chat is named by then', async () => {
+    const h = harness()
+    h.see(CHAT, 'Fix the build')
+    h.see(CHAT, 'Fix the tests')
+
+    h.nameChat('chat-1', 'Ship it')
+    await settle()
+
+    expect(h.calls).toEqual([['renameChat', 'chat-1', 'Fix the tests']])
+  })
+
+  it('takes the name a chat was given in its tab after its row name was left unwritten', async () => {
+    const owed = new Map<string, OwedChatName>()
+    const before = harness({ 'chat-1': { name: 'Ship it', user: true } }, owed)
+    before.see(CHAT, 'Ship it')
+    before.outcomes.push(new Error('store busy'))
+    before.see(CHAT, 'Fix the build')
+    await settle()
+    before.titles.dispose()
+
+    const restarted = harness({ 'chat-1': { name: 'Release notes', user: true } }, owed)
+    restarted.see(CHAT, 'Fix the build')
+    await settle()
+
+    expect(restarted.calls).toEqual([['annotate', 'local:claude:abc', 'Release notes']])
   })
 
   it('stops following chat names once disposed', () => {
