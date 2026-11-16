@@ -3,7 +3,7 @@ import type {
   LiveTranscriptCursor,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
-import { liveSessionSurfaceOf } from '../../../shared/live-sessions/live-session-surface'
+import { localChatSessionId } from '../../../shared/live-sessions/live-session-paired-server'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import type { LiveTranscriptStreams } from './live-transcript-streams'
 
@@ -25,8 +25,8 @@ export type SessionTranscriptSources = {
 }
 
 function journalOf(session: LiveSession, sources: SessionTranscriptSources) {
-  const surface = liveSessionSurfaceOf(session)
-  return surface.kind === 'chat' ? sources.journal(surface.sessionId, session.id) : null
+  const chat = localChatSessionId(session)
+  return chat === null ? null : sources.journal(chat, session.id)
 }
 
 function fileTranscript(sessionId: string, sources: SessionTranscriptSources): SessionTranscript {

@@ -15,7 +15,7 @@ export type LiveSessionMarksState = {
   seenAt: Readonly<Record<string, number>>
 }
 
-type StoppedSession = Pick<LiveSession, 'id' | 'alive' | 'surface' | 'inputRoutes'>
+type StoppedSession = Pick<LiveSession, 'id' | 'alive' | 'surface'>
 
 /** Keeps the store's read marks in step with another surface's own; returns its stop function. */
 export type LiveSessionMarksJoin = (store: LiveSessionMarksStore) => () => void
