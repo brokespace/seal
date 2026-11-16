@@ -208,23 +208,23 @@ export class LiveSessionService {
   }
 
   async retry(messageId: string): Promise<LiveMessage | null> {
-    const forwarded = this.federation?.retry(messageId)
-    if (forwarded) {
-      return forwarded
-    }
     // It failed here while its server was away; the server is listed again, so it goes there.
     const held = this.outbox.list().find((message) => message.messageId === messageId)
     const server = held?.state === 'failed' ? this.federated(held.sessionId) : null
-    const released = server ? await this.outbox.release(messageId) : null
-    return server && released
-      ? server.send({ ...released, sessionId: this.registry.currentId(released.sessionId) })
-      : this.outbox.retry(messageId)
+    const moved = server
+      ? await this.outbox.handOver(messageId, (request) =>
+          server.offer({ ...request, sessionId: this.registry.currentId(request.sessionId) })
+        )
+      : null
+    return moved ?? this.federation?.retry(messageId) ?? this.outbox.retry(messageId)
   }
 
   messages(sessionId?: string): LiveMessage[] {
     const current = sessionId === undefined ? undefined : this.registry.currentId(sessionId)
     const remote = this.federation?.messages(current) ?? []
-    const local = this.outbox.list(current)
+    // Seal stopped between a server taking a message and the outbox letting it go: the server's stands.
+    const onServer = new Set(remote.map((message) => message.messageId))
+    const local = this.outbox.list(current).filter((message) => !onServer.has(message.messageId))
     return remote.length === 0
       ? local
       : [...local, ...remote].sort((a, b) => a.createdAt - b.createdAt)

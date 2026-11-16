@@ -133,16 +133,27 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
-  /** Gives a failed message up to another owner of its session; null when there is none to give. */
-  async release(messageId: string): Promise<LiveSendRequest | null> {
+  /**
+   * Offers a failed message to another owner of its session (`offer` answers why it was refused).
+   * It stays here, and on disk, until that owner has it. Null when there is none to give.
+   */
+  async handOver(
+    messageId: string,
+    offer: (request: LiveSendRequest) => Promise<LiveMessage | { refused: string }>
+  ): Promise<LiveMessage | null> {
     await this.start()
     const item = this.items.get(messageId)
     if (!item || item.state !== 'failed') {
       return null
     }
+    const taken = await offer({ sessionId: item.sessionId, messageId, text: item.text })
+    if ('refused' in taken) {
+      this.set(item, { error: taken.refused })
+      return publicView(item)
+    }
     this.items.delete(messageId)
     this.persist()
-    return { sessionId: item.sessionId, messageId, text: item.text }
+    return taken
   }
 
   /** The session now goes by another id; its messages follow it, in order. */

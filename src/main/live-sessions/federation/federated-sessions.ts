@@ -123,31 +123,17 @@ export class FederatedSessions {
     return target && { environmentId: target.feed.environmentId, sessionId: target.serverId }
   }
 
-  async send(request: LiveSendRequest): Promise<LiveMessage> {
-    const target = this.target(request.sessionId)
-    const failed = (error: string): LiveMessage => {
-      const held = target?.feed.messages.get(request.messageId)
-      if (held && !target?.feed.messages.isUnsent(request.messageId)) {
-        // The server already has it: a resend that did not get through changes nothing.
-        return held
-      }
-      const now = this.now()
-      const message: LiveMessage = {
-        ...request,
-        state: 'failed',
-        route: null,
-        error,
-        createdAt: held?.createdAt ?? now,
-        updatedAt: now
-      }
-      if (target) {
-        return target.feed.messages.failedToSend(message)
-      }
-      this.emitMessage(message)
-      return message
-    }
+  /** Asks the session's server to take a message; `refused` says why it did not, and the caller keeps it. */
+  offer(request: LiveSendRequest): Promise<LiveMessage | { refused: string }> {
+    return this.offerTo(this.target(request.sessionId), request)
+  }
+
+  private async offerTo(
+    target: Target | null,
+    request: LiveSendRequest
+  ): Promise<LiveMessage | { refused: string }> {
     if (!target) {
-      return failed(SERVER_NOT_CONNECTED)
+      return { refused: SERVER_NOT_CONNECTED }
     }
     try {
       const response = await this.deps.transport.call(
@@ -157,14 +143,41 @@ export class FederatedSessions {
         SEND_TIMEOUT_MS
       )
       if (response.ok !== true) {
-        return failed(response.error.message)
+        return { refused: response.error.message }
       }
       const sent = readServerMessage(response.result)
       const message = sent ? federatedMessage(sent, target.feed.hostId) : null
-      return message ? target.feed.messages.fromServer(message) : failed(UNREADABLE_ANSWER)
+      return message ? target.feed.messages.fromServer(message) : { refused: UNREADABLE_ANSWER }
     } catch (error) {
-      return failed(messageOf(error))
+      return { refused: messageOf(error) }
     }
+  }
+
+  async send(request: LiveSendRequest): Promise<LiveMessage> {
+    const target = this.target(request.sessionId)
+    const taken = await this.offerTo(target, request)
+    if (!('refused' in taken)) {
+      return taken
+    }
+    const held = target?.feed.messages.get(request.messageId)
+    if (held && !target?.feed.messages.isUnsent(request.messageId)) {
+      // The server already has it: a resend that did not get through changes nothing.
+      return held
+    }
+    const now = this.now()
+    const message: LiveMessage = {
+      ...request,
+      state: 'failed',
+      route: null,
+      error: taken.refused,
+      createdAt: held?.createdAt ?? now,
+      updatedAt: now
+    }
+    if (target) {
+      return target.feed.messages.failedToSend(message)
+    }
+    this.emitMessage(message)
+    return message
   }
 
   /** Null when no federated message has that id. */

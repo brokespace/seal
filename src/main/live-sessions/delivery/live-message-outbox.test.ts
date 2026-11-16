@@ -196,4 +196,27 @@ describe('LiveMessageOutbox', () => {
     expect(JSON.parse(await readFile(storePath, 'utf8'))[0].state).toBe('delivered')
     box.stop()
   })
+
+  // Its session is on a paired server now: a retry offers the message to that server.
+  it('keeps a failed message on disk, as failed, until the owner it is handed to has it', async () => {
+    current = null
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'deploy it' })
+    await settle(box, ([m]) => m.state === 'failed')
+    await box.handOver('m1', async () => ({ refused: 'The server did not answer' }))
+    await box.flush()
+    box.stop()
+
+    const restarted = outbox()
+    await restarted.start()
+    expect(restarted.list().map((m) => [m.messageId, m.text, m.state, m.error])).toEqual([
+      ['m1', 'deploy it', 'failed', 'The server did not answer']
+    ])
+
+    const onServer: LiveMessage = { ...restarted.list()[0], state: 'queued', error: null }
+    expect(await restarted.handOver('m1', async () => onServer)).toEqual(onServer)
+    await restarted.flush()
+    expect(JSON.parse(await readFile(join(dir, 'outbox.json'), 'utf8'))).toEqual([])
+    restarted.stop()
+  })
 })
