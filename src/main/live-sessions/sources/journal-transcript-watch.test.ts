@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
-import { watchJournalTranscript, type JournalTranscript } from './journal-transcript-watch'
+import type { SessionTranscript } from '../transcripts/session-transcript'
+import { watchJournalTranscript } from './journal-transcript-watch'
 
 const row = (id: string, role: NativeChatMessage['role'], text: string): NativeChatMessage => ({
   id,
@@ -14,7 +15,7 @@ const ASKED = row('m1', 'user', 'Fix the build')
 const REPLIED = row('m2', 'assistant', 'Done.')
 const ASKED_AGAIN = row('m3', 'user', 'Try again')
 
-function journalOf(rows: NativeChatMessage[]): JournalTranscript {
+function journalOf(rows: NativeChatMessage[]): SessionTranscript {
   return {
     page: async () => ({
       sessionId: 'local:claude:abc',

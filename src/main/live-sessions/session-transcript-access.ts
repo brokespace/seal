@@ -1,3 +1,4 @@
+import { localChatSessionId } from '../../shared/live-sessions/live-session-paired-server'
 import type {
   LiveSession,
   LiveTranscriptCursor,
@@ -6,11 +7,12 @@ import type {
 } from '../../shared/live-sessions/live-session-types'
 import type { FederatedTranscripts } from './federation/federated-transcripts'
 import { watchJournalTranscript } from './sources/journal-transcript-watch'
-import { structuredSessionJournal } from './sources/structured-session-transcript'
+import { structuredChatJournal } from './transcripts/journal-session-transcript'
 import type {
   LiveTranscriptStreams,
   LiveTranscriptSubscription
 } from './transcripts/live-transcript-streams'
+import type { SessionTranscript } from './transcripts/session-transcript'
 
 export type SessionTranscriptAccessDeps = {
   session(sessionId: string): LiveSession | null
@@ -25,6 +27,12 @@ export type SessionTranscriptAccessDeps = {
 
 type TranscriptHolder = 'server' | 'journal' | 'files'
 
+/** The journal of a chat this Seal's own host holds, read as the record's transcript; null for any other session. */
+function journalOf(session: LiveSession | null): SessionTranscript | null {
+  const chat = localChatSessionId(session)
+  return session && chat !== null ? structuredChatJournal(chat, session.id) : null
+}
+
 /** A session's transcript, read from whoever holds it: its server, its chat's journal, or its file. */
 export class SessionTranscriptAccess {
   constructor(private readonly deps: SessionTranscriptAccessDeps) {}
@@ -38,7 +46,7 @@ export class SessionTranscriptAccess {
     if (server) {
       return server.page(sessionId, before, limit)
     }
-    const journal = structuredSessionJournal(this.deps.session(sessionId))
+    const journal = journalOf(this.deps.session(sessionId))
     return journal ? journal.page(before, limit) : this.deps.files.page(sessionId, before, limit)
   }
 
@@ -51,7 +59,7 @@ export class SessionTranscriptAccess {
     if (server) {
       return server.since(sessionId, cursor)
     }
-    const journal = structuredSessionJournal(this.deps.session(sessionId))
+    const journal = journalOf(this.deps.session(sessionId))
     return journal ? journal.since(cursor) : this.deps.files.since(sessionId, cursor)
   }
 
@@ -104,7 +112,7 @@ export class SessionTranscriptAccess {
     if (this.deps.server(sessionId)) {
       return 'server'
     }
-    return structuredSessionJournal(session) ? 'journal' : 'files'
+    return journalOf(session) ? 'journal' : 'files'
   }
 
   private follow(
@@ -120,7 +128,7 @@ export class SessionTranscriptAccess {
     return holder === 'journal'
       ? watchJournalTranscript(
           sessionId,
-          () => structuredSessionJournal(this.deps.session(sessionId)),
+          () => journalOf(this.deps.session(sessionId)),
           fromCursor,
           listener,
           { log: this.deps.log }

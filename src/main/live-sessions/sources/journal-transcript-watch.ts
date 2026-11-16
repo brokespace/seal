@@ -3,16 +3,8 @@ import type {
   LiveTranscriptDelta,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
-import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import type { LiveTranscriptSubscription } from '../transcripts/live-transcript-streams'
-
-/** A chat's journal read the way a transcript file is: by page, and from a cursor on. */
-export type JournalTranscript = {
-  page(before: LiveTranscriptCursor | null, limit?: number): Promise<LiveTranscriptPage>
-  since(
-    cursor: LiveTranscriptCursor
-  ): Promise<{ messages: NativeChatMessage[]; cursor: LiveTranscriptCursor; shrank: boolean }>
-}
+import type { SessionTranscript } from '../transcripts/session-transcript'
 
 const POLL_MS = 1_000
 const MAX_BACKOFF_DOUBLINGS = 3
@@ -23,7 +15,7 @@ const MAX_BACKOFF_DOUBLINGS = 3
  */
 export function watchJournalTranscript(
   sessionId: string,
-  journal: () => JournalTranscript | null,
+  journal: () => SessionTranscript | null,
   fromCursor: LiveTranscriptCursor | null,
   listener: (delta: LiveTranscriptDelta) => void,
   options?: { pollMs?: number; log?: (message: string, error?: unknown) => void }
