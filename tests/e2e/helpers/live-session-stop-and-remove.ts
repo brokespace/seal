@@ -10,13 +10,18 @@ export async function stopAndRemoveFromRow(
   row: Locator,
   testInfo: TestInfo
 ): Promise<void> {
+  // Held from before the dialog: while one is open, role lookups do not see the page behind it.
+  const listedRow = await row.elementHandle()
+  if (!listedRow) {
+    throw new Error('The session has no row to stop it from')
+  }
   await row.click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Stop and remove…' }).click()
   const confirm = page.getByTestId('live-session-danger-confirm')
   await expect(confirm).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('stop-and-remove-dialog.png') })
   // Timed in the page, from the click as the app gets it: Playwright takes up to two seconds to land one in the hidden window.
-  await row.evaluate(
+  await listedRow.evaluate(
     (rowElement, confirmElement) => {
       const id = rowElement.getAttribute('data-live-session-row')
       const listed = (): boolean =>
