@@ -3,12 +3,20 @@ import type { NativeChatMessage } from '../../../../shared/native-chat/native-ch
 import type { LiveMessage } from '../../../../shared/live-sessions/live-session-types'
 import { pendingRows } from './live-session-pending-rows'
 
-const user = (id: string, text: string): NativeChatMessage => ({
+const user = (id: string, text: string, timestamp = 0): NativeChatMessage => ({
   id,
   role: 'user',
   source: 'transcript',
-  timestamp: 0,
+  timestamp,
   blocks: [{ type: 'text', text }]
+})
+
+const reply = (id: string, timestamp: number): NativeChatMessage => ({
+  id,
+  role: 'assistant',
+  source: 'transcript',
+  timestamp,
+  blocks: [{ type: 'text', text: 'done' }]
 })
 
 const message = (
@@ -42,5 +50,34 @@ describe('pendingRows', () => {
       ['c', 'live-message:c'],
       ['d', 'live-message:d']
     ])
+  })
+
+  it('drops delivered messages the agent wrote into one transcript row', () => {
+    const rows = pendingRows(
+      [user('o1', 'use pnpm\nok\nok')],
+      [
+        message('a', 'use pnpm', 'delivered', 1),
+        message('b', 'ok', 'delivered', 2),
+        message('c', 'ok', 'delivered', 3),
+        message('d', 'ok', 'delivered', 4)
+      ]
+    )
+    expect(rows.map((r) => r.message.messageId)).toEqual(['d'])
+  })
+
+  it('drops a delivered message once the transcript has moved on past it', () => {
+    const transcript = [user('o1', 'run the tests', 1000)]
+    for (let i = 0; i < 60; i++) {
+      transcript.push(reply(`r${i}`, 2000 + i))
+    }
+    const scrolledOut = transcript.slice(1)
+    const sent = [message('a', 'run the tests', 'delivered', 900)]
+    expect(pendingRows(transcript, sent)).toEqual([])
+    expect(pendingRows(scrolledOut, sent)).toEqual([])
+    expect(
+      pendingRows(scrolledOut, [message('b', 'and lint', 'delivered', 3000)]).map(
+        (r) => r.message.messageId
+      )
+    ).toEqual(['b'])
   })
 })

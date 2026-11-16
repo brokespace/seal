@@ -1,7 +1,8 @@
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
 import type { LiveMessage } from '../../../../shared/live-sessions/live-session-types'
 
-const words = (text: string) => text.split(/\s+/).filter(Boolean).join(' ')
+// Two spaces between words: counting a text inside a row must not share a space between two finds.
+const words = (text: string) => ` ${text.split(/\s+/).filter(Boolean).join('  ')} `
 
 function userText(message: NativeChatMessage): string {
   return words(message.blocks.map((block) => (block.type === 'text' ? block.text : '')).join('\n'))
@@ -17,22 +18,34 @@ export function pendingRows(
   transcript: readonly NativeChatMessage[],
   messages: readonly LiveMessage[]
 ): PendingRow[] {
-  const recent = new Map<string, number>()
-  for (const m of transcript.slice(-50)) {
+  const said: string[] = []
+  let newest = 0
+  for (const m of transcript) {
+    newest = Math.max(newest, m.timestamp ?? 0)
     if (m.role === 'user') {
-      const text = userText(m)
-      recent.set(text, (recent.get(text) ?? 0) + 1)
+      said.push(userText(m))
     }
   }
+  const taken = new Map<string, number>()
+  // Why inside a row: the agent writes messages typed while it works into one record.
+  const shown = (text: string): boolean =>
+    said.some((row, at) => {
+      const key = `${at}\n${text}`
+      const used = taken.get(key) ?? 0
+      const found = row.split(text).length - 1 > used
+      if (found) {
+        taken.set(key, used + 1)
+      }
+      return found
+    })
   const rows: PendingRow[] = []
   for (const message of [...messages].sort((a, b) => a.createdAt - b.createdAt)) {
-    if (message.state === 'delivered') {
-      const text = words(message.text)
-      const seen = recent.get(text) ?? 0
-      if (seen > 0) {
-        recent.set(text, seen - 1)
-        continue
-      }
+    // Why the time: a transcript written past the delivery holds the row, shown or scrolled out of what is loaded.
+    if (
+      message.state === 'delivered' &&
+      (message.updatedAt < newest || shown(words(message.text)))
+    ) {
+      continue
     }
     rows.push({
       message,
