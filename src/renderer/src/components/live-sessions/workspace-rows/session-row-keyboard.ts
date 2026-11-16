@@ -31,12 +31,26 @@ function cursorOption(list: HTMLElement): HTMLElement | null {
     : list.querySelector<HTMLElement>('[role="option"][aria-current="page"]')
 }
 
+/**
+ * Gives a row the keyboard. It is marked while it holds it, as the list is while its own arrow
+ * keys move it: a terminal that regains the window then leaves the keyboard where it is.
+ */
+export function focusRowForKeyboard(row: HTMLElement): void {
+  // Why not the browser's focus scroll: it cannot see the headers pinned over the rows.
+  row.focus({ preventScroll: true })
+  if (document.activeElement === row) {
+    row.setAttribute('data-keyboard-navigation', '')
+    row.addEventListener('blur', () => row.removeAttribute('data-keyboard-navigation'), {
+      once: true
+    })
+  }
+}
+
 function focusSessionRow(row: HTMLElement | undefined): boolean {
   if (!row) {
     return false
   }
-  // Why not the browser's focus scroll: it cannot see the headers pinned over the rows.
-  row.focus({ preventScroll: true })
+  focusRowForKeyboard(row)
   scrollSidebarSessionRowIntoView(row)
   return true
 }
@@ -166,11 +180,47 @@ function onKeyDown(event: KeyboardEvent): void {
   }
 }
 
+let tabbing = false
+
+function onTabKey(event: KeyboardEvent): void {
+  tabbing =
+    event.type === 'keydown' &&
+    event.key === 'Tab' &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+}
+
+/** Tab into the list lands on the row of the session on screen, as it does in Active agents. */
+function onFocusIn(event: FocusEvent): void {
+  const list = event.target
+  if (!tabbing || !(list instanceof HTMLElement) || !list.matches(LIST)) {
+    return
+  }
+  // Shift+Tab off a row stops on the list itself, or the keyboard could not leave backwards.
+  if (event.relatedTarget instanceof Node && list.contains(event.relatedTarget)) {
+    return
+  }
+  focusSessionRow(
+    list.querySelector<HTMLElement>(
+      '[data-workspace-session-rows] [data-live-session-row][data-current="true"]'
+    ) ?? undefined
+  )
+}
+
 /** Makes workspaces and the session rows under them one arrow-key list, while mounted. */
 export function useSidebarSessionRowKeyboard(): void {
   useEffect(() => {
     // Why capture: this runs ahead of the list's own key handler, which knows nothing of session rows.
     document.addEventListener('keydown', onKeyDown, true)
-    return () => document.removeEventListener('keydown', onKeyDown, true)
+    document.addEventListener('keydown', onTabKey, true)
+    document.addEventListener('keyup', onTabKey, true)
+    document.addEventListener('focusin', onFocusIn)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true)
+      document.removeEventListener('keydown', onTabKey, true)
+      document.removeEventListener('keyup', onTabKey, true)
+      document.removeEventListener('focusin', onFocusIn)
+    }
   }, [])
 }

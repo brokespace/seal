@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Loader2 } from 'lucide-react'
+import { isWebClientLocation } from '@/app-shell/platform/web-client-location'
 import { useAppStore } from '@/store/index'
 import { useTranslate } from '@/i18n/use-translate'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
@@ -33,7 +34,10 @@ import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { useUnassignedSessions } from '../links/use-workspace-sessions'
 import { SessionsOptionsMenu } from '../workspace-rows/SessionsOptionsMenu'
 import { SidebarSessionsToolbar } from '../workspace-rows/SidebarSessionsToolbar'
-import { useSidebarSessionRowKeyboard } from '../workspace-rows/session-row-keyboard'
+import {
+  focusRowForKeyboard,
+  useSidebarSessionRowKeyboard
+} from '../workspace-rows/session-row-keyboard'
 import { pickSidebarSessionRow } from '../workspace-rows/session-row-picking'
 import {
   unhideSessionRow,
@@ -130,8 +134,7 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
   const focusRow = (sessionId: string | undefined): void => {
     const row = sessionId ? rowIn(list.current, sessionId) : null
     if (row) {
-      // Why not the browser's focus scroll: it cannot see the header pinned over the rows.
-      row.focus({ preventScroll: true })
+      focusRowForKeyboard(row)
       // The first row brings the label above it into view, as at the top of a list of its own.
       const target = sessionId === order[0] ? (list.current ?? row) : row
       revealInSidebarScrollSection(target, pinned.current)
@@ -284,7 +287,8 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
 /** The sidebar list's first section. It also mounts the sessions toolbar pinned over the whole list. */
 const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
   // Windows without the registry (a paired web client) have no sessions to list or filter.
-  if (!window.api?.liveSessions?.onEvent) {
+  // Why both: the web client answers for every missing part of `window.api`.
+  if (isWebClientLocation() || !window.api?.liveSessions?.onEvent) {
     return null
   }
   return <UnassignedActiveAgents />

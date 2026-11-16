@@ -11,7 +11,10 @@ type OverlayFocusablePane = {
 export function focusPanePreservingOverlays(pane: OverlayFocusablePane): void {
   if (
     typeof document !== 'undefined' &&
-    (document.activeElement?.matches('[data-worktree-sidebar][data-keyboard-navigation]') ||
+    // Seal: a session row the arrow keys moved to is part of the list's keyboard navigation.
+    (document.activeElement?.matches(
+      '[data-worktree-sidebar][data-keyboard-navigation], [data-worktree-sidebar] [data-keyboard-navigation]'
+    ) ||
       getOverlayFocusOwners(pane.container).length > 0)
   ) {
     return
