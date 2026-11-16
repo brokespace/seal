@@ -40,6 +40,8 @@ export type StructuredAgentLaunchOptions = StructuredLaunchPromptOptions & {
   /** The create waits for this (a source that must stop before the chat writes). */
   createAfter?: Promise<StructuredAgentSessionCreateGate>
   surfaceAddress?: StructuredLaunchSurfaceAddress
+  /** Workspace-relative subfolder the agent starts in; read only by the caller that starts the launch. */
+  launchDirectory?: string
 }
 
 export type StructuredLaunchCaller = {
