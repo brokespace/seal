@@ -96,17 +96,18 @@ function xml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function renderLaunchAgent(
+export function renderLaunchAgent(
   label: string,
   argv: string[],
   env: Record<string, string>,
-  logPath: string
+  logPath: string,
+  options: { abandonProcessGroup?: boolean } = {}
 ): string {
   const strings = (values: string[]): string =>
     values.map((value) => `    <string>${xml(value)}</string>`).join('\n')
   const envEntries = Object.entries(env)
-    .map(([key, value]) => `    <key>${xml(key)}</key>\n    <string>${xml(value)}</string>`)
-    .join('\n')
+    .map(([key, value]) => `    <key>${xml(key)}</key>\n    <string>${xml(value)}</string>\n`)
+    .join('')
   // launchd has no start limit; a clean crash-brake exit must stop restarts.
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -120,8 +121,7 @@ ${strings(argv)}
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-${envEntries}
-  </dict>
+${envEntries}  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
@@ -137,7 +137,7 @@ ${envEntries}
   <string>${xml(logPath)}</string>
   <key>StandardErrorPath</key>
   <string>${xml(logPath)}</string>
-</dict>
+${options.abandonProcessGroup ? '  <key>AbandonProcessGroup</key>\n  <true/>\n' : ''}</dict>
 </plist>
 `
 }
@@ -150,21 +150,24 @@ export function systemdQuote(value: string): string {
     : escaped
 }
 
-function renderSystemdUnit(argv: string[], env: Record<string, string>): string {
+export function renderSystemdUnit(
+  argv: string[],
+  env: Record<string, string>,
+  description = 'Seal server (seal serve --supervise)'
+): string {
   const environment = Object.entries(env)
-    .map(([key, value]) => `Environment=${systemdQuote(`${key}=${value}`)}`)
-    .join('\n')
+    .map(([key, value]) => `Environment=${systemdQuote(`${key}=${value}`)}\n`)
+    .join('')
   // Kill only the supervisor: it stops its server while the terminal daemon survives.
   return `[Unit]
-Description=Seal server (seal serve --supervise)
+Description=${description}
 StartLimitIntervalSec=900
 StartLimitBurst=5
 
 [Service]
 Type=simple
 ExecStart=${argv.map(systemdQuote).join(' ')}
-${environment}
-Restart=on-failure
+${environment}Restart=on-failure
 RestartSec=10
 TimeoutStopSec=90
 KillMode=process
