@@ -92,7 +92,6 @@ function HomeChatPanel({
         chat={active}
         machines={state.machines}
         onOpenMachines={state.refreshMachines}
-        onCompact={state.compact}
       />
 
       {active && active.entries.length > 0 ? (
@@ -136,6 +135,7 @@ function HomeChatPanel({
         accounts={state.accounts}
         onSend={state.send}
         onStop={state.stop}
+        onCompact={state.compact}
         onUpdate={state.updateChat}
         onSaveSettings={state.saveSettings}
         onOpenAccounts={state.refreshAccounts}

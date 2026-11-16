@@ -12,6 +12,7 @@ import {
   type HomeChatSettings,
   type HomeChatSummary
 } from '../../../../shared/home-chat/home-chat-types'
+import { HomeChatContextRing } from './HomeChatContextRing'
 import { HomeChatSettingsPopover } from './HomeChatSettingsPopover'
 import type { HomeChatState } from './use-home-chat'
 
@@ -23,6 +24,7 @@ type ComposerProps = {
   accounts: HomeChatAccountOption[]
   onSend: (text: string) => Promise<boolean>
   onStop: () => void
+  onCompact: HomeChatState['compact']
   onUpdate: HomeChatState['updateChat']
   onSaveSettings: HomeChatState['saveSettings']
   onOpenAccounts: () => void
@@ -34,6 +36,7 @@ export function HomeChatComposer({
   accounts,
   onSend,
   onStop,
+  onCompact,
   onUpdate,
   onSaveSettings,
   onOpenAccounts
@@ -56,7 +59,7 @@ export function HomeChatComposer({
 
   return (
     // Padded in to the transcript's column, so the composer lines up under the conversation.
-    <div className="border-t border-border px-[max(1rem,calc((100%_-_var(--chat-content-max-width))/2))] pt-2 pb-3">
+    <div className="@container/home-chat-composer border-t border-border px-[max(1rem,calc((100%_-_var(--chat-content-max-width))/2))] pt-2 pb-3">
       <Textarea
         value={draft}
         rows={2}
@@ -148,6 +151,7 @@ export function HomeChatComposer({
         <HomeChatSettingsPopover settings={settings} onSave={onSaveSettings} />
 
         <div className="flex-1" />
+        <HomeChatContextRing chat={chat} onCompact={onCompact} />
         {running ? (
           <Button
             size="icon-xs"

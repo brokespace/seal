@@ -113,14 +113,11 @@ function ContextUsageArc({ filled }: { filled: number }): React.JSX.Element {
 /** Composer ring for context-window usage and compaction; hover, click, tap, or Enter shows the breakdown. */
 export function NativeChatContextUsageRing({
   usage,
-  note,
-  cardSide = 'top'
+  note
 }: {
   usage: NativeChatContextUsageRingInput
   /** Shown last in the card, for what only the surface holding the ring can explain. */
   note?: React.ReactNode
-  /** Where the card opens: above a composer's ring, below one in a top bar. */
-  cardSide?: 'top' | 'bottom'
 }): React.JSX.Element {
   const t = useTranslate()
   const now = useLiveSessionClock(CLOCK_TICK_MS)
@@ -195,7 +192,7 @@ export function NativeChatContextUsageRing({
         <PopoverContent
           aria-label={label}
           data-native-chat-context-card=""
-          side={cardSide}
+          side="top"
           align="end"
           sideOffset={8}
           className="w-72"
