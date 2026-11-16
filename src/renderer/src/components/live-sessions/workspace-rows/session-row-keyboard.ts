@@ -87,13 +87,6 @@ function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
   if (!list || !card) {
     return false
   }
-  if (event.key === 'Escape') {
-    if (liveSessionMarksStore.getState().picked === null) {
-      return false
-    }
-    liveSessionMarksStore.setPicked(null)
-    return true
-  }
   if (event.key === 'Home' || event.key === 'End') {
     const rows = Array.from(list.querySelectorAll<HTMLElement>(SESSION_ROW))
     return focusSessionRow(event.key === 'Home' ? rows[0] : rows.at(-1))
@@ -124,6 +117,18 @@ function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
   return true
 }
 
+/** Escape ends selecting from anywhere in the list: its menus hand focus back to their button, not to a row. */
+function endSelecting(target: HTMLElement): boolean {
+  if (
+    liveSessionMarksStore.getState().picked === null ||
+    target.matches('input, textarea, [contenteditable="true"]')
+  ) {
+    return false
+  }
+  liveSessionMarksStore.setPicked(null)
+  return true
+}
+
 function onKeyDown(event: KeyboardEvent): void {
   if (!KEYS.has(event.key)) {
     return
@@ -140,15 +145,21 @@ function onKeyDown(event: KeyboardEvent): void {
   ) {
     return
   }
-  const onList = target.matches(LIST)
-  // Keys from a control inside a row, or from an Active agents row, belong to their own handlers.
-  if (!onList && !target.matches(SESSION_ROW)) {
+  // Keys typed anywhere else in the window are not the sidebar's.
+  if (!target.closest(LIST)) {
     return
   }
   if (hasVisibleOverlay() || useAppStore.getState().activeModal !== 'none') {
     return
   }
-  if (onList ? moveFromList(target, event) : moveFromSessionRow(target, event)) {
+  const handled =
+    event.key === 'Escape'
+      ? endSelecting(target)
+      : target.matches(LIST)
+        ? moveFromList(target, event)
+        : // Keys from a control inside a row, or from an Active agents row, belong to their own handlers.
+          target.matches(SESSION_ROW) && moveFromSessionRow(target, event)
+  if (handled) {
     event.preventDefault()
     // Why: the list's own handler would also move on to the next workspace.
     event.stopPropagation()
