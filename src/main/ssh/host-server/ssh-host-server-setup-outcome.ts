@@ -92,5 +92,11 @@ async function unfinished(
     }
   }
   deps.recordUnavailable(target, unavailable)
-  return { route: 'unserved', reason: 'orcad_unavailable', detail: unavailable }
+  const cause = boundedDetail(failure.detail)
+  return {
+    route: 'unserved',
+    reason: 'orcad_unavailable',
+    detail: unavailable,
+    ...(cause ? { cause } : {})
+  }
 }

@@ -8,8 +8,8 @@ import { findOrcadMigrationSourceCutoverForTarget } from '../../persistence/migr
 import { abandonOrcadConversion } from '../../managed-server/migration/cutover/orcad-conversion-abandon'
 import { retainOrcadMigrationSource } from '../../persistence/migrating-orcad-catalog/retained-source/orcad-migration-source-retention'
 import { enableMovedOrcadAutomationsForTarget } from '../../persistence/migrating-orcad-catalog/retained-source/orcad-migration-moved-automations'
-import { hasOrcadTemplate } from '../../orcad/artifact-slots/orcad-artifact-materializer'
-import { isOrcadHostUnavailableFixableOnHost } from '../../orcad/diagnostics/orcad-host-unavailable'
+import { missingOrcadTemplate } from '../../orcad/artifact-slots/orcad-artifact-materializer'
+import { isOrcadHostUnavailableRecheckedOnConnect } from '../../orcad/diagnostics/orcad-host-unavailable'
 import { managedServerUpdateDeps } from '../../ssh/host-server/managed-server-update-deps'
 import { ensureOrcadManagedTunnel } from '../../managed-server/lifecycle/orcad-managed-tunnel'
 import { verifyOrcadManagedServing } from '../../managed-server/lifecycle/orcad-managed-serving-verify'
@@ -75,13 +75,15 @@ export function hostServerOnConnectDeps(userDataPath: string): HostServerOnConne
           )
         : 0
     },
-    hasTemplate: hasOrcadTemplate,
+    missingTemplate: missingOrcadTemplate,
+    // A record saved before a reason was rechecked on connect is not trusted either.
     recordedUnavailable: (target) =>
-      target.managedServerUnavailable?.appVersion === appVersion
+      target.managedServerUnavailable?.appVersion === appVersion &&
+      !isOrcadHostUnavailableRecheckedOnConnect(target.managedServerUnavailable.reason)
         ? target.managedServerUnavailable.reason
         : null,
     recordUnavailable: (target, reason) => {
-      if (!isOrcadHostUnavailableFixableOnHost(reason)) {
+      if (!isOrcadHostUnavailableRecheckedOnConnect(reason)) {
         registry.updateTarget(target.id, { managedServerUnavailable: { reason, appVersion } })
       }
     },
