@@ -223,8 +223,8 @@ describe('a Docker removal plan', () => {
     ])
     expect(labels('docker-dangling-images')).toEqual([['eeeeeeeeeeee', true]])
     expect(labels('docker-containers')).toEqual([
-      ['job', false],
-      ['seed', false]
+      ['job', true],
+      ['seed', true]
     ])
     expect(labels('docker-volumes')).toEqual([['scratch', false]])
     expect(dockerCleanupPlan(STORAGE, 'docker-build-cache').items).toEqual([

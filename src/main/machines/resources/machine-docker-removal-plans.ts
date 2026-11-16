@@ -167,11 +167,11 @@ function unavailablePlan(storage: MachineDockerUnavailable): MachineCleanupPlan 
   }
 }
 
-// Only what holds no data of its own is ticked without being asked.
+// Volumes and tagged images hold what someone may still want, so those wait to be ticked.
 const TICKED: Record<MachineDockerCleanupTarget, boolean> = {
   'docker-images': false,
   'docker-dangling-images': true,
-  'docker-containers': false,
+  'docker-containers': true,
   'docker-volumes': false,
   'docker-build-cache': true
 }
