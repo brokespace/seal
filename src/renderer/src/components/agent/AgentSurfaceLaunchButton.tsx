@@ -58,7 +58,7 @@ export function AgentSurfaceLaunchButton({
         aria-label={title}
         aria-description={reason}
         aria-disabled={reason ? true : undefined}
-        className={className}
+        className={cn(className, reason && 'cursor-default')}
         {...props}
         onClick={(event) => {
           if (reason) {

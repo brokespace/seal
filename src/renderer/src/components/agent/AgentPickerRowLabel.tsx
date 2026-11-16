@@ -17,20 +17,20 @@ export function AgentPickerRowLabel({
   shortcut?: string
   reason?: string
   reasonId: string
-  /** The row's surface actions share its width, so the name keeps its room before anything trailing it. */
+  /** The row's surface actions share its width, so a reason takes the room the name leaves. */
   besideActions: boolean
 }): React.JSX.Element {
-  const nameFirst = besideActions && (!!reason || !!shortcut)
+  const reasonTakesRoom = besideActions && !!reason
   return (
     <>
       <AgentIcon agent={agent} size={14} />
-      <span className={cn('min-w-0 truncate text-left', !nameFirst && 'flex-1')}>{label}</span>
-      {shortcut && !besideActions ? <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut> : null}
-      {shortcut && besideActions && !reason ? (
-        // Why: a shortcut that does not fit beside the name wraps onto a clipped second line instead of crowding it.
-        <span className="flex h-4 min-w-0 flex-1 flex-wrap justify-end overflow-hidden">
-          <span className="h-4" />
-          <DropdownMenuShortcut className="ml-1">{shortcut}</DropdownMenuShortcut>
+      <span className={cn('min-w-0 truncate text-left', !reasonTakesRoom && 'flex-1')}>
+        {label}
+      </span>
+      {shortcut && !reasonTakesRoom ? (
+        // Why: beside the surface actions the name gives way first, so the shortcut is never the part that is cut.
+        <span className="flex shrink-0">
+          <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
         </span>
       ) : null}
       {reason ? (

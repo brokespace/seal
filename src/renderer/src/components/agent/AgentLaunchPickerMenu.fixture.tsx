@@ -44,6 +44,19 @@ const LOCAL: AgentPickerEntry[] = [
     surfaces: ['terminal'],
     defaultSurface: 'terminal'
   }),
+  entry('copilot', 'GitHub Copilot', {
+    rows: [
+      { kind: 'chat', agent: 'copilot' },
+      { kind: 'cli', agent: 'copilot' }
+    ],
+    surfaces: ['chat', 'terminal'],
+    defaultSurface: 'chat'
+  }),
+  entry('antigravity', 'Antigravity', {
+    rows: [{ kind: 'cli', agent: 'antigravity', noChat: 'windows' }],
+    surfaces: ['terminal'],
+    defaultSurface: 'terminal'
+  }),
   entry('opencode', 'OpenCode', {
     rows: [{ kind: 'chat', agent: 'opencode' }],
     surfaces: ['chat'],
@@ -61,11 +74,11 @@ const SSH: AgentPickerEntry[] = [
         agent: 'claude',
         reason: 'needs-server',
         executionHostId: SSH_HOST
-      },
-      { kind: 'cli', agent: 'claude', executionHostId: SSH_HOST }
+      }
     ],
-    surfaces: ['terminal'],
+    surfaces: [],
     defaultSurface: 'terminal',
+    terminalMissing: 'needs-server',
     chatAction: 'install-server'
   }),
   entry('codex', 'Codex', {
@@ -103,19 +116,20 @@ function settled(entries: AgentPickerEntry[], terminalPending = false): NewTabAg
 
 function pickerFixture(entries: AgentPickerEntry[], terminalPending = false) {
   return defineFixture({
-    width: 384,
+    width: 416,
     render: () => (
-      <div className="h-[280px] bg-background p-3">
+      <div className="h-[340px] bg-background p-3">
         <DropdownMenu defaultOpen modal={false}>
           <DropdownMenuTrigger>New tab</DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-88">
+          <DropdownMenuContent align="start" className="w-96">
             <AgentLaunchPickerMenu
               entries={entries}
               model={settled(entries, terminalPending)}
               shortcutLabels={
                 new Map([
                   ['claude', 'Ctrl+Shift+A'],
-                  ['codex', 'Ctrl+Shift+X']
+                  ['codex', 'Ctrl+Shift+X'],
+                  ['copilot', 'Ctrl+Alt+Shift+U']
                 ])
               }
               hideSearch

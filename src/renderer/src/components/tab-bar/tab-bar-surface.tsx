@@ -234,7 +234,7 @@ export function renderTabBarSurface(
         <DropdownMenuContent
           align="start"
           sideOffset={6}
-          className="w-88 max-w-[calc(100vw-1rem)]"
+          className="w-96 max-w-[calc(100vw-1rem)]"
           onCloseAutoFocus={(event) => {
             // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal.
             event.preventDefault()
