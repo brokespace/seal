@@ -8,6 +8,7 @@ import { machineIdOf, requireString, type MachineInvokeRegistrar } from '../mach
 import { removeServerFromMachine } from '../server-install/machine-server-removal'
 import { learnOwnServerServices } from '../server-install/own-server-service'
 import { startMachineServerUpgradeReconnects } from '../server-install/machine-server-upgrade-reconnect'
+import { recheckServerServiceWarnings } from '../server-install/server-service-warning-recheck'
 import {
   declineServerInstall,
   installServerOnSshMachine
@@ -38,6 +39,7 @@ export function registerMachineRegistryHandlers(handle: MachineInvokeRegistrar):
   handle(MACHINE_IPC.list, () => {
     const views = getMachineRegistry().list()
     learnOwnServerServices(views)
+    recheckServerServiceWarnings(views)
     return views
   })
 
