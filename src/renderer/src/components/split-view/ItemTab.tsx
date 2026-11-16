@@ -18,7 +18,10 @@ import {
   type DropIndicator
 } from '@/components/tab-bar/drop-indicator'
 import { EditorFileTabCloseButton } from '@/components/tab-bar/EditorFileTabCloseButton'
-import { preventMiddleButtonDefault } from '@/components/tab-bar/middle-button-default-guard'
+import {
+  closeTabOnMiddleClick,
+  preventMiddleButtonDefault
+} from '@/components/tab-bar/middle-button-default-guard'
 import {
   useTabContextMenuDismissal,
   useTabContextMenuOpening
@@ -147,13 +150,7 @@ export function ItemTab({
       onDoubleClick={() => commands.keep(item)}
       onMouseDown={preventMiddleButtonDefault}
       onMouseUp={preventMiddleButtonDefault}
-      onAuxClick={(event) => {
-        if (event.button === 1) {
-          event.preventDefault()
-          event.stopPropagation()
-          commands.close(item)
-        }
-      }}
+      onAuxClick={(event) => closeTabOnMiddleClick(event, () => commands.close(item))}
       onKeyDown={(event) => {
         // Enter and Space on the close button are its own, not the tab's.
         if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {

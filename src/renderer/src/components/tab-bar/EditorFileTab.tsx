@@ -18,7 +18,7 @@ import { useAppStore } from '@/store/index'
 import { STATUS_COLORS } from '../../lib/source-control/paths/git-path-decoration'
 import { STATUS_LABELS } from '../../../../shared/git/status/git-status-labels'
 import { getUntitledFileRoot } from '@/components/editor/panel/untitled-rename/untitled-file-rename-path'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
@@ -224,16 +224,7 @@ export default function EditorFileTab({
         }
       }}
       onMouseUp={preventMiddleButtonDefault}
-      onAuxClick={(e) => {
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose()
-        }
-      }}
+      onAuxClick={(e) => closeTabOnMiddleClick(e, isPinned ? null : onClose)}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {isConflictReview ? (

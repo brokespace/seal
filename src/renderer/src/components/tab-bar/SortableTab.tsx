@@ -20,7 +20,7 @@ import {
   getTabStripBorderClasses,
   type DropIndicator
 } from './drop-indicator'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { useSortableTabRename } from './use-sortable-tab-rename'
 import { useTabRenameReturnFocus } from './use-tab-rename-return-focus'
 import { SortableTabContextMenu } from './SortableTabContextMenu'
@@ -218,16 +218,8 @@ export default function SortableTab({
       onMouseDown={preventMiddleButtonDefault}
       onMouseUp={preventMiddleButtonDefault}
       onAuxClick={(e) => {
-        if (isEditing) {
-          return
-        }
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose(tab.id)
+        if (!isEditing) {
+          closeTabOnMiddleClick(e, isPinned ? null : () => onClose(tab.id))
         }
       }}
     >

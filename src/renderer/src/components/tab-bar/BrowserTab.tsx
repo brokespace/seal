@@ -24,7 +24,7 @@ import {
   getTabStripBorderClasses,
   type DropIndicator
 } from './drop-indicator'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
@@ -170,16 +170,7 @@ export default function BrowserTab({
         }
       }}
       onMouseUp={preventMiddleButtonDefault}
-      onAuxClick={(e) => {
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose()
-        }
-      }}
+      onAuxClick={(e) => closeTabOnMiddleClick(e, isPinned ? null : onClose)}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {/* Keep browser identity distinct on inactive tabs too; muted icons look disabled. */}
