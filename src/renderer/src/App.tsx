@@ -44,6 +44,7 @@ import { AddToChatPointMenuHost } from './components/native-chat/selection-quote
 import { installActiveWorktreeRemovalSuccessor } from './lib/workspace/activation/active-worktree-removal-successor'
 import { installSplitViewNavigationSettle } from './components/split-view/split-view-navigation-settle'
 import { subscribeHomeChatOpenRequests } from './components/home-chat/home-chat-open-target'
+import { useLiveSessionPaneStatusSync } from './components/live-sessions/links/use-live-session-pane-status-sync'
 
 function App(): React.JSX.Element {
   const layout = useAppChromeLayout()
@@ -69,6 +70,7 @@ function App(): React.JSX.Element {
   useEffect(() => installActiveWorktreeRemovalSuccessor(), [])
   useEffect(() => installSplitViewNavigationSettle(), [])
   useEffect(() => subscribeHomeChatOpenRequests(), [])
+  useLiveSessionPaneStatusSync()
 
   // Portaled sheets/dialogs live outside .app-layout and need root offsets to clear Windows/Linux controls.
   useEffect(() => {

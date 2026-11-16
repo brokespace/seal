@@ -98,7 +98,7 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
               {!open && top ? (
                 <AgentStateDot
                   state={liveSessionDotState(top)}
-                  title={liveSessionStatusLabel(top)}
+                  label={liveSessionStatusLabel(top)}
                 />
               ) : null}
               <span className="shrink-0 tabular-nums">{machine.sessions.length}</span>

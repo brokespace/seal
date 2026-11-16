@@ -15,7 +15,7 @@ export function liveSessionProviderOf(agent: string): LiveSessionProvider | null
 }
 
 /**
- * What a session is doing and whose move it is; `docs/session-status.md` has the signals behind each.
+ * What a session is doing and whose move it is; `docs/design/agent-status.md` has the signals behind each.
  *
  * working           the agent is generating or calling tools
  * running-shell     a shell command the agent started is still running (looks paused, is busy)
@@ -43,13 +43,16 @@ export const LIVE_SESSION_STATUSES = [
 export type LiveSessionStatus = (typeof LIVE_SESSION_STATUSES)[number]
 
 /**
- * Where a status came from, strongest first. `process` is the transcript read against the agent's
- * child processes; `classifier` is the utility model's verdict on a reply the text rules left open.
+ * Where a status came from, strongest first. `agent-state` is what the agent's own process says
+ * it is doing (Claude Code's session registry); `process` is the transcript read against the
+ * agent's child processes; `classifier` is the utility model's verdict on a reply the text rules
+ * left open.
  */
 export type LiveSessionStatusSource =
   | 'seal-hooks'
   | 'agent-hooks'
   | 'screen'
+  | 'agent-state'
   | 'process'
   | 'transcript'
   | 'classifier'

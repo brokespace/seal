@@ -68,7 +68,8 @@ export function installLiveSessions(
     }
   })
   const sealPanes = createSealPaneAccess(runtime, {
-    snapshot: () => agentHookServer.getStatusSnapshot()
+    snapshot: () => agentHookServer.getStatusSnapshot(),
+    checkAgentPresence: (paneKey) => agentHookServer.checkAgentPresence(paneKey)
   })
   const reaper = new SealIdleReaper({
     minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),

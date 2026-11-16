@@ -103,7 +103,8 @@ docs/**
 !docs/home-chat-architecture.md
 !docs/session-recap.md
 !docs/project-overview.md
-!docs/session-status.md
+!docs/design/
+!docs/design/agent-status.md
 !docs/machines.md
 !docs/disk-usage-index.md
 !docs/mcp.md

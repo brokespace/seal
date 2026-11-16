@@ -6,7 +6,7 @@ import type {
   LiveSessionStatus,
   LiveSessionStatusSource
 } from '../../../shared/live-sessions/live-session-types'
-import type { DiscoveredPane, DiscoveredProcess, DiscoveryOutput } from './discovery-output'
+import type { DiscoveredPane, DiscoveryOutput } from './discovery-output'
 import { parseAgentScreen } from './agent-screen'
 import { withAgentScreen } from './agent-screen-status'
 import type { TranscriptSummary } from './transcript-summary'
@@ -14,17 +14,18 @@ import type { LiveTodo } from '../../../shared/live-sessions/live-session-activi
 import type { ClaudeActivityState } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
 import { pendingCallStatus, turnStatus, withBackgroundWait } from './session-status'
-import { toolProcessStarts } from './agent-tool-processes'
+import { toolProcesses, type ToolProcess } from './agent-tool-processes'
+import {
+  claudeRegistryBackgroundShells,
+  claudeRegistryHoldsBusy,
+  withClaudeRegistryState
+} from './claude-session-registry'
 import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { hookStatus, parseHookStates } from './agent-hook-states'
-import {
-  agentProcesses,
-  approvalModeFromArgs,
-  codexHomeOf,
-  processBinary,
-  sessionIdFromArgs
-} from './agent-processes'
+import { agentProcesses, approvalModeFromArgs, codexHomeOf, processBinary } from './agent-processes'
+import { pairProcesses } from './session-process-pairing'
+import type { CodexTerminalState } from './codex-background-terminals'
 import { conversations, distinctSessions } from './session-identity'
 
 export type SummarizedTranscript = {
@@ -38,6 +39,10 @@ export type SummarizedTranscript = {
   subagents?: SubagentFileSummary[]
   /** Codex: the newest `update_plan`. */
   codexPlan?: LiveTodo[] | null
+  /** Codex: the background terminals its rollout left running, folded scan after scan. */
+  codexTerminals?: CodexTerminalState
+  /** The agent process an earlier scan paired with it. */
+  agentPid?: number
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -67,70 +72,23 @@ export function configDirOf(provider: LiveSessionProvider, path: string | null):
   return at > 0 ? path!.slice(0, at) : null
 }
 
-type Claim = {
-  transcript: SummarizedTranscript | null
-  process: (DiscoveredProcess & { provider: LiveSessionProvider }) | null
-}
-
-/** Pair agent processes with the transcripts they write. */
-function pairProcesses(
-  processes: (DiscoveredProcess & { provider: LiveSessionProvider })[],
-  transcripts: SummarizedTranscript[],
-  claudeSessionByPid: ReadonlyMap<number, string>,
-  ownedPaths: ReadonlyMap<number, ReadonlySet<string>>,
-  freshSince: number
-): Claim[] {
-  const free = new Set(transcripts)
-  const claims: Claim[] = []
-  const take = (t: SummarizedTranscript | undefined) => {
-    if (t) {
-      free.delete(t)
-    }
-    return t ?? null
+/**
+ * A host with no word from the agent itself still shows what runs under it: a command of its
+ * Bash tool that outlives a settled turn was left in the background, and with none left, none is.
+ */
+function leftoverCommands(
+  commands: readonly ToolProcess[] | null,
+  turn: TranscriptSummary | undefined,
+  status: LiveSessionStatus
+): 'running' | 'none' | null {
+  if (commands === null) {
+    return null
   }
-  const pending: typeof processes = []
-  for (const process of processes) {
-    const named =
-      (process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined) ??
-      sessionIdFromArgs(process.args)
-    const owned = ownedPaths.get(process.pid)
-    const match =
-      (named
-        ? [...free].find(
-            (t) => t.summary.provider === process.provider && t.summary.providerSessionId === named
-          )
-        : undefined) ??
-      [...free]
-        .filter((t) => t.summary.provider === process.provider && owned?.has(t.path))
-        .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
-    if (match) {
-      claims.push({ process, transcript: take(match) })
-    } else {
-      pending.push(process)
-    }
+  if (!commands.some((command) => command.claudeBash)) {
+    return 'none'
   }
-  // Newer processes write the newer transcripts in a shared folder.
-  pending.sort((a, b) => b.pid - a.pid)
-  for (const process of pending) {
-    const match = [...free]
-      .filter((t) => t.summary.provider === process.provider && t.summary.cwd === process.cwd)
-      .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
-    claims.push({ process, transcript: take(match) })
-  }
-  // A running agent's transcript is being written right now even when its folder says otherwise.
-  for (const provider of ['claude', 'codex'] as const) {
-    const bare = claims.filter((c) => c.process?.provider === provider && !c.transcript)
-    const fresh = [...free].filter(
-      (t) => t.summary.provider === provider && t.mtimeMs >= freshSince
-    )
-    if (bare.length === 1 && fresh.length === 1) {
-      bare[0].transcript = take(fresh[0])
-    }
-  }
-  for (const transcript of free) {
-    claims.push({ process: null, transcript })
-  }
-  return claims
+  const settled = turn?.phase === 'turn-ended' && turn.settled && isRestingLiveSessionStatus(status)
+  return settled ? 'running' : null
 }
 
 export function assembleHostSessions(input: {
@@ -138,6 +96,7 @@ export function assembleHostSessions(input: {
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
     Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed'>>
   transcripts: SummarizedTranscript[]
+  unreadPaths?: ReadonlySet<string>
   nowMs: number
 }): LiveSession[] {
   const { machine, output } = input
@@ -146,16 +105,22 @@ export function assembleHostSessions(input: {
   const hooks = new Map(
     parseHookStates(output.hookStates).map((h) => [`${h.provider}:${h.providerSessionId}`, h])
   )
+  const claudeRegistry = new Map((output.claudeSessions ?? []).map((s) => [s.pid, s] as const))
   const claudeSessionByPid = new Map(
-    (output.claudeSessions ?? []).map((s) => [s.pid, s.sessionId] as const)
+    [...claudeRegistry.values()].map((s) => [s.pid, s.sessionId] as const)
   )
   const ownedPaths = new Map<number, Set<string>>()
+  const openTranscripts = new Set<string>()
   for (const pin of output.pins ?? []) {
     if (pin.kind !== 'cwd') {
       ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
     }
+    if (pin.kind === 'open') {
+      openTranscripts.add(pin.path)
+    }
   }
-  const toolStarts = toolProcessStarts(output, now)
+  const commandsUnder = toolProcesses(output, now)
+  const listedPids = new Set(output.processes.map((p) => p.pid))
   const sessions: LiveSession[] = []
   // A Codex helper thread writes its own rollout, but it is its session's subagent, not a session.
   const helpers = codexHelperThreads(input.transcripts)
@@ -166,7 +131,8 @@ export function assembleHostSessions(input: {
     found.map((c) => c.transcript),
     claudeSessionByPid,
     ownedPaths,
-    now - FRESH_WRITE_MS
+    now - FRESH_WRITE_MS,
+    input.unreadPaths
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
@@ -183,12 +149,25 @@ export function assembleHostSessions(input: {
       ...(transcript?.subagents ?? []).map((sub) => sub.mtimeMs),
       ...helperThreads.map((helper) => helper.mtimeMs)
     )
-    const running = process !== null || now - lastWrite < FRESH_WRITE_MS
+    // One Codex app-server holds many threads open but pairs with one; the rest still have it.
+    const heldOpen = transcript !== null && openTranscripts.has(transcript.path)
+    // The process seen running it is off the host's list: it exited, however fresh its last
+    // write (Claude writes its closing records on its way out).
+    const last = transcript?.agentPid
+    const exited =
+      last !== undefined && output.processesListed === true && !heldOpen && !listedPids.has(last)
+    const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
     const pane = process?.tty ? panesByTty.get(process.tty) : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
     const hook = hooks.get(`${provider}:${providerSessionId}`)
+    const gone = output.processesListed === true && !running && !heldOpen
+    const commands = process ? commandsUnder(process.pid, provider) : null
+    // The registry speaks for the process's current conversation only.
+    const registered =
+      process && provider === 'claude' ? claudeRegistry.get(process.pid) : undefined
+    const registry = registered?.sessionId === providerSessionId ? registered : null
 
-    let status: LiveSessionStatus = turnStatus(summary, running, now - lastWrite)
+    let status: LiveSessionStatus = turnStatus(summary, running, now - lastWrite, gone)
     let statusSource: LiveSessionStatusSource = 'transcript'
     let statusDetail = summary?.detail ?? null
     const hookFresh = hook && hook.updatedMs >= lastWrite - HOOK_STALE_MS
@@ -196,30 +175,56 @@ export function assembleHostSessions(input: {
     // around the call: the file says "working" or "needs" until the answer, and never "asked".
     const fromHook =
       hookFresh && summary?.phase !== 'input-requested'
-        ? hookStatus(hook.state, running, summary, output.processesListed === true && !running)
+        ? hookStatus(hook, running, summary, output.processesListed === true && !running)
         : null
     if (fromHook) {
       status = fromHook
       statusSource = 'agent-hooks'
       statusDetail = hook!.detail ?? statusDetail
     }
+    const fromRegistry = withClaudeRegistryState(
+      { status, statusDetail },
+      summary,
+      registry,
+      transcript?.mtimeMs ?? lastWrite
+    )
+    if (fromRegistry) {
+      ;({ status, statusDetail } = fromRegistry)
+      statusSource = 'agent-state'
+      if (status === 'needs-permission' && summary?.phase === 'tool-pending' && statusDetail) {
+        statusDetail = `Allow ${statusDetail}?`
+      }
+    }
     const activity = sessionActivityOf({
       transcript,
       helperThreads,
       running,
       turnOpen: status === 'working',
+      backgroundShells:
+        provider === 'codex'
+          ? commands && (commands.length > 0 ? 'running' : 'none')
+          : (claudeRegistryBackgroundShells(registry) ??
+            (registry?.state ? null : leftoverCommands(commands, summary, status))),
       nowMs: now
     })
     ;({ status, statusDetail } = withBackgroundWait({ status, statusDetail }, summary, activity))
+    if (claudeRegistryHoldsBusy({ status, statusDetail }, summary, registry)) {
+      status = 'working'
+      statusSource = 'agent-state'
+      statusDetail = null
+    }
     // The transcript cannot tell a running command from one a prompt holds; the process list can.
-    const fromProcesses =
+    const inferred =
       status === 'working' && process
         ? pendingCallStatus(summary, {
-            processStarts: toolStarts(process.pid, provider),
+            processStarts: commands?.map((command) => command.startedAt) ?? null,
             approvalMode: summary?.approvalMode ?? approvalModeFromArgs(process.args),
             nowMs: now
           })
         : null
+    // An agent that says it is busy has no prompt up, however long its call stands with no process.
+    const fromProcesses =
+      inferred === 'needs-permission' && registry?.state === 'busy' ? null : inferred
     if (fromProcesses) {
       status = fromProcesses
       statusSource = 'process'

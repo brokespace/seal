@@ -1,6 +1,7 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import type { DiscoveredSubagentFile } from './claude-subagent-files'
+import { parseClaudeRegistryEntry, type ClaudeRegistryEntry } from './claude-session-registry'
 
 export type DiscoveredProcess = {
   pid: number
@@ -74,8 +75,8 @@ export type DiscoveryOutput = {
   panes: DiscoveredPane[]
   /** Raw hook state files (SISomewhere-compatible), keyed by path. */
   hookStates: { path: string; text: string }[]
-  /** Claude Code's own registry of running sessions (`~/.claude/sessions/<pid>.json`): pid → session. */
-  claudeSessions: { pid: number; sessionId: string }[]
+  /** Claude Code's own registry of running sessions (`~/.claude/sessions/<pid>.json`). */
+  claudeSessions: ClaudeRegistryEntry[]
   /** Transcripts running agents own, listed whatever their age. */
   pins: TranscriptPin[]
   files: DiscoveredFile[]
@@ -224,9 +225,11 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         break
       }
       case 'CLAUDESESSION': {
-        const record = parseJsonRecord(decode(pathAndPayload(rest).payload))
-        if (record && typeof record.pid === 'number' && typeof record.sessionId === 'string') {
-          out.claudeSessions.push({ pid: record.pid, sessionId: record.sessionId })
+        const entry = parseClaudeRegistryEntry(
+          parseJsonRecord(decode(pathAndPayload(rest).payload))
+        )
+        if (entry) {
+          out.claudeSessions.push(entry)
         }
         break
       }

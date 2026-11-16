@@ -49,7 +49,11 @@ function ItemTabIcon({
     return (
       <>
         <AgentIcon agent={resolved.session.provider} size={13} />
-        <AgentStateDot state={liveSessionDotState(resolved.session.status)} title={null} />
+        <AgentStateDot
+          state={liveSessionDotState(resolved.session.status)}
+          label={liveSessionStatusText(resolved.session)}
+          title={null}
+        />
       </>
     )
   }
