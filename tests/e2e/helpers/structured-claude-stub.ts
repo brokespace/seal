@@ -137,6 +137,7 @@ export async function openStubChat(page: Page, claudeCommand: string) {
   const composer = chat.getByRole('textbox')
   await composer.click()
   return {
+    sessionId,
     tab,
     composer,
     send: chat.getByRole('button', { name: 'Send', exact: true }),
