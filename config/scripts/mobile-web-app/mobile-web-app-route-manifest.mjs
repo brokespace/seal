@@ -6,7 +6,7 @@ import * as esbuild from 'esbuild'
 export const MOBILE_WEB_APP_ROUTE_ROOT = 'h'
 
 // Undeclared routes always hand off to native, so these subtrees would only cost page bytes and assets.
-export const NATIVE_ONLY_ROUTE_DIRS = new Set(['h/[hostId]/seal'])
+const NATIVE_ONLY_ROUTE_DIRS = new Set(['h/[hostId]/seal'])
 
 const ROUTE_FILE = /\.[tj]sx?$/
 const NOT_A_ROUTE = /(\.(test|spec|d)\.|\+api\.|\+middleware\.)/
