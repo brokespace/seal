@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useDndMonitor } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CircleDashed, Folder, GitBranch } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
@@ -126,6 +127,10 @@ export function ItemTab({
     onActivate: () => commands.activate(item)
   })
   const handleMenuOpenChange = useTabContextMenuOpening(setMenuOpen, retirePendingActivation)
+  // A drag given up with Esc is not a click, wherever the pointer is then released.
+  useDndMonitor(
+    useMemo(() => ({ onDragCancel: retirePendingActivation }), [retirePendingActivation])
+  )
   useTabContextMenuDismissal(menuOpen, setMenuOpen)
   const slotProps = useTabStripSlotProps(key, active)
   const icon = <ItemTabIcon item={item} resolved={resolved} />
