@@ -132,6 +132,63 @@ it("lists how full a session's context is, and keeps that reading while the tail
   expect(await listed()).toEqual([reading])
 })
 
+// Nothing names a Codex's rollout as its own before its first prompt: only its folder does.
+it('keeps a rollout apart from a Codex started in its folder after its own Codex exited', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const scanOf = (input: {
+    now: number
+    pid: number
+    ran: string
+    text: string
+    written: number
+  }) =>
+    [
+      `@@NOW ${input.now / 1000}`,
+      `@@PROC ${input.pid} 1 pts/3 codex`,
+      `@@CWD ${input.pid} /srv/api`,
+      '@@PS',
+      `@@AGE ${input.pid} ${input.ran}`,
+      `@@FILE codex ${Buffer.byteLength(input.text)} ${input.written / 1000} ${path}`,
+      `@@HEAD ${path} ${Buffer.from(input.text).toString('base64')}`,
+      `@@TAIL ${path} ${Buffer.from(input.text).toString('base64')}`,
+      '@@DONE'
+    ].join('\n')
+  let output = ''
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async (now: number) =>
+    (await scanner.scan(now)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+
+  output = scanOf({ now: at + 20_000, pid: 4100, ran: '10:00', text, written: at })
+  expect(await listed(at + 20_000)).toEqual([[CODEX_ID, 4100, 'codex-queue']])
+
+  // The first Codex exited; another started 30 seconds after the rollout's last write.
+  output = scanOf({ now: at + 60_000, pid: 4200, ran: '00:30', text, written: at })
+  const apart = [
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, 'resume']
+  ]
+  expect(await listed(at + 60_000)).toEqual(apart)
+
+  // `codex resume --last`: the second Codex took the rollout over and writes it now.
+  const more = text + line({ type: 'event_msg', timestamp, payload: { type: 'task_started' } })
+  output = scanOf({ now: at + 90_000, pid: 4200, ran: '01:00', text: more, written: at + 80_000 })
+  expect(await listed(at + 90_000)).toEqual(apart)
+  expect(await listed(at + 90_000)).toEqual([[CODEX_ID, 4200, 'codex-queue']])
+})
+
 const viaAiVault = () =>
   aiVaultTranscriptFiles(async () => ({
     claudeProjectsDir: join(home, '.claude/projects'),
