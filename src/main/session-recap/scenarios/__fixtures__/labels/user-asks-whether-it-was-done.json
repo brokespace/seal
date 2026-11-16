@@ -1,0 +1,26 @@
+{
+  "id": "user-asks-whether-it-was-done",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add rate limiting to /login"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 4: the agent says rate limiting is on /login, five attempts a minute per IP"
+        }
+      }
+    },
+    {
+      "quotes": ["document it in docs/api.md", "did you document the rate limit?"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent confirms docs/api.md has a Rate limits section, edited at step 3"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

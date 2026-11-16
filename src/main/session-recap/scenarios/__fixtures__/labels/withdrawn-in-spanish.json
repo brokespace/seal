@@ -1,0 +1,30 @@
+{
+  "id": "withdrawn-in-spanish",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["añade un botón para exportar a PDF en la página de facturas"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 2: the agent says it has not added it yet and asks which PDF library to use"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 6: the user says to leave it because the PDF is no longer needed"
+        }
+      }
+    },
+    {
+      "quotes": ["arregla el total, que sale mal en la factura"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says the total is fixed, VAT is added once and the invoice test passes"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

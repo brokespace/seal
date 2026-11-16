@@ -1,0 +1,19 @@
+{
+  "id": "partly-done-with-a-failing-step",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Add a migration that renames users.fullname to users.display_name, and backfill display_name from the profiles table"
+      ],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 6: migration 0061 renamed the column but the backfill timed out and is not done"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

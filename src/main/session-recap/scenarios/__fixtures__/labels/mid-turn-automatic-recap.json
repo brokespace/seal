@@ -1,0 +1,23 @@
+{
+  "id": "mid-turn-automatic-recap",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Migrate all 30 API route handlers from Express to Fastify and fix the tests as you go"
+      ],
+      "at": {
+        "four minutes into the turn": {
+          "is": "working",
+          "why": "step 4: the agent says 6 of 30 handlers are migrated so far and the turn has not ended"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 10: the agent says all 30 handlers run on Fastify and the full test suite passes"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

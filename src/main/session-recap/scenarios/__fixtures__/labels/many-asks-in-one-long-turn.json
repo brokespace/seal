@@ -1,0 +1,112 @@
+{
+  "id": "many-asks-in-one-long-turn",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": [
+        "Replace the hand-rolled retry loop in src/orders/sync.ts with the shared retry helper"
+      ],
+      "at": {
+        "four minutes into the turn": {
+          "is": "done",
+          "why": "step 4: the agent says it replaced the loop with the shared retry helper and the sync tests pass"
+        },
+        "eight minutes into the turn": {
+          "is": "done",
+          "why": "step 4: the agent says it replaced the loop with the shared retry helper and the sync tests pass"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 16: the agent says all five items are in (retry loop replaced at step 4)"
+        }
+      }
+    },
+    {
+      "quotes": ["Add an index on orders.customer_id"],
+      "at": {
+        "four minutes into the turn": {
+          "is": "done",
+          "why": "step 4: the agent says it wrote migration 0042 creating the index and ran it on staging"
+        },
+        "eight minutes into the turn": {
+          "is": "done",
+          "why": "step 4: the agent says it wrote migration 0042 creating the index and ran it on staging"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 16: the agent says all five items are in (index migration 0042 at step 4)"
+        }
+      }
+    },
+    {
+      "quotes": ["export timestamps as ISO 8601 with offset"],
+      "at": {
+        "four minutes into the turn": {
+          "is": "working",
+          "why": "step 4: the agent says it is on the CSV export now and the turn has not ended"
+        },
+        "eight minutes into the turn": {
+          "is": "done",
+          "why": "step 10: the agent says the CSV export is done and writes ISO 8601 with the offset"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 16: the agent says all five items are in (export format done at step 10)"
+        }
+      }
+    },
+    {
+      "quotes": ["Delete the unused legacy_orders table and its model"],
+      "at": {
+        "four minutes into the turn": {
+          "is": "working",
+          "why": "step 4: the agent says the legacy table comes after the export; the turn is still running"
+        },
+        "eight minutes into the turn": {
+          "is": "done",
+          "why": "step 10: the agent says it removed the model and wrote migration 0043 dropping the table"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 16: the agent says all five items are in (model removed and drop migration at step 10)"
+        }
+      }
+    },
+    {
+      "quotes": ["Update docs/orders.md to describe the new export format"],
+      "at": {
+        "four minutes into the turn": {
+          "is": "working",
+          "why": "step 4: the agent says the docs come later in this turn; the turn is still running"
+        },
+        "eight minutes into the turn": {
+          "is": "working",
+          "why": "step 10: the agent says it is rewriting the export section of docs/orders.md now"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 14 edits docs/orders.md and step 16 says all five items are in"
+        }
+      }
+    },
+    {
+      "quotes": ["Open a PR when it is all done"],
+      "at": {
+        "four minutes into the turn": {
+          "is": "working",
+          "why": "step 4: the agent says the pull request comes last; the turn is still running"
+        },
+        "eight minutes into the turn": {
+          "is": "working",
+          "why": "step 10: the agent says the pull request comes after the docs; the turn is still running"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 15: gh pr create opens pull request 212, and step 16 says the PR is open"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -1,0 +1,24 @@
+{
+  "id": "partly-addressed-then-finished",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Add pagination to the /orders and /customers endpoints, 50 per page",
+        "do customers too"
+      ],
+      "at": {
+        "after turn 1": {
+          "is": "partly",
+          "why": "step 3: /orders is paginated but the agent left /customers for a follow-up"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent says /customers is paginated the same way, so both endpoints are done"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

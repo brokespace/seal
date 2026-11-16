@@ -1,0 +1,17 @@
+{
+  "id": "declined-then-agreed",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Turn off TypeScript strict mode"],
+      "at": {
+        "after turn 2": {
+          "is": "declined",
+          "why": "step 3: the agent advises against it because strict mode catches null bugs, and step 8 leaves strict mode on"
+        }
+      }
+    }
+  ],
+  "notRequests": ["yeah ok fix them instead"],
+  "rules": []
+}

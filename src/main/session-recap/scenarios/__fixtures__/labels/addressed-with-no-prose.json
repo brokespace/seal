@@ -1,0 +1,35 @@
+{
+  "id": "addressed-with-no-prose",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Set up prettier for the repo"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says prettier is set up"
+        }
+      }
+    },
+    {
+      "quotes": ["run it over src/"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 7: pnpm format reports 148 files formatted"
+        }
+      }
+    },
+    {
+      "quotes": ["commit the result"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: git commit makes 4c1e9aa with the 148 formatted files"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

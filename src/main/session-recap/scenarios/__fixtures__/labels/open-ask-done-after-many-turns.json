@@ -1,0 +1,28 @@
+{
+  "id": "open-ask-done-after-many-turns",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "add a LOG_LEVEL env var to the logger, default info",
+        "now add the LOG_LEVEL env var"
+      ],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 2: the agent says it will add LOG_LEVEL after the moves are done"
+        },
+        "after twenty-two more turns": {
+          "is": "open",
+          "why": "step 2: the agent put LOG_LEVEL off, and the 22 routine turns at step 6 only move services"
+        },
+        "after it is added": {
+          "is": "done",
+          "why": "step 12: the agent says LOG_LEVEL is in and defaults to info"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

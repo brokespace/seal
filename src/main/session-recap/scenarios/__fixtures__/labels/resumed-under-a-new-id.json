@@ -1,0 +1,34 @@
+{
+  "id": "resumed-under-a-new-id",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Write a script that backs up the uploads bucket nightly"],
+      "at": {
+        "after the resume": {
+          "is": "done",
+          "why": "step 3: the agent says backup-uploads.ts copies the bucket and is scheduled nightly at 02:00"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says backup-uploads.ts copies the bucket and is scheduled nightly at 02:00"
+        }
+      }
+    },
+    {
+      "quotes": ["add a restore command", "now the restore command"],
+      "at": {
+        "after the resume": {
+          "is": "open",
+          "why": "step 3: the agent says it has not written the restore command"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent says it added scripts/restore-uploads.ts"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

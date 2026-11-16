@@ -1,0 +1,17 @@
+{
+  "id": "withdrawn-while-the-agent-works",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Convert the Dockerfile to a multi-stage build"],
+      "at": {
+        "after the turn": {
+          "is": "withdrawn",
+          "why": "step 5: the user says to stop and not touch the Dockerfile, and the agent reverts its change in step 7"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": ["don't touch the Dockerfile, ops owns it"]
+}

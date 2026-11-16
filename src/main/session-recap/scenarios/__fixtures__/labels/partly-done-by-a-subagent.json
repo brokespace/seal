@@ -1,0 +1,17 @@
+{
+  "id": "partly-done-by-a-subagent",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Audit the API routes for missing auth checks and fix what you find"],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 3: the audit found three routes without auth but the agent says it has not fixed any of them"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

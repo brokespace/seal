@@ -1,0 +1,43 @@
+{
+  "id": "withdrawn-because-someone-else-does-it",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Write a changelog entry for 3.2"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the 3.2 entry is in CHANGELOG.md"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the 3.2 entry is in CHANGELOG.md and nothing later reopens it"
+        }
+      }
+    },
+    {
+      "quotes": ["tweet-length release notes"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not written the release notes yet"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 7: the user says marketing will do the notes"
+        }
+      }
+    },
+    {
+      "quotes": ["tag the release"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent says it tagged v3.2.0 and pushed the tag"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

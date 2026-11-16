@@ -1,0 +1,59 @@
+{
+  "id": "nothing-said-since-the-recap",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["rename the 'Buy' button to 'Add to cart'"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the button says Add to cart"
+        },
+        "four minutes after the compaction": {
+          "is": "done",
+          "why": "step 3: the agent said the button says Add to cart; the compaction at step 7 changes nothing"
+        },
+        "after the user opens it twice": {
+          "is": "done",
+          "why": "step 3: the agent said the button says Add to cart; opening the session changes nothing"
+        }
+      }
+    },
+    {
+      "quotes": ["make the price bold"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the price is bold"
+        },
+        "four minutes after the compaction": {
+          "is": "done",
+          "why": "step 3: the agent said the price is bold; the compaction at step 7 changes nothing"
+        },
+        "after the user opens it twice": {
+          "is": "done",
+          "why": "step 3: the agent said the price is bold; opening the session changes nothing"
+        }
+      }
+    },
+    {
+      "quotes": ["remove the old banner from the product page"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the old banner is gone"
+        },
+        "four minutes after the compaction": {
+          "is": "done",
+          "why": "step 3: the agent said the old banner is gone; the compaction at step 7 changes nothing"
+        },
+        "after the user opens it twice": {
+          "is": "done",
+          "why": "step 3: the agent said the old banner is gone; opening the session changes nothing"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

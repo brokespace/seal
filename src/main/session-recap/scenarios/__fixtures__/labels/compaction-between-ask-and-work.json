@@ -1,0 +1,34 @@
+{
+  "id": "compaction-between-ask-and-work",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add request IDs to every log line"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says request IDs are on every log line now"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says request IDs are on every log line now"
+        }
+      }
+    },
+    {
+      "quotes": ["add a /healthz endpoint"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not added /healthz yet"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 10: the agent says /healthz is added"
+        }
+      }
+    }
+  ],
+  "notRequests": ["continue"],
+  "rules": []
+}

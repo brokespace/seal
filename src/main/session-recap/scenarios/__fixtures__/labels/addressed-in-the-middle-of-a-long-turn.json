@@ -1,0 +1,35 @@
+{
+  "id": "addressed-in-the-middle-of-a-long-turn",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["fix the broken user filter"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 4: the agent says the user filter works again"
+        }
+      }
+    },
+    {
+      "quotes": ["make the audit log sortable"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 7: the agent says the audit log is sortable by all three columns"
+        }
+      }
+    },
+    {
+      "quotes": ["export invoices as PDF"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 10: the agent says invoices export as PDF from the invoice page"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

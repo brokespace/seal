@@ -1,0 +1,35 @@
+{
+  "id": "multiple-asks-all-done",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["rename the 'Buy' button to 'Add to cart'"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the button says Add to cart"
+        }
+      }
+    },
+    {
+      "quotes": ["make the price bold"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the price is bold"
+        }
+      }
+    },
+    {
+      "quotes": ["remove the old banner from the product page"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent says the old banner is gone"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}
