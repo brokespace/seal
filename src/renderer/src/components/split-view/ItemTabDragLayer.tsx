@@ -16,6 +16,7 @@ import { getDragPointer } from '@/components/tab-group/tab-drag-pointer'
 import { TabDragPointerSensor } from '@/components/tab-group/tab-drag-pointer-sensor'
 import { TAB_DRAG_ACTIVATION_DISTANCE_PX } from '@/components/tab-group/useTabDragSplit'
 import { isItemTabDragData, ItemTabIcon } from './ItemTab'
+import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
 import {
   beginSplitViewDrag,
   commitSplitViewDrop,
@@ -57,6 +58,10 @@ export function ItemTabDragLayer({ children }: { children: React.ReactNode }): R
   const anyDragActive = useSplitViewDragActive()
 
   const clearDragState = useCallback(() => {
+    // A browser page gave up the keyboard on the press; a drag that moved no focus hands it back.
+    if (tabDragActiveRef.current && document.activeElement === document.body) {
+      bringKeyboardFocusIntoFocusedPane(false)
+    }
     tabDragActiveRef.current = false
     draggedRef.current = null
     releaseMissedEndFallback()

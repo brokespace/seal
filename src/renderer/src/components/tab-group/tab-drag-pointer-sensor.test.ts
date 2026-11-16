@@ -50,4 +50,16 @@ describe('tab drag pointer sensor cancellation', () => {
     expect(current.onCancel).toHaveBeenCalledOnce()
     expect(current.onEnd).not.toHaveBeenCalled()
   })
+
+  it('keeps a press whose own window focus arrives right after it', () => {
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1000)
+    const sensor = startSensor({ activationConstraint: { distance: 12 } })
+    now.mockReturnValue(1002)
+    window.dispatchEvent(new Event('focus'))
+    movePointer()
+    movePointer()
+
+    expect(sensor.onCancel).not.toHaveBeenCalled()
+    expect(sensor.onStart).toHaveBeenCalledOnce()
+  })
 })

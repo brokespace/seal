@@ -7,6 +7,7 @@ import type {
   SensorInstance,
   SensorProps
 } from '@dnd-kit/core'
+import { ListenerBag } from './tab-drag-listener-bag'
 import { recordTabDragPointer } from './tab-drag-pointer'
 
 type PointerCoordinates = { x: number; y: number }
@@ -14,38 +15,6 @@ type PointerCoordinates = { x: number; y: number }
 const DEFAULT_COORDINATES: PointerCoordinates = { x: 0, y: 0 }
 const TAB_DRAG_EARLY_MOVE_CONFIRMATION_MS = 50
 const TAB_DRAG_CONFIRMED_DISTANCE_SAMPLE_COUNT = 2
-
-type ListenerEntry = {
-  eventName: string
-  handler: EventListener
-  options?: AddEventListenerOptions | boolean
-  target: EventTarget
-}
-
-class ListenerBag {
-  private readonly listeners: ListenerEntry[] = []
-
-  add<T extends Event>(
-    target: EventTarget | null,
-    eventName: string,
-    handler: (event: T) => void,
-    options?: AddEventListenerOptions | boolean
-  ): void {
-    if (!target) {
-      return
-    }
-    const listener = handler as EventListener
-    target.addEventListener(eventName, listener, options)
-    this.listeners.push({ eventName, handler: listener, options, target })
-  }
-
-  removeAll = (): void => {
-    for (const { eventName, handler, options, target } of this.listeners) {
-      target.removeEventListener(eventName, handler, options)
-    }
-    this.listeners.length = 0
-  }
-}
 
 function isDistanceConstraint(
   constraint: PointerActivationConstraint
@@ -163,6 +132,7 @@ export class TabDragPointerSensor implements SensorInstance {
     this.handleEnd = this.handleEnd.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleKeydown = this.handleKeydown.bind(this)
+    this.handleWindowFocus = this.handleWindowFocus.bind(this)
     this.removeTextSelection = this.removeTextSelection.bind(this)
     this.attach()
   }
@@ -179,7 +149,7 @@ export class TabDragPointerSensor implements SensorInstance {
     this.windowListeners.add(win, 'visibilitychange', this.handleCancel)
     this.windowListeners.add(win, 'contextmenu', preventDefault)
     this.windowListeners.add(win, 'blur', this.handleCancel)
-    this.windowListeners.add(win, 'focus', this.handleCancel)
+    this.windowListeners.add(win, 'focus', this.handleWindowFocus)
     // Why capture: a terminal that holds the keyboard keeps its keys from the document.
     this.documentListeners.add(this.document, 'keydown', this.handleKeydown, { capture: true })
 
@@ -307,6 +277,14 @@ export class TabDragPointerSensor implements SensorInstance {
       this.props.onAbort(this.props.active)
     }
     this.props.onCancel()
+  }
+
+  private handleWindowFocus(): void {
+    const pressAgeMs = performance.now() - this.pointerDownTime
+    // A press that takes the keyboard from an embedded page focuses the window right after pointerdown.
+    if (this.activated || pressAgeMs >= TAB_DRAG_EARLY_MOVE_CONFIRMATION_MS) {
+      this.handleCancel()
+    }
   }
 
   private handleKeydown(event: KeyboardEvent): void {
