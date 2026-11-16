@@ -134,7 +134,8 @@ describe('one session on every surface', () => {
         element.getAttribute('data-live-session-row')!
       )
     expect(ids('machines')).toEqual(['asks', 'external'])
-    expect(ids('home')).toEqual(['local-idle', 'asks', 'external'])
+    // Home lists a session that asks once, in the strip above the workspaces.
+    expect(ids('home')).toEqual(['asks', 'local-idle', 'external'])
     expect(ids('active-agents')).toEqual(['local-idle', 'asks', 'external'])
   })
 
