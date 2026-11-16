@@ -1,0 +1,1244 @@
+[
+  {
+    "probe": "open/addressed-next-turn#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "test",
+    "contentHash": "ad781da0ed048b14c97acd13213761a32e22fc7ea38932ee3debf15119d0810d",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it.\n\n[m2] AGENT: I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/addressed-next-turn#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "test",
+    "contentHash": "ad781da0ed048b14c97acd13213761a32e22fc7ea38932ee3debf15119d0810d",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it.\n\n[m2] AGENT: I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/addressed-several-turns-later#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "readme",
+    "contentHash": "7f6ded03c0e2e751df49690a3f58cc3cf12e6121ba84d42608945512e822b1f1",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Customer model to Account everywhere. And update the README to match when you're done.\n\n[m2] AGENT: Renamed Customer to Account across src/ (41 files) and the tests pass. I have not touched the README yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/addressed-several-turns-later#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "readme",
+    "contentHash": "7f6ded03c0e2e751df49690a3f58cc3cf12e6121ba84d42608945512e822b1f1",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Customer model to Account everywhere. And update the README to match when you're done.\n\n[m2] AGENT: Renamed Customer to Account across src/ (41 files) and the tests pass. I have not touched the README yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/addressed-later-user-looks-at-once#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "doc",
+    "contentHash": "56eee40071ffa59fa2bf21b9efba9eed386324034a3cd12f550be32ded666c7e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a --dry-run flag to the import script and document it in docs/import.md.\n\n[m2] AGENT: Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/addressed-later-user-looks-at-once#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "doc",
+    "contentHash": "56eee40071ffa59fa2bf21b9efba9eed386324034a3cd12f550be32ded666c7e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a --dry-run flag to the import script and document it in docs/import.md.\n\n[m2] AGENT: Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/compaction-between-ask-and-work#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "healthz",
+    "contentHash": "f1972b9bc0a550bafbd418d428864a9413227b0050ac568c67ba053bf336adbb",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add request IDs to every log line, and add a /healthz endpoint.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add request IDs to every log line, and add a /healthz endpoint.\n\n[m2] AGENT: Request IDs are on every log line now, via a middleware that sets req.id. I haven't added /healthz yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/compaction-between-ask-and-work#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "healthz",
+    "contentHash": "f1972b9bc0a550bafbd418d428864a9413227b0050ac568c67ba053bf336adbb",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add request IDs to every log line, and add a /healthz endpoint.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add request IDs to every log line, and add a /healthz endpoint.\n\n[m2] AGENT: Request IDs are on every log line now, via a middleware that sets req.id. I haven't added /healthz yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/duplicate-reminder#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "schema|docs",
+    "contentHash": "518c09aa7e3d0a4e3f745c822cbf2b83becb8843c9907097ca68cf52c3b2166b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add an index on orders.created_at and update the schema docs.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add an index on orders.created_at and update the schema docs.\n\n[m2] AGENT: Added the index in migration 0042_orders_created_at_idx.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/duplicate-reminder#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "schema|docs",
+    "contentHash": "518c09aa7e3d0a4e3f745c822cbf2b83becb8843c9907097ca68cf52c3b2166b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add an index on orders.created_at and update the schema docs.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add an index on orders.created_at and update the schema docs.\n\n[m2] AGENT: Added the index in migration 0042_orders_created_at_idx.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/multiple-asks-one-deferred#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "log",
+    "contentHash": "26f3ac08ffb34317e6313de391324000cb6aff8f4a7c56d0bf4fd7ef9232b161",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"A few things: 1) make the search box debounce 300ms, 2) show a spinner while res\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: A few things: 1) make the search box debounce 300ms, 2) show a spinner while results load, 3) add an empty state when nothing matches, 4) and log slow searches over 2s to the server.\n\n[m2] AGENT: Done with the first three: the search box debounces by 300ms, a spinner shows while results load, and an empty state appears when nothing matches. I did not add the slow-search logging: there is no logging endpoint on the server yet, so that needs a decision from you first.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/multiple-asks-one-deferred#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "log",
+    "contentHash": "26f3ac08ffb34317e6313de391324000cb6aff8f4a7c56d0bf4fd7ef9232b161",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"A few things: 1) make the search box debounce 300ms, 2) show a spinner while res\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: A few things: 1) make the search box debounce 300ms, 2) show a spinner while results load, 3) add an empty state when nothing matches, 4) and log slow searches over 2s to the server.\n\n[m2] AGENT: Done with the first three: the search box debounces by 300ms, a spinner shows while results load, and an empty state appears when nothing matches. I did not add the slow-search logging: there is no logging endpoint on the server yet, so that needs a decision from you first.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/non-english-session#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "traduc|error|pago",
+    "contentHash": "ef927bcd7985e23245ff029bca1783a63a5e8519419eb7192fa8e5a00ecc9124",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de error del formulario de pago al español.\n\n[m2] AGENT: Listo lo primero: la lista de pedidos ahora tiene paginación de 25 por página. Los mensajes de error del formulario de pago siguen en inglés; todavía no los he traducido.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/non-english-session#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "traduc|error|pago",
+    "contentHash": "ef927bcd7985e23245ff029bca1783a63a5e8519419eb7192fa8e5a00ecc9124",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de error del formulario de pago al español.\n\n[m2] AGENT: Listo lo primero: la lista de pedidos ahora tiene paginación de 25 por página. Los mensajes de error del formulario de pago siguen en inglés; todavía no los he traducido.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/partly-addressed-stays-open#1",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "reindex",
+    "contentHash": "67471bebb5d2c3ec9f80ab4f0966a76bee26f98280bcd601c9b0666ad81c5d09",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Migrate cron jobs to queue worker\",\"goal\":\"Move cleanup and digest-email cron jobs to queue worker\",\"standing\":\"Two jobs migrated; reindex blocked by timeout limit\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Migrate cleanup cron to queue worker\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Migrate digest-email cron to queue worker\",\"state\":\"done\"},{\"id\":\"w3\",\"text\":\"Stop before migrating reindex due to timeout\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q4\",\"text\":\"Increase worker timeout to allow reindex\"}],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d5\",\"text\":\"Leave reindex cron running until timeout limit is changed\"}]}\n</recap>\n<new_messages>\n[m1] USER: what timeout does the worker allow?\n\n[m2] AGENT: 30 seconds per job by default; it is the WORKER_JOB_TIMEOUT setting in config/worker.ts.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/partly-addressed-stays-open#1",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "reindex",
+    "contentHash": "67471bebb5d2c3ec9f80ab4f0966a76bee26f98280bcd601c9b0666ad81c5d09",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Migrate cron jobs to queue worker\",\"goal\":\"Move cleanup and digest-email cron jobs to queue worker\",\"standing\":\"Two jobs migrated; reindex blocked by timeout limit\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Migrate cleanup cron to queue worker\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Migrate digest-email cron to queue worker\",\"state\":\"done\"},{\"id\":\"w3\",\"text\":\"Stop before migrating reindex due to timeout\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q4\",\"text\":\"Increase worker timeout to allow reindex\"}],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d5\",\"text\":\"Leave reindex cron running until timeout limit is changed\"}]}\n</recap>\n<new_messages>\n[m1] USER: what timeout does the worker allow?\n\n[m2] AGENT: 30 seconds per job by default; it is the WORKER_JOB_TIMEOUT setting in config/worker.ts.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/partly-addressed-then-finished#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "customers",
+    "contentHash": "d435eaf977c75f4ca58ca0be9c70588dcd107d4a5bc4e2de9fbba532ec466556",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add pagination to the /orders and /customers endpoints, 50 per page.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add pagination to the /orders and /customers endpoints, 50 per page.\n\n[m2] AGENT: /orders is paginated now: 50 per page with a next cursor, and the list test covers it. /customers builds its query in a different helper, so I have left it for a follow-up.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/partly-addressed-then-finished#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "customers",
+    "contentHash": "d435eaf977c75f4ca58ca0be9c70588dcd107d4a5bc4e2de9fbba532ec466556",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add pagination to the /orders and /customers endpoints, 50 per page.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add pagination to the /orders and /customers endpoints, 50 per page.\n\n[m2] AGENT: /orders is paginated now: 50 per page with a next cursor, and the list test covers it. /customers builds its query in a different helper, so I have left it for a follow-up.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/terse-ask-skipped#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "test",
+    "contentHash": "9e1c95a7bb7d3f4872318375e34303a38badcff5c6f8f0673269c1a89a78c032",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"add csv export to reports. tests too pls\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add csv export to reports. tests too pls\n\n[m2] AGENT: Reports have a CSV export button now; it downloads the current filter's rows.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/terse-ask-skipped#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "test",
+    "contentHash": "9e1c95a7bb7d3f4872318375e34303a38badcff5c6f8f0673269c1a89a78c032",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"add csv export to reports. tests too pls\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add csv export to reports. tests too pls\n\n[m2] AGENT: Reports have a CSV export button now; it downloads the current filter's rows.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/withdrawn-ask#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "dark",
+    "contentHash": "1aef74ec0271f83cc7a9a2049db43cc0a89935876e5df414a2e27fca4a1917cf",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page, and fix the avatar upload that fails on PNGs\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page, and fix the avatar upload that fails on PNGs over 2MB.\n\n[m2] AGENT: Avatar upload is fixed: the size check used kilobytes where it meant bytes, so PNGs over 2MB now upload. Dark mode touches the theme tokens across the whole app, so I have not started it.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/withdrawn-ask#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "dark",
+    "contentHash": "1aef74ec0271f83cc7a9a2049db43cc0a89935876e5df414a2e27fca4a1917cf",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page, and fix the avatar upload that fails on PNGs\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page, and fix the avatar upload that fails on PNGs over 2MB.\n\n[m2] AGENT: Avatar upload is fixed: the size check used kilobytes where it meant bytes, so PNGs over 2MB now upload. Dark mode touches the theme tokens across the whole app, so I have not started it.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/restart-mid-session#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "track|analytics",
+    "contentHash": "f033464829d91732b294c6f1aaf44811db6c65142128d2ffb444fc05e13f684f",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a 'reorder' button to past orders, and track clicks on it in analytics.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a 'reorder' button to past orders, and track clicks on it in analytics.\n\n[m2] AGENT: The reorder button is on each past order and refills the cart with the same items. Analytics tracking is not wired up yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/restart-mid-session#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "track|analytics",
+    "contentHash": "f033464829d91732b294c6f1aaf44811db6c65142128d2ffb444fc05e13f684f",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a 'reorder' button to past orders, and track clicks on it in analytics.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a 'reorder' button to past orders, and track clicks on it in analytics.\n\n[m2] AGENT: The reorder button is on each past order and refills the cart with the same items. Analytics tracking is not wired up yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/resumed-under-a-new-id#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "restore",
+    "contentHash": "28458c19caf9257c87a28bb9e4574b75580e82f07f7a2a36640bc8f6c29c49f2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write a script that backs up the uploads bucket nightly, and add a restore comma\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write a script that backs up the uploads bucket nightly, and add a restore command.\n\n[m2] AGENT: scripts/backup-uploads.ts copies the bucket to the backup bucket and is scheduled nightly at 02:00. I have not written the restore command.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/resumed-under-a-new-id#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "restore",
+    "contentHash": "28458c19caf9257c87a28bb9e4574b75580e82f07f7a2a36640bc8f6c29c49f2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write a script that backs up the uploads bucket nightly, and add a restore comma\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write a script that backs up the uploads bucket nightly, and add a restore command.\n\n[m2] AGENT: scripts/backup-uploads.ts copies the bucket to the backup bucket and is scheduled nightly at 02:00. I have not written the restore command.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/session-ends-after-doing-the-open-ask#0",
+    "kind": "open",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "expect": "rollback",
+    "contentHash": "9ccce33497a6275ec2b6f85692ac25b7a004f1112f4ec4e5c8737d19fc52d3c9",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write the release notes for 3.2 and add a rollback section to the runbook.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write the release notes for 3.2 and add a rollback section to the runbook.\n\n[m2] AGENT: The 3.2 release notes are in docs/release-notes/3.2.md. I have not written the rollback section yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "open/session-ends-after-doing-the-open-ask#0",
+    "kind": "open",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "expect": "rollback",
+    "contentHash": "9ccce33497a6275ec2b6f85692ac25b7a004f1112f4ec4e5c8737d19fc52d3c9",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write the release notes for 3.2 and add a rollback section to the runbook.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write the release notes for 3.2 and add a rollback section to the runbook.\n\n[m2] AGENT: The 3.2 release notes are in docs/release-notes/3.2.md. I have not written the rollback section yet.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-same-turn#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "5b97f49b9f68b23f0fa2224405820a16083184f6a5c335a7eac09dca65c77b54",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"The checkout page crashes when the cart is empty. Fix it.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: The checkout page crashes when the cart is empty. Fix it.\n\n[m2] AGENT: Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-same-turn#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "5b97f49b9f68b23f0fa2224405820a16083184f6a5c335a7eac09dca65c77b54",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"The checkout page crashes when the cart is empty. Fix it.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: The checkout page crashes when the cart is empty. Fix it.\n\n[m2] AGENT: Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-implicitly-by-edit#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "6bedd70c2e1840fae9aeac2c5d8aa02585b52a05bee941c1d7424909944b6933",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new export feature.\n\n[m2] AGENT: CHANGELOG has the entry under 2.4.0.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-implicitly-by-edit#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "6bedd70c2e1840fae9aeac2c5d8aa02585b52a05bee941c1d7424909944b6933",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new \",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new export feature.\n\n[m2] AGENT: CHANGELOG has the entry under 2.4.0.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-in-the-middle-of-a-long-turn#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "ab265b2131f8e98e4cf1ec2b1cb63234e5d755b68e0791f616f014d6758aa931",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Go through the admin area: fix the broken user filter, make the audit log sortab\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Go through the admin area: fix the broken user filter, make the audit log sortable, and export invoices as PDF.\n\n[m2] AGENT: First, the user filter. The admin user list read its filter from the query string but compared the role with a strict equals against a lower-cased value, while the roles in the database are capitalised, so every role filter matched nothing. I normalise both sides now and added a test that filters by Admin, Staff and Support. The filter also kept its old value when you switched between the Active and Suspended tabs, which made the list look empty after a search; it resets on a tab switch now. I checked the three role filters and the two status filters by hand against the staging data and the co\n…\nort. There was no PDF path at all, only CSV, so I added one. The invoice page has an Export PDF button next to Export CSV. It calls GET /admin/invoices/:id/pdf, which renders the same template the email uses through the headless renderer that already produces the shipping labels, so there is no new dependency. The PDF has the company header, the billing address, the line items with tax per line, the totals block and the payment reference; long invoices break across pages with the table header repeated on each page. File names follow invoice-<number>.pdf. I checked three invoices by eye against their HTML versions, including one with 140 line items and one with a refund line, and the totals match to the cent. There is a test that renders a fixture invoice and checks the page count and that the total appears in the text layer. Rendering takes about 300ms for a normal invoice and 2 seconds for the 140-line one, so the button shows a spinner while it waits. I also added the PDF route to the admin permission map so only staff with the invoices permission can call it, and a 404 for invoices that belong to another tenant, with a test for each. Invoices export as PDF from the invoice page.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-in-the-middle-of-a-long-turn#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "ab265b2131f8e98e4cf1ec2b1cb63234e5d755b68e0791f616f014d6758aa931",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Go through the admin area: fix the broken user filter, make the audit log sortab\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Go through the admin area: fix the broken user filter, make the audit log sortable, and export invoices as PDF.\n\n[m2] AGENT: First, the user filter. The admin user list read its filter from the query string but compared the role with a strict equals against a lower-cased value, while the roles in the database are capitalised, so every role filter matched nothing. I normalise both sides now and added a test that filters by Admin, Staff and Support. The filter also kept its old value when you switched between the Active and Suspended tabs, which made the list look empty after a search; it resets on a tab switch now. I checked the three role filters and the two status filters by hand against the staging data and the co\n…\nort. There was no PDF path at all, only CSV, so I added one. The invoice page has an Export PDF button next to Export CSV. It calls GET /admin/invoices/:id/pdf, which renders the same template the email uses through the headless renderer that already produces the shipping labels, so there is no new dependency. The PDF has the company header, the billing address, the line items with tax per line, the totals block and the payment reference; long invoices break across pages with the table header repeated on each page. File names follow invoice-<number>.pdf. I checked three invoices by eye against their HTML versions, including one with 140 line items and one with a refund line, and the totals match to the cent. There is a test that renders a fixture invoice and checks the page count and that the total appears in the text layer. Rendering takes about 300ms for a normal invoice and 2 seconds for the 140-line one, so the button shows a spinner while it waits. I also added the PDF route to the admin permission map so only staff with the invoices permission can call it, and a 404 for invoices that belong to another tenant, with a test for each. Invoices export as PDF from the invoice page.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-with-no-prose#1",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "5246fe85318bf01e891b8dec760981953c2a7d91630acf6a08a514730b3bb6ed",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Setup Prettier\",\"goal\":\"Use prettier to ensure consistent code formatting\",\"standing\":\"Prettier is configured and ready. Hook is installed.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Install prettier hook and configs\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: now run it over src/ and commit the result\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-with-no-prose#1",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "5246fe85318bf01e891b8dec760981953c2a7d91630acf6a08a514730b3bb6ed",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Setup Prettier\",\"goal\":\"Use prettier to ensure consistent code formatting\",\"standing\":\"Prettier is configured and ready. Hook is installed.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Install prettier hook and configs\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: now run it over src/ and commit the result\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-by-commit-and-pr#1",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "9cf402ca0454de1171edff6f81bbe29ace73d5a701f17fa4effb40cc86940585",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Fix flaky date test in test/invoice.test.ts\",\"goal\":\"Fix flaky date test causing test failures\",\"standing\":\"Replaced dynamic date comparisons with a fixed clock to stabilize the test, which now passes consistently\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Replaced dynamic date comparison with fixed clock\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: great, commit and push, then open a PR\n\n[m2] AGENT: https://github.com/acme/shop/pull/212\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/addressed-by-commit-and-pr#1",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "9cf402ca0454de1171edff6f81bbe29ace73d5a701f17fa4effb40cc86940585",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Fix flaky date test in test/invoice.test.ts\",\"goal\":\"Fix flaky date test causing test failures\",\"standing\":\"Replaced dynamic date comparisons with a fixed clock to stabilize the test, which now passes consistently\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Replaced dynamic date comparison with fixed clock\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: great, commit and push, then open a PR\n\n[m2] AGENT: https://github.com/acme/shop/pull/212\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/tool-heavy-one-word-reply#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "c1022c43589cc51a24b0e28c2876cda326d025f53698e9080b4d9a0b2ae01158",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Upgrade React Router from v5 to v6 across the app.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Upgrade React Router from v5 to v6 across the app.\n\n[m2] AGENT: Done.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/tool-heavy-one-word-reply#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "c1022c43589cc51a24b0e28c2876cda326d025f53698e9080b4d9a0b2ae01158",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Upgrade React Router from v5 to v6 across the app.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Upgrade React Router from v5 to v6 across the app.\n\n[m2] AGENT: Done.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/multiple-asks-all-done#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "8a7a1b3a1e6a7238b7204e6958ec0d6850610d1c665e0ca164eb335f7edbdf04",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Three small things: rename the 'Buy' button to 'Add to cart', make the price bol\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Three small things: rename the 'Buy' button to 'Add to cart', make the price bold, and remove the old banner from the product page.\n\n[m2] AGENT: All three are done on the product page: the button says Add to cart, the price is bold, and the old banner is gone.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/multiple-asks-all-done#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "8a7a1b3a1e6a7238b7204e6958ec0d6850610d1c665e0ca164eb335f7edbdf04",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Three small things: rename the 'Buy' button to 'Add to cart', make the price bol\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Three small things: rename the 'Buy' button to 'Add to cart', make the price bold, and remove the old banner from the product page.\n\n[m2] AGENT: All three are done on the product page: the button says Add to cart, the price is bold, and the old banner is gone.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/declined-with-a-reason#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "23220598c49931615eb7ce213ee9f7911cb199b60023745d8f85c0102f89c184",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Delete the old migrations folder, we don't need those files anymore.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Delete the old migrations folder, we don't need those files anymore.\n\n[m2] AGENT: I'd leave db/migrations in place. The deploy script replays every migration on a fresh database, and staging is rebuilt from scratch each night, so deleting them would break tonight's rebuild. If you want less clutter I can squash them into one baseline migration instead. I have not deleted anything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/declined-with-a-reason#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "23220598c49931615eb7ce213ee9f7911cb199b60023745d8f85c0102f89c184",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Delete the old migrations folder, we don't need those files anymore.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Delete the old migrations folder, we don't need those files anymore.\n\n[m2] AGENT: I'd leave db/migrations in place. The deploy script replays every migration on a fresh database, and staging is rebuilt from scratch each night, so deleting them would break tonight's rebuild. If you want less clutter I can squash them into one baseline migration instead. I have not deleted anything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-answered#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "be3a7959f017d67123b88f422551101e42b9712c5119774b142da185db298ec4",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add email notifications when an order ships.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add email notifications when an order ships.\n\n[m2] AGENT: I can send them through the existing SES setup or through Postmark, which the marketing emails use. Which one should order emails go through?\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-answered#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "be3a7959f017d67123b88f422551101e42b9712c5119774b142da185db298ec4",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add email notifications when an order ships.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add email notifications when an order ships.\n\n[m2] AGENT: I can send them through the existing SES setup or through Postmark, which the marketing emails use. Which one should order emails go through?\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-tool-waiting#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "60db9a37145bf2f4ab1be2ce85b7d0c1656cce1d4e29e9025617e238778dbe39",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Set up the staging deploy.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Set up the staging deploy.\n\n[m2] AGENT: I need one choice from you before I can write the workflow.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-tool-waiting#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "60db9a37145bf2f4ab1be2ce85b7d0c1656cce1d4e29e9025617e238778dbe39",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Set up the staging deploy.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Set up the staging deploy.\n\n[m2] AGENT: I need one choice from you before I can write the workflow.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-refresh#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "b141b936ae88f51b24a5beda26120c5563b021041f7ce427edf6c42c7ed085a8",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Refactor the payment module into separate files and then update the imports in t\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Refactor the payment module into separate files and then update the imports in the checkout pages.\n\n[m2] AGENT: I'll split src/payment.ts into charge.ts, refund.ts and webhook.ts first, then update the checkout imports.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-refresh#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "b141b936ae88f51b24a5beda26120c5563b021041f7ce427edf6c42c7ed085a8",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Refactor the payment module into separate files and then update the imports in t\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Refactor the payment module into separate files and then update the imports in the checkout pages.\n\n[m2] AGENT: I'll split src/payment.ts into charge.ts, refund.ts and webhook.ts first, then update the checkout imports.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-first-look#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "c78869fdbe0d83882c7f4b37e1a06dd203dd89a560548d407f283bd34055cf6e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\n\n[m2] AGENT: Starting with the TOTP setup page.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-first-look#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "c78869fdbe0d83882c7f4b37e1a06dd203dd89a560548d407f283bd34055cf6e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\n\n[m2] AGENT: Starting with the TOTP setup page.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-automatic-recap#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "5c70368519be39b071c3108c01883e90fdfa3d7c4a5b4f420d36ca79a02d8576",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Migrate all 30 API route handlers from Express to Fastify and fix the tests as y\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Migrate all 30 API route handlers from Express to Fastify and fix the tests as you go.\n\n[m2] AGENT: Starting with the auth routes because everything else depends on the session plugin. So far: I replaced the Express app with a Fastify instance in src/server.ts, registered the cookie and session plugins, and moved the error handler to setErrorHandler so the JSON error shape stays the same. The auth routes (login, logout, refresh, me) are on Fastify now with their schemas declared, and their 24 tests pass after I swapped supertest for app.inject. The middleware that attached req.user is a preHandler hook now; it runs for every route under /api and skips /api/public. Next come the catalog routes (list, detail, search), then cart, then checkout and orders, and the admin routes last because they share the CSV export helper that still calls res.write directly. I am converting the catalog routes now: list and detail are done, search still uses the Express query parser and I am rewriting its validation as a Fastify schema. After each group I run that group's tests before moving on, so a failure points at one group. 6 of 30 handlers are migrated so far, and the server boots and serves the migrated routes alongside the Express ones through a small bridge I will delete at the end.\n</new_messages>\nThe agent is still working and its last message is unfinished: record what it is doing as \"in-progress\", never \"done\", and say in \"standing\" what it is doing now."
+      }
+    ]
+  },
+  {
+    "probe": "clean/mid-turn-automatic-recap#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "5c70368519be39b071c3108c01883e90fdfa3d7c4a5b4f420d36ca79a02d8576",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Migrate all 30 API route handlers from Express to Fastify and fix the tests as y\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Migrate all 30 API route handlers from Express to Fastify and fix the tests as you go.\n\n[m2] AGENT: Starting with the auth routes because everything else depends on the session plugin. So far: I replaced the Express app with a Fastify instance in src/server.ts, registered the cookie and session plugins, and moved the error handler to setErrorHandler so the JSON error shape stays the same. The auth routes (login, logout, refresh, me) are on Fastify now with their schemas declared, and their 24 tests pass after I swapped supertest for app.inject. The middleware that attached req.user is a preHandler hook now; it runs for every route under /api and skips /api/public. Next come the catalog routes (list, detail, search), then cart, then checkout and orders, and the admin routes last because they share the CSV export helper that still calls res.write directly. I am converting the catalog routes now: list and detail are done, search still uses the Express query parser and I am rewriting its validation as a Fastify schema. After each group I run that group's tests before moving on, so a failure points at one group. 6 of 30 handlers are migrated so far, and the server boots and serves the migrated routes alongside the Express ones through a small bridge I will delete at the end.\n</new_messages>\nThe agent is still working and its last message is unfinished: record what it is doing as \"in-progress\", never \"done\", and say in \"standing\" what it is doing now."
+      }
+    ]
+  },
+  {
+    "probe": "clean/subagent-does-the-work#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "f0856862bab29c9619944db33c3f2ab69cfd437caa9217679efad869298043d6",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Audit our npm dependencies for known vulnerabilities and tell me what needs upgr\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Audit our npm dependencies for known vulnerabilities and tell me what needs upgrading.\n\n[m2] AGENT: The audit found 3 high-severity advisories and no critical ones: lodash (upgrade to 4.17.21), axios (to 1.7.4) and minimist (to 1.2.8).\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/subagent-does-the-work#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "f0856862bab29c9619944db33c3f2ab69cfd437caa9217679efad869298043d6",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Audit our npm dependencies for known vulnerabilities and tell me what needs upgr\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Audit our npm dependencies for known vulnerabilities and tell me what needs upgrading.\n\n[m2] AGENT: The audit found 3 high-severity advisories and no critical ones: lodash (upgrade to 4.17.21), axios (to 1.7.4) and minimist (to 1.2.8).\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/partly-addressed-then-finished#1",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "ebbe2da10f8bf0b1af111cdd3e89c768462f05b18d8962701b4292a4acc56894",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add pagination to endpoints\",\"goal\":\"Add pagination to /orders and /customers endpoints, 50 per page\",\"standing\":\"/orders is paginated and tested. /customers requires a helper change\",\"asked\":[],\"did\":[{\"id\":\"w2\",\"text\":\"Leave /customers for follow-up due to helper\",\"state\":\"in-progress\"},{\"id\":\"w1\",\"text\":\"Paginate /orders at 50 per page with next cursor\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: do customers too\n\n[m2] AGENT: /customers is paginated the same way, 50 per page, with its own test.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/partly-addressed-then-finished#1",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "ebbe2da10f8bf0b1af111cdd3e89c768462f05b18d8962701b4292a4acc56894",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add pagination to endpoints\",\"goal\":\"Add pagination to /orders and /customers endpoints, 50 per page\",\"standing\":\"/orders is paginated and tested. /customers requires a helper change\",\"asked\":[],\"did\":[{\"id\":\"w2\",\"text\":\"Leave /customers for follow-up due to helper\",\"state\":\"in-progress\"},{\"id\":\"w1\",\"text\":\"Paginate /orders at 50 per page with next cursor\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: do customers too\n\n[m2] AGENT: /customers is paginated the same way, 50 per page, with its own test.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-ask-answered#0",
+    "kind": "clean",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "contentHash": "8cc2d36af42574b85ed72ba0fbf7586cc991f6bd8a890626e8b4111e7d9284b3",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Why is the CI build so slow lately? Don't change anything, just tell me.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Why is the CI build so slow lately? Don't change anything, just tell me.\n\n[m2] AGENT: The build got slower because the e2e job stopped using the dependency cache on 3 November: the cache key includes the lockfile hash, and the lockfile now changes on every run. Install went from 40 seconds to about 6 minutes. I have not changed anything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "clean/question-ask-answered#0",
+    "kind": "clean",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "contentHash": "8cc2d36af42574b85ed72ba0fbf7586cc991f6bd8a890626e8b4111e7d9284b3",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Why is the CI build so slow lately? Don't change anything, just tell me.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Why is the CI build so slow lately? Don't change anything, just tell me.\n\n[m2] AGENT: The build got slower because the e2e job stopped using the dependency cache on 3 November: the cache key includes the lockfile hash, and the lockfile now changes on every run. Install went from 40 seconds to about 6 minutes. I have not changed anything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-next-turn#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i4",
+    "carriedIgnored": [
+      {
+        "id": "i4",
+        "text": "Add a test for the rate limit"
+      }
+    ],
+    "contentHash": "7d57c079c52f60bbfe21358e4d1da8ef8585706531c95baa17bd477d513e4f34",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a test\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Test not added\",\"state\":\"in-progress\"},{\"id\":\"w2\",\"text\":\"Added rate limiting to login endpoint\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i4\",\"text\":\"Add a test for the rate limit\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok. anything left?\n\n[m2] AGENT: One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-next-turn#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i4",
+    "carriedIgnored": [
+      {
+        "id": "i4",
+        "text": "Add a test for the rate limit"
+      }
+    ],
+    "contentHash": "7d57c079c52f60bbfe21358e4d1da8ef8585706531c95baa17bd477d513e4f34",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a test\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Test not added\",\"state\":\"in-progress\"},{\"id\":\"w2\",\"text\":\"Added rate limiting to login endpoint\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i4\",\"text\":\"Add a test for the rate limit\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok. anything left?\n\n[m2] AGENT: One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-several-turns-later#3",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i7",
+    "carriedIgnored": [
+      {
+        "id": "i7",
+        "text": "Update the README to match the rename"
+      }
+    ],
+    "contentHash": "e74085cfccfb6fd0fd6b46c3b79d033c0aa14906d5e5f3e7add1a568a802d745",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renamed Customer to Account in code and tests with one message remaining.\",\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[{\"id\":\"a5\",\"text\":\"Update README with missing changes\"}],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Customer to Account in source\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Run tests to verify change\",\"state\":\"done\"},{\"id\":\"w6\",\"text\":\"Update CSV export column\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i7\",\"text\":\"Update the README to match the rename\"}],\"actions\":[],\"decisions\":[{\"id\":\"d4\",\"text\":\"Limit change to code first and defer README\"}]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Updated the README: every mention of Customer is now Account, including the API examples and the schema diagram caption. That was the last open item.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-several-turns-later#3",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i7",
+    "carriedIgnored": [
+      {
+        "id": "i7",
+        "text": "Update the README to match the rename"
+      }
+    ],
+    "contentHash": "e74085cfccfb6fd0fd6b46c3b79d033c0aa14906d5e5f3e7add1a568a802d745",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Renamed Customer to Account in code and tests with one message remaining.\",\"firstRequest\":\"Rename the Customer model to Account everywhere. And update the README to match \",\"asked\":[{\"id\":\"a5\",\"text\":\"Update README with missing changes\"}],\"did\":[{\"id\":\"w1\",\"text\":\"Rename Customer to Account in source\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Run tests to verify change\",\"state\":\"done\"},{\"id\":\"w6\",\"text\":\"Update CSV export column\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i7\",\"text\":\"Update the README to match the rename\"}],\"actions\":[],\"decisions\":[{\"id\":\"d4\",\"text\":\"Limit change to code first and defer README\"}]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Updated the README: every mention of Customer is now Account, including the API examples and the schema diagram caption. That was the last open item.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-later-user-looks-at-once#2",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Document the --dry-run flag in docs/import.md"
+      }
+    ],
+    "contentHash": "faf0b7ed328881fcc257faf227b01e1d587b8405038caeb466df765472a88c32",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Need to document --dry-run flag in docs/import.md\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Added --dry-run parsing to scripts/import.ts\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Document the --dry-run flag in docs/import.md\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: document it please\n\n[m2] AGENT: Documented --dry-run in docs/import.md with an example.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/addressed-later-user-looks-at-once#2",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Document the --dry-run flag in docs/import.md"
+      }
+    ],
+    "contentHash": "faf0b7ed328881fcc257faf227b01e1d587b8405038caeb466df765472a88c32",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a --dry-run flag to the import script and document it in docs/import.md.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Need to document --dry-run flag in docs/import.md\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Added --dry-run parsing to scripts/import.ts\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Document the --dry-run flag in docs/import.md\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: document it please\n\n[m2] AGENT: Documented --dry-run in docs/import.md with an example.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/compaction-between-ask-and-work#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i2",
+    "carriedIgnored": [
+      {
+        "id": "i2",
+        "text": "Add a /healthz endpoint"
+      }
+    ],
+    "contentHash": "494a368ff14ad119af680816e7f1d7424fbe7c33e402f7c1d6838c6d8daae0f0",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add request IDs to logs and healthz endpoint\",\"goal\":\"Add request IDs to logs and add a health endpoint\",\"standing\":\"Request ID middleware created. /healthz endpoint pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Add request IDs to every log line\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i2\",\"text\":\"Add a /healthz endpoint\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: continue\n\n[m2] AGENT: Added /healthz: it returns 200 with the build SHA and checks the database connection.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/compaction-between-ask-and-work#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i2",
+    "carriedIgnored": [
+      {
+        "id": "i2",
+        "text": "Add a /healthz endpoint"
+      }
+    ],
+    "contentHash": "494a368ff14ad119af680816e7f1d7424fbe7c33e402f7c1d6838c6d8daae0f0",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add request IDs to logs and healthz endpoint\",\"goal\":\"Add request IDs to logs and add a health endpoint\",\"standing\":\"Request ID middleware created. /healthz endpoint pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Add request IDs to every log line\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i2\",\"text\":\"Add a /healthz endpoint\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: continue\n\n[m2] AGENT: Added /healthz: it returns 200 with the build SHA and checks the database connection.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/duplicate-reminder#2",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Update the schema docs"
+      }
+    ],
+    "contentHash": "5c21f82b408eb8105a3e624f882e0dc1d71a36fb8224b67b15e75a4c8237c3b9",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add index and update schema docs\",\"goal\":\"Add index and update documentation\",\"standing\":\"Index added in migration 0042, docs pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added index in migration 0042\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Update the schema docs\"}],\"actions\":[{\"id\":\"t2\",\"text\":\"Update the schema docs\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ran it, docs are updated\n\n[m2] AGENT: Good, then the index and its docs are both done.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/duplicate-reminder#2",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Update the schema docs"
+      }
+    ],
+    "contentHash": "5c21f82b408eb8105a3e624f882e0dc1d71a36fb8224b67b15e75a4c8237c3b9",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add index and update schema docs\",\"goal\":\"Add index and update documentation\",\"standing\":\"Index added in migration 0042, docs pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added index in migration 0042\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Update the schema docs\"}],\"actions\":[{\"id\":\"t2\",\"text\":\"Update the schema docs\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ran it, docs are updated\n\n[m2] AGENT: Good, then the index and its docs are both done.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/non-english-session#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Traducir los mensajes de error del pago al español"
+      }
+    ],
+    "contentHash": "5111185e53ced1293009ad376bc2f0ff159d442e7fdd47dfe2d45c0fb7144432",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Paginación y traducción a español\",\"goal\":\"Añadir paginación a pedidos y traducir mensajes al español.\",\"standing\":\"Paginación implementada. Traducción de formularios pendiente.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Añadir paginación a lista de pedidos\"},{\"id\":\"a2\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Implementar paginación de 25 por página\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i5\",\"text\":\"Traducir los mensajes de error del pago al español\"}],\"actions\":[{\"id\":\"t4\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: vale, tradúcelos\n\n[m2] AGENT: Hecho: los 14 mensajes de error del formulario de pago están traducidos al español.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/non-english-session#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Traducir los mensajes de error del pago al español"
+      }
+    ],
+    "contentHash": "5111185e53ced1293009ad376bc2f0ff159d442e7fdd47dfe2d45c0fb7144432",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Paginación y traducción a español\",\"goal\":\"Añadir paginación a pedidos y traducir mensajes al español.\",\"standing\":\"Paginación implementada. Traducción de formularios pendiente.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Añadir paginación a lista de pedidos\"},{\"id\":\"a2\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Implementar paginación de 25 por página\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i5\",\"text\":\"Traducir los mensajes de error del pago al español\"}],\"actions\":[{\"id\":\"t4\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: vale, tradúcelos\n\n[m2] AGENT: Hecho: los 14 mensajes de error del formulario de pago están traducidos al español.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/partly-addressed-then-finished#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Add pagination to the /customers endpoint"
+      }
+    ],
+    "contentHash": "d967c884859c45f928257569c0518ac16bc50b08a7d3c3b6c581b381cb9c2301",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add pagination to endpoints\",\"goal\":\"Add pagination to /orders and /customers endpoints, 50 per page\",\"standing\":\"/orders is paginated and tested. /customers requires a helper change\",\"asked\":[],\"did\":[{\"id\":\"w2\",\"text\":\"Leave /customers for follow-up due to helper\",\"state\":\"in-progress\"},{\"id\":\"w1\",\"text\":\"Paginate /orders at 50 per page with next cursor\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Add pagination to the /customers endpoint\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: do customers too\n\n[m2] AGENT: /customers is paginated the same way, 50 per page, with its own test.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/partly-addressed-then-finished#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Add pagination to the /customers endpoint"
+      }
+    ],
+    "contentHash": "d967c884859c45f928257569c0518ac16bc50b08a7d3c3b6c581b381cb9c2301",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Add pagination to endpoints\",\"goal\":\"Add pagination to /orders and /customers endpoints, 50 per page\",\"standing\":\"/orders is paginated and tested. /customers requires a helper change\",\"asked\":[],\"did\":[{\"id\":\"w2\",\"text\":\"Leave /customers for follow-up due to helper\",\"state\":\"in-progress\"},{\"id\":\"w1\",\"text\":\"Paginate /orders at 50 per page with next cursor\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Add pagination to the /customers endpoint\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: do customers too\n\n[m2] AGENT: /customers is paginated the same way, 50 per page, with its own test.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/restart-mid-session#2",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Track clicks on the reorder button in analytics"
+      }
+    ],
+    "contentHash": "2e69fdaa8840969d9db9fc51cad4353c6dc842104c3c6341d098ca9a8a46c3b5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a 'reorder' button to past orders, and track clicks on it in analytics.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add 'reorder' button to past orders\"},{\"id\":\"a2\",\"text\":\"Track reorder button clicks in analytics\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Implement reorder button component\",\"state\":\"done\"},{\"id\":\"w4\",\"text\":\"Wire reorder button to fill cart\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i5\",\"text\":\"Track clicks on the reorder button in analytics\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add the tracking now\n\n[m2] AGENT: Clicks on reorder now send a reorder_clicked event with the order id.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/restart-mid-session#2",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Track clicks on the reorder button in analytics"
+      }
+    ],
+    "contentHash": "2e69fdaa8840969d9db9fc51cad4353c6dc842104c3c6341d098ca9a8a46c3b5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a 'reorder' button to past orders, and track clicks on it in analytics.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add 'reorder' button to past orders\"},{\"id\":\"a2\",\"text\":\"Track reorder button clicks in analytics\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Implement reorder button component\",\"state\":\"done\"},{\"id\":\"w4\",\"text\":\"Wire reorder button to fill cart\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i5\",\"text\":\"Track clicks on the reorder button in analytics\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add the tracking now\n\n[m2] AGENT: Clicks on reorder now send a reorder_clicked event with the order id.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/resumed-under-a-new-id#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Add a restore command"
+      }
+    ],
+    "contentHash": "c0c87efd11ad6b5e6067f64d010cba37d772dd249bb6c4a68d405ba6708c1bbb",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Bucket restore command\",\"goal\":\"Add restore command to uploads backup script\",\"standing\":\"Nightly backup script exists; restore command pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Create backup-uploads.ts script\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Schedule nightly execution at 02:00\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q3\",\"text\":\"Where to place restore command file\"}],\"ignored\":[{\"id\":\"i5\",\"text\":\"Add a restore command\"}],\"actions\":[{\"id\":\"t4\",\"text\":\"Implement restore command function\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: now the restore command\n\n[m2] AGENT: Added scripts/restore-uploads.ts: it takes a date and copies that night's backup back into the uploads bucket.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/resumed-under-a-new-id#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i5",
+    "carriedIgnored": [
+      {
+        "id": "i5",
+        "text": "Add a restore command"
+      }
+    ],
+    "contentHash": "c0c87efd11ad6b5e6067f64d010cba37d772dd249bb6c4a68d405ba6708c1bbb",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Bucket restore command\",\"goal\":\"Add restore command to uploads backup script\",\"standing\":\"Nightly backup script exists; restore command pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Create backup-uploads.ts script\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Schedule nightly execution at 02:00\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q3\",\"text\":\"Where to place restore command file\"}],\"ignored\":[{\"id\":\"i5\",\"text\":\"Add a restore command\"}],\"actions\":[{\"id\":\"t4\",\"text\":\"Implement restore command function\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: now the restore command\n\n[m2] AGENT: Added scripts/restore-uploads.ts: it takes a date and copies that night's backup back into the uploads bucket.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/session-ends-after-doing-the-open-ask#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i2",
+    "carriedIgnored": [
+      {
+        "id": "i2",
+        "text": "Add a rollback section to the runbook"
+      }
+    ],
+    "contentHash": "173d83554e5058cb7c8be1f298190ab1567bf4f7ad031ff755df8933271c8d7c",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Release notes 3.2 and rollback runbook\",\"goal\":\"Create 3.2 release notes and add a rollback section to the runbook\",\"standing\":\"Release notes exists. Add a rollback section to the runbook.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Opened existing 3.2 release notes\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i2\",\"text\":\"Add a rollback section to the runbook\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add the rollback section, then we're done\n\n[m2] AGENT: The runbook has a rollback section now: how to pin the previous image, revert migration 0051, and verify. That is everything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/session-ends-after-doing-the-open-ask#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i2",
+    "carriedIgnored": [
+      {
+        "id": "i2",
+        "text": "Add a rollback section to the runbook"
+      }
+    ],
+    "contentHash": "173d83554e5058cb7c8be1f298190ab1567bf4f7ad031ff755df8933271c8d7c",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Release notes 3.2 and rollback runbook\",\"goal\":\"Create 3.2 release notes and add a rollback section to the runbook\",\"standing\":\"Release notes exists. Add a rollback section to the runbook.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Opened existing 3.2 release notes\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i2\",\"text\":\"Add a rollback section to the runbook\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add the rollback section, then we're done\n\n[m2] AGENT: The runbook has a rollback section now: how to pin the previous image, revert migration 0051, and verify. That is everything.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/withdrawn-ask#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Add dark mode to the settings page"
+      }
+    ],
+    "contentHash": "bdbf557b145db164705b5d4d06babd4acc5383f55c0474aa529c0c81e85d6871",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Dark mode and avatar upload fix\",\"goal\":\"Add dark mode to the settings page and fix the avatar upload failure\",\"standing\":\"Avatar upload bug is resolved; dark mode feature is pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Fixed avatar upload size check\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Add dark mode to the settings page\"}],\"actions\":[{\"id\":\"t2\",\"text\":\"Implement dark mode theme tokens\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: never mind dark mode, we'll do it next quarter\n\n[m2] AGENT: Understood, leaving dark mode out.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/withdrawn-ask#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Add dark mode to the settings page"
+      }
+    ],
+    "contentHash": "bdbf557b145db164705b5d4d06babd4acc5383f55c0474aa529c0c81e85d6871",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Dark mode and avatar upload fix\",\"goal\":\"Add dark mode to the settings page and fix the avatar upload failure\",\"standing\":\"Avatar upload bug is resolved; dark mode feature is pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Fixed avatar upload size check\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Add dark mode to the settings page\"}],\"actions\":[{\"id\":\"t2\",\"text\":\"Implement dark mode theme tokens\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: never mind dark mode, we'll do it next quarter\n\n[m2] AGENT: Understood, leaving dark mode out.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/changed-ask#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Cache the product list in Redis with a 5 minute TTL"
+      }
+    ],
+    "contentHash": "695eda13e9029de8e2c4841e509ed5e83bc24e3a075f5b80ad86c0962d6c0448",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Need to decide between Redis and in-process cache, or add Redis service.\",\"firstRequest\":\"Cache the product list in Redis with a 5 minute TTL.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add Redis service or use in-process cache?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Cache product list in Redis with 5 minute TTL\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Cache the product list in Redis with a 5 minute TTL\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: oh, no new services. in-memory LRU is fine, same TTL\n\n[m2] AGENT: The product list is cached in an in-memory LRU with a 5 minute TTL (src/cache/product-cache.ts); no Redis involved.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/changed-ask#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i3",
+    "carriedIgnored": [
+      {
+        "id": "i3",
+        "text": "Cache the product list in Redis with a 5 minute TTL"
+      }
+    ],
+    "contentHash": "695eda13e9029de8e2c4841e509ed5e83bc24e3a075f5b80ad86c0962d6c0448",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Need to decide between Redis and in-process cache, or add Redis service.\",\"firstRequest\":\"Cache the product list in Redis with a 5 minute TTL.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add Redis service or use in-process cache?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Cache product list in Redis with 5 minute TTL\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[{\"id\":\"i3\",\"text\":\"Cache the product list in Redis with a 5 minute TTL\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: oh, no new services. in-memory LRU is fine, same TTL\n\n[m2] AGENT: The product list is cached in an in-memory LRU with a 5 minute TTL (src/cache/product-cache.ts); no Redis involved.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/declined-then-agreed#1",
+    "kind": "resolve",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "ignoredId": "i4",
+    "carriedIgnored": [
+      {
+        "id": "i4",
+        "text": "Turn off TypeScript strict mode"
+      }
+    ],
+    "contentHash": "d095553cb30254c0b2106609a3807d50119b0932c1b8bf787aa341557af5fc7e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Turn off TypeScript strict mode so the build passes.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Would you like to fix the 3 type errors instead?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Proposed fixing 3 type errors in src/import/\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[{\"id\":\"i4\",\"text\":\"Turn off TypeScript strict mode\"}],\"actions\":[],\"decisions\":[{\"id\":\"d3\",\"text\":\"Keep TypeScript strict mode enabled\"}]}\n</recap>\n<new_messages>\n[m1] USER: yeah ok fix them instead\n\n[m2] AGENT: Fixed the 3 type errors in src/import/ (two missing null checks, one wrong return type). The build passes with strict mode still on.\n</new_messages>"
+      }
+    ]
+  },
+  {
+    "probe": "resolve/declined-then-agreed#1",
+    "kind": "resolve",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "ignoredId": "i4",
+    "carriedIgnored": [
+      {
+        "id": "i4",
+        "text": "Turn off TypeScript strict mode"
+      }
+    ],
+    "contentHash": "d095553cb30254c0b2106609a3807d50119b0932c1b8bf787aa341557af5fc7e",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Turn off TypeScript strict mode so the build passes.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Would you like to fix the 3 type errors instead?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Proposed fixing 3 type errors in src/import/\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[{\"id\":\"i4\",\"text\":\"Turn off TypeScript strict mode\"}],\"actions\":[],\"decisions\":[{\"id\":\"d3\",\"text\":\"Keep TypeScript strict mode enabled\"}]}\n</recap>\n<new_messages>\n[m1] USER: yeah ok fix them instead\n\n[m2] AGENT: Fixed the 3 type errors in src/import/ (two missing null checks, one wrong return type). The build passes with strict mode still on.\n</new_messages>"
+      }
+    ]
+  }
+]
