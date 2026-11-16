@@ -27,6 +27,7 @@ test('a chat that finished its turn shows the scripted summary on its row and a 
   sessionServicesStub
 }, testInfo) => {
   test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
+  // Runs a chat turn, then waits for the registry scan, the utility-model summary and the recap.
   test.setTimeout(240_000)
   await useScriptedSessionServices(orcaPage, sessionServicesStub)
   writeSessionServicesScript(sessionServicesStub, { chat: { defaultReply: CHAT_REPLY } })

@@ -115,6 +115,7 @@ test.describe('desktop notifications for agent sessions', () => {
     sessionServicesStub,
     testRepoPath
   }, testInfo) => {
+    // Runs a turn, then waits out its summary and two more registry scans for a second notification.
     test.setTimeout(240_000)
     await captureDesktopNotifications(electronApp)
     await useScriptedSessionServices(orcaPage, sessionServicesStub)
@@ -156,6 +157,7 @@ test.describe('desktop notifications for agent sessions', () => {
     sessionServicesStub,
     testRepoPath
   }, testInfo) => {
+    // Runs a turn, then waits out its summary and two more registry scans for a second notification.
     test.setTimeout(240_000)
     await captureDesktopNotifications(electronApp)
     await useScriptedSessionServices(orcaPage, sessionServicesStub)
@@ -208,6 +210,7 @@ test.describe('desktop notifications for agent sessions', () => {
     electronApp,
     sessionServicesStub
   }, testInfo) => {
+    // Runs a turn, then waits out its summary and two more registry scans for a second notification.
     test.setTimeout(240_000)
     await captureDesktopNotifications(electronApp)
     await useScriptedSessionServices(orcaPage, sessionServicesStub)
@@ -257,6 +260,7 @@ test.describe('desktop notifications for agent sessions', () => {
     sessionServicesStub,
     testRepoPath
   }) => {
+    // Runs a turn on all three surfaces and waits out the reply classifier and the registry scans for each.
     test.setTimeout(300_000)
     await captureDesktopNotifications(electronApp)
     await useScriptedSessionServices(orcaPage, sessionServicesStub)
