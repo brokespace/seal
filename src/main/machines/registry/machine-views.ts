@@ -1,7 +1,26 @@
-import { activeMachineConnection, type MachineStore } from '../../../shared/machines/machine-record'
+import {
+  activeMachineConnection,
+  type MachineRecord,
+  type MachineStore
+} from '../../../shared/machines/machine-record'
+import {
+  installedServerKeeper,
+  serverServiceRemains,
+  type MachineServerKeeper
+} from '../../../shared/machines/machine-server-install'
+import { machineServerInstallAction } from '../../../shared/machines/machine-server-install-action'
 import { toMachineId } from '../../../shared/machines/machine-types'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import type { MachineRegistryEnvironment, MachineRegistrySshTarget } from './machine-registry'
+
+/** What is known only while the app runs, keyed the way the connect flow reports it. */
+export type MachineServerInstallActivity = {
+  installing(recordId: string): boolean
+  blockedMove(sshTargetId: string): { detail: string | null } | null
+  reportedKeeper(
+    sshTargetId: string
+  ): { manager: MachineServerKeeper; startsAtBoot?: boolean | null } | null
+}
 
 function sshAddress(target: MachineRegistrySshTarget): string {
   const host = target.host || target.configHost || target.label
@@ -10,11 +29,64 @@ function sshAddress(target: MachineRegistrySshTarget): string {
   return `${user}${host}${port}`
 }
 
+function serverInstallView(
+  record: MachineRecord,
+  connection: MachineView['connection'],
+  hasSshDetails: boolean,
+  environment: MachineRegistryEnvironment | undefined,
+  activity: MachineServerInstallActivity | undefined
+): Pick<
+  MachineView,
+  | 'serverInstall'
+  | 'serverInstallAction'
+  | 'serverMoveBlocked'
+  | 'serverStartsAtBoot'
+  | 'serverKeeper'
+  | 'serverServiceRemains'
+> {
+  const serverInstall = record.serverInstall ?? null
+  const targetId = record.sshTargetId
+  const managedOver = connection === 'server' ? (environment?.managedSshTargetId ?? null) : null
+  const managedServer =
+    managedOver === null ? null : managedOver === targetId ? 'own-target' : 'other-target'
+  // A server Seal deployed over another target is not the one this machine's SSH details reach.
+  const reported =
+    targetId && managedServer !== 'other-target'
+      ? (activity?.reportedKeeper(targetId) ?? null)
+      : null
+  const blocked =
+    targetId && connection === 'ssh' && serverInstall?.state === 'failed'
+      ? (activity?.blockedMove(targetId) ?? null)
+      : null
+  // The record only knows the keeper of a server Seal installed.
+  const keeper =
+    reported?.manager ??
+    (connection === 'ssh' || managedServer ? installedServerKeeper(serverInstall) : null)
+  return {
+    serverInstall,
+    serverInstallAction: machineServerInstallAction({
+      connection,
+      hasSshDetails,
+      serverInstall,
+      installing: activity?.installing(record.id) ?? false,
+      managedServer,
+      reportedKeeper: reported?.manager ?? null
+    }),
+    ...(blocked ? { serverMoveBlocked: blocked } : {}),
+    ...(keeper === 'pm2' && reported ? { serverStartsAtBoot: reported.startsAtBoot ?? null } : {}),
+    ...(keeper ? { serverKeeper: keeper } : {}),
+    ...(connection === 'ssh' && serverServiceRemains(serverInstall)
+      ? { serverServiceRemains: true as const }
+      : {})
+  }
+}
+
 /** What the renderer shows per machine: both transports' stored details, and which one is in use. */
 export function buildMachineViews(
   store: MachineStore,
   sshTargets: readonly MachineRegistrySshTarget[],
-  environments: readonly MachineRegistryEnvironment[]
+  environments: readonly MachineRegistryEnvironment[],
+  activity?: MachineServerInstallActivity
 ): MachineView[] {
   const targets = new Map(sshTargets.map((target) => [target.id, target]))
   const servers = new Map(environments.map((environment) => [environment.id, environment]))
@@ -48,7 +120,8 @@ export function buildMachineViews(
               name: environment.name,
               endpoint: environment.preferredEndpoint
             }
-          : null
+          : null,
+        ...serverInstallView(record, connection, target !== undefined, environment, activity)
       }
     })
     .filter((view): view is MachineView => view !== null)

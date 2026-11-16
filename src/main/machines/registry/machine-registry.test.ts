@@ -64,6 +64,7 @@ const kesselServer: MachineRegistryEnvironment = {
   name: 'kessel-ml',
   endpoints: ['ws://100.101.7.4:6768'],
   linkedSshTargetId: null,
+  managedSshTargetId: null,
   machineName: null,
   preferredEndpoint: 'ws://100.101.7.4:6768'
 }
@@ -112,6 +113,7 @@ describe('MachineRegistry', () => {
       name: 'office',
       endpoints: ['wss://relay.example.com/x'],
       linkedSshTargetId: null,
+      managedSshTargetId: null,
       machineName: null,
       preferredEndpoint: null
     }
@@ -146,6 +148,7 @@ describe('MachineRegistry', () => {
       name: 'gpu server',
       endpoints: ['ws://10.0.0.77:6768'],
       linkedSshTargetId: null,
+      managedSshTargetId: null,
       machineName: null,
       preferredEndpoint: null
     })

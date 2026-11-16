@@ -32,7 +32,7 @@ import {
 } from './ssh-connect-attempt-registry'
 import { connectionManager, getCurrentMainWindow } from './ssh-ipc-context'
 import { broadcastSshState, getPublicSshState } from './ssh-renderer-broadcast'
-import { connectsDirectlyOverSsh } from '../../ssh/host-server/ssh-direct-connect-policy'
+import * as directSsh from '../../ssh/host-server/ssh-direct-connect-policy'
 import { abandonDecisionTransport } from './ssh-session-teardown'
 import { awaitTargetLifecycle } from './ssh-target-lifecycle-queue'
 import { startLegacyRelayBridge } from '../../ssh/legacy-relay/bridge/legacy-relay-bridge-registry'
@@ -200,7 +200,7 @@ async function doConnect(
 
   // Attribute decision-created transports so cancellation closes only those not adopted by a newer owner.
   const owner = Symbol(targetId)
-  if (!quiet && connectsDirectlyOverSsh(targetId)) {
+  if (!quiet && directSsh.connectsDirectlyOverSsh(targetId)) {
     return connectDirect(target, owner, authority)
   }
   // Deploy/conversion require teardown first; rotated authority still lets concurrent connects join.
@@ -218,6 +218,9 @@ async function doConnect(
       }
       // A failed setup leaves no relay to own the transport its decision dialed.
       await abandonDecisionTransport(targetId, owner, authority)
+      if (directSsh.fallsBackToDirectSsh(targetId, error)) {
+        return directSsh.DIRECT_SSH_FALLBACK
+      }
       publishHostServerDecisionFailure(targetId, error)
       throw error
     }
@@ -227,6 +230,9 @@ async function doConnect(
   if (!isCurrentConnectAttempt(targetId, authority)) {
     await abandonDecisionTransport(targetId, owner, authority)
     throw createCancelledConnectAttemptError()
+  }
+  if (server === directSsh.DIRECT_SSH_FALLBACK) {
+    return connectDirect(target, owner, authority)
   }
   adoptCurrentTransport(targetId, owner)
   if (quiet?.active && server.route === 'unserved' && !server.bridged) {
@@ -249,6 +255,7 @@ async function doConnect(
       authority = rotateSshProviderAuthority(targetId)
       quiet.rotated(authority)
     }
+    directSsh.noteSshHostServed(targetId, server.environmentId)
     const published = publishManagedServerConnect(
       targetId,
       server.environmentId,
@@ -277,6 +284,9 @@ async function doConnect(
   }
   // Unserved hosts have no relay fallback.
   await abandonDecisionTransport(targetId, owner, authority)
+  if (directSsh.fallsBackToDirectSsh(targetId, server)) {
+    return connectDirect(target, owner, authority)
+  }
   throw publishUnservedHostServer(target, server)
 }
 

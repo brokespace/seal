@@ -1,10 +1,18 @@
 import { app, BrowserWindow } from 'electron'
+import { getAppEnvironment } from '../../../shared/app-environment'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
 import { isVmToolSshConfigTarget } from '../../../shared/ssh-target-source'
-import { getRuntimeSshAccess } from '../../../shared/remote-runtime/host-catalog/runtime-environments'
+import {
+  getOrcadSshDeployment,
+  getRuntimeSshAccess
+} from '../../../shared/remote-runtime/host-catalog/runtime-environments'
 import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store'
 import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/connections/runtime-environment-request-connections'
 import { connectRuntimeEnvironmentOnRequest } from '../../ipc/runtime-environments/connectivity/runtime-environment-connectivity-handlers'
+import {
+  onSealServiceOutcome,
+  setSealServiceWishes
+} from '../../managed-server/service/seal-service-policy'
 import { setDirectSshConnectPolicy } from '../../ssh/host-server/ssh-direct-connect-policy'
 import {
   connectRegisteredSshTarget,
@@ -20,6 +28,12 @@ import { SshMachineConnection } from '../connection/ssh-machine-connection'
 import { openSystemSshMachineShell } from '../connection/system-ssh-machine-shell'
 import type { MachineAccess } from '../machine-services'
 import { createRuntimeMachineChannel } from '../runtime/runtime-machine-channel'
+import {
+  machineServerInstallActivity,
+  onMachineServerInstallActivityChanged,
+  sshConnectsDirectlyNow
+} from '../server-install/machine-server-install-activity'
+import { createMachineServerSetup } from '../server-install/machine-server-setup-outcomes'
 import { MachineRegistry, type MachineRegistryEnvironment } from './machine-registry'
 import { readMachineStore, writeMachineStore } from './machine-store'
 
@@ -50,6 +64,7 @@ function environmentFacts(userDataPath: string): MachineRegistryEnvironment[] {
         name: environment.name,
         endpoints: environment.endpoints.map((endpoint) => endpoint.endpoint),
         linkedSshTargetId: getRuntimeSshAccess(environment)?.sshTargetId ?? null,
+        managedSshTargetId: getOrcadSshDeployment(environment)?.sshTargetId ?? null,
         machineName:
           getRuntimeEnvironmentStatusSnapshot(environment.id)?.status?.machineName ?? null,
         preferredEndpoint: preferred?.endpoint ?? null
@@ -102,6 +117,7 @@ function createRegistry(userDataPath: string): MachineRegistry {
       }),
     changed: broadcastMachinesChanged,
     now: Date.now,
+    serverInstallActivity: machineServerInstallActivity,
     log: (message, error) =>
       error === undefined
         ? console.info(message)
@@ -113,7 +129,14 @@ export function getMachineRegistry(): MachineRegistry {
   if (!registry) {
     registry = createRegistry(app.getPath('userData'))
     const created = registry
-    setDirectSshConnectPolicy((targetId) => created.connectsOverSsh(targetId))
+    const setup = createMachineServerSetup(created, () => getAppEnvironment().getVersion())
+    onMachineServerInstallActivityChanged(broadcastMachinesChanged)
+    setDirectSshConnectPolicy(
+      (targetId) => created.connectsOverSsh(targetId) || sshConnectsDirectlyNow(targetId),
+      setup.outcomes
+    )
+    setSealServiceWishes(setup.serviceWish)
+    onSealServiceOutcome(setup.serviceOutcome)
   }
   return registry
 }

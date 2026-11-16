@@ -17,7 +17,13 @@ const kesselMl: MachineView = {
     identityFile: null,
     jumpHost: null
   },
-  server: { environmentId: 'env-kessel', name: 'kessel-ml server', endpoint: 'ws://kessel-ml:6768' }
+  server: {
+    environmentId: 'env-kessel',
+    name: 'kessel-ml server',
+    endpoint: 'ws://kessel-ml:6768'
+  },
+  serverInstall: null,
+  serverInstallAction: 'own-server'
 }
 
 const droppedServer: RuntimeHostStatusSnapshot = {
