@@ -91,16 +91,23 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const menu = props.menu ?? defaultMenu
   const tone = TONES[props.tone ?? 'sidebar']
   const [preview, setPreview] = React.useState(false)
-  const [menuOpen, setMenuOpen] = React.useState(false)
-  // A menu hands focus back to the row when it closes, which would open the preview with the pointer elsewhere.
+  const row = React.useRef<HTMLDivElement>(null)
+  const openMenus = React.useRef(0)
+  // Why held past the menu's close: the closing menu hands focus back to the row, and a hover timer
+  // started before it opened still fires; either would open the preview with the pointer elsewhere.
   const previewHeld = React.useRef(false)
   const onMenuOpenChange = (open: boolean): void => {
-    setMenuOpen(open)
-    if (open) {
-      previewHeld.current = true
-      setPreview(false)
+    openMenus.current = Math.max(0, openMenus.current + (open ? 1 : -1))
+    previewHeld.current = true
+    setPreview(false)
+  }
+  // The pointer coming to the row, or a key pressed on it, asks for the preview afresh.
+  const releasePreview = (): void => {
+    if (openMenus.current === 0) {
+      previewHeld.current = false
     }
   }
+  const dropdownDismissedOutside = React.useRef(false)
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
   const runningCount = runningSubagents(session.activity).length
@@ -129,12 +136,13 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
       <HoverCard
         openDelay={500}
         closeDelay={80}
-        open={preview && !menuOpen}
+        open={preview}
         onOpenChange={(open) => setPreview(open && !previewHeld.current)}
       >
         <ContextMenuTrigger asChild>
           <HoverCardTrigger asChild>
             <div
+              ref={row}
               role="option"
               tabIndex={props.tabStop ? 0 : -1}
               aria-selected={picked ?? props.current}
@@ -151,18 +159,12 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 }
               }}
               onDoubleClick={(event) => props.onOpen(session, event)}
-              onPointerEnter={() => {
-                previewHeld.current = false
-              }}
-              onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget)) {
-                  previewHeld.current = false
-                }
-              }}
+              onPointerEnter={releasePreview}
               onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) {
                   return
                 }
+                releasePreview()
                 if (event.key === 'Enter') {
                   event.preventDefault()
                   props.onOpen(session, event)
@@ -311,7 +313,21 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                     <Ellipsis className="size-3.5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" onClick={(event) => event.stopPropagation()}>
+                <DropdownMenuContent
+                  align="start"
+                  onClick={(event) => event.stopPropagation()}
+                  onInteractOutside={() => {
+                    dropdownDismissedOutside.current = true
+                  }}
+                  onCloseAutoFocus={(event) => {
+                    // Why the row: its button is hidden once the pointer has left, so focus would fall out of the list.
+                    if (!dropdownDismissedOutside.current) {
+                      event.preventDefault()
+                      row.current?.focus({ preventScroll: true })
+                    }
+                    dropdownDismissedOutside.current = false
+                  }}
+                >
                   {menu(session, DROPDOWN_MENU_KIT)}
                 </DropdownMenuContent>
               </DropdownMenu>
