@@ -51,26 +51,32 @@ function refuseCardDrag(event: React.DragEvent): void {
   event.stopPropagation()
 }
 
-function dropClick(click: MouseEvent): void {
-  click.stopPropagation()
-}
-
 // Why: a press on a row released on the card around it is, to the browser, a click on that card.
 function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   event.stopPropagation()
   const rows = event.currentTarget
-  const onRelease = (release: PointerEvent): void => {
-    window.removeEventListener('pointerdown', forget, true)
-    if (release.target instanceof Node && rows.contains(release.target)) {
-      return
-    }
-    window.addEventListener('click', dropClick, { capture: true, once: true })
-    // The click follows its release at once; a later one is not this press's.
-    window.setTimeout(() => window.removeEventListener('click', dropClick, true), 0)
+  // A press inside a row's menu comes here through React alone: the menu is drawn outside the rows.
+  if (event.button !== 0 || !(event.target instanceof Node) || !rows.contains(event.target)) {
+    return
   }
-  // A press that never reports its release must not claim the next one.
-  const forget = (): void => window.removeEventListener('pointerup', onRelease, true)
+  const dropClickOnCard = (click: MouseEvent): void => {
+    // The click lands on what holds both ends of the press; a menu item's own click is not that.
+    if (click.target instanceof Node && click.target !== rows && click.target.contains(rows)) {
+      click.stopPropagation()
+    }
+  }
+  const forget = (): void => {
+    window.removeEventListener('click', dropClickOnCard, true)
+    window.removeEventListener('pointerup', onRelease, true)
+    window.removeEventListener('pointerdown', forget, true)
+  }
+  // The click follows its release at once; a later one is not this press's.
+  const onRelease = (): void => {
+    window.setTimeout(forget, 0)
+  }
+  window.addEventListener('click', dropClickOnCard, true)
   window.addEventListener('pointerup', onRelease, { capture: true, once: true })
+  // A press that never reports its release must not claim the next one.
   window.addEventListener('pointerdown', forget, { capture: true, once: true })
 }
 
