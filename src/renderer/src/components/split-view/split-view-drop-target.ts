@@ -198,11 +198,10 @@ function resolveStripDrop(
   }
   const side = index === -1 ? 'right' : 'left'
   const hovered = tabs.at(index)
-  if (index === -1) {
-    index = tabs.length
-  }
-  const hoveredRect = hovered?.getBoundingClientRect()
-  const barLeft = hoveredRect ? hoveredRect[side] : stripRect.left
+  const hoveredRect = hovered?.getBoundingClientRect() ?? stripRect
+  // Where the tab draws its own bar, inside that edge; none where the edge is scrolled out of view.
+  const barLeft = side === 'left' ? hoveredRect.left : hoveredRect.right - 2
+  const barWidth = barLeft < shown.left - 1 || barLeft > shown.right - 1 ? 0 : 2
   const visibleTabId = hovered?.getAttribute(ITEM_TAB_KEY_ATTRIBUTE)
   const under = tabs.find((tab) => {
     const rect = tab.getBoundingClientRect()
@@ -210,10 +209,10 @@ function resolveStripDrop(
   })
   const overItself = dragged.has(under?.getAttribute(ITEM_TAB_KEY_ATTRIBUTE) ?? '')
   return {
-    place: { paneId, zone: 'center', index },
+    place: { paneId, zone: 'center', index: index === -1 ? tabs.length : index },
     preview: {
       kind: 'insert',
-      rect: { left: barLeft - 1, top: stripRect.top, width: 2, height: stripRect.height },
+      rect: { left: barLeft, top: hoveredRect.top, width: barWidth, height: hoveredRect.height },
       // No bar while over the dragged tab itself, as in a workspace's tab row.
       ...(visibleTabId && !overItself
         ? { insertion: { groupId: itemTabStripGroupId(paneId), visibleTabId, side } }

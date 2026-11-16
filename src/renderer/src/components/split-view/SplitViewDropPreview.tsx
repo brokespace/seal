@@ -1,4 +1,5 @@
 import { useTranslate } from '@/i18n/use-translate'
+import { getDropIndicatorClasses } from '../tab-bar/drop-indicator'
 import TabGroupDropOverlay from '../tab-group/TabGroupDropOverlay'
 import {
   useSplitViewDropPreview,
@@ -25,14 +26,29 @@ function useDropLabel(kind: Preview['kind']): string | undefined {
   }
 }
 
-/** The pane or half a dragged row or tab would land in. A strip draws an insertion on its own tabs. */
+/**
+ * The pane or half a dragged row or tab would land in. A strip draws an insertion on its own tabs;
+ * the bar is drawn here once more, over it, because a sidebar row's ghost hangs by the pointer and
+ * covers the tab's own.
+ */
 export function SplitViewDropPreview(): React.JSX.Element | null {
   const preview = useSplitViewDropPreview()
   const label = useDropLabel(preview?.kind ?? 'insert')
-  if (!preview || preview.kind === 'insert') {
+  if (!preview) {
     return null
   }
   const { rect } = preview
+  if (preview.kind === 'insert') {
+    // The drag ghost is at z-index 2147483000.
+    return preview.insertion && rect.width > 0 ? (
+      <div
+        aria-hidden="true"
+        data-split-view-insertion-bar=""
+        className={`pointer-events-none fixed z-[2147483001] ${getDropIndicatorClasses('left')}`}
+        style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+      />
+    ) : null
+  }
   return (
     <div
       aria-hidden="true"
