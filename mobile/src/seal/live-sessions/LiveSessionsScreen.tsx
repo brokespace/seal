@@ -6,7 +6,7 @@ import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
+} from '../../components/feedback/MobileStateView'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { useRouteHandoff } from '../../navigation/route-handoff'
 import { colors, pressedStyle, spacing } from '../../theme/mobile-theme'

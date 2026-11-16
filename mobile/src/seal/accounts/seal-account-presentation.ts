@@ -1,4 +1,4 @@
-import { formatResetDuration } from '../../../../src/shared/rate-limit-reset-format'
+import { formatResetDuration } from '../../../../src/shared/agent-usage/rate-limits/rate-limit-reset-format'
 import { translate } from '../../i18n/mobile-i18n'
 import type { LiveSession } from '../live-sessions/live-session-schemas'
 import type {

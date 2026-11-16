@@ -10,13 +10,13 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeftRight, UserRound } from 'lucide-react-native'
-import { ConfirmModal } from '../../components/ConfirmModal'
+import { ConfirmModal } from '../../components/sheets/ConfirmModal'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
 import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
+} from '../../components/feedback/MobileStateView'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { useKeyboardOcclusion } from '../../platform/keyboard/keyboard-occlusion'
 import { colors, pressedStyle, spacing } from '../../theme/mobile-theme'

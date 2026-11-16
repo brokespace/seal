@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 
 /** An MCP call waiting for a person, as the host's `SealMcpApprovalRequest` describes it. */
 export const mcpApprovalSchema = z.looseObject({

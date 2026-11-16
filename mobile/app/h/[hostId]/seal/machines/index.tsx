@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import { PageRouteUnavailableScreen } from '../../../../../src/mobile-web-shell/PageRouteUnavailableScreen'
+import { PageRouteUnavailableScreen } from '../../../../../src/mobile-web-shell/presentation/PageRouteUnavailableScreen'
 import { firstParam } from '../../../../../src/navigation/route-param-reader'
 import { MachinesListScreen } from '../../../../../src/seal/machines/MachinesListScreen'
 

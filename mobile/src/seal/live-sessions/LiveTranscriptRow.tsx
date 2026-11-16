@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Pressable, Text, View } from 'react-native'
-import { MobileMarkdown } from '../../components/MobileMarkdown'
+import { MobileMarkdown } from '../../components/markdown/MobileMarkdown'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, pressedStyle, radii, spacing, typography } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'

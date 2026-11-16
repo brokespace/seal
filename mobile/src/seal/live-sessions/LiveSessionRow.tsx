@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native'
-import { AgentStateDot } from '../../components/AgentStateDot'
+import { AgentStateDot } from '../../agents/presentation/AgentStateDot'
 import {
   LIST_LEADING_INSET,
   ListGroup,

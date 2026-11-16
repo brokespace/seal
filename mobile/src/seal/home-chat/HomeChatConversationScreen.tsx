@@ -10,10 +10,10 @@ import {
   RefreshCw
 } from 'lucide-react-native'
 import type { HomeChatEntry } from '../../../../src/shared/home-chat/home-chat-types'
-import { MobileStateView } from '../../components/MobileStateView'
+import { MobileStateView } from '../../components/feedback/MobileStateView'
 import { NavBar } from '../../components/nav-bar/NavBar'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
-import { TransientToast, useTransientToast } from '../../components/TransientToast'
+import { TransientToast, useTransientToast } from '../../components/feedback/TransientToast'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { firstParam } from '../../navigation/route-param-reader'
 import { useRouteHandoff } from '../../navigation/route-handoff'

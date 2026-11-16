@@ -3,7 +3,7 @@ import type {
   HomeChatAccountOption,
   HomeChatBackendKind
 } from '../../../../src/shared/home-chat/home-chat-types'
-import { PickerModal, type PickerOption } from '../../components/PickerModal'
+import { PickerModal, type PickerOption } from '../../components/sheets/PickerModal'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { fetchHomeChatAccounts } from './home-chat-operations'

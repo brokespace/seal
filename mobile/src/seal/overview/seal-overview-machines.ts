@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 import { defineHostQuery } from '../../query/host-query'
 import type { HostQueryTarget } from '../../query/host-query-key'
 import { defineRpcOperation, runRpcOperation } from '../../transport/rpc/rpc-operation'

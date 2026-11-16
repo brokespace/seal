@@ -12,8 +12,8 @@ import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
-import { MobileSegmentedControl } from '../../components/MobileSegmentedControl'
+} from '../../components/feedback/MobileStateView'
+import { MobileSegmentedControl } from '../../components/controls/MobileSegmentedControl'
 import { NavBar } from '../../components/nav-bar/NavBar'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
 import { HOST_LIST_TARGET, NO_HOST_LIST_INPUT } from '../../host-screen/catalog/host-list-queries'

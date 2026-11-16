@@ -4,7 +4,7 @@ import {
   LIVE_SESSION_STATUSES
 } from '../../../../src/shared/live-sessions/live-session-types'
 import { liveSessionRecapBriefSchema } from '../../../../src/shared/session-recap/session-recap-schemas'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 
 const Timestamp = z.number().finite()
 

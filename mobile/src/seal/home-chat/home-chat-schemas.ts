@@ -6,7 +6,7 @@ import type {
   HomeChatEvent,
   HomeChatSummary
 } from '../../../../src/shared/home-chat/home-chat-types'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 
 const entryBase = { id: z.string().min(1), rev: z.number(), at: z.number(), ord: z.number() }
 
