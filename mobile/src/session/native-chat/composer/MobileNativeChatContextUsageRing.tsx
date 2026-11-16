@@ -1,7 +1,6 @@
 import {
   StyleSheet,
   Pressable,
-  Text,
   View,
   type HostInstance,
   type LayoutChangeEvent
@@ -23,7 +22,6 @@ import {
 import { useDetailCardScope } from '../../../components/use-detail-card-scope'
 import {
   COMPOSER_CONTROL_HIT_SLOP,
-  COMPOSER_CONTROL_SIZE,
   composerInputStyles as inputStyles
 } from '../../../components/composer-input/composer-input-styles'
 import { useNow } from '../../../hooks/use-now'
@@ -31,11 +29,11 @@ import { useKeyboardPersistingTaps } from '../../../platform/keyboard/keyboard-p
 import { useKeyboardOcclusion } from '../../../platform/keyboard/keyboard-occlusion'
 import type { Translate } from '../../../i18n/mobile-i18n'
 import { useMobileTranslation } from '../../../i18n/use-mobile-translation'
-import { colors, radii, spacing, typography } from '../../../theme/mobile-theme'
-import { themedStyleSheet } from '../../../theme/themed-styles'
+import { colors, spacing } from '../../../theme/mobile-theme'
 import { useMobileColorScheme } from '../../../theme/use-mobile-color-scheme'
 import type { MobileHostHandle } from '../../../platform/host-handle'
 import { MobileNativeChatContextUsageCardBody } from './MobileNativeChatContextUsageCardBody'
+import { useMobileNativeChatDictationFailed } from './MobileNativeChatDictationLeading'
 
 const RING_SIZE = 16
 const RING_STROKE = 2
@@ -44,7 +42,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 /** Often enough for "Compacted" to end near its minute and for the card's "ago" to stay right. */
 const COMPACTION_CLOCK_MS = 30_000
 
-/** The words beside the ring; a ring with nothing to warn about has none. */
+/** The state in words, for the card and the label: a phone's action row has no room beside the ring. */
 function contextUsageStateText(state: NativeChatContextUsageState, t: Translate): string | null {
   switch (state) {
     case 'near':
@@ -62,8 +60,9 @@ function contextUsageStateText(state: NativeChatContextUsageState, t: Translate)
 }
 
 /** The composer box's props, which the card lines its trailing and bottom edges up with, and the
- *  ring for the action row (null without usage). `obscured` is the composer's own menu, which sits
- *  where the card would and closes it. */
+ *  ring for the action row beside Send (null without usage, and while a failed dictation's Retry
+ *  has the room). `obscured` is the composer's own menu, which sits where the card would and
+ *  closes it. */
 export function useMobileNativeChatContextRing(
   usage: NativeChatContextUsageSummary | null,
   obscured: boolean
@@ -74,17 +73,19 @@ export function useMobileNativeChatContextRing(
     (event: LayoutChangeEvent) => setHeight(event.nativeEvent.layout.height),
     []
   )
+  const dictationFailed = useMobileNativeChatDictationFailed()
   // Without usage there is no card to follow the bar, so its height need not re-render the composer.
   return {
     barProps: usage ? { ref, onLayout } : { ref },
-    ring: usage ? (
-      <MobileNativeChatContextUsageRing
-        usage={usage}
-        composerRef={ref}
-        composerHeight={height}
-        obscured={obscured}
-      />
-    ) : null
+    ring:
+      usage && !dictationFailed ? (
+        <MobileNativeChatContextUsageRing
+          usage={usage}
+          composerRef={ref}
+          composerHeight={height}
+          obscured={obscured}
+        />
+      ) : null
   }
 }
 
@@ -179,24 +180,11 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
         accessibilityLabel={label}
         aria-expanded={card.requestedOpen}
         testID="native-chat-context-usage"
-        style={({ pressed }) => [
-          styles.opener,
-          stateText !== null && styles.openerWithText,
-          pressed && inputStyles.pressed
-        ]}
+        style={({ pressed }) => [inputStyles.ghostButton, pressed && inputStyles.pressed]}
         onLayout={card.onAnchorLayout}
         onPress={card.toggle}
         hitSlop={COMPOSER_CONTROL_HIT_SLOP}
       >
-        {stateText !== null ? (
-          <Text
-            style={[styles.stateText, { color: tint }]}
-            numberOfLines={1}
-            testID="native-chat-context-usage-text"
-          >
-            {stateText}
-          </Text>
-        ) : null}
         {/* The state as tests read it: react-native-svg drops a testID on the web. */}
         <View pointerEvents="none" testID={`native-chat-context-usage-state-${state}`}>
           <Svg
@@ -234,7 +222,7 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
         obscured={obscured}
         layerRef={attachLayer}
         title={t('chat.contextUsage.title', 'Context')}
-        titleTrailing={measured ? `${used}/${window}` : undefined}
+        titleTrailing={stateText ?? (measured ? `${used}/${window}` : undefined)}
       >
         <MobileNativeChatContextUsageCardBody
           usage={usage}
@@ -250,28 +238,3 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
 const ringStyles = StyleSheet.create({
   ring: { transform: [{ rotate: '-90deg' }] }
 })
-
-const styles = themedStyleSheet(() => ({
-  // Alone, the ring fills a round control; with words it grows toward the leading controls and
-  // truncates before it can push the mic or Send off a narrow row.
-  opener: {
-    flexShrink: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    minWidth: COMPOSER_CONTROL_SIZE,
-    maxWidth: '45%',
-    height: COMPOSER_CONTROL_SIZE,
-    paddingHorizontal: (COMPOSER_CONTROL_SIZE - RING_SIZE) / 2,
-    borderRadius: radii.pill
-  },
-  openerWithText: {
-    paddingLeft: spacing.xs
-  },
-  stateText: {
-    flexShrink: 1,
-    fontSize: typography.metaSize,
-    fontWeight: '500'
-  }
-}))
