@@ -210,15 +210,22 @@ export function createStructuredSessionAccess(
   }
 
   const stopWatchingHeld = onStructuredAgentSessionsHeldChanged(refreshFromHost)
-  const timer = setInterval(tick, SAFETY_REFRESH_MS)
-  timer.unref?.()
+  let checkedAt = now()
   refreshFromHost()
 
   const texts = createStructuredJournalTexts(() => host, now)
 
   return {
     source: {
-      sessions: () => published,
+      // The store tells of no removed record and no chat grows old on its own: the registry's
+      // scans, which read this, set the pace of looking again.
+      sessions: () => {
+        if (!disposed && now() - checkedAt >= SAFETY_REFRESH_MS) {
+          checkedAt = now()
+          queueMicrotask(tick)
+        }
+        return published
+      },
       subscribe: (onChange) => {
         listeners.add(onChange)
         return () => listeners.delete(onChange)
@@ -242,7 +249,6 @@ export function createStructuredSessionAccess(
     },
     dispose: () => {
       disposed = true
-      clearInterval(timer)
       stopWatchingHeld()
       listeners.clear()
       attach()
