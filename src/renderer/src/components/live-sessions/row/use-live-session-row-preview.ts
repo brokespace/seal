@@ -103,6 +103,25 @@ export function useLiveSessionRowPreview(): LiveSessionRowPreview {
       }
     }
   }, [open])
+
+  // A keyboard preview outlives the pointer: it must not stay beside a row scrolled out of sight.
+  React.useEffect(() => {
+    if (!open) {
+      return
+    }
+    const closeWhenRowHidden = (): void => {
+      const box = row.current?.getBoundingClientRect()
+      const shown = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+      // Pinned headers cover a row without clipping it: only what is drawn there can tell.
+      if (!shown || !(row.current?.contains(shown) || card.current?.contains(shown))) {
+        focusAsks.current = false
+        setOpen(false)
+      }
+    }
+    window.addEventListener('scroll', closeWhenRowHidden, { capture: true, passive: true })
+    return () => window.removeEventListener('scroll', closeWhenRowHidden, true)
+  }, [open])
+
   React.useEffect(
     () => () => {
       openRowMenus = Math.max(0, openRowMenus - openMenus.current)
