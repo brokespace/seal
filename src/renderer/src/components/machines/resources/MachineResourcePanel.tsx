@@ -7,6 +7,7 @@ import { cn } from '@/lib/class-names'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { MachineCpuSensors, MachineCpuTemperatureStat } from './MachineCpuTemperature'
+import { MachineCpuTemperatureSetupCard } from './MachineCpuTemperatureSetupCard'
 import { MachineDiskDetail } from './MachineDiskDetail'
 import { MachineGpuDetail } from './MachineGpuDetail'
 import { MachineCpuDetail, MachineMemoryDetail } from './MachineProcessDetails'
@@ -75,6 +76,10 @@ export function MachineResourcePanel({
                   <MachineCpuTemperatureStat metrics={metrics} />
                 </MachineResourceStats>
                 <MachineCpuSensors metrics={metrics} />
+                <MachineCpuTemperatureSetupCard
+                  machine={machine}
+                  hasReading={metrics.cpuTemperature !== undefined}
+                />
               </>
             ) : null}
             <p className="text-sm text-muted-foreground">

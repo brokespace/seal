@@ -4,7 +4,11 @@ import type { MachineSummary } from '../../../../../shared/machines/machine-summ
 import type { MachineGpu } from '../../../../../shared/machines/machine-gpu-types'
 import { toMachineId, type MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { fakeMachinesApi, KESSEL, METRICS } from '../machine-api-fixture'
-import { RYZEN_LIBRE_HARDWARE_MONITOR } from '../machine-cpu-temperature-fixture-data'
+import type { MachineCpuTemperatureSetup } from '../../../../../shared/machines/machine-cpu-temperature-types'
+import {
+  RYZEN_LIBRE_HARDWARE_MONITOR,
+  WINDOWS_SETUP_NOT_SET_UP
+} from '../machine-cpu-temperature-fixture-data'
 import { A100_80GB, asMig, fakeGpus, fakeGpuSnapshot, RTX_4090 } from '../machine-gpu-fixture-data'
 import { fakeDiskIndexNotStartedReply } from '../machine-disk-index-fixture-data'
 import { MachineResourcePanel } from './MachineResourcePanel'
@@ -82,6 +86,54 @@ export const cpuWindows = panel('cpu', undefined, undefined, {
 })
 
 export const cpuWindowsNoSensor = panel('cpu', undefined, undefined, WINDOWS)
+
+function windowsSetup(
+  setup: Partial<MachineCpuTemperatureSetup>,
+  metrics: MachineMetrics = WINDOWS,
+  then?: (frame: HTMLElement) => void
+) {
+  return panel(
+    'cpu',
+    then,
+    {
+      ...fakeMachinesApi,
+      cpuTemperatureSetup: async () => ({ ...WINDOWS_SETUP_NOT_SET_UP, ...setup })
+    },
+    metrics
+  )
+}
+
+export const cpuWindowsSetupConfirm = windowsSetup({}, WINDOWS, (frame) =>
+  press(frame, 'Set up CPU temperature')
+)
+
+export const cpuWindowsSetupRunning = windowsSetup(
+  { state: 'running' },
+  { ...WINDOWS, cpuTemperature: RYZEN_LIBRE_HARDWARE_MONITOR }
+)
+
+export const cpuWindowsSetupRestart = windowsSetup({
+  state: 'running',
+  message: 'Restart Windows to finish installing the PawnIO driver.'
+})
+
+export const cpuWindowsSetupStopped = windowsSetup({ state: 'stopped' })
+
+export const cpuWindowsSetupFailed = windowsSetup({
+  state: 'failed',
+  message:
+    'Setup stopped while installing LibreHardwareMonitor: The remote name could not be resolved: github.com'
+})
+
+export const cpuWindowsSetupNeedsAdmin = windowsSetup({ elevation: 'needs-admin' })
+
+export const cpuWindowsSetupNoDesktop = windowsSetup({ elevation: 'no-desktop' })
+
+export const cpuWindowsSetupRemoveConfirm = windowsSetup(
+  { state: 'running', elevation: 'elevated' },
+  { ...WINDOWS, cpuTemperature: RYZEN_LIBRE_HARDWARE_MONITOR },
+  (frame) => press(frame, 'Remove')
+)
 
 export const memory = panel('memory')
 
