@@ -84,6 +84,23 @@ describe('groupLiveSessionsByWorkspace', () => {
     ])
   })
 
+  it('keeps a workspace to one machine when two machines hold the same checkout path', () => {
+    const twin = { worktreeId: 'shop::/code/shop', projectKey: 'github:acme/shop' }
+    const sessions = [
+      session('here', 'idle', '/code/shop', { workspace: twin }),
+      session('there', 'idle', '/code/shop', { machine: GPU, workspace: twin })
+    ]
+    expect(outline(groupLiveSessionsByWorkspace(sessions))).toEqual([
+      [
+        'shop',
+        [
+          ['/code/shop', 'gpu-box', ['there']],
+          ['/code/shop', 'laptop', ['here']]
+        ]
+      ]
+    ])
+  })
+
   it('names groups as the client resolves them', () => {
     const sessions = [session('a', 'idle', '/code/shop'), session('b', 'idle', '/code/shop-2')]
     const groups = groupLiveSessionsByWorkspace(sessions, (entry) => ({

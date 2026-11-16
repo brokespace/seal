@@ -695,6 +695,10 @@
           "hiddenByFilters": "{{count}} hidden by filters",
           "statusAttention": "Needs you"
         },
+        "workspaceGroups": {
+          "noProject": "No project",
+          "noFolder": "No folder"
+        },
         "workspace": {
           "actions": "Session actions",
           "loading": "Looking for sessions",
@@ -2133,7 +2137,7 @@
       },
       "agents": {
         "title": "Agents",
-        "showInActiveAgents": "Show in Active agents",
+        "showInSidebar": "Show in sidebar",
         "active": "{{count}} active",
         "empty": "No agents are active in this project. Start one with New agent."
       },

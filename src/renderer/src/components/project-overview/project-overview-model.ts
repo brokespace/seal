@@ -17,6 +17,7 @@ import {
 import type { WorkspaceSortBy } from '../../../../shared/workspace-view/workspace-row-sort'
 import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
+import { getRepoIdFromWorktreeId } from '../../../../shared/worktree/id'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { buildWorktreeOccurrencePlan } from '../../../../shared/worktree-occurrence-plan'
 import { addVisibleLineageAncestors } from '../../../../shared/sidebar-list/selection/visible-worktrees'
@@ -153,13 +154,18 @@ export function projectWorktrees(
   return (plan.bySection.get(PROJECT_SECTION) ?? []).map((occurrence) => occurrence.row)
 }
 
-/** The sessions Seal links to one of the project's workspaces, on any machine. */
+/** The sessions in one of the project's workspaces, on any machine: by the registry's link, else this window's. */
 export function projectLiveSessions(
   sessions: readonly LiveSession[],
   links: ReadonlyMap<string, LiveSessionLink>,
   repoId: string
 ): LiveSession[] {
-  return sessions.filter((session) => links.get(session.id)?.repoId === repoId)
+  return sessions.filter(
+    (session) =>
+      (session.workspace
+        ? getRepoIdFromWorktreeId(session.workspace.worktreeId)
+        : links.get(session.id)?.repoId) === repoId
+  )
 }
 
 export type GitChangeSummary = {

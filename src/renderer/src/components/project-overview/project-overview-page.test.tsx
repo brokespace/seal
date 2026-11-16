@@ -40,20 +40,21 @@ afterEach(() => {
   useAppStore.setState(initial, true)
 })
 
-it("lists the project's running agents under their machine and the ended ones apart", () => {
+it("lists the project's running agents under their workspace and the ended ones apart", () => {
   renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
-  const groups = [...document.querySelectorAll<HTMLElement>('[data-sessions-machine]')]
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-sessions-workspace]')]
   expect(
     groups.map((group) => [
-      group.dataset.sessionsMachine,
+      group.dataset.sessionsWorkspace,
       [...group.querySelectorAll('[data-live-session-row]')].map((row) =>
         row.getAttribute('data-live-session-row')
       )
     ])
   ).toEqual([
-    ['local', ['Fix the login bug']],
-    ['ssh-gpu', ['Pick a dataset']]
+    ['local\n/code/seal', ['Fix the login bug']],
+    ['ssh-gpu\n/code/seal', ['Pick a dataset']]
   ])
+  expect(groups[1].querySelector('[data-live-session-machine]')?.textContent).toBe('gpu-box')
   const finished = document.querySelector<HTMLElement>('[data-project-overview-finished]')!
   expect(
     [...finished.querySelectorAll('[data-live-session-row]')].map((row) =>
@@ -69,11 +70,13 @@ it('an agent opens as its session', () => {
   expect(liveSessionTabsStore.getState().activeId).toBe('Pick a dataset')
 })
 
-it("Show in Active agents asks the sidebar for the project's first running agent and stays on the page", () => {
+it("the sidebar link opens the sidebar on the project's most urgent running agent and stays on the page", () => {
+  useAppStore.setState({ sidebarOpen: false })
   renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Show in Active agents' }))
+  fireEvent.click(document.querySelector('[data-project-overview-filter-agents]')!)
   expect(useAppStore.getState().activeView).toBe('project')
-  expect(liveSessionMarksStore.getState().reveal?.sessionId).toBe('Fix the login bug')
+  expect(useAppStore.getState().sidebarOpen).toBe(true)
+  expect(liveSessionMarksStore.getState().reveal?.sessionId).toBe('Pick a dataset')
 })
 
 it('New agent opens the composer on this project and its machine', () => {

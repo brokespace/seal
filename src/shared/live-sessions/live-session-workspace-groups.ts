@@ -30,7 +30,8 @@ export function liveSessionPlaceOf(session: WorkspaceGroupableLiveSession): Live
     return {
       projectKey: session.workspace.projectKey,
       project: folder,
-      workspaceKey: session.workspace.worktreeId,
+      // A checkout at the same path on two machines has one worktree id.
+      workspaceKey: `${session.machine.hostId}\n${session.workspace.worktreeId}`,
       workspace: session.cwd
     }
   }
@@ -40,6 +41,11 @@ export function liveSessionPlaceOf(session: WorkspaceGroupableLiveSession): Live
     workspaceKey: `${session.machine.hostId}\n${session.cwd ?? ''}`,
     workspace: session.cwd
   }
+}
+
+/** `query` names the project a session is listed under: by its name in any letter case, or by its key. */
+export function isLiveSessionPlaceInProject(place: LiveSessionPlace, query: string): boolean {
+  return place.projectKey === query || place.project?.toLowerCase() === query.toLowerCase()
 }
 
 export type LiveSessionWorkspaceGroup<T extends WorkspaceGroupableLiveSession> = {
@@ -104,7 +110,8 @@ export function groupLiveSessionsByWorkspace<T extends WorkspaceGroupableLiveSes
           ...workspace,
           sessions: workspace.sessions.sort(compareListedLiveSessions)
         }))
-        .sort(byLabel)
+        // Two machines' checkouts of one name keep their order whatever their sessions do.
+        .sort((a, b) => byLabel(a, b) || a.machine.label.localeCompare(b.machine.label))
     }))
     .sort(byLabel)
 }

@@ -143,14 +143,23 @@ describe('projectLiveSessions', () => {
     const sessions = [
       sampleLiveSession('mine'),
       sampleLiveSession('theirs'),
-      sampleLiveSession('loose')
+      sampleLiveSession('loose'),
+      // The registry's link wins over this window's.
+      sampleLiveSession('placed', {
+        workspace: { worktreeId: 'repo-1::/c', projectKey: 'github:acme/one' }
+      }),
+      sampleLiveSession('moved', {
+        workspace: { worktreeId: 'repo-2::/d', projectKey: 'github:acme/two' }
+      })
     ]
     const links = new Map([
       ['mine', { worktreeId: 'repo-1::/a', repoId: 'repo-1', name: 'Repo 1 / a' }],
-      ['theirs', { worktreeId: 'repo-2::/b', repoId: 'repo-2', name: 'Repo 2 / b' }]
+      ['theirs', { worktreeId: 'repo-2::/b', repoId: 'repo-2', name: 'Repo 2 / b' }],
+      ['moved', { worktreeId: 'repo-1::/a', repoId: 'repo-1', name: 'Repo 1 / a' }]
     ])
     expect(projectLiveSessions(sessions, links, 'repo-1').map((session) => session.id)).toEqual([
-      'mine'
+      'mine',
+      'placed'
     ])
   })
 })
