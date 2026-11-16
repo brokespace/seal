@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { LiveSessionAnnotateParams } from '../../../../shared/live-sessions/live-session-rpc-params'
 import { liveSessionSurfaceOf } from '../../../../shared/live-sessions/live-session-surface'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { parsePaneKey } from '../../../../shared/workspace-layout/stable-pane-id'
@@ -23,9 +24,6 @@ export type LiveSessionTabTitleJoinDeps = {
   annotate: (sessionId: string, customTitle: string | null) => void
 }
 
-// A row's name is capped where a tab's is not; a longer tab name stays the tab's alone.
-const MAX_ROW_NAME_LENGTH = 200
-
 function givenName(title: string | null | undefined): string | null {
   return title?.trim() || null
 }
@@ -43,7 +41,8 @@ export function joinLiveSessionTitlesWithTabTitles({
   let titles = new Map<string, string | null>()
 
   const nameRowOf = (tabId: string, title: string | null): void => {
-    if (title && title.length > MAX_ROW_NAME_LENGTH) {
+    // A row's name is capped where a tab's is not; a longer tab name stays the tab's alone.
+    if (!LiveSessionAnnotateParams.shape.customTitle.safeParse(title).success) {
       return
     }
     const inTab = sessions.get().filter((session) => {
