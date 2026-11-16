@@ -5,15 +5,14 @@ import { matchDelivered, type UserText } from './transcript-user-texts'
 
 export type Confirmation = {
   item: OutboxItem
-  patch: Pick<OutboxItem, 'state' | 'error' | 'unread' | 'unconfirmed'>
+  patch: Pick<OutboxItem, 'state' | 'error' | 'unconfirmed'>
 }
 
 /** The session was handed the message and never showed it: it may have run it all the same. */
-const unconfirmed = (why: string, unread = false): Confirmation['patch'] => ({
+const unconfirmed = (why: string): Confirmation['patch'] => ({
   state: 'failed',
   error: `Not confirmed, it may have been delivered: ${why}`,
-  unconfirmed: true,
-  ...(unread && { unread })
+  unconfirmed: true
 })
 
 /**
@@ -38,13 +37,11 @@ export function confirmSent(
   const out: Confirmation[] = []
   for (const item of items) {
     if (delivered.has(item)) {
-      out.push({
-        item,
-        patch: { state: 'delivered', error: null, unread: false, unconfirmed: undefined }
-      })
+      out.push({ item, patch: { state: 'delivered', error: null, unconfirmed: undefined } })
       continue
     }
-    if (item.unread) {
+    // Already given up as unconfirmed: only its transcript changes that.
+    if (item.state === 'failed') {
       continue
     }
     const since = now - (item.sentAt ?? now)
@@ -76,18 +73,15 @@ export function confirmSent(
       restingSince !== null &&
       now - Math.max(restingSince, item.sentAt ?? now) > timing.unreadAfterMs
     ) {
-      out.push({
-        item,
-        patch: unconfirmed('Seal typed it, but the session never showed it', true)
-      })
+      out.push({ item, patch: unconfirmed('Seal typed it, but the session never showed it') })
     }
   }
   return out
 }
 
 /**
- * Typed but unconfirmed messages, per session, oldest first. One given up as unread is looked
- * for again while its session has another to confirm.
+ * Sent messages awaiting their transcript, per session, oldest first. One given up as unconfirmed
+ * is looked for again while its session has another to confirm.
  */
 export function sentBySession(items: Iterable<OutboxItem>): Map<string, OutboxItem[]> {
   const bySession = new Map<string, OutboxItem[]>()
@@ -98,7 +92,7 @@ export function sentBySession(items: Iterable<OutboxItem>): Map<string, OutboxIt
     }
   }
   for (const item of all) {
-    if (item.state === 'failed' && item.unread) {
+    if (item.state === 'failed' && item.unconfirmed) {
       bySession.get(item.sessionId)?.push(item)
     }
   }

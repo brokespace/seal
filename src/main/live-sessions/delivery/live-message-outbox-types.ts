@@ -11,8 +11,6 @@ export type OutboxItem = LiveMessage & {
   /** Transcript size before it went in; its user record must come after this. */
   offset: number
   sentAt: number | null
-  /** Typed, but its session rested without showing it. Its transcript may still show it. */
-  unread?: boolean
 }
 
 export const DEFAULT_OUTBOX_TIMING = {
@@ -54,7 +52,6 @@ export const REQUEUED: Partial<OutboxItem> = {
   error: null,
   route: null,
   sentAt: null,
-  unread: false,
   unconfirmed: undefined
 }
 
@@ -62,7 +59,7 @@ export const REQUEUED: Partial<OutboxItem> = {
 export type OfferedMessage = LiveMessage | { refused: string }
 
 export function publicView(item: OutboxItem): LiveMessage {
-  const { offset: _offset, sentAt: _sentAt, unread: _unread, ...message } = item
+  const { offset: _offset, sentAt: _sentAt, ...message } = item
   return message
 }
 

@@ -254,6 +254,24 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  // A headless resume wrote the message after Seal stopped waiting for it.
+  it('confirms a resumed message its transcript shows only after it was given up as unconfirmed', async () => {
+    current = { ...session, alive: false, pid: null, inputRoutes: [{ kind: 'resume' }] }
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })
+    await settle(box, ([m]) => m.state === 'sent')
+    clock += 91_000
+    await settle(box, ([m]) => m.state === 'failed')
+    expect(box.list()[0].unconfirmed).toBe(true)
+
+    transcript.push({ offset: 500, text: 'first' })
+    await box.send({ sessionId: session.id, messageId: 'm2', text: 'second' })
+    await settle(box, ([a, b]) => a.state === 'delivered' && b.state === 'sent')
+    expect(box.list()[0].unconfirmed).toBeUndefined()
+    expect(typed).toEqual(['first', 'second'])
+    box.stop()
+  })
+
   // The agent may have run it without a sign: typing it again could run it twice.
   it('types a message that timed out unconfirmed again only once the retry says it may run twice', async () => {
     const storePath = join(dir, 'outbox.json')
