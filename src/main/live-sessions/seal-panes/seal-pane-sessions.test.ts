@@ -41,7 +41,8 @@ const pane: SealPane = {
   transcriptPath: null,
   prompt: 'Deploy it',
   receivedAt: 1000,
-  permission: null
+  permission: null,
+  silent: false
 }
 
 describe('mergeSealPanes', () => {
@@ -67,7 +68,7 @@ describe('sealPanesFromRows', () => {
   const statusOf = (
     patch: Partial<SealPaneRow>,
     prompt: Parameters<typeof sealPanesFromRows>[1] = () => null
-  ) => sealPanesFromRows([row(patch)], prompt).map((p) => [p.status, p.statusDetail])
+  ) => sealPanesFromRows([row(patch)], prompt, 2000).map((p) => [p.status, p.statusDetail])
 
   it('reads a finished turn as waiting on the user', () => {
     expect(statusOf({ state: 'done' })).toEqual([['your-turn', null]])
@@ -92,19 +93,181 @@ describe('sealPanesFromRows', () => {
   })
 })
 
-describe('what discovery adds to a Seal pane', () => {
-  const found = (status: LiveSession['status'], statusSource: LiveSession['statusSource']) =>
-    mergeSealPanes(
-      [{ ...discovered, status, statusSource, statusDetail: 'Bash: pnpm test' }],
-      [pane],
-      local
-    ).map((s) => [s.status, s.statusSource])
+describe('what a pane row says of a turn that stopped', () => {
+  const row = (patch: Partial<SealPaneRow>): SealPaneRow => ({
+    paneKey: 'tab-1:0',
+    state: 'done',
+    agentType: 'claude',
+    providerSession: { key: 'session_id', id: '0e7d2c1a-0000-4000-8000-00000000000a', cwd: '/w' },
+    receivedAt: 1000,
+    stateStartedAt: 1000,
+    connectionId: null,
+    prompt: 'Deploy it',
+    ...patch
+  })
+  const done = { state: 'done', stateStartedAt: 900 } as const
 
-  it('shows the shell command a working pane runs', () => {
-    expect(found('running-shell', 'process')).toEqual([['running-shell', 'process']])
+  it.each<[string, Partial<SealPaneRow>, LiveSession['status'], string | null]>([
+    ['finished', { mainAgent: { ...done, outcome: 'success' } }, 'your-turn', null],
+    ['failed', { mainAgent: { ...done, outcome: 'failure' } }, 'errored', null],
+    ['was stopped by the user', { interrupted: true }, 'your-turn', 'Interrupted'],
+    [
+      'left a watcher running',
+      { state: 'working', workingMode: 'monitoring', mainAgent: done },
+      'waiting-task',
+      null
+    ],
+    ['left a subagent running', { state: 'working', mainAgent: done }, 'waiting-subagent', null],
+    [
+      'failed with a watcher still running',
+      {
+        state: 'working',
+        workingMode: 'monitoring',
+        mainAgent: { ...done, outcome: 'failure' }
+      },
+      'errored',
+      null
+    ],
+    [
+      'did not stop: a tool runs',
+      { state: 'working', toolName: 'Edit', mainAgent: { state: 'working', stateStartedAt: 900 } },
+      'working',
+      'Edit'
+    ]
+  ])('a turn that %s', (_, patch, status, detail) => {
+    expect(
+      sealPanesFromRows([row(patch)], () => null, 2000).map((p) => [p.status, p.statusDetail])
+    ).toEqual([[status, detail]])
+  })
+})
+
+describe('a pane whose hooks no longer speak for its agent', () => {
+  const HOUR = 60 * 60_000
+  const row = (patch: Partial<SealPaneRow>): SealPaneRow => ({
+    paneKey: 'tab-1:0',
+    state: 'working',
+    agentType: 'codex',
+    providerSession: { key: 'session_id', id: '0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b', cwd: '/w' },
+    receivedAt: 10 * HOUR,
+    stateStartedAt: 10 * HOUR,
+    connectionId: null,
+    prompt: 'Deploy it',
+    ...patch
+  })
+  const silent = (patch: Partial<SealPaneRow>, now: number) =>
+    sealPanesFromRows([row(patch)], () => null, now)[0].silent
+
+  it.each<[string, Partial<SealPaneRow>, number, boolean]>([
+    ['a tool hook heard a minute ago', {}, 10 * HOUR + 60_000, false],
+    ['a tool hook heard 31 minutes ago, and nothing since', {}, 10 * HOUR + 31 * 60_000, true],
+    ['a prompt left open for 31 minutes', { state: 'waiting' }, 10 * HOUR + 31 * 60_000, true],
+    ['a finished turn, however old', { state: 'done' }, 20 * HOUR, false],
+    ['a row saved by the last run of Seal', { restoredUnconfirmed: true }, 10 * HOUR, true],
+    [
+      'a row replayed on reconnect, by when it was first seen',
+      { receivedAt: 10 * HOUR + 40 * 60_000, evidenceObservedAt: 10 * HOUR },
+      10 * HOUR + 41 * 60_000,
+      true
+    ]
+  ])('%s', (_, patch, now, expected) => {
+    expect(silent(patch, now)).toBe(expected)
   })
 
-  it("keeps the hook's word over an approval guessed from the process list", () => {
-    expect(found('needs-permission', 'process')).toEqual([['working', 'seal-hooks']])
+  it('shows what discovery reads instead, and asks the host to check the agent is there', () => {
+    const asked: string[] = []
+    const shown = mergeSealPanes(
+      [
+        {
+          ...discovered,
+          providerSessionId: pane.providerSessionId,
+          status: 'done',
+          statusSource: 'transcript',
+          alive: false,
+          pid: null
+        }
+      ],
+      [{ ...pane, status: 'waiting-input', silent: true }],
+      local,
+      (paneKey) => asked.push(paneKey)
+    ).map((s) => [s.status, s.statusSource])
+    expect({ shown, asked }).toEqual({ shown: [['done', 'transcript']], asked: ['tab-1:0'] })
+  })
+})
+
+describe('a turn cut short without a Stop hook', () => {
+  const remote = { hostId: 'ssh-1', label: 'gpu-box', kind: 'remote' } as const
+  const interrupted = (patch: Partial<SealPane>, lastActivityAt: number) =>
+    mergeSealPanes(
+      [
+        {
+          ...discovered,
+          machine: patch.connectionId ? remote : local,
+          status: 'your-turn',
+          statusSource: 'transcript',
+          statusDetail: 'Interrupted',
+          lastActivityAt
+        }
+      ],
+      [{ ...pane, status: 'working', receivedAt: 60_000, ...patch }],
+      local
+    ).map((s) => [s.status, s.statusDetail])
+
+  it('ends when the transcript records the interrupt after the last hook', () => {
+    expect(interrupted({}, 90_000)).toEqual([['your-turn', 'Interrupted']])
+  })
+
+  it('keeps working while the hook is the newer of the two', () => {
+    expect(interrupted({}, 59_000)).toEqual([['working', null]])
+  })
+
+  it('keeps working on a remote pane, whose transcript is stamped by another clock', () => {
+    expect(interrupted({ connectionId: 'ssh-1' }, 90_000)).toEqual([['working', null]])
+  })
+})
+
+describe('what discovery adds to a Seal pane', () => {
+  type Source = LiveSession['statusSource']
+  type Status = LiveSession['status']
+  const merged = (hooks: Status, status: Status, statusSource: Source) =>
+    mergeSealPanes(
+      [{ ...discovered, status, statusSource, statusDetail: 'from discovery' }],
+      [{ ...pane, status: hooks }],
+      local
+    ).map((s) => [s.status, s.statusSource])[0]
+
+  // [the pane's hooks, what discovery read and from where, what shows and whose word it is]
+  it.each<[Status, Status, Source, Status, Source]>([
+    // A Stop hook does not say what the turn left running, asked, or died of.
+    ['your-turn', 'waiting-task', 'transcript', 'waiting-task', 'transcript'],
+    ['your-turn', 'waiting-task', 'agent-state', 'waiting-task', 'agent-state'],
+    ['your-turn', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
+    ['your-turn', 'waiting-input', 'transcript', 'waiting-input', 'transcript'],
+    ['your-turn', 'errored', 'transcript', 'errored', 'transcript'],
+    // Claude says a turn runs that no hook announced.
+    ['your-turn', 'working', 'agent-state', 'working', 'agent-state'],
+    ['your-turn', 'needs-permission', 'agent-state', 'needs-permission', 'agent-state'],
+    // A transcript still being written does not outrank a Stop hook.
+    ['your-turn', 'working', 'transcript', 'your-turn', 'seal-hooks'],
+    ['your-turn', 'done', 'transcript', 'your-turn', 'seal-hooks'],
+    // A tool hook does not say the command it started, or that the turn since ended on a wait.
+    ['working', 'running-shell', 'process', 'running-shell', 'process'],
+    ['working', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
+    ['working', 'waiting-task', 'transcript', 'waiting-task', 'transcript'],
+    ['working', 'needs-permission', 'agent-state', 'needs-permission', 'agent-state'],
+    // An approval guessed from the process list, or a turn end not yet hooked, is not news.
+    ['working', 'needs-permission', 'process', 'working', 'seal-hooks'],
+    ['working', 'your-turn', 'transcript', 'working', 'seal-hooks'],
+    ['working', 'errored', 'transcript', 'working', 'seal-hooks'],
+    // The hook's inventory says work runs; discovery says which kind.
+    ['waiting-task', 'waiting-subagent', 'transcript', 'waiting-subagent', 'transcript'],
+    ['waiting-task', 'your-turn', 'transcript', 'waiting-task', 'seal-hooks'],
+    // A prompt and a failure are the hooks' to report.
+    ['needs-permission', 'working', 'transcript', 'needs-permission', 'seal-hooks'],
+    ['waiting-input', 'your-turn', 'transcript', 'waiting-input', 'seal-hooks'],
+    ['errored', 'your-turn', 'transcript', 'errored', 'seal-hooks'],
+    // A guess never outranks a hook.
+    ['your-turn', 'waiting-task', 'classifier', 'your-turn', 'seal-hooks']
+  ])('hooks say %s, discovery read %s from %s: shows %s', (hooks, read, from, shows, word) => {
+    expect(merged(hooks, read, from)).toEqual([shows, word])
   })
 })

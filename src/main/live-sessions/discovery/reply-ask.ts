@@ -4,7 +4,7 @@
  * asks     its last line is a question
  * tells    nothing in its closing lines asks for anything
  * unclear  it asks somewhere near the end, or in words rather than a question mark: the utility
- *          model decides (docs/session-status.md)
+ *          model decides (docs/design/agent-status.md)
  */
 export type ReplyAsk = 'asks' | 'tells' | 'unclear'
 

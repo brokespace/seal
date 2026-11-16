@@ -66,11 +66,17 @@ function assemble(
   transcripts: SummarizedTranscript[],
   panes: DiscoveredPane[] = [],
   hookStates: { path: string; text: string }[] = [],
-  claudeSessions: { pid: number; sessionId: string }[] = []
+  named: { pid: number; sessionId: string }[] = []
 ) {
   return assembleHostSessions({
     machine,
-    output: { processes, panes, hookStates, hostNowMs: NOW, claudeSessions },
+    output: {
+      processes,
+      panes,
+      hookStates,
+      hostNowMs: NOW,
+      claudeSessions: named.map((s) => ({ ...s, state: null, waitingFor: null, stateAtMs: null }))
+    },
     transcripts,
     nowMs: NOW
   })
@@ -254,7 +260,7 @@ describe('assembleHostSessions', () => {
     expect(statusWith('working', false)).toBe('working')
   })
 
-  it('keeps an unanswered question waiting on the user when its agent is not seen', () => {
+  it('keeps an unanswered question open only while its agent may still be there', () => {
     const id = '99999999-9999-4999-8999-999999999999'
     const sessionWith = (
       phase: SummarizedTranscript['summary']['phase'],
@@ -280,13 +286,15 @@ describe('assembleHostSessions', () => {
         transcripts: [transcript(id, '/srv/app', 600_000, phase)],
         nowMs: NOW
       })[0]
+    // The host listed its processes and the agent that asked is not among them: nobody is asking.
     expect(sessionWith('input-requested', null)).toMatchObject({
       alive: false,
-      status: 'waiting-input',
+      status: 'done',
       inputRoutes: [{ kind: 'resume' }]
     })
-    expect(sessionWith('input-requested', 'idle').status).toBe('waiting-input')
-    // A host that lists no processes cannot say the agent is gone, so its hook file still counts.
+    expect(sessionWith('input-requested', 'idle').status).toBe('done')
+    // A host that lists no processes cannot say the agent is gone, so the question stands.
+    expect(sessionWith('input-requested', null, false).status).toBe('waiting-input')
     expect(sessionWith('input-requested', 'needs', false).status).toBe('waiting-input')
     expect(sessionWith('input-requested', 'working', false).status).toBe('waiting-input')
     // Answered: the transcript moved on to a turn that ended.
