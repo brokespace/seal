@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslate } from '@/i18n/use-translate'
-import { cn } from '@/lib/class-names'
 import type {
   MachineDockerContainerDetails,
   MachineDockerContainerMount,
@@ -35,8 +34,7 @@ function HealthBadge({ health }: { health: string }): React.JSX.Element {
   const t = useTranslate()
   return (
     <Badge
-      variant="outline"
-      className={cn(health === 'unhealthy' && 'border-destructive/40 text-destructive')}
+      variant={health === 'unhealthy' ? 'destructive' : 'outline'}
       data-machine-docker-health={health}
     >
       {health === 'healthy'

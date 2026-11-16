@@ -8,11 +8,13 @@ import type { MachineSummary } from '../../../../../shared/machines/machine-summ
 
 /** Sets `backticked` words in the code face. */
 function withCode(text: string): React.ReactNode[] {
-  return text
-    .split('`')
-    .map((part, index) =>
-      index % 2 === 1 ? <code key={index}>{part}</code> : <span key={index}>{part}</span>
+  return [...text.matchAll(/`([^`]*)`|[^`]+/g)].map((match) =>
+    match[1] === undefined ? (
+      <span key={match.index}>{match[0]}</span>
+    ) : (
+      <code key={match.index}>{match[1]}</code>
     )
+  )
 }
 
 /** The account an SSH machine is reached as; other machines do not say. */

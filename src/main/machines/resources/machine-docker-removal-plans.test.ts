@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MachineDockerContainerRef } from '../../../shared/machines/machine-docker-types'
 import type { MachineCleanupProgress } from '../../../shared/machines/machine-resource-types'
+import { createLocalMachineConnection } from '../connection/local-machine-connection'
 import type { MachineConnection } from '../connection/machine-connection'
 import { MachineCleanupRunner } from './machine-cleanup-runner'
 import type { DockerStorage } from './machine-docker-inventory'
@@ -245,18 +246,18 @@ function machineWithManyVolumes(): MachineConnection {
     `@k {"Id":"${WEB_ID}","Name":"/web","State":"running","Running":true,"Image":"nginx:1.27","ImageID":"${NGINX_ID}","Mounts":[{"Type":"volume","Name":"v44","Destination":"/data","RW":true}]}`,
     ...Array.from({ length: 45 }, (_, index) => `@v {"Name":"v${index}","Links":"0","Size":"1kB"}`)
   ].join('\n')
-  const exec = async (_command: string, options: { stdin?: string }) => {
-    const script = options.stdin ?? ''
-    const stdout = script.includes('docker system df')
-      ? inventory
-      : [...script.matchAll(/echo "@ok (\d+) /g)].map((match) => `@ok ${match[1]} `).join('\n')
-    return { stdout, stderr: '', exitCode: 0, timedOut: false }
-  }
   return {
+    ...createLocalMachineConnection(),
     machineId: 'machine:many',
     dialect: async () => 'posix',
-    exec
-  } as unknown as MachineConnection
+    exec: async (_command, options) => {
+      const script = String(options.stdin ?? '')
+      const stdout = script.includes('docker system df')
+        ? inventory
+        : [...script.matchAll(/echo "@ok (\d+) /g)].map((match) => `@ok ${match[1]} `).join('\n')
+      return { stdout, stderr: '', exitCode: 0, timedOut: false }
+    }
+  }
 }
 
 describe('a cleanup run', () => {

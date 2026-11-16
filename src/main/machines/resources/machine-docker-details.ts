@@ -15,6 +15,7 @@ import {
   dockerExecError,
   dockerJsonRows,
   dockerText,
+  isDockerJsonRow,
   parseDockerContainerUses,
   parseDockerMounts,
   parseDockerSize,
@@ -50,9 +51,7 @@ ${DOCKER_ALL_CONTAINER_USE_COMMAND}
 }
 
 function fields(value: unknown): DockerJsonRow {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as DockerJsonRow)
-    : {}
+  return isDockerJsonRow(value) ? value : {}
 }
 
 function texts(value: unknown): string[] {

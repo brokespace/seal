@@ -113,19 +113,20 @@ function DockerDetail({
             {t('auto.components.machines.dockerDetails.back', 'Back')}
           </Button>
         ) : null}
-        <div className="min-w-0 flex-1 px-1">
-          <SheetDescription className="truncate text-2xs font-semibold tracking-wider uppercase">
+        <div className="min-w-0 flex-1 px-1 [&>*]:truncate">
+          <SheetTitle title={title}>
+            {isDockerHash(title) ? (
+              <span className="font-mono">{title.replace(/^sha256:/, '').slice(0, 12)}</span>
+            ) : (
+              title
+            )}
+          </SheetTitle>
+          <SheetDescription>
             {t('auto.components.machines.dockerDetails.kindOn', '{{kind}} on {{machine}}', {
               kind: kindLabel,
               machine: machine.label
             })}
           </SheetDescription>
-          <SheetTitle
-            className={cn('truncate text-sm', isDockerHash(title) && 'font-mono')}
-            title={title}
-          >
-            {isDockerHash(title) ? title.replace(/^sha256:/, '').slice(0, 12) : title}
-          </SheetTitle>
         </div>
         <Button
           type="button"

@@ -330,15 +330,18 @@ export function MachineDockerStorageTable({
                       <Badge
                         variant="referenceLabel"
                         // The badge gives way before the name does.
-                        className={cn(
-                          'min-w-8 shrink-[4] justify-start',
-                          isDockerStorageItemReclaimable(item) &&
-                            'border-foreground/25 text-foreground'
-                        )}
+                        className="min-w-8 shrink-[4] justify-start"
                         title={copy.status(item)}
                         data-machine-docker-status={item.status}
                       >
-                        <span className="truncate">{copy.status(item)}</span>
+                        <span
+                          className={cn(
+                            'truncate',
+                            isDockerStorageItemReclaimable(item) && 'text-foreground'
+                          )}
+                        >
+                          {copy.status(item)}
+                        </span>
                       </Badge>
                     )}
                   </div>

@@ -1,9 +1,8 @@
 import React from 'react'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
-import { getIntlLocale } from '@/i18n/i18n'
 import { formatUiRelativeTimeFromDate } from '@/i18n/relative-time-format'
-import { useTranslate } from '@/i18n/use-translate'
+import { useIntlLocale, useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { MachineDiskRowAction } from './MachineDiskRowAction'
 
@@ -38,12 +37,13 @@ export function MachineDockerFact({
 
 /** How long ago something happened, with the date and time on hover. */
 export function MachineDockerTime({ at }: { at: number | null }): React.JSX.Element {
+  const locale = useIntlLocale()
   if (at === null || Number.isNaN(at)) {
     return <>—</>
   }
   const date = new Date(at)
   return (
-    <time dateTime={date.toISOString()} title={date.toLocaleString(getIntlLocale())}>
+    <time dateTime={date.toISOString()} title={date.toLocaleString(locale)}>
       {formatUiRelativeTimeFromDate(date.toISOString())}
     </time>
   )

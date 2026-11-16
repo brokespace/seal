@@ -494,7 +494,7 @@
           "cancel": "Cancel",
           "killConfirm": "Force kill",
           "stopConfirm": "Stop process",
-          "filter": "Filter by name, command, user, or pid",
+          "filter": "Filter by name, command, user, pid, or container",
           "filterLabel": "Filter processes",
           "showingTop": "Top {{shown}} of {{total}} processes",
           "showingMatches": "{{shown}} matching",

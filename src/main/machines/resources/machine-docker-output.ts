@@ -57,6 +57,10 @@ export function parseDockerTime(value: unknown): number | null {
 
 export type DockerJsonRow = Record<string, unknown>
 
+export function isDockerJsonRow(value: unknown): value is DockerJsonRow {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 /** The JSON objects on lines starting with `prefix`; a line that is cut short or not JSON is skipped. */
 export function dockerJsonRows(lines: readonly string[], prefix: string): DockerJsonRow[] {
   const rows: DockerJsonRow[] = []
@@ -66,8 +70,8 @@ export function dockerJsonRows(lines: readonly string[], prefix: string): Docker
     }
     try {
       const parsed: unknown = JSON.parse(line.slice(prefix.length))
-      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-        rows.push(parsed as DockerJsonRow)
+      if (isDockerJsonRow(parsed)) {
+        rows.push(parsed)
       }
     } catch {
       // Output past the transport's cap ends mid-line.
@@ -168,10 +172,10 @@ export type DockerContainerUse = MachineDockerContainerRef & {
 
 export function parseDockerMounts(value: unknown): MachineDockerContainerMount[] {
   return (Array.isArray(value) ? value : []).flatMap((mount: unknown) => {
-    if (typeof mount !== 'object' || mount === null) {
+    if (!isDockerJsonRow(mount)) {
       return []
     }
-    const fields = mount as DockerJsonRow
+    const fields = mount
     const type = dockerText(fields.Type)
     return [
       {

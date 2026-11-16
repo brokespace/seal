@@ -48,14 +48,26 @@ export function MachineDockerStateBadge({
   const failed = state === 'dead' || (state === 'exited' && Boolean(exitCode))
   return (
     <Badge
-      variant={dense ? 'referenceLabel' : state === 'running' ? 'secondary' : 'outline'}
-      className={cn(
-        dense && state === 'running' && 'text-foreground',
-        failed && 'border-destructive/40 text-destructive'
-      )}
+      variant={
+        dense
+          ? 'referenceLabel'
+          : failed
+            ? 'destructive'
+            : state === 'running'
+              ? 'secondary'
+              : 'outline'
+      }
       data-machine-docker-state={state}
     >
-      {label}
+      {dense ? (
+        <span
+          className={cn(state === 'running' && 'text-foreground', failed && 'text-destructive')}
+        >
+          {label}
+        </span>
+      ) : (
+        label
+      )}
     </Badge>
   )
 }

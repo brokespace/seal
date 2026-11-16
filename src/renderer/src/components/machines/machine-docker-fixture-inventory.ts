@@ -195,47 +195,54 @@ export const FAKE_DOCKER_VOLUMES: MachineDockerVolume[] = [
   }
 ]
 
-export const FAKE_DOCKER_BUILD_CACHE: MachineDockerBuildCacheRecord[] = [
-  {
-    id: 'k3v9s1q7xw2m8n4p6r0t5y1za',
-    cacheType: 'regular',
-    description: 'RUN pip install -r requirements.txt',
-    sizeBytes: 21.4 * GB,
-    inUse: false,
-    shared: false,
-    createdAt: now - 20 * DAY,
-    lastUsedAt: now - 3 * DAY
-  },
-  {
-    id: 'b7c2d9e4f1a6g3h8j5k0l2m9n',
-    cacheType: 'exec.cachemount',
-    description: 'mount / from exec /bin/sh -c pnpm install --frozen-lockfile',
-    sizeBytes: 12.8 * GB,
-    inUse: false,
-    shared: false,
-    createdAt: now - 45 * DAY,
-    lastUsedAt: now - 2 * DAY
-  },
-  {
-    id: 'q1w2e3r4t5y6u7i8o9p0a1s2d',
-    cacheType: 'regular',
-    description: 'COPY . /workspace',
-    sizeBytes: 6.3 * GB,
-    inUse: true,
-    shared: true,
-    createdAt: now - 2 * DAY,
-    lastUsedAt: now - 3_600_000
-  },
-  {
-    id: 'z9x8c7v6b5n4m3l2k1j0h9g8f',
-    cacheType: 'source.local',
-    description: 'local source for context',
-    sizeBytes: 3.5 * GB,
-    inUse: false,
-    shared: false,
-    createdAt: now - 70 * DAY,
-    lastUsedAt: now - 30 * DAY
+/** One build cache record; `text` is what the build step ran, as BuildKit reports it. */
+function cacheRecord(
+  id: string,
+  cacheType: string,
+  text: string,
+  sizeBytes: number,
+  ages: { created: number; used: number },
+  inUse = false
+): MachineDockerBuildCacheRecord {
+  return {
+    id,
+    cacheType,
+    description: text,
+    sizeBytes,
+    inUse,
+    shared: inUse,
+    createdAt: now - ages.created,
+    lastUsedAt: now - ages.used
   }
+}
+
+export const FAKE_DOCKER_BUILD_CACHE: MachineDockerBuildCacheRecord[] = [
+  cacheRecord(
+    'k3v9s1q7xw2m8n4p6r0t5y1za',
+    'regular',
+    'RUN pip install -r requirements.txt',
+    21.4 * GB,
+    { created: 20 * DAY, used: 3 * DAY }
+  ),
+  cacheRecord(
+    'b7c2d9e4f1a6g3h8j5k0l2m9n',
+    'exec.cachemount',
+    'mount / from exec /bin/sh -c pnpm install --frozen-lockfile',
+    12.8 * GB,
+    { created: 45 * DAY, used: 2 * DAY }
+  ),
+  cacheRecord(
+    'q1w2e3r4t5y6u7i8o9p0a1s2d',
+    'regular',
+    'COPY . /workspace',
+    6.3 * GB,
+    { created: 2 * DAY, used: 3_600_000 },
+    true
+  ),
+  cacheRecord('z9x8c7v6b5n4m3l2k1j0h9g8f', 'source.local', 'local source for context', 3.5 * GB, {
+    created: 70 * DAY,
+    used: 30 * DAY
+  })
 ]
 
 export const FAKE_DOCKER_INVENTORY: MachineDockerInventory = {

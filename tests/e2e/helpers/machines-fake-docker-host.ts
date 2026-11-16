@@ -86,10 +86,12 @@ export async function launchFakeDockerHost(
         writeHostFile(target, `${BIN_DIR}/docker`, fakeDockerCliScript())
         execDockerSshHostTargetControlCommand(target, `chmod +x ${BIN_DIR}/docker`)
       },
-      readState: () =>
-        JSON.parse(
+      readState: () => {
+        const state: FakeDockerState = JSON.parse(
           execDockerSshHostTargetControlCommand(target, `cat ${STATE_PATH}`)
-        ) as FakeDockerState,
+        )
+        return state
+      },
       openPanel: async (kind) => {
         const panel = page.locator(`[data-machine-resource-panel="${kind}"]`)
         if (!(await panel.isVisible())) {

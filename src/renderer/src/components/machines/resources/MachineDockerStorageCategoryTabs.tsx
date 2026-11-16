@@ -16,12 +16,7 @@ export function MachineDockerStorageCategoryTabs({
     <div className="scrollbar-none overflow-x-auto border-b border-border px-1.5 pt-1 pb-[5px]">
       <TabsList variant="line" size="sm">
         {MACHINE_DOCKER_STORAGE_KINDS.map((kind) => (
-          <TabsTrigger
-            key={kind}
-            value={kind}
-            className="px-1.5"
-            data-machine-docker-category={kind}
-          >
+          <TabsTrigger key={kind} value={kind} data-machine-docker-category={kind}>
             {copy.kind[kind]}
             <span className="font-normal text-muted-foreground tabular-nums">
               {totals[kind].count}

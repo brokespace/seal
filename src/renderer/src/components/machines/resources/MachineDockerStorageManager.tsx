@@ -217,7 +217,6 @@ function Inventory({
   return (
     <div data-machine-docker-manager={category}>
       <Tabs
-        className="gap-0"
         value={category}
         onValueChange={(value) => {
           const kind = MACHINE_DOCKER_STORAGE_KINDS.find((candidate) => candidate === value)

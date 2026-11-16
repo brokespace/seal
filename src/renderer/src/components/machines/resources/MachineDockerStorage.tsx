@@ -58,10 +58,9 @@ export function useMachineDockerStorage(machineId: MachineId): MachineDockerStor
             error: resourceErrorText(err)
           }))
         }
-      } finally {
-        forced.current -= force ? 1 : 0
-        setInFlight((count) => count - 1)
       }
+      forced.current -= force ? 1 : 0
+      setInFlight((count) => count - 1)
     },
     [machineId]
   )
