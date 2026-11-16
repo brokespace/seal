@@ -233,7 +233,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <LiveSessionStatusPill
                     session={session}
                     dot={!card}
-                    // With nothing after it the label takes the line, so a narrow sidebar still reads it whole.
+                    // With nothing after it the label takes the line; under about 260 px the longest ones still end in an ellipsis.
                     className={cn(after ? 'max-w-[70%] shrink-0' : 'shrink', card && 'font-medium')}
                   />
                   <span className="min-w-0 flex-1 truncate">{after}</span>
