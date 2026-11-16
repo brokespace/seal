@@ -1,3 +1,4 @@
+import { compareAppVersions } from '../app-version'
 import {
   activeMachineConnection,
   type MachineRecord,
@@ -157,7 +158,8 @@ export function completeMachineServerInstall(
   machineId: string,
   served: {
     environmentId: string
-    version: string
+    /** `null`: not known; `undefined`: as recorded before. */
+    version: string | null | undefined
     keeper: { manager: MachineServerKeeper; linger?: boolean } | null
   },
   now: number
@@ -172,13 +174,14 @@ export function completeMachineServerInstall(
       }
       const known = installedServerKeeper(previous)
       const keeper = served.keeper ?? (known ? { manager: known, linger: previous.linger } : null)
+      const version = served.version === undefined ? previous.version : served.version
       return {
         serverInstall: {
           policy: 'auto',
           state: 'installed',
           ...(keeper ? { manager: keeper.manager } : {}),
           ...(keeper?.linger !== undefined ? { linger: keeper.linger } : {}),
-          version: served.version,
+          ...(version ? { version } : {}),
           ...(previous.attemptedAt !== undefined ? { attemptedAt: previous.attemptedAt } : {})
         },
         ...(machine.environmentId === served.environmentId ? { connection: 'server' as const } : {})
@@ -261,6 +264,7 @@ export function machinesAwaitingServerUpgrade(
       activeMachineConnection(machine) === 'server' &&
       machine.serverInstall?.policy === 'auto' &&
       machine.serverInstall.state === 'installed' &&
-      machine.serverInstall.version !== appVersion
+      machine.serverInstall.version !== undefined &&
+      compareAppVersions(machine.serverInstall.version, appVersion) < 0
   )
 }

@@ -1,3 +1,4 @@
+import type { SshManagedServerUpdateNote } from '../../../shared/ssh-types'
 import type { HostServerOnConnectResult } from './ssh-host-server-on-connect'
 
 /** Machines set to connect over SSH get a plain session: no Seal server is deployed or converted. */
@@ -7,7 +8,8 @@ type DirectSshPolicy = (targetId: string) => boolean
 export type SshServerSetupOutcomes = {
   /** True when the machine connects over plain SSH instead of ending in the setup's failure. */
   failed: (targetId: string, failure: unknown) => boolean
-  served: (targetId: string, environmentId: string) => void
+  /** `update` is set when the server kept its version on this connect. */
+  served: (targetId: string, environmentId: string, update?: SshManagedServerUpdateNote) => void
 }
 
 let policy: DirectSshPolicy | null = null
@@ -36,6 +38,10 @@ export function fallsBackToDirectSsh(targetId: string, failure: unknown): boolea
   return outcomes?.failed(targetId, failure) ?? false
 }
 
-export function noteSshHostServed(targetId: string, environmentId: string): void {
-  outcomes?.served(targetId, environmentId)
+export function noteSshHostServed(
+  targetId: string,
+  environmentId: string,
+  update?: SshManagedServerUpdateNote
+): void {
+  outcomes?.served(targetId, environmentId, update)
 }

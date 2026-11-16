@@ -12,6 +12,7 @@ import type {
   SealServiceWish
 } from '../../managed-server/service/seal-service-policy'
 import { readSealServiceState } from '../../managed-server/service/seal-service-removal'
+import type { SshManagedServerUpdateNote } from '../../../shared/ssh-types'
 import type { SshServerSetupOutcomes } from '../../ssh/host-server/ssh-direct-connect-policy'
 import { getSshConnectionManager } from '../../ssh/targets/ssh-target-registry'
 import type { MachineRegistry } from '../registry/machine-registry'
@@ -28,6 +29,20 @@ import {
   repeatsOverPlainSsh,
   serverInstallFailureReason
 } from './machine-server-install-failure'
+
+/**
+ * The app version the server runs, as far as this connect knows: this app's unless the server kept
+ * its own. `null` is a newer server, whose version is not known here; `undefined` keeps the record's.
+ */
+function servedVersion(
+  update: SshManagedServerUpdateNote | undefined,
+  appVersion: string
+): string | null | undefined {
+  if (!update) {
+    return appVersion
+  }
+  return update.state === 'host-newer' ? null : undefined
+}
 
 export type MachineServerSetup = {
   outcomes: SshServerSetupOutcomes
@@ -81,7 +96,11 @@ export function createMachineServerSetup(
     return true
   }
 
-  const served = (sshTargetId: string, environmentId: string): void => {
+  const served = (
+    sshTargetId: string,
+    environmentId: string,
+    update: SshManagedServerUpdateNote | undefined
+  ): void => {
     // Merges the server's fresh record into the SSH machine that deployed it.
     registry.reconcile()
     const record = registry.recordForSshTarget(sshTargetId)
@@ -102,7 +121,7 @@ export function createMachineServerSetup(
       completeMachineServerInstall(
         store,
         record.id,
-        { environmentId, version: appVersion(), keeper },
+        { environmentId, version: servedVersion(update, appVersion()), keeper },
         now
       )
     )
@@ -119,9 +138,9 @@ export function createMachineServerSetup(
           return false
         }
       },
-      served: (sshTargetId, environmentId) => {
+      served: (sshTargetId, environmentId, update) => {
         try {
-          served(sshTargetId, environmentId)
+          served(sshTargetId, environmentId, update)
         } catch (error) {
           console.warn('[machines] could not record an installed Seal server:', error)
         }

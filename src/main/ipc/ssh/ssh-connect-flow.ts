@@ -255,7 +255,7 @@ async function doConnect(
       authority = rotateSshProviderAuthority(targetId)
       quiet.rotated(authority)
     }
-    directSsh.noteSshHostServed(targetId, server.environmentId)
+    directSsh.noteSshHostServed(targetId, server.environmentId, server.update)
     const published = publishManagedServerConnect(
       targetId,
       server.environmentId,
