@@ -48,6 +48,7 @@ function startJoin(options: {
   sessions: LiveSession[]
   seenAt: Record<string, number>
   attention?: Partial<TabAttention>
+  now?: () => number
 }) {
   const sessions = observable<readonly LiveSession[]>(options.sessions)
   const attention = observable<TabAttention>({
@@ -78,7 +79,8 @@ function startJoin(options: {
         })
       }
     },
-    marks
+    marks,
+    now: options.now
   })
   const acknowledgeTab = (paneKey: string, at: number): void =>
     attention.set({
@@ -235,52 +237,116 @@ describe('joinLiveSessionMarksWithTabAttention', () => {
     expect(acknowledged).toEqual([])
   })
 
-  it("gives up a terminal pane's completion marker when its agent ends", () => {
-    const { sessions, attention, acknowledged } = startJoin({
+  it('keeps the marker and the unread row of an agent that exits by itself', () => {
+    const { sessions, marks, acknowledged, raiseCompletionMarker } = startJoin({
+      sessions: [{ ...cliSession, status: 'working' }],
+      seenAt: { 'local:claude:cli': 500 }
+    })
+    const exited: LiveSession = { ...cliSession, status: 'done', alive: false }
+
+    sessions.set([exited])
+    raiseCompletionMarker(CLI_PANE_KEY)
+
+    expect(acknowledged).toEqual([])
+    expect(marks.getState().seenAt).toEqual({ 'local:claude:cli': 500 })
+    expect(isLiveSessionUnread(exited, marks.getState().seenAt)).toBe(true)
+  })
+
+  it('keeps the marker and the unread row of an agent that crashes', () => {
+    const { sessions, attention, marks, acknowledged, raiseCompletionMarker } = startJoin({
+      sessions: [{ ...cliSession, status: 'working' }],
+      seenAt: { 'local:claude:cli': 500 }
+    })
+    const crashed: LiveSession = { ...cliSession, status: 'errored', alive: false }
+
+    sessions.set([crashed])
+    raiseCompletionMarker(CLI_PANE_KEY)
+    sessions.set([])
+
+    expect(acknowledged).toEqual([])
+    expect(attention.get().unreadAgentCompletionPanes).toEqual({ [CLI_PANE_KEY]: true })
+    expect(isLiveSessionUnread(crashed, marks.getState().seenAt)).toBe(true)
+  })
+
+  it('gives up the marker a pane raises for an agent Seal stopped, and leaves its row unread', () => {
+    const { sessions, attention, marks, acknowledged, raiseCompletionMarker } = startJoin({
+      sessions: [cliSession],
+      seenAt: { 'local:claude:cli': 500 }
+    })
+    const ended: LiveSession = { ...cliSession, status: 'done', alive: false }
+
+    marks.stopped([cliSession])
+    sessions.set([ended])
+    raiseCompletionMarker(CLI_PANE_KEY)
+
+    expect(acknowledged).toEqual([[CLI_PANE_KEY]])
+    expect(attention.get().unreadAgentCompletionPanes).toEqual({})
+    expect(marks.getState().seenAt).toEqual({ 'local:claude:cli': 500 })
+    expect(isLiveSessionUnread(ended, marks.getState().seenAt)).toBe(true)
+  })
+
+  it('gives up a marker raised before Seal reports the stop', () => {
+    const { marks, acknowledged } = startJoin({
       sessions: [cliSession],
       seenAt: { 'local:claude:cli': 1000 },
       attention: { unreadAgentCompletionPanes: { [CLI_PANE_KEY]: true } }
     })
     expect(acknowledged).toEqual([])
 
-    sessions.set([{ ...cliSession, status: 'done', alive: false }])
+    marks.stopped([cliSession])
 
     expect(acknowledged).toEqual([[CLI_PANE_KEY]])
-    expect(attention.get().unreadAgentCompletionPanes).toEqual({})
   })
 
-  it("gives up the marker a killed agent's pane raises as it reports the exit", () => {
-    const { sessions, acknowledged, raiseCompletionMarker } = startJoin({
+  it('marks a stopped session seen once its tab is really viewed', () => {
+    const { marks, acknowledgeTab, raiseCompletionMarker } = startJoin({
       sessions: [cliSession],
-      seenAt: { 'local:claude:cli': 1000 }
+      seenAt: { 'local:claude:cli': 500 }
     })
-
-    sessions.set([])
+    marks.stopped([cliSession])
     raiseCompletionMarker(CLI_PANE_KEY)
 
-    expect(acknowledged).toEqual([[CLI_PANE_KEY]])
+    acknowledgeTab(CLI_PANE_KEY, 3000)
+
+    expect(marks.getState().seenAt).toEqual({ 'local:claude:cli': 1000 })
   })
 
-  it('keeps the marker of a pane where another agent runs after the first one ended', () => {
-    const { sessions, attention, acknowledged, raiseCompletionMarker } = startJoin({
+  it('keeps the marker of a pane where another agent runs after the stopped one', () => {
+    const { attention, marks, acknowledged, raiseCompletionMarker } = startJoin({
       sessions: [cliSession],
       seenAt: { 'local:claude:cli': 1000 }
     })
 
-    sessions.set([])
+    marks.stopped([cliSession])
     attention.set({ ...attention.get(), agentStatusByPaneKey: { [CLI_PANE_KEY]: true } })
     raiseCompletionMarker(CLI_PANE_KEY)
 
     expect(acknowledged).toEqual([])
   })
 
-  it("keeps a chat tab's completion marker when its agent process ends", () => {
-    const { sessions, acknowledged } = startJoin({
+  it('keeps the marker a pane raises a minute after its agent was stopped', () => {
+    let now = 10_000
+    const { marks, acknowledged, raiseCompletionMarker } = startJoin({
+      sessions: [cliSession],
+      seenAt: { 'local:claude:cli': 1000 },
+      now: () => now
+    })
+
+    marks.stopped([cliSession])
+    now += 60_001
+    raiseCompletionMarker(CLI_PANE_KEY)
+
+    expect(acknowledged).toEqual([])
+  })
+
+  it("keeps a chat tab's completion marker when Seal stops its agent", () => {
+    const { sessions, marks, acknowledged } = startJoin({
       sessions: [chatSession],
       seenAt: { 'local:claude:chat': 1000 },
       attention: { unreadAgentCompletionPanes: { [CHAT_PANE_KEY]: true } }
     })
 
+    marks.stopped([chatSession])
     sessions.set([{ ...chatSession, status: 'done', alive: false }])
 
     expect(acknowledged).toEqual([])

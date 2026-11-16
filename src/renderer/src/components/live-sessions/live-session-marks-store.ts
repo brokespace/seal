@@ -15,6 +15,8 @@ export type LiveSessionMarksState = {
   seenAt: Readonly<Record<string, number>>
 }
 
+type StoppedSession = Pick<LiveSession, 'id' | 'alive' | 'surface' | 'inputRoutes'>
+
 /** Keeps the store's read marks in step with another surface's own; returns its stop function. */
 export type LiveSessionMarksJoin = (store: LiveSessionMarksStore) => () => void
 
@@ -43,6 +45,7 @@ function restoreSeen(): Record<string, number> {
 export class LiveSessionMarksStore {
   private state: LiveSessionMarksState
   private readonly listeners = new Set<() => void>()
+  private readonly stopListeners = new Set<(sessions: readonly StoppedSession[]) => void>()
   private nonce = 0
   private join: LiveSessionMarksJoin | null
 
@@ -105,6 +108,19 @@ export class LiveSessionMarksStore {
     const seenAt = Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, MAX_SEEN))
     this.set({ seenAt })
     this.saveSeen()
+  }
+
+  /** Seal stopped these sessions because the user asked it to, as each was when it was asked. */
+  stopped(sessions: readonly StoppedSession[]): void {
+    this.startJoin()
+    for (const listener of this.stopListeners) {
+      listener(sessions)
+    }
+  }
+
+  readonly onStopped = (listener: (sessions: readonly StoppedSession[]) => void): (() => void) => {
+    this.stopListeners.add(listener)
+    return () => this.stopListeners.delete(listener)
   }
 
   /** The same session under a new id keeps its read mark, picks and highlight. */

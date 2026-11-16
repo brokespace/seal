@@ -28,18 +28,22 @@ export type LiveSessionTabAttentionJoinDeps = {
     subscribe: Subscribe
     acknowledgeAgents: (paneKeys: string[]) => void
   }
-  marks: Pick<LiveSessionMarksStore, 'getState' | 'subscribe' | 'markSeen'>
+  marks: Pick<LiveSessionMarksStore, 'getState' | 'subscribe' | 'markSeen' | 'onStopped'>
   now?: () => number
 }
 
-/** A pane's own exit report can raise the completion marker this long after its agent is gone. */
-const ENDED_AGENT_MARKER_MS = 60_000
+/** A pane's own exit report can raise the completion marker this long after its agent was stopped. */
+const STOPPED_AGENT_MARKER_MS = 60_000
+
+/** A terminal pane whose agent Seal stopped for the user, while its exit report may still come. */
+type StoppedAgent = { sessionId: string; at: number; rowGone: boolean }
 
 /**
  * A session that runs in a Seal pane is read in one place and counts as read in the other: its
  * tab, once viewed, marks the record seen; the record, once seen in a session view, acknowledges
- * the tab's attention. A terminal pane whose agent has ended gives its completion marker up.
- * Returns the stop function.
+ * the tab's attention. A terminal pane whose agent the user had Seal stop gives up the completion
+ * marker that stop raises; an agent that exits or crashes by itself keeps its marker and its
+ * unread row. Returns the stop function.
  */
 export function joinLiveSessionMarksWithTabAttention({
   sessions,
@@ -48,65 +52,86 @@ export function joinLiveSessionMarksWithTabAttention({
   now = Date.now
 }: LiveSessionTabAttentionJoinDeps): () => void {
   let lastSessions: unknown = undefined
-  let runningIn = new Set<string>()
-  let lastRunning: unknown = undefined
-  const endedAt = new Map<string, number>()
+  const stopped = new Map<string, StoppedAgent>()
+  /** The acknowledgement each release left on its pane: nobody viewed the tab for it. */
+  const releasedAt = new Map<string, number>()
   let releasing = false
 
-  const noteEndedAgents = (): void => {
-    const listed = sessions.get()
-    if (listed === lastRunning) {
-      return
+  const runsAnotherAgent = (paneKey: string, agent: StoppedAgent, hasRow: boolean): boolean => {
+    if (hasRow && agent.rowGone) {
+      return true
     }
-    lastRunning = listed
-    const running = new Set<string>()
-    for (const session of listed) {
+    return sessions.get().some((session) => {
       const surface = liveSessionSurfaceOf(session)
-      // A chat's tab still holds the unread reply after its agent process is reaped.
-      if (surface.kind === 'cli' && isActiveLiveSession(session)) {
-        running.add(surface.paneKey)
-      }
-    }
-    for (const paneKey of runningIn) {
-      if (!running.has(paneKey)) {
-        endedAt.set(paneKey, now())
-      }
-    }
-    for (const paneKey of running) {
-      endedAt.delete(paneKey)
-    }
-    runningIn = running
+      return (
+        surface.kind === 'cli' &&
+        surface.paneKey === paneKey &&
+        session.id !== agent.sessionId &&
+        isActiveLiveSession(session)
+      )
+    })
   }
 
-  const releaseEndedAgentMarkers = (): void => {
-    noteEndedAgents()
-    if (endedAt.size === 0 || releasing) {
+  const releaseStoppedAgentMarkers = (): void => {
+    if (stopped.size === 0 || releasing) {
       return
     }
     const attention = tabAttention.get()
     const paneKeys: string[] = []
-    for (const [paneKey, at] of endedAt) {
-      // Another agent runs in the pane now, or the marker would be a later one's.
-      if (attention.agentStatusByPaneKey[paneKey] || now() - at > ENDED_AGENT_MARKER_MS) {
-        endedAt.delete(paneKey)
-      } else if (attention.unreadAgentCompletionPanes[paneKey]) {
+    for (const [paneKey, agent] of stopped) {
+      const hasRow = Boolean(attention.agentStatusByPaneKey[paneKey])
+      // A marker raised now would be a later agent's, or comes too late to be this stop's.
+      if (now() - agent.at > STOPPED_AGENT_MARKER_MS || runsAnotherAgent(paneKey, agent, hasRow)) {
+        stopped.delete(paneKey)
+        continue
+      }
+      agent.rowGone ||= !hasRow
+      if (attention.unreadAgentCompletionPanes[paneKey]) {
         paneKeys.push(paneKey)
       }
     }
-    if (paneKeys.length > 0) {
-      releasing = true
-      try {
-        tabAttention.acknowledgeAgents(paneKeys)
-      } finally {
-        releasing = false
+    if (paneKeys.length === 0) {
+      return
+    }
+    const before = attention.acknowledgedAgentsByPaneKey
+    releasing = true
+    try {
+      tabAttention.acknowledgeAgents(paneKeys)
+    } finally {
+      releasing = false
+    }
+    const after = tabAttention.get().acknowledgedAgentsByPaneKey
+    for (const paneKey of paneKeys) {
+      if (after[paneKey] !== undefined && after[paneKey] !== before[paneKey]) {
+        releasedAt.set(paneKey, after[paneKey])
       }
     }
+  }
+
+  const noteStopped: Parameters<LiveSessionMarksStore['onStopped']>[0] = (ended) => {
+    const attention = tabAttention.get()
+    for (const session of ended) {
+      const surface = liveSessionSurfaceOf(session)
+      // An agent already gone reports no exit; a chat's tab still holds the reply it stopped on.
+      if (session.alive && surface.kind === 'cli') {
+        stopped.set(surface.paneKey, {
+          sessionId: session.id,
+          at: now(),
+          rowGone: !attention.agentStatusByPaneKey[surface.paneKey]
+        })
+      }
+    }
+    releaseStoppedAgentMarkers()
   }
   let lastAcknowledged: unknown = undefined
   let lastSeenAt = marks.getState().seenAt
   let markingFromTab = false
 
   const markViewedTabsSeen = (): void => {
+    // Mid-release the acknowledgement is not yet known to be the release's own.
+    if (releasing) {
+      return
+    }
     const listed = sessions.get()
     const acknowledged = tabAttention.get().acknowledgedAgentsByPaneKey
     if (listed === lastSessions && acknowledged === lastAcknowledged) {
@@ -122,7 +147,13 @@ export function joinLiveSessionMarksWithTabAttention({
         }
         const paneKey = liveSessionPaneKeyOf(session)
         const acknowledgedAt = paneKey === null ? undefined : acknowledged[paneKey]
-        if (acknowledgedAt !== undefined && acknowledgedAt >= session.lastActivityAt) {
+        // A release acknowledges the pane without anybody having viewed its tab.
+        if (
+          paneKey !== null &&
+          acknowledgedAt !== undefined &&
+          acknowledgedAt !== releasedAt.get(paneKey) &&
+          acknowledgedAt >= session.lastActivityAt
+        ) {
           marks.markSeen(session.id, session.lastActivityAt)
         }
       }
@@ -164,13 +195,14 @@ export function joinLiveSessionMarksWithTabAttention({
   }
 
   const onStoresChanged = (): void => {
-    releaseEndedAgentMarkers()
+    releaseStoppedAgentMarkers()
     markViewedTabsSeen()
   }
   const stops = [
     sessions.subscribe(onStoresChanged),
     tabAttention.subscribe(onStoresChanged),
-    marks.subscribe(acknowledgeSeenTabs)
+    marks.subscribe(acknowledgeSeenTabs),
+    marks.onStopped(noteStopped)
   ]
   onStoresChanged()
   return () => {
