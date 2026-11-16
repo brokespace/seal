@@ -131,6 +131,18 @@ describe('agent session launch directory', () => {
     expect(resolveWorkspacePath).not.toHaveBeenCalled()
   })
 
+  it('restarts a worktree chat at its workspace when its stored folder is an older build pin', async () => {
+    const worktreeRoot = await directory('worktree')
+    const founded = await reserve(WORKTREE)
+    const record = { ...founded, launchDirectory: join(root, 'old-directory') }
+    const resolveWorkspacePath = vi.fn(async () => worktreeRoot)
+
+    await expect(
+      resolveAgentSessionLaunchDirectory({ store, resolveWorkspacePath }, record)
+    ).resolves.toBe(worktreeRoot)
+    expect(resolveWorkspacePath).toHaveBeenCalledWith(WORKTREE.workspaceId)
+  })
+
   it('pins a legacy floating record once, so a later setting change cannot move it', async () => {
     const current = await directory('floating-current')
     const later = await directory('floating-later')

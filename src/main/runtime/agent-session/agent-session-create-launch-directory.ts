@@ -7,6 +7,7 @@ import {
   normalizeExistingPath
 } from '../../ipc/filesystem/access/filesystem-path-containment'
 import { getStructuredAgentSessionHost } from '../../native-chat/agent-session-wire/host/structured-agent-session-registry'
+import { agentSessionPinnedLaunchDirectory } from './records/agent-session-record-launch-directory'
 import type { StructuredAgentSessionCreateIntentInput } from './structured-agent-session-create-adoption'
 
 async function existingDirectoryRealPath(path: string): Promise<string | null> {
@@ -53,7 +54,8 @@ export async function resolveStructuredAgentSessionCreateLaunchDirectory(
   const records = getStructuredAgentSessionHost()?.deps.store
   // A copied conversation is saved under its source's folder, so the fork runs there too.
   if (input.forkFrom) {
-    return records?.getRecord(input.forkFrom.sessionId)?.launchDirectory
+    const source = records?.getRecord(input.forkFrom.sessionId)
+    return source ? agentSessionPinnedLaunchDirectory(source) : undefined
   }
   if (!input.launchDirectory) {
     return undefined
@@ -61,6 +63,6 @@ export async function resolveStructuredAgentSessionCreateLaunchDirectory(
   // A replayed create keeps the folder proven at founding; refusing it now would disown a live chat.
   const founded = records?.getRecord(input.envelope.sessionId)
   return founded
-    ? founded.launchDirectory
+    ? agentSessionPinnedLaunchDirectory(founded)
     : resolveWorkspaceLaunchDirectory(await resolveWorkspacePath(), input.launchDirectory)
 }

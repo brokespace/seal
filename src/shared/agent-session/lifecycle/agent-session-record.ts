@@ -2,6 +2,7 @@ import { isOptionalUsageLimitContinueCancel } from './agent-session-usage-limit-
 import type { AgentSessionDeathEvidence } from './agent-session-death-evidence'
 import { isAgentSessionRewindRecord, type AgentSessionRewindRecord } from './agent-session-rewind'
 import { isAgentSessionLaunchArgs } from './agent-session-launch-args'
+import { isOptionalAgentSessionLaunchDirectory } from './agent-session-launch-directory'
 import { isAgentSessionConversationName } from '../agent-session-conversation-name'
 import {
   isPersistedAgentSessionHandoffStage,
@@ -31,7 +32,6 @@ import { isNonNegativeSafeInteger } from '../../ssh-retained-payload-limits'
 import {
   isAgentSessionAccountHome,
   isOptionalAgentSessionLaunchedAccount,
-  MAX_PATH_LENGTH,
   type AgentSessionAccountHome,
   type AgentSessionLaunchedAccount
 } from './agent-session-account-home'
@@ -125,8 +125,10 @@ export type AgentSessionRecord = {
   launchedAccount?: AgentSessionLaunchedAccount
   /** Optional host-written construction observation; checked independently of record readability. */
   acquiredAccount?: unknown
-  /** Initial launch directory in host path syntax. Floating sessions resume here; worktree/folder IDs resolve their durable location. */
+  /** Initial launch directory in host path syntax. Floating sessions resume here; worktree/folder IDs resolve their durable location unless `launchDirectoryInWorkspace` is set. */
   launchDirectory?: string
+  /** The host founded this worktree/folder chat in `launchDirectory`, a folder inside its workspace, so it resumes there. Absent, a stored folder is an older build's pin and the workspace id decides. */
+  launchDirectoryInWorkspace?: true
   /** Provider options the user chose, replayed whenever a new owner starts the session. */
   options?: Record<string, string>
   /** The permission mode the user chose; Orca's, so a provider's options answer never replaces it. */
@@ -318,8 +320,7 @@ export function isPersistedAgentSessionObservationRecord(
       isStructuredAgentId(record.provider) &&
       isAgentSessionAccountHome(record.accountHome) &&
       isOptionalAgentSessionLaunchedAccount(record.launchedAccount) &&
-      (record.launchDirectory === undefined ||
-        isBoundedString(record.launchDirectory, MAX_PATH_LENGTH)) &&
+      isOptionalAgentSessionLaunchDirectory(record) &&
       (record.options === undefined || isAgentSessionOptions(record.options)) &&
       (record.permissionMode === undefined ||
         isBoundedString(record.permissionMode, MAX_ID_LENGTH)) &&
