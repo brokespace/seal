@@ -44,6 +44,8 @@ function machine(clock: () => number = () => NOW) {
     down: boolean
     /** The scan's shell dies before it lists a process. */
     cutShort: boolean
+    /** The scan's shell dies after the process list, before any transcript. */
+    cutAfterProcesses: boolean
     /** The machine left the list of connected machines. */
     disconnected: boolean
   } = {
@@ -53,6 +55,7 @@ function machine(clock: () => number = () => NOW) {
     panes: [],
     down: false,
     cutShort: false,
+    cutAfterProcesses: false,
     disconnected: false
   }
   const host: LiveSessionHost = {
@@ -71,7 +74,7 @@ function machine(clock: () => number = () => NOW) {
           ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`, '@@AGE 4100 900-00:00:00']
           : []),
         '@@PS',
-        '@@DONE'
+        ...(state.cutAfterProcesses ? [] : ['@@DONE'])
       ].join('\n')
     },
     transcriptFiles: async () => state.files
@@ -268,6 +271,19 @@ describe('a machine that stops answering', () => {
 
     state.cutShort = true
     expect(await told()).toEqual({ alive: [true], read: true })
+  })
+
+  // Over SSH the transcripts come from the scan's shell: cut short, it names no agent it did not reach.
+  it('does not count as read on a scan that broke off after the process list', async () => {
+    const { state, registry } = machine()
+    state.running = true
+    state.cutAfterProcesses = true
+    await registry.refresh()
+    expect(registry.hasRead('local:claude:pid-4100')).toBe(false)
+
+    state.cutAfterProcesses = false
+    await registry.refresh()
+    expect(registry.hasRead('local:claude:pid-4100')).toBe(true)
   })
 
   it('tells its listeners the error is gone when the machine disconnects', async () => {

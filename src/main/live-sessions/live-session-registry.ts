@@ -259,7 +259,8 @@ export class LiveSessionRegistry {
         state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
       }
-      state.read ||= told
+      // Cut short after the process list, it names no agent whose transcript it did not reach.
+      state.read ||= result.complete
       state.scans++
       state.failures = 0
       this.deps.onHostScanned?.(state.host, state.sessions)
