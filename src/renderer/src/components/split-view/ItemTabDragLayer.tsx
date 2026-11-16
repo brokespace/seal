@@ -32,6 +32,17 @@ const NO_COLLISIONS: CollisionDetection = () => []
 // The pointer has to reach the pane under the ghost.
 const GHOST_STYLE: React.CSSProperties = { pointerEvents: 'none' }
 
+/** A release the window never saw arrives as a move with no button down; the sensor ends on a cancel. */
+function cancelTabDragOnButtonlessMove(): () => void {
+  const onMove = (move: PointerEvent): void => {
+    if (move.buttons === 0) {
+      document.dispatchEvent(new PointerEvent('pointercancel'))
+    }
+  }
+  window.addEventListener('pointermove', onMove)
+  return () => window.removeEventListener('pointermove', onMove)
+}
+
 function ItemTabDragPreview({ item }: { item: SplitViewItem }): React.JSX.Element {
   const resolved = useResolvedSplitViewItem(item)
   const title = useSplitViewItemTitle(item, resolved)
@@ -81,7 +92,12 @@ export function ItemTabDragLayer({ children }: { children: React.ReactNode }): R
         }
         tabDragActiveRef.current = true
         draggedRef.current = data.item
-        endSplitViewDragRef.current = beginSplitViewDrag()
+        const endSplitViewDrag = beginSplitViewDrag()
+        const stopCancelOnButtonlessMove = cancelTabDragOnButtonlessMove()
+        endSplitViewDragRef.current = () => {
+          stopCancelOnButtonlessMove()
+          endSplitViewDrag()
+        }
         clearDragStateRef.current = clearDragState
         installMissedEndFallback()
         setDragged(data.item)
