@@ -6,7 +6,7 @@ import {
 } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSessionStatus } from '../../../../../shared/live-sessions/live-session-types'
 
-/** The text color that goes with each dot; see docs/session-status.md for the color code. */
+/** The text color that goes with each dot; see docs/design/agent-status.md for the color code. */
 export const LIVE_SESSION_TONE_TEXT: Record<LiveSessionStatusTone, string> = {
   busy: 'text-agent-working',
   waiting: 'text-agent-working',

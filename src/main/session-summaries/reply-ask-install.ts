@@ -18,7 +18,7 @@ export type ReplyAskClassifier = {
 }
 
 /**
- * The fallback of session status detection (docs/session-status.md), watching this host's sessions
+ * The fallback of session status detection (docs/design/agent-status.md), watching this host's sessions
  * until disposed. It keeps a cache file of its own.
  */
 export function createReplyAskClassifier(options: {

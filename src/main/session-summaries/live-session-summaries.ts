@@ -1,10 +1,10 @@
 import type { AgentPaneChange } from '../agent-hooks/observations/agent-transition-detector'
 import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
+import { isSettledLiveSessionStatus } from '../../shared/live-sessions/live-session-status'
 import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
 import type {
   LiveSession,
-  LiveSessionRegistryEvent,
-  LiveSessionStatus
+  LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import type { SessionSummariesListResult } from '../../shared/session-summaries/session-summary-contracts'
 import { structuredSessionIdFromNotificationPane } from '../../shared/structured-session-notification-pane'
@@ -54,17 +54,8 @@ type Pane = {
 
 type PaneStop = { paneKey: string; row: AgentStatusIpcPayload }
 
-/** Stopped for its user, or parked on a subagent or background task: the moments a summary describes. */
-const SUMMARIZED_STATUSES: ReadonlySet<LiveSessionStatus> = new Set([
-  'waiting-input',
-  'your-turn',
-  'idle',
-  'waiting-subagent',
-  'waiting-task'
-])
-
 function stopped(session: LiveSession): boolean {
-  return SUMMARIZED_STATUSES.has(session.status)
+  return isSettledLiveSessionStatus(session.status)
 }
 
 /**

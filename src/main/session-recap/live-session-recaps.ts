@@ -1,7 +1,10 @@
+import {
+  isSettledLiveSessionStatus,
+  isTurnRunningLiveSessionStatus
+} from '../../shared/live-sessions/live-session-status'
 import type {
   LiveSession,
-  LiveSessionRegistryEvent,
-  LiveSessionStatus
+  LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import {
   openRecapItems,
@@ -33,16 +36,6 @@ export type LiveSessionRecapsDeps = {
   now?: () => number
 }
 
-/** The moments a recap is brought up to date at once: a turn has ended, or parked. */
-const SETTLED: ReadonlySet<LiveSessionStatus> = new Set([
-  'waiting-input',
-  'your-turn',
-  'idle',
-  'waiting-subagent',
-  'waiting-task'
-])
-/** The turn is still the agent's own: recapped as it goes, by what it has said. */
-const AT_WORK: ReadonlySet<LiveSessionStatus> = new Set(['working', 'running-shell'])
 const SETTLE_DELAY_MS = 2_500
 /** One automatic pass per session in this long; a stop inside it is picked up when it ends. */
 export const RECAP_AUTO_INTERVAL_MS = 4 * 60_000
@@ -97,14 +90,14 @@ export class LiveSessionRecaps {
     }
     const { session } = event
     const readable = session.alive && this.deps.readable(session)
-    if (readable && AT_WORK.has(session.status)) {
+    if (readable && isTurnRunningLiveSessionStatus(session.status)) {
       const tracked = this.track(session.id)
       tracked.stamp = null
       tracked.workingSince ??= this.now()
       this.scheduleWorking(session.id, tracked)
       return
     }
-    if (!readable || !SETTLED.has(session.status)) {
+    if (!readable || !isSettledLiveSessionStatus(session.status)) {
       const tracked = this.tracked.get(session.id)
       if (tracked) {
         tracked.stamp = null

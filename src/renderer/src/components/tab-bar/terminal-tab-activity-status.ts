@@ -1,7 +1,8 @@
-import {
-  readAgentAttentionUnreadReason,
-  type ReadableAgentAttentionUnread
-} from '@/attention/agent-attention-contract'
+export {
+  hasUnreadAgentCompletionForTerminalTab,
+  resetUnreadAgentCompletionTabIdsCacheForTest,
+  terminalTabHasUnreadActivity
+} from './terminal-tab-unread-activity'
 import {
   isAgentStatusFresh,
   AGENT_STATUS_STALE_AFTER_MS
@@ -9,6 +10,11 @@ import {
 import { resolveWorktreeStatus } from '@/lib/workspace/activity/worktree-status'
 
 import type { AgentStatusEntry } from '../../../../shared/agent-status/contracts/agent-status-types'
+import {
+  applyLiveSessionPaneFlags,
+  type LiveSessionPaneStatuses
+} from '../../../../shared/live-sessions/live-session-pane-activity'
+import { currentLiveSessionPaneStatuses } from '../live-sessions/links/live-session-pane-statuses'
 import { agentVerdictDisplayMark } from '../../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
 import { resolveProgramStatusPresentation } from '../../../../shared/program-status/presentation'
 import {
@@ -43,6 +49,7 @@ export type TerminalTabActivityFlags = AgentPaneActivityFlags & {
 type FlagsCache = {
   agentStatusByPaneKey: Record<string, AgentStatusEntry> | undefined
   agentStatusEpoch: number | undefined
+  sessionStatuses: LiveSessionPaneStatuses
   flagsByTabId: Map<string, TerminalTabActivityFlags>
 }
 
@@ -51,13 +58,15 @@ let flagsCache: FlagsCache | null = null
 
 export function getTerminalTabActivityFlags(
   agentStatusByPaneKey: Record<string, AgentStatusEntry> | undefined,
-  agentStatusEpoch: number | undefined
+  agentStatusEpoch: number | undefined,
+  sessionStatuses: LiveSessionPaneStatuses = currentLiveSessionPaneStatuses()
 ): Map<string, TerminalTabActivityFlags> {
   // Invalidate on freshness epoch as well as map identity; stale boundaries advance without replacing hook rows.
   if (
     flagsCache &&
     flagsCache.agentStatusByPaneKey === agentStatusByPaneKey &&
-    flagsCache.agentStatusEpoch === agentStatusEpoch
+    flagsCache.agentStatusEpoch === agentStatusEpoch &&
+    flagsCache.sessionStatuses === sessionStatuses
   ) {
     return flagsCache.flagsByTabId
   }
@@ -68,6 +77,14 @@ export function getTerminalTabActivityFlags(
     const identity = parseAgentStatusPaneKey(entry.paneKey || paneKey)
     if (!identity) {
       continue
+    }
+    const sessionStatus = sessionStatuses.get(entry.paneKey || paneKey)
+    if (sessionStatus !== undefined) {
+      const flags = getOrCreateTerminalTabActivityFlags(flagsByTabId, identity.tabId)
+      if (applyLiveSessionPaneFlags(flags, sessionStatus)) {
+        flags.paneIds.add(identity.paneId)
+        continue
+      }
     }
     if (entry.restoredUnconfirmed) {
       const flags = getOrCreateTerminalTabActivityFlags(flagsByTabId, identity.tabId)
@@ -89,7 +106,7 @@ export function getTerminalTabActivityFlags(
     recordPaneProgramProgress(flags, entry)
   }
 
-  flagsCache = { agentStatusByPaneKey, agentStatusEpoch, flagsByTabId }
+  flagsCache = { agentStatusByPaneKey, agentStatusEpoch, sessionStatuses, flagsByTabId }
   return flagsByTabId
 }
 
@@ -162,6 +179,8 @@ type TerminalTabActivityInput = {
   runtimePaneTitlesByTabId?: Record<string, Record<number, string>>
   ptyIdsByTabId?: Record<string, string[]>
   terminalLayout?: TerminalLayoutSnapshot
+  /** Pane sessions whose status discovery decided; the registry's own by default. */
+  sessionStatuses?: LiveSessionPaneStatuses
 }
 
 /** Resolve fresh hook state and live title fallback like the sidebar, returning a primitive to avoid unrelated rerenders. */
@@ -171,9 +190,14 @@ export function resolveTerminalTabActivityStatus({
   agentStatusEpoch,
   runtimePaneTitlesByTabId,
   ptyIdsByTabId,
-  terminalLayout
+  terminalLayout,
+  sessionStatuses
 }: TerminalTabActivityInput): TerminalTabActivityStatus {
-  const flags = getTerminalTabActivityFlags(agentStatusByPaneKey, agentStatusEpoch).get(tab.id)
+  const flags = getTerminalTabActivityFlags(
+    agentStatusByPaneKey,
+    agentStatusEpoch,
+    sessionStatuses
+  ).get(tab.id)
   return resolveWorktreeStatus({
     tabs: [tab],
     browserTabs: [],
@@ -286,63 +310,6 @@ export function terminalTabActivityToAgentDotState(
   }
 }
 
-/** Bell or unacked agent completion — same sources the tab strip and floating launcher use. */
-export function terminalTabHasUnreadActivity({
-  terminalTabId,
-  unreadTerminalTabs,
-  unreadAgentCompletionPanes
-}: {
-  terminalTabId: string
-  unreadTerminalTabs: Record<string, ReadableAgentAttentionUnread>
-  unreadAgentCompletionPanes: Record<string, ReadableAgentAttentionUnread>
-}): boolean {
-  return (
-    readAgentAttentionUnreadReason(unreadTerminalTabs[terminalTabId]) !== null ||
-    hasUnreadAgentCompletionForTerminalTab(unreadAgentCompletionPanes, terminalTabId)
-  )
-}
-
-// Why: production writes replace this map; WeakMap supports retained snapshots without pinning them.
-let unreadAgentCompletionTabIdsBySnapshot = new WeakMap<
-  Record<string, ReadableAgentAttentionUnread>,
-  ReadonlySet<string>
->()
-
-function getUnreadAgentCompletionTabIds(
-  unreadAgentCompletionPanes: Record<string, ReadableAgentAttentionUnread>
-): ReadonlySet<string> {
-  const cached = unreadAgentCompletionTabIdsBySnapshot.get(unreadAgentCompletionPanes)
-  if (cached) {
-    return cached
-  }
-
-  // Why: every mounted tab runs this selector per store write; index each immutable marker snapshot once.
-  const tabIds = new Set<string>()
-  for (const paneKey of Object.keys(unreadAgentCompletionPanes)) {
-    if (!unreadAgentCompletionPanes[paneKey]) {
-      continue
-    }
-    const separatorIndex = paneKey.indexOf(':')
-    tabIds.add(separatorIndex === -1 ? paneKey : paneKey.slice(0, separatorIndex))
-  }
-  unreadAgentCompletionTabIdsBySnapshot.set(unreadAgentCompletionPanes, tabIds)
-  return tabIds
-}
-
-/** Match pane-level unread completion markers to their owning terminal tab. */
-export function hasUnreadAgentCompletionForTerminalTab(
-  unreadAgentCompletionPanes: Record<string, ReadableAgentAttentionUnread> | undefined,
-  tabId: string
-): boolean {
-  return unreadAgentCompletionPanes
-    ? getUnreadAgentCompletionTabIds(unreadAgentCompletionPanes).has(tabId)
-    : false
-}
-
 export function resetTerminalTabActivityFlagsCacheForTest(): void {
   flagsCache = null
-}
-
-export function resetUnreadAgentCompletionTabIdsCacheForTest(): void {
-  unreadAgentCompletionTabIdsBySnapshot = new WeakMap()
 }

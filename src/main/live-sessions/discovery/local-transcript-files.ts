@@ -6,6 +6,7 @@ import type { AiVaultScanOptions, FileWithMtime } from '../../ai-vault/session-s
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery-output'
 import { localSubagentFiles } from './local-subagent-files'
+import { TURN_TAIL_WINDOW_FACTOR, turnTail } from './transcript-turn-tail'
 
 export type TranscriptFileRequest = {
   nowMs: number
@@ -158,10 +159,10 @@ async function readEnds(
       const { bytesRead } = await handle.read(buffer, 0, length, from)
       return buffer.subarray(0, bytesRead).toString('utf8')
     }
-    const tailLength = Math.min(size, request.tailBytes)
+    const windowLength = Math.min(size, request.tailBytes * TURN_TAIL_WINDOW_FACTOR)
     return {
       head: withHead ? await read(0, Math.min(size, request.headBytes)) : null,
-      tail: await read(size - tailLength, tailLength)
+      tail: turnTail(await read(size - windowLength, windowLength), request.tailBytes)
     }
   } catch {
     return null

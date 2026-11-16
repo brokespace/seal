@@ -77,6 +77,25 @@ describe('LiveSessionStatusHold', () => {
     })
   })
 
+  it('keeps what a waiting session waits on while it holds', () => {
+    const hold = new LiveSessionStatusHold()
+    const watcher = (status: 'running' | 'failed') => ({
+      subagents: [],
+      todos: [],
+      tasks: [{ id: 'bash_1', label: 'tail -F run.log', status, startedAt: T0, summary: null }]
+    })
+    hold.settle({ ...session('waiting-task'), activity: watcher('running') }, 1, T0)
+    const held = hold.settle(
+      { ...session('your-turn'), activity: watcher('failed') },
+      2,
+      T0 + 3_000
+    )
+    expect([held.status, held.activity?.tasks.map((task) => task.status)]).toEqual([
+      'waiting-task',
+      ['running']
+    ])
+  })
+
   it('does not wait for a second scan on a republish between scans', () => {
     expect(
       shown([

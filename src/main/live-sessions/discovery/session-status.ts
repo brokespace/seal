@@ -27,6 +27,9 @@ const REVIEWED_PROMPT_AFTER_MS = 20_000
  * the next move is the user's, or it has had no turn at all.
  */
 export function restingStatus(turn: TranscriptTurn | undefined): LiveSessionStatus {
+  if (turn?.phase === 'errored') {
+    return 'errored'
+  }
   if (turn?.phase === 'input-requested') {
     return 'waiting-input'
   }
@@ -36,18 +39,29 @@ export function restingStatus(turn: TranscriptTurn | undefined): LiveSessionStat
   return 'idle'
 }
 
+/** A question or an approval the transcript holds open until its answer is written after it. */
+function heldPrompt(turn: TranscriptTurn | undefined): LiveSessionStatus | null {
+  if (turn?.phase === 'input-requested') {
+    return 'waiting-input'
+  }
+  return turn?.phase === 'approval-requested' ? 'needs-permission' : null
+}
+
 export function turnStatus(
   turn: TranscriptTurn | undefined,
   running: boolean,
-  sinceLastWriteMs: number
+  sinceLastWriteMs: number,
+  /** The host listed its processes and none of them can still be holding this session. */
+  gone = false
 ): LiveSessionStatus {
   if (turn?.phase === 'errored') {
     return 'errored'
   }
-  // The transcript holds a question until an answer or the end of the turn is written after it,
-  // so an unseen process (a host that lists none, a scan that missed it) does not end it.
-  if (turn?.phase === 'input-requested') {
-    return 'waiting-input'
+  // Nothing is written while a prompt waits, so a quiet transcript does not end it: only a host
+  // that listed its processes and has nobody left to answer does.
+  const held = heldPrompt(turn)
+  if (held && !gone) {
+    return held
   }
   if (!running) {
     return 'done'
@@ -57,7 +71,8 @@ export function turnStatus(
     case 'tool-pending':
       return 'working'
     case 'approval-requested':
-      return 'needs-permission'
+    case 'input-requested':
+      return held!
     case 'turn-ended':
       return !turn.settled && sinceLastWriteMs < UNSETTLED_REPLY_MS
         ? 'working'
