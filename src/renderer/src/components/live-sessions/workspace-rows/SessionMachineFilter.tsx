@@ -113,55 +113,64 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
           {rows.searchable ? (
             <HostListSearchField value={rows.query} onChange={rows.setQuery} inMenu />
           ) : null}
-          {/* A fixed height while searching: a menu that shrinks moves to the button's other side and drops the typing. */}
+          {/* One size while searching, note included: a menu that resizes moves under the pointer and drops the typing. */}
           <div
-            className={cn('overflow-y-auto scrollbar-sleek', rows.searchable ? 'h-80' : 'max-h-80')}
+            className={cn(
+              'flex flex-col',
+              rows.searchable
+                ? 'h-[min(23rem,calc(var(--radix-dropdown-menu-content-available-height)_-_6rem))]'
+                : 'max-h-80'
+            )}
           >
-            {rows.shown.map(({ option: machine, label: name }) => (
-              <DropdownMenuRadioItem
-                key={machine.hostId}
-                value={machine.hostId}
-                data-machine-filter-option={machine.hostId}
-                data-machine-filter-error={machine.error === null ? undefined : ''}
-                title={machine.error === null ? undefined : scanError(machine)}
-                className="items-start"
-              >
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className="min-w-0 flex-1 truncate"
-                      // A machine known only by its id has no other name to add.
-                      title={
-                        machine.machine.label === machine.hostId ? undefined : machine.machine.label
-                      }
-                    >
-                      {name}
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek">
+              {rows.shown.map(({ option: machine, label: name }) => (
+                <DropdownMenuRadioItem
+                  key={machine.hostId}
+                  value={machine.hostId}
+                  data-machine-filter-option={machine.hostId}
+                  data-machine-filter-error={machine.error === null ? undefined : ''}
+                  title={machine.error === null ? undefined : scanError(machine)}
+                  className="items-start"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="min-w-0 flex-1 truncate"
+                        // A machine known only by its id has no other name to add.
+                        title={
+                          machine.machine.label === machine.hostId
+                            ? undefined
+                            : machine.machine.label
+                        }
+                      >
+                        {name}
+                      </span>
+                      {machine.error === null ? null : (
+                        <TriangleAlert
+                          className="size-3 text-agent-question-text"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {machine.topStatus ? (
+                        <AgentStateDot
+                          state={liveSessionDotState(machine.topStatus)}
+                          title={liveSessionStatusLabel(machine.topStatus)}
+                        />
+                      ) : null}
+                      <span className={COUNT}>{machine.count}</span>
                     </span>
                     {machine.error === null ? null : (
-                      <TriangleAlert
-                        className="size-3 text-agent-question-text"
-                        aria-hidden="true"
-                      />
+                      <span className="text-2xs break-words text-muted-foreground">
+                        {scanError(machine)}
+                      </span>
                     )}
-                    {machine.topStatus ? (
-                      <AgentStateDot
-                        state={liveSessionDotState(machine.topStatus)}
-                        title={liveSessionStatusLabel(machine.topStatus)}
-                      />
-                    ) : null}
-                    <span className={COUNT}>{machine.count}</span>
                   </span>
-                  {machine.error === null ? null : (
-                    <span className="text-2xs break-words text-muted-foreground">
-                      {scanError(machine)}
-                    </span>
-                  )}
-                </span>
-              </DropdownMenuRadioItem>
-            ))}
+                </DropdownMenuRadioItem>
+              ))}
+            </div>
+            <HostListOverflowNote hiddenCount={rows.hiddenCount} />
           </div>
         </DropdownMenuRadioGroup>
-        <HostListOverflowNote hiddenCount={rows.hiddenCount} />
       </DropdownMenuContent>
     </DropdownMenu>
   )
