@@ -13,9 +13,6 @@ import { readLinkableWorkspaces, WorkspaceLinkCatalog } from './workspace-link-c
 import { WorkspaceLinker } from './workspace-linker'
 import { workspacesInUse, workspacesWithTerminals } from './workspaces-in-use'
 
-const LISTING_REFRESH_MS = 30_000
-const SWEEP_INTERVAL_MS = 10_000
-
 export type WorkspaceLink = {
   link: (session: LiveSession) => LiveSession
   /** The registry is built with `link`, so it joins only once it exists. */
@@ -56,18 +53,14 @@ export function installWorkspaceLink(deps: {
     store,
     creation,
     sessions: () => registry?.getSnapshot().sessions ?? [],
+    // Until the workspaces are listed no session is linked, so every project looks empty.
     machineRead: () =>
-      registry?.hasRead(`${LOCAL_HOST_ID}:`) === true && catalog.ageMs() < 2 * LISTING_REFRESH_MS,
+      registry?.hasRead(`${LOCAL_HOST_ID}:`) === true && Number.isFinite(catalog.ageMs()),
     inUse: () => workspacesInUse(store),
     terminalWorkspaces: () => workspacesWithTerminals(runtime),
     onRemoved: () => catalog.refresh(),
     log
   })
-  const every = (ms: number, run: () => void): void => {
-    const timer = setInterval(run, ms)
-    timer.unref?.()
-    stops.push(() => clearInterval(timer))
-  }
   return {
     link: (session) => linker.link(session),
     start(started) {
@@ -89,17 +82,9 @@ export function installWorkspaceLink(deps: {
         ),
         () => sweep.stop()
       )
-      every(LISTING_REFRESH_MS, () => {
-        // The sweep removes nothing on a stale listing, so a project left behind keeps it fresh.
-        const watched =
-          started.getSnapshot().sessions.length > 0 ||
-          store.getRepos().some((repo) => repo.autoCreated)
-        if (watched) {
-          void catalog.refresh()
-        }
-      })
-      every(SWEEP_INTERVAL_MS, () => void sweep.run())
       void catalog.refresh()
+      // A project whose sessions left while Seal was closed has no session to announce it.
+      sweep.schedule()
     },
     stop() {
       for (const stop of stops.splice(0)) {

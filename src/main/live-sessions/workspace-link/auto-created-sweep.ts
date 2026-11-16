@@ -10,6 +10,7 @@ import type { WorktreeMeta } from '../../../shared/worktree/meta-types'
 import { readAllWorktreeMetaForRepo } from '../../persistence/host-qualified-worktree-meta'
 import type { Store } from '../../persistence/loading-store/store'
 import {
+  AUTO_CREATED_GRACE_MS,
   autoCreatedVerdict,
   type AutoCreatedFacts,
   type AutoCreatedVerdict
@@ -18,6 +19,8 @@ import type { WorkspaceCreation } from './workspace-creation'
 import { isServedHere } from './workspace-link-catalog'
 
 const SWEEP_DEBOUNCE_MS = 1_000
+/** A project that could not go yet is looked at again, less and less often. */
+const RETRY_MS = { first: 5_000, last: 300_000 }
 
 type AutoCreatedRepo = Repo & { autoCreated: NonNullable<Repo['autoCreated']> }
 
@@ -57,33 +60,58 @@ function workspaceFacts(
 /** Takes away the projects Seal made for sessions once those have left, and keeps the ones the user took up. */
 export class AutoCreatedSweep {
   private readonly emptySince = new Map<string, number>()
-  private timer: ReturnType<typeof setTimeout> | null = null
+  private timer: { handle: ReturnType<typeof setTimeout>; at: number } | null = null
+  private retryMs = RETRY_MS.first
   private sweeping = false
 
   constructor(private readonly deps: AutoCreatedSweepDeps) {}
 
-  schedule(): void {
-    if (this.timer) {
+  /** Sweeps in `ms`, or sooner when a sweep is already due before then. */
+  schedule(ms = SWEEP_DEBOUNCE_MS): void {
+    const at = (this.deps.now ?? Date.now)() + ms
+    if (this.timer && this.timer.at <= at) {
       return
     }
-    this.timer = setTimeout(() => {
+    this.stop()
+    const handle = setTimeout(() => {
       this.timer = null
       void this.run()
-    }, SWEEP_DEBOUNCE_MS)
-    this.timer.unref?.()
+    }, ms)
+    handle.unref?.()
+    this.timer = { handle, at }
   }
 
   stop(): void {
     if (this.timer) {
-      clearTimeout(this.timer)
+      clearTimeout(this.timer.handle)
       this.timer = null
     }
   }
 
-  async run(): Promise<void> {
-    const repos = this.deps.store
+  private autoCreated(): AutoCreatedRepo[] {
+    return this.deps.store
       .getRepos()
       .filter((repo): repo is AutoCreatedRepo => !!repo.autoCreated && isServedHere(repo))
+  }
+
+  /** Comes back for the projects left without a session; none left, no timer. */
+  private rearm(): void {
+    const waiting = this.autoCreated().flatMap((repo) => this.emptySince.get(repo.id) ?? [])
+    if (waiting.length === 0) {
+      this.retryMs = RETRY_MS.first
+      return
+    }
+    const graceLeft = Math.min(...waiting) + AUTO_CREATED_GRACE_MS - (this.deps.now ?? Date.now)()
+    if (graceLeft > 0) {
+      this.schedule(graceLeft)
+      return
+    }
+    this.schedule(this.retryMs)
+    this.retryMs = Math.min(this.retryMs * 2, RETRY_MS.last)
+  }
+
+  async run(): Promise<void> {
+    const repos = this.autoCreated()
     for (const repoId of this.emptySince.keys()) {
       if (!repos.some((repo) => repo.id === repoId)) {
         this.emptySince.delete(repoId)
@@ -118,6 +146,7 @@ export class AutoCreatedSweep {
       this.deps.log?.('[live-sessions] sweep of auto-created projects failed', error)
     } finally {
       this.sweeping = false
+      this.rearm()
     }
   }
 

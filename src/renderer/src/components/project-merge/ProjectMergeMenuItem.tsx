@@ -25,8 +25,8 @@ export function ProjectMergeMenuItem({
   const projects = useAppStore((state) => state.projects)
   const setups = useAppStore((state) => state.projectHostSetups)
   const source = getProjectMergeSource(repo, setups)
-  const targets = source ? getProjectMergeTargets(projects) : []
-  if (!source || targets.length === 0) {
+  const mergeable = source ? getProjectMergeTargets(projects) : []
+  if (!source || mergeable.length === 0) {
     return null
   }
   return (
@@ -36,7 +36,7 @@ export function ProjectMergeMenuItem({
         {t('seal.projectMerge.action', 'Merge into project')}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
-        {targets.map((target) => (
+        {mergeable.map((target) => (
           <DropdownMenuItem
             key={target.id}
             onSelect={() => void mergeProjectInto({ source, sourceLabel: label, target, confirm })}

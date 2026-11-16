@@ -133,6 +133,10 @@ export class WorkspaceLinker {
     const workspaces = this.workspaces()
     let found = this.matches.get(place.key)
     if (found === undefined) {
+      // A folder not seen before may be a worktree made outside Seal since the last listing.
+      if (this.deps.catalog.ageMs() > STALE_LISTING_MS) {
+        void this.deps.catalog.refresh()
+      }
       found = workspaceForSession(
         { hostId: place.hostId, cwd: place.cwd, tabWorktreeId: null },
         workspaces,
