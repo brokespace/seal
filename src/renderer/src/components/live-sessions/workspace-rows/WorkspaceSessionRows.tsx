@@ -13,6 +13,7 @@ import { openAgentSession } from '../open/open-agent-session'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { pickSidebarSessionRow } from './session-row-picking'
+import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from '@/components/sidebar/workspace-actions/context-menu/worktree-context-menu-policy'
 import { useSidebarSessionFilters } from './sidebar-session-filter-store'
 import {
   buildWorkspaceSessionRows,
@@ -22,7 +23,7 @@ import {
 
 export type WorkspaceSessionRowState = Pick<
   LiveSessionRowProps,
-  'account' | 'unread' | 'current' | 'highlighted' | 'picked' | 'machine'
+  'workspaceName' | 'account' | 'unread' | 'current' | 'highlighted' | 'picked' | 'machine'
 >
 
 export type WorkspaceSessionRowListProps = {
@@ -56,7 +57,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
     <LiveSessionRow
       key={session.id}
       session={session}
-      workspaceName={null}
+      // The card above the row names the workspace; the hover preview still does.
       showPlace={false}
       {...props.rowState(session)}
       // The sidebar list is the one Tab stop; arrow keys reach the rows from it.
@@ -71,6 +72,8 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
     <div
       role="group"
       data-workspace-session-rows={props.worktreeId}
+      // Why: the card takes a right-click in the capture phase; this leaves it to the row's own menu.
+      {...{ [WORKTREE_NATIVE_CONTEXT_MENU_ATTR]: '' }}
       aria-label={t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')}
       className={cn('flex min-w-0 flex-col', props.className)}
       onClick={keepFromCard}
@@ -140,8 +143,9 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
   )
   const rowState = useCallback(
     (session: LiveSession): WorkspaceSessionRowState => {
-      const { account, unread, current, highlighted } = sharedRowState(session)
+      const { workspaceName, account, unread, current, highlighted } = sharedRowState(session)
       return {
+        workspaceName,
         account,
         unread,
         current,

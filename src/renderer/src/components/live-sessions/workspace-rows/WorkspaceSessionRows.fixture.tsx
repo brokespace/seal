@@ -109,6 +109,7 @@ function rowState(
   picked: ReadonlySet<string> | null
 ): WorkspaceSessionRowState {
   return {
+    workspaceName: 'shop / checkout-flow',
     account: session.id === 'pinned' ? 'work' : null,
     unread: session.id === 'unread',
     current: session.id === 'waiting-input',
