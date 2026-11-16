@@ -6,6 +6,7 @@ import type {
   RecapJudgeCriterion,
   RecapRequest
 } from '../../shared/session-recap/session-recap-types'
+import { jsonRecord } from '../utility-model/utility-model-http-request'
 import type { RecapPassKind } from './session-recap-budget'
 import {
   RECAP_JUDGE_QUESTION_IDS,
@@ -69,20 +70,15 @@ export function recapJudgeKey(model: string, body: unknown): string {
     .slice(0, 32)
 }
 
-function probability(value: unknown): number | null {
-  const given =
-    typeof value === 'object' && value !== null && 'noul' in value ? value.noul : undefined
-  return typeof given === 'number' && Number.isFinite(given) && given >= 0 && given <= 1
-    ? given
-    : null
-}
-
 /** The probability of yes per question; null unless the reply holds one for every question. */
 export function recapJudgeAnswersIn(answers: unknown): RecapJudgeAnswers | null {
-  const given = (id: RecapJudgeCriterion): number | null =>
-    typeof answers === 'object' && answers !== null && id in answers
-      ? probability((answers as Record<string, unknown>)[id])
+  const all = jsonRecord(answers)
+  const given = (id: RecapJudgeCriterion): number | null => {
+    const value = jsonRecord(all?.[id])?.noul
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1
+      ? value
       : null
+  }
   const [done, didPart, declined, withdrawn, leftUndone] = [
     given('done'),
     given('did_part'),
