@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
+import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import { acquireWebviewsDragPassthrough } from '../browser-pane/host-guest/webview-drag-passthrough'
 
 const MIN_RATIO = 0.15
@@ -162,6 +163,9 @@ export function ResizeHandle({
       className={`tab-group-split-resize-handle ${
         isHorizontal ? 'is-vertical' : 'is-horizontal'
       }${dragging ? ' is-dragging' : ''}`}
+      // A resize leaves the keyboard where it is: a terminal gives it up on any other press outside it.
+      {...{ [KEEPS_FOCUS_ATTRIBUTE]: '' }}
+      onMouseDown={(event) => event.preventDefault()}
       onPointerDown={onPointerDown}
     />
   )
