@@ -193,7 +193,7 @@ Clipping removes more: an agent turn longer than 1,800 characters loses its midd
 
 #### F20. Remote sessions are recapped twice and ticks are not shared
 
-**C.** The desktop recomputes recaps for sessions on a server and never asks the server (`use-session-recap.ts:10,44-45`); a phone paired with the server gets the server's own recap. Ticks and dismissals live in whichever store the client talked to (`docs/session-recap.md:315-316`).
+**C.** The desktop recomputes recaps for sessions on a server and never asks the server (`use-session-recap.ts:10,44-45`); a phone paired with the server gets the server's own recap. Ticks and dismissals live in whichever store the client talked to (`docs/session-recap.md:315-316`). Measured in the app: 3 model requests on the desktop and 3 on the server for the same two turns, and an item ticked on the desktop is not ticked on the server ([evidence](./evidence/e2e/remote-server-session-through-orcad-the-desktop-recaps-it-the-server-only-once-a/where-the-recap-was-computed.json)). A newly installed server has no utility model: the default provider is Cloudflare Workers AI, whose account is saved on the desktop (`src/shared/utility-model/utility-model-selection.ts:26-30`), so until one is configured on the server its own clients get no recap.
 
 ### UI
 
@@ -208,6 +208,20 @@ Clipping removes more: an agent turn longer than 1,800 characters loses its midd
 #### F23. Failures are silent
 
 **C.** RPC errors in the recap hooks are swallowed (`use-session-recap.ts:56,92`). A jump to a message that cannot be found does nothing visible.
+
+#### F25. An open panel does not learn that its recap went stale
+
+**B.** `stale` is computed when the recap is read (`live-session-recaps.ts:162`). The pane reads it when it mounts, when the window gets focus, and when the row's `rev` or `updating` changes (`use-session-recap.ts:62-78`, mounted in `LiveSessionPane.tsx:299`). A turn that ends while the panel is open changes none of these, so the panel keeps the old recap with no note until the next pass lands, up to four minutes later (F6). Showing or hiding the panel on an open session is not a visit, so it starts no pass either. When the note does show, the footer beside it still reads "Updated just now" if the last pass was seconds ago. Seen in the app: [mid-turn-refresh](./evidence/e2e/mid-turn-refresh-on-an-external-Claude-CLI-session-Refresh-mid-turn-shows-the-wo/right-after-the-turn-ends.png), [addressed-later](./evidence/e2e/addressed-later-user-looks-at-once-on-an-external-Claude-CLI-session-the-recap-o/right-after-turn-2.png).
+
+### Restart
+
+#### F26. A relaunch disturbs a recap that was up to date
+
+**B.** Seen in the app on a chat ([evidence](./evidence/e2e/restart-mid-session-in-a-chat-the-recap-survives-a-relaunch-without-a-model-requ/)); the causes below the first were not traced further than the lines given.
+
+- The recap survives and no model request is made, which is right. But the panel shows "The session has moved on since this was written" although nothing was said: `stale` compares the session's last activity with the recap's time (`live-session-recaps.ts:162`), and the relaunch moves the former.
+- The session's title becomes its latest prompt. That title is what the next request carries as `firstRequest` (`session-recap-prompt.ts:56`): after the relaunch the model was told the first request was "add the tracking now" (`observed.json`).
+- The first turn after the relaunch was recapped about 225 s after it ended. The pass at relaunch finds nothing new and still sets `lastPassAt` (`live-session-recaps.ts:302`), so the next turn waits out the interval (F6).
 
 ### Tests
 

@@ -4,7 +4,7 @@ An audit of the session recap on `seal/all` at 7a6dc74d5d2, a baseline of how it
 
 |                                                      |                                                                                                               |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [01-pipeline-audit.md](./01-pipeline-audit.md)       | How the recap works today, with file and line references, and every bug and weakness found (F1 to F24).       |
+| [01-pipeline-audit.md](./01-pipeline-audit.md)       | How the recap works today, with file and line references, and every bug and weakness found (F1 to F26).       |
 | [02-scenario-baseline.md](./02-scenario-baseline.md) | What was tested, how, and the results: 135 pipeline runs, model variance on 258 samples, and the in-app runs. |
 | [03-overhaul-design.md](./03-overhaul-design.md)     | The proposed design, the builder workstreams and the decisions to make.                                       |
 | [evidence/](./evidence/)                             | The full matrix, the model samples, and screenshots and recap JSON from the app.                              |
@@ -52,13 +52,22 @@ A recording is one sample of a model that varies. [The baseline](./02-scenario-b
 
 ## In the app
 
-`tests/e2e/session-recap-baseline-*.spec.ts` run the same scenarios in the built app, with the recap panel open, replaying the same recorded replies through the scripted `claude` stub (`recapReplies` in `tests/e2e/helpers/session-services-stub.ts`). They are skipped unless asked for:
+Three specs run thirteen of the scenarios in the built app, with the recap panel open, replaying the same recorded replies through the scripted `claude` stub (`recapReplies` in `tests/e2e/helpers/session-services-stub.ts`):
+
+| Spec                                                    | Surface                                            | Needs                                                                                                                                                                                                                   |
+| ------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/session-recap-baseline-chat.spec.ts`         | In-app Claude chat                                 |                                                                                                                                                                                                                         |
+| `tests/e2e/session-recap-baseline-external-cli.spec.ts` | Claude and Codex CLI sessions started outside Seal |                                                                                                                                                                                                                         |
+| `tests/e2e/session-recap-baseline-remote.spec.ts`       | A Claude CLI session over SSH and on a Seal server | Linux with passwordless sudo (the spec creates accounts and starts its own `sshd` on loopback); for the server test, `ORCA_E2E_ORCAD_CONVERT_TEMPLATE` set to an orcad template built as in `.github/workflows/e2e.yml` |
+
+They are skipped unless asked for:
 
 ```
 RECAP_E2E=1 RECAP_E2E_EVIDENCE_DIR="$PWD/docs/recap-audit/evidence/e2e" ORCA_BACKGROUND_LAUNCH=1 \
-  xvfb-run -a pnpm run test:e2e tests/e2e/session-recap-baseline-chat.spec.ts
+  xvfb-run -a pnpm run test:e2e tests/e2e/session-recap-baseline-chat.spec.ts \
+  tests/e2e/session-recap-baseline-external-cli.spec.ts tests/e2e/session-recap-baseline-remote.spec.ts --workers=3
 ```
 
-The first run builds the app; add `SKIP_BUILD=1` to reuse that build. `xvfb-run` is for Linux machines without a display.
+The first run builds the app; add `SKIP_BUILD=1` to reuse that build. `xvfb-run` is for Linux machines without a display. A full run takes about ten minutes: the scheduler leaves four minutes between two automatic passes and the app has no test clock.
 
-Each test saves a screenshot of the hidden window and the recap as the app returned it. A test for behaviour that is wrong today is marked `test.fail`, so the spec passes while the bug is present and fails once it is fixed; remove the mark then.
+Each test saves a screenshot of the hidden window and the recap as the app returned it. After a run that rewrites the evidence, format it before committing: `pnpm exec oxfmt --write docs/recap-audit/evidence`. A test for behaviour that is wrong today is marked `test.fail`, so the spec passes while the bug is present and fails once it is fixed; remove the mark then.
