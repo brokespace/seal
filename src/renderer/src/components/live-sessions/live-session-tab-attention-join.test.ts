@@ -292,6 +292,19 @@ describe('joinLiveSessionMarksWithTabAttention', () => {
     expect(acknowledged).toEqual([])
   })
 
+  it('marks an agent seen in its tab when it was listed without its pane on its way out', () => {
+    const { sessions, marks, viewTab } = startJoin({
+      sessions: [{ ...cliSession, status: 'working' }],
+      seenAt: { 'local:claude:cli': 500 }
+    })
+    sessions.set([{ ...goneFromPane('working'), alive: true }])
+    sessions.set([goneFromPane('done')])
+
+    viewTab(CLI_PANE_KEY)
+
+    expect(marks.getState().seenAt).toEqual({ 'local:claude:cli': 1000 })
+  })
+
   it('keeps the marker and the unread row of an agent that crashes', () => {
     const { sessions, attention, marks, acknowledged, raiseCompletionMarker } = startJoin({
       sessions: [{ ...cliSession, status: 'working' }],

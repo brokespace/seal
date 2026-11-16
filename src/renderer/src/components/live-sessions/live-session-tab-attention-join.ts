@@ -200,7 +200,7 @@ export function joinLiveSessionMarksWithTabAttention({
   }
 
   /** The pane each CLI session ran in: once its agent is gone it is listed without one. */
-  const ranIn = new Map<string, string>()
+  const ranIn = new Map<string, { paneKey: string; ended: boolean }>()
   let lastListed: unknown = undefined
   let lastSeenForGone: unknown = undefined
   let goneUnread: { id: string; paneKey: string; lastActivityAt: number }[] = []
@@ -218,10 +218,14 @@ export function joinLiveSessionMarksWithTabAttention({
       for (const session of listed) {
         ids.add(session.id)
         const surface = liveSessionSurfaceOf(session)
+        const ran = ranIn.get(session.id)
         if (surface.kind === 'cli') {
-          ranIn.set(session.id, surface.paneKey)
-        } else if (session.alive) {
-          // Resumed somewhere else: the pane no longer shows where it stands.
+          ranIn.set(session.id, { paneKey: surface.paneKey, ended: false })
+        } else if (ran && !session.alive) {
+          ran.ended = true
+        } else if (ran?.ended) {
+          // Resumed somewhere else: the pane no longer shows where it stands. An agent on its
+          // way out is listed alive without its pane first, which is not that.
           ranIn.delete(session.id)
         }
       }
@@ -232,11 +236,9 @@ export function joinLiveSessionMarksWithTabAttention({
       }
     }
     goneUnread = listed.flatMap((session) => {
-      const paneKey = ranIn.get(session.id)
-      return paneKey !== undefined &&
-        liveSessionPaneKeyOf(session) === null &&
-        (seenAt[session.id] ?? 0) < session.lastActivityAt
-        ? [{ id: session.id, paneKey, lastActivityAt: session.lastActivityAt }]
+      const ran = ranIn.get(session.id)
+      return ran?.ended && (seenAt[session.id] ?? 0) < session.lastActivityAt
+        ? [{ id: session.id, paneKey: ran.paneKey, lastActivityAt: session.lastActivityAt }]
         : []
     })
   }
