@@ -3,37 +3,37 @@
     {
       "category": "addressed-same-turn",
       "pass": 9,
-      "fail": 3
-    },
-    {
-      "category": "addressed-later-turn",
-      "pass": 1,
-      "fail": 18
-    },
-    {
-      "category": "addressed-implicitly",
-      "pass": 3,
       "fail": 6
     },
     {
-      "category": "partly-addressed",
-      "pass": 0,
-      "fail": 9
+      "category": "addressed-later-turn",
+      "pass": 12,
+      "fail": 24
     },
     {
-      "category": "multiple-asks",
+      "category": "addressed-implicitly",
       "pass": 6,
       "fail": 12
     },
     {
-      "category": "withdrawn-or-changed",
+      "category": "partly-addressed",
       "pass": 0,
-      "fail": 6
+      "fail": 20
+    },
+    {
+      "category": "multiple-asks",
+      "pass": 6,
+      "fail": 24
+    },
+    {
+      "category": "withdrawn-or-changed",
+      "pass": 7,
+      "fail": 14
     },
     {
       "category": "declined",
-      "pass": 3,
-      "fail": 3
+      "pass": 11,
+      "fail": 9
     },
     {
       "category": "question-answered",
@@ -43,16 +43,16 @@
     {
       "category": "question-open",
       "pass": 6,
-      "fail": 3
+      "fail": 5
     },
     {
       "category": "long-session",
       "pass": 0,
-      "fail": 6
+      "fail": 10
     },
     {
       "category": "restart-resume",
-      "pass": 0,
+      "pass": 3,
       "fail": 5
     },
     {
@@ -63,37 +63,37 @@
     {
       "category": "tool-heavy",
       "pass": 9,
-      "fail": 3
+      "fail": 8
     },
     {
       "category": "subagent",
-      "pass": 3,
-      "fail": 3
+      "pass": 4,
+      "fail": 4
     },
     {
       "category": "non-english-terse",
       "pass": 0,
-      "fail": 9
+      "fail": 12
     },
     {
       "category": "duplicate-asks",
-      "pass": 3,
-      "fail": 3
+      "pass": 9,
+      "fail": 5
     },
     {
       "category": "mid-turn",
-      "pass": 0,
-      "fail": 11
+      "pass": 3,
+      "fail": 14
     },
     {
       "category": "model-failure",
       "pass": 1,
-      "fail": 5
+      "fail": 9
     },
     {
       "category": "agent-surface",
       "pass": 5,
-      "fail": 11
+      "fail": 14
     },
     {
       "category": "remote",
@@ -636,6 +636,129 @@
           "name": "after the turn: the PDF export is recorded as done",
           "ok": true,
           "actual": "[done] Fixed user filter role matching and tab switch behavior | [done] Made audit log sortable | [done] Added PDF export to invoices | [done] Checked invoices with staging data and one with 140 line items | [done] Added test renders fixture invoice and checks page count | [done] Added admin permission map for PDF route"
+        }
+      ]
+    },
+    {
+      "id": "addressed-later-by-tools-on-other-files@chat-journal",
+      "title": "An open ask is done a turn later with tools, on files the ask never names, and the agent says only Done",
+      "categories": ["addressed-later-turn", "addressed-implicitly", "tool-heavy"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "The slow login page is open after turn 1. After turn 2, which measures, edits and measures again and says only Done, it is no longer listed as not addressed, and the speed-up is recorded as work.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 3,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Added a test for the password reset email. Login page optimization is pending.",
+        "asked": ["optimize login page loading speed", "add test for password reset email"],
+        "did": ["[done] add test for password reset email"],
+        "questions": ["login page not yet examined"],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the slow login page is asked for and not looked at yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent worked on the login page with tools and said it was done",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the work on the login page is recorded",
+          "ok": false,
+          "actual": "[done] add test for password reset email"
+        }
+      ]
+    },
+    {
+      "id": "addressed-later-by-tools-on-other-files@claude-cli",
+      "title": "An open ask is done a turn later with tools, on files the ask never names, and the agent says only Done",
+      "categories": ["addressed-later-turn", "addressed-implicitly", "tool-heavy"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "The slow login page is open after turn 1. After turn 2, which measures, edits and measures again and says only Done, it is no longer listed as not addressed, and the speed-up is recorded as work.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 3,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Added a test for the password reset email. Login page optimization is pending.",
+        "asked": ["optimize login page loading speed", "add test for password reset email"],
+        "did": ["[done] add test for password reset email"],
+        "questions": ["login page not yet examined"],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the slow login page is asked for and not looked at yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent worked on the login page with tools and said it was done",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the work on the login page is recorded",
+          "ok": false,
+          "actual": "[done] add test for password reset email"
+        }
+      ]
+    },
+    {
+      "id": "addressed-later-by-tools-on-other-files@codex-cli",
+      "title": "An open ask is done a turn later with tools, on files the ask never names, and the agent says only Done",
+      "categories": ["addressed-later-turn", "addressed-implicitly", "tool-heavy"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "The slow login page is open after turn 1. After turn 2, which measures, edits and measures again and says only Done, it is no longer listed as not addressed, and the speed-up is recorded as work.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 3,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Added a test for the password reset email. Login page optimization is pending.",
+        "asked": ["optimize login page loading speed", "add test for password reset email"],
+        "did": ["[done] add test for password reset email"],
+        "questions": ["login page not yet examined"],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the slow login page is asked for and not looked at yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent worked on the login page with tools and said it was done",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the work on the login page is recorded",
+          "ok": false,
+          "actual": "[done] add test for password reset email"
         }
       ]
     },
@@ -1962,6 +2085,232 @@
       ]
     },
     {
+      "id": "declined-as-out-of-reach@chat-journal",
+      "title": "The agent cannot reach what the ask needs, says so, and does the part it can",
+      "categories": ["declined", "multiple-asks"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "The README note is done. Rotating the key is answered with a reason it cannot be done from the session and is not listed as overlooked.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Rotate Stripe key and update Vault",
+        "goal": "Rotate production Stripe key and add key rotation doc to README",
+        "standing": "Rotating key and updating Vault requires manual action and credentials",
+        "asked": ["provide production overview"],
+        "did": ["[done] add rotation note to README"],
+        "questions": [],
+        "ignored": ["rotate Stripe key and update Vault"],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the agent said it cannot rotate the key and why; it did not overlook it",
+          "ok": false,
+          "actual": "rotate Stripe key and update Vault"
+        },
+        {
+          "name": "after the turn: the README line is recorded as done",
+          "ok": true,
+          "actual": "[done] add rotation note to README"
+        }
+      ]
+    },
+    {
+      "id": "declined-as-out-of-reach@claude-cli",
+      "title": "The agent cannot reach what the ask needs, says so, and does the part it can",
+      "categories": ["declined", "multiple-asks"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "The README note is done. Rotating the key is answered with a reason it cannot be done from the session and is not listed as overlooked.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Rotate Stripe key and update Vault",
+        "goal": "Rotate production Stripe key and add key rotation doc to README",
+        "standing": "Rotating key and updating Vault requires manual action and credentials",
+        "asked": ["provide production overview"],
+        "did": ["[done] add rotation note to README"],
+        "questions": [],
+        "ignored": ["rotate Stripe key and update Vault"],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the agent said it cannot rotate the key and why; it did not overlook it",
+          "ok": false,
+          "actual": "rotate Stripe key and update Vault"
+        },
+        {
+          "name": "after the turn: the README line is recorded as done",
+          "ok": true,
+          "actual": "[done] add rotation note to README"
+        }
+      ]
+    },
+    {
+      "id": "declined-for-safety-with-an-alternative@claude-cli",
+      "title": "The agent does one ask and refuses the other as unsafe, offering another way",
+      "categories": ["declined", "multiple-asks"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "The version bump is done. The force-push is refused with its reason and is not listed as overlooked; the offer of a revert is not a request of the user's.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Agent explained why main cannot be force-pushed due to branch protection and other users' checkouts.",
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the agent refused the force-push and said why; it did not overlook it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the version bump is recorded as done",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "declined-for-safety-with-an-alternative@codex-cli",
+      "title": "The agent does one ask and refuses the other as unsafe, offering another way",
+      "categories": ["declined", "multiple-asks"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "The version bump is done. The force-push is refused with its reason and is not listed as overlooked; the offer of a revert is not a request of the user's.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Agent explained why main cannot be force-pushed due to branch protection and other users' checkouts.",
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the agent refused the force-push and said why; it did not overlook it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the version bump is recorded as done",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "declined-in-a-terse-reply@claude-cli",
+      "title": "A two-word ask gets a one-line refusal, and the user lets it stand",
+      "categories": ["declined", "non-english-terse"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "The refusal is recorded with its reason. After the user's \"ok\" nothing is listed as not addressed and no new request appears.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": ["[done] keep vendor dir"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent refused with a reason; the ask was not overlooked",
+          "ok": false,
+          "actual": "rm the vendor dir"
+        },
+        {
+          "name": "after turn 2: the user accepted the refusal; nothing is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: \"ok\" asks for nothing",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "declined-in-a-terse-reply@codex-cli",
+      "title": "A two-word ask gets a one-line refusal, and the user lets it stand",
+      "categories": ["declined", "non-english-terse"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "The refusal is recorded with its reason. After the user's \"ok\" nothing is listed as not addressed and no new request appears.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": ["[done] keep vendor dir"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent refused with a reason; the ask was not overlooked",
+          "ok": false,
+          "actual": "rm the vendor dir"
+        },
+        {
+          "name": "after turn 2: the user accepted the refusal; nothing is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: \"ok\" asks for nothing",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
       "id": "declined-then-agreed@chat-journal",
       "title": "The agent pushes back, offers another way, and the user takes it",
       "categories": ["declined", "question-answered"],
@@ -2100,6 +2449,262 @@
       ]
     },
     {
+      "id": "declined-then-replaced-by-what-the-agent-offered@chat-journal",
+      "title": "The agent advises against an ask and offers another way; the user takes the offer",
+      "categories": ["declined", "withdrawn-or-changed", "addressed-later-turn"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "After turn 2 turning the rule off is refused with its reason. After turn 3 the user has taken the agent's offer instead: the warnings are fixed, and turning the rule off is no longer wanted and not listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "React Upgrade",
+        "goal": "Upgrade React to 19 because the library moved to a new major version.",
+        "standing": "React is on 19.0 and all tests pass. The upgrade is complete.",
+        "asked": ["Turn off eslint rule about hook deps"],
+        "did": [
+          "[done] React upgraded to 19.0",
+          "[done] All 212 tests passing",
+          "[done] Six ESLint warnings fixed"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": ["React hooks rule stays on"]
+      },
+      "checks": [
+        {
+          "name": "after turn 2: the agent advised against it and left the rule on; it did not overlook the ask",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the React upgrade is recorded as done",
+          "ok": true,
+          "actual": "[done] React upgraded to 19.0 | [done] All 212 tests passing"
+        },
+        {
+          "name": "after turn 3: the user chose the fix over turning the rule off, and the fix is done",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: fixing the warnings is recorded as done",
+          "ok": true,
+          "actual": "[done] React upgraded to 19.0 | [done] All 212 tests passing | [done] Six ESLint warnings fixed"
+        }
+      ]
+    },
+    {
+      "id": "declined-then-replaced-by-what-the-agent-offered@claude-cli",
+      "title": "The agent advises against an ask and offers another way; the user takes the offer",
+      "categories": ["declined", "withdrawn-or-changed", "addressed-later-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "After turn 2 turning the rule off is refused with its reason. After turn 3 the user has taken the agent's offer instead: the warnings are fixed, and turning the rule off is no longer wanted and not listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "React Upgrade",
+        "goal": "Upgrade React to 19 because the library moved to a new major version.",
+        "standing": "React is on 19.0 and all tests pass. The upgrade is complete.",
+        "asked": ["Turn off eslint rule about hook deps"],
+        "did": [
+          "[done] React upgraded to 19.0",
+          "[done] All 212 tests passing",
+          "[done] Six ESLint warnings fixed"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": ["React hooks rule stays on"]
+      },
+      "checks": [
+        {
+          "name": "after turn 2: the agent advised against it and left the rule on; it did not overlook the ask",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the React upgrade is recorded as done",
+          "ok": true,
+          "actual": "[done] React upgraded to 19.0 | [done] All 212 tests passing"
+        },
+        {
+          "name": "after turn 3: the user chose the fix over turning the rule off, and the fix is done",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: fixing the warnings is recorded as done",
+          "ok": true,
+          "actual": "[done] React upgraded to 19.0 | [done] All 212 tests passing | [done] Six ESLint warnings fixed"
+        }
+      ]
+    },
+    {
+      "id": "declined-then-user-insists@chat-journal",
+      "title": "The agent refuses with a reason, the user overrules it, and the agent does it",
+      "categories": ["declined", "addressed-later-turn"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "After turn 1 the request is answered with a refusal, not overlooked. After turn 2 the table is dropped: the request is done, listed once, and nothing is left as refused or not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Rejected dropping legacy_reports, keeps table intact",
+          "[done] Dropped legacy_reports table"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": [
+          "Do not drop legacy_reports due to finance month-end dependency",
+          "finance moved off this export, allowing drop"
+        ]
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent answered the request with a refusal; it did not overlook it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: dropping the table is recorded as done",
+          "ok": true,
+          "actual": "[done] Rejected dropping legacy_reports, keeps table intact | [done] Dropped legacy_reports table"
+        },
+        {
+          "name": "after turn 2: where things stand no longer says the table was kept",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "declined-then-user-insists@claude-cli",
+      "title": "The agent refuses with a reason, the user overrules it, and the agent does it",
+      "categories": ["declined", "addressed-later-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "After turn 1 the request is answered with a refusal, not overlooked. After turn 2 the table is dropped: the request is done, listed once, and nothing is left as refused or not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Rejected dropping legacy_reports, keeps table intact",
+          "[done] Dropped legacy_reports table"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": [
+          "Do not drop legacy_reports due to finance month-end dependency",
+          "finance moved off this export, allowing drop"
+        ]
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent answered the request with a refusal; it did not overlook it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: dropping the table is recorded as done",
+          "ok": true,
+          "actual": "[done] Rejected dropping legacy_reports, keeps table intact | [done] Dropped legacy_reports table"
+        },
+        {
+          "name": "after turn 2: where things stand no longer says the table was kept",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "declined-then-user-insists@codex-cli",
+      "title": "The agent refuses with a reason, the user overrules it, and the agent does it",
+      "categories": ["declined", "addressed-later-turn"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "After turn 1 the request is answered with a refusal, not overlooked. After turn 2 the table is dropped: the request is done, listed once, and nothing is left as refused or not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Rejected dropping legacy_reports, keeps table intact",
+          "[done] Dropped legacy_reports table"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": [
+          "Do not drop legacy_reports due to finance month-end dependency",
+          "finance moved off this export, allowing drop"
+        ]
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent answered the request with a refusal; it did not overlook it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: dropping the table is recorded as done",
+          "ok": true,
+          "actual": "[done] Rejected dropping legacy_reports, keeps table intact | [done] Dropped legacy_reports table"
+        },
+        {
+          "name": "after turn 2: where things stand no longer says the table was kept",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
       "id": "declined-with-a-reason@chat-journal",
       "title": "The agent refuses to do what was asked and says why",
       "categories": ["declined"],
@@ -2204,6 +2809,129 @@
           "name": "after the turn: where things stand says the migrations were kept",
           "ok": false,
           "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "dismissed-entry-stays-dismissed@chat-journal",
+      "title": "The user dismisses a wrong not-addressed entry and then presses Refresh",
+      "categories": ["declined", "restart-resume"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "Once the user dismisses the entry it stays dismissed when the recap is rebuilt, and Refresh asks the model again rather than giving back the same reading.",
+      "passes": ["auto: updated", "asked: current", "asked rebuild: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Squash migrations into one baseline"],
+        "did": ["[done] Warned against deleting migrations folder"],
+        "questions": [],
+        "ignored": ["Delete the old migrations folder"],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user dismisses it: the user dismissed the entry",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: an entry the user dismissed does not come back when the recap is rebuilt",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: Refresh asks the model again: it is how the user gets a second reading of a recap that looks wrong",
+          "ok": true,
+          "actual": "2 requests"
+        }
+      ]
+    },
+    {
+      "id": "dismissed-entry-stays-dismissed@claude-cli",
+      "title": "The user dismisses a wrong not-addressed entry and then presses Refresh",
+      "categories": ["declined", "restart-resume"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "Once the user dismisses the entry it stays dismissed when the recap is rebuilt, and Refresh asks the model again rather than giving back the same reading.",
+      "passes": ["auto: updated", "asked: current", "asked rebuild: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Squash migrations into one baseline"],
+        "did": ["[done] Warned against deleting migrations folder"],
+        "questions": [],
+        "ignored": ["Delete the old migrations folder"],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user dismisses it: the user dismissed the entry",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: an entry the user dismissed does not come back when the recap is rebuilt",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: Refresh asks the model again: it is how the user gets a second reading of a recap that looks wrong",
+          "ok": true,
+          "actual": "2 requests"
+        }
+      ]
+    },
+    {
+      "id": "dismissed-entry-stays-dismissed@codex-cli",
+      "title": "The user dismisses a wrong not-addressed entry and then presses Refresh",
+      "categories": ["declined", "restart-resume"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "Once the user dismisses the entry it stays dismissed when the recap is rebuilt, and Refresh asks the model again rather than giving back the same reading.",
+      "passes": ["auto: updated", "asked: current", "asked rebuild: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Squash migrations into one baseline"],
+        "did": ["[done] Warned against deleting migrations folder"],
+        "questions": [],
+        "ignored": ["Delete the old migrations folder"],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user dismisses it: the user dismissed the entry",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: an entry the user dismissed does not come back when the recap is rebuilt",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after Refresh: Refresh asks the model again: it is how the user gets a second reading of a recap that looks wrong",
+          "ok": true,
+          "actual": "2 requests"
         }
       ]
     },
@@ -2510,6 +3238,153 @@
           "name": "after turn 3: nothing is waiting on the user",
           "ok": true,
           "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "finished-work-mentioned-again@chat-journal",
+      "title": "The user mentions work that is already done while asking for the next thing",
+      "categories": ["duplicate-asks", "addressed-later-turn"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "Two requests, both done. The retries, which the user only mentions in passing in turn 2, are not listed as a new or unaddressed request.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "webhook sender retries with backoff",
+        "goal": "Add retries to the webhook sender, three attempts with backoff.",
+        "standing": "The webhook sender now includes retry logic with three attempts and exponential backoff.",
+        "asked": ["Log each attempt with its status code"],
+        "did": [
+          "[done] Added three attempts with exponential backoff to webhook sender",
+          "[done] Added logging for each attempt with status code"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user mentioning the finished retries is not a new request for them",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user asked two things",
+          "ok": true,
+          "actual": "Log each attempt with its status code"
+        },
+        {
+          "name": "after turn 2: the logging is recorded as done",
+          "ok": true,
+          "actual": "[done] Added three attempts with exponential backoff to webhook sender | [done] Added logging for each attempt with status code"
+        }
+      ]
+    },
+    {
+      "id": "finished-work-mentioned-again@claude-cli",
+      "title": "The user mentions work that is already done while asking for the next thing",
+      "categories": ["duplicate-asks", "addressed-later-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "Two requests, both done. The retries, which the user only mentions in passing in turn 2, are not listed as a new or unaddressed request.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "webhook sender retries with backoff",
+        "goal": "Add retries to the webhook sender, three attempts with backoff.",
+        "standing": "The webhook sender now includes retry logic with three attempts and exponential backoff.",
+        "asked": ["Log each attempt with its status code"],
+        "did": [
+          "[done] Added three attempts with exponential backoff to webhook sender",
+          "[done] Added logging for each attempt with status code"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user mentioning the finished retries is not a new request for them",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user asked two things",
+          "ok": true,
+          "actual": "Log each attempt with its status code"
+        },
+        {
+          "name": "after turn 2: the logging is recorded as done",
+          "ok": true,
+          "actual": "[done] Added three attempts with exponential backoff to webhook sender | [done] Added logging for each attempt with status code"
+        }
+      ]
+    },
+    {
+      "id": "finished-work-mentioned-again@codex-cli",
+      "title": "The user mentions work that is already done while asking for the next thing",
+      "categories": ["duplicate-asks", "addressed-later-turn"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "Two requests, both done. The retries, which the user only mentions in passing in turn 2, are not listed as a new or unaddressed request.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "webhook sender retries with backoff",
+        "goal": "Add retries to the webhook sender, three attempts with backoff.",
+        "standing": "The webhook sender now includes retry logic with three attempts and exponential backoff.",
+        "asked": ["Log each attempt with its status code"],
+        "did": [
+          "[done] Added three attempts with exponential backoff to webhook sender",
+          "[done] Added logging for each attempt with status code"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user mentioning the finished retries is not a new request for them",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user asked two things",
+          "ok": true,
+          "actual": "Log each attempt with its status code"
+        },
+        {
+          "name": "after turn 2: the logging is recorded as done",
+          "ok": true,
+          "actual": "[done] Added three attempts with exponential backoff to webhook sender | [done] Added logging for each attempt with status code"
         }
       ]
     },
@@ -3467,6 +4342,78 @@
       ]
     },
     {
+      "id": "model-fails-twice-then-recovers@claude-cli",
+      "title": "The model's replies cannot be read for two turns running, then it recovers",
+      "categories": ["model-failure"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "While the model's replies cannot be read the recap claims nothing is overlooked. Once it recovers, the work of the turns it failed on is recorded, and the requests the host wrote down in the meantime are not listed a second time in the model's words.",
+      "passes": ["auto: updated", "auto: updated", "auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [
+          "Add a CSV export to the orders page and a date filter above the table.",
+          "make the date filter default to the last 30 days",
+          "Add a CSV export to the orders page.",
+          "Make the date filter default to last 30 days.",
+          "Add a Reset button next to the filter."
+        ],
+        "did": ["[done] Add a Reset button next to the date filter."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the first unreadable pass: a recap the model could not write does not claim a request was overlooked",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the second unreadable pass: a recap the model could not write does not claim a request was overlooked",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the model recovers: a good pass clears the degraded mark",
+          "ok": true,
+          "actual": "false"
+        },
+        {
+          "name": "after the model recovers: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the model recovers: the requests the host wrote down while the model failed are not listed again in the model's words",
+          "ok": false,
+          "actual": "Add a CSV export to the orders page and a date filter above the table. | make the date filter default to the last 30 days | Add a CSV export to the orders page. | Make the date filter default to last 30 days. | Add a Reset button next to the filter."
+        },
+        {
+          "name": "after the model recovers: the work of the first turn the model failed on is recorded",
+          "ok": false,
+          "actual": "[done] Add a Reset button next to the date filter."
+        },
+        {
+          "name": "after the model recovers: the work of the second turn the model failed on is recorded",
+          "ok": false,
+          "actual": "[done] Add a Reset button next to the date filter."
+        },
+        {
+          "name": "after the model recovers: the new work is recorded",
+          "ok": true,
+          "actual": "[done] Add a Reset button next to the date filter."
+        }
+      ]
+    },
+    {
       "id": "model-failure-then-next-turn@claude-cli",
       "title": "A pass fails and the session goes on",
       "categories": ["model-failure"],
@@ -4249,6 +5196,282 @@
       ]
     },
     {
+      "id": "nothing-said-since-the-recap@chat-journal",
+      "title": "The session moves without anything being said: the user compacts it while it rests",
+      "categories": ["long-session", "agent-surface"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "After the compaction the recap is still up to date: nothing was asked or done since it was written, so it is not shown as behind and nothing waits to be checked.",
+      "passes": ["auto: updated", "auto: current", "asked: current"],
+      "requests": 1,
+      "state": "ready",
+      "stale": true,
+      "failure": null,
+      "recap": {
+        "title": "UI locale updates",
+        "goal": "Rename Buy button and bold price then remove banner",
+        "standing": "All requested changes are done",
+        "asked": [
+          "Rename Buy button to Add to cart",
+          "Make price bold",
+          "Remove banner from product page"
+        ],
+        "did": [
+          "[done] Rename Buy button to Add to cart",
+          "[done] Make price bold",
+          "[done] Remove banner from product page"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the recap covers the turn",
+          "ok": true,
+          "actual": "false"
+        },
+        {
+          "name": "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "four minutes after the compaction: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "four minutes after the compaction: a compaction with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        },
+        {
+          "name": "after the user opens it twice: opening the recap does not leave it marked as behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "after the user opens it twice: opening a recap with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        }
+      ]
+    },
+    {
+      "id": "nothing-said-since-the-recap@claude-cli",
+      "title": "The session moves without anything being said: the user compacts it while it rests",
+      "categories": ["long-session", "agent-surface"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After the compaction the recap is still up to date: nothing was asked or done since it was written, so it is not shown as behind and nothing waits to be checked.",
+      "passes": ["auto: updated", "auto: current", "asked: current"],
+      "requests": 1,
+      "state": "ready",
+      "stale": true,
+      "failure": null,
+      "recap": {
+        "title": "UI locale updates",
+        "goal": "Rename Buy button and bold price then remove banner",
+        "standing": "All requested changes are done",
+        "asked": [
+          "Rename Buy button to Add to cart",
+          "Make price bold",
+          "Remove banner from product page"
+        ],
+        "did": [
+          "[done] Rename Buy button to Add to cart",
+          "[done] Make price bold",
+          "[done] Remove banner from product page"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the recap covers the turn",
+          "ok": true,
+          "actual": "false"
+        },
+        {
+          "name": "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "four minutes after the compaction: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "four minutes after the compaction: a compaction with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        },
+        {
+          "name": "after the user opens it twice: opening the recap does not leave it marked as behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "after the user opens it twice: opening a recap with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        }
+      ]
+    },
+    {
+      "id": "nothing-said-since-the-recap@codex-cli",
+      "title": "The session moves without anything being said: the user compacts it while it rests",
+      "categories": ["long-session", "agent-surface"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "After the compaction the recap is still up to date: nothing was asked or done since it was written, so it is not shown as behind and nothing waits to be checked.",
+      "passes": ["auto: updated", "auto: current", "asked: current"],
+      "requests": 1,
+      "state": "ready",
+      "stale": true,
+      "failure": null,
+      "recap": {
+        "title": "UI locale updates",
+        "goal": "Rename Buy button and bold price then remove banner",
+        "standing": "All requested changes are done",
+        "asked": [
+          "Rename Buy button to Add to cart",
+          "Make price bold",
+          "Remove banner from product page"
+        ],
+        "did": [
+          "[done] Rename Buy button to Add to cart",
+          "[done] Make price bold",
+          "[done] Remove banner from product page"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the recap covers the turn",
+          "ok": true,
+          "actual": "false"
+        },
+        {
+          "name": "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "four minutes after the compaction: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "four minutes after the compaction: a compaction with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        },
+        {
+          "name": "after the user opens it twice: opening the recap does not leave it marked as behind",
+          "ok": false,
+          "actual": "true"
+        },
+        {
+          "name": "after the user opens it twice: opening a recap with nothing new to read costs no model request",
+          "ok": true,
+          "actual": "1 requests"
+        }
+      ]
+    },
+    {
+      "id": "open-ask-done-after-many-turns@claude-cli",
+      "title": "An ask put off at the start is done more than twenty turns later",
+      "categories": ["long-session", "addressed-later-turn"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "LOG_LEVEL is open after the first turn and through the twenty-two turns that follow. When the user asks for it again and the agent adds it, it is done: not listed as not addressed, and not left behind as a second, forever open request.",
+      "passes": ["auto: updated", "auto: updated", "auto: updated"],
+      "requests": 4,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Migrate services to shared logger",
+        "goal": "Move every service onto the shared logger one by one",
+        "standing": "Quote service still needs to be moved. Started adding LOG_LEVEL env var to round 1 services.",
+        "asked": [
+          "Add LOG_LEVEL env var to logger default info",
+          "Move catalog service onto shared logger",
+          "Move checkout service onto shared logger",
+          "Move inventory service onto shared logger",
+          "Move invoices service onto shared logger",
+          "Move notifications service onto shared logger",
+          "Move orders service onto shared logger (round 1)",
+          "Move payments service onto shared logger (round 1)",
+          "Move pricing service onto shared logger (round 1)",
+          "Move profiles service onto shared logger (round 1)",
+          "Move refunds service onto shared logger (round 1)",
+          "Move reports service onto shared logger (round 1)",
+          "Move search service onto shared logger (round 1)",
+          "Move shipping service onto shared logger (round 1)",
+          "Move taxes service onto shared logger (round 1)",
+          "Move vouchers service onto shared logger (round 1)",
+          "Move warehouse service onto shared logger (round 1)",
+          "Move webhooks service onto shared logger (round 1)"
+        ],
+        "did": [
+          "[done] Move billing onto shared logger",
+          "[done] Move catalog onto shared logger",
+          "[done] Move checkout onto shared logger",
+          "[done] Move inventory onto shared logger",
+          "[done] Move invoices onto shared logger",
+          "[done] Move notifications onto shared logger",
+          "[done] Move orders onto shared logger (round 1)",
+          "[done] Move payments onto shared logger (round 1)",
+          "[done] Move pricing onto shared logger (round 1)",
+          "[done] Move profiles onto shared logger (round 1)",
+          "[in-progress] Move refunds onto shared logger (round 1)",
+          "[in-progress] Move reports onto shared logger (round 1)",
+          "[in-progress] Move search onto shared logger (round 1)",
+          "[in-progress] Move shipping onto shared logger (round 1)",
+          "[in-progress] Move taxes onto shared logger (round 1)",
+          "[in-progress] Move vouchers onto shared logger (round 1)",
+          "[in-progress] Move warehouse onto shared logger (round 1)",
+          "[in-progress] Move webhooks onto shared logger (round 1)"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": ["Continue with round 2 moves for services already moved in round 1"]
+      },
+      "checks": [
+        {
+          "name": "after turn 1: LOG_LEVEL was asked for and put off",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after twenty-two more turns: LOG_LEVEL is still not added",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after it is added: LOG_LEVEL was added",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after it is added: adding LOG_LEVEL is recorded as done",
+          "ok": false,
+          "actual": "[done] Move billing onto shared logger | [done] Move catalog onto shared logger | [done] Move checkout onto shared logger | [done] Move inventory onto shared logger | [done] Move invoices onto shared logger | [done] Move notifications onto shared logger | [done] Move orders onto shared logger (round 1) | [done] Move payments onto shared logger (round 1) | [done] Move pricing onto shared logger (round 1) | [done] Move profiles onto shared logger (round 1) | [in-progress] Move refunds onto shared logger (round 1) | [in-progress] Move reports onto shared logger (round 1) | [in-progress] Move search onto shared logger (round 1) | [in-progress] Move shipping onto shared logger (round 1) | [in-progress] Move taxes onto shared logger (round 1) | [in-progress] Move vouchers onto shared logger (round 1) | [in-progress] Move warehouse onto shared logger (round 1) | [in-progress] Move webhooks onto shared logger (round 1)"
+        }
+      ]
+    },
+    {
       "id": "partly-addressed-stays-open@chat-journal",
       "title": "One of three jobs is never migrated and the talk moves on",
       "categories": ["partly-addressed"],
@@ -4545,6 +5768,306 @@
           "name": "after turn 2: the /customers half is recorded as done",
           "ok": true,
           "actual": "[done] Paginate /orders at 50 per page with next cursor | [blocked] Leave /customers for follow-up due to helper | [done] Paginate /customers at 50 per page with test"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-across-three-turns@claude-cli",
+      "title": "A three-part ask is finished one part per turn, with the user pushing it on",
+      "categories": ["partly-addressed", "addressed-later-turn", "duplicate-asks"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 and turn 2 the ask is half done, with what is left. After turn 3 it is done, listed once, and nothing is left as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Replacing moment with date-fns",
+        "goal": "Replace moment with date-fns in all three: api, web and worker packages.",
+        "standing": "api package converted successfully with passing tests. web and worker packages still use moment.",
+        "asked": [],
+        "did": [
+          "[done] Replaced moment with date-fns in api, web, and worker packages",
+          "[done] Converted web package to date-fns",
+          "[done] Converted worker package using date-fns-tz"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: web and worker are not converted yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: worker is not converted yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: all three packages are converted",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: the conversion is recorded as done",
+          "ok": true,
+          "actual": "[done] Replaced moment with date-fns in api, web, and worker packages | [done] Converted web package to date-fns | [done] Converted worker package using date-fns-tz"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-across-three-turns@codex-cli",
+      "title": "A three-part ask is finished one part per turn, with the user pushing it on",
+      "categories": ["partly-addressed", "addressed-later-turn", "duplicate-asks"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "After turn 1 and turn 2 the ask is half done, with what is left. After turn 3 it is done, listed once, and nothing is left as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Replacing moment with date-fns",
+        "goal": "Replace moment with date-fns in all three: api, web and worker packages.",
+        "standing": "api package converted successfully with passing tests. web and worker packages still use moment.",
+        "asked": [],
+        "did": [
+          "[done] Replaced moment with date-fns in api, web, and worker packages",
+          "[done] Converted web package to date-fns",
+          "[done] Converted worker package using date-fns-tz"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: web and worker are not converted yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: worker is not converted yet",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: all three packages are converted",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 3: the conversion is recorded as done",
+          "ok": true,
+          "actual": "[done] Replaced moment with date-fns in api, web, and worker packages | [done] Converted web package to date-fns | [done] Converted worker package using date-fns-tz"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-and-the-agent-says-which-part@chat-journal",
+      "title": "Three of the same thing are asked for; two get done and the agent names the third",
+      "categories": ["partly-addressed"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "Tests exist for the csv and json parsers. The yaml parser has none yet, and that is what is left open.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Add unit tests for csv and json parsers",
+          "[in-progress] Implement yaml parser depending on fixture loader"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the yaml parser still has no tests",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-and-the-agent-says-which-part@claude-cli",
+      "title": "Three of the same thing are asked for; two get done and the agent names the third",
+      "categories": ["partly-addressed"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "Tests exist for the csv and json parsers. The yaml parser has none yet, and that is what is left open.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Add unit tests for csv and json parsers",
+          "[in-progress] Implement yaml parser depending on fixture loader"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the yaml parser still has no tests",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-by-a-subagent@claude-cli",
+      "title": "A subagent does two of three of the same fix; the third waits on the user",
+      "categories": ["partly-addressed", "subagent"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "Two of the three routes have an auth check. /hooks/replay does not, and the recap says so with the agent's question.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["How to handle /hooks/replay auth"],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": ["/export and /admin/stats now require auth"]
+      },
+      "checks": [
+        {
+          "name": "after the turn: /hooks/replay still has no auth check",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-with-a-failing-step@claude-cli",
+      "title": "The agent does two of three of the same step and stops when the third fails",
+      "categories": ["partly-addressed", "tool-heavy"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "The users and admins tables are backfilled. The guests table is not, and the recap says so with the reason.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Backfilled display_name for users and admins, timed out on guests table.",
+        "asked": [],
+        "did": [
+          "[done] Backfilled users display_name",
+          "[done] Backfilled admins display_name",
+          "[blocked] Attempted to backfill guests display_name"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Run guests backfill in batches"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the guests table was not backfilled",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-with-a-failing-step@codex-cli",
+      "title": "The agent does two of three of the same step and stops when the third fails",
+      "categories": ["partly-addressed", "tool-heavy"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "The users and admins tables are backfilled. The guests table is not, and the recap says so with the reason.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "Backfilled display_name for users and admins, timed out on guests table.",
+        "asked": [],
+        "did": [
+          "[done] Backfilled users display_name",
+          "[done] Backfilled admins display_name",
+          "[blocked] Attempted to backfill guests display_name"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Run guests backfill in batches"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the guests table was not backfilled",
+          "ok": false,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "partly-done-with-the-rest-blocked@claude-cli",
+      "title": "One of two languages is translated; the other waits on something the agent lacks",
+      "categories": ["partly-addressed"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "German is done. French is not, and the recap says so with the reason.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Settings page translation",
+        "goal": "Translate settings page into German and French.",
+        "standing": "German translation done. Product terms for French glossary missing.",
+        "asked": [],
+        "did": ["[done] German translation done in de.json"],
+        "questions": ["Can French product terms be defined"],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the French translation is not done",
+          "ok": false,
+          "actual": "(none)"
         }
       ]
     },
@@ -5480,6 +7003,252 @@
       ]
     },
     {
+      "id": "reply-lists-in-the-wrong-place@chat-journal",
+      "title": "The model puts its lists at the top of the reply instead of under add",
+      "categories": ["model-failure", "addressed-same-turn"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "A reply whose lists sit where the recap does not read them is not taken as the recap of the turn: the fix is recorded as done, or the recap says it could not be written. Never a recap that is ready and empty.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the fix the reply named is recorded as done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: where things stand says the crash is fixed",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "reply-lists-in-the-wrong-place@claude-cli",
+      "title": "The model puts its lists at the top of the reply instead of under add",
+      "categories": ["model-failure", "addressed-same-turn"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "A reply whose lists sit where the recap does not read them is not taken as the recap of the turn: the fix is recorded as done, or the recap says it could not be written. Never a recap that is ready and empty.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the fix the reply named is recorded as done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: where things stand says the crash is fixed",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "reply-lists-in-the-wrong-place@codex-cli",
+      "title": "The model puts its lists at the top of the reply instead of under add",
+      "categories": ["model-failure", "addressed-same-turn"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "A reply whose lists sit where the recap does not read them is not taken as the recap of the turn: the fix is recorded as done, or the recap says it could not be written. Never a recap that is ready and empty.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the fix the reply named is recorded as done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: where things stand says the crash is fixed",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "rest-of-a-partly-done-ask-finished-in-passing@chat-journal",
+      "title": "The half of an ask that was left over is finished while doing something else, without being named",
+      "categories": ["partly-addressed", "addressed-implicitly"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "After turn 1 the /customers half is open. Turn 2 changes the page size on both endpoints, which only works because /customers now paginates too; after it nothing is listed as not addressed or as half done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Change page size to 100 on /orders, /customers."],
+        "did": ["[done] Paginate /orders with 50/page and cursor."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the /customers half is not done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: /customers was paginated along with the page-size change",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the page-size change is recorded as done",
+          "ok": false,
+          "actual": "[done] Paginate /orders with 50/page and cursor."
+        }
+      ]
+    },
+    {
+      "id": "rest-of-a-partly-done-ask-finished-in-passing@claude-cli",
+      "title": "The half of an ask that was left over is finished while doing something else, without being named",
+      "categories": ["partly-addressed", "addressed-implicitly"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 the /customers half is open. Turn 2 changes the page size on both endpoints, which only works because /customers now paginates too; after it nothing is listed as not addressed or as half done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Change page size to 100 on /orders, /customers."],
+        "did": ["[done] Paginate /orders with 50/page and cursor."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the /customers half is not done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: /customers was paginated along with the page-size change",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the page-size change is recorded as done",
+          "ok": false,
+          "actual": "[done] Paginate /orders with 50/page and cursor."
+        }
+      ]
+    },
+    {
+      "id": "rest-of-a-partly-done-ask-finished-in-passing@codex-cli",
+      "title": "The half of an ask that was left over is finished while doing something else, without being named",
+      "categories": ["partly-addressed", "addressed-implicitly"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "After turn 1 the /customers half is open. Turn 2 changes the page size on both endpoints, which only works because /customers now paginates too; after it nothing is listed as not addressed or as half done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Change page size to 100 on /orders, /customers."],
+        "did": ["[done] Paginate /orders with 50/page and cursor."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the /customers half is not done",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: /customers was paginated along with the page-size change",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the page-size change is recorded as done",
+          "ok": false,
+          "actual": "[done] Paginate /orders with 50/page and cursor."
+        }
+      ]
+    },
+    {
       "id": "restart-mid-session@chat-journal",
       "title": "The app restarts between an open ask and the turn that does it",
       "categories": ["restart-resume"],
@@ -5815,6 +7584,167 @@
           "name": "after turn 2: the restore command is recorded as done",
           "ok": true,
           "actual": "[done] Create backup-uploads.ts script | [done] Schedule nightly execution at 02:00 | [done] Add restore-uploads.ts script | [done] Implement restore command function"
+        }
+      ]
+    },
+    {
+      "id": "second-ask-sent-while-the-agent-works@chat-journal",
+      "title": "The user sends a second ask while the agent is still on the first",
+      "categories": ["multiple-asks", "mid-turn"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
+      "passes": ["asked: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Rename Account page to Profile",
+        "goal": "Rename Account page to Profile everywhere",
+        "standing": "Renaming page component and route.",
+        "asked": ["Update nav link and sitemap"],
+        "did": ["[in-progress] Renaming page component and route"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": ["Updating nav link and sitemap"]
+      },
+      "checks": [
+        {
+          "name": "right after the second message: the agent is still working; a request it has only just been sent is not overlooked",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "right after the second message: nothing here is for the user to do",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the request sent mid-turn is recorded",
+          "ok": true,
+          "actual": "Update nav link and sitemap"
+        },
+        {
+          "name": "after the turn: the rename is recorded as done",
+          "ok": false,
+          "actual": "[in-progress] Renaming page component and route"
+        }
+      ]
+    },
+    {
+      "id": "second-ask-sent-while-the-agent-works@claude-cli",
+      "title": "The user sends a second ask while the agent is still on the first",
+      "categories": ["multiple-asks", "mid-turn"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
+      "passes": ["asked: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Rename Account Page to Profile",
+        "goal": "Systematically rename Account page to Profile.",
+        "standing": "Changing page component, route, and navigation links.",
+        "asked": [],
+        "did": [
+          "[done] Rename account page component and route",
+          "[done] Update nav link for profile",
+          "[done] Update sitemap for profile"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "right after the second message: the agent is still working; a request it has only just been sent is not overlooked",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "right after the second message: nothing here is for the user to do",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the request sent mid-turn is recorded",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the rename is recorded as done",
+          "ok": true,
+          "actual": "[done] Rename account page component and route | [done] Update nav link for profile | [done] Update sitemap for profile"
+        }
+      ]
+    },
+    {
+      "id": "second-ask-sent-while-the-agent-works@codex-cli",
+      "title": "The user sends a second ask while the agent is still on the first",
+      "categories": ["multiple-asks", "mid-turn"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
+      "passes": ["asked: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Rename Account Page to Profile",
+        "goal": "Systematically rename Account page to Profile.",
+        "standing": "Changing page component, route, and navigation links.",
+        "asked": [],
+        "did": [
+          "[done] Rename account page component and route",
+          "[done] Update nav link for profile",
+          "[done] Update sitemap for profile"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "right after the second message: the agent is still working; a request it has only just been sent is not overlooked",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "right after the second message: nothing here is for the user to do",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the request sent mid-turn is recorded",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the rename is recorded as done",
+          "ok": true,
+          "actual": "[done] Rename account page component and route | [done] Update nav link for profile | [done] Update sitemap for profile"
         }
       ]
     },
@@ -6353,6 +8283,57 @@
       ]
     },
     {
+      "id": "subagent-still-running-when-the-agent-stops@claude-cli",
+      "title": "The agent stops writing while a subagent it started is still doing one of the asks",
+      "categories": ["subagent", "mid-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "While the subagent runs, the audit is work under way, not a request the agent overlooked and not a to-do for the user. Once the agent reports the result, the audit is done and nothing is listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["bump Node version to 22 in CI", "audit npm dependencies for vulnerabilities"],
+        "did": ["[done] bump Node version to 22 in CI", "[done] audit npm dependencies"],
+        "questions": ["What vulnerabilities were found in the dependency audit?"],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "while the subagent runs: the audit is under way in a subagent; the agent has not overlooked it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "while the subagent runs: the audit is the agent's job, not a to-do for the user",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "while the subagent runs: the Node bump is recorded as done",
+          "ok": true,
+          "actual": "[done] bump Node version to 22 in CI | [in-progress] audit npm dependencies"
+        },
+        {
+          "name": "after the subagent reports: both things were done; nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the subagent reports: the audit is recorded as done",
+          "ok": true,
+          "actual": "[done] bump Node version to 22 in CI | [done] audit npm dependencies"
+        }
+      ]
+    },
+    {
       "id": "terse-ask-skipped@chat-journal",
       "title": "A terse second ask the agent silently skips",
       "categories": ["non-english-terse", "partly-addressed"],
@@ -6782,6 +8763,306 @@
       ]
     },
     {
+      "id": "user-asks-whether-it-was-done@chat-journal",
+      "title": "The user asks whether something was done, and it was, turns ago",
+      "categories": ["duplicate-asks", "addressed-implicitly"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "The documentation was written in turn 1 without a word. When the user asks about it the agent confirms, with no new work. The request is not reopened and not listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Add rate limiting to /login endpoint",
+          "[done] Document limit in docs/api.md"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Add 429 status message to docs"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: the documentation was written in turn 1 and the agent confirmed it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: a question about finished work is not a second request for it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent asked nothing",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "user-asks-whether-it-was-done@claude-cli",
+      "title": "The user asks whether something was done, and it was, turns ago",
+      "categories": ["duplicate-asks", "addressed-implicitly"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "The documentation was written in turn 1 without a word. When the user asks about it the agent confirms, with no new work. The request is not reopened and not listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Add rate limiting to /login endpoint",
+          "[done] Document limit in docs/api.md"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Add 429 status message to docs"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: the documentation was written in turn 1 and the agent confirmed it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: a question about finished work is not a second request for it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent asked nothing",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "user-asks-whether-it-was-done@codex-cli",
+      "title": "The user asks whether something was done, and it was, turns ago",
+      "categories": ["duplicate-asks", "addressed-implicitly"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "The documentation was written in turn 1 without a word. When the user asks about it the agent confirms, with no new work. The request is not reopened and not listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [],
+        "did": [
+          "[done] Add rate limiting to /login endpoint",
+          "[done] Document limit in docs/api.md"
+        ],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Add 429 status message to docs"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 2: the documentation was written in turn 1 and the agent confirmed it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: a question about finished work is not a second request for it",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the agent asked nothing",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "user-drops-everything-open@chat-journal",
+      "title": "The user drops every open ask at once without naming any of them",
+      "categories": ["withdrawn-or-changed", "multiple-asks"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "After turn 1 the export, dark mode and the German emails are open. After the user says to forget the rest, none of the three is listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Demo: Avatar, CSV, Dark Mode, Translations",
+        "goal": "Complete pre-demo fixes for avatar upload, CSV export, dark mode, and German emails.",
+        "standing": "Avatar upload is done; CSV, dark mode, and emails are pending.",
+        "asked": [
+          "Fix avatar upload before demo",
+          "Add CSV export to orders page",
+          "Add dark mode to settings page",
+          "Translate onboarding emails to German"
+        ],
+        "did": ["[done] Fixed avatar upload size comparison bug"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the CSV export is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: dark mode is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: the German emails are asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user dropped everything that was still open",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the push is recorded as done",
+          "ok": true,
+          "actual": "[done] Fixed avatar upload size comparison bug"
+        }
+      ]
+    },
+    {
+      "id": "user-drops-everything-open@claude-cli",
+      "title": "The user drops every open ask at once without naming any of them",
+      "categories": ["withdrawn-or-changed", "multiple-asks"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 the export, dark mode and the German emails are open. After the user says to forget the rest, none of the three is listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Demo: Avatar, CSV, Dark Mode, Translations",
+        "goal": "Complete pre-demo fixes for avatar upload, CSV export, dark mode, and German emails.",
+        "standing": "Avatar upload is done; CSV, dark mode, and emails are pending.",
+        "asked": [
+          "Fix avatar upload before demo",
+          "Add CSV export to orders page",
+          "Add dark mode to settings page",
+          "Translate onboarding emails to German"
+        ],
+        "did": ["[done] Fixed avatar upload size comparison bug"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the CSV export is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: dark mode is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: the German emails are asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user dropped everything that was still open",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the push is recorded as done",
+          "ok": true,
+          "actual": "[done] Fixed avatar upload size comparison bug"
+        }
+      ]
+    },
+    {
+      "id": "user-drops-everything-open@codex-cli",
+      "title": "The user drops every open ask at once without naming any of them",
+      "categories": ["withdrawn-or-changed", "multiple-asks"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "After turn 1 the export, dark mode and the German emails are open. After the user says to forget the rest, none of the three is listed as not addressed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Demo: Avatar, CSV, Dark Mode, Translations",
+        "goal": "Complete pre-demo fixes for avatar upload, CSV export, dark mode, and German emails.",
+        "standing": "Avatar upload is done; CSV, dark mode, and emails are pending.",
+        "asked": [
+          "Fix avatar upload before demo",
+          "Add CSV export to orders page",
+          "Add dark mode to settings page",
+          "Translate onboarding emails to German"
+        ],
+        "did": ["[done] Fixed avatar upload size comparison bug"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the CSV export is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: dark mode is asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 1: the German emails are asked for and not started",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user dropped everything that was still open",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the push is recorded as done",
+          "ok": true,
+          "actual": "[done] Fixed avatar upload size comparison bug"
+        }
+      ]
+    },
+    {
       "id": "withdrawn-ask@chat-journal",
       "title": "The user takes back an ask the agent had not started",
       "categories": ["withdrawn-or-changed"],
@@ -6899,6 +9180,445 @@
         },
         {
           "name": "after turn 2: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-because-someone-else-does-it@chat-journal",
+      "title": "The user takes back the open half of an ask in passing while asking for something new",
+      "categories": ["withdrawn-or-changed", "multiple-asks"],
+      "surface": "chat-journal",
+      "status": "fail",
+      "expected": "After turn 1 the changelog is done and the release notes are open. After turn 2 the notes are no longer wanted and not listed as not addressed; the tag is done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Release 3.2.0",
+        "goal": "Write a changelog entry for 3.2 and tweet-length release notes.",
+        "standing": "v3.2.0 tagged and pushed. Marketing will provide the notes.",
+        "asked": [],
+        "did": ["[done] Tagged v3.2.0 and pushed tag"],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Marketing to write tweet-length notes"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the release notes are not written",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: marketing took the release notes over",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the tag is recorded as done",
+          "ok": true,
+          "actual": "[done] Tagged v3.2.0 and pushed tag"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-because-someone-else-does-it@claude-cli",
+      "title": "The user takes back the open half of an ask in passing while asking for something new",
+      "categories": ["withdrawn-or-changed", "multiple-asks"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 the changelog is done and the release notes are open. After turn 2 the notes are no longer wanted and not listed as not addressed; the tag is done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Release 3.2.0",
+        "goal": "Write a changelog entry for 3.2 and tweet-length release notes.",
+        "standing": "v3.2.0 tagged and pushed. Marketing will provide the notes.",
+        "asked": [],
+        "did": ["[done] Tagged v3.2.0 and pushed tag"],
+        "questions": [],
+        "ignored": [],
+        "actions": ["Marketing to write tweet-length notes"],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the release notes are not written",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: marketing took the release notes over",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the tag is recorded as done",
+          "ok": true,
+          "actual": "[done] Tagged v3.2.0 and pushed tag"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-by-a-change-of-plan@claude-cli",
+      "title": "The user scraps an ask the agent had a question about and asks for something else",
+      "categories": ["withdrawn-or-changed", "question-open"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 the rate limiter is open, waiting on the agent's question. After turn 2 it is withdrawn and not listed as not addressed; the CAPTCHA is done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [
+          "Staging has no Redis. Add Redis to compose or point to existing instance?",
+          "Westward route deregistered from rate limiter."
+        ],
+        "did": ["[done] Added reCAPTCHA to login form, verified on server"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent's question is open",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user scrapped the rate limiter",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the CAPTCHA is recorded as done",
+          "ok": true,
+          "actual": "[done] Added reCAPTCHA to login form, verified on server"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-by-a-change-of-plan@codex-cli",
+      "title": "The user scraps an ask the agent had a question about and asks for something else",
+      "categories": ["withdrawn-or-changed", "question-open"],
+      "surface": "codex-cli",
+      "status": "fail",
+      "expected": "After turn 1 the rate limiter is open, waiting on the agent's question. After turn 2 it is withdrawn and not listed as not addressed; the CAPTCHA is done.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": [
+          "Staging has no Redis. Add Redis to compose or point to existing instance?",
+          "Westward route deregistered from rate limiter."
+        ],
+        "did": ["[done] Added reCAPTCHA to login form, verified on server"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent's question is open",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user scrapped the rate limiter",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the CAPTCHA is recorded as done",
+          "ok": true,
+          "actual": "[done] Added reCAPTCHA to login form, verified on server"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-in-spanish@claude-cli",
+      "title": "In a Spanish session the user drops an open ask and asks for a fix instead",
+      "categories": ["withdrawn-or-changed", "non-english-terse"],
+      "surface": "claude-cli",
+      "status": "fail",
+      "expected": "After turn 1 the PDF button is open. After turn 2 it is withdrawn and not listed as not addressed; the invoice total is fixed.",
+      "passes": ["auto: updated", "auto: updated"],
+      "requests": 2,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": "Añadir botón de exportar a PDF",
+        "goal": "Añadir botón para exportar a PDF en la página de facturas",
+        "standing": "La librería de PDF se descartó, ahora se está arreglando el cálculo del total de la factura.",
+        "asked": [],
+        "did": ["[done] Descartar librería PDF", "[done] Corregir cálculo doble de IVA"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": [
+          "Seleccionar librería de PDF compatible",
+          "Descartar PDF y arreglar total de factura"
+        ]
+      },
+      "checks": [
+        {
+          "name": "after turn 1: the agent's question is open",
+          "ok": false,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the user dropped the PDF button",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after turn 2: the total fix is recorded as done",
+          "ok": true,
+          "actual": "[done] Descartar librería PDF | [done] Corregir cálculo doble de IVA"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-then-asked-again@chat-journal",
+      "title": "The user withdraws an ask, then asks for it again",
+      "categories": ["withdrawn-or-changed", "addressed-later-turn"],
+      "surface": "chat-journal",
+      "status": "pass",
+      "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
+      "passes": ["auto: updated", "auto: updated", "auto: updated"],
+      "requests": 4,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Add dark mode to the settings page.", "Add dark mode to settings page."],
+        "did": ["[done] Add dark mode to settings page."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user withdraws it: the user withdrew the request",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user withdraws it: the question fell away with the request it was about",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: dark mode is recorded as done",
+          "ok": true,
+          "actual": "[done] Add dark mode to settings page."
+        },
+        {
+          "name": "after the user asks again: the user said which pages when asking again",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-then-asked-again@claude-cli",
+      "title": "The user withdraws an ask, then asks for it again",
+      "categories": ["withdrawn-or-changed", "addressed-later-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
+      "passes": ["auto: updated", "auto: updated", "auto: updated"],
+      "requests": 4,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Add dark mode to the settings page.", "Add dark mode to settings page."],
+        "did": ["[done] Add dark mode to settings page."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user withdraws it: the user withdrew the request",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user withdraws it: the question fell away with the request it was about",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: dark mode is recorded as done",
+          "ok": true,
+          "actual": "[done] Add dark mode to settings page."
+        },
+        {
+          "name": "after the user asks again: the user said which pages when asking again",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-then-asked-again@codex-cli",
+      "title": "The user withdraws an ask, then asks for it again",
+      "categories": ["withdrawn-or-changed", "addressed-later-turn"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
+      "passes": ["auto: updated", "auto: updated", "auto: updated"],
+      "requests": 4,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": null,
+        "asked": ["Add dark mode to the settings page.", "Add dark mode to settings page."],
+        "did": ["[done] Add dark mode to settings page."],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the user withdraws it: the user withdrew the request",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user withdraws it: the question fell away with the request it was about",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: nothing the user asked for is left unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the user asks again: dark mode is recorded as done",
+          "ok": true,
+          "actual": "[done] Add dark mode to settings page."
+        },
+        {
+          "name": "after the user asks again: the user said which pages when asking again",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-while-the-agent-works@claude-cli",
+      "title": "The user stops an ask in the middle of the agent's turn and the agent undoes what it began",
+      "categories": ["withdrawn-or-changed", "mid-turn"],
+      "surface": "claude-cli",
+      "status": "pass",
+      "expected": "The Dockerfile ask was taken back mid-turn and the agent reverted its change: nothing is listed as not addressed and no work is left half done.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "The Dockerfile remains unchanged.",
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the user took the ask back; nothing is unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the conversion was undone, so it is not work that was done",
+          "ok": true,
+          "actual": "(none)"
+        }
+      ]
+    },
+    {
+      "id": "withdrawn-while-the-agent-works@codex-cli",
+      "title": "The user stops an ask in the middle of the agent's turn and the agent undoes what it began",
+      "categories": ["withdrawn-or-changed", "mid-turn"],
+      "surface": "codex-cli",
+      "status": "pass",
+      "expected": "The Dockerfile ask was taken back mid-turn and the agent reverted its change: nothing is listed as not addressed and no work is left half done.",
+      "passes": ["auto: updated"],
+      "requests": 1,
+      "state": "ready",
+      "stale": false,
+      "failure": null,
+      "recap": {
+        "title": null,
+        "goal": null,
+        "standing": "The Dockerfile remains unchanged.",
+        "asked": [],
+        "did": [],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      },
+      "checks": [
+        {
+          "name": "after the turn: the user took the ask back; nothing is unaddressed",
+          "ok": true,
+          "actual": "(none)"
+        },
+        {
+          "name": "after the turn: the conversion was undone, so it is not work that was done",
           "ok": true,
           "actual": "(none)"
         }

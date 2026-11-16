@@ -4,7 +4,6 @@
   "categories": ["partly-addressed"],
   "surfaces": ["claude-cli", "chat-journal"],
   "expected": "Tests exist for the csv and json parsers. The yaml parser has none yet, and that is what is left open.",
-  "pending": true,
   "steps": [
     {
       "user": "Add unit tests for the three parsers: csv, json and yaml."

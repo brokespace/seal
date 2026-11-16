@@ -4,7 +4,6 @@
   "categories": ["long-session", "addressed-later-turn"],
   "surfaces": ["claude-cli"],
   "expected": "LOG_LEVEL is open after the first turn and through the twenty-two turns that follow. When the user asks for it again and the agent adds it, it is done: not listed as not addressed, and not left behind as a second, forever open request.",
-  "pending": true,
   "steps": [
     {
       "user": "We are moving every service onto the shared logger, one service per turn. Before any of that: add a LOG_LEVEL env var to the logger, default info."

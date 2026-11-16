@@ -4,7 +4,6 @@
   "categories": ["model-failure"],
   "surfaces": ["claude-cli"],
   "expected": "While the model's replies cannot be read the recap claims nothing is overlooked. Once it recovers, the work of the turns it failed on is recorded, and the requests the host wrote down in the meantime are not listed a second time in the model's words.",
-  "pending": true,
   "steps": [
     {
       "fault": {

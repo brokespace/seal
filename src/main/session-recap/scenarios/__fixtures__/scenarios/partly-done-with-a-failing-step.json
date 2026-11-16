@@ -4,7 +4,6 @@
   "categories": ["partly-addressed", "tool-heavy"],
   "surfaces": ["claude-cli", "codex-cli"],
   "expected": "The users and admins tables are backfilled. The guests table is not, and the recap says so with the reason.",
-  "pending": true,
   "steps": [
     {
       "user": "Backfill display_name from the profiles table on the users, admins and guests tables."

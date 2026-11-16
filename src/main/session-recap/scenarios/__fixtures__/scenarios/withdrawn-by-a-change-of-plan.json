@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "question-open"],
   "surfaces": ["claude-cli", "codex-cli"],
   "expected": "After turn 1 the rate limiter is open, waiting on the agent's question. After turn 2 it is withdrawn and not listed as not addressed; the CAPTCHA is done.",
-  "pending": true,
   "steps": [
     {
       "user": "Add a Redis-backed rate limiter to the login route."

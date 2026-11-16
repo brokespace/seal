@@ -4,7 +4,6 @@
   "categories": ["duplicate-asks", "addressed-implicitly"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "The documentation was written in turn 1 without a word. When the user asks about it the agent confirms, with no new work. The request is not reopened and not listed as not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Add rate limiting to /login, and document it in docs/api.md."

@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "non-english-terse"],
   "surfaces": ["claude-cli"],
   "expected": "After turn 1 the PDF button is open. After turn 2 it is withdrawn and not listed as not addressed; the invoice total is fixed.",
-  "pending": true,
   "steps": [
     {
       "user": "añade un botón para exportar a PDF en la página de facturas"

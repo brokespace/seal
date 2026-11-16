@@ -4,7 +4,6 @@
   "categories": ["partly-addressed", "addressed-later-turn", "duplicate-asks"],
   "surfaces": ["claude-cli", "codex-cli"],
   "expected": "After turn 1 and turn 2 the ask is half done, with what is left. After turn 3 it is done, listed once, and nothing is left as not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Replace moment with date-fns in all three packages: api, web and worker."

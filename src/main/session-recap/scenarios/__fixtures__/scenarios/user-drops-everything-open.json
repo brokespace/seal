@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "multiple-asks"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "After turn 1 the export, dark mode and the German emails are open. After the user says to forget the rest, none of the three is listed as not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Before the demo: 1) fix the broken avatar upload, 2) add a CSV export to the orders page, 3) add dark mode to settings, 4) translate the onboarding emails to German."

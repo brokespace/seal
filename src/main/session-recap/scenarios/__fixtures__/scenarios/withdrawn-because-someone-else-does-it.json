@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "multiple-asks"],
   "surfaces": ["claude-cli", "chat-journal"],
   "expected": "After turn 1 the changelog is done and the release notes are open. After turn 2 the notes are no longer wanted and not listed as not addressed; the tag is done.",
-  "pending": true,
   "steps": [
     {
       "user": "Write a changelog entry for 3.2 and tweet-length release notes."

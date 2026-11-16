@@ -4,7 +4,6 @@
   "categories": ["declined", "addressed-later-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "After turn 1 the request is answered with a refusal, not overlooked. After turn 2 the table is dropped: the request is done, listed once, and nothing is left as refused or not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Drop the legacy_reports table, nothing reads it."

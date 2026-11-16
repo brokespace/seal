@@ -4,7 +4,6 @@
   "categories": ["multiple-asks", "mid-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
-  "pending": true,
   "steps": [
     {
       "user": "Rename the Account page to Profile everywhere."

@@ -4,7 +4,6 @@
   "categories": ["partly-addressed"],
   "surfaces": ["claude-cli"],
   "expected": "German is done. French is not, and the recap says so with the reason.",
-  "pending": true,
   "steps": [
     {
       "user": "Translate the settings page into German and French."

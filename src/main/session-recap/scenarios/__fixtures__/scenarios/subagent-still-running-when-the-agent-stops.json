@@ -4,7 +4,6 @@
   "categories": ["subagent", "mid-turn"],
   "surfaces": ["claude-cli"],
   "expected": "While the subagent runs, the audit is work under way, not a request the agent overlooked and not a to-do for the user. Once the agent reports the result, the audit is done and nothing is listed as not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Two things: bump the Node version in CI to 22, and audit our npm dependencies for known vulnerabilities."

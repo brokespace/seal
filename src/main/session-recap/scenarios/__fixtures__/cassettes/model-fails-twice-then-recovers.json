@@ -1,0 +1,14 @@
+[
+  {
+    "key": "d5bed77b752e1c5f90eaafb41faff420",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a CSV export to the orders page and a date filter above the table.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a CSV export to the orders page and a date filter above the table.\"},{\"id\":\"a2\",\"text\":\"make the date filter default to the last 30 days\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: and add a Reset button next to the filter\n\n[m2] AGENT: There is a Reset button next to the date filter now.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Add a CSV export to the orders page.\", \"ref\": \"a1\"}, {\"text\": \"Make the date filter default to last 30 days.\", \"ref\": \"a2\"}, {\"text\": \"Add a Reset button next to the filter.\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Add a Reset button next to the date filter.\", \"state\": \"done\", \"ref\": \"m2\"}]\n  },\n  \"resolve\": [\"a1\"],\n  \"update\": [{\"id\": \"a1\", \"state\": \"blocked\"}]\n}",
+    "neurons": 8.7289
+  }
+]

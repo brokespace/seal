@@ -4,7 +4,6 @@
   "categories": ["declined", "withdrawn-or-changed", "addressed-later-turn"],
   "surfaces": ["claude-cli", "chat-journal"],
   "expected": "After turn 2 turning the rule off is refused with its reason. After turn 3 the user has taken the agent's offer instead: the warnings are fixed, and turning the rule off is no longer wanted and not listed as not addressed.",
-  "pending": true,
   "steps": [
     {
       "user": "Upgrade React to 19."

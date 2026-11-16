@@ -1,0 +1,2998 @@
+[
+  {
+    "key": "34214dba85427f814023e28017cf492a",
+    "item": "action-done-by-user#1@after turn 1",
+    "answers": {
+      "done": 0.3333,
+      "did_part": 0.9474,
+      "declined": 0.0254,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0825
+    },
+    "inputTokens": 724,
+    "outputTokens": 0,
+    "ms": 298
+  },
+  {
+    "key": "6f3c5ed656145b45374af64a87e84dba",
+    "item": "action-done-by-user#1@after turn 2",
+    "answers": {
+      "done": 0.8932,
+      "did_part": 0.5946,
+      "declined": 0.0284,
+      "withdrawn": 0.0131,
+      "left_undone": 0.1267
+    },
+    "inputTokens": 756,
+    "outputTokens": 0,
+    "ms": 196
+  },
+  {
+    "key": "2f13baa628b7d80381a11f99370d0d99",
+    "item": "action-done-by-user#2@after turn 2",
+    "answers": {
+      "done": 0.9408,
+      "did_part": 0.2104,
+      "declined": 0.0652,
+      "withdrawn": 0.01,
+      "left_undone": 0.3431
+    },
+    "inputTokens": 673,
+    "outputTokens": 0,
+    "ms": 358
+  },
+  {
+    "key": "e90a9842344ae805cdce8d42cf3bc579",
+    "item": "addressed-by-commit-and-pr#1@after turn 2",
+    "answers": {
+      "done": 0.9171,
+      "did_part": 0.1343,
+      "declined": 0.0258,
+      "withdrawn": 0.0138,
+      "left_undone": 0.0465
+    },
+    "inputTokens": 778,
+    "outputTokens": 0,
+    "ms": 340
+  },
+  {
+    "key": "56a049bbe8bb1df130b69a7b3aa7a075",
+    "item": "addressed-by-commit-and-pr#2@after turn 2",
+    "answers": {
+      "done": 0.9213,
+      "did_part": 0.1458,
+      "declined": 0.0228,
+      "withdrawn": 0.0115,
+      "left_undone": 0.0303
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 317
+  },
+  {
+    "key": "2dfcd292aeec64b90522efe67508dfa7",
+    "item": "addressed-by-commit-and-pr#3@after turn 2",
+    "answers": {
+      "done": 0.9363,
+      "did_part": 0.1196,
+      "declined": 0.0223,
+      "withdrawn": 0.0134,
+      "left_undone": 0.0324
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 266
+  },
+  {
+    "key": "9f5db83ad562469e0b3454caa0bdd77f",
+    "item": "addressed-implicitly-by-edit#1@after the turn",
+    "answers": {
+      "done": 0.9512,
+      "did_part": 0.2656,
+      "declined": 0.0245,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0315
+    },
+    "inputTokens": 723,
+    "outputTokens": 0,
+    "ms": 754
+  },
+  {
+    "key": "deb71a170c7b5600e99fb2abaabce698",
+    "item": "addressed-implicitly-by-edit#2@after the turn",
+    "answers": {
+      "done": 0.9393,
+      "did_part": 0.1914,
+      "declined": 0.0256,
+      "withdrawn": 0.0128,
+      "left_undone": 0.0412
+    },
+    "inputTokens": 719,
+    "outputTokens": 0,
+    "ms": 330
+  },
+  {
+    "key": "aba3ef2619fbefcfb94d56c93267471f",
+    "item": "addressed-in-the-middle-of-a-long-turn#1@after the turn",
+    "answers": {
+      "done": 0.8879,
+      "did_part": 0.2861,
+      "declined": 0.0267,
+      "withdrawn": 0.0104,
+      "left_undone": 0.0425
+    },
+    "inputTokens": 1300,
+    "outputTokens": 0,
+    "ms": 304
+  },
+  {
+    "key": "60f326e192eecc8bd8c4becb6f4bc8f0",
+    "item": "addressed-in-the-middle-of-a-long-turn#2@after the turn",
+    "answers": {
+      "done": 0.9281,
+      "did_part": 0.1278,
+      "declined": 0.0217,
+      "withdrawn": 0.0101,
+      "left_undone": 0.0463
+    },
+    "inputTokens": 1300,
+    "outputTokens": 0,
+    "ms": 486
+  },
+  {
+    "key": "0bc0e5a37f5e3bbfa8e0e594b03e8236",
+    "item": "addressed-in-the-middle-of-a-long-turn#3@after the turn",
+    "answers": {
+      "done": 0.9166,
+      "did_part": 0.0879,
+      "declined": 0.019,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0427
+    },
+    "inputTokens": 1299,
+    "outputTokens": 0,
+    "ms": 375
+  },
+  {
+    "key": "01885a101fba1523e93bece0f35bbe0e",
+    "item": "addressed-later-by-tools-on-other-files#1@after turn 1",
+    "answers": {
+      "done": 0.014,
+      "did_part": 0.7717,
+      "declined": 0.0424,
+      "withdrawn": 0.0105,
+      "left_undone": 0.8931
+    },
+    "inputTokens": 719,
+    "outputTokens": 0,
+    "ms": 266
+  },
+  {
+    "key": "30979860c67e64c7d42869e7f8417082",
+    "item": "addressed-later-by-tools-on-other-files#1@after turn 2",
+    "answers": {
+      "done": 0.7967,
+      "did_part": 0.4637,
+      "declined": 0.053,
+      "withdrawn": 0.0222,
+      "left_undone": 0.1205
+    },
+    "inputTokens": 793,
+    "outputTokens": 0,
+    "ms": 230
+  },
+  {
+    "key": "156fddec3f1ba7b5e75aac68a7ddca56",
+    "item": "addressed-later-by-tools-on-other-files#2@after turn 1",
+    "answers": {
+      "done": 0.9111,
+      "did_part": 0.5048,
+      "declined": 0.0251,
+      "withdrawn": 0.0105,
+      "left_undone": 0.037
+    },
+    "inputTokens": 715,
+    "outputTokens": 0,
+    "ms": 274
+  },
+  {
+    "key": "735f4f24226e0f03bb27d12aa3a4bdcb",
+    "item": "addressed-later-by-tools-on-other-files#2@after turn 2",
+    "answers": {
+      "done": 0.8842,
+      "did_part": 0.3245,
+      "declined": 0.0284,
+      "withdrawn": 0.0131,
+      "left_undone": 0.0304
+    },
+    "inputTokens": 789,
+    "outputTokens": 0,
+    "ms": 200
+  },
+  {
+    "key": "cfaf2d974f2652281a6f19e1239ac128",
+    "item": "addressed-next-turn#1@after the next automatic pass",
+    "answers": {
+      "done": 0.9503,
+      "did_part": 0.1389,
+      "declined": 0.0202,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0442
+    },
+    "inputTokens": 817,
+    "outputTokens": 0,
+    "ms": 197
+  },
+  {
+    "key": "832fe9471a78a9ef44c4d5f11a9dfe65",
+    "item": "addressed-next-turn#1@after turn 1",
+    "answers": {
+      "done": 0.111,
+      "did_part": 0.9501,
+      "declined": 0.0189,
+      "withdrawn": 0.0121,
+      "left_undone": 0.1211
+    },
+    "inputTokens": 739,
+    "outputTokens": 0,
+    "ms": 338
+  },
+  {
+    "key": "1c9a3811d447187b33b8770c2eccf494",
+    "item": "addressed-next-turn#2@after the next automatic pass",
+    "answers": {
+      "done": 0.9489,
+      "did_part": 0.0987,
+      "declined": 0.0277,
+      "withdrawn": 0.0139,
+      "left_undone": 0.0732
+    },
+    "inputTokens": 806,
+    "outputTokens": 0,
+    "ms": 802
+  },
+  {
+    "key": "49633f011b12f7970fa6e07c0820fb63",
+    "item": "addressed-next-turn#2@after turn 1",
+    "answers": {
+      "done": 0.0272,
+      "did_part": 0.7773,
+      "declined": 0.0282,
+      "withdrawn": 0.013,
+      "left_undone": 0.9397
+    },
+    "inputTokens": 728,
+    "outputTokens": 0,
+    "ms": 323
+  },
+  {
+    "key": "b2b9c9fc91c4eb9bbda5bbce45747730",
+    "item": "addressed-next-turn#3@after the next automatic pass",
+    "answers": {
+      "done": 0.8941,
+      "did_part": 0.3779,
+      "declined": 0.0273,
+      "withdrawn": 0.0122,
+      "left_undone": 0.2132
+    },
+    "inputTokens": 719,
+    "outputTokens": 0,
+    "ms": 292
+  },
+  {
+    "key": "6a82c701d975ba83af9ffd0c41ee05dd",
+    "item": "addressed-several-turns-later#1@after turn 1",
+    "answers": {
+      "done": 0.0446,
+      "did_part": 0.8966,
+      "declined": 0.0294,
+      "withdrawn": 0.0106,
+      "left_undone": 0.1757
+    },
+    "inputTokens": 706,
+    "outputTokens": 0,
+    "ms": 368
+  },
+  {
+    "key": "66a2001ec8e6763498a3b055cb4f6f6e",
+    "item": "addressed-several-turns-later#1@after turn 3",
+    "answers": {
+      "done": 0.1524,
+      "did_part": 0.7813,
+      "declined": 0.0253,
+      "withdrawn": 0.0123,
+      "left_undone": 0.0618
+    },
+    "inputTokens": 789,
+    "outputTokens": 0,
+    "ms": 220
+  },
+  {
+    "key": "26ab04305ab5c7ad71d934c631a1ed68",
+    "item": "addressed-several-turns-later#1@after turn 4",
+    "answers": {
+      "done": 0.9242,
+      "did_part": 0.1177,
+      "declined": 0.0185,
+      "withdrawn": 0.01,
+      "left_undone": 0.0364
+    },
+    "inputTokens": 836,
+    "outputTokens": 0,
+    "ms": 207
+  },
+  {
+    "key": "9fdb789458d386f71897828d216523ee",
+    "item": "addressed-several-turns-later#2@after turn 1",
+    "answers": {
+      "done": 0.014,
+      "did_part": 0.2268,
+      "declined": 0.1481,
+      "withdrawn": 0.0098,
+      "left_undone": 0.9416
+    },
+    "inputTokens": 704,
+    "outputTokens": 0,
+    "ms": 208
+  },
+  {
+    "key": "bb1e9a07a737b4c63f79a896e7ad7616",
+    "item": "addressed-several-turns-later#2@after turn 3",
+    "answers": {
+      "done": 0.0248,
+      "did_part": 0.2801,
+      "declined": 0.073,
+      "withdrawn": 0.0088,
+      "left_undone": 0.9647
+    },
+    "inputTokens": 787,
+    "outputTokens": 0,
+    "ms": 346
+  },
+  {
+    "key": "94918ac3018c16c64f2a497f3217cada",
+    "item": "addressed-several-turns-later#2@after turn 4",
+    "answers": {
+      "done": 0.9493,
+      "did_part": 0.137,
+      "declined": 0.0186,
+      "withdrawn": 0.0112,
+      "left_undone": 0.0724
+    },
+    "inputTokens": 834,
+    "outputTokens": 0,
+    "ms": 335
+  },
+  {
+    "key": "965b09c88b8fdea3285decaf385eb228",
+    "item": "addressed-with-no-prose#1@after turn 2",
+    "answers": {
+      "done": 0.9365,
+      "did_part": 0.2288,
+      "declined": 0.0261,
+      "withdrawn": 0.0123,
+      "left_undone": 0.0415
+    },
+    "inputTokens": 729,
+    "outputTokens": 0,
+    "ms": 301
+  },
+  {
+    "key": "ac7b97e377cd64ef99d430f031a2ba95",
+    "item": "addressed-with-no-prose#2@after turn 2",
+    "answers": {
+      "done": 0.8079,
+      "did_part": 0.3257,
+      "declined": 0.0317,
+      "withdrawn": 0.0141,
+      "left_undone": 0.0535
+    },
+    "inputTokens": 679,
+    "outputTokens": 0,
+    "ms": 280
+  },
+  {
+    "key": "d08f1cc9f2cc320685d97d4b8eab4d57",
+    "item": "addressed-with-no-prose#3@after turn 2",
+    "answers": {
+      "done": 0.9343,
+      "did_part": 0.183,
+      "declined": 0.0289,
+      "withdrawn": 0.0131,
+      "left_undone": 0.0754
+    },
+    "inputTokens": 677,
+    "outputTokens": 0,
+    "ms": 321
+  },
+  {
+    "key": "b39f440d56bdd9d0bd904a347cd9dafd",
+    "item": "ask-in-the-middle-of-a-long-message#1@after the turn",
+    "answers": {
+      "done": 0.8998,
+      "did_part": 0.4842,
+      "declined": 0.0438,
+      "withdrawn": 0.0188,
+      "left_undone": 0.0492
+    },
+    "inputTokens": 1484,
+    "outputTokens": 0,
+    "ms": 376
+  },
+  {
+    "key": "d378e72933d50937d8a301eaf485fa71",
+    "item": "ask-in-the-middle-of-a-long-message#2@after the turn",
+    "answers": {
+      "done": 0.8119,
+      "did_part": 0.4414,
+      "declined": 0.0689,
+      "withdrawn": 0.0316,
+      "left_undone": 0.4064
+    },
+    "inputTokens": 1485,
+    "outputTokens": 0,
+    "ms": 266
+  },
+  {
+    "key": "5915091bea5e960089386ae94b364667",
+    "item": "changed-ask#1@after turn 1",
+    "answers": {
+      "done": 0.0171,
+      "did_part": 0.1763,
+      "declined": 0.7149,
+      "withdrawn": 0.0115,
+      "left_undone": 0.8997
+    },
+    "inputTokens": 707,
+    "outputTokens": 0,
+    "ms": 373
+  },
+  {
+    "key": "ffa6c2d61879e84b7996a93dbf876ea2",
+    "item": "changed-ask#1@after turn 2",
+    "answers": {
+      "done": 0.3785,
+      "did_part": 0.6314,
+      "declined": 0.4826,
+      "withdrawn": 0.8948,
+      "left_undone": 0.0691
+    },
+    "inputTokens": 766,
+    "outputTokens": 0,
+    "ms": 197
+  },
+  {
+    "key": "8a2fc7e89a619f16bccbd13977b3a348",
+    "item": "changed-ask#2@after turn 2",
+    "answers": {
+      "done": 0.928,
+      "did_part": 0.2387,
+      "declined": 0.1153,
+      "withdrawn": 0.0124,
+      "left_undone": 0.191
+    },
+    "inputTokens": 707,
+    "outputTokens": 0,
+    "ms": 268
+  },
+  {
+    "key": "0f8940b4006e7c9718f6631c71dbf0f0",
+    "item": "compaction-before-first-recap#1@after the turn",
+    "answers": {
+      "done": 0.9242,
+      "did_part": 0.3281,
+      "declined": 0.0218,
+      "withdrawn": 0.0117,
+      "left_undone": 0.0295
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 1285
+  },
+  {
+    "key": "41df6debf3d2d682929eb2a47537ec17",
+    "item": "compaction-before-first-recap#2@after the turn",
+    "answers": {
+      "done": 0.9231,
+      "did_part": 0.2641,
+      "declined": 0.0218,
+      "withdrawn": 0.0115,
+      "left_undone": 0.0431
+    },
+    "inputTokens": 703,
+    "outputTokens": 0,
+    "ms": 326
+  },
+  {
+    "key": "e688f5fc77de2ad9a2e2b19a4321e9f5",
+    "item": "compaction-between-ask-and-work#1@after turn 1",
+    "answers": {
+      "done": 0.7136,
+      "did_part": 0.7208,
+      "declined": 0.0305,
+      "withdrawn": 0.0128,
+      "left_undone": 0.062
+    },
+    "inputTokens": 705,
+    "outputTokens": 0,
+    "ms": 267
+  },
+  {
+    "key": "fcff4c8a61928f4a63e2b37c186eab6f",
+    "item": "compaction-between-ask-and-work#1@after turn 2",
+    "answers": {
+      "done": 0.8865,
+      "did_part": 0.4531,
+      "declined": 0.023,
+      "withdrawn": 0.0109,
+      "left_undone": 0.0422
+    },
+    "inputTokens": 754,
+    "outputTokens": 0,
+    "ms": 325
+  },
+  {
+    "key": "d07b0402e7e5b445c981d6ad7da51f03",
+    "item": "compaction-between-ask-and-work#2@after turn 1",
+    "answers": {
+      "done": 0.0137,
+      "did_part": 0.4108,
+      "declined": 0.0464,
+      "withdrawn": 0.0101,
+      "left_undone": 0.9438
+    },
+    "inputTokens": 704,
+    "outputTokens": 0,
+    "ms": 228
+  },
+  {
+    "key": "6ca896233c87faf08ae019b0934c3b02",
+    "item": "compaction-between-ask-and-work#2@after turn 2",
+    "answers": {
+      "done": 0.9465,
+      "did_part": 0.1901,
+      "declined": 0.0188,
+      "withdrawn": 0.0093,
+      "left_undone": 0.0504
+    },
+    "inputTokens": 753,
+    "outputTokens": 0,
+    "ms": 339
+  },
+  {
+    "key": "abacbae12b2b2f1616dc94ee57c09dfc",
+    "item": "declined-as-out-of-reach#1@after the turn",
+    "answers": {
+      "done": 0.0168,
+      "did_part": 0.6766,
+      "declined": 0.9328,
+      "withdrawn": 0.0086,
+      "left_undone": 0.5738
+    },
+    "inputTokens": 755,
+    "outputTokens": 0,
+    "ms": 196
+  },
+  {
+    "key": "3fc9ea0d043cb328b2b4606df4de7002",
+    "item": "declined-as-out-of-reach#2@after the turn",
+    "answers": {
+      "done": 0.8833,
+      "did_part": 0.6451,
+      "declined": 0.5807,
+      "withdrawn": 0.0112,
+      "left_undone": 0.0677
+    },
+    "inputTokens": 758,
+    "outputTokens": 0,
+    "ms": 308
+  },
+  {
+    "key": "9a5c07ae86bb4096531540dc322a62b5",
+    "item": "declined-for-safety-with-an-alternative#1@after the turn",
+    "answers": {
+      "done": 0.0249,
+      "did_part": 0.6727,
+      "declined": 0.9618,
+      "withdrawn": 0.0097,
+      "left_undone": 0.4311
+    },
+    "inputTokens": 745,
+    "outputTokens": 0,
+    "ms": 248
+  },
+  {
+    "key": "a4cb076dac96bfa669c70d5af04ca8bb",
+    "item": "declined-for-safety-with-an-alternative#2@after the turn",
+    "answers": {
+      "done": 0.8173,
+      "did_part": 0.6783,
+      "declined": 0.7971,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0781
+    },
+    "inputTokens": 747,
+    "outputTokens": 0,
+    "ms": 228
+  },
+  {
+    "key": "60b6371149af04e4f4c430c3ab02c573",
+    "item": "declined-in-a-terse-reply#1@after turn 1",
+    "answers": {
+      "done": 0.0254,
+      "did_part": 0.1135,
+      "declined": 0.9766,
+      "withdrawn": 0.0078,
+      "left_undone": 0.1967
+    },
+    "inputTokens": 691,
+    "outputTokens": 0,
+    "ms": 470
+  },
+  {
+    "key": "52b19d1b649ca19c56f0247d954fe222",
+    "item": "declined-in-a-terse-reply#1@after turn 2",
+    "answers": {
+      "done": 0.0452,
+      "did_part": 0.146,
+      "declined": 0.9711,
+      "withdrawn": 0.1595,
+      "left_undone": 0.2213
+    },
+    "inputTokens": 705,
+    "outputTokens": 0,
+    "ms": 896
+  },
+  {
+    "key": "28da784b0908fc15e6117f65eead1dc6",
+    "item": "declined-then-agreed#1@after turn 2",
+    "answers": {
+      "done": 0.0416,
+      "did_part": 0.1285,
+      "declined": 0.9139,
+      "withdrawn": 0.9384,
+      "left_undone": 0.1888
+    },
+    "inputTokens": 768,
+    "outputTokens": 0,
+    "ms": 311
+  },
+  {
+    "key": "5c340ffcfbe042591cd1e379ffa82ceb",
+    "item": "declined-then-agreed#2@after turn 2",
+    "answers": {
+      "done": 0.9613,
+      "did_part": 0.0994,
+      "declined": 0.0244,
+      "withdrawn": 0.0135,
+      "left_undone": 0.0281
+    },
+    "inputTokens": 692,
+    "outputTokens": 0,
+    "ms": 635
+  },
+  {
+    "key": "485d10329f062322a27335ebd53af9a3",
+    "item": "declined-then-replaced-by-what-the-agent-offered#1@after turn 2",
+    "answers": {
+      "done": 0.8532,
+      "did_part": 0.3853,
+      "declined": 0.6812,
+      "withdrawn": 0.0178,
+      "left_undone": 0.1622
+    },
+    "inputTokens": 771,
+    "outputTokens": 0,
+    "ms": 286
+  },
+  {
+    "key": "eeb78d199118599975653e28461fa352",
+    "item": "declined-then-replaced-by-what-the-agent-offered#1@after turn 3",
+    "answers": {
+      "done": 0.9248,
+      "did_part": 0.2008,
+      "declined": 0.6808,
+      "withdrawn": 0.1321,
+      "left_undone": 0.0751
+    },
+    "inputTokens": 830,
+    "outputTokens": 0,
+    "ms": 309
+  },
+  {
+    "key": "7c0f0d9b2bb0026f1df7c0f03fcaf89c",
+    "item": "declined-then-replaced-by-what-the-agent-offered#2@after turn 2",
+    "answers": {
+      "done": 0.0162,
+      "did_part": 0.0785,
+      "declined": 0.9687,
+      "withdrawn": 0.0084,
+      "left_undone": 0.383
+    },
+    "inputTokens": 723,
+    "outputTokens": 0,
+    "ms": 606
+  },
+  {
+    "key": "bc85252feba54c2a0a464cb8c7888a44",
+    "item": "declined-then-replaced-by-what-the-agent-offered#2@after turn 3",
+    "answers": {
+      "done": 0.034,
+      "did_part": 0.2177,
+      "declined": 0.9044,
+      "withdrawn": 0.8668,
+      "left_undone": 0.2185
+    },
+    "inputTokens": 782,
+    "outputTokens": 0,
+    "ms": 257
+  },
+  {
+    "key": "9ead985a5ffac836d5bc5f7d36692a3e",
+    "item": "declined-then-replaced-by-what-the-agent-offered#3@after turn 3",
+    "answers": {
+      "done": 0.9583,
+      "did_part": 0.0923,
+      "declined": 0.0248,
+      "withdrawn": 0.0126,
+      "left_undone": 0.0326
+    },
+    "inputTokens": 700,
+    "outputTokens": 0,
+    "ms": 308
+  },
+  {
+    "key": "094a608ba21783b02e8d83b11ab2244a",
+    "item": "declined-then-user-insists#1@after turn 1",
+    "answers": {
+      "done": 0.0128,
+      "did_part": 0.0738,
+      "declined": 0.9694,
+      "withdrawn": 0.0083,
+      "left_undone": 0.212
+    },
+    "inputTokens": 702,
+    "outputTokens": 0,
+    "ms": 291
+  },
+  {
+    "key": "c51d72da7cd6c05fad1cde598a63d5b7",
+    "item": "declined-then-user-insists#1@after turn 2",
+    "answers": {
+      "done": 0.9565,
+      "did_part": 0.0712,
+      "declined": 0.123,
+      "withdrawn": 0.016,
+      "left_undone": 0.0527
+    },
+    "inputTokens": 763,
+    "outputTokens": 0,
+    "ms": 185
+  },
+  {
+    "key": "6e9c1712416ce85dcff426693d8f9970",
+    "item": "dismissed-entry-stays-dismissed#1@after Refresh",
+    "answers": {
+      "done": 0.0172,
+      "did_part": 0.0898,
+      "declined": 0.9562,
+      "withdrawn": 0.0091,
+      "left_undone": 0.4408
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 217
+  },
+  {
+    "key": "ea2072ad627bca387b5a2a3c5ceeb25e",
+    "item": "duplicate-asks-paraphrased#1@after turn 3",
+    "answers": {
+      "done": 0.9269,
+      "did_part": 0.1547,
+      "declined": 0.0226,
+      "withdrawn": 0.0103,
+      "left_undone": 0.0344
+    },
+    "inputTokens": 762,
+    "outputTokens": 0,
+    "ms": 1234
+  },
+  {
+    "key": "dfbb50487a7f495cb14b32cc4495a5ab",
+    "item": "duplicate-reminder#1@after turn 1",
+    "answers": {
+      "done": 0.124,
+      "did_part": 0.9252,
+      "declined": 0.0183,
+      "withdrawn": 0.0112,
+      "left_undone": 0.1084
+    },
+    "inputTokens": 698,
+    "outputTokens": 0,
+    "ms": 425
+  },
+  {
+    "key": "a6d84cdac9e766c88c7f2a6821450eb5",
+    "item": "duplicate-reminder#1@after turn 2",
+    "answers": {
+      "done": 0.0601,
+      "did_part": 0.9467,
+      "declined": 0.654,
+      "withdrawn": 0.0109,
+      "left_undone": 0.189
+    },
+    "inputTokens": 767,
+    "outputTokens": 0,
+    "ms": 190
+  },
+  {
+    "key": "f65d2209e0e5a1b84db1d48e868c6843",
+    "item": "duplicate-reminder#1@after turn 3",
+    "answers": {
+      "done": 0.8652,
+      "did_part": 0.4297,
+      "declined": 0.1328,
+      "withdrawn": 0.0115,
+      "left_undone": 0.0705
+    },
+    "inputTokens": 790,
+    "outputTokens": 0,
+    "ms": 329
+  },
+  {
+    "key": "67a4eaa396d2ca714c10b3e9e25baece",
+    "item": "duplicate-reminder#2@after turn 1",
+    "answers": {
+      "done": 0.0401,
+      "did_part": 0.8306,
+      "declined": 0.0223,
+      "withdrawn": 0.0114,
+      "left_undone": 0.8556
+    },
+    "inputTokens": 695,
+    "outputTokens": 0,
+    "ms": 198
+  },
+  {
+    "key": "afc9357db523aeb423a49ca82b73d503",
+    "item": "duplicate-reminder#2@after turn 2",
+    "answers": {
+      "done": 0.0346,
+      "did_part": 0.6487,
+      "declined": 0.8975,
+      "withdrawn": 0.0139,
+      "left_undone": 0.8152
+    },
+    "inputTokens": 764,
+    "outputTokens": 0,
+    "ms": 184
+  },
+  {
+    "key": "8890b2402be296101d8a67fd8fa622b0",
+    "item": "duplicate-reminder#2@after turn 3",
+    "answers": {
+      "done": 0.7424,
+      "did_part": 0.3884,
+      "declined": 0.6777,
+      "withdrawn": 0.0138,
+      "left_undone": 0.3216
+    },
+    "inputTokens": 787,
+    "outputTokens": 0,
+    "ms": 300
+  },
+  {
+    "key": "f4de3f989353929450ea48cac73172c1",
+    "item": "finished-work-mentioned-again#1@after turn 2",
+    "answers": {
+      "done": 0.9316,
+      "did_part": 0.2002,
+      "declined": 0.0305,
+      "withdrawn": 0.013,
+      "left_undone": 0.0381
+    },
+    "inputTokens": 739,
+    "outputTokens": 0,
+    "ms": 324
+  },
+  {
+    "key": "f1b809323d94e86017e83b171ed7869b",
+    "item": "finished-work-mentioned-again#2@after turn 2",
+    "answers": {
+      "done": 0.9286,
+      "did_part": 0.2137,
+      "declined": 0.0284,
+      "withdrawn": 0.0137,
+      "left_undone": 0.0809
+    },
+    "inputTokens": 692,
+    "outputTokens": 0,
+    "ms": 342
+  },
+  {
+    "key": "229fe509dfcb5655fc9b9e7b5b74066c",
+    "item": "injected-reminders#1@after the turn",
+    "answers": {
+      "done": 0.9136,
+      "did_part": 0.1771,
+      "declined": 0.02,
+      "withdrawn": 0.0095,
+      "left_undone": 0.0297
+    },
+    "inputTokens": 683,
+    "outputTokens": 0,
+    "ms": 265
+  },
+  {
+    "key": "eb0fbf1e2f9049d3daa3ca79da87bb26",
+    "item": "long-session-first-recap#1@after the user presses Refresh",
+    "answers": {
+      "done": 0.3849,
+      "did_part": 0.544,
+      "declined": 0.0579,
+      "withdrawn": 0.0214,
+      "left_undone": 0.2405
+    },
+    "inputTokens": 6043,
+    "outputTokens": 0,
+    "ms": 617
+  },
+  {
+    "key": "8f1d4b1ad894a849ca788600fcaed5d2",
+    "item": "long-session-first-recap#2@after the user presses Refresh",
+    "answers": {
+      "done": 0.0326,
+      "did_part": 0.4497,
+      "declined": 0.6127,
+      "withdrawn": 0.0092,
+      "left_undone": 0.9191
+    },
+    "inputTokens": 5967,
+    "outputTokens": 0,
+    "ms": 604
+  },
+  {
+    "key": "e079e14203eca20a4ec2adba6388d77c",
+    "item": "long-session-first-recap#3@after the user presses Refresh",
+    "answers": {
+      "done": 0.9645,
+      "did_part": 0.164,
+      "declined": 0.0206,
+      "withdrawn": 0.0108,
+      "left_undone": 0.0352
+    },
+    "inputTokens": 690,
+    "outputTokens": 0,
+    "ms": 223
+  },
+  {
+    "key": "a77f54e0148e815f2e5596b69b10256b",
+    "item": "many-asks-in-one-long-turn#1@after the turn",
+    "answers": {
+      "done": 0.9382,
+      "did_part": 0.1359,
+      "declined": 0.0175,
+      "withdrawn": 0.0103,
+      "left_undone": 0.0237
+    },
+    "inputTokens": 1462,
+    "outputTokens": 0,
+    "ms": 368
+  },
+  {
+    "key": "1020801db9f4b993d0e741c861b23875",
+    "item": "many-asks-in-one-long-turn#1@eight minutes into the turn",
+    "answers": {
+      "done": 0.3093,
+      "did_part": 0.6057,
+      "declined": 0.0226,
+      "withdrawn": 0.0128,
+      "left_undone": 0.069
+    },
+    "inputTokens": 1405,
+    "outputTokens": 0,
+    "ms": 346
+  },
+  {
+    "key": "88a424371ffa05d33266b107a7e2b436",
+    "item": "many-asks-in-one-long-turn#1@four minutes into the turn",
+    "answers": {
+      "done": 0.3096,
+      "did_part": 0.6439,
+      "declined": 0.0259,
+      "withdrawn": 0.0157,
+      "left_undone": 0.113
+    },
+    "inputTokens": 1070,
+    "outputTokens": 0,
+    "ms": 230
+  },
+  {
+    "key": "ad6e285ec9e064ff0e9b4478bb363dff",
+    "item": "many-asks-in-one-long-turn#2@after the turn",
+    "answers": {
+      "done": 0.9041,
+      "did_part": 0.2016,
+      "declined": 0.0221,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0403
+    },
+    "inputTokens": 1451,
+    "outputTokens": 0,
+    "ms": 280
+  },
+  {
+    "key": "104b14cc8d11bc7dc598dc8b1593a6b2",
+    "item": "many-asks-in-one-long-turn#2@eight minutes into the turn",
+    "answers": {
+      "done": 0.4808,
+      "did_part": 0.6501,
+      "declined": 0.0256,
+      "withdrawn": 0.0141,
+      "left_undone": 0.0873
+    },
+    "inputTokens": 1394,
+    "outputTokens": 0,
+    "ms": 467
+  },
+  {
+    "key": "1ed23eb2514d91f8fd7799e2d0131ffb",
+    "item": "many-asks-in-one-long-turn#2@four minutes into the turn",
+    "answers": {
+      "done": 0.4752,
+      "did_part": 0.715,
+      "declined": 0.0181,
+      "withdrawn": 0.0103,
+      "left_undone": 0.0684
+    },
+    "inputTokens": 1059,
+    "outputTokens": 0,
+    "ms": 494
+  },
+  {
+    "key": "dbbe3fc7786535d042e42c75f90c9f1c",
+    "item": "many-asks-in-one-long-turn#3@after the turn",
+    "answers": {
+      "done": 0.9232,
+      "did_part": 0.1167,
+      "declined": 0.0239,
+      "withdrawn": 0.0119,
+      "left_undone": 0.0383
+    },
+    "inputTokens": 1455,
+    "outputTokens": 0,
+    "ms": 248
+  },
+  {
+    "key": "fc3c5db87df3e1282178e662ab99a5e4",
+    "item": "many-asks-in-one-long-turn#3@eight minutes into the turn",
+    "answers": {
+      "done": 0.3306,
+      "did_part": 0.7504,
+      "declined": 0.0354,
+      "withdrawn": 0.0164,
+      "left_undone": 0.0841
+    },
+    "inputTokens": 1398,
+    "outputTokens": 0,
+    "ms": 375
+  },
+  {
+    "key": "65335a15cbf46900b75c8da575e1eed0",
+    "item": "many-asks-in-one-long-turn#3@four minutes into the turn",
+    "answers": {
+      "done": 0.1151,
+      "did_part": 0.7999,
+      "declined": 0.0315,
+      "withdrawn": 0.017,
+      "left_undone": 0.6265
+    },
+    "inputTokens": 1063,
+    "outputTokens": 0,
+    "ms": 356
+  },
+  {
+    "key": "3ec6376e67b68cabdd9eafb519506e4f",
+    "item": "many-asks-in-one-long-turn#4@after the turn",
+    "answers": {
+      "done": 0.9344,
+      "did_part": 0.1253,
+      "declined": 0.0225,
+      "withdrawn": 0.0097,
+      "left_undone": 0.0233
+    },
+    "inputTokens": 1453,
+    "outputTokens": 0,
+    "ms": 282
+  },
+  {
+    "key": "1b6d30b604d8dd4e13b0627dfea226a1",
+    "item": "many-asks-in-one-long-turn#4@eight minutes into the turn",
+    "answers": {
+      "done": 0.8561,
+      "did_part": 0.3097,
+      "declined": 0.0314,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0438
+    },
+    "inputTokens": 1396,
+    "outputTokens": 0,
+    "ms": 609
+  },
+  {
+    "key": "8695c206e4e9f7b76120786cefa8139c",
+    "item": "many-asks-in-one-long-turn#4@four minutes into the turn",
+    "answers": {
+      "done": 0.0327,
+      "did_part": 0.2541,
+      "declined": 0.0155,
+      "withdrawn": 0.0098,
+      "left_undone": 0.9605
+    },
+    "inputTokens": 1061,
+    "outputTokens": 0,
+    "ms": 321
+  },
+  {
+    "key": "7fd7417af5f58febc8782a51d22bb34f",
+    "item": "many-asks-in-one-long-turn#5@after the turn",
+    "answers": {
+      "done": 0.9552,
+      "did_part": 0.0755,
+      "declined": 0.0195,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0333
+    },
+    "inputTokens": 1454,
+    "outputTokens": 0,
+    "ms": 448
+  },
+  {
+    "key": "36b3b937d5617ed636f53e23a90d983e",
+    "item": "many-asks-in-one-long-turn#5@eight minutes into the turn",
+    "answers": {
+      "done": 0.0836,
+      "did_part": 0.6917,
+      "declined": 0.0237,
+      "withdrawn": 0.0131,
+      "left_undone": 0.742
+    },
+    "inputTokens": 1397,
+    "outputTokens": 0,
+    "ms": 319
+  },
+  {
+    "key": "6840b1e9cb449c75501e2a4e22991dd3",
+    "item": "many-asks-in-one-long-turn#5@four minutes into the turn",
+    "answers": {
+      "done": 0.025,
+      "did_part": 0.222,
+      "declined": 0.0185,
+      "withdrawn": 0.0119,
+      "left_undone": 0.9493
+    },
+    "inputTokens": 1062,
+    "outputTokens": 0,
+    "ms": 325
+  },
+  {
+    "key": "2201b676ed7b61d4f1c75b78b99ff987",
+    "item": "many-asks-in-one-long-turn#6@after the turn",
+    "answers": {
+      "done": 0.9131,
+      "did_part": 0.0832,
+      "declined": 0.0225,
+      "withdrawn": 0.0117,
+      "left_undone": 0.0436
+    },
+    "inputTokens": 1452,
+    "outputTokens": 0,
+    "ms": 400
+  },
+  {
+    "key": "44fffba6f5440d074a967006e1e7e5b3",
+    "item": "many-asks-in-one-long-turn#6@eight minutes into the turn",
+    "answers": {
+      "done": 0.038,
+      "did_part": 0.9056,
+      "declined": 0.0196,
+      "withdrawn": 0.0117,
+      "left_undone": 0.6377
+    },
+    "inputTokens": 1395,
+    "outputTokens": 0,
+    "ms": 451
+  },
+  {
+    "key": "8802540a446918c9682c620f4779c5b9",
+    "item": "many-asks-in-one-long-turn#6@four minutes into the turn",
+    "answers": {
+      "done": 0.0222,
+      "did_part": 0.9178,
+      "declined": 0.0221,
+      "withdrawn": 0.0125,
+      "left_undone": 0.8498
+    },
+    "inputTokens": 1060,
+    "outputTokens": 0,
+    "ms": 241
+  },
+  {
+    "key": "5ad3728f8e4de42514091fe8a616b447",
+    "item": "mid-turn-automatic-recap#1@after the turn",
+    "answers": {
+      "done": 0.9514,
+      "did_part": 0.1199,
+      "declined": 0.0188,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0408
+    },
+    "inputTokens": 1019,
+    "outputTokens": 0,
+    "ms": 346
+  },
+  {
+    "key": "e9d54e0176e428e835007c920d6d3287",
+    "item": "mid-turn-automatic-recap#1@four minutes into the turn",
+    "answers": {
+      "done": 0.0121,
+      "did_part": 0.9808,
+      "declined": 0.0154,
+      "withdrawn": 0.0105,
+      "left_undone": 0.2979
+    },
+    "inputTokens": 967,
+    "outputTokens": 0,
+    "ms": 359
+  },
+  {
+    "key": "1fef59220fd4ac62c8926ecf7b97a164",
+    "item": "mid-turn-first-look#1@after the turn",
+    "answers": {
+      "done": 0.9473,
+      "did_part": 0.1525,
+      "declined": 0.0208,
+      "withdrawn": 0.0102,
+      "left_undone": 0.0345
+    },
+    "inputTokens": 766,
+    "outputTokens": 0,
+    "ms": 342
+  },
+  {
+    "key": "5b01635840c90c3d1fc1527bcbbb5e1f",
+    "item": "mid-turn-first-look#1@mid-turn",
+    "answers": {
+      "done": 0.0208,
+      "did_part": 0.9525,
+      "declined": 0.0169,
+      "withdrawn": 0.0101,
+      "left_undone": 0.2379
+    },
+    "inputTokens": 711,
+    "outputTokens": 0,
+    "ms": 220
+  },
+  {
+    "key": "3b2f93cb6291532a44d9808a51befcdb",
+    "item": "mid-turn-refresh#1@four minutes later",
+    "answers": {
+      "done": 0.8433,
+      "did_part": 0.1565,
+      "declined": 0.023,
+      "withdrawn": 0.0122,
+      "left_undone": 0.0412
+    },
+    "inputTokens": 770,
+    "outputTokens": 0,
+    "ms": 314
+  },
+  {
+    "key": "c62873e309a75a3016e778643b7d42a7",
+    "item": "mid-turn-refresh#1@mid-turn",
+    "answers": {
+      "done": 0.0287,
+      "did_part": 0.9633,
+      "declined": 0.018,
+      "withdrawn": 0.0117,
+      "left_undone": 0.2042
+    },
+    "inputTokens": 716,
+    "outputTokens": 0,
+    "ms": 330
+  },
+  {
+    "key": "dde34712d30e803f30042c1900c8ffe1",
+    "item": "mid-turn-refresh#2@four minutes later",
+    "answers": {
+      "done": 0.8883,
+      "did_part": 0.1393,
+      "declined": 0.0294,
+      "withdrawn": 0.0153,
+      "left_undone": 0.0485
+    },
+    "inputTokens": 769,
+    "outputTokens": 0,
+    "ms": 1041
+  },
+  {
+    "key": "810cdb2c3f5a89dde988a96494ded744",
+    "item": "mid-turn-refresh#2@mid-turn",
+    "answers": {
+      "done": 0.0303,
+      "did_part": 0.7209,
+      "declined": 0.0212,
+      "withdrawn": 0.0128,
+      "left_undone": 0.9436
+    },
+    "inputTokens": 715,
+    "outputTokens": 0,
+    "ms": 191
+  },
+  {
+    "key": "2b8ca683994626a8c2a8d0a0e2b1b608",
+    "item": "model-fails-twice-then-recovers#1@after the model recovers",
+    "answers": {
+      "done": 0.9293,
+      "did_part": 0.1559,
+      "declined": 0.022,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0327
+    },
+    "inputTokens": 783,
+    "outputTokens": 0,
+    "ms": 417
+  },
+  {
+    "key": "8e9af86259fe54fcf10e504594ef2623",
+    "item": "model-fails-twice-then-recovers#2@after the model recovers",
+    "answers": {
+      "done": 0.9321,
+      "did_part": 0.1509,
+      "declined": 0.023,
+      "withdrawn": 0.0125,
+      "left_undone": 0.0297
+    },
+    "inputTokens": 781,
+    "outputTokens": 0,
+    "ms": 212
+  },
+  {
+    "key": "aee71b9aab407fb522f2793a685a7959",
+    "item": "model-fails-twice-then-recovers#3@after the model recovers",
+    "answers": {
+      "done": 0.958,
+      "did_part": 0.1338,
+      "declined": 0.0255,
+      "withdrawn": 0.0119,
+      "left_undone": 0.0362
+    },
+    "inputTokens": 730,
+    "outputTokens": 0,
+    "ms": 359
+  },
+  {
+    "key": "0f61720f6446bdfaa2ca7eab72c28d5d",
+    "item": "model-fails-twice-then-recovers#4@after the model recovers",
+    "answers": {
+      "done": 0.9421,
+      "did_part": 0.1192,
+      "declined": 0.0179,
+      "withdrawn": 0.0104,
+      "left_undone": 0.0276
+    },
+    "inputTokens": 684,
+    "outputTokens": 0,
+    "ms": 201
+  },
+  {
+    "key": "abe5b7ab715a8a160f90d952cb7a65b9",
+    "item": "model-not-found-fallback#1@after turn 1",
+    "answers": {
+      "done": 0.1034,
+      "did_part": 0.951,
+      "declined": 0.0221,
+      "withdrawn": 0.0128,
+      "left_undone": 0.1476
+    },
+    "inputTokens": 727,
+    "outputTokens": 0,
+    "ms": 192
+  },
+  {
+    "key": "d3c063bbd77b3172db1cdedc007cb36a",
+    "item": "model-not-found-fallback#1@after turn 2",
+    "answers": {
+      "done": 0.9477,
+      "did_part": 0.1278,
+      "declined": 0.0225,
+      "withdrawn": 0.0111,
+      "left_undone": 0.049
+    },
+    "inputTokens": 792,
+    "outputTokens": 0,
+    "ms": 315
+  },
+  {
+    "key": "3ad13fa00276550864be2079fb792e6b",
+    "item": "model-not-found-fallback#2@after turn 1",
+    "answers": {
+      "done": 0.0347,
+      "did_part": 0.8336,
+      "declined": 0.0303,
+      "withdrawn": 0.013,
+      "left_undone": 0.9029
+    },
+    "inputTokens": 716,
+    "outputTokens": 0,
+    "ms": 793
+  },
+  {
+    "key": "582c856241fdedc976e45c4358e93dd9",
+    "item": "model-not-found-fallback#2@after turn 2",
+    "answers": {
+      "done": 0.9478,
+      "did_part": 0.155,
+      "declined": 0.0257,
+      "withdrawn": 0.0137,
+      "left_undone": 0.0741
+    },
+    "inputTokens": 781,
+    "outputTokens": 0,
+    "ms": 343
+  },
+  {
+    "key": "9b5fd79e59154f96107176c24da198b0",
+    "item": "model-not-found-fallback#3@after turn 2",
+    "answers": {
+      "done": 0.917,
+      "did_part": 0.2371,
+      "declined": 0.0239,
+      "withdrawn": 0.0115,
+      "left_undone": 0.1578
+    },
+    "inputTokens": 706,
+    "outputTokens": 0,
+    "ms": 170
+  },
+  {
+    "key": "10c657a521792a8906ddf3b33ed48e9c",
+    "item": "model-reply-not-json#1@after the degraded pass",
+    "answers": {
+      "done": 0.9254,
+      "did_part": 0.253,
+      "declined": 0.0204,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0477
+    },
+    "inputTokens": 703,
+    "outputTokens": 0,
+    "ms": 379
+  },
+  {
+    "key": "04e9e0154c59f67ed612c15ae97a203b",
+    "item": "model-reply-not-json#1@after the next pass",
+    "answers": {
+      "done": 0.924,
+      "did_part": 0.1317,
+      "declined": 0.0198,
+      "withdrawn": 0.0105,
+      "left_undone": 0.0275
+    },
+    "inputTokens": 745,
+    "outputTokens": 0,
+    "ms": 178
+  },
+  {
+    "key": "6144daf66e677b9c3c2232a331f1f8ac",
+    "item": "model-reply-not-json#2@after the degraded pass",
+    "answers": {
+      "done": 0.9208,
+      "did_part": 0.2264,
+      "declined": 0.0301,
+      "withdrawn": 0.0134,
+      "left_undone": 0.0607
+    },
+    "inputTokens": 701,
+    "outputTokens": 0,
+    "ms": 438
+  },
+  {
+    "key": "fa7945eedd7fb75aa4e49ba81ad7eb48",
+    "item": "model-reply-not-json#2@after the next pass",
+    "answers": {
+      "done": 0.912,
+      "did_part": 0.118,
+      "declined": 0.0232,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0396
+    },
+    "inputTokens": 743,
+    "outputTokens": 0,
+    "ms": 173
+  },
+  {
+    "key": "5ef396bfe4d6645d7a0b64697435a86a",
+    "item": "model-reply-not-json#3@after the next pass",
+    "answers": {
+      "done": 0.9506,
+      "did_part": 0.096,
+      "declined": 0.0207,
+      "withdrawn": 0.0108,
+      "left_undone": 0.0297
+    },
+    "inputTokens": 692,
+    "outputTokens": 0,
+    "ms": 233
+  },
+  {
+    "key": "c5a4a4036ddfa0b4d907964b3deb47fd",
+    "item": "multiple-asks-one-deferred#1@after the turn",
+    "answers": {
+      "done": 0.8149,
+      "did_part": 0.6017,
+      "declined": 0.8079,
+      "withdrawn": 0.0189,
+      "left_undone": 0.1227
+    },
+    "inputTokens": 794,
+    "outputTokens": 0,
+    "ms": 303
+  },
+  {
+    "key": "4d468b65506dfd89e202470080f78310",
+    "item": "multiple-asks-one-deferred#2@after the turn",
+    "answers": {
+      "done": 0.9171,
+      "did_part": 0.2297,
+      "declined": 0.3012,
+      "withdrawn": 0.0108,
+      "left_undone": 0.0712
+    },
+    "inputTokens": 790,
+    "outputTokens": 0,
+    "ms": 314
+  },
+  {
+    "key": "d27671ad00976022248c1e101cd0a300",
+    "item": "multiple-asks-one-deferred#3@after the turn",
+    "answers": {
+      "done": 0.9303,
+      "did_part": 0.3358,
+      "declined": 0.7356,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0747
+    },
+    "inputTokens": 791,
+    "outputTokens": 0,
+    "ms": 1401
+  },
+  {
+    "key": "0660120e92fc05e1bf6efddf173c8b6e",
+    "item": "multiple-asks-one-deferred#4@after the turn",
+    "answers": {
+      "done": 0.0288,
+      "did_part": 0.3017,
+      "declined": 0.9583,
+      "withdrawn": 0.0112,
+      "left_undone": 0.8084
+    },
+    "inputTokens": 794,
+    "outputTokens": 0,
+    "ms": 297
+  },
+  {
+    "key": "a05a2e718ef1013abd731b63e565d30c",
+    "item": "non-english-session#1@after turn 1",
+    "answers": {
+      "done": 0.6626,
+      "did_part": 0.6965,
+      "declined": 0.0328,
+      "withdrawn": 0.0109,
+      "left_undone": 0.0991
+    },
+    "inputTokens": 744,
+    "outputTokens": 0,
+    "ms": 229
+  },
+  {
+    "key": "415444a27281fabf22451384d7ed61d7",
+    "item": "non-english-session#1@after turn 2",
+    "answers": {
+      "done": 0.699,
+      "did_part": 0.5003,
+      "declined": 0.0347,
+      "withdrawn": 0.0149,
+      "left_undone": 0.1165
+    },
+    "inputTokens": 790,
+    "outputTokens": 0,
+    "ms": 276
+  },
+  {
+    "key": "c45ea6ee833a1f5508fb24b4c4283962",
+    "item": "non-english-session#2@after turn 1",
+    "answers": {
+      "done": 0.0168,
+      "did_part": 0.3167,
+      "declined": 0.1314,
+      "withdrawn": 0.0096,
+      "left_undone": 0.9208
+    },
+    "inputTokens": 739,
+    "outputTokens": 0,
+    "ms": 215
+  },
+  {
+    "key": "c797f6de02cca3181128f887bcae9cdd",
+    "item": "non-english-session#2@after turn 2",
+    "answers": {
+      "done": 0.9537,
+      "did_part": 0.2056,
+      "declined": 0.0214,
+      "withdrawn": 0.0119,
+      "left_undone": 0.0535
+    },
+    "inputTokens": 785,
+    "outputTokens": 0,
+    "ms": 829
+  },
+  {
+    "key": "683912b4d6af75a32a39fe638f12c2d7",
+    "item": "nothing-said-since-the-recap#1@after the turn",
+    "answers": {
+      "done": 0.9381,
+      "did_part": 0.1415,
+      "declined": 0.024,
+      "withdrawn": 0.012,
+      "left_undone": 0.0327
+    },
+    "inputTokens": 726,
+    "outputTokens": 0,
+    "ms": 356
+  },
+  {
+    "key": "6028d09b4ca637a358de375e2f5edf13",
+    "item": "nothing-said-since-the-recap#1@after the user opens it twice",
+    "answers": {
+      "done": 0.9375,
+      "did_part": 0.1693,
+      "declined": 0.0238,
+      "withdrawn": 0.0119,
+      "left_undone": 0.0517
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 230
+  },
+  {
+    "key": "0e48139cc76afcc9bce7df5659816c59",
+    "item": "nothing-said-since-the-recap#2@after the turn",
+    "answers": {
+      "done": 0.9466,
+      "did_part": 0.1479,
+      "declined": 0.0242,
+      "withdrawn": 0.0118,
+      "left_undone": 0.0615
+    },
+    "inputTokens": 718,
+    "outputTokens": 0,
+    "ms": 270
+  },
+  {
+    "key": "816bb7c4b68ae1d3c881f3a7eedcf3c6",
+    "item": "nothing-said-since-the-recap#2@after the user opens it twice",
+    "answers": {
+      "done": 0.949,
+      "did_part": 0.1959,
+      "declined": 0.0246,
+      "withdrawn": 0.0134,
+      "left_undone": 0.0718
+    },
+    "inputTokens": 727,
+    "outputTokens": 0,
+    "ms": 232
+  },
+  {
+    "key": "45a680802937b6cefb7a8737e7063a0f",
+    "item": "nothing-said-since-the-recap#3@after the turn",
+    "answers": {
+      "done": 0.9211,
+      "did_part": 0.1137,
+      "declined": 0.0226,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0554
+    },
+    "inputTokens": 722,
+    "outputTokens": 0,
+    "ms": 394
+  },
+  {
+    "key": "dac48bd645d4dc7eeddadb2afaa80516",
+    "item": "nothing-said-since-the-recap#3@after the user opens it twice",
+    "answers": {
+      "done": 0.9096,
+      "did_part": 0.1404,
+      "declined": 0.019,
+      "withdrawn": 0.0105,
+      "left_undone": 0.0638
+    },
+    "inputTokens": 731,
+    "outputTokens": 0,
+    "ms": 336
+  },
+  {
+    "key": "a98aaae22853d026e3a3565d9e01c823",
+    "item": "open-ask-done-after-many-turns#1@after it is added",
+    "answers": {
+      "done": 0.9361,
+      "did_part": 0.1283,
+      "declined": 0.0842,
+      "withdrawn": 0.0102,
+      "left_undone": 0.0637
+    },
+    "inputTokens": 5981,
+    "outputTokens": 0,
+    "ms": 603
+  },
+  {
+    "key": "e1d3fc42042a5dfa1a8c854e4dbf2b8c",
+    "item": "open-ask-done-after-many-turns#1@after turn 1",
+    "answers": {
+      "done": 0.0157,
+      "did_part": 0.1692,
+      "declined": 0.8322,
+      "withdrawn": 0.0114,
+      "left_undone": 0.8953
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 392
+  },
+  {
+    "key": "b799efd85bcb459661312086dac34445",
+    "item": "open-ask-done-after-many-turns#1@after twenty-two more turns",
+    "answers": {
+      "done": 0.0247,
+      "did_part": 0.2266,
+      "declined": 0.7722,
+      "withdrawn": 0.0096,
+      "left_undone": 0.9212
+    },
+    "inputTokens": 5960,
+    "outputTokens": 0,
+    "ms": 722
+  },
+  {
+    "key": "92cc6b3848c7f494e7794a5b5f2c4496",
+    "item": "partly-addressed-stays-open#1@after turn 2",
+    "answers": {
+      "done": 0.0234,
+      "did_part": 0.9731,
+      "declined": 0.9045,
+      "withdrawn": 0.0141,
+      "left_undone": 0.4259
+    },
+    "inputTokens": 788,
+    "outputTokens": 0,
+    "ms": 298
+  },
+  {
+    "key": "5a75b6919c4b133b207544a18777e60d",
+    "item": "partly-addressed-stays-open#2@after turn 2",
+    "answers": {
+      "done": 0.953,
+      "did_part": 0.1269,
+      "declined": 0.021,
+      "withdrawn": 0.0103,
+      "left_undone": 0.0435
+    },
+    "inputTokens": 681,
+    "outputTokens": 0,
+    "ms": 317
+  },
+  {
+    "key": "0e4960d2eb99d70671961037c4800d47",
+    "item": "partly-addressed-then-finished#1@after turn 2",
+    "answers": {
+      "done": 0.9516,
+      "did_part": 0.355,
+      "declined": 0.0416,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0874
+    },
+    "inputTokens": 771,
+    "outputTokens": 0,
+    "ms": 322
+  },
+  {
+    "key": "dcde7fce941457b0ba0320671adb647b",
+    "item": "partly-done-across-three-turns#1@after turn 1",
+    "answers": {
+      "done": 0.0107,
+      "did_part": 0.9809,
+      "declined": 0.0187,
+      "withdrawn": 0.0111,
+      "left_undone": 0.342
+    },
+    "inputTokens": 708,
+    "outputTokens": 0,
+    "ms": 320
+  },
+  {
+    "key": "02bfcb2679aa8cdfef7d9f0c889e4ce2",
+    "item": "partly-done-across-three-turns#1@after turn 2",
+    "answers": {
+      "done": 0.0164,
+      "did_part": 0.9795,
+      "declined": 0.7557,
+      "withdrawn": 0.0096,
+      "left_undone": 0.3054
+    },
+    "inputTokens": 760,
+    "outputTokens": 0,
+    "ms": 325
+  },
+  {
+    "key": "cf1cd84d9372f4ab0812ad727de1a1d1",
+    "item": "partly-done-across-three-turns#1@after turn 3",
+    "answers": {
+      "done": 0.9571,
+      "did_part": 0.0893,
+      "declined": 0.0353,
+      "withdrawn": 0.0093,
+      "left_undone": 0.0307
+    },
+    "inputTokens": 816,
+    "outputTokens": 0,
+    "ms": 433
+  },
+  {
+    "key": "05095f0c1c7862fb2a1209db69d32fd7",
+    "item": "partly-done-and-the-agent-says-which-part#1@after the turn",
+    "answers": {
+      "done": 0.0171,
+      "did_part": 0.9755,
+      "declined": 0.9148,
+      "withdrawn": 0.0123,
+      "left_undone": 0.2532
+    },
+    "inputTokens": 740,
+    "outputTokens": 0,
+    "ms": 398
+  },
+  {
+    "key": "8dc426a3af153d9919d77a142a7a265e",
+    "item": "partly-done-by-a-subagent#1@after the turn",
+    "answers": {
+      "done": 0.0219,
+      "did_part": 0.9759,
+      "declined": 0.8597,
+      "withdrawn": 0.0101,
+      "left_undone": 0.2058
+    },
+    "inputTokens": 787,
+    "outputTokens": 0,
+    "ms": 319
+  },
+  {
+    "key": "9ce4de51e90e7b89b7513c2bbebe1621",
+    "item": "partly-done-with-a-failing-step#1@after the turn",
+    "answers": {
+      "done": 0.0197,
+      "did_part": 0.9829,
+      "declined": 0.7647,
+      "withdrawn": 0.0098,
+      "left_undone": 0.2309
+    },
+    "inputTokens": 785,
+    "outputTokens": 0,
+    "ms": 352
+  },
+  {
+    "key": "f6e749f9fd29457cfbbed6544f13ffa0",
+    "item": "partly-done-with-the-rest-blocked#1@after the turn",
+    "answers": {
+      "done": 0.0218,
+      "did_part": 0.9738,
+      "declined": 0.928,
+      "withdrawn": 0.0116,
+      "left_undone": 0.2706
+    },
+    "inputTokens": 707,
+    "outputTokens": 0,
+    "ms": 349
+  },
+  {
+    "key": "c7f2a345c8413e47623dcf42b2cd7028",
+    "item": "question-answered#1@after turn 1",
+    "answers": {
+      "done": 0.0174,
+      "did_part": 0.3936,
+      "declined": 0.0281,
+      "withdrawn": 0.0097,
+      "left_undone": 0.9186
+    },
+    "inputTokens": 688,
+    "outputTokens": 0,
+    "ms": 342
+  },
+  {
+    "key": "56f22326d0f034808ee292207204afcf",
+    "item": "question-answered#1@after turn 2",
+    "answers": {
+      "done": 0.9472,
+      "did_part": 0.139,
+      "declined": 0.0207,
+      "withdrawn": 0.0096,
+      "left_undone": 0.0432
+    },
+    "inputTokens": 725,
+    "outputTokens": 0,
+    "ms": 303
+  },
+  {
+    "key": "e4c04eb26758f61f9b8ed2d5c4936c1f",
+    "item": "question-ask-answered#1@after the turn",
+    "answers": {
+      "done": 0.9059,
+      "did_part": 0.285,
+      "declined": 0.0645,
+      "withdrawn": 0.0094,
+      "left_undone": 0.0513
+    },
+    "inputTokens": 744,
+    "outputTokens": 0,
+    "ms": 338
+  },
+  {
+    "key": "c690656fb667f9689df336acf350a4c4",
+    "item": "question-left-open#1@after turn 1",
+    "answers": {
+      "done": 0.0994,
+      "did_part": 0.9364,
+      "declined": 0.0659,
+      "withdrawn": 0.0103,
+      "left_undone": 0.1569
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 413
+  },
+  {
+    "key": "5282f13dd3166bc13521b919fc6e453a",
+    "item": "question-left-open#1@after turn 2",
+    "answers": {
+      "done": 0.1508,
+      "did_part": 0.9291,
+      "declined": 0.051,
+      "withdrawn": 0.0099,
+      "left_undone": 0.1211
+    },
+    "inputTokens": 769,
+    "outputTokens": 0,
+    "ms": 317
+  },
+  {
+    "key": "ad6ac9b8090809b048cc06390c6dafa5",
+    "item": "question-left-open#2@after turn 2",
+    "answers": {
+      "done": 0.9601,
+      "did_part": 0.1285,
+      "declined": 0.0216,
+      "withdrawn": 0.0094,
+      "left_undone": 0.036
+    },
+    "inputTokens": 681,
+    "outputTokens": 0,
+    "ms": 356
+  },
+  {
+    "key": "6b855e7cf14d055c386da34278fe1e32",
+    "item": "question-tool-answered#1@after the turn",
+    "answers": {
+      "done": 0.9392,
+      "did_part": 0.2065,
+      "declined": 0.0225,
+      "withdrawn": 0.0101,
+      "left_undone": 0.0413
+    },
+    "inputTokens": 751,
+    "outputTokens": 0,
+    "ms": 444
+  },
+  {
+    "key": "e71506ebe7511331d4e9738c7dcc0cd2",
+    "item": "question-tool-waiting#1@while the agent waits",
+    "answers": {
+      "done": 0.0179,
+      "did_part": 0.74,
+      "declined": 0.0359,
+      "withdrawn": 0.0115,
+      "left_undone": 0.8337
+    },
+    "inputTokens": 705,
+    "outputTokens": 0,
+    "ms": 275
+  },
+  {
+    "key": "f85c257f483b37e75163246539a00a71",
+    "item": "remote-ssh-session#1@after turn 1",
+    "answers": {
+      "done": 0.0275,
+      "did_part": 0.9683,
+      "declined": 0.0203,
+      "withdrawn": 0.0111,
+      "left_undone": 0.2494
+    },
+    "inputTokens": 707,
+    "outputTokens": 0,
+    "ms": 345
+  },
+  {
+    "key": "c45c17acda403e0a469ca7ace0ca86bb",
+    "item": "remote-ssh-session#1@after turn 2",
+    "answers": {
+      "done": 0.9217,
+      "did_part": 0.2922,
+      "declined": 0.0239,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0527
+    },
+    "inputTokens": 738,
+    "outputTokens": 0,
+    "ms": 224
+  },
+  {
+    "key": "75d8ceac6cfd72ffea4253587c4d81f8",
+    "item": "remote-ssh-session#2@after turn 1",
+    "answers": {
+      "done": 0.0181,
+      "did_part": 0.6083,
+      "declined": 0.0413,
+      "withdrawn": 0.0102,
+      "left_undone": 0.9378
+    },
+    "inputTokens": 703,
+    "outputTokens": 0,
+    "ms": 184
+  },
+  {
+    "key": "4c99b9df074c2b238de43ded38a5d22f",
+    "item": "remote-ssh-session#2@after turn 2",
+    "answers": {
+      "done": 0.9663,
+      "did_part": 0.1059,
+      "declined": 0.0199,
+      "withdrawn": 0.0113,
+      "left_undone": 0.0631
+    },
+    "inputTokens": 734,
+    "outputTokens": 0,
+    "ms": 204
+  },
+  {
+    "key": "8aec33f5d8282f5f7f18939a8fe8de45",
+    "item": "reply-lists-in-the-wrong-place#1@after the turn",
+    "answers": {
+      "done": 0.9533,
+      "did_part": 0.0726,
+      "declined": 0.0203,
+      "withdrawn": 0.0109,
+      "left_undone": 0.046
+    },
+    "inputTokens": 744,
+    "outputTokens": 0,
+    "ms": 193
+  },
+  {
+    "key": "4690c03ee4edde41e15232e46e166f18",
+    "item": "rest-of-a-partly-done-ask-finished-in-passing#1@after turn 1",
+    "answers": {
+      "done": 0.0125,
+      "did_part": 0.9805,
+      "declined": 0.2095,
+      "withdrawn": 0.0097,
+      "left_undone": 0.2231
+    },
+    "inputTokens": 731,
+    "outputTokens": 0,
+    "ms": 295
+  },
+  {
+    "key": "35d99857de582adca1be0d4c86a8dafe",
+    "item": "rest-of-a-partly-done-ask-finished-in-passing#1@after turn 2",
+    "answers": {
+      "done": 0.8968,
+      "did_part": 0.4654,
+      "declined": 0.0519,
+      "withdrawn": 0.0139,
+      "left_undone": 0.0712
+    },
+    "inputTokens": 794,
+    "outputTokens": 0,
+    "ms": 312
+  },
+  {
+    "key": "b4aefdf96f883c641f1b46fa833d8f27",
+    "item": "rest-of-a-partly-done-ask-finished-in-passing#2@after turn 2",
+    "answers": {
+      "done": 0.949,
+      "did_part": 0.1335,
+      "declined": 0.0191,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0291
+    },
+    "inputTokens": 710,
+    "outputTokens": 0,
+    "ms": 189
+  },
+  {
+    "key": "406fee5beabc6bfd342a0cef1f16eb32",
+    "item": "restart-mid-session#1@after the restart",
+    "answers": {
+      "done": 0.1074,
+      "did_part": 0.9356,
+      "declined": 0.0282,
+      "withdrawn": 0.0128,
+      "left_undone": 0.1796
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 431
+  },
+  {
+    "key": "bbf6d6b23dce64423cd353e91e719f88",
+    "item": "restart-mid-session#1@after turn 2",
+    "answers": {
+      "done": 0.7095,
+      "did_part": 0.5702,
+      "declined": 0.0414,
+      "withdrawn": 0.0206,
+      "left_undone": 0.1111
+    },
+    "inputTokens": 748,
+    "outputTokens": 0,
+    "ms": 356
+  },
+  {
+    "key": "01b7a56cdd3d874a3f70da66bbfec37a",
+    "item": "restart-mid-session#2@after the restart",
+    "answers": {
+      "done": 0.0192,
+      "did_part": 0.6173,
+      "declined": 0.5461,
+      "withdrawn": 0.0111,
+      "left_undone": 0.8703
+    },
+    "inputTokens": 708,
+    "outputTokens": 0,
+    "ms": 211
+  },
+  {
+    "key": "cefb81f6251ff88ff12761965eef0415",
+    "item": "restart-mid-session#2@after turn 2",
+    "answers": {
+      "done": 0.9283,
+      "did_part": 0.2555,
+      "declined": 0.0272,
+      "withdrawn": 0.0107,
+      "left_undone": 0.0895
+    },
+    "inputTokens": 744,
+    "outputTokens": 0,
+    "ms": 197
+  },
+  {
+    "key": "1b90a00261759343d4cd6040f8ba047a",
+    "item": "resumed-under-a-new-id#1@after the resume",
+    "answers": {
+      "done": 0.072,
+      "did_part": 0.9532,
+      "declined": 0.0746,
+      "withdrawn": 0.0102,
+      "left_undone": 0.1458
+    },
+    "inputTokens": 716,
+    "outputTokens": 0,
+    "ms": 270
+  },
+  {
+    "key": "996219b5cb218bbaca9f5d3c70544c36",
+    "item": "resumed-under-a-new-id#1@after turn 2",
+    "answers": {
+      "done": 0.6927,
+      "did_part": 0.5372,
+      "declined": 0.0406,
+      "withdrawn": 0.0157,
+      "left_undone": 0.0876
+    },
+    "inputTokens": 762,
+    "outputTokens": 0,
+    "ms": 362
+  },
+  {
+    "key": "11a10a94f0abd5d395b3723f9a4ed7e1",
+    "item": "resumed-under-a-new-id#2@after the resume",
+    "answers": {
+      "done": 0.0137,
+      "did_part": 0.841,
+      "declined": 0.44,
+      "withdrawn": 0.0113,
+      "left_undone": 0.8791
+    },
+    "inputTokens": 710,
+    "outputTokens": 0,
+    "ms": 367
+  },
+  {
+    "key": "0e2ba261eb7402cd03f21e8ed01ee62c",
+    "item": "resumed-under-a-new-id#2@after turn 2",
+    "answers": {
+      "done": 0.9464,
+      "did_part": 0.181,
+      "declined": 0.0234,
+      "withdrawn": 0.0127,
+      "left_undone": 0.1393
+    },
+    "inputTokens": 756,
+    "outputTokens": 0,
+    "ms": 362
+  },
+  {
+    "key": "9e2b21c7e16d540894bca586df90d3fb",
+    "item": "second-ask-sent-while-the-agent-works#1@after the turn",
+    "answers": {
+      "done": 0.9383,
+      "did_part": 0.1351,
+      "declined": 0.0188,
+      "withdrawn": 0.0102,
+      "left_undone": 0.0441
+    },
+    "inputTokens": 743,
+    "outputTokens": 0,
+    "ms": 357
+  },
+  {
+    "key": "dc6536f36e273de74bdc47bf222c27cf",
+    "item": "second-ask-sent-while-the-agent-works#1@right after the second message",
+    "answers": {
+      "done": 0.0693,
+      "did_part": 0.9407,
+      "declined": 0.0163,
+      "withdrawn": 0.0098,
+      "left_undone": 0.3555
+    },
+    "inputTokens": 696,
+    "outputTokens": 0,
+    "ms": 203
+  },
+  {
+    "key": "fe22081598fafa9a6abfe67550606623",
+    "item": "second-ask-sent-while-the-agent-works#2@after the turn",
+    "answers": {
+      "done": 0.9546,
+      "did_part": 0.089,
+      "declined": 0.0218,
+      "withdrawn": 0.0121,
+      "left_undone": 0.0594
+    },
+    "inputTokens": 708,
+    "outputTokens": 0,
+    "ms": 280
+  },
+  {
+    "key": "9579865aeca4ff849e5917caa9ddae36",
+    "item": "second-ask-sent-while-the-agent-works#2@right after the second message",
+    "answers": {
+      "done": 0.2447,
+      "did_part": 0.5573,
+      "declined": 0.0473,
+      "withdrawn": 0.0119,
+      "left_undone": 0.9284
+    },
+    "inputTokens": 661,
+    "outputTokens": 0,
+    "ms": 421
+  },
+  {
+    "key": "c9689344eecffdcadfa9f9c2934d76d0",
+    "item": "session-ends-after-doing-the-open-ask#1@after the user opens it",
+    "answers": {
+      "done": 0.9086,
+      "did_part": 0.2917,
+      "declined": 0.0309,
+      "withdrawn": 0.0149,
+      "left_undone": 0.0687
+    },
+    "inputTokens": 769,
+    "outputTokens": 0,
+    "ms": 334
+  },
+  {
+    "key": "32d33cce7f78c10f890aa33f022514e1",
+    "item": "session-ends-after-doing-the-open-ask#1@after turn 1",
+    "answers": {
+      "done": 0.6295,
+      "did_part": 0.8665,
+      "declined": 0.0358,
+      "withdrawn": 0.0099,
+      "left_undone": 0.1207
+    },
+    "inputTokens": 713,
+    "outputTokens": 0,
+    "ms": 291
+  },
+  {
+    "key": "25d8ccf537e2d5d22ee3e193948bc966",
+    "item": "session-ends-after-doing-the-open-ask#2@after the user opens it",
+    "answers": {
+      "done": 0.9482,
+      "did_part": 0.1083,
+      "declined": 0.0242,
+      "withdrawn": 0.0126,
+      "left_undone": 0.0536
+    },
+    "inputTokens": 768,
+    "outputTokens": 0,
+    "ms": 429
+  },
+  {
+    "key": "eb434a953c96ad5bb13576880396c03c",
+    "item": "session-ends-after-doing-the-open-ask#2@after turn 1",
+    "answers": {
+      "done": 0.015,
+      "did_part": 0.6966,
+      "declined": 0.1472,
+      "withdrawn": 0.0105,
+      "left_undone": 0.9046
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 334
+  },
+  {
+    "key": "9e6eff1c15242cec0963ed231cb59420",
+    "item": "session-ends-right-after-its-turn#1@five minutes after the session ended",
+    "answers": {
+      "done": 0.9266,
+      "did_part": 0.1234,
+      "declined": 0.0239,
+      "withdrawn": 0.0123,
+      "left_undone": 0.0385
+    },
+    "inputTokens": 676,
+    "outputTokens": 0,
+    "ms": 208
+  },
+  {
+    "key": "3872cbb6e43867e953900ac3fc209b52",
+    "item": "subagent-does-the-work#1@after the turn",
+    "answers": {
+      "done": 0.903,
+      "did_part": 0.3015,
+      "declined": 0.0216,
+      "withdrawn": 0.0104,
+      "left_undone": 0.0457
+    },
+    "inputTokens": 831,
+    "outputTokens": 0,
+    "ms": 200
+  },
+  {
+    "key": "e44ba3eb327c61f63b295007d451c96f",
+    "item": "subagent-result-is-the-answer#1@after the turn",
+    "answers": {
+      "done": 0.9308,
+      "did_part": 0.1946,
+      "declined": 0.0183,
+      "withdrawn": 0.0081,
+      "left_undone": 0.0297
+    },
+    "inputTokens": 723,
+    "outputTokens": 0,
+    "ms": 543
+  },
+  {
+    "key": "06cbeae79897873d68a0ecae8ce2c2fd",
+    "item": "subagent-still-running-when-the-agent-stops#1@after the subagent reports",
+    "answers": {
+      "done": 0.8353,
+      "did_part": 0.4472,
+      "declined": 0.0253,
+      "withdrawn": 0.0123,
+      "left_undone": 0.1062
+    },
+    "inputTokens": 779,
+    "outputTokens": 0,
+    "ms": 243
+  },
+  {
+    "key": "e0387625687d5feceb9719801a996e21",
+    "item": "subagent-still-running-when-the-agent-stops#1@while the subagent runs",
+    "answers": {
+      "done": 0.5648,
+      "did_part": 0.7821,
+      "declined": 0.02,
+      "withdrawn": 0.0111,
+      "left_undone": 0.105
+    },
+    "inputTokens": 731,
+    "outputTokens": 0,
+    "ms": 266
+  },
+  {
+    "key": "a219f03d70c214fde7370d5065aed7ec",
+    "item": "subagent-still-running-when-the-agent-stops#2@after the subagent reports",
+    "answers": {
+      "done": 0.9018,
+      "did_part": 0.1983,
+      "declined": 0.0195,
+      "withdrawn": 0.01,
+      "left_undone": 0.0793
+    },
+    "inputTokens": 775,
+    "outputTokens": 0,
+    "ms": 193
+  },
+  {
+    "key": "981e35c1816fd753d0a34c6a3cc3ba44",
+    "item": "subagent-still-running-when-the-agent-stops#2@while the subagent runs",
+    "answers": {
+      "done": 0.0278,
+      "did_part": 0.6225,
+      "declined": 0.0267,
+      "withdrawn": 0.0128,
+      "left_undone": 0.6341
+    },
+    "inputTokens": 727,
+    "outputTokens": 0,
+    "ms": 386
+  },
+  {
+    "key": "e27a4f3ba606dc7c26ed79f3bdf26fcc",
+    "item": "terse-ask-skipped#1@after turn 1",
+    "answers": {
+      "done": 0.169,
+      "did_part": 0.9177,
+      "declined": 0.0217,
+      "withdrawn": 0.0127,
+      "left_undone": 0.1065
+    },
+    "inputTokens": 686,
+    "outputTokens": 0,
+    "ms": 356
+  },
+  {
+    "key": "60e3bcd8b5ff8bcd7da24f26e180d2cf",
+    "item": "terse-ask-skipped#1@after turn 2",
+    "answers": {
+      "done": 0.6271,
+      "did_part": 0.6012,
+      "declined": 0.0459,
+      "withdrawn": 0.0215,
+      "left_undone": 0.0695
+    },
+    "inputTokens": 728,
+    "outputTokens": 0,
+    "ms": 244
+  },
+  {
+    "key": "ad6578c06374ec1c528081b9dba9457d",
+    "item": "terse-ask-skipped#2@after turn 1",
+    "answers": {
+      "done": 0.0269,
+      "did_part": 0.8225,
+      "declined": 0.0284,
+      "withdrawn": 0.0122,
+      "left_undone": 0.9135
+    },
+    "inputTokens": 684,
+    "outputTokens": 0,
+    "ms": 237
+  },
+  {
+    "key": "839092ac6a22d6bada62383093d8a65b",
+    "item": "terse-ask-skipped#2@after turn 2",
+    "answers": {
+      "done": 0.2327,
+      "did_part": 0.5893,
+      "declined": 0.0292,
+      "withdrawn": 0.0115,
+      "left_undone": 0.7996
+    },
+    "inputTokens": 726,
+    "outputTokens": 0,
+    "ms": 304
+  },
+  {
+    "key": "61976cb0e61a36409301f28bf3205ba4",
+    "item": "terse-ask-skipped#3@after turn 2",
+    "answers": {
+      "done": 0.9651,
+      "did_part": 0.0675,
+      "declined": 0.0183,
+      "withdrawn": 0.0102,
+      "left_undone": 0.0387
+    },
+    "inputTokens": 692,
+    "outputTokens": 0,
+    "ms": 341
+  },
+  {
+    "key": "03c9373db87bdcf3628456afdc09d2f9",
+    "item": "terse-confirmations#1@after turn 1",
+    "answers": {
+      "done": 0.0307,
+      "did_part": 0.596,
+      "declined": 0.1546,
+      "withdrawn": 0.0094,
+      "left_undone": 0.9002
+    },
+    "inputTokens": 719,
+    "outputTokens": 0,
+    "ms": 335
+  },
+  {
+    "key": "c22e771dc67b1d26579a57165f7664ce",
+    "item": "terse-confirmations#1@after turn 2",
+    "answers": {
+      "done": 0.9516,
+      "did_part": 0.1481,
+      "declined": 0.0235,
+      "withdrawn": 0.0079,
+      "left_undone": 0.0329
+    },
+    "inputTokens": 759,
+    "outputTokens": 0,
+    "ms": 258
+  },
+  {
+    "key": "da84e1ce84d6e50da571e78d3e227d48",
+    "item": "terse-confirmations#1@after turn 3",
+    "answers": {
+      "done": 0.9477,
+      "did_part": 0.1126,
+      "declined": 0.0231,
+      "withdrawn": 0.0105,
+      "left_undone": 0.0267
+    },
+    "inputTokens": 785,
+    "outputTokens": 0,
+    "ms": 363
+  },
+  {
+    "key": "03bb1a088108b66bbfe792bb52ed03d8",
+    "item": "terse-confirmations#2@after turn 3",
+    "answers": {
+      "done": 0.7887,
+      "did_part": 0.5407,
+      "declined": 0.0309,
+      "withdrawn": 0.0149,
+      "left_undone": 0.0967
+    },
+    "inputTokens": 666,
+    "outputTokens": 0,
+    "ms": 217
+  },
+  {
+    "key": "9defcd0c9c11cb573a52a3b1134de0c3",
+    "item": "tool-heavy-one-word-reply#1@after the turn",
+    "answers": {
+      "done": 0.9371,
+      "did_part": 0.2082,
+      "declined": 0.0264,
+      "withdrawn": 0.0143,
+      "left_undone": 0.0556
+    },
+    "inputTokens": 798,
+    "outputTokens": 0,
+    "ms": 183
+  },
+  {
+    "key": "63b1297ffabb466f0f4d3f4cad8b61a3",
+    "item": "user-asks-whether-it-was-done#1@after turn 2",
+    "answers": {
+      "done": 0.9174,
+      "did_part": 0.2009,
+      "declined": 0.0301,
+      "withdrawn": 0.0131,
+      "left_undone": 0.0393
+    },
+    "inputTokens": 734,
+    "outputTokens": 0,
+    "ms": 282
+  },
+  {
+    "key": "6103587505a7b07005162bc15bd792ec",
+    "item": "user-asks-whether-it-was-done#2@after turn 2",
+    "answers": {
+      "done": 0.944,
+      "did_part": 0.1496,
+      "declined": 0.0281,
+      "withdrawn": 0.0145,
+      "left_undone": 0.0605
+    },
+    "inputTokens": 734,
+    "outputTokens": 0,
+    "ms": 217
+  },
+  {
+    "key": "87cbdd496d9e64780c7fcfd6e627a0a3",
+    "item": "user-drops-everything-open#1@after turn 1",
+    "answers": {
+      "done": 0.9152,
+      "did_part": 0.3423,
+      "declined": 0.0293,
+      "withdrawn": 0.0099,
+      "left_undone": 0.0647
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 211
+  },
+  {
+    "key": "e95e815045c460816a63dc3e8066d0f7",
+    "item": "user-drops-everything-open#1@after turn 2",
+    "answers": {
+      "done": 0.9455,
+      "did_part": 0.2083,
+      "declined": 0.0184,
+      "withdrawn": 0.2911,
+      "left_undone": 0.0665
+    },
+    "inputTokens": 773,
+    "outputTokens": 0,
+    "ms": 213
+  },
+  {
+    "key": "17da27616ee043899a66d43b91828494",
+    "item": "user-drops-everything-open#2@after turn 1",
+    "answers": {
+      "done": 0.023,
+      "did_part": 0.1099,
+      "declined": 0.0702,
+      "withdrawn": 0.0084,
+      "left_undone": 0.9602
+    },
+    "inputTokens": 738,
+    "outputTokens": 0,
+    "ms": 204
+  },
+  {
+    "key": "5d86ecf51b503e250d86ceec30b3ee59",
+    "item": "user-drops-everything-open#2@after turn 2",
+    "answers": {
+      "done": 0.0097,
+      "did_part": 0.1419,
+      "declined": 0.3391,
+      "withdrawn": 0.966,
+      "left_undone": 0.1145
+    },
+    "inputTokens": 776,
+    "outputTokens": 0,
+    "ms": 301
+  },
+  {
+    "key": "7a0afe0355718b74c1684bcb4c63ea72",
+    "item": "user-drops-everything-open#3@after turn 1",
+    "answers": {
+      "done": 0.0127,
+      "did_part": 0.1061,
+      "declined": 0.2659,
+      "withdrawn": 0.0087,
+      "left_undone": 0.9648
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 228
+  },
+  {
+    "key": "679f2ebc9d9e876d2bbfcca672e159c8",
+    "item": "user-drops-everything-open#3@after turn 2",
+    "answers": {
+      "done": 0.0131,
+      "did_part": 0.1337,
+      "declined": 0.4675,
+      "withdrawn": 0.9455,
+      "left_undone": 0.2222
+    },
+    "inputTokens": 773,
+    "outputTokens": 0,
+    "ms": 375
+  },
+  {
+    "key": "698fd631310cce346f5441c1b85365d3",
+    "item": "user-drops-everything-open#4@after turn 1",
+    "answers": {
+      "done": 0.0167,
+      "did_part": 0.0944,
+      "declined": 0.272,
+      "withdrawn": 0.0082,
+      "left_undone": 0.9682
+    },
+    "inputTokens": 737,
+    "outputTokens": 0,
+    "ms": 595
+  },
+  {
+    "key": "480cfe10be7a7b70fe2a1738a99942b5",
+    "item": "user-drops-everything-open#4@after turn 2",
+    "answers": {
+      "done": 0.0119,
+      "did_part": 0.0941,
+      "declined": 0.5955,
+      "withdrawn": 0.9516,
+      "left_undone": 0.1542
+    },
+    "inputTokens": 775,
+    "outputTokens": 0,
+    "ms": 513
+  },
+  {
+    "key": "f5c1f6ec121ba91e21a9a4a57304030f",
+    "item": "user-drops-everything-open#5@after turn 2",
+    "answers": {
+      "done": 0.7396,
+      "did_part": 0.6584,
+      "declined": 0.0228,
+      "withdrawn": 0.2936,
+      "left_undone": 0.0817
+    },
+    "inputTokens": 680,
+    "outputTokens": 0,
+    "ms": 360
+  },
+  {
+    "key": "dfc7133c210a8a9382f48a9aa01be19a",
+    "item": "withdrawn-ask#1@after turn 1",
+    "answers": {
+      "done": 0.0197,
+      "did_part": 0.3459,
+      "declined": 0.9255,
+      "withdrawn": 0.0112,
+      "left_undone": 0.8852
+    },
+    "inputTokens": 729,
+    "outputTokens": 0,
+    "ms": 327
+  },
+  {
+    "key": "ad232a2c7d709af5076e4994696fbf90",
+    "item": "withdrawn-ask#1@after turn 2",
+    "answers": {
+      "done": 0.026,
+      "did_part": 0.5397,
+      "declined": 0.7648,
+      "withdrawn": 0.9523,
+      "left_undone": 0.1279
+    },
+    "inputTokens": 754,
+    "outputTokens": 0,
+    "ms": 1052
+  },
+  {
+    "key": "434f3b8e1dd4b2c9847b2e851559881c",
+    "item": "withdrawn-ask#2@after turn 1",
+    "answers": {
+      "done": 0.9308,
+      "did_part": 0.387,
+      "declined": 0.3566,
+      "withdrawn": 0.0121,
+      "left_undone": 0.0584
+    },
+    "inputTokens": 735,
+    "outputTokens": 0,
+    "ms": 194
+  },
+  {
+    "key": "becb29e6dc22fa9292c1714b345f4b77",
+    "item": "withdrawn-ask#2@after turn 2",
+    "answers": {
+      "done": 0.9344,
+      "did_part": 0.2887,
+      "declined": 0.047,
+      "withdrawn": 0.0391,
+      "left_undone": 0.0474
+    },
+    "inputTokens": 760,
+    "outputTokens": 0,
+    "ms": 758
+  },
+  {
+    "key": "6966a58c3344bea5fb2acb495ffa6d72",
+    "item": "withdrawn-because-someone-else-does-it#1@after turn 1",
+    "answers": {
+      "done": 0.3845,
+      "did_part": 0.8371,
+      "declined": 0.0249,
+      "withdrawn": 0.0103,
+      "left_undone": 0.1012
+    },
+    "inputTokens": 701,
+    "outputTokens": 0,
+    "ms": 227
+  },
+  {
+    "key": "a878fabf02cfa2016fe8dd94c140ee95",
+    "item": "withdrawn-because-someone-else-does-it#1@after turn 2",
+    "answers": {
+      "done": 0.795,
+      "did_part": 0.5121,
+      "declined": 0.0418,
+      "withdrawn": 0.0367,
+      "left_undone": 0.0575
+    },
+    "inputTokens": 749,
+    "outputTokens": 0,
+    "ms": 263
+  },
+  {
+    "key": "a11fc92a8e83bdf1eff370185d8dd6fb",
+    "item": "withdrawn-because-someone-else-does-it#2@after turn 1",
+    "answers": {
+      "done": 0.0195,
+      "did_part": 0.7506,
+      "declined": 0.0416,
+      "withdrawn": 0.0108,
+      "left_undone": 0.91
+    },
+    "inputTokens": 695,
+    "outputTokens": 0,
+    "ms": 259
+  },
+  {
+    "key": "0757f8ddf1f91417b7878dd20ec5a48e",
+    "item": "withdrawn-because-someone-else-does-it#2@after turn 2",
+    "answers": {
+      "done": 0.0311,
+      "did_part": 0.3254,
+      "declined": 0.1679,
+      "withdrawn": 0.7366,
+      "left_undone": 0.4501
+    },
+    "inputTokens": 743,
+    "outputTokens": 0,
+    "ms": 276
+  },
+  {
+    "key": "0feb638844c414b0e31a66e917933001",
+    "item": "withdrawn-because-someone-else-does-it#3@after turn 2",
+    "answers": {
+      "done": 0.9581,
+      "did_part": 0.1026,
+      "declined": 0.0203,
+      "withdrawn": 0.0126,
+      "left_undone": 0.0244
+    },
+    "inputTokens": 689,
+    "outputTokens": 0,
+    "ms": 429
+  },
+  {
+    "key": "ebcf574613a71985db814202681f2a16",
+    "item": "withdrawn-by-a-change-of-plan#1@after turn 1",
+    "answers": {
+      "done": 0.0197,
+      "did_part": 0.1267,
+      "declined": 0.0537,
+      "withdrawn": 0.01,
+      "left_undone": 0.9356
+    },
+    "inputTokens": 697,
+    "outputTokens": 0,
+    "ms": 203
+  },
+  {
+    "key": "f236a329616ad208b819577d74cb55b5",
+    "item": "withdrawn-by-a-change-of-plan#1@after turn 2",
+    "answers": {
+      "done": 0.0805,
+      "did_part": 0.3352,
+      "declined": 0.5179,
+      "withdrawn": 0.9597,
+      "left_undone": 0.1333
+    },
+    "inputTokens": 755,
+    "outputTokens": 0,
+    "ms": 209
+  },
+  {
+    "key": "bb30760e9ca90f0da2a5366f8d5f8816",
+    "item": "withdrawn-by-a-change-of-plan#2@after turn 2",
+    "answers": {
+      "done": 0.9181,
+      "did_part": 0.2871,
+      "declined": 0.0261,
+      "withdrawn": 0.0992,
+      "left_undone": 0.0362
+    },
+    "inputTokens": 705,
+    "outputTokens": 0,
+    "ms": 268
+  },
+  {
+    "key": "b9d663683c07bf119e3cc34f6e4fe0b4",
+    "item": "withdrawn-in-spanish#1@after turn 1",
+    "answers": {
+      "done": 0.0204,
+      "did_part": 0.2125,
+      "declined": 0.8,
+      "withdrawn": 0.012,
+      "left_undone": 0.8909
+    },
+    "inputTokens": 712,
+    "outputTokens": 0,
+    "ms": 224
+  },
+  {
+    "key": "e6d42971cc9d2575bd31675cf2d1a2f0",
+    "item": "withdrawn-in-spanish#1@after turn 2",
+    "answers": {
+      "done": 0.0515,
+      "did_part": 0.2267,
+      "declined": 0.8821,
+      "withdrawn": 0.95,
+      "left_undone": 0.1389
+    },
+    "inputTokens": 780,
+    "outputTokens": 0,
+    "ms": 950
+  },
+  {
+    "key": "e2da72fb1d15c7d62681d172f3fedb6a",
+    "item": "withdrawn-in-spanish#2@after turn 2",
+    "answers": {
+      "done": 0.9283,
+      "did_part": 0.1707,
+      "declined": 0.0184,
+      "withdrawn": 0.2891,
+      "left_undone": 0.0354
+    },
+    "inputTokens": 718,
+    "outputTokens": 0,
+    "ms": 296
+  },
+  {
+    "key": "769e0960945ce3a6821118d15b94c13e",
+    "item": "withdrawn-then-asked-again#1@after the user asks again",
+    "answers": {
+      "done": 0.9217,
+      "did_part": 0.1439,
+      "declined": 0.0961,
+      "withdrawn": 0.0372,
+      "left_undone": 0.0501
+    },
+    "inputTokens": 740,
+    "outputTokens": 0,
+    "ms": 277
+  },
+  {
+    "key": "479b5d29c192df89d0a31185b980d772",
+    "item": "withdrawn-then-asked-again#1@after the user withdraws it",
+    "answers": {
+      "done": 0.0251,
+      "did_part": 0.1007,
+      "declined": 0.8137,
+      "withdrawn": 0.9598,
+      "left_undone": 0.0807
+    },
+    "inputTokens": 701,
+    "outputTokens": 0,
+    "ms": 287
+  },
+  {
+    "key": "439cc4ff4cc20a63fade6a5646e10b79",
+    "item": "withdrawn-while-the-agent-works#1@after the turn",
+    "answers": {
+      "done": 0.0269,
+      "did_part": 0.4243,
+      "declined": 0.8257,
+      "withdrawn": 0.9321,
+      "left_undone": 0.2277
+    },
+    "inputTokens": 734,
+    "outputTokens": 0,
+    "ms": 266
+  }
+]

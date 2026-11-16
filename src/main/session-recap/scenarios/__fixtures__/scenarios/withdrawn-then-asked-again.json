@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "addressed-later-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
-  "pending": true,
   "steps": [
     {
       "user": "Add dark mode to the settings page."

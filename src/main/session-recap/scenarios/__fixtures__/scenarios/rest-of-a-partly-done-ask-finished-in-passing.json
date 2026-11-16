@@ -4,7 +4,6 @@
   "categories": ["partly-addressed", "addressed-implicitly"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "After turn 1 the /customers half is open. Turn 2 changes the page size on both endpoints, which only works because /customers now paginates too; after it nothing is listed as not addressed or as half done.",
-  "pending": true,
   "steps": [
     {
       "user": "Add pagination to the /orders and /customers endpoints, 50 per page."

@@ -4,7 +4,6 @@
   "categories": ["withdrawn-or-changed", "mid-turn"],
   "surfaces": ["claude-cli", "codex-cli"],
   "expected": "The Dockerfile ask was taken back mid-turn and the agent reverted its change: nothing is listed as not addressed and no work is left half done.",
-  "pending": true,
   "steps": [
     {
       "user": "Convert the Dockerfile to a multi-stage build."

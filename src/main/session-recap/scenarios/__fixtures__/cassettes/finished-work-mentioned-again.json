@@ -1,0 +1,26 @@
+[
+  {
+    "key": "5150f0be148ce1bf7cba2a8587c5f4b4",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add retries to the webhook sender, three attempts with backoff.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add retries to the webhook sender, three attempts with backoff.\n\n[m2] AGENT: The webhook sender now retries three times with exponential backoff.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"webhook sender retries with backoff\",\n  \"goal\": \"Add retries to the webhook sender, three attempts with backoff.\",\n  \"standing\": \"The webhook sender now includes retry logic with three attempts and exponential backoff.\",\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"Added three attempts with exponential backoff to webhook sender\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ]\n  },\n  \"resolve\": [\n    \"firstRequest\"\n  ]\n}",
+    "neurons": 7.728
+  },
+  {
+    "key": "3337e995d022c129055cad8ed75c504d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"webhook sender retries with backoff\",\"goal\":\"Add retries to the webhook sender, three attempts with backoff.\",\"standing\":\"The webhook sender now includes retry logic with three attempts and exponential backoff.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added three attempts with exponential backoff to webhook sender\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Thanks. Now that the webhook sender retries, log each attempt with its status code.\n\n[m2] AGENT: Each attempt is logged with its status code and the attempt number.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Log each attempt with its status code\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Added logging for each attempt with status code\", \"ref\": \"m2\", \"state\": \"done\"}]\n  }\n}",
+    "neurons": 6.1699
+  }
+]

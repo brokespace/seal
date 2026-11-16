@@ -4,7 +4,6 @@
   "categories": ["declined", "non-english-terse"],
   "surfaces": ["claude-cli", "codex-cli"],
   "expected": "The refusal is recorded with its reason. After the user's \"ok\" nothing is listed as not addressed and no new request appears.",
-  "pending": true,
   "steps": [
     {
       "user": "rm the vendor dir"

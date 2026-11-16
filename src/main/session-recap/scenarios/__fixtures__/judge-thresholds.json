@@ -1,0 +1,50 @@
+{
+  "@cf/cloudflare/clef": {
+    "questionBook": "ba879810db9d",
+    "cuts": {
+      "done": 0.3785,
+      "did_part": 0.9532,
+      "declined": 0.9255,
+      "withdrawn": 0.2911,
+      "left_undone": 0.5738
+    },
+    "unanswered": 0,
+    "mustKeepLost": []
+  },
+  "@cf/cloudflare/clef-flash": {
+    "questionBook": "ba879810db9d",
+    "cuts": {
+      "done": 0.3654,
+      "did_part": 0.9261,
+      "declined": 0.7157,
+      "withdrawn": 0.4669,
+      "left_undone": 0.7713
+    },
+    "unanswered": 0,
+    "mustKeepLost": []
+  },
+  "@cf/zai-org/glm-4.7-flash": {
+    "questionBook": "ba879810db9d",
+    "cuts": {
+      "done": 1,
+      "did_part": 1,
+      "declined": 1,
+      "withdrawn": 0,
+      "left_undone": 1
+    },
+    "unanswered": 0,
+    "mustKeepLost": []
+  },
+  "@cf/google/gemma-4-26b-a4b-it": {
+    "questionBook": "ba879810db9d",
+    "cuts": {
+      "done": 1,
+      "did_part": 1,
+      "declined": 1,
+      "withdrawn": 0,
+      "left_undone": 1
+    },
+    "unanswered": 0,
+    "mustKeepLost": []
+  }
+}

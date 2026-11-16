@@ -4,7 +4,6 @@
   "categories": ["duplicate-asks", "addressed-later-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
   "expected": "Two requests, both done. The retries, which the user only mentions in passing in turn 2, are not listed as a new or unaddressed request.",
-  "pending": true,
   "steps": [
     {
       "user": "Add retries to the webhook sender, three attempts with backoff."

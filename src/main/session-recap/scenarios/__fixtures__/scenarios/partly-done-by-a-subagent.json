@@ -4,7 +4,6 @@
   "categories": ["partly-addressed", "subagent"],
   "surfaces": ["claude-cli"],
   "expected": "Two of the three routes have an auth check. /hooks/replay does not, and the recap says so with the agent's question.",
-  "pending": true,
   "steps": [
     {
       "user": "Add an auth check to the three unprotected routes: /export, /admin/stats and /hooks/replay."
