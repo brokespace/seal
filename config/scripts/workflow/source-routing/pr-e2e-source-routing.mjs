@@ -32,7 +32,7 @@ export const MANUAL_ONLY_E2E_SPECS = ['tests/e2e/ssh-orcad-phone-feed-list.spec.
 
 // Shared fixtures and workflow changes must exercise every managed-SSH consumer.
 const MANAGED_SSH_HARNESS =
-  /^tests\/e2e\/helpers\/(?:orcad-managed-workspace|orcad-convert-(?:flow|host|teardown)|orcad-template-variant|orcad-upgrade-(?:profile|retained-state)|docker-ssh-host-target|reserve-local-port|ssh-remote-only-browser-fixture|windows-host-orcad-processes)\.ts$/
+  /^tests\/e2e\/helpers\/(?:orcad-managed-workspace|orcad-convert-(?:flow|host|teardown)|orcad-template-variant|orcad-upgrade-(?:profile|retained-state)|docker-ssh-host-(?:image|target|systemd-target)|docker-systemd-boot|proc-net-tcp-listeners|seal-server-install-machine|reserve-local-port|ssh-remote-only-browser-fixture|windows-host-orcad-processes)\.ts$/
 
 // An enabled SSH automation moves with its host and is re-enabled on the server (#29083).
 const ENABLED_AUTOMATION_MOVE =
@@ -357,6 +357,22 @@ export const PR_E2E_SOURCE_ROUTES = [
       MANAGED_SSH_HARNESS.test(file) ||
       (isProductSource(file) &&
         /^src\/(?:main\/managed-server\/lifecycle\/orcad-managed-tunnel|main\/ssh\/system-transport\/system-ssh-forward-port-reservation|shared\/runtime-environment-(?:sidecar|managed-orcad-store))/.test(
+          file
+        ))
+  },
+  {
+    // Seal server installed over SSH as a user service, on a Docker host whose PID 1 is systemd.
+    id: 'ssh.orcad-seal-server-install',
+    specs: [
+      'tests/e2e/ssh-orcad-seal-server-service.spec.ts',
+      'tests/e2e/ssh-orcad-seal-server-install-fallback.spec.ts',
+      'tests/e2e/ssh-orcad-seal-server-existing-machine.spec.ts'
+    ],
+    matches: (file) =>
+      MANAGED_SSH_HARNESS.test(file) ||
+      /^tests\/e2e\/fixtures\/docker-ssh-host(?:-systemd)?\//.test(file) ||
+      (isProductSource(file) &&
+        /^src\/(?:main\/(?:managed-server\/service|machines\/server-install)\/|shared\/machines\/machine-server-install|renderer\/src\/components\/machines\/(?:server-install|add)\/)/.test(
           file
         ))
   },

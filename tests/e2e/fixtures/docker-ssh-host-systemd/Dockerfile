@@ -1,20 +1,7 @@
-FROM node:22.23.4-bookworm@sha256:2bd396628eceb5c999a6e43731fab69d5fb98b94ba9d9d90b5f64575c5178765 AS patched-node
-FROM node:22-bookworm@sha256:5647be709086c696ff32edaaf1c70cd26d1da6ab2b39c32f3c7b4c4a31957e37
-
-COPY --from=patched-node /usr/local/bin/node /usr/local/bin/node
-
-# Why: immutable snapshot inputs keep the SSH/Git fixture identical across rebuild dates.
-RUN sed -i \
-      -e 's|http://deb.debian.org/debian-security|https://snapshot.debian.org/archive/debian-security/20260713T000000Z|' \
-      -e 's|http://deb.debian.org/debian|https://snapshot.debian.org/archive/debian/20260713T000000Z|' \
-      /etc/apt/sources.list.d/debian.sources \
-    && apt-get -o Acquire::Check-Valid-Until=false update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      git=1:2.39.5-0+deb12u3 \
-      openssh-server=1:9.2p1-2+deb12u10 \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /run/sshd /root/.ssh \
-    && chmod 700 /root/.ssh
+# check=skip=InvalidDefaultArgInFrom
+# The image of ../docker-ssh-host (patched node, apt snapshot sources, git, sshd). Its tag is a content hash, so there is no default.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # uid 1000 is the node image's `node` user, so the SSH user is seal (1100).
 # polkitd lets a user enable linger for itself; POLKIT= builds the host that refuses it.
@@ -46,5 +33,4 @@ RUN chmod 755 /usr/local/sbin/seal-fixture-init
 # systemd reads this to know it runs in a container; SIGRTMIN+3 is its clean-shutdown signal.
 ENV container=docker
 STOPSIGNAL SIGRTMIN+3
-EXPOSE 22
 ENTRYPOINT ["/usr/local/sbin/seal-fixture-init"]
