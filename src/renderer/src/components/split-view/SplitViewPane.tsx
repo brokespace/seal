@@ -128,12 +128,9 @@ export function SplitViewPane({
         if (event.detail > 0 && landsOnTab(event.target)) {
           tabPressedRef.current = true
           setTabPresses((count) => count + 1)
-        } else if (
-          focused &&
-          landsOnStrip(event.target) &&
-          document.activeElement === document.body
-        ) {
-          // A browser page gives up the keyboard on any press outside it, the bare strip's included.
+        } else if (landsOnStrip(event.target) && document.activeElement === document.body) {
+          // A browser page gives up the keyboard on any press outside it: on the bare strip, and on
+          // a button of another pane's strip, which leaves pane focus where it is.
           bringKeyboardFocusIntoFocusedPane(false)
         }
       }}
