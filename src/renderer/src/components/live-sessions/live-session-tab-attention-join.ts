@@ -1,6 +1,10 @@
 import { useAppStore } from '@/store'
+import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import { liveSessionPaneKeyOf } from '../../../../shared/live-sessions/live-session-surface'
+import {
+  liveSessionPaneKeyOf,
+  liveSessionSurfaceOf
+} from '../../../../shared/live-sessions/live-session-surface'
 import type { LiveSessionMarksStore } from './live-session-marks-store'
 import { liveSessionRegistryStore } from './live-session-registry-store'
 
@@ -8,32 +12,96 @@ type Subscribe = (listener: () => void) => () => void
 
 export type LiveSessionTabAttentionJoinDeps = {
   sessions: {
-    get: () => readonly Pick<LiveSession, 'id' | 'lastActivityAt' | 'surface' | 'inputRoutes'>[]
+    get: () => readonly Pick<
+      LiveSession,
+      'id' | 'lastActivityAt' | 'surface' | 'inputRoutes' | 'alive' | 'status'
+    >[]
     subscribe: Subscribe
   }
   tabAttention: {
     get: () => {
       acknowledgedAgentsByPaneKey: Readonly<Record<string, number>>
       unreadAgentCompletionPanes: Readonly<Record<string, unknown>>
+      agentStatusByPaneKey: Readonly<Record<string, unknown>>
     }
     /** Fires on every app-store write. */
     subscribe: Subscribe
     acknowledgeAgents: (paneKeys: string[]) => void
   }
   marks: Pick<LiveSessionMarksStore, 'getState' | 'subscribe' | 'markSeen'>
+  now?: () => number
 }
+
+/** A pane's own exit report can raise the completion marker this long after its agent is gone. */
+const ENDED_AGENT_MARKER_MS = 60_000
 
 /**
  * A session that runs in a Seal pane is read in one place and counts as read in the other: its
  * tab, once viewed, marks the record seen; the record, once seen in a session view, acknowledges
- * the tab's attention. Returns the stop function.
+ * the tab's attention. A terminal pane whose agent has ended gives its completion marker up.
+ * Returns the stop function.
  */
 export function joinLiveSessionMarksWithTabAttention({
   sessions,
   tabAttention,
-  marks
+  marks,
+  now = Date.now
 }: LiveSessionTabAttentionJoinDeps): () => void {
   let lastSessions: unknown = undefined
+  let runningIn = new Set<string>()
+  let lastRunning: unknown = undefined
+  const endedAt = new Map<string, number>()
+  let releasing = false
+
+  const noteEndedAgents = (): void => {
+    const listed = sessions.get()
+    if (listed === lastRunning) {
+      return
+    }
+    lastRunning = listed
+    const running = new Set<string>()
+    for (const session of listed) {
+      const surface = liveSessionSurfaceOf(session)
+      // A chat's tab still holds the unread reply after its agent process is reaped.
+      if (surface.kind === 'cli' && isActiveLiveSession(session)) {
+        running.add(surface.paneKey)
+      }
+    }
+    for (const paneKey of runningIn) {
+      if (!running.has(paneKey)) {
+        endedAt.set(paneKey, now())
+      }
+    }
+    for (const paneKey of running) {
+      endedAt.delete(paneKey)
+    }
+    runningIn = running
+  }
+
+  const releaseEndedAgentMarkers = (): void => {
+    noteEndedAgents()
+    if (endedAt.size === 0 || releasing) {
+      return
+    }
+    const attention = tabAttention.get()
+    const paneKeys: string[] = []
+    for (const [paneKey, at] of endedAt) {
+      // Another agent runs in the pane now, or the marker would be a later one's.
+      if (attention.agentStatusByPaneKey[paneKey] || now() - at > ENDED_AGENT_MARKER_MS) {
+        endedAt.delete(paneKey)
+      } else if (attention.unreadAgentCompletionPanes[paneKey]) {
+        paneKeys.push(paneKey)
+      }
+    }
+    if (paneKeys.length > 0) {
+      releasing = true
+      try {
+        tabAttention.acknowledgeAgents(paneKeys)
+      } finally {
+        releasing = false
+      }
+    }
+  }
   let lastAcknowledged: unknown = undefined
   let lastSeenAt = marks.getState().seenAt
   let markingFromTab = false
@@ -95,12 +163,16 @@ export function joinLiveSessionMarksWithTabAttention({
     }
   }
 
+  const onStoresChanged = (): void => {
+    releaseEndedAgentMarkers()
+    markViewedTabsSeen()
+  }
   const stops = [
-    sessions.subscribe(markViewedTabsSeen),
-    tabAttention.subscribe(markViewedTabsSeen),
+    sessions.subscribe(onStoresChanged),
+    tabAttention.subscribe(onStoresChanged),
     marks.subscribe(acknowledgeSeenTabs)
   ]
-  markViewedTabsSeen()
+  onStoresChanged()
   return () => {
     for (const stop of stops) {
       stop()
