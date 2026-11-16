@@ -41,6 +41,15 @@ function chat(providerSessionId: string, patch: Partial<LiveSession> = {}): Live
   })
 }
 
+const READING = {
+  usedTokens: 44_500,
+  windowTokens: 200_000,
+  percentage: 22,
+  estimated: true,
+  rows: [],
+  model: 'claude-sonnet-4-5'
+}
+
 const merge = (discovered: LiveSession[], chats: LiveSession[]): LiveSession[] =>
   mergeSessionSources({ discovered, panes: [], chats, localMachine: LOCAL })
 
@@ -53,7 +62,9 @@ describe('one record per session across sources', () => {
       pid: 4100,
       transcriptPath: '/home/u/.claude/projects/shop/abc.jsonl',
       lastActivityAt: 5_000,
-      inputRoutes: [{ kind: 'resume' }]
+      inputRoutes: [{ kind: 'resume' }],
+      context: READING,
+      model: 'claude-sonnet-4-5'
     })
     const owned = chat('abc', { status: 'needs-permission', cwd: '/srv/shop-chat' })
 
@@ -64,7 +75,9 @@ describe('one record per session across sources', () => {
         title: 'Fix checkout',
         pid: 4100,
         transcriptPath: '/home/u/.claude/projects/shop/abc.jsonl',
-        lastActivityAt: 5_000
+        lastActivityAt: 5_000,
+        context: READING,
+        model: 'claude-sonnet-4-5'
       }
     ])
   })

@@ -31,6 +31,9 @@ function chatOver(chat: LiveSession, lower: LiveSession): LiveSession {
     ...(chat.activity === undefined && lower.activity ? { activity: lower.activity } : {}),
     ...(chat.lastMessage == null && lower.lastMessage ? { lastMessage: lower.lastMessage } : {}),
     ...(chat.configDir == null && lower.configDir ? { configDir: lower.configDir } : {}),
+    // A chat measures from its first reply on; until then the transcript's reading stands.
+    ...(chat.context === undefined && lower.context ? { context: lower.context } : {}),
+    ...(chat.model === undefined && lower.model ? { model: lower.model } : {}),
     ...(chat.title === null && lower.titleNamed ? { titleNamed: true as const } : {}),
     ...(continues.length > 0 ? { continues } : {})
   }
