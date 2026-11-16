@@ -99,21 +99,24 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
 export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): React.JSX.Element {
   const t = useTranslate()
   const { view } = props
-  const row = (session: LiveSession): React.JSX.Element => (
-    <LiveSessionRow
-      key={session.id}
-      session={session}
-      // The card above the row names the workspace; the hover preview still does.
-      showPlace={false}
-      {...props.rowState(session)}
-      // The sidebar list is the one Tab stop; arrow keys reach the rows from it.
-      tabStop={false}
-      now={props.now}
-      onOpen={props.onOpen}
-      onPick={props.onPick}
-      menu={props.menu}
-    />
-  )
+  const row = (session: LiveSession): React.JSX.Element => {
+    const state = props.rowState(session)
+    return (
+      <LiveSessionRow
+        key={session.id}
+        session={session}
+        // The card above the row names the workspace; the hover preview still does.
+        showPlace={false}
+        {...state}
+        // Tab stops on the row of the session on screen, in its place; arrow keys reach the others from the list.
+        tabStop={state.current}
+        now={props.now}
+        onOpen={props.onOpen}
+        onPick={props.onPick}
+        menu={props.menu}
+      />
+    )
+  }
   // What the card's badge said before the rows replaced it: how many run and what the most urgent needs.
   const top = topLiveSessionStatus(view.running.map((session) => session.status))
   const groupLabel =

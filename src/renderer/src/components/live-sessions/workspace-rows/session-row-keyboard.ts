@@ -13,6 +13,8 @@ const CARD = '[data-worktree-card-surface]'
 // The line that unfolds a workspace's ended sessions is a stop too, or the keyboard could not open it.
 const SESSION_ROW =
   '[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle])'
+// Active agents rows too: Tab reaches them without this file's arrow keys.
+const TAB_STOP_ROW = `${LIST} [data-live-session-row]`
 const KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape'])
 
 // Why closest(): a card can hold other workspaces' cards, whose rows are not its own.
@@ -32,17 +34,21 @@ function cursorOption(list: HTMLElement): HTMLElement | null {
 }
 
 /**
- * Gives a row the keyboard. It is marked while it holds it, as the list is while its own arrow
+ * A row the keyboard moved to is marked while it holds it, as the list is while its own arrow
  * keys move it: a terminal that regains the window then leaves the keyboard where it is.
  */
+function markRowForKeyboard(row: HTMLElement): void {
+  row.setAttribute('data-keyboard-navigation', '')
+  row.addEventListener('blur', () => row.removeAttribute('data-keyboard-navigation'), {
+    once: true
+  })
+}
+
 export function focusRowForKeyboard(row: HTMLElement): void {
   // Why not the browser's focus scroll: it cannot see the headers pinned over the rows.
   row.focus({ preventScroll: true })
   if (document.activeElement === row) {
-    row.setAttribute('data-keyboard-navigation', '')
-    row.addEventListener('blur', () => row.removeAttribute('data-keyboard-navigation'), {
-      once: true
-    })
+    markRowForKeyboard(row)
   }
 }
 
@@ -191,21 +197,16 @@ function onTabKey(event: KeyboardEvent): void {
     !event.altKey
 }
 
-/** Tab into the list lands on the row of the session on screen, as it does in Active agents. */
+/** A row Tab lands on holds the keyboard as one the arrow keys moved to does, clear of the pinned headers. */
 function onFocusIn(event: FocusEvent): void {
-  const list = event.target
-  if (!tabbing || !(list instanceof HTMLElement) || !list.matches(LIST)) {
+  const row = event.target
+  if (!tabbing || !(row instanceof HTMLElement) || !row.matches(TAB_STOP_ROW)) {
     return
   }
-  // Shift+Tab off a row stops on the list itself, or the keyboard could not leave backwards.
-  if (event.relatedTarget instanceof Node && list.contains(event.relatedTarget)) {
-    return
+  markRowForKeyboard(row)
+  if (row.matches(SESSION_ROW)) {
+    scrollSidebarSessionRowIntoView(row)
   }
-  focusSessionRow(
-    list.querySelector<HTMLElement>(
-      '[data-workspace-session-rows] [data-live-session-row][data-current="true"]'
-    ) ?? undefined
-  )
 }
 
 /** Makes workspaces and the session rows under them one arrow-key list, while mounted. */
