@@ -12,6 +12,7 @@ import {
   SEAL_SERVICE_LAUNCHD_AGENTS_DIR_WORD,
   SEAL_SERVICE_SYSTEMD_UNIT_DIR_WORD
 } from './seal-service-host-layout'
+import { SEAL_LAUNCHD_UID, SEAL_SYSTEMD_USER_SESSION } from './seal-service-manager-commands'
 
 export type OwnSealServe = {
   manager: 'systemd-user' | 'launchd'
@@ -101,4 +102,51 @@ export async function readOwnSealServe(conn: SshConnection): Promise<OwnSealServ
     throw new Error('The machine did not answer whether it runs a Seal server of its own.')
   }
   return parseOwnSealServe(answer[1].trim())
+}
+
+// launchctl exits with this when the domain holds no such service.
+const LAUNCHD_NOT_LOADED_EXIT = 113
+const LAUNCHD_NOT_LOADED = 'not-loaded'
+const SYSTEMD_STOPPED_STATES: ReadonlySet<string> = new Set(['inactive', 'failed', 'deactivating'])
+
+/** Answers `own_serve_state=` with the manager's word for the service, or with nothing when the manager did not say. Read-only. */
+export function ownSealServeStateCommand(serve: OwnSealServe): string {
+  if (serve.manager === 'systemd-user') {
+    return `${SEAL_SYSTEMD_USER_SESSION} echo "own_serve_state=$(systemctl --user is-active ${serve.name} 2>/dev/null)"`
+  }
+  return [
+    SEAL_LAUNCHD_UID,
+    `seal_agent=$(launchctl print "gui/$seal_uid/${serve.name}" 2>/dev/null);`,
+    'case $? in',
+    '0) echo "own_serve_state=$(printf \'%s\\n\' "$seal_agent" | sed -n \'s/^[[:space:]]*state = //p\' | head -n 1)";;',
+    `${LAUNCHD_NOT_LOADED_EXIT}) echo own_serve_state=${LAUNCHD_NOT_LOADED};;`,
+    '*) echo own_serve_state=;; esac'
+  ].join(' ')
+}
+
+/** The command that starts a service that is not running; null when it runs, or when its manager did not say. */
+export function parseOwnSealServeStartCommand(serve: OwnSealServe, output: string): string | null {
+  const state = /^own_serve_state=(.*)$/mu.exec(output)?.[1].trim()
+  if (!state) {
+    return null
+  }
+  if (serve.manager === 'systemd-user') {
+    return SYSTEMD_STOPPED_STATES.has(state) ? `systemctl --user start ${serve.name}` : null
+  }
+  if (state === 'running') {
+    return null
+  }
+  // An agent that was booted out has to be loaded again; RunAtLoad then starts it.
+  return state === LAUNCHD_NOT_LOADED
+    ? `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/${serve.name}.plist`
+    : `launchctl kickstart gui/$(id -u)/${serve.name}`
+}
+
+/** Read-only. Asked only after the server did not answer, so a server that answers costs no round trip. */
+export async function readOwnSealServeStartCommand(
+  conn: SshConnection,
+  serve: OwnSealServe
+): Promise<string | null> {
+  const output = await execCommand(conn, ownSealServeStateCommand(serve), { wrapCommand: true })
+  return parseOwnSealServeStartCommand(serve, output)
 }

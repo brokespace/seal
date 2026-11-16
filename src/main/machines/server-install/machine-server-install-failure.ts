@@ -1,5 +1,7 @@
 /** Why a Seal server install failed, as a fragment that reads after "Seal server is not installed: ". */
 import { sshHostServerSetupRemedy } from '../../../shared/ssh-host-server-setup-remedy'
+import { escapeRegex } from '../../../shared/string-utils'
+import { RELAY_REMOTE_DIR } from '../../managed-server/install/remote-install-root'
 import {
   classifyOrcadHostUnavailable,
   ORCAD_TUNNEL_UNAVAILABLE_REASON,
@@ -23,7 +25,30 @@ const NEVER_STARTED = 'the server did not start on this machine'
 const OTHER_SERVER_RUNNING =
   'another Seal or Orca server is already running in this account on the machine; stop it, then try again'
 const HOST_BUSY = 'an earlier install on this machine was interrupted or is still running'
+const SERVER_FOLDER_IS_A_FILE = `~/${RELAY_REMOTE_DIR} on the machine is a file, not a folder, so Seal cannot put its server there. Move or delete that file, then try again`
+const COMMAND_FAILED = 'the install command failed on the machine'
+const COMMAND_TIMED_OUT = 'the machine did not finish the install command in time'
+const DID_NOT_FINISH = 'the install did not finish'
 const MAX_REASON_CHARS = 200
+const MAX_HOST_LINE_CHARS = 120
+
+// `mkdir -p` names the folder itself when it is a file; a path below it fails with "Not a directory".
+const SERVER_FOLDER_IS_A_FILE_PHRASE = new RegExp(
+  `${escapeRegex(RELAY_REMOTE_DIR)}(?:[’'"]?: file exists|\\b[^\\s:]*: not a directory)`,
+  'i'
+)
+
+// A failed remote command is worded `Command "<command line>" failed (exit N): <what the host printed>`.
+const COMMAND_EXIT = /^[\s\S]*" failed \(exit \d+\):/u
+const COMMAND_TIMEOUT = /" timed out after [\d.]+s\b/u
+
+// Shells say `sh: 1: tar: not found`, `bash: line 1: tar: command not found` or `zsh:1: command not found: tar`.
+const MISSING_PROGRAM =
+  /(?<![\w./+-])([A-Za-z_][\w.+-]*): (?:command )?not found\b|\bcommand not found: ([\w.+-]+)/u
+
+const INTERNAL_NAME = /orcad|orca_/iu
+// Markers the install commands print for Seal, and shell syntax, are not the host's words.
+const NOT_PROSE = /[A-Z0-9]_[A-Z0-9]|[$`{}|;\\]|&&/u
 
 // Another desktop, or an install that was cut short, holds the host for a while.
 const HOST_BUSY_CODES: ReadonlySet<string> = new Set([
@@ -77,6 +102,7 @@ const HOST_ERROR_PHRASES: readonly (readonly [RegExp, string])[] = [
   ],
   [/read-only file system|\bEROFS\b/i, READ_ONLY_HOME],
   [/permission denied|\bEACCES\b/i, UNWRITABLE_HOME],
+  [SERVER_FOLDER_IS_A_FILE_PHRASE, SERVER_FOLDER_IS_A_FILE],
   [/\bpairing\b/i, PAIRING_FAILED],
   [/never published an .?orca_server_ready/i, NEVER_STARTED],
   [/unmanaged runtime owner is still live/i, OTHER_SERVER_RUNNING]
@@ -160,9 +186,9 @@ export function serverInstallFailureReason(failure: unknown): string {
     return decisionReason(failure)
   }
   if (failure instanceof Error) {
-    return errorReason(failure) ?? hostPhraseReason(failure.message) ?? fragment(failure.message)
+    return errorReason(failure) ?? messageReason(failure.message)
   }
-  return fragment(String(failure))
+  return messageReason(String(failure))
 }
 
 function decisionReason(decision: UnservedDecision): string {
@@ -176,7 +202,7 @@ function decisionReason(decision: UnservedDecision): string {
     return 'moving the projects of this machine to its server was interrupted'
   }
   if (decision.reason === 'orcad_unavailable') {
-    return unavailableReason(decision.detail) ?? fragment(unservedHostServerMessage(decision))
+    return unavailableReason(decision.detail) ?? statedReason(unservedHostServerMessage(decision))
   }
   if (decision.code && sshHostServerSetupRemedy(decision.code) === 'free-host-space') {
     return NO_SPACE
@@ -188,9 +214,7 @@ function decisionReason(decision: UnservedDecision): string {
     decision.reason === 'failed' || decision.reason === 'deferred' || decision.reason === 'refused'
       ? decision.detail
       : undefined
-  return (
-    (detail && hostPhraseReason(detail)) || fragment(detail || unservedHostServerMessage(decision))
-  )
+  return detail ? messageReason(detail) : statedReason(unservedHostServerMessage(decision))
 }
 
 function unavailableReason(detail: string | undefined): string | null {
@@ -215,10 +239,51 @@ function hostPhraseReason(text: string): string | null {
   return HOST_ERROR_PHRASES.find(([phrase]) => phrase.test(text))?.[1] ?? null
 }
 
-/** The first sentence of a longer message, without its full stop. */
-function fragment(text: string): string {
+/** A failed command's message holds its whole command line, so only what the host printed is read. */
+function messageReason(message: string): string {
+  const exit = COMMAND_EXIT.exec(message)
+  if (!exit) {
+    return COMMAND_TIMEOUT.test(message)
+      ? COMMAND_TIMED_OUT
+      : (hostPhraseReason(message) ?? statedReason(message))
+  }
+  const printed = message.slice(exit[0].length)
+  return hostPhraseReason(printed) ?? hostLineReason(printed) ?? COMMAND_FAILED
+}
+
+/** The last thing the host said in words: stderr comes before the markers a command prints for Seal. */
+function hostLineReason(printed: string): string | null {
+  const line = printed
+    .split(/\r?\n/u)
+    .map((candidate) => candidate.trim())
+    .findLast(
+      (candidate) =>
+        candidate.length <= MAX_HOST_LINE_CHARS &&
+        /\p{L}{3}/u.test(candidate) &&
+        /\s/u.test(candidate) &&
+        !INTERNAL_NAME.test(candidate) &&
+        !NOT_PROSE.test(candidate)
+    )
+  if (!line) {
+    return null
+  }
+  const missing = MISSING_PROGRAM.exec(line)
+  const program = missing?.[1] ?? missing?.[2]
+  if (!program) {
+    return `the machine reported “${line.replace(/[.\s]+$/u, '')}”`
+  }
+  const purpose = program === 'tar' ? 'unpack' : 'install'
+  return `the machine has no “${program}” program, which Seal needs to ${purpose} its server. Install ${program} there, then try again`
+}
+
+/** The first sentence of a longer message, without its full stop; never one that names Seal's internals. */
+function statedReason(text: string): string {
   const line = text.trim().split(/\r?\n/u)[0] ?? ''
   const sentence = (line.split(/(?<=[.!?])\s+/u)[0] ?? line).replace(/[.\s]+$/u, '')
-  const reason = sentence || 'the install did not finish'
-  return reason.length > MAX_REASON_CHARS ? `${reason.slice(0, MAX_REASON_CHARS - 1)}…` : reason
+  if (!sentence || INTERNAL_NAME.test(sentence)) {
+    return DID_NOT_FINISH
+  }
+  return sentence.length > MAX_REASON_CHARS
+    ? `${sentence.slice(0, MAX_REASON_CHARS - 1)}…`
+    : sentence
 }

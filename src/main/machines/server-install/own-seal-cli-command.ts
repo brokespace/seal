@@ -5,6 +5,9 @@ import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import { isSshCommandExitError } from '../../ssh/remote-exec/remote-exec-command'
 import { execInSshLoginShell } from '../../ssh/remote-exec/ssh-login-shell-exec'
 
+/** The CLI ran and answered with an error in its own words. */
+export class OwnSealCliAnswerError extends Error {}
+
 /** The CLI's `--json` answer; null when the output holds none. */
 function cliAnswer(output: string): Record<string, unknown> | null {
   const start = output.indexOf('{')
@@ -21,8 +24,9 @@ function cliAnswer(output: string): Record<string, unknown> | null {
 }
 
 /**
- * Resolves with the answer's `result`. `whenNotFound` is the sentence that tells the user what to
- * do on the machine when the command is not on the PATH of their login shell.
+ * Resolves with the answer's `result`; rejects with `OwnSealCliAnswerError` when the CLI answered with an error.
+ * `whenNotFound` is the sentence that tells the user what to do on the machine when the command is
+ * not on the PATH of their login shell.
  */
 export async function runOwnSealCli(
   conn: SshConnection,
@@ -50,7 +54,7 @@ export async function runOwnSealCli(
     return answer.result
   }
   if (answer && isRecord(answer.error) && typeof answer.error.message === 'string') {
-    throw new Error(answer.error.message)
+    throw new OwnSealCliAnswerError(answer.error.message)
   }
   const said = `${stderr}\n${output}`.trim()
   if (/not found|unknown command/iu.test(said)) {

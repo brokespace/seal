@@ -1,6 +1,7 @@
 /** A server the user runs, on a machine Seal also reaches over SSH: the machine's own CLI installs and reports its service. */
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { INSTALLED_CLI_COMMAND_NAME } from '../../cli/installation/cli-install-constants'
+import { readOwnSealServe } from '../../managed-server/service/own-seal-serve-probe'
 import type { SealServiceOutcome } from '../../managed-server/service/seal-service-policy'
 import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import { isWindowsRemoteHost } from '../../ssh/remote-host/ssh-remote-platform'
@@ -74,12 +75,24 @@ export async function keepOwnServerRunning(sshTargetId: string): Promise<void> {
   asked.add(sshTargetId)
   await onPlainSshSession(sshTargetId, async (session) => {
     // An install restarts the service, so a server that already is one is left alone.
-    const kept = await readOwnServerService(session).catch(() => null)
+    const existing = await existingOwnServerService(session)
     noteSealServiceOutcome(
       sshTargetId,
-      kept && kept.manager !== 'detached' ? kept : await installOwnServerService(session)
+      existing && existing.manager !== 'detached'
+        ? existing
+        : await installOwnServerService(session)
     )
   })
+}
+
+/** The CLI's word, or a service file the user already set up, which no install may replace. */
+async function existingOwnServerService(conn: SshConnection): Promise<SealServiceOutcome | null> {
+  const kept = await readOwnServerService(conn).catch(() => null)
+  if (kept && kept.manager !== 'detached') {
+    return kept
+  }
+  const own = await readOwnSealServe(conn)
+  return own ? { manager: own.manager } : kept
 }
 
 /** Asks each such machine once per app run, and only over an SSH session that is already open. */
@@ -101,7 +114,7 @@ export function learnOwnServerServices(views: readonly MachineView[]): void {
       continue
     }
     asked.add(sshTargetId)
-    void readOwnServerService(session)
+    void existingOwnServerService(session)
       .then((kept) => {
         if (kept && !latestSealServiceOutcome(sshTargetId)) {
           noteSealServiceOutcome(sshTargetId, kept)

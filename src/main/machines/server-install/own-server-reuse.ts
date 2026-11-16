@@ -25,7 +25,10 @@ import { publishRuntimeEnvironmentCatalogChanged } from '../../ipc/runtime-envir
 import { clearRuntimeEnvironmentManualDisconnect } from '../../ipc/runtime-environments/connectivity/runtime-environment-manual-disconnect'
 import { verifyAndAddRuntimeEnvironmentFromPairingCode } from '../../ipc/runtime-environments/pairing/runtime-environment-pairing-verification'
 import { publishVerifiedPairing } from '../../ipc/runtime-environments/pairing/runtime-environment-verified-pairing-publish'
-import type { OwnSealServe } from '../../managed-server/service/own-seal-serve-probe'
+import {
+  readOwnSealServeStartCommand,
+  type OwnSealServe
+} from '../../managed-server/service/own-seal-serve-probe'
 import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import {
   linkRuntimeSshAccess,
@@ -38,7 +41,7 @@ import {
   noteSealServiceOutcome
 } from './machine-server-install-activity'
 import { onPlainSshSession } from './machine-ssh-session'
-import { runOwnSealCli } from './own-seal-cli-command'
+import { OwnSealCliAnswerError, runOwnSealCli } from './own-seal-cli-command'
 import { checkHostForOwnSealServe, forgetOwnSealServeAnswer } from './own-seal-serve-check'
 
 const PAIR_TIMEOUT_MS = 30_000
@@ -83,7 +86,7 @@ async function reuseOwnServer(
       if (!found) {
         throw new Error('This machine no longer runs a Seal server of its own')
       }
-      const pairingUrl = await ownServerPairingUrl(session)
+      const pairingUrl = await ownServerPairingUrl(session, found, machine.name)
       const server = await byHandWhenItFails(() =>
         connectOwnServer(userDataPath, machine, sshTargetId, pairingUrl)
       )
@@ -104,16 +107,45 @@ async function byHandWhenItFails<T>(work: () => Promise<T>): Promise<T> {
 }
 
 /** The link `seal pair` prints. The running server makes it; nothing about the server changes. */
-async function ownServerPairingUrl(session: SshConnection): Promise<string> {
+async function ownServerPairingUrl(
+  session: SshConnection,
+  found: OwnSealServe,
+  machineName: string
+): Promise<string> {
   const offer = await runOwnSealCli(session, 'pair', {
     timeoutMs: PAIR_TIMEOUT_MS,
     whenNotFound: BY_HAND
+  }).catch(async (error: unknown) => {
+    throw error instanceof OwnSealCliAnswerError
+      ? await unansweredPairing(session, found, machineName, error)
+      : error
   })
   if (offer.available !== true || typeof offer.pairingUrl !== 'string') {
     const guidance = typeof offer.guidance === 'string' ? ` ${offer.guidance}` : ''
     throw new Error(`The Seal server on this machine gave no pairing link.${guidance} ${BY_HAND}`)
   }
   return offer.pairingUrl
+}
+
+/** The CLI answered with an error, so the service manager is asked whether the server runs at all. */
+async function unansweredPairing(
+  session: SshConnection,
+  found: OwnSealServe,
+  machineName: string,
+  refusal: OwnSealCliAnswerError
+): Promise<Error> {
+  const start = await readOwnSealServeStartCommand(session, found).catch(() => null)
+  const again = 'then choose “Use this server” again.'
+  if (start) {
+    return new Error(
+      `The Seal server you set up on ${machineName} is not running. Start it there (for example “${start}”), ${again}`
+    )
+  }
+  // One line: the page shows only the first line of a failure.
+  const said = (refusal.message.trim().split(/\r?\n/u)[0] ?? '').replace(/[.\s]+$/u, '')
+  return new Error(
+    `The Seal server you set up on ${machineName} did not answer${said ? ` (“${said}”)` : ''}. Check that it is running there, ${again}`
+  )
 }
 
 async function connectOwnServer(
