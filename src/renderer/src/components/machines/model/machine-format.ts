@@ -45,6 +45,11 @@ export function formatCount(count: number): string {
   return uiNumberFormat(COUNT_FORMAT).format(count)
 }
 
+/** `72 °C`, as every temperature on the Machines page reads; a dash where there is no reading. */
+export function formatTemperature(celsius: number | null | undefined): string {
+  return celsius === null || celsius === undefined ? '—' : `${Math.round(celsius)} °C`
+}
+
 /** Used share of a capacity, 0–100, or null when either side is unknown. */
 export function usedPercent(total: number | null, available: number | null): number | null {
   if (total === null || available === null || total <= 0) {

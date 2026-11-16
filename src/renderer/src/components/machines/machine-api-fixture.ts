@@ -6,6 +6,11 @@ import type {
   MachineTransfer
 } from '../../../../shared/machines/machine-types'
 import type { MachinesApi } from '../../../../preload/api/machines/machines-bridge'
+import {
+  APPLE_SMC,
+  THREADRIPPER_K10TEMP,
+  XEON_CORETEMP
+} from './machine-cpu-temperature-fixture-data'
 import { A100_80GB, APPLE_GPU, fakeGpus, RTX_4090 } from './machine-gpu-fixture-data'
 import { fakeMachineResourceApi } from './machine-resource-fixture-data'
 
@@ -116,7 +121,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     loadAverage: [2.1, 1.8, 1.6],
     cpuUsagePercent: null,
     homeDir: '/Users/brian',
-    gpus: [APPLE_GPU]
+    gpus: [APPLE_GPU],
+    cpuTemperature: APPLE_SMC
   }),
   [toMachineId(GPU)]: metrics({
     hostname: 'gpu-box',
@@ -130,7 +136,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     diskTotalBytes: 4 * 1024 ** 4,
     diskAvailableBytes: 1.1 * 1024 ** 4,
     uptimeSeconds: 1_209_600,
-    gpus: fakeGpus(RTX_4090, 2)
+    gpus: fakeGpus(RTX_4090, 2),
+    cpuTemperature: THREADRIPPER_K10TEMP
   }),
   [toMachineId(KESSEL)]: metrics({
     hostname: 'kessel-ml',
@@ -143,7 +150,8 @@ export const METRICS: Record<string, MachineMetrics> = {
     diskTotalBytes: 8 * 1024 ** 4,
     diskAvailableBytes: 5.2 * 1024 ** 4,
     uptimeSeconds: 432_000,
-    gpus: fakeGpus(A100_80GB, 8)
+    gpus: fakeGpus(A100_80GB, 8),
+    cpuTemperature: XEON_CORETEMP
   })
 }
 

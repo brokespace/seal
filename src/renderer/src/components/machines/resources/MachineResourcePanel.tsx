@@ -6,9 +6,11 @@ import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
+import { MachineCpuSensors, MachineCpuTemperatureStat } from './MachineCpuTemperature'
 import { MachineDiskDetail } from './MachineDiskDetail'
 import { MachineGpuDetail } from './MachineGpuDetail'
 import { MachineCpuDetail, MachineMemoryDetail } from './MachineProcessDetails'
+import { MachineResourceStats } from './MachineResourceStat'
 import type { MachineResourceKind } from './machine-resource-requests'
 
 /** What a CPU, RAM, Disk or GPU meter opens: who is using that resource, and what can be done about it. */
@@ -65,12 +67,23 @@ export function MachineResourcePanel({
         )}
       >
         {metrics?.os === 'win32' ? (
-          <p className="text-sm text-muted-foreground">
-            {t(
-              'auto.components.machines.resources.unsupported',
-              'Process, memory and disk details are available for Linux and macOS machines.'
-            )}
-          </p>
+          <div className="space-y-4">
+            {/* The temperature is the one CPU figure a Windows machine does give. */}
+            {kind === 'cpu' ? (
+              <>
+                <MachineResourceStats>
+                  <MachineCpuTemperatureStat metrics={metrics} />
+                </MachineResourceStats>
+                <MachineCpuSensors metrics={metrics} />
+              </>
+            ) : null}
+            <p className="text-sm text-muted-foreground">
+              {t(
+                'auto.components.machines.resources.unsupported',
+                'Process, memory and disk details are available for Linux and macOS machines.'
+              )}
+            </p>
+          </div>
         ) : kind === 'cpu' ? (
           <MachineCpuDetail machine={machine} metrics={metrics} />
         ) : kind === 'memory' ? (

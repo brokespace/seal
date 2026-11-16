@@ -6,7 +6,7 @@ import {
 } from '../../../../../shared/machines/machine-gpu-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
-import { formatBytes } from '../model/machine-format'
+import { formatBytes, formatTemperature } from '../model/machine-format'
 import { formatGpuPercent, formatGpuWatts } from '../model/machine-gpu-format'
 import { useMachineGpuHistory } from '../model/machine-gpu-history'
 import { MachineGpuCard } from './MachineGpuCard'
@@ -63,7 +63,7 @@ function GpuTotals({ gpus }: { gpus: readonly MachineGpu[] }): React.JSX.Element
       />
       <MachineResourceStat
         label={t('auto.components.machines.gpu.hottest', 'Hottest')}
-        value={summary.temperatureC === null ? '—' : `${Math.round(summary.temperatureC)} °C`}
+        value={formatTemperature(summary.temperatureC)}
         detail={
           hottest && gpus.length > 1
             ? t('auto.components.machines.gpu.index', 'GPU {{index}}', { index: hottest.index })
