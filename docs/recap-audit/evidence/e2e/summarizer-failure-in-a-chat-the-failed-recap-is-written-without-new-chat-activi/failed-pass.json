@@ -1,0 +1,20 @@
+{
+  "view": {
+    "sessionId": "local:claude:9745a794-8b12-4043-b219-6550e117c78f",
+    "recap": null,
+    "marks": {},
+    "since": null,
+    "state": "failed",
+    "stale": false,
+    "pausedUntil": null,
+    "failure": "Claude CLI command failed with code 1: scripted failure",
+    "rev": 0
+  },
+  "requests": [
+    {
+      "newMessages": "<new_messages>\n[m1] USER: Rename the export button to Download CSV.\n\n[m2] AGENT: Renamed the export button to Download CSV in the reports toolbar and updated its test.\n</new_messages>",
+      "reply": "",
+      "failure": "scripted failure"
+    }
+  ]
+}
