@@ -123,7 +123,8 @@ export function MachineDockerContainerDetail({
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
           <div className="flex items-center gap-1.5">
             <MachineDockerStateBadge state={details.state} exitCode={details.exitCode} />
-            {details.health ? <HealthBadge health={details.health} /> : null}
+            {/* Docker keeps the last result after a stop; `docker ps` hides it too. */}
+            {details.health && details.running ? <HealthBadge health={details.health} /> : null}
           </div>
           <div className="ml-auto flex flex-wrap justify-end gap-1.5">
             {details.running ? (
