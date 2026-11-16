@@ -168,18 +168,18 @@ Nothing here runs without a confirmation dialog that names the machine and what 
 
 Cleanup targets (`MACHINE_CLEANUP_TARGETS`):
 
-| Target                    | Finds                                                                                     | Removes with                            |
-| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- |
-| Unused Docker images      | images no container uses                                                                  | `docker image rm` (never `--force`)     |
-| Dangling Docker images    | untagged images no container uses (**Clean up** lists them under unused images)           | `docker image rm` (never `--force`)     |
-| Stopped Docker containers | exited or never started                                                                   | `docker container rm`                   |
-| Unused Docker volumes     | volumes no container references                                                           | `docker volume rm`                      |
-| Docker build cache        | the total from `docker system df`                                                         | `docker builder prune --all --force`    |
-| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                        | `rm -rf` of the cache folder            |
-| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`               | `rm -rf`; none are ticked by default    |
-| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                      | emptied; the folders stay               |
-| Old logs                  | log files not written to for 14 days                                                      | `rm -rf` of each ticked file            |
-| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour | `rm -rf`; running jobs are never listed |
+| Target                    | Finds                                                                                              | Removes with                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Unused Docker images      | images no container uses                                                                           | `docker image rm` (never `--force`)     |
+| Dangling Docker images    | untagged images no container uses (**Clean up** lists them under unused images)                    | `docker image rm` (never `--force`)     |
+| Stopped Docker containers | exited or never started                                                                            | `docker container rm`                   |
+| Unused Docker volumes     | volumes no container references                                                                    | `docker volume rm`                      |
+| Docker build cache        | the listed records no build is using; the total from `docker system df` when the list is cut short | `docker builder prune --all --force`    |
+| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                                 | `rm -rf` of the cache folder            |
+| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`                        | `rm -rf`; none are ticked by default    |
+| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                               | emptied; the folders stay               |
+| Old logs                  | log files not written to for 14 days                                                               | `rm -rf` of each ticked file            |
+| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour          | `rm -rf`; running jobs are never listed |
 
 ## Go to folder
 
@@ -221,14 +221,16 @@ The chevron next to the button picks another app, or Seal's editor, for one open
 
 ## Tests
 
-| Test                                                               | Covers                                                                                                                                      |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/shared/machines/machine-reconcile.test.ts`                    | Migration, merge reasons, relay and machine-id guards, splits, deletions, kessel-ml                                                         |
-| `src/main/machines/registry/machine-registry.test.ts`              | Routing by connection type, switching, identity merges, adding a transport                                                                  |
-| `src/main/machines/connection/machine-connection-parity.test.ts`   | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers   |
-| `src/main/machines/resources/machine-resources-parity.test.ts`     | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)    |
-| `src/main/machines/resources/machine-resource-parsing.test.ts`     | Linux and macOS probe output, secret masking, cleanup path guards                                                                           |
-| `src/main/machines/resources/machine-docker-parsing.test.ts`       | Inventory, container figures, details and logs from recorded Docker 29 output; why Docker does not answer; volume path guards               |
-| `src/main/machines/resources/machine-docker-removal-plans.test.ts` | Which removals are ticked, warned about or blocked, the exact commands, and progress in batches                                             |
-| `src/main/machines/resources/machine-docker-transport.test.ts`     | Inventory, removal, details, logs and volume files over both transports, against the stateful fake `docker` in `testing/fake-docker-cli.ts` |
-| `src/main/machines/resources/machine-gpu-readings.test.ts`         | GPU readings and GPU processes from `nvidia-smi`, `rocm-smi` and `ioreg` output; see [Machines: GPUs](./machines-gpu.md#tests)              |
+| Test                                                               | Covers                                                                                                                                                                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/machines/machine-reconcile.test.ts`                    | Migration, merge reasons, relay and machine-id guards, splits, deletions, kessel-ml                                                                                                                              |
+| `src/main/machines/registry/machine-registry.test.ts`              | Routing by connection type, switching, identity merges, adding a transport                                                                                                                                       |
+| `src/main/machines/connection/machine-connection-parity.test.ts`   | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers                                                                        |
+| `src/main/machines/resources/machine-resources-parity.test.ts`     | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)                                                                         |
+| `src/main/machines/resources/machine-resource-parsing.test.ts`     | Linux and macOS probe output, secret masking, cleanup path guards                                                                                                                                                |
+| `src/main/machines/resources/machine-docker-parsing.test.ts`       | Inventory, container figures, details and logs from recorded Docker 29 output; why Docker does not answer; volume path guards                                                                                    |
+| `src/main/machines/resources/machine-docker-removal-plans.test.ts` | Which removals are ticked, warned about or blocked, the exact commands, and progress in batches                                                                                                                  |
+| `src/main/machines/resources/machine-docker-transport.test.ts`     | Inventory, removal, details, logs and volume files over both transports, against the stateful fake `docker` in `testing/fake-docker-cli.ts`                                                                      |
+| `tests/e2e/machines-docker-storage.spec.ts`                        | The Docker tab on an SSH machine in the real app, against the fake `docker`: missing Docker and permission messages, removal of picked items, in-use warnings and blocks, pruning, Clean up unused, volume files |
+| `tests/e2e/machines-docker-containers.spec.ts`                     | The Containers card in the CPU and RAM views and the shared details sheet on an SSH machine: figures, sorting, filter, logs, image layers, stop, restart, start and remove                                       |
+| `src/main/machines/resources/machine-gpu-readings.test.ts`         | GPU readings and GPU processes from `nvidia-smi`, `rocm-smi` and `ioreg` output; see [Machines: GPUs](./machines-gpu.md#tests)                                                                                   |
