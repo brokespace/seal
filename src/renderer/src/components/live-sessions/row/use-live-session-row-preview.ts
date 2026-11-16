@@ -36,6 +36,13 @@ export type LiveSessionRowPreview = {
  * Why not the hover card's own timers: they outlive the hover or focus that started them and a
  * newer one does not cancel them, so a preview opened early, after the pointer had left, or twice.
  */
+// Pinned headers cover a row without clipping it: only what is drawn at its centre can tell.
+function isDrawn(row: HTMLElement | null, card: HTMLElement | null): boolean {
+  const box = row?.getBoundingClientRect()
+  const shown = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
+  return Boolean(shown && (row?.contains(shown) || card?.contains(shown)))
+}
+
 export function useLiveSessionRowPreview(): LiveSessionRowPreview {
   const [open, setOpen] = React.useState(false)
   const row = React.useRef<HTMLDivElement>(null)
@@ -64,6 +71,8 @@ export function useLiveSessionRowPreview(): LiveSessionRowPreview {
     cancelOpening()
     openTimer.current = window.setTimeout(() => {
       openTimer.current = null
+      // The list may have scrolled the focused row out of sight while it waited.
+      focusAsks.current = focusAsks.current && isDrawn(row.current, card.current)
       if (!blocked() && (pointedAt() || focusAsks.current)) {
         setOpen(true)
       }
@@ -110,10 +119,7 @@ export function useLiveSessionRowPreview(): LiveSessionRowPreview {
       return
     }
     const closeWhenRowHidden = (): void => {
-      const box = row.current?.getBoundingClientRect()
-      const shown = box && document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)
-      // Pinned headers cover a row without clipping it: only what is drawn there can tell.
-      if (!shown || !(row.current?.contains(shown) || card.current?.contains(shown))) {
+      if (!isDrawn(row.current, card.current)) {
         focusAsks.current = false
         setOpen(false)
       }
