@@ -3,7 +3,12 @@ import type { Page } from '@stablyai/playwright-test'
 import { expect } from './helpers/orca-app'
 import { waitForActiveWorktree, waitForSessionReady } from './helpers/store'
 import { buildFakeAgentCommandOverride } from './helpers/fake-agent-command-override'
-import { SUPPORTED, createChatOnHost, test } from './helpers/structured-claude-stub'
+import {
+  SUPPORTED,
+  createChatOnHost,
+  readClaudeStubLaunches,
+  test
+} from './helpers/structured-claude-stub'
 import { resolveCliCommand } from '../../src/shared/node-cli-command-resolution'
 import { claudeSessionIdForOrcaSession } from '../../src/main/claude/structured/claude-structured-session-id'
 import { buildClaudeModelListArgs } from '../../src/shared/claude-model-list-probe'
@@ -36,30 +41,6 @@ async function waitForChatTab(page: Page, worktreeId: string, sessionId: string)
 
 function tabInStrip(page: Page, tabId: string) {
   return page.locator(`[data-testid="sortable-tab"][data-tab-id="${tabId}"]`)
-}
-
-/** Every Claude process Orca started, as the stub recorded it. */
-function readStubLaunches(launchLog: string): { pid: number; args: string[] }[] {
-  if (!existsSync(launchLog)) {
-    return []
-  }
-  return readFileSync(launchLog, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const entry: unknown = JSON.parse(line)
-      if (
-        typeof entry !== 'object' ||
-        entry === null ||
-        !('pid' in entry) ||
-        typeof entry.pid !== 'number' ||
-        !('args' in entry) ||
-        !Array.isArray(entry.args)
-      ) {
-        throw new Error(`unreadable stub launch: ${line}`)
-      }
-      return { pid: entry.pid, args: entry.args.map(String) }
-    })
 }
 
 function readStubRequests(launchLog: string, pid: number) {
@@ -158,8 +139,8 @@ test.describe('structured chat tabs', () => {
     const providerIds = [first, second, opened!.entityId].map((id) =>
       claudeSessionIdForOrcaSession(id)
     )
-    await expect.poll(() => readStubLaunches(claudeStub.launchLog).length).toBeGreaterThan(0)
-    for (const { pid, args } of readStubLaunches(claudeStub.launchLog)) {
+    await expect.poll(() => readClaudeStubLaunches(claudeStub.launchLog).length).toBeGreaterThan(0)
+    for (const { pid, args } of readClaudeStubLaunches(claudeStub.launchLog)) {
       if (providerIds.some((id) => args.includes(id))) {
         continue
       }
