@@ -96,8 +96,11 @@ export function sendLiveMessage(
   return runRpcOperation(client, sendMessage, request)
 }
 
-export function retryLiveMessage(client: Port, messageId: string): Promise<LiveMessage | null> {
-  return runRpcOperation(client, retryMessage, { messageId })
+export function retryLiveMessage(
+  client: Port,
+  request: { messageId: string; mayRunTwice?: true }
+): Promise<LiveMessage | null> {
+  return runRpcOperation(client, retryMessage, request)
 }
 
 export function answerLivePermission(

@@ -81,6 +81,7 @@ export function LiveSessionDetailScreen({
   const [answerError, setAnswerError] = useState<string | null>(null)
   const [accountSheetOpen, setAccountSheetOpen] = useState(false)
   const [takeOverAsked, setTakeOverAsked] = useState(false)
+  const [resendAsked, setResendAsked] = useState<LiveMessage | null>(null)
   const [notice, setNotice] = useState<{ title: string; message: string } | null>(null)
 
   const list = useRef<FlatList<Row>>(null)
@@ -300,7 +301,15 @@ export function LiveSessionDetailScreen({
               item.kind === 'transcript' ? (
                 <LiveTranscriptRow message={item.message} />
               ) : (
-                <LivePendingRow message={item.message} onRetry={connected ? retry : null} />
+                <LivePendingRow
+                  message={item.message}
+                  onRetry={
+                    connected
+                      ? (message) =>
+                          message.unconfirmed ? setResendAsked(message) : void retry(message)
+                      : null
+                  }
+                />
               )
             }
           />
@@ -344,6 +353,18 @@ export function LiveSessionDetailScreen({
         destructive
         onConfirm={() => session && void takeOver(session)}
         onCancel={() => setTakeOverAsked(false)}
+      />
+      <ConfirmModal
+        visible={resendAsked !== null}
+        title={t('seal.liveSessions.resendTitle', 'Send it again?')}
+        message={t(
+          'seal.liveSessions.resendMessage',
+          'Seal could not confirm that the session got this message. It may already have run it, so sending it again could run it twice.'
+        )}
+        confirmLabel={t('seal.liveSessions.resendConfirm', 'Send again')}
+        cancelLabel={t('common.cancel', 'Cancel')}
+        onConfirm={() => resendAsked && void retry(resendAsked)}
+        onCancel={() => setResendAsked(null)}
       />
       <ConfirmModal
         visible={notice !== null || accounts.error !== null}

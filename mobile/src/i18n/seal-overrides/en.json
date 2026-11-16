@@ -213,7 +213,10 @@
         "notResumable": "Seal hasn’t seen this session’s transcript yet, so it can’t resume it. Send it a first message, then try again.",
         "stillRunning": "The agent process didn’t stop.",
         "failed": "Something went wrong."
-      }
+      },
+      "resendTitle": "Send it again?",
+      "resendMessage": "Seal could not confirm that the session got this message. It may already have run it, so sending it again could run it twice.",
+      "resendConfirm": "Send again"
     },
     "machines": {
       "status": {

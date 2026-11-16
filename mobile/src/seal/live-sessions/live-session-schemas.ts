@@ -113,6 +113,8 @@ export const liveMessageSchema = z.looseObject({
   state: z.enum(LIVE_MESSAGE_STATES),
   route: z.string().nullable(),
   error: z.string().nullable(),
+  /** The session may have run it without a sign: the host sends it again only when told it may run twice. */
+  unconfirmed: z.literal(true).optional().catch(undefined),
   createdAt: Timestamp,
   updatedAt: Timestamp
 })
