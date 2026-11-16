@@ -302,7 +302,8 @@ export class LiveMessageOutbox {
           session,
           this.now(),
           this.timing,
-          this.resting.since(sessionId, session, this.now())
+          this.resting.since(sessionId, session, this.now()),
+          this.deps.machineRead?.(sessionId) ?? true
         )) {
           this.set(item, patch)
         }

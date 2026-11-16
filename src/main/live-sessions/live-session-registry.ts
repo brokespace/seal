@@ -123,6 +123,15 @@ export class LiveSessionRegistry {
     return this.published.get(sessionId)
   }
 
+  /** Whether the session's machine has answered or given up since Seal started; until then a session not listed may still be running. */
+  hasRead(sessionId: string): boolean {
+    return [...this.hosts].some(
+      ([hostId, state]) =>
+        sessionId.startsWith(`${hostId}:`) &&
+        (state.scans > 0 || state.failures >= UNREACHABLE_AFTER_FAILURES || this.federated(state))
+    )
+  }
+
   /** The id a session goes by now, following its renames. */
   currentId(sessionId: string): string {
     return this.published.currentId(sessionId)

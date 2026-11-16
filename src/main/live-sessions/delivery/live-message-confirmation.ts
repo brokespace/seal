@@ -11,15 +11,20 @@ export type Confirmation = {
 /**
  * What the transcript says about one session's sent messages; anything it can't settle waits.
  * `restingSince` is when the session was first seen at its prompt with nothing running, and
- * null while it is not: a working agent keeps what is typed in its own queue.
+ * null while it is not: a working agent keeps what is typed in its own queue. A session missing
+ * from a machine not read since Seal started (`machineRead` false) may still be running.
  */
 export function confirmSent(
   items: OutboxItem[],
   records: UserText[],
   session: LiveSession | null,
   now: number,
-  timing: Pick<typeof DEFAULT_OUTBOX_TIMING, 'goneGraceMs' | 'resumeConfirmMs' | 'unreadAfterMs'>,
-  restingSince: number | null = null
+  timing: Pick<
+    typeof DEFAULT_OUTBOX_TIMING,
+    'goneGraceMs' | 'resumeConfirmMs' | 'unreadAfterMs' | 'orderHoldMs'
+  >,
+  restingSince: number | null = null,
+  machineRead = true
 ): Confirmation[] {
   const delivered = matchDelivered(items, records)
   const out: Confirmation[] = []
@@ -32,6 +37,10 @@ export function confirmSent(
       continue
     }
     const since = now - (item.sentAt ?? now)
+    // Nothing says what became of it until its machine is read; the order hold ends that wait.
+    if (!session && !machineRead && since <= timing.orderHoldMs) {
+      continue
+    }
     if (item.route === 'resume') {
       if (since > timing.resumeConfirmMs) {
         out.push({

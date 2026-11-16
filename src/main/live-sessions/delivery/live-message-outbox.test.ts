@@ -40,11 +40,13 @@ let transcript: UserText[]
 let typed: string[]
 let attempt: (route: LiveSessionInputRoute, text: string) => Promise<RouteAttempt>
 let current: LiveSession | null
+let machineRead: boolean
 
 function outbox(storePath = join(dir, 'outbox.json')) {
   return new LiveMessageOutbox({
     storePath,
     getSession: () => current,
+    machineRead: () => machineRead,
     attempt: (_s, route, text) => attempt(route, text),
     transcriptSize: async () => (transcript.at(-1)?.offset ?? 0) + 1,
     userTexts: async (_s, from) => transcript.filter((r) => r.offset >= from),
@@ -71,6 +73,7 @@ beforeEach(async () => {
   transcript = [{ offset: 0, text: 'earlier prompt' }]
   typed = []
   current = session
+  machineRead = true
   attempt = async (_route, text) => {
     typed.push(text)
     return { outcome: 'sent' }
@@ -194,6 +197,36 @@ describe('LiveMessageOutbox', () => {
     expect(typed).toEqual([])
     await box.flush()
     expect(JSON.parse(await readFile(storePath, 'utf8'))[0].state).toBe('delivered')
+    box.stop()
+  })
+
+  // Seal restarted: its outbox looks before the first scan of the session's machine has ended.
+  it('does not call a session closed while its machine has not been read', async () => {
+    current = { ...session, status: 'working' }
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })
+    await settle(box, ([m]) => m.state === 'sent')
+    current = null
+    machineRead = false
+    clock += 60_000
+    await box.confirm()
+    expect(box.list()[0].state).toBe('sent')
+
+    machineRead = true
+    await settle(box, ([m]) => m.state === 'failed')
+    expect(box.list()[0].error).toBe('The session closed before it read the message')
+    box.stop()
+  })
+
+  it('stops waiting for a machine that is never read once the order hold is over', async () => {
+    current = { ...session, status: 'working' }
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })
+    await settle(box, ([m]) => m.state === 'sent')
+    current = null
+    machineRead = false
+    clock += 16 * 60_000
+    await settle(box, ([m]) => m.state === 'failed')
     box.stop()
   })
 

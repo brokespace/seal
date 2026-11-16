@@ -59,6 +59,8 @@ export function publicView(item: OutboxItem): LiveMessage {
 export type LiveMessageOutboxDeps = {
   storePath: string
   getSession(sessionId: string): LiveSession | null
+  /** Whether the session's machine has been read since Seal started; assumed so when absent. */
+  machineRead?(sessionId: string): boolean
   attempt(
     session: LiveSession,
     route: LiveSessionInputRoute,

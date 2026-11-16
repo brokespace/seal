@@ -111,6 +111,7 @@ export class LiveSessionService {
     this.outbox = new LiveMessageOutbox({
       storePath: join(deps.userDataPath, 'live-sessions', 'outbox.json'),
       getSession: (id) => this.registry.get(id),
+      machineRead: (id) => this.registry.hasRead(id),
       attempt: (session, route, text, messageId, signal) =>
         this.routes.attempt(session, route, text, messageId, signal),
       transcriptSize: async (session) => {
