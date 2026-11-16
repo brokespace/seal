@@ -9,8 +9,6 @@ import { HomeSessionsPanel } from '../home-overview/HomeSessionsPanel'
 import { MachineSessionList } from '../machines/detail/MachineSessionList'
 import { activeLiveSessionsByMachine } from '../machines/model/machine-live-sessions'
 import ActiveAgentsSection from './active-agents/ActiveAgentsSection'
-import { buildActiveAgents } from './active-agents/active-agents-model'
-import { liveSessionBadges, type LiveSessionLink } from './links/live-session-links'
 import { liveSessionRegistryStore, useLiveSessions } from './live-session-registry-store'
 import { SAMPLE_NOW, sampleLiveSession } from './live-session.test-fixture'
 import { liveSessionDialogStore } from './menu/live-session-dialog-store'
@@ -169,27 +167,4 @@ describe('one session on every surface', () => {
       })
     }
   )
-})
-
-describe('a workspace badge', () => {
-  it('counts the sessions Active agents lists for that workspace', () => {
-    const links = new Map<string, LiveSessionLink>([
-      ['asks', { worktreeId: 'wt-shop', repoId: 'repo-1', name: 'shop' }],
-      ['external', { worktreeId: 'wt-shop', repoId: 'repo-1', name: 'shop' }],
-      ['local-idle', { worktreeId: 'wt-docs', repoId: 'repo-1', name: 'docs' }]
-    ])
-    const badge = liveSessionBadges(SESSIONS, links).byWorktree.get('wt-shop')
-    const listed = buildActiveAgents(
-      SESSIONS,
-      { kind: 'worktree', id: 'wt-shop', label: 'shop' },
-      links,
-      SAMPLE_NOW
-    ).machines.flatMap((machine) => machine.sessions.map((session) => session.id))
-    expect(badge).toEqual({
-      count: 2,
-      status: 'needs-permission',
-      sessionIds: ['asks', 'external']
-    })
-    expect(listed).toEqual(['asks', 'external'])
-  })
 })

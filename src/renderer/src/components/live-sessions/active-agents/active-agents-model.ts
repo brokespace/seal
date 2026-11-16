@@ -8,10 +8,6 @@ import {
   groupLiveSessionsByMachine,
   type LiveSessionMachineGroup
 } from '../../../../../shared/live-sessions/live-session-summary'
-import type { LiveSessionLink } from '../links/live-session-links'
-
-/** Sessions of one workspace or project, as picked from its badge in Projects. */
-export type ActiveAgentsScope = { kind: 'worktree' | 'project'; id: string; label: string }
 
 export type ActiveAgentsMachine = LiveSessionMachineGroup<LiveSession>
 
@@ -19,7 +15,7 @@ export type ActiveAgentsView = {
   machines: ActiveAgentsMachine[]
   /** Ended in the last day; still resumable or deletable. */
   finished: LiveSession[]
-  /** Active sessions on every machine, whatever the scope. */
+  /** Active sessions on every machine. */
   activeCount: number
 }
 
@@ -41,40 +37,28 @@ export function isRecentlyFinishedLiveSession(
   return now - session.lastActivityAt <= RECENTLY_FINISHED_MS || session.pinned === true
 }
 
+/** What a sessions list shows at all: every running session, and an ended one while it is recent or pinned. */
+export function isListedLiveSession(session: LiveSession, now: number): boolean {
+  return isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)
+}
+
 /** A machine with no session to name it, as a failed scan reports it: by its host id. */
 export function machineKnownByHostId(hostId: string): Pick<LiveSessionMachine, 'kind' | 'label'> {
   return { kind: hostId === LOCAL_EXECUTION_HOST_ID ? 'local' : 'remote', label: hostId }
 }
 
-function inScope(scope: ActiveAgentsScope | null, link: LiveSessionLink | undefined): boolean {
-  return !scope || (scope.kind === 'worktree' ? link?.worktreeId : link?.repoId) === scope.id
-}
-
 /** Machines (this one first), each with its sessions: pinned, then needs-attention, working, idle. */
-export function buildActiveAgents(
-  sessions: readonly LiveSession[],
-  scope: ActiveAgentsScope | null,
-  links: ReadonlyMap<string, LiveSessionLink>,
-  now: number
-): ActiveAgentsView {
+export function buildActiveAgents(sessions: readonly LiveSession[], now: number): ActiveAgentsView {
   const running: LiveSession[] = []
   const finished: LiveSession[] = []
   let activeCount = 0
   for (const session of sessions) {
-    const active = isActiveLiveSession(session)
-    if (active) {
+    if (isActiveLiveSession(session)) {
       activeCount++
-    } else if (!isRecentlyFinishedLiveSession(session, now)) {
-      continue
-    }
-    if (!inScope(scope, links.get(session.id))) {
-      continue
-    }
-    if (!active) {
+      running.push(session)
+    } else if (isRecentlyFinishedLiveSession(session, now)) {
       finished.push(session)
-      continue
     }
-    running.push(session)
   }
   return {
     machines: groupLiveSessionsByMachine(running),

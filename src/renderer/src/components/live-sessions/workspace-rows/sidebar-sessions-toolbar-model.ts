@@ -12,10 +12,7 @@ import type {
   LiveSessionMachine,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
-import {
-  isRecentlyFinishedLiveSession,
-  machineKnownByHostId
-} from '../active-agents/active-agents-model'
+import { isListedLiveSession, machineKnownByHostId } from '../active-agents/active-agents-model'
 import { liveSessionStatusLabel } from '../live-session-presentation'
 import {
   hasSidebarSessionFilters,
@@ -97,9 +94,7 @@ export function buildSidebarSessionsToolbar(
   const onMachine = active.filter(
     (session) => filters.machine === null || session.machine.hostId === filters.machine
   )
-  const listed = sessions.filter(
-    (session) => isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)
-  )
+  const listed = sessions.filter((session) => isListedLiveSession(session, now))
   return {
     activeCount: active.length,
     machines,

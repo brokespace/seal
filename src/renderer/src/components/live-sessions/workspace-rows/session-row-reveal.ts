@@ -11,6 +11,7 @@ import {
   getScrollTopToRevealBounds
 } from '@/components/sidebar/worktree-list/navigation/worktree-sidebar-reveal'
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
@@ -64,36 +65,58 @@ export function scrollSidebarSessionRowIntoView(row: HTMLElement): void {
   requestVirtualizedScrollAnchorRecord(list)
 }
 
-/** Shows a session row asked for from elsewhere (a badge, a fresh launch, the palette) under its workspace. */
-export function useWorkspaceSessionRowReveal(): void {
+/** Stops what hides a session's row: the filters, and for an ended one the line it sits behind. */
+export function unhideSessionRow(session: LiveSession, finishedOpenKey: string): void {
+  if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
+    sidebarSessionFilterStore.clear()
+  }
+  const app = useAppStore.getState()
+  if (!isActiveLiveSession(session) && !app.collapsedGroups.has(finishedOpenKey)) {
+    app.toggleCollapsedGroup(finishedOpenKey)
+  }
+}
+
+/**
+ * Runs `show` once for each session asked for from elsewhere (a badge, a fresh launch, the
+ * palette), then fades the row's ring. `show` gets the workspace that lists the session and
+ * returns how to stop, or null when the row is another list's.
+ */
+export function useSessionRowRevealRequest(
+  show: (session: LiveSession, worktreeId: string | undefined) => (() => void) | null
+): void {
   const reveal = useLiveSessionMarks().reveal
   const { links } = useLiveSessionLinks()
-  const linksAtRequest = useLatestHandler(() => links)
-
+  // Read at the moment of the request: later session updates must not move the list again.
+  const showAtRequest = useLatestHandler((sessionId: string) => {
+    const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === sessionId)
+    return session ? show(session, links.get(session.id)?.worktreeId) : null
+  })
   useEffect(() => {
-    // Read at the moment of the request: later session updates must not move the list again.
-    const session = reveal
-      ? liveSessionRegistryStore.getState().sessions.find((s) => s.id === reveal.sessionId)
-      : undefined
-    const worktreeId = session && linksAtRequest().get(session.id)?.worktreeId
-    if (!session || !worktreeId) {
+    const stop = reveal ? showAtRequest(reveal.sessionId) : null
+    if (!stop) {
       return
     }
-    if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
-      sidebarSessionFilterStore.clear()
+    const fade = setTimeout(() => liveSessionMarksStore.highlight([]), HIGHLIGHT_MS)
+    return () => {
+      stop()
+      clearTimeout(fade)
     }
-    const app = useAppStore.getState()
-    const finishedKey = workspaceFinishedOpenKey(worktreeId)
-    if (!isActiveLiveSession(session) && !app.collapsedGroups.has(finishedKey)) {
-      app.toggleCollapsedGroup(finishedKey)
-    }
+  }, [reveal, showAtRequest])
+}
 
+/** Shows a session row asked for from elsewhere under its workspace. */
+export function useWorkspaceSessionRowReveal(): void {
+  useSessionRowRevealRequest((session, worktreeId) => {
+    if (!worktreeId) {
+      return null
+    }
+    unhideSessionRow(session, workspaceFinishedOpenKey(worktreeId))
     const selector = `${SIDEBAR_LIST} [data-workspace-session-rows="${CSS.escape(worktreeId)}"] [data-live-session-row="${CSS.escape(session.id)}"]`
     const mountedRows = (): HTMLElement[] =>
       Array.from(document.querySelectorAll<HTMLElement>(selector))
     // A row already listed stays where it is: only a folded project or a card scrolled out of the list is brought in.
     if (mountedRows().length === 0) {
-      app.revealWorktreeInSidebar(worktreeId, { behavior: 'auto' })
+      useAppStore.getState().revealWorktreeInSidebar(worktreeId, { behavior: 'auto' })
     }
     let frame = 0
     let framesLeft = ROW_MOUNT_FRAMES
@@ -110,10 +133,6 @@ export function useWorkspaceSessionRowReveal(): void {
       }
     }
     showRow()
-    const fade = setTimeout(() => liveSessionMarksStore.highlight([]), HIGHLIGHT_MS)
-    return () => {
-      cancelAnimationFrame(frame)
-      clearTimeout(fade)
-    }
-  }, [reveal, linksAtRequest])
+    return () => cancelAnimationFrame(frame)
+  })
 }

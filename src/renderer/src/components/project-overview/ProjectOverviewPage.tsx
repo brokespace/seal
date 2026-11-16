@@ -90,7 +90,7 @@ function ProjectOverview({ repo }: { repo: Repo }): React.JSX.Element {
         <div className="@container/overview flex min-w-0 flex-col gap-(--page-section-gap)">
           <div className="grid grid-cols-1 items-start gap-(--page-section-gap) @min-[56rem]/overview:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="flex min-w-0 flex-col gap-(--page-section-gap)">
-              <ProjectAgentsCard repo={repo} sessions={sessions} now={now} />
+              <ProjectAgentsCard sessions={sessions} now={now} />
               <ProjectWorkspacesCard repo={repo} worktrees={worktrees} />
               {agentConfigAvailable() ? <ProjectAgentConfigCard repo={repo} /> : null}
               <ProjectReadmeCard repo={repo} machine={machine} mainWorktree={mainWorktree} />

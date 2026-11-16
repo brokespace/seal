@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo } from 'react'
-import { ChevronRight } from 'lucide-react'
 import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { liveSessionStatusLabel } from '../live-session-presentation'
+import { FoldChevron } from '../active-agents/ActiveAgentsGroups'
 import { useLiveSessionClock } from '../live-session-clock'
 import { useLiveSessionMarks } from '../live-session-marks-store'
+import { liveSessionsCountLabel } from '../links/LiveSessionsBadge'
 import { useWorkspaceSessions } from '../links/use-workspace-sessions'
 import { liveSessionRowOpenMode } from '../menu/live-session-menu-effects'
 import { openAgentSession } from '../open/open-agent-session'
@@ -118,14 +118,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
   const groupLabel =
     top === null
       ? t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')
-      : view.running.length === 1
-        ? t('auto.components.live-sessions.badge.one', '1 agent session: {{status}}', {
-            status: liveSessionStatusLabel(top)
-          })
-        : t('auto.components.live-sessions.badge.many', '{{count}} agent sessions: {{status}}', {
-            count: view.running.length,
-            status: liveSessionStatusLabel(top)
-          })
+      : liveSessionsCountLabel(t, view.running.length, top)
   return (
     <div
       role="group"
@@ -152,13 +145,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
             onClick={props.onToggleFinished}
             className="flex h-5 min-w-0 items-center gap-1 rounded-md px-1.5 text-left text-2xs leading-none text-muted-foreground transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none focus-visible:ring-inset"
           >
-            <ChevronRight
-              className={cn(
-                'size-3 shrink-0 transition-transform',
-                props.finishedOpen && 'rotate-90'
-              )}
-              aria-hidden="true"
-            />
+            <FoldChevron open={props.finishedOpen} />
             <span className="min-w-0 truncate">
               {t(
                 'auto.components.live-sessions.sessionRows.finished',

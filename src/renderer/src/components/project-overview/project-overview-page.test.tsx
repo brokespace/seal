@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
-import { activeAgentsScopeStore } from '@/components/live-sessions/active-agents/active-agents-scope-store'
+import { liveSessionMarksStore } from '@/components/live-sessions/live-session-marks-store'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 import { makeRepo } from '../worktree-jump/worktree-jump-palette-test-fixtures'
 import { ProjectAgentsCard } from './ProjectAgentsCard'
@@ -41,7 +41,7 @@ afterEach(() => {
 })
 
 it("lists the project's running agents under their machine and the ended ones apart", () => {
-  renderInApp(<ProjectAgentsCard repo={repo} sessions={sessions} now={SAMPLE_NOW} />)
+  renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
   const groups = [...document.querySelectorAll<HTMLElement>('[data-sessions-machine]')]
   expect(
     groups.map((group) => [
@@ -63,21 +63,17 @@ it("lists the project's running agents under their machine and the ended ones ap
 })
 
 it('an agent opens as its session', () => {
-  renderInApp(<ProjectAgentsCard repo={repo} sessions={sessions} now={SAMPLE_NOW} />)
+  renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByText('Pick a dataset'))
   expect(useAppStore.getState().activeView).toBe('sessions')
   expect(liveSessionTabsStore.getState().activeId).toBe('Pick a dataset')
 })
 
-it("Show in Active agents narrows the sidebar's list to this project and stays on the page", () => {
-  renderInApp(<ProjectAgentsCard repo={repo} sessions={sessions} now={SAMPLE_NOW} />)
+it("Show in Active agents asks the sidebar for the project's first running agent and stays on the page", () => {
+  renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByRole('button', { name: 'Show in Active agents' }))
   expect(useAppStore.getState().activeView).toBe('project')
-  expect(activeAgentsScopeStore.getState()).toEqual({
-    kind: 'project',
-    id: 'repo-1',
-    label: 'Repo 1'
-  })
+  expect(liveSessionMarksStore.getState().reveal?.sessionId).toBe('Fix the login bug')
 })
 
 it('New agent opens the composer on this project and its machine', () => {

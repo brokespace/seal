@@ -1,7 +1,7 @@
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import { compareListedLiveSessions } from '../../../../../shared/live-sessions/live-session-summary'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { isRecentlyFinishedLiveSession } from '../active-agents/active-agents-model'
+import { isListedLiveSession } from '../active-agents/active-agents-model'
 import {
   matchesSidebarSessionFilters,
   type SidebarSessionFilters
@@ -23,13 +23,9 @@ export function buildWorkspaceSessionRows(
   const running: LiveSession[] = []
   const finished: LiveSession[] = []
   for (const session of sessions) {
-    if (!matchesSidebarSessionFilters(session, filters)) {
-      continue
-    }
-    if (isActiveLiveSession(session)) {
-      running.push(session)
-    } else if (isRecentlyFinishedLiveSession(session, now)) {
-      finished.push(session)
+    if (isListedLiveSession(session, now) && matchesSidebarSessionFilters(session, filters)) {
+      const group = isActiveLiveSession(session) ? running : finished
+      group.push(session)
     }
   }
   return {

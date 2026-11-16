@@ -5,27 +5,22 @@ import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { buildActiveAgents } from '@/components/live-sessions/active-agents/active-agents-model'
-import { useLiveSessionLinks } from '@/components/live-sessions/links/use-live-session-links'
-import { showScopeInActiveAgents } from '@/components/live-sessions/links/show-scope-in-active-agents'
+import { liveSessionMarksStore } from '@/components/live-sessions/live-session-marks-store'
 import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
 import { LiveSessionRows } from '@/components/live-sessions/row/LiveSessionRows'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import type { Repo } from '../../../../shared/repo-types'
 
 /** The project's agents: running ones under their machine, then the ones that ended in the last day. */
 export function ProjectAgentsCard({
-  repo,
   sessions,
   now
 }: {
-  repo: Repo
   /** Already narrowed to this project. */
   sessions: readonly LiveSession[]
   now: number
 }): React.JSX.Element {
   const t = useTranslate()
-  const { links } = useLiveSessionLinks()
-  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
+  const view = useMemo(() => buildActiveAgents(sessions, now), [sessions, now])
   const finishedLabel = t('auto.components.live-sessions.sidebar.finished', 'Recently finished')
   const empty = view.machines.length === 0 && view.finished.length === 0
   return (
@@ -41,12 +36,7 @@ export function ProjectAgentsCard({
               size="xs"
               data-project-overview-filter-agents
               // The sidebar badge's own click, so both lead to the same list and leave the page up.
-              onClick={() =>
-                showScopeInActiveAgents(
-                  { kind: 'project', id: repo.id, label: repo.displayName },
-                  view.machines[0]?.sessions[0]?.id
-                )
-              }
+              onClick={() => liveSessionMarksStore.reveal(view.machines[0].sessions[0].id)}
             >
               {t('seal.projectOverview.agents.showInActiveAgents', 'Show in Active agents')}
             </Button>

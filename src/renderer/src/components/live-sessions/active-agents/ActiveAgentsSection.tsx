@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import { Loader2 } from 'lucide-react'
 import { useAppStore } from '@/store/index'
 import { useTranslate } from '@/i18n/use-translate'
-import { useLatestHandler } from '@/lib/use-latest-handler'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
 import {
   revealInSidebarScrollSection,
@@ -19,28 +18,30 @@ import { ProjectsCollapseAllButton } from '@/components/sidebar/worktree-list/co
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
-import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
+import { useLiveSessions } from '../live-session-registry-store'
 import { openLiveSessionFromRow } from '../menu/live-session-menu-effects'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
 import { ActiveAgentsGroups, type ActiveAgentsRowState } from './ActiveAgentsGroups'
 import {
   ACTIVE_AGENTS_COLLAPSE_KEY,
   buildActiveAgents,
-  isRecentlyFinishedLiveSession,
+  isListedLiveSession,
   visibleSessionIds
 } from './active-agents-model'
-import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
+import { useLiveSessionMarks } from '../live-session-marks-store'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
-import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { useUnassignedSessions } from '../links/use-workspace-sessions'
 import { SessionsOptionsMenu } from '../workspace-rows/SessionsOptionsMenu'
 import { SidebarSessionsToolbar } from '../workspace-rows/SidebarSessionsToolbar'
 import { useSidebarSessionRowKeyboard } from '../workspace-rows/session-row-keyboard'
 import { pickSidebarSessionRow } from '../workspace-rows/session-row-picking'
-import { useWorkspaceSessionRowReveal } from '../workspace-rows/session-row-reveal'
+import {
+  unhideSessionRow,
+  useSessionRowRevealRequest,
+  useWorkspaceSessionRowReveal
+} from '../workspace-rows/session-row-reveal'
 import {
   matchesSidebarSessionFilters,
-  sidebarSessionFilterStore,
   useSidebarSessionFilters
 } from '../workspace-rows/sidebar-session-filter-store'
 
@@ -56,7 +57,6 @@ function rowIn(list: HTMLElement | null, sessionId: string): HTMLElement | null 
 const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
   const t = useTranslate()
   const registry = useLiveSessions()
-  const { links } = useLiveSessionLinks()
   const unassigned = useUnassignedSessions()
   const filters = useSidebarSessionFilters()
   const sharedRowState = useLiveSessionRowState()
@@ -89,50 +89,33 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
     () => unassigned.filter((session) => matchesSidebarSessionFilters(session, filters)),
     [unassigned, filters]
   )
-  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
+  const view = useMemo(() => buildActiveAgents(sessions, now), [sessions, now])
   const order = useMemo(
     () => visibleSessionIds(view, { machines: collapsedMachines, finished: !finishedOpen }),
     [view, collapsedMachines, finishedOpen]
   )
 
   // A row asked for from elsewhere (a fresh launch, the palette) is unfolded and shown.
-  const reveal = marks.reveal
-  const isUnderWorkspace = useLatestHandler((sessionId: string) =>
-    Boolean(links.get(sessionId)?.worktreeId)
-  )
-  useEffect(() => {
-    // Read at the moment of the request: later session updates must not move the list again.
-    const session = reveal
-      ? liveSessionRegistryStore.getState().sessions.find((s) => s.id === reveal.sessionId)
-      : null
-    // A workspace's session is revealed on its card, which also fades its ring.
-    if (!reveal || !session || isUnderWorkspace(session.id)) {
-      return
+  useSessionRowRevealRequest((session, worktreeId) => {
+    // A workspace's session is revealed on its card.
+    if (worktreeId) {
+      return null
     }
-    if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
-      sidebarSessionFilterStore.clear()
-    }
+    unhideSessionRow(session, FINISHED_OPEN_KEY)
     const { collapsedGroups: collapsed, toggleCollapsedGroup: toggle } = useAppStore.getState()
     for (const key of [ACTIVE_AGENTS_COLLAPSE_KEY, MACHINE_KEY + session.machine.hostId]) {
       if (collapsed.has(key)) {
         toggle(key)
       }
     }
-    if (!isActiveLiveSession(session) && !collapsed.has(FINISHED_OPEN_KEY)) {
-      toggle(FINISHED_OPEN_KEY)
-    }
     const frame = requestAnimationFrame(() => {
-      const row = rowIn(list.current, reveal.sessionId)
+      const row = rowIn(list.current, session.id)
       if (row) {
         revealInSidebarScrollSection(row, pinned.current)
       }
     })
-    const fade = setTimeout(() => liveSessionMarksStore.highlight([]), 4000)
-    return () => {
-      cancelAnimationFrame(frame)
-      clearTimeout(fade)
-    }
-  }, [reveal, isUnderWorkspace])
+    return () => cancelAnimationFrame(frame)
+  })
 
   const tabStop = tabs.activeId && order.includes(tabs.activeId) ? tabs.activeId : order[0]
   const rowState = useCallback(
@@ -196,8 +179,7 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
   }
 
   const title = t('auto.components.live-sessions.sidebar.title', 'Active agents')
-  const listable = (session: LiveSession): boolean =>
-    isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)
+  const listable = (session: LiveSession): boolean => isListedLiveSession(session, now)
   const emptyText = (): string | null => {
     if (!registry.loaded) {
       return t('auto.components.live-sessions.workspace.loading', 'Looking for sessions')

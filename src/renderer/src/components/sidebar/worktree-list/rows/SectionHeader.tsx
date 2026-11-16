@@ -352,9 +352,7 @@ export function renderWorktreeSectionHeaderRow(
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />
                 {isRepoHeader ? <RepoScanUnavailableIndicator repo={row.repo!} /> : null}
                 {liveSessionsProjectId ? (
-                  <LiveSessionsBadge
-                    scope={{ kind: 'project', id: liveSessionsProjectId, label }}
-                  />
+                  <LiveSessionsBadge projectId={liveSessionsProjectId} />
                 ) : null}
               </div>
             </div>

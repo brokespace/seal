@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import type { LiveSessionLink } from '../links/live-session-links'
 import { sampleLiveSession as session, SAMPLE_NOW as NOW } from '../live-session.test-fixture'
 import { buildActiveAgents } from './active-agents-model'
 
 const HOUR = 3_600_000
 
 const BUILD_BOX = { hostId: 'ssh-1', label: 'build-box', kind: 'remote' } as const
-const NO_LINKS = new Map<string, LiveSessionLink>()
 
 const ids = (sessions: readonly LiveSession[]) => sessions.map((s) => s.id)
 
@@ -23,8 +21,6 @@ describe('buildActiveAgents', () => {
         session('permission', { status: 'needs-permission' }),
         session('remote-errored', { machine: BUILD_BOX, status: 'errored' })
       ],
-      null,
-      NO_LINKS,
       NOW
     )
     expect(view.machines.map((m) => [m.label, ids(m.sessions)])).toEqual([
@@ -37,8 +33,6 @@ describe('buildActiveAgents', () => {
   it('puts pinned sessions above the rest of their machine', () => {
     const view = buildActiveAgents(
       [session('permission', { status: 'needs-permission' }), session('pinned', { pinned: true })],
-      null,
-      NO_LINKS,
       NOW
     )
     expect(ids(view.machines[0].sessions)).toEqual(['pinned', 'permission'])
@@ -53,30 +47,9 @@ describe('buildActiveAgents', () => {
         session('ended-this-morning', { ...ended, lastActivityAt: NOW - 5 * HOUR }),
         session('ended-just-now', { ...ended, lastActivityAt: NOW - 60_000 })
       ],
-      null,
-      NO_LINKS,
       NOW
     )
     expect(ids(view.machines[0].sessions)).toEqual(['running'])
     expect(ids(view.finished)).toEqual(['ended-just-now', 'ended-this-morning'])
-  })
-
-  it('narrows to the workspace picked from a Projects badge', () => {
-    const sessions = [
-      session('local-working', { status: 'working' }),
-      session('local-idle'),
-      session('remote-working', { machine: BUILD_BOX, status: 'waiting-task' })
-    ]
-    const links = new Map<string, LiveSessionLink>([
-      ['local-idle', { worktreeId: 'wt-1', repoId: 'repo-1', name: 'seal' }]
-    ])
-    const view = buildActiveAgents(
-      sessions,
-      { kind: 'worktree', id: 'wt-1', label: 'seal' },
-      links,
-      NOW
-    )
-    expect(view.machines.flatMap((m) => ids(m.sessions))).toEqual(['local-idle'])
-    expect(view.activeCount).toBe(3)
   })
 })

@@ -1,7 +1,8 @@
 import React from 'react'
 
 const OPEN_DELAY_MS = 500
-const CLOSE_DELAY_MS = 80
+/** Long enough to cross from the row to its preview. */
+export const LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS = 80
 
 /** Row menus open anywhere: no row previews beside a menu, whichever row it belongs to. */
 let openRowMenus = 0
@@ -96,7 +97,7 @@ export function useLiveSessionRowPreview(): LiveSessionRowPreview {
       if (!pointedAt() && !focusAsks.current && card.current?.matches(':hover') !== true) {
         setOpen(false)
       }
-    }, CLOSE_DELAY_MS)
+    }, LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS)
   }
 
   React.useEffect(() => {

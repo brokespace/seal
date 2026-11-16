@@ -31,7 +31,10 @@ import {
 import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
-import { useLiveSessionRowPreview } from './use-live-session-row-preview'
+import {
+  LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS,
+  useLiveSessionRowPreview
+} from './use-live-session-row-preview'
 
 export type LiveSessionRowProps = {
   session: LiveSession
@@ -125,7 +128,11 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   return (
     <ContextMenu onOpenChange={onMenuOpenChange}>
       {/* A preview over an open menu would take the menu's Escape. */}
-      <HoverCard closeDelay={80} open={previewOpen} onOpenChange={onCardOpenChange}>
+      <HoverCard
+        closeDelay={LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS}
+        open={previewOpen}
+        onOpenChange={onCardOpenChange}
+      >
         <ContextMenuTrigger asChild>
           <HoverCardTrigger asChild>
             <div
