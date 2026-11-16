@@ -113,6 +113,7 @@ test('a session that asks where Seal cannot type shows no answer buttons in its 
   electronApp
 }) => {
   test.skip(process.platform === 'win32', 'Sessions are not scanned for on Windows')
+  // Two seeded sessions are each listed by a scan before their tabs are opened.
   test.setTimeout(180_000)
   await showSidebar(page)
   const cwd = await activeWorkspaceFolder(page)
