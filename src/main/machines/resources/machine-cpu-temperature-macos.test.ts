@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { parseMacosCpuTemperature } from './machine-cpu-temperature-macos'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import {
+  MACOS_CPU_TEMPERATURE_SCRIPT,
+  parseMacosCpuTemperature
+} from './machine-cpu-temperature-macos'
 
 describe('macOS CPU temperature', () => {
   it('reports the hottest core of an Apple Silicon Mac among the other host script lines', () => {
@@ -92,5 +99,119 @@ describe('macOS CPU temperature', () => {
 
     expect(parseMacosCpuTemperature(output)).toBeNull()
     expect(parseMacosCpuTemperature('')).toBeNull()
+  })
+})
+
+/** A Mac as the script sees it: stand-ins for uname, xcode-select, xcrun and the /usr/bin/cc shim. */
+describe.skipIf(process.platform === 'win32')('macOS CPU temperature helper build', () => {
+  let root: string
+  let log: string
+
+  const tool = (file: string, body: string): string => {
+    mkdirSync(path.dirname(file), { recursive: true })
+    writeFileSync(file, `#!/bin/sh\n${body}\n`, { mode: 0o755 })
+    return file
+  }
+  const compiler = (file: string): string =>
+    tool(
+      file,
+      [
+        'echo "compile" >> "$SEAL_TEST_LOG"',
+        'while [ $# -gt 0 ]; do [ "$1" = -o ] && out=$2; shift; done',
+        'cat > /dev/null',
+        `printf '#!/bin/sh\\nprintf "@mactemp\\\\tsmc\\\\tTp0X\\\\t61.2\\\\n"\\n' > "$out"`,
+        'chmod +x "$out"'
+      ].join('\n')
+    )
+  const read = (developerDir: string, compilerPath: string): string =>
+    execFileSync('/bin/sh', ['-c', MACOS_CPU_TEMPERATURE_SCRIPT], {
+      encoding: 'utf8',
+      env: {
+        PATH: `${path.join(root, 'bin')}:/usr/bin:/bin`,
+        HOME: path.join(root, 'home'),
+        SEAL_TEST_LOG: log,
+        SEAL_TEST_DEVELOPER_DIR: developerDir,
+        SEAL_TEST_CC: compilerPath
+      }
+    })
+  const calls = (): string[] =>
+    existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : []
+  const helperFiles = (): string[] => {
+    const dir = path.join(root, 'home/.seal/cpu-temperature')
+    return existsSync(dir) ? execFileSync('ls', [dir], { encoding: 'utf8' }).split('\n') : []
+  }
+
+  beforeEach(() => {
+    root = mkdtempSync(path.join(os.tmpdir(), 'seal-mactemp-'))
+    log = path.join(root, 'calls.log')
+    mkdirSync(path.join(root, 'home'))
+    tool(path.join(root, 'bin/uname'), 'echo Darwin')
+    tool(
+      path.join(root, 'bin/xcode-select'),
+      [
+        'echo "xcode-select $*" >> "$SEAL_TEST_LOG"',
+        'if [ -z "$SEAL_TEST_DEVELOPER_DIR" ]; then',
+        '  echo "xcode-select: error: unable to get active developer directory" >&2',
+        '  exit 2',
+        'fi',
+        'echo "$SEAL_TEST_DEVELOPER_DIR"'
+      ].join('\n')
+    )
+    tool(
+      path.join(root, 'bin/xcrun'),
+      [
+        'echo "xcrun $1 $2" >> "$SEAL_TEST_LOG"',
+        'if [ ! -x "$SEAL_TEST_CC" ]; then',
+        '  echo "xcrun: error: unable to find utility \\"cc\\", not a developer tool or in PATH" >&2',
+        '  exit 72',
+        'fi',
+        'if [ "$1" = --find ]; then echo "$SEAL_TEST_CC"; exit 0; fi',
+        'shift',
+        'exec "$SEAL_TEST_CC" "$@"'
+      ].join('\n')
+    )
+    // The real /usr/bin/cc is the shim that can open the install dialog.
+    tool(path.join(root, 'bin/cc'), 'echo "cc shim" >> "$SEAL_TEST_LOG"; exit 1')
+  })
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true })
+  })
+
+  it('builds once with an Xcode whose developer directory holds no usr/bin', () => {
+    const developerDir = path.join(root, 'Applications/Xcode.app/Contents/Developer')
+    const cc = compiler(path.join(developerDir, 'Toolchains/XcodeDefault.xctoolchain/usr/bin/cc'))
+
+    expect(existsSync(path.join(developerDir, 'usr/bin'))).toBe(false)
+    expect(read(developerDir, cc)).toBe('@mactemp\tsmc\tTp0X\t61.2\n')
+    expect(read(developerDir, cc)).toBe('@mactemp\tsmc\tTp0X\t61.2\n')
+    expect(calls()).toEqual(['xcode-select -p', 'xcrun --find cc', 'xcrun cc -x', 'compile'])
+  })
+
+  it('builds with the Command Line Tools', () => {
+    const developerDir = path.join(root, 'Library/Developer/CommandLineTools')
+    const cc = compiler(path.join(developerDir, 'usr/bin/cc'))
+
+    expect(read(developerDir, cc)).toBe('@mactemp\tsmc\tTp0X\t61.2\n')
+  })
+
+  it('never reaches for xcrun or cc on a Mac with no developer directory', () => {
+    expect(read('', '')).toBe('')
+    expect(read(path.join(root, 'Applications/Gone.app/Contents/Developer'), '')).toBe('')
+
+    expect(calls()).toEqual(['xcode-select -p', 'xcode-select -p'])
+    expect(helperFiles()).toEqual([])
+  })
+
+  it('waits for a compiler without marking the build as failed', () => {
+    const developerDir = path.join(root, 'Library/Developer/CommandLineTools')
+    mkdirSync(developerDir, { recursive: true })
+
+    expect(read(developerDir, path.join(developerDir, 'usr/bin/cc'))).toBe('')
+    expect(calls()).toEqual(['xcode-select -p', 'xcrun --find cc'])
+    expect(helperFiles()).toEqual([])
+
+    const cc = compiler(path.join(developerDir, 'usr/bin/cc'))
+    expect(read(developerDir, cc)).toBe('@mactemp\tsmc\tTp0X\t61.2\n')
   })
 })

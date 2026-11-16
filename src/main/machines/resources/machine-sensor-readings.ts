@@ -88,6 +88,25 @@ async function readSensors(connection: MachineConnection, state: SensorState): P
   state.reading = null
 }
 
+function sensorState(machineId: MachineId): SensorState {
+  const state = stateByMachine.get(machineId) ?? {
+    latest: NO_SENSORS,
+    reading: null,
+    recheckAt: -1,
+    macos: false
+  }
+  stateByMachine.set(machineId, state)
+  return state
+}
+
+/** Reads the sensors now, so a monitor that was just set up or removed shows in the next metrics. */
+export async function rereadMachineSensors(connection: MachineConnection): Promise<void> {
+  const state = sensorState(connection.machineId)
+  await state.reading
+  state.reading = readSensors(connection, state)
+  await state.reading
+}
+
 /**
  * The sensors for a machine's overview. A read that is slow hands back the previous readings and
  * finishes on its own, so a driver that hangs holds up the machine's other metrics only briefly.
@@ -96,14 +115,7 @@ async function overviewSensors(connection: MachineConnection): Promise<MachineSe
   if (!connection.isConnected()) {
     return NO_SENSORS
   }
-  const { machineId } = connection
-  const state = stateByMachine.get(machineId) ?? {
-    latest: NO_SENSORS,
-    reading: null,
-    recheckAt: -1,
-    macos: false
-  }
-  stateByMachine.set(machineId, state)
+  const state = sensorState(connection.machineId)
   if (!state.reading && Date.now() >= state.recheckAt) {
     state.reading = readSensors(connection, state)
   }

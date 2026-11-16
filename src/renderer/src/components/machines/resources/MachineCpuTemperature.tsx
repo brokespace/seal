@@ -13,12 +13,12 @@ function useMissingSensorHint(): (os: MachineOs | null) => string {
       case 'darwin':
         return t(
           'auto.components.machines.cpu.temperatureHintMac',
-          'Reading a Mac’s sensors needs the Xcode Command Line Tools on that Mac: run xcode-select --install there.'
+          'Reading a Mac’s sensors needs Xcode or its Command Line Tools on that Mac: run xcode-select --install there.'
         )
       case 'win32':
         return t(
           'auto.components.machines.cpu.temperatureHintWindows',
-          'Windows shows no CPU temperature to an account without administrator rights here. Running LibreHardwareMonitor on that machine makes one readable.'
+          'Windows gives no CPU temperature to an ordinary account on this machine. “Set up CPU temperature” in the CPU details installs a monitor that makes one readable.'
         )
       case 'linux':
       case null:

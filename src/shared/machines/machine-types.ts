@@ -151,6 +151,8 @@ export const MACHINE_IPC = {
   removeWorktree: 'machines:removeWorktree',
   listProcesses: 'machines:listProcesses',
   signalProcess: 'machines:signalProcess',
+  cpuTemperatureSetup: 'machines:cpuTemperatureSetup',
+  runCpuTemperatureSetup: 'machines:runCpuTemperatureSetup',
   listDockerContainers: 'machines:listDockerContainers',
   dockerContainerAction: 'machines:dockerContainerAction',
   dockerStorage: 'machines:dockerStorage',

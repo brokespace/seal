@@ -1,6 +1,7 @@
 import type {
   MachineCpuTemperature,
-  MachineCpuTemperatureSensor
+  MachineCpuTemperatureSensor,
+  MachineCpuTemperatureSetup
 } from '../../../../shared/machines/machine-cpu-temperature-types'
 
 function sensor(label: string, temperatureC: number): MachineCpuTemperatureSensor {
@@ -48,4 +49,12 @@ export const RYZEN_LIBRE_HARDWARE_MONITOR: MachineCpuTemperature = {
   temperatureC: 58.9,
   source: 'LibreHardwareMonitor',
   sensors: [sensor('Core (Tctl/Tdie)', 58.9)]
+}
+
+/** A Windows desktop where Seal has not been asked to set the monitor up. */
+export const WINDOWS_SETUP_NOT_SET_UP: MachineCpuTemperatureSetup = {
+  state: 'not-set-up',
+  message: null,
+  elevation: 'prompt',
+  account: String.raw`kessel-pc\brian`
 }
