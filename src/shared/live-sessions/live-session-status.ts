@@ -154,12 +154,30 @@ function isBlockedOnUserNow(status: LiveSessionStatus): boolean {
   return status === 'needs-permission' || status === 'waiting-input'
 }
 
+/** A chat at its prompt: its host starts the agent again with the next message. */
+function isOpenChatAtPrompt(
+  session: Pick<LiveSession, 'status'> & Partial<Pick<LiveSession, 'surface'>>
+): boolean {
+  return (
+    session.surface?.kind === 'chat' &&
+    (session.status === 'your-turn' || session.status === 'idle')
+  )
+}
+
 /**
  * Still running: its process is there, or its status is one only a running agent has. A host that
  * cannot list processes still reports a busy or blocked agent, which must not read as finished.
+ * A chat whose agent rests is still open: only a closed chat reads `done`.
  */
-export function isActiveLiveSession(session: Pick<LiveSession, 'alive' | 'status'>): boolean {
-  return session.alive || GROUPS[session.status] === 'working' || isBlockedOnUserNow(session.status)
+export function isActiveLiveSession(
+  session: Pick<LiveSession, 'alive' | 'status'> & Partial<Pick<LiveSession, 'surface'>>
+): boolean {
+  return (
+    session.alive ||
+    GROUPS[session.status] === 'working' ||
+    isBlockedOnUserNow(session.status) ||
+    isOpenChatAtPrompt(session)
+  )
 }
 
 /** Needs-attention first, then working, then idle; newest activity first inside each. */

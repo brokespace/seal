@@ -66,6 +66,31 @@ export async function removeFromHost(
   return 'removed'
 }
 
+/** Stops and cleans up through whoever runs the session: its server, its chat host, its machine. */
+export async function removeFromOwner(
+  session: LiveSession,
+  request: LiveRemoveRequest,
+  owner: {
+    server: {
+      remove(sessionId: string, request: LiveRemoveRequest): Promise<'removed' | 'still_running'>
+    } | null
+    chats: { stop(chatSessionId: string): Promise<boolean> } | null
+    host: LiveSessionHost | null
+  }
+): Promise<'removed' | 'still_running'> {
+  if (owner.server) {
+    return request.stop || request.deleteTranscripts
+      ? owner.server.remove(session.id, request)
+      : 'removed'
+  }
+  if (session.surface.kind === 'chat') {
+    // The chat's host ends its agent: a signal to the pid would leave the host holding a dead chat.
+    const stopped = !request.stop || ((await owner.chats?.stop(session.surface.sessionId)) ?? true)
+    return stopped ? 'removed' : 'still_running'
+  }
+  return owner.host ? removeFromHost(session, owner.host, request) : 'removed'
+}
+
 /** Sessions the user removed from Seal; they stay hidden across rescans and restarts. */
 export class LiveSessionRemovals {
   private readonly removed = new Map<string, number>()

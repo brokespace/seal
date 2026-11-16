@@ -28,9 +28,14 @@ import { userTextsOf, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
-import { LiveSessionRemovals, removeFromHost } from './delivery/session-removal'
+import { LiveSessionRemovals, removeFromOwner } from './delivery/session-removal'
 import { LiveSessionAnnotations } from './live-session-annotations'
 import type { StructuredSessionAccess } from './sources/structured-session-source'
+import {
+  localChatSessionId,
+  structuredSessionTranscriptPage,
+  structuredSessionTranscriptSince
+} from './sources/structured-session-transcript'
 import type { FederatedSessions } from './federation/federated-sessions'
 
 export type LiveSessionServiceDeps = {
@@ -166,7 +171,11 @@ export class LiveSessionService {
     before: LiveTranscriptCursor | null,
     limit?: number
   ): Promise<LiveTranscriptPage> {
-    return this.streams.page(sessionId, before, limit)
+    const session = this.registry.get(sessionId)
+    const chat = localChatSessionId(session)
+    return chat && session
+      ? structuredSessionTranscriptPage(session, chat, before, limit)
+      : this.streams.page(sessionId, before, limit)
   }
 
   /** What a transcript gained after `cursor`; `shrank` when it was rewritten shorter. */
@@ -174,7 +183,10 @@ export class LiveSessionService {
     sessionId: string,
     cursor: LiveTranscriptCursor
   ): ReturnType<LiveTranscriptStreams['since']> {
-    return this.streams.since(sessionId, cursor)
+    const chat = localChatSessionId(this.registry.get(sessionId))
+    return chat
+      ? structuredSessionTranscriptSince(chat, cursor)
+      : this.streams.since(sessionId, cursor)
   }
 
   watchTranscript(
@@ -200,8 +212,9 @@ export class LiveSessionService {
   }
 
   messages(sessionId?: string): LiveMessage[] {
-    const remote = this.federation?.messages(sessionId) ?? []
-    const local = this.outbox.list(sessionId)
+    const current = sessionId === undefined ? undefined : this.registry.currentId(sessionId)
+    const remote = this.federation?.messages(current) ?? []
+    const local = this.outbox.list(current)
     return remote.length === 0
       ? local
       : [...local, ...remote].sort((a, b) => a.createdAt - b.createdAt)
@@ -266,7 +279,13 @@ export class LiveSessionService {
       const session = this.registry.get(sessionId)
       const host = session ? this.registry.host(session.machine.hostId) : null
       try {
-        const outcome = session ? await this.removeFromOwner(session, host, request) : 'removed'
+        const outcome = session
+          ? await removeFromOwner(session, request, {
+              server: session.surface.kind === 'external' ? null : this.federated(session.id),
+              chats: this.chats,
+              host
+            })
+          : 'removed'
         if (outcome === 'removed') {
           result.removed.push(sessionId)
         } else {
@@ -289,25 +308,6 @@ export class LiveSessionService {
       void this.registry.refresh(hostId)
     }
     return result
-  }
-
-  /** Stops and cleans up through whoever runs the session: its server, its chat host, its machine. */
-  private async removeFromOwner(
-    session: LiveSession,
-    host: LiveSessionHost | null,
-    request: LiveRemoveRequest
-  ): Promise<'removed' | 'still_running'> {
-    const remote = session.surface.kind === 'external' ? null : this.federated(session.id)
-    if (remote) {
-      return request.stop || request.deleteTranscripts
-        ? remote.remove(session.id, request)
-        : 'removed'
-    }
-    if (session.surface.kind === 'chat') {
-      const stopped = !request.stop || ((await this.chats?.stop(session.surface.sessionId)) ?? true)
-      return stopped ? 'removed' : 'still_running'
-    }
-    return host ? removeFromHost(session, host, request) : 'removed'
   }
 
   private async userTexts(session: LiveSession, from: number): Promise<UserText[]> {

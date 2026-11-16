@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentSessionStatusEvidence } from './adapters/agent-session-adapter'
-import { liveSessionStatusFromEvidence } from './live-session-status'
-import type { LiveSessionStatus } from './live-session-types'
+import { isActiveLiveSession, liveSessionStatusFromEvidence } from './live-session-status'
+import type { AgentSessionSurface, LiveSessionStatus } from './live-session-types'
 
 const nothing: AgentSessionStatusEvidence = {
   turnRunning: false,
@@ -98,5 +98,44 @@ describe('which evidence wins when a session reports several', () => {
     ['a failed first turn', { turnFailed: true }, 'errored']
   ])('%s', (_, evidence, status) => {
     expect(liveSessionStatusFromEvidence({ ...nothing, ...evidence })).toBe(status)
+  })
+})
+
+describe('which sessions count as still running', () => {
+  const chat: AgentSessionSurface = { kind: 'chat', sessionId: 'chat-1', tabId: 'tab-1' }
+  const external: AgentSessionSurface = { kind: 'external' }
+
+  it.each<
+    [string, { alive: boolean; status: LiveSessionStatus; surface: AgentSessionSurface }, boolean]
+  >([
+    [
+      'a chat at its prompt whose agent rests',
+      { alive: false, status: 'your-turn', surface: chat },
+      true
+    ],
+    ['a new chat nobody has written to', { alive: false, status: 'idle', surface: chat }, true],
+    ['a closed chat', { alive: false, status: 'done', surface: chat }, false],
+    [
+      'a chat whose last turn failed and whose agent is gone',
+      { alive: false, status: 'errored', surface: chat },
+      false
+    ],
+    [
+      'a terminal agent that exited at its prompt',
+      { alive: false, status: 'your-turn', surface: external },
+      false
+    ],
+    [
+      'a terminal agent at its prompt',
+      { alive: true, status: 'your-turn', surface: external },
+      true
+    ],
+    [
+      'a busy agent on a host that lists no processes',
+      { alive: false, status: 'working', surface: external },
+      true
+    ]
+  ])('%s', (_, session, active) => {
+    expect(isActiveLiveSession(session)).toBe(active)
   })
 })
