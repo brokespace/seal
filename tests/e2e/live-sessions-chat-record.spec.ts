@@ -51,6 +51,7 @@ test.describe('live sessions chat record', () => {
     electronApp,
     claudeStub
   }, testInfo) => {
+    // Seven states of the chat, each read back through the CLI for up to 30 s.
     test.setTimeout(180_000)
     const shotsDir = process.env.SEAL_LIVE_SESSIONS_SHOTS_DIR ?? testInfo.outputPath('shots')
     mkdirSync(shotsDir, { recursive: true })

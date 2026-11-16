@@ -50,6 +50,7 @@ test.describe('live sessions: a CLI session continued in Chat', () => {
     claudeStub,
     registerPostElectronShutdownCleanup
   }, testInfo) => {
+    // A CLI turn, the adoption and a chat turn, each read back through the CLI for up to 30 s.
     test.setTimeout(180_000)
     const userDataDir = await electronApp.evaluate(({ app }) => app.getPath('userData'))
     const stubDir = mkdtempSync(path.join(os.tmpdir(), 'orca-e2e-stub-cli-'))
