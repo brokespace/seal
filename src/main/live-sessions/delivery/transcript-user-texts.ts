@@ -78,15 +78,13 @@ export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine
   return out
 }
 
-/**
- * Pair each pending message, oldest first, with a user record at or after where it went in.
- * Each delivered message comes with the offset of the record that holds it.
- */
+/** Pair each pending message, oldest first, with a user record at or after where it went in. */
 export function matchDelivered<T extends { text: string; offset: number }>(
   pending: T[],
   records: UserText[]
 ): Map<T, number> {
   const used = new Map<string, number>()
+  // Each delivered message with the offset of the record that holds it.
   const delivered = new Map<T, number>()
   for (const item of pending) {
     const want = normalizeForMatch(item.text)

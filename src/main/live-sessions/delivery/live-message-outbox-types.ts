@@ -27,15 +27,6 @@ export const DEFAULT_OUTBOX_TIMING = {
   keepFinishedMs: 72 * 60 * 60_000
 }
 
-/** A message read back from disk. One being typed when Seal stopped may already be at the prompt: only the transcript can say, never a second send. */
-export function restoredOutboxItem(item: OutboxItem, now: number): OutboxItem {
-  if (item.state === 'sending') {
-    item.state = 'sent'
-    item.sentAt ??= now
-  }
-  return item
-}
-
 export function publicView(item: OutboxItem): LiveMessage {
   const { offset: _offset, sentAt: _sentAt, ...message } = item
   return message
@@ -71,4 +62,13 @@ export function isOutboxItem(item: unknown): item is OutboxItem {
     'sessionId' in item &&
     typeof item.sessionId === 'string'
   )
+}
+
+/** A message read back from disk. One being typed when Seal stopped may already be at the prompt: only the transcript can say, never a second send. */
+export function restoredOutboxItem(item: OutboxItem, now: number): OutboxItem {
+  if (item.state === 'sending') {
+    item.state = 'sent'
+    item.sentAt ??= now
+  }
+  return item
 }

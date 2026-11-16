@@ -4,11 +4,11 @@ import type { UserText } from './transcript-user-texts'
 import { confirmSent, sentBySession } from './live-message-confirmation'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
+  restoredOutboxItem,
   DEFAULT_OUTBOX_TIMING,
   publicView,
   type LiveMessageOutboxDeps,
   isOutboxItem,
-  restoredOutboxItem,
   type OutboxItem as Item
 } from './live-message-outbox-types'
 
@@ -113,15 +113,6 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
-  /** Notes how long the transcript is as the message is written: a chat shows it there, above what the agent writes while it waits. */
-  private async place(item: Item): Promise<void> {
-    const session = this.deps.getSession(item.sessionId)
-    const size = session ? await this.deps.transcriptSize(session).catch(() => null) : null
-    if (size !== null && this.items.get(item.messageId) === item) {
-      this.set(item, { sentOffset: size })
-    }
-  }
-
   /** Put a failed message back in line under the same id. */
   async retry(messageId: string): Promise<LiveMessage | null> {
     await this.start()
@@ -143,6 +134,15 @@ export class LiveMessageOutbox {
     }
     if (this.next(to)) {
       this.kick(to)
+    }
+  }
+
+  /** Notes how long the transcript is as the message is written: a chat shows it there, above what the agent writes while it waits. */
+  private async place(item: Item): Promise<void> {
+    const session = this.deps.getSession(item.sessionId)
+    const size = session ? await this.deps.transcriptSize(session).catch(() => null) : null
+    if (size !== null && this.items.get(item.messageId) === item) {
+      this.set(item, { sentOffset: size })
     }
   }
 
