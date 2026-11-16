@@ -291,7 +291,8 @@ export class LiveMessageOutbox {
       for (const [sessionId, items] of sentBySession(this.items.values())) {
         const session = this.deps.getSession(sessionId)
         let records: UserText[] = []
-        if (session?.transcriptPath) {
+        // A chat's journal stands in for a transcript file.
+        if (session?.transcriptPath || session?.surface.kind === 'chat') {
           const from = Math.min(...items.map((i) => i.offset))
           records = await this.deps.userTexts(session, from).catch(() => [])
         }

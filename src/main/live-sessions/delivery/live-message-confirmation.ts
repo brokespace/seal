@@ -30,6 +30,17 @@ export function confirmSent(
           }
         })
       }
+    } else if (item.route === 'structured') {
+      // The chat's host took it and starts the agent if it rests: a process says nothing here.
+      if (since > timing.resumeConfirmMs) {
+        out.push({
+          item,
+          patch: {
+            state: 'failed',
+            error: 'The chat took the message, but its history never showed it'
+          }
+        })
+      }
     } else if (item.route === 'codex-queue') {
       // Codex keeps it queued with the thread; it is delivered whenever the session runs again.
       continue
