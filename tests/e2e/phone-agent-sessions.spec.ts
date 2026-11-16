@@ -129,6 +129,13 @@ test('the phone lists every session by project and workspace and opens each in t
         outsideChat.getByText('Which limit should apply to anonymous clients?')
       ).toBeVisible({ timeout: 30_000 })
 
+      // Its recap is the host's answer, not the line shown while the phone waits for one.
+      await view.getByLabel('Session actions').click()
+      await view.getByText('Recap', { exact: true }).click()
+      await expect(view.getByText('Refresh', { exact: true })).toBeVisible()
+      await expect(view.getByText('Reading the session…')).toHaveCount(0)
+      await view.getByText('Done', { exact: true }).click()
+
       // So does an agent CLI in a Seal pane.
       await phone.open(listHref)
       await view.getByTestId(`live-session-row-${idOf('cli')}`).click()

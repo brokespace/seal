@@ -10,6 +10,10 @@ export const MOBILE_SEAL_RPC_METHODS = [
   'liveSessions.unwatch',
   'liveSessions.watch',
   'liveSessions.watchTranscript',
+  // Turning recaps on or off stays a desktop setting.
+  'sessionRecap.get',
+  'sessionRecap.mark',
+  'sessionRecap.refresh',
   'seal.accounts.setAutoSwap',
   'seal.accounts.setSessionLiveSwap',
   'seal.accounts.status',
