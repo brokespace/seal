@@ -18,14 +18,14 @@ export function hostChatAnswer(input: AgentLaunchRoutingInput): HostChatAnswer {
         ? 'not-yet-known'
         : 'not-on-host'
     case 'remote-execution-host':
-      return 'ssh'
+      return 'needs-server'
     case 'project-runtime':
       return 'wsl'
     case 'runtime-capability':
     case 'client-capability':
       return 'no-chats'
     case 'custom-start-directory':
-      return 'subfolder'
+      return 'outside-workspace'
     case 'reused-terminal':
       return 'yes'
   }

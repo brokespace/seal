@@ -35,6 +35,10 @@ export type AgentPickerEntry = {
   rows: NewTabAgentMenuRow[]
   surfaces: AgentPickerSurface[]
   defaultSurface: AgentPickerSurface
+  /** The CLI is not installed on the host, so its action is listed disabled with that reason. */
+  terminalMissing?: true
+  /** What the chat action does when it is not a structured chat. */
+  chatAction?: 'install-server' | 'via-cli'
   terminal: AgentDedicatedChoices
   structured: AgentDedicatedChoices
   arguments?: string | null
@@ -184,7 +188,8 @@ export { agentPickerSessionOptions } from '../choices/agent-launch-choices'
 
 export function agentPickerEntriesFromRows(
   rows: readonly NewTabAgentMenuRow[],
-  detected: readonly TuiAgent[],
+  /** Null while the host's inventory is unknown: the CLI is then offered and the launch reports a missing binary. */
+  detected: readonly TuiAgent[] | null,
   seed: (agent: TuiAgent) => Pick<AgentPickerEntry, 'terminal' | 'structured' | 'arguments'>,
   label: (agent: TuiAgent) => string,
   defaultAgent: TuiAgent | 'blank' | null | undefined
@@ -195,15 +200,25 @@ export function agentPickerEntriesFromRows(
       const own = rows.filter((row) => row.agent === agent)
       const chatDefault = own.some((row) => row.kind === 'chat')
       const chat = chatDefault || own.some((row) => row.kind === 'cli' && row.chat)
+      const terminal = detected === null || detected.includes(agent)
+      const needsServer = own.some((row) =>
+        row.kind === 'cli'
+          ? row.needsServer
+          : row.kind === 'chat-unavailable' && row.reason === 'needs-server'
+      )
+      const viaCli = own.some((row) => (row.kind === 'chat' || row.kind === 'cli') && row.viaCli)
       return {
         agent,
         label: label(agent),
         rows: own,
-        surfaces: [
-          ...(chat ? ['chat' as const] : []),
-          ...(detected.includes(agent) ? ['terminal' as const] : [])
-        ],
+        surfaces: [...(chat ? ['chat' as const] : []), ...(terminal ? ['terminal' as const] : [])],
         defaultSurface: chatDefault ? 'chat' : 'terminal',
+        ...(terminal ? {} : { terminalMissing: true as const }),
+        ...(needsServer
+          ? { chatAction: 'install-server' as const }
+          : viaCli
+            ? { chatAction: 'via-cli' as const }
+            : {}),
         ...seed(agent),
         catalog: { origin: 'unknown' }
       }

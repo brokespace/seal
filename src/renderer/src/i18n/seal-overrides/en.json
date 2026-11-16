@@ -1560,6 +1560,14 @@
         "signInAgain": "Sign in again in Settings > Accounts"
       }
     },
+    "launcher": {
+      "chat": "Chat",
+      "cli": "CLI",
+      "installServerToChat": "Install Seal server to chat here",
+      "chatOutsideWorkspace": "No chat outside the workspace",
+      "cliNotInstalledOn": "{{value0}} is not installed on {{value1}}",
+      "cliNotInstalledHere": "{{value0}} is not installed on this computer"
+    },
     "session": {
       "liveSwap": {
         "inherit": "Follow the global setting",
