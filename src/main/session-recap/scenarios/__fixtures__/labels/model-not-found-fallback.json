@@ -1,0 +1,43 @@
+{
+  "id": "model-not-found-fallback",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add rate limiting to the /login endpoint, 5 attempts per minute per IP"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 4: the agent says it added a limiter to /login, 5 attempts per minute per IP"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 4: the agent said it added a limiter to /login, 5 attempts per minute per IP"
+        }
+      }
+    },
+    {
+      "quotes": ["add a test for it"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 4: the agent's closing message covers only the limiter and never mentions the test"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 10: the agent says it wrote test/login-rate-limit.test.ts and it passes"
+        }
+      }
+    },
+    {
+      "quotes": ["anything left?"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 10: the agent answers that one thing was left, the test, and that it is now written"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

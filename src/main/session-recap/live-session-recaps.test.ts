@@ -3,39 +3,19 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
-import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import {
   emptySessionRecap,
   type SessionRecap
 } from '../../shared/session-recap/session-recap-types'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
+import { ServerSessionRecaps } from './server-session-recaps'
 import type { RecapPassOutcome } from './session-recap-engine'
 import { SessionRecapStore } from './session-recap-store'
-
-function session(overrides: Partial<LiveSession> = {}): LiveSession {
-  return {
-    id: 'local:claude:abc',
-    provider: 'claude',
-    providerSessionId: 'abc',
-    machine: { hostId: 'local', label: 'mac', kind: 'local', connection: 'local' },
-    origin: 'external',
-    ...sampleSessionSurface(),
-    cwd: '/repo',
-    project: 'repo',
-    title: 'fix the login thing',
-    status: 'idle',
-    statusSource: 'transcript',
-    statusDetail: null,
-    lastActivityAt: 1_000,
-    startedAt: 500,
-    alive: true,
-    pid: 42,
-    transcriptPath: '/t.jsonl',
-    inputRoutes: [],
-    permission: null,
-    ...overrides
-  }
-}
+import {
+  recapLiveSession as session,
+  recapServerSession,
+  recapServerView
+} from './session-recap.test-fixture'
 
 function recap(updatedAt: number): SessionRecap {
   return {
@@ -50,7 +30,8 @@ function recap(updatedAt: number): SessionRecap {
   }
 }
 
-async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
+/** `serverReply` is what a paired server answers every call with; without it no server is reached. */
+async function harness(options: { enabled?: boolean; serverReply?: unknown } = {}) {
   const store = new SessionRecapStore(
     join(await mkdtemp(join(tmpdir(), 'seal-live-recaps-')), 'recaps.json')
   )
@@ -70,6 +51,19 @@ async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
     failure: () => null,
     forget: () => undefined
   }
+  const setTimer = (run: () => void, delayMs: number) => {
+    const timer = { run, at: clock.now + delayMs }
+    timers.push(timer)
+    return {
+      cancel: () => void (timers.includes(timer) && timers.splice(timers.indexOf(timer), 1))
+    }
+  }
+  const observe = (next: LiveSession) =>
+    recaps.observe({ type: 'upsert', revision: 1, session: next })
+  const server =
+    options.serverReply === undefined
+      ? undefined
+      : new ServerSessionRecaps({ call: async () => options.serverReply })
   const recaps = new LiveSessionRecaps({
     engine,
     store,
@@ -77,19 +71,13 @@ async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
     pausedUntil: () => null,
     session: (sessionId) => sessions.get(sessionId) ?? null,
     readable: (session) => session.transcriptPath !== null,
-    eager: options.eager ?? true,
-    setTimer: (run, delayMs) => {
-      const timer = { run, at: clock.now + delayMs }
-      timers.push(timer)
-      return {
-        cancel: () => void (timers.includes(timer) && timers.splice(timers.indexOf(timer), 1))
-      }
-    },
+    server,
+    setTimer,
     now: () => clock.now
   })
   const seen = (next: LiveSession) => {
     sessions.set(next.id, next)
-    recaps.observe({ type: 'upsert', revision: 1, session: next })
+    observe(next)
   }
   const stop = (next: LiveSession) => {
     seen(next)
@@ -181,16 +169,6 @@ describe('LiveSessionRecaps', () => {
     expect(h.passes).toEqual(['asked local:claude:abc', 'auto local:claude:abc'])
   })
 
-  it('on a host that is not eager, waits until someone opens the recap', async () => {
-    const h = await harness({ eager: false })
-
-    h.stop(session())
-    expect(h.passes).toEqual([])
-
-    h.recaps.view('local:claude:abc', true)
-    expect(h.passes).toEqual(['asked local:claude:abc'])
-  })
-
   it('brings a stale recap up to date when it is opened, and only reads it otherwise', async () => {
     const h = await harness()
     h.sessions.set('local:claude:abc', session({ status: 'working', lastActivityAt: 9_000 }))
@@ -216,5 +194,78 @@ describe('LiveSessionRecaps', () => {
     })
 
     expect(h.recaps.decorate(session({ id: 'local:claude:def' })).recap?.questions).toBe(1)
+  })
+
+  it('lists under Not addressed only what the judge found left undone, once the turn is over', async () => {
+    const h = await harness()
+    const judged = {
+      at: 2_000,
+      coveredTo: 900,
+      model: '@cf/cloudflare/clef',
+      questionBook: 'ba879810db9d',
+      answers: { done: 0.02, did_part: 0.03, declined: 0.01, withdrawn: 0.01, left_undone: 0.9 },
+      leftUndone: true,
+      turnEnded: true,
+      complete: true
+    }
+    const item = { messageId: 'o10', at: 1_500 }
+    h.store.setRecap(
+      'local:claude:abc',
+      {
+        ...recap(2_000),
+        coveredTo: 900,
+        // What the read step proposed: it is stored, and never shown.
+        ignored: [{ id: 'i9', text: 'Add a retry', ...item }],
+        requests: [
+          {
+            id: 'a4',
+            text: 'Write the migration test',
+            ...item,
+            status: 'open',
+            statusAt: 1_500,
+            judged
+          },
+          { id: 'a5', text: 'Update the docs', ...item, status: 'open', statusAt: 1_500 },
+          { id: 'a6', text: 'Add a retry', ...item, status: 'addressed', statusAt: 2_000, judged }
+        ]
+      },
+      {}
+    )
+
+    const view = h.recaps.view('local:claude:abc', false)
+    expect(view.turnEnded).toBe(false)
+    expect(view.recap?.ignored).toEqual([])
+    h.sessions.set('local:claude:abc', session({ status: 'working' }))
+    expect(h.recaps.view('local:claude:abc', false).recap?.ignored).toEqual([])
+    expect(h.recaps.decorate(session({ status: 'working' })).recap?.notAddressed).toBeUndefined()
+
+    h.sessions.set('local:claude:abc', session({ status: 'your-turn' }))
+    const ended = h.recaps.view('local:claude:abc', false)
+    expect(ended.turnEnded).toBe(true)
+    expect(ended.recap?.ignored).toEqual([
+      { id: 'a4', text: 'Write the migration test', messageId: 'o10', at: 2_000 }
+    ])
+    expect(h.recaps.decorate(session({ status: 'your-turn' })).recap?.notAddressed).toBe(1)
+
+    // The session moved on after the recap: the verdict is about a conversation that has grown.
+    const moved = session({ status: 'your-turn', lastActivityAt: 9_000 })
+    h.sessions.set('local:claude:abc', moved)
+    expect(h.recaps.view('local:claude:abc', false).recap?.ignored).toEqual([])
+    expect(h.recaps.decorate(moved).recap?.notAddressed).toBeUndefined()
+  })
+
+  it("makes no recap of a session a server runs, and keeps the server's brief on its row", async () => {
+    const h = await harness({ serverReply: recapServerView() })
+    const brief = { title: 'Fix login redirect loop', rev: 7, questions: 1, actions: 1 }
+    const remote = recapServerSession({ status: 'your-turn', recap: brief })
+
+    h.stop(remote)
+    await h.wait(5 * 60_000)
+
+    expect(h.passes).toEqual([])
+    expect(h.recaps.decorate(remote).recap).toEqual(brief)
+    const view = await h.recaps.get(remote.id, true)
+    expect(view.recap?.title).toBe('Fix login redirect loop')
+    expect(h.passes).toEqual([])
   })
 })

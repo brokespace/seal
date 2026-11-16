@@ -1,0 +1,52 @@
+{
+  "id": "question-dismissed-by-user",
+  "title": "The user dismisses a question in the recap and the session goes on",
+  "categories": ["question-open"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The dismissed question is not asked again under other words.",
+  "steps": [
+    {
+      "user": "Clean up the unused feature flags."
+    },
+    {
+      "edit": "/srv/shop/config/flags.ts"
+    },
+    {
+      "agent": "I found 14 flags. 9 are off everywhere and unreferenced, so I removed them. The other 5 are off in production but still on in staging: checkout_v2, new_search, bulk_edit, gift_cards, sso_beta. Should I remove those too, or keep them until staging is updated?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "mark": {
+        "item": "flag|staging|remove",
+        "as": "dismissed"
+      }
+    },
+    {
+      "user": "btw what's the node version in CI?"
+    },
+    {
+      "agent": "CI runs Node 22.11, set in .github/workflows/ci.yml."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "questions",
+          "max": 1,
+          "why": "the dismissed question is not added a second time"
+        }
+      ]
+    }
+  ]
+}

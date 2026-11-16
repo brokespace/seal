@@ -1,0 +1,45 @@
+{
+  "id": "declined-with-a-reason",
+  "title": "The agent refuses to do what was asked and says why",
+  "categories": ["declined"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The recap says the agent kept the migrations and why. The request is not presented as overlooked.",
+  "steps": [
+    {
+      "user": "Delete the old migrations folder, we don't need those files anymore."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/scripts/deploy.sh"
+        },
+        "output": "// scripts/deploy.sh"
+      }
+    },
+    {
+      "agent": "I'd leave db/migrations in place. The deploy script replays every migration on a fresh database, and staging is rebuilt from scratch each night, so deleting them would break tonight's rebuild. If you want less clutter I can squash them into one baseline migration instead. I have not deleted anything."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "migration|delete",
+          "why": "the agent answered the request with a refusal; it did not overlook it"
+        },
+        {
+          "text": "standing",
+          "why": "where things stand says the migrations were kept",
+          "has": "migration|delet"
+        }
+      ]
+    }
+  ]
+}

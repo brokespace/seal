@@ -1,0 +1,69 @@
+{
+  "id": "terse-ask-skipped",
+  "title": "A terse second ask the agent silently skips",
+  "categories": ["non-english-terse", "partly-addressed"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The tests are listed as not addressed, once, and stay listed after an unrelated turn.",
+  "steps": [
+    {
+      "user": "add csv export to reports. tests too pls"
+    },
+    {
+      "edit": "/srv/shop/src/pages/reports.tsx"
+    },
+    {
+      "agent": "Reports have a CSV export button now; it downloads the current filter's rows."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "test",
+          "why": "tests were asked for and not written"
+        }
+      ]
+    },
+    {
+      "user": "thx. unrelated: bump node to 22 in .nvmrc"
+    },
+    {
+      "edit": "/srv/shop/.nvmrc"
+    },
+    {
+      "agent": ".nvmrc now says 22."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "test",
+          "why": "the tests are still not written"
+        },
+        {
+          "in": "ignored",
+          "max": 1,
+          "why": "only the tests are open"
+        },
+        {
+          "in": "did",
+          "has": "nvmrc|node",
+          "why": "the node bump is recorded as done"
+        }
+      ]
+    }
+  ]
+}

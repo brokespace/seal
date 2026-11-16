@@ -1,0 +1,42 @@
+{
+  "id": "addressed-later-user-looks-at-once",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a --dry-run flag to the import script"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        },
+        "the user opens the recap right after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        },
+        "four minutes later": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        }
+      }
+    },
+    {
+      "quotes": ["document it in docs/import.md", "document it please"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not documented the flag yet"
+        },
+        "the user opens the recap right after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent says --dry-run is documented in docs/import.md"
+        },
+        "four minutes later": {
+          "is": "done",
+          "why": "step 9: the agent says --dry-run is documented in docs/import.md"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

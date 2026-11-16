@@ -1,0 +1,26 @@
+[
+  {
+    "key": "aa9faad9c4e104010ea52b6c7fed598d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Turn off TypeScript strict mode so the build passes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Turn off TypeScript strict mode so the build passes.\n\n[m2] AGENT: I would rather not: strict mode is what catches the null bugs we fixed last week. The build fails on 3 errors in src/import/; I can fix those instead, which takes a few minutes. Want me to?\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Would you like to fix the 3 type errors instead?\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Proposed fixing 3 type errors in src/import/\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"decisions\": [\n      { \"text\": \"Keep TypeScript strict mode enabled\", \"ref\": \"m2\" }\n    ]\n  }\n}",
+    "neurons": 7.9912
+  },
+  {
+    "key": "b9e392e7819fe699263474a56857adf6",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Turn off TypeScript strict mode so the build passes.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Would you like to fix the 3 type errors instead?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Proposed fixing 3 type errors in src/import/\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[{\"id\":\"d3\",\"text\":\"Keep TypeScript strict mode enabled\"}]}\n</recap>\n<new_messages>\n[m1] USER: yeah ok fix them instead\n\n[m2] AGENT: Fixed the 3 type errors in src/import/ (two missing null checks, one wrong return type). The build passes with strict mode still on.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"a1\"],\n  \"did\": [\n    {\n      \"id\": \"w2\",\n      \"text\": \"Fixed the 3 type errors in src/import/ (two missing null checks, one wrong return type).\",\n      \"state\": \"done\"\n    }\n  ]\n}",
+    "neurons": 6.223599999999999
+  }
+]

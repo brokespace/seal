@@ -1,0 +1,26 @@
+[
+  {
+    "key": "8bb0771b0784debbd2c315dd8d7a400e",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to /login, and document it in docs/api.md.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add rate limiting to /login, and document it in docs/api.md.\n\n[m2] AGENT: Rate limiting is on /login: five attempts a minute per IP, then a 429.\n</new_messages>"
+      }
+    ],
+    "reply": "{\"add\":{\"did\":[{\"text\":\"Add rate limiting to /login endpoint\",\"state\":\"done\",\"ref\":\"m2\"},{\"text\":\"Document limit in docs/api.md\",\"state\":\"to-do\",\"ref\":\"m2\"}],\"actions\":[{\"text\":\"Add 429 status message to docs\",\"state\":\"to-do\",\"ref\":\"m2\"}]}}\n",
+    "neurons": 6.156
+  },
+  {
+    "key": "8b89750aa67085a09cc0300eb63b6ae2",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to /login, and document it in docs/api.md.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Add rate limiting to /login endpoint\",\"state\":\"done\"},{\"id\":\"w2\",\"text\":\"Document limit in docs/api.md\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t3\",\"text\":\"Add 429 status message to docs\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: did you document the rate limit?\n\n[m2] AGENT: Yes. docs/api.md has had a Rate limits section since the first change.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\n      \"id\": \"t3\",\n      \"text\": \"Add 429 status message to docs\",\n      \"state\": \"done\"\n    }\n  ],\n  \"resolve\": [\n    \"w1\",\n    \"w2\"\n  ]\n}",
+    "neurons": 6.0175
+  }
+]

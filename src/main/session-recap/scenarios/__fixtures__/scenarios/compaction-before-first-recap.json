@@ -1,0 +1,61 @@
+{
+  "id": "compaction-before-first-recap",
+  "title": "The first recap is written over a transcript that was compacted mid-turn",
+  "categories": ["long-session", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "Both requests are recorded and done; the compaction summary is not listed as something the user asked.",
+  "steps": [
+    {
+      "user": "Build a CSV import for products."
+    },
+    {
+      "edit": "/srv/shop/src/import/products.ts"
+    },
+    {
+      "agent": "Built the importer in src/import/products.ts with validation for SKU and price."
+    },
+    {
+      "user": "Blank SKU rows should be skipped, not fail the whole file."
+    },
+    {
+      "compact": "The user asked for a CSV product import (built, in src/import/products.ts, validates SKU and price) and then asked that rows with a blank SKU be skipped instead of failing the file (in progress)."
+    },
+    {
+      "edit": "/srv/shop/src/import/products.ts"
+    },
+    {
+      "agent": "Rows with a blank SKU are now skipped and counted in the import summary."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "has": "blank|SKU|skip",
+          "why": "the second request is recorded"
+        },
+        {
+          "in": "asked",
+          "lacks": "compact|continued from|summary",
+          "why": "the agent's own compaction is not a request from the user"
+        },
+        {
+          "in": "asked",
+          "max": 2,
+          "why": "the user asked two things"
+        }
+      ]
+    }
+  ]
+}

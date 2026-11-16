@@ -1,0 +1,55 @@
+{
+  "id": "question-ask-answered",
+  "title": "A question to the agent, answered in the same turn",
+  "categories": ["addressed-same-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The answer is the work: nothing is unaddressed and the agent asked the user nothing.",
+  "steps": [
+    {
+      "user": "Why is the CI build so slow lately? Don't change anything, just tell me."
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "gh run list --workflow ci --limit 20"
+        },
+        "output": "20 runs, median 11m02s"
+      }
+    },
+    {
+      "agent": "The build got slower because the e2e job stopped using the dependency cache on 3 November: the cache key includes the lockfile hash, and the lockfile now changes on every run. Install went from 40 seconds to about 6 minutes. I have not changed anything."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user asked the agent, not the other way round"
+        },
+        {
+          "in": "did",
+          "min": 1,
+          "why": "the finding is recorded as what the agent did"
+        },
+        {
+          "text": "standing",
+          "why": "where things stand names the finding",
+          "has": "cache|slow|build|lockfile"
+        }
+      ]
+    }
+  ]
+}

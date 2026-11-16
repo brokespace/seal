@@ -1,0 +1,73 @@
+{
+  "id": "duplicate-asks-paraphrased",
+  "title": "The same request in three different wordings over three turns",
+  "categories": ["duplicate-asks"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The validation request is listed once or twice, not three times, and is done at the end.",
+  "steps": [
+    {
+      "user": "Please add input validation to the signup form."
+    },
+    {
+      "agent": "Which fields matter most? I'd validate email format and password length first."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "all of them. the signup form needs to validate every field before submit"
+    },
+    {
+      "agent": "Understood. I'll validate every field."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "user": "so did you add the validation on signup yet?"
+    },
+    {
+      "edit": "/srv/shop/src/pages/signup.tsx"
+    },
+    {
+      "agent": "Yes, it is in now: every signup field is validated before submit (email format, password length, name required, terms checked), with inline errors."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 3",
+      "check": [
+        {
+          "in": "asked",
+          "max": 2,
+          "why": "three wordings of one request are not three requests"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user answered which fields"
+        },
+        {
+          "in": "did",
+          "has": "validat",
+          "why": "the validation is recorded as done"
+        }
+      ]
+    }
+  ]
+}

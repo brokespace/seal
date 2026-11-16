@@ -49,7 +49,7 @@ session after the first turn.
 | Since you last looked | What the agent did, decided or left aside after his previous visit, newest first.               | host, no model |
 | Open questions        | Questions the agent put to him that are still unanswered. Can be ticked or dismissed.           | model          |
 | Action items          | Things he must do himself: said he would, or the agent told him to. Can be ticked or dismissed. | model          |
-| Not addressed         | Requests of his the agent never acted on. They leave when the agent gets to them.               | model          |
+| Not addressed         | Requests of his the judge found still waiting once the agent's turn was over (see below).       | judge, host    |
 | What I asked          | Each of his requests, condensed to a line, oldest first.                                        | model          |
 | What the agent did    | Work items, each `done`, `in-progress` or `blocked`.                                            | model          |
 | Decisions             | Choices made, by either side.                                                                   | model          |
@@ -163,17 +163,58 @@ transcript is never re-read from the start.
 A pass on a working session reads the turn before it has ended, so its request says so: the
 agent's last message is unfinished, work in it is recorded as in progress, never done, and
 _where it stands_ says what the agent is doing now. The stop pass that follows settles it. While
-the agent has written too little, the check asks no model and leaves `coveredTo` where it was. A
-headless server only keeps up sessions someone has opened from a client paired to it, so a
-desktop and a server that both see a session do not both pay for it.
+the agent has written too little, the check asks no model and leaves `coveredTo` where it was.
+
+## Not addressed: the judge
+
+The model that writes the recap does not decide what was left undone. After each pass a second
+step (`session-recap-requests.ts`) keeps one request per _What I asked_ item and asks a judge
+where each unsettled one stands. Everything else is code.
+
+- **One model, no fallback.** The judge is Cloudflare Clef (`@cf/cloudflare/clef`), a decision
+  model, on the Workers AI account, whichever provider writes the recap. When it fails, times
+  out or the account has no credential, the request stays "Open". No other model is asked: the
+  thresholds below belong to Clef alone.
+- **One question per criterion.** Clef is sent the request and the conversation after it, and
+  answers five yes/no questions with a probability each: done, did part, declined, withdrawn,
+  left undone (`session-recap-judge-questions.ts`). Each has its own threshold, measured on
+  labelled sessions (done 0.38, did part 0.95, declined 0.93, withdrawn 0.29, left undone 0.57).
+  Code combines them in a fixed order: withdrawn, declined, done, did part, left undone. The
+  thresholds are pinned to the model and to a hash of the wording; with other wording the judge
+  does not run.
+- **An explicit verdict before "Not addressed".** A request is listed only when the judge said
+  it was left undone and nothing else fired, the agent's turn is over, the reader saw the whole
+  conversation up to where the recap reads, and the session has not moved on since. In every
+  other case, a failed call included, it is "Open", or "In progress" while the turn runs.
+- **The turn's state is the registry's, not the model's.** A turn is running while the session
+  is `working`, `running-shell`, `waiting-subagent`, `waiting-task` or `needs-permission`, and
+  when the user's message is the last thing said.
+- **What the judge reads** (`session-recap-conversation.ts`): his message, then one line per
+  thing said or done after it. See _Reading and chunking the transcript_ for what a line may
+  hold. A conversation longer than 24,000 characters keeps its start and its end, and a
+  request judged on a cut conversation is never listed as not addressed.
+- **Cache and log.** An answer is kept under a hash of the model, the wording, the request and
+  the conversation (`session-recaps/judge-answers.json`), so nothing unchanged is paid for
+  twice. Every call is logged with its model, hash, tokens, cost, time and outcome, and with
+  nothing of the conversation (`session-recaps/judge-calls.json`, the last 500).
+- **Limits.** At most six requests are judged per pass, newest first. Done and withdrawn are
+  final; a request more than twenty of his messages old is never listed as not addressed.
+
+The stored recap keeps the read step's own `ignored` list untouched. What clients receive in
+`ignored` is the list above, derived when the recap is read, from `requests`.
 
 ## Reading and chunking the transcript
 
-What reaches the model is conversation prose only: his messages and the agent's own text. Tool
-calls, tool output and reasoning are never sent. Each message is stripped of code blocks and
-terminal escapes, passed through the app's redactor, and clipped (his messages to 1,500
-characters; an agent turn, merged into one entry, to 1,800 with its end favoured, where the
-outcome and any question sit).
+What reaches the model that writes the recap is conversation prose only: his messages and the
+agent's own text. Each message is stripped of code blocks and terminal escapes, passed through
+the app's redactor, and clipped (his messages to 1,500 characters; an agent turn, merged into one
+entry, to 1,800 with its end favoured, where the outcome and any question sit).
+
+The judge step, which decides whether a request of his was dealt with, is also shown what the
+agent did after it, one line per tool call: the path of a file it edited or used a tool on, the
+command line it ran (clipped to 120 characters, credentials replaced by `redactRecapCommand`), and
+the prompt and final report of a subagent it started. What tools print, the contents of files and
+reasoning are never sent, to either step.
 
 - **Incremental pass.** Read forward from `coveredTo` (`readTranscriptForward`, the reader the
   chat view tails with). Typically one turn: a few hundred tokens.
@@ -191,7 +232,8 @@ The context window (131k tokens) is never the constraint; the daily allocation i
 
 Rates ([Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)):
 `glm-4.7-flash` 5,500 neurons per M input tokens and 36,400 per M output; the fallback
-`gemma-4-26b-a4b-it` 9,091 and 27,273. Free allocation: 10,000 neurons a day, shared with the
+`gemma-4-26b-a4b-it` 9,091 and 27,273; the judge, `clef`, 21,818 per M input tokens and nothing
+for output. Free allocation: 10,000 neurons a day, shared with the
 status summaries. Tokens are estimated at 3.5 characters each.
 
 | Call                                      | Input tokens                     | Output tokens | Neurons |
@@ -201,6 +243,7 @@ status summaries. Tokens are estimated at 3.5 characters each.
 | Full chunk (first pass, long gap)         | 450 + 900 + 6,900                | 700           | ~71     |
 | Worst case (repair retry of a full chunk) | 2 x 8,250 + 600                  | 2 x 1,000     | ~167    |
 | Status summary, for comparison            | 600                              | 30            | ~4.4    |
+| One judged request (typical)              | 450 questions + 400 conversation | 0             | ~19     |
 
 A day of 150 turns across all sessions is about 2,700 neurons of recaps plus 660 of summaries.
 A session that works without stopping adds at most 15 passes an hour, about 270 neurons. The
@@ -212,6 +255,7 @@ for the next:
 - **Passes on stops stop at 6,000 neurons**. Rows keep their last recap and the panel says
   updates resume tomorrow.
 - **Passes he asks for** (open, Refresh) run until 9,000.
+- The judge's calls count in the same tally and stop with the tier of the pass they follow.
 - A 429 or a spent allocation pauses every utility request to that provider through its
   `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note.
 - The tally counts every provider. A model with no Workers AI rate is counted at the dearest one
@@ -267,6 +311,14 @@ panel shows why, and the next trigger tries again.
   annotations do.
 - Clients read and change it over three runtime RPC methods, used alike by the desktop renderer
   and the phone: `sessionRecap.get`, `sessionRecap.refresh`, `sessionRecap.mark`.
+- **A session has one recap, kept by the host that runs it.** A Seal server recaps every session
+  in its registry as it stops. A desktop paired to it makes none for those sessions. The row's
+  brief arrives with the server's own record of the session, over the watch the desktop lists a
+  server's sessions from, and the desktop forwards a read, a Refresh or a tick to the server over
+  the same three methods (`server-session-recaps.ts`). That holds for a server that makes no
+  recaps too (recaps off, or no utility model on it): its sessions then have none, and the
+  recap's state says `unavailable`. A server from before the judge still answers; nothing it
+  lists is shown as not addressed.
 - A tick on the phone bumps `rev` on the session; the registry stream delivers it to the desktop,
   which fetches the recap again. No new channel.
 
@@ -312,7 +364,5 @@ where the desktop panel links to the setting and the bar and the phone's banner 
 
 ## Not in this version
 
-- A recap for sessions on a paired server is made by whichever hub the client talks to; the two
-  hubs do not share ticks.
 - Resolved questions and finished action items leave the list rather than moving to a history.
 - The recap is not searchable and is not fed back to the agent.

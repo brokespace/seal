@@ -1,0 +1,84 @@
+{
+  "id": "long-session-first-recap",
+  "title": "A long session gets its first recap after the fact",
+  "categories": ["long-session"],
+  "surfaces": ["claude-cli"],
+  "expected": "The recap covers the whole session: the goal, the two standing rules, and the LOG_LEVEL request from the start that the agent put off and never did.",
+  "steps": [
+    {
+      "user": "We are moving every service onto the shared logger this week, one service at a time. Two rules for the whole job: never log customer emails, and keep the old log field names. Start with the plan."
+    },
+    {
+      "agent": "Plan: one service per turn, in alphabetical order. Each move replaces direct console calls with the shared logger, keeps the field names, and strips customer emails from the payload."
+    },
+    {
+      "user": "One more thing before you start: add a LOG_LEVEL env var to the logger, default info."
+    },
+    {
+      "agent": "I'll add LOG_LEVEL after the moves are done, so the services don't change twice."
+    },
+    {
+      "filler": 22
+    },
+    {
+      "user": "how many services are left in round 2?"
+    },
+    {
+      "agent": "14 are left in round 2, everything after inventory. Round 1 is complete for all 18 services."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the first automatic recap",
+      "check": [
+        {
+          "text": "goal",
+          "why": "the goal is the logger move",
+          "has": "logger"
+        },
+        {
+          "in": "ignored",
+          "has": "LOG_LEVEL",
+          "why": "LOG_LEVEL was asked for at the start and never added"
+        },
+        {
+          "view": "partial",
+          "is": false,
+          "why": "the recap covers the session from its start"
+        }
+      ]
+    },
+    {
+      "refresh": true
+    },
+    {
+      "label": "after the user presses Refresh",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "LOG_LEVEL",
+          "why": "LOG_LEVEL was asked for at the start and never added"
+        },
+        {
+          "in": "asked",
+          "has": "LOG_LEVEL",
+          "why": "the LOG_LEVEL request is recorded"
+        },
+        {
+          "in": "decisions",
+          "has": "email",
+          "why": "the rule about customer emails is recorded"
+        },
+        {
+          "in": "did",
+          "min": 5,
+          "why": "the services moved are recorded"
+        }
+      ]
+    }
+  ]
+}

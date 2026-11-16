@@ -1,0 +1,70 @@
+{
+  "id": "declined-then-agreed",
+  "title": "The agent pushes back, offers another way, and the user takes it",
+  "categories": ["declined", "question-answered"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Strict mode stays on by agreement, the three type errors are fixed, and nothing is open.",
+  "steps": [
+    {
+      "user": "Turn off TypeScript strict mode so the build passes."
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsc --noEmit"
+        },
+        "output": "Found 3 errors in src/import/"
+      }
+    },
+    {
+      "agent": "I would rather not: strict mode is what catches the null bugs we fixed last week. The build fails on 3 errors in src/import/; I can fix those instead, which takes a few minutes. Want me to?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "yeah ok fix them instead"
+    },
+    {
+      "edit": "/srv/shop/src/import/products.ts"
+    },
+    {
+      "agent": "Fixed the 3 type errors in src/import/ (two missing null checks, one wrong return type). The build passes with strict mode still on."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "strict",
+          "why": "the user agreed to keep strict mode"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user answered"
+        },
+        {
+          "in": "did",
+          "has": "error|build",
+          "why": "the fix is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "key": "c0b6249035e0c1e5923e75ac2d6ce3b1",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"login broken on safari. fix\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: login broken on safari. fix\n\n[m2] AGENT: Safari blocks the session cookie because it is set with SameSite=None but without Secure on the staging domain. I can either set Secure on the cookie or switch to SameSite=Lax. Lax is the smaller change. Go with Lax?\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      { \"text\": \"set cookie to SameSite=Lax?\", \"ref\": \"m2\" }\n    ]\n  },\n  \"decisions\": [\n    { \"text\": \"switch to SameSite=Lax\", \"ref\": \"m2\" }\n  ]\n}",
+    "neurons": 6.1911000000000005
+  },
+  {
+    "key": "1f422f9fef4536bff23d4fb8cd1b7480",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"login broken on safari. fix\",\"asked\":[{\"id\":\"a1\",\"text\":\"set cookie to SameSite=Lax?\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: y\n\n[m2] AGENT: Switched the session cookie to SameSite=Lax. Login works in Safari 17 and 18.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"did\": [{\"text\": \"set cookie to SameSite=Lax\", \"state\": \"done\", \"ref\": \"a1\"}]\n  },\n  \"resolve\": [\"a1\"]\n}",
+    "neurons": 5.3332
+  },
+  {
+    "key": "3434260a76d4a46d2ed2602ae69df12b",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"login broken on safari. fix\",\"asked\":[{\"id\":\"a1\",\"text\":\"set cookie to SameSite=Lax?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"set cookie to SameSite=Lax\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ship it\n\n[m2] AGENT: Pushed to main; the deploy is running.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"w2\"]\n}",
+    "neurons": 4.0359
+  }
+]

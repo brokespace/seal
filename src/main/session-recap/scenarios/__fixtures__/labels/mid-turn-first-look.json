@@ -1,0 +1,21 @@
+{
+  "id": "mid-turn-first-look",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes"],
+      "at": {
+        "mid-turn": {
+          "is": "working",
+          "why": "step 2: the agent has only started on the TOTP setup page and has written no closing message"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 8: the agent says 2FA is in with the setup page, the verify step and backup codes"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

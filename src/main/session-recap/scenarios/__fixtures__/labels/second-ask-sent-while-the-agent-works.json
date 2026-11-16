@@ -1,0 +1,34 @@
+{
+  "id": "second-ask-sent-while-the-agent-works",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Rename the Account page to Profile everywhere"],
+      "at": {
+        "right after the second message": {
+          "is": "working",
+          "why": "step 3: the agent has started the rename and has written no closing message"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 9: the agent says the component, route, nav link and sitemap all say Profile"
+        }
+      }
+    },
+    {
+      "quotes": ["update the nav link and the sitemap"],
+      "at": {
+        "right after the second message": {
+          "is": "working",
+          "why": "step 4: the message arrived while the agent's turn was still running"
+        },
+        "after the turn": {
+          "is": "done",
+          "why": "step 9: the agent edited Nav.tsx and sitemap.xml and says both say Profile"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

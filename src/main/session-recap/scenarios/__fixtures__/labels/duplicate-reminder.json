@@ -1,0 +1,42 @@
+{
+  "id": "duplicate-reminder",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add an index on orders.created_at"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the index is added in migration 0042"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the index is added in migration 0042"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "step 3: the agent says the index is added in migration 0042"
+        }
+      }
+    },
+    {
+      "quotes": ["update the schema docs", "you forgot the schema docs"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the turn ends with only the index added and the schema docs never mentioned"
+        },
+        "after turn 2": {
+          "is": "open",
+          "why": "step 8: the agent asks the user to run pnpm docs:schema and waits"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "steps 12-13: the user ran the generator and the agent says the docs are done"
+        }
+      }
+    }
+  ],
+  "notRequests": ["ran it, docs are updated"],
+  "rules": []
+}

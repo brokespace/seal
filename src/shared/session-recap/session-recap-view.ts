@@ -72,9 +72,9 @@ export function recapWorkByState(
   })).filter((group) => group.items.length > 0)
 }
 
-/** What a row's badge counts: questions and action items still on the user. */
+/** What a row's badge counts: questions and action items still on the user, and requests not addressed. */
 export function recapOpenCount(brief: LiveSessionRecapBrief | undefined): number {
-  return brief ? brief.questions + brief.actions : 0
+  return brief ? brief.questions + brief.actions + (brief.notAddressed ?? 0) : 0
 }
 
 /** The one line the collapsed recap shows: where things stand, else what the session is for. */

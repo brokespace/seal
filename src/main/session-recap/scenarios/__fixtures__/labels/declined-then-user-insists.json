@@ -1,0 +1,21 @@
+{
+  "id": "declined-then-user-insists",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Drop the legacy_reports table", "drop it anyway"],
+      "at": {
+        "after turn 1": {
+          "is": "declined",
+          "why": "step 3: the agent keeps the table because the month-end finance export reads it"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 10: the agent says migration 0051 removes legacy_reports and is applied"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -1,0 +1,69 @@
+{
+  "id": "non-english-session",
+  "title": "A session held in Spanish",
+  "categories": ["non-english-terse", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The untranslated error messages are listed as not addressed after turn 1 and leave the list once they are translated.",
+  "steps": [
+    {
+      "user": "Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de error del formulario de pago al español."
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "Listo lo primero: la lista de pedidos ahora tiene paginación de 25 por página. Los mensajes de error del formulario de pago siguen en inglés; todavía no los he traducido."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "asked",
+          "has": "pagina",
+          "why": "the pagination request is recorded"
+        },
+        {
+          "in": "ignored",
+          "has": "traduc|translat|mensaje|error",
+          "why": "the translation is asked for and not done yet"
+        }
+      ]
+    },
+    {
+      "user": "vale, tradúcelos"
+    },
+    {
+      "edit": "/srv/shop/src/i18n/es/payment.json"
+    },
+    {
+      "agent": "Hecho: los 14 mensajes de error del formulario de pago están traducidos al español."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "traduc|translat",
+          "why": "the translation is recorded as done"
+        }
+      ]
+    }
+  ]
+}

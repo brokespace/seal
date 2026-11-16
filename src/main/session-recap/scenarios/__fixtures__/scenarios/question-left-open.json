@@ -1,0 +1,66 @@
+{
+  "id": "question-left-open",
+  "title": "The agent asks a question and the user moves on without answering",
+  "categories": ["question-open"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The question about the five staging flags stays open, once, after an unrelated turn.",
+  "steps": [
+    {
+      "user": "Clean up the unused feature flags."
+    },
+    {
+      "edit": "/srv/shop/config/flags.ts"
+    },
+    {
+      "agent": "I found 14 flags. 9 are off everywhere and unreferenced, so I removed them. The other 5 are off in production but still on in staging: checkout_v2, new_search, bulk_edit, gift_cards, sso_beta. Should I remove those too, or keep them until staging is updated?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "questions",
+          "has": "flag|staging|remove",
+          "why": "the agent asked whether to remove the staging flags"
+        },
+        {
+          "in": "did",
+          "has": "flag|remov",
+          "why": "removing the nine dead flags is recorded as done"
+        }
+      ]
+    },
+    {
+      "user": "btw what's the node version in CI?"
+    },
+    {
+      "agent": "CI runs Node 22.11, set in .github/workflows/ci.yml."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "questions",
+          "has": "flag|staging|remove",
+          "why": "the user never answered, so the question is still open"
+        },
+        {
+          "in": "questions",
+          "max": 1,
+          "why": "the question is listed once"
+        }
+      ]
+    }
+  ]
+}

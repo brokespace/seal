@@ -1,0 +1,81 @@
+{
+  "id": "model-not-found-fallback",
+  "title": "The primary model is gone and the fallback model writes every recap",
+  "categories": ["model-failure", "addressed-later-turn"],
+  "surfaces": ["claude-cli"],
+  "expected": "The fallback model writes the recap, and it too drops the test from the not-addressed list once the test is written.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "model-not-found",
+        "model": "primary",
+        "times": 1
+      }
+    },
+    {
+      "user": "Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it."
+    },
+    {
+      "edit": "/srv/shop/src/routes/login.ts"
+    },
+    {
+      "agent": "I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the fallback model writes the recap"
+        },
+        {
+          "view": "model",
+          "is": "@cf/google/gemma-4-26b-a4b-it",
+          "why": "the fallback model answered"
+        },
+        {
+          "in": "ignored",
+          "has": "test",
+          "why": "the test was asked for and not written yet"
+        }
+      ]
+    },
+    {
+      "user": "ok. anything left?"
+    },
+    {
+      "edit": "/srv/shop/test/login-rate-limit.test.ts"
+    },
+    {
+      "agent": "One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "test",
+          "why": "the test now exists"
+        },
+        {
+          "in": "did",
+          "has": "test",
+          "why": "the test is recorded as done"
+        }
+      ]
+    }
+  ]
+}

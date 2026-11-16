@@ -1,0 +1,51 @@
+{
+  "id": "question-tool-waiting",
+  "title": "The agent asks through its question tool and waits",
+  "categories": ["question-open", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The region question is listed as a question for the user.",
+  "steps": [
+    {
+      "user": "Set up the staging deploy."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/.github/workflows/ci.yml"
+        },
+        "output": "// .github/workflows/ci.yml"
+      }
+    },
+    {
+      "agent": "I need one choice from you before I can write the workflow."
+    },
+    {
+      "question": {
+        "text": "Which region should staging deploy to?",
+        "options": ["eu-west-1", "us-east-1"]
+      }
+    },
+    {
+      "status": "waiting-input"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "while the agent waits",
+      "check": [
+        {
+          "in": "questions",
+          "has": "region",
+          "why": "the question asked through the agent's question tool is waiting on the user"
+        },
+        {
+          "in": "ignored",
+          "lacks": "staging|deploy",
+          "why": "the agent is waiting on an answer; it did not overlook the request"
+        }
+      ]
+    }
+  ]
+}

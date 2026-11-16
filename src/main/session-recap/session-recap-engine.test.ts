@@ -102,6 +102,42 @@ describe('SessionRecapEngine', () => {
     expect(auto.store.get('s1')?.recap?.coveredTo).toBe(12_000)
   })
 
+  it('settles the requests after each read, and again when only tools moved the transcript', async () => {
+    const messages = firstTurn()
+    const passes: { asked: string[]; before: string[]; coveredTo: number }[] = []
+    const h = await recapHarness(messages, [FIRST_REPLY], async (pass) => {
+      passes.push({
+        asked: pass.asked.map((item) => item.id),
+        before: pass.before.map((request) => request.status),
+        coveredTo: pass.coveredTo
+      })
+      return pass.asked.map((item) => ({
+        ...item,
+        status: passes.length === 1 ? 'open' : 'addressed',
+        statusAt: 1
+      }))
+    })
+
+    await h.engine.update('s1', 'asked')
+    expect(h.store.get('s1')?.recap?.requests?.map((request) => request.status)).toEqual(['open'])
+
+    messages.push({
+      ...recapMessage(200, 'assistant', ''),
+      blocks: [{ type: 'tool-call', name: 'Edit', input: { file_path: '/srv/shop/header.tsx' } }]
+    })
+    h.clock.now = 60_000
+    expect(await h.engine.update('s1', 'auto')).toBe('updated')
+
+    expect(h.requests).toHaveLength(1)
+    expect(passes).toEqual([
+      { asked: ['a1'], before: [], coveredTo: 200 },
+      { asked: ['a1'], before: ['open'], coveredTo: 300 }
+    ])
+    const recap = h.store.get('s1')?.recap
+    expect(recap?.requests?.map((request) => request.status)).toEqual(['addressed'])
+    expect(recap?.updatedAt).toBe(60_000)
+  })
+
   it('asks no model when nothing was said since the last pass', async () => {
     const h = await recapHarness(firstTurn(), [FIRST_REPLY])
     await h.engine.update('s1', 'asked')

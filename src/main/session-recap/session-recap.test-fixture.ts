@@ -1,11 +1,86 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
+import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
+import {
+  emptySessionRecap,
+  type SessionRecapView
+} from '../../shared/session-recap/session-recap-types'
 import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
 import { SessionRecapBudget } from './session-recap-budget'
 import { SessionRecapEngine, type RecapTranscript } from './session-recap-engine'
+import type { RecapRequestsStep } from './session-recap-judge'
 import { SessionRecapStore } from './session-recap-store'
+
+/** A stopped Claude session on this machine, as the registry lists it. */
+export function recapLiveSession(overrides: Partial<LiveSession> = {}): LiveSession {
+  return {
+    id: 'local:claude:abc',
+    provider: 'claude',
+    providerSessionId: 'abc',
+    machine: { hostId: 'local', label: 'mac', kind: 'local', connection: 'local' },
+    origin: 'external',
+    ...sampleSessionSurface(),
+    cwd: '/repo',
+    project: 'repo',
+    title: 'fix the login thing',
+    status: 'idle',
+    statusSource: 'transcript',
+    statusDetail: null,
+    lastActivityAt: 1_000,
+    startedAt: 500,
+    alive: true,
+    pid: 42,
+    transcriptPath: '/t.jsonl',
+    inputRoutes: [],
+    permission: null,
+    ...overrides
+  }
+}
+
+/** The same conversation as a desktop lists it when it runs on a paired Seal server. */
+export function recapServerSession(overrides: Partial<LiveSession> = {}): LiveSession {
+  return recapLiveSession({
+    id: 'machine-1:claude:abc',
+    machine: {
+      hostId: 'machine-1',
+      label: 'kessel',
+      kind: 'remote',
+      executionHostId: 'runtime:env-kessel',
+      connection: 'server'
+    },
+    ...overrides
+  })
+}
+
+/** A current server's answer about that session: two questions, one ticked, and one request not addressed. */
+export function recapServerView(overrides: Partial<SessionRecapView> = {}): SessionRecapView {
+  return {
+    sessionId: 'local:claude:abc',
+    recap: {
+      ...emptySessionRecap(2_000),
+      title: 'Fix login redirect loop',
+      questions: [
+        { id: 'q1', text: 'Drop the audit table?', messageId: 'o10', at: 2_000 },
+        { id: 'q2', text: 'Keep the old cookie name?', messageId: 'o30', at: 2_000 }
+      ],
+      actions: [{ id: 't3', text: 'Set the deploy secret', messageId: 'o20', at: 2_000 }],
+      ignored: [{ id: 'r4', text: 'Document the flag', messageId: 'o5', at: 2_000 }],
+      nextItemId: 5
+    },
+    marks: { q1: 'done' },
+    since: null,
+    state: 'ready',
+    stale: false,
+    pausedUntil: null,
+    failure: null,
+    rev: 7,
+    turnEnded: true,
+    ...overrides
+  }
+}
 
 export function recapMessage(
   offset: number,
@@ -42,7 +117,11 @@ export function recapTranscript(messages: NativeChatMessage[]): RecapTranscript 
 }
 
 /** An engine over real stores in a temp folder; `replies` are what the model answers, in order. */
-export async function recapHarness(messages: NativeChatMessage[], replies: (string | Error)[]) {
+export async function recapHarness(
+  messages: NativeChatMessage[],
+  replies: (string | Error)[],
+  requestsStep?: RecapRequestsStep
+) {
   const folder = await mkdtemp(join(tmpdir(), 'seal-recap-'))
   const path = join(folder, 'recaps.json')
   const store = new SessionRecapStore(path)
@@ -61,6 +140,7 @@ export async function recapHarness(messages: NativeChatMessage[], replies: (stri
     },
     store,
     budget,
+    requests: requestsStep,
     firstPrompt: () => null,
     onChange: () => undefined,
     now: () => clock.now

@@ -1,0 +1,42 @@
+{
+  "id": "ask-in-the-middle-of-a-long-message",
+  "title": "A second ask sits in the middle of a long message with a pasted stack trace",
+  "categories": ["multiple-asks"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Both requests are recorded: the 500 on /export and the row limit raised to 50k. Both are done.",
+  "steps": [
+    {
+      "user": "The /export endpoint returns a 500 for large date ranges. Here is what the server logs when I export all of October:\n\nError [ERR_STREAM_WRITE_AFTER_END]: write after end\n    at ExportStream.write (/srv/shop/src/export/stream.ts:88:13)\n    at writeRow (/srv/shop/src/export/rows.ts:41:9)\n    at exportOrders (/srv/shop/src/export/orders.ts:132:5)\n    at async handler (/srv/shop/src/routes/export.ts:57:3)\n    at Layer.handle (/srv/shop/src/node_modules/router/layer.js:95:5)\n    at next (/srv/shop/src/node_modules/router/route.js:144:13)\n    at Route.dispatch (/srv/shop/src/node_modules/router/route.js:114:3)\n    at requireAdmin (/srv/shop/src/middleware/auth.ts:29:5)\n    at session (/srv/shop/src/middleware/session.ts:61:7)\n    at requestId (/srv/shop/src/middleware/request-id.ts:12:3)\n    at cors (/srv/shop/src/middleware/cors.ts:33:5)\n    at jsonParser (/srv/shop/src/middleware/body.ts:18:5)\n    at compression (/srv/shop/src/middleware/compression.ts:44:5)\n    at accessLog (/srv/shop/src/middleware/access-log.ts:27:3)\n    at Server.onRequest (/srv/shop/src/server.ts:102:7)\n\nIt works for a single day. It fails as soon as the range is more than about a week.\n\nAlso, while you are in there, raise the export row limit from 10k to 50k, finance keeps hitting it.\n\nFor reference these are the last requests before the failure:\nGET /export?from=2026-10-01&to=2026-10-02 200 180ms rows=412\nGET /export?from=2026-10-01&to=2026-10-03 200 240ms rows=655\nGET /export?from=2026-10-01&to=2026-10-04 200 310ms rows=902\nGET /export?from=2026-10-01&to=2026-10-05 200 395ms rows=1180\nGET /export?from=2026-10-01&to=2026-10-06 200 470ms rows=1433\nGET /export?from=2026-10-01&to=2026-10-07 200 560ms rows=1702\nGET /export?from=2026-10-01&to=2026-10-08 200 655ms rows=1990\nGET /export?from=2026-10-01&to=2026-10-31 500 9120ms rows=0\n\nThanks!"
+    },
+    {
+      "edit": "/srv/shop/src/export/stream.ts"
+    },
+    {
+      "edit": "/srv/shop/config/export.ts"
+    },
+    {
+      "agent": "Fixed the 500 on /export: the handler ended the stream when the first page finished and then kept writing the later pages. It now ends the stream after the last page. All of October exports in 9 seconds."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "asked",
+          "has": "limit|50",
+          "why": "the row-limit request in the middle of the message is recorded"
+        },
+        {
+          "in": "asked",
+          "has": "export|500",
+          "why": "the 500 is recorded as asked"
+        }
+      ]
+    }
+  ]
+}

@@ -107,9 +107,13 @@ export class SessionSummariesHost {
             liveSessions,
             transcripts,
             utility: this.models.recaps,
+            // The judge runs on Workers AI whatever the read step runs on; an injected model brings none.
+            decisions: options.utilityModel
+              ? undefined
+              : getUtilityModelHost().provider('cloudflare-workers-ai'),
             userDataPath: options.userDataPath,
             enabled: () => this.recapOn() && this.isConfigured('recaps'),
-            eager: options.recapEagerly !== false,
+            serverRecapCall: options.serverRecapCall,
             onChange: () => this.republishSoon(),
             setTimer: unrefTimer,
             log

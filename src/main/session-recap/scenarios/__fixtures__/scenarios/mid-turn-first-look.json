@@ -1,0 +1,66 @@
+{
+  "id": "mid-turn-first-look",
+  "title": "The user opens a session that has no recap yet while its first turn is running",
+  "categories": ["mid-turn", "multiple-asks"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Mid-turn nothing is listed as not addressed: the agent is still on it. After the turn all three parts are done.",
+  "steps": [
+    {
+      "user": "Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes."
+    },
+    {
+      "agent": "Starting with the TOTP setup page."
+    },
+    {
+      "edit": "/srv/shop/src/pages/totp-setup.tsx"
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "mid-turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        }
+      ]
+    },
+    {
+      "edit": "/srv/shop/src/auth/verify-totp.ts"
+    },
+    {
+      "edit": "/srv/shop/src/auth/backup-codes.ts"
+    },
+    {
+      "agent": "2FA is in: the TOTP setup page, the verify step at login, and ten one-time backup codes per user."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "backup",
+          "why": "the backup codes are recorded as done"
+        },
+        {
+          "in": "did",
+          "has": "verify|login",
+          "why": "the verify step is recorded as done"
+        }
+      ]
+    }
+  ]
+}

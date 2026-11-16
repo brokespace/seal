@@ -1,0 +1,19 @@
+{
+  "id": "subagent-does-the-work",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Audit our npm dependencies for known vulnerabilities and tell me what needs upgrading"
+      ],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent reports 3 high advisories and the version each package must be upgraded to"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

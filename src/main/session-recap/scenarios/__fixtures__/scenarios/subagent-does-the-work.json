@@ -1,0 +1,61 @@
+{
+  "id": "subagent-does-the-work",
+  "title": "The agent hands the job to a subagent and reports its result",
+  "categories": ["subagent", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Only the user's request is listed as asked. What the parent told the subagent, and what the subagent told the parent, is neither a request nor an action for the user.",
+  "steps": [
+    {
+      "user": "Audit our npm dependencies for known vulnerabilities and tell me what needs upgrading."
+    },
+    {
+      "subagent": {
+        "prompt": "Run npm audit in /srv/shop and list every package with a high or critical advisory, with the fixed version. Also check for unused dependencies and remove them.",
+        "says": [
+          "Running npm audit now.",
+          "Found 3 high advisories: lodash 4.17.19, axios 0.21.1, minimist 1.2.5. You should upgrade them and rotate the npm token."
+        ],
+        "result": "3 high advisories: lodash 4.17.19 -> 4.17.21, axios 0.21.1 -> 1.7.4, minimist 1.2.5 -> 1.2.8. No critical. Unused dependencies: none."
+      }
+    },
+    {
+      "agent": "The audit found 3 high-severity advisories and no critical ones: lodash (upgrade to 4.17.21), axios (to 1.7.4) and minimist (to 1.2.8)."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "max": 1,
+          "why": "the user asked one thing"
+        },
+        {
+          "in": "asked",
+          "lacks": "unused|rotate|npm audit in",
+          "why": "the parent's instructions to its subagent are not the user's requests"
+        },
+        {
+          "in": "actions",
+          "lacks": "rotate",
+          "why": "what a subagent told its parent is not an action for the user"
+        },
+        {
+          "in": "did",
+          "has": "audit|advisor|vulnerab",
+          "why": "the audit is recorded as done"
+        }
+      ]
+    }
+  ]
+}

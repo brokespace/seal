@@ -1,0 +1,14 @@
+[
+  {
+    "key": "fca9b6ac6db40e3a03d9b9b1d9209932",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Translate the settings page into German and French.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Translate the settings page into German and French.\n\n[m2] AGENT: The settings page is translated into German in locales/de.json. French is not done: the product terms have no agreed French glossary, and I did not want to invent one.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Settings page translation\",\n  \"goal\": \"Translate settings page into German and French.\",\n  \"standing\": \"German translation done. Product terms for French glossary missing.\",\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"German translation done in de.json\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [\n      {\n        \"text\": \"Can French product terms be defined\",\n        \"ref\": \"m2\"\n      }\n    ]\n  }\n}",
+    "neurons": 7.9252
+  }
+]

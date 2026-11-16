@@ -1,0 +1,43 @@
+{
+  "id": "terse-ask-skipped",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["add csv export to reports"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says reports have a CSV export button now"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says reports have a CSV export button now"
+        }
+      }
+    },
+    {
+      "quotes": ["tests too pls"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the turn ended with no test written and no mention of tests"
+        },
+        "after turn 2": {
+          "is": "open",
+          "why": "step 9: the second turn only changed .nvmrc, tests were still never written or mentioned"
+        }
+      }
+    },
+    {
+      "quotes": ["bump node to 22 in .nvmrc"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent says .nvmrc now says 22"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

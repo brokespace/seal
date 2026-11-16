@@ -35,25 +35,35 @@ export function installDesktopSessionSummaries(
 ): SessionSummariesHost {
   const userDataPath = app.getPath('userData')
   const call = runtimeEnvironmentCall(userDataPath)
+  const serverResult = async (
+    executionHostId: string,
+    method: string,
+    params: unknown,
+    timeoutMs: number
+  ): Promise<unknown> => {
+    const host = parseExecutionHostId(executionHostId)
+    if (host?.kind !== 'runtime') {
+      return null
+    }
+    const response = await call(host.environmentId, method, params, timeoutMs)
+    // A server from before the method answers method_not_found.
+    return response.ok === true ? response.result : null
+  }
   return installSessionSummaries({
     runtime,
     store,
     userDataPath,
     liveSessions,
     serverSummaries: async (executionHostId) => {
-      const host = parseExecutionHostId(executionHostId)
-      if (host?.kind !== 'runtime') {
-        return null
-      }
-      const response = await call(
-        host.environmentId,
+      const result = await serverResult(
+        executionHostId,
         SESSION_SUMMARIES_LIST_METHOD,
         undefined,
         SERVER_LIST_TIMEOUT_MS
       )
-      // A server from before summaries answers method_not_found: its sessions are summarized here.
-      return response.ok === true && isListResult(response.result) ? response.result : null
+      return isListResult(result) ? result : null
     },
+    serverRecapCall: serverResult,
     onPaneSummaryChanged: () => runtime.notifyAgentStatusSummaryChanged()
   })
 }

@@ -185,6 +185,28 @@ describe('UtilityModelService', () => {
     ])
   })
 
+  it('asks a decision model alone: its failure reaches the caller, and no other model is tried', async () => {
+    const asked: string[] = []
+    const provider: UtilityModelProvider = {
+      id: 'cloudflare-workers-ai',
+      complete: vi.fn(async () => 'ok'),
+      decide: async (model) => {
+        asked.push(model)
+        throw new UtilityModelError('network', 'The decision model took too long')
+      },
+      listModels: async () => []
+    }
+    const service = new UtilityModelService({
+      backend: async () => ({ provider, models: [PRIMARY, FALLBACK] })
+    })
+
+    await expect(service.decide('@cf/cloudflare/clef', { body: {} })).rejects.toMatchObject({
+      kind: 'network'
+    })
+    expect(asked).toEqual(['@cf/cloudflare/clef'])
+    expect(provider.complete).not.toHaveBeenCalled()
+  })
+
   it('reports not-configured without a provider', async () => {
     const service = new UtilityModelService({ backend: async () => null })
 

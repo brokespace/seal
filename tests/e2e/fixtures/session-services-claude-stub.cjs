@@ -20,6 +20,10 @@ const DEFAULT_SCRIPT = {
     decision: 'Scripted decision: keep the session check on the server',
     question: 'Scripted question: which of the two options to go ahead with'
   },
+  /** Recorded model replies: the first entry whose `match` a recap prompt contains answers it verbatim. */
+  recapReplies: [],
+  /** When set, every recap request fails with this on stderr. */
+  recapFailure: null,
   /** What a new chat is named from its first request (Seal asks the same CLI for it). */
   chatTitle: 'Login redirect chat',
   chat: {
@@ -104,7 +108,11 @@ function answerUtilityRequest(prompt, script) {
     return { kind: 'reply-ask', reply: asks ? 'ASKS' : 'TELLS' }
   }
   if (prompt.includes('You keep a running recap of one coding-agent session')) {
-    return { kind: 'recap', reply: JSON.stringify(recapDelta(prompt, script)) }
+    if (script.recapFailure) {
+      return { kind: 'recap', failure: script.recapFailure }
+    }
+    const recorded = (script.recapReplies ?? []).find((entry) => prompt.includes(entry.match))
+    return { kind: 'recap', reply: recorded?.reply ?? JSON.stringify(recapDelta(prompt, script)) }
   }
   if (prompt.includes("Name this chat from the user's first request.")) {
     return { kind: 'chat-title', reply: script.chatTitle }
@@ -119,12 +127,17 @@ function runUtilityRequest() {
     prompt += String(chunk)
   })
   process.stdin.on('end', () => {
-    const { kind, reply } = answerUtilityRequest(prompt, readScript())
+    const { kind, reply = '', failure } = answerUtilityRequest(prompt, readScript())
     fs.appendFileSync(launchLog, `${JSON.stringify({ pid: process.pid, args })}\n`)
     fs.appendFileSync(
       `${launchLog}.utility.jsonl`,
-      `${JSON.stringify({ pid: process.pid, kind, args, cwd: process.cwd(), prompt, reply })}\n`
+      `${JSON.stringify({ pid: process.pid, kind, args, cwd: process.cwd(), prompt, reply, failure })}\n`
     )
+    if (failure) {
+      process.stderr.write(`${failure}\n`)
+      process.exitCode = 1
+      return
+    }
     process.stdout.write(`${reply}\n`)
   })
 }

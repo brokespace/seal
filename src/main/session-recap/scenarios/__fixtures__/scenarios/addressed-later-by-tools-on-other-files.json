@@ -1,0 +1,85 @@
+{
+  "id": "addressed-later-by-tools-on-other-files",
+  "title": "An open ask is done a turn later with tools, on files the ask never names, and the agent says only Done",
+  "categories": ["addressed-later-turn", "addressed-implicitly", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The slow login page is open after turn 1. After turn 2, which measures, edits and measures again and says only Done, it is no longer listed as not addressed, and the speed-up is recorded as work.",
+  "steps": [
+    {
+      "user": "The login page takes four seconds to load, make it faster. And add a test for the password reset email."
+    },
+    {
+      "edit": "/srv/shop/src/emails/password-reset.test.ts"
+    },
+    {
+      "agent": "Added a test for the password reset email; it covers the link and the expiry. I have not looked at the login page yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "login|load|faster|slow",
+          "why": "the slow login page is asked for and not looked at yet"
+        }
+      ]
+    },
+    {
+      "user": "ok go on"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm exec lighthouse http://localhost:3000/login --quiet"
+        },
+        "output": "Largest Contentful Paint 3.9 s"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/auth/session-cache.ts"
+    },
+    {
+      "edit": "/srv/shop/src/components/Avatar.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm exec lighthouse http://localhost:3000/login --quiet"
+        },
+        "output": "Largest Contentful Paint 0.8 s"
+      }
+    },
+    {
+      "agent": "Done."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the agent worked on the login page with tools and said it was done"
+        },
+        {
+          "in": "did",
+          "has": "login|load|faster|cache|speed",
+          "why": "the work on the login page is recorded"
+        }
+      ]
+    }
+  ]
+}

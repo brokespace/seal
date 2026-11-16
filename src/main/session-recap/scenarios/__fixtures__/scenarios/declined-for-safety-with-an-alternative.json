@@ -1,0 +1,40 @@
+{
+  "id": "declined-for-safety-with-an-alternative",
+  "title": "The agent does one ask and refuses the other as unsafe, offering another way",
+  "categories": ["declined", "multiple-asks"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The version bump is done. The force-push is refused with its reason and is not listed as overlooked; the offer of a revert is not a request of the user's.",
+  "steps": [
+    {
+      "user": "Force-push main to drop the last three commits, and bump the version to 2.4.0."
+    },
+    {
+      "edit": "/srv/shop/package.json"
+    },
+    {
+      "agent": "Version is 2.4.0 in package.json. I won't force-push main: the branch is protected and two people have already pulled those commits, so rewriting it would break their checkouts. Nothing on main was rewritten. If you want the three commits gone I can open a revert PR instead."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "force|push|commits",
+          "why": "the agent refused the force-push and said why; it did not overlook it"
+        },
+        {
+          "in": "did",
+          "has": "2\\.4\\.0|version",
+          "state": "done",
+          "why": "the version bump is recorded as done"
+        }
+      ]
+    }
+  ]
+}

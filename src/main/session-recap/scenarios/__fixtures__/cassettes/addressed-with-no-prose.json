@@ -1,0 +1,26 @@
+[
+  {
+    "key": "731d415b5a5b04f6c9dbbf0013e8bac4",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Set up prettier for the repo.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Set up prettier for the repo.\n\n[m2] AGENT: Prettier is set up: .prettierrc, a format script, and the pre-commit hook.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Setup Prettier\",\n  \"goal\": \"Use prettier to ensure consistent code formatting\",\n  \"standing\": \"Prettier is configured and ready. Hook is installed.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Install prettier hook and configs\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 8.1339
+  },
+  {
+    "key": "339429aedaea6b05a8f3748c0eaf8388",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Setup Prettier\",\"goal\":\"Use prettier to ensure consistent code formatting\",\"standing\":\"Prettier is configured and ready. Hook is installed.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Install prettier hook and configs\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: now run it over src/ and commit the result\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\"text\": \"Run prettier on src/ and commit\", \"ref\": \"m1\"}\n    ],\n    \"did\": [\n      {\"id\": \"w1\", \"text\": \"Install prettier hook and configs\", \"state\": \"done\"}\n    ],\n    \"decisions\": [\n      {\"text\": \"Proceed to run prettier on src/ and commit\", \"ref\": \"m1\"}\n    ]\n  },\n  \"update\": [\n    {\"id\": \"w1\", \"state\": \"in-progress\", \"text\": \"Run prettier hook and configs\"}\n  ],\n  \"resolve\": []\n}",
+    "neurons": 8.649000000000001
+  }
+]
