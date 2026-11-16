@@ -109,10 +109,12 @@ export function MachineFilePreview({
     }
   }, [machineId, path, tooLarge, t, readText, source])
 
+  const canEdit = !readOnly && file?.text !== null && file?.truncated === false
   const save = useCallback(
     async (content: string) => {
       const api = window.api.machines
-      if (!api || saving) {
+      // The editor's save shortcut fires in a read-only view too.
+      if (!api || saving || !canEdit) {
         return
       }
       setSaving(true)
@@ -134,10 +136,9 @@ export function MachineFilePreview({
         t('auto.components.machines.preview.saved', 'Saved {{name}}', { name: entry.name })
       )
     },
-    [machineId, path, entry.name, saving, t, writeFile]
+    [machineId, path, entry.name, saving, t, writeFile, canEdit]
   )
 
-  const canEdit = !readOnly && file?.text !== null && file?.truncated === false
   const dirty = draft !== null && draft !== file?.text
 
   let body: React.JSX.Element
