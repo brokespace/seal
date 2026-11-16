@@ -26,6 +26,13 @@ export function isClaudeAskTool(name: string): boolean {
 /** The tools that start a subagent (`Task` before Claude Code 2.x renamed it). */
 export const CLAUDE_SUBAGENT_TOOLS: ReadonlySet<string> = new Set(['Agent', 'Task'])
 
+/** Tools whose call stands until a command or task an earlier call started reports. */
+const BACKGROUND_WAIT_TOOLS: ReadonlySet<string> = new Set(['BashOutput', 'TaskOutput'])
+
+export function isClaudeBackgroundWaitTool(name: string): boolean {
+  return BACKGROUND_WAIT_TOOLS.has(name)
+}
+
 /** Tools that change files at once unless a permission prompt holds them. */
 const EDIT_TOOLS: ReadonlySet<string> = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 
@@ -38,6 +45,9 @@ function pendingKind(name: string, input: TranscriptRecord | null): PendingCallK
   if (name === 'Bash') {
     // A background command returns at once; only a foreground one holds the call open while it runs.
     return input?.run_in_background === true ? null : 'shell'
+  }
+  if (isClaudeBackgroundWaitTool(name)) {
+    return 'shell-wait'
   }
   return EDIT_TOOLS.has(name) ? 'edit' : null
 }

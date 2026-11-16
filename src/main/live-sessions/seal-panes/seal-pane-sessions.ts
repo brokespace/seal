@@ -24,7 +24,6 @@ import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 /** What a finished turn may still rest on, which a Stop hook does not say. */
 const RESTS_ON: ReadonlySet<LiveSessionStatus> = new Set([
   'waiting-subagent',
-  'waiting-task',
   'waiting-input',
   'errored'
 ])

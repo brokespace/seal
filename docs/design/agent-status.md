@@ -24,9 +24,9 @@ The predicates every surface shares live in `src/shared/live-sessions/live-sessi
 | Predicate                        | True for                                                         | Used by                                         |
 | -------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- |
 | `isActiveLiveSession`            | a process is seen, or the status is one only a running agent has | every list, badge, count, CLI, Home chat        |
-| `isTurnRunningLiveSessionStatus` | `working`, `running-shell`                                       | recaps (a turn is going), pane roll-ups         |
+| `isTurnRunningLiveSessionStatus` | `working`, `running-shell`, `waiting-task`                       | recaps (a turn is going), pane roll-ups         |
 | `isWaitingOnBackgroundWork`      | `waiting-subagent`, `waiting-task`                               | row and label rendering                         |
-| `isSettledLiveSessionStatus`     | `waiting-input`, `your-turn`, `idle`, both waits                 | summaries, recaps (there is a stop to describe) |
+| `isSettledLiveSessionStatus`     | `waiting-input`, `your-turn`, `idle`, `waiting-subagent`         | summaries, recaps (there is a stop to describe) |
 | `isRestingLiveSessionStatus`     | `your-turn`, `idle`                                              | discovery                                       |
 | `liveSessionStatusGroup`         | `attention`, `working`, `idle`, `finished`                       | sort order, counts, notifications               |
 
@@ -48,22 +48,33 @@ is their status.
 
 ## Status codes
 
-| Code               | Label                         | Dot          | Whose move      | Meaning                                                                |
-| ------------------ | ----------------------------- | ------------ | --------------- | ---------------------------------------------------------------------- |
-| `needs-permission` | Waiting for approval          | amber, halo  | Yours, now      | A permission prompt or a dialog holds a tool call until you answer.    |
-| `waiting-input`    | Asking you a question         | orange, halo | Yours, now      | It asked through its question tool, or its turn ended on a question.   |
-| `errored`          | Error                         | red, halo    | Yours, now      | The turn failed (API error, crashed tool run).                         |
-| `working`          | Working                       | blue spinner | The agent's     | It is generating, or a tool call is in flight.                         |
-| `running-shell`    | Running shell                 | solid blue   | The agent's     | A foreground shell command it started is still running.                |
-| `waiting-subagent` | Waiting on N subagents        | blue ring    | The agent's     | It waits for subagents it launched, in its turn or after it.           |
-| `waiting-task`     | Waiting on N background tasks | blue ring    | The agent's     | Its turn ended, but work it left in the background still runs.         |
-| `your-turn`        | Waiting on you                | green        | Yours, whenever | It finished its turn and told you the result. Nothing of its own runs. |
-| `idle`             | Idle                          | grey         | Nobody's        | It runs, but has had no turn yet.                                      |
-| `done`             | Ended                         | grey         | Nobody's        | Its process is gone.                                                   |
+| Code               | Label                         | Dot          | Whose move      | Meaning                                                              |
+| ------------------ | ----------------------------- | ------------ | --------------- | -------------------------------------------------------------------- |
+| `needs-permission` | Waiting for approval          | amber, halo  | Yours, now      | A permission prompt or a dialog holds a tool call until you answer.  |
+| `waiting-input`    | Asking you a question         | orange, halo | Yours, now      | It asked through its question tool, or its turn ended on a question. |
+| `errored`          | Error                         | red, halo    | Yours, now      | The turn failed (API error, crashed tool run).                       |
+| `working`          | Working                       | blue spinner | The agent's     | It is generating, or a tool call is in flight.                       |
+| `running-shell`    | Running shell                 | solid blue   | The agent's     | A foreground shell command it started is still running.              |
+| `waiting-subagent` | Waiting on N subagents        | blue ring    | The agent's     | It waits for subagents it launched, in its turn or after it.         |
+| `waiting-task`     | Waiting on N background tasks | blue ring    | The agent's     | Its turn is blocked on a command or task it started earlier.         |
+| `your-turn`        | Waiting on you                | green        | Yours, whenever | It finished its turn; what it left running holds nothing.            |
+| `idle`             | Idle                          | grey         | Nobody's        | It runs, but has had no turn yet.                                    |
+| `done`             | Ended                         | grey         | Nobody's        | Its process is gone.                                                 |
 
-"Waiting on you" is only ever shown for a turn that ended with nothing of the agent's still
-running. Work left behind a finished turn is `waiting-task` or `waiting-subagent`: the agent wakes
-itself when that work reports, so the next move is still its own.
+"Waiting on you" is what an ended turn shows (or "Asking you a question", when it ended on one),
+whether or not commands, monitors or a wake-up it started still run. Such leftovers hold nothing:
+they are listed in the session's Tasks panel and noted beside the status ("2 background tasks still
+running"), and the next move is the user's. If one of them wakes the agent, that is a new turn:
+`working`, then `your-turn` again.
+
+`waiting-task` exists only inside a turn: the agent called for the output of a command or task an
+earlier call started (`BashOutput`, `TaskOutput`, Codex `wait` or `write_stdin`), that call has no
+result yet, and a command still runs under the agent. Claude's `Monitor` returns at once, so a
+Monitor is never a wait; it is a leftover.
+
+Background subagents are the one exception to the first rule: an ended turn with subagents still
+running is `waiting-subagent`, as before. Claude Code itself reports that state as `busy`, not as
+being at its prompt.
 
 The order of the table is the order of every list of running sessions (`compareLiveSessions`).
 Colors are existing tokens from `src/renderer/src/assets/main.css`; `LiveSessionStatusDot` is the
@@ -80,7 +91,8 @@ one component that draws them:
 | `quiet`                        | `idle`, `done`                     | `muted-foreground/40` | `text-muted-foreground`    |
 
 `statusDetail` says what the status is about (`Bash: pnpm test`, `Allow Bash: rm -rf build?`, the
-question, the error, `Waiting on 2 background tasks`, `Interrupted`). `statusSource` says which
+question, the error, `Waiting on 2 subagents`, `Interrupted`, and on a resting session what it
+left behind: `2 background tasks still running`). `statusSource` says which
 signal decided: `seal-hooks`, `agent-hooks`, `agent-state`, `screen`, `process`, `transcript`,
 `classifier`.
 
@@ -148,12 +160,15 @@ rather than `shell`; on a build that writes no state, the absence of any command
 tool under the agent. For Codex it is the absence of any command under the agent. A host that
 cannot list processes confirms nothing, and what the transcript says stands.
 
+What is tracked here is listed, never waited on: a running task appears in the session's activity
+and in the note on its resting status, and changes no status by itself.
+
 ### The agent's own state (Claude Code)
 
 | Registry `status` | Meaning                                               | Effect                                                                                                                                    |
 | ----------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `busy`            | a turn runs, or work it delegated does                | A turn the transcript ended reads `working` (compaction, a turn not logged yet). No prompt is inferred from a slow call.                  |
-| `shell`           | at its prompt, commands it left in the background run | Background commands are running, whether or not the scan still sees their launch.                                                         |
+| `shell`           | at its prompt, commands it left in the background run | The turn is over (`your-turn`), as for `idle`. Its leftovers are listed as running, whether or not the scan still sees their launch.      |
 | `idle`            | at its prompt, nothing of its own running             | Background commands are over. A turn the transcript left open is dropped (`your-turn`).                                                   |
 | `waiting`         | a dialog holds it (`waitingFor` says which)           | `permission prompt` and others: `needs-permission`. `input needed`: `waiting-input`. A dialog the user opened (`dialog open`) is ignored. |
 
@@ -175,47 +190,46 @@ stateDiagram-v2
     working --> waiting_subagent: subagent launch pending
     waiting_subagent --> working: subagents report
     working --> errored: turn fails
-    working --> your_turn: turn ends, nothing left running
-    working --> waiting_task: turn ends, background work runs
+    working --> waiting_task: output or wait call on an earlier command
+    waiting_task --> working: the call returns
+    working --> your_turn: turn ends, leftovers or not
     working --> waiting_subagent: turn ends, background subagents run
     working --> waiting_input: turn ends on a question
-    waiting_task --> working: work reports, agent wakes
-    waiting_task --> your_turn: work ended, agent stays quiet
-    your_turn --> working: prompt, wake-up
+    your_turn --> working: prompt, wake-up, a leftover reports
     errored --> working: prompt
     your_turn --> done: process gone
     idle --> done: process gone
     working --> done: process gone
     needs_permission --> done: process gone
     waiting_input --> done: process gone (host lists processes)
-    waiting_task --> done: process gone
     errored --> errored: process gone
 ```
 
 ### Transitions
 
-| From                               | Event                                                                                                                                               | To                                    |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `idle`, `your-turn`, `errored`     | user prompt; scheduled wake-up fires; background work reports and the agent resumes                                                                 | `working`                             |
-| `working`                          | foreground command running for 3 s                                                                                                                  | `running-shell`                       |
-| `working`                          | shell call 5 s with no process, edit 8 s with no result (20 s in `auto` mode)                                                                       | `needs-permission`                    |
-| `working`                          | approval dialog on screen; registry `waiting`; pane hook `PermissionRequest`                                                                        | `needs-permission`                    |
-| `needs-permission`                 | answered in Seal, in the terminal, or on another device: the result is written, the dialog leaves the screen, or the registry leaves `waiting`      | `working`                             |
-| `working`                          | question tool call pending                                                                                                                          | `waiting-input`                       |
-| `working`                          | subagent launch pending (`Agent`, `Task`, `wait_agent`)                                                                                             | `waiting-subagent`                    |
-| `working`                          | turn ends; nothing left running; reply tells                                                                                                        | `your-turn`                           |
-| `working`                          | turn ends; reply asks (wording, or the classifier)                                                                                                  | `waiting-input`                       |
-| `working`                          | turn ends; background subagents still run                                                                                                           | `waiting-subagent`                    |
-| `working`                          | turn ends; background commands, monitors, workflows or a wake-up remain                                                                             | `waiting-task`                        |
-| `working`                          | turn fails (API error, `StopFailure`, `turn_aborted` with an error)                                                                                 | `errored`                             |
-| `working`                          | interrupted (Esc, Ctrl-C)                                                                                                                           | `your-turn`, detail `Interrupted`     |
-| `waiting-task`, `waiting-subagent` | the work reports and the agent takes a turn                                                                                                         | `working`                             |
-| `waiting-task`, `waiting-subagent` | the work ended and nothing else runs (its notice, or confirmation it is gone)                                                                       | `your-turn`                           |
-| `waiting-task`                     | killed outside the agent                                                                                                                            | `your-turn`                           |
-| any but `errored`                  | the agent's process, seen by an earlier scan, is off the host's process list; or no process was ever seen and the transcript is quiet for 2 minutes | `done`                                |
-| `waiting-input` (question tool)    | process gone, on a host that cannot list processes                                                                                                  | stays `waiting-input`                 |
-| `errored`                          | process gone; a `done` or `idle` hook arrives                                                                                                       | stays `errored`                       |
-| any                                | the machine stops answering for three scans in a row                                                                                                | not shown, machine marked unreachable |
+| From                            | Event                                                                                                                                               | To                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `idle`, `your-turn`, `errored`  | user prompt; scheduled wake-up fires; a leftover command or monitor reports and the agent resumes                                                   | `working`                             |
+| `working`                       | foreground command running for 3 s                                                                                                                  | `running-shell`                       |
+| `working`                       | shell call 5 s with no process, edit 8 s with no result (20 s in `auto` mode)                                                                       | `needs-permission`                    |
+| `working`                       | approval dialog on screen; registry `waiting`; pane hook `PermissionRequest`                                                                        | `needs-permission`                    |
+| `needs-permission`              | answered in Seal, in the terminal, or on another device: the result is written, the dialog leaves the screen, or the registry leaves `waiting`      | `working`                             |
+| `working`                       | question tool call pending                                                                                                                          | `waiting-input`                       |
+| `working`                       | subagent launch pending (`Agent`, `Task`, `wait_agent`)                                                                                             | `waiting-subagent`                    |
+| `working`                       | a call for the output of an earlier command is pending (`BashOutput`, `TaskOutput`, Codex `wait`, `write_stdin`) and a command runs                 | `waiting-task`                        |
+| `waiting-task`                  | the call returns; or no command runs under the agent any more                                                                                       | `working`                             |
+| `working`                       | turn ends; reply tells; background commands, monitors, workflows or a wake-up may remain                                                            | `your-turn`, detail the leftover note |
+| `working`                       | turn ends; reply asks (wording, or the classifier)                                                                                                  | `waiting-input`                       |
+| `working`                       | turn ends; background subagents still run                                                                                                           | `waiting-subagent`                    |
+| `working`                       | turn fails (API error, `StopFailure`, `turn_aborted` with an error)                                                                                 | `errored`                             |
+| `working`                       | interrupted (Esc, Ctrl-C)                                                                                                                           | `your-turn`, detail `Interrupted`     |
+| `waiting-subagent`              | the subagents report and the agent takes a turn                                                                                                     | `working`                             |
+| `waiting-subagent`              | the subagents ended (their notice, or their transcripts going quiet)                                                                                | `your-turn`                           |
+| `your-turn` with leftovers      | a leftover ends by itself or is killed outside the agent                                                                                            | stays `your-turn`; the note drops it  |
+| any but `errored`               | the agent's process, seen by an earlier scan, is off the host's process list; or no process was ever seen and the transcript is quiet for 2 minutes | `done`                                |
+| `waiting-input` (question tool) | process gone, on a host that cannot list processes                                                                                                  | stays `waiting-input`                 |
+| `errored`                       | process gone; a `done` or `idle` hook arrives                                                                                                       | stays `errored`                       |
+| any                             | the machine stops answering for three scans in a row                                                                                                | not shown, machine marked unreachable |
 
 `done` needs the process to be gone, not merely unseen. A transcript written in the last 2 minutes
 (`FRESH_WRITE_MS`) belongs to a running agent even if `ps` missed it, unless an earlier scan paired
@@ -238,25 +252,25 @@ Read top to bottom; the first row that matches wins.
 | 4   | Transcript: question tool pending, agent not known to be gone                               | `waiting-input`                      | `transcript`  |
 | 5   | Claude registry `waiting` on a prompt or a question                                         | `needs-permission` / `waiting-input` | `agent-state` |
 | 6   | Agent hook file says a prompt is pending, agent not known to be gone, turn not ended since  | `needs-permission`                   | `agent-hooks` |
-| 7   | Agent hook file says working, agent not known to be gone, turn not ended since              | `working`, refined by rows 11–13     | `agent-hooks` |
+| 7   | Agent hook file says working, agent not known to be gone, turn not ended since              | `working`, refined by rows 11–14     | `agent-hooks` |
 | 8   | Transcript: the turn failed (whatever a later `done` or `idle` hook says)                   | `errored`                            | `transcript`  |
 | 9   | Process gone                                                                                | `done`                               | `transcript`  |
 | 10  | Claude registry `idle`, stamped after a turn the transcript left open                       | `your-turn`                          | `agent-state` |
 | 11  | Transcript: subagent launch pending                                                         | `waiting-subagent`                   | `transcript`  |
 | 12  | Pending shell call, its command process running for 3 s                                     | `running-shell`                      | `process`     |
-| 13  | Pending shell or edit call, nothing running, past the prompt threshold, registry not `busy` | `needs-permission`                   | `process`     |
-| 14  | Transcript: turn in progress                                                                | `working`                            | `transcript`  |
-| 15  | Turn ended, Claude registry `busy`                                                          | `working`                            | `agent-state` |
-| 16  | Turn ended, interrupt hint on screen                                                        | `working`                            | `screen`      |
-| 17  | Turn ended, background subagents running                                                    | `waiting-subagent`                   | `transcript`  |
-| 18  | Turn ended, background work running and confirmed                                           | `waiting-task`                       | `transcript`  |
+| 13  | Pending call for an earlier command's output, a command running under the agent             | `waiting-task`                       | `process`     |
+| 14  | Pending shell or edit call, nothing running, past the prompt threshold, registry not `busy` | `needs-permission`                   | `process`     |
+| 15  | Transcript: turn in progress                                                                | `working`                            | `transcript`  |
+| 16  | Turn ended, Claude registry `busy`                                                          | `working`                            | `agent-state` |
+| 17  | Turn ended, interrupt hint on screen                                                        | `working`                            | `screen`      |
+| 18  | Turn ended, background subagents running                                                    | `waiting-subagent`                   | `transcript`  |
 | 19  | Turn ended, reply ends in a question                                                        | `waiting-input`                      | `transcript`  |
 | 20  | Turn ended, reply unclear, classifier says ASKS                                             | `waiting-input`                      | `classifier`  |
-| 21  | Turn ended                                                                                  | `your-turn`                          | `transcript`  |
+| 21  | Turn ended, with or without commands, monitors or a wake-up left running                    | `your-turn`                          | `transcript`  |
 | 22  | No turn yet                                                                                 | `idle`                               | `transcript`  |
 
-An explicit question (row 4) outranks a wait (rows 17–18): a session that asks and also has a
-watcher running is asking. A hook file older than the transcript by 2 minutes (`HOOK_STALE_MS`) is
+An explicit question (row 4) outranks a wait (row 18): a session that asks and also has
+subagents running is asking. No row turns an ended turn into `waiting-task`. A hook file older than the transcript by 2 minutes (`HOOK_STALE_MS`) is
 ignored. A hook file that says `working` or `needs` more than 3 s before the transcript recorded
 a settled end of turn is left over from an interrupted turn, for which no hook fires, and is
 ignored too.
@@ -272,26 +286,26 @@ A pane's hook row maps to a status first (`hookStatus` in `seal-pane-sessions.ts
 | `waiting` on anything else                            | `needs-permission`                                      |
 | main agent ended in a failure (`mainAgent.outcome`)   | `errored`                                               |
 | `done`                                                | `your-turn` (detail `Interrupted` when the row says so) |
-| `working`, `workingMode: 'monitoring'`                | `waiting-task`                                          |
+| `working`, `workingMode: 'monitoring'`                | `your-turn` (shells and monitors it left still run)     |
 | `working`, main agent done, held open by child agents | `waiting-subagent`                                      |
 | `working`                                             | `working`                                               |
 
 Then the scan's reading of the same session is joined in (`mergeSealPanes`). Hooks are events and
 are trusted for what they can say; discovery fills in what they cannot:
 
-| Pane says                          | Discovery read                                                  | Shown                              |
-| ---------------------------------- | --------------------------------------------------------------- | ---------------------------------- |
-| anything                           | an approval dialog on screen                                    | discovery                          |
-| anything                           | a classifier verdict                                            | pane                               |
-| silent pane                        | anything                                                        | discovery                          |
-| `your-turn`                        | `waiting-task`, `waiting-subagent`, `waiting-input`, `errored`  | discovery                          |
-| `your-turn`                        | the agent's own state says `working`, a prompt or a question    | discovery                          |
-| `working`                          | `running-shell`, `waiting-task`, `waiting-subagent`             | discovery                          |
-| `working`                          | the agent's own state says a prompt or a question               | discovery                          |
-| `working` (local)                  | the transcript ended the turn more than 3 s after the last hook | discovery (`your-turn`, `errored`) |
-| `waiting-task`, `waiting-subagent` | the other wait                                                  | discovery                          |
-| a prompt or question               | anything but a dialog on screen                                 | pane                               |
-| anything else                      |                                                                 | pane                               |
+| Pane says            | Discovery read                                                  | Shown                              |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------- |
+| anything             | an approval dialog on screen                                    | discovery                          |
+| anything             | a classifier verdict                                            | pane                               |
+| silent pane          | anything                                                        | discovery                          |
+| `your-turn`          | `waiting-subagent`, `waiting-input`, `errored`                  | discovery                          |
+| `your-turn`          | the agent's own state says `working`, a prompt or a question    | discovery                          |
+| `working`            | `running-shell`, `waiting-task`, `waiting-subagent`             | discovery                          |
+| `working`            | the agent's own state says a prompt or a question               | discovery                          |
+| `working` (local)    | the transcript ended the turn more than 3 s after the last hook | discovery (`your-turn`, `errored`) |
+| `waiting-subagent`   | a wait                                                          | discovery                          |
+| a prompt or question | anything but a dialog on screen                                 | pane                               |
+| anything else        |                                                                 | pane                               |
 
 A pane is silent when its row was restored at startup and not confirmed since, or when it is not
 `done` and has had no hook evidence for 30 minutes (`AGENT_STATUS_STALE_AFTER_MS`). A silent pane
@@ -313,9 +327,10 @@ within half a second instead of waiting for its next scan (`SealPaneStatusChange
 | New agent where an earlier session ended     | Claude names its conversation in its registry before it writes a transcript: the agent is its own new session, and the earlier one stays ended instead of reading as running again.                                                                                                    |
 | Agent killed in a Seal pane (no hooks fire)  | The scan sees no process for the pane's session; Seal probes the process the hooks recorded (at most every 15 s per pane) and ends the row.                                                                                                                                            |
 | Agent killed, or leaving by itself (`/exit`) | `done` at the scan that finds its process off the host's list, when an earlier scan saw it; otherwise once the host has listed its processes, nobody holds the session and its transcript is 2 minutes quiet.                                                                          |
-| Interrupted turn (Esc, Ctrl-C)               | The transcript records the end; a stale `working` hook file or pane row from before it is overruled. Shown as `your-turn`, `Interrupted`, or as a background wait while a command the turn left behind still runs (Codex keeps a command it was polling in its terminal).              |
+| Interrupted turn (Esc, Ctrl-C)               | The transcript records the end; a stale `working` hook file or pane row from before it is overruled. Shown as `your-turn`, `Interrupted`; a command the turn left behind stays listed as running (Codex keeps a command it was polling in its terminal).                               |
 | Compaction                                   | Runs inside a turn. The Claude registry says `busy` throughout, so a transcript that reads as ended still shows `working`.                                                                                                                                                             |
 | Subagents                                    | A pending launch is `waiting-subagent`; background subagents hold an ended turn in `waiting-subagent` until each reports or goes quiet.                                                                                                                                                |
+| Commands and monitors left running           | The turn that started them ends in `your-turn` with the note "N background tasks still running". Each wake-up they cause is a turn of its own: `working`, then `your-turn` again, the note counting what still runs.                                                                   |
 | Prompt answered elsewhere                    | The result lands in the transcript, the dialog leaves the screen, or the registry leaves `waiting`; any one returns the session to `working`.                                                                                                                                          |
 | Hooks out of order or duplicated             | A status is a function of the newest state, not of the sequence: a repeated hook changes nothing, and a late `done` cannot hide an `errored` turn.                                                                                                                                     |
 | Failed turn, then a `done` or `idle` hook    | `errored` stays, while the agent runs and after it exits.                                                                                                                                                                                                                              |
@@ -334,11 +349,13 @@ within half a second instead of waiting for its next scan (`SealPaneStatusChange
 ## Notifications, summaries, recaps
 
 - A notification fires when a session enters the `attention` group, and when it leaves the
-  `working` group for `idle` or `finished`. Entering or leaving a background wait says nothing, so
-  a turn that ends with work still running is announced once: when that work is over and the
-  session reaches `your-turn`.
-- Summaries describe a settled session (`isSettledLiveSessionStatus`), which includes both waits.
-- Recaps start when a turn is running and are written when it settles.
+  `working` group for `idle` or `finished`. Entering or leaving a wait says nothing. A turn that
+  ends with commands or monitors still running is announced when it ends, like any other, and
+  again after each turn one of them wakes. A turn that ends with subagents still running is
+  announced once they are over and the session reaches `your-turn`.
+- Summaries describe a settled session (`isSettledLiveSessionStatus`): one that rests, asks, or
+  waits on subagents. A `waiting-task` session is inside its turn and is not settled.
+- Recaps start when a turn is running (`waiting-task` included) and are written when it settles.
 
 ## Older clients
 
@@ -357,7 +374,7 @@ than some clients on the wire. A client that sends its capabilities without
   is read, and a question stands until its transcript is 12 hours old and leaves the scan.
 - Codex runs commands under a shared `codex app-server`, so a command there counts for every Codex
   session on the machine. A Codex that does not write a command's end to its rollout (0.169 does)
-  keeps a background terminal that exited unpolled in `waiting-task` while any other Codex command
+  keeps a background terminal that exited unpolled listed as running while any other Codex command
   still runs under that app-server.
 - Codex's context compaction writes no record Seal reads; it runs inside a turn, so the session
   reads `working` from the turn itself.
@@ -369,13 +386,17 @@ than some clients on the wire. A client that sends its capabilities without
 - The workspace dot a phone shows for a desktop workspace is rolled up in the runtime from hook
   rows alone (`runtime-worktree-sidebar-status.ts`); it does not yet read the pane's session. The
   phone's session rows do.
-- Mobile labels a wait without its count ("Waiting on background tasks"). So does the desktop for
-  the moment between a pane's Stop hook, which says background work is left, and the scan half a
-  second later that counts it.
+- Mobile labels a wait without its count ("Waiting on background tasks", "Waiting on subagents").
+- `waiting-task` needs a transcript and a process list: a host that lists no processes shows such
+  a turn as `working`, and an agent without a session record never shows it. A chat reports it
+  for Claude's `TaskOutput` and `BashOutput` only.
+- The terminal tab glyph and the workspace dot of a Seal pane are rolled up from its hook row, and
+  that row still reads `working` in its `monitoring` mode while commands or monitors outlive a
+  turn. The tab then shows the monitoring glyph while the pane's session says `your-turn`.
 - The per-agent rows inside a workspace card and in the agent dashboard (`worktree-agent-rows.ts`,
   `agent-row-dot-state.ts`) are built from pane hook rows alone. Where discovery knew more than the
   hooks, such a row can read `done` or `idle` while the card's dot, the tab and the session say a
-  background wait.
+  wait on subagents.
 - A machine that disconnects leaves the list with its sessions; they are not shown as disconnected.
 
 ## How this is verified
@@ -398,13 +419,15 @@ sessions, trimmed of request logs and instructions. The newer ones (`live-claude
 `live-claude-monitor-watch`, `live-claude-scheduled-wakeup`, `live-codex-background-terminal`, …)
 were recorded with the real CLIs driven by a scripted model endpoint, so the tool calls are
 scripted and every record is the CLI's own. `claude-background-command-check-in` is written by hand
-from Claude Code's notification format.
+from Claude Code's notification format, and `claude-task-output-pending` is a recorded background
+command followed by a hand-written `TaskOutput` call.
 
 By hand, to re-check against a live agent: start `claude` or `codex` in tmux, open Home, and
 
 1. ask it to run `sleep 90` → Running shell within a few seconds, until the command ends;
-2. ask it to start `while true; do date; sleep 5; done` in the background and stop → Waiting on 1
-   background task, not Waiting on you; kill the loop → Waiting on you;
+2. ask it to start `while true; do date; sleep 5; done` in the background and stop → Waiting on
+   you, with "1 background task still running" in its Tasks panel, not Waiting on 1 background
+   task; kill the loop → still Waiting on you, the note gone;
 3. ask it something it must ask back about → Asking you a question;
 4. ask it to delete a file in default permission mode → Waiting for approval;
 5. let a turn finish → Waiting on you;
