@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate } from '@/i18n/use-translate'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
@@ -25,7 +26,7 @@ import type { NativeChatLiveSession } from '../../native-chat/session/terminal/r
 import { LiveSessionChat } from '../LiveSessionChat'
 import { pendingRows } from '../live-session-pending-rows'
 import { liveSessionProviderLabel, liveSessionTitle } from '../live-session-presentation'
-import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { retryLiveMessage } from '../live-session-retry'
 import { sendLiveMessage } from '../live-session-send'
 import { DROPDOWN_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
 import { liveSessionMarksStore } from '../live-session-marks-store'
@@ -79,7 +80,7 @@ export type LiveSessionPaneViewProps = {
   openSubagentId: string | null
   onOpenSubagent: (subagentId: string | null) => void
   onSend: (text: string) => void
-  onRetry: (messageId: string) => void
+  onRetry: (message: LiveMessage) => void
   onAnswer: (optionId: string) => void
   answering: string | null
   composerFocus?: number
@@ -340,11 +341,11 @@ export function LiveSessionPane({
     },
     [permission, session.id]
   )
-  const onRetry = useCallback((messageId: string) => {
-    void window.api.liveSessions
-      .retry({ messageId })
-      .then((message) => message && liveSessionRegistryStore.upsertMessage(message))
-  }, [])
+  const confirm = useConfirmationDialog()
+  const onRetry = useCallback(
+    (message: LiveMessage) => void retryLiveMessage(message, confirm),
+    [confirm]
+  )
   const onSend = useCallback((text: string) => sendLiveMessage(session.id, text), [session.id])
   const recapProps = useMemo(
     () => ({

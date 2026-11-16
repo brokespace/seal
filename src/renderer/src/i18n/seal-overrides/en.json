@@ -668,6 +668,11 @@
           "plan": "Plan",
           "todos": "To-dos",
           "noTodos": "The agent keeps no list."
+        },
+        "retry": {
+          "unconfirmedTitle": "Send it again?",
+          "unconfirmedDescription": "Seal could not confirm that the session got this message. It may already have run it, so sending it again could run it twice.",
+          "unconfirmedConfirm": "Send again"
         }
       },
       "skills": {
