@@ -251,40 +251,31 @@ describe('a machine that stops answering', () => {
     expect(await shown()).toEqual({ statuses: ['working'], error: null })
   })
 
-  // This machine's transcripts are read by Seal itself, so they are listed whatever the shell did.
-  it('does not take a scan that broke off before the process list as word that its agents left', async () => {
-    const { state, registry } = machine()
-    state.running = true
-    state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
-    const told = async () => {
-      await registry.refresh()
-      return {
-        alive: registry.getSnapshot().sessions.map((s) => s.alive),
-        read: registry.hasRead(`local:claude:${WORKING}`)
+  // This machine's transcripts are read by Seal itself, so they are listed whatever the shell did;
+  // cut after the process list, the scan has not read what ties an agent to its transcript.
+  it.each(['cutShort', 'cutAfterProcesses'] as const)(
+    'does not take a scan that broke off (%s) as word that its agents left',
+    async (cut) => {
+      const { state, registry } = machine()
+      state.running = true
+      state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
+      const told = async () => {
+        await registry.refresh()
+        return {
+          alive: registry.getSnapshot().sessions.map((s) => s.alive),
+          read: registry.hasRead(`local:claude:${WORKING}`)
+        }
       }
+      state[cut] = true
+      expect(await told()).toEqual({ alive: [], read: false })
+
+      state[cut] = false
+      expect(await told()).toEqual({ alive: [true], read: true })
+
+      state[cut] = true
+      expect(await told()).toEqual({ alive: [true], read: true })
     }
-    state.cutShort = true
-    expect(await told()).toEqual({ alive: [], read: false })
-
-    state.cutShort = false
-    expect(await told()).toEqual({ alive: [true], read: true })
-
-    state.cutShort = true
-    expect(await told()).toEqual({ alive: [true], read: true })
-  })
-
-  // Over SSH the transcripts come from the scan's shell: cut short, it names no agent it did not reach.
-  it('does not count as read on a scan that broke off after the process list', async () => {
-    const { state, registry } = machine()
-    state.running = true
-    state.cutAfterProcesses = true
-    await registry.refresh()
-    expect(registry.hasRead('local:claude:pid-4100')).toBe(false)
-
-    state.cutAfterProcesses = false
-    await registry.refresh()
-    expect(registry.hasRead('local:claude:pid-4100')).toBe(true)
-  })
+  )
 
   it('tells its listeners the error is gone when the machine disconnects', async () => {
     const { state, registry, events } = machine()

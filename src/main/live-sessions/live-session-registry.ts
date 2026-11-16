@@ -253,15 +253,13 @@ export class LiveSessionRegistry {
       if (this.hosts.get(hostId) !== state) {
         return
       }
-      // A scan that broke off before the process list would show every agent as gone.
-      const told = result.complete || result.processesListed
-      if (told && (result.complete || result.sessions.length >= state.sessions.length)) {
+      // A scan cut short would show as gone every agent it did not get to: it changes nothing listed.
+      if (result.complete) {
         const unchanged = JSON.stringify(result.sessions) === JSON.stringify(state.sessions)
         state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
+        state.read = true
       }
-      // Cut short after the process list, it names no agent whose transcript it did not reach.
-      state.read ||= result.complete
       state.scans++
       state.failures = 0
       this.deps.onHostScanned?.(state.host, state.sessions)
