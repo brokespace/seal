@@ -18,7 +18,8 @@ export async function retryLiveMessage(
       confirmLabel: translate(
         'auto.components.live-sessions.retry.unconfirmedConfirm',
         'Send again'
-      )
+      ),
+      ignoresOpeningGesture: true
     })
     if (!agreed) {
       return
