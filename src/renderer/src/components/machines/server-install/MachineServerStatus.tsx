@@ -117,6 +117,7 @@ export function MachineServerStatus({
         busy={busy !== null}
         onRetry={() => installServer()}
         onMoveAnyway={() => installServer({ moveAnyway: true })}
+        onCallOff={() => run('decline', () => declineSealServerInstall(view.id))}
       />
     )
   }

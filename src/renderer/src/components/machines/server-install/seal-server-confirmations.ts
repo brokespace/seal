@@ -64,7 +64,7 @@ function lingerText(t: Translate): string {
 function laterRemovalText(t: Translate): string {
   return t(
     'seal.machineServer.installDialog.laterRemoval',
-    'Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.'
+    'Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
   )
 }
 
@@ -123,7 +123,7 @@ export function sealServerInstallConfirmation(
       ),
       t(
         'seal.machineServer.installDialog.serverData',
-        'Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}.',
+        'Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings) and ~/.seal/disk-index (folder sizes for the Machines page), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}, keeping a .bak copy of each settings file it changes.',
         { name }
       ),
       options.moveAnyway
@@ -187,7 +187,7 @@ export function sealServerRemovalConfirmation(
       ),
       t(
         'seal.machineServer.remove.stays',
-        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.'
+        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
       ),
       t(
         'seal.machineServer.remove.terminals',

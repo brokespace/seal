@@ -6,20 +6,24 @@ import { useTranslate } from '@/i18n/use-translate'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { serverInstallFailureText } from './seal-server-install-copy'
 
-/** The last install failed, so the machine is on plain SSH; a blocked move can still go ahead. */
+/** The last install failed or waits, so the machine is on plain SSH; a blocked move can still go ahead. */
 export function MachineServerRetryNotice({
   view,
   busy,
   onRetry,
-  onMoveAnyway
+  onMoveAnyway,
+  onCallOff
 }: {
   view: Pick<MachineView, 'name' | 'serverInstall' | 'serverMoveBlocked'>
   busy: boolean
   onRetry: () => void
   onMoveAnyway: () => void
+  /** Ends an install that a later connect would otherwise finish. */
+  onCallOff: () => void
 }): React.JSX.Element {
   const t = useTranslate()
   const blocked = view.serverMoveBlocked
+  const waits = view.serverInstall?.state === 'pending'
   return (
     <div
       role="status"
@@ -59,6 +63,18 @@ export function MachineServerRetryNotice({
         ) : null}
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        {waits ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            disabled={busy}
+            onClick={onCallOff}
+            data-machine-server-action="call-off"
+          >
+            {t('seal.machineServer.notice.callOff', 'Don’t install')}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"
