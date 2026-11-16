@@ -27,7 +27,10 @@ export function MachineDockerImageDetail({
 }): React.JSX.Element {
   const t = useTranslate()
   const [allLayers, setAllLayers] = useState(false)
-  const layers = allLayers ? details.layers : details.layers.slice(0, MACHINE_DOCKER_LAYERS_SHOWN)
+  // Docker gives a layer no id of its own; its height above the base image names it.
+  const layers = details.layers
+    .map((layer, fromTop) => ({ layer, fromTop, height: details.layers.length - fromTop }))
+    .slice(0, allLayers ? undefined : MACHINE_DOCKER_LAYERS_SHOWN)
   const platform = [details.os, details.architecture].filter(Boolean).join('/')
   return (
     <div className="space-y-5" data-machine-docker-image-detail={details.id}>
@@ -116,14 +119,13 @@ export function MachineDockerImageDetail({
           </p>
         ) : (
           <ol className="divide-y divide-border/60 rounded-md border border-border text-xs">
-            {layers.map((layer, index) => {
+            {layers.map(({ layer, fromTop, height }) => {
               const step = dockerLayerStep(layer.createdBy)
               return (
-                // Docker gives a layer no id of its own; its place in the history names it.
                 <li
-                  key={index}
+                  key={height}
                   className="flex items-start gap-3 px-2.5 py-1.5"
-                  data-machine-docker-layer={index}
+                  data-machine-docker-layer={fromTop}
                 >
                   <div className="min-w-0 flex-1">
                     <div

@@ -35,6 +35,7 @@ import {
 } from './machine-docker-containers'
 import { readMachineDockerDetails } from './machine-docker-details'
 import { readMachineDockerStorage } from './machine-docker-inventory'
+import { isDockerJsonRow } from './machine-docker-output'
 import {
   listMachineDockerVolumeDir,
   readMachineDockerVolumeFile
@@ -73,8 +74,7 @@ const DOCKER_DETAIL_KINDS = ['container', 'image', 'volume'] as const
 const DOCKER_STORAGE_KINDS = ['images', 'containers', 'volumes', 'build-cache'] as const
 
 function dockerDetailTargetOf(value: unknown): MachineDockerDetailTarget {
-  const target =
-    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}
+  const target = isDockerJsonRow(value) ? value : {}
   const kind = DOCKER_DETAIL_KINDS.find((known) => known === target.kind)
   if (!kind) {
     throw new Error('Unknown kind of Docker object')
