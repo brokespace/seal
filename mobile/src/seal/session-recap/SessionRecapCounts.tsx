@@ -5,7 +5,7 @@ import { colors, typography } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 
-/** How many questions and action items still wait on the user, on a row or the recap banner. Nothing at zero. */
+/** How many questions and action items still wait on the user, on a session's row. Nothing at zero. */
 export function SessionRecapCounts({ questions, actions }: { questions: number; actions: number }) {
   useMobileColorScheme()
   const t = useMobileTranslation()

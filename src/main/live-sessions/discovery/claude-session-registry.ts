@@ -49,7 +49,10 @@ const QUESTIONS: ReadonlySet<string> = new Set(['input needed', 'goal proposal']
 /** The transcript lands a moment after the state it records; a state stamped later than this is newer. */
 const STATE_AFTER_WRITE_MS = 2_000
 
-/** What the agent says of commands it left running: null when it says nothing either way. */
+/**
+ * What the agent says of commands it left running behind its prompt: leftovers to list, never
+ * something it waits on. Null when it says nothing either way.
+ */
 export function claudeRegistryBackgroundShells(
   entry: ClaudeRegistryEntry | null
 ): 'running' | 'none' | null {

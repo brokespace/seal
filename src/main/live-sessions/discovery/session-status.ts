@@ -1,8 +1,7 @@
-// A session's status from its transcript turn, refined by what it runs in the background.
+// A session's status from its transcript turn, refined by the subagents and commands it waits on.
 import type { LiveSessionStatus } from '../../../shared/live-sessions/live-session-types'
 import {
   backgroundWaitLabel,
-  runningBackgroundTasks,
   runningSubagents,
   type LiveSessionActivity
 } from '../../../shared/live-sessions/live-session-activity'
@@ -111,13 +110,14 @@ export type PendingCallEvidence = {
 }
 
 /**
- * A pending shell or edit call read against the agent's processes: the command is running, or
- * nothing is and a permission prompt holds the call. Null leaves the transcript's `working`.
+ * A pending shell or edit call read against the agent's processes: the command is running, the
+ * call waits on one an earlier call left running, or nothing runs and a permission prompt holds
+ * the call. Null leaves the transcript's `working`.
  */
 export function pendingCallStatus(
   turn: TranscriptTurn | undefined,
   evidence: PendingCallEvidence
-): Extract<LiveSessionStatus, 'running-shell' | 'needs-permission'> | null {
+): Extract<LiveSessionStatus, 'running-shell' | 'waiting-task' | 'needs-permission'> | null {
   if (
     turn?.phase !== 'tool-pending' ||
     turn.pendingKind === null ||
@@ -127,7 +127,7 @@ export function pendingCallStatus(
     return null
   }
   if (turn.pendingKind === 'shell-wait') {
-    return evidence.processStarts.length > 0 ? 'running-shell' : null
+    return evidence.processStarts.length > 0 ? 'waiting-task' : null
   }
   const pendingFor = evidence.nowMs - turn.pendingSince
   const since = turn.pendingSince - PROCESS_START_SLACK_MS
@@ -149,8 +149,9 @@ function waitsOnSubagentCall(turn: TranscriptTurn | undefined): boolean {
 export type StatusAndDetail = { status: LiveSessionStatus; statusDetail: string | null }
 
 /**
- * An agent waiting for subagents or background commands it started is still busy: nothing for the
- * user to do. Only a question it put to the user explicitly outranks that.
+ * An agent waiting for subagents it started is still busy: nothing for the user to do. Only a
+ * question it put to the user explicitly outranks that. Commands, monitors and wake-ups a turn
+ * left behind hold nothing: the turn ended, and the next move is the user's.
  */
 export function withBackgroundWait(
   current: StatusAndDetail,
@@ -158,21 +159,14 @@ export function withBackgroundWait(
   activity: LiveSessionActivity
 ): StatusAndDetail {
   const subagents = runningSubagents(activity).length
-  const tasks = runningBackgroundTasks(activity).length
   if (current.status === 'working' && waitsOnSubagentCall(turn)) {
-    return {
-      status: 'waiting-subagent',
-      statusDetail: backgroundWaitLabel(Math.max(subagents, 1), 0)
-    }
+    return { status: 'waiting-subagent', statusDetail: backgroundWaitLabel(Math.max(subagents, 1)) }
   }
   const resting =
     isRestingLiveSessionStatus(current.status) ||
     (current.status === 'waiting-input' && turn?.phase !== 'input-requested')
-  if (resting && subagents + tasks > 0) {
-    return {
-      status: subagents > 0 ? 'waiting-subagent' : 'waiting-task',
-      statusDetail: backgroundWaitLabel(subagents, tasks)
-    }
+  if (resting && subagents > 0) {
+    return { status: 'waiting-subagent', statusDetail: backgroundWaitLabel(subagents) }
   }
   return current
 }

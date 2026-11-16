@@ -3,8 +3,11 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
 import type { HomeChatOpenTarget } from '../../../../shared/home-chat/home-chat-types'
 import { parseMachineId } from '../../../../shared/machines/machine-types'
+import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
+import { compareListedLiveSessions } from '../../../../shared/live-sessions/live-session-summary'
+import { liveSessionRegistryStore } from '../live-sessions/live-session-registry-store'
 import { takeOverLiveSession } from '../live-sessions/take-over/live-session-take-over'
-import { showActiveAgents } from '../live-sessions/menu/live-session-menu-effects'
+import { revealFirstListedSession } from '../live-sessions/workspace-rows/session-row-reveal'
 import { rememberMachineSelection } from '../machines/model/machine-selection'
 
 async function takeOver(sessionId: string): Promise<void> {
@@ -15,6 +18,18 @@ async function takeOver(sessionId: string): Promise<void> {
     return
   }
   await takeOverLiveSession(session)
+}
+
+/** Sessions are listed under their workspaces in the sidebar: open it on the one that most needs a look. */
+function revealSessionsInSidebar(): void {
+  useAppStore.getState().setSidebarOpen(true)
+  const running = liveSessionRegistryStore
+    .getState()
+    .sessions.filter(isActiveLiveSession)
+    .sort(compareListedLiveSessions)
+  if (running.length > 0) {
+    revealFirstListedSession(running.map((session) => session.id))
+  }
 }
 
 type ThreadSelector = (chatId: string) => void
@@ -78,10 +93,10 @@ export function openHomeChatTarget(target: HomeChatOpenTarget): void {
         case 'machines':
           store.openMachinesPage()
           return
-        // Agent activity lives in Active agents; the upstream Activity page lists panes only.
+        // Agent activity is the sidebar's session rows; the upstream Activity page lists panes only.
         case 'sessions':
         case 'activity':
-          showActiveAgents()
+          revealSessionsInSidebar()
           return
         case 'tasks':
           store.openTaskPage()

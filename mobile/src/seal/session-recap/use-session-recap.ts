@@ -12,7 +12,7 @@ import {
   refreshSessionRecap
 } from './session-recap-operations'
 
-export type SessionRecapModel = {
+type SessionRecapModel = {
   /** Null until the host has answered, and on a host from before recaps. */
   view: SessionRecapView | null
   refreshing: boolean

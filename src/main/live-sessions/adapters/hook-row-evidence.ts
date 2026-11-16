@@ -36,16 +36,17 @@ export function hookRowEvidence(
   const turnFailed = agentVerdictDisplayMark(row) === 'failed'
   const working = row.state === 'working'
   // The turn ended and the host still counts work under it: shells and monitors, or agents.
-  const onTasks = working && row.workingMode === 'monitoring'
-  const onSubagents = working && !onTasks && isAgentStatusHeldOpenByChildWork(row)
+  const leftBehind = working && row.workingMode === 'monitoring'
+  const onSubagents = working && !leftBehind && isAgentStatusHeldOpenByChildWork(row)
   return {
-    turnRunning: working && !turnFailed && !onTasks && !onSubagents,
+    turnRunning: working && !turnFailed && !leftBehind && !onSubagents,
     shellRunning: false,
     pendingApproval: row.state === 'blocked' || (row.state === 'waiting' && !question),
     pendingQuestion: question,
     turnFailed,
     runningSubagents: onSubagents ? 1 : 0,
-    runningBackgroundTasks: onTasks ? 1 : 0,
+    // A hook names the last tool, not whether its call still stands.
+    waitsOnBackgroundTask: false,
     // A `done` row in a live pane is a finished turn: no hook says the agent has had none.
     hadTurn: true,
     ended: false,

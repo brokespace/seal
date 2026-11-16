@@ -140,8 +140,9 @@ Specs are zod shapes in `tools/home-chat-*-tool-specs.ts`. All three drivers exp
 | Web                  | `web_search`, `web_fetch`                                                                                      |
 | Thread               | `report_progress`, `attach_file`                                                                               |
 
-The session tools read Seal's live-session service, the one behind Active agents in the sidebar. They
-cover the same sessions: on this computer, SSH hosts and paired Seal servers.
+The session tools read Seal's live-session service, the one behind the session rows in the sidebar.
+They cover the same sessions (chats, agents in Seal panes and sessions started outside Seal) on this
+computer, SSH hosts and paired Seal servers. A message to a chat is delivered as a chat message.
 
 Approval is decided in `tools/home-chat-tool-risk.ts`. These always ask: `delete_path`,
 `take_over_session`, `switch_account`. `run_command` asks when a shell segment deletes files,

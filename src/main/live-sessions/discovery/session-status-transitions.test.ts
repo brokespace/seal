@@ -28,6 +28,11 @@ const KILLED: ScanOptions = { alive: false, listsProcesses: true }
 /** It exited by itself, writing to its transcript on the way out, after the scan that last saw it. */
 const LEFT: ScanOptions = { ...KILLED, closedAfterMs: 40_000 }
 
+const PINNING_TICKS = 'for i in $(seq 1 20); do echo tick $i; sleep 2; done'
+const PINNING_WATCHER =
+  "tail -F /tmp/cc-home/pinning.log & while true; do grep MemAvailable /proc/meminfo; pgrep -f vllm >/dev/null || echo 'vllm not running'; sleep 5; done"
+const ONE_LEFT_RUNNING = '1 background task still running'
+
 // One scanner follows each session from scan to scan. Claude transcripts were recorded from Claude
 // Code 2.1.325 (docs/design/agent-status.md says how); `records` is how much of one was written.
 const CLAUDE: Transitions[] = [
@@ -39,25 +44,34 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the turn ended and Claude says its shell runs',
         host: { records: 7, registry: { state: 'shell' } },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [[PINNING_TICKS, 'running']]
       },
       {
         when: 'a Claude that writes no state, with the command under it',
         host: { records: 7, children: CLAUDE_SHELL('00:20') },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       {
         when: 'a host that lists no processes',
         host: { records: 7 },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       {
         when: 'the command ended and woke Claude',
         host: { records: 13, quietMs: 1_000, registry: { state: 'busy' } },
         shows: 'working'
       },
-      { when: 'Claude reported', host: { registry: { state: 'idle' } }, shows: 'your-turn' }
+      {
+        when: 'Claude reported',
+        host: { registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[PINNING_TICKS, 'completed']]
+      }
     ]
   },
   {
@@ -67,8 +81,9 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the turn ended on "pinning is still in progress"',
         host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('00:20') },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [[PINNING_WATCHER, 'running']]
       },
       {
         when: 'hours later, still watching',
@@ -77,12 +92,15 @@ const CLAUDE: Transitions[] = [
           registry: { state: 'shell' },
           children: CLAUDE_SHELL('05:00:00')
         },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       {
         when: 'the watcher was killed outside Claude',
         host: { quietMs: 5 * 60 * 60_000, registry: { state: 'idle', afterWriteMs: 60_000 } },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        detail: null,
+        tasks: [[PINNING_WATCHER, 'completed']]
       },
       { when: 'Claude was killed', host: GONE, shows: 'done' }
     ]
@@ -94,8 +112,9 @@ const CLAUDE: Transitions[] = [
       {
         when: 'Claude says its shell runs',
         host: { readFrom: 8, registry: { state: 'shell' } },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [['Background command', 'running']]
       }
     ]
   },
@@ -106,7 +125,8 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the command runs under it',
         host: { readFrom: 8, children: CLAUDE_SHELL('00:20') },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       }
     ]
   },
@@ -117,7 +137,8 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the turn ended',
         host: { records: 11, registry: { state: 'shell' } },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       {
         when: 'the check-in woke Claude',
@@ -127,8 +148,30 @@ const CLAUDE: Transitions[] = [
       {
         when: 'Claude left the command running',
         host: {},
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      }
+    ]
+  },
+  {
+    session: 'a command Claude waits on inside its turn',
+    fixture: 'claude-task-output-pending',
+    steps: [
+      {
+        when: 'its TaskOutput call stands while the command runs',
+        host: { records: 6, quietMs: 20_000, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task'
+      },
+      {
+        when: 'the same call on a host that lists no processes',
+        host: { records: 6, quietMs: 20_000 },
+        shows: 'working'
+      },
+      {
+        when: 'the command ended and Claude reported',
+        host: { registry: { state: 'idle' } },
+        shows: 'your-turn',
+        detail: null
       }
     ]
   },
@@ -139,8 +182,8 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the turn ended with the monitor watching',
         host: { records: 7 },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       {
         when: 'an event woke Claude',
@@ -150,26 +193,38 @@ const CLAUDE: Transitions[] = [
       {
         when: 'Claude noted it; the monitor still runs',
         host: { records: 15 },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
-      { when: 'a second event was noted', host: { records: 20 }, shows: 'waiting-task' },
+      {
+        when: 'a second event was noted',
+        host: { records: 20 },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
       {
         when: 'the stream ended and woke Claude',
         host: { records: 23, quietMs: 1_000 },
         shows: 'working'
       },
-      { when: 'Claude reported', host: {}, shows: 'your-turn' }
+      { when: 'Claude reported', host: {}, shows: 'your-turn', detail: null }
     ]
   },
   {
     session: 'a Monitor watch whose closing notice never came',
     fixture: 'live-claude-monitor-watch',
     steps: [
-      { when: 'within its 90 s', host: { records: 7, quietMs: 60_000 }, shows: 'waiting-task' },
+      {
+        when: 'within its 90 s',
+        host: { records: 7, quietMs: 60_000 },
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
       {
         when: 'well past its timeout',
         host: { records: 7, quietMs: 5 * 60_000 },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        detail: null
       }
     ]
   },
@@ -185,9 +240,10 @@ const CLAUDE: Transitions[] = [
       {
         when: 'it was moved to the background and the turn ended',
         host: { records: 11, registry: { state: 'shell' } },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
-      { when: 'it finished and Claude reported', host: {}, shows: 'your-turn' }
+      { when: 'it finished and Claude reported', host: {}, shows: 'your-turn', detail: null }
     ]
   },
   {
@@ -197,11 +253,11 @@ const CLAUDE: Transitions[] = [
       {
         when: 'the turn ended with the wake-up 115 s away',
         host: { records: 11, registry: { state: 'idle' } },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
       { when: 'the wake-up fired', host: { records: 14, quietMs: 1_000 }, shows: 'working' },
-      { when: 'Claude reported', host: {}, shows: 'your-turn' }
+      { when: 'Claude reported', host: {}, shows: 'your-turn', detail: null }
     ]
   },
   {
@@ -211,7 +267,8 @@ const CLAUDE: Transitions[] = [
       {
         when: 'long past its time',
         host: { records: 11, quietMs: 10 * 60_000 },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        detail: null
       }
     ]
   },
@@ -341,9 +398,9 @@ const CLAUDE: Transitions[] = [
     fixture: 'live-claude-background-command-running',
     steps: [
       {
-        when: 'it waits on its command',
+        when: 'it sits at its prompt with the command running',
         host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('00:20') },
-        shows: 'waiting-task'
+        shows: 'your-turn'
       },
       { when: 'it left, and took its command with it', host: LEFT, shows: 'done' }
     ]
@@ -401,19 +458,27 @@ const CODEX: Transitions[] = [
       {
         when: 'Codex ended its turn with the command still running',
         host: { listsProcesses: true, children: CODEX_COMMAND('00:20') },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
+        tasks: [[MEMORY_WATCHER, 'running']]
       },
       {
         when: 'an hour on',
         host: { listsProcesses: true, children: CODEX_COMMAND('1:00:00'), quietMs: 60 * 60_000 },
-        shows: 'waiting-task'
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
       },
-      { when: 'on a host that lists no processes', host: {}, shows: 'waiting-task' },
+      {
+        when: 'on a host that lists no processes',
+        host: {},
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING
+      },
       {
         when: 'the command was killed outside Codex',
         host: { listsProcesses: true, children: [] },
         shows: 'your-turn',
+        detail: null,
         tasks: [[MEMORY_WATCHER, 'completed']]
       },
       { when: 'Codex was killed', host: KILLED, shows: 'done' }
@@ -431,7 +496,8 @@ const CODEX: Transitions[] = [
       {
         when: 'Codex polls it',
         host: { records: 8, children: CODEX_COMMAND('00:31') },
-        shows: 'running-shell'
+        shows: 'waiting-task',
+        detail: `Bash: ${LONG_SCRIPT}`
       },
       {
         when: 'the poll saw it exit and the turn ended',
@@ -457,8 +523,8 @@ const CODEX: Transitions[] = [
       {
         when: 'Codex ended its turn with both running',
         host: { records: 12, listsProcesses: true, children: CODEX_COMMAND('00:20') },
-        shows: 'waiting-task',
-        detail: 'Waiting on 2 background tasks',
+        shows: 'your-turn',
+        detail: '2 background tasks still running',
         tasks: [
           [WATCHER_B, 'running'],
           [WATCHER_A, 'running']
@@ -467,8 +533,8 @@ const CODEX: Transitions[] = [
       {
         when: 'one was killed and Codex wrote that it ended',
         host: { records: 13, listsProcesses: true, children: CODEX_COMMAND('01:20') },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task',
+        shows: 'your-turn',
+        detail: ONE_LEFT_RUNNING,
         tasks: [
           [WATCHER_B, 'running'],
           [WATCHER_A, 'stopped']
@@ -482,6 +548,7 @@ const CODEX: Transitions[] = [
           children: CODEX_SHELL('00:05')
         },
         shows: 'your-turn',
+        detail: null,
         tasks: [
           [WATCHER_B, 'stopped'],
           [WATCHER_A, 'stopped']
@@ -496,13 +563,14 @@ const CODEX: Transitions[] = [
       {
         when: 'Codex polls the command',
         host: { records: 8, children: CODEX_COMMAND('00:31') },
-        shows: 'running-shell'
+        shows: 'waiting-task'
       },
       {
         when: 'Esc ended the turn and the command runs on in its terminal',
         host: { records: 10, listsProcesses: true, children: CODEX_COMMAND('01:00') },
-        shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        shows: 'your-turn',
+        detail: 'Interrupted',
+        tasks: [[LONG_SCRIPT, 'running']]
       },
       {
         when: 'the command ended',
@@ -557,9 +625,9 @@ it.each<[string, string, ScanOptions, LiveSessionStatus]>([
     'Claude Code',
     'live-claude-background-command-running',
     { registry: { state: 'shell' } },
-    'waiting-task'
+    'your-turn'
   ],
-  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'waiting-task'],
+  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'your-turn'],
   [
     'Codex (its rollout held open by a shared app-server, not by its own process)',
     'live-codex-background-terminal',
@@ -569,7 +637,7 @@ it.each<[string, string, ScanOptions, LiveSessionStatus]>([
       heldOpenBy: 4300,
       children: CODEX_COMMAND('00:20')
     },
-    'waiting-task'
+    'your-turn'
   ]
 ])(
   'a running %s session shows once its transcript is read, never as idle before',

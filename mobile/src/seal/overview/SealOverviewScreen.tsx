@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQueryClient } from '@tanstack/react-query'
@@ -16,10 +16,17 @@ import { SealAccountUsageCard } from '../accounts/SealAccountUsageCard'
 import { useSealAccounts } from '../accounts/use-seal-accounts'
 import { liveSessionsNeedingAttention } from '../../../../src/shared/live-sessions/live-session-summary'
 import { liveSessionFinished } from '../live-sessions/live-session-presentation'
-import type { LiveSession } from '../live-sessions/live-session-schemas'
-import { LiveSessionGroups, LiveSessionRow } from '../live-sessions/LiveSessionRow'
+import {
+  liveSessionPlaceResolver,
+  useKnownSessionWorkspaces
+} from '../live-sessions/live-session-workspace-place'
 import { useLiveSessionsFeed } from '../live-sessions/live-sessions-feed'
-import { sealPageHref, sealSessionHref } from '../seal-route-hrefs'
+import {
+  LiveSessionsNeedingYou,
+  LiveSessionWorkspaceGroups
+} from '../live-sessions/LiveSessionWorkspaceGroups'
+import { useOpenLiveSession } from '../live-sessions/use-open-live-session'
+import { sealPageHref } from '../seal-route-hrefs'
 import { sealStyles } from '../seal-screen-styles'
 import { SealScreenFrame, useSealHostName } from '../SealScreenFrame'
 import { SealOverviewMachineRow } from './SealOverviewMachineRow'
@@ -30,7 +37,7 @@ import {
   sealOverviewMetricsQuery
 } from './seal-overview-machines'
 
-/** Desktop Home on a phone: what needs you, sessions by machine and project, machines, and account usage. */
+/** Desktop Home on a phone: what needs you, sessions by project and workspace, machines, and account usage. */
 export function SealOverviewScreen({ hostId }: { hostId: string }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
@@ -51,7 +58,9 @@ export function SealOverviewScreen({ hostId }: { hostId: string }) {
   const now = useNow(60_000, true)
   const [pulling, setPulling] = useState(false)
 
-  const open = (session: LiveSession) => router.push(sealSessionHref(hostId, session.id))
+  const workspaces = useKnownSessionWorkspaces(hostId, client, connected)
+  const placeOf = useMemo(() => liveSessionPlaceResolver(workspaces), [workspaces])
+  const { open, openingId } = useOpenLiveSession(hostId, client, workspaces)
   const running = feed.sessions.filter((session) => !liveSessionFinished(session))
   const attention = liveSessionsNeedingAttention(running)
   const providers = Object.entries(accounts.status?.providers ?? {}).filter(
@@ -99,20 +108,7 @@ export function SealOverviewScreen({ hostId }: { hostId: string }) {
           />
         }
       >
-        {attention.length > 0 ? (
-          <>
-            <SectionHeader
-              title={t('seal.overview.attention', 'Needs you')}
-              trailing={String(attention.length)}
-              first
-            />
-            <ListGroup separatorInset={LIST_LEADING_INSET} style={sealStyles.group}>
-              {attention.map((session) => (
-                <LiveSessionRow key={session.id} session={session} onPress={open} />
-              ))}
-            </ListGroup>
-          </>
-        ) : null}
+        <LiveSessionsNeedingYou attention={attention} openingId={openingId} onOpen={open} />
 
         <SectionHeader
           title={t('seal.overview.sessions', 'Sessions')}
@@ -128,7 +124,13 @@ export function SealOverviewScreen({ hostId }: { hostId: string }) {
             {t('seal.overview.noSessions', 'No agents running right now.')}
           </Text>
         ) : (
-          <LiveSessionGroups sessions={running} onOpen={open} />
+          <LiveSessionWorkspaceGroups
+            sessions={running}
+            placeOf={placeOf}
+            first
+            openingId={openingId}
+            onOpen={open}
+          />
         )}
 
         <SectionHeader title={t('seal.overview.machines', 'Machines')} />

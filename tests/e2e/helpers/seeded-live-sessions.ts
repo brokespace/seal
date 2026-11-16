@@ -55,11 +55,12 @@ type Recipe = {
   neverAsks?: true
   /** The stub runs a shell, which the scanner reads as the pending call's command. */
   shell?: true
-  /** Claude's own record says commands it left in the background still run; the transcript alone reads `your-turn`. */
-  backgroundShells?: true
+  /** Only the fixture's first records are kept: the turn stops at a call still pending. */
+  records?: number
 }
 
-// Each status is the one session-status-fixtures.test.ts reads from the same fixture.
+// Each status is the one session-status-fixtures.test.ts or session-status-transitions.test.ts
+// reads from the same fixture.
 const RECIPES: Record<SeedProvider, Partial<Record<SeedStatus, Recipe>>> = {
   claude: {
     'needs-permission': { fixture: 'live-claude-approval-pending' },
@@ -68,7 +69,7 @@ const RECIPES: Record<SeedProvider, Partial<Record<SeedStatus, Recipe>>> = {
     working: { fixture: 'claude-working', neverAsks: true },
     'running-shell': { fixture: 'live-claude-shell-pending', shell: true },
     'waiting-subagent': { fixture: 'claude-waiting-foreground-subagent' },
-    'waiting-task': { fixture: 'claude-waiting-background-task', backgroundShells: true },
+    'waiting-task': { fixture: 'claude-task-output-pending', records: 6, shell: true },
     'your-turn': { fixture: 'claude-idle' },
     idle: { fixture: 'claude-idle', noTurn: true }
   },
@@ -135,6 +136,7 @@ function fixtureText(session: Seeded, recipe: Recipe): string {
   const first: Record<string, unknown> & { payload?: { cwd?: string } } = JSON.parse(lines[0])
   const add = (at: number, drop: number, ...records: Record<string, unknown>[]) =>
     lines.splice(at, drop, ...records.map((record) => JSON.stringify(record)))
+  lines.length = recipe.records ?? lines.length
   if (session.provider === 'claude') {
     if (recipe.noTurn) {
       // Only a slash command ran; the title then comes from the summary record.
@@ -220,28 +222,6 @@ function writeTranscript(session: Seeded, status: SeedStatus, lastAt: number): v
     fs.rmSync(previous.replace(/\.jsonl$/, ''), { recursive: true, force: true })
   }
   session.child?.stdin?.write(recipe.shell ? 'shell\n' : 'no-shell\n')
-  writeClaudeRegistry(session, recipe.backgroundShells === true)
-}
-
-/** `~/.claude/sessions/<pid>.json`, which Claude Code keeps for a process that has background work. */
-function writeClaudeRegistry(session: Seeded, backgroundShells: boolean): void {
-  const pid = session.child?.pid
-  if (session.provider !== 'claude' || pid === undefined) {
-    return
-  }
-  const file = path.join(session.home, '.claude/sessions', `${pid}.json`)
-  if (!backgroundShells) {
-    fs.rmSync(file, { force: true })
-    return
-  }
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const entry = {
-    pid,
-    sessionId: session.providerSessionId,
-    status: 'shell',
-    statusUpdatedAt: Date.now()
-  }
-  fs.writeFileSync(file, JSON.stringify(entry))
 }
 
 function kill(child: ChildProcess | null): Promise<void> {
@@ -301,7 +281,6 @@ export async function seedLiveSession(
       writeTranscript(session, next, Date.now() - QUIET_MS)
     },
     stop: async (stopOptions) => {
-      writeClaudeRegistry(session, false)
       await kill(session.child)
       session.child = null
       writeTranscript(session, status, endedAt(stopOptions?.ageMs))

@@ -70,11 +70,11 @@ describe('status of a Claude Code session, from its transcript, process and scre
     expect(session.activity?.subagents.map((s) => s.status)).toEqual(['completed', 'completed'])
   })
 
-  it('waiting on a background command after its turn ended', async () => {
+  it('waiting on the user after its turn ended, noting the background command it left running', async () => {
     const [session] = await scan('claude-waiting-background-task')
     expect([session.status, session.statusDetail]).toEqual([
-      'waiting-task',
-      'Waiting on 1 background task'
+      'your-turn',
+      '1 background task still running'
     ])
     expect(session.activity?.tasks).toEqual([
       {
@@ -344,14 +344,14 @@ describe('status of recorded Codex sessions', () => {
     ).toEqual(['running-shell', 'process', 'Bash: ./long.sh 70'])
   })
 
-  it('running shell: the command outlived its exec call and the agent polls it', async () => {
+  it('waiting on a task: the command outlived its exec call and the agent polls it', async () => {
     expect(
       await sourcedStatusOf('live-codex-poll-pending', {
         quietMs: 10_000,
         processes: [CODEX_APP_SERVER],
         children: CODEX_SHELL('00:40')
       })
-    ).toEqual(['running-shell', 'process', 'Bash: ./long.sh 70'])
+    ).toEqual(['waiting-task', 'process', 'Bash: ./long.sh 70'])
   })
 
   it('waiting for approval: an exec cell has no output and nothing runs under the app-server', async () => {

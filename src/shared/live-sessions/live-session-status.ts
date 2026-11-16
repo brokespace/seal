@@ -24,7 +24,10 @@ export function liveSessionStatusFromEvidence(
     if (evidence.shellRunning) {
       return 'running-shell'
     }
-    return evidence.runningSubagents > 0 ? 'waiting-subagent' : 'working'
+    if (evidence.runningSubagents > 0) {
+      return 'waiting-subagent'
+    }
+    return evidence.waitsOnBackgroundTask ? 'waiting-task' : 'working'
   }
   // A failed turn stays news while what it left running goes on.
   if (evidence.turnFailed) {
@@ -33,9 +36,7 @@ export function liveSessionStatusFromEvidence(
   if (evidence.runningSubagents > 0) {
     return 'waiting-subagent'
   }
-  if (evidence.runningBackgroundTasks > 0) {
-    return 'waiting-task'
-  }
+  // Commands, monitors and wake-ups a turn left behind hold nothing: the next move is the user's.
   return evidence.hadTurn ? 'your-turn' : 'idle'
 }
 
@@ -117,22 +118,22 @@ export function isRestingLiveSessionStatus(status: LiveSessionStatus): boolean {
   return status === 'your-turn' || status === 'idle'
 }
 
-/** Parked on work running behind a finished turn; the agent picks itself up when it reports. */
+/** Blocked on work it started: subagents, in a turn or behind one, or a background task inside a turn. */
 export function isWaitingOnBackgroundWork(status: LiveSessionStatus): boolean {
   return status === 'waiting-subagent' || status === 'waiting-task'
 }
 
-/** The turn is the agent's own and still going. */
+/** The turn is the agent's own and still going, a wait on a background task included. */
 export function isTurnRunningLiveSessionStatus(status: LiveSessionStatus): boolean {
-  return status === 'working' || status === 'running-shell'
+  return status === 'working' || status === 'running-shell' || status === 'waiting-task'
 }
 
-/** The turn has stopped, for its user or on background work: what a summary and a recap describe. */
+/** The turn has stopped, for its user or on its subagents: what a summary and a recap describe. */
 export function isSettledLiveSessionStatus(status: LiveSessionStatus): boolean {
   return (
     status === 'waiting-input' ||
     isRestingLiveSessionStatus(status) ||
-    isWaitingOnBackgroundWork(status)
+    status === 'waiting-subagent'
   )
 }
 
