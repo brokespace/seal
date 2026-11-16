@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, type RefObject } from 'react'
 import { subscribeTabGroupBodyRect } from '../tab-group/tab-group-body-geometry'
+import { holdKeyboardFocusForSurfacePress } from './pane-keyboard-focus'
 import { reportWorkspaceSurfaceInPane } from './pane-workspace-surfaces'
 import { focusSplitViewPane } from './split-view-commands'
 
@@ -55,5 +56,11 @@ export function useWorkspaceSurfacePaneSlot(
       focusSplitViewPane(paneId)
     }
   }, [paneId])
-  return paneId ? { onPointerDownCapture: focusPane, onFocusCapture: focusPane } : NO_HANDLERS
+  const pressPane = useCallback(() => {
+    if (paneId) {
+      holdKeyboardFocusForSurfacePress(paneId)
+      focusSplitViewPane(paneId)
+    }
+  }, [paneId])
+  return paneId ? { onPointerDownCapture: pressPane, onFocusCapture: focusPane } : NO_HANDLERS
 }

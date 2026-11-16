@@ -13,6 +13,39 @@ export function landsOnStripControl(target: EventTarget): boolean {
 
 const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
 
+const SURFACE_PRESS_END_EVENTS = ['pointerup', 'pointercancel', 'pointermove'] as const
+let surfacePressPaneId: string | null = null
+
+/**
+ * A press inside a workspace places the keyboard itself, and a tab pressed there gives up when an
+ * embedded page takes the keyboard before the release. The pane it focuses waits for the release.
+ */
+export function holdKeyboardFocusForSurfacePress(paneId: string): void {
+  if (surfacePressPaneId !== null || splitViewStore.getState().focusedPaneId === paneId) {
+    return
+  }
+  surfacePressPaneId = paneId
+  const release = (event: PointerEvent): void => {
+    // A release the window never saw arrives as a buttonless move.
+    if (event.type === 'pointermove' && event.buttons !== 0) {
+      return
+    }
+    for (const type of SURFACE_PRESS_END_EVENTS) {
+      window.removeEventListener(type, release, true)
+    }
+    // After the press's own click handlers.
+    setTimeout(() => {
+      surfacePressPaneId = null
+      if (splitViewStore.getState().focusedPaneId === paneId) {
+        bringKeyboardFocusIntoFocusedPane(false)
+      }
+    }, 0)
+  }
+  for (const type of SURFACE_PRESS_END_EVENTS) {
+    window.addEventListener(type, release, true)
+  }
+}
+
 /**
  * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
  * it in the pane that lost focus, and closing the tab that held it leaves it nowhere. A tab
@@ -24,6 +57,9 @@ export function bringKeyboardFocusIntoPane(
   worktreeId: string | null,
   tabPressed: boolean
 ): void {
+  if (surfacePressPaneId === paneId) {
+    return
+  }
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null
   const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
@@ -46,8 +82,8 @@ export function bringKeyboardFocusIntoPane(
   }
 }
 
-/** After a menu command that moved pane focus: the keyboard goes where the focus went. */
-export function bringKeyboardFocusIntoFocusedPane(): void {
+/** After a menu command or a press that moved pane focus: the keyboard goes where the focus went. */
+export function bringKeyboardFocusIntoFocusedPane(tabPressed = true): void {
   const state = splitViewStore.getState()
   const paneId = state.focusedPaneId
   const pane = paneId
@@ -61,6 +97,6 @@ export function bringKeyboardFocusIntoFocusedPane(): void {
     paneId,
     pane,
     active?.kind === 'workspace' ? active.worktreeId : null,
-    true
+    tabPressed
   )
 }
