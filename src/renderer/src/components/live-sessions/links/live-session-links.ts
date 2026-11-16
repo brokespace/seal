@@ -1,3 +1,9 @@
+import type { AppState } from '@/store/types'
+import { getIndexedWorktreeMap } from '@/store/slices/worktrees/listing/worktree-catalog-index'
+import {
+  selectFolderWorkspaces,
+  selectWorktreesByRepo
+} from '@/store/workspaces/catalog/workspace-record-fields'
 import type {
   LiveSession,
   LiveSessionStatus
@@ -6,55 +12,43 @@ import {
   isActiveLiveSession,
   topLiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-status'
+import { folderWorkspaceKey } from '../../../../../shared/workspace-scope'
+import { worktreeIdentityKey } from '../../../../../shared/worktree/id'
 
 /** The workspace a session runs in, when Seal knows one. */
 export type LiveSessionLink = { worktreeId: string; repoId: string; name: string }
 
-export type LinkableWorktree = {
-  id: string
-  repoId: string
-  path: string
-  name: string
-  /** The execution host that owns it; null when unknown. */
-  hostId: string | null
-}
-
-/**
- * A Seal pane's session belongs to the workspace its tab is in; any other belongs to the workspace
- * whose folder holds its cwd on the same host. Sessions elsewhere stay unlinked.
- */
-export function linkLiveSessions(
-  sessions: readonly LiveSession[],
-  worktrees: readonly LinkableWorktree[],
-  worktreeIdByTabId: ReadonlyMap<string, string>,
-  hostOf: (session: LiveSession) => string
-): Map<string, LiveSessionLink> {
-  const byId = new Map(worktrees.map((worktree) => [worktree.id, worktree]))
-  const links = new Map<string, LiveSessionLink>()
-  for (const session of sessions) {
-    let found: LinkableWorktree | undefined
-    for (const route of session.inputRoutes) {
-      const separator = route.kind === 'seal-pane' ? route.paneKey.lastIndexOf(':') : -1
-      if (route.kind === 'seal-pane' && separator > 0) {
-        found = byId.get(worktreeIdByTabId.get(route.paneKey.slice(0, separator)) ?? '')
+/** Finds a registry workspace id among the workspaces this window lists, under this window's id for it. */
+export function workspaceLinkFinder(
+  state: Pick<AppState, 'repos' | 'worktreesByRepo' | 'folderWorkspaces'>
+): (worktreeId: string) => LiveSessionLink | undefined {
+  const projectNames = new Map(state.repos.map((repo) => [repo.id, repo.displayName]))
+  const links = [...getIndexedWorktreeMap(selectWorktreesByRepo(state) ?? {}).values()].map(
+    (worktree): LiveSessionLink => {
+      const project = projectNames.get(worktree.repoId)
+      return {
+        worktreeId: worktree.id,
+        repoId: worktree.repoId,
+        // "shop / checkout"; a primary checkout named for its branch alone says little.
+        name:
+          project && project !== worktree.displayName
+            ? `${project} / ${worktree.displayName}`
+            : worktree.displayName
       }
     }
-    const cwd = session.cwd
-    if (!found && cwd) {
-      const host = hostOf(session)
-      found = worktrees
-        .filter(
-          (worktree) =>
-            worktree.hostId === host &&
-            (cwd === worktree.path || cwd.startsWith(`${worktree.path}/`))
-        )
-        .sort((a, b) => b.path.length - a.path.length)[0]
-    }
-    if (found) {
-      links.set(session.id, { worktreeId: found.id, repoId: found.repoId, name: found.name })
-    }
+  )
+  // Folder workspaces hold sessions too; they have no git worktree behind them.
+  for (const folder of selectFolderWorkspaces(state) ?? []) {
+    links.push({
+      worktreeId: folderWorkspaceKey(folder.id),
+      repoId: folder.projectGroupId,
+      name: folder.name
+    })
   }
-  return links
+  const byId = new Map(links.map((link) => [link.worktreeId, link]))
+  // The registry may spell a checkout's path differently than this window's row does.
+  const byIdentity = new Map(links.map((link) => [worktreeIdentityKey(link.worktreeId), link]))
+  return (worktreeId) => byId.get(worktreeId) ?? byIdentity.get(worktreeIdentityKey(worktreeId))
 }
 
 export type LiveSessionsBadge = { count: number; status: LiveSessionStatus; sessionIds: string[] }
