@@ -21,17 +21,30 @@ function LeadingIcon({ drag }: { drag: TabDragItemData }): React.JSX.Element {
   return <TerminalIcon className="h-3.5 w-3.5 shrink-0" />
 }
 
-// Fill DragOverlay’s source-sized wrapper so the portal ghost stays aligned with the cursor outside its strip.
-export default function TabDragPreview({ drag }: { drag: TabDragItemData }): React.JSX.Element {
+/** The ghost that follows the pointer while a tab is dragged, whatever the tab holds. */
+export function TabDragPreviewChip({
+  icon,
+  label,
+  color
+}: {
+  icon: React.ReactNode
+  label: string
+  color?: string | null
+}): React.JSX.Element {
   return (
+    // Fill DragOverlay’s source-sized wrapper so the portal ghost stays aligned with the cursor outside its strip.
     <div className="pointer-events-none flex h-full w-full items-center gap-1.5 rounded-sm border border-border bg-accent px-2 text-xs text-foreground shadow-md">
-      <span className="inline-flex shrink-0">
-        <LeadingIcon drag={drag} />
-      </span>
-      <span className="truncate">{drag.label}</span>
-      {drag.color ? (
-        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: drag.color }} />
+      <span className="inline-flex shrink-0">{icon}</span>
+      <span className="truncate">{label}</span>
+      {color ? (
+        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       ) : null}
     </div>
+  )
+}
+
+export default function TabDragPreview({ drag }: { drag: TabDragItemData }): React.JSX.Element {
+  return (
+    <TabDragPreviewChip icon={<LeadingIcon drag={drag} />} label={drag.label} color={drag.color} />
   )
 }

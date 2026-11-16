@@ -17,8 +17,8 @@ export function EditorFileTabCloseButton({
         fileIsDirty
           ? 'hidden group-hover:flex text-muted-foreground hover:text-foreground hover:bg-muted'
           : showsSelectionChrome
-            ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted'
+            ? 'text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:text-foreground focus-visible:bg-muted'
+            : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted focus-visible:!text-foreground focus-visible:!bg-muted'
       }`}
       type="button"
       // Share the real close affordance with simulator tabs so E2E exercises their actual button.
