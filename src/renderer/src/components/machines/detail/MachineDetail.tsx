@@ -38,6 +38,7 @@ import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineServerStatus } from '../server-install/MachineServerStatus'
+import { serverInstallStatusText } from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
@@ -119,8 +120,8 @@ export function MachineDetail({
             <h2 className="truncate text-sm font-semibold">{machine.label}</h2>
             <MachineStatusDot status={machine.status} />
             <MachineConnectionBadge connection={machine.connection} />
-            <span className="shrink-0 text-2xs text-muted-foreground">
-              {statusLabel(machine.status)}
+            <span className="shrink-0 text-2xs text-muted-foreground" data-machine-status-text>
+              {serverInstallStatusText(t, view, machine.status) ?? statusLabel(machine.status)}
             </span>
           </div>
           {machine.address || machine.statusDetail ? (

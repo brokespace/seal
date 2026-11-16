@@ -242,6 +242,7 @@ export const fakeMachinesApi: MachinesApi = {
   installServer: async ({ machineId }) => machineView(machineId),
   declineServerInstall: async ({ machineId }) => machineView(machineId),
   removeServer: async ({ machineId }) => machineView(machineId),
+  reuseOwnServer: async ({ machineId }) => machineView(machineId),
   separate: async () => MACHINES,
   connect: async () => {},
   shellOpen: async () => ({ ok: false, message: 'Fixture has no shell' }),

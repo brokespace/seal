@@ -13,7 +13,7 @@ import { AddRemoteHostDialog } from '@/components/sidebar/host-admission/ssh/Add
 import type { MachineConnectionType } from '../../../../../shared/machines/machine-record'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
-import { installSealServerOnMachine } from '../server-install/seal-server-install-requests'
+import { useSealServerInstall } from '../server-install/use-seal-server-install'
 import {
   AddMachineServerInstallOptions,
   AddMachineServiceManagerOptions,
@@ -67,6 +67,7 @@ export function AddMachineDialog({
   onClose: () => void
   onAdopted: () => void
 }): React.JSX.Element {
+  const installServer = useSealServerInstall()
   const [serverChoice, setServerChoice] = useState(DEFAULT_SERVER_INSTALL_CHOICE)
   // Saving takes a moment, so adoption reads the choice as it is then, not as it was on the click.
   const serverChoiceRef = useRef(serverChoice)
@@ -110,20 +111,14 @@ export function AddMachineDialog({
             ...added,
             connection: request.keepConnection ?? request.mode,
             ...(request.machineId ? { machineId: request.machineId } : {}),
-            ...(choice?.install
-              ? { serverInstall: 'auto' as const, serviceManager: choice.manager }
-              : choice
-                ? { serverInstall: 'never' as const }
-                : {})
+            // Adding installs nothing: a ticked box only opens the install dialog afterwards.
+            ...(choice ? { serverInstall: 'never' as const } : {})
           })
           .then((machine) => {
             onAdopted()
             if (choice?.install) {
-              // The dialog is closed by now; the machine's page shows the install and how it ends.
-              void installSealServerOnMachine(machine.id, { manager: choice.manager }).then(
-                onAdopted,
-                () => {}
-              )
+              // Cancelling leaves the machine on plain SSH; its page shows an install and how it ends.
+              void installServer(machine, { manager: choice.manager }).then(onAdopted)
             }
           })
           .catch((error: unknown) => toast.error(readIpcErrorMessage(error) ?? String(error)))

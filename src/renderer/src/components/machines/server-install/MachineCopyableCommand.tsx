@@ -10,7 +10,10 @@ export function MachineCopyableCommand({ command }: { command: string }): React.
       <code className="min-w-0 truncate rounded-md border border-border bg-muted/40 px-2 py-1 font-mono text-xs text-foreground select-text">
         {command}
       </code>
-      <McpCopyButton text={command} label={t('w7.server.copyCommand', 'Copy command')} />
+      <McpCopyButton
+        text={command}
+        label={t('seal.machineServer.server.copyCommand', 'Copy command')}
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import React from 'react'
 import { TriangleAlert } from 'lucide-react'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
@@ -32,7 +33,7 @@ export function MachineServerRetryNotice({
         <p className="[overflow-wrap:anywhere]">
           <span className="text-status-warning-text">{serverInstallFailureText(t, view)}</span>{' '}
           <span className="text-muted-foreground">
-            {t('w7.notice.stillSsh', 'This machine still works over SSH.')}
+            {t('seal.machineServer.notice.stillSsh', 'This machine still works over SSH.')}
           </span>
         </p>
         {blocked ? (
@@ -58,12 +59,25 @@ export function MachineServerRetryNotice({
         ) : null}
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button type="button" variant="outline" size="xs" disabled={busy} onClick={onRetry}>
-          {t('w7.notice.retry', 'Retry install')}
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          disabled={busy}
+          onClick={onRetry}
+          data-machine-server-action="retry"
+        >
+          {t('seal.machineServer.notice.retry', 'Retry install…')}
         </Button>
         {blocked ? (
-          <Button type="button" size="xs" disabled={busy} onClick={onMoveAnyway}>
-            {t('auto.components.settings.moveAnyway.confirm', 'Move anyway')}
+          <Button
+            type="button"
+            size="xs"
+            disabled={busy}
+            onClick={onMoveAnyway}
+            data-machine-server-action="move-anyway"
+          >
+            {t('seal.machineServer.notice.moveAnyway', 'Move anyway…')}
           </Button>
         ) : null}
       </div>
@@ -71,7 +85,7 @@ export function MachineServerRetryNotice({
   )
 }
 
-/** Shown once on an SSH machine added before installs were the default; either choice ends it. */
+/** Shown once on an SSH machine that never decided; either choice ends it. */
 export function MachineServerOfferNotice({
   busy,
   onInstall,
@@ -89,16 +103,74 @@ export function MachineServerOfferNotice({
     >
       <p className="min-w-0 flex-1 basis-64">
         {t(
-          'w7.notice.offer',
-          'Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing changes until you choose.'
+          'seal.machineServer.notice.offer',
+          'Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing is installed until you confirm.'
         )}
       </p>
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button type="button" variant="ghost" size="xs" disabled={busy} onClick={onDecline}>
-          {t('w7.notice.notNow', 'Not now')}
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          disabled={busy}
+          onClick={onDecline}
+          data-machine-server-action="decline"
+        >
+          {t('seal.machineServer.notice.notNow', 'Not now')}
         </Button>
-        <Button type="button" size="xs" disabled={busy} onClick={onInstall}>
-          {t('w7.server.install', 'Install Seal server')}
+        <Button
+          type="button"
+          size="xs"
+          disabled={busy}
+          onClick={onInstall}
+          data-machine-server-action="install"
+        >
+          {t('seal.machineServer.server.installAction', 'Install Seal server…')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** The machine's user already runs `seal serve` as a service: Seal offers that server, not a second one. */
+export function MachineServerReuseNotice({
+  serviceName,
+  busy,
+  onReuse
+}: {
+  serviceName: string | undefined
+  /** The request is running; the button says so. */
+  busy: boolean
+  onReuse: () => void
+}): React.JSX.Element {
+  const t = useTranslate()
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2 text-xs"
+    >
+      <p className="min-w-0 flex-1 basis-64 [overflow-wrap:anywhere]">
+        {serviceName
+          ? t(
+              'seal.machineServer.notice.reuseNamed',
+              'This machine already runs its own Seal server as a service ({{service}}). Seal does not install a second one.',
+              { service: serviceName }
+            )
+          : t(
+              'seal.machineServer.notice.reuse',
+              'This machine already runs its own Seal server as a service. Seal does not install a second one.'
+            )}
+      </p>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <Button
+          type="button"
+          size="xs"
+          disabled={busy}
+          onClick={onReuse}
+          data-machine-server-action="reuse"
+        >
+          {busy ? <LoadingSpinner /> : null}
+          {t('seal.machineServer.notice.reuseAction', 'Use this server…')}
         </Button>
       </div>
     </div>

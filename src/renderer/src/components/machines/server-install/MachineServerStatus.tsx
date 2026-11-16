@@ -1,36 +1,39 @@
 import React, { useState } from 'react'
-import { TriangleAlert } from 'lucide-react'
-import { Trans } from 'react-i18next'
+import {
+  useConfirmationDialog,
+  type ConfirmationDialogOptions
+} from '@/components/confirmation-dialog-context'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
-import { i18n } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
+import type { MachinesApi } from '../../../../../preload/api/machines/machines-bridge'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineCopyableCommand } from './MachineCopyableCommand'
-import { MachineServerOfferNotice, MachineServerRetryNotice } from './MachineServerInstallNotice'
-import { MachineServerRemoveDialog } from './MachineServerRemoveDialog'
-import { serverManagerText } from './seal-server-install-copy'
 import {
-  declineSealServerInstall,
-  installSealServerOnMachine
-} from './seal-server-install-requests'
+  MachineServerOfferNotice,
+  MachineServerRetryNotice,
+  MachineServerReuseNotice
+} from './MachineServerInstallNotice'
+import { MachineServerKeeperNotes, MachineServerWarning } from './MachineServerKeeperNotes'
+import {
+  ownSealServerReuseConfirmation,
+  sealServerRemovalConfirmation
+} from './seal-server-confirmations'
+import {
+  serverInstallIsRunning,
+  serverInstallWaitsForHostText,
+  serverManagerText
+} from './seal-server-install-copy'
+import { declineSealServerInstall, sealServerRequest } from './seal-server-install-requests'
+import { useSealServerInstall, type SealServerInstallOptions } from './use-seal-server-install'
 
-// Why untranslated: literal shell commands.
+// Why untranslated: a literal shell command.
 const OWN_SERVER_SERVICE_COMMAND = 'seal serve service install'
-const lingerCommand = (username: string | undefined): string =>
-  `sudo loginctl enable-linger ${username || '$USER'}`
 
-function Warning({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <p className="flex items-start gap-1.5 text-status-warning-text">
-      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-      <span className="min-w-0">{children}</span>
-    </p>
-  )
-}
+type Busy = 'install' | 'decline' | 'reuse' | 'remove'
 
 /** Whether Seal's server is on the machine, how it is kept running, and what can be done about it. */
 export function MachineServerStatus({
@@ -43,53 +46,66 @@ export function MachineServerStatus({
   onChanged: () => void
 }): React.JSX.Element | null {
   const t = useTranslate()
+  const confirm = useConfirmationDialog()
+  const confirmAndInstall = useSealServerInstall()
   const mountedRef = useMountedRef()
-  const [busy, setBusy] = useState(false)
-  const [removing, setRemoving] = useState(false)
+  const [busy, setBusy] = useState<Busy | null>(null)
   const action = view.serverInstallAction
   const install = view.serverInstall
   const installed = view.connection === 'server' && install?.state === 'installed'
   // A server the user runs has no install record; the machine reports how it is kept running.
   const ownService =
     view.connection === 'server' && !installed && action === 'none' ? view.serverKeeper : undefined
+  const keeper = installed ? install.manager : ownService
   const serviceRemains = view.serverServiceRemains === true
   const removable = installed || serviceRemains
-  const title = t('w7.server.title', 'Seal server')
+  const title = t('seal.machineServer.server.title', 'Seal server')
 
-  // The request shows its own error toast; this only ends the busy state and refreshes the page.
-  const run = (request: () => Promise<unknown>): void => {
-    setBusy(true)
-    void request()
-      .catch(() => {})
-      .finally(() => {
-        if (mountedRef.current) {
-          setBusy(false)
-        }
-        onChanged()
-      })
+  // Each request shows its own error toast; this only ends the busy state and refreshes the page.
+  const run = (kind: Busy, request: () => Promise<unknown>): void => {
+    setBusy(kind)
+    void request().finally(() => {
+      if (mountedRef.current) {
+        setBusy(null)
+      }
+      onChanged()
+    })
   }
-  const installServer = (options?: { moveAnyway: boolean }): void =>
-    run(() => installSealServerOnMachine(view.id, options))
+  const installServer = (options?: SealServerInstallOptions): void =>
+    run('install', () => confirmAndInstall(view, options))
+  const runConfirmed = (
+    kind: Busy,
+    confirmation: ConfirmationDialogOptions,
+    request: (api: MachinesApi) => Promise<MachineView>
+  ): void =>
+    void confirm(confirmation).then((confirmed) => {
+      if (confirmed) {
+        run(kind, () => sealServerRequest(request))
+      }
+    })
 
+  const installRuns = serverInstallIsRunning(view, connecting)
   const band = (children: React.ReactNode): React.JSX.Element => (
     <section
       aria-label={title}
-      data-machine-server={action}
-      className={cn('shrink-0 border-b border-border py-2.5', PAGE_GUTTER_X)}
+      data-machine-server={installRuns ? 'installing' : action}
+      data-machine-server-keeper={keeper}
+      data-machine-server-waits-for-host={
+        installRuns && view.serverInstallWaitsForHost ? 'true' : undefined
+      }
+      className={cn('shrink-0 border-b border-border py-3', PAGE_GUTTER_X)}
     >
       {children}
     </section>
   )
 
-  // A connect runs an install that waited for terminals, so its notice no longer applies.
-  if (
-    action === 'installing' ||
-    (connecting && action === 'retry' && install?.state === 'pending')
-  ) {
+  if (installRuns) {
     return band(
       <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
         <LoadingSpinner className="size-3.5 shrink-0" />
-        {t('w7.server.installing', 'Installing Seal server…')}
+        {view.serverInstallWaitsForHost
+          ? serverInstallWaitsForHostText(t)
+          : t('seal.machineServer.server.installing', 'Installing Seal server…')}
       </p>
     )
   }
@@ -97,7 +113,7 @@ export function MachineServerStatus({
     return band(
       <MachineServerRetryNotice
         view={view}
-        busy={busy}
+        busy={busy !== null}
         onRetry={() => installServer()}
         onMoveAnyway={() => installServer({ moveAnyway: true })}
       />
@@ -106,15 +122,29 @@ export function MachineServerStatus({
   if (action === 'offer') {
     return band(
       <MachineServerOfferNotice
-        busy={busy}
+        busy={busy !== null}
         onInstall={() => installServer()}
-        onDecline={() => run(() => declineSealServerInstall(view.id))}
+        onDecline={() => run('decline', () => declineSealServerInstall(view.id))}
+      />
+    )
+  }
+  if (action === 'reuse') {
+    return band(
+      <MachineServerReuseNotice
+        serviceName={view.serverOwnServe?.name}
+        busy={busy === 'reuse'}
+        onReuse={() =>
+          runConfirmed('reuse', ownSealServerReuseConfirmation(t, view.name), (api) =>
+            api.reuseOwnServer({ machineId: view.id })
+          )
+        }
       />
     )
   }
   if (
     !installed &&
     !ownService &&
+    !view.serverLaunchdNeedsLogin &&
     action !== 'install' &&
     action !== 'keep-running' &&
     action !== 'own-server'
@@ -134,56 +164,34 @@ export function MachineServerStatus({
             {install.version ? (
               <span className="text-muted-foreground">
                 {' · '}
-                {t('w7.server.version', 'Version {{version}}', { version: install.version })}
+                {t('seal.machineServer.server.version', 'Version {{version}}', {
+                  version: install.version
+                })}
               </span>
             ) : null}
           </p>
         ) : ownService ? (
           <p>{serverManagerText(t, ownService)}</p>
         ) : serviceRemains ? (
-          <Warning>
+          <MachineServerWarning kind="service-remains">
             {t(
-              'w7.server.serviceRemains',
+              'seal.machineServer.server.serviceRemains',
               'Seal server was stopped, but its service is still registered on this machine. Remove it again to finish.'
             )}
-          </Warning>
+          </MachineServerWarning>
         ) : action === 'install' ? (
           <p className="text-muted-foreground">
-            {t('w7.server.notInstalled', 'Not installed on this machine')}
+            {t('seal.machineServer.server.notInstalled', 'Not installed on this machine')}
           </p>
         ) : action === 'keep-running' ? (
-          <p>{t('w7.server.notService', 'Not kept running as a service')}</p>
+          <p>{t('seal.machineServer.server.notService', 'Not kept running as a service')}</p>
         ) : null}
-        {installed && install.manager === 'systemd-user' && install.linger === false ? (
-          <>
-            <Warning>
-              {t(
-                'w7.server.lingerOff',
-                'It stops when you log out of the machine and does not start after a reboot. To fix that, run this on the machine:'
-              )}
-            </Warning>
-            <MachineCopyableCommand command={lingerCommand(view.ssh?.username)} />
-          </>
-        ) : null}
-        {installed && install.manager === 'pm2' && view.serverStartsAtBoot === false ? (
-          <Warning>
-            <Trans
-              i18n={i18n}
-              defaults={t(
-                'w7.server.pm2NoBoot',
-                'PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.'
-              )}
-              components={{
-                code: <code className="rounded bg-muted px-1 py-0.5 font-mono whitespace-nowrap" />
-              }}
-            />
-          </Warning>
-        ) : null}
+        <MachineServerKeeperNotes view={view} keeper={keeper} />
         {action === 'keep-running' ? (
           <p className="text-muted-foreground">
             {t(
-              'w7.server.keepRunningHelp',
-              'As a service it keeps running when this computer disconnects and starts again after a reboot.'
+              'seal.machineServer.server.keepRunningHelp',
+              'As a user service, Seal server keeps running after this computer disconnects.'
             )}
           </p>
         ) : null}
@@ -191,8 +199,8 @@ export function MachineServerStatus({
           <>
             <p className="text-muted-foreground">
               {t(
-                'w7.server.ownServer',
-                'To keep this server running after a reboot, run this on the machine:'
+                'seal.machineServer.server.ownServer',
+                'To keep this server running as a service, run this on the machine:'
               )}
             </p>
             <MachineCopyableCommand command={OWN_SERVER_SERVICE_COMMAND} />
@@ -205,12 +213,23 @@ export function MachineServerStatus({
             type="button"
             variant="outline"
             size="xs"
-            disabled={busy}
-            onClick={() => installServer()}
+            disabled={busy !== null}
+            data-machine-server-action={action}
+            onClick={() =>
+              installServer(
+                action === 'keep-running'
+                  ? {
+                      purpose: 'keep-running',
+                      // launchd is never picked automatically, so the earlier choice is asked for again.
+                      manager: view.serverLaunchdNeedsLogin ? 'launchd' : undefined
+                    }
+                  : undefined
+              )
+            }
           >
             {action === 'install'
-              ? t('w7.server.install', 'Install Seal server')
-              : t('w7.server.keepRunning', 'Keep it running as a service')}
+              ? t('seal.machineServer.server.installAction', 'Install Seal server…')
+              : t('seal.machineServer.server.keepRunningAction', 'Keep it running as a service…')}
           </Button>
         ) : null}
         {removable ? (
@@ -218,21 +237,19 @@ export function MachineServerStatus({
             type="button"
             variant="ghost"
             size="xs"
-            disabled={busy}
-            onClick={() => setRemoving(true)}
+            disabled={busy !== null}
+            data-machine-server-action="remove"
+            onClick={() =>
+              runConfirmed('remove', sealServerRemovalConfirmation(t, view.name), (api) =>
+                api.removeServer({ machineId: view.id })
+              )
+            }
           >
-            {t('w7.remove.action', 'Remove Seal server…')}
+            {busy === 'remove' ? <LoadingSpinner /> : null}
+            {t('seal.machineServer.remove.action', 'Remove Seal server…')}
           </Button>
         ) : null}
       </div>
-      {removable ? (
-        <MachineServerRemoveDialog
-          view={view}
-          open={removing}
-          onOpenChange={setRemoving}
-          onRemoved={onChanged}
-        />
-      ) : null}
     </div>
   )
 }

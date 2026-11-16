@@ -13,12 +13,16 @@ export function SealServerOfferCount(): React.JSX.Element | null {
   }
   const label =
     offered.length === 1
-      ? t('w7.sidebar.offerOne', 'Seal server can be installed on {{name}}', {
+      ? t('seal.machineServer.sidebar.offerOne', 'Seal server can be installed on {{name}}', {
           name: offered[0]?.name
         })
-      : t('w7.sidebar.offerMany', 'Seal server can be installed on {{count}} machines', {
-          count: offered.length
-        })
+      : t(
+          'seal.machineServer.sidebar.offerMany',
+          'Seal server can be installed on {{count}} machines',
+          {
+            count: offered.length
+          }
+        )
   return (
     <Tooltip>
       <TooltipTrigger asChild>

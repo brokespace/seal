@@ -17,6 +17,7 @@ import {
   machineOsLabel,
   useMachineStatusLabel
 } from '../detail/MachineVitals'
+import { serverInstallStatusText } from '../server-install/seal-server-install-copy'
 import { MachineServerInstallBadge } from './MachineServerInstallBadge'
 
 const CONNECTION_ICON = { local: Laptop, ssh: Server, server: Cloud }
@@ -58,7 +59,7 @@ function MachineListItem({
         <div className="flex w-full min-w-0 items-center gap-2">
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{machine.label}</span>
-          <MachineServerInstallBadge view={view} />
+          <MachineServerInstallBadge view={view} connecting={machine.status === 'connecting'} />
           {sessionCount > 0 ? (
             <span
               className="flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground tabular-nums"
@@ -71,7 +72,9 @@ function MachineListItem({
             </span>
           ) : null}
           <MachineStatusDot status={machine.status} />
-          <span className="sr-only">{statusLabel(machine.status)}</span>
+          <span className="sr-only">
+            {serverInstallStatusText(t, view, machine.status) ?? statusLabel(machine.status)}
+          </span>
         </div>
         {subtitle || machine.statusDetail ? (
           <span

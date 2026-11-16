@@ -9,10 +9,18 @@ export type MachineServerInstallChoice = {
   manager: MachineServiceManagerChoice
 }
 
+/** An offer, not a default: nothing is installed unless the box is ticked and the dialog confirmed. */
 export const DEFAULT_SERVER_INSTALL_CHOICE: MachineServerInstallChoice = {
-  install: true,
+  install: false,
   manager: 'auto'
 }
+
+const MANAGER_CHOICES: readonly MachineServiceManagerChoice[] = [
+  'auto',
+  'systemd-user',
+  'pm2',
+  'launchd'
+]
 
 function ManagerOption({
   value,
@@ -48,7 +56,7 @@ type ChoiceProps = {
   onChange: (choice: MachineServerInstallChoice) => void
 }
 
-/** Whether a new SSH machine gets Seal's server. */
+/** Whether Seal offers its server for a new SSH machine once the machine is saved. */
 export function AddMachineServerInstallOptions({
   choice,
   onChange
@@ -62,12 +70,12 @@ export function AddMachineServerInstallOptions({
       />
       <span>
         <span className="block font-medium">
-          {t('w7.add.install', 'Install Seal server on this machine (recommended)')}
+          {t('seal.machineServer.add.install', 'Install Seal server on this machine')}
         </span>
         <span className="text-muted-foreground">
           {t(
-            'w7.add.installHelp',
-            'Keeps agents running when this computer disconnects, and enables chat, sessions and file features on the machine.'
+            'seal.machineServer.add.installHelp',
+            'Keeps agents running when this computer disconnects, and enables chat, sessions and file features on the machine. After you save, Seal shows what it writes on the machine and asks before installing.'
           )}
         </span>
       </span>
@@ -85,27 +93,46 @@ export function AddMachineServiceManagerOptions({
   return (
     <div className="space-y-2 py-1 text-xs" data-add-machine-service-manager>
       <p id={labelId} className="font-medium">
-        {t('w7.add.manager', 'How Seal server is kept running')}
+        {t('seal.machineServer.add.manager', 'How Seal server is kept running')}
       </p>
       <RadioGroup
         aria-labelledby={labelId}
         value={choice.manager}
-        onValueChange={(manager) =>
-          onChange({ ...choice, manager: manager === 'pm2' ? 'pm2' : 'auto' })
-        }
+        onValueChange={(value) => {
+          const manager = MANAGER_CHOICES.find((candidate) => candidate === value)
+          if (manager) {
+            onChange({ ...choice, manager })
+          }
+        }}
       >
         <ManagerOption
           value="auto"
-          label={t('w7.add.managerAuto', 'Automatic (recommended)')}
+          label={t('seal.machineServer.add.managerAuto', 'Automatic (recommended)')}
           help={t(
-            'w7.add.managerAutoHelp',
-            'The system’s own service manager; PM2 when that is not available.'
+            'seal.machineServer.add.managerAutoHelp',
+            'PM2 when the machine has it, otherwise a systemd user service.'
+          )}
+        />
+        <ManagerOption
+          value="systemd-user"
+          label={t('seal.machineServer.add.managerSystemd', 'systemd user service')}
+          help={t(
+            'seal.machineServer.add.managerSystemdHelp',
+            'For Linux machines that run systemd.'
           )}
         />
         <ManagerOption
           value="pm2"
-          label={t('w7.add.managerPm2', 'PM2')}
-          help={t('w7.add.managerPm2Help', 'Use PM2 when it is installed on the machine.')}
+          label={t('seal.machineServer.add.managerPm2', 'PM2')}
+          help={t('seal.machineServer.add.managerPm2Help', 'For machines that have PM2 installed.')}
+        />
+        <ManagerOption
+          value="launchd"
+          label={t('seal.machineServer.add.managerLaunchd', 'launchd user service (experimental)')}
+          help={t(
+            'seal.machineServer.add.managerLaunchdHelp',
+            'macOS only. Starts when you log in at the Mac’s screen, so not on a headless Mac. Not yet tested on a real Mac.'
+          )}
         />
       </RadioGroup>
     </div>

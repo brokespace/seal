@@ -10,12 +10,19 @@ const now = Date.now()
 export const SERVER_INSTALL_FIXTURE_IDS = {
   systemd: 'build-01',
   lingerOff: 'build-02',
+  lingerOffUnknownUser: 'build-03',
+  lingerUnknown: 'build-04',
+  pm2: 'container-02',
   pm2NoBoot: 'container-01',
+  launchd: 'mac-mini',
+  launchdNeedsLogin: 'mac-headless',
   detached: 'legacy-box',
   retry: 'small-disk',
   moveBlocked: 'busy-box',
   offer: 'super9',
+  reuse: 'own-serve',
   installing: 'fresh-box',
+  waitsForHost: 'shared-box',
   install: 'plain-ssh',
   keepRunning: 'idle-server',
   ownServer: 'own-server',
@@ -44,14 +51,37 @@ const STATES: Record<FixtureKey, Partial<MachineView> & Pick<MachineView, 'conne
     connection: 'server',
     serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: true }
   },
+  // The machine's own account differs from the SSH details' `deploy`: the command names the former.
   lingerOff: {
     connection: 'server',
+    serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: false },
+    serverHostUser: 'brian'
+  },
+  lingerOffUnknownUser: {
+    connection: 'server',
     serverInstall: { ...INSTALLED, manager: 'systemd-user', linger: false }
+  },
+  lingerUnknown: {
+    connection: 'server',
+    serverInstall: { ...INSTALLED, manager: 'systemd-user' },
+    serverHostUser: 'brian'
+  },
+  pm2: {
+    connection: 'server',
+    serverInstall: { ...INSTALLED, manager: 'pm2' },
+    serverStartsAtBoot: true
   },
   pm2NoBoot: {
     connection: 'server',
     serverInstall: { ...INSTALLED, manager: 'pm2' },
     serverStartsAtBoot: false
+  },
+  launchd: { connection: 'server', serverInstall: { ...INSTALLED, manager: 'launchd' } },
+  launchdNeedsLogin: {
+    connection: 'server',
+    serverInstall: { ...INSTALLED, manager: 'detached' },
+    serverInstallAction: 'keep-running',
+    serverLaunchdNeedsLogin: true
   },
   detached: { connection: 'server', serverInstall: { ...INSTALLED, manager: 'detached' } },
   retry: {
@@ -71,10 +101,21 @@ const STATES: Record<FixtureKey, Partial<MachineView> & Pick<MachineView, 'conne
     serverMoveBlocked: { detail: MOVE_BLOCKED_DETAIL }
   },
   offer: { connection: 'ssh', serverInstallAction: 'offer' },
+  reuse: {
+    connection: 'ssh',
+    serverInstallAction: 'reuse',
+    serverOwnServe: { manager: 'systemd-user', name: 'seal-serve.service' }
+  },
   installing: {
     connection: 'ssh',
     serverInstall: { policy: 'auto', state: 'pending', attemptedAt: now },
     serverInstallAction: 'installing'
+  },
+  waitsForHost: {
+    connection: 'ssh',
+    serverInstall: { policy: 'auto', state: 'pending', attemptedAt: now },
+    serverInstallAction: 'installing',
+    serverInstallWaitsForHost: true
   },
   install: {
     connection: 'ssh',

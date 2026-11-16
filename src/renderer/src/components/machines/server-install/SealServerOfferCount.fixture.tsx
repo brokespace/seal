@@ -8,9 +8,14 @@ import {
   SERVER_INSTALL_FIXTURE_MACHINES
 } from '../machine-server-install-fixture-data'
 
-const OFFERED = SERVER_INSTALL_FIXTURE_MACHINES.find(
-  (machine) => machine.id === toMachineId(SERVER_INSTALL_FIXTURE_IDS.offer)
-)
+function fixtureMachine(key: keyof typeof SERVER_INSTALL_FIXTURE_IDS): MachineView | undefined {
+  return SERVER_INSTALL_FIXTURE_MACHINES.find(
+    (machine) => machine.id === toMachineId(SERVER_INSTALL_FIXTURE_IDS[key])
+  )
+}
+
+const OFFERED = fixtureMachine('offer')
+const RUNS_OWN_SERVER = fixtureMachine('reuse')
 
 function offeredMachines(count: number): MachineView[] {
   return OFFERED
@@ -33,12 +38,18 @@ async function hoverCount(frame: HTMLElement): Promise<void> {
   await wait(900)
 }
 
-function navButtonFixture(offers: number, options: { active?: boolean; hover?: boolean } = {}) {
+function navButtonFixture(
+  offers: number,
+  options: { active?: boolean; hover?: boolean; others?: MachineView[] } = {}
+) {
   return defineFixture({
     width: 260,
     store: { activeView: options.active ? 'machines' : 'terminal' },
     setup: () => {
-      window.api.machines = { ...fakeMachinesApi, list: async () => offeredMachines(offers) }
+      window.api.machines = {
+        ...fakeMachinesApi,
+        list: async () => [...offeredMachines(offers), ...(options.others ?? [])]
+      }
     },
     render: () => (
       <div className="bg-worktree-sidebar px-2 pt-12 pb-2 text-worktree-sidebar-foreground">
@@ -56,3 +67,8 @@ export const severalOffers = navButtonFixture(3, { hover: true })
 export const severalOffersActive = navButtonFixture(3, { active: true })
 
 export const noOffers = navButtonFixture(0)
+
+/** A machine that runs its own server is offered that server, not an install: it is not counted. */
+export const ownServerNotCounted = navButtonFixture(0, {
+  others: RUNS_OWN_SERVER ? [RUNS_OWN_SERVER] : []
+})
