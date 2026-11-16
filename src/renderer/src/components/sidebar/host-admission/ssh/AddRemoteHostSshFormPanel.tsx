@@ -14,7 +14,8 @@ export function AddRemoteHostSshFormPanel({
   onCancel,
   onFillFromConfig,
   serverLabel,
-  options
+  options,
+  advancedOptions
 }: {
   form: EditingTarget
   disabled: boolean
@@ -29,6 +30,8 @@ export function AddRemoteHostSshFormPanel({
   serverLabel?: string
   /** Shown between the fields and the buttons. */
   options?: React.ReactNode
+  /** Shown at the end of Advanced. */
+  advancedOptions?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
   return (
@@ -65,6 +68,7 @@ export function AddRemoteHostSshFormPanel({
         onFormChange={onFormChange}
         onSubmit={onSubmit}
         offerProxyConnectionReuse={!serverLabel}
+        advancedOptions={advancedOptions}
       />
 
       {options}

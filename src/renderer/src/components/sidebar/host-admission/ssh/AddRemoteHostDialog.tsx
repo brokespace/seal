@@ -33,6 +33,8 @@ type AddRemoteHostDialogProps = {
   onAdded?: (added: AddedRemoteHost) => void
   /** Shown between the SSH fields and the dialog's buttons. */
   sshFormOptions?: React.ReactNode
+  /** Shown at the end of the SSH form's Advanced section. */
+  sshAdvancedOptions?: React.ReactNode
 }
 
 type SshDialogView = 'form' | 'config-picker'
@@ -41,7 +43,8 @@ export function AddRemoteHostDialog({
   mode,
   onOpenChange,
   onAdded,
-  sshFormOptions
+  sshFormOptions,
+  sshAdvancedOptions
 }: AddRemoteHostDialogProps): React.JSX.Element {
   const t = useTranslate()
   const open = mode !== null
@@ -384,6 +387,7 @@ export function AddRemoteHostDialog({
             onCancel={close}
             onFillFromConfig={() => void openSshConfigPicker()}
             options={sshFormOptions}
+            advancedOptions={sshAdvancedOptions}
           />
         ) : (
           <AddRemoteHostServerFormPanel

@@ -2189,8 +2189,7 @@
     "add": {
       "install": "Install Seal server on this machine (recommended)",
       "installHelp": "Keeps agents running when this computer disconnects, and enables chat, sessions and file features on the machine.",
-      "advanced": "Advanced server options",
-      "manager": "How the server is kept running",
+      "manager": "How Seal server is kept running",
       "managerAuto": "Automatic (recommended)",
       "managerAutoHelp": "The system’s own service manager; PM2 when that is not available.",
       "managerPm2": "PM2",

@@ -16,6 +16,7 @@ import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 import { installSealServerOnMachine } from '../server-install/seal-server-install-requests'
 import {
   AddMachineServerInstallOptions,
+  AddMachineServiceManagerOptions,
   DEFAULT_SERVER_INSTALL_CHOICE
 } from './AddMachineServerInstallOptions'
 
@@ -92,6 +93,11 @@ export function AddMachineDialog({
       sshFormOptions={
         offersServerInstall ? (
           <AddMachineServerInstallOptions choice={serverChoice} onChange={setServerChoice} />
+        ) : undefined
+      }
+      sshAdvancedOptions={
+        offersServerInstall && serverChoice.install ? (
+          <AddMachineServiceManagerOptions choice={serverChoice} onChange={setServerChoice} />
         ) : undefined
       }
       onAdded={(added) => {

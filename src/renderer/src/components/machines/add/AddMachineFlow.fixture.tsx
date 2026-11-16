@@ -11,7 +11,7 @@ function wait(ms: number): Promise<void> {
 // The dialog is portaled to <body>, outside the fixture frame.
 async function clickInDialog(selector: string): Promise<void> {
   await wait(100)
-  document.querySelector<HTMLElement>(`[data-add-machine-server-install] ${selector}`)?.click()
+  document.querySelector<HTMLElement>(`[role="dialog"] ${selector}`)?.click()
   await wait(400)
 }
 
@@ -29,12 +29,15 @@ function addMachineFixture(request: AddMachineRequest, interact?: () => Promise<
 
 export const sshNewMachine = addMachineFixture(NEW_SSH_MACHINE)
 
-export const sshNewMachineAdvanced = addMachineFixture(NEW_SSH_MACHINE, () =>
-  clickInDialog('[data-slot="collapsible-trigger"]')
-)
+export const sshNewMachineAdvanced = addMachineFixture(NEW_SSH_MACHINE, async () => {
+  await clickInDialog('[data-slot="collapsible-trigger"]')
+  const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
+  dialog?.scrollTo({ top: dialog.scrollHeight })
+  await wait(100)
+})
 
 export const sshNewMachineUnticked = addMachineFixture(NEW_SSH_MACHINE, () =>
-  clickInDialog('[data-slot="checkbox"]')
+  clickInDialog('[data-add-machine-server-install] [data-slot="checkbox"]')
 )
 
 /** SSH details for a machine that already exists: nothing is installed, so nothing is asked. */
