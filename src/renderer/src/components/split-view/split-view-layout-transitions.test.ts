@@ -237,9 +237,10 @@ describe('placeSplitViewItems: into a strip', () => {
     expect(next.focusedPaneId).toBe('right')
   })
 
-  it('reorders a chip within its strip to the slot the index named before the move', () => {
+  it('reorders a chip within its strip to the slot the index named before the move, selecting nothing', () => {
     const threeChips: SplitViewState = {
       ...sideBySide,
+      focusedPaneId: 'right',
       panes: { ...sideBySide.panes, left: { tabs: [alphaTab, betaTab, docsTab], activeKey: BETA } }
     }
     const next = placeSplitViewItems(
@@ -249,7 +250,8 @@ describe('placeSplitViewItems: into a strip', () => {
       { newPaneId: 'new' }
     )
 
-    expect(next.panes.left).toEqual({ tabs: [betaTab, alphaTab, docsTab], activeKey: ALPHA })
+    expect(next.panes.left).toEqual({ tabs: [betaTab, alphaTab, docsTab], activeKey: BETA })
+    expect(next.focusedPaneId).toBe('right')
   })
 
   it('moves an item that is already in another pane instead of duplicating it', () => {

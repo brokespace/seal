@@ -146,9 +146,9 @@ export function SplitViewPane({
         commands={commands}
         className={cn(
           'pointer-events-auto relative',
-          // The focused pane is told apart by a line and by strength, not by color alone.
+          // The focused pane is told apart by a line and by strength, not by color alone. The line runs over the docked tab too.
           focused
-            ? "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-[2px] before:bg-tab-active-indicator before:content-['']"
+            ? "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-20 before:h-[2px] before:bg-tab-active-indicator before:content-['']"
             : '[&_[role=tab][aria-selected=true]]:text-muted-foreground'
         )}
         after={

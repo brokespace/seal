@@ -9,6 +9,7 @@ import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-p
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTab } from './ItemTab'
 import {
+  ITEM_TAB_ROW_ATTRIBUTE,
   ITEM_TAB_STRIP_ATTRIBUTE,
   itemTabStripGroupId,
   useSplitViewDropPreview
@@ -88,7 +89,10 @@ export function ItemTabBar({
       style={style}
     >
       {before}
-      <div className="@container/tab-strip flex min-w-0 flex-1 items-stretch">
+      <div
+        {...{ [ITEM_TAB_ROW_ATTRIBUTE]: '' }}
+        className="@container/tab-strip flex min-w-0 flex-1 items-stretch"
+      >
         <div className="flex h-full min-w-10 flex-1 items-stretch overflow-hidden">
           <TabStripViewport
             sortableIds={keys}

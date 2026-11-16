@@ -26,6 +26,8 @@ const SPLIT_VIEW_DRAG_ATTRIBUTE = 'data-split-view-drag'
 /** On a strip: its pane id, or empty for the agent-session page's strip in single view. */
 export const ITEM_TAB_STRIP_ATTRIBUTE = 'data-item-tab-strip'
 export const ITEM_TAB_KEY_ATTRIBUTE = 'data-item-tab-key'
+/** On the part of a strip its tabs and their scroll buttons take. */
+export const ITEM_TAB_ROW_ATTRIBUTE = 'data-item-tab-row'
 
 const EDGE_SHARE = 0.3
 
@@ -167,11 +169,22 @@ function sessionPageTabs(
 function resolveStripDrop(strip: HTMLElement, x: number, paneId: string | null): ResolvedDrop {
   const stripRect = strip.getBoundingClientRect()
   const tabs = [...strip.querySelectorAll<HTMLElement>(`[${ITEM_TAB_KEY_ATTRIBUTE}]`)]
-  // The first tab the pointer is left of the middle of; past them all, the end of the last.
-  let index = tabs.findIndex((tab) => {
-    const rect = tab.getBoundingClientRect()
-    return x < rect.left + rect.width / 2
-  })
+  const scroller = strip.querySelector<HTMLElement>('[role="tablist"]')
+  const shown = scroller?.getBoundingClientRect() ?? stripRect
+  const row = strip.querySelector(`[${ITEM_TAB_ROW_ATTRIBUTE}]`)?.getBoundingClientRect() ?? shown
+  // Tabs scrolled out of the strip lie under what is beside it: past either end is that end.
+  let index = x <= shown.left ? 0 : -1
+  if (x > shown.left && x < shown.right) {
+    // The first tab the pointer is left of the middle of; past them all, the end of the last.
+    index = tabs.findIndex((tab) => {
+      const rect = tab.getBoundingClientRect()
+      return x < rect.left + rect.width / 2
+    })
+  }
+  // Beside the scroll buttons, which scroll a held tab along, the end it would land at is shown.
+  if (scroller && (x < row.left || x > row.right)) {
+    scroller.scrollLeft = index === 0 ? 0 : scroller.scrollWidth
+  }
   const side = index === -1 ? 'right' : 'left'
   const hovered = tabs.at(index)
   if (index === -1) {

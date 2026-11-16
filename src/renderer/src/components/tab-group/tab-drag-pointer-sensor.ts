@@ -180,7 +180,8 @@ export class TabDragPointerSensor implements SensorInstance {
     this.windowListeners.add(win, 'contextmenu', preventDefault)
     this.windowListeners.add(win, 'blur', this.handleCancel)
     this.windowListeners.add(win, 'focus', this.handleCancel)
-    this.documentListeners.add(this.document, 'keydown', this.handleKeydown)
+    // Why capture: a terminal that holds the keyboard keeps its keys from the document.
+    this.documentListeners.add(this.document, 'keydown', this.handleKeydown, { capture: true })
 
     if (!activationConstraint) {
       this.handleStart()
@@ -309,9 +310,15 @@ export class TabDragPointerSensor implements SensorInstance {
   }
 
   private handleKeydown(event: KeyboardEvent): void {
-    if (event.code === 'Escape') {
-      this.handleCancel()
+    if (event.code !== 'Escape') {
+      return
     }
+    if (this.activated && !this.ended) {
+      // The key ends the drag; what holds the keyboard does not get it as well.
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    this.handleCancel()
   }
 
   private removeTextSelection(): void {

@@ -145,11 +145,19 @@ export function placeSplitViewItems(
       .slice(0, placement.index ?? target.tabs.length)
       .filter((tab) => !movedKeys.has(splitViewItemKey(tab.item))).length
     const at = placement.zone === 'center' ? before : remaining.length
+    // Tabs that change places in their own strip change nothing else, as in any tab strip.
+    const reordered =
+      placement.index !== undefined &&
+      [...movedKeys].every((key) => target.tabs.some((tab) => splitViewItemKey(tab.item) === key))
     panes[placement.paneId] = {
       tabs: [...remaining.slice(0, at), ...tabs, ...remaining.slice(at)],
-      activeKey
+      activeKey: reordered ? target.activeKey : activeKey
     }
-    return settleSplitView({ ...state, panes, focusedPaneId: placement.paneId })
+    return settleSplitView({
+      ...state,
+      panes,
+      focusedPaneId: reordered ? state.focusedPaneId : placement.paneId
+    })
   }
   const horizontal = placement.zone === 'left' || placement.zone === 'right'
   const first = placement.zone === 'left' || placement.zone === 'up'
