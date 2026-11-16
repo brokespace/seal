@@ -1,0 +1,61 @@
+{
+  "id": "partly-done-with-a-failing-step",
+  "title": "The agent does two of three of the same step and stops when the third fails",
+  "categories": ["partly-addressed", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The users and admins tables are backfilled. The guests table is not, and the recap says so with the reason.",
+  "steps": [
+    {
+      "user": "Backfill display_name from the profiles table on the users, admins and guests tables."
+    },
+    {
+      "edit": "/srv/shop/scripts/backfill-display-name.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsx scripts/backfill-display-name.ts users"
+        },
+        "output": "users: 81,204 rows updated"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsx scripts/backfill-display-name.ts admins"
+        },
+        "output": "admins: 312 rows updated"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsx scripts/backfill-display-name.ts guests"
+        },
+        "output": "Error: statement timeout after 30000 ms"
+      }
+    },
+    {
+      "agent": "users and admins are backfilled: 81,204 and 312 rows. guests is not. The script times out on the 4M-row guests table, so I stopped it; that one needs to run in batches."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "guests",
+          "why": "the guests table was not backfilled"
+        }
+      ]
+    }
+  ]
+}

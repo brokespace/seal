@@ -1,0 +1,96 @@
+{
+  "id": "mid-turn-refresh",
+  "title": "The user presses Refresh while the agent is in the middle of its turn",
+  "categories": ["mid-turn"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "Mid-turn the work shows as in progress and nothing as not addressed. When the turn ends the recap is brought up to date and shows the work as done.",
+  "steps": [
+    {
+      "user": "Refactor the payment module into separate files and then update the imports in the checkout pages."
+    },
+    {
+      "agent": "I'll split src/payment.ts into charge.ts, refund.ts and webhook.ts first, then update the checkout imports."
+    },
+    {
+      "edit": "/srv/shop/src/payment/charge.ts"
+    },
+    {
+      "edit": "/srv/shop/src/payment/refund.ts"
+    },
+    {
+      "refresh": true
+    },
+    {
+      "label": "mid-turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "split|refactor|payment",
+          "why": "the work under way is in progress",
+          "state": "in-progress"
+        }
+      ]
+    },
+    {
+      "edit": "/srv/shop/src/payment/webhook.ts"
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "agent": "The payment module is split into charge.ts, refund.ts and webhook.ts, and the three checkout pages import from the new files. Tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "right after the turn ends",
+      "check": [
+        {
+          "view": "stale",
+          "is": false,
+          "why": "the recap is brought up to date when the turn ends"
+        },
+        {
+          "in": "did",
+          "has": "split|refactor|payment",
+          "why": "the work is done",
+          "state": "done"
+        }
+      ]
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "four minutes later",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "split|refactor|payment",
+          "why": "the work is done",
+          "state": "done"
+        },
+        {
+          "in": "did",
+          "has": "import|checkout",
+          "why": "the import update is recorded as done",
+          "state": "done"
+        }
+      ]
+    }
+  ]
+}

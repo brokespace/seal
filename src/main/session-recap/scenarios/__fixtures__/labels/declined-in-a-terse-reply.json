@@ -1,0 +1,21 @@
+{
+  "id": "declined-in-a-terse-reply",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["rm the vendor dir"],
+      "at": {
+        "after turn 1": {
+          "is": "declined",
+          "why": "step 3: the agent says no because the build imports vendor/pdfkit, and leaves vendor/ as is"
+        },
+        "after turn 2": {
+          "is": "declined",
+          "why": "step 8: the user only said ok and the agent confirms vendor/ stays"
+        }
+      }
+    }
+  ],
+  "notRequests": ["ok"],
+  "rules": []
+}

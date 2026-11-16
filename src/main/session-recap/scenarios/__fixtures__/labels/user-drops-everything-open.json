@@ -1,0 +1,69 @@
+{
+  "id": "user-drops-everything-open",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["fix the broken avatar upload"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says the avatar upload is fixed"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says the avatar upload is fixed"
+        }
+      }
+    },
+    {
+      "quotes": ["add a CSV export to the orders page"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not started the CSV export"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 7: the user says to forget the rest"
+        }
+      }
+    },
+    {
+      "quotes": ["add dark mode to settings"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not started dark mode"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 7: the user says to forget the rest"
+        }
+      }
+    },
+    {
+      "quotes": ["translate the onboarding emails to German"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not started the German emails"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 7: the user says to forget the rest"
+        }
+      }
+    },
+    {
+      "quotes": ["ship what we have"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 9: the agent pushed and says the avatar fix is on main"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

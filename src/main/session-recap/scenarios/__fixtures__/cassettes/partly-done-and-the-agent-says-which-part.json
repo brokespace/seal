@@ -1,0 +1,14 @@
+[
+  {
+    "key": "a3f0b30624232e25aeb93db4c8d021cd",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add unit tests for the three parsers: csv, json and yaml.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add unit tests for the three parsers: csv, json and yaml.\n\n[m2] AGENT: The csv and json parsers have tests now, 14 passing. I have not written the yaml ones: the yaml parser reads from disk and needs a fixture loader first.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\"text\": \"Add unit tests for csv and json parsers\", \"state\": \"done\", \"ref\": \"m1\"}, {\"text\": \"Implement yaml parser depending on fixture loader\", \"state\": \"in-progress\", \"ref\": \"m2\"}],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  }\n}",
+    "neurons": 7.0956
+  }
+]

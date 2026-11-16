@@ -1,0 +1,26 @@
+{
+  "id": "addressed-implicitly-by-edit",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Bump the version to 2.4.0 in package.json"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "steps 2 and 4: the agent edits package.json and the diff stat shows its one-line change"
+        }
+      }
+    },
+    {
+      "quotes": ["add a CHANGELOG entry for the new export feature"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 5: the agent says CHANGELOG has the entry under 2.4.0"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

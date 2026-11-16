@@ -1,0 +1,14 @@
+[
+  {
+    "key": "29af85355deb86db7357b786be91db8f",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a CSV export to the orders page and a date filter above the table.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a CSV export to the orders page and a date filter above the table.\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: make the date filter default to the last 30 days\n\n[m2] AGENT: The date filter defaults to the last 30 days now.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"a1\", \"text\": \"Add a CSV export and a date filter above the orders table that defaults to the last 30 days.\", \"state\": \"in-progress\"}\n  ],\n  \"resolve\": []\n}",
+    "neurons": 5.686999999999999
+  }
+]

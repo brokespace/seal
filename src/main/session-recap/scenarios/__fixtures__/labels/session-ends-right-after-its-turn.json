@@ -1,0 +1,17 @@
+{
+  "id": "session-ends-right-after-its-turn",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Generate the sitemap"],
+      "at": {
+        "five minutes after the session ended": {
+          "is": "done",
+          "why": "step 3: the agent says sitemap.xml is generated with 1,204 URLs, and the session then ended"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

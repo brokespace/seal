@@ -1,0 +1,84 @@
+{
+  "id": "withdrawn-then-asked-again",
+  "title": "The user withdraws an ask, then asks for it again",
+  "categories": ["withdrawn-or-changed", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
+  "steps": [
+    {
+      "user": "Add dark mode to the settings page."
+    },
+    {
+      "agent": "Dark mode touches the theme tokens across the whole app. Should I do the whole app or only the settings page?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "never mind dark mode for now"
+    },
+    {
+      "agent": "OK, leaving dark mode out."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the user withdraws it",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the user withdrew the request"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the question fell away with the request it was about"
+        }
+      ]
+    },
+    {
+      "user": "actually do add dark mode, only on settings"
+    },
+    {
+      "edit": "/srv/shop/src/pages/settings.tsx"
+    },
+    {
+      "agent": "Dark mode is on the settings page and follows the system setting."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the user asks again",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "dark",
+          "state": "done",
+          "why": "dark mode is recorded as done"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user said which pages when asking again"
+        }
+      ]
+    }
+  ]
+}

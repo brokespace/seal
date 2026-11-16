@@ -1,0 +1,42 @@
+{
+  "id": "remote-server-session",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a --dry-run flag to the import script"],
+      "at": {
+        "before anyone opens it": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        },
+        "after a client opens it": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says --dry-run is added to scripts/import.ts"
+        }
+      }
+    },
+    {
+      "quotes": ["document it in docs/import.md", "document it please"],
+      "at": {
+        "before anyone opens it": {
+          "is": "open",
+          "why": "step 3: the agent says it has not documented the flag yet"
+        },
+        "after a client opens it": {
+          "is": "open",
+          "why": "step 3: the agent says it has not documented the flag yet, and opening the recap changes nothing"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent says --dry-run is documented in docs/import.md"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

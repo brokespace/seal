@@ -1,0 +1,26 @@
+[
+  {
+    "key": "562266547d20c18cd7a82651ad853f37",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"rm the vendor dir\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: rm the vendor dir\n\n[m2] AGENT: No. The build imports vendor/pdfkit directly, so removing vendor/ breaks invoices. Left as is.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [],\n    \"did\": [],\n    \"questions\": [],\n    \"ignored\": [{\"text\": \"rm the vendor dir\", \"ref\": \"m1\"}],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"resolve\": [\"firstRequest\"]\n}",
+    "neurons": 5.9059
+  },
+  {
+    "key": "d870d8b8dd6f46918b0613e8eb6b69fa",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"rm the vendor dir\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[{\"id\":\"i1\",\"text\":\"rm the vendor dir\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok\n\n[m2] AGENT: Understood, vendor/ stays.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"i1\"],\n  \"add\": {\n    \"did\": [{\"text\": \"keep vendor dir\", \"state\": \"done\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 5.0776
+  }
+]

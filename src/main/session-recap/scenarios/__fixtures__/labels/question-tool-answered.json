@@ -1,0 +1,17 @@
+{
+  "id": "question-tool-answered",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Set up the staging deploy"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 6: after the user picked a region the agent wrote staging.yml and says it deploys on every push to main"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

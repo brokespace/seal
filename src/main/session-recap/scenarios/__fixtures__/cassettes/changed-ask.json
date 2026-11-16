@@ -1,0 +1,26 @@
+[
+  {
+    "key": "8a75183ec6745da7b2f93f29b8625ae3",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Cache the product list in Redis with a 5 minute TTL.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Cache the product list in Redis with a 5 minute TTL.\n\n[m2] AGENT: Before I add it: Redis isn't in the stack yet, so this means a new service in docker-compose and in production. Do you want that, or an in-process cache?\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"ref\": \"m2\",\n        \"text\": \"Add Redis service or use in-process cache?\"\n      }\n    ],\n    \"did\": [\n      {\n        \"ref\": \"m1\",\n        \"state\": \"in-progress\",\n        \"text\": \"Cache product list in Redis with 5 minute TTL\"\n      }\n    ]\n  },\n  \"standing\": \"Need to decide between Redis and in-process cache, or add Redis service.\"\n}",
+    "neurons": 7.5743
+  },
+  {
+    "key": "156bdd15b6332969a391049fe02126eb",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Need to decide between Redis and in-process cache, or add Redis service.\",\"firstRequest\":\"Cache the product list in Redis with a 5 minute TTL.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add Redis service or use in-process cache?\"}],\"did\":[{\"id\":\"w2\",\"text\":\"Cache product list in Redis with 5 minute TTL\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: oh, no new services. in-memory LRU is fine, same TTL\n\n[m2] AGENT: The product list is cached in an in-memory LRU with a 5 minute TTL (src/cache/product-cache.ts); no Redis involved.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\n      \"id\": \"w2\",\n      \"text\": \"Cache product list in in-memory LRU with 5 minute TTL\",\n      \"state\": \"done\"\n    }\n  ],\n  \"resolve\": [\n    \"a1\"\n  ],\n  \"standing\": \"Product list is cached in an in-memory LRU with a 5 minute TTL.\"\n}",
+    "neurons": 6.9228000000000005
+  }
+]

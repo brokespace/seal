@@ -1,0 +1,15 @@
+{
+  "label": "before anyone opens it",
+  "view": {
+    "sessionId": "local:claude:6b406ac9-c3fe-4767-a611-a5f34d8207b7",
+    "recap": null,
+    "marks": {},
+    "since": null,
+    "state": "empty",
+    "stale": false,
+    "pausedUntil": null,
+    "failure": null,
+    "rev": 0
+  },
+  "requests": 0
+}

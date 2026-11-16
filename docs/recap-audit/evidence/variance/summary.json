@@ -1,0 +1,151 @@
+{
+  "samples": 258,
+  "unmatched": 0,
+  "byModel": {
+    "@cf/zai-org/glm-4.7-flash": {
+      "samples": 172,
+      "acceptedByParser": "163/172 (95%)",
+      "wellFormed": "85/172 (49%)",
+      "faults": {
+        "unknown-add-key": 1,
+        "resolve-wrong-id": 57,
+        "not-json": 1,
+        "list-at-top-level": 30,
+        "unknown-key": 5,
+        "code-fence": 6
+      },
+      "openAskListedAsNotAddressed": "1/56 (2%)",
+      "openProbesWithOtherIgnoredItems": "0/56 (0%)",
+      "cleanTurnLeavesNotAddressedEmpty": "64/64 (100%)",
+      "addressedAskResolved": "39/52 (75%)",
+      "addressedAskStillListedAfterThePass": "17/52 (33%)",
+      "resolvedAndAddedBackInTheSameReply": "4/52 (8%)",
+      "resolveProbesThatAddIgnored": "6/52 (12%)",
+      "firstPassWithAnAskRecorded": "37/128 (29%)",
+      "firstPassWithGoal": "61/128 (48%)",
+      "samplesAddingUserActions": "18/172 (10%)",
+      "perProbe": {
+        "open": {
+          "open/addressed-next-turn#0": "0/4",
+          "open/addressed-several-turns-later#0": "0/4",
+          "open/addressed-later-user-looks-at-once#0": "0/4",
+          "open/compaction-between-ask-and-work#0": "0/4",
+          "open/duplicate-reminder#0": "0/4",
+          "open/multiple-asks-one-deferred#0": "1/4",
+          "open/non-english-session#0": "0/4",
+          "open/partly-addressed-stays-open#1": "0/4",
+          "open/partly-addressed-then-finished#0": "0/4",
+          "open/terse-ask-skipped#0": "0/4",
+          "open/withdrawn-ask#0": "0/4",
+          "open/restart-mid-session#0": "0/4",
+          "open/resumed-under-a-new-id#0": "0/4",
+          "open/session-ends-after-doing-the-open-ask#0": "0/4"
+        },
+        "clean": {
+          "clean/addressed-same-turn#0": "4/4",
+          "clean/addressed-implicitly-by-edit#0": "4/4",
+          "clean/addressed-in-the-middle-of-a-long-turn#0": "4/4",
+          "clean/addressed-with-no-prose#1": "4/4",
+          "clean/addressed-by-commit-and-pr#1": "4/4",
+          "clean/tool-heavy-one-word-reply#0": "4/4",
+          "clean/multiple-asks-all-done#0": "4/4",
+          "clean/declined-with-a-reason#0": "4/4",
+          "clean/question-answered#0": "4/4",
+          "clean/question-tool-waiting#0": "4/4",
+          "clean/mid-turn-refresh#0": "4/4",
+          "clean/mid-turn-first-look#0": "4/4",
+          "clean/mid-turn-automatic-recap#0": "4/4",
+          "clean/subagent-does-the-work#0": "4/4",
+          "clean/partly-addressed-then-finished#1": "4/4",
+          "clean/question-ask-answered#0": "4/4"
+        },
+        "resolve": {
+          "resolve/addressed-next-turn#1": "4/4",
+          "resolve/addressed-several-turns-later#3": "3/4",
+          "resolve/addressed-later-user-looks-at-once#2": "4/4",
+          "resolve/compaction-between-ask-and-work#1": "3/4",
+          "resolve/duplicate-reminder#2": "3/4",
+          "resolve/non-english-session#1": "2/4",
+          "resolve/partly-addressed-then-finished#1": "4/4",
+          "resolve/restart-mid-session#2": "3/4",
+          "resolve/resumed-under-a-new-id#1": "2/4",
+          "resolve/session-ends-after-doing-the-open-ask#1": "3/4",
+          "resolve/withdrawn-ask#1": "4/4",
+          "resolve/changed-ask#1": "2/4",
+          "resolve/declined-then-agreed#1": "2/4"
+        }
+      }
+    },
+    "@cf/google/gemma-4-26b-a4b-it": {
+      "samples": 86,
+      "acceptedByParser": "86/86 (100%)",
+      "wellFormed": "0/86 (0%)",
+      "faults": {
+        "code-fence": 86,
+        "list-at-top-level": 1,
+        "resolve-wrong-id": 12
+      },
+      "openAskListedAsNotAddressed": "0/28 (0%)",
+      "openProbesWithOtherIgnoredItems": "0/28 (0%)",
+      "cleanTurnLeavesNotAddressedEmpty": "32/32 (100%)",
+      "addressedAskResolved": "25/26 (96%)",
+      "addressedAskStillListedAfterThePass": "1/26 (4%)",
+      "resolvedAndAddedBackInTheSameReply": "0/26 (0%)",
+      "resolveProbesThatAddIgnored": "0/26 (0%)",
+      "firstPassWithAnAskRecorded": "8/64 (13%)",
+      "firstPassWithGoal": "63/64 (98%)",
+      "samplesAddingUserActions": "0/86 (0%)",
+      "perProbe": {
+        "open": {
+          "open/addressed-next-turn#0": "0/2",
+          "open/addressed-several-turns-later#0": "0/2",
+          "open/addressed-later-user-looks-at-once#0": "0/2",
+          "open/compaction-between-ask-and-work#0": "0/2",
+          "open/duplicate-reminder#0": "0/2",
+          "open/multiple-asks-one-deferred#0": "0/2",
+          "open/non-english-session#0": "0/2",
+          "open/partly-addressed-stays-open#1": "0/2",
+          "open/partly-addressed-then-finished#0": "0/2",
+          "open/terse-ask-skipped#0": "0/2",
+          "open/withdrawn-ask#0": "0/2",
+          "open/restart-mid-session#0": "0/2",
+          "open/resumed-under-a-new-id#0": "0/2",
+          "open/session-ends-after-doing-the-open-ask#0": "0/2"
+        },
+        "clean": {
+          "clean/addressed-same-turn#0": "2/2",
+          "clean/addressed-implicitly-by-edit#0": "2/2",
+          "clean/addressed-in-the-middle-of-a-long-turn#0": "2/2",
+          "clean/addressed-with-no-prose#1": "2/2",
+          "clean/addressed-by-commit-and-pr#1": "2/2",
+          "clean/tool-heavy-one-word-reply#0": "2/2",
+          "clean/multiple-asks-all-done#0": "2/2",
+          "clean/declined-with-a-reason#0": "2/2",
+          "clean/question-answered#0": "2/2",
+          "clean/question-tool-waiting#0": "2/2",
+          "clean/mid-turn-refresh#0": "2/2",
+          "clean/mid-turn-first-look#0": "2/2",
+          "clean/mid-turn-automatic-recap#0": "2/2",
+          "clean/subagent-does-the-work#0": "2/2",
+          "clean/partly-addressed-then-finished#1": "2/2",
+          "clean/question-ask-answered#0": "2/2"
+        },
+        "resolve": {
+          "resolve/addressed-next-turn#1": "2/2",
+          "resolve/addressed-several-turns-later#3": "2/2",
+          "resolve/addressed-later-user-looks-at-once#2": "2/2",
+          "resolve/compaction-between-ask-and-work#1": "2/2",
+          "resolve/duplicate-reminder#2": "2/2",
+          "resolve/non-english-session#1": "2/2",
+          "resolve/partly-addressed-then-finished#1": "2/2",
+          "resolve/restart-mid-session#2": "2/2",
+          "resolve/resumed-under-a-new-id#1": "2/2",
+          "resolve/session-ends-after-doing-the-open-ask#1": "2/2",
+          "resolve/withdrawn-ask#1": "2/2",
+          "resolve/changed-ask#1": "2/2",
+          "resolve/declined-then-agreed#1": "1/2"
+        }
+      }
+    }
+  }
+}

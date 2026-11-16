@@ -1,0 +1,17 @@
+{
+  "id": "injected-reminders",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add a favicon to the site"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 5: the agent says the site has a favicon now"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

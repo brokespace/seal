@@ -1,0 +1,26 @@
+[
+  {
+    "key": "513c484953c4a50b1774e490f4d83ec3",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page, and fix the avatar upload that fails on PNGs\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page, and fix the avatar upload that fails on PNGs over 2MB.\n\n[m2] AGENT: Avatar upload is fixed: the size check used kilobytes where it meant bytes, so PNGs over 2MB now upload. Dark mode touches the theme tokens across the whole app, so I have not started it.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Dark mode and avatar upload fix\",\n  \"goal\": \"Add dark mode to the settings page and fix the avatar upload failure\",\n  \"standing\": \"Avatar upload bug is resolved; dark mode feature is pending\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Fixed avatar upload size check\", \"state\": \"done\", \"ref\": \"m2\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [\n      {\"text\": \"Implement dark mode theme tokens\", \"state\": \"in-progress\", \"ref\": \"m2\"}\n    ],\n    \"decisions\": []\n  }\n}",
+    "neurons": 9.0167
+  },
+  {
+    "key": "6bcd020a1612e3e27b1c25c1004eac8d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Dark mode and avatar upload fix\",\"goal\":\"Add dark mode to the settings page and fix the avatar upload failure\",\"standing\":\"Avatar upload bug is resolved; dark mode feature is pending\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Fixed avatar upload size check\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t2\",\"text\":\"Implement dark mode theme tokens\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: never mind dark mode, we'll do it next quarter\n\n[m2] AGENT: Understood, leaving dark mode out.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Dark mode and avatar upload fix\",\n  \"goal\": \"Fix the avatar upload failure\",\n  \"standing\": \"Avatar upload bug is resolved\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [{\"id\": \"w1\", \"text\": \"Fixed avatar upload size check\", \"state\": \"done\"}],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": [{\"id\": \"t2\", \"text\": \"Drop dark mode feature\"}]\n  },\n  \"resolve\": [\"t2\"]\n}",
+    "neurons": 8.2172
+  }
+]

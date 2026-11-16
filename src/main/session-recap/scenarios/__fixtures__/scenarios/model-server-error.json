@@ -1,0 +1,64 @@
+{
+  "id": "model-server-error",
+  "title": "The primary model answers HTTP 500",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "The fallback model writes the recap.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "http-500",
+        "model": "primary",
+        "times": 1
+      }
+    },
+    {
+      "user": "The checkout page crashes when the cart is empty. Fix it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/pages/checkout.tsx"
+        },
+        "output": "// src/pages/checkout.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/pages/checkout.test.tsx"
+        },
+        "output": "12 passed"
+      }
+    },
+    {
+      "agent": "Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the fallback model writes the recap when the primary errors"
+        },
+        {
+          "view": "model",
+          "is": "@cf/google/gemma-4-26b-a4b-it",
+          "why": "the fallback model answered"
+        }
+      ]
+    }
+  ]
+}

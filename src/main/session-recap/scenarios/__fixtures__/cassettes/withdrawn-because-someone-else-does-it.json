@@ -1,0 +1,26 @@
+[
+  {
+    "key": "c1e2329a1abc73b4a9297c56f966284a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Write a changelog entry for 3.2 and tweet-length release notes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Write a changelog entry for 3.2 and tweet-length release notes.\n\n[m2] AGENT: The 3.2 entry is in CHANGELOG.md. I have not written the release notes yet.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"asked\": [\n    {\"text\": \"Write changelog for 3.2 and tweet-length release notes\", \"ref\": \"m1\"}\n  ],\n  \"did\": [\n    {\"text\": \"Verify CHANGELOG.md has 3.2 entry\", \"state\": \"done\", \"ref\": \"m2\"}\n  ],\n  \"standing\": \"Tweet-length release notes are not yet written.\"\n}",
+    "neurons": 6.7913
+  },
+  {
+    "key": "ebec6f566c458b30f09f123c573e9dd5",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Tweet-length release notes are not yet written.\",\"firstRequest\":\"Write a changelog entry for 3.2 and tweet-length release notes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: marketing will do the notes. can you tag the release?\n\n[m2] AGENT: Tagged v3.2.0 and pushed the tag.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Release 3.2.0\",\n  \"goal\": \"Write a changelog entry for 3.2 and tweet-length release notes.\",\n  \"standing\": \"v3.2.0 tagged and pushed. Marketing will provide the notes.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Tagged v3.2.0 and pushed tag\", \"state\": \"done\", \"ref\": \"m2\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [\n      {\"text\": \"Marketing to write tweet-length notes\", \"ref\": \"m1\"}\n    ],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": [\"m1\"]\n}",
+    "neurons": 9.5302
+  }
+]

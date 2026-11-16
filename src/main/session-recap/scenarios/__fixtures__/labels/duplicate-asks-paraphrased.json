@@ -1,0 +1,21 @@
+{
+  "id": "duplicate-asks-paraphrased",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": [
+        "add input validation to the signup form",
+        "the signup form needs to validate every field before submit",
+        "did you add the validation on signup yet?"
+      ],
+      "at": {
+        "after turn 3": {
+          "is": "done",
+          "why": "step 11: the agent says every signup field is validated before submit"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

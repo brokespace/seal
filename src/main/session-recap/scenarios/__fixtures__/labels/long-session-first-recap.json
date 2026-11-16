@@ -1,0 +1,47 @@
+{
+  "id": "long-session-first-recap",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Start with the plan"],
+      "at": {
+        "after the first automatic recap": {
+          "is": "done",
+          "why": "step 2: the agent gives the plan (one service per turn, alphabetical, fields kept, emails stripped)"
+        },
+        "after the user presses Refresh": {
+          "is": "done",
+          "why": "step 2: the agent gave the plan; the refresh at step 11 changes nothing"
+        }
+      }
+    },
+    {
+      "quotes": ["add a LOG_LEVEL env var to the logger, default info"],
+      "at": {
+        "after the first automatic recap": {
+          "is": "open",
+          "why": "step 4: the agent says it will add LOG_LEVEL after the moves are done, and no later step adds it"
+        },
+        "after the user presses Refresh": {
+          "is": "open",
+          "why": "step 4: the agent put LOG_LEVEL off until after the moves and it is still not added; the refresh changes nothing"
+        }
+      }
+    },
+    {
+      "quotes": ["how many services are left in round 2?"],
+      "at": {
+        "after the first automatic recap": {
+          "is": "done",
+          "why": "step 7: the agent answers that 14 are left in round 2"
+        },
+        "after the user presses Refresh": {
+          "is": "done",
+          "why": "step 7: the agent answered that 14 are left in round 2"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": ["never log customer emails", "keep the old log field names"]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "model-server-error",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["The checkout page crashes when the cart is empty. Fix it"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 6: the agent says it is fixed and all 12 checkout tests pass"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

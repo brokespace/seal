@@ -1,0 +1,62 @@
+[
+  {
+    "contentHash": "a25347553c74fd7d1142b1d2d1aada34a68bce2d618ab4117c348717a04a837d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\"title\":\"Orders Service Cleanup\",\"goal\":\"Refactor orders service before Friday release.\",\"standing\":\"Replacing CSV timestamp patterns.\",\"add\":{\"asked\":[{\"text\":\"Replace hand-rolled retry loop\",\"ref\":\"m1\"},{\"text\":\"Add index on orders.customer_id\",\"ref\":\"m1\"},{\"text\":\"Fix CSV export timezone offset\",\"ref\":\"m1\"},{\"text\":\"Delete legacy_orders table\",\"ref\":\"m1\"},{\"text\":\"Update docs/orders.md\",\"ref\":\"m1\"},{\"text\":\"Open PR when done\",\"ref\":\"m1\"}],\"did\":[{\"text\":\"Replace retry loop with shared helper\",\"ref\":\"m2\",\"state\":\"done\"},{\"text\":\"Create Orders Customer ID index\",\"ref\":\"m2\",\"state\":\"done\"},{\"text\":\"Refactor CSV timestamp patterns\",\"ref\":\"m2\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]},\"update\":[],\"resolve\":[]}"
+  },
+  {
+    "contentHash": "a25347553c74fd7d1142b1d2d1aada34a68bce2d618ab4117c348717a04a837d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "```json\n{\n  \"goal\": \"Clean up the orders service before Friday's release and prepare a PR.\",\n  \"standing\": \"Working through a list of tasks. Replaced the retry loop with a shared helper and added a customer_id index. Currently moving timestamp formatters to a single formatter for the CSV export.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Replace sync retry loop with shared helper using exponential backoff\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Add concurrent index on orders.customer_id for the customer page\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": [\n      {\n        \"text\": \"Used concurrency for index to avoid locking production table\",\n        \"ref\": \"m2\"\n      }\n    ]\n  },\n  \"update\": [\n    {\n      \"id\": \"firstRequest\",\n      \"state\": \"in-progress\",\n      \"ref\": \"m1\"\n    }\n  ],\n  \"resolve\": []\n}\n```"
+  },
+  {
+    "contentHash": "a25347553c74fd7d1142b1d2d1aada34a68bce2d618ab4117c348717a04a837d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"standing\": \"Aiming to make the three CSV export timestamp formatters consistent. Removing legacy table and docs, then open PR.\",\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"Replace hand-rolled sync retry loop with shared exponential backoff helper\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Write concurrent index migration for orders.customer_id\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Run index migration on staging and verify customer page performance\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Unify CSV timestamp formatter before updating format to ISO 8601\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m2\"\n      }\n    ]\n  }\n}"
+  },
+  {
+    "contentHash": "a25347553c74fd7d1142b1d2d1aada34a68bce2d618ab4117c348717a04a837d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"firstRequest\": \"Big cleanup of the orders service before Friday's release. 1) Replace the hand-rolled retry loop in src/orders/sync.ts with the shared retry helper. 2) Add an index on orders.customer_id, the customer page takes 4 seconds. 3) The CSV export drops the timezone, export timestamps as ISO 8601 with offset. 4) Delete the unused legacy_orders table and its model. 5) Update docs/orders.md to describe the new export format. Open a PR when it is all done.\",\n  \"did\": [\n    {\n      \"text\": \"Replaced hand-rolled retry loop with shared helper using exponential backoff\",\n      \"ref\": \"m2\"\n    },\n    {\n      \"text\": \"Added index concurrently on orders.customer_id, customer page query sped up\",\n      \"ref\": \"m2\"\n    },\n    {\n      \"text\": \"Refactored timestamp formatting to move three places onto one formatter\",\n      \"ref\": \"m2\",\n      \"state\": \"in-progress\"\n    }\n  ],\n  \"standing\": \"Working on CSV export timestamps to fix timezone, then legacy table removal and documentation updates.\",\n  \"add\": {\n    \"decisions\": [\n      { \"text\": \"Keep existing log line to make dashboards count sync retries\", \"ref\": \"m2\" }\n    ],\n    \"actions\": [\n      { \"text\": \"Add sync test case for upstream never recovering\", \"ref\": \"m2\" }\n    ]\n  }\n}"
+  },
+  {
+    "contentHash": "af70730dd77031e3d648c4758f8d5f6d5eff07774f0756c1c9873ed5c509aa48",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": \"Fixing CSV export timezone and removing legacy table.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Format CSV exports with ISO 8601 offset\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Drop legacy_orders table with migration 0043\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [\n      {\n        \"text\": \"Update docs/orders.md\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"decisions\": []\n  },\n  \"update\": [\n    {\n      \"id\": \"w9\",\n      \"state\": \"done\",\n      \"text\": \"Refactor CSV timestamp patterns\"\n    },\n    {\n      \"id\": \"w7\",\n      \"state\": \"done\",\n      \"text\": \"Replace retry loop with shared helper\"\n    },\n    {\n      \"id\": \"w8\",\n      \"state\": \"done\",\n      \"text\": \"Create Orders Customer ID index\"\n    }\n  ],\n  \"resolve\": []\n}"
+  },
+  {
+    "contentHash": "af70730dd77031e3d648c4758f8d5f6d5eff07774f0756c1c9873ed5c509aa48",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"standing\": \"Updating docs/orders.md and preparing PR.\",\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"Refactor CSV timestamp patterns\",\n        \"ref\": \"w9\",\n        \"state\": \"done\"\n      },\n      {\n        \"text\": \"Remove legacy-order model and drop table\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Add offset round-trip test for export\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"actions\": [\n      {\n        \"text\": \"Update docs/orders.md\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Open PR\",\n        \"ref\": \"m1\"\n      }\n    ]\n  },\n  \"update\": [\n    {\n      \"id\": \"w9\",\n      \"state\": \"done\"\n    }\n  ],\n  \"resolve\": [\"a3\", \"a4\"]\n}"
+  },
+  {
+    "contentHash": "af70730dd77031e3d648c4758f8d5f6d5eff07774f0756c1c9873ed5c509aa48",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "```json\n{\n  \"resolve\": [\"w9\", \"a4\"],\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"Replace retry loop with shared helper\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Create Orders Customer ID index\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Refactor CSV timestamp patterns\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Fix CSV export timezone offset\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Delete legacy_orders table\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"standing\": \"Finalizing docs update before PR creation.\"\n  },\n  \"update\": [\n    {\n      \"id\": \"a5\",\n      \"text\": \"Update docs/orders.md\",\n      \"state\": \"in-progress\"\n    }\n  ]\n}\n```"
+  },
+  {
+    "contentHash": "af70730dd77031e3d648c4758f8d5f6d5eff07774f0756c1c9873ed5c509aa48",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": \"Rewriting documentation and will open PR.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Refactor CSV timestamp patterns\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Add index on orders.customer_id\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Fix CSV export timezone offset\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Delete legacy_orders table\",\n        \"state\": \"done\",\n        \"ref\": \"m1\"\n      },\n      {\n        \"text\": \"Update docs/orders.md\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [\n    {\n      \"id\": \"w9\",\n      \"state\": \"done\",\n      \"text\": \"Refactor CSV timestamp patterns\"\n    }\n  ],\n  \"resolve\": []\n}"
+  },
+  {
+    "contentHash": "52d4af07da841b15a1e1a6c4eb756241f3ed05c430b822fd34a95d4756b5c7db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"resolve\": [\"a1\", \"a2\", \"a3\", \"a4\", \"a5\"],\n  \"actions\": [{\"id\":\"t12\",\"text\":\"Update docs/orders.md\"}]\n}"
+  },
+  {
+    "contentHash": "52d4af07da841b15a1e1a6c4eb756241f3ed05c430b822fd34a95d4756b5c7db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"resolves\": [\"t12\"],\n  \"standing\": \"All items done, tests pass, PR #212 open.\"\n}"
+  },
+  {
+    "contentHash": "52d4af07da841b15a1e1a6c4eb756241f3ed05c430b822fd34a95d4756b5c7db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"did\": [\n    {\n      \"id\": \"w7\",\n      \"state\": \"done\"\n    },\n    {\n      \"id\": \"w8\",\n      \"state\": \"done\"\n    },\n    {\n      \"id\": \"w9\",\n      \"state\": \"done\"\n    },\n    {\n      \"id\": \"w10\",\n      \"state\": \"done\"\n    },\n    {\n      \"id\": \"w11\",\n      \"state\": \"done\"\n    }\n  ],\n  \"actions\": [\n    {\n      \"id\": \"t12\",\n      \"state\": \"done\"\n    }\n  ],\n  \"decisions\": [\n    {\n      \"id\": \"d13\",\n      \"text\": \"Proceed with release prep, PR 212 open\"\n    }\n  ],\n  \"resolve\": [\"a1\", \"a2\", \"a3\", \"a4\", \"a5\", \"a6\"]\n}"
+  },
+  {
+    "contentHash": "52d4af07da841b15a1e1a6c4eb756241f3ed05c430b822fd34a95d4756b5c7db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "reply": "{\n  \"update\": [{\"id\": \"a5\", \"state\": \"done\"}, {\"id\": \"a6\", \"state\": \"done\"}],\n  \"resolve\": [\"t12\", \"a5\", \"a6\"],\n  \"did\": [\n    {\"id\": \"w7\", \"text\": \"Replace retry loop with shared helper\", \"state\": \"done\"},\n    {\"id\": \"w8\", \"text\": \"Create Orders Customer ID index\", \"state\": \"done\"},\n    {\"id\": \"w9\", \"text\": \"Refactor CSV timestamp patterns\", \"state\": \"done\"},\n    {\"id\": \"w10\", \"text\": \"Format CSV exports with ISO 8601 offset\", \"state\": \"done\"},\n    {\"id\": \"w11\", \"text\": \"Drop legacy_orders table with migration 0043\", \"state\": \"done\"},\n    {\"text\": \"Open PR #212\", \"state\": \"done\", \"ref\": \"m1\"}\n  ]\n}"
+  }
+]

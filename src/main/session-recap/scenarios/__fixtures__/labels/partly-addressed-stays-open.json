@@ -1,0 +1,28 @@
+{
+  "id": "partly-addressed-stays-open",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": [
+        "Migrate the three cron jobs (cleanup, digest-email, reindex) from node-cron to the queue worker"
+      ],
+      "at": {
+        "after turn 2": {
+          "is": "partly",
+          "why": "step 4: cleanup and digest-email are moved, but the agent stopped before moving reindex"
+        }
+      }
+    },
+    {
+      "quotes": ["what timeout does the worker allow?"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent answers 30 seconds per job by default"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

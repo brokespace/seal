@@ -1,0 +1,26 @@
+{
+  "id": "ask-in-the-middle-of-a-long-message",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["The /export endpoint returns a 500 for large date ranges"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 4: the agent says the 500 is fixed and all of October exports"
+        }
+      }
+    },
+    {
+      "quotes": ["raise the export row limit from 10k to 50k"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 3: the agent edits config/export.ts, the export config, though its message never mentions the limit"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

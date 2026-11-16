@@ -1,0 +1,85 @@
+{
+  "view": {
+    "sessionId": "local:claude:50b17bf4-cdcf-4017-b947-0ce0c155e8d8",
+    "recap": {
+      "version": 1,
+      "title": null,
+      "titleChangedAt": null,
+      "goal": null,
+      "standing": null,
+      "asked": [
+        {
+          "id": "a1",
+          "text": "Add 'reorder' button to past orders",
+          "messageId": "orca:1794848128153-89daa60a89a74d56b7ba2e8e32485d39",
+          "at": 1794848131576
+        },
+        {
+          "id": "a2",
+          "text": "Track reorder button clicks in analytics",
+          "messageId": "orca:1794848128153-89daa60a89a74d56b7ba2e8e32485d39",
+          "at": 1794848131576
+        },
+        {
+          "id": "a5",
+          "text": "Add tracking for reorder button clicks",
+          "messageId": "orca:1794848168577-12b7c93bd73b4dabaa7443c43025e499",
+          "at": 1794848390657
+        }
+      ],
+      "did": [
+        {
+          "id": "w3",
+          "text": "Implement reorder button component",
+          "messageId": "claude:50b17bf4-cdcf-4017-b947-0ce0c155e8d8:bdccccc1-03fc-4ace-ad9c-8d83b2feb87a",
+          "at": 1794848131576,
+          "state": "done"
+        },
+        {
+          "id": "w4",
+          "text": "Wire reorder button to fill cart",
+          "messageId": "claude:50b17bf4-cdcf-4017-b947-0ce0c155e8d8:bdccccc1-03fc-4ace-ad9c-8d83b2feb87a",
+          "at": 1794848131576,
+          "state": "done"
+        },
+        {
+          "id": "w6",
+          "text": "Add tracking for reorder button clicks",
+          "messageId": "claude:50b17bf4-cdcf-4017-b947-0ce0c155e8d8:972619e5-5900-4f5d-8629-6ab5768c20e5",
+          "at": 1794848390657,
+          "state": "done"
+        }
+      ],
+      "questions": [],
+      "ignored": [],
+      "actions": [],
+      "decisions": [],
+      "references": [],
+      "updatedAt": 1794848390658,
+      "coveredFrom": 0,
+      "coveredTo": 13,
+      "nextItemId": 7
+    },
+    "marks": {},
+    "since": null,
+    "state": "ready",
+    "stale": false,
+    "pausedUntil": null,
+    "failure": null,
+    "rev": 2
+  },
+  "requests": [
+    {
+      "newMessages": "<new_messages>\n[m1] USER: Add a 'reorder' button to past orders, and track clicks on it in analytics.\n\n[m2] AGENT: The reorder button is on each past order and refills the cart with the same items. Analytics tracking is not wired up yet.\n</new_messages>",
+      "reply": "{\"add\":{\"asked\":[{\"text\":\"Add 'reorder' button to past orders\",\"ref\":\"m1\"},{\"text\":\"Track reorder button clicks in analytics\",\"ref\":\"m1\"}],\"did\":[{\"text\":\"Implement reorder button component\",ref\":\"m2\"},{\"text\":\"Wire reorder button to fill cart\",ref\":\"m2\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}}\n"
+    },
+    {
+      "newMessages": "<new_messages>\n[m1] USER: Add a 'reorder' button to past orders, and track clicks on it in analytics.\n\n[m2] AGENT: The reorder button is on each past order and refills the cart with the same items. Analytics tracking is not wired up yet.\n</new_messages>\n\nYour earlier reply:\n{\"add\":{\"asked\":[{\"text\":\"Add 'reorder' button to past orders\",\"ref\":\"m1\"},{\"text\":\"Track reorder button clicks in analytics\",\"ref\":\"m1\"}],\"did\":[{\"text\":\"Implement reorder button component\",ref\":\"m2\"},{\"text\":\"Wire reorder button to fill cart\",ref\":\"m2\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}}\n\nThat reply could not be used. The reply is not valid JSON: Expected double-quoted property name in JSON at position 191 (line 1 column 192)\nReply again with only the JSON object described, starting with { and ending with }.",
+      "reply": "{\"add\":{\"asked\":[{\"text\":\"Add 'reorder' button to past orders\",\"ref\":\"m1\"},{\"text\":\"Track reorder button clicks in analytics\",\"ref\":\"m1\"}],\"did\":[{\"text\":\"Implement reorder button component\",\"ref\":\"m2\"},{\"text\":\"Wire reorder button to fill cart\",\"ref\":\"m2\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}}"
+    },
+    {
+      "newMessages": "<new_messages>\n[m1] USER: add the tracking now\n\n[m2] AGENT: Clicks on reorder now send a reorder_clicked event with the order id.\n</new_messages>",
+      "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Add reorder button to past orders\",\n        \"ref\": \"a1\"\n      },\n      {\n        \"text\": \"Track reorder button clicks in analytics\",\n        \"ref\": \"a2\"\n      },\n      {\n        \"text\": \"Add tracking for reorder button clicks\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Implement reorder button component\",\n        \"state\": \"done\",\n        \"ref\": \"w3\"\n      },\n      {\n        \"text\": \"Wire reorder button to fill cart\",\n        \"state\": \"done\",\n        \"ref\": \"w4\"\n      },\n      {\n        \"text\": \"Add tracking for reorder button clicks\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ]\n  },\n  \"resolve\": [\n    \"a2\"\n  ]\n}"
+    }
+  ]
+}

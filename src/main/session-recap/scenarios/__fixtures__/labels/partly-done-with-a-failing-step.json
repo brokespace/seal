@@ -1,0 +1,19 @@
+{
+  "id": "partly-done-with-a-failing-step",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Backfill display_name from the profiles table on the users, admins and guests tables"
+      ],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 6: users and admins are backfilled, guests timed out and is not"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

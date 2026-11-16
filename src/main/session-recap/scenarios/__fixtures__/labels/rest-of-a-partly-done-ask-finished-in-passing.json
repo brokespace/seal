@@ -1,0 +1,30 @@
+{
+  "id": "rest-of-a-partly-done-ask-finished-in-passing",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add pagination to the /orders and /customers endpoints, 50 per page"],
+      "at": {
+        "after turn 1": {
+          "is": "partly",
+          "why": "step 3: /orders is paginated and /customers is left for a follow-up"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent edited customers.ts and says both endpoints are paginated and both list tests pass"
+        }
+      }
+    },
+    {
+      "quotes": ["make the page size 100 instead"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 11: the agent says the page size is 100 on both endpoints"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

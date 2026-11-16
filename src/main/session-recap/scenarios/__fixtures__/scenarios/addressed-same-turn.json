@@ -1,0 +1,68 @@
+{
+  "id": "addressed-same-turn",
+  "title": "One ask, done in the same turn",
+  "categories": ["addressed-same-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The crash fix is listed as asked and as done. Nothing is listed as asked but not addressed, and no question is open.",
+  "steps": [
+    {
+      "user": "The checkout page crashes when the cart is empty. Fix it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/pages/checkout.tsx"
+        },
+        "output": "// src/pages/checkout.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/pages/checkout.test.tsx"
+        },
+        "output": "12 passed"
+      }
+    },
+    {
+      "agent": "Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "asked",
+          "has": "checkout|crash|empty",
+          "why": "the request is recorded"
+        },
+        {
+          "in": "did",
+          "has": "checkout|crash|empty",
+          "why": "the fix is recorded as done",
+          "state": "done"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the agent asked nothing"
+        }
+      ]
+    }
+  ]
+}

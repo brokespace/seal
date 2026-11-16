@@ -1,0 +1,89 @@
+{
+  "id": "nothing-said-since-the-recap",
+  "title": "The session moves without anything being said: the user compacts it while it rests",
+  "categories": ["long-session", "agent-surface"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After the compaction the recap is still up to date: nothing was asked or done since it was written, so it is not shown as behind and nothing waits to be checked.",
+  "steps": [
+    {
+      "user": "Three small things: rename the 'Buy' button to 'Add to cart', make the price bold, and remove the old banner from the product page."
+    },
+    {
+      "edit": "/srv/shop/src/pages/product.tsx"
+    },
+    {
+      "agent": "All three are done on the product page: the button says Add to cart, the price is bold, and the old banner is gone."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "view": "stale",
+          "is": false,
+          "why": "the recap covers the turn"
+        }
+      ]
+    },
+    {
+      "compact": "The user asked for three changes to the product page (button renamed to Add to cart, price bold, old banner removed). All three are done."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "four minutes after the compaction",
+      "check": [
+        {
+          "view": "stale",
+          "is": false,
+          "why": "nothing was said since the recap was written, so it is not behind"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "requests": {
+            "max": 1
+          },
+          "why": "a compaction with nothing new to read costs no model request"
+        }
+      ]
+    },
+    {
+      "open": true
+    },
+    {
+      "advance": 70000
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "after the user opens it twice",
+      "check": [
+        {
+          "view": "stale",
+          "is": false,
+          "why": "opening the recap does not leave it marked as behind"
+        },
+        {
+          "requests": {
+            "max": 1
+          },
+          "why": "opening a recap with nothing new to read costs no model request"
+        }
+      ]
+    }
+  ]
+}

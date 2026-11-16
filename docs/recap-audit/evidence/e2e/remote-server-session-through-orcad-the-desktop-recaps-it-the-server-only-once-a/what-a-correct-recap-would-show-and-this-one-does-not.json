@@ -1,0 +1,32 @@
+{
+  "failed": [
+    "after a client opens it: the documentation is asked for and not written yet (was: (none))",
+    "after turn 2: the documentation is recorded as done (was: [done] Added --dry-run parsing to scripts/import.ts)",
+    "on the desktop, after turn 1: the documentation is asked for and not written yet (was: (none))",
+    "on the desktop, after turn 2: the documentation is recorded as done (was: [done] Added --dry-run parsing to scripts/import.ts)"
+  ],
+  "panel": [
+    {
+      "label": "on the desktop, after turn 1",
+      "panel": {
+        "asked": ["Need to document --dry-run flag in docs/import.md"],
+        "did": ["Added --dry-run parsing to scripts/import.ts"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      }
+    },
+    {
+      "label": "on the desktop, after turn 2",
+      "panel": {
+        "asked": ["Need to document --dry-run flag in docs/import.md"],
+        "did": ["Added --dry-run parsing to scripts/import.ts"],
+        "questions": [],
+        "ignored": [],
+        "actions": [],
+        "decisions": []
+      }
+    }
+  ]
+}

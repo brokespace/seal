@@ -1,0 +1,26 @@
+{
+  "id": "question-dismissed-by-user",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Clean up the unused feature flags"],
+      "at": {
+        "after turn 2": {
+          "is": "partly",
+          "why": "step 3: the agent removed 9 flags and left the 5 still on in staging, asking whether to remove them"
+        }
+      }
+    },
+    {
+      "quotes": ["what's the node version in CI?"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent answers that CI runs Node 22.11"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

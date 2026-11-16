@@ -1,0 +1,59 @@
+{
+  "id": "partly-addressed-stays-open",
+  "title": "One of three jobs is never migrated and the talk moves on",
+  "categories": ["partly-addressed"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "reindex stays listed as not addressed after an unrelated turn; cleanup and digest-email are done and never listed as unaddressed.",
+  "steps": [
+    {
+      "user": "Migrate the three cron jobs (cleanup, digest-email, reindex) from node-cron to the queue worker."
+    },
+    {
+      "edit": "/srv/shop/src/jobs/cleanup.ts"
+    },
+    {
+      "edit": "/srv/shop/src/jobs/digest-email.ts"
+    },
+    {
+      "agent": "cleanup and digest-email now run on the queue worker and their old cron entries are gone. reindex needs a longer timeout than the worker allows, so I stopped before moving it."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "what timeout does the worker allow?"
+    },
+    {
+      "agent": "30 seconds per job by default; it is the WORKER_JOB_TIMEOUT setting in config/worker.ts."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "reindex",
+          "why": "reindex was asked for and is still not migrated"
+        },
+        {
+          "in": "ignored",
+          "lacks": "^(?!.*reindex).*(cleanup|digest)",
+          "why": "the two migrated jobs are not listed as unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "cleanup|digest",
+          "why": "the two migrated jobs are recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "id": "model-timeout",
+  "title": "The primary model does not answer in time",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "The fallback model writes the recap. Failing that, the pass is tried again without the user having to open the session.",
+  "steps": [
+    {
+      "fault": {
+        "kind": "timeout",
+        "model": "primary",
+        "times": 1
+      }
+    },
+    {
+      "user": "The checkout page crashes when the cart is empty. Fix it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/pages/checkout.tsx"
+        },
+        "output": "// src/pages/checkout.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/pages/checkout.test.tsx"
+        },
+        "output": "12 passed"
+      }
+    },
+    {
+      "agent": "Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "the fallback model writes the recap when the primary times out"
+        },
+        {
+          "view": "model",
+          "is": "@cf/google/gemma-4-26b-a4b-it",
+          "why": "the fallback model answered"
+        }
+      ]
+    },
+    {
+      "advance": 600000
+    },
+    {
+      "label": "ten minutes later",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "a pass that failed is tried again on its own"
+        }
+      ]
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "after the user opens the session",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "opening the session writes the recap"
+        },
+        {
+          "view": "failed",
+          "is": false,
+          "why": "the earlier failure is cleared"
+        }
+      ]
+    }
+  ]
+}

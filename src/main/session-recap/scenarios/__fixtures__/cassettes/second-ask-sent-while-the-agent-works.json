@@ -1,0 +1,50 @@
+[
+  {
+    "key": "a1ab6ad25431d81ccfc0d7336e37458d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Account page to Profile everywhere.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Account page to Profile everywhere.\n\n[m2] AGENT: Renaming the page component and its route first.\n\n[m3] USER: also update the nav link and the sitemap while you're there\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Rename Account Page to Profile\",\n  \"goal\": \"Systematically rename Account page to Profile.\",\n  \"standing\": \"Changing page component, route, and navigation links.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Rename account page component and route\", \"state\": \"done\", \"ref\": \"m2\"},\n      {\"text\": \"Update nav link for profile\", \"state\": \"in-progress\", \"ref\": \"m3\"},\n      {\"text\": \"Update sitemap for profile\", \"state\": \"in-progress\", \"ref\": \"m3\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  }\n}",
+    "neurons": 9.3317
+  },
+  {
+    "key": "499979835964e6776df56da4836f0f1d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Rename Account Page to Profile\",\"goal\":\"Systematically rename Account page to Profile.\",\"standing\":\"Changing page component, route, and navigation links.\",\"asked\":[],\"did\":[{\"id\":\"w2\",\"text\":\"Update nav link for profile\",\"state\":\"in-progress\"},{\"id\":\"w3\",\"text\":\"Update sitemap for profile\",\"state\":\"in-progress\"},{\"id\":\"w1\",\"text\":\"Rename account page component and route\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] AGENT: The Account page is now Profile: the component, the route, the nav link and the sitemap all say Profile.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w2\", \"state\": \"done\"},\n    {\"id\": \"w3\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"w2\", \"w3\"]\n}",
+    "neurons": 5.637
+  },
+  {
+    "key": "3231605cedb9458351b3a76accb33d73",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Rename the Account page to Profile everywhere.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Rename the Account page to Profile everywhere.\n\n[m2] AGENT: Renaming the page component and its route first.\n</new_messages>"
+      }
+    ],
+    "reply": "{\"title\":\"Rename Account page to Profile\",\"goal\":\"Rename Account page to Profile everywhere\",\"standing\":\"Renaming page component and route.\",\"add\":{\"did\":[{\"text\":\"Renaming page component and route\",\"state\":\"in-progress\",\"ref\":\"m2\"}]}}",
+    "neurons": 5.4052
+  },
+  {
+    "key": "e40148be6ffa6dbd3f7ee9637bd4931c",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Rename Account page to Profile\",\"goal\":\"Rename Account page to Profile everywhere\",\"standing\":\"Renaming page component and route.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Renaming page component and route\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: also update the nav link and the sitemap while you're there\n\n[m2] AGENT: The Account page is now Profile: the component, the route, the nav link and the sitemap all say Profile.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Update nav link and sitemap\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Renaming page component and route\", \"state\": \"done\", \"ref\": \"w1\"}],\n    \"decisions\": [{\"text\": \"Updating nav link and sitemap\", \"ref\": \"m1\"}]\n  },\n  \"resolve\": [\"w1\"]\n}",
+    "neurons": 7.165
+  }
+]
