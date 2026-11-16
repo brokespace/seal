@@ -62,7 +62,7 @@ function harness(options: { reply?: string; modelSays?: string; available?: bool
     await settle()
     return replyAsks.decorate(scanned)
   }
-  return { state, asked, publish }
+  return { state, asked, publish, replyAsks }
 }
 
 describe('LiveSessionReplyAsks', () => {
@@ -76,6 +76,23 @@ describe('LiveSessionReplyAsks', () => {
     expect((await publish(session())).status).toBe('waiting-input')
     expect((await publish(session({ lastActivityAt: 2_000 }))).status).toBe('waiting-input')
     expect(asked).toHaveLength(1)
+  })
+
+  it('says a finished turn is being decided until its reply is read and the model has answered', async () => {
+    const { replyAsks } = harness()
+    expect(replyAsks.verdict(session())).toBe('deciding')
+    replyAsks.observe({ type: 'upsert', revision: 1, session: session() })
+    expect(replyAsks.verdict(session())).toBe('deciding')
+    await settle()
+    expect(replyAsks.verdict(session())).toBe('asks')
+    expect(replyAsks.verdict(session({ status: 'working' }))).toBe('tells')
+
+    const report = harness({ modelSays: 'TELLS' })
+    await report.publish(session())
+    expect(report.replyAsks.verdict(session())).toBe('tells')
+    const noModel = harness({ available: false })
+    await noModel.publish(session())
+    expect(noModel.replyAsks.verdict(session())).toBe('tells')
   })
 
   it('leaves "Waiting on you" when the model reads the reply as a report', async () => {

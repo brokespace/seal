@@ -3,6 +3,8 @@ import type {
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import { replyAskOf } from '../live-sessions/discovery/reply-ask'
+import { oneLine } from '../live-sessions/discovery/transcript-records'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import type { SessionSummarizer } from './session-summarizer'
 
 export type LiveSessionReplyAsksDeps = {
@@ -18,6 +20,8 @@ type Tracked = {
   stamp: number | null
   reading: boolean
   again: boolean
+  /** The reply the model was asked about, as a notification quotes it. */
+  asked: string | null
 }
 
 function replyAskKey(sessionId: string): string {
@@ -54,11 +58,17 @@ export class LiveSessionReplyAsks {
       return
     }
     const { session } = event
-    const tracked = this.tracked.get(session.id) ?? { stamp: null, reading: false, again: false }
+    const tracked = this.tracked.get(session.id) ?? {
+      stamp: null,
+      reading: false,
+      again: false,
+      asked: null
+    }
     this.tracked.set(session.id, tracked)
     if (!undecided(session)) {
       if (tracked.stamp !== null) {
         tracked.stamp = null
+        tracked.asked = null
         this.deps.classifier.clear(replyAskKey(session.id))
       }
       return
@@ -77,6 +87,28 @@ export class LiveSessionReplyAsks {
     return this.deps.classifier.view(replyAskKey(session.id))?.text === 'asks'
       ? { ...session, status: 'waiting-input', statusSource: 'classifier' }
       : session
+  }
+
+  /** Whether the finished turn's reply asks, once it has been read and the model has answered. */
+  verdict(session: LiveSession): ReplyAskVerdict {
+    if (session.status !== 'your-turn' || !session.alive) {
+      return 'tells'
+    }
+    const tracked = this.tracked.get(session.id)
+    // A turn's end reaches whoever asks in the same registry event, maybe before it is seen here.
+    if (!tracked || tracked.stamp !== session.lastActivityAt || tracked.reading) {
+      return 'deciding'
+    }
+    const view = this.deps.classifier.view(replyAskKey(session.id))
+    if (view?.pending) {
+      return 'deciding'
+    }
+    return view?.text === 'asks' ? 'asks' : 'tells'
+  }
+
+  /** The reply a session relabelled as asking ended on; null for any other session. */
+  askedReply(sessionId: string): string | null {
+    return this.tracked.get(sessionId)?.asked ?? null
   }
 
   dispose(): void {
@@ -112,8 +144,10 @@ export class LiveSessionReplyAsks {
           return
         }
         if (text && replyAskOf(text) === 'unclear') {
+          tracked.asked = oneLine(text, 200)
           this.deps.classifier.request(replyAskKey(sessionId), text, false)
         } else {
+          tracked.asked = null
           this.deps.classifier.clear(replyAskKey(sessionId))
         }
       })

@@ -32,7 +32,16 @@ export function localTranscriptSource(path: string): TranscriptSource {
   return {
     maxRead: 4 * 1024 * 1024,
     async read(start, length) {
-      const handle = await open(path, 'r')
+      // A session is listed before its agent writes the file: that reads as empty, as on a remote host.
+      const handle = await open(path, 'r').catch((error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT') {
+          return null
+        }
+        throw error
+      })
+      if (!handle) {
+        return { bytes: Buffer.alloc(0), size: 0 }
+      }
       try {
         const { size } = await handle.stat()
         const want = Math.max(0, Math.min(length, size - start))

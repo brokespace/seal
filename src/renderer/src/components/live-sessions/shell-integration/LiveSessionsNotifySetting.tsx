@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { GlobalSettings } from '../../../../../shared/global-settings-types'
+import { outsideSessionsMuted } from '../../../../../shared/live-sessions/live-session-settings'
 import { SettingsSwitchRow } from '../../settings/form-controls/SettingsFormControls'
 import { useTranslate } from '@/i18n/use-translate'
 
@@ -7,18 +9,32 @@ type Props = {
   updateSettings: (updates: Partial<GlobalSettings>) => void | Promise<void>
 }
 
-export function LiveSessionsNotifySetting({ settings, updateSettings }: Props): React.JSX.Element {
+/**
+ * Shown only to a profile that had the switch off: the way back to hearing about these sessions.
+ * Once turned on it stays until Settings closes, so a second click never lands on another setting.
+ */
+export function LiveSessionsNotifySetting({
+  settings,
+  updateSettings
+}: Props): React.JSX.Element | null {
   const t = useTranslate()
-  const on = settings.liveSessionsNotify !== false
+  const muted = outsideSessionsMuted(settings)
+  const [offered, setOffered] = useState(muted)
+  if (muted && !offered) {
+    setOffered(true)
+  }
+  if (!offered) {
+    return null
+  }
   return (
     <SettingsSwitchRow
-      label={t('auto.components.live-sessions.notify.label', 'Notify about agent sessions')}
+      label={t('auto.components.live-sessions.notify.label', 'Notify about sessions outside Seal')}
       description={t(
         'auto.components.live-sessions.notify.description',
-        'A desktop notification when a Claude Code or Codex session outside Seal’s own panes needs permission or an answer, fails, or finishes. Follows the notification settings: nothing shows while notifications are off.'
+        'You had “Notify about agent sessions” off. Turn this on and “Agent needs input” and “Agent task complete” in Notifications also cover Claude Code and Codex sessions outside Seal’s own panes. Once on, this switch goes away when you leave Settings.'
       )}
-      checked={on}
-      onChange={() => void updateSettings({ liveSessionsNotify: !on })}
+      checked={!muted}
+      onChange={() => void updateSettings({ liveSessionsNotify: muted })}
     />
   )
 }
