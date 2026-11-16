@@ -100,6 +100,7 @@ export class LiveSessionService {
           ? (this.federated(sessionId)?.transcripts ?? null)
           : null,
       files: this.streams,
+      onSessionsChanged: (listener) => this.registry.subscribe(listener),
       log: deps.log
     })
     this.routes = new SessionInputRoutes({
