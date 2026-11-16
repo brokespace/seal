@@ -9,13 +9,14 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-it('keeps Active agents folded when Projects is regrouped, and drops the project folds', () => {
+it('keeps the session folds when Projects is regrouped, and drops the project folds', () => {
   const store = createUIStore()
   for (const key of [
     'repo:seal',
     'active-agents',
-    'active-agents:machine:gpu-box',
-    'active-agents:finished-open'
+    'active-agents:unassigned',
+    'active-agents:finished-open',
+    'active-agents:finished-open:repo-1::/code/seal'
   ]) {
     store.getState().toggleCollapsedGroup(key)
   }
@@ -23,17 +24,17 @@ it('keeps Active agents folded when Projects is regrouped, and drops the project
   store.getState().setGroupBy('none')
 
   expect([...store.getState().collapsedGroups]).toEqual([
-    'active-agents',
-    'active-agents:machine:gpu-box',
-    'active-agents:finished-open'
+    'active-agents:unassigned',
+    'active-agents:finished-open',
+    'active-agents:finished-open:repo-1::/code/seal'
   ])
   expect(saveUi.mock.lastCall).toEqual([
     {
       groupBy: 'none',
       collapsedGroups: [
-        'active-agents',
-        'active-agents:machine:gpu-box',
-        'active-agents:finished-open'
+        'active-agents:unassigned',
+        'active-agents:finished-open',
+        'active-agents:finished-open:repo-1::/code/seal'
       ]
     }
   ])

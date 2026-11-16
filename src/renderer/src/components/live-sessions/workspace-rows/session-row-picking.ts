@@ -1,16 +1,15 @@
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { SIDEBAR_SESSION_ROW } from './sidebar-session-row-dom'
 
 /** Where a Shift-pick range starts: one for the whole sidebar, so a range can span sections and workspaces. */
 let anchor: string | null = null
 
-/** The session rows the sidebar list shows, top to bottom: Active agents, then each workspace's. */
+/** The session rows the sidebar list shows, top to bottom: each workspace's, then the unassigned ones. */
 export function sidebarSessionRowIds(): string[] {
   const ids = new Set<string>()
-  for (const row of document.querySelectorAll<HTMLElement>(
-    '[data-worktree-sidebar] [data-live-session-row]'
-  )) {
+  for (const row of document.querySelectorAll<HTMLElement>(SIDEBAR_SESSION_ROW)) {
     if (row.dataset.liveSessionRow) {
       ids.add(row.dataset.liveSessionRow)
     }

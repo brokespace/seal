@@ -3,7 +3,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { PageCard } from '@/components/page-layout/PageCard'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import { buildActiveAgents } from '../live-sessions/active-agents/active-agents-model'
+import { buildActiveAgents } from '../live-sessions/row/live-session-machine-listing'
 import { LiveSessionMachineGroups } from '../live-sessions/row/LiveSessionMachineGroups'
 import { HomeOverviewEmpty } from './HomeOverviewRow'
 

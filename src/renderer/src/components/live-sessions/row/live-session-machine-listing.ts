@@ -19,14 +19,6 @@ export type ActiveAgentsView = {
   activeCount: number
 }
 
-/** `collapsedGroups` key of the whole section; machines and the finished group add their own. */
-export const ACTIVE_AGENTS_COLLAPSE_KEY = 'active-agents'
-
-/** The section's own fold keys; unlike project group keys, they mean the same under every Projects grouping. */
-export function isActiveAgentsCollapseKey(key: string): boolean {
-  return key === ACTIVE_AGENTS_COLLAPSE_KEY || key.startsWith(`${ACTIVE_AGENTS_COLLAPSE_KEY}:`)
-}
-
 export const RECENTLY_FINISHED_MS = 24 * 60 * 60 * 1000
 
 /** An ended session stays listed for a day, and for as long as it is pinned. */
@@ -65,17 +57,4 @@ export function buildActiveAgents(sessions: readonly LiveSession[], now: number)
     finished: finished.sort((a, b) => b.lastActivityAt - a.lastActivityAt),
     activeCount
   }
-}
-
-/** Rows in the order the list shows them, for arrow keys and shift-click ranges. */
-export function visibleSessionIds(
-  view: ActiveAgentsView,
-  collapsed: { machines: ReadonlySet<string>; finished: boolean }
-): string[] {
-  return [
-    ...view.machines
-      .filter((machine) => !collapsed.machines.has(machine.hostId))
-      .flatMap((machine) => machine.sessions.map((session) => session.id)),
-    ...(collapsed.finished ? [] : view.finished.map((session) => session.id))
-  ]
 }

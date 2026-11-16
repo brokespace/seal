@@ -1,20 +1,27 @@
 import { useEffect } from 'react'
 import { useAppStore } from '@/store/index'
 import { hasVisibleOverlay } from '@/lib/overlay-interaction/visible-overlay'
-import { offerSidebarSectionKeyboardCursor } from '@/components/sidebar/sidebar-section-keyboard-handoff'
+import {
+  offerSidebarSectionKeyboardCursor,
+  type SidebarSectionEntryEdge
+} from '@/components/sidebar/sidebar-section-keyboard-handoff'
 import { getExecutionHostIdFromWorktreeHostIdentity } from '../../../../../shared/worktree/host-qualified-identity'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { scrollSidebarSessionRowIntoView } from './session-row-reveal'
+import {
+  SIDEBAR_LIST as LIST,
+  SIDEBAR_SESSION_ROW,
+  UNASSIGNED_SESSIONS,
+  UNASSIGNED_SESSIONS_TOGGLE
+} from './sidebar-session-row-dom'
 
-const LIST = '[data-worktree-sidebar]'
+const SESSIONS = `${LIST}, ${UNASSIGNED_SESSIONS}`
 const WORKSPACE_ROWS_SECTION = '[data-worktree-sidebar-content]'
 const WORKSPACE_OPTION = '[role="option"][data-worktree-id]'
 const CARD = '[data-worktree-card-surface]'
-// The line that unfolds a workspace's ended sessions is a stop too, or the keyboard could not open it.
-const SESSION_ROW =
-  '[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle])'
-// Active agents rows too: Tab reaches them without this file's arrow keys.
-const TAB_STOP_ROW = `${LIST} [data-live-session-row]`
+// The lines that unfold ended sessions and the Unassigned group are stops too, or the keyboard could not open them.
+const SESSION_ROW = `[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle]), ${UNASSIGNED_SESSIONS_TOGGLE}`
+const TAB_STOP_ROW = `${SIDEBAR_SESSION_ROW}, ${UNASSIGNED_SESSIONS_TOGGLE}`
 const KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape'])
 
 // Why closest(): a card can hold other workspaces' cards, whose rows are not its own.
@@ -101,15 +108,44 @@ function moveFromList(list: HTMLElement, event: KeyboardEvent): boolean {
   return previous ? focusSessionRow(sessionRowsOf(previous).at(-1)) : false
 }
 
+function unassignedStops(group: Element | null): HTMLElement[] {
+  return group ? Array.from(group.querySelectorAll<HTMLElement>(SESSION_ROW)) : []
+}
+
+/** The Unassigned group takes the cursor a neighbouring sidebar section offers, on its first or last stop. */
+export function enterUnassignedSessions(
+  group: Element | null,
+  edge: SidebarSectionEntryEdge
+): boolean {
+  const stops = unassignedStops(group)
+  return focusSessionRow(edge === 'first' ? stops[0] : stops.at(-1))
+}
+
+function moveInUnassignedSessions(group: Element, row: HTMLElement, event: KeyboardEvent): boolean {
+  const stops = unassignedStops(group)
+  const up = event.key === 'ArrowUp'
+  if (!focusSessionRow(stops[stops.indexOf(row) + (up ? -1 : 1)])) {
+    // Past its own ends the cursor moves on through the sidebar list, or stays when no workspace takes it.
+    offerSidebarSectionKeyboardCursor(group, up ? 'up' : 'down', event.repeat)
+  }
+  return true
+}
+
 function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
   const list = row.closest<HTMLElement>(LIST)
   const card = row.closest(CARD)
-  if (!list || !card) {
+  // A stop no card holds is the Unassigned group's, a section of its own after the workspaces.
+  const group = card ? null : row.closest(UNASSIGNED_SESSIONS)
+  const sessions = list ?? group
+  if (!sessions || (!card && !group)) {
     return false
   }
   if (event.key === 'Home' || event.key === 'End') {
-    const rows = Array.from(list.querySelectorAll<HTMLElement>(SESSION_ROW))
+    const rows = Array.from(sessions.querySelectorAll<HTMLElement>(SESSION_ROW))
     return focusSessionRow(event.key === 'Home' ? rows[0] : rows.at(-1))
+  }
+  if (!list || !card) {
+    return group !== null && moveInUnassignedSessions(group, row, event)
   }
   const rows = sessionRowsOf(card)
   const at = rows.indexOf(row)
@@ -166,7 +202,7 @@ function onKeyDown(event: KeyboardEvent): void {
     return
   }
   // Keys typed anywhere else in the window are not the sidebar's.
-  if (!target.closest(LIST)) {
+  if (!target.closest(SESSIONS)) {
     return
   }
   if (hasVisibleOverlay() || useAppStore.getState().activeModal !== 'none') {
@@ -177,7 +213,7 @@ function onKeyDown(event: KeyboardEvent): void {
       ? endSelecting(target)
       : target.matches(LIST)
         ? moveFromList(target, event)
-        : // Keys from a control inside a row, or from an Active agents row, belong to their own handlers.
+        : // Keys from a control inside a row belong to its own handlers.
           target.matches(SESSION_ROW) && moveFromSessionRow(target, event)
   if (handled) {
     event.preventDefault()
@@ -204,9 +240,7 @@ function onFocusIn(event: FocusEvent): void {
     return
   }
   markRowForKeyboard(row)
-  if (row.matches(SESSION_ROW)) {
-    scrollSidebarSessionRowIntoView(row)
-  }
+  scrollSidebarSessionRowIntoView(row)
 }
 
 /** Makes workspaces and the session rows under them one arrow-key list, while mounted. */

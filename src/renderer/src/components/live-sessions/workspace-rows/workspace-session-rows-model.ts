@@ -4,7 +4,8 @@ import type {
   LiveSession,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
-import { isListedLiveSession } from '../active-agents/active-agents-model'
+import { isListedLiveSession } from '../row/live-session-machine-listing'
+import { SESSION_FOLD_KEY_PREFIX } from './session-fold-keys'
 import {
   matchesSidebarSessionFilters,
   type SidebarSessionFilters
@@ -48,5 +49,5 @@ export function buildWorkspaceSessionRows(
 
 /** Present in `collapsedGroups` while a workspace's ended sessions are unfolded; the prefix survives a Projects regrouping. */
 export function workspaceFinishedOpenKey(worktreeId: string): string {
-  return `active-agents:finished-open:${worktreeId}`
+  return `${SESSION_FOLD_KEY_PREFIX}finished-open:${worktreeId}`
 }

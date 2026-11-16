@@ -1,6 +1,6 @@
 import { Monitor, Server } from 'lucide-react'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
-import type { ActiveAgentsMachine } from '../active-agents/active-agents-model'
+import type { ActiveAgentsMachine } from './live-session-machine-listing'
 import { LiveSessionRows } from './LiveSessionRows'
 
 /** Sessions under the machine they run on, as a page card lists them (Home, a project's overview). */

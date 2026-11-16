@@ -5,7 +5,6 @@ import { useTranslate } from '@/i18n/use-translate'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { FoldChevron } from '../active-agents/ActiveAgentsGroups'
 import { useLiveSessionClock } from '../live-session-clock'
 import { useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionsCountLabel } from '../links/LiveSessionsBadge'
@@ -15,6 +14,7 @@ import { openAgentSession } from '../open/open-agent-session'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
+import { FoldChevron } from './FoldChevron'
 import { pickSidebarSessionRow } from './session-row-picking'
 import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from '@/components/sidebar/workspace-actions/context-menu/worktree-context-menu-policy'
 import { useSidebarSessionFilters } from './sidebar-session-filter-store'
@@ -30,7 +30,8 @@ export type WorkspaceSessionRowState = Pick<
 >
 
 export type WorkspaceSessionRowListProps = {
-  worktreeId: string
+  /** Null lists the sessions no workspace holds. */
+  worktreeId: string | null
   view: WorkspaceSessionRowsView
   finishedOpen: boolean
   rowState: (session: LiveSession) => WorkspaceSessionRowState
@@ -95,7 +96,7 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   window.addEventListener('pointerdown', onLost, true)
 }
 
-/** One workspace's sessions on its card: a full row each, then the ended ones behind one line. */
+/** One workspace's sessions on its card, or the unassigned ones: a full row each, then the ended ones behind one line. */
 export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): React.JSX.Element {
   const t = useTranslate()
   const { view } = props
@@ -105,8 +106,8 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
       <LiveSessionRow
         key={session.id}
         session={session}
-        // The card above the row names the workspace; the hover preview still does.
-        showPlace={false}
+        // The card above the row names the workspace; a row no card holds names its place itself.
+        showPlace={props.worktreeId === null}
         {...state}
         // Tab stops on the row of the session on screen, in its place; arrow keys reach the others from the list.
         tabStop={state.current}
@@ -127,7 +128,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
   return (
     <div
       role="group"
-      data-workspace-session-rows={props.worktreeId}
+      data-workspace-session-rows={props.worktreeId ?? ''}
       // Why: the card takes a right-click in the capture phase; this leaves it to the row's own menu.
       {...{ [WORKTREE_NATIVE_CONTEXT_MENU_ATTR]: '' }}
       aria-label={groupLabel}
@@ -187,21 +188,21 @@ function openFromRow(session: LiveSession, event: { type: string }): void {
   openAgentSession(session.id, liveSessionRowOpenMode(event))
 }
 
-const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
-  worktreeId,
-  sessions,
-  className
-}: {
-  worktreeId: string
-  sessions: readonly LiveSession[]
-  className?: string
-}): React.JSX.Element | null {
+export type SessionRowList = Pick<
+  WorkspaceSessionRowListProps,
+  'view' | 'finishedOpen' | 'rowState' | 'now' | 'onToggleFinished' | 'onOpen' | 'onPick'
+>
+
+/** The rows one sidebar list shows and what they do, under a workspace or unassigned. */
+export function useSessionRowList(
+  sessions: readonly LiveSession[],
+  finishedKey: string
+): SessionRowList {
   const filters = useSidebarSessionFilters()
   const now = useLiveSessionClock()
   const sharedRowState = useLiveSessionRowState()
   const picked = useLiveSessionMarks().picked
   const machineName = useSessionMachineName()
-  const finishedKey = workspaceFinishedOpenKey(worktreeId)
   const finishedOpen = useAppStore((state) => state.collapsedGroups.has(finishedKey))
   const toggleCollapsedGroup = useAppStore((state) => state.toggleCollapsedGroup)
   const view = useMemo(
@@ -228,22 +229,32 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
     () => toggleCollapsedGroup(finishedKey),
     [toggleCollapsedGroup, finishedKey]
   )
+  return {
+    view,
+    finishedOpen,
+    rowState,
+    now,
+    onToggleFinished,
+    onOpen: openFromRow,
+    onPick: pickSidebarSessionRow
+  }
+}
+
+const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
+  worktreeId,
+  sessions,
+  className
+}: {
+  worktreeId: string
+  sessions: readonly LiveSession[]
+  className?: string
+}): React.JSX.Element | null {
+  const list = useSessionRowList(sessions, workspaceFinishedOpenKey(worktreeId))
+  const { view } = list
   if (view.running.length === 0 && view.finished.length === 0 && view.hidden.length === 0) {
     return null
   }
-  return (
-    <WorkspaceSessionRowList
-      worktreeId={worktreeId}
-      view={view}
-      finishedOpen={finishedOpen}
-      rowState={rowState}
-      now={now}
-      onToggleFinished={onToggleFinished}
-      onOpen={openFromRow}
-      onPick={pickSidebarSessionRow}
-      className={className}
-    />
-  )
+  return <WorkspaceSessionRowList worktreeId={worktreeId} {...list} className={className} />
 })
 
 /** Every agent session of a workspace as rows on its card. A workspace without sessions adds nothing. */
