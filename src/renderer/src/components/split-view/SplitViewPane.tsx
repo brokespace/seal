@@ -6,7 +6,11 @@ import { useTranslate } from '@/i18n/use-translate'
 import type { SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTabBar } from './ItemTabBar'
-import { bringKeyboardFocusIntoPane, landsOnStripControl } from './pane-keyboard-focus'
+import {
+  bringKeyboardFocusIntoFocusedPane,
+  bringKeyboardFocusIntoPane,
+  landsOnStripControl
+} from './pane-keyboard-focus'
 import {
   closeOtherSplitViewItems,
   closeSplitViewItems,
@@ -123,6 +127,13 @@ export function SplitViewPane({
         if (event.detail > 0 && landsOnTab(event.target)) {
           tabPressedRef.current = true
           setTabPresses((count) => count + 1)
+        } else if (
+          focused &&
+          landsOnStrip(event.target) &&
+          document.activeElement === document.body
+        ) {
+          // A browser page gives up the keyboard on any press outside it, the bare strip's included.
+          bringKeyboardFocusIntoFocusedPane(false)
         }
       }}
     >
