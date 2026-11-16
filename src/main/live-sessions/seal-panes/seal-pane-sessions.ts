@@ -172,7 +172,7 @@ export function sealPanesFromRows(
   })
 }
 
-const REMOTE_SEAL_MACHINE: LiveSessionMachine = {
+export const REMOTE_SEAL_MACHINE: LiveSessionMachine = {
   hostId: 'seal-remote',
   label: 'Remote Seal host',
   kind: 'remote'

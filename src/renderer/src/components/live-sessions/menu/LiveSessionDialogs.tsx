@@ -209,7 +209,11 @@ function DangerDialog({
   const confirm = async () => {
     setBusy(true)
     try {
-      const result = await window.api.liveSessions.remove(removeRequestFor(danger, sessions))
+      const request = removeRequestFor(danger, sessions)
+      const result = await window.api.liveSessions.remove(request)
+      if (request.stop) {
+        liveSessionMarksStore.stopped(sessions.filter(({ id }) => result.removed.includes(id)))
+      }
       if (result.failed.length > 0) {
         toast.error(
           t(

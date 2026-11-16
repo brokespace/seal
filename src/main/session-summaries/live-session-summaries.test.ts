@@ -54,8 +54,9 @@ function harness(
   const live = new LiveSessionSummaries({
     summarizer,
     lastAssistantText,
-    paneView: (paneKey) =>
-      paneKey === 'pane-1' ? { text: 'From the pane.', pending: false } : null,
+    readHookRow: () => null,
+    chatLastAssistantText: async () => null,
+    summarizeRegistry: true,
     serverSummaries: options.serverSummaries,
     onChange,
     setTimer: () => ({ cancel: () => {} }),
@@ -73,9 +74,7 @@ describe('LiveSessionSummaries', () => {
     await h.settle()
 
     expect(h.lastAssistantText).toHaveBeenCalledWith('local:claude:abc')
-    expect(h.calls).toEqual([
-      'request live:local:claude:abc Patched the middleware and added a test.'
-    ])
+    expect(h.calls).toEqual(['request local:claude:abc Patched the middleware and added a test.'])
   })
 
   it('reads the transcript once per stop, however often the session is republished', async () => {
@@ -112,8 +111,8 @@ describe('LiveSessionSummaries', () => {
     h.live.observe(upsert(session({ status: 'working', statusDetail: 'Bash: pnpm test' })))
 
     expect(h.calls).toEqual([
-      'request live:local:claude:abc Patched the middleware and added a test.',
-      'clear live:local:claude:abc'
+      'request local:claude:abc Patched the middleware and added a test.',
+      'clear local:claude:abc'
     ])
   })
 
@@ -126,30 +125,19 @@ describe('LiveSessionSummaries', () => {
     h.live.observe(upsert(session({ status: 'done', alive: false })))
 
     expect(h.calls).toEqual([
-      'request live:local:claude:abc Patched the middleware and added a test.',
-      'forget live:local:claude:abc'
+      'request local:claude:abc Patched the middleware and added a test.',
+      'forget local:claude:abc'
     ])
-  })
-
-  it('leaves a Seal pane to its hook rows and shows the pane summary', async () => {
-    const h = harness()
-    const pane = session({ inputRoutes: [{ kind: 'seal-pane', paneKey: 'pane-1' }] })
-
-    h.live.observe(upsert(pane))
-    await h.settle()
-
-    expect(h.lastAssistantText).not.toHaveBeenCalled()
-    expect(h.live.decorate(pane).summary).toBe('From the pane.')
   })
 
   it('shows its own summary, then pending, on the published session', () => {
     const h = harness()
     const waiting = session()
 
-    h.views.set('live:local:claude:abc', { text: null, pending: true })
+    h.views.set('local:claude:abc', { text: null, pending: true })
     expect(h.live.decorate(waiting)).toEqual({ ...waiting, summaryPending: true })
 
-    h.views.set('live:local:claude:abc', { text: 'Patched the middleware.', pending: false })
+    h.views.set('local:claude:abc', { text: 'Patched the middleware.', pending: false })
     expect(h.live.decorate(waiting)).toEqual({ ...waiting, summary: 'Patched the middleware.' })
   })
 
@@ -183,7 +171,7 @@ describe('LiveSessionSummaries', () => {
 
     expect(serverSummaries).toHaveBeenCalledWith('runtime:env-kessel')
     expect(h.lastAssistantText).not.toHaveBeenCalled()
-    expect(h.calls).toEqual(['forget live:kessel:claude:abc'])
+    expect(h.calls).toEqual(['forget kessel:claude:abc'])
     expect(h.onChange).toHaveBeenCalledTimes(1)
     expect(h.live.decorate(remote).summary).toBe('Needs approval to deploy.')
   })
@@ -209,8 +197,6 @@ describe('LiveSessionSummaries', () => {
     h.live.observe(upsert(remote))
     await h.settle()
 
-    expect(h.calls).toEqual([
-      'request live:kessel:claude:abc Patched the middleware and added a test.'
-    ])
+    expect(h.calls).toEqual(['request kessel:claude:abc Patched the middleware and added a test.'])
   })
 })
