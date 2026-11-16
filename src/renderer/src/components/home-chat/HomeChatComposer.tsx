@@ -123,7 +123,7 @@ export function HomeChatComposer({
           >
             <SelectTrigger
               size="sm"
-              className="max-w-48"
+              className="max-w-48 min-w-0"
               aria-label={t('homeChat.account.label', 'Account')}
             >
               <SelectValue />
