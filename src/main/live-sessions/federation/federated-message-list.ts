@@ -1,4 +1,7 @@
-import type { LiveMessage } from '../../../shared/live-sessions/live-session-types'
+import {
+  LIVE_MESSAGE_STATES,
+  type LiveMessage
+} from '../../../shared/live-sessions/live-session-types'
 
 /** One server's messages as the desktop lists them: what the server's outbox reports. */
 export class FederatedMessageList {
@@ -16,10 +19,18 @@ export class FederatedMessageList {
       .sort((a, b) => a.createdAt - b.createdAt)
   }
 
-  /** The server's word on a message. A call's answer can arrive after a newer frame, so an older one is ignored. */
+  /**
+   * The server's word on a message. A call's answer can arrive after a newer frame, so an older
+   * one is ignored; of two stamped in the same millisecond, the earlier state is the older.
+   */
   fromServer(message: LiveMessage): LiveMessage {
     const held = this.held.get(message.messageId)
-    return held && held.updatedAt > message.updatedAt ? held : this.set(message)
+    const stale =
+      held &&
+      (held.updatedAt > message.updatedAt ||
+        (held.updatedAt === message.updatedAt &&
+          LIVE_MESSAGE_STATES.indexOf(held.state) > LIVE_MESSAGE_STATES.indexOf(message.state)))
+    return stale ? held : this.set(message)
   }
 
   /** The server's whole outbox after a (re)connect. */

@@ -342,6 +342,26 @@ describe('a paired server listed from its own registry', () => {
     expect(heard).toHaveBeenCalledWith(listed)
   })
 
+  // The server stamps `queued` and `sending` in one millisecond; the frame can beat the call's answer.
+  it('does not step a message back to the state a late answer carries', async () => {
+    const { federation, streams, answers } = federate()
+    const heard = vi.fn()
+    federation.subscribeMessages(heard)
+    answers.set('liveSessions.send', () => {
+      streams[0].handlers.onFrame({ type: 'message', message: serverMessage({ state: 'sending' }) })
+      return ok(serverMessage())
+    })
+
+    const sent = await federation.offer({
+      sessionId: 'machine-7:claude:abc',
+      messageId: 'm-1',
+      text: 'Run the tests'
+    })
+
+    expect('state' in sent && sent.state).toBe('sending')
+    expect(heard.mock.calls.map(([message]) => message.state)).toEqual(['sending'])
+  })
+
   it('says why a message did not reach the server and keeps nothing of it', async () => {
     const { federation } = federate()
 
