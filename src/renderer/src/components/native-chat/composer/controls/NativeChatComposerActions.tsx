@@ -321,7 +321,7 @@ export const NativeChatComposerActions = memo(function NativeChatComposerActions
           }
         ]
       : []),
-    // Last and unprioritised: the context ring stays beside Send at every width.
+    // Last and unprioritised: the context ring stays beside Send while the toolbar keeps one row.
     ...(contextUsage
       ? [{ id: 'context', content: <NativeChatContextUsageRing usage={contextUsage} /> }]
       : [])
