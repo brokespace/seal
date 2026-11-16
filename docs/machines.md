@@ -126,17 +126,29 @@ A machine with GPUs has a fourth meter, **GPU**, and shows its GPUs in the Machi
 
 Every host script runs through `runMachineHostScript` (`resources/machine-host-script.ts`): the login shell is asked only to start `sh -s`, and the script arrives on stdin. That keeps the scripts POSIX `sh` whatever the login shell is (bash, zsh, fish), and no value is ever word-split by it.
 
-| View | Shows                                                                                                                                                                                         | Actions                                                                                                                                                         |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CPU  | Busiest processes: name, command line, user, pid, CPU %, memory. tmux panes and Claude / Codex processes are listed as sessions with the CPU and memory of everything running under them.     | **Stop** (SIGTERM), **Force kill** (SIGKILL)                                                                                                                    |
-| RAM  | Largest processes, swap, Docker containers with their memory, and what Docker's images, containers, volumes and build cache hold and could free (`docker system df`).                         | The same, plus **Start**, **Stop**, **Restart** and **Remove** a container, and pruning stopped containers, dangling images, unused volumes and the build cache |
-| Disk | Each mounted disk with its index age and scan progress; **What's taking space**, a drill-down by folder; **Largest files**; **Largest folders**; **Clean up**, the reclaimable space by kind. | **Delete…** one entry; clean up a reviewed list; choose which disks are indexed                                                                                 |
+| View | Shows                                                                                                                                                                                                                                                      | Actions                                                                                                         |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| CPU  | Busiest processes: name, command line, user, pid, CPU %, memory. tmux panes and Claude / Codex processes are listed as sessions with the CPU and memory of everything running under them. Running Docker containers.                                       | **Stop** (SIGTERM), **Force kill** (SIGKILL); **Stop**, **Restart** and **Remove** a container                  |
+| RAM  | Largest processes, swap, and running Docker containers.                                                                                                                                                                                                    | The same                                                                                                        |
+| Disk | Each mounted disk with its index age and scan progress; **What's taking space**, a drill-down by folder; **Largest files**; **Largest folders**; **Docker**, its images, containers, volumes and build cache; **Clean up**, the reclaimable space by kind. | **Delete…** one entry; remove or prune Docker objects; clean up a reviewed list; choose which disks are indexed |
 
-Every view shows the machine as it is and keeps itself current: there is no pause or refresh control. Processes are sampled every 3 seconds, containers every 5, Docker's storage figures every 30, and the cleanup measurements every minute; all of them stop while the window is hidden.
+Every view shows the machine as it is and keeps itself current: there is no pause control, and only the Docker manager has **Refresh**. Processes are sampled every 3 seconds, containers every 5, Docker's storage figures every 30, and the cleanup measurements every minute; all of them stop while the window is hidden.
 
 Disk sizes come from a background index that each machine keeps for itself, so the panel opens at once however large the disk is. Its design is in [Disk usage index](./disk-usage-index.md).
 
 Linux CPU percentages come from two `/proc` readings one second apart. macOS uses `ps`.
+
+### Docker
+
+Everything is read with the machine's own `docker` CLI, so it works wherever the account may run `docker`. A machine without Docker, an account outside the `docker` group and a daemon that is not running each get their own message (`classifyDockerUnreachable`).
+
+- **Containers card** (CPU, RAM and GPU views). A sortable table of the running containers from `docker stats`: CPU %, memory used and limit, network I/O, block I/O and PIDs. A row opens the same details sheet the Docker manager uses. Stopped containers and pruning live in Disk → Docker.
+- **Inventory** (Disk → Docker). One script reads `docker system df`, `docker system df -v`, one `docker container inspect` over all containers and `docker volume ls` (`resources/machine-docker-inventory.ts`). Each image and volume is listed with the containers that use it, running or stopped; an object with none is unused, an untagged image is dangling. A machine can hold thousands of build cache records, so only the 500 largest of each kind are listed, and the build cache says how many records were left out. Main shares one read for 20 seconds; **Refresh** and every removal plan read again.
+- **Details.** A container: state, exit code, health, restart policy, ports, networks and mounts. An image: tags, digests, layers from `docker history`, and the containers made from it. A volume: driver, mountpoint, labels, options, and where each container mounts it.
+- **Logs.** The last 500 lines of `docker logs --timestamps`, stdout and stderr together, cut to the last 512 KiB.
+- **Volume files.** Read-only: folders are listed and a file's first 2 MiB can be previewed. When the account can read the volume's folder on the machine, Seal reads it there. Usually it is root's, and then Seal runs a throwaway container from an image already on the machine (`--rm --pull never --network none --read-only`, the volume mounted `:ro`), trying the images of the volume's own containers first, then the smallest. Nothing is pulled; a machine with no image that has a shell gets a message instead. A path is rejected if it has a `..` segment, and a link that leads out of the volume is not followed.
+
+A Seal server returns at most 1 MiB per command, so listings are capped on the machine and files are read in 512 KiB pieces.
 
 ### What can change a machine, and its guards
 
@@ -145,24 +157,29 @@ Nothing here runs without a confirmation dialog that names the machine and what 
 - **Signals.** The dialog shows the process's command line. Main refuses pid 0, 1 and negative pids. The request carries the process's start marker (`/proc` start time on Linux, `ps lstart` elsewhere); if the pid now belongs to another process the signal is not sent and the dialog says so. A process that carries Seal's own connection to the machine is labelled, and the dialog warns before it is signalled.
 - **Command lines.** Values of secret-named flags and variables (`--token`, `--api-key`, `PASSWORD=…`), bearer tokens, JWTs and URL passwords are masked in main (`command-line-secrets.ts`) before they reach the renderer or a log.
 - **Containers.** Only `docker start`, `docker stop`, `docker restart` and `docker rm`, on a container id read from the listing, on the machine the container lives on. Stop, restart and remove ask first; start does not, since it interrupts nothing. Remove never passes `--force`, so Docker refuses a container that is still running.
-- **Docker prune.** The RAM detail's prune rows are the Docker cleanup targets below and go through the same scan, review and one-use token as **Clean up**. Each row shows what it would free before anything is ticked.
+- **Docker removal.** Removing picked objects and pruning a category both go through the same review and one-use token as **Clean up**. The renderer names objects only by the keys the inventory listed (`planDockerRemoval`); main reads the machine again and builds the commands (`resources/machine-docker-removal-plans.ts`):
+  - Unused: removed with plain `docker image rm`, `docker container rm` or `docker volume rm`.
+  - Used only by stopped containers: listed unticked with those containers named. A ticked image is removed with `docker image rm --force`; a ticked volume is removed after `docker container rm` of its containers.
+  - Used by a running container, a running container itself, or a build cache record a build is using: shown as blocked. Main rejects a run that names a blocked item.
+  - Build cache records are removed one by one with `docker builder prune --all --force --filter id=…`, newest step first, because Docker keeps a record that another one builds on.
+- **Progress.** A run removes in about twenty batches and sends `machines:cleanupProgress` (done, total, bytes freed, failures, the item it is on) before each batch and at the end. Freed bytes are what Docker reported where it reports them: an image that was only untagged counts as nothing.
 - **Delete in the drill-down.** The file browser's own delete dialog and `files.remove`.
 - **Clean up.** A scan only measures. It returns items plus a one-use token bound to that machine, valid for 15 minutes. The run accepts the token and the ids of the ticked items only, so the renderer can never name a path or a command. Unknown ids reject the whole run. Paths are checked again by `isRemovableCleanupPath`: absolute, at least two levels deep, no `.` or `..`, and never the home folder.
 
 Cleanup targets (`MACHINE_CLEANUP_TARGETS`):
 
-| Target                    | Finds                                                                                            | Removes with                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| Unused Docker images      | images no container uses                                                                         | `docker image rm` (never `--force`)     |
-| Dangling Docker images    | untagged images no container uses (RAM detail only; **Clean up** lists them under unused images) | `docker image rm` (never `--force`)     |
-| Stopped Docker containers | exited or never started                                                                          | `docker container rm`                   |
-| Unused Docker volumes     | volumes no container references                                                                  | `docker volume rm`                      |
-| Docker build cache        | the total from `docker system df`                                                                | `docker builder prune --all --force`    |
-| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                               | `rm -rf` of the cache folder            |
-| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`                      | `rm -rf`; none are ticked by default    |
-| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                             | emptied; the folders stay               |
-| Old logs                  | log files not written to for 14 days                                                             | `rm -rf` of each ticked file            |
-| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour        | `rm -rf`; running jobs are never listed |
+| Target                    | Finds                                                                                     | Removes with                            |
+| ------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------- |
+| Unused Docker images      | images no container uses                                                                  | `docker image rm` (never `--force`)     |
+| Dangling Docker images    | untagged images no container uses (**Clean up** lists them under unused images)           | `docker image rm` (never `--force`)     |
+| Stopped Docker containers | exited or never started                                                                   | `docker container rm`                   |
+| Unused Docker volumes     | volumes no container references                                                           | `docker volume rm`                      |
+| Docker build cache        | the total from `docker system df`                                                         | `docker builder prune --all --force`    |
+| Package manager caches    | npm, pnpm, Yarn, pip, uv, Cargo, Go, Bun, Homebrew                                        | `rm -rf` of the cache folder            |
+| `node_modules` folders    | under the home folder, outside hidden folders, `Library` and `Applications`               | `rm -rf`; none are ticked by default    |
+| Trash                     | `~/.Trash` on a Mac, `~/.local/share/Trash` on Linux                                      | emptied; the folders stay               |
+| Old logs                  | log files not written to for 14 days                                                      | `rm -rf` of each ticked file            |
+| Seal leftovers            | finished background job folders in `~/.seal/jobs`, and Seal temp files older than an hour | `rm -rf`; running jobs are never listed |
 
 ## Go to folder
 
@@ -204,11 +221,14 @@ The chevron next to the button picks another app, or Seal's editor, for one open
 
 ## Tests
 
-| Test                                                             | Covers                                                                                                                                    |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/shared/machines/machine-reconcile.test.ts`                  | Migration, merge reasons, relay and machine-id guards, splits, deletions, kessel-ml                                                       |
-| `src/main/machines/registry/machine-registry.test.ts`            | Routing by connection type, switching, identity merges, adding a transport                                                                |
-| `src/main/machines/connection/machine-connection-parity.test.ts` | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers |
-| `src/main/machines/resources/machine-resources-parity.test.ts`   | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)  |
-| `src/main/machines/resources/machine-resource-parsing.test.ts`   | Linux and macOS probe output, secret masking, cleanup path guards                                                                         |
-| `src/main/machines/resources/machine-gpu-readings.test.ts`       | GPU readings and GPU processes from `nvidia-smi`, `rocm-smi` and `ioreg` output; see [Machines: GPUs](./machines-gpu.md#tests)            |
+| Test                                                               | Covers                                                                                                                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/machines/machine-reconcile.test.ts`                    | Migration, merge reasons, relay and machine-id guards, splits, deletions, kessel-ml                                                         |
+| `src/main/machines/registry/machine-registry.test.ts`              | Routing by connection type, switching, identity merges, adding a transport                                                                  |
+| `src/main/machines/connection/machine-connection-parity.test.ts`   | One feature suite run against both transports on this host, through a loopback SSH link and the in-process `machineHost` runtime handlers   |
+| `src/main/machines/resources/machine-resources-parity.test.ts`     | Processes, signals, disk usage, cleanup and folder completion over both transports, once per installed login shell (sh, bash, zsh, fish)    |
+| `src/main/machines/resources/machine-resource-parsing.test.ts`     | Linux and macOS probe output, secret masking, cleanup path guards                                                                           |
+| `src/main/machines/resources/machine-docker-parsing.test.ts`       | Inventory, container figures, details and logs from recorded Docker 29 output; why Docker does not answer; volume path guards               |
+| `src/main/machines/resources/machine-docker-removal-plans.test.ts` | Which removals are ticked, warned about or blocked, the exact commands, and progress in batches                                             |
+| `src/main/machines/resources/machine-docker-transport.test.ts`     | Inventory, removal, details, logs and volume files over both transports, against the stateful fake `docker` in `testing/fake-docker-cli.ts` |
+| `src/main/machines/resources/machine-gpu-readings.test.ts`         | GPU readings and GPU processes from `nvidia-smi`, `rocm-smi` and `ioreg` output; see [Machines: GPUs](./machines-gpu.md#tests)              |
