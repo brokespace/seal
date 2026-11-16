@@ -17,12 +17,13 @@ const PANE: DiscoveredPane = {
   screen: null
 }
 
-/** A Codex rollout in `/srv/api`, last written `ageMs` ago. */
-function rollout(ageMs: number, agentPid?: number): SummarizedTranscript {
+/** A Codex rollout in `/srv/api`, begun `beganMs` ago and last written `ageMs` ago. */
+function rollout(beganMs: number, ageMs = beganMs, agentPid?: number): SummarizedTranscript {
   const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T11-00-00-${ROLLOUT_ID}.jsonl`
+  const began = new Date(NOW - beganMs).toISOString()
   const at = new Date(NOW - ageMs).toISOString()
   const text = [
-    { type: 'session_meta', timestamp: at, payload: { id: ROLLOUT_ID, cwd: '/srv/api' } },
+    { type: 'session_meta', timestamp: began, payload: { id: ROLLOUT_ID, cwd: '/srv/api' } },
     { type: 'event_msg', timestamp: at, payload: { type: 'user_message', message: 'Add a cache' } },
     { type: 'event_msg', timestamp: at, payload: { type: 'task_complete' } }
   ]
@@ -61,25 +62,51 @@ function listed(processes: DiscoveredProcess[], transcripts: SummarizedTranscrip
 }
 
 describe('which agent a transcript belongs to, when nothing names it', () => {
-  it('is the agent in its folder that was running when it was last written', () => {
+  it('is the one agent that started in its folder before it began', () => {
     expect(listed([codex(4200, '/srv/api', 600_000)], [rollout(10_000)])).toEqual([
       { id: ROLLOUT_ID, pid: 4200, routes: ['codex-queue', 'tmux'] }
     ])
   })
 
   // One Codex exits and another starts in its folder within two minutes, before its first prompt.
-  it('is not an agent that started after it was last written', () => {
+  it('is not an agent that started after it began', () => {
     expect(listed([codex(4200, '/srv/api', 30_000)], [rollout(60_000)])).toEqual([
       { id: 'pid-4200', pid: 4200, routes: ['tmux'] },
       { id: ROLLOUT_ID, pid: null, routes: [] }
     ])
   })
 
-  // The second Codex was already open, unprompted, when the first wrote its last record and left.
-  it('is not an agent other than the one seen writing it', () => {
-    expect(listed([codex(4200, '/srv/api', 600_000)], [rollout(10_000, 4100)])).toEqual([
+  // Seal's own resume, or anyone's, wrote to the exited Codex's rollout after the new one started.
+  it('is not an agent that started after it began, though it was written since', () => {
+    expect(listed([codex(4200, '/srv/api', 30_000)], [rollout(60_000, 5_000)])).toEqual([
+      { id: 'pid-4200', pid: 4200, routes: ['tmux'] },
+      { id: ROLLOUT_ID, pid: null, routes: [] }
+    ])
+    expect(listed([codex(4200, '/srv/api', 30_000)], [rollout(60_000, 5_000, 4100)])).toEqual([
       { id: 'pid-4200', pid: 4200, routes: ['tmux'] },
       { id: ROLLOUT_ID, pid: null, routes: ['resume'] }
+    ])
+  })
+
+  // The second Codex was already open, unprompted, when the first wrote its last record and left.
+  it('is not an agent other than the one seen writing it', () => {
+    expect(listed([codex(4200, '/srv/api', 600_000)], [rollout(10_000, 10_000, 4100)])).toEqual([
+      { id: 'pid-4200', pid: 4200, routes: ['tmux'] },
+      { id: ROLLOUT_ID, pid: null, routes: ['resume'] }
+    ])
+  })
+
+  // Either may be at its prompt with the rollout as its own: a resume would write beside it.
+  it('is neither of two agents that started in its folder before it began, and is not resumed', () => {
+    expect(
+      listed(
+        [codex(4200, '/srv/api', 900_000), { ...codex(4300, '/srv/api', 800_000), tty: 'pts/4' }],
+        [rollout(600_000, 300_000)]
+      )
+    ).toEqual([
+      { id: 'pid-4200', pid: 4200, routes: ['tmux'] },
+      { id: 'pid-4300', pid: 4300, routes: [] },
+      { id: ROLLOUT_ID, pid: null, routes: [] }
     ])
   })
 

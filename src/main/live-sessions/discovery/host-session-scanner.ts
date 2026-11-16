@@ -63,8 +63,6 @@ export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
 type CachedTranscript = SummarizedTranscript & {
   head: string | null
   subagentFiles: Map<string, SubagentFileSummary>
-  /** Its size when the agent seen writing it was first off the host's list. */
-  sizeWhenAgentLeft?: number
 }
 
 export type HostScanResult = { sessions: LiveSession[]; complete: boolean }
@@ -143,11 +141,7 @@ export class HostSessionScanner {
       const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
       if (transcript && session.pid !== null) {
         transcript.agentPid = session.pid
-        delete transcript.sizeWhenAgentLeft
       }
-    }
-    if (output.complete && output.processesListed) {
-      this.forgetAgentsWrittenAfter(new Set(output.processes.map((process) => process.pid)))
     }
     const ids = new Set(sessions.map((s) => s.id))
     for (const id of this.firstSeen.keys()) {
@@ -161,20 +155,6 @@ export class HostSessionScanner {
       session.lastActivityAt ||= seen
     }
     return { sessions, complete: output.complete }
-  }
-
-  /** A transcript that grows after its agent left is another agent's now (`claude --continue`). */
-  private forgetAgentsWrittenAfter(running: Set<number>): void {
-    for (const transcript of this.cache.values()) {
-      if (transcript.agentPid === undefined || running.has(transcript.agentPid)) {
-        continue
-      }
-      transcript.sizeWhenAgentLeft ??= transcript.size
-      if (transcript.size > transcript.sizeWhenAgentLeft) {
-        delete transcript.agentPid
-        delete transcript.sizeWhenAgentLeft
-      }
-    }
   }
 
   /** Subagent transcripts change while their session's own file stands still. */
@@ -246,10 +226,7 @@ export class HostSessionScanner {
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
       subagents: cached?.subagents ?? [],
-      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {}),
-      ...(cached?.sizeWhenAgentLeft !== undefined
-        ? { sizeWhenAgentLeft: cached.sizeWhenAgentLeft }
-        : {})
+      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
     }
     this.cache.set(file.path, next)
     if (!cached) {

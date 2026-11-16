@@ -48,7 +48,8 @@ it('keeps a session under its id, and adds no nameless one, when a scan is cut s
     `@@NOW ${now / 1000}`,
     '@@PROC 4100 1 pts/3 codex',
     '@@CWD 4100 /srv/api',
-    '@@PS'
+    '@@PS',
+    '@@AGE 4100 10:00'
   ]
   const whole = [
     ...processes,
@@ -182,11 +183,10 @@ it('keeps a rollout apart from a Codex started in its folder after its own Codex
   ]
   expect(await listed(at + 60_000)).toEqual(apart)
 
-  // `codex resume --last`: the second Codex took the rollout over and writes it now.
+  // Seal's resume, or anyone's, wrote to the rollout since: it is still not the second Codex's.
   const more = text + line({ type: 'event_msg', timestamp, payload: { type: 'task_started' } })
   output = scanOf({ now: at + 90_000, pid: 4200, ran: '01:00', text: more, written: at + 80_000 })
   expect(await listed(at + 90_000)).toEqual(apart)
-  expect(await listed(at + 90_000)).toEqual([[CODEX_ID, 4200, 'codex-queue']])
 })
 
 const viaAiVault = () =>
@@ -429,6 +429,12 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
       }
     )
     try {
+      // Claude names its session in its registry: the transcript began before this stand-in did.
+      await mkdir(join(root, '.claude/sessions'), { recursive: true })
+      await writeFile(
+        join(root, `.claude/sessions/${agent.pid}.json`),
+        JSON.stringify({ pid: agent.pid, sessionId: CLAUDE_ID })
+      )
       const childPid = await vi.waitFor(async () =>
         Number((await readFile(join(root, 'child.pid'), 'utf8')).trim())
       )

@@ -6,21 +6,37 @@ import type { SummarizedTranscript } from './session-assembly'
 export type ProcessClaim = {
   transcript: SummarizedTranscript | null
   process: AgentProcess | null
+  /** Several running agents may each be what writes this transcript: none is paired with it. */
+  contested?: boolean
 }
 
 /** `ps` and file times are whole seconds, read moments apart. */
 const CLOCK_SLACK_MS = 2_000
 
 /**
- * Whether `process` may be what writes a transcript nothing names as its own. Not one another
- * process was seen writing, and not one last written before this process started.
+ * Whether `process` may be what writes a transcript nothing names as its own: one begun after
+ * the process started, that no other process was seen writing. A transcript begun earlier and
+ * written again says nothing: Seal's own resume writes it, as anyone's may. An agent carrying
+ * an earlier session on (`claude --continue`) is known by its registry entry or its open file.
  */
 function couldWrite(process: AgentProcess, transcript: SummarizedTranscript): boolean {
   if (transcript.agentPid !== undefined && transcript.agentPid !== process.pid) {
     return false
   }
+  const began = transcript.summary.firstAt
   return (
-    process.startedAtMs === undefined || transcript.mtimeMs + CLOCK_SLACK_MS >= process.startedAtMs
+    process.startedAtMs !== undefined &&
+    began !== null &&
+    began + CLOCK_SLACK_MS >= process.startedAtMs
+  )
+}
+
+function couldWriteInFolder(process: AgentProcess, transcript: SummarizedTranscript): boolean {
+  return (
+    transcript.summary.provider === process.provider &&
+    process.cwd !== null &&
+    transcript.summary.cwd === process.cwd &&
+    couldWrite(process, transcript)
   )
 }
 
@@ -82,19 +98,16 @@ export function pairProcesses(
       pending.push(process)
     }
   }
-  // Newer processes write the newer transcripts in a shared folder.
-  pending.sort((a, b) => b.pid - a.pid)
   /** Processes with no transcript, by provider: each is listed on its own as a new session. */
   const bare = new Map<string, ProcessClaim[]>()
+  // Which of two agents started in one folder writes the transcript begun after both is not
+  // known: typing into either on its behalf could reach the wrong one.
+  const contested = new Set(
+    [...free].filter((t) => pending.filter((p) => couldWriteInFolder(p, t)).length > 1)
+  )
   for (const process of pending) {
     const match = [...free]
-      .filter(
-        (t) =>
-          t.summary.provider === process.provider &&
-          process.cwd !== null &&
-          t.summary.cwd === process.cwd &&
-          couldWrite(process, t)
-      )
+      .filter((t) => !contested.has(t) && couldWriteInFolder(process, t))
       .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     // One still to be read may be its own (a shared app-server holds it open): shown then.
     const mayBeUnread =
@@ -126,7 +139,11 @@ export function pairProcesses(
   }
   claims.push(...unwritten)
   for (const transcript of free) {
-    claims.push({ process: null, transcript })
+    claims.push({
+      process: null,
+      transcript,
+      ...(contested.has(transcript) && { contested: true })
+    })
   }
   return claims
 }

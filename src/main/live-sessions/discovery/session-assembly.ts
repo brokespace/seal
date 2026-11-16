@@ -137,7 +137,7 @@ export function assembleHostSessions(input: {
   const helpers = codexHelperThreads(input.transcripts)
   const found = conversations(input.transcripts.filter((t) => !t.summary.parentSessionId))
   const earlierOf = new Map(found.map((c) => [c.transcript, c.earlier]))
-  for (const { process, transcript } of pairProcesses(
+  for (const { process, transcript, contested } of pairProcesses(
     agentProcesses(output.processes),
     found.map((c) => c.transcript),
     claudeSessionByPid,
@@ -270,7 +270,7 @@ export function assembleHostSessions(input: {
       inputRoutes.push({ kind: 'tmux', target: pane.paneId, socket: pane.socket })
     }
     // Resuming next to a live process would fork the conversation, so only closed sessions resume.
-    if (!running && summary && !providerSessionId.startsWith('pid-')) {
+    if (!running && !contested && summary && !providerSessionId.startsWith('pid-')) {
       inputRoutes.push({ kind: 'resume' })
     }
     const cwd = summary?.cwd ?? process?.cwd ?? null

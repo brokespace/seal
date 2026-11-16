@@ -60,7 +60,10 @@ function machine(clock: () => number = () => NOW) {
       }
       return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
-        ...(state.running ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`] : []),
+        // Started before any transcript here began.
+        ...(state.running
+          ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`, '@@AGE 4100 900-00:00:00']
+          : []),
         '@@DONE'
       ].join('\n')
     },

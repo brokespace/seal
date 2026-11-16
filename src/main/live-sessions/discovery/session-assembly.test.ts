@@ -59,7 +59,9 @@ const proc = (
   ppid: 1,
   tty,
   args,
-  cwd
+  cwd,
+  // Before any transcript here began.
+  startedAtMs: NOW - 7_200_000
 })
 
 const pane = (tty: string, screen: string): DiscoveredPane => ({
@@ -93,15 +95,14 @@ function assemble(
 }
 
 describe('assembleHostSessions', () => {
-  it('pairs processes with transcripts by resumed id, then newest-to-newest in a shared folder', () => {
+  it('pairs processes with transcripts by resumed id, then with the newest begun in their folder', () => {
     const sessions = assemble(
       [
-        proc(100, 'claude', '/srv/app'),
         proc(200, 'claude', '/srv/app'),
         proc(300, 'claude --resume 11111111-1111-4111-8111-111111111111', '/elsewhere')
       ],
       [
-        transcript('11111111-1111-4111-8111-111111111111', '/srv/app', 60_000),
+        transcript('11111111-1111-4111-8111-111111111111', '/srv/app', 5_000),
         transcript('22222222-2222-4222-8222-222222222222', '/srv/app', 30_000),
         transcript('33333333-3333-4333-8333-333333333333', '/srv/app', 10_000)
       ]
@@ -110,7 +111,7 @@ describe('assembleHostSessions', () => {
     expect(pidOf).toEqual({
       '11111111-1111-4111-8111-111111111111': 300,
       '33333333-3333-4333-8333-333333333333': 200,
-      '22222222-2222-4222-8222-222222222222': 100
+      '22222222-2222-4222-8222-222222222222': null
     })
     expect(sessions.every((s) => s.id === `ssh-1:claude:${s.providerSessionId}`)).toBe(true)
   })
