@@ -15,6 +15,7 @@ import type {
   AiVaultSessionResumePreparation
 } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
+import { isFloatingWorkspaceId } from '../../../shared/floating-workspace-worktree'
 import { isWslUncPath } from '../../../shared/wsl-paths'
 import { getStructuredAgentSessionHost } from '../../native-chat/agent-session-wire/host/structured-agent-session-registry'
 import { structuredAgentRuntimeMetadata } from '../../runtime/agent-session/installation/structured-agent-runtime-metadata'
@@ -121,8 +122,11 @@ export async function prepareStructuredChatCliFork(
     }
   }
   const agent = record.provider
+  // A chat started in a workspace subfolder saved its conversation under that folder.
   const cwd =
-    (await host.deps.resolveWorkspacePath?.(record.location.workspaceId)) || record.launchDirectory
+    (!isFloatingWorkspaceId(record.location.workspaceId) && record.launchDirectory) ||
+    (await host.deps.resolveWorkspacePath?.(record.location.workspaceId)) ||
+    record.launchDirectory
   if (!cwd || !isAbsolute(cwd) || isWslUncPath(cwd)) {
     throw new Error('The chat workspace is unavailable on this host.')
   }

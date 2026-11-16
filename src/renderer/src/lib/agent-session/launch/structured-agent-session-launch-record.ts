@@ -65,13 +65,16 @@ export type StructuredAgentLaunchPersistedRecord = {
   seedOptions?: Readonly<Record<string, string>>
   /** When a failed launch failed; records written by older builds lack it. */
   failedAt?: number
+  /** Outside the fingerprint, so a create replayed after a reload must still name its subfolder. */
+  launchDirectory?: string
 }
 
 export function structuredAgentLaunchRecordFor(
   intent: StructuredAgentSessionLaunchIntent,
   lifecycle: StructuredAgentLaunchPersistedLifecycle
 ): StructuredAgentLaunchPersistedRecord {
-  const { envelope, resumeFrom, forkFrom, firstMessage, optionsMode, options } = intent.params
+  const { envelope, resumeFrom, forkFrom, firstMessage, optionsMode, options, launchDirectory } =
+    intent.params
   // A local launch re-reads this machine's settings on reload; only a paired server's seed is kept.
   const pairedSeed = intent.target.kind === 'local' ? undefined : intent.seedOptions
   return {
@@ -94,7 +97,8 @@ export function structuredAgentLaunchRecordFor(
     ...(intent.createMessageSupport === undefined
       ? {}
       : { createMessageSupport: intent.createMessageSupport }),
-    ...(pairedSeed ? { seedOptions: pairedSeed } : {})
+    ...(pairedSeed ? { seedOptions: pairedSeed } : {}),
+    ...(launchDirectory ? { launchDirectory } : {})
   }
 }
 
@@ -152,6 +156,9 @@ export function validRecord(value: unknown): value is Omit<
       value.explicitLaunchOptions === undefined ||
       isAgentSessionOptions(value.explicitLaunchOptions)) &&
     (createMessageSupport === undefined || typeof createMessageSupport === 'boolean') &&
+    (!('launchDirectory' in value) ||
+      value.launchDirectory === undefined ||
+      (typeof value.launchDirectory === 'string' && value.launchDirectory.length > 0)) &&
     (forkFrom === undefined ||
       (validForkSource(forkFrom) &&
         resumeFrom === undefined &&

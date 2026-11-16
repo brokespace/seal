@@ -26,6 +26,11 @@ describe('per-launch structured feasibility', () => {
     ['grok', { agent: 'grok' }, 'agent-without-structured-session'],
     ['openclaude', { agent: 'openclaude' }, 'agent-without-structured-session'],
     ['a custom start directory', { startsOutsideWorkspaceRoot: true }, 'custom-start-directory'],
+    [
+      'a workspace subfolder on a host that cannot start there',
+      { startsInWorkspaceSubfolder: true },
+      'custom-start-directory'
+    ],
     ['a host-nested SSH project', { projectExecutionKind: 'ssh' }, 'remote-execution-host'],
     ['an SSH host', { executionHostId: 'ssh:host-a' }, 'remote-execution-host'],
     ['a missing capability', { hostCapabilities: [] }, 'runtime-capability'],
@@ -34,6 +39,18 @@ describe('per-launch structured feasibility', () => {
 
   it.each(blockerCases)('names %s as the blocker', (_name, overrides, blocker) => {
     expect(support(overrides)).toEqual({ supported: false, blocker })
+  })
+
+  it('supports a workspace subfolder on a host that starts chats there', () => {
+    expect(
+      support({
+        startsInWorkspaceSubfolder: true,
+        hostCapabilities: [
+          STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY,
+          'agentSession.create.launch-directory.v1'
+        ]
+      })
+    ).toEqual({ supported: true })
   })
 
   it('blocks a WSL or repair-required project runtime', () => {

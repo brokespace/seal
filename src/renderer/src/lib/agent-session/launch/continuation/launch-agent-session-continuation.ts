@@ -11,6 +11,7 @@ import {
 } from '../inventory/host-chat-program-acquisition'
 import { agentChoicePending } from '../inventory/host-chat-program'
 import { worktreeLaunchWorkspace } from '../routing/agent-launch-route-input'
+import { agentLaunchStartDirectoryInWorkspace } from '../routing/agent-launch-start-directory'
 import { isTuiAgentEnabled } from '../../../../../../shared/agent-launch/catalog/tui-agent-selection'
 import type { LaunchSource } from '../../../../../../shared/telemetry-property-schemas'
 import type { TuiAgent } from '../../../../../../shared/agent-launch/catalog/tui-agent'
@@ -160,9 +161,21 @@ export async function launchAgentSessionContinuation({
     workspace: worktreeLaunchWorkspace(worktreeId),
     tuiCustomization: { cwd: initialCwd }
   }
+  // A picked chat skips planning, which is what reads the subfolder it starts in.
+  const startDirectory =
+    launchChoice?.route === 'structured-native-chat'
+      ? agentLaunchStartDirectoryInWorkspace(useAppStore.getState(), worktreeId, initialCwd)
+      : undefined
   // Capture preference routes before detection awaits; only deliberate picks demand a surface.
   const plan = launchChoice
-    ? adoptAgentSessionLaunchVerdict({ ...request, ...launchChoice, worktreeId })
+    ? adoptAgentSessionLaunchVerdict({
+        ...request,
+        ...launchChoice,
+        worktreeId,
+        ...(startDirectory?.kind === 'workspace-subfolder'
+          ? { launchDirectory: startDirectory.launchDirectory }
+          : {})
+      })
     : planAgentSessionLaunch(useAppStore.getState(), request)
   // A dialog closed while detection ran must not start the session the user just left.
   if (!(await ensureAgentAvailable(agent, worktreeId, plan.route, signal)) || signal?.aborted) {

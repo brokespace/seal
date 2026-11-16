@@ -1,5 +1,4 @@
 import type { AgentSessionRecord } from '../../../../shared/agent-session/lifecycle/agent-session-record'
-import { isFloatingWorkspaceId } from '../../../../shared/floating-workspace-worktree'
 
 /** First pin wins: resolving workspace settings again must not silently move an existing conversation. */
 export function pinAgentSessionRecordLaunchDirectory(
@@ -13,9 +12,9 @@ export function pinAgentSessionRecordLaunchDirectory(
   return { ...record, launchDirectory, updatedAt: now }
 }
 
-/** Only floating ids need pinned paths; worktree/folder ids already name durable places. */
+/** A floating chat's folder or a workspace subfolder; a chat at its worktree/folder root records none, since the id names that place. */
 export function agentSessionPinnedLaunchDirectory(
   record: Pick<AgentSessionRecord, 'launchDirectory' | 'location'>
 ): string | undefined {
-  return isFloatingWorkspaceId(record.location.workspaceId) ? record.launchDirectory : undefined
+  return record.launchDirectory
 }
