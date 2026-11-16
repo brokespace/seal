@@ -114,6 +114,7 @@ async function confirmReuse(page: Page, screenshotPath?: string): Promise<void> 
 
 test('an install asked for on a machine that runs its own seal serve installs nothing and offers that server', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launch and its host.
 {}, testInfo) => {
+  // Boots a systemd host and launches the app; the host's answer arrives over a fresh SSH login.
   test.setTimeout(8 * 60_000)
   const host = await startDockerSystemdSshHost(testInfo, { linger: true })
   const session = createRestartSession(testInfo, { ORCA_ORCAD_TEMPLATE_PATH: TEMPLATE! })
@@ -174,6 +175,7 @@ test('an install asked for on a machine that runs its own seal serve installs no
 
 test('a machine added without the install turns to the reuse offer once its SSH session is asked', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launch and its host.
 {}, testInfo) => {
+  // Boots a systemd host and launches the app; the host's answer arrives over a fresh SSH login.
   test.setTimeout(8 * 60_000)
   const host = await startDockerSystemdSshHost(testInfo, { linger: true })
   const session = createRestartSession(testInfo, { ORCA_ORCAD_TEMPLATE_PATH: TEMPLATE! })
@@ -221,6 +223,7 @@ test('a machine added without the install turns to the reuse offer once its SSH 
 
 test('Use this server connects the machine through the seal serve its user runs', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launch and its host.
 {}, testInfo) => {
+  // Boots a systemd host, unpacks and starts a real server on it, and launches the app twice.
   test.setTimeout(8 * 60_000)
   const host = await startDockerSystemdSshHost(testInfo, { linger: true })
   const session = createRestartSession(testInfo, { ORCA_ORCAD_TEMPLATE_PATH: TEMPLATE! })
