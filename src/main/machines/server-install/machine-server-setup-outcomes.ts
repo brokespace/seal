@@ -31,6 +31,7 @@ import {
 } from './machine-server-install-activity'
 import {
   blockedServerMove,
+  busyHostReason,
   deferredServerInstallReason,
   hostIsBusyWithAnotherInstall,
   repeatsOverPlainSsh,
@@ -83,12 +84,12 @@ export function createMachineServerSetup(
 
   const busyHostRetries = new Map<string, number>()
 
-  /** The host was busy with another install: the same connect, again, once that one has had time to end. */
-  const retryWhenHostIsFree = (sshTargetId: string): void => {
+  /** The host was busy with another install: the same connect, again, once that one has had time to end. False when the tries are used up. */
+  const retryWhenHostIsFree = (sshTargetId: string): boolean => {
     const tried = busyHostRetries.get(sshTargetId) ?? 0
     const delay = BUSY_HOST_RETRY_DELAYS_MS[tried]
     if (delay === undefined) {
-      return
+      return false
     }
     busyHostRetries.set(sshTargetId, tried + 1)
     const timer = setTimeout(() => {
@@ -97,6 +98,7 @@ export function createMachineServerSetup(
       if (!record || install?.state !== 'pending' || !install.reason) {
         return
       }
+      console.info(`[machines] trying the waiting Seal server install on ${record.name} again`)
       void joinMachineServerInstall(record.id, async () => {
         // Automatic: no sign-in prompt appears and a Disconnect stays.
         await connectRegisteredSshTarget(sshTargetId, { automatic: true })
@@ -109,6 +111,7 @@ export function createMachineServerSetup(
       })
     }, delay)
     timer.unref()
+    return true
   }
 
   const failed = (sshTargetId: string, failure: unknown): boolean => {
@@ -122,13 +125,17 @@ export function createMachineServerSetup(
     if (!record) {
       return false
     }
-    const deferred = deferredServerInstallReason(failure)
+    const busy = hostIsBusyWithAnotherInstall(failure)
+    const deferred = busy
+      ? busyHostReason(retryWhenHostIsFree(sshTargetId))
+      : deferredServerInstallReason(failure)
     const reason = deferred ?? serverInstallFailureReason(failure)
-    if (hostIsBusyWithAnotherInstall(failure)) {
-      retryWhenHostIsFree(sshTargetId)
-    } else if ((latestSealServiceOutcome(sshTargetId)?.manager ?? 'detached') !== 'detached') {
+    if (!busy) {
+      busyHostRetries.delete(sshTargetId)
       // Only a launch of this app reports a manager, so the service is this install's own.
-      removeServiceOfFailedInstall(sshTargetId)
+      if ((latestSealServiceOutcome(sshTargetId)?.manager ?? 'detached') !== 'detached') {
+        removeServiceOfFailedInstall(sshTargetId)
+      }
     }
     noteBlockedServerMove(sshTargetId, deferred ? null : blockedServerMove(failure))
     registry.edit((store, now) =>

@@ -24,8 +24,7 @@ const INSTALL_INTERRUPTED =
 const NEVER_STARTED = 'the server did not start on this machine'
 const OTHER_SERVER_RUNNING =
   'another Seal or Orca server is already running in this account on the machine; stop it, then try again'
-const HOST_BUSY =
-  'another install is still running on this machine, and Seal tries again when it is done'
+const HOST_BUSY = 'another install is still running on this machine'
 const MAX_REASON_CHARS = 200
 
 // Another desktop, or an install that was cut short, holds the host for a while.
@@ -127,11 +126,15 @@ export function hostIsBusyWithAnotherInstall(failure: unknown): boolean {
   return failure instanceof Error && HOST_BUSY_PHRASE.test(failure.message)
 }
 
-/** Set when the install only waits, for terminals to end or for another install, so a later connect finishes it. */
+/** Why an install waits for another one, and when Seal tries it again. */
+export function busyHostReason(retriesSoon: boolean): string {
+  return retriesSoon
+    ? `${HOST_BUSY}, and Seal tries again when it is done`
+    : `${HOST_BUSY}, and Seal tries again the next time it connects`
+}
+
+/** Set when the move only waits for terminals to end, so a later connect finishes the install. */
 export function deferredServerInstallReason(failure: unknown): string | null {
-  if (hostIsBusyWithAnotherInstall(failure)) {
-    return HOST_BUSY
-  }
   if (!isUnservedDecision(failure)) {
     return null
   }
