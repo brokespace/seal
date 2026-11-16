@@ -74,6 +74,55 @@ it('keeps a session under its id, and adds no nameless one, when a scan is cut s
   expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
 })
 
+// Newer transcripts push an old one off the host's list; a later write brings it back, read anew.
+it('remembers who wrote a transcript while it is off the list, so an idle agent in its folder is not taken for its writer', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp: at, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const now = Date.parse(at) + 20_000
+  // Started ten minutes before the transcript began, in its folder, and never wrote it.
+  const idle = ['@@PROC 4100 1 pts/3 codex', '@@CWD 4100 /srv/api', '@@PS', '@@AGE 4100 10:00']
+  const withWriter = [
+    '@@PROC 4200 1 pts/4 codex',
+    '@@CWD 4200 /srv/api',
+    ...idle,
+    '@@AGE 4200 00:25',
+    `@@PIN 4200 open codex ${path}`
+  ]
+  const file = [
+    `@@FILE codex ${Buffer.byteLength(text)} ${Date.parse(at) / 1000} ${path}`,
+    `@@HEAD ${path} ${b64}`,
+    `@@TAIL ${path} ${b64}`
+  ]
+  let output: string[] = []
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => [`@@NOW ${now / 1000}`, ...output, '@@DONE'].join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async (rows: string[]) => {
+    output = rows
+    return (await scanner.scan(now)).sessions.map((s) => [s.providerSessionId, s.pid]).sort()
+  }
+
+  expect(await listed([...withWriter, ...file])).toEqual([
+    [CODEX_ID, 4200],
+    ['pid-4100', 4100]
+  ])
+  expect(await listed([...idle, ...file])).toEqual([
+    [CODEX_ID, null],
+    ['pid-4100', 4100]
+  ])
+  expect(await listed(idle)).toEqual([['pid-4100', 4100]])
+  expect(await listed([...idle, ...file])).toEqual([
+    [CODEX_ID, null],
+    ['pid-4100', 4100]
+  ])
+})
+
 // A long tool result can fill the bytes a scan reads, leaving no response in them.
 it("lists how full a session's context is, and keeps that reading while the tail holds no response", async () => {
   const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`

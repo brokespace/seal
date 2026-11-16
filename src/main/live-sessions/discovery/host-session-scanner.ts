@@ -87,8 +87,8 @@ export class HostSessionScanner {
   private readonly contested = new Set<string>()
   /** The agent processes of the last whole scan. */
   private agentPids: string | null = null
-  /** Headless resumes Seal started since the last scan, by the transcript each writes. */
-  private readonly resumed = new Map<string, number>()
+  /** The agent process last known to write each transcript; outlives the read cache. */
+  private readonly writers = new Map<string, number>()
 
   constructor(
     private readonly host: LiveSessionHost,
@@ -97,7 +97,7 @@ export class HostSessionScanner {
 
   /** Seal resumed the session of `transcriptPath` as `pid`: its writes from here on are that process's. */
   noteResumed(transcriptPath: string, pid: number): void {
-    this.resumed.set(transcriptPath, pid)
+    this.writers.set(transcriptPath, pid)
   }
 
   /** Whether an agent started or ended since the last scan: one `ps`, not a scan. */
@@ -143,17 +143,12 @@ export class HostSessionScanner {
         }
       }
     }
-    for (const [path, pid] of this.resumed) {
-      const transcript = this.cache.get(path)
-      if (transcript) {
-        transcript.agentPid = pid
-        this.resumed.delete(path)
-      }
-    }
     // A scan cut short lists only some: the rest stand as earlier scans read them.
-    const transcripts = [...this.cache.values()].map((transcript) =>
-      this.contested.has(transcript.path) ? { ...transcript, contested: true } : transcript
-    )
+    const transcripts = [...this.cache.values()].map((transcript) => ({
+      ...transcript,
+      agentPid: this.writers.get(transcript.path),
+      contested: this.contested.has(transcript.path)
+    }))
     const sessions = assembleHostSessions({
       machine: this.host.machine,
       output,
@@ -163,9 +158,8 @@ export class HostSessionScanner {
       onContested: (transcript) => this.contested.add(transcript.path)
     })
     for (const session of sessions) {
-      const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
-      if (transcript && session.pid !== null) {
-        transcript.agentPid = session.pid
+      if (session.transcriptPath && session.pid !== null) {
+        this.writers.set(session.transcriptPath, session.pid)
       }
     }
     const ids = new Set(sessions.map((s) => s.id))
@@ -253,8 +247,7 @@ export class HostSessionScanner {
             codexTerminals
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
-      subagents: cached?.subagents ?? [],
-      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
+      subagents: cached?.subagents ?? []
     }
     this.cache.set(file.path, next)
     if (!cached) {
