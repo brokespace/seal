@@ -6,6 +6,7 @@ import type {
 } from '../../../../shared/machines/machine-resource-types'
 import type { MachineGpu } from '../../../../shared/machines/machine-gpu-types'
 import type { MachineFileEntry, MachineId } from '../../../../shared/machines/machine-types'
+import { WINDOWS_SETUP_NOT_SET_UP } from './machine-cpu-temperature-fixture-data'
 import { fakeDiskIndexReply } from './machine-disk-index-fixture-data'
 import { fakeGpuSnapshot, GPU_PROCESSES } from './machine-gpu-fixture-data'
 
@@ -88,6 +89,8 @@ type MachineResourceApi = Pick<
   MachinesApi,
   | 'listProcesses'
   | 'signalProcess'
+  | 'cpuTemperatureSetup'
+  | 'runCpuTemperatureSetup'
   | 'listDockerContainers'
   | 'dockerContainerAction'
   | 'dockerStorage'
@@ -118,6 +121,12 @@ export function fakeMachineResourceApi(
       collectedAt: Date.now()
     }),
     signalProcess: async () => ({ outcome: 'sent' }),
+    cpuTemperatureSetup: async () => WINDOWS_SETUP_NOT_SET_UP,
+    runCpuTemperatureSetup: async () => ({
+      outcome: 'done',
+      detail: null,
+      setup: { ...WINDOWS_SETUP_NOT_SET_UP, state: 'running' }
+    }),
     listDockerContainers: async () => ({
       state: 'ready',
       containers: [

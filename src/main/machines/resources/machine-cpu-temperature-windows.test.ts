@@ -37,6 +37,20 @@ describe('Windows CPU temperature', () => {
     })
   })
 
+  it('reads the text LibreHardwareMonitor’s web server shows, decimal comma or Fahrenheit', () => {
+    const output = String.raw`SEAL_CPU_TEMP {"source":"web","rows":[{"n":"Core (Tctl/Tdie)","t":"61,6 C","i":"/amdcpu/0/temperature/2"},{"n":"CCD1 (Tdie)","t":"58.3 C","i":"/amdcpu/0/temperature/3"},{"n":"CCD2 (Tdie)","t":"146.3 F","i":"/amdcpu/0/temperature/4"},{"n":"Core (Tctl/Tdie)","t":"","i":"/amdcpu/0/temperature/9"}]}`
+
+    expect(parseWindowsCpuTemperature(output)).toEqual({
+      temperatureC: 61.6,
+      source: 'LibreHardwareMonitor',
+      sensors: [
+        { label: 'Core (Tctl/Tdie)', temperatureC: 61.6 },
+        { label: 'CCD1 (Tdie)', temperatureC: 58.3 },
+        { label: 'CCD2 (Tdie)', temperatureC: 63.5 }
+      ]
+    })
+  })
+
   it('reports the hotter of two processors and says which one each sensor is on', () => {
     const output = String.raw`SEAL_CPU_TEMP {"source":"ohm","rows":[{"n":"CPU Core #1","v":44.0,"i":"/intelcpu/0/temperature/0"},{"n":"CPU Package","v":47.0,"i":"/intelcpu/0/temperature/1"},{"n":"CPU Core #1","v":52.0,"i":"/intelcpu/1/temperature/0"},{"n":"CPU Package","v":55.0,"i":"/intelcpu/1/temperature/1"}]}`
 

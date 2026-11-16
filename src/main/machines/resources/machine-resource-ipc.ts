@@ -1,4 +1,8 @@
 import {
+  MACHINE_CPU_TEMPERATURE_SETUP_ACTIONS,
+  type MachineCpuTemperatureSetupAction
+} from '../../../shared/machines/machine-cpu-temperature-types'
+import {
   MACHINE_CLEANUP_TARGETS,
   MACHINE_DOCKER_CONTAINER_ACTIONS,
   type MachineCleanupTargetId,
@@ -15,6 +19,10 @@ import {
 } from '../machine-ipc-args'
 import { getMachineRegistry } from '../registry/machine-registry-service'
 import { MachineCleanupRunner } from './machine-cleanup-runner'
+import {
+  readWindowsCpuTemperatureSetup,
+  runWindowsCpuTemperatureSetup
+} from './machine-cpu-temperature-windows-setup'
 import { readMachineDockerStorage } from './machine-docker-cleanup-scan'
 import { queryMachineDiskIndex } from './machine-disk-index'
 import {
@@ -23,9 +31,11 @@ import {
 } from './machine-docker-containers'
 import { probeMachineProcesses } from './machine-process-probe'
 import { signalMachineProcess } from './machine-process-signal'
+import { rereadMachineSensors } from './machine-sensor-readings'
 
 const cleanups = new MachineCleanupRunner()
 const listings = new Map<string, AbortController>()
+const temperatureSetups = new Set<string>()
 
 async function connected(machineId: unknown): Promise<MachineConnection> {
   const connection = getMachineRegistry().connection(machineIdOf(machineId))
@@ -49,6 +59,14 @@ function dockerActionOf(value: unknown): MachineDockerContainerAction {
   return action
 }
 
+function cpuTemperatureSetupActionOf(value: unknown): MachineCpuTemperatureSetupAction {
+  const action = MACHINE_CPU_TEMPERATURE_SETUP_ACTIONS.find((known) => known === value)
+  if (!action) {
+    throw new Error('Unsupported setup action')
+  }
+  return action
+}
+
 export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar): void {
   handle(MACHINE_IPC.listProcesses, async (args) =>
     probeMachineProcesses(await connected(args.machineId), { gpus: args.gpus === true })
@@ -61,6 +79,27 @@ export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar):
       startMarker: requireString(args.startMarker, 'startMarker')
     })
   )
+
+  handle(MACHINE_IPC.cpuTemperatureSetup, async (args) =>
+    readWindowsCpuTemperatureSetup(await connected(args.machineId))
+  )
+
+  handle(MACHINE_IPC.runCpuTemperatureSetup, async (args) => {
+    const connection = await connected(args.machineId)
+    const action = cpuTemperatureSetupActionOf(args.action)
+    // A second Windows prompt for the same machine would race the first one's installer.
+    if (temperatureSetups.has(connection.machineId)) {
+      throw new Error('CPU temperature setup is already running on this machine.')
+    }
+    temperatureSetups.add(connection.machineId)
+    try {
+      const result = await runWindowsCpuTemperatureSetup(connection, action)
+      await rereadMachineSensors(connection)
+      return result
+    } finally {
+      temperatureSetups.delete(connection.machineId)
+    }
+  })
 
   handle(MACHINE_IPC.listDockerContainers, async (args) =>
     listMachineDockerContainers(await connected(args.machineId))

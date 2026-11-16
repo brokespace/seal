@@ -13,9 +13,10 @@ const HELPER_HASH = createHash('sha256')
   .slice(0, 12)
 
 /**
- * Builds the helper once with the Mac's own compiler, then runs it on every reading. `cc` is only
- * touched once `xcode-select -p` names developer tools that are really there: without them the
- * /usr/bin/cc shim opens the "install developer tools" dialog. A failed build is retried a day on.
+ * Builds the helper once with the Mac's own compiler, then runs it on every reading. `xcrun` is
+ * only touched once `xcode-select -p` names a directory that is really there: with no developer
+ * directory at all the /usr/bin shims open the "install developer tools" dialog. `xcrun` then finds
+ * the compiler wherever that Xcode or Command Line Tools keeps it. A failed build is retried a day on.
  */
 export const MACOS_CPU_TEMPERATURE_SCRIPT = `
 if [ "$(uname -s)" = Darwin ]; then
@@ -24,11 +25,13 @@ if [ "$(uname -s)" = Darwin ]; then
   if [ ! -x "$seal_cputemp_bin" ] &&
     [ -z "$(find "$seal_cputemp_bin.failed" -mtime -1 2>/dev/null)" ] &&
     seal_cputemp_tools=$(xcode-select -p 2>/dev/null) &&
-    [ -x "$seal_cputemp_tools/usr/bin/xcrun" ]; then
+    [ -d "$seal_cputemp_tools" ] &&
+    seal_cputemp_cc=$(xcrun --find cc 2>/dev/null) &&
+    [ -x "$seal_cputemp_cc" ]; then
     (
       umask 077
       if mkdir -p "$seal_cputemp_dir" &&
-        cc -x c -O1 -w -o "$seal_cputemp_bin.$$" - -framework IOKit -framework CoreFoundation <<'SEAL_CPUTEMP_C' &&
+        xcrun cc -x c -O1 -w -o "$seal_cputemp_bin.$$" - -framework IOKit -framework CoreFoundation <<'SEAL_CPUTEMP_C' &&
 ${MACOS_CPU_TEMPERATURE_HELPER_SOURCE}
 SEAL_CPUTEMP_C
         mv -f "$seal_cputemp_bin.$$" "$seal_cputemp_bin"
