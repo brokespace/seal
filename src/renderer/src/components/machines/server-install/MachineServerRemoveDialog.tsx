@@ -64,7 +64,7 @@ export function MachineServerRemoveDialog({
           <DialogDescription>
             {t(
               'w7.remove.description',
-              'This removes the service and the server from the machine. {{name}} goes back to a plain SSH connection, and agents and terminals running through the server stop.',
+              'This stops Seal server on {{name}} and removes its service, and {{name}} goes back to a plain SSH connection. Projects and sessions opened through the server are no longer shown on this computer. Their files, the server files and its data stay on the machine. Close the terminals that run through the server first: Seal does not stop a server that has running terminals.',
               { name: view.name }
             )}
           </DialogDescription>

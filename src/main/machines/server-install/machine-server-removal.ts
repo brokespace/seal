@@ -24,6 +24,8 @@ import {
 import { sshSessionTo } from './machine-ssh-session'
 import { sealDeployedServer } from './seal-deployed-server'
 
+const TERMINALS_RUNNING_CODE = 'orcad_decommission_terminals_running'
+
 export async function removeServerFromMachine(machineId: MachineId): Promise<MachineView> {
   const registry = getMachineRegistry()
   const record = registry.record(machineId)
@@ -50,7 +52,11 @@ export async function removeServerFromMachine(machineId: MachineId): Promise<Mac
       // The stop needs the server running, so the service that keeps it comes off afterwards.
       const stopped = await actions.stop(environment.id)
       if (stopped.outcome === 'refused') {
-        throw new Error(stopped.reason)
+        throw new Error(
+          stopped.code === TERMINALS_RUNNING_CODE
+            ? 'Terminals are still running through Seal server on this machine. Close them, then remove Seal server again.'
+            : stopped.reason
+        )
       }
       returnToPlainSsh(registry, record, sshTargetId)
     }

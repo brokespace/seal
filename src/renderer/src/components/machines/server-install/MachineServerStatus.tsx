@@ -173,7 +173,9 @@ export function MachineServerStatus({
                 'w7.server.pm2NoBoot',
                 'PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.'
               )}
-              components={{ code: <code className="rounded bg-muted px-1 py-0.5 font-mono" /> }}
+              components={{
+                code: <code className="rounded bg-muted px-1 py-0.5 font-mono whitespace-nowrap" />
+              }}
             />
           </Warning>
         ) : null}

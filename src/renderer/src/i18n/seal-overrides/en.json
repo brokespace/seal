@@ -2228,7 +2228,7 @@
     "remove": {
       "action": "Remove Seal server…",
       "title": "Remove Seal server from {{name}}?",
-      "description": "This removes the service and the server from the machine. {{name}} goes back to a plain SSH connection, and agents and terminals running through the server stop.",
+      "description": "This stops Seal server on {{name}} and removes its service, and {{name}} goes back to a plain SSH connection. Projects and sessions opened through the server are no longer shown on this computer. Their files, the server files and its data stay on the machine. Close the terminals that run through the server first: Seal does not stop a server that has running terminals.",
       "confirm": "Remove Seal server"
     },
     "list": {

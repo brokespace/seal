@@ -18,11 +18,14 @@ function machinesApi(): MachinesApi {
   return api
 }
 
+// These errors say what to do on the machine, which takes longer to read than a default toast stays.
+const ERROR_TOAST_MS = 15_000
+
 async function toastingFailure<T>(request: () => Promise<T>): Promise<T> {
   try {
     return await request()
   } catch (error) {
-    toast.error(readIpcErrorMessage(error) ?? String(error))
+    toast.error(readIpcErrorMessage(error) ?? String(error), { duration: ERROR_TOAST_MS })
     throw error
   }
 }
