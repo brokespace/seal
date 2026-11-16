@@ -46,7 +46,7 @@ Seventeen changes are needed before builders start. None of them changes the dir
 | M14 | Replace the sample thresholds (design :290-295) with: thresholds set on the tune split of the labelled suite, results reported on the held-out split, and both pinned to the model and the wording they were measured with. A rate limit must not move the judge to a model with no pinned thresholds.     | "0 of 78 samples" fails more than half the time at a true rate of 1%, and proves little when it passes.                    | [Calibration](#5-calibration-and-measurement), [the suite](#the-suite-restructured) |
 | M15 | Each of the eight must-keep cases is either fixed or held at "Open" by a host rule, with a scenario that shows it. A request whose evidence the host knows to be incomplete is never "Not addressed".                                                                                                      | These are requests that were done and that the design would list.                                                          | [Must-keep cases](#must-keep-cases-the-design-loses)                                |
 | M16 | Reader work goes into a workstream: a recap cursor that survives a fork or resume; background subagent results; current Codex tool calls; rows that are not requests kept out of the user's lines. "A and B do not edit the readers" (design :341) goes.                                                   | Three of the eight must-keep cases are in the readers.                                                                     | [What the readers lose](#what-the-readers-lose)                                     |
-| M17 | Write the policy for the four cases the labels had to settle: a compound ask half done; an ask the agent declined whose alternative the user took; an ask waiting on the user's answer; "don't touch X" said mid-turn.                                                                                     | Labels follow policy. Until it is written, the judge is tuned to this review's choices.                                    | [Labelling rules](./labelling-rules.md#where-the-rules-had-to-choose)               |
+| M17 | Write the policy for the cases the labels had to settle: one request done for some of its items; an ask the agent declined whose alternative the user took; an ask waiting on the user's answer; an ask whose last step is the user's to do; "don't touch X" said mid-turn.                                | Labels follow policy. Until it is written, the judge is tuned to this review's choices.                                    | [Labelling rules](./labelling-rules.md#where-the-rules-had-to-choose)               |
 
 ### Should
 
@@ -212,21 +212,21 @@ The first eleven probe a clause of the design:
 
 The other thirteen fill the rare standings, which the suite had too few of to hold out a split ([the suite, restructured](#the-suite-restructured)). Declined, partly done and withdrawn each get the ways they are said in practice:
 
-| Scenario                                           | What happens                                                                          |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `declined-for-safety-with-an-alternative`          | The agent will not force-push and does the safe half of the message.                  |
-| `declined-as-out-of-reach`                         | The agent cannot rotate a key it has no access to, and says so.                       |
-| `declined-in-a-terse-reply`                        | A two-word ask gets a one-line refusal, and the user lets it stand.                   |
-| `declined-then-replaced-by-what-the-agent-offered` | The agent declines, offers something else, and the user takes the offer.              |
-| `partly-done-with-a-failing-step`                  | The first half lands; the second fails and the agent says so.                         |
-| `partly-done-and-the-agent-says-which-part`        | Two of three get done and the agent names the third.                                  |
-| `partly-done-with-the-rest-blocked`                | One of two languages is translated; the other waits on something the agent lacks.     |
-| `partly-done-across-three-turns`                   | Partly, still partly after "keep going", then done.                                   |
-| `partly-done-by-a-subagent`                        | A subagent does the finding half of a find-and-fix ask; the fixing waits on the user. |
-| `withdrawn-by-a-change-of-plan`                    | The user replaces the request with a different approach.                              |
-| `withdrawn-because-someone-else-does-it`           | "marketing will do the notes", said in passing while asking for something new.        |
-| `withdrawn-in-spanish`                             | The same, in another language.                                                        |
-| `withdrawn-while-the-agent-works`                  | Taken back mid-turn; the agent undoes what it began.                                  |
+| Scenario                                           | What happens                                                                            |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `declined-for-safety-with-an-alternative`          | The agent will not force-push and does the safe half of the message.                    |
+| `declined-as-out-of-reach`                         | The agent cannot rotate a key it has no access to, and says so.                         |
+| `declined-in-a-terse-reply`                        | A two-word ask gets a one-line refusal, and the user lets it stand.                     |
+| `declined-then-replaced-by-what-the-agent-offered` | The agent declines, offers something else, and the user takes the offer.                |
+| `partly-done-with-a-failing-step`                  | The same step runs on three tables; two succeed, the third fails and the agent says so. |
+| `partly-done-and-the-agent-says-which-part`        | Two of three get done and the agent names the third.                                    |
+| `partly-done-with-the-rest-blocked`                | One of two languages is translated; the other waits on something the agent lacks.       |
+| `partly-done-across-three-turns`                   | Partly, still partly after "keep going", then done.                                     |
+| `partly-done-by-a-subagent`                        | A subagent makes the same fix on two of three routes; the third waits on the user.      |
+| `withdrawn-by-a-change-of-plan`                    | The user replaces the request with a different approach.                                |
+| `withdrawn-because-someone-else-does-it`           | "marketing will do the notes", said in passing while asking for something new.          |
+| `withdrawn-in-spanish`                             | The same, in another language.                                                          |
+| `withdrawn-while-the-agent-works`                  | Taken back mid-turn; the agent undoes what it began.                                    |
 
 **Format extensions**, in the suite's fixture files:
 
@@ -290,15 +290,15 @@ Three High findings, each a required change:
 
 ### 5. Calibration and measurement
 
-| Box                                                                                                            | Design |          | Finding                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ground truth is a blind, stratified, labelled sample with a reason per label, following the product's policy   | No     | **High** | PR #58 has no labels. A scenario's checks were written by the person who wrote the scenario and then read the model's replies, and `baseline.json` records what fails, not what is true. Supplied here ([the suite, restructured](#the-suite-restructured)). The policy has four gaps the labels had to fill (M17). |
-| Held out                                                                                                       | No     | **High** | M14.                                                                                                                                                                                                                                                                                                                |
-| Each question scored against the labels for its own reason; one that answers the same for everything is broken | No     | Med      | The design's thresholds are rates of end results. When one is missed, nothing says which judgement failed.                                                                                                                                                                                                          |
-| Operating point set for a bounded loss                                                                         | No     | **High** | "0 samples" on 64 and 78 samples (design :291-292). At a true rate of 1%, 78 samples show at least one failure in 54% of runs: the gate is a coin.                                                                                                                                                                  |
-| Must-keep guard, with each loss named                                                                          | No     | **High** | M15.                                                                                                                                                                                                                                                                                                                |
-| Small samples are flagged                                                                                      | No     | Med      | S2.                                                                                                                                                                                                                                                                                                                 |
-| Thresholds are tied to the model they were calibrated on                                                       | No     | **High** | M14, and [decision 2](#2-the-model-per-step-starting-with-gemma-as-the-judge).                                                                                                                                                                                                                                      |
+| Box                                                                                                            | Design |          | Finding                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------------------- | ------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ground truth is a blind, stratified, labelled sample with a reason per label, following the product's policy   | No     | **High** | PR #58 has no labels. A scenario's checks were written by the person who wrote the scenario and then read the model's replies, and `baseline.json` records what fails, not what is true. Supplied here ([the suite, restructured](#the-suite-restructured)). The policy has gaps the labels had to fill (M17). |
+| Held out                                                                                                       | No     | **High** | M14.                                                                                                                                                                                                                                                                                                           |
+| Each question scored against the labels for its own reason; one that answers the same for everything is broken | No     | Med      | The design's thresholds are rates of end results. When one is missed, nothing says which judgement failed.                                                                                                                                                                                                     |
+| Operating point set for a bounded loss                                                                         | No     | **High** | "0 samples" on 64 and 78 samples (design :291-292). At a true rate of 1%, 78 samples show at least one failure in 54% of runs: the gate is a coin.                                                                                                                                                             |
+| Must-keep guard, with each loss named                                                                          | No     | **High** | M15.                                                                                                                                                                                                                                                                                                           |
+| Small samples are flagged                                                                                      | No     | Med      | S2.                                                                                                                                                                                                                                                                                                            |
+| Thresholds are tied to the model they were calibrated on                                                       | No     | **High** | M14, and [decision 2](#2-the-model-per-step-starting-with-gemma-as-the-judge).                                                                                                                                                                                                                                 |
 
 ### 6. Running it
 
@@ -335,7 +335,7 @@ The scenario suite in PR #58 checks the pipeline against its author's expectatio
 
 **Labels.** Every scenario has a file in `__fixtures__/labels/`: the requests in the user's own words, what is not a request, the standing rules, and where each request stands at each check, with a sentence naming the step that decides it. The six standings are `working`, `done`, `partly`, `declined`, `withdrawn` and `open`. [The rules](./labelling-rules.md) are in this folder.
 
-**Blind.** The labellers were given the scenarios rendered as scripts and the rules, and nothing else: no checks, no recorded replies, no baseline, no design. A second labeller did 35 of the 79 scenarios independently, including all 13 new ones, and agreed on all 101 labels, with no request found by one and not the other.
+**Blind.** The labellers were given the scenarios rendered as scripts and the rules, and nothing else: no checks, no recorded replies, no baseline, no design. All 79 were labelled twice. The first round's scripts carried the scenario ids, and many ids name the standing, so that round was not blind to the author's intent. The second round had the ids replaced by numbers and three fresh labellers. Of 261 labels on requests both rounds found, 259 were the same; the request lists differed in 6 scenarios. Each difference was settled against [the rules](./labelling-rules.md#who-labels): two scenarios were relabelled, and two whose ask mixed two different things were rewritten as one thing over several items.
 
 The labellers were instances of the model that wrote this review, not people. Same rules and same model means the agreement measures whether the rules are clear, not whether the labels are right. A person should read the 30 `open` labels and the 29 `partly`, `declined` and `withdrawn` ones before a threshold is trusted. Each is one sentence beside one script.
 
@@ -343,31 +343,31 @@ The labellers were instances of the model that wrote this review, not people. Sa
 
 | Scenarios by rarest standing | Tune   | Held out |
 | ---------------------------- | ------ | -------- |
-| withdrawn                    | 5      | 4        |
-| declined                     | 5      | 2        |
+| withdrawn                    | 5      | 5        |
+| declined                     | 4      | 2        |
 | partly                       | 6      | 4        |
 | working                      | 4      | 2        |
 | open                         | 12     | 8        |
 | done                         | 17     | 10       |
 | **All**                      | **49** | **30**   |
 
-A judge is asked about one request at one check. The 79 scenarios hold 153 requests and 267 such labels; scenarios that tell one story under different conditions give the same request and conversation, which counts once, leaving 217:
+A judge is asked about one request at one check. The 79 scenarios hold 152 requests and 264 such labels; scenarios that tell one story under different conditions give the same request and conversation, which counts once, leaving 214:
 
 | Requests-at-a-check      | Tune | Held out |
 | ------------------------ | ---- | -------- |
-| done (the must-keep set) | 71   | 74       |
+| done (the must-keep set) | 71   | 71       |
 | open                     | 17   | 13       |
 | partly                   | 6    | 4        |
-| declined                 | 5    | 3        |
-| withdrawn                | 7    | 4        |
+| declined                 | 3    | 4        |
+| withdrawn                | 7    | 5        |
 | working (mid-turn)       | 5    | 8        |
 
-**Must-keep set.** All 145 `done` items. The bound is zero on both splits: a model that would list any of them as not addressed, at its own thresholds, is named in the report with the items. The 29 partly, declined and withdrawn items are reported the same way as other false alarms. The 13 mid-turn items are never shown to the user as anything but "In progress", because turn state is the host's; they are scored for what the judge would say if the host got the turn state wrong (M3).
+**Must-keep set.** All 142 `done` items. The bound is zero on both splits: a model that would list any of them as not addressed, at its own thresholds, is named in the report with the items. The 29 partly, declined and withdrawn items are reported the same way as other false alarms. The 13 mid-turn items are never shown to the user as anything but "In progress", because turn state is the host's; they are scored for what the judge would say if the host got the turn state wrong (M3).
 
 **What the numbers can and cannot show.**
 
-- Zero losses on 74 held-out items bounds the true loss rate at about 4%, and on all 145 at about 2%, at 95% confidence. A measurement of this size cannot show "never". The structural rules do that (M1, M2, M3); the measurement picks the model and the thresholds.
-- The rare groups are small. With 3 declined, 4 withdrawn and 4 partly on the held-out side, one item moves a rate by 25 to 33 points. The report says so beside each figure.
+- Zero losses on 71 held-out items bounds the true loss rate at about 4%, and on all 142 at about 2%, at 95% confidence. A measurement of this size cannot show "never". The structural rules do that (M1, M2, M3); the measurement picks the model and the thresholds.
+- The rare groups are small. With 4 declined, 5 withdrawn and 4 partly on the held-out side, one item moves a rate by 20 to 25 points. The report says so beside each figure.
 - The suite over-samples hard cases and has no weights back to real sessions, because nobody has counted how often each case occurs in one. Its rates are rates on the suite. S1 is still owed.
 - A scenario's conversation is a few hundred characters at the median (370; the longest is 23,000). Real sessions are longer.
 
@@ -458,7 +458,7 @@ What the one command does, in order:
 
 1. Sends one small request with the credential. If Cloudflare turns it down, it stops there and nothing is written.
 2. Records the model's replies for the 24 scenarios that have none, with today's prompt, and updates `baseline.json` and the evidence matrix. Scenarios that already have recordings are replayed, not re-recorded.
-3. Asks each of the four models the five questions about each of the 217 labelled items: 868 requests, four at a time. A model the account cannot call is asked once.
+3. Asks each of the four models the five questions about each of the 214 labelled items: 856 requests, four at a time. A model the account cannot call is asked once.
 4. Removes `pending` from the scenarios that now have recordings, and replays the whole suite with no network.
 5. Prints the summary table, one row per model, and the files to commit.
 
@@ -643,7 +643,7 @@ Low risk. The one assumption to check when D starts is "no recap code changes" (
 - Diffed #53 to #56 against `seal/all` for files and symbols the recap uses.
 - Ran the scheduler and the transcript readers on the recordings in the repository with small scripts outside it; nothing from them is committed.
 - Read the decision-model-design skill and its findings file in full and scored the design against each checklist box.
-- Had every scenario labelled blind, and 35 of the 79 labelled twice.
+- Had every scenario labelled twice from its script alone, the second time with the scenario ids hidden, and settled each difference against the rules.
 - Ran the whole kessel-ml command against a stand-in for Workers AI: a refused credential (stops, writes nothing, prints no secret), one model the account cannot call (asked once, reported, the rest measured), and requests that fail twice before answering (asked again, nothing lost). Everything that run wrote was discarded: no fabricated answer, threshold or recording is committed.
 
 Not done:

@@ -3,11 +3,13 @@
   "split": "tune",
   "requests": [
     {
-      "quotes": ["Audit the API routes for missing auth checks and fix what you find"],
+      "quotes": [
+        "Add an auth check to the three unprotected routes: /export, /admin/stats and /hooks/replay"
+      ],
       "at": {
         "after the turn": {
           "is": "partly",
-          "why": "step 3: the audit found three routes without auth but the agent says it has not fixed any of them"
+          "why": "step 3: /export and /admin/stats require auth and /hooks/replay is left unchanged pending the user's answer"
         }
       }
     }

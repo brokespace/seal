@@ -1,23 +1,23 @@
 {
   "id": "partly-done-by-a-subagent",
-  "title": "A subagent does the finding half of a find-and-fix ask; the fixing waits on the user",
+  "title": "A subagent does two of three of the same fix; the third waits on the user",
   "categories": ["partly-addressed", "subagent"],
   "surfaces": ["claude-cli"],
-  "expected": "The audit is done and names three routes. The fixes are not made, and that half is open with the agent's question.",
+  "expected": "Two of the three routes have an auth check. /hooks/replay does not, and the recap says so with the agent's question.",
   "pending": true,
   "steps": [
     {
-      "user": "Audit the API routes for missing auth checks and fix what you find."
+      "user": "Add an auth check to the three unprotected routes: /export, /admin/stats and /hooks/replay."
     },
     {
       "subagent": {
-        "prompt": "List every route under src/routes that does not call requireAuth",
-        "says": ["Reading src/routes.", "Three routes do not call requireAuth."],
-        "result": "3 routes lack auth: /export, /admin/stats, /hooks/replay"
+        "prompt": "Add requireAuth to /export, /admin/stats and /hooks/replay under src/routes",
+        "says": ["Reading src/routes.", "Added requireAuth to two routes."],
+        "result": "Added requireAuth to /export and /admin/stats. Left /hooks/replay unchanged: a partner calls it without a token."
       }
     },
     {
-      "agent": "The audit found three routes without an auth check: /export, /admin/stats and /hooks/replay. I have not fixed any of them yet. /hooks/replay is called by a partner that sends no token, so I need to know how you want that one handled before I change the three together."
+      "agent": "/export and /admin/stats now require auth. I have not changed /hooks/replay: a partner calls it and sends no token, so I need to know how you want that one handled before I touch it."
     },
     {
       "status": "your-turn"
@@ -30,8 +30,8 @@
       "check": [
         {
           "in": "ignored",
-          "has": "fix|auth",
-          "why": "the fixes are not made"
+          "has": "replay|hooks",
+          "why": "/hooks/replay still has no auth check"
         }
       ]
     }

@@ -3,7 +3,11 @@
   "split": "held-out",
   "requests": [
     {
-      "quotes": ["Rename the Customer model to Account everywhere"],
+      "quotes": [
+        "Rename the Customer model to Account everywhere",
+        "The orders page still says 'Customer' in the table header",
+        "Also the CSV export column"
+      ],
       "at": {
         "after turn 1": {
           "is": "done",
@@ -33,32 +37,6 @@
         "after turn 4": {
           "is": "done",
           "why": "step 20: the agent says the README is updated"
-        }
-      }
-    },
-    {
-      "quotes": ["The orders page still says 'Customer' in the table header"],
-      "at": {
-        "after turn 3": {
-          "is": "done",
-          "why": "step 9: the agent says the orders header now reads Account"
-        },
-        "after turn 4": {
-          "is": "done",
-          "why": "step 9: the agent says the orders header now reads Account"
-        }
-      }
-    },
-    {
-      "quotes": ["Also the CSV export column"],
-      "at": {
-        "after turn 3": {
-          "is": "done",
-          "why": "step 14: the agent says the CSV export column is now account_name"
-        },
-        "after turn 4": {
-          "is": "done",
-          "why": "step 14: the agent says the CSV export column is now account_name"
         }
       }
     }

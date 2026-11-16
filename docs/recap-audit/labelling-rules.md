@@ -8,13 +8,23 @@ The labels encode a policy. Where the product's policy changes, change the rule 
 
 Someone who has not seen the scenario's checks, the recorded model replies, the baseline or the design. The labeller reads the scenario as a script of what was said and done, and nothing else. Steps about the recap itself (opening it, refreshing it, marking an entry, a restart, the recap model failing) are not part of what was asked or done.
 
-The first 79 scenarios were labelled by model instances that were given only the scripts and these rules. A second instance labelled 35 of them independently and agreed on all 101 labels. Both read the same rules, so that agreement shows the rules are unambiguous on those scripts; it does not replace a person reading the labels.
+The 79 scenarios were labelled twice by model instances that were given only the scripts and these rules.
+
+- In the first round the scripts carried the scenario's id, and many ids name the standing (`partly-done-…`, `withdrawn-…`). That round was not blind to what the scenario's author intended.
+- In the second round the ids were replaced by numbers and three fresh instances labelled all 79. Of 261 labels on requests both rounds found, 259 were the same. The request lists differed in 6 scenarios: one round split a message the other kept whole, or counted a line the other did not.
+- Every difference was settled against the rules below, and the rules gained a line where they had been silent. Two scenarios were relabelled (`declined-then-agreed`, `addressed-several-turns-later`). Two were rewritten so that their ask is one thing over several items, and carry the second round's labels only (`partly-done-with-a-failing-step`, `partly-done-by-a-subagent`).
+
+Both rounds used the same model and the same rules, so the agreement shows the rules are clear on these scripts. It does not replace a person reading the labels.
 
 ## What a request is
 
 Something the user asks the agent to do, change, find out or answer.
 
 - One entry per distinct request, even when one message holds several.
+- A message that names two different things to do ("add the flag and document it") holds two requests. One thing to do over several named items ("translate the page into German and French") is one request.
+- A complaint that a finished request missed a spot ("the orders page still says Customer") belongs to that request, and so does a question about whether it was done. Their words are added as quotes.
+- A general question ("anything left?") is its own request, `done` when the agent answers it.
+- Words to the session and not about the work ("exit", "continue", "ok go on") are not requests.
 - A reminder or a second asking of the same thing is the same request. Its words are added as another quote.
 - Not requests: an answer to the agent's question that asks for nothing new, thanks, a remark, agreeing to what the agent proposed. These go under `notRequests`.
 - A rule for the whole session ("never touch generated/") has no outcome. It goes under `rules`.
@@ -43,13 +53,15 @@ Each label has a `why`: one sentence naming the step that decides it.
 
 The design does not settle these. The labels follow the choice in the right-hand column; if the design decides otherwise, relabel.
 
-| Case                                                                        | Labelled as                                                                                  |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| A compound ask where one half is done ("rename the column and backfill it") | One request, `partly`. Two requests only when the user states them as separate things.       |
-| The agent declines and offers something else, and the user takes the offer  | The original is `withdrawn`; the offer is a new request.                                     |
-| Part is done and the rest waits on the user's answer                        | `partly`.                                                                                    |
-| Nothing is done and the agent waits on the user's answer                    | `open`.                                                                                      |
-| The user says "don't touch X" while the agent is working on X               | The request for X is `withdrawn`. It is a rule only when it is stated for the whole session. |
+| Case                                                                       | Labelled as                                                                                          |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| One request over several named items, some done and some not               | `partly`. Two different things in one message are two requests, each with its own standing.          |
+| The agent declines and offers something else, and the user takes the offer | The original is `withdrawn`; the offer is a new request.                                             |
+| Part is done and the rest waits on the user's answer                       | `partly`.                                                                                            |
+| Nothing is done and the agent waits on the user's answer                   | `open`.                                                                                              |
+| The agent did its part and the one step left is the user's to do           | `done`. The two rounds disagreed on this one (`action-done-by-user`); the other reading is `partly`. |
+| The agent reports something finished while its turn is still running       | `done` from then on. The rest of that message's requests stay `working`.                             |
+| The user says "don't touch X" while the agent is working on X              | The request for X is `withdrawn`. It is a rule only when it is stated for the whole session.         |
 
 ## Splits
 

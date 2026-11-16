@@ -4,12 +4,12 @@
   "requests": [
     {
       "quotes": [
-        "Add a migration that renames users.fullname to users.display_name, and backfill display_name from the profiles table"
+        "Backfill display_name from the profiles table on the users, admins and guests tables"
       ],
       "at": {
         "after the turn": {
           "is": "partly",
-          "why": "step 6: migration 0061 renamed the column but the backfill timed out and is not done"
+          "why": "step 6: users and admins are backfilled, guests timed out and is not"
         }
       }
     }
