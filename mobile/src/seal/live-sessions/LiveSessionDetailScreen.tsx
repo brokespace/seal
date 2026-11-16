@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeftRight, UserRound } from 'lucide-react-native'
+import { withPendingLiveMessages } from '../../../../src/shared/live-sessions/live-session-pending-messages'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
 import {
@@ -85,8 +86,6 @@ export function LiveSessionDetailScreen({
 
   const list = useRef<FlatList<Row>>(null)
   const atBottom = useRef(true)
-  const jump = useLiveTranscriptJump({ list, atBottom, transcript })
-
   const onSend = useCallback(() => {
     atBottom.current = true
   }, [])
@@ -95,20 +94,22 @@ export function LiveSessionDetailScreen({
     feed,
     sessionId,
     transcript: transcript.messages,
+    readTo: transcript.readTo,
     onSend
   })
-  const rows: Row[] = [
-    ...transcript.messages.map((message) => ({
-      kind: 'transcript' as const,
-      key: `t:${message.id}`,
-      message
-    })),
-    ...pending.map((message) => ({
-      kind: 'pending' as const,
-      key: `p:${message.messageId}`,
-      message
-    }))
-  ]
+  const rows = withPendingLiveMessages<LiveTranscriptMessage, LiveMessage, Row>(
+    transcript.messages,
+    pending,
+    (message) => ({ kind: 'transcript', key: `t:${message.id}`, message }),
+    (message) => ({ kind: 'pending', key: `p:${message.messageId}`, message })
+  )
+  const jump = useLiveTranscriptJump({
+    list,
+    atBottom,
+    transcript,
+    indexOf: (messageId) =>
+      rows.findIndex((row) => row.kind === 'transcript' && row.message.id === messageId)
+  })
 
   const answer = async (session: LiveSession, optionId: string) => {
     if (!client || !session.permission) {
