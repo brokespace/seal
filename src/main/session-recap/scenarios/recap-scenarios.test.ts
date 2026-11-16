@@ -3,8 +3,8 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { CloudflareAiConfigStore } from '../../utility-model/cloudflare-ai-config'
 import type { CloudflareAiCredentials } from '../../utility-model/cloudflare-workers-ai-provider'
+import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
 import {
   addToRecapCassette,
   loadRecapBaseline,
@@ -34,7 +34,7 @@ const env = process.env
 const pendingPath = env.RECAP_SCENARIOS_PENDING
 /** Replies to that file's requests, filed into the cassettes before the run. */
 const repliesPath = env.RECAP_SCENARIOS_REPLIES
-/** Ask the real model for what no recording answers, and record it. Needs the Cloudflare config file. */
+/** Ask the real model for what no recording answers, and record it. Needs a Workers AI credential. */
 const live = env.RECAP_SCENARIOS_LIVE === '1'
 const reportDir = env.RECAP_SCENARIOS_REPORT
 const updateBaseline = env.RECAP_SCENARIOS_UPDATE_BASELINE === '1'
@@ -53,29 +53,13 @@ const awaited: RecapPendingRequest[] = []
 const results: RecapBaseline = {}
 let credentials: CloudflareAiCredentials | undefined
 
-async function liveCredentials(): Promise<CloudflareAiCredentials> {
-  const store = new CloudflareAiConfigStore({
-    saved: {
-      read: () => null,
-      save: () => undefined,
-      clear: () => undefined,
-      protection: () => null
-    }
-  })
-  const found = (await store.load()).credentials
-  if (!found) {
-    throw new Error('RECAP_SCENARIOS_LIVE needs ~/.config/seal/cloudflare-ai.json')
-  }
-  return found
-}
-
 describe('recap scenarios', () => {
   beforeAll(async () => {
     if (pendingPath && repliesPath) {
       await mergeRelayedRecapReplies(pendingPath, repliesPath)
     }
     if (live) {
-      credentials = await liveCredentials()
+      credentials = await liveRecapCredentials()
     }
   })
 
@@ -102,7 +86,9 @@ describe('recap scenarios', () => {
   for (const scenario of scenarios) {
     for (const surface of scenario.surfaces) {
       const unrecorded = scenario.pending ? ' (not recorded yet)' : ''
-      it(`${scenario.id}@${surface}: ${scenario.title}${unrecorded}`, async () => {
+      // A live scenario waits on up to a dozen real requests, one after the other.
+      const timeout = live ? 15 * 60_000 : undefined
+      it(`${scenario.id}@${surface}: ${scenario.title}${unrecorded}`, { timeout }, async () => {
         const recorded: RecapCassetteEntry[] = []
         const model = new RecapScenarioModel({
           scenario: scenario.id,
