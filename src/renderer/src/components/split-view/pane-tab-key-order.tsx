@@ -19,7 +19,9 @@ function isShown(element: HTMLElement): boolean {
 }
 
 function edgeTabStop(root: Element, edge: 'first' | 'last'): HTMLElement | undefined {
-  const isStop = (element: HTMLElement): boolean => element.tabIndex >= 0 && isShown(element)
+  // A control folded away with `inert` (a session's "Jump to latest") takes no focus.
+  const isStop = (element: HTMLElement): boolean =>
+    element.tabIndex >= 0 && isShown(element) && !element.closest('[inert]')
   const stops = [...root.querySelectorAll<HTMLElement>(TAB_STOP_SELECTOR)]
   return edge === 'first' ? stops.find(isStop) : stops.findLast(isStop)
 }
