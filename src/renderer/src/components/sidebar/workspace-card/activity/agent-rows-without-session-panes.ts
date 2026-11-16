@@ -3,7 +3,7 @@ import { applyAgentRowLineage } from '@/components/dashboard/rows/agent-row-line
 
 /**
  * A card's inline rows cover pane agents that have no session record. A pane the live-session
- * registry tracks shows as the card's sessions badge and in Active agents, not here as well.
+ * registry tracks shows as a session row under the workspace, not here as well.
  */
 export function agentRowsWithoutSessionPanes(
   rows: DashboardAgentRow[],

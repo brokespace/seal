@@ -29,6 +29,14 @@ export function isActiveAgentsCollapseKey(key: string): boolean {
 
 export const RECENTLY_FINISHED_MS = 24 * 60 * 60 * 1000
 
+/** An ended session stays listed for a day, and for as long as it is pinned. */
+export function isRecentlyFinishedLiveSession(
+  session: Pick<LiveSession, 'lastActivityAt' | 'pinned'>,
+  now: number
+): boolean {
+  return now - session.lastActivityAt <= RECENTLY_FINISHED_MS || session.pinned === true
+}
+
 function inScope(scope: ActiveAgentsScope | null, link: LiveSessionLink | undefined): boolean {
   return !scope || (scope.kind === 'worktree' ? link?.worktreeId : link?.repoId) === scope.id
 }
@@ -47,7 +55,7 @@ export function buildActiveAgents(
     const active = isActiveLiveSession(session)
     if (active) {
       activeCount++
-    } else if (now - session.lastActivityAt > RECENTLY_FINISHED_MS && !session.pinned) {
+    } else if (!isRecentlyFinishedLiveSession(session, now)) {
       continue
     }
     if (!inScope(scope, links.get(session.id))) {

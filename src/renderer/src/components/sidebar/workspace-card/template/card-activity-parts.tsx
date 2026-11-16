@@ -13,6 +13,7 @@ import {
 } from '../metadata/worktree-card-meta-items'
 import { WorktreeCardStatusLane } from '../surface/worktree-card-status-lane'
 import { WorktreeLineageToggle } from '../identity/WorktreeLineageToggle'
+import { WorkspaceSessionRows } from '@/components/live-sessions/workspace-rows/WorkspaceSessionRows'
 import { cardElement } from './card-template-compiler'
 
 type Card = WorktreeCardController
@@ -47,8 +48,21 @@ function detailsHover(
 }
 
 export const CARD_ACTIVITY_PARTS = {
-  StatusLane: part(['unreadAction'], (props, _children, card) => (
-    <WorktreeCardStatusLane card={card} showUnreadAction={props.unreadAction === true} />
+  StatusLane: part(['unreadAction', 'titleLine'], (props, _children, card) => {
+    const lane = (
+      <WorktreeCardStatusLane card={card} showUnreadAction={props.unreadAction === true} />
+    )
+    // Seal: a one-line card centres the lane on its title, so session rows under the title cannot pull it down.
+    return props.titleLine === true ? (
+      <div className="flex h-5 shrink-0 items-center">{lane}</div>
+    ) : (
+      lane
+    )
+  }),
+  // Seal: every agent session of the workspace, on every card style.
+  SessionRows: part([], (_props, _children, card) => (
+    // Why -mt-1: the rows carry their own padding, so they sit as close to the title as inline agents do.
+    <WorkspaceSessionRows worktreeId={card.worktree.id} className="-mt-1" />
   )),
   Agents: part(['tight'], (props, _children, card) => (
     <WorktreeCardAgents

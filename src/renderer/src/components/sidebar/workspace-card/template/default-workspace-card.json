@@ -74,7 +74,6 @@
                   "when": "ws.isSparse",
                   "props": { "hasHoverDetails": "=vars.hoverDetails && !ws.isRenaming" }
                 },
-                { "el": "LiveSessionsBadge" },
                 {
                   "el": "HostBadge",
                   "when": "vars.newStyle && !vars.metaRow && vars.hostBadge",
@@ -185,14 +184,17 @@
     "props": {
       "fill": true,
       "gap": "xs",
-      "align": "=vars.singleLine ? 'center' : 'start'",
+      "align": "start",
       "marker": "parent-content"
     },
     "children": [
       {
         "el": "StatusLane",
         "when": "options.show.status",
-        "props": { "unreadAction": "=!place.affiliateList && !vars.newStyle" }
+        "props": {
+          "unreadAction": "=!place.affiliateList && !vars.newStyle",
+          "titleLine": "=vars.singleLine"
+        }
       },
       {
         "el": "Stack",
@@ -217,6 +219,7 @@
             "when": "vars.inlineAgents",
             "props": { "tight": "=!(vars.hasMetaRow || git.remoteBranchConflict != null)" }
           },
+          { "el": "SessionRows" },
           { "el": "ChildToggle", "when": "lineage.toggleable" }
         ]
       }
