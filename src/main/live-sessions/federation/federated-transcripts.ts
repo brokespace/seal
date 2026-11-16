@@ -139,7 +139,9 @@ export class FederatedTranscripts {
       const current = ++attempt
       const target = this.deps.target(sessionId)
       if (!target) {
-        ended(current, SERVER_NOT_CONNECTED)
+        // Nothing was asked of a server that is away: the wait for its return does not grow.
+        failures = 0
+        ended(current, null)
         return
       }
       void this.deps.transport
