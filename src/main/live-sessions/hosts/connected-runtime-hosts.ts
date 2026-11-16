@@ -21,20 +21,28 @@ export function runtimeEnvironmentCall(userDataPath: string): RuntimeEnvironment
     )
 }
 
+/** A paired server whose last status check answered and that the user has not disconnected. */
+export function isRuntimeServerReachable(environmentId: string): boolean {
+  const snapshot = getRuntimeEnvironmentStatusSnapshot(environmentId)
+  return (
+    !isRuntimeEnvironmentManuallyDisconnected(environmentId) &&
+    snapshot !== undefined &&
+    snapshot !== null &&
+    !snapshot.retired &&
+    snapshot.verification === 'verified'
+  )
+}
+
 /** The runtime-side scan for a paired server whose last status check answered, or null to skip it. */
 export function runtimeScanRunner(
   userDataPath: string
 ): (environmentId: string, label: string) => LiveSessionHost['run'] | null {
   const call = runtimeEnvironmentCall(userDataPath)
   return (environmentId, label) => {
-    const snapshot = getRuntimeEnvironmentStatusSnapshot(environmentId)
     if (
-      isRuntimeEnvironmentManuallyDisconnected(environmentId) ||
-      !snapshot ||
-      snapshot.retired ||
-      snapshot.verification !== 'verified' ||
+      !isRuntimeServerReachable(environmentId) ||
       // Discovery reads ps, tmux and transcripts with a POSIX shell.
-      snapshot.status?.hostPlatform === 'win32'
+      getRuntimeEnvironmentStatusSnapshot(environmentId)?.status?.hostPlatform === 'win32'
     ) {
       return null
     }

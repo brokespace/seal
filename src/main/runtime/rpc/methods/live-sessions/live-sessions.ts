@@ -52,6 +52,10 @@ export const LIVE_SESSION_METHODS = [
         emit({
           type: 'ready',
           subscriptionId,
+          // A desktop lists this machine from this feed only when it carries chats; else it scans.
+          ...(process.env.SEAL_LIVE_SESSION_FEDERATION === 'off'
+            ? {}
+            : { surfaces: ['chat', 'cli', 'external'] }),
           snapshot: liveSessionSnapshotForClient(live.snapshot(), ctx.clientCapabilities),
           messages: live.messages()
         })
