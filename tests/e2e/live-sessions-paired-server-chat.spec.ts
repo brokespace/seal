@@ -209,14 +209,15 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     const transcript = page.locator(`[data-live-session-pane="${relisted.id}"]`)
     await expect(transcript).toContainText('Stub reply.', { timeout: 60_000 })
     await page.screenshot({ path: testInfo.outputPath('server-chat-transcript.png') })
-    await page.evaluate((sessionId) => {
-      const followed = window as unknown as { __followedTranscript: NativeChatMessage[] }
-      followed.__followedTranscript = []
+    // The rows the open view's watch delivers from here on, kept in the window.
+    const followed = await page.evaluateHandle((sessionId) => {
+      const rows: NativeChatMessage[] = []
       window.api.liveSessions.onTranscriptDelta(({ delta }) => {
         if (delta.sessionId === sessionId) {
-          followed.__followedTranscript.push(...delta.messages)
+          rows.push(...delta.messages)
         }
       })
+      return rows
     }, relisted.id)
 
     // A send from the desktop, by the desktop's id, reaches the agent on the server.
@@ -232,17 +233,10 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     expect(exec(`grep -c '"type":"user"' ${STUB_REQUESTS}`)).toBe('2')
     // The open view's watch on the server delivers the new turn; nothing here reads a file.
     await expect
-      .poll(
-        async () =>
-          said(
-            await page.evaluate(
-              () =>
-                (window as unknown as { __followedTranscript: NativeChatMessage[] })
-                  .__followedTranscript
-            )
-          ),
-        { timeout: 60_000, message: "the server chat's new turn never reached the open transcript" }
-      )
+      .poll(async () => said(await followed.jsonValue()), {
+        timeout: 60_000,
+        message: "the server chat's new turn never reached the open transcript"
+      })
       .toContain('user:slow swim')
     await expect(transcript).toContainText('slow swim')
     await page.screenshot({ path: testInfo.outputPath('server-chat-transcript-followed.png') })
