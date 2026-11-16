@@ -1,5 +1,6 @@
 import { Monitor, TriangleAlert } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
+import { noHostsMatchLabel } from '@/components/host-picker/host-picker-copy'
 import { HostListOverflowNote } from '@/components/host-picker/HostListOverflowNote'
 import { HostListSearchField } from '@/components/host-picker/HostListSearchField'
 import { useBoundedHostRows } from '@/components/host-picker/use-bounded-host-rows'
@@ -119,7 +120,7 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
               'flex flex-col',
               rows.searchable
                 ? 'h-[min(23rem,calc(var(--radix-dropdown-menu-content-available-height)_-_6rem))]'
-                : 'max-h-80'
+                : 'max-h-[min(20rem,calc(var(--radix-dropdown-menu-content-available-height)_-_4rem))]'
             )}
           >
             <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek">
@@ -167,6 +168,11 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
                   </span>
                 </DropdownMenuRadioItem>
               ))}
+              {rows.shown.length === 0 && machines.length > 0 ? (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {noHostsMatchLabel(t)}
+                </div>
+              ) : null}
             </div>
             <HostListOverflowNote hiddenCount={rows.hiddenCount} />
           </div>
