@@ -1,83 +1,78 @@
 import { describe, expect, it } from 'vitest'
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
+import { orderNativeChatDisplayMessages } from '../../../../shared/native-chat/transcript/native-chat-message-order'
 import type { LiveMessage } from '../../../../shared/live-sessions/live-session-types'
 import { pendingRows } from './live-session-pending-rows'
 
-const user = (id: string, text: string, timestamp = 0): NativeChatMessage => ({
-  id,
-  role: 'user',
+const row = (offset: number, role: NativeChatMessage['role'], text: string): NativeChatMessage => ({
+  id: `o${offset}`,
+  role,
   source: 'transcript',
-  timestamp,
+  timestamp: offset,
+  transcriptOffset: offset,
+  transcriptOrder: offset,
   blocks: [{ type: 'text', text }]
-})
-
-const reply = (id: string, timestamp: number): NativeChatMessage => ({
-  id,
-  role: 'assistant',
-  source: 'transcript',
-  timestamp,
-  blocks: [{ type: 'text', text: 'done' }]
 })
 
 const message = (
   messageId: string,
-  text: string,
   state: LiveMessage['state'],
-  createdAt: number
+  at: number,
+  place: Pick<LiveMessage, 'sentOffset' | 'echoOffset'> = {}
 ): LiveMessage => ({
   messageId,
   sessionId: 's',
-  text,
+  text: messageId,
   state,
   route: 'tmux',
   error: null,
-  createdAt,
-  updatedAt: createdAt
+  createdAt: at,
+  updatedAt: at,
+  ...place
 })
 
+/** The ids in the order the chat draws them. */
+function drawn(transcript: NativeChatMessage[], readTo: number, messages: LiveMessage[]): string[] {
+  const pending = pendingRows(transcript, readTo, messages)
+  return orderNativeChatDisplayMessages([...transcript, ...pending.map((p) => p.row)]).map(
+    (m) => m.id
+  )
+}
+
 describe('pendingRows', () => {
-  it('keeps undelivered messages in send order and drops delivered ones the transcript shows, once each', () => {
-    const rows = pendingRows(
-      [user('o1', 'ok'), user('o9', 'run  the\ntests')],
-      [
-        message('c', 'still typing', 'sending', 3),
-        message('a', 'run the tests', 'delivered', 1),
-        message('b', 'ok', 'delivered', 2),
-        message('d', 'ok', 'delivered', 4)
-      ]
-    )
-    expect(rows.map((r) => [r.message.messageId, r.row.id])).toEqual([
-      ['c', 'live-message:c'],
-      ['d', 'live-message:d']
+  it('draws a pending message where it was written, above what the agent wrote since', () => {
+    const transcript = [
+      row(100, 'user', 'start'),
+      row(200, 'assistant', 'on it'),
+      row(400, 'assistant', 'tool turn'),
+      row(500, 'assistant', 'the newest reply')
+    ]
+    expect(
+      drawn(transcript, 600, [
+        message('typed mid-turn', 'sent', 9_000, { sentOffset: 300 }),
+        message('typed after it', 'queued', 9_001, { sentOffset: 300 }),
+        message('typed now', 'sending', 9_002, { sentOffset: 600 }),
+        message('never placed', 'queued', 9_003)
+      ])
+    ).toEqual([
+      'o100',
+      'o200',
+      'live-message:typed mid-turn',
+      'live-message:typed after it',
+      'o400',
+      'o500',
+      'live-message:typed now',
+      'live-message:never placed'
     ])
   })
 
-  it('drops delivered messages the agent wrote into one transcript row', () => {
-    const rows = pendingRows(
-      [user('o1', 'use pnpm\nok\nok')],
-      [
-        message('a', 'use pnpm', 'delivered', 1),
-        message('b', 'ok', 'delivered', 2),
-        message('c', 'ok', 'delivered', 3),
-        message('d', 'ok', 'delivered', 4)
-      ]
-    )
-    expect(rows.map((r) => r.message.messageId)).toEqual(['d'])
-  })
-
-  it('drops a delivered message once the transcript has moved on past it', () => {
-    const transcript = [user('o1', 'run the tests', 1000)]
-    for (let i = 0; i < 60; i++) {
-      transcript.push(reply(`r${i}`, 2000 + i))
-    }
-    const scrolledOut = transcript.slice(1)
-    const sent = [message('a', 'run the tests', 'delivered', 900)]
-    expect(pendingRows(transcript, sent)).toEqual([])
-    expect(pendingRows(scrolledOut, sent)).toEqual([])
+  it('draws nothing for delivered messages the transcript holds, however far back', () => {
+    const transcript = [row(8_000, 'assistant', 'tool turn'), row(8_100, 'assistant', 'reply')]
     expect(
-      pendingRows(scrolledOut, [message('b', 'and lint', 'delivered', 3000)]).map(
-        (r) => r.message.messageId
-      )
-    ).toEqual(['b'])
+      drawn(transcript, 8_200, [
+        message('first', 'delivered', 50_000, { sentOffset: 100, echoOffset: 100 }),
+        message('second', 'delivered', 50_001, { sentOffset: 300, echoOffset: 4_000 })
+      ])
+    ).toEqual(['o8000', 'o8100'])
   })
 })

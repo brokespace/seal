@@ -1,62 +1,28 @@
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
+import { pendingLiveMessages } from '../../../../shared/live-sessions/live-session-pending-messages'
 import type { LiveMessage } from '../../../../shared/live-sessions/live-session-types'
-
-// Two spaces between words: counting a text inside a row must not share a space between two finds.
-const words = (text: string) => ` ${text.split(/\s+/).filter(Boolean).join('  ')} `
-
-function userText(message: NativeChatMessage): string {
-  return words(message.blocks.map((block) => (block.type === 'text' ? block.text : '')).join('\n'))
-}
 
 export type PendingRow = { row: NativeChatMessage; message: LiveMessage }
 
 /**
- * Outbox messages the transcript doesn't show yet, as user rows after it. A delivered message
- * stays until its transcript row arrives (the transcript is read a moment after delivery is seen).
+ * Outbox messages the transcript read to `readTo` doesn't hold yet, as user rows. Each sorts where
+ * it was written, above what the agent wrote since; one without a place sorts after every row.
  */
 export function pendingRows(
   transcript: readonly NativeChatMessage[],
+  readTo: number | null,
   messages: readonly LiveMessage[]
 ): PendingRow[] {
-  const said: string[] = []
-  let newest = 0
-  for (const m of transcript) {
-    newest = Math.max(newest, m.timestamp ?? 0)
-    if (m.role === 'user') {
-      said.push(userText(m))
+  return pendingLiveMessages(transcript, readTo, messages).map(({ message, at }) => ({
+    message,
+    row: {
+      id: `live-message:${message.messageId}`,
+      role: 'user',
+      source: 'transcript',
+      timestamp: message.createdAt,
+      // Transcript rows sort by their byte offset: half a byte earlier is just before the row there.
+      ...(at === null ? {} : { transcriptOrder: at - 0.5 }),
+      blocks: [{ type: 'text', text: message.text }]
     }
-  }
-  const taken = new Map<string, number>()
-  // Why inside a row: the agent writes messages typed while it works into one record.
-  const shown = (text: string): boolean =>
-    said.some((row, at) => {
-      const key = `${at}\n${text}`
-      const used = taken.get(key) ?? 0
-      const found = row.split(text).length - 1 > used
-      if (found) {
-        taken.set(key, used + 1)
-      }
-      return found
-    })
-  const rows: PendingRow[] = []
-  for (const message of [...messages].sort((a, b) => a.createdAt - b.createdAt)) {
-    // Why the time: a transcript written past the delivery holds the row, shown or scrolled out of what is loaded.
-    if (
-      message.state === 'delivered' &&
-      (message.updatedAt < newest || shown(words(message.text)))
-    ) {
-      continue
-    }
-    rows.push({
-      message,
-      row: {
-        id: `live-message:${message.messageId}`,
-        role: 'user',
-        source: 'transcript',
-        timestamp: message.createdAt,
-        blocks: [{ type: 'text', text: message.text }]
-      }
-    })
-  }
-  return rows
+  }))
 }

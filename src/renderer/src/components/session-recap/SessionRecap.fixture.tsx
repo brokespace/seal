@@ -40,6 +40,7 @@ function Pane({
           phase: 'ready',
           error: null,
           messages: SAMPLE_RECAP_TRANSCRIPT,
+          readTo: null,
           hasMore: false,
           loadingEarlier: false,
           loadEarlier: async () => 'exhausted'

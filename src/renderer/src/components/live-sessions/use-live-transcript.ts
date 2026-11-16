@@ -10,6 +10,8 @@ export type LiveTranscriptState = {
   phase: 'loading' | 'ready' | 'error'
   error: string | null
   messages: NativeChatMessage[]
+  /** How far the transcript has been read, in bytes; null before the first read. */
+  readTo: number | null
   hasMore: boolean
   loadingEarlier: boolean
 }
@@ -34,6 +36,7 @@ export function useLiveTranscript(sessionId: string | null): LiveTranscriptState
     phase: 'loading',
     error: null,
     messages: [],
+    readTo: null,
     hasMore: false,
     loadingEarlier: false
   })
@@ -53,6 +56,7 @@ export function useLiveTranscript(sessionId: string | null): LiveTranscriptState
         phase: 'ready',
         error: null,
         messages: ordered(held.current.byId),
+        readTo: held.current.cursor,
         hasMore: hasMore ?? s.hasMore
       }))
     const applyPage = (page: LiveTranscriptPage) => {
