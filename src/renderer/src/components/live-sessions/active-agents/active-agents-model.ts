@@ -1,4 +1,8 @@
-import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
+import type {
+  LiveSession,
+  LiveSessionMachine
+} from '../../../../../shared/live-sessions/live-session-types'
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import {
   groupLiveSessionsByMachine,
@@ -35,6 +39,11 @@ export function isRecentlyFinishedLiveSession(
   now: number
 ): boolean {
   return now - session.lastActivityAt <= RECENTLY_FINISHED_MS || session.pinned === true
+}
+
+/** A machine with no session to name it, as a failed scan reports it: by its host id. */
+export function machineKnownByHostId(hostId: string): Pick<LiveSessionMachine, 'kind' | 'label'> {
+  return { kind: hostId === LOCAL_EXECUTION_HOST_ID ? 'local' : 'remote', label: hostId }
 }
 
 function inScope(scope: ActiveAgentsScope | null, link: LiveSessionLink | undefined): boolean {

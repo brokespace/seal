@@ -12,7 +12,10 @@ import type {
   LiveSessionMachine,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
-import { isRecentlyFinishedLiveSession } from '../active-agents/active-agents-model'
+import {
+  isRecentlyFinishedLiveSession,
+  machineKnownByHostId
+} from '../active-agents/active-agents-model'
 import { liveSessionStatusLabel } from '../live-session-presentation'
 import {
   hasSidebarSessionFilters,
@@ -81,11 +84,11 @@ export function buildSidebarSessionsToolbar(
     if (machines.some((machine) => machine.hostId === hostId)) {
       continue
     }
-    // An ended session still knows its machine's name; a host that only failed goes by its id.
+    // An ended session still knows its machine's name; a remote host that only failed goes by its id.
     const known = sessions.find((session) => session.machine.hostId === hostId)?.machine
     machines.push({
       hostId,
-      machine: known ?? { kind: 'remote', label: hostId },
+      machine: known ?? machineKnownByHostId(hostId),
       count: 0,
       topStatus: null,
       error: hostErrors[hostId] ?? null

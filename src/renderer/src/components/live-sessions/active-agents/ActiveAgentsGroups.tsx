@@ -7,7 +7,7 @@ import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-s
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
-import type { ActiveAgentsView } from './active-agents-model'
+import { machineKnownByHostId, type ActiveAgentsView } from './active-agents-model'
 
 export type ActiveAgentsRowState = Pick<
   LiveSessionRowProps,
@@ -118,7 +118,7 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
             {t(
               'auto.components.live-sessions.sidebar.hostError',
               'Could not scan {{host}}: {{error}}',
-              { host: hostId, error }
+              { host: machineName(machineKnownByHostId(hostId)), error }
             )}
           </span>
         </p>

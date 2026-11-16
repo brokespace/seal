@@ -39,7 +39,6 @@ import { useSidebarSessionRowKeyboard } from '../workspace-rows/session-row-keyb
 import { pickSidebarSessionRow } from '../workspace-rows/session-row-picking'
 import { useWorkspaceSessionRowReveal } from '../workspace-rows/session-row-reveal'
 import {
-  hasSidebarSessionFilters,
   matchesSidebarSessionFilters,
   sidebarSessionFilterStore,
   useSidebarSessionFilters
@@ -189,27 +188,25 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
     } else if (event.key === 'End') {
       event.preventDefault()
       focusRow(order.at(-1))
-    } else if (event.key === 'Escape' && marks.picked) {
-      event.preventDefault()
-      liveSessionMarksStore.setPicked(null)
     }
   }
 
   const title = t('auto.components.live-sessions.sidebar.title', 'Active agents')
-  const emptyText = (): string => {
+  const listable = (session: LiveSession): boolean =>
+    isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)
+  const emptyText = (): string | null => {
     if (!registry.loaded) {
       return t('auto.components.live-sessions.workspace.loading', 'Looking for sessions')
     }
-    // What the sidebar lists anywhere; the filters may leave it only under workspaces.
-    const listed = registry.sessions.filter(
-      (session) =>
-        (isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)) &&
-        matchesSidebarSessionFilters(session, filters)
-    )
-    if (hasSidebarSessionFilters(filters) && listed.length === 0) {
-      return t('auto.components.live-sessions.sidebar.noMatch', 'No sessions match.')
+    if (unassigned.some(listable)) {
+      // Its own sessions are only filtered out. With no row left anywhere the toolbar says so already.
+      return registry.sessions.some(
+        (session) => listable(session) && matchesSidebarSessionFilters(session, filters)
+      )
+        ? t('auto.components.live-sessions.sidebar.noMatch', 'No sessions match.')
+        : null
     }
-    return listed.some((session) => links.get(session.id)?.worktreeId)
+    return registry.sessions.some(listable)
       ? t(
           'auto.components.live-sessions.sessionRows.allUnderWorkspaces',
           'Every session is listed under its workspace.'
@@ -219,6 +216,9 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
           'No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.'
         )
   }
+  const empty = view.machines.length === 0 && view.finished.length === 0 ? emptyText() : null
+  // The total, whatever the filters, as the toolbar's count is.
+  const activeCount = unassigned.filter(isActiveLiveSession).length
 
   return (
     <>
@@ -230,7 +230,7 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
             toggle={
               <>
                 <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
-                  {view.activeCount}
+                  {activeCount}
                 </span>
                 {!registry.loaded ? (
                   <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
@@ -273,9 +273,7 @@ const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
               onKeyDown={onListKeyDown}
               className="flex flex-col pb-1 outline-none"
             >
-              {view.machines.length === 0 && view.finished.length === 0 ? (
-                <p className="px-1.5 py-1 text-2xs text-muted-foreground">{emptyText()}</p>
-              ) : null}
+              {empty ? <p className="px-1.5 py-1 text-2xs text-muted-foreground">{empty}</p> : null}
               <ActiveAgentsGroups
                 view={view}
                 collapsedMachines={collapsedMachines}
