@@ -1,17 +1,18 @@
-import { Gauge, Server } from 'lucide-react'
+import { useMemo } from 'react'
+import { Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
-import { Progress } from '../ui/progress'
 import { HostListOverflowNote } from '../host-picker/HostListOverflowNote'
 import { HostListSearchField } from '../host-picker/HostListSearchField'
 import { useBoundedHostRows } from '../host-picker/use-bounded-host-rows'
 import { MachineStatusDot, useMachineStatusLabel } from '../machines/detail/MachineVitals'
+import { NativeChatContextUsageRing } from '../native-chat/usage/NativeChatContextUsageRing'
+import type { NativeChatContextUsageRingInput } from '../native-chat/usage/native-chat-context-usage-ring-input'
 import type {
   HomeChatMachineOption,
   HomeChatSummary
 } from '../../../../shared/home-chat/home-chat-types'
-import { formatHomeChatTokens } from './home-chat-format'
 
 function MachinesPopover({
   current,
@@ -80,7 +81,7 @@ function MachinesPopover({
   )
 }
 
-function ContextPopover({
+function ContextRing({
   chat,
   onCompact
 }: {
@@ -89,55 +90,41 @@ function ContextPopover({
 }): React.JSX.Element {
   const t = useTranslate()
   const { usedTokens, windowTokens, compactions } = chat.context
-  const percent =
-    windowTokens > 0 ? Math.min(100, Math.round((usedTokens / windowTokens) * 100)) : 0
-  const usage = t('homeChat.context.usage', '{{used}} / {{window}}', {
-    used: formatHomeChatTokens(usedTokens),
-    window: formatHomeChatTokens(windowTokens)
-  })
+  const percentage = windowTokens > 0 ? Math.round((usedTokens / windowTokens) * 100) : 0
+  const compactDisabled = chat.status === 'running'
+  const usage = useMemo<NativeChatContextUsageRingInput>(
+    () => ({
+      usedTokens,
+      windowTokens,
+      percentage,
+      // The thread summary does not say whether a provider measured its size; most drivers estimate it.
+      estimated: true,
+      rows: [],
+      compactions,
+      onCompact,
+      compactDisabled
+    }),
+    [usedTokens, windowTokens, percentage, compactions, onCompact, compactDisabled]
+  )
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          size="xs"
-          variant="muted-field-icon"
-          data-home-chat-context={percent}
-          aria-label={t('homeChat.context.label', 'Context: {{usage}} tokens', { usage })}
-        >
-          <Gauge />
-          <span className="tabular-nums">{usage}</span>
-          <Progress value={percent} className="h-1 w-12" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-72">
-        <div className="space-y-2 p-3">
-          <p className="text-sm font-medium">{t('homeChat.context.title', 'Context')}</p>
-          <p className="text-xs text-muted-foreground">
-            {t(
-              'homeChat.context.description',
-              'What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.',
-              { percent }
-            )}
-          </p>
-          {compactions > 0 && (
-            <p className="text-xs text-muted-foreground" data-home-chat-compactions={compactions}>
-              {t('homeChat.context.compactions', 'Summaries so far: {{count}}', {
-                count: compactions
-              })}
+    <div className="flex" data-home-chat-context={percentage}>
+      <NativeChatContextUsageRing
+        usage={usage}
+        note={
+          // The description states a share of the window, so it waits for a measured one.
+          windowTokens > 0 ? (
+            <p className="text-2xs text-muted-foreground" data-home-chat-compactions={compactions}>
+              {t(
+                'homeChat.context.description',
+                'What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.',
+                { percent: percentage }
+              )}
             </p>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={chat.status === 'running'}
-            onClick={onCompact}
-          >
-            {t('homeChat.context.compactNow', 'Summarize older messages now')}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+          ) : undefined
+        }
+      />
+    </div>
   )
 }
 
@@ -161,9 +148,7 @@ export function HomeChatContextBar({
         onOpen={onOpenMachines}
       />
       <div className="flex-1" />
-      {chat && chat.context.windowTokens > 0 && (
-        <ContextPopover chat={chat} onCompact={onCompact} />
-      )}
+      {chat && <ContextRing chat={chat} onCompact={onCompact} />}
     </div>
   )
 }
