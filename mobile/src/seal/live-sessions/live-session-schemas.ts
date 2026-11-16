@@ -3,6 +3,10 @@ import {
   LIVE_MESSAGE_STATES,
   LIVE_SESSION_STATUSES
 } from '../../../../src/shared/live-sessions/live-session-types'
+import {
+  NATIVE_CHAT_ROLES,
+  type NativeChatMessage
+} from '../../../../src/shared/native-chat/native-chat-types'
 import { liveSessionRecapBriefSchema } from '../../../../src/shared/session-recap/session-recap-schemas'
 import { salvagingArray } from '../../../../src/shared/zod-salvage'
 
@@ -57,7 +61,7 @@ const contextSchema = z.looseObject({
   updatedAt: Timestamp.optional().catch(undefined)
 })
 
-export const liveSessionSchema = z.looseObject({
+const liveSessionSchema = z.looseObject({
   id: z.string().min(1),
   // Any provider the host scans, so one added on desktop still lists here.
   provider: z.string().min(1),
@@ -151,23 +155,18 @@ export const liveSessionsWatchFrameSchema = z.discriminatedUnion('type', [
   z.looseObject({ type: z.literal('error'), message: z.string().optional() })
 ])
 
-// Only what the phone draws; the rest of a transcript row rides along untyped.
-const transcriptBlockSchema = z.looseObject({
-  type: z.string(),
-  text: z.string().optional(),
-  name: z.string().optional(),
-  output: z.string().optional(),
-  callId: z.string().optional(),
-  isError: z.boolean().optional()
-})
-
-export const liveTranscriptMessageSchema = z.looseObject({
+const transcriptRowSchema = z.looseObject({
   id: z.string().min(1),
-  role: z.string(),
-  blocks: salvagingArray(transcriptBlockSchema),
-  timestamp: Timestamp.nullable().optional(),
+  role: z.enum(NATIVE_CHAT_ROLES),
+  blocks: z.array(z.looseObject({ type: z.string() })),
+  timestamp: Timestamp.nullish(),
   transcriptOffset: z.number().optional()
 })
+
+// The registry sends the chat view's own rows: only what orders and places one is checked here.
+const liveTranscriptMessageSchema = z.custom<NativeChatMessage>(
+  (row) => transcriptRowSchema.safeParse(row).success
+)
 
 export const liveTranscriptPageSchema = z.looseObject({
   sessionId: z.string(),
@@ -210,7 +209,6 @@ export type LiveSession = z.output<typeof liveSessionSchema>
 export type LiveSessionSnapshot = z.output<typeof liveSessionSnapshotSchema>
 export type LiveMessage = z.output<typeof liveMessageSchema>
 export type LiveRegistryEvent = z.output<typeof registryEventSchema>
-export type LiveTranscriptMessage = z.output<typeof liveTranscriptMessageSchema>
 export type LiveTranscriptPage = z.output<typeof liveTranscriptPageSchema>
 export type LiveTranscriptDelta = z.output<typeof liveTranscriptDeltaSchema>
 export type LiveTakeOverResult = z.output<typeof liveTakeOverResultSchema>

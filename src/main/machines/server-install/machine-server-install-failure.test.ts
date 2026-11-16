@@ -109,3 +109,28 @@ describe('serverInstallFailureReason', () => {
     expect(serverInstallFailureReason(failure)).toBe(expected)
   })
 })
+
+describe('serverInstallFailureReason for missing server files', () => {
+  const looked = 'looked in C:\\Seal\\resources\\orcad-template, C:\\Seal\\out\\orcad-template'
+
+  it('names where the server files were looked for', () => {
+    expect(
+      serverInstallFailureReason({
+        route: 'unserved',
+        reason: 'orcad_unavailable',
+        detail: 'artifacts_unavailable',
+        cause: looked
+      })
+    ).toBe(`this copy of Seal does not include the server files (${looked})`)
+  })
+
+  it('keeps the fixed reason alone when no cause came with it', () => {
+    expect(
+      serverInstallFailureReason({
+        route: 'unserved',
+        reason: 'orcad_unavailable',
+        detail: 'artifacts_unavailable'
+      })
+    ).toBe('this copy of Seal does not include the server files')
+  })
+})

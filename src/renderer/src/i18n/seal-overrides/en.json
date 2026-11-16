@@ -594,7 +594,7 @@
           "task": "1 background task",
           "tasks": "{{count}} background tasks",
           "label": "Waiting on {{what}}",
-          "and": " and "
+          "stillRunning": "{{what}} still running"
         },
         "rename": {
           "title": "Rename session",
@@ -694,6 +694,10 @@
           "finished": "Recently finished · {{count}}",
           "hiddenByFilters": "{{count}} hidden by filters",
           "statusAttention": "Needs you"
+        },
+        "workspaceGroups": {
+          "noProject": "No project",
+          "noFolder": "No folder"
         },
         "workspace": {
           "actions": "Session actions",
@@ -2133,7 +2137,7 @@
       },
       "agents": {
         "title": "Agents",
-        "showInActiveAgents": "Show in Active agents",
+        "showInSidebar": "Show in sidebar",
         "active": "{{count}} active",
         "empty": "No agents are active in this project. Start one with New agent."
       },
@@ -2401,6 +2405,21 @@
       "empty": "Context usage appears after the first reply.",
       "compactsAt": "Compacts automatically at {{threshold}}: {{left}} left",
       "compactNow": "Compact now"
+    },
+    "projectMerge": {
+      "action": "Merge into project",
+      "confirmTitle": "Merge {{source}} into {{target}}?",
+      "confirmDescription": "Its workspaces, sessions and pins move to {{target}}. This can't be undone.",
+      "confirm": "Merge"
+    },
+    "fileTree": {
+      "title": "Files",
+      "error": {
+        "title": "The file tree hit an error.",
+        "description": "The workspace is still running. Retry, or hide the files and show them again."
+      },
+      "hide": "Hide files",
+      "show": "Show files"
     }
   },
   "components": {

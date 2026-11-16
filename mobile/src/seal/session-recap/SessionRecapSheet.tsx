@@ -23,17 +23,10 @@ import {
 } from '../../../../src/shared/session-recap/session-recap-view'
 import { sealStyles } from '../seal-screen-styles'
 import { recapClockTime, recapItemKindLabel, recapStateNote } from './session-recap-copy'
-import {
-  RecapLineRow,
-  RecapReferenceRow,
-  RecapTickRow,
-  RecapWorkRow,
-  type RecapJump
-} from './SessionRecapRows'
+import { RecapLineRow, RecapReferenceRow, RecapTickRow, RecapWorkRow } from './SessionRecapRows'
 
 type Handlers = {
   onMark: (itemId: string, mark: RecapItemMark | null) => void
-  onJump: RecapJump
   onOpenLink: (url: string) => void
 }
 
@@ -52,9 +45,8 @@ function TickSection({
   icon,
   items,
   view,
-  onMark,
-  onJump
-}: Pick<Handlers, 'onMark' | 'onJump'> & {
+  onMark
+}: Pick<Handlers, 'onMark'> & {
   title: string
   icon: React.ReactNode
   items: readonly RecapItem[]
@@ -73,7 +65,6 @@ function TickSection({
       mark={view.marks[item.id]}
       isNew={recapItemIsNew(view, item)}
       onMark={onMark}
-      onJump={onJump}
     />
   )
   return (
@@ -126,13 +117,12 @@ function RecapSections({
   recap,
   view,
   onMark,
-  onJump,
   onOpenLink
 }: Handlers & { recap: SessionRecap; view: SessionRecapView }) {
   const t = useMobileTranslation()
   const news = recapNewsSinceLastLook(view)
   const work = recapWorkByState(recap.did)
-  const line = (item: RecapItem) => <RecapLineRow key={item.id} item={item} onJump={onJump} />
+  const line = (item: RecapItem) => <RecapLineRow key={item.id} item={item} />
   const prose = (key: string, text: string) => (
     <Text key={key} style={styles.prose}>
       {text}
@@ -157,19 +147,9 @@ function RecapSections({
           <ListGroup>
             {news.map(({ section, item }) =>
               section === 'did' ? (
-                <RecapWorkRow
-                  key={item.id}
-                  item={item}
-                  label={recapItemKindLabel(section, item)}
-                  onJump={onJump}
-                />
+                <RecapWorkRow key={item.id} item={item} label={recapItemKindLabel(section, item)} />
               ) : (
-                <RecapLineRow
-                  key={item.id}
-                  item={item}
-                  kind={recapItemKindLabel(section, item)}
-                  onJump={onJump}
-                />
+                <RecapLineRow key={item.id} item={item} kind={recapItemKindLabel(section, item)} />
               )
             )}
           </ListGroup>
@@ -183,7 +163,6 @@ function RecapSections({
         items={recap.questions}
         view={view}
         onMark={onMark}
-        onJump={onJump}
       />
       <TickSection
         title={t('seal.sessionRecap.actions', 'Your action items')}
@@ -191,7 +170,6 @@ function RecapSections({
         items={recap.actions}
         view={view}
         onMark={onMark}
-        onJump={onJump}
       />
       {recap.ignored.length > 0 ? (
         <Section
@@ -210,12 +188,7 @@ function RecapSections({
         <Section title={t('seal.sessionRecap.did', 'What the agent did')}>
           {work.flatMap((group) =>
             group.items.map((item) => (
-              <RecapWorkRow
-                key={item.id}
-                item={item}
-                label={recapItemKindLabel('did', item)}
-                onJump={onJump}
-              />
+              <RecapWorkRow key={item.id} item={item} label={recapItemKindLabel('did', item)} />
             ))
           )}
         </Section>
@@ -231,7 +204,6 @@ function RecapSections({
             <RecapReferenceRow
               key={`${reference.kind}:${reference.target}`}
               reference={reference}
-              onJump={onJump}
               onOpenLink={onOpenLink}
             />
           ))}

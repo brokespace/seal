@@ -38,7 +38,8 @@ describe('which server an SSH host runs on connect', () => {
     await expect(resolveHostServerOnConnect(target, d)).resolves.toEqual({
       route: 'unserved',
       reason: 'orcad_unavailable',
-      detail: 'unsupported_host'
+      detail: 'unsupported_host',
+      cause: 'Packaged orcad template does not support x'
     })
     expect(d.recordUnavailable).toHaveBeenCalledWith(target, 'unsupported_host')
     // An empty host releases its deploy claim, never a migration fence.
@@ -65,6 +66,17 @@ describe('which server an SSH host runs on connect', () => {
       reason: 'orcad_unavailable'
     })
     expect(remembered.convert).not.toHaveBeenCalled()
+  })
+
+  it('says where the server files were looked for when this copy has none', async () => {
+    const d = deps({ missingTemplate: () => 'looked in /app/resources/orcad-template' })
+    await expect(resolveHostServerOnConnect(target, d)).resolves.toEqual({
+      route: 'unserved',
+      reason: 'orcad_unavailable',
+      detail: 'artifacts_unavailable',
+      cause: 'looked in /app/resources/orcad-template'
+    })
+    expect(d.recordUnavailable).not.toHaveBeenCalled()
   })
 
   it('keeps a host an older build changed on the relay, and still connects when retaining fails', async () => {
@@ -153,7 +165,8 @@ describe('which server an SSH host runs on connect', () => {
     await expect(resolveHostServerOnConnect(target, d)).resolves.toEqual({
       route: 'unserved',
       reason: 'orcad_unavailable',
-      detail: 'ssh_tunnel_unavailable'
+      detail: 'ssh_tunnel_unavailable',
+      cause: 'exit 127'
     })
     expect(d.abandonDeploy).toHaveBeenCalledWith(target)
     expect(d.recordUnavailable).toHaveBeenCalledWith(target, 'ssh_tunnel_unavailable')

@@ -3,7 +3,7 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import { useLiveSessionClock } from '../../live-sessions/live-session-clock'
 import { LiveSessionRows } from '../../live-sessions/row/LiveSessionRows'
 
-/** The machine's sessions, as Active agents lists them. */
+/** The machine's sessions (chats, agents in panes and ones started outside Seal), as every list shows them. */
 export function MachineSessionList({
   sessions
 }: {

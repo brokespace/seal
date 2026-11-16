@@ -125,7 +125,7 @@ function getOpenFileWatchConsumer(
   }
 }
 
-function getSidebarWatchConsumer(
+export function getSidebarWatchConsumer(
   state: EditorExternalWatchTargetState,
   worktreeId: string
 ): WatchConsumer {
@@ -286,7 +286,7 @@ export function selectEditorExternalWatchTargets(
   return cachedWatchedTargetsSnapshot
 }
 
-function resolveWatchTargets(
+export function resolveWatchTargets(
   state: EditorExternalWatchTargetState,
   consumersByWorktreeId: ReadonlyMap<string, ReadonlyMap<string, WatchConsumer>>
 ): Map<string, EditorExternalWatchTarget> {

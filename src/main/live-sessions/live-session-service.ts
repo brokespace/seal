@@ -53,6 +53,7 @@ export type LiveSessionServiceDeps = {
   /** Paired servers' own registries; absent on a server, which has none. */
   federation?: FederatedSessions
   onHostScanned?: LiveSessionRegistryDeps['onHostScanned']
+  link?: LiveSessionRegistryDeps['link']
   log?: (message: string, error?: unknown) => void
 }
 
@@ -86,6 +87,7 @@ export class LiveSessionService {
     this.registry = new LiveSessionRegistry({
       isRemoved: (session) => this.removals.has(session.id),
       annotate: (session) => this.annotations.apply(session),
+      link: deps.link,
       localMachine: { hostId: LOCAL_HOST_ID, label: hostname(), kind: 'local' },
       hosts: deps.hosts,
       sealPanes: () => deps.sealPanes?.panes() ?? [],

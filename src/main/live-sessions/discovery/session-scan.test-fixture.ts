@@ -168,7 +168,9 @@ export function recordedSession(name: string): (options?: ScanOptions) => Promis
   const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
   return async (options = {}) => {
     current = hostOutput([name, ...(options.beside ?? [])], options)
-    return (await scanner.scan(current.now)).sessions[0]
+    const { sessions } = await scanner.scan(current.now)
+    // An agent that holds no transcript open is listed beside the session the recording belongs to.
+    return sessions.find((s) => s.transcriptPath === current.files[0].path) ?? sessions[0]
   }
 }
 

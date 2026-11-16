@@ -49,12 +49,14 @@ function scopeSessions(
     return { sessions: all.sessions.filter((s) => allowed.has(s.machineId)), errors: [] }
   }
   const requireVisible = async (sessionId: string): Promise<void> => {
-    if (!(await list()).sessions.some((session) => session.id === sessionId)) {
+    const id = sessions.currentId(sessionId)
+    if (!(await list()).sessions.some((session) => session.id === id)) {
       throw new Error(`No session ${sessionId}. Call list_sessions and use an id from it.`)
     }
   }
   return {
     list,
+    currentId: sessions.currentId,
     transcript: async (sessionId, limit) => {
       await requireVisible(sessionId)
       return sessions.transcript(sessionId, limit)

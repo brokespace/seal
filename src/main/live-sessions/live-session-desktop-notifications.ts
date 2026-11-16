@@ -5,21 +5,14 @@ import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-ch
 import type { AgentSessionSurface } from '../../shared/live-sessions/live-session-types'
 import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
 import type { NotificationSettings } from '../../shared/notification-settings-types'
-import {
-  migrateLiveSessionsNotify,
-  outsideSessionsMuted
-} from '../../shared/live-sessions/live-session-settings'
+import { migrateLiveSessionsNotify } from '../../shared/live-sessions/live-session-settings'
 import { deliverNativeNotification } from '../ipc/native-notification-delivery'
 import { getTrustedUIRendererWindow } from '../ipc/ui'
 import { activeSessionWorkspaceId } from '../runtime/terminal/wait/active-worktree-context-fallback'
 import { getSessionSummariesHost } from '../session-summaries/session-summaries-instance'
 import { safelyRevealWindow } from '../window/activation/focus-existing-window'
 import { isBackgroundLaunch } from '../window/activation/foreground-activation-policy'
-import {
-  isLiveSessionNoticeEnabled,
-  LiveSessionNotifier,
-  type LiveSessionNotification
-} from './live-session-notifier'
+import { installLiveSessionNotifier, type LiveSessionNotification } from './live-session-notifier'
 import type { LiveSessionService } from './live-session-service'
 
 type NotificationSettingsStore = {
@@ -83,30 +76,24 @@ function showSessionNotification(
   notification.show()
 }
 
+/** `pushToPhone` gets every wanted notice; the desktop shows one unless this Seal is being looked at. */
 export function installLiveSessionDesktopNotifications(
   service: LiveSessionService,
-  store: NotificationSettingsStore
+  store: NotificationSettingsStore,
+  pushToPhone: (notification: LiveSessionNotification) => void
 ): void {
   const migration = migrateLiveSessionsNotify(store.getSettings())
   if (migration) {
     store.updateSettings(migration)
   }
-  const notifier = new LiveSessionNotifier({
-    wanted: (kind, surface) => {
-      const settings = store.getSettings()
-      const { notifications } = settings
-      return (
-        isLiveSessionNoticeEnabled(notifications, kind) &&
-        !(surface.kind === 'external' && outsideSessionsMuted(settings)) &&
-        !(notifications.suppressWhenFocused && lookingAt(surface, store)) &&
-        Notification.isSupported()
-      )
-    },
-    show: (notification) =>
-      showSessionNotification(notification, store.getSettings().notifications),
-    // Installed after this, and only where replies are classified.
-    replyAsk: (session) => getSessionSummariesHost()?.replyAsk(session) ?? 'tells',
-    askedReply: (sessionId) => getSessionSummariesHost()?.askedReply(sessionId) ?? null
+  installLiveSessionNotifier(service, store, (notification) => {
+    pushToPhone(notification)
+    const { notifications } = store.getSettings()
+    if (
+      !(notifications.suppressWhenFocused && lookingAt(notification.surface, store)) &&
+      Notification.isSupported()
+    ) {
+      showSessionNotification(notification, notifications)
+    }
   })
-  service.subscribe((event) => notifier.onEvent(event))
 }

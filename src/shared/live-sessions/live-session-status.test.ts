@@ -10,7 +10,7 @@ const nothing: AgentSessionStatusEvidence = {
   pendingQuestion: false,
   turnFailed: false,
   runningSubagents: 0,
-  runningBackgroundTasks: 0,
+  waitsOnBackgroundTask: false,
   hadTurn: false,
   ended: false
 }
@@ -26,8 +26,8 @@ describe('the status a chat or a hook row reports', () => {
     ['a turn runs', inTurn, 'working'],
     ['the turn ended and subagents run', { ...tookTurn, runningSubagents: 2 }, 'waiting-subagent'],
     [
-      'the turn ended and background tasks run',
-      { ...tookTurn, runningBackgroundTasks: 1 },
+      'a turn waits on a command it started earlier',
+      { ...inTurn, waitsOnBackgroundTask: true },
       'waiting-task'
     ],
     ['the turn ended with nothing running', tookTurn, 'your-turn'],
@@ -63,8 +63,8 @@ describe('which evidence wins when a session reports several', () => {
       'waiting-input'
     ],
     [
-      'a question with background tasks running',
-      { ...tookTurn, pendingQuestion: true, runningBackgroundTasks: 1 },
+      'a question in a turn that waits on a background task',
+      { ...inTurn, pendingQuestion: true, waitsOnBackgroundTask: true },
       'waiting-input'
     ],
     [
@@ -78,23 +78,25 @@ describe('which evidence wins when a session reports several', () => {
       'waiting-subagent'
     ],
     [
-      'a running turn with background tasks behind it',
-      { ...inTurn, runningBackgroundTasks: 2 },
-      'working'
+      'a running turn that waits on subagents and on a background task',
+      { ...inTurn, runningSubagents: 1, waitsOnBackgroundTask: true },
+      'waiting-subagent'
+    ],
+    [
+      'a turn that runs a shell command and waits on a background task',
+      { ...inTurn, shellRunning: true, waitsOnBackgroundTask: true },
+      'running-shell'
     ],
     ['a new turn after a failed one', { ...inTurn, turnFailed: true }, 'working'],
     [
-      'a failed turn with tasks still running',
-      { ...tookTurn, turnFailed: true, runningBackgroundTasks: 1, runningSubagents: 1 },
+      'a failed turn with subagents still running',
+      { ...tookTurn, turnFailed: true, runningSubagents: 1 },
       'errored'
     ],
-    [
-      'subagents and background tasks behind an ended turn',
-      { ...tookTurn, runningSubagents: 1, runningBackgroundTasks: 3 },
-      'waiting-subagent'
-    ],
+    // A wait belongs to a turn: once it ended, what it left running holds nothing.
+    ['a wait flag with no turn running', { ...tookTurn, waitsOnBackgroundTask: true }, 'your-turn'],
     ['a shell flag with no turn running', { ...tookTurn, shellRunning: true }, 'your-turn'],
-    ['background tasks before any turn', { runningBackgroundTasks: 1 }, 'waiting-task'],
+    ['a wait flag before any turn', { waitsOnBackgroundTask: true }, 'idle'],
     ['a failed first turn', { turnFailed: true }, 'errored']
   ])('%s', (_, evidence, status) => {
     expect(liveSessionStatusFromEvidence({ ...nothing, ...evidence })).toBe(status)

@@ -5,11 +5,8 @@ import type {
   SshManagedServerStatus,
   SshManagedServerUpdateNote
 } from './ssh-types'
-import {
-  SSH_MANAGED_SERVER_PHASES,
-  SSH_MANAGED_SERVER_RELAY_REASONS,
-  SSH_MANAGED_SERVER_UPDATE_STATES
-} from './ssh-types'
+import { SSH_MANAGED_SERVER_PHASES, SSH_MANAGED_SERVER_UPDATE_STATES } from './ssh-types'
+import { SSH_MANAGED_SERVER_RELAY_REASONS } from './ssh-managed-server-relay-reasons'
 import {
   isNonNegativeSafeInteger,
   isSshRetainedIdentifier,
@@ -69,6 +66,7 @@ export function admitSshManagedServerStatus(value: unknown): {
     return {}
   }
   const detail = 'detail' in value && typeof value.detail === 'string' ? value.detail : ''
+  const cause = 'cause' in value && typeof value.cause === 'string' ? value.cause : ''
   const terminals = 'terminals' in value ? value.terminals : undefined
   return {
     managedServer: {
@@ -77,6 +75,7 @@ export function admitSshManagedServerStatus(value: unknown): {
       ...(detail
         ? { detail: clampUtf8TextPrefix(detail, SSH_CONNECTION_ERROR_MAX_UTF8_BYTES) }
         : {}),
+      ...(cause ? { cause: clampUtf8TextPrefix(cause, SSH_CONNECTION_ERROR_MAX_UTF8_BYTES) } : {}),
       ...('code' in value && isSshRetainedIdentifier(value.code) ? { code: value.code } : {}),
       ...(isNonNegativeSafeInteger(terminals) ? { terminals } : {}),
       ...('terminalsElsewhere' in value && value.terminalsElsewhere === true

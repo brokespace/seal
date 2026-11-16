@@ -20,10 +20,10 @@ export function liveSessionProviderOf(agent: string): LiveSessionProvider | null
  * working           the agent is generating or calling tools
  * running-shell     a shell command the agent started is still running (looks paused, is busy)
  * waiting-subagent  the agent waits for subagents it started (still busy, nothing for the user to do)
- * waiting-task      the agent waits for background commands it started
+ * waiting-task      the agent's turn is blocked on a background command or task it started earlier
  * needs-permission  a permission prompt is up: a tool or command waits for the user's approval
  * waiting-input     the agent asked the user a question
- * your-turn         the agent finished its turn and waits for the user's next message
+ * your-turn         the agent finished its turn and waits for the user's next message, whatever it left running
  * idle              the agent is running and has not been given anything to do yet
  * done              the agent process has ended
  * errored           the last turn failed

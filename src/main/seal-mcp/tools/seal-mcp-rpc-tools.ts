@@ -107,10 +107,10 @@ async function listWorkspaces(
 }
 
 async function stopSession(input: Rec, runtime: SealMcpToolRuntime): Promise<HomeChatToolResult> {
-  const sessionId = String(input.session_id ?? '').trim()
+  const access = runtime.services.seal.sessions
+  const sessionId = access.currentId(String(input.session_id ?? '').trim())
   // The session list is already narrowed to the client's machines.
-  const { sessions } = await runtime.services.seal.sessions.list()
-  const session = sessions.find((candidate) => candidate.id === sessionId)
+  const session = (await access.list()).sessions.find((candidate) => candidate.id === sessionId)
   if (!session) {
     return {
       text: `No session ${sessionId}. Call list_sessions and use an id from it.`,

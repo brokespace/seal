@@ -16,6 +16,7 @@ import {
   useScriptedSessionServices,
   writeSessionServicesScript
 } from './helpers/session-services-stub'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 
 const PROMPT = 'Fix the login redirect loop'
 // Over 80 characters, so the row's line has to come from the model; its link gives the recap a reference.
@@ -54,8 +55,7 @@ test('a chat that finished its turn shows the scripted summary on its row and a 
     { message: 'the finished chat got no summary and recap' }
   )
 
-  // A chat in a workspace is listed under that workspace, not under Active agents.
-  const row = orcaPage.locator(`[data-live-session-row="${sessionId}"]`)
+  const row = sidebarSessionRow(orcaPage, sessionId)
   await expect(row).toBeVisible()
   await expect(row).toHaveAttribute('data-status', 'your-turn')
   await expect(row.locator('[data-session-summary]')).toHaveText(SCRIPTED.summary)

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAppStore } from '@/store/index'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { sessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import {
@@ -11,6 +12,7 @@ import {
   isActiveLiveSession
 } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import type { Tab } from '../../../../../shared/tab-types'
 import {
   liveSessionProviderLabel,
   liveSessionStatusText,
@@ -18,20 +20,55 @@ import {
 } from '../live-session-presentation'
 import { useLiveSessions } from '../live-session-registry-store'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
-import { openLiveSessionView } from '../menu/live-session-menu-effects'
+import { openAgentSession } from '../open/open-agent-session'
 import { RECENTLY_FINISHED_MS } from '../active-agents/active-agents-model'
 
-/** The palette's rows for sessions: running ones first, then those that ended in the last day. */
+/** What a session's workspace tab goes by: a chat by its chat, an agent in a pane by its terminal tab. */
+function liveSessionTabKey(session: Pick<LiveSession, 'surface'>): string | null {
+  const { surface } = session
+  if (surface.kind === 'chat') {
+    return `agent-session:${surface.sessionId}`
+  }
+  if (surface.kind !== 'cli') {
+    return null
+  }
+  const separator = surface.paneKey.lastIndexOf(':')
+  return separator > 0 ? `terminal:${surface.paneKey.slice(0, separator)}` : null
+}
+
+type SessionTab = Pick<Tab, 'contentType' | 'entityId'>
+
+/** The chat and terminal tabs open in any workspace, which Open Tabs lists itself. */
+export function openSessionTabKeys(
+  unifiedTabsByWorktree: Readonly<Record<string, readonly SessionTab[] | undefined>>
+): Set<string> {
+  const keys = new Set<string>()
+  for (const tabs of Object.values(unifiedTabsByWorktree)) {
+    for (const tab of tabs ?? []) {
+      if (tab.contentType === 'agent-session' || tab.contentType === 'terminal') {
+        keys.add(`${tab.contentType}:${tab.entityId}`)
+      }
+    }
+  }
+  return keys
+}
+
+/**
+ * The palette's rows for sessions: running ones first, then those that ended in the last day. A
+ * session whose tab is open is left to that tab's own row, so the palette lists it once.
+ */
 export function liveSessionPaletteResults(
   sessions: readonly LiveSession[],
   query: string,
   now: number,
+  openTabKeys: ReadonlySet<string>,
   open: (sessionId: string) => void
 ): PaletteExtraResult[] {
   const listed = sessions
     .filter(
       (session) =>
-        isActiveLiveSession(session) || now - session.lastActivityAt <= RECENTLY_FINISHED_MS
+        (isActiveLiveSession(session) || now - session.lastActivityAt <= RECENTLY_FINISHED_MS) &&
+        !openTabKeys.has(liveSessionTabKey(session) ?? '')
     )
     .sort(
       (a, b) =>
@@ -79,12 +116,13 @@ export function liveSessionPaletteResults(
   })
 }
 
-/** "Go to agent session": every live session, from Cmd+J. */
+/** "Go to agent session" in Cmd+J: the live sessions that no open tab already stands for. */
 export function useLiveSessionPaletteSource(args: {
   query: string
   visible: boolean
 }): PaletteExtraSource | null {
   const { sessions } = useLiveSessions()
+  const unifiedTabsByWorktree = useAppStore((state) => state.unifiedTabsByWorktree)
   const { query, visible } = args
   const [now, setNow] = useState(() => Date.now())
   // "The last day" is measured from when the palette opened.
@@ -105,9 +143,13 @@ export function useLiveSessionPaletteSource(args: {
       emptyQueryPlacement: 'last',
       typedPlacement: 'after-workspaces',
       leadsOnTie: false,
-      results: liveSessionPaletteResults(sessions, query, now, (sessionId) =>
-        openLiveSessionView(sessionId, 'tab')
+      results: liveSessionPaletteResults(
+        sessions,
+        query,
+        now,
+        openSessionTabKeys(unifiedTabsByWorktree),
+        (sessionId) => openAgentSession(sessionId, 'tab')
       )
     }
-  }, [sessions, query, visible, now])
+  }, [sessions, query, visible, now, unifiedTabsByWorktree])
 }
