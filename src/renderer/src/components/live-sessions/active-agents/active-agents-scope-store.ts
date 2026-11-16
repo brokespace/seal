@@ -1,7 +1,6 @@
-import { useSyncExternalStore } from 'react'
 import type { ActiveAgentsScope } from './active-agents-model'
 
-/** The workspace or project Active agents is narrowed to, set from its badge in Projects. */
+/** The workspace or project last shown from its badge or its overview. Recorded only: session rows live under their workspaces and no list narrows by it. */
 export class ActiveAgentsScopeStore {
   private scope: ActiveAgentsScope | null = null
   private readonly listeners = new Set<() => void>()
@@ -22,7 +21,3 @@ export class ActiveAgentsScopeStore {
 }
 
 export const activeAgentsScopeStore = new ActiveAgentsScopeStore()
-
-export function useActiveAgentsScope(): ActiveAgentsScope | null {
-  return useSyncExternalStore(activeAgentsScopeStore.subscribe, activeAgentsScopeStore.getState)
-}

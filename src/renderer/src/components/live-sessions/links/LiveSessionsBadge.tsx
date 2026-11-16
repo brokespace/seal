@@ -10,8 +10,9 @@ import { showScopeInActiveAgents } from './show-scope-in-active-agents'
 import { useLiveSessionLinks } from './use-live-session-links'
 
 /**
- * On a project or workspace row: how many live sessions it has and what the most urgent one needs.
- * The sessions themselves are rows in Active agents; pointing here marks them, clicking filters to them.
+ * On a project's header: how many live sessions it has and what the most urgent one needs.
+ * The sessions themselves are rows under their workspaces; pointing here rings them, clicking
+ * unfolds the project down to the first of them and rings them all.
  */
 export function LiveSessionsBadge({
   scope
@@ -50,6 +51,8 @@ export function LiveSessionsBadge({
         event.preventDefault()
         event.stopPropagation()
         showScopeInActiveAgents(scope, badge.sessionIds[0])
+        // The reveal rings the one row it scrolls to; the badge counts them all.
+        liveSessionMarksStore.highlight(badge.sessionIds)
       }}
       className={cn(
         'flex h-4 shrink-0 items-center gap-1 rounded-full border border-worktree-sidebar-border px-1 text-2xs leading-none text-muted-foreground tabular-nums transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring focus-visible:outline-none',

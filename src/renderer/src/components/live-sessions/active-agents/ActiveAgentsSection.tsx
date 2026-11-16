@@ -1,19 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Ellipsis, Loader2 } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Loader2 } from 'lucide-react'
 import { useAppStore } from '@/store/index'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
+import { useLatestHandler } from '@/lib/use-latest-handler'
 import { SidebarSectionHeader } from '@/components/sidebar/SidebarSectionHeader'
 import {
   revealInSidebarScrollSection,
-  SIDEBAR_STICKY_SECTION_HEADER_CLASS
+  SIDEBAR_STICKY_SECTION_HEADER_CLASS,
+  useSidebarScrollSectionHosts
 } from '@/components/sidebar/sidebar-scroll-sections'
 import {
   offerSidebarSectionKeyboardCursor,
@@ -21,22 +16,34 @@ import {
   useSidebarSectionKeyboardEntry
 } from '@/components/sidebar/sidebar-section-keyboard-handoff'
 import { ProjectsCollapseAllButton } from '@/components/sidebar/worktree-list/controls/ProjectsCollapseAllButton'
+import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
 import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
-import { liveSessionMenuEffects, openLiveSessionFromRow } from '../menu/live-session-menu-effects'
+import { openLiveSessionFromRow } from '../menu/live-session-menu-effects'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
 import { ActiveAgentsGroups, type ActiveAgentsRowState } from './ActiveAgentsGroups'
-import { ActiveAgentsToolbar } from './ActiveAgentsToolbar'
 import {
   ACTIVE_AGENTS_COLLAPSE_KEY,
   buildActiveAgents,
+  isRecentlyFinishedLiveSession,
   visibleSessionIds
 } from './active-agents-model'
-import { activeAgentsScopeStore, useActiveAgentsScope } from './active-agents-scope-store'
 import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
+import { useUnassignedSessions } from '../links/use-workspace-sessions'
+import { SessionsOptionsMenu } from '../workspace-rows/SessionsOptionsMenu'
+import { SidebarSessionsToolbar } from '../workspace-rows/SidebarSessionsToolbar'
+import { useSidebarSessionRowKeyboard } from '../workspace-rows/session-row-keyboard'
+import { pickSidebarSessionRow } from '../workspace-rows/session-row-picking'
+import { useWorkspaceSessionRowReveal } from '../workspace-rows/session-row-reveal'
+import {
+  hasSidebarSessionFilters,
+  matchesSidebarSessionFilters,
+  sidebarSessionFilterStore,
+  useSidebarSessionFilters
+} from '../workspace-rows/sidebar-session-filter-store'
 
 const MACHINE_KEY = 'active-agents:machine:'
 /** Present while the group is open: ended sessions start folded away. */
@@ -46,21 +53,27 @@ function rowIn(list: HTMLElement | null, sessionId: string): HTMLElement | null 
   return list?.querySelector(`[data-live-session-row="${CSS.escape(sessionId)}"]`) ?? null
 }
 
-/** Every agent session on every machine, the sidebar list's first section: the one place session rows live. */
-const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
+/** The agent sessions no workspace holds, on every machine; a workspace's own are rows on its card. */
+const UnassignedActiveAgents = React.memo(function UnassignedActiveAgents() {
   const t = useTranslate()
   const registry = useLiveSessions()
   const { links } = useLiveSessionLinks()
+  const unassigned = useUnassignedSessions()
+  const filters = useSidebarSessionFilters()
   const sharedRowState = useLiveSessionRowState()
-  const scope = useActiveAgentsScope()
   const marks = useLiveSessionMarks()
   const tabs = useLiveSessionTabs()
   const now = useLiveSessionClock()
+  const hosts = useSidebarScrollSectionHosts()
   const collapsedGroups = useAppStore((state) => state.collapsedGroups)
   const toggleCollapsedGroup = useAppStore((state) => state.toggleCollapsedGroup)
   const list = useRef<HTMLDivElement>(null)
   const pinned = useRef<HTMLDivElement>(null)
-  const anchor = useRef<string | null>(null)
+  // Why after the first commit: the Projects header is portaled into the same host and must stay ahead of the toolbar.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  useSidebarSessionRowKeyboard()
+  useWorkspaceSessionRowReveal()
 
   const open = !collapsedGroups.has(ACTIVE_AGENTS_COLLAPSE_KEY)
   const finishedOpen = collapsedGroups.has(FINISHED_OPEN_KEY)
@@ -73,34 +86,41 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       ),
     [collapsedGroups]
   )
-  const view = useMemo(
-    () => buildActiveAgents(registry.sessions, scope, links, now),
-    [registry.sessions, scope, links, now]
+  const sessions = useMemo(
+    () => unassigned.filter((session) => matchesSidebarSessionFilters(session, filters)),
+    [unassigned, filters]
   )
+  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
   const order = useMemo(
     () => visibleSessionIds(view, { machines: collapsedMachines, finished: !finishedOpen }),
     [view, collapsedMachines, finishedOpen]
   )
-  const byId = useMemo(
-    () => new Map(registry.sessions.map((session) => [session.id, session])),
-    [registry.sessions]
-  )
 
-  // A row asked for from elsewhere (a Projects badge, a fresh launch, the palette) is unfolded and shown.
+  // A row asked for from elsewhere (a fresh launch, the palette) is unfolded and shown.
   const reveal = marks.reveal
+  const isUnderWorkspace = useLatestHandler((sessionId: string) =>
+    Boolean(links.get(sessionId)?.worktreeId)
+  )
   useEffect(() => {
     // Read at the moment of the request: later session updates must not move the list again.
     const session = reveal
       ? liveSessionRegistryStore.getState().sessions.find((s) => s.id === reveal.sessionId)
       : null
-    if (!reveal || !session) {
+    // A workspace's session is revealed on its card, which also fades its ring.
+    if (!reveal || !session || isUnderWorkspace(session.id)) {
       return
+    }
+    if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
+      sidebarSessionFilterStore.clear()
     }
     const { collapsedGroups: collapsed, toggleCollapsedGroup: toggle } = useAppStore.getState()
     for (const key of [ACTIVE_AGENTS_COLLAPSE_KEY, MACHINE_KEY + session.machine.hostId]) {
       if (collapsed.has(key)) {
         toggle(key)
       }
+    }
+    if (!isActiveLiveSession(session) && !collapsed.has(FINISHED_OPEN_KEY)) {
+      toggle(FINISHED_OPEN_KEY)
     }
     const frame = requestAnimationFrame(() => {
       const row = rowIn(list.current, reveal.sessionId)
@@ -113,25 +133,8 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
       cancelAnimationFrame(frame)
       clearTimeout(fade)
     }
-  }, [reveal])
+  }, [reveal, isUnderWorkspace])
 
-  const onPick = useCallback(
-    (session: LiveSession, range: boolean) => {
-      const from = range && anchor.current ? order.indexOf(anchor.current) : -1
-      const to = order.indexOf(session.id)
-      if (from !== -1 && to !== -1) {
-        const picked = new Set(liveSessionMarksStore.getState().picked)
-        for (const id of order.slice(Math.min(from, to), Math.max(from, to) + 1)) {
-          picked.add(id)
-        }
-        liveSessionMarksStore.setPicked(picked)
-        return
-      }
-      anchor.current = session.id
-      liveSessionMarksStore.togglePicked(session.id)
-    },
-    [order]
-  )
   const tabStop = tabs.activeId && order.includes(tabs.activeId) ? tabs.activeId : order[0]
   const rowState = useCallback(
     (session: LiveSession): ActiveAgentsRowState => ({
@@ -192,146 +195,115 @@ const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
     }
   }
 
-  const pickedSessions = marks.picked
-    ? [...marks.picked].flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
-    : []
   const title = t('auto.components.live-sessions.sidebar.title', 'Active agents')
-  const empty = view.machines.length === 0 && view.finished.length === 0
-  const openAgentSettings = (): void => {
-    const store = useAppStore.getState()
-    store.openSettingsPage()
-    store.openSettingsTarget({ pane: 'agents', repoId: null })
+  const emptyText = (): string => {
+    if (!registry.loaded) {
+      return t('auto.components.live-sessions.workspace.loading', 'Looking for sessions')
+    }
+    // What the sidebar lists anywhere; the filters may leave it only under workspaces.
+    const listed = registry.sessions.filter(
+      (session) =>
+        (isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)) &&
+        matchesSidebarSessionFilters(session, filters)
+    )
+    if (hasSidebarSessionFilters(filters) && listed.length === 0) {
+      return t('auto.components.live-sessions.sidebar.noMatch', 'No sessions match.')
+    }
+    return listed.some((session) => links.get(session.id)?.worktreeId)
+      ? t(
+          'auto.components.live-sessions.sessionRows.allUnderWorkspaces',
+          'Every session is listed under its workspace.'
+        )
+      : t(
+          'auto.components.live-sessions.sidebar.empty',
+          'No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.'
+        )
   }
 
-  // Windows without the registry (a paired web client) have no sessions to list.
+  return (
+    <>
+      <section data-testid="active-agents" data-open={open} aria-label={title}>
+        <div ref={pinned} className={SIDEBAR_STICKY_SECTION_HEADER_CLASS}>
+          <SidebarSectionHeader
+            title={title}
+            section="active-agents"
+            toggle={
+              <>
+                <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
+                  {view.activeCount}
+                </span>
+                {!registry.loaded ? (
+                  <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
+                ) : null}
+                <span data-active-agents-toggle className="flex shrink-0">
+                  <ProjectsCollapseAllButton
+                    allCollapsed={!open}
+                    onToggle={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
+                    label={
+                      open
+                        ? t(
+                            'auto.components.live-sessions.sidebar.collapse',
+                            'Collapse active agents'
+                          )
+                        : t('auto.components.live-sessions.sidebar.expand', 'Expand active agents')
+                    }
+                    pinned={!open}
+                  />
+                </span>
+              </>
+            }
+            actions={
+              <SessionsOptionsMenu
+                label={t('auto.components.live-sessions.sidebar.options', 'Active agents options')}
+                data-active-agents-menu
+              />
+            }
+          />
+        </div>
+        {open ? (
+          <div className="px-2 pb-1">
+            <div
+              ref={list}
+              role="listbox"
+              // Sidebar chrome, not a popup: Escape and arrow keys stay with the page beside it.
+              data-focus-behavior="page"
+              aria-multiselectable={marks.picked !== null}
+              aria-label={title}
+              {...SIDEBAR_KEYBOARD_SECTION_PROPS}
+              onKeyDown={onListKeyDown}
+              className="flex flex-col pb-1 outline-none"
+            >
+              {view.machines.length === 0 && view.finished.length === 0 ? (
+                <p className="px-1.5 py-1 text-2xs text-muted-foreground">{emptyText()}</p>
+              ) : null}
+              <ActiveAgentsGroups
+                view={view}
+                collapsedMachines={collapsedMachines}
+                finishedOpen={finishedOpen}
+                hostErrors={registry.hostErrors}
+                rowState={rowState}
+                now={now}
+                onToggleMachine={(hostId) => toggleCollapsedGroup(MACHINE_KEY + hostId)}
+                onToggleFinished={() => toggleCollapsedGroup(FINISHED_OPEN_KEY)}
+                onOpen={openLiveSessionFromRow}
+                onPick={pickSidebarSessionRow}
+              />
+            </div>
+          </div>
+        ) : null}
+      </section>
+      {mounted && hosts ? createPortal(<SidebarSessionsToolbar />, hosts.pinnedHeader) : null}
+    </>
+  )
+})
+
+/** The sidebar list's first section. It also mounts the sessions toolbar pinned over the whole list. */
+const ActiveAgentsSection = React.memo(function ActiveAgentsSection() {
+  // Windows without the registry (a paired web client) have no sessions to list or filter.
   if (!window.api?.liveSessions?.onEvent) {
     return null
   }
-  return (
-    <section data-testid="active-agents" data-open={open} aria-label={title}>
-      {/* The scope and bulk actions stay in reach with the header while the rows scroll. */}
-      <div ref={pinned} className={SIDEBAR_STICKY_SECTION_HEADER_CLASS}>
-        <SidebarSectionHeader
-          title={title}
-          section="active-agents"
-          toggle={
-            <>
-              <span className="shrink-0 px-1 text-xs text-muted-foreground tabular-nums">
-                {view.activeCount}
-              </span>
-              {!registry.loaded ? (
-                <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" />
-              ) : null}
-              <span data-active-agents-toggle className="flex shrink-0">
-                <ProjectsCollapseAllButton
-                  allCollapsed={!open}
-                  onToggle={() => toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)}
-                  label={
-                    open
-                      ? t(
-                          'auto.components.live-sessions.sidebar.collapse',
-                          'Collapse active agents'
-                        )
-                      : t('auto.components.live-sessions.sidebar.expand', 'Expand active agents')
-                  }
-                  pinned={!open}
-                />
-              </span>
-            </>
-          }
-          actions={
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  data-active-agents-menu
-                  aria-label={t(
-                    'auto.components.live-sessions.sidebar.options',
-                    'Active agents options'
-                  )}
-                >
-                  <Ellipsis className="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => void window.api.liveSessions?.refresh()}>
-                  {t('auto.components.live-sessions.LiveSessionsPage.refresh', 'Scan again')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => liveSessionMarksStore.setPicked(marks.picked ? null : new Set())}
-                >
-                  {marks.picked
-                    ? t('auto.components.live-sessions.sidebar.stopPicking', 'Done selecting')
-                    : t('auto.components.live-sessions.sidebar.startPicking', 'Select sessions')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={openAgentSettings}>
-                  {t(
-                    'auto.components.live-sessions.sidebar.settings',
-                    'Idle sessions and notifications…'
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          }
-        />
-        {open ? (
-          <div className="px-2">
-            <ActiveAgentsToolbar
-              scope={scope}
-              picked={marks.picked}
-              pickedSessions={pickedSessions}
-              onClearScope={() => activeAgentsScopeStore.setScope(null)}
-              onBulk={(danger, sessions) => liveSessionMenuEffects.confirm(danger, sessions)}
-              onStopPicking={() => liveSessionMarksStore.setPicked(null)}
-            />
-          </div>
-        ) : null}
-      </div>
-      {open ? (
-        <div className="px-2 pb-1">
-          <div
-            ref={list}
-            role="listbox"
-            // Sidebar chrome, not a popup: Escape and arrow keys stay with the page beside it.
-            data-focus-behavior="page"
-            aria-multiselectable={marks.picked !== null}
-            aria-label={title}
-            {...SIDEBAR_KEYBOARD_SECTION_PROPS}
-            onKeyDown={onListKeyDown}
-            className="flex flex-col pb-1 outline-none"
-          >
-            {empty ? (
-              <p className="px-1.5 py-1 text-2xs text-muted-foreground">
-                {scope
-                  ? t('auto.components.live-sessions.sidebar.noMatch', 'No sessions match.')
-                  : registry.loaded
-                    ? t(
-                        'auto.components.live-sessions.sidebar.empty',
-                        'No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.'
-                      )
-                    : t('auto.components.live-sessions.workspace.loading', 'Looking for sessions')}
-              </p>
-            ) : null}
-            <ActiveAgentsGroups
-              view={view}
-              collapsedMachines={collapsedMachines}
-              finishedOpen={finishedOpen}
-              hostErrors={registry.hostErrors}
-              rowState={rowState}
-              now={now}
-              onToggleMachine={(hostId) => toggleCollapsedGroup(MACHINE_KEY + hostId)}
-              onToggleFinished={() => toggleCollapsedGroup(FINISHED_OPEN_KEY)}
-              onOpen={openLiveSessionFromRow}
-              onPick={onPick}
-            />
-          </div>
-        </div>
-      ) : null}
-    </section>
-  )
+  return <UnassignedActiveAgents />
 })
 
 export default ActiveAgentsSection
