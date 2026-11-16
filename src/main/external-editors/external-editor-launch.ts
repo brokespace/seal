@@ -3,9 +3,9 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { spawnProcess } from '@orca/process-host'
 import { existsSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
-import { parseWslUncPath } from '../../shared/wsl-paths'
-import { isVsCodeLauncherExecutable } from '../../shared/remote-ssh-editor-launcher'
-import { resolveCliCommand } from '../../shared/node-cli-command-resolution'
+import { parseWslUncPath } from '../../shared/file-access/wsl-paths'
+import { isVsCodeLauncherExecutable } from '../../shared/editor/launch/remote-ssh-editor-launcher'
+import { resolveCliCommand } from '../../shared/shell/command-resolution/node-cli-command-resolution'
 import { envWithoutAppImageRuntime } from '../pty/shell-startup/appimage-terminal-env'
 import {
   getLauncherBaseName,
@@ -17,7 +17,10 @@ import {
   resolveColocatedJetBrainsGuiExecutable
 } from './jetbrains-windows-gui-launchers'
 import { findInstalledVsCodeCli } from './vscode-cli-install-paths'
-import { getCmdExePath, getSpawnArgsForWindows } from '../../shared/windows-batch-spawn'
+import {
+  getCmdExePath,
+  getSpawnArgsForWindows
+} from '../../shared/shell/launch/windows-batch-spawn'
 import {
   describeEditorExitFailure,
   describeEditorSpawnFailure,
@@ -282,12 +285,11 @@ export const EXTERNAL_EDITOR_EARLY_EXIT_GRACE_MS = 1500
  */
 export async function launchExternalEditor(
   launchSpec: ExternalEditorLaunchSpec,
-  options: { earlyExitGraceMs?: number } = {}
+  { earlyExitGraceMs: graceMs = 0 }: { earlyExitGraceMs?: number } = {}
 ): Promise<void> {
   // The command the user would recognise: the shell line for shell launches, else the executable.
   const command =
     launchSpec.kind === 'shell' ? (launchSpec.spawnArgs.at(-1) ?? '') : launchSpec.spawnCmd
-  const graceMs = options.earlyExitGraceMs ?? 0
   await new Promise<void>((resolvePromise, rejectPromise) => {
     const child = startExternalEditorProcess(launchSpec)
     let settled = false

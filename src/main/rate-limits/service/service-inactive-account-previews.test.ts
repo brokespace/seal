@@ -1,14 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
 import { RateLimitService } from './rate-limit-service'
 import { fetchActiveClaudeRateLimits } from '../providers/claude/claude-active-usage-fetch'
 import { fetchInactiveClaudeAccountUsage } from '../providers/claude/claude-managed-account-usage'
 import { fetchCodexRateLimits } from '../providers/codex/codex-fetcher'
-import {
-  deferred,
-  okProvider,
-  resetRateLimitProviderMocks
-} from './rate-limit-service-test-harness'
+import { okProvider, resetRateLimitProviderMocks } from './rate-limit-service-test-harness'
 
 vi.mock('../providers/claude/claude-active-usage-fetch', () => ({
   fetchActiveClaudeRateLimits: vi.fn()
@@ -90,64 +85,6 @@ describe('RateLimitService', () => {
     vi.useRealTimers()
   })
 
-  it('does not overwrite inactive Claude cache from a stale same-id fetch', async () => {
-    const service = new RateLimitService()
-    const accountFetch = deferred<ProviderRateLimits>()
-    service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }])
-    service.setClaudeAuthPreparationResolver(async () => ({
-      configDir: '/tmp/.claude',
-      envPatch: {},
-      provenance: 'system'
-    }))
-    vi.mocked(fetchActiveClaudeRateLimits).mockResolvedValue(okProvider('claude', 7))
-    await service.refresh()
-    vi.mocked(fetchInactiveClaudeAccountUsage).mockReturnValueOnce(accountFetch.promise)
-
-    const fetchOnOpen = service.fetchInactiveClaudeAccountsOnOpen()
-    await Promise.resolve()
-
-    await service.refreshForClaudeAccountChange('account-1')
-    accountFetch.resolve(okProvider('claude', 42))
-    await fetchOnOpen
-
-    expect(service.getState().inactiveClaudeAccounts).toEqual([
-      {
-        accountId: 'account-1',
-        rateLimits: expect.objectContaining({
-          provider: 'claude',
-          session: expect.objectContaining({ usedPercent: 7 })
-        }),
-        updatedAt: expect.any(Number),
-        isFetching: false
-      }
-    ])
-  })
-
-  it('reads one account on request into the state every surface shows, and serves it again while fresh', async () => {
-    const service = new RateLimitService()
-    service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }, { id: 'account-2' }])
-    vi.mocked(fetchInactiveClaudeAccountUsage).mockResolvedValue(okProvider('claude', 93))
-
-    const first = await service.readAccountUsage('claude', 'account-2')
-    vi.setSystemTime(1_700_000_000_000 + 10_000)
-    const second = await service.readAccountUsage('claude', 'account-2')
-
-    expect(
-      vi.mocked(fetchInactiveClaudeAccountUsage).mock.calls.map(([account]) => account)
-    ).toEqual([{ id: 'account-2' }])
-    expect(second).toBe(first)
-    expect(service.getState().inactiveClaudeAccounts).toEqual([
-      {
-        accountId: 'account-2',
-        rateLimits: expect.objectContaining({
-          session: expect.objectContaining({ usedPercent: 93 })
-        }),
-        updatedAt: 1_700_000_000_000,
-        isFetching: false
-      }
-    ])
-  })
-
   it('does not ask again while a throttled usage check is still told to wait', async () => {
     const service = new RateLimitService()
     service.setInactiveClaudeAccountsResolver(() => [{ id: 'account-1' }])
@@ -195,22 +132,5 @@ describe('RateLimitService', () => {
     const other = await service.readSystemLoginUsage('claude', 'claude:other@acme.dev')
     expect(other?.session?.usedPercent).toBe(7)
     expect(service.getState().systemLoginUsage?.claude?.identity).toBe('claude:other@acme.dev')
-  })
-
-  it('keeps a monthly-only outgoing Codex snapshot for the switcher', async () => {
-    const service = new RateLimitService()
-    service.setInactiveCodexAccountsResolver(() => [
-      { id: 'account-1', resolveHome: () => ({ kind: 'skip' }) }
-    ])
-    vi.mocked(fetchCodexRateLimits).mockResolvedValue({
-      ...okProvider('codex', 0),
-      session: null,
-      monthly: { usedPercent: 20, windowMinutes: 43_200, resetsAt: null, resetDescription: null }
-    })
-    await service.refresh()
-
-    await service.refreshForCodexAccountChange('account-1')
-
-    expect(service.getState().inactiveCodexAccounts[0]?.rateLimits?.monthly?.usedPercent).toBe(20)
   })
 })

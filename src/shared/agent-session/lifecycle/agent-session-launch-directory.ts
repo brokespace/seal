@@ -1,4 +1,4 @@
-import { MAX_PATH_LENGTH } from './agent-session-account-home'
+import { MAX_PATH_LENGTH } from './accounts/agent-session-account-home'
 
 /** A stored record's launch directory: a bounded host path, and the mark only a founding in a workspace subfolder writes. */
 export function isOptionalAgentSessionLaunchDirectory(record: {

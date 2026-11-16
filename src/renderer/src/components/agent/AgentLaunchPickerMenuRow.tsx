@@ -1,4 +1,4 @@
-import { terminalPendingLabel } from '../tab-bar/new-tab-agent-menu-model'
+import { terminalPendingLabel } from './launch-menu/new-tab-agent-menu-model'
 import { memo, useId } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +14,7 @@ import { applyAgentPickerEdit } from '../../../../shared/agent-launch/picker/age
 import {
   chatUnavailableLabel,
   installServerOfferLabel
-} from '../tab-bar/tab-agent-row-presentation'
+} from './launch-menu/agent-menu-row-presentation'
 import { offerSealServerInstall } from '@/lib/agent-session/launch/routing/seal-server-install-offer'
 import { AgentPickerRowLabel } from './AgentPickerRowLabel'
 import { AgentPickerSurfaceActions } from './AgentPickerSurfaceActions'

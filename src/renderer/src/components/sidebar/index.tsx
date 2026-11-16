@@ -24,6 +24,7 @@ import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 import { SeveredTerminalDaemonBanner } from './SeveredTerminalDaemonBanner'
 import { StalledTerminalDaemonBanner } from './StalledTerminalDaemonBanner'
 import { StartupWorktreeRefreshStatus } from './StartupWorktreeRefreshStatus'
+import { WorktreeCardsIntroNotice } from './WorktreeCardsIntroNotice'
 import { WorktreeCardsUpdateNotice } from './WorktreeCardsUpdateNotice'
 
 const WorktreeMetaDialog = lazyWithRetry(
@@ -155,6 +156,7 @@ function Sidebar({
               <LocalGitToolchainScanBanner />
               <StartupWorktreeRefreshStatus />
               <WorktreeCardsUpdateNotice />
+              <WorktreeCardsIntroNotice />
               {/* Active agents and Projects are sections of one list: both render inside its scroll container. */}
               <SidebarScrollSections
                 leading={<ActiveAgentsSection />}

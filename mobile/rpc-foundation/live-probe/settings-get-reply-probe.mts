@@ -3,7 +3,7 @@ import WebSocket from 'ws'
 import nacl from 'tweetnacl'
 import { readFileSync } from 'node:fs'
 import { authenticatePairedE2EEV2TestClient } from '../../../src/main/runtime/rpc/mobile/e2ee/paired-e2ee-v2-test-client.ts'
-import { botOverridesRead } from '../../src/source-control/review/mobile-pr-bot-settings-operations.ts'
+import { botOverridesRead } from '../../src/source-control/review/pull-request/comments/mobile-pr-bot-settings-operations.ts'
 import { newTabSettingsRead } from '../../src/session/agent-launch/mobile-new-tab-settings-operations.ts'
 import {
   optionalSettingsRead,

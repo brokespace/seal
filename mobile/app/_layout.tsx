@@ -29,6 +29,7 @@ import { startPushTokenSync } from '../src/notifications/push-registration'
 import { ensureDesktopNotificationChannel } from '../src/notifications/foreground-delivery/desktop-notification-channel'
 import { loadHostCatalog } from '../src/host-catalog/host-store'
 import { usePairingLinks } from '../src/navigation/use-pairing-links'
+import { readWorkspaceRouteExecutionHost } from '../src/navigation/route-param-reader'
 import { consumeInitialLaunchIntent } from '../src/navigation/initial-launch-intent'
 import { recoverMobileRelayPairing } from '../src/pairing/mobile-relay-pairing-recovery'
 import { appUpdateChecker } from '../src/app-update/app-update-runtime'
@@ -39,7 +40,7 @@ import { startMobileUiLanguage } from '../src/i18n/ui-language-preference'
 import { subscribeMobileUiLanguage } from '../src/i18n/mobile-i18n'
 import { startDeviceStore } from '../src/device-store/device-store'
 
-export { NativeScreenRecovery as ErrorBoundary } from '../src/components/NativeScreenRecovery'
+export { NativeScreenRecovery as ErrorBoundary } from '../src/components/feedback/NativeScreenRecovery'
 
 // Keep splash visible until React content is ready to avoid a blank frame.
 SplashScreen.preventAutoHideAsync()
@@ -68,11 +69,16 @@ export default function RootLayout() {
   const colorScheme = useMobileColorScheme()
   useFollowDeviceUiLocale()
   const pathname = usePathname()
-  const { hostId, worktreeId, executionHost } = useGlobalSearchParams<{
+  const {
+    hostId,
+    worktreeId,
+    executionHost: routeExecutionHost
+  } = useGlobalSearchParams<{
     hostId?: string
     worktreeId?: string
     executionHost?: string
   }>()
+  const executionHost = readWorkspaceRouteExecutionHost(routeExecutionHost)
   useEffect(() => {
     setNotificationViewingWorkspace(
       notificationViewingOfRoute(pathname, { hostId, worktreeId, executionHost })

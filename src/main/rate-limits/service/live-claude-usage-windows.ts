@@ -1,5 +1,8 @@
-import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
-import type { ProviderRateLimits, RateLimitWindow } from '../../../shared/rate-limit-types'
+import type { ClaudeStatusLineRateLimits } from '../../../shared/agent-usage/rate-limits/claude-statusline-rate-limits'
+import type {
+  ProviderRateLimits,
+  RateLimitWindow
+} from '../../../shared/agent-usage/rate-limits/rate-limit-types'
 import {
   isSameClaudeUsageWindow,
   isStaleClaudeUsageWindow,
@@ -80,13 +83,18 @@ export function liveClaudeReading(
   authProvenance: string | undefined,
   now: number
 ): ProviderRateLimits {
+  const inherited = windows.inherited
+  // Statusline posts carry no plan; keep the one read for this same login, with its account.
+  const sameLogin = inherited !== null && inherited.usageMetadata?.authProvenance === authProvenance
   return {
     provider: 'claude',
     session: windows.session,
     weekly: windows.weekly,
     // Statusline lacks Fable scope and credits; retain the latest OAuth values.
-    fableWeekly: windows.inherited?.fableWeekly ?? null,
-    extraUsage: windows.inherited?.extraUsage ?? null,
+    fableWeekly: inherited?.fableWeekly ?? null,
+    extraUsage: inherited?.extraUsage ?? null,
+    ...(sameLogin && inherited.planType ? { planType: inherited.planType } : {}),
+    ...(sameLogin && inherited.billing ? { billing: inherited.billing } : {}),
     updatedAt: now,
     error: null,
     status: 'ok',
@@ -95,7 +103,10 @@ export function liveClaudeReading(
       lastSuccessfulSource: 'live-session',
       credentialSource: previous?.usageMetadata?.credentialSource,
       retryAtMs: previous?.usageMetadata?.retryAtMs,
-      authProvenance
+      authProvenance,
+      ...(sameLogin && inherited.usageMetadata?.readingAccount
+        ? { readingAccount: inherited.usageMetadata.readingAccount }
+        : {})
     }
   }
 }

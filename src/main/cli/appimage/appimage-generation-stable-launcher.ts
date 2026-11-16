@@ -2,7 +2,7 @@ import { dirname, join } from 'node:path'
 import {
   LINUX_EXECUTABLE_NAME,
   resolveAppImageGenerationOfExecutable
-} from '../../../shared/appimage-cache-identity'
+} from '../../../shared/desktop-distribution/appimage/appimage-cache-identity'
 import {
   isAppImageStableLauncherReady,
   resolveAppImageStableLauncherPath

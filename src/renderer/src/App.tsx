@@ -1,3 +1,4 @@
+import { PluginUpdateReviewHost } from './components/plugins/dialogs/PluginUpdateReviewHost'
 import { useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Toaster } from '@/components/ui/sonner'
@@ -15,6 +16,7 @@ import ClaudeAccountSwitchDialog from './components/ClaudeAccountSwitchDialog'
 import { useUnreadDockBadge } from './hooks/useUnreadDockBadge'
 import { AppBackgroundServices } from './app-shell/AppBackgroundServices'
 import { AppRootSurfaces } from './app-shell/AppRootSurfaces'
+import { LiveSessionAppSurface } from './components/live-sessions/LiveSessionAppSurface'
 import { AppWorkspaceShell } from './app-shell/AppWorkspaceShell'
 import { WindowControls } from './app-shell/WindowControls'
 import {
@@ -118,6 +120,7 @@ function App(): React.JSX.Element {
               floatingWorkspace={floatingWorkspace}
               onboardingGate={onboardingGate}
             />
+            <LiveSessionAppSurface />
             <BrowserWebAuthnAccountDialog />
             <BrowserExtensionInstallDialog />
           </LinkRoutingPreferenceDialogProvider>
@@ -128,6 +131,7 @@ function App(): React.JSX.Element {
         )}
         <PlainSshTerminalPanels />
         <PluginShotReplayMount />
+        <PluginUpdateReviewHost />
       </TooltipProvider>
       <SkillFreshnessNudge />
       <WorktreeBaseFallbackDialog />

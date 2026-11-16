@@ -7,7 +7,7 @@ import {
 } from './service-types'
 import type { ClaudeRuntimeAuthPreparation } from '../../claude-accounts/runtime-auth/runtime-auth-types'
 import type { NormalizedClaudeAccountSelectionTarget } from '../../claude-accounts/selection/runtime-selection'
-import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
+import type { ProviderRateLimits } from '../../../shared/agent-usage/rate-limits/rate-limit-types'
 import { claudeOAuthUsageDisabledResult } from '../providers/claude/claude-usage-result'
 import { readUserClaudeConfigDir } from '../../claude-accounts/profiles/claude-profile-paths'
 import { getClaudeProfileRouter } from '../../claude-accounts/profiles/routing/claude-profile-installed-router'

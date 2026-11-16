@@ -11,8 +11,10 @@ import { getActiveCodexAccountIdForRateLimitTarget } from '../../accounts/usage/
 export type HomeUsageCard = {
   /** The saved account's id, or null for the machine's own CLI login. */
   accountId: string | null
-  /** The account's name on the desktop (its alias or email); null for an unnamed system login. */
+  /** The sign-in email, or the system login's desktop label; null for an unnamed system login. */
   email: string | null
+  /** The desktop's alias for a saved account, when it has one. */
+  displayName?: string
   /** Claude's organization or Codex's workspace, when the desktop knows it. */
   subtitle: string | null
   active: boolean
@@ -44,11 +46,13 @@ function managedAccounts(snapshot: AccountsSnapshot, provider: ProviderKey) {
     ? snapshot.claude.accounts.map((account) => ({
         id: account.id,
         email: account.email,
+        displayName: account.displayName,
         subtitle: account.organizationName ?? null
       }))
     : snapshot.codex.accounts.map((account) => ({
         id: account.id,
         email: account.email,
+        displayName: account.displayName,
         subtitle: account.workspaceLabel ?? null
       }))
 }
@@ -80,7 +84,8 @@ export function selectHomeUsageCards(
     const limits = active ? activeLimits : (inactive?.rateLimits ?? null)
     cards.push({
       accountId: account.id,
-      email: seal?.labels[account.id] ?? account.email,
+      email: account.email,
+      displayName: seal?.labels[account.id] ?? account.displayName,
       subtitle: account.subtitle,
       active,
       limits,

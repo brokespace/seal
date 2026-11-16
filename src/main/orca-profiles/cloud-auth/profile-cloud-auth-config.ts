@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { cleanCloudServiceUrl as cleanUrl } from '../../../shared/cloud-service-url'
+import { cleanCloudServiceUrl as cleanUrl } from '../../../shared/network/cloud-service-url'
 import { resolveSealRelayOrigin } from '../../../shared/seal-cloud/seal-service-origins'
 import { resolvePushGatewayOrigin } from '../../runtime/push/push-gateway-origin'
 

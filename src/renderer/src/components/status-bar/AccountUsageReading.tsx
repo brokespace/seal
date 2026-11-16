@@ -1,9 +1,9 @@
 import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
-import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
-import { hasUsageData } from '../../../../shared/usage-provider-windows'
-import { hasInlineUsage, InlineUsageBars, InlineUsageSkeleton } from './InlineProviderUsage'
-import { formatTimeAgo } from './tooltip'
+import type { ProviderRateLimits } from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
+import { hasUsageData } from '../../../../shared/agent-usage/display/usage-provider-windows'
+import { hasInlineUsage, InlineUsageBars, InlineUsageSkeleton } from './usage/InlineProviderUsage'
+import { formatTimeAgo } from './usage/provider-usage-panel'
 
 type Reading = ProviderRateLimits | null | undefined
 

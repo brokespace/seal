@@ -1,5 +1,5 @@
 import type { WebSocket } from 'ws'
-import type { WsOutboundBackpressureQueue } from '../../../../../shared/ws-outbound-backpressure-queue'
+import type { WsOutboundBackpressureQueue } from '../../../../../shared/network/websocket/ws-outbound-backpressure-queue'
 import {
   createDesktopMobileE2EEV2OutboundQueue,
   desktopMobileE2EEV2OutboundItemBytes,

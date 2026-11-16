@@ -1,5 +1,5 @@
-import { getRepoExecutionHostId } from '../../../../../shared/execution-host'
-import type { Repo } from '../../../../../shared/repo-types'
+import { getRepoExecutionHostId } from '../../../../../shared/execution-host/execution-host'
+import type { Repo } from '../../../../../shared/repository/repo-types'
 
 /** The project an overview page shows. Host-scoped: two machines may register the same repo id. */
 export type ProjectOverviewTarget = { repoId: string; hostId: string }

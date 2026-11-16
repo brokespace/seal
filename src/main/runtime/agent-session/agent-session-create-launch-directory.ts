@@ -1,11 +1,11 @@
 import { stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { agentSessionRefusalError } from '../../../shared/agent-session/failures/agent-session-wire-refusals'
-import { isFloatingWorkspaceSelector } from '../../../shared/floating-workspace-worktree'
+import { isFloatingWorkspaceSelector } from '../../../shared/workspace/identity/floating-workspace-worktree'
 import {
   isDescendantOrEqual,
   normalizeExistingPath
-} from '../../ipc/filesystem/access/filesystem-path-containment'
+} from '../../filesystem/local-file-io/filesystem-path-containment'
 import { getStructuredAgentSessionHost } from '../../native-chat/agent-session-wire/host/structured-agent-session-registry'
 import { agentSessionPinnedLaunchDirectory } from './records/agent-session-record-launch-directory'
 import type { StructuredAgentSessionCreateIntentInput } from './structured-agent-session-create-adoption'

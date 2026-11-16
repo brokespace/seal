@@ -1,4 +1,4 @@
-import { clampUtf8TextPrefix } from '../../../src/shared/utf8-byte-limits'
+import { clampUtf8TextPrefix } from '../../../src/shared/text/utf8-byte-limits'
 
 // Seal has no feedback service yet; the report stays copy-only until one exists.
 const CONNECTION_DIAGNOSTICS_ENDPOINT: string | null = null

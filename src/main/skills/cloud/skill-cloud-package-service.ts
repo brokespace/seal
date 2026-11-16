@@ -10,7 +10,7 @@ import type {
   SkillCloudPublishResult,
   SkillCloudShare,
   SkillCloudVersion
-} from '../../../shared/skill-cloud-contract'
+} from '../../../shared/skills/sharing/skill-cloud-contract'
 import {
   ARTIFACT_CLOUD_UNCONFIGURED_MESSAGE,
   findArtifactCloudApiUrl

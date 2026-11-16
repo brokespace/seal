@@ -1,7 +1,7 @@
 import React from 'react'
 import { DetachedHeadBadge } from '@/components/DetachedHeadBadge'
 import { useWslHostDistro, WslHostMark } from '@/components/wsl-host-mark/WslHostMark'
-import { getWorktreeExecutionHostId } from '../../../../../../shared/execution-host'
+import { getWorktreeExecutionHostId } from '../../../../../../shared/execution-host/execution-host'
 import CacheTimer from '../activity/CacheTimer'
 import { TruncatedSidebarLabel } from '../../truncated-sidebar-label'
 import type { WorktreeCardController } from '../controller/use-worktree-card-controller'
@@ -14,6 +14,7 @@ import {
   WorktreeCardRuntimeHostMark,
   WorktreeCardSparseBadge
 } from '../identity/worktree-card-header-items'
+import { WorktreeCardNotificationsMutedBadge } from '../identity/WorktreeCardNotificationsMutedBadge'
 import {
   WorktreeCardConflictBadge,
   WorktreeCardFolderPath,
@@ -51,7 +52,7 @@ function CardTitle({
       displayName={card.visibleCardTitle}
       disabled={card.isDeleting || affiliateListMode}
       showUnreadEmphasis={card.showUnreadEmphasis || rolledUpUnread}
-      dimReadTitle={props.dimWhenRead === true}
+      dimReadTitle={props.dimWhenRead === true && !card.isActiveSurface}
       className="text-[13px] leading-5"
       editingClassName="flex-1"
       titleWrapper={props.tooltip === false ? withoutTitleTooltip : undefined}
@@ -138,6 +139,9 @@ export const CARD_IDENTITY_PARTS = {
     <LiveSessionsBadge
       scope={{ kind: 'worktree', id: card.worktree.id, label: card.visibleCardTitle }}
     />
+  )),
+  NotificationsMuted: part([], (_props, _children, { worktree }) => (
+    <WorktreeCardNotificationsMutedBadge worktreeId={worktree.id} />
   )),
   DeleteQuickAction: part([], (_props, _children, card) => (
     <WorktreeCardDeleteQuickAction

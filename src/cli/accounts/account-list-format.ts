@@ -1,8 +1,9 @@
-import type { AntigravityAccountState } from '../../shared/antigravity-account-types'
-import type { ManagedDataAccountsState } from '../../shared/managed-account-types'
+import type { AntigravityAccountState } from '../../shared/agent-accounts/antigravity/antigravity-account-types'
+import type { ManagedDataAccountsState } from '../../shared/agent-accounts/managed-account-types'
+import { getManagedAccountInlineLabel } from '../../shared/agent-accounts/managed-account-display-names'
 
 type AccountsBlock = {
-  accounts: readonly { id: string; email: string; needsSignIn?: true }[]
+  accounts: readonly { id: string; email: string; displayName?: string; needsSignIn?: true }[]
   activeAccountId: string | null
   activeAccountIdsByRuntime?: {
     host: string | null
@@ -37,8 +38,8 @@ export function formatAccountsBlock(label: string, block: AccountsBlock): string
   // Why the id: `orca account select --account` needs it when one email signs into several orgs.
   const lines = block.accounts.map(
     (account) =>
-      `  ${account.id}  ${account.email}${activeAccountIds.has(account.id) ? ' (active)' : ''}${
-        account.needsSignIn ? ' (sign in again in Seal Settings > Accounts)' : ''
+      `  ${account.id}  ${getManagedAccountInlineLabel(account)}${activeAccountIds.has(account.id) ? ' (active)' : ''}${
+        account.needsSignIn ? ' (sign in again in Orca Settings > Accounts)' : ''
       }`
   )
   return `Managed ${label} accounts (${block.accounts.length}):\n${system}\n${lines.join('\n')}`

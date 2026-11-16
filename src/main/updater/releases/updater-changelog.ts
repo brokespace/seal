@@ -1,5 +1,5 @@
 import { net } from 'electron'
-import type { ChangelogData } from '../../../shared/update-status-types'
+import type { ChangelogData } from '../../../shared/updater/update-status-types'
 import { compareVersions } from './updater-fallback'
 import { isUpstreamUpdateFeedEnabled } from '../../upstream-service-policy'
 

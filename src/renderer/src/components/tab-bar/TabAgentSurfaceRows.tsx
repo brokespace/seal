@@ -12,15 +12,15 @@ import { offerSealServerInstall } from '@/lib/agent-session/launch/routing/seal-
 import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
 import { useAgentLaunchHostName } from './agent-launch-host-name'
-import { terminalPendingReason } from './new-tab-agent-menu-model'
-import { TabAgentSurfaceChoiceRow } from './TabAgentSurfaceChoiceRow'
+import { terminalPendingReason } from '../agent/launch-menu/new-tab-agent-menu-model'
+import { TabAgentSurfaceChoiceRow } from '../agent/launch-menu/TabAgentSurfaceChoiceRow'
 import {
   chatUnavailableLabel,
   cliMissingReason,
   rowId,
   rowLabel,
   rowTitle
-} from './tab-agent-row-presentation'
+} from '../agent/launch-menu/agent-menu-row-presentation'
 
 /** The same agent on the other surface: a chat's CLI, or a CLI row's chat or its install offer. */
 export function otherSurfaceRow(

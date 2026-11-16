@@ -1,5 +1,5 @@
-import { relativePathInsideRoot } from '../../../../../../shared/cross-platform-path'
-import { isFloatingWorkspaceId } from '../../../../../../shared/floating-workspace-worktree'
+import { relativePathInsideRoot } from '../../../../../../shared/file-access/cross-platform-path'
+import { isFloatingWorkspaceId } from '../../../../../../shared/workspace/identity/floating-workspace-worktree'
 import {
   requestsCwdOutsideWorkspaceRootForWorkspace,
   resolveTerminalStartupCwd,

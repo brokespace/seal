@@ -13,8 +13,8 @@ import {
   mergeWindowsPathSegments,
   resolvePathEnvKey
 } from '../../../pty/environment/windows-path-segment-merge'
-import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import { overlayEnvironmentVariables } from '../../../../shared/environment-overlay'
+import type { GlobalSettings } from '../../../../shared/settings/global-settings-types'
+import { overlayEnvironmentVariables } from '../../../../shared/shell/launch/environment-overlay'
 import { stripInheritedAgentSessionEnv } from '../../../../shared/agent-launch/startup/parent-agent-session-env'
 import {
   nativeChatShellEnvironmentPolicy,

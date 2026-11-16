@@ -3,7 +3,7 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
 import type { ClaudeBillingSignals } from '../../../../shared/claude-account-billing'
-import { isDefinitiveAbsence } from '../../../../shared/definitive-filesystem-absence'
+import { isDefinitiveAbsence } from '../../../../shared/errors/definitive-filesystem-absence'
 import { readActiveClaudeKeychainCredentialsStrict } from '../../../claude-accounts/runtime-auth/keychain'
 import type { ClaudeRuntimeAuthPreparation } from '../../../claude-accounts/runtime-auth/runtime-auth-types'
 import { readUserClaudeConfigDir } from '../../../claude-accounts/profiles/claude-profile-paths'
@@ -37,6 +37,7 @@ const schema = z.object({
       accessToken: z.string().optional(),
       refreshToken: z.string().optional(),
       refreshTokenExpiresAt: z.unknown().optional(),
+      // Plan metadata never decides whether the token is usable.
       subscriptionType: z.unknown().optional(),
       rateLimitTier: z.unknown().optional(),
       scopes: z.unknown().optional()

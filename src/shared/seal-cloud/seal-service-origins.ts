@@ -1,4 +1,4 @@
-import { cleanCloudServiceOrigin } from '../cloud-service-url'
+import { cleanCloudServiceOrigin } from '../network/cloud-service-url'
 
 /** Seal's self-hosted relay and push Worker (cloud/seal-relay); forks change these to their own deploy. */
 export const SEAL_BUILD_SERVICE_ORIGINS = {

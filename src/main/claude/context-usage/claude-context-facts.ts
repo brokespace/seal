@@ -16,7 +16,7 @@ import {
   claudeContextWindowFromResult,
   type ClaudeMainThreadModel
 } from './claude-context-usage'
-import type { ClaudeOpenTurn } from '../structured/turns/claude-open-turn'
+import type { ClaudeOpenTurn, ClaudeStoppedTurnEnd } from '../structured/turns/claude-open-turn'
 import { claudeRecord, claudeText } from '../structured/journal/claude-structured-item-translation'
 import type { ClaudeTurnEnd } from '../structured/turns/claude-turn-lifecycle-item'
 import { isRootClaudeFrame } from '../structured/turns/claude-turn-opening'
@@ -53,6 +53,7 @@ export class ClaudeContextFacts {
   private journalMayLackWindow = true
   private lastResponse: string | null = null
   private readonly requestListeners = new Set<ClaudeContextReportListener>()
+  private readonly activityListeners = new Set<() => void>()
 
   constructor(
     private readonly turn: ClaudeOpenTurn,
@@ -64,7 +65,15 @@ export class ClaudeContextFacts {
   }
 
   markActivity(): void {
+    for (const listener of this.activityListeners) {
+      listener()
+    }
     this.activity += 1
+  }
+
+  subscribeActivity(listener: () => void): () => void {
+    this.activityListeners.add(listener)
+    return () => this.activityListeners.delete(listener)
   }
 
   /** Observe before journaling. */
@@ -145,7 +154,11 @@ export class ClaudeContextFacts {
     )
   }
 
-  settle(message: Record<string, unknown>, end: ClaudeTurnEnd): void {
+  settle(
+    message: Record<string, unknown>,
+    end: ClaudeTurnEnd,
+    stopped?: ClaudeStoppedTurnEnd
+  ): void {
     const tokens = this.windowReported
       ? null
       : claudeContextWindowFromResult(message, this.mainModel)
@@ -156,12 +169,12 @@ export class ClaudeContextFacts {
     }
     const settled = this.turn.identity
     if (settled === null) {
-      this.turn.settle(end)
+      this.turn.settle(end, undefined, stopped)
       if (facts) {
         this.write(facts)
       }
     } else {
-      this.turn.settle(end, facts)
+      this.turn.settle(end, facts, stopped)
     }
     this.requestReport(settled)
   }
@@ -190,6 +203,7 @@ export class ClaudeContextFacts {
   }
 
   dispose(): void {
+    this.activityListeners.clear()
     this.requestListeners.clear()
   }
 

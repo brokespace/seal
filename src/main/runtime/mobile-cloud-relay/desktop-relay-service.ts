@@ -6,7 +6,7 @@ import type {
   PairingGetEndpointsResult,
   PairingProvisionRelayParams
 } from '../../../shared/remote-runtime/relay/mobile-relay-credential-contract'
-import type { RelayHostCloseReason } from '../../../shared/relay-host-close-reason'
+import type { RelayHostCloseReason } from '../../../shared/remote-runtime/relay/relay-host-close-reason'
 import type { RelayAuthContext } from './authentication/relay-auth-identity'
 import type { RelayEndpointConfig } from './authentication/seal-relay-host-auth'
 import type { E2EEKeypair } from '../rpc/server/pairing/e2ee-keypair'
@@ -22,7 +22,7 @@ import { pairingAuthorizationForContext } from './pairing/relay-pairing-authoriz
 import { deriveRelayHostId } from './director/relay-http-client'
 import { RelayDemandLedger } from './demand/relay-demand-ledger'
 import { RELAY_INVITE_TTL_MS } from '../../../shared/remote-runtime/pairing/mobile-relay-invite-expiry'
-import { clampTimerDelayMs } from '../../../shared/timer-delay'
+import { clampTimerDelayMs } from '../../../shared/concurrency/timer-delay'
 import { createRelayRegionPreferenceReader } from './region-selection/relay-region-preference-reader'
 
 type DesktopRelayServiceOptions = {
