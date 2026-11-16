@@ -379,6 +379,17 @@ describe('a paired server listed from its own registry', () => {
     ])
   })
 
+  // The session view places and retires a message by these, never by the server's clock.
+  it('keeps where a server message was written and where its transcript holds it', () => {
+    const { federation, streams } = federate()
+    streams[0].handlers.onFrame({
+      type: 'message',
+      message: serverMessage({ state: 'delivered', sentOffset: 1200, echoOffset: 1350 })
+    })
+
+    expect(federation.messages()[0]).toMatchObject({ sentOffset: 1200, echoOffset: 1350 })
+  })
+
   it('says why a message did not reach the server and keeps nothing of it', async () => {
     const { federation } = federate()
 

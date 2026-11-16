@@ -185,7 +185,10 @@ const messageSchema: z.ZodType<LiveMessage> = z.object({
   error: NullableText,
   unconfirmed: z.literal(true).optional().catch(undefined),
   createdAt: Finite,
-  updatedAt: Finite
+  updatedAt: Finite,
+  // Offsets into the server's transcript, which the desktop reads through the server: they hold here too.
+  sentOffset: z.number().nullish().catch(undefined),
+  echoOffset: z.number().nullish().catch(undefined)
 })
 
 const snapshotSchema = z.object({
