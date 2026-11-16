@@ -1,7 +1,7 @@
 import { MachineConnectionTypeSchema } from '../../../shared/machines/machine-record'
 import {
-  DECLINED_SERVER_INSTALL,
-  setMachineServerInstall
+  declineMachineServerInstall,
+  MACHINE_SERVICE_MANAGERS
 } from '../../../shared/machines/machine-server-install'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
 import type { MachineServiceManagerChoice } from '../../../shared/machines/machine-view'
@@ -28,9 +28,7 @@ function connectionTypeOf(value: unknown): 'ssh' | 'server' {
 
 const SERVICE_MANAGER_CHOICES: readonly MachineServiceManagerChoice[] = [
   'auto',
-  'systemd-user',
-  'launchd',
-  'pm2'
+  ...MACHINE_SERVICE_MANAGERS
 ]
 
 function serviceManagerChoiceOf(value: unknown): MachineServiceManagerChoice | null {
@@ -83,9 +81,7 @@ export function registerMachineRegistryHandlers(handle: MachineInvokeRegistrar):
     if (!('sshTargetId' in link) || args.serverInstall !== 'never') {
       return adopted
     }
-    registry.edit((store, now) =>
-      setMachineServerInstall(store, adopted.recordId, DECLINED_SERVER_INSTALL, now)
-    )
+    registry.edit(declineMachineServerInstall(adopted.recordId))
     return registry.view(adopted.id)
   })
 

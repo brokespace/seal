@@ -1,8 +1,7 @@
 /** Seal installs no server beside one the user already runs as a service: every install asks the host first. */
 import {
   awaitsServerInstall,
-  DECLINED_SERVER_INSTALL,
-  setMachineServerInstall
+  declineMachineServerInstall
 } from '../../../shared/machines/machine-server-install'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import {
@@ -27,9 +26,7 @@ export async function checkHostForOwnSealServe(
   noteOwnSealServe(sshTargetId, found)
   const record = found ? registry.recordForSshTarget(sshTargetId) : null
   if (record && awaitsServerInstall(record.serverInstall)) {
-    registry.edit((store, now) =>
-      setMachineServerInstall(store, record.id, DECLINED_SERVER_INSTALL, now)
-    )
+    registry.edit(declineMachineServerInstall(record.id))
   }
   return found
 }

@@ -1,12 +1,9 @@
 /** For the machine page: what keeps a host's server running, and "Remove Seal server". */
 import type { RemoteInstallTransport } from '../install/remote-install-transport'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
-import {
-  isWindowsRemoteHost,
-  type RemoteHostPlatform
-} from '../../ssh/remote-host/ssh-remote-platform'
-import { detectRemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform-detection'
+import type { RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
 import { ORCAD_ACTIVATION_FILENAME } from '../activation/orcad-activation-record'
+import { isPosixHost } from './own-seal-serve-probe'
 import {
   SEAL_SERVICE_LAUNCH_RECORD_WORD,
   SEAL_SERVICE_LAUNCHD_PLIST_WORD,
@@ -44,14 +41,6 @@ export type SealServiceHostOptions = {
 export type SealServiceRemovalOptions = SealServiceHostOptions & {
   /** Leaves the service of a host whose server was activated: another desktop may use it. */
   unlessActivated?: boolean
-}
-
-async function isPosixHost(
-  conn: RemoteInstallTransport,
-  options: SealServiceHostOptions
-): Promise<boolean> {
-  const host = options.host ?? (await detectRemoteHostPlatform(conn, { signal: options.signal }))
-  return host !== null && !isWindowsRemoteHost(host)
 }
 
 async function probeHost(

@@ -2,14 +2,11 @@
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import { SEAL_SERVER_SERVICE_ENV } from '../../../shared/orcad-managed-launch-env'
 import { SEAL_MANAGED_SSH_PORT } from '../../../shared/orcad-managed-runtime'
-import {
-  joinRemotePath,
-  remoteDirname,
-  type RemoteHostPlatform
-} from '../../ssh/remote-host/ssh-remote-platform'
+import { joinRemotePath, type RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
 import { ORCAD_PID_FILENAME } from '../install/orcad-remote-host-support'
 import type { OrcadLaunchSpec } from '../install/orcad-remote-launch'
 import { selectOrcadSlotRuntimeCommand } from '../install/orcad-remote-runtime'
+import { orcadWindowsBaseDir } from '../install/orcad-remote-windows-node'
 import {
   SEAL_SERVICE_LAUNCH_RECORD_WORD,
   SEAL_SERVICE_LAUNCHER_WORD,
@@ -47,10 +44,6 @@ export function writeSealServerLauncherCommand(): string {
 /** Without a record the launcher exits 0: a manager that still holds the service then starts nothing. */
 export function dropSealServerLaunchRecordCommand(managedRoot: string): string {
   return `${sealServiceBinAssignment(managedRoot)} rm -f ${SEAL_SERVICE_LAUNCH_RECORD_WORD}`
-}
-
-export function sealServiceManagedRoot(host: RemoteHostPlatform, remoteInstallDir: string): string {
-  return remoteDirname(remoteInstallDir.replace(/\/+$/u, ''), host)
 }
 
 /** Quotes the launching shell's values into $seal_env as sh assignments. */
@@ -110,7 +103,7 @@ export function sealServiceLaunchTail(
   const afterLoginEnv = manager === 'pm2' ? superviseRuntimeLines(run, pidFile) : [run]
   const temp = `${SEAL_SERVICE_LAUNCH_RECORD_WORD}.$$`
   return [
-    `{ ${sealServiceBinAssignment(sealServiceManagedRoot(host, spec.remoteInstallDir))}`,
+    `{ ${sealServiceBinAssignment(orcadWindowsBaseDir(host, spec.remoteInstallDir))}`,
     CAPTURE_LOGIN_ENV,
     `{ ${printLinesCommand(beforeLoginEnv)};`,
     'printf \'%s\\n\' "umask $orcad_login_umask" "${seal_env:+export$seal_env}";',

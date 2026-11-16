@@ -6,8 +6,12 @@ import {
 } from '../../../cli/runtime/serve-service-unit'
 import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import { execCommand } from '../../ssh/remote-exec/remote-exec-command'
-import { isWindowsRemoteHost } from '../../ssh/remote-host/ssh-remote-platform'
+import {
+  isWindowsRemoteHost,
+  type RemoteHostPlatform
+} from '../../ssh/remote-host/ssh-remote-platform'
 import { detectRemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform-detection'
+import type { RemoteInstallTransport } from '../install/remote-install-transport'
 import {
   SEAL_SERVICE_LAUNCHD_AGENTS_DIR_WORD,
   SEAL_SERVICE_SYSTEMD_UNIT_DIR_WORD
@@ -89,11 +93,19 @@ export function parseOwnSealServe(unitFile: string | undefined): OwnSealServe | 
   return null
 }
 
+/** False for Windows and for a platform Seal does not support; a known `host` skips the detection. */
+export async function isPosixHost(
+  conn: RemoteInstallTransport,
+  options: { host?: RemoteHostPlatform; signal?: AbortSignal } = {}
+): Promise<boolean> {
+  const host = options.host ?? (await detectRemoteHostPlatform(conn, { signal: options.signal }))
+  return host !== null && !isWindowsRemoteHost(host)
+}
+
 /** Read-only. Null when the host has no `seal serve` service of the user's own; throws when the host did not answer. */
 export async function readOwnSealServe(conn: SshConnection): Promise<OwnSealServe | null> {
-  const host = await detectRemoteHostPlatform(conn)
   // `seal serve service` exists on Linux and macOS only.
-  if (!host || isWindowsRemoteHost(host)) {
+  if (!(await isPosixHost(conn))) {
     return null
   }
   const output = await execCommand(conn, OWN_SEAL_SERVE_ANSWER, { wrapCommand: true })

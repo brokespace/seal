@@ -1,11 +1,9 @@
 /** A server the user runs, on a machine Seal also reaches over SSH: the machine's own CLI installs and reports its service. */
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { INSTALLED_CLI_COMMAND_NAME } from '../../cli/installation/cli-install-constants'
-import { readOwnSealServe } from '../../managed-server/service/own-seal-serve-probe'
+import { isPosixHost, readOwnSealServe } from '../../managed-server/service/own-seal-serve-probe'
 import type { SealServiceOutcome } from '../../managed-server/service/seal-service-policy'
 import type { SshConnection } from '../../ssh/connection/ssh-connection'
-import { isWindowsRemoteHost } from '../../ssh/remote-host/ssh-remote-platform'
-import { detectRemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform-detection'
 import { latestSealServiceOutcome, noteSealServiceOutcome } from './machine-server-install-activity'
 import { connectedSshSession, onPlainSshSession } from './machine-ssh-session'
 import { runOwnSealCli } from './own-seal-cli-command'
@@ -25,8 +23,7 @@ async function runServiceCommand(
   verb: ServiceVerb,
   timeoutMs: number
 ): Promise<Record<string, unknown>> {
-  const host = await detectRemoteHostPlatform(conn)
-  if (!host || isWindowsRemoteHost(host)) {
+  if (!(await isPosixHost(conn))) {
     throw new Error('Seal can keep a server running as a service only on Linux and macOS machines')
   }
   // The service inherits the PATH of the login shell the CLI runs in.

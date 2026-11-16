@@ -2,7 +2,7 @@
 import { getAppEnvironment } from '../../../shared/app-environment'
 import {
   awaitsServerInstall,
-  DECLINED_SERVER_INSTALL,
+  declineMachineServerInstall,
   keptRunningServerInstall,
   pendingServerInstall,
   preferredServiceManager,
@@ -18,6 +18,7 @@ import { restartManagedOrcadEnvironment } from '../../managed-server/lifecycle/o
 import { hasSealServiceManager } from '../../managed-server/service/seal-service-removal'
 import { getSshHostServerStatus } from '../../ssh/host-server/ssh-host-server-status'
 import {
+  allowManagedServerMoveLeavingBehind,
   connectRegisteredSshTarget,
   getSshConnectionManager,
   getSshTargetRegistryStore
@@ -34,6 +35,7 @@ import {
 } from './machine-server-install-activity'
 import { onPlainSshSession } from './machine-ssh-session'
 import { checkHostForOwnSealServe } from './own-seal-serve-check'
+import { invalidateServerTransport } from './own-server-reuse'
 import { keepOwnServerRunning } from './own-server-service'
 import { sealDeployedServer } from './seal-deployed-server'
 
@@ -81,7 +83,7 @@ async function keepRunning(
     throw new Error('This machine has no Seal server to keep running')
   }
   if (sealDeployedServer({ sshTargetId, environmentId })) {
-    return keepServerRunning(registry, machine, request)
+    return keepServerRunning(registry, machine, request, { sshTargetId, environmentId })
   }
   await keepOwnServerRunning(sshTargetId)
   return registry.view(machine.id)
@@ -96,9 +98,7 @@ export function declineServerInstall(machineId: MachineId): MachineView {
   if (machine.ssh) {
     noteBlockedServerMove(machine.ssh.targetId, null)
   }
-  registry.edit((store, now) =>
-    setMachineServerInstall(store, machine.recordId, DECLINED_SERVER_INSTALL, now)
-  )
+  registry.edit(declineMachineServerInstall(machine.recordId))
   return registry.view(machineId)
 }
 
@@ -131,13 +131,11 @@ async function installOverSsh(
   )
   if (ownServe) {
     noteBlockedServerMove(targetId, null)
-    registry.edit((store, now) =>
-      setMachineServerInstall(store, machine.recordId, DECLINED_SERVER_INSTALL, now)
-    )
+    registry.edit(declineMachineServerInstall(machine.recordId))
     return registry.view(machine.id)
   }
-  if (request.moveAnyway) {
-    allowMoveLeavingSavedItems(targetId)
+  if (request.moveAnyway && !allowManagedServerMoveLeavingBehind(targetId)) {
+    throw new Error('This machine has no SSH details')
   }
   askHostAgain(targetId)
   await failedInstallServiceCleanup(targetId)
@@ -163,28 +161,13 @@ function askHostAgain(sshTargetId: string): void {
   }
 }
 
-/** The same store update as upstream's "Move anyway"; the next connect reads it and clears it. */
-function allowMoveLeavingSavedItems(sshTargetId: string): void {
-  const targets = getSshTargetRegistryStore()
-  if (!targets?.getTarget(sshTargetId)) {
-    throw new Error('This machine has no SSH details')
-  }
-  targets.updateTarget(sshTargetId, {
-    managedServerLeaveBehind: { confirmedAt: new Date().toISOString() }
-  })
-}
-
 /** A restart launches the server again, and a launch on a machine that wants a service installs it. */
 async function keepServerRunning(
   registry: MachineRegistry,
   machine: MachineView,
-  request: MachineServerInstallRequest
+  request: MachineServerInstallRequest,
+  { sshTargetId: targetId, environmentId }: { sshTargetId: string; environmentId: string }
 ): Promise<MachineView> {
-  const environmentId = machine.server?.environmentId
-  const targetId = machine.ssh?.targetId
-  if (!environmentId || !targetId) {
-    throw new Error('This machine has no Seal server to keep running')
-  }
   // Checked first: the restart below would stop the server and start it the same way.
   const connection = getSshConnectionManager()?.getConnection(targetId)
   const prefer = askedManager(request, machine)
@@ -214,10 +197,7 @@ async function keepServerRunning(
   if (result.outcome === 'not-restarted') {
     throw new Error(result.reason)
   }
-  // Import lazily: runtime-environments wires every server handler, and only a restart needs it.
-  const { invalidateRuntimeEnvironmentTransport } =
-    await import('../../ipc/runtime-environments/runtime-environments')
-  await invalidateRuntimeEnvironmentTransport(environmentId)
+  await invalidateServerTransport(environmentId)
   if (latestSealServiceOutcome(targetId)?.manager === 'detached') {
     throw new Error(NO_SERVICE_MANAGER)
   }

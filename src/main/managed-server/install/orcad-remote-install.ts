@@ -10,7 +10,8 @@ import {
   isUnconfirmedSshCommandTermination
 } from '../../ssh/remote-exec/remote-exec-command'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
-import { isWslOrcadHostTarget, type OrcadHostTransport } from './orcad-host-transport'
+import type { OrcadHostTransport } from './orcad-host-transport'
+import { sshHostTargetId } from '../service/seal-service-launch-resolution'
 import { installLockWait } from './install-lock-wait-policy'
 import { readBoundedOrcadRemoteRecord } from './orcad-remote-record-file'
 import { joinRemotePath, type RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
@@ -103,10 +104,8 @@ export async function installOrcadBundle(
   // Persist the token so a relaunch can prove ownership of an interrupted upload lock.
   const token = randomUUID()
   rememberHeldOrcadFence(token)
-  // Optional call: transports outside the SSH stack may not name a target.
-  const hostTarget = options.conn.getTarget?.()
-  const wait =
-    hostTarget && !isWslOrcadHostTarget(hostTarget) ? installLockWait(hostTarget.id) : null
+  const sshTargetId = sshHostTargetId(options.conn)
+  const wait = sshTargetId === null ? null : installLockWait(sshTargetId)
   // SFTP uploads and chmod leave no host workload after this client exits.
   const exitedOwner = exitedOwnLockProof(options, {
     baseDir: orcadWindowsBaseDir(options.host, remoteDir),

@@ -8,10 +8,8 @@ import {
 import { OrcadFenceLostError } from '../activation/orcad-activation-fence-scope'
 import { isWslOrcadHostTarget, type OrcadHostTransport } from '../install/orcad-host-transport'
 import type { OrcadLaunchSpec } from '../install/orcad-remote-launch'
-import {
-  dropSealServerLaunchRecordCommand,
-  sealServiceManagedRoot
-} from './seal-server-launch-record'
+import { orcadWindowsBaseDir } from '../install/orcad-remote-windows-node'
+import { dropSealServerLaunchRecordCommand } from './seal-server-launch-record'
 import {
   parseSealServiceInstallAnswer,
   SEAL_ENABLE_LINGER_COMMAND,
@@ -42,13 +40,18 @@ export type SealServiceRemoteRun = (command: string) => Promise<string>
 
 type SealServiceLaunchTarget = { conn: OrcadHostTransport; host: RemoteHostPlatform }
 
+/** Null for WSL and for a transport outside the SSH stack, which may not name a target. */
+export function sshHostTargetId(conn: OrcadHostTransport): string | null {
+  const hostTarget = conn.getTarget?.()
+  return hostTarget && !isWslOrcadHostTarget(hostTarget) ? hostTarget.id : null
+}
+
 /** Null for WSL, Windows and transports that bring their own launch strategy. */
 function sshTargetId(target: SealServiceLaunchTarget): string | null {
   if (isWindowsRemoteHost(target.host) || target.conn.orcadLaunchDetach !== undefined) {
     return null
   }
-  const hostTarget = target.conn.getTarget?.()
-  return hostTarget && !isWslOrcadHostTarget(hostTarget) ? hostTarget.id : null
+  return sshHostTargetId(target.conn)
 }
 
 /** A lost fence or an unconfirmed command says nothing about the manager and must stop the launch. */
@@ -162,7 +165,8 @@ export async function resolveSealServiceLaunch(
   run: SealServiceRemoteRun
 ): Promise<{ service: SealServiceManager } | null> {
   const targetId = sshTargetId(target)
-  const managedRoot = sealServiceManagedRoot(target.host, spec.remoteInstallDir)
+  // Host-neutral despite its name: the folder above the install slot.
+  const managedRoot = orcadWindowsBaseDir(target.host, spec.remoteInstallDir)
   // The unit and plist need the launcher's absolute path.
   if (targetId === null || !managedRoot.startsWith('/')) {
     return null

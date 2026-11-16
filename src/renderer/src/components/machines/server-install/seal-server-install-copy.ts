@@ -1,5 +1,6 @@
 import type { Translate } from '@/i18n/use-translate'
 import type { MachineServerInstall } from '../../../../../shared/machines/machine-record'
+import { withoutTrailingFullStop } from '../../../../../shared/machines/machine-server-install'
 import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 
@@ -13,7 +14,7 @@ export function serverInstallFailureText(t: Translate, view: InstallFailure): st
       'Seal server is not installed: some saved items cannot move to the server.'
     )
   }
-  const reason = view.serverInstall?.reason?.trim().replace(/[.\s]+$/, '')
+  const reason = withoutTrailingFullStop(view.serverInstall?.reason?.trim() ?? '')
   return reason
     ? t('seal.machineServer.notice.failed', 'Seal server is not installed: {{reason}}.', { reason })
     : t('seal.machineServer.notice.failedNoReason', 'Seal server is not installed.')

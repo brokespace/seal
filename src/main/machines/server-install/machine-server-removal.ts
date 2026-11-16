@@ -1,11 +1,10 @@
 /** "Remove Seal server": stops the server, returns the machine to plain SSH, then takes the service off the host. */
 import type { MachineRecord } from '../../../shared/machines/machine-record'
 import {
-  DECLINED_SERVER_INSTALL,
+  declineMachineServerInstall,
   installedServerKeeper,
   returnMachineToPlainSsh,
   serverServiceRemains,
-  setMachineServerInstall,
   stoppedServerInstall
 } from '../../../shared/machines/machine-server-install'
 import type { MachineId } from '../../../shared/machines/machine-types'
@@ -64,9 +63,7 @@ export async function removeServerFromMachine(machineId: MachineId): Promise<Mac
       sshTargetId,
       registry.record(machineId)?.serverInstall?.manager !== undefined
     )
-    registry.edit((store, now) =>
-      setMachineServerInstall(store, record.id, DECLINED_SERVER_INSTALL, now)
-    )
+    registry.edit(declineMachineServerInstall(record.id))
   })
   return registry.view(machineId)
 }

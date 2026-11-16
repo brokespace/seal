@@ -1,8 +1,11 @@
 /** Which SSH hosts get Seal's server as a service, and what the host answered. Set by the machine registry. */
-import type { MachineServerInstall } from '../../../shared/machines/machine-record'
+import type {
+  MachineServerKeeper,
+  MachineServiceManager
+} from '../../../shared/machines/machine-server-install'
 
-export type SealServerKeeper = NonNullable<MachineServerInstall['manager']>
-export type SealServiceManager = Exclude<SealServerKeeper, 'detached'>
+export type SealServerKeeper = MachineServerKeeper
+export type SealServiceManager = MachineServiceManager
 
 /** `prefer` is the advanced option: that manager ahead of the one Seal would pick. launchd is used only when preferred. */
 export type SealServiceWish = { prefer?: SealServiceManager }

@@ -1,4 +1,5 @@
 /** Why a Seal server install failed, as a fragment that reads after "Seal server is not installed: ". */
+import { withoutTrailingFullStop } from '../../../shared/machines/machine-server-install'
 import { sshHostServerSetupRemedy } from '../../../shared/ssh-host-server-setup-remedy'
 import { escapeRegex } from '../../../shared/string-utils'
 import { RELAY_REMOTE_DIR } from '../../managed-server/install/remote-install-root'
@@ -302,13 +303,13 @@ function hostLineReason(printed: string): string | null {
   const program = missing?.[1] ?? missing?.[2]
   return program
     ? missingProgramReason(program)
-    : `the machine reported “${line.replace(/[.\s]+$/u, '')}”`
+    : `the machine reported “${withoutTrailingFullStop(line)}”`
 }
 
 /** The first sentence of a longer message, without its full stop; never one that names Seal's internals. */
 function statedReason(text: string): string {
   const line = text.trim().split(/\r?\n/u)[0] ?? ''
-  const sentence = (line.split(/(?<=[.!?])\s+/u)[0] ?? line).replace(/[.\s]+$/u, '')
+  const sentence = withoutTrailingFullStop(line.split(/(?<=[.!?])\s+/u)[0] ?? line)
   if (!sentence || INTERNAL_NAME.test(sentence)) {
     return DID_NOT_FINISH
   }

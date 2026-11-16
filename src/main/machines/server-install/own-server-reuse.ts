@@ -1,9 +1,10 @@
 /** Connects an SSH machine through the `seal serve` its user already runs there. Nothing on the host is installed, restarted or removed. */
 import { randomUUID } from 'node:crypto'
 import { getAppEnvironment } from '../../../shared/app-environment'
+import { InFlightPromiseDedupe } from '../../../shared/in-flight-promise-dedupe'
 import {
-  DECLINED_SERVER_INSTALL,
-  setMachineServerInstall
+  declineMachineServerInstall,
+  withoutTrailingFullStop
 } from '../../../shared/machines/machine-server-install'
 import type { MachineId } from '../../../shared/machines/machine-types'
 import type { MachineView } from '../../../shared/machines/machine-view'
@@ -49,21 +50,14 @@ const BY_HAND = `Run "${INSTALLED_CLI_COMMAND_NAME} pair" on the machine, then a
 
 type SavedServer = ReturnType<typeof listEnvironments>[number]
 
-const reuses = new Map<string, Promise<MachineView>>()
+// No expiry: a second request for the machine joins the reuse that runs, however long it takes.
+const reuses = new InFlightPromiseDedupe<MachineView>(0)
 
 /** Rejects with what to do by hand when the server cannot be connected from here. */
 export function reuseOwnServerOnSshMachine(machineId: MachineId): Promise<MachineView> {
   const registry = getMachineRegistry()
   const machine = registry.view(machineId)
-  const running = reuses.get(machine.recordId)
-  if (running) {
-    return running
-  }
-  const reuse = Promise.resolve()
-    .then(() => reuseOwnServer(registry, machine))
-    .finally(() => reuses.delete(machine.recordId))
-  reuses.set(machine.recordId, reuse)
-  return reuse
+  return reuses.run(machine.recordId, () => reuseOwnServer(registry, machine))
 }
 
 async function reuseOwnServer(
@@ -101,7 +95,7 @@ async function byHandWhenItFails<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work()
   } catch (error) {
-    const reason = (error instanceof Error ? error.message : String(error)).replace(/[.\s]+$/u, '')
+    const reason = withoutTrailingFullStop(error instanceof Error ? error.message : String(error))
     throw new Error(`Seal could not connect to the server on this machine: ${reason}. ${BY_HAND}`)
   }
 }
@@ -142,7 +136,7 @@ async function unansweredPairing(
     )
   }
   // One line: the page shows only the first line of a failure.
-  const said = (refusal.message.trim().split(/\r?\n/u)[0] ?? '').replace(/[.\s]+$/u, '')
+  const said = withoutTrailingFullStop(refusal.message.trim().split(/\r?\n/u)[0] ?? '')
   return new Error(
     `The Seal server you set up on ${machineName} did not answer${said ? ` (“${said}”)` : ''}. Check that it is running there, ${again}`
   )
@@ -247,8 +241,8 @@ async function forgetUnlinkedServer(userDataPath: string, environmentId: string)
   }
 }
 
-// Import lazily: runtime-environments wires every server handler, and only a reuse needs it.
-async function invalidateServerTransport(environmentId: string): Promise<void> {
+// Import lazily: runtime-environments wires every server handler, and only a reuse or restart needs it.
+export async function invalidateServerTransport(environmentId: string): Promise<void> {
   const { invalidateRuntimeEnvironmentTransport } =
     await import('../../ipc/runtime-environments/runtime-environments')
   await invalidateRuntimeEnvironmentTransport(environmentId)
@@ -268,9 +262,7 @@ function bindOwnServer(
     machineId: machine.id
   })
   // Declined: the server is the user's, so Seal neither upgrades nor removes it.
-  registry.edit((store, now) =>
-    setMachineServerInstall(store, bound.recordId, DECLINED_SERVER_INSTALL, now)
-  )
+  registry.edit(declineMachineServerInstall(bound.recordId))
   noteSealServiceOutcome(sshTargetId, { manager: found.manager })
   forgetOwnSealServeAnswer(sshTargetId)
   return registry.view(bound.id)

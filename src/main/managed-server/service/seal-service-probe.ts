@@ -1,4 +1,5 @@
 /** One remote command that tells which service managers the host has and which one holds the server. */
+import { MACHINE_SERVICE_MANAGERS } from '../../../shared/machines/machine-server-install'
 import { OWN_SEAL_SERVE_ANSWER, parseOwnSealServe } from './own-seal-serve-probe'
 import {
   SEAL_SERVICE_LAUNCHER_WORD,
@@ -17,8 +18,6 @@ import {
 } from './seal-service-manager-commands'
 import { sealLaunchdNeedsLogin, type SealServiceProbe } from './seal-service-manager-selection'
 import type { SealServiceManager, SealServiceOutcome, SealServiceWish } from './seal-service-policy'
-
-const MANAGERS: readonly SealServiceManager[] = ['systemd-user', 'launchd', 'pm2']
 
 /** Without a root the login home's managed root is probed. Read-only, and never spawns a PM2 daemon. */
 export function sealServiceProbeCommand(managedRoot?: string): string {
@@ -90,7 +89,7 @@ export function parseSealServiceProbe(output: string): SealServiceProbe | null {
     launchctl: answer.get('launchctl') === '1',
     guiSession: answer.get('gui') === '1',
     pm2: answer.get('pm2') === '1',
-    installed: MANAGERS.find((manager) => manager === marker) ?? null,
+    installed: MACHINE_SERVICE_MANAGERS.find((manager) => manager === marker) ?? null,
     registered: answer.get('registered') === '1',
     ownServe: parseOwnSealServe(answer.get('own_serve')),
     linger: parseSealLinger(answer.get('linger')),

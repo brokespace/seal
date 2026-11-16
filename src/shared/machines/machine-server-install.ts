@@ -11,6 +11,11 @@ export type MachineServerKeeper = NonNullable<MachineServerInstall['manager']>
 
 export const DECLINED_SERVER_INSTALL: MachineServerInstall = { policy: 'never', state: 'declined' }
 
+/** A reason goes inside a sentence of Seal's, so the full stop and spaces it ends on are dropped. */
+export function withoutTrailingFullStop(text: string): string {
+  return text.replace(/[.\s]+$/u, '')
+}
+
 /** True while a machine asked for Seal's server and no attempt has settled; absent reads as never. */
 export function awaitsServerInstall(install: MachineServerInstall | null | undefined): boolean {
   return install?.policy === 'auto' && install.state === 'pending'
@@ -18,6 +23,13 @@ export function awaitsServerInstall(install: MachineServerInstall | null | undef
 
 /** A manager a user can ask for; `detached` is only ever an outcome. */
 export type MachineServiceManager = Exclude<MachineServerKeeper, 'detached'>
+
+/** In the order the Add machine dialog offers them. */
+export const MACHINE_SERVICE_MANAGERS = [
+  'systemd-user',
+  'pm2',
+  'launchd'
+] as const satisfies readonly MachineServiceManager[]
 
 /** Until the server is installed, `manager` holds the manager the user asked for; null leaves the pick to Seal. */
 export function preferredServiceManager(
@@ -110,6 +122,13 @@ export function setMachineServerInstall(
   now: number
 ): MachineStore {
   return changeMachine(store, machineId, () => ({ serverInstall }), now)
+}
+
+/** The edit that records that Seal installs no server on this machine. */
+export function declineMachineServerInstall(
+  machineId: string
+): (store: MachineStore, now: number) => MachineStore {
+  return (store, now) => setMachineServerInstall(store, machineId, DECLINED_SERVER_INSTALL, now)
 }
 
 function unfinishedServerInstall(

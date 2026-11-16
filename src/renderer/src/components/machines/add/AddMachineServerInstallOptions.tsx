@@ -2,6 +2,7 @@ import React, { useId } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useTranslate } from '@/i18n/use-translate'
+import { MACHINE_SERVICE_MANAGERS } from '../../../../../shared/machines/machine-server-install'
 import type { MachineServiceManagerChoice } from '../../../../../shared/machines/machine-view'
 
 export type MachineServerInstallChoice = {
@@ -17,9 +18,7 @@ export const DEFAULT_SERVER_INSTALL_CHOICE: MachineServerInstallChoice = {
 
 const MANAGER_CHOICES: readonly MachineServiceManagerChoice[] = [
   'auto',
-  'systemd-user',
-  'pm2',
-  'launchd'
+  ...MACHINE_SERVICE_MANAGERS
 ]
 
 function ManagerOption({
