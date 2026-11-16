@@ -133,4 +133,12 @@ describe('LiveSessionStatusHold', () => {
       ])
     ).toEqual(['working', 'working', 'your-turn'])
   })
+
+  it('shows at once that a session left "working" when Seal stopped it itself', () => {
+    const hold = new LiveSessionStatusHold()
+    hold.settle(session('working'), 1, T0)
+    hold.release('local:claude:a')
+
+    expect(hold.settle(session('done', 'process'), 1, T0 + 500).status).toBe('done')
+  })
 })

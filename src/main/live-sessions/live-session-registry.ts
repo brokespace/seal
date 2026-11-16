@@ -69,7 +69,8 @@ export class LiveSessionRegistry {
   private running = false
   private releaseSources: (() => void)[] = []
   private decorator: ((session: LiveSession) => LiveSession) | null = null
-  private readonly statusHold = new LiveSessionStatusHold()
+  /** Released by whoever stops a session for the user. */
+  readonly statusHold = new LiveSessionStatusHold()
   private readonly paneStatuses = new SealPaneStatusChanges()
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }

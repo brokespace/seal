@@ -107,9 +107,10 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
   return {
     panes,
     input,
-    confirmAgent: (paneKey: string) => {
+    /** `'now'` after Seal stopped the pane's agent: the last check, made while it ran, says nothing. */
+    confirmAgent: (paneKey: string, when?: 'now') => {
       const now = Date.now()
-      if (now - (agentChecks.get(paneKey) ?? -Infinity) < AGENT_CHECK_MS) {
+      if (when !== 'now' && now - (agentChecks.get(paneKey) ?? -Infinity) < AGENT_CHECK_MS) {
         return
       }
       for (const [key, at] of agentChecks) {

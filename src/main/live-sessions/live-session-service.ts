@@ -28,11 +28,14 @@ import { userTextsFrom, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
-import { LiveSessionRemovals, removeFromOwner } from './delivery/session-removal'
+import { LiveSessionRemovals, removeSessions } from './delivery/session-removal'
 import { LiveSessionAnnotations } from './live-session-annotations'
 import type { StructuredSessionAccess } from './sources/structured-session-source'
 import { SessionTranscriptAccess } from './session-transcript-access'
-import { localChatSessionId } from '../../shared/live-sessions/live-session-paired-server'
+import {
+  isPairedServerLiveSession,
+  localChatSessionId
+} from '../../shared/live-sessions/live-session-paired-server'
 import type { FederatedSessions } from './federation/federated-sessions'
 import { errorMessage } from '../../shared/error-message'
 
@@ -43,7 +46,7 @@ export type LiveSessionServiceDeps = {
     panes: () => SealPane[]
     input: SealPaneInput
     subscribe: (onChange: () => void) => () => void
-    confirmAgent?: (paneKey: string) => void
+    confirmAgent?: (paneKey: string, when?: 'now') => void
   }
   /** This machine's chats; absent where no structured host runs. */
   chats?: StructuredSessionAccess
@@ -69,7 +72,7 @@ export class LiveSessionService {
   private readonly chats: StructuredSessionAccess | null
   private readonly federation: FederatedSessions | null
 
-  constructor(deps: LiveSessionServiceDeps) {
+  constructor(private readonly deps: LiveSessionServiceDeps) {
     this.chats = deps.chats ?? null
     this.federation = deps.federation ?? null
     this.annotations = new LiveSessionAnnotations(
@@ -287,43 +290,39 @@ export class LiveSessionService {
     this.registry.republish()
   }
 
-  /** Hides sessions for good; stops them and deletes their transcripts first when asked. */
+  /** Hides sessions for good at once; stops them and deletes their transcripts behind that when asked. */
   async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
-    const result: LiveRemoveResult = { removed: [], failed: [] }
-    const hostIds = new Set<string>()
-    for (const sessionId of new Set(request.sessionIds)) {
-      const session = this.registry.get(sessionId)
-      const host = session ? this.registry.host(session.machine.hostId) : null
-      try {
-        const outcome = session
-          ? await removeFromOwner(session, request, {
-              server: session.surface.kind === 'external' ? null : this.federated(session.id),
-              chats: this.chats,
-              host
-            })
-          : 'removed'
-        if (outcome === 'removed') {
-          result.removed.push(sessionId)
-        } else {
-          result.failed.push({ sessionId, reason: outcome })
-        }
-        if (session) {
-          hostIds.add(session.machine.hostId)
-        }
-      } catch (error) {
-        const message = errorMessage(error)
-        result.failed.push({ sessionId, reason: 'failed', error: message })
-      }
-    }
+    const { result, sessions } = await removeSessions(request, {
+      session: (sessionId) => this.registry.get(sessionId),
+      owner: (session) => ({
+        server: session.surface.kind === 'external' ? null : this.federated(session.id),
+        chats: this.chats,
+        host: this.registry.host(session.machine.hostId)
+      }),
+      removals: this.removals,
+      onListChanged: () => this.registry.republish(),
+      now: Date.now
+    })
     if (!request.keep) {
-      this.removals.add(result.removed, Date.now())
       this.annotations.forget(result.removed)
     }
-    this.registry.republish()
-    for (const hostId of hostIds) {
+    for (const session of sessions) {
+      if (request.stop && result.removed.includes(session.id)) {
+        this.noteStopped(session)
+      }
+    }
+    for (const hostId of new Set(sessions.map((session) => session.machine.hostId))) {
       void this.registry.refresh(hostId)
     }
     return result
+  }
+
+  /** Seal stopped it for the user: what is read of it next is shown without a second look. */
+  private noteStopped(session: LiveSession): void {
+    this.registry.statusHold.release(session.id)
+    if (session.surface.kind === 'cli' && !isPairedServerLiveSession(session)) {
+      this.deps.sealPanes?.confirmAgent?.(session.surface.paneKey, 'now')
+    }
   }
 
   private async userTexts(session: LiveSession, from: number): Promise<UserText[]> {
