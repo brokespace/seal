@@ -167,11 +167,19 @@ function Inventory({
           kind: category,
           keys: all.filter((item) => selected.has(item.key)).map((item) => item.key)
         }),
-      (scan) => ({
-        scan,
-        copy: { title: cleanupCopy[scan.target].title, removal: removalCopy[category].removal },
-        heading: removalCopy[category].title(scan.items.length, machine.label)
-      })
+      (scan) => {
+        if (scan.items.length > 0) {
+          return {
+            scan,
+            copy: { title: cleanupCopy[scan.target].title, removal: removalCopy[category].removal },
+            heading: removalCopy[category].title(scan.items.length, machine.label)
+          }
+        }
+        // The list was read before something else removed them.
+        toast(copy.alreadyGone(machine.label))
+        void reloadNow()
+        return null
+      }
     )
   const prune = (wanted: MachineDockerStoragePrune): Promise<void> =>
     openReview(

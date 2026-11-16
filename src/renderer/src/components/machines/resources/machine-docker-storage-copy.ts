@@ -14,6 +14,7 @@ export type MachineDockerStorageCopy = {
   reclaimableOnly: Record<MachineDockerStorageKind, string>
   prune: Record<MachineDockerStoragePrune, string>
   nothingToPrune: Record<MachineDockerStoragePrune, string>
+  alreadyGone: (machine: string) => string
 }
 
 export function useMachineDockerStorageCopy(): MachineDockerStorageCopy {
@@ -79,6 +80,14 @@ export function useMachineDockerStorageCopy(): MachineDockerStorageCopy {
         'Prune build cache'
       )
     },
+    alreadyGone: (machine) =>
+      t(
+        'auto.components.machines.dockerStorage.alreadyGone',
+        'Those are no longer on {{machine}}.',
+        {
+          machine
+        }
+      ),
     nothingToPrune: {
       'docker-dangling-images': t(
         'auto.components.machines.dockerStorage.nothing.danglingImages',

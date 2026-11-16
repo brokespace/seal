@@ -755,7 +755,8 @@
             "stoppedContainers": "No stopped containers to remove.",
             "unusedVolumes": "No unused volumes to remove.",
             "buildCache": "No build cache to remove."
-          }
+          },
+          "alreadyGone": "Those are no longer on {{machine}}."
         }
       },
       "live-sessions": {
