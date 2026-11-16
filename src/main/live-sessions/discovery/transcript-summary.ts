@@ -1,3 +1,4 @@
+import { ORCA_CLAUDE_CHAT_ENTRYPOINT } from '../../../shared/agent-launch/startup/claude-chat-entrypoint'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 import { codexUserMessageText } from './codex-user-message'
 import { claudePhase, claudePromptText } from './claude-transcript-phase'
@@ -86,6 +87,11 @@ export const UNKNOWN_TURN: TranscriptTurn = {
 
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
 
+/** Claude Code started by a program: the Agent SDK, `claude -p`, or a Seal chat. */
+function isDrivenEntrypoint(entrypoint: string | null): boolean {
+  return entrypoint?.startsWith('sdk') === true || entrypoint === ORCA_CLAUDE_CHAT_ENTRYPOINT
+}
+
 function claudeIdentity(
   head: TranscriptRecord[],
   tail: TranscriptRecord[]
@@ -101,7 +107,7 @@ function claudeIdentity(
   return {
     // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
     // A chat's history a terminal carries on (a fork into the CLI) is that terminal's from then on.
-    headless: startedBy?.startsWith('sdk') === true && lastBy?.startsWith('sdk') === true,
+    headless: isDrivenEntrypoint(startedBy) && isDrivenEntrypoint(lastBy),
     recordIds: [
       ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
     ],

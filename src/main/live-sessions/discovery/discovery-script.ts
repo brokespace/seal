@@ -71,7 +71,8 @@ while read -r pid ppid tty args; do
   AGENTS="$AGENTS$pid "
   cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
   if [ -z "$cwd" ] && command -v lsof >/dev/null 2>&1; then
-    cwd=$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)
+    # For another user's process lsof names the link it could not read, not a folder.
+    cwd=$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n '/ (readlink: /d;s/^n//p' | head -n 1)
   fi
   [ -n "$cwd" ] && echo "@@CWD $pid $cwd"
   case "$tty" in ''|'?'|'??') ;; *) TTYS="$TTYS$tty|" ;; esac

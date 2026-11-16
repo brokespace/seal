@@ -83,12 +83,9 @@ export function installLiveSessions(
     )
   const localMachine = { hostId: LOCAL_HOST_ID, label: hostname(), kind: 'local' as const }
   const chats = createStructuredSessionAccess(runtime, {
-    // A chat whose agent runs on an SSH machine is still hosted here, and listed under that machine.
+    // A chat runs where its host does: here, or on a server whose own registry lists it.
     machineOf: (executionHostId) =>
-      executionHostId === LOCAL_HOST_ID
-        ? (local?.machine ?? localMachine)
-        : (allHosts().find((host) => host.machine.executionHostId === executionHostId)?.machine ??
-          null),
+      executionHostId === LOCAL_HOST_ID ? (local?.machine ?? localMachine) : null,
     log
   })
   const wrapSync = new ShellIntegrationSync(() => wrapAgentsEnabled(store.getSettings()), log)

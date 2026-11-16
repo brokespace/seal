@@ -1,7 +1,7 @@
 import { overlayEnvironmentVariables } from '../../environment-overlay'
 
 export const CLAUDE_ENTRYPOINT_ENV = 'CLAUDE_CODE_ENTRYPOINT'
-const ORCA_CLAUDE_CHAT_ENTRYPOINT = 'orca'
+export const ORCA_CLAUDE_CHAT_ENTRYPOINT = 'orca'
 
 /** Only structured chats own this identity; other Claude processes retain their CLI default. */
 export function withOrcaClaudeChatEntrypoint(

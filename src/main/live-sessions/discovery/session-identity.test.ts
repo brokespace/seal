@@ -93,12 +93,15 @@ describe('one card per real conversation', () => {
     ])
   })
 
-  it('lists a chat forked into the terminal as its own session that continues the chat', () => {
+  it.each([
+    ['a Seal chat', 'orca'],
+    ['an Agent SDK host', 'sdk-ts']
+  ])('lists %s forked into the terminal as its own session that continues it', (_, entrypoint) => {
     const chat = claudeFile(
       '/p/aaaaaaaa-0000-4000-8000-00000000000a.jsonl',
       [
-        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'sdk-ts' },
-        { ...turn('c2', 'c1', 'Now write it'), entrypoint: 'sdk-ts' }
+        { ...turn('c1', null, 'Plan the migration'), entrypoint },
+        { ...turn('c2', 'c1', 'Now write it'), entrypoint }
       ],
       // The chat went on after the fork.
       60_000
@@ -106,7 +109,7 @@ describe('one card per real conversation', () => {
     const fork = claudeFile(
       '/p/bbbbbbbb-0000-4000-8000-00000000000b.jsonl',
       [
-        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'sdk-ts' },
+        { ...turn('c1', null, 'Plan the migration'), entrypoint },
         { ...turn('f1', 'c1', 'Try it with a view instead'), entrypoint: 'cli' }
       ],
       300_000
