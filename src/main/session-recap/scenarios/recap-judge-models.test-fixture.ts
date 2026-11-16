@@ -239,12 +239,16 @@ export async function askRecapJudge(
 }
 
 const ANSWERS = join(import.meta.dirname, '__fixtures__', 'judge-answers')
-const answersPath = (model: RecapJudgeModel): string => join(ANSWERS, `${modelName(model)}.json`)
+const answersPath = (name: string): string => join(ANSWERS, `${name}.json`)
+/** What the judge answered inside the scenario suite's own runs, beside the measurement's answers. */
+export const RECAP_SCENARIO_JUDGE_ANSWERS = 'recap-scenarios'
 
+/** `name` is the answers file: a model's measurement by default. */
 export async function loadRecapJudgeRecords(
-  model: RecapJudgeModel
+  model: RecapJudgeModel,
+  name = modelName(model)
 ): Promise<Map<string, RecapJudgeRecord>> {
-  const records: RecapJudgeRecord[] = await readFile(answersPath(model), 'utf8')
+  const records: RecapJudgeRecord[] = await readFile(answersPath(name), 'utf8')
     .then((raw) => JSON.parse(raw))
     .catch(() => [])
   return new Map(records.map((record) => [record.key, record]))
@@ -252,9 +256,12 @@ export async function loadRecapJudgeRecords(
 
 export async function saveRecapJudgeRecords(
   model: RecapJudgeModel,
-  records: readonly RecapJudgeRecord[]
+  records: readonly RecapJudgeRecord[],
+  name = modelName(model)
 ): Promise<void> {
-  const sorted = [...records].sort((a, b) => a.item.localeCompare(b.item))
-  await mkdir(dirname(answersPath(model)), { recursive: true })
-  await writeFile(answersPath(model), `${JSON.stringify(sorted, null, 2)}\n`)
+  const sorted = [...records].sort(
+    (a, b) => a.item.localeCompare(b.item) || a.key.localeCompare(b.key)
+  )
+  await mkdir(dirname(answersPath(name)), { recursive: true })
+  await writeFile(answersPath(name), `${JSON.stringify(sorted, null, 2)}\n`)
 }

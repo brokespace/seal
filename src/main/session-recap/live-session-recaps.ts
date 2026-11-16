@@ -6,14 +6,15 @@ import type {
   LiveSession,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
-import {
-  openRecapItems,
-  type LiveSessionRecapBrief,
-  type RecapItemMark,
-  type SessionRecapState,
-  type SessionRecapView
+import { recapTurnHasEnded } from '../../shared/session-recap/session-recap-request-display'
+import type {
+  RecapItemMark,
+  SessionRecapView
 } from '../../shared/session-recap/session-recap-types'
+import { unrefTimer } from '../session-summaries/unref-timer'
+import type { ServerSessionRecapsSource } from './server-session-recaps-source'
 import type { RecapPassOutcome, SessionRecapEngine } from './session-recap-engine'
+import { recapBrief, recapViewState, shownRecap } from './session-recap-shown'
 import type { SessionRecapStore } from './session-recap-store'
 
 export type LiveSessionRecapsDeps = {
@@ -27,11 +28,8 @@ export type LiveSessionRecapsDeps = {
   session: (sessionId: string) => LiveSession | null
   /** The session's conversation can be read here: a transcript file, or a chat's journal. */
   readable: (session: LiveSession) => boolean
-  /**
-   * Whether every stopped session gets a recap, or only those someone opened here. A headless
-   * server leaves the rest to the desktop that also sees them.
-   */
-  eager: boolean
+  /** Paired servers' own recaps. Absent on a host that reaches no server, and on a server itself. */
+  server?: ServerSessionRecapsSource
   setTimer?: (run: () => void, delayMs: number) => { cancel: () => void }
   now?: () => number
 }
@@ -60,19 +58,13 @@ type Tracked = {
   outcome: RecapPassOutcome | null
 }
 
-function defaultTimer(run: () => void, delayMs: number): { cancel: () => void } {
-  const timer = setTimeout(run, delayMs)
-  timer.unref?.()
-  return { cancel: () => clearTimeout(timer) }
-}
-
 /** Recaps for the registry's sessions: when each is brought up to date, and what clients read. */
 export class LiveSessionRecaps {
   private readonly tracked = new Map<string, Tracked>()
   private readonly setTimer: NonNullable<LiveSessionRecapsDeps['setTimer']>
 
   constructor(private readonly deps: LiveSessionRecapsDeps) {
-    this.setTimer = deps.setTimer ?? defaultTimer
+    this.setTimer = deps.setTimer ?? unrefTimer
   }
 
   observe(event: LiveSessionRegistryEvent): void {
@@ -80,6 +72,7 @@ export class LiveSessionRecaps {
       this.tracked.get(event.sessionId)?.timer?.cancel()
       this.tracked.delete(event.sessionId)
       this.deps.engine.forget(event.sessionId)
+      this.deps.server?.forget(event.sessionId)
       if (event.replacedBy) {
         this.deps.store.move(event.sessionId, event.replacedBy)
       }
@@ -89,6 +82,13 @@ export class LiveSessionRecaps {
       return
     }
     const { session } = event
+    if (this.deps.server?.owns(session)) {
+      // One recap per session: the server that runs it makes it, and this host only shows it.
+      this.deps.server.observe(session)
+      this.tracked.get(session.id)?.timer?.cancel()
+      this.tracked.delete(session.id)
+      return
+    }
     const readable = session.alive && this.deps.readable(session)
     if (readable && isTurnRunningLiveSessionStatus(session.status)) {
       const tracked = this.track(session.id)
@@ -126,26 +126,24 @@ export class LiveSessionRecaps {
 
   /** The session as clients see it: its recap title and what is still open for the user. */
   decorate(session: LiveSession): LiveSession {
+    if (this.deps.server?.owns(session)) {
+      const brief = this.deps.server.brief(session)
+      return brief ? { ...session, recap: brief } : session
+    }
     if (!this.deps.enabled()) {
       return session
     }
     const stored = this.deps.store.get(session.id)
     const updating = this.deps.engine.isUpdating(session.id)
-    if (!stored?.recap && !updating) {
-      return session
-    }
-    const recap = stored?.recap
-    const marks = stored?.marks ?? {}
-    const brief: LiveSessionRecapBrief = {
-      title: recap?.title ?? null,
-      rev: stored?.rev ?? 0,
-      questions: recap ? openRecapItems(recap.questions, marks).length : 0,
-      actions: recap ? openRecapItems(recap.actions, marks).length : 0
-    }
-    if (updating) {
-      brief.updating = true
-    }
-    return { ...session, recap: brief }
+    const recap = stored?.recap ?? null
+    const shown =
+      recap &&
+      shownRecap(recap, {
+        turnEnded: recapTurnHasEnded(session.status),
+        stale: session.lastActivityAt > recap.updatedAt
+      })
+    const brief = recapBrief(shown, stored?.marks ?? {}, stored?.rev ?? 0, updating)
+    return brief ? { ...session, recap: brief } : session
   }
 
   /** What a client draws. `look` is the user opening it: a visit, and a pass when it is out of date. */
@@ -171,22 +169,42 @@ export class LiveSessionRecaps {
     ) {
       this.run(id, tracked, 'asked', false)
     }
+    const turnEnded = session !== null && recapTurnHasEnded(session.status)
     return {
       sessionId: id,
-      recap,
+      recap: recap && shownRecap(recap, { turnEnded, stale }),
       marks: stored?.marks ?? {},
       since,
-      state: this.state(id, tracked, recap !== null, stale),
+      state: recapViewState({
+        enabled: this.deps.enabled(),
+        updating: this.deps.engine.isUpdating(id),
+        hasRecap: recap !== null,
+        stale,
+        paused: this.deps.pausedUntil() !== null,
+        failed: tracked.outcome === 'failed' && Boolean(this.deps.engine.failure(id)),
+        overBudget: tracked.outcome === 'over-budget'
+      }),
       stale,
       pausedUntil: this.deps.pausedUntil(),
       failure: this.deps.engine.failure(id),
-      rev: stored?.rev ?? 0
+      rev: stored?.rev ?? 0,
+      turnEnded
     }
+  }
+
+  /** `view` for any session: one a paired server keeps is read from that server. */
+  async get(sessionId: string, look: boolean): Promise<SessionRecapView> {
+    const owned = this.serverOwned(sessionId)
+    return owned ? owned.server.view(owned.session, look) : this.view(sessionId, look)
   }
 
   /** A pass now; with nothing new to read, the recap is rebuilt from the recent history. */
   async refresh(sessionId: string): Promise<SessionRecapView> {
     const session = this.deps.session(sessionId)
+    const owned = this.serverOwned(sessionId)
+    if (owned) {
+      return owned.server.refresh(owned.session)
+    }
     const id = session?.id ?? sessionId
     if (this.deps.enabled() && session && this.deps.readable(session)) {
       const tracked = this.track(id)
@@ -203,6 +221,18 @@ export class LiveSessionRecaps {
     return this.view(id, false)
   }
 
+  /** `mark` for any session: one a paired server keeps is marked on that server. */
+  async setMark(
+    sessionId: string,
+    itemId: string,
+    mark: RecapItemMark | null
+  ): Promise<SessionRecapView> {
+    const owned = this.serverOwned(sessionId)
+    return owned
+      ? owned.server.mark(owned.session, itemId, mark)
+      : this.mark(sessionId, itemId, mark)
+  }
+
   dispose(): void {
     for (const tracked of this.tracked.values()) {
       tracked.timer?.cancel()
@@ -212,6 +242,14 @@ export class LiveSessionRecaps {
 
   private now(): number {
     return this.deps.now?.() ?? Date.now()
+  }
+
+  private serverOwned(
+    sessionId: string
+  ): { server: ServerSessionRecapsSource; session: LiveSession } | null {
+    const { server } = this.deps
+    const session = this.deps.session(sessionId)
+    return server && session && server.owns(session) ? { server, session } : null
   }
 
   private available(): boolean {
@@ -235,9 +273,6 @@ export class LiveSessionRecaps {
   }
 
   private schedule(sessionId: string, tracked: Tracked): void {
-    if (!this.deps.eager && !this.deps.store.get(sessionId)?.recap) {
-      return
-    }
     tracked.timer?.cancel()
     const wait = Math.max(SETTLE_DELAY_MS, tracked.lastPassAt + RECAP_AUTO_INTERVAL_MS - this.now())
     tracked.timer = this.setTimer(() => {
@@ -256,7 +291,7 @@ export class LiveSessionRecaps {
 
   /** While a session works: a look at what it has said since its recap, once a pass may follow. */
   private scheduleWorking(sessionId: string, tracked: Tracked): void {
-    if (tracked.timer || (!this.deps.eager && !this.deps.store.get(sessionId)?.recap)) {
+    if (tracked.timer) {
       return
     }
     const wait = Math.max(
@@ -304,33 +339,5 @@ export class LiveSessionRecaps {
       tracked.outcome = outcome
       return outcome
     })
-  }
-
-  private state(
-    sessionId: string,
-    tracked: Tracked,
-    hasRecap: boolean,
-    stale: boolean
-  ): SessionRecapState {
-    if (!this.deps.enabled()) {
-      return 'unavailable'
-    }
-    if (this.deps.engine.isUpdating(sessionId)) {
-      return 'updating'
-    }
-    // A recap that covers everything is ready whatever stopped the pass after it.
-    if (hasRecap && !stale) {
-      return 'ready'
-    }
-    if (this.deps.pausedUntil() !== null) {
-      return 'paused'
-    }
-    if (tracked.outcome === 'failed' && this.deps.engine.failure(sessionId)) {
-      return 'failed'
-    }
-    if (tracked.outcome === 'over-budget') {
-      return 'over-budget'
-    }
-    return hasRecap ? 'ready' : 'empty'
   }
 }

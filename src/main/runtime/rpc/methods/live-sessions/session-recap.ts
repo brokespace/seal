@@ -17,13 +17,16 @@ function recaps(): LiveSessionRecaps {
   return found
 }
 
-/** A session's recap on the host that owns its registry, for the desktop window and phones alike. */
+/**
+ * A session's recap on the host that owns its registry, for the desktop window and phones alike.
+ * A desktop answers for a session a paired server recaps by asking that server.
+ */
 export const SESSION_RECAP_METHODS = [
   defineMethod({
     name: 'sessionRecap.get',
     permission: 'workspace',
     params: SessionRecapGetParams,
-    handler: async ({ sessionId, look }) => recaps().view(sessionId, look === true)
+    handler: ({ sessionId, look }) => recaps().get(sessionId, look === true)
   }),
   defineMethod({
     name: 'sessionRecap.refresh',
@@ -36,7 +39,7 @@ export const SESSION_RECAP_METHODS = [
     permission: 'workspace',
     params: SessionRecapMarkParams,
     handler: async ({ sessionId, itemId, mark }) => {
-      const view = recaps().mark(sessionId, itemId, mark)
+      const view = await recaps().setMark(sessionId, itemId, mark)
       // Row badges and other clients read the open counts off the registry, not this reply.
       getLiveSessionService()?.registry.republish()
       return view

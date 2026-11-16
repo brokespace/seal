@@ -1,10 +1,9 @@
 {
   "id": "remote-server-session",
-  "title": "A session on a headless Seal server, which recaps only what a client opens",
+  "title": "A session on a headless Seal server, which recaps it before any client opens it",
   "categories": ["remote", "addressed-later-turn"],
   "surfaces": ["claude-cli", "chat-journal"],
-  "expected": "Opening the session writes its recap. Once it has one, the server keeps it up to date, so the documentation leaves the not-addressed list after turn 2.",
-  "lazy": true,
+  "expected": "The server writes the recap when the turn stops, with no client looking, and keeps it up to date, so the documentation leaves the not-addressed list after turn 2.",
   "steps": [
     {
       "user": "Add a --dry-run flag to the import script and document it in docs/import.md."
@@ -25,10 +24,9 @@
       "label": "before anyone opens it",
       "check": [
         {
-          "requests": {
-            "max": 0
-          },
-          "why": "a server recaps nothing nobody opened"
+          "view": "exists",
+          "is": true,
+          "why": "a server recaps what stops with nobody looking, so the row can say what is open"
         }
       ]
     },
@@ -41,7 +39,7 @@
         {
           "view": "exists",
           "is": true,
-          "why": "opening the session writes its recap"
+          "why": "the recap the server made is the one a client opens"
         },
         {
           "in": "ignored",

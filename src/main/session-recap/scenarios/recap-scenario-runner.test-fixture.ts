@@ -3,11 +3,9 @@ import { copyFile, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import { recapTurnHasEnded } from '../../../shared/session-recap/session-recap-request-display'
 import type { SessionRecapView } from '../../../shared/session-recap/session-recap-types'
-import { runLocalScript } from '../../live-sessions/hosts/local-shell-script'
-import { journalSessionTranscript } from '../../live-sessions/transcripts/journal-session-transcript'
-import { LiveTranscriptStreams } from '../../live-sessions/transcripts/live-transcript-streams'
-import { sessionTranscripts } from '../../live-sessions/transcripts/session-transcript'
+import { SessionSummaryCache } from '../../session-summaries/session-summary-cache'
 import {
   createCloudflareWorkersAiProvider,
   type CloudflareAiCredentials
@@ -15,21 +13,25 @@ import {
 import { UtilityModelService } from '../../utility-model/utility-model-service'
 import { LiveSessionRecaps } from '../live-session-recaps'
 import { SessionRecapBudget } from '../session-recap-budget'
+import { createClefRecapJudge } from '../session-recap-clef-judge'
+import { redactRecapCommand } from '../session-recap-command-redaction'
 import { SessionRecapEngine } from '../session-recap-engine'
+import { createRecapRequestsStep } from '../session-recap-requests'
 import { SessionRecapStore } from '../session-recap-store'
-import { chatJournalScenario } from './recap-scenario-chat-journal.test-fixture'
 import { evaluateRecapCheck, type RecapCheckResult } from './recap-scenario-checks.test-fixture'
-import {
-  claudeScenarioTranscript,
-  type RecapScenarioConversation
-} from './recap-scenario-claude-transcript.test-fixture'
-import { codexScenarioTranscript } from './recap-scenario-codex-transcript.test-fixture'
 import { RECAP_SCENARIO_MODELS, type RecapScenarioModel } from './recap-scenario-model.test-fixture'
 import {
   recapScenarioSteps,
   type RecapScenario,
   type RecapScenarioSurface
 } from './recap-scenario-schema.test-fixture'
+import {
+  RECAP_SCENARIO_SESSION_IDS,
+  RECAP_SCENARIO_START,
+  RECAP_SCENARIO_STEP_MS,
+  recapScenarioSession,
+  recapScenarioTranscripts
+} from './recap-scenario-session.test-fixture'
 
 export type RecapScenarioRun = {
   /** `<scenario>@<surface>`. */
@@ -42,12 +44,14 @@ export type RecapScenarioRun = {
   /** Every pass the scheduler started: its kind and how it ended. */
   passes: string[]
   requests: number
+  /** The judge's requests: how many a recording answered, and how many none did. */
+  judge: { answered: number; unrecorded: number }
   view: SessionRecapView
 }
 
-const START = Date.UTC(2026, 10, 13, 10, 0, 0)
-const STEP_MS = 2_000
-const SESSION_IDS = ['7d0c1c0e-5a51-4f0a-9d0b-2a6f3c1e8b01', '7d0c1c0e-5a51-4f0a-9d0b-2a6f3c1e8b02']
+const START = RECAP_SCENARIO_START
+const STEP_MS = RECAP_SCENARIO_STEP_MS
+const SESSION_IDS = RECAP_SCENARIO_SESSION_IDS
 
 type Timer = { run: () => void; at: number }
 
@@ -63,56 +67,14 @@ export async function runRecapScenario(
   const timers: Timer[] = []
   const passes: string[] = []
   const checks: RecapCheckResult[] = []
-  const provider = surface === 'codex-cli' ? 'codex' : 'claude'
-  const remote = surface === 'claude-ssh'
-  const hostId = remote ? 'ssh-build-box' : 'local'
-  const journal = surface === 'chat-journal' ? chatJournalScenario() : null
-  let transcriptPath = join(folder, 'session-1.jsonl')
-  const fileConversation = (path: string, id: string): RecapScenarioConversation =>
-    provider === 'codex' ? codexScenarioTranscript(path, id) : claudeScenarioTranscript(path, id)
+  const opened = recapScenarioSession(surface, folder)
+  const { provider, journal, fileConversation } = opened
+  const hostId = opened.session.machine.hostId
+  let { transcriptPath, session } = opened
   let conversation = journal?.conversation ?? fileConversation(transcriptPath, SESSION_IDS[0])
   let revision = 0
-  let session: LiveSession = {
-    id: `${hostId}:${provider}:${SESSION_IDS[0]}`,
-    provider,
-    providerSessionId: SESSION_IDS[0],
-    machine: {
-      hostId,
-      label: hostId,
-      kind: remote ? 'remote' : 'local',
-      connection: remote ? 'ssh' : 'local'
-    },
-    origin: journal ? 'seal' : 'external',
-    cwd: '/srv/shop',
-    project: 'shop',
-    title: null,
-    status: 'idle',
-    statusSource: 'transcript',
-    statusDetail: null,
-    lastActivityAt: START,
-    startedAt: START,
-    alive: true,
-    pid: 4242,
-    transcriptPath: journal ? null : transcriptPath,
-    inputRoutes: [],
-    permission: null,
-    ...(journal ? { surface: { kind: 'chat', sessionId: 'chat-1', tabId: 'tab-1' } } : {})
-  }
   const sessionOf = (id: string): LiveSession | null => (id === session.id ? session : null)
-
-  // The SSH reader's own script, run in a local shell: the bounded base64 reads are the same.
-  const streams = new LiveTranscriptStreams({
-    get: sessionOf,
-    host: () => ({ machine: session.machine, run: runLocalScript })
-  })
-  const transcripts = sessionTranscripts(sessionOf, {
-    files: {
-      page: (id, before, limit) => streams.page(id, before, limit),
-      since: (id, cursor) => streams.since(id, cursor)
-    },
-    journal: (_chat, recordId) =>
-      journal ? journalSessionTranscript(recordId, journal.read) : null
-  })
+  const transcripts = recapScenarioTranscripts(() => session, journal)
   const utility = new UtilityModelService({
     backend: async () => ({
       provider: createCloudflareWorkersAiProvider(credentials, model.fetch),
@@ -128,14 +90,31 @@ export async function runRecapScenario(
       join(folder, 'session-recaps', 'budget.json'),
       () => clock.now
     )
+    const since = (id: string, cursor: number) => transcripts.of(id).since(cursor)
+    const judge = createClefRecapJudge({
+      decide: (judging, request, signal) => utility.decide(judging, request, signal),
+      // Kept for the run only: a restart asks again, and the recordings answer.
+      cache: new SessionSummaryCache(null),
+      spend: (neurons) => budget.spend(neurons),
+      record: () => undefined,
+      now: () => clock.now
+    })
     const engine = new SessionRecapEngine({
       transcript: {
         page: (id, before, limit) => transcripts.of(id).page(before, limit),
-        since: (id, cursor) => transcripts.of(id).since(cursor)
+        since
       },
       complete: (request, signal) => utility.complete(request, signal),
       store,
       budget,
+      requests: createRecapRequestsStep({
+        judge,
+        since,
+        turnEnded: (id) => recapTurnHasEnded(sessionOf(id)?.status ?? 'working'),
+        allows: (kind) => budget.allows(kind),
+        redact: redactRecapCommand,
+        now: () => clock.now
+      }),
       firstPrompt: (id) => {
         const found = sessionOf(id)
         return found && !found.titleNamed ? found.title : null
@@ -159,7 +138,6 @@ export async function runRecapScenario(
       pausedUntil: () => utility.health().pausedUntil,
       session: sessionOf,
       readable: (found) => transcripts.has(found),
-      eager: scenario.lazy !== true,
       setTimer: (run, delayMs) => {
         const timer = { run, at: clock.now + delayMs }
         timers.push(timer)
@@ -313,6 +291,7 @@ export async function runRecapScenario(
     checks,
     passes,
     requests: model.answeredBy.length,
+    judge: { ...model.judge },
     view
   }
 }

@@ -8,8 +8,8 @@ import {
 
 /**
  * A headless server summarizes the agents in its own panes; paired clients read them from its agent
- * rows. Its registry sessions get a recap only once a client paired to it opens one: a desktop that
- * sees the same sessions already recaps them, and the allocation is one account's.
+ * rows. It recaps every session in its registry as each stops: a paired desktop on a current build
+ * shows this recap instead of making a second one, so nobody else would make it.
  */
 export function startOrcadSessionSummaries(
   runtime: OrcaRuntimeService,
@@ -22,7 +22,6 @@ export function startOrcadSessionSummaries(
     userDataPath: getAppEnvironment().getPath('userData'),
     liveSessions: getLiveSessionService(),
     summarizeLive: false,
-    recapEagerly: false,
     onPaneSummaryChanged: () => runtime.notifyAgentStatusSummaryChanged()
   })
   registerCleanup(() => summaries.dispose())

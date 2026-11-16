@@ -2,6 +2,7 @@ import type { AgentPaneChange } from '../agent-hooks/observations/agent-transiti
 import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { SessionSummarySettings } from '../../shared/session-summaries/session-summary-contracts'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { ServerSessionRecapsDeps } from '../session-recap/server-session-recaps'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import type { UtilityModelHostContext } from '../utility-model/utility-model-provider-sources'
 import type { CliTabTitleRuntime } from './cli-session-tab-title'
@@ -31,9 +32,9 @@ export type SessionSummariesInstallOptions = {
   liveSessions?: LiveSessionService | null
   /** False on a headless server, whose registry sessions the desktop that sees them summarizes. */
   summarizeLive?: boolean
-  /** Recap every stopped session (the desktop), or only those opened from a client of this host. */
-  recapEagerly?: boolean
   serverSummaries?: LiveSessionSummariesDeps['serverSummaries']
+  /** Reaches paired Seal servers for the recaps they keep. Only a desktop passes it; a server reaches none. */
+  serverRecapCall?: ServerSessionRecapsDeps['call']
   /** A pane's summary changed: clients reading agent rows should read again. */
   onPaneSummaryChanged?: () => void
   /** One model for both summaries and recaps, in place of the providers Settings chose. */

@@ -230,8 +230,6 @@ export const recapScenarioSchema = z.strictObject({
   surfaces: z.array(z.enum(RECAP_SCENARIO_SURFACES)).min(1),
   /** What a correct recap says at the end, in words, for the matrix. */
   expected: z.string().min(1),
-  /** A host that only recaps sessions someone opened, as a headless Seal server does. */
-  lazy: z.boolean().optional(),
   /**
    * No model reply is recorded for it yet, so it runs up to its first model request and stops. The
    * suite fails once it has recordings and still says this: its checks then join the baseline.

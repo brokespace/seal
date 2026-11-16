@@ -4,6 +4,14 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { CloudflareAiCredentials } from '../../utility-model/cloudflare-workers-ai-provider'
+import { RECAP_JUDGE_CALIBRATION } from '../session-recap-judge-questions'
+import {
+  loadRecapJudgeRecords,
+  RECAP_JUDGE_MODELS,
+  RECAP_SCENARIO_JUDGE_ANSWERS,
+  saveRecapJudgeRecords,
+  type RecapJudgeRecord
+} from './recap-judge-models.test-fixture'
 import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
 import { askLiveRecapModel } from './recap-live-model.test-fixture'
 import {
@@ -47,6 +55,15 @@ const scenarios = (await loadRecapScenarios()).filter(
   (scenario) => !only || only.includes(scenario.id)
 )
 const baseline = await loadRecapBaseline()
+const judgeModel = RECAP_JUDGE_MODELS.find((model) => model.id === RECAP_JUDGE_CALIBRATION.model)
+if (!judgeModel) {
+  throw new Error(`${RECAP_JUDGE_CALIBRATION.model} is not among the measured judge models`)
+}
+/** What the judge answered in earlier runs of this suite; the measurement's answers stand in for the rest. */
+const judgedHere = await loadRecapJudgeRecords(judgeModel, RECAP_SCENARIO_JUDGE_ANSWERS)
+const judged = new Map([...(await loadRecapJudgeRecords(judgeModel)), ...judgedHere])
+const judgeRecorded: RecapJudgeRecord[] = []
+const judgeTotals = { answered: 0, unrecorded: 0 }
 const rows: RecapMatrixRow[] = []
 const pending: RecapPendingRequest[] = []
 /** Requests of scenarios that say they are not recorded yet: relayed with the rest, but not a gap. */
@@ -74,14 +91,26 @@ describe('recap scenarios', () => {
       )
       await writeFile(pendingPath, `${JSON.stringify([...unique.values()], null, 2)}\n`)
     }
+    console.info(
+      `[recap-scenarios] judge requests: ${judgeTotals.answered} answered from recordings, ${judgeTotals.unrecorded} with none on record (those requests stay "Open")`
+    )
     // A run that lost live requests would record the outage as the recap's behaviour.
     if (!sound) {
       return
+    }
+    if (judgeRecorded.length > 0) {
+      await saveRecapJudgeRecords(
+        judgeModel,
+        [...new Map([...judgedHere.values(), ...judgeRecorded].map((r) => [r.key, r])).values()],
+        RECAP_SCENARIO_JUDGE_ANSWERS
+      )
     }
     if (reportDir) {
       rows.sort((a, b) => a.id.localeCompare(b.id))
       await writeRecapScenarioJson(join(reportDir, 'matrix.json'), {
         counts: recapCategoryCounts(rows),
+        // A judge request with no answer on record leaves its request "Open", as a failed call does.
+        judge: judgeTotals,
         runs: rows
       })
       await writeFile(join(reportDir, 'matrix.md'), recapMatrixMarkdown(rows))
@@ -101,14 +130,28 @@ describe('recap scenarios', () => {
         const model = new RecapScenarioModel({
           scenario: scenario.id,
           cassette: await loadRecapCassette(scenario.id),
+          judged,
           ...(live
             ? {
                 live: askLiveRecapModel,
-                onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry)
+                onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry),
+                onJudgeRecorded: (answer) => {
+                  const record = {
+                    ...answer,
+                    item: `${scenario.id}@${surface}`,
+                    outputTokens: null,
+                    ms: 0
+                  }
+                  judgeRecorded.push(record)
+                  // The same state in a later scenario is answered from here, not paid for again.
+                  judged.set(record.key, record)
+                }
               }
             : {})
         })
         const run = await runRecapScenario(scenario, surface, model, credentials)
+        judgeTotals.answered += run.judge.answered
+        judgeTotals.unrecorded += run.judge.unrecorded
         if (recorded.length > 0) {
           await addToRecapCassette(scenario.id, recorded)
         }

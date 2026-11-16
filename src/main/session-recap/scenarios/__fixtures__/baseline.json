@@ -121,24 +121,16 @@
   "compaction-between-ask-and-work@codex-cli": [
     "after turn 1: /healthz is asked for and not added yet"
   ],
-  "declined-as-out-of-reach@chat-journal": [
-    "after the turn: the agent said it cannot rotate the key and why; it did not overlook it"
-  ],
-  "declined-as-out-of-reach@claude-cli": [
-    "after the turn: the agent said it cannot rotate the key and why; it did not overlook it"
-  ],
+  "declined-as-out-of-reach@chat-journal": [],
+  "declined-as-out-of-reach@claude-cli": [],
   "declined-for-safety-with-an-alternative@claude-cli": [
     "after the turn: the version bump is recorded as done"
   ],
   "declined-for-safety-with-an-alternative@codex-cli": [
     "after the turn: the version bump is recorded as done"
   ],
-  "declined-in-a-terse-reply@claude-cli": [
-    "after turn 1: the agent refused with a reason; the ask was not overlooked"
-  ],
-  "declined-in-a-terse-reply@codex-cli": [
-    "after turn 1: the agent refused with a reason; the ask was not overlooked"
-  ],
+  "declined-in-a-terse-reply@claude-cli": [],
+  "declined-in-a-terse-reply@codex-cli": [],
   "declined-then-agreed@chat-journal": [],
   "declined-then-agreed@claude-cli": [],
   "declined-then-agreed@codex-cli": [],
@@ -148,15 +140,12 @@
   "declined-then-user-insists@claude-cli": [],
   "declined-then-user-insists@codex-cli": [],
   "declined-with-a-reason@chat-journal": [
-    "after the turn: the agent answered the request with a refusal; it did not overlook it",
     "after the turn: where things stand says the migrations were kept"
   ],
   "declined-with-a-reason@claude-cli": [
-    "after the turn: the agent answered the request with a refusal; it did not overlook it",
     "after the turn: where things stand says the migrations were kept"
   ],
   "declined-with-a-reason@codex-cli": [
-    "after the turn: the agent answered the request with a refusal; it did not overlook it",
     "after the turn: where things stand says the migrations were kept"
   ],
   "dismissed-entry-stays-dismissed@chat-journal": [],
@@ -232,7 +221,9 @@
   "model-failure-then-next-turn@claude-cli": [
     "after the next pass: the request from the turn whose pass failed is recorded"
   ],
-  "model-not-found-fallback@claude-cli": [],
+  "model-not-found-fallback@claude-cli": [
+    "after turn 1: the test was asked for and not written yet"
+  ],
   "model-rate-limited@claude-cli": [
     "five minutes later: the recap is written once the pause is over",
     "five minutes later: the fix is recorded as done"
@@ -294,18 +285,9 @@
   "partly-addressed-stays-open@codex-cli": [
     "after turn 2: reindex was asked for and is still not migrated"
   ],
-  "partly-addressed-then-finished@chat-journal": [
-    "after turn 1: the /customers half is not done",
-    "after turn 2: nothing the user asked for is left unaddressed"
-  ],
-  "partly-addressed-then-finished@claude-cli": [
-    "after turn 1: the /customers half is not done",
-    "after turn 2: nothing the user asked for is left unaddressed"
-  ],
-  "partly-addressed-then-finished@codex-cli": [
-    "after turn 1: the /customers half is not done",
-    "after turn 2: nothing the user asked for is left unaddressed"
-  ],
+  "partly-addressed-then-finished@chat-journal": ["after turn 1: the /customers half is not done"],
+  "partly-addressed-then-finished@claude-cli": ["after turn 1: the /customers half is not done"],
+  "partly-addressed-then-finished@codex-cli": ["after turn 1: the /customers half is not done"],
   "partly-done-across-three-turns@claude-cli": [
     "after turn 1: web and worker are not converted yet",
     "after turn 2: worker is not converted yet"

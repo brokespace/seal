@@ -5,7 +5,10 @@ import {
   CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL,
   CLOUDFLARE_AI_DEFAULT_MODEL
 } from '../../../shared/utility-model/utility-model-types'
+import type { RecapJudgeAnswers } from '../../../shared/session-recap/session-recap-types'
 import type { UtilityModelFetch } from '../../utility-model/utility-model-http-request'
+import { recapJudgeAnswersIn, recapJudgeKey } from '../session-recap-judge'
+import { RECAP_JUDGE_CALIBRATION } from '../session-recap-judge-questions'
 
 export const RECAP_SCENARIO_MODELS = {
   primary: CLOUDFLARE_AI_DEFAULT_MODEL,
@@ -29,6 +32,13 @@ export type RecapPendingRequest = Omit<RecapCassetteEntry, 'reply' | 'neurons'> 
   maxTokens: number
   /** sha256 of `JSON.stringify(messages)`: what a relayed reply is checked against. */
   contentHash: string
+}
+
+/** One answer the judge gave to one state, kept on the hash of what it was asked. */
+export type RecapJudgeRecording = {
+  key: string
+  answers: RecapJudgeAnswers
+  inputTokens: number | null
 }
 
 export type RecapScenarioFault =
@@ -100,6 +110,9 @@ export type RecapScenarioModelOptions = {
   /** The real endpoint, for recording; absent, a request without a recording is left pending. */
   live?: UtilityModelFetch
   onRecorded?: (entry: RecapCassetteEntry) => void
+  /** The judge's answers on record, by content hash. */
+  judged?: ReadonlyMap<string, Pick<RecapJudgeRecording, 'answers' | 'inputTokens'>>
+  onJudgeRecorded?: (recording: RecapJudgeRecording) => void
 }
 
 export class RecapScenarioModel {
@@ -109,6 +122,8 @@ export class RecapScenarioModel {
   readonly liveFailures: string[] = []
   /** The model of each request that got a reply, in order. */
   readonly answeredBy: string[] = []
+  /** The judge's requests: answered from a recording or live, or left without an answer. */
+  readonly judge = { answered: 0, unrecorded: 0 }
   private readonly faults: { fault: RecapScenarioFault; model: string }[] = []
 
   constructor(private readonly options: RecapScenarioModelOptions) {}
@@ -119,7 +134,49 @@ export class RecapScenarioModel {
     }
   }
 
+  /**
+   * The judge is asked on a hash of its state. With no answer on record it gets none, which the
+   * recap takes as it takes any judge failure: the request stays open. That is counted, not hidden.
+   */
+  private async judged(url: string, init: RequestInit): Promise<Response> {
+    const { model } = RECAP_JUDGE_CALIBRATION
+    const key = recapJudgeKey(model, JSON.parse(String(init.body)))
+    const recorded = this.options.judged?.get(key)
+    const answer = (answers: RecapJudgeAnswers, inputTokens: number | null): Response => {
+      this.judge.answered += 1
+      return json(200, {
+        success: true,
+        errors: [],
+        result: {
+          answers: Object.fromEntries(Object.entries(answers).map(([id, noul]) => [id, { noul }])),
+          usage: inputTokens === null ? {} : { input_tokens: inputTokens }
+        }
+      })
+    }
+    if (recorded) {
+      return answer(recorded.answers, recorded.inputTokens)
+    }
+    if (!this.options.live) {
+      this.judge.unrecorded += 1
+      return failed(503, 'No recorded answer for this judge request')
+    }
+    const response = await this.options.live(url, init).catch(() => null)
+    const result = field(await response?.json().catch(() => null), 'result')
+    const answers = recapJudgeAnswersIn(field(result, 'answers'))
+    if (!response?.ok || answers === null) {
+      this.liveFailures.push(`${model} ${response ? `http-${response.status}` : 'unreachable'}`)
+      return failed(503, 'The judge did not answer')
+    }
+    const tokens = field(field(result, 'usage'), 'input_tokens')
+    const inputTokens = typeof tokens === 'number' ? tokens : null
+    this.options.onJudgeRecorded?.({ key, answers, inputTokens })
+    return answer(answers, inputTokens)
+  }
+
   readonly fetch: UtilityModelFetch = async (url, init) => {
+    if (url.endsWith(`/ai/run/${RECAP_JUDGE_CALIBRATION.model}`)) {
+      return this.judged(url, init)
+    }
     const { model, messages, maxTokens } = requestOf(url, init)
     const fault = this.faults.findIndex((queued) => queued.model === model)
     if (fault !== -1) {
