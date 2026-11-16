@@ -1,7 +1,7 @@
 // T7.1 and T7.2: a new SSH machine gets Seal server as a systemd user service with linger, and a host restart
-// brings the server back before any desktop connects. Needs Docker with cgroup v2 and
-// ORCA_E2E_ORCAD_CONVERT_TEMPLATE built for linux-x64-glibc.
-import type { ElectronApplication, Page } from '@stablyai/playwright-test'
+// brings the server back before any desktop connects. Settings' own way to install asks first too.
+// Needs Docker with cgroup v2 and ORCA_E2E_ORCAD_CONVERT_TEMPLATE built for linux-x64-glibc.
+import type { ElectronApplication, Locator, Page } from '@stablyai/playwright-test'
 import { expect, test } from './helpers/orca-app'
 import { createRestartSession } from './helpers/orca-restart'
 import { waitForSessionReady } from './helpers/store'
@@ -11,6 +11,7 @@ import {
   type DockerSystemdSshHost
 } from './helpers/docker-ssh-host-systemd-target'
 import {
+  addSshMachine,
   addSshMachineUpToServerInstallConfirmation,
   confirmServerInstall,
   openMachinesPage,
@@ -19,12 +20,14 @@ import {
   readMachineServer,
   sealServerFilesOnHost,
   SERVER_INSTALL_TIMEOUT_MS,
+  serverInstallConfirmation,
   showMachine
 } from './helpers/seal-server-install-machine'
 
 const TEMPLATE = process.env.ORCA_E2E_ORCAD_CONVERT_TEMPLATE
 const UNAVAILABLE = dockerSystemdSshHostUnavailableReason()
 const MACHINE = 'seal-e2e-service-box'
+const SETTINGS_MACHINE = 'seal-e2e-settings-box'
 // A server run as a service keeps off 6768, the port the user's own `seal serve` takes.
 const SERVER_PORT = 16768
 const OWN_SERVE_PORT = 6768
@@ -57,6 +60,23 @@ async function serverListsSessions(page: Page, environmentId: string): Promise<b
     })
     return response.ok
   }, environmentId)
+}
+
+/** Settings > Machines > Seal servers > "Set up Seal on an SSH host"; returns that dialog. */
+async function openSettingsServerSetup(page: Page): Promise<Locator> {
+  await page.evaluate(() => {
+    const state = window.__store!.getState()
+    state.openSettingsTarget({ pane: 'machines', repoId: null })
+    state.openSettingsPage()
+  })
+  await page.getByRole('button', { name: 'SSH keys, port forwards and server pairing' }).click()
+  await page.getByRole('button', { name: 'More ways to add a server' }).click()
+  await page.getByRole('menuitem', { name: /Set up Seal on an SSH host/ }).click()
+  const setup = page
+    .getByRole('dialog')
+    .filter({ has: page.locator('[data-machine-server-action="install"]') })
+  await expect(setup).toBeVisible()
+  return setup
 }
 
 test('a new SSH machine runs Seal server as a service that a host restart brings back', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launches and its host.
@@ -170,6 +190,89 @@ test('a new SSH machine runs Seal server as a service that a host restart brings
       ).toBeVisible({ timeout: 60_000 })
       await second.page.screenshot({
         path: testInfo.outputPath('reconnected.png'),
+        animations: 'disabled'
+      })
+    })
+  } finally {
+    try {
+      await session.dispose(app ?? undefined)
+    } finally {
+      host.dispose()
+    }
+  }
+})
+
+test('Settings installs Seal server on an SSH host only after the confirmation', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launch and its host.
+{}, testInfo) => {
+  // Boots a systemd host and installs a server on it.
+  test.setTimeout(15 * 60_000)
+  const host = await startDockerSystemdSshHost(testInfo)
+  const session = createRestartSession(testInfo, { ORCA_ORCAD_TEMPLATE_PATH: TEMPLATE! })
+  let app: ElectronApplication | null = null
+  try {
+    const launched = await session.launch()
+    app = launched.app
+    const { page } = launched
+    await waitForSessionReady(page)
+    await openMachinesPage(page)
+    await addSshMachine(page, host.ssh, SETTINGS_MACHINE)
+    const setup = await openSettingsServerSetup(page)
+    const install = setup.locator('[data-machine-server-action="install"]')
+    const confirmation = serverInstallConfirmation(page)
+    const listedServer = page
+      .locator('[data-settings-section="managed-servers"]')
+      .filter({ hasText: SETTINGS_MACHINE })
+
+    await test.step('"Install Seal server…" in Settings asks before it writes anything', async () => {
+      await setup.getByRole('combobox').click()
+      await page.getByRole('option', { name: SETTINGS_MACHINE }).click()
+      await page.screenshot({
+        path: testInfo.outputPath('settings-install-dialog.png'),
+        animations: 'disabled'
+      })
+      await install.click()
+      await expect(confirmation).toBeVisible()
+      expect(sealServerFilesOnHost(host)).toEqual([])
+      await page.screenshot({
+        path: testInfo.outputPath('settings-install-confirmation.png'),
+        animations: 'disabled'
+      })
+    })
+
+    await test.step('Cancel leaves the host untouched and the machine on plain SSH', async () => {
+      await confirmation.getByRole('button', { name: 'Cancel' }).click()
+      await expect(confirmation).toBeHidden()
+      // The button is disabled while an install runs for the chosen host.
+      await expect(install).toBeEnabled()
+      expect(sealServerFilesOnHost(host)).toEqual([])
+      expect(await readMachine(page, SETTINGS_MACHINE)).toMatchObject({
+        connection: 'ssh',
+        serverInstallAction: 'install'
+      })
+      await expect(listedServer).toHaveCount(0)
+    })
+
+    await test.step('confirming installs the server and Settings lists it', async () => {
+      await install.click()
+      await confirmServerInstall(page)
+      await expect
+        .poll(() => readMachineServer(page, SETTINGS_MACHINE), {
+          timeout: SERVER_INSTALL_TIMEOUT_MS
+        })
+        .toEqual({
+          connection: 'server',
+          state: 'installed',
+          manager: 'systemd-user',
+          linger: true,
+          reason: null
+        })
+      expect(sealServerFilesOnHost(host)).not.toEqual([])
+      expect(listensOn(host, SERVER_PORT)).toEqual([{ loopback: true }])
+      expect(listensOn(host, OWN_SERVE_PORT)).toEqual([])
+      await expect(setup).toBeHidden()
+      await expect(listedServer).toBeVisible()
+      await page.screenshot({
+        path: testInfo.outputPath('settings-server-listed.png'),
         animations: 'disabled'
       })
     })

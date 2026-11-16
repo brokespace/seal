@@ -3,6 +3,7 @@ import type { Locator, Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 import type { DockerSystemdSshHost } from './docker-ssh-host-systemd-target'
 import type { MachineView } from '../../../src/shared/machines/machine-view'
+import type { SshConnectionState } from '../../../src/shared/ssh-types'
 
 /** A fresh install uploads a runtime and a bundle, starts the server and pairs with it. */
 export const SERVER_INSTALL_TIMEOUT_MS = 6 * 60_000
@@ -83,6 +84,28 @@ export async function addSshMachineUpToServerInstallConfirmation(
   const confirmation = serverInstallConfirmation(page)
   await expect(confirmation).toBeVisible({ timeout: 30_000 })
   return confirmation
+}
+
+/**
+ * Sends the request the install confirmation sends, for the machine of an SSH target saved with
+ * `ssh.addTarget`. Setup only: it skips the dialog. Resolves once the install is over, with the
+ * target's state as main holds it and the reason when the machine stayed on plain SSH.
+ */
+export function installSealServerOverSshTarget(
+  page: Page,
+  targetId: string
+): Promise<{ state: SshConnectionState | null; reason: string | null }> {
+  return page.evaluate(async (id) => {
+    const machine = (await window.api.machines!.list()).find((view) => view.ssh?.targetId === id)
+    if (!machine) {
+      throw new Error(`No machine for SSH target ${id}`)
+    }
+    const installed = await window.api.machines!.installServer({ machineId: machine.id })
+    return {
+      state: await window.api.ssh.getState({ targetId: id }),
+      reason: installed.serverInstall?.reason ?? null
+    }
+  }, targetId)
 }
 
 export function readMachine(page: Page, label: string): Promise<MachineView | null> {

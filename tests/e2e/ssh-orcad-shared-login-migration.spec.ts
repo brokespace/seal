@@ -8,10 +8,11 @@ import { z } from 'zod'
 import { expect, test } from './helpers/orca-app'
 import { waitForSessionReady } from './helpers/store'
 import { createRestartSession } from './helpers/orca-restart'
-import { managedServer, reconnect, serverCall } from './helpers/orcad-convert-flow'
+import { managedServer, serverCall } from './helpers/orcad-convert-flow'
 import { seedRelayEraProfile } from './helpers/orcad-upgrade-profile'
 import { startOrcadConvertHost, type OrcadConvertHost } from './helpers/orcad-convert-host'
 import { callEnvironment } from './helpers/paired-host-terminal'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import { findOrcadMigrationSourceCutoverForTarget } from '../../src/main/persistence/migrating-orcad-catalog/cutover-journals/orcad-migration-cutover-journal'
 import { ORCAD_TEMPLATE_MANIFEST_FILENAME } from '../../src/shared/orcad-artifacts'
 
@@ -62,16 +63,16 @@ async function connectFresh(
   page: Page,
   host: OrcadConvertHost
 ): Promise<{ targetId: string; environmentId: string }> {
-  const connected = await page.evaluate(async (input) => {
-    const { target } = await window.api.ssh.addTarget({ target: input })
-    const state = await window.api.ssh.connect({ targetId: target.id })
-    return { targetId: target.id, managedServer: state?.managedServer ?? null }
-  }, host.input)
-  const server = connected.managedServer
+  const targetId = await page.evaluate(
+    async (input) => (await window.api.ssh.addTarget({ target: input })).target.id,
+    host.input
+  )
+  const installed = await installSealServerOverSshTarget(page, targetId)
+  const server = installed.state?.managedServer
   if (server?.kind !== 'managed') {
-    throw new Error(`expected a managed server, got ${JSON.stringify(server)}`)
+    throw new Error(`expected a managed server, got ${JSON.stringify(installed)}`)
   }
-  return { targetId: connected.targetId, environmentId: server.environmentId }
+  return { targetId, environmentId: server.environmentId }
 }
 
 test('a relay-era desktop joins the server another version runs for the same login', async (// oxlint-disable-next-line no-empty-pattern -- Playwright's second fixture arg is testInfo; the first must be an object destructure to opt out of the default fixture set.
@@ -122,7 +123,8 @@ test('a relay-era desktop joins the server another version runs for the same log
     const b = await desktopB.launch()
     app = b.app
     await waitForSessionReady(b.page)
-    const connected = await reconnect(b.page, seeded.targetId)
+    // A saved host connects over plain SSH; only a confirmed install converts it.
+    const connected = JSON.stringify(await installSealServerOverSshTarget(b.page, seeded.targetId))
     await expect
       .poll(
         async () => {

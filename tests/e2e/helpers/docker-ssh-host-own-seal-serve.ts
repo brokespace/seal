@@ -52,3 +52,12 @@ export function installOwnSealServe(host: DockerSystemdSshHost, templateDir: str
   )
   host.exec(`rm -f ${ARCHIVE_ON_HOST}`)
 }
+
+/** The link `seal pair` prints on the host, which its user pastes into another computer's Seal. */
+export function ownSealServePairingLink(host: DockerSystemdSshHost): string {
+  const printed = host.exec(`bash -lc '${SEAL_COMMAND} pair --json'`, { user: 'seal' })
+  const answer: { result: { pairingUrl: string } } = JSON.parse(
+    printed.slice(printed.indexOf('{'), printed.lastIndexOf('}') + 1)
+  )
+  return answer.result.pairingUrl
+}

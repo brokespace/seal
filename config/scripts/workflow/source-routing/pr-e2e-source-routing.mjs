@@ -32,7 +32,7 @@ export const MANUAL_ONLY_E2E_SPECS = ['tests/e2e/ssh-orcad-phone-feed-list.spec.
 
 // Shared fixtures and workflow changes must exercise every managed-SSH consumer.
 const MANAGED_SSH_HARNESS =
-  /^tests\/e2e\/helpers\/(?:orcad-managed-workspace|orcad-convert-(?:flow|host|teardown)|orcad-template-variant|orcad-upgrade-(?:profile|retained-state)|docker-ssh-host-(?:image|target|systemd-target)|docker-systemd-boot|proc-net-tcp-listeners|seal-server-install-machine|reserve-local-port|ssh-remote-only-browser-fixture|windows-host-orcad-processes)\.ts$/
+  /^tests\/e2e\/helpers\/(?:orcad-managed-workspace|orcad-convert-(?:flow|host|teardown)|orcad-template-variant|orcad-upgrade-(?:profile|retained-state)|docker-ssh-host-(?:image|target|systemd-target|own-seal-serve)|docker-systemd-boot|proc-net-tcp-listeners|seal-server-install-machine|user-run-ssh-port-forward|reserve-local-port|ssh-remote-only-browser-fixture|windows-host-orcad-processes)\.ts$/
 
 // An enabled SSH automation moves with its host and is re-enabled on the server (#29083).
 const ENABLED_AUTOMATION_MOVE =
