@@ -42,6 +42,8 @@ function machine(clock: () => number = () => NOW) {
     panes: SealPane[]
     /** The machine stopped answering: its scans fail. */
     down: boolean
+    /** The scan's shell dies before it lists a process. */
+    cutShort: boolean
     /** The machine left the list of connected machines. */
     disconnected: boolean
   } = {
@@ -50,6 +52,7 @@ function machine(clock: () => number = () => NOW) {
     files: [],
     panes: [],
     down: false,
+    cutShort: false,
     disconnected: false
   }
   const host: LiveSessionHost = {
@@ -57,6 +60,9 @@ function machine(clock: () => number = () => NOW) {
     run: async () => {
       if (state.down) {
         throw new Error('ssh: connect to host dev-box: Connection timed out')
+      }
+      if (state.cutShort) {
+        return `@@NOW ${Math.floor(NOW / 1000)}`
       }
       return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
@@ -223,6 +229,28 @@ describe('a machine that stops answering', () => {
 
     state.down = false
     expect(await shown()).toEqual({ statuses: ['working'], error: null })
+  })
+
+  // This machine's transcripts are read by Seal itself, so they are listed whatever the shell did.
+  it('does not take a scan that broke off before the process list as word that its agents left', async () => {
+    const { state, registry } = machine()
+    state.running = true
+    state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
+    const told = async () => {
+      await registry.refresh()
+      return {
+        alive: registry.getSnapshot().sessions.map((s) => s.alive),
+        read: registry.hasRead(`local:claude:${WORKING}`)
+      }
+    }
+    state.cutShort = true
+    expect(await told()).toEqual({ alive: [], read: false })
+
+    state.cutShort = false
+    expect(await told()).toEqual({ alive: [true], read: true })
+
+    state.cutShort = true
+    expect(await told()).toEqual({ alive: [true], read: true })
   })
 
   it('tells its listeners the error is gone when the machine disconnects', async () => {

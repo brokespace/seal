@@ -65,7 +65,12 @@ type CachedTranscript = SummarizedTranscript & {
   subagentFiles: Map<string, SubagentFileSummary>
 }
 
-export type HostScanResult = { sessions: LiveSession[]; complete: boolean }
+export type HostScanResult = {
+  sessions: LiveSession[]
+  complete: boolean
+  /** The scan got as far as the host's process list: an agent not on it has left. */
+  processesListed: boolean
+}
 
 const agentPidsOf = (output: DiscoveryOutput): string =>
   output.processes
@@ -159,7 +164,7 @@ export class HostSessionScanner {
       this.firstSeen.set(session.id, seen)
       session.lastActivityAt ||= seen
     }
-    return { sessions, complete: output.complete }
+    return { sessions, complete: output.complete, processesListed: output.processesListed }
   }
 
   /** Subagent transcripts change while their session's own file stands still. */

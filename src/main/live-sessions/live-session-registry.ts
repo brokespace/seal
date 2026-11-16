@@ -128,7 +128,7 @@ export class LiveSessionRegistry {
     return [...this.hosts].some(
       ([hostId, state]) =>
         sessionId.startsWith(`${hostId}:`) &&
-        (state.scans > 0 || state.failures >= UNREACHABLE_AFTER_FAILURES || this.federated(state))
+        (state.read || state.failures >= UNREACHABLE_AFTER_FAILURES || this.federated(state))
     )
   }
 
@@ -244,11 +244,14 @@ export class LiveSessionRegistry {
       if (this.hosts.get(hostId) !== state) {
         return
       }
-      if (result.complete || result.sessions.length >= state.sessions.length) {
+      // A scan that broke off before the process list would show every agent as gone.
+      const told = result.complete || result.processesListed
+      if (told && (result.complete || result.sessions.length >= state.sessions.length)) {
         const unchanged = JSON.stringify(result.sessions) === JSON.stringify(state.sessions)
         state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
       }
+      state.read ||= told
       state.scans++
       state.failures = 0
       this.deps.onHostScanned?.(state.host, state.sessions)

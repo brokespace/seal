@@ -17,6 +17,8 @@ export type HostScanState = {
   idleScans: number
   /** Scans that returned, for the status hold: a session leaves "working" on the second that says so. */
   scans: number
+  /** A scan since Seal started told which agents run on the host. */
+  read: boolean
   failures: number
   /** A pane changed status since this host's last scan began: what that scan read is from before it. */
   paneChanged: boolean
@@ -49,6 +51,7 @@ export function newHostScanState(
     scanning: false,
     idleScans: 0,
     scans: 0,
+    read: false,
     failures: 0,
     paneChanged: false
   }
