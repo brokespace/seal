@@ -56,7 +56,8 @@ describe('journalSessionTranscript', () => {
 
     const older = await transcript.page(newest.start, 2)
     expect(texts(older.messages)).toEqual(['Fix the login redirect'])
-    expect(older.more).toBe(false)
+    // The conversation's first page starts at 0, which a recap reads as "nothing left out".
+    expect({ start: older.start, more: older.more }).toEqual({ start: 0, more: false })
   })
 
   it('holds back the reply a running turn is still writing until the turn ends', async () => {

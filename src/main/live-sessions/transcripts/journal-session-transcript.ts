@@ -79,7 +79,8 @@ export function journalSessionTranscript(
         sessionId: recordId,
         messages: page,
         cursor: through,
-        start: page[0] ? sequenceOf(page[0]) : 0,
+        // A file's first page starts at byte 0; a journal's first row has a later sequence.
+        start: first > 0 ? sequenceOf(page[0]) : 0,
         more: first > 0
       }
     },
