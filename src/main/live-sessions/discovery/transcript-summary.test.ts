@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
+import {
+  contextAfter,
+  summarizeClaudeTranscript,
+  summarizeCodexRollout
+} from './transcript-summary'
 
 const lines = (records: unknown[]) => `${records.map((r) => JSON.stringify(r)).join('\n')}\n`
 const at = (s: number) => `2026-11-13T10:00:${String(s).padStart(2, '0')}.000Z`
@@ -158,5 +162,18 @@ describe('summarizeCodexRollout', () => {
     expect(
       summarizeCodexRollout({ path, head: text, tail: text, tailIsWholeFile: true }).phase
     ).toBe('turn-ended')
+  })
+})
+
+describe('contextAfter', () => {
+  // Claude's window is told from how much a response used: one under 200k says nothing of it.
+  it('keeps a window the model was seen to exceed when a later response alone would not show it', () => {
+    const reading = { estimated: true, rows: [], model: 'claude-sonnet-4-5' }
+    expect(
+      contextAfter(
+        { ...reading, usedTokens: 76_000, windowTokens: 200_000, percentage: 38 },
+        { ...reading, usedTokens: 52_000, windowTokens: 1_000_000, percentage: 5 }
+      )
+    ).toEqual({ ...reading, usedTokens: 76_000, windowTokens: 1_000_000, percentage: 8 })
   })
 })

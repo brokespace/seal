@@ -101,14 +101,33 @@ function contextOf(
   return contextUsageOfRecords(decoder, records, { complete: whole })
 }
 
-/** A tail with no response in it says nothing new: the last reading stands until a response or a compaction replaces it. */
+/**
+ * A tail with no response in it says nothing new: the last reading stands until a response or a
+ * compaction replaces it. A new reading keeps what only records before its tail said: the model
+ * its turn began under, and a window that model was already seen to exceed.
+ */
 export function contextAfter(
   read: NativeChatContextUsageSummary | null,
   earlier: NativeChatContextUsageSummary | null
 ): NativeChatContextUsageSummary | null {
-  return !earlier || isContextUsageMeasured(read) || read?.lastCompactedAt !== undefined
-    ? read
-    : earlier
+  if (!earlier || !read) {
+    return read ?? earlier
+  }
+  if (!isContextUsageMeasured(read)) {
+    return read.lastCompactedAt !== undefined ? read : earlier
+  }
+  const model = read.model ?? earlier.model
+  const held = read.estimated && earlier.estimated && model === earlier.model
+  const windowTokens = held ? Math.max(read.windowTokens, earlier.windowTokens) : read.windowTokens
+  return {
+    ...read,
+    ...(model === undefined ? {} : { model }),
+    windowTokens,
+    percentage:
+      windowTokens === read.windowTokens
+        ? read.percentage
+        : Math.round((read.usedTokens / windowTokens) * 100)
+  }
 }
 
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i

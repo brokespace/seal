@@ -131,6 +131,31 @@ it("lists how full a session's context is, and keeps that reading while the tail
 
   output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 1000, later, null)
   expect(await listed()).toEqual([reading])
+
+  // The next response is in the tail; the `turn_context` that named its model no longer is.
+  const response = `ut off"}\n${line({
+    type: 'event_msg',
+    timestamp: '2026-11-13T10:00:09.000Z',
+    payload: {
+      type: 'token_count',
+      info: { last_token_usage: { total_tokens: 136_000 }, model_context_window: 272_000 }
+    }
+  })}`
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 2000, response, null)
+  expect(await listed()).toEqual([
+    {
+      context: {
+        usedTokens: 136_000,
+        windowTokens: 272_000,
+        percentage: 50,
+        estimated: false,
+        rows: [],
+        model: 'gpt-5.2-codex',
+        updatedAt: Date.parse('2026-11-13T10:00:09.000Z')
+      },
+      model: 'gpt-5.2-codex'
+    }
+  ])
 })
 
 // Nothing names a Codex's rollout as its own before its first prompt: only its folder does.
