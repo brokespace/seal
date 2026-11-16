@@ -632,6 +632,22 @@
           "collapse": "Collapse active agents",
           "expand": "Expand active agents"
         },
+        "sessionRows": {
+          "allUnderWorkspaces": "Every session is listed under its workspace.",
+          "machine": "Machine",
+          "filterByMachine": "Filter sessions by machine",
+          "scanFailed": "Some machines could not be scanned",
+          "allMachines": "All machines",
+          "filterByStatus": "Filter sessions by status",
+          "allStatuses": "All statuses",
+          "clearFilter": "Clear filter",
+          "toolbarTitle": "Sessions",
+          "options": "Session options",
+          "label": "Agent sessions",
+          "finished": "Recently finished · {{count}}",
+          "hiddenByFilters": "{{count}} hidden by filters",
+          "statusAttention": "Needs you"
+        },
         "workspace": {
           "actions": "Session actions",
           "loading": "Looking for sessions",
@@ -667,22 +683,6 @@
           "plan": "Plan",
           "todos": "To-dos",
           "noTodos": "The agent keeps no list."
-        },
-        "sessionRows": {
-          "allUnderWorkspaces": "Every session is listed under its workspace.",
-          "machine": "Machine",
-          "filterByMachine": "Filter sessions by machine",
-          "scanFailed": "Some machines could not be scanned",
-          "allMachines": "All machines",
-          "filterByStatus": "Filter sessions by status",
-          "allStatuses": "All statuses",
-          "clearFilter": "Clear filter",
-          "toolbarTitle": "Sessions",
-          "options": "Session options",
-          "label": "Agent sessions",
-          "finished": "Recently finished · {{count}}",
-          "hiddenByFilters": "{{count}} hidden by filters",
-          "statusAttention": "Needs you"
         }
       },
       "skills": {
