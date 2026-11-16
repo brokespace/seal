@@ -50,7 +50,7 @@ export function MachineServerKeeperNotes({
           <MachineServerWarning kind="linger-off">
             {t(
               'seal.machineServer.server.lingerOff',
-              'Seal server stops about 10 seconds after this computer disconnects, because lingering is off for your account on this machine. To keep it running, run this on the machine:'
+              'Lingering is off for your account on this machine, so the machine stops Seal server when your last session there ends. That can be 10 seconds after this computer disconnects. To keep it running, run this on the machine:'
             )}
           </MachineServerWarning>
           <MachineCopyableCommand command={lingerCommand(view.serverHostUser)} />

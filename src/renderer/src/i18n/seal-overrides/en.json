@@ -2171,7 +2171,7 @@
         "pm2": "Kept running by PM2",
         "detached": "Starts when Seal connects and stops when idle",
         "version": "Version {{version}}",
-        "lingerOff": "Seal server stops about 10 seconds after this computer disconnects, because lingering is off for your account on this machine. To keep it running, run this on the machine:",
+        "lingerOff": "Lingering is off for your account on this machine, so the machine stops Seal server when your last session there ends. That can be 10 seconds after this computer disconnects. To keep it running, run this on the machine:",
         "pm2NoBoot": "PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.",
         "copyCommand": "Copy command",
         "notInstalled": "Not installed on this machine",
