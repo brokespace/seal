@@ -15,9 +15,14 @@ import {
 } from '../../../../../shared/native-chat/native-chat-context-usage-summary'
 import type { NativeChatContextUsageRingInput } from './native-chat-context-usage-ring-input'
 
-const DISTANCE_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
-  near: 'font-medium text-status-warning-text',
-  critical: 'font-medium text-destructive'
+const STATE_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
+  near: 'text-status-warning-text',
+  critical: 'text-destructive'
+}
+
+const BAR_TONE: Partial<Record<NativeChatContextUsageState, string>> = {
+  near: '[&>[data-slot=progress-indicator]]:bg-status-warning',
+  critical: '[&>[data-slot=progress-indicator]]:bg-destructive'
 }
 
 /** What the ring says beside itself; a state that needs no words has none. */
@@ -110,6 +115,7 @@ export function NativeChatContextUsageCard({
   const t = useTranslate()
   const { state, filled, used, window, compactsAt, left } = readout
   const measured = isContextUsageMeasured(usage)
+  const stateText = contextUsageStateText(state, t)
   const amounts = { used, window, percent: String(usage.percentage) }
   const lastCompactedAt = usage.lastCompactedAt
   const history = compactionHistory(
@@ -125,9 +131,14 @@ export function NativeChatContextUsageCard({
   const deferred = rows.filter(({ row }) => row.deferred)
   return (
     <div className="p-4">
-      <p className="text-sm font-medium text-foreground">
-        {t('components.native-chat.contextUsage.title', 'Context')}
-      </p>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-medium text-foreground">
+          {t('components.native-chat.contextUsage.title', 'Context')}
+        </p>
+        {stateText !== null ? (
+          <p className={cn('text-xs', STATE_TONE[state] ?? 'text-muted-foreground')}>{stateText}</p>
+        ) : null}
+      </div>
       <div className="mt-1 space-y-1 text-xs text-muted-foreground">
         {measured ? (
           <>
@@ -144,16 +155,18 @@ export function NativeChatContextUsageCard({
                     amounts
                   )}
             </p>
-            <Progress value={filled} aria-label={label} className="my-2 h-1.5" />
+            <Progress
+              value={filled}
+              aria-label={label}
+              className={cn('my-2 h-1.5', BAR_TONE[state])}
+            />
             {usage.model ? <p className="truncate">{usage.model}</p> : null}
           </>
         ) : (
           <p>{t('seal.contextIndicator.empty', 'Context usage appears after the first reply.')}</p>
         )}
-        {state === 'compacting' ? (
-          <p className="text-foreground">{contextUsageStateText(state, t)}</p>
-        ) : compactsAt !== undefined && left !== undefined ? (
-          <p className={cn('tabular-nums', DISTANCE_TONE[state])}>
+        {compactsAt !== undefined && left !== undefined ? (
+          <p className={cn('tabular-nums', STATE_TONE[state], STATE_TONE[state] && 'font-medium')}>
             {t(
               'seal.contextIndicator.compactsAt',
               'Compacts automatically at {{threshold}}: {{left}} left',
@@ -163,7 +176,7 @@ export function NativeChatContextUsageCard({
         ) : null}
         {history !== null ? <p>{history}</p> : null}
       </div>
-      {usage.onCompact ? (
+      {usage.onCompact && measured ? (
         <Button
           type="button"
           size="sm"
