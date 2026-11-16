@@ -43,6 +43,7 @@ import {
   LiveSessionSendParams,
   LiveSessionTakeOverParams,
   LiveSessionTranscriptParams,
+  LiveSessionTranscriptSinceParams,
   LiveSessionUnwatchParams,
   LiveSessionWatchTranscriptParams
 } from '../live-sessions/live-session-rpc-params'
@@ -1489,6 +1490,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'liveSessions.send': LiveSessionSendParams,
   'liveSessions.takeOver': LiveSessionTakeOverParams,
   'liveSessions.transcript': LiveSessionTranscriptParams,
+  'liveSessions.transcriptSince': LiveSessionTranscriptSinceParams,
   'liveSessions.unwatch': LiveSessionUnwatchParams,
   'liveSessions.watch': null,
   'liveSessions.watchTranscript': LiveSessionWatchTranscriptParams,

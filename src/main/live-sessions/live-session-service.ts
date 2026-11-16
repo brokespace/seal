@@ -31,11 +31,8 @@ import { takeOverSession } from './delivery/session-take-over'
 import { LiveSessionRemovals, removeFromOwner } from './delivery/session-removal'
 import { LiveSessionAnnotations } from './live-session-annotations'
 import type { StructuredSessionAccess } from './sources/structured-session-source'
-import {
-  localChatSessionId,
-  structuredSessionTranscriptPage,
-  structuredSessionTranscriptSince
-} from './sources/structured-session-transcript'
+import { SessionTranscriptAccess } from './session-transcript-access'
+import { localChatSessionId } from '../../shared/live-sessions/live-session-paired-server'
 import type { FederatedSessions } from './federation/federated-sessions'
 
 export type LiveSessionServiceDeps = {
@@ -64,6 +61,7 @@ const MAX_CONFIRM_READS = 8
 export class LiveSessionService {
   readonly registry: LiveSessionRegistry
   readonly streams: LiveTranscriptStreams
+  private readonly transcripts: SessionTranscriptAccess
   private readonly routes: SessionInputRoutes
   private readonly outbox: LiveMessageOutbox
   private readonly messageListeners = new Set<(message: LiveMessage) => void>()
@@ -97,6 +95,16 @@ export class LiveSessionService {
       log: deps.log
     })
     this.streams = new LiveTranscriptStreams(this.registry, { log: deps.log })
+    this.transcripts = new SessionTranscriptAccess({
+      session: (sessionId) => this.registry.get(sessionId),
+      // Only a chat: a server's CLI session keeps a file this Seal already reads through its host.
+      server: (sessionId) =>
+        this.registry.get(sessionId)?.surface.kind === 'chat'
+          ? (this.federated(sessionId)?.transcripts ?? null)
+          : null,
+      files: this.streams,
+      log: deps.log
+    })
     this.routes = new SessionInputRoutes({
       host: (hostId) => this.registry.host(hostId),
       sealPanes: deps.sealPanes?.input ?? null,
@@ -108,8 +116,9 @@ export class LiveSessionService {
       attempt: (session, route, text, messageId, signal) =>
         this.routes.attempt(session, route, text, messageId, signal),
       transcriptSize: async (session) => {
-        if (session.surface.kind === 'chat') {
-          return (await this.chats?.journalSize(session.surface.sessionId)) ?? 0
+        const chat = localChatSessionId(session)
+        if (chat !== null) {
+          return (await this.chats?.journalSize(chat)) ?? 0
         }
         const found = this.streams.source(session.id)
         return found ? (await found.source.read(0, 0)).size : 0
@@ -171,11 +180,7 @@ export class LiveSessionService {
     before: LiveTranscriptCursor | null,
     limit?: number
   ): Promise<LiveTranscriptPage> {
-    const session = this.registry.get(sessionId)
-    const chat = localChatSessionId(session)
-    return chat && session
-      ? structuredSessionTranscriptPage(session, chat, before, limit)
-      : this.streams.page(sessionId, before, limit)
+    return this.transcripts.page(sessionId, before, limit)
   }
 
   /** What a transcript gained after `cursor`; `shrank` when it was rewritten shorter. */
@@ -183,10 +188,7 @@ export class LiveSessionService {
     sessionId: string,
     cursor: LiveTranscriptCursor
   ): ReturnType<LiveTranscriptStreams['since']> {
-    const chat = localChatSessionId(this.registry.get(sessionId))
-    return chat
-      ? structuredSessionTranscriptSince(chat, cursor)
-      : this.streams.since(sessionId, cursor)
+    return this.transcripts.since(sessionId, cursor)
   }
 
   watchTranscript(
@@ -194,7 +196,7 @@ export class LiveSessionService {
     fromCursor: LiveTranscriptCursor | null,
     listener: (delta: LiveTranscriptDelta) => void
   ): LiveTranscriptSubscription {
-    return this.streams.subscribe(sessionId, fromCursor, listener)
+    return this.transcripts.watch(sessionId, fromCursor, listener)
   }
 
   /** A session on a paired server is reached through that server: its routes mean nothing here. */
@@ -311,8 +313,9 @@ export class LiveSessionService {
   }
 
   private async userTexts(session: LiveSession, from: number): Promise<UserText[]> {
-    if (session.surface.kind === 'chat') {
-      return (await this.chats?.userTexts(session.surface.sessionId, from)) ?? []
+    const chat = localChatSessionId(session)
+    if (chat !== null) {
+      return (await this.chats?.userTexts(chat, from)) ?? []
     }
     const found = this.streams.source(session.id)
     if (!found) {

@@ -8,6 +8,7 @@ import {
   LiveSessionRetryParams,
   LiveSessionSendParams,
   LiveSessionTranscriptParams,
+  LiveSessionTranscriptSinceParams,
   LiveSessionUnwatchParams,
   LiveSessionWatchTranscriptParams
 } from '../../../../../shared/live-sessions/live-session-rpc-params'
@@ -72,6 +73,13 @@ export const LIVE_SESSION_METHODS = [
     params: LiveSessionTranscriptParams,
     handler: ({ sessionId, before, limit }) =>
       service().transcriptPage(sessionId, before ?? null, limit)
+  }),
+  // What a paired desktop's recap of a chat here reads: the rows after a cursor it already holds.
+  defineMethod({
+    name: 'liveSessions.transcriptSince',
+    permission: 'workspace',
+    params: LiveSessionTranscriptSinceParams,
+    handler: ({ sessionId, cursor }) => service().transcriptSince(sessionId, cursor)
   }),
   // Resumable: pass the last delta's cursor as fromCursor after a reconnect.
   defineStreamingMethod({

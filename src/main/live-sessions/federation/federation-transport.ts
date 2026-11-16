@@ -7,6 +7,9 @@ export type FederatedServer = {
   environmentId: string
 }
 
+/** Said of a session whose server has no feed open right now. */
+export const SERVER_NOT_CONNECTED = 'This machine is not connected'
+
 export type FederationStreamError = { code: string; message: string }
 
 export type FederationTransport = {

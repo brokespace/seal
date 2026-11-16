@@ -242,7 +242,7 @@ const removeResultSchema: z.ZodType<LiveRemoveResult> = z.object({
 })
 
 /** `value` as the schema reads it, or null: what a server sends is dropped when malformed, never thrown on. */
-function read<T>(schema: z.ZodType<T>, value: unknown): T | null {
+export function readFromServer<T>(schema: z.ZodType<T>, value: unknown): T | null {
   try {
     const parsed = schema.safeParse(value)
     return parsed.success ? parsed.data : null
@@ -252,9 +252,10 @@ function read<T>(schema: z.ZodType<T>, value: unknown): T | null {
 }
 
 export const readWatchFrame = (value: unknown): ServerWatchFrame | null =>
-  read(watchFrameSchema, value)
-export const readServerMessage = (value: unknown): LiveMessage | null => read(messageSchema, value)
+  readFromServer(watchFrameSchema, value)
+export const readServerMessage = (value: unknown): LiveMessage | null =>
+  readFromServer(messageSchema, value)
 export const readAnswerResult = (value: unknown): LivePermissionAnswerResult | null =>
-  read(answerResultSchema, value)
+  readFromServer(answerResultSchema, value)
 export const readRemoveResult = (value: unknown): LiveRemoveResult | null =>
-  read(removeResultSchema, value)
+  readFromServer(removeResultSchema, value)

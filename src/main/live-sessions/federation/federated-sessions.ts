@@ -9,7 +9,12 @@ import type { LiveSessionSource } from '../sources/live-session-source'
 import { FederatedServerFeed } from './federated-server-feed'
 import { federatedMessage, serverSessionId } from './federated-session-records'
 import { readAnswerResult, readRemoveResult, readServerMessage } from './federated-watch-frames'
-import type { FederatedServer, FederationTransport } from './federation-transport'
+import { FederatedTranscripts } from './federated-transcripts'
+import {
+  SERVER_NOT_CONNECTED,
+  type FederatedServer,
+  type FederationTransport
+} from './federation-transport'
 
 export type { FederatedServer, FederationTransport } from './federation-transport'
 
@@ -18,7 +23,6 @@ const DEFAULT_RETRY_MS = 2_000
 const SEND_TIMEOUT_MS = 30_000
 /** Answering types into a terminal and stopping waits for the agent to exit, both on the server. */
 const ACTION_TIMEOUT_MS = 60_000
-const NOT_CONNECTED = 'This machine is not connected'
 const UNREADABLE_ANSWER = 'The server gave an answer Seal could not read'
 
 type Target = { feed: FederatedServerFeed; serverId: string }
@@ -39,6 +43,8 @@ export class FederatedSessions {
   private readonly retryMs: number
   private readonly now: () => number
   private stopped = false
+  /** Each federated session's transcript, read by its server. */
+  readonly transcripts: FederatedTranscripts
 
   /** Every federated record, already under the desktop's ids and machine records. */
   readonly source: LiveSessionSource = {
@@ -60,6 +66,12 @@ export class FederatedSessions {
   ) {
     this.now = deps.now ?? Date.now
     this.retryMs = deps.retryMs ?? DEFAULT_RETRY_MS
+    this.transcripts = new FederatedTranscripts({
+      transport: deps.transport,
+      target: (sessionId) => this.serverSession(sessionId),
+      retryMs: this.retryMs,
+      log: deps.log
+    })
   }
 
   /** The paired servers connected right now: opens a feed for each new one, closes the rest. Cheap to call often. */
@@ -105,8 +117,8 @@ export class FederatedSessions {
     return this.target(sessionId) !== null
   }
 
-  /** Where a federated session's other calls go (its transcript): the server and the id it knows it by. */
-  serverSession(sessionId: string): { environmentId: string; sessionId: string } | null {
+  /** The server a federated session's calls go to, and the id it knows the session by. */
+  private serverSession(sessionId: string): { environmentId: string; sessionId: string } | null {
     const target = this.target(sessionId)
     return target && { environmentId: target.feed.environmentId, sessionId: target.serverId }
   }
@@ -135,7 +147,7 @@ export class FederatedSessions {
       return message
     }
     if (!target) {
-      return failed(NOT_CONNECTED)
+      return failed(SERVER_NOT_CONNECTED)
     }
     try {
       const response = await this.deps.transport.call(
@@ -209,7 +221,7 @@ export class FederatedSessions {
       error
     })
     if (!target) {
-      return failed(NOT_CONNECTED)
+      return failed(SERVER_NOT_CONNECTED)
     }
     try {
       const response = await this.deps.transport.call(
@@ -236,7 +248,7 @@ export class FederatedSessions {
     }
     const target = this.target(sessionId)
     if (!target) {
-      throw new Error(NOT_CONNECTED)
+      throw new Error(SERVER_NOT_CONNECTED)
     }
     const response = await this.deps.transport.call(
       target.feed.environmentId,
@@ -266,6 +278,7 @@ export class FederatedSessions {
 
   stop(): void {
     this.stopped = true
+    this.transcripts.stop()
     for (const feed of this.feeds.values()) {
       feed.close()
     }

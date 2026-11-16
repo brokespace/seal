@@ -9,6 +9,8 @@ export const LiveSessionTranscriptParams = z.object({
   limit: z.number().int().min(1).max(500).optional()
 })
 
+export const LiveSessionTranscriptSinceParams = z.object({ sessionId: SessionId, cursor: Cursor })
+
 export const LiveSessionWatchTranscriptParams = z.object({
   sessionId: SessionId,
   fromCursor: Cursor.nullish()

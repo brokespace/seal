@@ -4,6 +4,7 @@ import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import { FederatedSessions, type FederationTransport } from './federated-sessions'
 
 type Handlers = Parameters<FederationTransport['subscribe']>[3]
+type Stream = { method: string; params: unknown; handlers: Handlers; closed: boolean }
 
 const MACHINE: LiveSessionMachine = {
   hostId: 'machine-7',
@@ -86,11 +87,11 @@ function ok(result: unknown): RuntimeRpcResponse<unknown> {
 
 function fakeServer(): {
   transport: FederationTransport
-  streams: { handlers: Handlers; closed: boolean }[]
+  streams: Stream[]
   calls: { environmentId: string; method: string; params: unknown }[]
   answers: Map<string, () => RuntimeRpcResponse<unknown>>
 } {
-  const streams: { handlers: Handlers; closed: boolean }[] = []
+  const streams: Stream[] = []
   const calls: { environmentId: string; method: string; params: unknown }[] = []
   const answers = new Map<string, () => RuntimeRpcResponse<unknown>>()
   return {
@@ -98,8 +99,8 @@ function fakeServer(): {
     calls,
     answers,
     transport: {
-      async subscribe(_environmentId, _method, _params, handlers) {
-        const stream = { handlers, closed: false }
+      async subscribe(_environmentId, method, params, handlers) {
+        const stream = { method, params, handlers, closed: false }
         streams.push(stream)
         return {
           close: () => {
@@ -476,5 +477,146 @@ describe('a paired server listed from its own registry', () => {
     federation.stop()
     expect(streams.map((stream) => stream.closed)).toEqual([true, true, true, true, true])
     expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+describe("a server chat's transcript", () => {
+  const row = (id: string, role: string, text: string): Record<string, unknown> => ({
+    id,
+    role,
+    blocks: [{ type: 'text', text }],
+    timestamp: 1000,
+    source: 'transcript'
+  })
+  const ASKED = row('m1', 'user', 'Fix the build')
+  const REPLIED = row('m2', 'assistant', 'Done.')
+
+  it('reads a page and the rows after a cursor from the server, under the desktop id', async () => {
+    const { federation, calls, answers } = federate()
+    answers.set('liveSessions.transcript', () =>
+      ok({
+        sessionId: 'local:claude:abc',
+        messages: [ASKED, { id: 'm9', role: 'assistant' }, REPLIED],
+        cursor: 9,
+        start: 4,
+        more: true
+      })
+    )
+    answers.set('liveSessions.transcriptSince', () =>
+      ok({ messages: [REPLIED], cursor: 12, shrank: false })
+    )
+
+    expect(await federation.transcripts.page('machine-7:claude:abc', 9, 50)).toEqual({
+      sessionId: 'machine-7:claude:abc',
+      messages: [ASKED, REPLIED],
+      cursor: 9,
+      start: 4,
+      more: true
+    })
+    expect(await federation.transcripts.since('machine-7:claude:abc', 9)).toEqual({
+      messages: [REPLIED],
+      cursor: 12,
+      shrank: false
+    })
+    expect(calls).toEqual([
+      {
+        environmentId: 'env-1',
+        method: 'liveSessions.transcript',
+        params: { sessionId: 'local:claude:abc', before: 9, limit: 50 }
+      },
+      {
+        environmentId: 'env-1',
+        method: 'liveSessions.transcriptSince',
+        params: { sessionId: 'local:claude:abc', cursor: 9 }
+      }
+    ])
+  })
+
+  it('follows the server watch and picks it up from the last cursor after a drop', async () => {
+    vi.useFakeTimers()
+    const { federation, streams } = federate()
+    const deltas: unknown[] = []
+
+    const watch = federation.transcripts.watch('machine-7:claude:abc', null, (delta) =>
+      deltas.push(delta)
+    )
+    await vi.advanceTimersByTimeAsync(0)
+    expect(streams[1]).toMatchObject({
+      method: 'liveSessions.watchTranscript',
+      params: { sessionId: 'local:claude:abc', fromCursor: null }
+    })
+    streams[1].handlers.onFrame({
+      type: 'ready',
+      subscriptionId: 'live-transcript-1',
+      page: { sessionId: 'local:claude:abc', messages: [ASKED], cursor: 3, start: 0, more: false }
+    })
+    expect(await watch.ready).toEqual({
+      sessionId: 'machine-7:claude:abc',
+      messages: [ASKED],
+      cursor: 3,
+      start: 0,
+      more: false
+    })
+
+    streams[1].handlers.onFrame({
+      type: 'delta',
+      delta: { sessionId: 'local:claude:abc', from: 3, cursor: 5, messages: [REPLIED] }
+    })
+    expect(deltas).toEqual([
+      { sessionId: 'machine-7:claude:abc', from: 3, cursor: 5, messages: [REPLIED] }
+    ])
+
+    streams[1].handlers.onClose()
+    await vi.advanceTimersToNextTimerAsync()
+    expect(streams[1].closed).toBe(true)
+    expect(streams[2].params).toEqual({ sessionId: 'local:claude:abc', fromCursor: 5 })
+
+    watch.unsubscribe()
+    expect(streams[2].closed).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('answers a watcher whose first open failed, then gives the page once the server does', async () => {
+    vi.useFakeTimers()
+    const { federation, streams } = federate()
+    const deltas: unknown[] = []
+
+    const watch = federation.transcripts.watch('machine-7:claude:abc', null, (delta) =>
+      deltas.push(delta)
+    )
+    await vi.advanceTimersByTimeAsync(0)
+    streams[1].handlers.onError({ code: 'unreachable', message: 'No route to kessel-ml' })
+    expect(await watch.ready).toEqual({
+      sessionId: 'machine-7:claude:abc',
+      messages: [],
+      cursor: 0,
+      start: 0,
+      more: false
+    })
+
+    await vi.advanceTimersToNextTimerAsync()
+    streams[2].handlers.onFrame({
+      type: 'ready',
+      subscriptionId: 'live-transcript-2',
+      page: {
+        sessionId: 'local:claude:abc',
+        messages: [ASKED, REPLIED],
+        cursor: 5,
+        start: 0,
+        more: false
+      }
+    })
+    expect(deltas).toEqual([
+      {
+        sessionId: 'machine-7:claude:abc',
+        from: 0,
+        cursor: 5,
+        messages: [ASKED, REPLIED],
+        reset: true
+      }
+    ])
+
+    federation.stop()
+    expect(streams[2].closed).toBe(true)
   })
 })
