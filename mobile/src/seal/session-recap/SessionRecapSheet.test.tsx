@@ -83,7 +83,6 @@ let renderer: ReactTestRenderer | null = null
 function render(patch: Partial<SessionRecapSheetProps> = {}) {
   const handlers = {
     onMark: vi.fn(),
-    onJump: vi.fn(),
     onOpenLink: vi.fn(),
     onRefresh: vi.fn(),
     onClose: vi.fn()
@@ -144,13 +143,11 @@ describe('SessionRecapSheet', () => {
     expect(onMark.mock.calls).toEqual([['t3', null]])
   })
 
-  it('sends a pressed item to its message and a pull request to the browser', () => {
-    const { onJump, onOpenLink } = render()
+  it('sends a pull request to the browser', () => {
+    const { onOpenLink } = render()
 
-    press(byTestId('recap-jump-m40')[0])
     press(byTestId('recap-open-https://github.com/acme/billing/pull/482')[0])
 
-    expect(onJump.mock.calls).toEqual([['m40']])
     expect(onOpenLink.mock.calls).toEqual([['https://github.com/acme/billing/pull/482']])
   })
 

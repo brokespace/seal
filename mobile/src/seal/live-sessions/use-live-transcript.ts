@@ -1,32 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { readLiveTranscriptPage } from './live-session-operations'
+import type { NativeChatMessage } from '../../../../src/shared/native-chat/native-chat-types'
 import {
   liveTranscriptFrameSchema,
   type LiveTranscriptDelta,
-  type LiveTranscriptMessage,
   type LiveTranscriptPage
 } from './live-session-schemas'
 
-export type LiveTranscriptState = {
+type LiveTranscriptState = {
   phase: 'loading' | 'ready' | 'error'
   error: string | null
-  messages: LiveTranscriptMessage[]
+  messages: NativeChatMessage[]
   /** How far the transcript has been read, in bytes; null before the first read. */
   readTo: number | null
   hasMore: boolean
-  loadingEarlier: boolean
+  /** The read of the page before the oldest loaded row; a failed one waits for a tap. */
+  olderPages: 'idle' | 'loading' | 'failed'
 }
 
 type Held = {
-  byId: Map<string, LiveTranscriptMessage>
+  byId: Map<string, NativeChatMessage>
   cursor: number | null
   start: number | null
 }
 
-const offsetOf = (m: LiveTranscriptMessage) => m.transcriptOffset ?? 0
+const offsetOf = (m: NativeChatMessage) => m.transcriptOffset ?? 0
 
-function ordered(byId: Map<string, LiveTranscriptMessage>): LiveTranscriptMessage[] {
+function ordered(byId: Map<string, NativeChatMessage>): NativeChatMessage[] {
   return [...byId.values()].sort((a, b) => offsetOf(a) - offsetOf(b))
 }
 
@@ -36,7 +37,7 @@ const LOADING: LiveTranscriptState = {
   messages: [],
   readTo: null,
   hasMore: false,
-  loadingEarlier: false
+  olderPages: 'idle'
 }
 
 /**
@@ -140,7 +141,7 @@ export function useLiveTranscript(
     if (!client || !sessionId || before === null || before === 0) {
       return
     }
-    setState((s) => ({ ...s, loadingEarlier: true }))
+    setState((s) => ({ ...s, olderPages: 'loading' }))
     try {
       const page = await readLiveTranscriptPage(client, sessionId, before)
       for (const m of page.messages) {
@@ -151,10 +152,10 @@ export function useLiveTranscript(
         ...s,
         messages: ordered(held.current.byId),
         hasMore: page.more,
-        loadingEarlier: false
+        olderPages: 'idle'
       }))
     } catch {
-      setState((s) => ({ ...s, loadingEarlier: false }))
+      setState((s) => ({ ...s, olderPages: 'failed' }))
     }
   }, [client, sessionId])
 

@@ -3,7 +3,8 @@ import { randomV4Uuid } from '../../platform/random-v4-uuid'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { retryLiveMessage, sendLiveMessage } from './live-session-operations'
 import { pendingLiveMessages } from '../../../../src/shared/live-sessions/live-session-pending-messages'
-import type { LiveMessage, LiveTranscriptMessage } from './live-session-schemas'
+import type { NativeChatMessage } from '../../../../src/shared/native-chat/native-chat-types'
+import type { LiveMessage } from './live-session-schemas'
 import { currentLiveSessionId, type LiveSessionsFeedState } from './live-sessions-feed'
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error))
@@ -17,15 +18,13 @@ export function useLiveSessionOutbox({
   feed,
   sessionId,
   transcript,
-  readTo,
-  onSend
+  readTo
 }: {
   client: RpcClient | null
   feed: LiveSessionsFeedState & { upsertMessage: (message: LiveMessage) => void }
   sessionId: string
-  transcript: readonly LiveTranscriptMessage[]
+  transcript: readonly NativeChatMessage[]
   readTo: number | null
-  onSend: () => void
 }) {
   const { upsertMessage, messages: outboxById } = feed
   const [unacked, setUnacked] = useState<LiveMessage[]>([])
@@ -46,7 +45,6 @@ export function useLiveSessionOutbox({
         ...list.filter((m) => m.messageId !== message.messageId),
         { ...message, state: 'sending', error: null }
       ])
-      onSend()
       try {
         upsertMessage(
           await sendLiveMessage(client, {
@@ -66,7 +64,7 @@ export function useLiveSessionOutbox({
         )
       }
     },
-    [client, onSend, upsertMessage]
+    [client, upsertMessage]
   )
 
   const send = useCallback(
