@@ -2,6 +2,7 @@
 
 import {
   contextTokensFromUsage,
+  type AgentSessionContextReport,
   type AgentSessionContextUsage,
   type AgentSessionContextUsageCategory,
   type AgentSessionContextUsed,
@@ -24,7 +25,19 @@ export type StructuredAgentContextUsage = {
   estimated: boolean
   /** The provider's breakdown; empty for an estimate. */
   categories: readonly AgentSessionContextUsageCategory[]
+  /** Where the provider compacts on its own, from its newest report for this window. */
+  autoCompactAtTokens?: number
+  model?: string
+  /** Epoch ms the count was captured. */
+  updatedAt?: number
+  /** Compaction notices in the journal; absent unless its whole history was read. */
+  compactions?: number
+  /** Epoch ms of the newest compaction notice read. */
+  lastCompactedAt?: number
 }
+
+/** A provider that names no model writes this in the report's place. */
+const UNNAMED_MODEL = 'unknown'
 
 type ContextFactSource = Pick<AgentJournalRenderItem, 'sequence' | 'body'>
 
@@ -66,40 +79,122 @@ export function selectStructuredAgentContextUsage(
   minimumSequence = 0
 ): StructuredAgentContextUsage | null {
   const clearedSequence = latestAgentSessionContextClearSequence(items)
-  const loaded = latestStructuredAgentContextFacts(
-    items,
-    Math.max(minimumSequence, clearedSequence)
-  )
+  const floor = Math.max(minimumSequence, clearedSequence)
+  const loaded = latestStructuredAgentContextFacts(items, floor)
   const fallback = clearedSequence > minimumSequence ? undefined : wholeJournal
-  return summarizeStructuredAgentContextFacts({ ...fallback, ...loaded })
+  return summarizeStructuredAgentContextFacts(
+    { ...fallback, ...loaded },
+    latestContextReport(items, floor) ??
+      (fallback?.used?.kind === 'report' ? { report: fallback.used, modelCurrent: false } : null)
+  )
 }
 
-/** Fill missing loaded-window facts from the host's whole-journal answer; a floor from another epoch is ignored. */
+type HeldContextReport = {
+  report: AgentSessionContextReport
+  /** No reset since: an `unknown` after it may be a model change, which keeps the window's size. */
+  modelCurrent: boolean
+}
+
+/** Between reports the count is an estimate, but the newest report still says where its window compacts. */
+function latestContextReport(
+  items: Iterable<ContextFactSource>,
+  minimumSequence: number
+): HeldContextReport | null {
+  let latest: { sequence: number; report: AgentSessionContextReport } | null = null
+  let resetSequence = 0
+  for (const item of items) {
+    const used = readAgentJournalTurn(item.body)?.contextUsage?.used
+    if (item.sequence <= minimumSequence) {
+      continue
+    }
+    if (used?.kind === 'unknown') {
+      resetSequence = Math.max(resetSequence, item.sequence)
+    }
+    if (used?.kind === 'report' && (latest === null || item.sequence >= latest.sequence)) {
+      latest = { sequence: item.sequence, report: used }
+    }
+  }
+  return latest ? { report: latest.report, modelCurrent: resetSequence < latest.sequence } : null
+}
+
+export type StructuredAgentSessionCompactions = {
+  /** Absent when older rows are not loaded, so the loaded count would run short. */
+  compactions?: number
+  lastCompactedAt?: number
+}
+
+/** Compaction notices since the conversation last started over; `complete` says the rows reach the journal's start. */
+export function structuredAgentSessionCompactions(
+  items: readonly Pick<AgentJournalRenderItem, 'sequence' | 'observedAt' | 'body'>[],
+  complete = false
+): StructuredAgentSessionCompactions {
+  const clearedSequence = latestAgentSessionContextClearSequence(items)
+  let count = 0
+  let lastCompactedAt: number | undefined
+  for (const item of items) {
+    if (
+      item.sequence <= clearedSequence ||
+      item.body.kind !== 'status' ||
+      item.body.presentation !== 'compaction'
+    ) {
+      continue
+    }
+    count += 1
+    lastCompactedAt = Math.max(lastCompactedAt ?? 0, item.observedAt)
+  }
+  return {
+    // Rows after a loaded clear are all loaded, whatever lies before it.
+    ...(complete || clearedSequence > 0 ? { compactions: count } : {}),
+    ...(lastCompactedAt === undefined ? {} : { lastCompactedAt })
+  }
+}
+
+/**
+ * Fill missing loaded-window facts from the host's whole-journal answer; a floor from another epoch is ignored.
+ * A session whose host writes context facts but has none to show yet gets an unmeasured answer (no
+ * window), so its ring draws empty instead of disappearing.
+ */
 export function selectStructuredAgentSessionContextUsage(
   journalItems: readonly AgentJournalRenderItem[],
   support: AgentSessionOptionsResult['contextUsage'],
-  journalEpoch?: string | null
+  journalEpoch?: string | null,
+  historyComplete = false
 ): StructuredAgentContextUsage | null {
-  return selectStructuredAgentContextUsage(
+  const usage = selectStructuredAgentContextUsage(
     journalItems,
     support?.current,
     support?.contextFloor && (!journalEpoch || support.contextFloor.epoch === journalEpoch)
       ? support.contextFloor.sequence
       : 0
   )
+  if (!usage && !support) {
+    return null
+  }
+  return {
+    ...(usage ?? {
+      usedTokens: 0,
+      windowTokens: 0,
+      percentage: 0,
+      estimated: false,
+      categories: []
+    }),
+    ...structuredAgentSessionCompactions(journalItems, historyComplete)
+  }
 }
 
-function summarizeStructuredAgentContextFacts({
-  used: fact,
-  window
-}: AgentSessionContextUsage): StructuredAgentContextUsage | null {
+function summarizeStructuredAgentContextFacts(
+  { used: fact, window }: AgentSessionContextUsage,
+  held: HeldContextReport | null
+): StructuredAgentContextUsage | null {
   if (fact?.kind === 'report') {
     return {
       usedTokens: fact.usedTokens,
       windowTokens: fact.windowTokens,
       percentage: fact.percentage,
       estimated: false,
-      categories: fact.categories
+      categories: fact.categories,
+      updatedAt: fact.capturedAt,
+      ...reportedCompactionPoint({ report: fact, modelCurrent: true }, fact.windowTokens)
     }
   }
   // `unknown`, or a kind a newer host writes that this client cannot measure.
@@ -116,6 +211,24 @@ function summarizeStructuredAgentContextFacts({
     windowTokens: window.tokens,
     percentage: Math.round((usedTokens / window.tokens) * 100),
     estimated: true,
-    categories: []
+    categories: [],
+    updatedAt: fact.capturedAt,
+    ...(held ? reportedCompactionPoint(held, window.tokens) : {})
+  }
+}
+
+/** A report speaks for its own window only: another model compacts elsewhere. */
+function reportedCompactionPoint(
+  { report, modelCurrent }: HeldContextReport,
+  windowTokens: number
+): Pick<StructuredAgentContextUsage, 'autoCompactAtTokens' | 'model'> {
+  if (report.windowTokens !== windowTokens) {
+    return {}
+  }
+  return {
+    ...(report.autoCompactAtTokens !== undefined && report.autoCompactAtTokens > 0
+      ? { autoCompactAtTokens: report.autoCompactAtTokens }
+      : {}),
+    ...(modelCurrent && report.model !== UNNAMED_MODEL ? { model: report.model } : {})
   }
 }
