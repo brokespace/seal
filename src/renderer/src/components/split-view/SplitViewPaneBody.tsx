@@ -4,6 +4,7 @@ import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessio
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
 import { WslHostStoppedWorkspaceNotice } from '@/components/wsl-host-stopped/WslHostStoppedWorkspaceNotice'
 import { useTranslate } from '@/i18n/use-translate'
+import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import { useAppStore } from '@/store/index'
 import {
   canAdmitTerminalTabsForStartup,
@@ -30,6 +31,7 @@ function Placeholder({
     <div
       data-split-view-placeholder={onClose ? 'unavailable' : onLoad ? 'paused' : 'loading'}
       // What cannot take focus must not take the keyboard from the pane that has it.
+      {...(onClose ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
       onMouseDown={onClose ? (event) => event.preventDefault() : undefined}
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center text-sm text-muted-foreground"
     >

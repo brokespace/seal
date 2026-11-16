@@ -40,6 +40,10 @@ function landsOnStripControl(target: EventTarget): boolean {
   return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
 }
 
+function landsOnStrip(target: EventTarget): boolean {
+  return target instanceof Element && target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}]`) !== null
+}
+
 /** React hands a pane the events of its menus too, which are drawn outside it. */
 function isInPane(event: React.SyntheticEvent<HTMLElement>): boolean {
   return event.target instanceof Node && event.currentTarget.contains(event.target)
@@ -122,7 +126,7 @@ export function SplitViewPane({
       bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId, tabPressedRef.current)
     }
     tabPressedRef.current = false
-  }, [focused, paneId, activeKey, worktreeId, tabCount, tabPresses])
+  }, [focused, paneId, activeKey, worktreeId, tabCount, tabPresses, state.maximizedPaneId])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')
@@ -151,7 +155,7 @@ export function SplitViewPane({
       }}
       onMouseDownCapture={(event) => {
         // A press on the strip leaves the keyboard where it is; the tab's content gets it instead.
-        if (landsOnStripControl(event.target)) {
+        if (landsOnStrip(event.target)) {
           event.preventDefault()
         }
       }}
@@ -165,6 +169,7 @@ export function SplitViewPane({
     >
       <ItemTabStrip
         paneId={paneId}
+        keepsFocus
         tabs={pane?.tabs ?? []}
         activeKey={activeKey}
         label={t('seal.splitView.pane.tabs', 'Tabs in this pane')}

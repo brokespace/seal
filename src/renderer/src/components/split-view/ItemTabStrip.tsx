@@ -16,6 +16,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { ItemTabMenu } from './ItemTabMenu'
 import { startItemPointerDrag } from './item-pointer-drag'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
+import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import { ITEM_TAB_KEY_ATTRIBUTE, ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 import {
   splitViewItemKey,
@@ -184,6 +185,7 @@ export function ItemTabStrip({
   commands,
   before,
   after,
+  keepsFocus = false,
   className,
   style
 }: {
@@ -196,6 +198,8 @@ export function ItemTabStrip({
   commands: ItemTabCommands
   before?: React.ReactNode
   after?: React.ReactNode
+  /** A press on the strip leaves a terminal its keyboard. */
+  keepsFocus?: boolean
   className?: string
   style?: React.CSSProperties
 }): React.JSX.Element {
@@ -224,6 +228,7 @@ export function ItemTabStrip({
   return (
     <div
       {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: paneId ?? '' }}
+      {...(keepsFocus ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
       className={cn(
         '@container/session-tabs flex shrink-0 border-b border-border bg-muted/40',
         className
