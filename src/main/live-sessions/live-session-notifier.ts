@@ -13,6 +13,7 @@ import {
   liveSessionNotice,
   type LiveSessionNotice
 } from '../../shared/live-sessions/live-session-notices'
+import { unrefTimer } from '../session-summaries/unref-timer'
 
 export type LiveSessionNotification = {
   sessionId: string
@@ -34,8 +35,7 @@ export type LiveSessionNotifierDeps = {
   replyAsk?: (session: LiveSession) => ReplyAskVerdict
   /** The reply a session relabelled as asking ended on, for one whose row carries none. */
   askedReply?: (sessionId: string) => string | null
-  /** Returns the timer's cancel. */
-  setTimer?: (run: () => void, delayMs: number) => () => void
+  setTimer?: typeof unrefTimer
 }
 
 export type LiveSessionNotificationOwner =
@@ -98,12 +98,6 @@ function describe(
 /** How long a finished turn waits, check by check, for its reply to be read. */
 const REPLY_CHECKS_MS = [300, 700, 1_500, 3_000, 5_000, 8_000]
 
-function unrefTimeout(run: () => void, delayMs: number): () => void {
-  const timer = setTimeout(run, delayMs)
-  timer.unref?.()
-  return () => clearTimeout(timer)
-}
-
 /** Only the registry reads a reply as a question, so no owner of a surface has announced it. */
 function askedAfterTurnEnd(before: LiveSession | undefined, after: LiveSession): boolean {
   return (
@@ -124,7 +118,7 @@ export class LiveSessionNotifier {
   private readonly setTimer: NonNullable<LiveSessionNotifierDeps['setTimer']>
 
   constructor(private readonly deps: LiveSessionNotifierDeps) {
-    this.setTimer = deps.setTimer ?? unrefTimeout
+    this.setTimer = deps.setTimer ?? unrefTimer
   }
 
   onEvent(event: LiveSessionRegistryEvent): void {
@@ -188,7 +182,7 @@ export class LiveSessionNotifier {
   private hold(sessionId: string, check: number): void {
     this.held.set(
       sessionId,
-      this.setTimer(() => this.read(sessionId, check), REPLY_CHECKS_MS[check])
+      this.setTimer(() => this.read(sessionId, check), REPLY_CHECKS_MS[check]).cancel
     )
   }
 

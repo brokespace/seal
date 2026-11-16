@@ -39,7 +39,7 @@ function watch(replyAsk?: () => ReplyAskVerdict) {
     setTimer: (run, delayMs) => {
       const timer = { run, delayMs }
       timers.push(timer)
-      return () => void timers.splice(timers.indexOf(timer), 1)
+      return { cancel: () => void timers.splice(timers.indexOf(timer), 1) }
     }
   })
   let revision = 0
