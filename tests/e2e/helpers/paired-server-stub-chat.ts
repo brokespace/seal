@@ -10,6 +10,7 @@ import { orcaCliResult } from './compiled-orca-cli'
 import { expect } from './orca-app'
 import { activateManagedWorkspace, type ManagedHostFixture } from './orcad-managed-workspace'
 import { callEnvironment } from './paired-host-terminal'
+import { installSealServerOverSshTarget } from './seal-server-install-machine'
 import { waitForSessionReady } from './store'
 
 const STUB = readFileSync(
@@ -93,22 +94,19 @@ export async function startServerStubChat(
   const page = launched.page
   await waitForSessionReady(page)
 
-  // Seal converts no SSH machine on connect; this is what "Set up Seal on an SSH host" calls.
-  const deployed = await page.evaluate(async (input) => {
-    const { target } = await window.api.ssh.addTarget({ target: input })
-    return window.api.runtimeEnvironments.managedOrcad!.deploy({
-      name: 'Docker Seal server',
-      sshTargetId: target.id
-    })
-  }, host.input)
-  if (!('environment' in deployed)) {
-    throw new Error(`The server was not installed: ${JSON.stringify(deployed)}`)
-  }
-  const environmentId = deployed.environment.id
-  const machine = (await page.evaluate(() => window.api.machines!.list())).find(
-    (entry) => entry.server?.environmentId === environmentId
+  // Seal installs no server on connect; this sends what the install confirmation sends.
+  const targetId = await page.evaluate(
+    async (input) => (await window.api.ssh.addTarget({ target: input })).target.id,
+    host.input
   )
-  expect(machine, 'the server is a machine').toMatchObject({ connection: 'server' })
+  const installed = await installSealServerOverSshTarget(page, targetId)
+  const machine = (await page.evaluate(() => window.api.machines!.list())).find(
+    (entry) => entry.ssh?.targetId === targetId
+  )
+  expect(machine, `the server is a machine (${installed.reason})`).toMatchObject({
+    connection: 'server'
+  })
+  const environmentId = machine!.server!.environmentId
   const hostId = machine!.recordId
   expect(hostId).not.toBe('local')
 
