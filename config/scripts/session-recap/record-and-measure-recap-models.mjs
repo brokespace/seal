@@ -70,5 +70,10 @@ if (!run('pnpm', ['test', suite, '--maxWorkers=2'])) {
   process.exit(1)
 }
 
+const report = readFileSync(join(repo, evidence, 'judge', 'report.md'), 'utf8')
+console.log(`\n${report.slice(0, report.indexOf('\n## ')).trim()}`)
+
 run('git', ['status', '--short', '--', suite, evidence])
-console.log(`\nDone. Read ${evidence}/judge/report.md, then commit and push what git lists above.`)
+console.log(
+  `\nDone. The full report is ${evidence}/judge/report.md. Commit and push what git lists above.`
+)

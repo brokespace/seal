@@ -218,6 +218,23 @@ function percentile(sorted: readonly number[], fraction: number): number | null 
     : sorted[Math.min(sorted.length - 1, Math.floor(fraction * sorted.length))]
 }
 
+export const RECAP_JUDGE_SUMMARY_HEAD = [
+  '| Model | Answered | AUC held out: done / did_part / declined / withdrawn / left_undone | Must-keep lost | Not addressed, caught (held out) | Cost | Median ms | p95 ms |',
+  '| --- | --- | --- | --- | --- | --- | --- | --- |'
+].join('\n')
+
+/** One model's line in the table a run ends on. */
+export function recapJudgeSummaryRow(
+  model: string,
+  score: RecapJudgeScore,
+  spend: RecapJudgeSpend
+): string {
+  const latency = [...spend.latencyMs].sort((a, b) => a - b)
+  const total = score.items.tune + score.items.heldOut + score.items.midTurn
+  const aucs = RECAP_JUDGE_QUESTION_IDS.map((id) => auc(score.questions[id].auc.heldOut))
+  return `| ${model} | ${total - score.items.unanswered}/${total} | ${aucs.join(' / ')} | ${score.mustKeepLost.length} | ${share(score.questions.left_undone.catches)} | $${spend.usd.toFixed(4)} | ${percentile(latency, 0.5) ?? 'n/a'} | ${percentile(latency, 0.95) ?? 'n/a'} |`
+}
+
 export function recapJudgeReportMarkdown(
   model: string,
   score: RecapJudgeScore,

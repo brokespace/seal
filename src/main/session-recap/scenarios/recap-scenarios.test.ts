@@ -52,6 +52,25 @@ const pending: RecapPendingRequest[] = []
 const awaited: RecapPendingRequest[] = []
 const results: RecapBaseline = {}
 let credentials: CloudflareAiCredentials | undefined
+/** False while a live run has no checked credential, or once a live request went unanswered. */
+let sound = !live
+
+const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** The real endpoint, asked again when it is busy or down: a fallback's reply must not stand in for the first model's. */
+async function askLive(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url, init).catch(() => null)
+    const answered = response !== null && response.status < 500 && response.status !== 429
+    if (answered || attempt === 3 || init.signal?.aborted) {
+      if (response === null) {
+        throw new Error('Workers AI could not be reached')
+      }
+      return response
+    }
+    await pause(2000 * 2 ** attempt)
+  }
+}
 
 describe('recap scenarios', () => {
   beforeAll(async () => {
@@ -60,6 +79,7 @@ describe('recap scenarios', () => {
     }
     if (live) {
       credentials = await liveRecapCredentials()
+      sound = true
     }
   })
 
@@ -69,6 +89,10 @@ describe('recap scenarios', () => {
         [...pending, ...awaited].map((request) => [`${request.scenario} ${request.key}`, request])
       )
       await writeFile(pendingPath, `${JSON.stringify([...unique.values()], null, 2)}\n`)
+    }
+    // A run that lost live requests would record the outage as the recap's behaviour.
+    if (!sound) {
+      return
     }
     if (reportDir) {
       rows.sort((a, b) => a.id.localeCompare(b.id))
@@ -95,7 +119,7 @@ describe('recap scenarios', () => {
           cassette: await loadRecapCassette(scenario.id),
           ...(live
             ? {
-                live: (url: string, init: RequestInit) => fetch(url, init),
+                live: askLive,
                 onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry)
               }
             : {})
@@ -103,6 +127,10 @@ describe('recap scenarios', () => {
         const run = await runRecapScenario(scenario, surface, model, credentials)
         if (recorded.length > 0) {
           await addToRecapCassette(scenario.id, recorded)
+        }
+        if (model.liveFailures.length > 0) {
+          sound = false
+          expect.fail(`Workers AI did not answer: ${model.liveFailures.join(', ')}. Run it again.`)
         }
         if (scenario.pending && run.status === 'pending') {
           awaited.push(...model.pending)

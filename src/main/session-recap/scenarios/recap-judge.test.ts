@@ -25,7 +25,9 @@ import {
 import { RECAP_JUDGE_QUESTION_BOOK } from './recap-judge-questions.test-fixture'
 import {
   cutForLoss,
+  RECAP_JUDGE_SUMMARY_HEAD,
   recapJudgeReportMarkdown,
+  recapJudgeSummaryRow,
   recapShownStanding,
   rocAuc,
   scoreRecapJudge,
@@ -255,29 +257,49 @@ describe('recap judge models', () => {
       await mkdir(reportDir, { recursive: true })
       const log = join(reportDir, 'calls.jsonl')
       const sections: string[] = []
+      const summary: string[] = []
       for (const { model, records, missing } of todo) {
         const failed: Record<string, number> = {}
-        const queue = [...missing]
-        const worker = async (): Promise<void> => {
-          for (let next = queue.shift(); next; next = queue.shift()) {
-            const call = await askRecapJudge(model, next.body, credentials, (url, init) =>
-              fetch(url, init)
-            )
-            const entry = { model: model.id, item: next.item.id, key: next.key, cached: false }
-            if ('failed' in call) {
-              failed[call.failed] = (failed[call.failed] ?? 0) + 1
-              await appendFile(log, `${JSON.stringify({ ...entry, ...call })}\n`)
-              continue
-            }
-            records.set(next.key, { key: next.key, item: next.item.id, ...call })
-            const usd = recapJudgeUsd(model, call.inputTokens ?? 0, call.outputTokens ?? 0)
-            await appendFile(
-              log,
-              `${JSON.stringify({ ...entry, ms: call.ms, inputTokens: call.inputTokens, outputTokens: call.outputTokens, usd })}\n`
-            )
+        const ask = async (
+          next: (typeof missing)[number]
+        ): Promise<'answered' | 'refused' | 'failed'> => {
+          const call = await askRecapJudge(model, next.body, credentials, (url, init) =>
+            fetch(url, init)
+          )
+          const entry = { model: model.id, item: next.item.id, key: next.key, cached: false }
+          if ('failed' in call) {
+            failed[call.failed] = (failed[call.failed] ?? 0) + 1
+            await appendFile(log, `${JSON.stringify({ ...entry, ...call })}\n`)
+            return call.refused ? 'refused' : 'failed'
           }
+          records.set(next.key, { key: next.key, item: next.item.id, ...call })
+          const usd = recapJudgeUsd(model, call.inputTokens ?? 0, call.outputTokens ?? 0)
+          await appendFile(
+            log,
+            `${JSON.stringify({ ...entry, ms: call.ms, inputTokens: call.inputTokens, outputTokens: call.outputTokens, usd })}\n`
+          )
+          return 'answered'
         }
-        await Promise.all(Array.from({ length: concurrency }, worker))
+        // One request alone first: an account that may not run the model says so here, once.
+        const [first, ...rest] = missing
+        if (first && (await ask(first)) === 'refused') {
+          const why = Object.keys(failed)[0]
+          sections.push(
+            `## ${model.id}\n\nNot callable with this credential: ${why}. Nothing was measured.\n`
+          )
+          summary.push(`| ${model.id} | not callable: ${why} | | | | | | |`)
+          continue
+        }
+        // A second round asks again for what a busy service left unanswered.
+        for (const round of [rest, null]) {
+          const queue = round ?? missing.filter((found) => !records.has(found.key))
+          const worker = async (): Promise<void> => {
+            for (let next = queue.shift(); next; next = queue.shift()) {
+              await ask(next)
+            }
+          }
+          await Promise.all(Array.from({ length: concurrency }, worker))
+        }
         const { score, records: used } = scoreOf(model, records)
         for (const record of used.filter((found) => !missing.some((m) => m.key === found.key))) {
           await appendFile(
@@ -288,13 +310,9 @@ describe('recap judge models', () => {
         // Only answers to what is asked today are kept: a reworded question's old answers go.
         await saveRecapJudgeRecords(model, used)
         calibrations[model.id] = calibrationOf(score)
-        sections.push(
-          recapJudgeReportMarkdown(
-            model.id,
-            score,
-            spendOf(model, used, { asked: missing.length, failed })
-          )
-        )
+        const spend = spendOf(model, used, { asked: missing.length, failed })
+        sections.push(recapJudgeReportMarkdown(model.id, score, spend))
+        summary.push(recapJudgeSummaryRow(model.id, score, spend))
       }
       await writeRecapScenarioJson(THRESHOLDS, calibrations)
       const standings = new Map<string, number>()
@@ -310,6 +328,9 @@ describe('recap judge models', () => {
           `Question book \`${RECAP_JUDGE_QUESTION_BOOK}\`. ${items.length} labelled requests-at-a-check from ${labelled.length} scenarios: ${[...standings].map(([key, n]) => `${n} ${key}`).join(', ')}.`,
           '',
           'Thresholds are set on the tune split; every "held out" number is on scenarios the thresholds never saw. The suite over-samples hard cases and is not weighted to real sessions, so rates here are for the suite. With this few items in a class, one item moves a rate by several points.',
+          '',
+          RECAP_JUDGE_SUMMARY_HEAD,
+          ...summary,
           '',
           ...sections
         ].join('\n')

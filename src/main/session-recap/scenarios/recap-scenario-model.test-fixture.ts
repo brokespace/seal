@@ -105,6 +105,8 @@ export type RecapScenarioModelOptions = {
 export class RecapScenarioModel {
   /** Requests nothing could answer; the scenario cannot go on past the first. */
   readonly pending: RecapPendingRequest[] = []
+  /** Live requests the real endpoint did not answer: the run then shows the outage, not the recap. */
+  readonly liveFailures: string[] = []
   /** The model of each request that got a reply, in order. */
   readonly answeredBy: string[] = []
   private readonly faults: { fault: RecapScenarioFault; model: string }[] = []
@@ -145,12 +147,17 @@ export class RecapScenarioModel {
       })
       throw new Error(`No recorded reply for a ${model} request of ${this.options.scenario}`)
     }
-    const response = await this.options.live(url, init)
+    const response = await this.options.live(url, init).catch((error: unknown) => {
+      this.liveFailures.push(`${model} unreachable`)
+      throw error
+    })
     const body: unknown = await response.json().catch(() => null)
     const reply = replyOf(body)
     if (response.ok && reply !== null) {
       this.answeredBy.push(model)
       this.options.onRecorded?.({ key, model, messages: rest, reply, ...neuronsOf(body) })
+    } else {
+      this.liveFailures.push(`${model} http-${response.status}`)
     }
     return json(response.status, body)
   }

@@ -160,7 +160,11 @@ export function recapJudgeAnswersIn(
 export type RecapJudgeCall =
   | Omit<RecapJudgeRecord, 'key' | 'item'>
   /** The kind of failure only: nothing of the request, its address or its credential. */
-  | { failed: string; ms: number }
+  | {
+      failed: string
+      ms: number
+      /** The service turned the request down: asking again gives the same. */ refused?: true
+    }
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -201,7 +205,12 @@ export async function askRecapJudge(
       if (!response.ok || result === null) {
         const errors = jsonRecord(answered)?.errors
         const message = jsonText(jsonRecord(Array.isArray(errors) ? errors[0] : null)?.message)
-        return { failed: clipProviderText(`http-${response.status} ${message ?? ''}`.trim()), ms }
+        const said = (message ?? '').replaceAll(credentials.accountId, '<account>')
+        return {
+          failed: clipProviderText(`http-${response.status} ${said}`.trim()),
+          ms,
+          refused: true
+        }
       }
       const answers = recapJudgeAnswersIn(model, result)
       if (answers === null) {
