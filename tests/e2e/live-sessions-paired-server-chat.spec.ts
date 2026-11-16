@@ -112,7 +112,8 @@ test('a chat on a Seal server is listed and read under its machine, and again af
       result: { sessionId: relisted.id, error: null }
     })
     await expectOneChat(session.userDataDir, hostId, 'working')
-    expect(exec(`grep -c '"type":"user"' ${SERVER_STUB_REQUESTS}`)).toBe('2')
+    // The server lists the turn before its agent has read it.
+    await expect.poll(() => exec(`grep -c '"type":"user"' ${SERVER_STUB_REQUESTS}`)).toBe('2')
     // The open view's watch on the server delivers the new turn; nothing here reads a file.
     await expect
       .poll(async () => said(await followed.jsonValue()), {
