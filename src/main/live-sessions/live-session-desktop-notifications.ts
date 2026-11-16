@@ -4,7 +4,10 @@ import type { GlobalSettings } from '../../shared/global-settings-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
 import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
 import type { NotificationSettings } from '../../shared/notification-settings-types'
-import { migrateLiveSessionsNotify } from '../../shared/live-sessions/live-session-settings'
+import {
+  migrateLiveSessionsNotify,
+  outsideSessionsMuted
+} from '../../shared/live-sessions/live-session-settings'
 import { deliverNativeNotification } from '../ipc/native-notification-delivery'
 import { getTrustedUIRendererWindow } from '../ipc/ui'
 import { getSessionSummariesHost } from '../session-summaries/session-summaries-instance'
@@ -73,13 +76,15 @@ export function installLiveSessionDesktopNotifications(
     store.updateSettings(migration)
   }
   const notifier = new LiveSessionNotifier({
-    wanted: (kind) => {
-      const { notifications } = store.getSettings()
+    wanted: (kind, surface) => {
+      const settings = store.getSettings()
+      const { notifications } = settings
       const lookingAtSeal =
         notifications.suppressWhenFocused &&
         BrowserWindow.getAllWindows().some((window) => !window.isDestroyed() && window.isFocused())
       return (
         isLiveSessionNoticeEnabled(notifications, kind) &&
+        !(surface === 'external' && outsideSessionsMuted(settings)) &&
         !lookingAtSeal &&
         Notification.isSupported()
       )
