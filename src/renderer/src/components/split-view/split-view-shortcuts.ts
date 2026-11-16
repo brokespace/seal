@@ -7,6 +7,7 @@ import {
   placeItemsInSplitView,
   toggleSplitViewPaneMaximized
 } from './split-view-commands'
+import { releaseKeyboardHeldBesidePanes } from './pane-keyboard-focus'
 import { isSplitViewShowing } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
 import { activeSplitViewItem, type SplitViewEdge } from './split-view-types'
@@ -33,10 +34,10 @@ function moveFocusedTabToNewPane(edge: SplitViewEdge): void {
 export function runSplitViewShortcut(actionId: SplitViewActionId): void {
   switch (actionId) {
     case 'splitView.focusNextPane':
-      focusNeighbourSplitViewPane(1)
-      return
     case 'splitView.focusPreviousPane':
-      focusNeighbourSplitViewPane(-1)
+      if (focusNeighbourSplitViewPane(actionId === 'splitView.focusNextPane' ? 1 : -1)) {
+        releaseKeyboardHeldBesidePanes()
+      }
       return
     case 'splitView.toggleMaximize':
       toggleSplitViewPaneMaximized()

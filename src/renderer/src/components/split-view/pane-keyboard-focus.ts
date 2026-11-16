@@ -197,6 +197,18 @@ export function bringKeyboardFocusIntoPane(
   }
 }
 
+/** A chord that moves pane focus asks for the pane: a field beside the grid gives the keyboard up. */
+export function releaseKeyboardHeldBesidePanes(): void {
+  const active = document.activeElement
+  if (
+    active instanceof HTMLElement &&
+    active !== document.body &&
+    !active.closest(PANE_CONTENT_SELECTOR)
+  ) {
+    active.blur()
+  }
+}
+
 /** After a menu command or a press that moved pane focus: the keyboard goes where the focus went. */
 export function bringKeyboardFocusIntoFocusedPane(tabPressed = true): void {
   const state = splitViewStore.getState()
