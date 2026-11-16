@@ -8,10 +8,12 @@ import {
 import type { AgentJournalItemIdentity } from '../../../shared/agent-session/journal/agent-session-journal-identity'
 import type { StructuredAgentSessionEventSink } from '../../native-chat/agent-session-wire/journal-ingress/structured-agent-session-event-sink'
 import {
+  claudeContextWindowHint,
+  claudeTokenUsage
+} from '../../../shared/agent-session/agent-session-context-usage-claude'
+import {
   claudeContextResetKind,
   claudeContextWindowFromResult,
-  claudeContextWindowHint,
-  claudeTokenUsage,
   type ClaudeMainThreadModel
 } from './claude-context-usage'
 import type { ClaudeOpenTurn } from '../structured/turns/claude-open-turn'

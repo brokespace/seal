@@ -38,7 +38,7 @@ const FLOATING: AgentSessionExecutionLocation = {
   workspaceId: FLOATING_TERMINAL_WORKTREE_ID,
   workspaceKind: 'folder'
 }
-void {
+const WORKTREE: AgentSessionExecutionLocation = {
   ...FLOATING,
   workspaceId: 'repo-1::/repos/one',
   workspaceKind: 'git-worktree'
@@ -112,6 +112,35 @@ describe('agent session launch directory', () => {
     await expect(failure).rejects.toMatchObject(LAUNCH_FOLDER_MISSING)
     expect(resolveWorkspacePath).not.toHaveBeenCalled()
     expect(store.getRecord(SESSION)?.launchDirectory).toBe(gone)
+  })
+
+  it('restarts a worktree chat in the subfolder it started in, and refuses once that folder is gone', async () => {
+    const worktreeRoot = await directory('worktree')
+    const subfolder = await directory('worktree/packages/web')
+    const record = await reserve(WORKTREE, subfolder)
+    const resolveWorkspacePath = vi.fn(async () => worktreeRoot)
+
+    await expect(
+      resolveAgentSessionLaunchDirectory({ store, resolveWorkspacePath }, record)
+    ).resolves.toBe(subfolder)
+
+    await rm(subfolder, { recursive: true })
+    await expect(
+      resolveAgentSessionLaunchDirectory({ store, resolveWorkspacePath }, record)
+    ).rejects.toMatchObject(LAUNCH_FOLDER_MISSING)
+    expect(resolveWorkspacePath).not.toHaveBeenCalled()
+  })
+
+  it('restarts a worktree chat at its workspace when its stored folder is an older build pin', async () => {
+    const worktreeRoot = await directory('worktree')
+    const founded = await reserve(WORKTREE)
+    const record = { ...founded, launchDirectory: join(root, 'old-directory') }
+    const resolveWorkspacePath = vi.fn(async () => worktreeRoot)
+
+    await expect(
+      resolveAgentSessionLaunchDirectory({ store, resolveWorkspacePath }, record)
+    ).resolves.toBe(worktreeRoot)
+    expect(resolveWorkspacePath).toHaveBeenCalledWith(WORKTREE.workspaceId)
   })
 
   it('pins a legacy floating record once, so a later setting change cannot move it', async () => {

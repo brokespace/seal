@@ -155,7 +155,7 @@ export function useStructuredAgentSession(args: StructuredAgentSessionViewArgs) 
     sendSelection: sendOptions
   })
 
-  const usage = useStructuredAgentSessionContextUsage(journalItems, usageSupport, state.epoch)
+  const usage = useStructuredAgentSessionContextUsage(journalItems, usageSupport, state)
 
   const contextFloor = usageSupport?.contextFloor ?? threadGoalSupport?.contextFloor
   const railOutline = useStructuredAgentSessionRailOutline({

@@ -19,42 +19,22 @@ export type NativeChatContextUsageSummary = {
   updatedAt?: number
 }
 
-/** Past this the window is nearly spent, so the ring turns red to say so. */
-const CRITICAL_PERCENTAGE = 90
-
-/** What a ring draws: its fill clamped to 0-100, the red state, and the token counts as shown. */
-export function contextUsageRingReadout(usage: NativeChatContextUsageSummary): {
-  filled: number
-  critical: boolean
-  used: string
-  window: string
-} {
-  return {
-    filled: Math.min(Math.max(usage.percentage, 0), 100),
-    critical: usage.percentage >= CRITICAL_PERCENTAGE,
-    used: formatContextTokenCount(usage.usedTokens),
-    window: formatContextTokenCount(usage.windowTokens)
-  }
-}
-
 function rowPercentage(tokens: number, windowTokens: number): number {
   return windowTokens > 0 ? Math.round((tokens / windowTokens) * 1000) / 10 : 0
 }
 
-export function summarizeContextUsage(
-  usage: StructuredAgentContextUsage
-): NativeChatContextUsageSummary {
+export function summarizeContextUsage({
+  categories,
+  ...measured
+}: StructuredAgentContextUsage): NativeChatContextUsageSummary {
   return {
-    usedTokens: usage.usedTokens,
-    windowTokens: usage.windowTokens,
-    percentage: usage.percentage,
-    estimated: usage.estimated,
-    rows: usage.categories
+    ...measured,
+    rows: categories
       .filter((row) => row.tokens > 0)
       .map((row) => ({
         name: row.name,
         tokens: row.tokens,
-        percentage: rowPercentage(row.tokens, usage.windowTokens),
+        percentage: rowPercentage(row.tokens, measured.windowTokens),
         ...(row.deferred === true ? { deferred: true as const } : {})
       }))
       .sort((left, right) => right.tokens - left.tokens)

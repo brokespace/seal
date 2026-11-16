@@ -13,9 +13,11 @@ export function pinAgentSessionRecordLaunchDirectory(
   return { ...record, launchDirectory, updatedAt: now }
 }
 
-/** Only floating ids need pinned paths; worktree/folder ids already name durable places. */
+/** A floating chat's folder, or the workspace subfolder a chat was founded in. Any other stored folder is an older build's pin: the worktree/folder id names that chat's place. */
 export function agentSessionPinnedLaunchDirectory(
-  record: Pick<AgentSessionRecord, 'launchDirectory' | 'location'>
+  record: Pick<AgentSessionRecord, 'launchDirectory' | 'launchDirectoryInWorkspace' | 'location'>
 ): string | undefined {
-  return isFloatingWorkspaceId(record.location.workspaceId) ? record.launchDirectory : undefined
+  return isFloatingWorkspaceId(record.location.workspaceId) || record.launchDirectoryInWorkspace
+    ? record.launchDirectory
+    : undefined
 }
