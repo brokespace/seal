@@ -156,7 +156,13 @@ export class LiveSessionRegistry {
     this.syncHosts()
     const now = this.now()
     for (const state of this.hosts.values()) {
-      if (!state.scanning && now >= state.nextScanAt && !this.federated(state)) {
+      if (state.scanning || now < state.nextScanAt) {
+        continue
+      }
+      if (this.federated(state)) {
+        // Not scanned, so nothing else moves its due time: left in the past it would wake this at once, forever.
+        state.nextScanAt = now + HOST_SYNC_MS
+      } else {
         void this.scanHost(state)
       }
     }
