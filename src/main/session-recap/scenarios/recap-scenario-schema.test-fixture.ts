@@ -43,7 +43,16 @@ export const RECAP_SCENARIO_CATEGORIES = [
 ] as const
 export type RecapScenarioCategory = (typeof RECAP_SCENARIO_CATEGORIES)[number]
 
-const pattern = z.string().min(1)
+function compiles(source: string): boolean {
+  try {
+    new RegExp(source, 'i')
+    return true
+  } catch {
+    return false
+  }
+}
+
+const pattern = z.string().min(1).refine(compiles, 'not a regular expression')
 const why = z.string().min(1)
 
 /** One thing the recap must say. `has` and `lacks` are case-insensitive patterns over an item's text. */
@@ -55,6 +64,8 @@ const itemCheck = z.strictObject({
   state: z.enum(RECAP_WORK_STATES).optional(),
   min: z.number().int().optional(),
   max: z.number().int().optional(),
+  /** Leave out the items the user ticked or dismissed. */
+  open: z.literal(true).optional(),
   why
 })
 
@@ -127,9 +138,20 @@ const step = z.union([
   z.strictObject({ compact: z.string().min(1) }),
   /** A record the agent's harness writes into the user's turn, which nobody typed. */
   z.strictObject({ injected: z.string().min(1) }),
-  /** The registry reports this status; a turn that ends is `your-turn` or `waiting-input`. */
+  /**
+   * The registry reports this status; a turn that ends is `your-turn` or `waiting-input`. On
+   * `waiting-subagent` the agent has stopped writing while work it started runs on behind it.
+   */
   z.strictObject({
-    status: z.enum(['working', 'your-turn', 'waiting-input', 'idle', 'done', 'errored'])
+    status: z.enum([
+      'working',
+      'waiting-subagent',
+      'your-turn',
+      'waiting-input',
+      'idle',
+      'done',
+      'errored'
+    ])
   }),
   /** Time passes: timers that come due run and their passes finish. */
   z.strictObject({ advance: z.number().int().positive() }),
@@ -141,7 +163,7 @@ const step = z.union([
   z.strictObject({ restart: z.literal(true) }),
   /** The session is resumed into a new transcript under a new id, as `--resume` does. */
   z.strictObject({ resume: z.literal(true) }),
-  /** The user ticks or dismisses the first open question or action item matching the pattern. */
+  /** The user ticks or dismisses the first question, action item or not-addressed entry matching the pattern. */
   z.strictObject({ mark: z.strictObject({ item: pattern, as: z.enum(RECAP_ITEM_MARKS) }) }),
   faultStep,
   /** That many routine turns, each a short ask the agent answers at length: what makes a session long. */
@@ -210,6 +232,11 @@ export const recapScenarioSchema = z.strictObject({
   expected: z.string().min(1),
   /** A host that only recaps sessions someone opened, as a headless Seal server does. */
   lazy: z.boolean().optional(),
+  /**
+   * No model reply is recorded for it yet, so it runs up to its first model request and stops. The
+   * suite fails once it has recordings and still says this: its checks then join the baseline.
+   */
+  pending: z.literal(true).optional(),
   steps: z.array(step).min(1)
 })
 export type RecapScenario = z.infer<typeof recapScenarioSchema>

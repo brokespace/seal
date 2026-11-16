@@ -48,6 +48,8 @@ const scenarios = (await loadRecapScenarios()).filter(
 const baseline = await loadRecapBaseline()
 const rows: RecapMatrixRow[] = []
 const pending: RecapPendingRequest[] = []
+/** Requests of scenarios that say they are not recorded yet: relayed with the rest, but not a gap. */
+const awaited: RecapPendingRequest[] = []
 const results: RecapBaseline = {}
 let credentials: CloudflareAiCredentials | undefined
 
@@ -80,7 +82,7 @@ describe('recap scenarios', () => {
   afterAll(async () => {
     if (pendingPath) {
       const unique = new Map(
-        pending.map((request) => [`${request.scenario} ${request.key}`, request])
+        [...pending, ...awaited].map((request) => [`${request.scenario} ${request.key}`, request])
       )
       await writeFile(pendingPath, `${JSON.stringify([...unique.values()], null, 2)}\n`)
     }
@@ -99,7 +101,8 @@ describe('recap scenarios', () => {
 
   for (const scenario of scenarios) {
     for (const surface of scenario.surfaces) {
-      it(`${scenario.id}@${surface}: ${scenario.title}`, async () => {
+      const unrecorded = scenario.pending ? ' (not recorded yet)' : ''
+      it(`${scenario.id}@${surface}: ${scenario.title}${unrecorded}`, async () => {
         const recorded: RecapCassetteEntry[] = []
         const model = new RecapScenarioModel({
           scenario: scenario.id,
@@ -115,12 +118,18 @@ describe('recap scenarios', () => {
         if (recorded.length > 0) {
           await addToRecapCassette(scenario.id, recorded)
         }
-        rows.push(recapMatrixRow(run))
+        if (scenario.pending && run.status === 'pending') {
+          awaited.push(...model.pending)
+          return
+        }
         pending.push(...model.pending)
+        rows.push(recapMatrixRow(run))
         results[run.id] = failingRecapChecks(run)
         if (recording) {
           return
         }
+        // It has recordings now: drop `pending` from the scenario and add its checks to the baseline.
+        expect(scenario.pending).toBeUndefined()
         // A request with no recorded reply means the prompt or the scenario changed: record it again.
         expect(model.pending.map((request) => request.key)).toEqual([])
         expect(failingRecapChecks(run)).toEqual(baseline[run.id] ?? [])

@@ -251,9 +251,11 @@ export async function runRecapScenario(
     } else if ('mark' in step) {
       const recap = host.recaps.view(session.id, false).recap
       const pattern = new RegExp(step.mark.item, 'i')
-      const item = [...(recap?.questions ?? []), ...(recap?.actions ?? [])].find((found) =>
-        pattern.test(found.text)
-      )
+      const item = [
+        ...(recap?.questions ?? []),
+        ...(recap?.actions ?? []),
+        ...(recap?.ignored ?? [])
+      ].find((found) => pattern.test(found.text))
       if (item) {
         host.recaps.mark(session.id, item.id, step.mark.as)
       }
