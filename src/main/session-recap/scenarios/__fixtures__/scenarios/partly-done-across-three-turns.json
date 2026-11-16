@@ -1,0 +1,100 @@
+{
+  "id": "partly-done-across-three-turns",
+  "title": "A three-part ask is finished one part per turn, with the user pushing it on",
+  "categories": ["partly-addressed", "addressed-later-turn", "duplicate-asks"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "After turn 1 and turn 2 the ask is half done, with what is left. After turn 3 it is done, listed once, and nothing is left as not addressed.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Replace moment with date-fns in all three packages: api, web and worker."
+    },
+    {
+      "edit": "/srv/shop/packages/api/src/dates.ts"
+    },
+    {
+      "agent": "api is converted to date-fns and its tests pass. web and worker still use moment."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "web|worker|moment",
+          "why": "web and worker are not converted yet"
+        }
+      ]
+    },
+    {
+      "user": "keep going"
+    },
+    {
+      "edit": "/srv/shop/packages/web/src/format-date.ts"
+    },
+    {
+      "agent": "web is converted too. I have left worker: its cron parser needs moment-timezone, and I want your call on what replaces that before I touch it."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "worker",
+          "why": "worker is not converted yet"
+        }
+      ]
+    },
+    {
+      "user": "use date-fns-tz"
+    },
+    {
+      "edit": "/srv/shop/packages/worker/src/cron.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "rg -l moment packages | wc -l"
+        },
+        "output": "0"
+      }
+    },
+    {
+      "agent": "worker is converted with date-fns-tz. moment is gone from all three packages."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 3",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "all three packages are converted"
+        },
+        {
+          "in": "did",
+          "has": "worker|date-fns|moment",
+          "state": "done",
+          "why": "the conversion is recorded as done"
+        }
+      ]
+    }
+  ]
+}

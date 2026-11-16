@@ -1,0 +1,105 @@
+{
+  "id": "declined-then-replaced-by-what-the-agent-offered",
+  "title": "The agent advises against an ask and offers another way; the user takes the offer",
+  "categories": ["declined", "withdrawn-or-changed", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "After turn 2 turning the rule off is refused with its reason. After turn 3 the user has taken the agent's offer instead: the warnings are fixed, and turning the rule off is no longer wanted and not listed as not addressed.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Upgrade React to 19."
+    },
+    {
+      "edit": "/srv/shop/package.json"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm install && pnpm test"
+        },
+        "output": "212 passed"
+      }
+    },
+    {
+      "agent": "React is on 19.0 now and all 212 tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "now turn off the eslint rule about hook deps, it's too noisy"
+    },
+    {
+      "agent": "I'd advise against turning off react-hooks/exhaustive-deps: two effects in src/cart depend on it to stay correct, and it is what caught the stale-total bug in March. I have left the rule on. There are only six warnings; I can fix those instead."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "eslint|rule|hook",
+          "why": "the agent advised against it and left the rule on; it did not overlook the ask"
+        },
+        {
+          "in": "did",
+          "has": "react|19",
+          "state": "done",
+          "why": "the React upgrade is recorded as done"
+        }
+      ]
+    },
+    {
+      "user": "fine, fix the warnings then"
+    },
+    {
+      "edit": "/srv/shop/src/cart/use-cart-total.ts"
+    },
+    {
+      "edit": "/srv/shop/src/cart/use-cart-sync.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm lint"
+        },
+        "output": "0 problems"
+      }
+    },
+    {
+      "agent": "All six warnings are fixed and lint is clean. The rule is still on."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 3",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the user chose the fix over turning the rule off, and the fix is done"
+        },
+        {
+          "in": "did",
+          "has": "warning|lint",
+          "state": "done",
+          "why": "fixing the warnings is recorded as done"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "partly-done-by-a-subagent",
+  "title": "A subagent does the finding half of a find-and-fix ask; the fixing waits on the user",
+  "categories": ["partly-addressed", "subagent"],
+  "surfaces": ["claude-cli"],
+  "expected": "The audit is done and names three routes. The fixes are not made, and that half is open with the agent's question.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Audit the API routes for missing auth checks and fix what you find."
+    },
+    {
+      "subagent": {
+        "prompt": "List every route under src/routes that does not call requireAuth",
+        "says": ["Reading src/routes.", "Three routes do not call requireAuth."],
+        "result": "3 routes lack auth: /export, /admin/stats, /hooks/replay"
+      }
+    },
+    {
+      "agent": "The audit found three routes without an auth check: /export, /admin/stats and /hooks/replay. I have not fixed any of them yet. /hooks/replay is called by a partner that sends no token, so I need to know how you want that one handled before I change the three together."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "fix|auth",
+          "why": "the fixes are not made"
+        }
+      ]
+    }
+  ]
+}

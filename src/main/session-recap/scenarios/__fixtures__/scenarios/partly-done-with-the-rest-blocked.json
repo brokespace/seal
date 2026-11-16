@@ -1,0 +1,35 @@
+{
+  "id": "partly-done-with-the-rest-blocked",
+  "title": "One of two languages is translated; the other waits on something the agent lacks",
+  "categories": ["partly-addressed"],
+  "surfaces": ["claude-cli"],
+  "expected": "German is done. French is not, and the recap says so with the reason.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Translate the settings page into German and French."
+    },
+    {
+      "edit": "/srv/shop/locales/de.json"
+    },
+    {
+      "agent": "The settings page is translated into German in locales/de.json. French is not done: the product terms have no agreed French glossary, and I did not want to invent one."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "french",
+          "why": "the French translation is not done"
+        }
+      ]
+    }
+  ]
+}

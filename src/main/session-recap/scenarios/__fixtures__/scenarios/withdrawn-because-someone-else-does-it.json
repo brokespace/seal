@@ -1,0 +1,72 @@
+{
+  "id": "withdrawn-because-someone-else-does-it",
+  "title": "The user takes back the open half of an ask in passing while asking for something new",
+  "categories": ["withdrawn-or-changed", "multiple-asks"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "After turn 1 the changelog is done and the release notes are open. After turn 2 the notes are no longer wanted and not listed as not addressed; the tag is done.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Write a changelog entry for 3.2 and tweet-length release notes."
+    },
+    {
+      "edit": "/srv/shop/CHANGELOG.md"
+    },
+    {
+      "agent": "The 3.2 entry is in CHANGELOG.md. I have not written the release notes yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "release notes|notes",
+          "why": "the release notes are not written"
+        }
+      ]
+    },
+    {
+      "user": "marketing will do the notes. can you tag the release?"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git tag v3.2.0 && git push --tags"
+        },
+        "output": "* [new tag] v3.2.0 -> v3.2.0"
+      }
+    },
+    {
+      "agent": "Tagged v3.2.0 and pushed the tag."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "notes",
+          "why": "marketing took the release notes over"
+        },
+        {
+          "in": "did",
+          "has": "tag|v3\\.2",
+          "state": "done",
+          "why": "the tag is recorded as done"
+        }
+      ]
+    }
+  ]
+}

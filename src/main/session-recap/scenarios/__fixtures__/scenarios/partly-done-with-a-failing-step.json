@@ -1,0 +1,61 @@
+{
+  "id": "partly-done-with-a-failing-step",
+  "title": "The agent does the first half of an ask and stops when the second half fails",
+  "categories": ["partly-addressed", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli"],
+  "expected": "The rename is done and applied. The backfill is not done and is the one thing left open, with the reason.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Add a migration that renames users.fullname to users.display_name, and backfill display_name from the profiles table."
+    },
+    {
+      "edit": "/srv/shop/db/migrations/0061_rename_fullname.sql"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm db:migrate"
+        },
+        "output": "1 migration applied"
+      }
+    },
+    {
+      "edit": "/srv/shop/scripts/backfill-display-name.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsx scripts/backfill-display-name.ts"
+        },
+        "output": "Error: statement timeout after 30000 ms"
+      }
+    },
+    {
+      "agent": "The column is renamed: migration 0061 is applied. The backfill is not done. My script times out on the 4M-row profiles table, so I stopped it; it needs to run in batches."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "backfill",
+          "why": "the backfill did not run"
+        },
+        {
+          "in": "ignored",
+          "lacks": "rename",
+          "why": "the rename is done and must not be listed as not addressed"
+        }
+      ]
+    }
+  ]
+}

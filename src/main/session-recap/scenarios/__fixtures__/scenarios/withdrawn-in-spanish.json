@@ -1,0 +1,63 @@
+{
+  "id": "withdrawn-in-spanish",
+  "title": "In a Spanish session the user drops an open ask and asks for a fix instead",
+  "categories": ["withdrawn-or-changed", "non-english-terse"],
+  "surfaces": ["claude-cli"],
+  "expected": "After turn 1 the PDF button is open. After turn 2 it is withdrawn and not listed as not addressed; the invoice total is fixed.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "añade un botón para exportar a PDF en la página de facturas"
+    },
+    {
+      "agent": "Todavía no lo he añadido. Antes necesito saber qué librería de PDF queréis usar: pdfkit ya está en el proyecto, pero no soporta las fuentes de la plantilla."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "questions",
+          "has": "pdf|librer",
+          "why": "the agent's question is open"
+        }
+      ]
+    },
+    {
+      "user": "déjalo, ya no hace falta el PDF. mejor arregla el total, que sale mal en la factura"
+    },
+    {
+      "edit": "/srv/shop/src/invoices/total.ts"
+    },
+    {
+      "agent": "Arreglado: el total sumaba el IVA dos veces. Ahora lo suma una sola vez y el test de facturas pasa."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "pdf",
+          "why": "the user dropped the PDF button"
+        },
+        {
+          "in": "did",
+          "has": "total|iva",
+          "state": "done",
+          "why": "the total fix is recorded as done"
+        }
+      ]
+    }
+  ]
+}
