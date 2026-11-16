@@ -33,7 +33,7 @@ export async function takeOverSession(
   }
   // Without the transcript's id there is nothing for `--resume` to reopen.
   const provider = liveSessionProviderOf(session.provider)
-  if (!provider || session.providerSessionId.startsWith('pid-')) {
+  if (!provider || !session.capabilities.takeOver) {
     return { ok: false, reason: 'not_resumable' }
   }
   if (session.alive && session.pid !== null) {

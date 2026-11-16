@@ -5,6 +5,7 @@ import { once } from 'node:events'
 import { spawnProcess } from '@orca/process-host'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import { localHost } from '../hosts/live-session-hosts'
 import { takeOverSession } from './session-take-over'
 
@@ -14,6 +15,7 @@ const session = (pid: number): LiveSession => ({
   providerSessionId: '11111111-1111-4111-8111-111111111111',
   machine: { hostId: 'local', label: 'mac', kind: 'local' },
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/srv/app',
   project: 'app',
   title: null,
@@ -69,7 +71,12 @@ describe.skipIf(process.platform === 'win32')('takeOverSession', () => {
       ok: false,
       reason: 'not_external'
     })
-    expect(await takeOverSession({ ...session(1), providerSessionId: 'pid-1' }, host)).toEqual({
+    const unnamed: LiveSession = {
+      ...session(1),
+      providerSessionId: 'pid-1',
+      capabilities: { ...session(1).capabilities, takeOver: false }
+    }
+    expect(await takeOverSession(unnamed, host)).toEqual({
       ok: false,
       reason: 'not_resumable'
     })
