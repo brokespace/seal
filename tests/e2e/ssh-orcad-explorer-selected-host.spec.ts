@@ -4,7 +4,8 @@ import { createRestartSession } from './helpers/orca-restart'
 import { startOrcadConvertHost } from './helpers/orcad-convert-host'
 import { seedRelayEraProfile, seedRelayEraTarget } from './helpers/orcad-upgrade-profile'
 import { mutateStoppedProfileState } from './helpers/persisted-profile-state'
-import { convertAndRetain, reconnect, serverCall } from './helpers/orcad-convert-flow'
+import { convertAndRetain, serverCall } from './helpers/orcad-convert-flow'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import { waitForSessionReady, waitForStartupWorktreeRefresh } from './helpers/store'
 import { dismissTransientAnnouncement } from './helpers/ssh-config-host-picker'
 import { toRuntimeExecutionHostId } from '../../src/shared/execution-host'
@@ -103,7 +104,11 @@ for (const selectedHost of ['A', 'B'] as const) {
         }
       })
       await waitForSessionReady(page)
-      console.log('[adopt-existing-managed-host]', await reconnect(page, adoptedTargetId))
+      // A saved host connects over plain SSH; only a confirmed install joins the server already there.
+      console.log(
+        '[adopt-existing-managed-host]',
+        JSON.stringify(await installSealServerOverSshTarget(page, adoptedTargetId))
+      )
       const environments = await page.evaluate(() => window.api.runtimeEnvironments.list())
       const environmentA = environments.find(
         (entry) => getOrcadSshDeployment(entry)?.sshTargetId === seededA.targetId
