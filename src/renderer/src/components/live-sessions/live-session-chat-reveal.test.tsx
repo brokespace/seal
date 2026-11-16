@@ -25,7 +25,7 @@ it('jumps to a message once, not again when the view comes back from behind a ta
       messages: [],
       hasMore: false,
       loadingEarlier: false,
-      loadEarlier: async () => ({ status: 'exhausted' }) as never
+      loadEarlier: async () => 'exhausted'
     },
     pending: [],
     onSend: () => {},
