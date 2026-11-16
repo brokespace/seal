@@ -198,7 +198,7 @@ it('keeps a rollout apart from a Codex started in its folder after its own Codex
     ])
 
   output = scanOf({ now: at + 20_000, pid: 4100, ran: '10:00', text, written: at })
-  expect(await listed(at + 20_000)).toEqual([[CODEX_ID, 4100, 'codex-queue']])
+  expect(await listed(at + 20_000)).toEqual([[CODEX_ID, 4100, '']])
 
   // The first Codex exited; another started 30 seconds after the rollout's last write.
   output = scanOf({ now: at + 60_000, pid: 4200, ran: '00:30', text, written: at })
@@ -212,6 +212,48 @@ it('keeps a rollout apart from a Codex started in its folder after its own Codex
   const more = text + line({ type: 'event_msg', timestamp, payload: { type: 'task_started' } })
   output = scanOf({ now: at + 90_000, pid: 4200, ran: '01:00', text: more, written: at + 80_000 })
   expect(await listed(at + 90_000)).toEqual(apart)
+})
+
+// Seal restarted after one of two agents in a folder left: no scan saw them both, so the one
+// still there is the only agent the rollout could be, and need not be the one that wrote it.
+it('types nothing into the agent it finds beside a rollout after a restart until the agent holds that rollout open', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const scanOf = (pins: string[]) =>
+    [
+      `@@NOW ${(at + 20_000) / 1000}`,
+      '@@PROC 4200 900 pts/3 codex',
+      '@@CWD 4200 /srv/api',
+      '@@TMUX /tmp/tmux-1000/default\t%4\t/dev/pts/3\t900\tmain:0.0',
+      '@@PS',
+      '@@AGE 4200 10:00',
+      ...pins,
+      `@@FILE codex ${Buffer.byteLength(text)} ${at / 1000} ${path}`,
+      `@@HEAD ${path} ${b64}`,
+      `@@TAIL ${path} ${b64}`,
+      '@@DONE'
+    ].join('\n')
+  const listed = async (pins: string[]) => {
+    const host: LiveSessionHost = {
+      machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+      run: async () => scanOf(pins)
+    }
+    const afterRestart = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+    return (await afterRestart.scan(at + 20_000)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+  }
+  expect(await listed([])).toEqual([[CODEX_ID, 4200, '']])
+  expect(await listed([`@@PIN 4200 open codex ${path}`])).toEqual([
+    [CODEX_ID, 4200, 'codex-queue tmux']
+  ])
 })
 
 // Two terminals open in one repository, neither prompted yet; nothing ties either to a rollout.

@@ -199,7 +199,9 @@ describe('assembleHostSessions', () => {
     const [live] = assemble(
       [proc(100, 'claude', '/srv/app', 'pts/3')],
       [transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 1_000)],
-      [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))]
+      [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))],
+      [],
+      [{ pid: 100, sessionId: '55555555-5555-4555-8555-555555555555' }]
     )
     expect(live.inputRoutes).toEqual([
       { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
@@ -213,7 +215,9 @@ describe('assembleHostSessions', () => {
       assemble(
         [{ ...proc(100, 'claude', '/srv/app', 'pts/3'), ancestors }],
         [transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 1_000)],
-        [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))]
+        [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))],
+        [],
+        [{ pid: 100, sessionId: '55555555-5555-4555-8555-555555555555' }]
       )[0].inputRoutes
     expect(routes([4321, 77])).toEqual([])
     expect(routes([850, 900])).toEqual([
@@ -241,7 +245,7 @@ describe('assembleHostSessions', () => {
   it("routes a live Codex session through its own queue first, with that session's binary and home", () => {
     const id = '99999999-9999-4999-8999-999999999999'
     const [session] = assemble(
-      [proc(100, '/opt/codex/bin/codex', '/srv/api', 'pts/3')],
+      [proc(100, `/opt/codex/bin/codex resume ${id}`, '/srv/api', 'pts/3')],
       [rollout(id, '/srv/api', 1_000)],
       [pane('pts/3', '\u203a Ask Codex')]
     )
@@ -262,7 +266,8 @@ describe('assembleHostSessions', () => {
       [proc(100, 'claude', '/srv/app', 'pts/3')],
       [transcript(id, '/srv/app', 1_000, 'tool-pending')],
       [pane('pts/3', ['Do you want to proceed?', '\u276f 1. Yes', '  2. No (esc)'].join('\n'))],
-      [{ path: '/h/a.json', text: JSON.stringify({ id, state: 'working', updated: NOW / 1000 }) }]
+      [{ path: '/h/a.json', text: JSON.stringify({ id, state: 'working', updated: NOW / 1000 }) }],
+      [{ pid: 100, sessionId: id }]
     )
     expect(session.status).toBe('needs-permission')
     expect(session.statusSource).toBe('screen')

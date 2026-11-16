@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSessionMachine } from '../../../shared/live-sessions/live-session-types'
-import type { DiscoveredPane, DiscoveredProcess } from './discovery-output'
+import type { DiscoveredPane, DiscoveredProcess, TranscriptPin } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
 import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
 
@@ -48,10 +48,21 @@ const codex = (pid: number, cwd: string | null, ranForMs: number): DiscoveredPro
   startedAtMs: NOW - ranForMs
 })
 
-function listed(processes: DiscoveredProcess[], transcripts: SummarizedTranscript[]) {
+function listed(
+  processes: DiscoveredProcess[],
+  transcripts: SummarizedTranscript[],
+  pins: TranscriptPin[] = []
+) {
   return assembleHostSessions({
     machine,
-    output: { processes, panes: [PANE], hookStates: [], hostNowMs: NOW, processesListed: true },
+    output: {
+      processes,
+      panes: [PANE],
+      hookStates: [],
+      hostNowMs: NOW,
+      processesListed: true,
+      pins
+    },
     transcripts,
     nowMs: NOW
   }).map((s) => ({
@@ -62,10 +73,17 @@ function listed(processes: DiscoveredProcess[], transcripts: SummarizedTranscrip
 }
 
 describe('which agent a transcript belongs to, when nothing names it', () => {
-  it('is the one agent that started in its folder before it began', () => {
-    expect(listed([codex(4200, '/srv/api', 600_000)], [rollout(10_000)])).toEqual([
-      { id: ROLLOUT_ID, pid: 4200, routes: ['codex-queue', 'tmux'] }
-    ])
+  it('is the one agent that started in its folder before it began, typed into only once the agent holds it open', () => {
+    const transcript = rollout(10_000)
+    const agent = codex(4200, '/srv/api', 600_000)
+    expect(listed([agent], [transcript])).toEqual([{ id: ROLLOUT_ID, pid: 4200, routes: [] }])
+    expect(
+      listed(
+        [agent],
+        [transcript],
+        [{ pid: 4200, kind: 'open', provider: 'codex', path: transcript.path }]
+      )
+    ).toEqual([{ id: ROLLOUT_ID, pid: 4200, routes: ['codex-queue', 'tmux'] }])
   })
 
   // One Codex exits and another starts in its folder within two minutes, before its first prompt.

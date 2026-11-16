@@ -8,6 +8,8 @@ export type ProcessClaim = {
   process: AgentProcess | null
   /** Several agents could each have written this transcript, and one that could still runs. */
   contested?: boolean
+  /** Only its folder, kind and start time suggest the process: no session id ties the two. */
+  unproven?: boolean
 }
 
 /** `ps` and file times are whole seconds, read moments apart. */
@@ -117,7 +119,7 @@ export function pairProcesses(
     if (!match && mayBeUnread) {
       continue
     }
-    const claim = { process, transcript: take(match) }
+    const claim = { process, transcript: take(match), ...(match && { unproven: true }) }
     claims.push(claim)
     if (!match) {
       bare.set(process.provider, [...(bare.get(process.provider) ?? []), claim])

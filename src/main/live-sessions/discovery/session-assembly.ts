@@ -142,7 +142,7 @@ export function assembleHostSessions(input: {
   const helpers = codexHelperThreads(input.transcripts)
   const found = conversations(input.transcripts.filter((t) => !t.summary.parentSessionId))
   const earlierOf = new Map(found.map((c) => [c.transcript, c.earlier]))
-  for (const { process, transcript, contested } of pairProcesses(
+  for (const { process, transcript, contested, unproven } of pairProcesses(
     agentProcesses(output.processes),
     found.map((c) => c.transcript),
     claudeSessionByPid,
@@ -177,7 +177,8 @@ export function assembleHostSessions(input: {
     const exited =
       last !== undefined && output.processesListed === true && !heldOpen && !listedPids.has(last)
     const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
-    const onTty = process?.tty ? panesByTty.get(process.tty) : undefined
+    // A pairing nothing proves shows the transcript as running, and types nothing into the agent.
+    const onTty = process?.tty && !unproven ? panesByTty.get(process.tty) : undefined
     // A container's `pts/1` is not this machine's: the pane is the agent's when it runs under it.
     const pane = onTty && process && runsInPane(process, onTty.panePid) ? onTty : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
@@ -268,7 +269,7 @@ export function assembleHostSessions(input: {
       statusDetail = summary?.detail === 'Interrupted' ? 'Interrupted' : null
     }
     const inputRoutes: LiveSessionInputRoute[] = []
-    if (provider === 'codex' && process && summary) {
+    if (provider === 'codex' && process && summary && !unproven) {
       inputRoutes.push({
         kind: 'codex-queue',
         thread: providerSessionId,
