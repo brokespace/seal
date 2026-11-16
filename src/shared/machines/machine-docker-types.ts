@@ -14,7 +14,7 @@ export type MachineDockerStorageRow = {
   kind: MachineDockerStorageKind
   count: number
   sizeBytes: number
-  /** What Docker itself says pruning this kind would free. */
+  /** What pruning this kind would free: Docker's own figure, plus the build cache records an image shares. */
   reclaimableBytes: number
 }
 

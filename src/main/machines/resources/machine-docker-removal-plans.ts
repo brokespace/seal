@@ -212,14 +212,8 @@ export function dockerCleanupPlan(
           .map((volume) => volumeItem(volume, ticked))
       )
     case 'docker-build-cache': {
-      // Records can run to thousands, so the prune is one item. Docker's own total leaves out
-      // shared records, which `--all` removes too, so the listed records are added up when all are listed.
-      const bytes =
-        storage.buildCacheOmitted === 0
-          ? storage.buildCache
-              .filter((record) => !record.inUse)
-              .reduce((sum, record) => sum + (record.sizeBytes ?? 0), 0)
-          : (storage.rows.find((row) => row.kind === 'build-cache')?.reclaimableBytes ?? 0)
+      // Records can run to thousands, so the prune is one item sized by the inventory's total.
+      const bytes = storage.rows.find((row) => row.kind === 'build-cache')?.reclaimableBytes ?? 0
       return plan(
         target,
         bytes > 0

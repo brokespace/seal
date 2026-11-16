@@ -137,7 +137,7 @@ export function dockerStorageItems(
       return inventory.buildCache.map((record) => ({
         kind,
         key: record.id,
-        name: record.description,
+        name: record.description || record.id,
         status: record.inUse ? 'in-use' : record.shared ? 'shared' : 'unused',
         sizeBytes: record.sizeBytes,
         freesBytes: record.sizeBytes,
@@ -148,9 +148,9 @@ export function dockerStorageItems(
   }
 }
 
-/** Nothing references it, so a prune takes it. */
+/** A prune takes it: nothing references it, or it is a cache record an image only shares. */
 export function isDockerStorageItemReclaimable(item: MachineDockerStorageItem): boolean {
-  return item.status === 'unused' || item.status === 'dangling' || item.status === 'stopped'
+  return ['unused', 'dangling', 'stopped', 'shared'].includes(item.status)
 }
 
 /** How many listed objects a prune target would take; zero means its button has nothing to do. */

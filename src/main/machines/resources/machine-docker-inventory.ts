@@ -211,6 +211,13 @@ export function parseDockerInventory(output: string, collectedAt: number): Docke
       .filter(Boolean)
   }))
   const omitted = lines.find((line) => line.startsWith('@omitted '))
+  // Docker's total leaves out records an image shares, which a prune removes too.
+  const cacheRow = rows.find((row) => row.kind === 'build-cache')
+  if (cacheRow && !omitted) {
+    cacheRow.reclaimableBytes = buildCache
+      .filter((record) => !record.inUse)
+      .reduce((sum, record) => sum + (record.sizeBytes ?? 0), 0)
+  }
   return {
     state: 'ready',
     rows,

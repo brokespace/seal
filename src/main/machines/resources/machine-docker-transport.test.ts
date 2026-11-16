@@ -75,7 +75,7 @@ describe.skipIf(process.platform !== 'linux').each(cases)(
           { kind: 'images', count: 6, sizeBytes: 868_100_000, reclaimableBytes: 183_100_000 },
           { kind: 'containers', count: 4, sizeBytes: 28_710_000, reclaimableBytes: 28_700_000 },
           { kind: 'volumes', count: 3, sizeBytes: 2_612_000_000, reclaimableBytes: 512_000_000 },
-          { kind: 'build-cache', count: 4, sizeBytes: 533_000_000, reclaimableBytes: 310_000_000 }
+          { kind: 'build-cache', count: 4, sizeBytes: 533_000_000, reclaimableBytes: 437_008_190 }
         ]
       })
 
