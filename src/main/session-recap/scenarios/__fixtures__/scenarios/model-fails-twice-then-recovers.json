@@ -1,0 +1,124 @@
+{
+  "id": "model-fails-twice-then-recovers",
+  "title": "The model's replies cannot be read for two turns running, then it recovers",
+  "categories": ["model-failure"],
+  "surfaces": ["claude-cli"],
+  "expected": "While the model's replies cannot be read the recap claims nothing is overlooked. Once it recovers, the work of the turns it failed on is recorded, and the requests the host wrote down in the meantime are not listed a second time in the model's words.",
+  "pending": true,
+  "steps": [
+    {
+      "fault": {
+        "kind": "not-json",
+        "model": "primary",
+        "times": 4
+      }
+    },
+    {
+      "fault": {
+        "kind": "not-json",
+        "model": "fallback",
+        "times": 4
+      }
+    },
+    {
+      "user": "Add a CSV export to the orders page and a date filter above the table."
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "Both are on the orders page: a date filter above the table and an Export CSV button that exports the filtered rows."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the first unreadable pass",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "a recap the model could not write does not claim a request was overlooked"
+        }
+      ]
+    },
+    {
+      "user": "make the date filter default to the last 30 days"
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "The date filter defaults to the last 30 days now."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the second unreadable pass",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "a recap the model could not write does not claim a request was overlooked"
+        }
+      ]
+    },
+    {
+      "user": "and add a Reset button next to the filter"
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "There is a Reset button next to the date filter now."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after the model recovers",
+      "check": [
+        {
+          "view": "degraded",
+          "is": false,
+          "why": "a good pass clears the degraded mark"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "asked",
+          "max": 4,
+          "why": "the requests the host wrote down while the model failed are not listed again in the model's words"
+        },
+        {
+          "in": "did",
+          "has": "csv|export",
+          "why": "the work of the first turn the model failed on is recorded"
+        },
+        {
+          "in": "did",
+          "has": "30 days|default",
+          "why": "the work of the second turn the model failed on is recorded"
+        },
+        {
+          "in": "did",
+          "has": "reset",
+          "why": "the new work is recorded"
+        }
+      ]
+    }
+  ]
+}

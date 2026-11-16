@@ -1,0 +1,67 @@
+{
+  "id": "dismissed-entry-stays-dismissed",
+  "title": "The user dismisses a wrong not-addressed entry and then presses Refresh",
+  "categories": ["declined", "restart-resume"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Once the user dismisses the entry it stays dismissed when the recap is rebuilt, and Refresh asks the model again rather than giving back the same reading.",
+  "steps": [
+    {
+      "user": "Delete the old migrations folder, we don't need those files anymore."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/scripts/deploy.sh"
+        },
+        "output": "// scripts/deploy.sh"
+      }
+    },
+    {
+      "agent": "I'd leave db/migrations in place. The deploy script replays every migration on a fresh database, and staging is rebuilt from scratch each night, so deleting them would break tonight's rebuild. If you want less clutter I can squash them into one baseline migration instead. I have not deleted anything."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "mark": {
+        "item": "migration",
+        "as": "dismissed"
+      }
+    },
+    {
+      "label": "after the user dismisses it",
+      "check": [
+        {
+          "in": "ignored",
+          "open": true,
+          "max": 0,
+          "why": "the user dismissed the entry"
+        }
+      ]
+    },
+    {
+      "refresh": true
+    },
+    {
+      "label": "after Refresh",
+      "check": [
+        {
+          "in": "ignored",
+          "open": true,
+          "max": 0,
+          "why": "an entry the user dismissed does not come back when the recap is rebuilt"
+        },
+        {
+          "requests": {
+            "min": 2
+          },
+          "why": "Refresh asks the model again: it is how the user gets a second reading of a recap that looks wrong"
+        }
+      ]
+    }
+  ]
+}

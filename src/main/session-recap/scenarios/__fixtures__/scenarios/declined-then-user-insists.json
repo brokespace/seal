@@ -1,0 +1,86 @@
+{
+  "id": "declined-then-user-insists",
+  "title": "The agent refuses with a reason, the user overrules it, and the agent does it",
+  "categories": ["declined", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After turn 1 the request is answered with a refusal, not overlooked. After turn 2 the table is dropped: the request is done, listed once, and nothing is left as refused or not addressed.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Drop the legacy_reports table, nothing reads it."
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "rg -n legacy_reports src"
+        },
+        "output": "src/finance/month-end-export.ts:41:  FROM legacy_reports"
+      }
+    },
+    {
+      "agent": "I'd keep it for now. The month-end finance export still selects from legacy_reports, so dropping the table would break that export. I have not dropped anything."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "legacy|table|drop",
+          "why": "the agent answered the request with a refusal; it did not overlook it"
+        }
+      ]
+    },
+    {
+      "user": "finance moved off that export last month. drop it anyway"
+    },
+    {
+      "edit": "/srv/shop/db/migrations/0051_drop_legacy_reports.sql"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm db:migrate"
+        },
+        "output": "1 migration applied"
+      }
+    },
+    {
+      "agent": "Dropped: migration 0051 removes legacy_reports and it is applied."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "drop|legacy|0051",
+          "state": "done",
+          "why": "dropping the table is recorded as done"
+        },
+        {
+          "text": "standing",
+          "lacks": "kept|keep|not dropped",
+          "why": "where things stand no longer says the table was kept"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "id": "reply-lists-in-the-wrong-place",
+  "title": "The model puts its lists at the top of the reply instead of under add",
+  "categories": ["model-failure", "addressed-same-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "A reply whose lists sit where the recap does not read them is not taken as the recap of the turn: the fix is recorded as done, or the recap says it could not be written. Never a recap that is ready and empty.",
+  "steps": [
+    {
+      "user": "The checkout page crashes when the cart is empty. Fix it."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/pages/checkout.tsx"
+        },
+        "output": "// src/pages/checkout.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/pages/checkout.test.tsx"
+        },
+        "output": "12 passed"
+      }
+    },
+    {
+      "agent": "Fixed. The checkout page read cart.items[0] without checking for an empty cart; it now shows the empty-cart message instead. All 12 checkout tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "did",
+          "has": "checkout|crash|empty",
+          "state": "done",
+          "why": "the fix the reply named is recorded as done"
+        },
+        {
+          "text": "standing",
+          "has": "checkout|crash|empty|fix",
+          "why": "where things stand says the crash is fixed"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        }
+      ]
+    }
+  ]
+}

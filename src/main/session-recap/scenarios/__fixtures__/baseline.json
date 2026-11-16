@@ -124,6 +124,9 @@
     "after the turn: the agent answered the request with a refusal; it did not overlook it",
     "after the turn: where things stand says the migrations were kept"
   ],
+  "dismissed-entry-stays-dismissed@chat-journal": [],
+  "dismissed-entry-stays-dismissed@claude-cli": [],
+  "dismissed-entry-stays-dismissed@codex-cli": [],
   "duplicate-asks-paraphrased@chat-journal": [],
   "duplicate-asks-paraphrased@claude-cli": [],
   "duplicate-asks-paraphrased@codex-cli": [],
@@ -222,6 +225,18 @@
     "after turn 1: the translation is asked for and not done yet",
     "after turn 2: the translation is recorded as done"
   ],
+  "nothing-said-since-the-recap@chat-journal": [
+    "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+    "after the user opens it twice: opening the recap does not leave it marked as behind"
+  ],
+  "nothing-said-since-the-recap@claude-cli": [
+    "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+    "after the user opens it twice: opening the recap does not leave it marked as behind"
+  ],
+  "nothing-said-since-the-recap@codex-cli": [
+    "four minutes after the compaction: nothing was said since the recap was written, so it is not behind",
+    "after the user opens it twice: opening the recap does not leave it marked as behind"
+  ],
   "partly-addressed-stays-open@chat-journal": [
     "after turn 2: reindex was asked for and is still not migrated"
   ],
@@ -299,6 +314,18 @@
   "remote-ssh-session@claude-ssh": [
     "after turn 1: the documentation is asked for and not written yet",
     "after turn 2: the documentation is recorded as done"
+  ],
+  "reply-lists-in-the-wrong-place@chat-journal": [
+    "after the turn: the fix the reply named is recorded as done",
+    "after the turn: where things stand says the crash is fixed"
+  ],
+  "reply-lists-in-the-wrong-place@claude-cli": [
+    "after the turn: the fix the reply named is recorded as done",
+    "after the turn: where things stand says the crash is fixed"
+  ],
+  "reply-lists-in-the-wrong-place@codex-cli": [
+    "after the turn: the fix the reply named is recorded as done",
+    "after the turn: where things stand says the crash is fixed"
   ],
   "restart-mid-session@chat-journal": [
     "after the restart: tracking is asked for and not done yet",

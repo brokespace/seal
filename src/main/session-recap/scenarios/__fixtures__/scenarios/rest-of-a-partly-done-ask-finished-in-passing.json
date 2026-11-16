@@ -1,0 +1,78 @@
+{
+  "id": "rest-of-a-partly-done-ask-finished-in-passing",
+  "title": "The half of an ask that was left over is finished while doing something else, without being named",
+  "categories": ["partly-addressed", "addressed-implicitly"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After turn 1 the /customers half is open. Turn 2 changes the page size on both endpoints, which only works because /customers now paginates too; after it nothing is listed as not addressed or as half done.",
+  "pending": true,
+  "steps": [
+    {
+      "user": "Add pagination to the /orders and /customers endpoints, 50 per page."
+    },
+    {
+      "edit": "/srv/shop/src/routes/orders.ts"
+    },
+    {
+      "agent": "/orders is paginated now: 50 per page with a next cursor, and the list test covers it. /customers builds its query in a different helper, so I have left it for a follow-up."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "customers",
+          "why": "the /customers half is not done"
+        }
+      ]
+    },
+    {
+      "user": "make the page size 100 instead"
+    },
+    {
+      "edit": "/srv/shop/src/routes/customers.ts"
+    },
+    {
+      "edit": "/srv/shop/src/routes/orders.ts"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test src/routes"
+        },
+        "output": "31 passed"
+      }
+    },
+    {
+      "agent": "The page size is 100 on both endpoints, and both list tests pass."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "/customers was paginated along with the page-size change"
+        },
+        {
+          "in": "did",
+          "has": "100|page size",
+          "state": "done",
+          "why": "the page-size change is recorded as done"
+        }
+      ]
+    }
+  ]
+}
