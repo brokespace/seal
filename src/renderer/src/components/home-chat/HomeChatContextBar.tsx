@@ -103,24 +103,15 @@ function useLastWatchedCompaction(chat: HomeChatSummary): number | undefined {
   return watch.lastCompactedAt
 }
 
-function ContextRing({
-  chat,
-  onCompact
-}: {
-  chat: HomeChatSummary
+/** The compaction the ring started and has not seen finish; the bar holds it across a thread switch. */
+function useRingStartedCompaction(
+  chatId: string | null,
   onCompact: HomeChatCompact
-}): React.JSX.Element {
-  const t = useTranslate()
-  const { usedTokens, windowTokens, compactions } = chat.context
-  const percentage = windowTokens > 0 ? Math.round((usedTokens / windowTokens) * 100) : 0
-  const compactDisabled = chat.status === 'running'
-  const lastCompactedAt = useLastWatchedCompaction(chat)
-  // The thread whose compaction this ring started and has not seen finish.
+): { compacting: boolean; compact: () => void } {
   const [compactingChatId, setCompactingChatId] = useState<string | null>(null)
-  const chatId = chat.id
   const compact = useCallback(() => {
     const finished = onCompact()
-    if (!finished) {
+    if (!finished || chatId === null) {
       return
     }
     setCompactingChatId(chatId)
@@ -128,7 +119,23 @@ function ContextRing({
       setCompactingChatId((current) => (current === chatId ? null : current))
     )
   }, [onCompact, chatId])
-  const compacting = compactingChatId === chatId
+  return { compacting: chatId !== null && compactingChatId === chatId, compact }
+}
+
+function ContextRing({
+  chat,
+  compacting,
+  onCompact: compact
+}: {
+  chat: HomeChatSummary
+  compacting: boolean
+  onCompact: () => void
+}): React.JSX.Element {
+  const t = useTranslate()
+  const { usedTokens, windowTokens, compactions } = chat.context
+  const percentage = windowTokens > 0 ? Math.round((usedTokens / windowTokens) * 100) : 0
+  const compactDisabled = chat.status === 'running'
+  const lastCompactedAt = useLastWatchedCompaction(chat)
   const usage = useMemo<NativeChatContextUsageRingInput>(
     () => ({
       usedTokens,
@@ -189,6 +196,7 @@ export function HomeChatContextBar({
   onOpenMachines: () => void
   onCompact: HomeChatCompact
 }): React.JSX.Element {
+  const { compacting, compact } = useRingStartedCompaction(chat?.id ?? null, onCompact)
   return (
     <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border px-2">
       <MachinesPopover
@@ -197,7 +205,7 @@ export function HomeChatContextBar({
         onOpen={onOpenMachines}
       />
       <div className="flex-1" />
-      {chat && <ContextRing chat={chat} onCompact={onCompact} />}
+      {chat && <ContextRing chat={chat} compacting={compacting} onCompact={compact} />}
     </div>
   )
 }
