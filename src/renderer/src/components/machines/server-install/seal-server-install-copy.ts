@@ -58,6 +58,16 @@ export function serverInstallWaitsForHostText(t: Translate): string {
   )
 }
 
+/** What a running install is doing, as the status area says it. */
+export function serverInstallProgressText(
+  t: Translate,
+  view: Pick<MachineView, 'serverInstallWaitsForHost'>
+): string {
+  return view.serverInstallWaitsForHost
+    ? serverInstallWaitsForHostText(t)
+    : t('seal.machineServer.server.installing', 'Installing Seal server…')
+}
+
 /** What a machine's status says while an install runs, where it would only say "Connecting". */
 export function serverInstallStatusText(
   t: Translate,

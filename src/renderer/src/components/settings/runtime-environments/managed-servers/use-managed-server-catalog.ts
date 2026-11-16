@@ -7,9 +7,15 @@ import {
 } from '../../../../../../shared/remote-runtime/host-catalog/runtime-environments'
 import type { SshTarget } from '../../../../../../shared/ssh-types'
 import type { ManagedOrcadPreloadApi } from '../../../../../../preload/api/runtime/managed-orcad-api'
+import {
+  findSshTargetMachine,
+  showSshTargetMachine
+} from '@/components/machines/model/ssh-target-machine'
+import { hasNoSealServerYet } from '@/components/machines/server-install/use-seal-server-install'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { getManagedOrcadApi } from '@/runtime/hosts/installation/managed-orcad-api-availability'
 import { managedServerOutcomeLabel } from './managed-server-copy'
+import { useSshHostSealServerInstall } from './use-ssh-host-seal-server-install'
 
 export type ManagedServerCatalog = {
   /** Absent in the web client, which can't reach SSH hosts. */
@@ -30,6 +36,7 @@ export function useManagedServerCatalog(
 ): ManagedServerCatalog {
   const api = getManagedOrcadApi()
   const mountedRef = useMountedRef()
+  const installOnHost = useSshHostSealServerInstall()
   const [targets, setTargets] = useState<SshTarget[]>([])
   const [pending, setPending] = useState<OrcadManagedPendingMigrationRow[]>([])
   const [resumingId, setResumingId] = useState<string | null>(null)
@@ -69,9 +76,18 @@ export function useManagedServerCatalog(
     }
     setResumingId(row.migrationId)
     try {
-      const result = await api.convertSshHost({ sshTargetId: row.sshTargetId, name: row.name })
-      if (result.outcome !== 'converted') {
-        toast.message(managedServerOutcomeLabel(result))
+      const machine = await findSshTargetMachine(row.sshTargetId)
+      if (machine && hasNoSealServerYet(machine)) {
+        // The move stopped before Seal server was on the host, so it finishes as a confirmed install.
+        const view = await installOnHost(row.sshTargetId)
+        if (view?.serverInstallAction === 'reuse') {
+          await showSshTargetMachine(row.sshTargetId)
+        }
+      } else {
+        const result = await api.convertSshHost({ sshTargetId: row.sshTargetId, name: row.name })
+        if (result.outcome !== 'converted') {
+          toast.message(managedServerOutcomeLabel(result))
+        }
       }
       onChanged()
       await reload()

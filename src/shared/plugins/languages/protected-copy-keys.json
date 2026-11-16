@@ -1005,6 +1005,7 @@
     "seal.machineServer.installDialog.laterRemoval",
     "seal.machineServer.installDialog.linger",
     "seal.machineServer.installDialog.moveAnyway",
+    "seal.machineServer.installDialog.serverData",
     "seal.machineServer.installDialog.serviceAuto",
     "seal.machineServer.installDialog.serviceLaunchd",
     "seal.machineServer.installDialog.serviceLaunchdFallback",

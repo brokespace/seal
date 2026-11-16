@@ -132,33 +132,35 @@ export function MachineServerOfferNotice({
   )
 }
 
-/** The machine's user already runs `seal serve` as a service: Seal offers that server, not a second one. */
+/** The machine's user set up `seal serve` as a service there, running or stopped: Seal offers that server, not a second one. */
 export function MachineServerReuseNotice({
-  serviceName,
+  view,
   busy,
   onReuse
 }: {
-  serviceName: string | undefined
+  view: Pick<MachineView, 'name' | 'serverOwnServe'>
   /** The request is running; the button says so. */
   busy: boolean
   onReuse: () => void
 }): React.JSX.Element {
   const t = useTranslate()
+  const service = view.serverOwnServe?.name
   return (
     <div
       role="status"
       className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2 text-xs"
     >
       <p className="min-w-0 flex-1 basis-64 [overflow-wrap:anywhere]">
-        {serviceName
+        {service
           ? t(
               'seal.machineServer.notice.reuseNamed',
-              'This machine already runs its own Seal server as a service ({{service}}). Seal does not install a second one.',
-              { service: serviceName }
+              '{{name}} already has a Seal server that you set up as a service ({{service}}). Seal can use it instead of installing a second one.',
+              { name: view.name, service }
             )
           : t(
               'seal.machineServer.notice.reuse',
-              'This machine already runs its own Seal server as a service. Seal does not install a second one.'
+              '{{name}} already has a Seal server that you set up as a service. Seal can use it instead of installing a second one.',
+              { name: view.name }
             )}
       </p>
       <div className="ml-auto flex shrink-0 items-center gap-1">

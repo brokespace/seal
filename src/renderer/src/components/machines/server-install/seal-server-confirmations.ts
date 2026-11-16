@@ -13,7 +13,7 @@ function confirmation(
     ...options,
     surface: 'security',
     description: paragraphs.filter((paragraph) => paragraph !== null).join('\n\n'),
-    descriptionClassName: 'scrollbar-sleek max-h-[60vh] overflow-y-auto leading-relaxed'
+    descriptionClassName: 'scrollbar-sleek max-h-[70vh] overflow-y-auto leading-relaxed'
   }
 }
 
@@ -64,7 +64,7 @@ function lingerText(t: Translate): string {
 function laterRemovalText(t: Translate): string {
   return t(
     'seal.machineServer.installDialog.laterRemoval',
-    'Later, “Remove Seal server” stops the server and removes the service. Lingering and the files in ~/.orca-remote stay on the machine.'
+    'Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.'
   )
 }
 
@@ -121,6 +121,11 @@ export function sealServerInstallConfirmation(
         'Seal writes its server files to ~/.orca-remote on {{name}}, then connects to {{name}} through the server instead of plain SSH.',
         { name }
       ),
+      t(
+        'seal.machineServer.installDialog.serverData',
+        'Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}.',
+        { name }
+      ),
       options.moveAnyway
         ? t(
             'seal.machineServer.installDialog.moveAnyway',
@@ -135,7 +140,7 @@ export function sealServerInstallConfirmation(
   )
 }
 
-/** Connecting through the `seal serve` service the machine's user already runs. */
+/** Connecting through the `seal serve` service the machine's user set up; it may be stopped, and may already be paired. */
 export function ownSealServerReuseConfirmation(
   t: Translate,
   name: string
@@ -144,7 +149,7 @@ export function ownSealServerReuseConfirmation(
     {
       title: t(
         'seal.machineServer.reuseDialog.title',
-        'Use the Seal server that already runs on {{name}}?',
+        'Use the Seal server you set up on {{name}}?',
         { name }
       ),
       confirmLabel: t('seal.machineServer.reuseDialog.confirm', 'Use this server')
@@ -152,7 +157,7 @@ export function ownSealServerReuseConfirmation(
     [
       t(
         'seal.machineServer.reuseDialog.connects',
-        'Seal connects to {{name}} through the server that already runs there. Over SSH, Seal asks that server for an access link with “seal pair”, then reaches the server through an SSH tunnel.',
+        'Seal connects to {{name}} through the Seal server you set up there. Over SSH, Seal runs “seal pair” on {{name}} to get an access link from that server: if this computer is already paired with the server, Seal keeps that pairing, otherwise it pairs with the link. Seal adds its own SSH tunnel only when the pairing needs one and has none.',
         { name }
       ),
       t(
@@ -182,7 +187,7 @@ export function sealServerRemovalConfirmation(
       ),
       t(
         'seal.machineServer.remove.stays',
-        'Lingering, the files under ~/.orca-remote and your project files stay on the machine.'
+        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.'
       ),
       t(
         'seal.machineServer.remove.terminals',

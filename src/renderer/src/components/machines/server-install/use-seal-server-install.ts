@@ -25,6 +25,14 @@ export type SealServerInstall = (
   options?: SealServerInstallOptions
 ) => Promise<MachineView | null>
 
+/** An SSH machine Seal has put no server on: one gets there only through `useSealServerInstall`. */
+export function hasNoSealServerYet(
+  machine: Pick<MachineView, 'connection' | 'serverInstallAction'>
+): boolean {
+  // `none` on SSH: Seal's server is installed and the machine was switched back to SSH.
+  return machine.connection === 'ssh' && machine.serverInstallAction !== 'none'
+}
+
 /**
  * The one way to install Seal server on an SSH machine: the dialog says what gets written there,
  * and the request is sent only when the user confirms. Resolves the machine as the attempt left it

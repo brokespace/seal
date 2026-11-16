@@ -2206,8 +2206,8 @@
         "offer": "Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing is installed until you confirm.",
         "notNow": "Not now",
         "moveAnyway": "Move anyway…",
-        "reuseNamed": "This machine already runs its own Seal server as a service ({{service}}). Seal does not install a second one.",
-        "reuse": "This machine already runs its own Seal server as a service. Seal does not install a second one.",
+        "reuseNamed": "{{name}} already has a Seal server that you set up as a service ({{service}}). Seal can use it instead of installing a second one.",
+        "reuse": "{{name}} already has a Seal server that you set up as a service. Seal can use it instead of installing a second one.",
         "reuseAction": "Use this server…"
       },
       "installDialog": {
@@ -2216,11 +2216,12 @@
         "servicePm2": "Seal registers the server with PM2, which keeps it running, as chosen under Advanced. When the machine has no PM2, Seal registers a systemd user service instead.",
         "serviceLaunchd": "Seal registers a launchd user service (experimental) that keeps the server running, as chosen under Advanced. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to.",
         "linger": "With systemd, Seal asks the machine to turn on lingering for your account, so the service keeps running after this computer disconnects.",
-        "laterRemoval": "Later, “Remove Seal server” stops the server and removes the service. Lingering and the files in ~/.orca-remote stay on the machine.",
+        "laterRemoval": "Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.",
         "title": "Install Seal server on {{name}}?",
         "files": "Seal writes its server files to ~/.orca-remote on {{name}}, then connects to {{name}} through the server instead of plain SSH.",
         "moveAnyway": "The saved items listed on this machine’s page stay on this computer and do not appear on {{name}}.",
-        "serviceLaunchdFallback": "When no one is logged in at the screen during the install, no service is registered, and the server starts when Seal connects and stops when idle. On a machine without launchd, Seal chooses as it does automatically: PM2 when the machine has PM2, otherwise a systemd user service."
+        "serviceLaunchdFallback": "When no one is logged in at the screen during the install, no service is registered, and the server starts when Seal connects and stops when idle. On a machine without launchd, Seal chooses as it does automatically: PM2 when the machine has PM2, otherwise a systemd user service.",
+        "serverData": "Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}."
       },
       "keepRunningDialog": {
         "title": "Keep Seal server running on {{name}} as a service?",
@@ -2228,9 +2229,9 @@
         "serviceLaunchd": "Seal registers the server that already runs on {{name}} as a launchd user service (experimental) and restarts the server once. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to. When no one is logged in at the screen now, no service is registered."
       },
       "reuseDialog": {
-        "title": "Use the Seal server that already runs on {{name}}?",
+        "title": "Use the Seal server you set up on {{name}}?",
         "confirm": "Use this server",
-        "connects": "Seal connects to {{name}} through the server that already runs there. Over SSH, Seal asks that server for an access link with “seal pair”, then reaches the server through an SSH tunnel.",
+        "connects": "Seal connects to {{name}} through the Seal server you set up there. Over SSH, Seal runs “seal pair” on {{name}} to get an access link from that server: if this computer is already paired with the server, Seal keeps that pairing, otherwise it pairs with the link. Seal adds its own SSH tunnel only when the pairing needs one and has none.",
         "nothingInstalled": "Nothing is installed on {{name}}, and the server is not restarted."
       },
       "remove": {
@@ -2238,8 +2239,12 @@
         "title": "Remove Seal server from {{name}}?",
         "confirm": "Remove Seal server",
         "stops": "This stops Seal server on {{name}} and removes its service. {{name}} goes back to a plain SSH connection, and projects and sessions opened through the server are no longer shown on this computer.",
-        "stays": "Lingering, the files under ~/.orca-remote and your project files stay on the machine.",
+        "stays": "Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json and the status hooks in your coding agents’ settings.",
         "terminals": "Running terminals block the removal: close the terminals that run through the server first."
+      },
+      "settings": {
+        "asksFirst": "Seal shows what it writes on the host and asks before it installs anything.",
+        "reuseDone": "Seal now connects to {{name}} through the Seal server you set up there."
       },
       "list": {
         "failed": "Install failed",

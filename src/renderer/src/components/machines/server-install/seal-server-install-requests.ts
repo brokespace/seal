@@ -6,7 +6,7 @@ import type { MachineId } from '../../../../../shared/machines/machine-types'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 
 // These errors say what to do on the machine, which takes longer to read than a default toast stays.
-const ERROR_TOAST_MS = 15_000
+export const SEAL_SERVER_ERROR_TOAST_MS = 15_000
 
 /**
  * Sends one Seal server request for a machine. Resolves null after showing the error toast, so
@@ -27,9 +27,16 @@ export async function sealServerRequest(
     }
     return await request(api)
   } catch (error) {
-    toast.error(readIpcErrorMessage(error) ?? String(error), { duration: ERROR_TOAST_MS })
+    toast.error(readIpcErrorMessage(error) ?? String(error), {
+      duration: SEAL_SERVER_ERROR_TOAST_MS
+    })
     return null
   }
+}
+
+/** Connects the machine through the Seal server its user set up there; nothing is installed. */
+export function reuseOwnSealServer(machineId: MachineId): Promise<MachineView | null> {
+  return sealServerRequest((api) => api.reuseOwnServer({ machineId }))
 }
 
 /** Records "Not now", which ends the one-time offer. */

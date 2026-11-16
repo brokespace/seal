@@ -174,15 +174,21 @@ export const SERVER_INSTALL_FIXTURE_MACHINES: MachineView[] = Object.keys(STATES
   .filter((key): key is FixtureKey => key in SERVER_INSTALL_FIXTURE_IDS)
   .map(fixtureMachine)
 
-/** Every fixture machine is reachable, so each one's page shows its status area in place. */
-export function serverInstallFixtureSshStates(): Map<string, SshConnectionState> {
+/**
+ * Every fixture machine is reachable, so each one's page shows its status area in place.
+ * `connecting` names the machine whose install is still bringing its connection up.
+ */
+export function serverInstallFixtureSshStates(
+  connecting?: FixtureKey
+): Map<string, SshConnectionState> {
+  const connectingId = connecting ? SERVER_INSTALL_FIXTURE_IDS[connecting] : null
   return new Map(
     SERVER_INSTALL_FIXTURE_MACHINES.filter((machine) => machine.connection === 'ssh').map(
       (machine) => [
         machine.recordId,
         {
           targetId: machine.recordId,
-          status: 'connected',
+          status: machine.recordId === connectingId ? 'connecting' : 'connected',
           error: null,
           reconnectAttempt: 0,
           remotePlatform: 'linux'

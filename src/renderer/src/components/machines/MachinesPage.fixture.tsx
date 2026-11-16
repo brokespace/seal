@@ -184,11 +184,15 @@ function serverInstallFixture(
   options: {
     width?: number
     press?: 'install' | 'keep-running' | 'reuse' | 'remove' | 'retry' | 'move-anyway'
+    /** The install has not connected the machine yet, so its files cannot be browsed. */
+    connecting?: boolean
   } = {}
 ) {
   return defineFixture({
     width: options.width ?? 1200,
-    store: { sshConnectionStates: serverInstallFixtureSshStates() },
+    store: {
+      sshConnectionStates: serverInstallFixtureSshStates(options.connecting ? key : undefined)
+    },
     setup: () => installServerInstallFakes(),
     render: () => <Page />,
     interact: async (frame) => {
@@ -216,6 +220,10 @@ export const serverOffer = serverInstallFixture('offer')
 export const serverReuse = serverInstallFixture('reuse')
 export const serverInstalling = serverInstallFixture('installing')
 export const serverWaitsForHost = serverInstallFixture('waitsForHost')
+export const serverInstallingConnecting = serverInstallFixture('installing', { connecting: true })
+export const serverWaitsForHostConnecting = serverInstallFixture('waitsForHost', {
+  connecting: true
+})
 export const serverInstall = serverInstallFixture('install')
 export const serverKeepRunning = serverInstallFixture('keepRunning')
 export const serverOwnServer = serverInstallFixture('ownServer')

@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import type { MachinesApi } from '../../../../../preload/api/machines/machines-bridge'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineCopyableCommand } from './MachineCopyableCommand'
 import {
@@ -24,10 +23,14 @@ import {
 } from './seal-server-confirmations'
 import {
   serverInstallIsRunning,
-  serverInstallWaitsForHostText,
+  serverInstallProgressText,
   serverManagerText
 } from './seal-server-install-copy'
-import { declineSealServerInstall, sealServerRequest } from './seal-server-install-requests'
+import {
+  declineSealServerInstall,
+  reuseOwnSealServer,
+  sealServerRequest
+} from './seal-server-install-requests'
 import { useSealServerInstall, type SealServerInstallOptions } from './use-seal-server-install'
 
 // Why untranslated: a literal shell command.
@@ -76,11 +79,11 @@ export function MachineServerStatus({
   const runConfirmed = (
     kind: Busy,
     confirmation: ConfirmationDialogOptions,
-    request: (api: MachinesApi) => Promise<MachineView>
+    request: () => Promise<unknown>
   ): void =>
     void confirm(confirmation).then((confirmed) => {
       if (confirmed) {
-        run(kind, () => sealServerRequest(request))
+        run(kind, request)
       }
     })
 
@@ -103,9 +106,7 @@ export function MachineServerStatus({
     return band(
       <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
         <LoadingSpinner className="size-3.5 shrink-0" />
-        {view.serverInstallWaitsForHost
-          ? serverInstallWaitsForHostText(t)
-          : t('seal.machineServer.server.installing', 'Installing Seal server…')}
+        {serverInstallProgressText(t, view)}
       </p>
     )
   }
@@ -131,11 +132,11 @@ export function MachineServerStatus({
   if (action === 'reuse') {
     return band(
       <MachineServerReuseNotice
-        serviceName={view.serverOwnServe?.name}
+        view={view}
         busy={busy === 'reuse'}
         onReuse={() =>
-          runConfirmed('reuse', ownSealServerReuseConfirmation(t, view.name), (api) =>
-            api.reuseOwnServer({ machineId: view.id })
+          runConfirmed('reuse', ownSealServerReuseConfirmation(t, view.name), () =>
+            reuseOwnSealServer(view.id)
           )
         }
       />
@@ -240,8 +241,8 @@ export function MachineServerStatus({
             disabled={busy !== null}
             data-machine-server-action="remove"
             onClick={() =>
-              runConfirmed('remove', sealServerRemovalConfirmation(t, view.name), (api) =>
-                api.removeServer({ machineId: view.id })
+              runConfirmed('remove', sealServerRemovalConfirmation(t, view.name), () =>
+                sealServerRequest((api) => api.removeServer({ machineId: view.id }))
               )
             }
           >

@@ -38,7 +38,10 @@ import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineServerStatus } from '../server-install/MachineServerStatus'
-import { serverInstallStatusText } from '../server-install/seal-server-install-copy'
+import {
+  serverInstallProgressText,
+  serverInstallStatusText
+} from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
@@ -82,6 +85,7 @@ export function MachineDetail({
   const removal =
     machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
+  const installStatus = serverInstallStatusText(t, view, machine.status)
   const homeDir = metrics?.homeDir ?? null
   // A detail belongs to the machine it was opened on, and needs that machine reachable.
   const resource = online && opened?.machineId === machine.id ? opened.kind : null
@@ -121,7 +125,7 @@ export function MachineDetail({
             <MachineStatusDot status={machine.status} />
             <MachineConnectionBadge connection={machine.connection} />
             <span className="shrink-0 text-2xs text-muted-foreground" data-machine-status-text>
-              {serverInstallStatusText(t, view, machine.status) ?? statusLabel(machine.status)}
+              {installStatus ?? statusLabel(machine.status)}
             </span>
           </div>
           {machine.address || machine.statusDetail ? (
@@ -280,6 +284,7 @@ export function MachineDetail({
         homeDir={homeDir}
         hidden={resource !== null}
         folderRequest={folderRequest}
+        unreachableText={view && installStatus ? serverInstallProgressText(t, view) : null}
       />
       <MachineEditDialog
         machineId={machine.id}
