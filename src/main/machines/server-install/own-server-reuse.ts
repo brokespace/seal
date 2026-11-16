@@ -151,14 +151,17 @@ async function connectOwnServer(
   const offer = parseRemotePairingCode(userDataPath, pairingUrl)
   const servers = listEnvironments(userDataPath)
   const saved = findEnvironmentWithHostKey(servers, offer.publicKeyB64)
+  // The port the server listens on there. A saved pairing may name the local end of a tunnel the user ran.
+  const remotePort = loopbackPortOnMachine(offer.endpoint)
   if (saved) {
     // A server that is already paired keeps its pairing; only a tunnel it lacks is added.
     // One paired through a tunnel the user runs keeps that tunnel: the link refuses a second.
     return getRuntimeSshAccess(saved) ||
       saved.connectionDependency === 'ssh-tunnel' ||
-      getPreferredLoopbackRuntimePort(saved) === null
+      getPreferredLoopbackRuntimePort(saved) === null ||
+      remotePort === null
       ? saved
-      : linkThroughSsh(userDataPath, saved, sshTargetId)
+      : linkSavedThroughSsh(userDataPath, saved, sshTargetId, remotePort)
   }
   const name = freeServerName(servers, machine.name)
   if (!('connectionDependency' in getPairingConnectionDependency('ssh-tunnel', offer))) {
@@ -169,7 +172,10 @@ async function connectOwnServer(
   const added = addEnvironmentFromPairingCode(userDataPath, { name, pairingCode: pairingUrl })
   clearRuntimeEnvironmentManualDisconnect(added.id)
   try {
-    return await linkThroughSsh(userDataPath, added, sshTargetId)
+    if (remotePort === null) {
+      throw new Error('The pairing link names no port on the machine')
+    }
+    return await linkThroughSsh(userDataPath, added, sshTargetId, remotePort)
   } catch (error) {
     await forgetUnlinkedServer(userDataPath, added.id)
     throw error
@@ -187,22 +193,62 @@ function freeServerName(servers: readonly SavedServer[], wanted: string): string
   }
 }
 
+function loopbackPortOnMachine(endpoint: string): number | null {
+  return getPreferredLoopbackRuntimePort({
+    endpoints: [{ id: 'offer', endpoint }],
+    preferredEndpointId: 'offer'
+  })
+}
+
 /** The link's check proves, through Seal's own tunnel, that the server holds the key the pairing link named. */
 async function linkThroughSsh(
   userDataPath: string,
   server: SavedServer,
-  sshTargetId: string
+  sshTargetId: string,
+  remotePort: number
 ): Promise<SavedServer> {
-  const remotePort = getPreferredLoopbackRuntimePort(server)
-  if (remotePort === null) {
-    throw new Error('The pairing link names no port on the machine')
+  try {
+    await linkRuntimeSshAccess(
+      userDataPath,
+      { selector: server.id, requestId: randomUUID(), sshTargetId, remotePort },
+      { invalidateTransport: invalidateServerTransport }
+    )
+  } catch (error) {
+    const reason = withoutTrailingFullStop(error instanceof Error ? error.message : String(error))
+    throw new Error(`Seal's SSH tunnel to port ${remotePort} on the machine failed: ${reason}`)
   }
-  await linkRuntimeSshAccess(
+  return server
+}
+
+/** A saved server keeps its pairing either way; a link left half made, now or by an earlier try, is dropped. */
+async function linkSavedThroughSsh(
+  userDataPath: string,
+  saved: SavedServer,
+  sshTargetId: string,
+  remotePort: number
+): Promise<SavedServer> {
+  if (saved.pendingSshAccessOperation) {
+    await dropUnfinishedLink(userDataPath, saved.id)
+  }
+  try {
+    return await linkThroughSsh(userDataPath, saved, sshTargetId, remotePort)
+  } catch (error) {
+    const left = listEnvironments(userDataPath).find((entry) => entry.id === saved.id)
+    if (left?.pendingSshAccessOperation) {
+      await dropUnfinishedLink(userDataPath, saved.id).catch((dropError: unknown) => {
+        console.warn('[machines] could not drop an SSH tunnel link that was not made:', dropError)
+      })
+    }
+    throw error
+  }
+}
+
+async function dropUnfinishedLink(userDataPath: string, environmentId: string): Promise<void> {
+  await unlinkRuntimeSshAccess(
     userDataPath,
-    { selector: server.id, requestId: randomUUID(), sshTargetId, remotePort },
+    { selector: environmentId, requestId: randomUUID() },
     { invalidateTransport: invalidateServerTransport }
   )
-  return server
 }
 
 /** The same check and save as Add machine > Connect via Seal server. */
@@ -229,11 +275,7 @@ async function pairDirectly(
 /** A server saved for a tunnel that could not be made is no use; the SSH details go back to how they were. */
 async function forgetUnlinkedServer(userDataPath: string, environmentId: string): Promise<void> {
   try {
-    await unlinkRuntimeSshAccess(
-      userDataPath,
-      { selector: environmentId, requestId: randomUUID() },
-      { invalidateTransport: invalidateServerTransport }
-    )
+    await dropUnfinishedLink(userDataPath, environmentId)
     removeEnvironment(userDataPath, environmentId)
     await invalidateServerTransport(environmentId)
   } catch (error) {

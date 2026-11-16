@@ -31,6 +31,7 @@ const COMMAND_FAILED = 'the install command failed on the machine'
 const COMMAND_TIMED_OUT = 'the machine did not finish the install command in time'
 const DID_NOT_FINISH = 'the install did not finish'
 const MAX_REASON_CHARS = 200
+const MAX_CAUSE_CHARS = 300
 const MAX_HOST_LINE_CHARS = 120
 
 // `mkdir -p` names the folder itself when it is a file; a path below it fails with "Not a directory".
@@ -212,7 +213,10 @@ function decisionReason(decision: UnservedDecision): string {
     return 'moving the projects of this machine to its server was interrupted'
   }
   if (decision.reason === 'orcad_unavailable') {
-    return unavailableReason(decision.detail) ?? statedReason(unservedHostServerMessage(decision))
+    const known = unavailableReason(decision.detail)
+    return known
+      ? withCause(known, decision.cause)
+      : statedReason(unservedHostServerMessage(decision))
   }
   if (decision.code && sshHostServerSetupRemedy(decision.code) === 'free-host-space') {
     return NO_SPACE
@@ -232,11 +236,21 @@ function unavailableReason(detail: string | undefined): string | null {
   return detail && Object.hasOwn(reasons, detail) ? reasons[detail] : null
 }
 
+/** The fixed reason, then what actually went wrong in its own words, such as the folder looked in. */
+function withCause(reason: string, cause: string | undefined): string {
+  const said = withoutTrailingFullStop((cause ?? '').trim().split(/\r?\n/u)[0] ?? '')
+  if (!said || said === reason) {
+    return reason
+  }
+  const shown = said.length > MAX_CAUSE_CHARS ? `${said.slice(0, MAX_CAUSE_CHARS - 1)}…` : said
+  return `${reason} (${shown})`
+}
+
 function errorReason(error: Error, depth = 0): string | null {
   const unavailable = classifyOrcadHostUnavailable(error)
   const errno = 'code' in error && typeof error.code === 'string' ? error.code : ''
   const known =
-    (unavailable && UNAVAILABLE_REASONS[unavailable]) ||
+    (unavailable && withCause(UNAVAILABLE_REASONS[unavailable], error.message)) ||
     REASONS_BY_ERROR_NAME[error.name] ||
     REASONS_BY_ERRNO[errno]
   if (known) {
