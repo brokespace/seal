@@ -7,7 +7,7 @@ import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-s
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
-import type { ActiveAgentsView } from './active-agents-model'
+import { machineKnownByHostId, type ActiveAgentsView } from './active-agents-model'
 
 export type ActiveAgentsRowState = Pick<
   LiveSessionRowProps,
@@ -31,7 +31,8 @@ export type ActiveAgentsGroupsProps = {
 const HEADER =
   'flex h-6 w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 text-left text-[11px] leading-none text-muted-foreground transition-colors hover:bg-worktree-sidebar-accent hover:text-worktree-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-worktree-sidebar-ring'
 
-function Chevron({ open }: { open: boolean }): React.JSX.Element {
+/** The fold mark of a line that hides rows: it points down while they show. */
+export function FoldChevron({ open }: { open: boolean }): React.JSX.Element {
   return (
     <ChevronRight
       className={cn('size-3 shrink-0 transition-transform', open && 'rotate-90')}
@@ -85,7 +86,7 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
               onClick={() => props.onToggleMachine(machine.hostId)}
               className={HEADER}
             >
-              <Chevron open={open} />
+              <FoldChevron open={open} />
               <span className="min-w-0 flex-1 truncate font-medium" title={machine.label}>
                 {machineName(machine)}
               </span>
@@ -118,7 +119,7 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
             {t(
               'auto.components.live-sessions.sidebar.hostError',
               'Could not scan {{host}}: {{error}}',
-              { host: hostId, error }
+              { host: machineName(machineKnownByHostId(hostId)), error }
             )}
           </span>
         </p>
@@ -131,7 +132,7 @@ export function ActiveAgentsGroups(props: ActiveAgentsGroupsProps): React.JSX.El
             onClick={props.onToggleFinished}
             className={HEADER}
           >
-            <Chevron open={props.finishedOpen} />
+            <FoldChevron open={props.finishedOpen} />
             <span className="min-w-0 flex-1 truncate font-medium">
               {t('auto.components.live-sessions.sidebar.finished', 'Recently finished')}
             </span>

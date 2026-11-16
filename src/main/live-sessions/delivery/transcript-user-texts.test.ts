@@ -69,7 +69,17 @@ describe('matchDelivered', () => {
         { offset: 60, text: 'ok then lint' }
       ]
     )
-    expect([a, b, c, early].map((m) => delivered.has(m))).toEqual([true, true, true, false])
+    expect([a, b, c, early].map((m) => delivered.get(m))).toEqual([20, 60, 60, undefined])
     expect(matchDelivered([{ text: 'ok', offset: 0 }], [{ offset: 0, text: 'look' }]).size).toBe(0)
+  })
+
+  it('matches the same message twice in one joined record', () => {
+    const sent = [
+      { text: 'ok', offset: 10 },
+      { text: 'ok', offset: 10 },
+      { text: 'ok', offset: 10 }
+    ]
+    const delivered = matchDelivered(sent, [{ offset: 40, text: 'ok ok' }])
+    expect(sent.map((m) => delivered.get(m))).toEqual([40, 40, undefined])
   })
 })

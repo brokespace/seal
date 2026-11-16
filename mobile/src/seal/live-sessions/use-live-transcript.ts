@@ -12,6 +12,8 @@ export type LiveTranscriptState = {
   phase: 'loading' | 'ready' | 'error'
   error: string | null
   messages: LiveTranscriptMessage[]
+  /** How far the transcript has been read, in bytes; null before the first read. */
+  readTo: number | null
   hasMore: boolean
   loadingEarlier: boolean
 }
@@ -32,6 +34,7 @@ const LOADING: LiveTranscriptState = {
   phase: 'loading',
   error: null,
   messages: [],
+  readTo: null,
   hasMore: false,
   loadingEarlier: false
 }
@@ -62,6 +65,7 @@ export function useLiveTranscript(
         phase: 'ready',
         error: null,
         messages: ordered(held.current.byId),
+        readTo: held.current.cursor,
         hasMore: hasMore ?? s.hasMore
       }))
     const applyPage = (page: LiveTranscriptPage) => {

@@ -5,6 +5,7 @@ import {
   parseJsonRecord,
   recordField
 } from '../../../shared/live-sessions/transcript-json-record'
+import { timesSaid } from '../../../shared/live-sessions/live-session-pending-messages'
 import { codexUserMessageText } from '../discovery/codex-user-message'
 
 export type UserText = { offset: number; text: string }
@@ -81,9 +82,10 @@ export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine
 export function matchDelivered<T extends { text: string; offset: number }>(
   pending: T[],
   records: UserText[]
-): Set<T> {
+): Map<T, number> {
   const used = new Map<string, number>()
-  const delivered = new Set<T>()
+  // Each delivered message with the offset of the record that holds it.
+  const delivered = new Map<T, number>()
   for (const item of pending) {
     const want = normalizeForMatch(item.text)
     if (!want) {
@@ -95,11 +97,10 @@ export function matchDelivered<T extends { text: string; offset: number }>(
         continue
       }
       // Word-bounded: queued messages arrive joined in one record, but "ok" must not match "look".
-      const count = ` ${record.text} `.split(` ${want} `).length - 1
       const key = `${i}\n${want}`
-      if (count > (used.get(key) ?? 0)) {
+      if (timesSaid(record.text, want) > (used.get(key) ?? 0)) {
         used.set(key, (used.get(key) ?? 0) + 1)
-        delivered.add(item)
+        delivered.set(item, record.offset)
         break
       }
     }

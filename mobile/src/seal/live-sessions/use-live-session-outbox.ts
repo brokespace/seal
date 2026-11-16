@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { randomV4Uuid } from '../../platform/random-v4-uuid'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { retryLiveMessage, sendLiveMessage } from './live-session-operations'
-import { pendingLiveMessages } from './live-session-pending-rows'
+import { pendingLiveMessages } from '../../../../src/shared/live-sessions/live-session-pending-messages'
 import type { LiveMessage, LiveTranscriptMessage } from './live-session-schemas'
 import { currentLiveSessionId, type LiveSessionsFeedState } from './live-sessions-feed'
 
@@ -10,25 +10,27 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 
 /**
  * One session's messages on their way: the host's outbox plus sends it hasn't acknowledged (or never
- * received), minus those the transcript already shows.
+ * received), minus those the transcript read to `readTo` already holds, each with its place in it.
  */
 export function useLiveSessionOutbox({
   client,
   feed,
   sessionId,
   transcript,
+  readTo,
   onSend
 }: {
   client: RpcClient | null
   feed: LiveSessionsFeedState & { upsertMessage: (message: LiveMessage) => void }
   sessionId: string
   transcript: readonly LiveTranscriptMessage[]
+  readTo: number | null
   onSend: () => void
 }) {
   const { upsertMessage, messages: outboxById } = feed
   const [unacked, setUnacked] = useState<LiveMessage[]>([])
 
-  const pending = pendingLiveMessages(transcript, [
+  const pending = pendingLiveMessages(transcript, readTo, [
     ...[...outboxById.values()].filter(
       (message) => currentLiveSessionId(feed, message.sessionId) === sessionId
     ),

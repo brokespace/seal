@@ -114,7 +114,10 @@ export const liveMessageSchema = z.looseObject({
   route: z.string().nullable(),
   error: z.string().nullable(),
   createdAt: Timestamp,
-  updatedAt: Timestamp
+  updatedAt: Timestamp,
+  /** Where it was written and where the transcript holds it; a host from before them sends neither. */
+  sentOffset: z.number().nullish().catch(undefined),
+  echoOffset: z.number().nullish().catch(undefined)
 })
 
 const registryEventSchema = z.discriminatedUnion('type', [

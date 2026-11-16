@@ -11,7 +11,10 @@ export function shouldPreserveEditableFocus(element: Element | null): boolean {
   }
   // Deferred layout maintenance must not steal focus from rename or settings edits.
   return (
-    element.matches('[data-worktree-sidebar][data-keyboard-navigation]') ||
+    // Seal: a session row the arrow keys moved to is part of the list's keyboard navigation.
+    element.matches(
+      '[data-worktree-sidebar][data-keyboard-navigation], [data-worktree-sidebar] [data-keyboard-navigation]'
+    ) ||
     element.isContentEditable ||
     element.tagName === 'INPUT' ||
     element.tagName === 'TEXTAREA' ||
