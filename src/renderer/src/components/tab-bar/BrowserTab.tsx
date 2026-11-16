@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { X, Pin, PinOff, Volume2, VolumeX } from 'lucide-react'
 import {
@@ -31,7 +31,7 @@ import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { TabWorkspaceLayoutMenuSection } from './TabWorkspaceLayoutMenuSection'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
-import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { useTabContextMenuDismissal, useTabContextMenuOpening } from './tab-context-menu-opening'
 import { cn } from '@/lib/class-names'
 import { BrowserFavicon } from '@/components/browser-favicon'
 import { AgentCursorGlyph } from '../browser-pane/agent-cursor/agent-cursor-glyph'
@@ -140,21 +140,7 @@ export default function BrowserTab({
     ? t('browserTab.controlledByHost', 'Controlled by {{host}}', { host: controllerHost })
     : t('browserTab.agentDriving', 'An agent is using this page')
 
-  useEffect(() => {
-    const closeMenu = (): void => setMenuOpen(false)
-    window.addEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-    return () => window.removeEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-  }, [])
-
-  // Webview clicks bypass renderer pointerdown, so window blur dismisses menus Radix cannot detect as outside clicks.
-  useEffect(() => {
-    if (!menuOpen) {
-      return
-    }
-    const dismiss = (): void => setMenuOpen(false)
-    window.addEventListener('blur', dismiss)
-    return () => window.removeEventListener('blur', dismiss)
-  }, [menuOpen])
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
 
   // Activate on pointer-up so drag gestures cannot switch tabs mid-drag.
   const { onPointerDown: onTabPointerDown, retirePendingActivation } = useTabStripPointerActivation(

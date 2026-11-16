@@ -1,6 +1,6 @@
 import { editorTabWorkspace } from '@/store/slices/editor/tabs/workspace-editor-files'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { Eye, ShieldAlert, Pin } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -35,7 +35,7 @@ import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { EditorFileTabCloseButton } from './EditorFileTabCloseButton'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
-import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { useTabContextMenuDismissal, useTabContextMenuOpening } from './tab-context-menu-opening'
 import { editorTabDocumentFolderAccess } from '@/lib/files/access/local-file-access'
 import { useTabCustomEditor } from '@/store/plugins/file-editors/plugin-custom-editors'
 import { PluginContributionIcon } from '../plugins/PluginContributionIcon'
@@ -188,21 +188,7 @@ export default function EditorFileTab({
 
   const tabStatusColor = tabStatus ? STATUS_COLORS[tabStatus] : undefined
 
-  useEffect(() => {
-    const closeMenu = (): void => setMenuOpen(false)
-    window.addEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-    return () => window.removeEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-  }, [])
-
-  // Webview clicks bypass renderer pointerdown, so window blur dismisses menus Radix cannot detect as outside clicks.
-  useEffect(() => {
-    if (!menuOpen) {
-      return
-    }
-    const dismiss = (): void => setMenuOpen(false)
-    window.addEventListener('blur', dismiss)
-    return () => window.removeEventListener('blur', dismiss)
-  }, [menuOpen])
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
 
   const dragListeners = isRenaming ? undefined : listeners
   const { onPointerDown, retirePendingActivation } = useTabStripPointerActivation({

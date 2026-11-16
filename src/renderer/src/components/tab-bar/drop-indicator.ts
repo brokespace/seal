@@ -38,3 +38,8 @@ export function getTabStripBorderClasses(
     .filter(Boolean)
     .join(' ')
 }
+
+/** The row a tab strip sits in. */
+export const TAB_STRIP_ROW_CLASSES = 'h-[32px] shrink-0 border-b border-border bg-tab-bar'
+/** What the strip's width rules and scroll buttons measure: the room tabs and row actions share. */
+export const TAB_STRIP_CONTAINER_CLASSES = '@container/tab-strip flex min-w-0 flex-1 items-stretch'

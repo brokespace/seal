@@ -1,5 +1,9 @@
 import { useMemo } from 'react'
-import type { DropIndicator } from '@/components/tab-bar/drop-indicator'
+import {
+  TAB_STRIP_CONTAINER_CLASSES,
+  TAB_STRIP_ROW_CLASSES,
+  type DropIndicator
+} from '@/components/tab-bar/drop-indicator'
 import { useTabStripDragScrollHandlers } from '@/components/tab-bar/tab-strip-drag-scroll'
 import { useTabStripOverflowNavigation } from '@/components/tab-bar/tab-strip-overflow-navigation'
 import { revealTabStripSlot } from '@/components/tab-bar/tab-strip-slot-geometry'
@@ -89,17 +93,11 @@ export function ItemTabBar({
     <div
       {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: groupId }}
       {...(keepsFocus ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
-      className={cn(
-        '@container/session-tabs flex h-[32px] shrink-0 items-stretch border-b border-border bg-tab-bar',
-        className
-      )}
+      className={cn(TAB_STRIP_ROW_CLASSES, '@container/session-tabs flex items-stretch', className)}
       style={style}
     >
       {before}
-      <div
-        {...{ [ITEM_TAB_ROW_ATTRIBUTE]: '' }}
-        className="@container/tab-strip flex min-w-0 flex-1 items-stretch"
-      >
+      <div {...{ [ITEM_TAB_ROW_ATTRIBUTE]: '' }} className={TAB_STRIP_CONTAINER_CLASSES}>
         <div className="flex h-full min-w-10 flex-1 items-stretch overflow-hidden">
           <TabStripViewport
             sortableIds={keys}

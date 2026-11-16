@@ -19,7 +19,10 @@ import {
 } from '@/components/tab-bar/drop-indicator'
 import { EditorFileTabCloseButton } from '@/components/tab-bar/EditorFileTabCloseButton'
 import { preventMiddleButtonDefault } from '@/components/tab-bar/middle-button-default-guard'
-import { useTabContextMenuOpening } from '@/components/tab-bar/tab-context-menu-opening'
+import {
+  useTabContextMenuDismissal,
+  useTabContextMenuOpening
+} from '@/components/tab-bar/tab-context-menu-opening'
 import { TabHoverCard } from '@/components/tab-bar/TabHoverCard'
 import { useTabStripPointerActivation } from '@/components/tab-bar/tab-strip-pointer-activation'
 import { TAB_LABEL_WIDTH_CLASSES } from '@/components/tab-bar/tab-width-rules'
@@ -39,7 +42,7 @@ import { splitViewItemKey, type SplitViewItem, type SplitViewTab } from './split
 import { useResolvedSplitViewItem, useSplitViewItemTitle } from './use-resolved-split-view-item'
 
 /** What a dragged item tab tells the drag layer. */
-export type ItemTabDragData = { kind: 'item-tab'; item: SplitViewItem }
+type ItemTabDragData = { kind: 'item-tab'; item: SplitViewItem }
 
 export function isItemTabDragData(value: unknown): value is ItemTabDragData {
   return typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'item-tab'
@@ -120,6 +123,7 @@ export function ItemTab({
     onActivate: () => commands.activate(item)
   })
   const handleMenuOpenChange = useTabContextMenuOpening(setMenuOpen, retirePendingActivation)
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
   const slotProps = useTabStripSlotProps(key, active)
   const icon = <ItemTabIcon item={item} resolved={resolved} />
 
@@ -141,11 +145,7 @@ export function ItemTab({
         )
       }}
       onDoubleClick={() => commands.keep(item)}
-      onMouseDown={(event) => {
-        if (event.button === 1) {
-          event.preventDefault()
-        }
-      }}
+      onMouseDown={preventMiddleButtonDefault}
       onMouseUp={preventMiddleButtonDefault}
       onAuxClick={(event) => {
         if (event.button === 1) {
