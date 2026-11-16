@@ -371,7 +371,7 @@ test.describe('a Claude session on a machine that runs the Seal server', () => {
     'needs ORCA_E2E_ORCAD_CONVERT_TEMPLATE: a linux-x64-glibc orcad template for the desktop to deploy over SSH'
   )
 
-  test('remote-server-session through orcad: the desktop recaps it, the server only once a client of its own opens it', async ({
+  test('remote-server-session through orcad: the server recaps it before any client opens it, and the desktop shows that recap and makes none', async ({
     orcaPage,
     sessionServicesStub,
     remoteMachine
@@ -466,6 +466,7 @@ test.describe('a Claude session on a machine that runs the Seal server', () => {
         itemId: desktopItem,
         mark: 'done'
       })
+      const serverMarks = (await serverView(false)).marks
       const desktopRequests = readUtilityRequests(sessionServicesStub, 'recap')
       const serverRequests = serverModel.recapRequests()
       saveRecapEvidenceJson(testInfo, 'where-the-recap-was-computed', {
@@ -476,7 +477,7 @@ test.describe('a Claude session on a machine that runs the Seal server', () => {
         serverRequestsBeforeAnyoneOpenedIt: serverCheckpoints[0].requests,
         staleRightAfterTurn2: beforeAutomaticPass.stale,
         desktopMarksAfterTickingOnDesktop: marked.marks,
-        serverMarksAfterTickingOnDesktop: (await serverView(false)).marks
+        serverMarksAfterTickingOnDesktop: serverMarks
       })
 
       const failed = [
@@ -492,7 +493,9 @@ test.describe('a Claude session on a machine that runs the Seal server', () => {
       })
 
       expect(found.machine).toMatchObject({ kind: 'remote', connection: 'server' })
-      expect(unrecordedRecapRequests(desktopRequests, recorded)).toEqual([])
+      // One recap, kept by the server that runs the session: the desktop asks its own model nothing.
+      expect(desktopRequests).toEqual([])
+      expect(serverMarks).toEqual(marked.marks)
       expect(unrecordedRecapRequests(serverRequests, recorded)).toEqual([])
       expect(recapPanelMismatches(checkpoints)).toEqual([])
       test.fail(

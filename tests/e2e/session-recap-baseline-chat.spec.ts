@@ -137,7 +137,7 @@ test('partly-addressed-then-finished in a chat: nothing stays under asked but no
   test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
   test.fail(
     true,
-    'turn 1 lists nothing as not addressed while /customers is open; turn 2 lists the finished /customers work there'
+    'turn 1 lists nothing as not addressed while /customers is open: no judge answers in this run'
   )
   // Two turns with the scheduler's 4 minutes between their automatic passes.
   test.setTimeout(600_000)
@@ -180,10 +180,7 @@ test('declined-with-a-reason in a chat: a request the agent refused with a reaso
 }, testInfo) => {
   test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
   test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
-  test.fail(
-    true,
-    'the refused request is listed as asked but not addressed, and where it stands says nothing'
-  )
+  test.fail(true, 'where it stands says nothing of the refusal')
   // One turn, its registry scans and one recap pass.
   test.setTimeout(240_000)
   await useScriptedSessionServices(orcaPage, sessionServicesStub)

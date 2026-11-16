@@ -423,7 +423,7 @@ test.describe('session recap baseline: agent CLI sessions started outside Seal',
     test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
     test.fail(
       true,
-      'after turn 1 /customers is not listed as not addressed, and after turn 2 the recap gains a stale "Leave /customers for follow-up" entry there'
+      'after turn 1 /customers is open but not listed as not addressed: no judge answers in this run'
     )
     // Two turns with the scheduler's 4 minutes between their automatic passes.
     test.setTimeout(540_000)
@@ -589,10 +589,7 @@ test.describe('session recap baseline: agent CLI sessions started outside Seal',
   }, testInfo) => {
     test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
     test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
-    test.fail(
-      true,
-      'the refused request is listed as asked but not addressed, and where it stands says nothing'
-    )
+    test.fail(true, 'where it stands says nothing of the refusal')
     // One turn, its registry scans and one recap pass.
     test.setTimeout(240_000)
     const scenario = loadScenario('declined-with-a-reason')
