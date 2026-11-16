@@ -60,14 +60,17 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
     return
   }
   const dropClickOnCard = (click: MouseEvent): void => {
-    // The click lands on what holds both ends of the press; a menu item's own click is not that.
-    if (click.target instanceof Node && click.target !== rows && click.target.contains(rows)) {
+    // The click lands on what holds both ends of the press; a menu item's or a key's click is not that.
+    const around =
+      click.target instanceof Node && click.target !== rows && click.target.contains(rows)
+    if (around && click.detail > 0) {
       click.stopPropagation()
     }
   }
   const forget = (): void => {
     window.removeEventListener('click', dropClickOnCard, true)
     window.removeEventListener('pointerup', onRelease, true)
+    window.removeEventListener('pointercancel', forget, true)
     window.removeEventListener('pointerdown', forget, true)
   }
   // The click follows its release at once; a later one is not this press's.
@@ -76,6 +79,8 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   }
   window.addEventListener('click', dropClickOnCard, true)
   window.addEventListener('pointerup', onRelease, { capture: true, once: true })
+  // A touch that turns into a scroll ends without a release, and without a click.
+  window.addEventListener('pointercancel', forget, { capture: true, once: true })
   // A press that never reports its release must not claim the next one.
   window.addEventListener('pointerdown', forget, { capture: true, once: true })
 }
