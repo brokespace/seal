@@ -32,7 +32,6 @@ test.describe('chat from a terminal in a workspace subfolder', () => {
     claudeStub,
     testRepoPath
   }, testInfo) => {
-    test.setTimeout(120_000)
     await waitForSessionReady(page)
     await waitForActiveWorktree(page)
     await ensureTerminalVisible(page)
