@@ -158,15 +158,16 @@ export function useLiveSessionRowPreview(): LiveSessionRowPreview {
       }
     },
     rowHandlers: {
+      // Not with a button down: a drag begun elsewhere only passes over this row.
       onPointerEnter: (event) => {
-        if (event.pointerType !== 'touch') {
+        if (event.pointerType !== 'touch' && event.buttons === 0) {
           release()
           arm(true)
         }
       },
       // A pointer already resting here when a menu elsewhere closed has no entry to start from.
       onPointerMove: (event) => {
-        if (event.pointerType !== 'touch' && !open) {
+        if (event.pointerType !== 'touch' && event.buttons === 0 && !open) {
           arm(false)
         }
       },
