@@ -5,9 +5,10 @@ import {
   getActiveTabDockSide,
   revealTabStripSlot
 } from '@/components/tab-bar/tab-strip-slot-geometry'
+import { ITEM_TAB_ROW_ATTRIBUTE } from './split-view-drop-target'
 
 /**
- * Keeps the selected tab in view while its strip narrows. A strip with room for two tabs docks it
+ * Keeps the selected tab in view while its pane narrows. A strip with room for two tabs docks it
  * at an edge; a narrower one, in a pane a splitter squeezed, would leave it scrolled away.
  */
 export function useSelectedTabKeptInNarrowingStrip(
@@ -19,14 +20,17 @@ export function useSelectedTabKeptInNarrowingStrip(
 ): void {
   const { tabStripRef, subscribeToStripResize } = navigation
   useEffect(() => {
-    let width = tabStripRef.current?.clientWidth ?? 0
+    // The row, not the strip: the strip itself shrinks when a widening row gains scroll buttons.
+    const rowWidth = (): number =>
+      tabStripRef.current?.closest(`[${ITEM_TAB_ROW_ATTRIBUTE}]`)?.clientWidth ?? 0
+    let width = rowWidth()
     return subscribeToStripResize(() => {
       const strip = tabStripRef.current
       if (!strip) {
         return
       }
-      const narrowed = strip.clientWidth < width
-      width = strip.clientWidth
+      const narrowed = rowWidth() < width
+      width = rowWidth()
       const slot = narrowed && activeKey !== null ? findTabStripSlot(strip, activeKey) : undefined
       // A docked tab is in view wherever the strip is scrolled to.
       if (slot && getActiveTabDockSide(strip) === null) {
