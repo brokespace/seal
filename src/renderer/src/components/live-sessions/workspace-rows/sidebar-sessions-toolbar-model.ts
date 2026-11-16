@@ -42,7 +42,7 @@ export type SidebarSessionsToolbarModel = {
   machines: SessionMachineOption[]
   /** Active sessions per status group on the chosen machine. */
   statusCounts: Record<SidebarSessionStatusFilter, number>
-  /** Filters are set and no listed session passes them. */
+  /** Filters are set and hide every session the sidebar would list. */
   noMatch: boolean
 }
 
@@ -97,16 +97,16 @@ export function buildSidebarSessionsToolbar(
   const onMachine = active.filter(
     (session) => filters.machine === null || session.machine.hostId === filters.machine
   )
+  const listed = sessions.filter(
+    (session) => isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)
+  )
   return {
     activeCount: active.length,
     machines,
     statusCounts: countLiveSessionGroups(onMachine),
     noMatch:
       hasSidebarSessionFilters(filters) &&
-      !sessions.some(
-        (session) =>
-          (isActiveLiveSession(session) || isRecentlyFinishedLiveSession(session, now)) &&
-          matchesSidebarSessionFilters(session, filters)
-      )
+      listed.length > 0 &&
+      !listed.some((session) => matchesSidebarSessionFilters(session, filters))
   }
 }

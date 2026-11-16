@@ -4,7 +4,9 @@ import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
+import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { liveSessionStatusLabel } from '../live-session-presentation'
 import { useLiveSessionClock } from '../live-session-clock'
 import { useLiveSessionMarks } from '../live-session-marks-store'
 import { useWorkspaceSessions } from '../links/use-workspace-sessions'
@@ -68,13 +70,26 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
       menu={props.menu}
     />
   )
+  // What the card's badge said before the rows replaced it: how many run and what the most urgent needs.
+  const top = topLiveSessionStatus(view.running.map((session) => session.status))
+  const groupLabel =
+    top === null
+      ? t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')
+      : view.running.length === 1
+        ? t('auto.components.live-sessions.badge.one', '1 agent session: {{status}}', {
+            status: liveSessionStatusLabel(top)
+          })
+        : t('auto.components.live-sessions.badge.many', '{{count}} agent sessions: {{status}}', {
+            count: view.running.length,
+            status: liveSessionStatusLabel(top)
+          })
   return (
     <div
       role="group"
       data-workspace-session-rows={props.worktreeId}
       // Why: the card takes a right-click in the capture phase; this leaves it to the row's own menu.
       {...{ [WORKTREE_NATIVE_CONTEXT_MENU_ATTR]: '' }}
-      aria-label={t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')}
+      aria-label={groupLabel}
       className={cn('flex min-w-0 flex-col', props.className)}
       onClick={keepFromCard}
       onDoubleClick={keepFromCard}
@@ -151,7 +166,7 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
         current,
         highlighted,
         picked: picked ? picked.has(session.id) : null,
-        // The card names its own machine; a row says so only when it runs somewhere else.
+        // Rows on this computer go without; the badge marks a session on another machine.
         machine: session.machine.kind === 'local' ? null : machineName(session.machine)
       }
     },

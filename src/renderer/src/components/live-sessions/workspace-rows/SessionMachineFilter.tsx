@@ -105,7 +105,13 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
             >
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate" title={machine.machine.label}>
+                  <span
+                    className="min-w-0 flex-1 truncate"
+                    // A machine known only by its id has no other name to add.
+                    title={
+                      machine.machine.label === machine.hostId ? undefined : machine.machine.label
+                    }
+                  >
                     {machineName(machine.machine)}
                   </span>
                   {machine.error === null ? null : (

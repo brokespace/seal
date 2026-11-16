@@ -22,7 +22,7 @@ import {
 } from './sidebar-sessions-toolbar-model'
 
 export type SidebarSessionsToolbarViewProps = {
-  /** False until the first scan answers. */
+  /** False until the registry's first snapshot arrives. */
   loaded: boolean
   sessions: readonly LiveSession[]
   hostErrors: Readonly<Record<string, string>>
