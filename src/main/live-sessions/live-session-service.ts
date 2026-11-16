@@ -108,7 +108,8 @@ export class LiveSessionService {
     this.routes = new SessionInputRoutes({
       host: (hostId) => this.registry.host(hostId),
       sealPanes: deps.sealPanes?.input ?? null,
-      structured: deps.chats?.input ?? null
+      structured: deps.chats?.input ?? null,
+      onResumed: (session, pid) => this.registry.noteResumed(session, pid)
     })
     this.outbox = new LiveMessageOutbox({
       storePath: join(deps.userDataPath, 'live-sessions', 'outbox.json'),

@@ -88,11 +88,18 @@ export class HostSessionScanner {
   private readonly contested = new Set<string>()
   /** The agent processes of the last whole scan. */
   private agentPids: string | null = null
+  /** Headless resumes Seal started since the last scan, by the transcript each writes. */
+  private readonly resumed = new Map<string, number>()
 
   constructor(
     private readonly host: LiveSessionHost,
     private readonly limits: HostScanLimits
   ) {}
+
+  /** Seal resumed the session of `transcriptPath` as `pid`: its writes from here on are that process's. */
+  noteResumed(transcriptPath: string, pid: number): void {
+    this.resumed.set(transcriptPath, pid)
+  }
 
   /** Whether an agent started or ended since the last scan: one `ps`, not a scan. */
   async agentsChanged(): Promise<boolean> {
@@ -135,6 +142,13 @@ export class HostSessionScanner {
         if (!listed.has(path)) {
           this.cache.delete(path)
         }
+      }
+    }
+    for (const [path, pid] of this.resumed) {
+      const transcript = this.cache.get(path)
+      if (transcript) {
+        transcript.agentPid = pid
+        this.resumed.delete(path)
       }
     }
     // A scan cut short lists only some: the rest stand as earlier scans read them.

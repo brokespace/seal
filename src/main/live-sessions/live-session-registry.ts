@@ -124,6 +124,13 @@ export class LiveSessionRegistry {
     return this.published.get(sessionId)
   }
 
+  /** Seal resumed a closed session headless as `pid`: the transcript's fresh writes are its own. */
+  noteResumed(session: LiveSession, pid: number): void {
+    if (session.transcriptPath) {
+      this.hosts.get(session.machine.hostId)?.scanner.noteResumed(session.transcriptPath, pid)
+    }
+  }
+
   /** Whether the session's machine has answered or given up since Seal started; until then a session not listed may still be running. */
   hasRead(sessionId: string): boolean {
     return [...this.hosts].some(

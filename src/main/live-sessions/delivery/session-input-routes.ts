@@ -60,6 +60,8 @@ export type SessionInputDeps = {
   host(hostId: string): LiveSessionHost | null
   sealPanes: SealPaneInput | null
   structured: StructuredSessionInput | null
+  /** A headless resume of `session` started as `pid` on its machine. */
+  onResumed?: (session: LiveSession, pid: number) => void
   sleep?: (ms: number) => Promise<void>
 }
 
@@ -230,6 +232,7 @@ export class SessionInputRoutes {
     const started = /@@STARTED(?: (\d+))?/.exec(out)
     if (started?.[1]) {
       this.resumes.set(session.id, Number(started[1]))
+      this.deps.onResumed?.(session, Number(started[1]))
     }
     return started
       ? { outcome: 'sent' }

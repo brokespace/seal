@@ -70,6 +70,7 @@ function machine(clock: () => number = () => NOW) {
         ...(state.running
           ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`, '@@AGE 4100 900-00:00:00']
           : []),
+        '@@PS',
         '@@DONE'
       ].join('\n')
     },
@@ -205,6 +206,22 @@ describe('one row per agent session', () => {
       'Failing build',
       true
     ])
+  })
+})
+
+describe('a closed session Seal resumed', () => {
+  // Nothing was seen running it, so its fresh writes alone would read as an agent at work.
+  it('keeps its resume route while the resume writes its transcript', async () => {
+    const { state, registry } = machine()
+    state.files = [transcript('discovery/__fixtures__/claude-idle.jsonl', WORKING, 2_000)]
+    const routes = async () => {
+      await registry.refresh()
+      return registry.getSnapshot().sessions.map((s) => s.inputRoutes)
+    }
+    expect(await routes()).toEqual([[]])
+
+    registry.noteResumed(registry.getSnapshot().sessions[0], 7001)
+    expect(await routes()).toEqual([[{ kind: 'resume' }]])
   })
 })
 

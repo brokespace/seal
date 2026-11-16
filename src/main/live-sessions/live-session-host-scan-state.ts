@@ -9,7 +9,7 @@ import type { SealPane } from './seal-panes/seal-pane-sessions'
 
 export type HostScanState = {
   host: LiveSessionHost
-  scanner: Pick<HostSessionScanner, 'scan'>
+  scanner: Pick<HostSessionScanner, 'scan' | 'noteResumed'>
   sessions: LiveSession[]
   nextScanAt: number
   scanning: boolean
@@ -68,6 +68,10 @@ function agentWakingScans(
   let idleWholeScans = 0
   let looks = 0
   return {
+    noteResumed: (transcriptPath, pid) => {
+      scanner.noteResumed(transcriptPath, pid)
+      last = null
+    },
     scan: async (nowMs) => {
       // Every look counts as an idle scan to the registry, so 0 means something changed.
       idleWholeScans = idleScans() === 0 ? 0 : idleWholeScans + (looks === 0 ? 1 : 0)
