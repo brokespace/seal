@@ -310,7 +310,9 @@ export function assembleHostSessions(input: {
       lastMessage: summary?.lastMessage ?? null,
       configDir: configDirOf(provider, transcript?.path ?? null),
       ...(continues.length > 0 ? { continues } : {}),
-      ...(summary?.titleNamed ? { titleNamed: true as const } : {})
+      ...(summary?.titleNamed ? { titleNamed: true as const } : {}),
+      ...(summary?.context ? { context: summary.context } : {}),
+      ...(summary?.context?.model ? { model: summary.context.model } : {})
     })
   }
   return distinctSessions(sessions)

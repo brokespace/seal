@@ -34,7 +34,8 @@ function transcript(
       parentSessionId: null,
       agentName: null,
       agentType: null,
-      approvalMode: null
+      approvalMode: null,
+      context: null
     }
   }
 }

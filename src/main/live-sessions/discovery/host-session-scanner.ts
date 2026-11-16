@@ -6,7 +6,11 @@ import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { buildAgentProbeScript, buildDiscoveryScript } from './discovery-script'
 import { parseDiscoveryOutput, type DiscoveredFile, type DiscoveryOutput } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
-import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
+import {
+  contextAfter,
+  summarizeClaudeTranscript,
+  summarizeCodexRollout
+} from './transcript-summary'
 import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
 import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subagent-files'
 import { foldCodexTerminals, newCodexTerminalState } from './codex-background-terminals'
@@ -187,13 +191,8 @@ export class HostSessionScanner {
     }
     const head = file.head ?? cached?.head ?? null
     const summarize = file.provider === 'claude' ? summarizeClaudeTranscript : summarizeCodexRollout
-    const summary = summarize({
-      path: file.path,
-      head,
-      tail: file.tail,
-      tailIsWholeFile: file.size <= this.limits.tailBytes
-    })
     const tailIsWholeFile = file.size <= this.limits.tailBytes
+    const summary = summarize({ path: file.path, head, tail: file.tail, tailIsWholeFile })
     const records = recordsOf(file.tail, !tailIsWholeFile)
     // A file that shrank was rewritten: what the old bytes launched no longer holds.
     const grew = cached !== undefined && file.size > cached.size
@@ -214,7 +213,8 @@ export class HostSessionScanner {
         title: summary.title ?? cached?.summary.title ?? null,
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
         firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
-        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null
+        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
+        context: contextAfter(summary.context, grew ? cached.summary.context : null)
       },
       ...(file.provider === 'claude'
         ? { claudeActivity }

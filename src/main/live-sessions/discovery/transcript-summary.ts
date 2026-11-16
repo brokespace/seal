@@ -1,5 +1,9 @@
 import { ORCA_CLAUDE_CHAT_ENTRYPOINT } from '../../../shared/agent-launch/startup/claude-chat-entrypoint'
+import { contextUsageOfRecords } from '../../../shared/live-sessions/adapters/agent-session-context-samples'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import { isContextUsageMeasured } from '../../../shared/native-chat/native-chat-context-usage-state'
+import type { NativeChatContextUsageSummary } from '../../../shared/native-chat/native-chat-context-usage-summary'
+import { liveSessionAdapter } from '../adapters/live-session-adapters'
 import { codexUserMessageText } from './codex-user-message'
 import { claudePhase, claudePromptText } from './claude-transcript-phase'
 import { codexPhase } from './codex-transcript-phase'
@@ -61,6 +65,8 @@ export type TranscriptSummary = TranscriptTurn & {
    * `bypassPermissions`, `plan`) or Codex's approval policy (`on-request`, `never`, …).
    */
   approvalMode: string | null
+  /** How full its context window is, as far as the bytes read say; null for an agent that records no usage. */
+  context: NativeChatContextUsageSummary | null
   /** Another program drives it (`claude -p`, an Agent SDK host such as Seal's Home chat, `codex exec`). */
   headless: boolean
   /** Record ids seen in the head and tail, for linking a resumed copy to what it continues. */
@@ -83,6 +89,26 @@ export const UNKNOWN_TURN: TranscriptTurn = {
   replyAsk: 'tells',
   settled: false,
   lastMessage: null
+}
+
+/** Compactions are counted only when the tail is the whole file. */
+function contextOf(
+  provider: LiveSessionProvider,
+  records: TranscriptRecord[],
+  whole: boolean
+): NativeChatContextUsageSummary | null {
+  const decoder = liveSessionAdapter(provider)?.transcript?.decoder ?? null
+  return contextUsageOfRecords(decoder, records, { complete: whole })
+}
+
+/** A tail with no response in it says nothing new: the last reading stands until a response or a compaction replaces it. */
+export function contextAfter(
+  read: NativeChatContextUsageSummary | null,
+  earlier: NativeChatContextUsageSummary | null
+): NativeChatContextUsageSummary | null {
+  return !earlier || isContextUsageMeasured(read) || read?.lastCompactedAt !== undefined
+    ? read
+    : earlier
 }
 
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
@@ -154,6 +180,7 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
     ...(customTitle ? { titleNamed: true as const } : {}),
     ...claudePhase(tail.length > 0 ? tail : head),
     approvalMode,
+    context: contextOf('claude', tail.length > 0 ? tail : head, input.tailIsWholeFile),
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: null,
@@ -202,6 +229,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
     title: firstPrompt ? oneLine(firstPrompt, 80) : null,
     ...codexPhase(tail.length > 0 ? tail : head),
     approvalMode,
+    context: contextOf('codex', tail.length > 0 ? tail : head, input.tailIsWholeFile),
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: str(spawn?.parent_thread_id) ?? str(meta?.parent_thread_id),

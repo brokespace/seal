@@ -73,6 +73,65 @@ it('keeps a session under its id, and adds no nameless one, when a scan is cut s
   expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
 })
 
+// A long tool result can fill the bytes a scan reads, leaving no response in them.
+it("lists how full a session's context is, and keeps that reading while the tail holds no response", async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'turn_context', timestamp: at, payload: { model: 'gpt-5.2-codex' } }) +
+    line({
+      type: 'event_msg',
+      timestamp: at,
+      payload: {
+        type: 'token_count',
+        info: { last_token_usage: { total_tokens: 54_400 }, model_context_window: 272_000 }
+      }
+    })
+  const later = `ut off"}\n${line({
+    type: 'response_item',
+    timestamp: '2026-11-13T10:00:05.000Z',
+    payload: { type: 'function_call_output', call_id: 'call_1', output: 'x'.repeat(200) }
+  })}`
+  const now = Date.parse(at) + 20_000
+  const scanOf = (size: number, tail: string, head: string | null) => [
+    `@@NOW ${now / 1000}`,
+    '@@PROC 4100 1 pts/3 codex',
+    '@@CWD 4100 /srv/api',
+    '@@PS',
+    `@@PIN 4100 open codex ${path}`,
+    `@@FILE codex ${size} ${Date.parse(at) / 1000} ${path}`,
+    ...(head === null ? [] : [`@@HEAD ${path} ${Buffer.from(head).toString('base64')}`]),
+    `@@TAIL ${path} ${Buffer.from(tail).toString('base64')}`,
+    '@@DONE'
+  ]
+  let output = scanOf(Buffer.byteLength(text), text, text)
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(now)).sessions.map((s) => ({ context: s.context, model: s.model }))
+  const reading = {
+    context: {
+      usedTokens: 54_400,
+      windowTokens: 272_000,
+      percentage: 20,
+      estimated: false,
+      rows: [],
+      model: 'gpt-5.2-codex',
+      compactions: 0,
+      updatedAt: Date.parse(at)
+    },
+    model: 'gpt-5.2-codex'
+  }
+  expect(await listed()).toEqual([reading])
+
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 1000, later, null)
+  expect(await listed()).toEqual([reading])
+})
+
 const viaAiVault = () =>
   aiVaultTranscriptFiles(async () => ({
     claudeProjectsDir: join(home, '.claude/projects'),
