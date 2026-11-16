@@ -35,24 +35,26 @@ export function MachineServerRemoveDialog({
     setError(null)
     onOpenChange(next)
   }
-  const remove = async (): Promise<void> => {
+  const remove = (): void => {
     setBusy(true)
     setError(null)
-    try {
-      await removeSealServerFromMachine(view.id)
-      if (mountedRef.current) {
-        setOpen(false)
-      }
-      onRemoved()
-    } catch (cause) {
-      if (mountedRef.current) {
-        setError(readIpcErrorMessage(cause) ?? String(cause))
-      }
-    } finally {
-      if (mountedRef.current) {
-        setBusy(false)
-      }
-    }
+    void removeSealServerFromMachine(view.id)
+      .then(() => {
+        if (mountedRef.current) {
+          setOpen(false)
+        }
+        onRemoved()
+      })
+      .catch((cause: unknown) => {
+        if (mountedRef.current) {
+          setError(readIpcErrorMessage(cause) ?? String(cause))
+        }
+      })
+      .finally(() => {
+        if (mountedRef.current) {
+          setBusy(false)
+        }
+      })
   }
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && setOpen(false)}>
@@ -78,7 +80,7 @@ export function MachineServerRemoveDialog({
           <Button type="button" variant="outline" disabled={busy} onClick={() => setOpen(false)}>
             {t('auto.components.machines.delete.cancel', 'Cancel')}
           </Button>
-          <Button type="button" variant="destructive" disabled={busy} onClick={() => void remove()}>
+          <Button type="button" variant="destructive" disabled={busy} onClick={remove}>
             {busy ? <Loader2 className="animate-spin" /> : null}
             {t('w7.remove.confirm', 'Remove Seal server')}
           </Button>
