@@ -2184,5 +2184,63 @@
     "remoteServerPairingErrors": {
       "invalidPairingCode": "Invalid pairing code. Expected an seal://pair?... URL or bare pairing payload."
     }
+  },
+  "w7": {
+    "add": {
+      "install": "Install Seal server on this machine (recommended)",
+      "installHelp": "Keeps agents running when this computer disconnects, and enables chat, sessions and file features on the machine.",
+      "advanced": "Advanced server options",
+      "manager": "How the server is kept running",
+      "managerAuto": "Automatic (recommended)",
+      "managerAutoHelp": "The system’s own service manager; PM2 when that is not available.",
+      "managerPm2": "PM2",
+      "managerPm2Help": "Use PM2 when it is installed on the machine."
+    },
+    "server": {
+      "title": "Seal server",
+      "installing": "Installing Seal server…",
+      "installed": "Installed on this machine",
+      "systemd": "Runs as a system service (systemd)",
+      "launchd": "Runs as a system service (launchd)",
+      "pm2": "Kept running by PM2",
+      "detached": "Starts when Seal connects and stops when idle",
+      "version": "Version {{version}}",
+      "lingerOff": "It stops when you log out of the machine and does not start after a reboot. To fix that, run this on the machine:",
+      "pm2NoBoot": "PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.",
+      "copyCommand": "Copy command",
+      "notInstalled": "Not installed on this machine",
+      "install": "Install Seal server",
+      "keepRunning": "Keep it running as a service",
+      "keepRunningHelp": "As a service it keeps running when this computer disconnects and starts again after a reboot.",
+      "ownServer": "To keep this server running after a reboot, run this on the machine:",
+      "desktopOnly": "Seal server is installed from the Seal desktop app.",
+      "serviceRemains": "Seal server was stopped, but its service is still registered on this machine. Remove it again to finish.",
+      "notService": "Not kept running as a service"
+    },
+    "notice": {
+      "failed": "Seal server is not installed: {{reason}}.",
+      "failedNoReason": "Seal server is not installed.",
+      "moveBlocked": "Seal server is not installed: some saved items cannot move to the server.",
+      "stillSsh": "This machine still works over SSH.",
+      "retry": "Retry install",
+      "offer": "Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing changes until you choose.",
+      "notNow": "Not now"
+    },
+    "remove": {
+      "action": "Remove Seal server…",
+      "title": "Remove Seal server from {{name}}?",
+      "description": "This removes the service and the server from the machine. {{name}} goes back to a plain SSH connection, and agents and terminals running through the server stop.",
+      "confirm": "Remove Seal server"
+    },
+    "list": {
+      "failed": "Install failed",
+      "offer": "Install available",
+      "offerTitle": "Seal server can be installed on this machine",
+      "waiting": "Install waiting"
+    },
+    "sidebar": {
+      "offerOne": "Seal server can be installed on {{name}}",
+      "offerMany": "Seal server can be installed on {{count}} machines"
+    }
   }
 }

@@ -3,6 +3,7 @@ import { Server } from 'lucide-react'
 import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
+import { SealServerOfferCount } from '@/components/machines/server-install/SealServerOfferCount'
 
 export function SidebarMachinesNavButton(): React.JSX.Element {
   const t = useTranslate()
@@ -25,6 +26,7 @@ export function SidebarMachinesNavButton(): React.JSX.Element {
         strokeWidth={active ? 2.25 : 1.75}
       />
       <span className="flex-1">{t('auto.components.sidebar.SidebarNav.machines', 'Machines')}</span>
+      <SealServerOfferCount />
     </button>
   )
 }

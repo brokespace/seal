@@ -36,6 +36,8 @@ import type { MachineResourceKind } from '../resources/machine-resource-requests
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineView } from '../../../../../shared/machines/machine-view'
+import { MachineServerStatus } from '../server-install/MachineServerStatus'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
@@ -48,6 +50,7 @@ import {
 
 export function MachineDetail({
   machine,
+  view,
   metrics,
   metricsError,
   sessions,
@@ -56,6 +59,8 @@ export function MachineDetail({
   onAddSshDetails
 }: {
   machine: MachineSummary
+  /** The stored machine behind the summary; null for this computer. */
+  view: MachineView | null
   metrics: MachineMetrics | null
   metricsError: string | null
   sessions: readonly LiveSession[]
@@ -227,6 +232,9 @@ export function MachineDetail({
           </DropdownMenu>
         </div>
       </header>
+      {view ? (
+        <MachineServerStatus key={`server:${view.id}`} view={view} onChanged={onChanged} />
+      ) : null}
       {online ? (
         <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
           <MachineVitalsStrip

@@ -3,8 +3,14 @@ import { toMachineId } from '../../../../shared/machines/machine-types'
 import type { SshConnectionState } from '../../../../shared/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import MachinesPage from './MachinesPage'
-import { fakeMachinesApi, GPU, HOME, KESSEL, NAS, now } from './machine-api-fixture'
+import { fakeMachinesApi, GPU, HOME, KESSEL, METRICS, NAS, now } from './machine-api-fixture'
 import { A100_80GB, RTX_4090, seedFakeGpuHistory } from './machine-gpu-fixture-data'
+import {
+  SERVER_INSTALL_FIXTURE_IDS,
+  SERVER_INSTALL_FIXTURE_MACHINES,
+  serverInstallFixtureRuntimeStatuses,
+  serverInstallFixtureSshStates
+} from './machine-server-install-fixture-data'
 import { MachinesSettingsPane } from '../settings/machines/MachinesSettingsPane'
 
 const STATES = new Map<string, SshConnectionState>([
@@ -65,9 +71,9 @@ async function openMachine(frame: HTMLElement, machineId: string): Promise<void>
 
 const openGpuBox = (frame: HTMLElement) => openMachine(frame, toMachineId(GPU))
 
-function Page(): React.JSX.Element {
+function Page({ height = 720 }: { height?: number }): React.JSX.Element {
   return (
-    <div style={{ height: 720 }}>
+    <div style={{ height }}>
       <MachinesPage />
     </div>
   )
@@ -151,4 +157,65 @@ export const settingsMachines = defineFixture({
       <MachinesSettingsPane sshAddSignal={0} serverAddSignal={0} advanced={null} />
     </div>
   )
+})
+
+function installServerInstallFakes(): void {
+  const metrics = { ...METRICS[toMachineId(GPU)]!, gpus: undefined }
+  window.api.machines = {
+    ...fakeMachinesApi,
+    list: async () => SERVER_INSTALL_FIXTURE_MACHINES,
+    listTransfers: async () => [],
+    getMetrics: async () => metrics
+  }
+  window.api.runtimeEnvironments.getStatusSnapshots = async () =>
+    serverInstallFixtureRuntimeStatuses()
+}
+
+/** The Seal server status area of one machine, as its page shows it. */
+function serverInstallFixture(key: keyof typeof SERVER_INSTALL_FIXTURE_IDS, width = 1200) {
+  return defineFixture({
+    width,
+    store: { sshConnectionStates: serverInstallFixtureSshStates() },
+    setup: installServerInstallFakes,
+    render: () => <Page />,
+    interact: (frame) => openMachine(frame, toMachineId(SERVER_INSTALL_FIXTURE_IDS[key]))
+  })
+}
+
+export const serverSystemd = serverInstallFixture('systemd')
+export const serverLingerOff = serverInstallFixture('lingerOff')
+export const serverPm2NoBoot = serverInstallFixture('pm2NoBoot')
+export const serverDetached = serverInstallFixture('detached')
+export const serverRetry = serverInstallFixture('retry')
+export const serverMoveBlocked = serverInstallFixture('moveBlocked')
+export const serverOffer = serverInstallFixture('offer')
+export const serverInstalling = serverInstallFixture('installing')
+export const serverInstall = serverInstallFixture('install')
+export const serverKeepRunning = serverInstallFixture('keepRunning')
+export const serverOwnServer = serverInstallFixture('ownServer')
+export const serverOwnService = serverInstallFixture('ownService')
+export const serverServiceRemains = serverInstallFixture('serviceRemains')
+export const serverWaitsForTerminals = serverInstallFixture('waitsForTerminals')
+export const serverMoveBlockedNarrow = serverInstallFixture('moveBlocked', 560)
+export const serverLingerOffNarrow = serverInstallFixture('lingerOff', 560)
+
+/** Every state at once, tall enough to show the whole list. */
+export const serverInstallList = defineFixture({
+  width: 1200,
+  store: { sshConnectionStates: serverInstallFixtureSshStates() },
+  setup: installServerInstallFakes,
+  render: () => <Page height={1040} />,
+  interact: (frame) => openMachine(frame, toMachineId(SERVER_INSTALL_FIXTURE_IDS.retry))
+})
+
+export const serverRemoveDialog = defineFixture({
+  width: 1200,
+  store: { sshConnectionStates: serverInstallFixtureSshStates() },
+  setup: installServerInstallFakes,
+  render: () => <Page />,
+  interact: async (frame) => {
+    await openMachine(frame, toMachineId(SERVER_INSTALL_FIXTURE_IDS.systemd))
+    frame.querySelector<HTMLElement>('[data-machine-server] button')?.click()
+    await wait(300)
+  }
 })
