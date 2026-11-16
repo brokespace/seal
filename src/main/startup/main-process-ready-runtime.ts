@@ -58,6 +58,7 @@ import { installSealMcp } from '../seal-mcp/seal-mcp-install'
 import { installDesktopSessionSummaries } from '../session-summaries/desktop-session-summaries'
 import { registerLiveSessionIpc } from '../live-sessions/live-sessions-ipc'
 import { installLiveSessionDesktopNotifications } from '../live-sessions/live-session-desktop-notifications'
+import { createExternalSessionPhonePush } from '../runtime/push/notifications/external-session-phone-push'
 
 // Headless serve has no first window; timer fallback must still sweep trash.
 const WORKTREE_TRASH_SWEEP_FALLBACK_MS = 15_000
@@ -82,7 +83,11 @@ export async function initializeReadyRuntimeServices(): Promise<void> {
   startMachineDiskIndexKeeper({ orcadSidecar: isOrcadSidecarLaunch() })
   if (liveSessions) {
     registerLiveSessionIpc(liveSessions.service, liveSessions.shellIntegration)
-    installLiveSessionDesktopNotifications(liveSessions.service, store)
+    installLiveSessionDesktopNotifications(
+      liveSessions.service,
+      store,
+      createExternalSessionPhonePush(runtime, liveSessions.service.registry)
+    )
     installDesktopSessionSummaries(runtime, store, liveSessions.service)
   }
   installFirstWorkRenameHookSubscription()
