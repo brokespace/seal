@@ -86,20 +86,10 @@ export function SidebarSessionsToolbarView(
               {model.activeCount}
             </span>
           ) : (
-            <>
-              <Loader2
-                className="ml-1 size-3 shrink-0 animate-spin text-muted-foreground"
-                aria-hidden="true"
-              />
-              <span
-                role="status"
-                title={loading}
-                // Why basis-0: it takes only the room the title leaves, so the title is cut last.
-                className="min-w-0 flex-1 basis-0 truncate pl-1.5 text-2xs text-muted-foreground"
-              >
-                {loading}
-              </span>
-            </>
+            <Loader2
+              aria-hidden
+              className="ml-1 size-3 shrink-0 animate-spin text-muted-foreground"
+            />
           )
         }
         actions={
@@ -124,6 +114,12 @@ export function SidebarSessionsToolbarView(
         }
       />
       <div className="flex flex-col gap-1 px-3 pb-1 empty:hidden">
+        {loaded ? null : (
+          // Why its own line: beside the title the sentence is cut at every usual sidebar width.
+          <p role="status" className="px-1 text-2xs text-muted-foreground">
+            {loading}
+          </p>
+        )}
         {filtered ? (
           <div className="flex min-w-0 flex-wrap items-center gap-1">
             {chosenMachine ? (
