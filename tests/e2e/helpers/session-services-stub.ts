@@ -40,6 +40,10 @@ export type SessionServicesScript = {
   recap?: Partial<
     Record<'title' | 'goal' | 'standing' | 'asked' | 'did' | 'decision' | 'question', string>
   >
+  /** Recorded model replies: the first entry whose `match` a recap prompt contains answers it verbatim. */
+  recapReplies?: { match: string; reply: string }[]
+  /** Every recap request fails with this on stderr. */
+  recapFailure?: string
   chatTitle?: string
   chat?: { replies?: { match: string; reply: string }[]; defaultReply?: string }
 }
@@ -59,6 +63,7 @@ export type UtilityRequestRecord = {
   cwd: string
   prompt: string
   reply: string
+  failure?: string
 }
 
 /** The stub's defaults, for specs that assert on what a row or a recap shows. */
