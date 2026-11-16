@@ -5,7 +5,16 @@ import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-t
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { isAiVaultAgent } from '../../../../../shared/ai-vault/contracts/ai-vault-types'
-import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
+import {
+  buildAiVaultResumeCommand,
+  buildAiVaultResumeShellCommand
+} from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
+import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
+import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
+import {
+  quoteCmdDoubleQuoted,
+  quotePosixShellUnlessPlain
+} from '../../../../../shared/shell/launch/shell-argument-quoting'
 import {
   compareLiveSessions,
   isActiveLiveSession
@@ -155,11 +164,25 @@ function focusLiveSessionView(sessionId: string, target: LiveSessionFocusTarget)
 
 /** `claude --resume <id>` or `codex resume <id>`, from the session's folder, for its machine's shell. */
 export function liveSessionResumeCommand(session: LiveSession): string {
-  // No registry lists such an agent yet.
-  if (!isAiVaultAgent(session.provider)) {
-    return ''
-  }
   const local = session.machine.kind === 'local'
+  // Remote machines are reached over a POSIX shell.
+  const platform = local && navigator.userAgent.includes('Windows') ? 'win32' : 'linux'
+  if (!isAiVaultAgent(session.provider)) {
+    // An agent Session History cannot resume: its adapter says how, or that it cannot.
+    const argv = agentSessionAdapter(session.provider)?.cli?.resumeArgv?.(
+      session.providerSessionId,
+      session.transcriptPath
+    )
+    return argv && !isProvisionalLiveSessionId(session.providerSessionId)
+      ? buildAiVaultResumeShellCommand({
+          resumeCommand: argv
+            .map(platform === 'win32' ? quoteCmdDoubleQuoted : quotePosixShellUnlessPlain)
+            .join(' '),
+          cwd: session.cwd,
+          platform
+        })
+      : ''
+  }
   // Sessions under an account folder resume only with that folder as CODEX_HOME.
   const codexHome =
     session.provider === 'codex' && session.configDir && !/\/\.codex\/?$/.test(session.configDir)
@@ -169,8 +192,7 @@ export function liveSessionResumeCommand(session: LiveSession): string {
     agent: session.provider,
     sessionId: session.providerSessionId,
     cwd: session.cwd,
-    // Remote machines are reached over a POSIX shell.
-    platform: local && navigator.userAgent.includes('Windows') ? 'win32' : 'linux',
+    platform,
     codexHome
   })
 }

@@ -1,4 +1,5 @@
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../shared/live-sessions/live-session-surface.test-fixture'
 
 export const SAMPLE_NOW = 1_800_000_000_000
 
@@ -10,6 +11,7 @@ export function sampleLiveSession(id: string, patch: Partial<LiveSession> = {}):
     providerSessionId: id,
     machine: { hostId: 'local', label: 'brian-mbp', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/code/seal',
     project: 'seal',
     title: id,

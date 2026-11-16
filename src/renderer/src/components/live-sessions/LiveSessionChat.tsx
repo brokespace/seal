@@ -6,7 +6,7 @@ import type { NativeChatMessageListHandle } from '../native-chat/messages/action
 import type { NativeChatDeliveryNotice } from '../native-chat/messages/rows/NativeChatMessageRow'
 import type { NativeChatLiveSession } from '../native-chat/session/terminal/read/native-chat-live-session-contract'
 import type { NativeChatOlderPageResult } from '../native-chat/viewport/history/native-chat-pagination'
-import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import type { LiveMessage, LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type { LiveTranscriptState } from './use-live-transcript'
 import type { PendingRow } from './live-session-pending-rows'
 import { LiveSessionComposer } from './LiveSessionComposer'
@@ -18,7 +18,7 @@ export type LiveSessionChatProps = {
   transcript: LiveTranscriptState & { loadEarlier: () => Promise<NativeChatOlderPageResult> }
   pending: readonly PendingRow[]
   onSend: (text: string) => void
-  onRetry: (messageId: string) => void
+  onRetry: (message: LiveMessage) => void
   onAnswer: (optionId: string) => void
   /** The option whose answer is on its way. */
   answering: string | null
@@ -89,7 +89,7 @@ export function LiveSessionChat({
       if (message.state === 'failed') {
         map.set(row.id, {
           text: liveMessageStateLabel(message),
-          onSend: () => onRetry(message.messageId)
+          onSend: () => onRetry(message)
         })
       } else if (message.state !== 'delivered') {
         map.set(row.id, { sending: true })

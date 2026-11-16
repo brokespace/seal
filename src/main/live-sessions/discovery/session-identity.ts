@@ -9,32 +9,47 @@ export type Conversation = {
 
 const MAX_CHAIN = 16
 
-/**
- * One file per conversation: the newest copy of a session id, the newest file of a resume chain.
- * Headless runs are dropped: the program that drives them owns the conversation.
- */
-export function conversations(transcripts: readonly SummarizedTranscript[]): Conversation[] {
+function newestPerSession(transcripts: readonly SummarizedTranscript[]): SummarizedTranscript[] {
   const newest = new Map<string, SummarizedTranscript>()
   for (const t of transcripts) {
     const key = `${t.summary.provider}:${t.summary.providerSessionId}`
     const seen = newest.get(key)
-    if (!t.summary.headless && (!seen || t.mtimeMs > seen.mtimeMs)) {
+    if (!seen || t.mtimeMs > seen.mtimeMs) {
       newest.set(key, t)
     }
   }
-  const files = [...newest.values()]
+  return [...newest.values()]
+}
+
+/**
+ * One file per conversation: the newest copy of a session id, the newest file of a resume chain.
+ * Headless runs are dropped: the program that drives them owns the conversation. A terminal
+ * session that opens with a headless run's history (a chat forked into the CLI) still names it.
+ */
+export function conversations(transcripts: readonly SummarizedTranscript[]): Conversation[] {
+  const files = newestPerSession(transcripts.filter((t) => !t.summary.headless))
+  const headless = new Set(newestPerSession(transcripts.filter((t) => t.summary.headless)))
   const holders = new Map<string, SummarizedTranscript[]>()
-  for (const t of files) {
+  for (const t of [...files, ...headless]) {
     for (const id of t.summary.recordIds) {
       holders.set(id, [...(holders.get(id) ?? []), t])
     }
   }
   const continuedBy = new Map<SummarizedTranscript, SummarizedTranscript>()
+  const forkedFrom = new Map<SummarizedTranscript, string[]>()
   for (const t of files) {
     // A resume either points at the record it continues or opens with a copy of the history.
     const links = [...t.summary.continues, ...t.summary.recordIds.slice(0, 1)]
     for (const other of links.flatMap((id) => holders.get(id) ?? [])) {
       if (other === t || other.summary.provider !== t.summary.provider) {
+        continue
+      }
+      if (headless.has(other)) {
+        // Its owner lists it and both go on: neither file folds into the other.
+        const id = other.summary.providerSessionId
+        if (id !== t.summary.providerSessionId) {
+          forkedFrom.set(t, [...new Set([...(forkedFrom.get(t) ?? []), id])])
+        }
         continue
       }
       // Files saved in the same instant still need one order, or each folds into the other.
@@ -54,12 +69,21 @@ export function conversations(transcripts: readonly SummarizedTranscript[]): Con
       last = continuedBy.get(last)!
     }
     if (last !== t && !continuedBy.has(last)) {
-      earlier.set(last, [...(earlier.get(last) ?? []), t.summary.providerSessionId])
+      earlier.set(last, [
+        ...(earlier.get(last) ?? []),
+        t.summary.providerSessionId,
+        ...(forkedFrom.get(t) ?? [])
+      ])
     }
   }
   return files
     .filter((t) => !continuedBy.has(t))
-    .map((transcript) => ({ transcript, earlier: earlier.get(transcript) ?? [] }))
+    .map((transcript) => ({
+      transcript,
+      earlier: [
+        ...new Set([...(earlier.get(transcript) ?? []), ...(forkedFrom.get(transcript) ?? [])])
+      ]
+    }))
 }
 
 export function conversationTranscripts(

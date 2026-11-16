@@ -92,6 +92,10 @@ export function aiVaultTranscriptFiles(
       if (request.known.get(file.path) !== size && reads < request.maxReads) {
         reads++
         const bytes = await readEnds(file.path, size, request, !request.headKnown.has(file.path))
+        // A file that cannot be read is not one a later scan's budget will reach.
+        if (!bytes && !request.known.has(file.path)) {
+          continue
+        }
         listed.head = bytes?.head ?? null
         listed.tail = bytes?.tail ?? null
       }

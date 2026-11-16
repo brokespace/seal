@@ -8,6 +8,7 @@ import {
 } from '../../../shared/live-sessions/live-session-types'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import { liveSessionAdapter } from '../adapters/live-session-adapters'
 import { parseSubagentTranscriptId } from '../../../shared/live-sessions/live-session-activity'
 import {
   readTranscriptForward,
@@ -60,7 +61,9 @@ export class LiveTranscriptStreams {
         ? session?.transcriptPath
         : session?.activity?.subagents.find((subagent) => subagent.id === subagentId)
             ?.transcriptPath
-    const provider = session ? liveSessionProviderOf(session.provider) : null
+    // An agent whose transcript decodes as Claude's or Codex's (OpenClaude) is read as that one.
+    const decoder = session ? liveSessionAdapter(session.provider)?.transcript?.decoder : null
+    const provider = decoder ? liveSessionProviderOf(decoder) : null
     if (!session || !path || !host || !provider) {
       return null
     }
@@ -153,7 +156,8 @@ export class LiveTranscriptStreams {
           failures = 0
         } catch (error) {
           failures++
-          if (failures === 1) {
+          // A watch closed while its read was out has nobody to tell.
+          if (failures === 1 && !stopped) {
             this.log?.(`[live-sessions] transcript read for ${sessionId} failed`, error)
           }
         }

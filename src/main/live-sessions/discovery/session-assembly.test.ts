@@ -34,8 +34,18 @@ function transcript(
       parentSessionId: null,
       agentName: null,
       agentType: null,
-      approvalMode: null
+      approvalMode: null,
+      context: null
     }
+  }
+}
+
+function rollout(id: string, cwd: string, ageMs: number): SummarizedTranscript {
+  const claude = transcript(id, cwd, ageMs)
+  return {
+    ...claude,
+    path: `/home/b/.codex-work/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${id}.jsonl`,
+    summary: { ...claude.summary, provider: 'codex' }
   }
 }
 
@@ -49,7 +59,9 @@ const proc = (
   ppid: 1,
   tty,
   args,
-  cwd
+  cwd,
+  // Before any transcript here began.
+  startedAtMs: NOW - 7_200_000
 })
 
 const pane = (tty: string, screen: string): DiscoveredPane => ({
@@ -83,15 +95,14 @@ function assemble(
 }
 
 describe('assembleHostSessions', () => {
-  it('pairs processes with transcripts by resumed id, then newest-to-newest in a shared folder', () => {
+  it('pairs processes with transcripts by resumed id, then with the newest begun in their folder', () => {
     const sessions = assemble(
       [
-        proc(100, 'claude', '/srv/app'),
         proc(200, 'claude', '/srv/app'),
         proc(300, 'claude --resume 11111111-1111-4111-8111-111111111111', '/elsewhere')
       ],
       [
-        transcript('11111111-1111-4111-8111-111111111111', '/srv/app', 60_000),
+        transcript('11111111-1111-4111-8111-111111111111', '/srv/app', 5_000),
         transcript('22222222-2222-4222-8222-222222222222', '/srv/app', 30_000),
         transcript('33333333-3333-4333-8333-333333333333', '/srv/app', 10_000)
       ]
@@ -100,7 +111,7 @@ describe('assembleHostSessions', () => {
     expect(pidOf).toEqual({
       '11111111-1111-4111-8111-111111111111': 300,
       '33333333-3333-4333-8333-333333333333': 200,
-      '22222222-2222-4222-8222-222222222222': 100
+      '22222222-2222-4222-8222-222222222222': null
     })
     expect(sessions.every((s) => s.id === `ssh-1:claude:${s.providerSessionId}`)).toBe(true)
   })
@@ -126,6 +137,36 @@ describe('assembleHostSessions', () => {
       '44444444-4444-4444-8444-444444444444': [200, true],
       '55555555-5555-4555-8555-555555555555': [100, true]
     })
+  })
+
+  it("pairs a Codex that npm's wrapper started by the rollout its native process holds open", () => {
+    const id = '99999999-9999-4999-8999-999999999999'
+    const prompted = rollout(id, '/srv/api', 60_000)
+    const wrapper = 'node /usr/lib/node_modules/@openai/codex/bin/codex.js'
+    const native =
+      '/usr/lib/node_modules/@openai/codex/vendor/x86_64-unknown-linux-musl/codex/codex'
+    const sessions = assembleHostSessions({
+      machine,
+      output: {
+        processes: [
+          proc(100, wrapper, '/srv/api'),
+          { ...proc(101, native, '/srv/api'), ppid: 100 },
+          // Started later in the same folder and not prompted yet: it has no rollout.
+          proc(200, wrapper, '/srv/api'),
+          { ...proc(201, native, '/srv/api'), ppid: 200 }
+        ],
+        panes: [],
+        hookStates: [],
+        hostNowMs: NOW,
+        pins: [{ pid: 101, kind: 'open', provider: 'codex', path: prompted.path }]
+      },
+      transcripts: [prompted],
+      nowMs: NOW
+    })
+    expect(sessions.map((s) => [s.providerSessionId, s.pid, s.status])).toEqual([
+      [id, 100, 'your-turn'],
+      ['pid-200', 200, 'idle']
+    ])
   })
 
   it('keeps only the outermost agent process', () => {
@@ -158,12 +199,30 @@ describe('assembleHostSessions', () => {
     const [live] = assemble(
       [proc(100, 'claude', '/srv/app', 'pts/3')],
       [transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 1_000)],
-      [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))]
+      [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))],
+      [],
+      [{ pid: 100, sessionId: '55555555-5555-4555-8555-555555555555' }]
     )
     expect(live.inputRoutes).toEqual([
       { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
     ])
     expect(live.status).toBe('your-turn')
+  })
+
+  // `ps` lists a container's agent on `pts/3` too: another device than this machine's `pts/3`.
+  it('gives an agent no way into a pane on its tty that it does not run under', () => {
+    const routes = (ancestors: number[]) =>
+      assemble(
+        [{ ...proc(100, 'claude', '/srv/app', 'pts/3'), ancestors }],
+        [transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 1_000)],
+        [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))],
+        [],
+        [{ pid: 100, sessionId: '55555555-5555-4555-8555-555555555555' }]
+      )[0].inputRoutes
+    expect(routes([4321, 77])).toEqual([])
+    expect(routes([850, 900])).toEqual([
+      { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
+    ])
   })
 
   it("names a fresh Claude from Claude's session registry and skips daemons and tool commands", () => {
@@ -185,14 +244,9 @@ describe('assembleHostSessions', () => {
 
   it("routes a live Codex session through its own queue first, with that session's binary and home", () => {
     const id = '99999999-9999-4999-8999-999999999999'
-    const rollout: SummarizedTranscript = {
-      ...transcript(id, '/srv/api', 1_000),
-      path: `/home/b/.codex-work/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${id}.jsonl`,
-      summary: { ...transcript(id, '/srv/api', 1_000).summary, provider: 'codex' }
-    }
     const [session] = assemble(
-      [proc(100, '/opt/codex/bin/codex', '/srv/api', 'pts/3')],
-      [rollout],
+      [proc(100, `/opt/codex/bin/codex resume ${id}`, '/srv/api', 'pts/3')],
+      [rollout(id, '/srv/api', 1_000)],
       [pane('pts/3', '\u203a Ask Codex')]
     )
     expect(session.inputRoutes).toEqual([
@@ -212,7 +266,8 @@ describe('assembleHostSessions', () => {
       [proc(100, 'claude', '/srv/app', 'pts/3')],
       [transcript(id, '/srv/app', 1_000, 'tool-pending')],
       [pane('pts/3', ['Do you want to proceed?', '\u276f 1. Yes', '  2. No (esc)'].join('\n'))],
-      [{ path: '/h/a.json', text: JSON.stringify({ id, state: 'working', updated: NOW / 1000 }) }]
+      [{ path: '/h/a.json', text: JSON.stringify({ id, state: 'working', updated: NOW / 1000 }) }],
+      [{ pid: 100, sessionId: id }]
     )
     expect(session.status).toBe('needs-permission')
     expect(session.statusSource).toBe('screen')

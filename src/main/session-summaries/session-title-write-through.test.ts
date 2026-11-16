@@ -6,6 +6,7 @@ import type {
   LiveSessionAnnotation,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import type { OwedChatName } from './owed-chat-names'
 import { SessionTitleWriteThrough } from './session-title-write-through'
 import { createSessionTitleWriteThrough } from './session-title-write-through-install'
@@ -62,6 +63,7 @@ function session(
     transcriptPath: '/t.jsonl',
     inputRoutes: [],
     permission: null,
+    ...sampleSessionSurface(),
     surface,
     ...(customTitle ? { customTitle } : {}),
     ...overrides

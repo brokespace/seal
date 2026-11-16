@@ -91,10 +91,17 @@ export function registerLiveSessionIpc(
       const unsubscribe = () => {
         subscription.unsubscribe()
         watches.delete(watchId)
+        sender.removeListener('destroyed', unsubscribe)
       }
       watches.set(watchId, { sender, unsubscribe })
       sender.once('destroyed', unsubscribe)
-      return { watchId, page: await subscription.ready }
+      try {
+        return { watchId, page: await subscription.ready }
+      } catch (error) {
+        // The window never learns this watch's id, so nothing else would end it.
+        unsubscribe()
+        throw error
+      }
     }
   )
   ipcMain.handle(LIVE_SESSION_IPC.unwatchTranscript, (event, args: { watchId: unknown }) => {
@@ -113,12 +120,15 @@ export function registerLiveSessionIpc(
     }
     return service.send({ sessionId: args.sessionId, messageId: args.messageId, text: args.text })
   })
-  ipcMain.handle(LIVE_SESSION_IPC.retry, (_event, args: { messageId: unknown }) => {
-    if (!isString(args?.messageId, 128)) {
-      throw new Error('messageId is required')
+  ipcMain.handle(
+    LIVE_SESSION_IPC.retry,
+    (_event, args: { messageId: unknown; mayRunTwice?: unknown }) => {
+      if (!isString(args?.messageId, 128)) {
+        throw new Error('messageId is required')
+      }
+      return service.retry({ messageId: args.messageId, mayRunTwice: args.mayRunTwice === true })
     }
-    return service.retry(args.messageId)
-  })
+  )
   ipcMain.handle(LIVE_SESSION_IPC.messages, (_event, args?: { sessionId?: unknown }) =>
     service.messages(isString(args?.sessionId) ? args.sessionId : undefined)
   )

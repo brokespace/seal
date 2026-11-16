@@ -4,6 +4,7 @@ import type {
   LiveSessionStatus,
   LiveSessionStatusSource
 } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionStatusHold } from './live-session-status-hold'
 
 const T0 = 1_000_000
@@ -19,6 +20,7 @@ function session(
     providerSessionId: 'a',
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/srv/shop',
     project: 'shop',
     title: null,
@@ -130,5 +132,13 @@ describe('LiveSessionStatusHold', () => {
         ['your-turn', 'transcript', 2, 23_000]
       ])
     ).toEqual(['working', 'working', 'your-turn'])
+  })
+
+  it('shows at once that a session left "working" when Seal stopped it itself', () => {
+    const hold = new LiveSessionStatusHold()
+    hold.settle(session('working'), 1, T0)
+    hold.release('local:claude:a')
+
+    expect(hold.settle(session('done', 'process'), 1, T0 + 500).status).toBe('done')
   })
 })

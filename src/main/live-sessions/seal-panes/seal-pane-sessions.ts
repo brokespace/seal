@@ -2,20 +2,23 @@
 import type { AgentStatusIpcPayload } from '../../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { PendingPrompt } from '../../../shared/agent-status/contracts/agent-pending-prompt'
 import type {
+  AgentSessionSurface,
   LiveSession,
   LiveSessionMachine,
   LiveSessionPermissionPrompt,
-  LiveSessionProvider,
   LiveSessionStatus
 } from '../../../shared/live-sessions/live-session-types'
-import { isAgentStatusHeldOpenByChildWork } from '../../../shared/agent-status/lifecycle/agent-lead-status-fold'
 import { agentVerdictDisplayMark } from '../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
 import { AGENT_STATUS_STALE_AFTER_MS } from '../../../shared/agent-status/contracts/agent-status-freshness'
-import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/agent-question-answered-intent'
-import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
 import { liveSessionId, projectOf } from '../discovery/session-assembly'
 import { oneLine } from '../discovery/transcript-records'
-import { isWaitingOnBackgroundWork } from '../../../shared/live-sessions/live-session-status'
+import {
+  isWaitingOnBackgroundWork,
+  liveSessionStatusFromEvidence
+} from '../../../shared/live-sessions/live-session-status'
+import { hookRowEvidence } from '../adapters/hook-row-evidence'
+import { liveSessionAdapter } from '../adapters/live-session-adapters'
+import { sessionCapabilities } from '../adapters/session-capabilities'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
 
 /** What a finished turn may still rest on, which a Stop hook does not say. */
@@ -40,11 +43,14 @@ export type SealPaneRow = Pick<
   | 'agentType'
   | 'providerSession'
   | 'providerSessionOnly'
+  | 'structuredHost'
   | 'receivedAt'
   | 'stateStartedAt'
   | 'connectionId'
   | 'prompt'
   | 'toolName'
+  | 'lastAssistantMessage'
+  | 'lastAssistantMessageIsToolOutput'
   | 'workingMode'
   | 'interrupted'
   | 'mainAgent'
@@ -54,7 +60,8 @@ export type SealPaneRow = Pick<
 
 export type SealPane = {
   paneKey: string
-  provider: LiveSessionProvider
+  provider: LiveSession['provider']
+  /** `pane-<paneKey>` while the agent's hooks have named no session. */
   providerSessionId: string
   /** Null for this machine; the mux connection id for a remote Seal host. */
   connectionId: string | null
@@ -63,49 +70,12 @@ export type SealPane = {
   cwd: string | null
   transcriptPath: string | null
   prompt: string | null
+  /** The agent's newest message as its hooks carried it, one line. */
+  lastMessage: string | null
   receivedAt: number
   permission: LiveSessionPermissionPrompt | null
   /** Its hooks went quiet mid-turn, or were last heard by an earlier run of Seal: they no longer say what the agent does now. */
   silent: boolean
-}
-
-/** What a pane waits on: a hook reports a question and a permission request alike as `waiting`. */
-function waitingStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSessionStatus {
-  if (prompt?.kind === 'approval') {
-    return 'needs-permission'
-  }
-  if (
-    prompt?.kind === 'question' ||
-    !row.toolName ||
-    isAskUserQuestionTool(row.toolName) ||
-    isClaudeAskTool(row.toolName)
-  ) {
-    return 'waiting-input'
-  }
-  // Any other tool the agent stopped on waits for its permission prompt.
-  return 'needs-permission'
-}
-
-function hookStatus(row: SealPaneRow, prompt: PendingPrompt | null): LiveSessionStatus {
-  if (row.state === 'blocked') {
-    return 'needs-permission'
-  }
-  if (row.state === 'waiting') {
-    return waitingStatus(row, prompt)
-  }
-  // A failed turn stays news while what it left running goes on.
-  if (agentVerdictDisplayMark(row) === 'failed') {
-    return 'errored'
-  }
-  if (row.state === 'done') {
-    // A finished turn in a live pane sits at its prompt.
-    return 'your-turn'
-  }
-  // The turn ended and the host still counts work under it: shells and monitors, or agents.
-  if (row.workingMode === 'monitoring') {
-    return 'waiting-task'
-  }
-  return isAgentStatusHeldOpenByChildWork(row) ? 'waiting-subagent' : 'working'
 }
 
 function hookDetail(
@@ -161,33 +131,39 @@ function wentSilent(row: SealPaneRow, now: number): boolean {
 
 export function sealPanesFromRows(
   rows: SealPaneRow[],
-  pendingPrompt: (paneKey: string, agent: LiveSessionProvider) => PendingPrompt | null,
+  pendingPrompt: (paneKey: string, agent: LiveSession['provider']) => PendingPrompt | null,
   now: number
 ): SealPane[] {
   return rows.flatMap((row) => {
-    const provider: LiveSessionProvider | null =
-      row.agentType === 'claude' ? 'claude' : row.agentType === 'codex' ? 'codex' : null
-    const id = row.providerSession?.id
-    if (!provider || !id || row.providerSessionOnly) {
+    const adapter = liveSessionAdapter(row.agentType)
+    // A chat's row is its structured host's projection: the structured source lists it.
+    if (!adapter || row.structuredHost !== undefined || row.providerSessionOnly) {
+      return []
+    }
+    const session = adapter.cli?.sessionOf ? adapter.cli.sessionOf(row) : row.providerSession
+    // Discovery lists an agent it can find until its hooks name the session.
+    if (!session?.id && adapter.discovery) {
       return []
     }
     const prompt =
       row.state === 'blocked' || row.state === 'waiting'
-        ? pendingPrompt(row.paneKey, provider)
+        ? pendingPrompt(row.paneKey, adapter.agent)
         : null
-    const status = hookStatus(row, prompt)
+    const status = liveSessionStatusFromEvidence(hookRowEvidence(row, prompt, adapter))
     const permission = permissionFromPendingPrompt(prompt)
+    const message = row.lastAssistantMessageIsToolOutput ? undefined : row.lastAssistantMessage
     return [
       {
         paneKey: row.paneKey,
-        provider,
-        providerSessionId: id,
+        provider: adapter.agent,
+        providerSessionId: session?.id || `pane-${row.paneKey}`,
         connectionId: row.connectionId,
         status,
         statusDetail: hookDetail(row, status, permission),
-        cwd: row.providerSession?.cwd ?? null,
-        transcriptPath: row.providerSession?.transcriptPath ?? null,
+        cwd: session?.cwd ?? null,
+        transcriptPath: session?.transcriptPath ?? null,
         prompt: row.prompt ? oneLine(row.prompt, 80) : null,
+        lastMessage: message ? oneLine(message, 200) : null,
         receivedAt: row.receivedAt,
         permission,
         silent: wentSilent(row, now)
@@ -275,6 +251,7 @@ export function mergeSealPanes(
       .map((matches) => out.findIndex((s) => sameHost(s) && matches(s)))
       .find((i) => i !== -1)
     const route = { kind: 'seal-pane' as const, paneKey: pane.paneKey }
+    const surface: AgentSessionSurface = { kind: 'cli', paneKey: pane.paneKey }
     if (index !== undefined) {
       const found = out[index]
       const fromDiscovery = discoveryKnowsMore(pane, found)
@@ -288,10 +265,11 @@ export function mergeSealPanes(
             transcriptPath: found.transcriptPath ?? pane.transcriptPath
           }
         : {}
-      out[index] = {
+      const merged = {
         ...found,
         ...named,
-        origin: 'seal',
+        origin: 'seal' as const,
+        surface,
         status: fromDiscovery ? found.status : pane.status,
         statusSource: fromDiscovery ? found.statusSource : 'seal-hooks',
         statusDetail:
@@ -301,16 +279,26 @@ export function mergeSealPanes(
         lastActivityAt: Math.max(found.lastActivityAt, pane.receivedAt),
         alive: true,
         inputRoutes: [route, ...found.inputRoutes.filter((r) => r.kind !== 'resume')],
-        permission: pane.permission ?? found.permission
+        permission: pane.permission ?? found.permission,
+        lastMessage: fromDiscovery
+          ? (found.lastMessage ?? pane.lastMessage)
+          : (pane.lastMessage ?? found.lastMessage ?? null)
       }
+      out[index] = { ...merged, capabilities: sessionCapabilities(merged) }
       continue
     }
     const machine = pane.connectionId === null ? localMachine : REMOTE_SEAL_MACHINE
-    out.push({
-      id: liveSessionId(machine.hostId, pane.provider, pane.providerSessionId),
+    const added = {
       provider: pane.provider,
       providerSessionId: pane.providerSessionId,
       machine,
+      surface,
+      inputRoutes: [route]
+    }
+    out.push({
+      ...added,
+      id: liveSessionId(machine.hostId, pane.provider, pane.providerSessionId),
+      capabilities: sessionCapabilities(added),
       origin: 'seal',
       cwd: pane.cwd,
       project: projectOf(pane.cwd),
@@ -323,8 +311,8 @@ export function mergeSealPanes(
       alive: true,
       pid: null,
       transcriptPath: pane.transcriptPath,
-      inputRoutes: [route],
-      permission: pane.permission
+      permission: pane.permission,
+      lastMessage: pane.lastMessage
     })
   }
   return out

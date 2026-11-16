@@ -3,7 +3,7 @@ import type {
   LiveTranscriptCursor,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
-import { liveSessionSurfaceOf } from '../../../shared/live-sessions/live-session-surface'
+import { localChatSessionId } from '../../../shared/live-sessions/live-session-paired-server'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import type { LiveTranscriptStreams } from './live-transcript-streams'
 
@@ -24,9 +24,13 @@ export type SessionTranscriptSources = {
   journal: (chatSessionId: string, recordId: string) => SessionTranscript | null
 }
 
-function journalOf(session: LiveSession, sources: SessionTranscriptSources) {
-  const surface = liveSessionSurfaceOf(session)
-  return surface.kind === 'chat' ? sources.journal(surface.sessionId, session.id) : null
+/** The journal of a chat this Seal's own host holds, read as the record's transcript; null for any other session. */
+export function chatJournalOf(
+  session: LiveSession | null,
+  journal: SessionTranscriptSources['journal']
+): SessionTranscript | null {
+  const chat = localChatSessionId(session)
+  return session && chat !== null ? journal(chat, session.id) : null
 }
 
 function fileTranscript(sessionId: string, sources: SessionTranscriptSources): SessionTranscript {
@@ -41,14 +45,14 @@ export function transcriptOf(
   session: LiveSession,
   sources: SessionTranscriptSources
 ): SessionTranscript {
-  return journalOf(session, sources) ?? fileTranscript(session.id, sources)
+  return chatJournalOf(session, sources.journal) ?? fileTranscript(session.id, sources)
 }
 
 export function hasSessionTranscript(
   session: LiveSession,
   sources: SessionTranscriptSources
 ): boolean {
-  return Boolean(session.transcriptPath) || journalOf(session, sources) !== null
+  return Boolean(session.transcriptPath) || chatJournalOf(session, sources.journal) !== null
 }
 
 /** Transcripts by registry id, for the services that follow sessions through the registry. */

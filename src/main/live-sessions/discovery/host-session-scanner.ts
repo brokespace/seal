@@ -3,10 +3,14 @@ import type {
   LiveSessionMachine
 } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
-import { buildDiscoveryScript } from './discovery-script'
-import { parseDiscoveryOutput, type DiscoveredFile } from './discovery-output'
+import { buildAgentProbeScript, buildDiscoveryScript } from './discovery-script'
+import { parseDiscoveryOutput, type DiscoveredFile, type DiscoveryOutput } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
-import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
+import {
+  contextAfter,
+  summarizeClaudeTranscript,
+  summarizeCodexRollout
+} from './transcript-summary'
 import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
 import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subagent-files'
 import { foldCodexTerminals, newCodexTerminalState } from './codex-background-terminals'
@@ -58,20 +62,49 @@ export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
 
 type CachedTranscript = SummarizedTranscript & {
   head: string | null
+  /** The last context reading that had a size; a compaction read on its own has none. */
+  sizedContext: SummarizedTranscript['summary']['context']
   subagentFiles: Map<string, SubagentFileSummary>
 }
 
-export type HostScanResult = { sessions: LiveSession[]; complete: boolean }
+export type HostScanResult = {
+  sessions: LiveSession[]
+  /** Cut short, it has not read what ties every agent to its transcript: its sessions are not the machine's. */
+  complete: boolean
+}
+
+const agentPidsOf = (output: DiscoveryOutput): string =>
+  output.processes
+    .map((process) => process.pid)
+    .sort((a, b) => a - b)
+    .join(' ')
 
 /** Scans one host, re-reading only transcripts that grew since the last scan. */
 export class HostSessionScanner {
   private readonly cache = new Map<string, CachedTranscript>()
   private readonly firstSeen = new Map<string, number>()
+  /** Transcripts a scan found several possible writers for; outlives the read cache. */
+  private readonly contested = new Set<string>()
+  /** The agent processes of the last whole scan. */
+  private agentPids: string | null = null
+  /** The agent process last known to write each transcript; outlives the read cache. */
+  private readonly writers = new Map<string, number>()
 
   constructor(
     private readonly host: LiveSessionHost,
     private readonly limits: HostScanLimits
   ) {}
+
+  /** Seal resumed the session of `transcriptPath` as `pid`: its writes from here on are that process's. */
+  noteResumed(transcriptPath: string, pid: number): void {
+    this.writers.set(transcriptPath, pid)
+  }
+
+  /** Whether an agent started or ended since the last scan: one `ps`, not a scan. */
+  async agentsChanged(): Promise<boolean> {
+    const output = parseDiscoveryOutput(await this.host.run(buildAgentProbeScript()))
+    return !output.complete || agentPidsOf(output) !== this.agentPids
+  }
 
   async scan(nowMs: number): Promise<HostScanResult> {
     const cached = [...this.cache.values()]
@@ -88,6 +121,7 @@ export class HostSessionScanner {
       headKnown: findFiles ? [] : headKnown
     })
     const output = parseDiscoveryOutput(await this.host.run(script))
+    this.agentPids = output.complete ? agentPidsOf(output) : null
     if (findFiles) {
       // After the script: it names the transcripts running agents own, which are listed however old.
       output.files = await findFiles({
@@ -109,18 +143,23 @@ export class HostSessionScanner {
         }
       }
     }
-    const transcripts = [...this.cache.values()].filter((t) => listed.has(t.path))
+    // A scan cut short lists only some: the rest stand as earlier scans read them.
+    const transcripts = [...this.cache.values()].map((transcript) => ({
+      ...transcript,
+      agentPid: this.writers.get(transcript.path),
+      contested: this.contested.has(transcript.path)
+    }))
     const sessions = assembleHostSessions({
       machine: this.host.machine,
       output,
       transcripts,
-      unreadPaths: new Set([...listed].filter((path) => !this.cache.has(path))),
-      nowMs
+      unread: output.files.filter((file) => !this.cache.has(file.path)),
+      nowMs,
+      onContested: (transcript) => this.contested.add(transcript.path)
     })
     for (const session of sessions) {
-      const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
-      if (transcript && session.pid !== null) {
-        transcript.agentPid = session.pid
+      if (session.transcriptPath && session.pid !== null) {
+        this.writers.set(session.transcriptPath, session.pid)
       }
     }
     const ids = new Set(sessions.map((s) => s.id))
@@ -162,8 +201,10 @@ export class HostSessionScanner {
       cached.mtimeMs = file.mtimeMs
       return
     }
-    if (file.tail === null) {
-      // Over this scan's read budget: keep the old summary until a later scan reads it.
+    const tailIsWholeFile = file.size <= this.limits.tailBytes
+    const records = recordsOf(file.tail, !tailIsWholeFile)
+    if (file.tail === null || (cached && !tailIsWholeFile && records.length === 0)) {
+      // Over this scan's read budget, or a tail cut inside one long line: the old summary stands until a scan reads a whole record.
       if (cached) {
         cached.mtimeMs = file.mtimeMs
       }
@@ -171,14 +212,7 @@ export class HostSessionScanner {
     }
     const head = file.head ?? cached?.head ?? null
     const summarize = file.provider === 'claude' ? summarizeClaudeTranscript : summarizeCodexRollout
-    const summary = summarize({
-      path: file.path,
-      head,
-      tail: file.tail,
-      tailIsWholeFile: file.size <= this.limits.tailBytes
-    })
-    const tailIsWholeFile = file.size <= this.limits.tailBytes
-    const records = recordsOf(file.tail, !tailIsWholeFile)
+    const summary = summarize({ path: file.path, head, tail: file.tail, tailIsWholeFile })
     // A file that shrank was rewritten: what the old bytes launched no longer holds.
     const grew = cached !== undefined && file.size > cached.size
     const claudeActivity = (grew ? cached.claudeActivity : undefined) ?? newClaudeActivityState()
@@ -188,17 +222,23 @@ export class HostSessionScanner {
     } else {
       foldCodexTerminals(codexTerminals, records)
     }
+    const sized = grew ? cached.sizedContext : null
+    const context = contextAfter(summary.context, grew ? cached.summary.context : null, sized)
     const next: CachedTranscript = {
       path: file.path,
       size: file.size,
       mtimeMs: file.mtimeMs,
       head,
+      sizedContext: context && context.windowTokens > 0 ? context : sized,
       summary: {
         ...summary,
         title: summary.title ?? cached?.summary.title ?? null,
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
         firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
-        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null
+        lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
+        context,
+        // A terminal's records can lie between the bytes a scan reads: once its, it stays its.
+        headless: summary.headless && !(grew && !cached.summary.headless)
       },
       ...(file.provider === 'claude'
         ? { claudeActivity }
@@ -207,8 +247,7 @@ export class HostSessionScanner {
             codexTerminals
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
-      subagents: cached?.subagents ?? [],
-      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
+      subagents: cached?.subagents ?? []
     }
     this.cache.set(file.path, next)
     if (!cached) {

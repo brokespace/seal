@@ -13,8 +13,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { errorMessage } from '../../../../../shared/error-message'
 import { liveSessionTranscriptFiles } from '../../../../../shared/live-sessions/live-session-transcript-files'
-import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import type {
+  LiveRemoveRequest,
+  LiveSession
+} from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionTitle } from '../live-session-presentation'
 import { sendLiveMessage } from '../live-session-send'
 import { liveSessionMarksStore } from '../live-session-marks-store'
@@ -191,6 +195,31 @@ function dangerCopy(
   }
 }
 
+/** Runs behind the closed dialog: a session that kept running is listed again by its host, and said here. */
+async function removeLiveSessions(
+  request: LiveRemoveRequest,
+  sessions: LiveSession[],
+  t: Translate
+): Promise<void> {
+  try {
+    const result = await window.api.liveSessions.remove(request)
+    if (request.stop) {
+      liveSessionMarksStore.stopped(sessions.filter(({ id }) => result.removed.includes(id)))
+    }
+    if (result.failed.length > 0) {
+      toast.error(
+        t(
+          'auto.components.live-sessions.remove.failed',
+          '{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.',
+          { count: result.failed.length }
+        )
+      )
+    }
+  } catch (error) {
+    toast.error(errorMessage(error))
+  }
+}
+
 function DangerDialog({
   danger,
   sessions
@@ -200,33 +229,14 @@ function DangerDialog({
 }): React.JSX.Element {
   const t = useTranslate()
   const machineName = useSessionMachineName()
-  const [busy, setBusy] = useState(false)
   const copy = dangerCopy(danger, sessions.length, t)
   const files =
     danger === 'delete-with-transcripts'
       ? sessions.flatMap((session) => liveSessionTranscriptFiles(session))
       : []
-  const confirm = async () => {
-    setBusy(true)
-    try {
-      const request = removeRequestFor(danger, sessions)
-      const result = await window.api.liveSessions.remove(request)
-      if (request.stop) {
-        liveSessionMarksStore.stopped(sessions.filter(({ id }) => result.removed.includes(id)))
-      }
-      if (result.failed.length > 0) {
-        toast.error(
-          t(
-            'auto.components.live-sessions.remove.failed',
-            '{{count}} session(s) could not be removed: they kept running after Seal asked them to stop.',
-            { count: result.failed.length }
-          )
-        )
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error))
-    }
-    setBusy(false)
+  const confirm = () => {
+    // The host hides the sessions at once and stops them behind that: the dialog does not wait for it.
+    void removeLiveSessions(removeRequestFor(danger, sessions), sessions, t)
     // A bulk action is over once it ran.
     liveSessionMarksStore.setPicked(null)
     close()
@@ -251,14 +261,13 @@ function DangerDialog({
             ))}
       </ul>
       <DialogFooter>
-        <Button variant="outline" disabled={busy} onClick={close}>
+        <Button variant="outline" onClick={close}>
           {t('auto.components.live-sessions.dialog.cancel', 'Cancel')}
         </Button>
         <Button
           variant={danger === 'remove' ? 'default' : 'destructive'}
-          disabled={busy}
           data-testid="live-session-danger-confirm"
-          onClick={() => void confirm()}
+          onClick={confirm}
         >
           {copy.action}
         </Button>

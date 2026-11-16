@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../../shared/live-sessions/live-session-surface.test-fixture'
 import {
   LIVE_SESSION_MENU_ITEM_IDS,
   removeRequestFor,
@@ -26,6 +27,7 @@ const session: LiveSession = {
   providerSessionId: '04186322-14da-4a67-890c-c5f4a754e99f',
   machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
   origin: 'seal',
+  ...sampleSessionSurface('seal'),
   cwd: '/srv/shop',
   project: 'shop',
   title: 'Fix the coupon bug',

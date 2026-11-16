@@ -217,18 +217,15 @@ export async function sendStubChatPrompt(chat: StubChat, prompt: string): Promis
 
 /**
  * The registry's session for a stub chat; null until the chat's first turn. Its id is
- * `local:claude:<the id the stub announced>`, which only the chat's pane route ties to the chat.
+ * `local:claude:<the id the stub announced>`, which only the record's surface ties to the chat.
  */
 export async function readStubChatLiveSession(
   page: Page,
   chat: Pick<StubChat, 'sessionId'>
 ): Promise<LiveSession | null> {
-  const panePrefix = `structured-agent-session-${chat.sessionId}:`
   return (
-    (await readLiveSessions(page)).find((session) =>
-      session.inputRoutes.some(
-        (route) => route.kind === 'seal-pane' && route.paneKey.startsWith(panePrefix)
-      )
+    (await readLiveSessions(page)).find(
+      ({ surface }) => surface.kind === 'chat' && surface.sessionId === chat.sessionId
     ) ?? null
   )
 }

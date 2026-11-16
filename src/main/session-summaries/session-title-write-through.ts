@@ -1,4 +1,3 @@
-import { liveSessionSurfaceOf } from '../../shared/live-sessions/live-session-surface'
 import type {
   AgentSessionSurface,
   LiveSession,
@@ -117,7 +116,7 @@ export class SessionTitleWriteThrough {
   }
 
   private sighted(session: LiveSession): void {
-    const surface = liveSessionSurfaceOf(session)
+    const surface = session.surface
     const owner = ownerOf(surface)
     const title = session.customTitle?.trim() || null
     if (surface.kind === 'chat') {

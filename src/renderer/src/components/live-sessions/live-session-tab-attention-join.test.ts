@@ -24,7 +24,7 @@ const goneFromPane = (status: LiveSession['status']): LiveSession => ({
   ...cliSession,
   status,
   alive: false,
-  surface: undefined,
+  surface: { kind: 'external' },
   inputRoutes: []
 })
 

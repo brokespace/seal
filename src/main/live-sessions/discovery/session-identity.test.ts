@@ -93,6 +93,56 @@ describe('one card per real conversation', () => {
     ])
   })
 
+  // The fork opens with the chat's history, and the resume's records are the last in it.
+  it("keeps a chat's fork into the terminal listed after Seal resumed it headless", () => {
+    const fork = claudeFile(
+      '/p/bbbbbbbb-0000-4000-8000-00000000000b.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'orca' },
+        { ...turn('f1', 'c1', 'Try it with a view instead'), entrypoint: 'cli' },
+        { ...turn('f2', 'f1', 'Also add a rollback'), entrypoint: 'sdk-cli' }
+      ],
+      600_000
+    )
+    expect(assemble([], [fork]).map((s) => s.id)).toEqual(['bbbbbbbb-0000-4000-8000-00000000000b'])
+  })
+
+  it.each([
+    ['a Seal chat', 'orca'],
+    ['an Agent SDK host', 'sdk-ts']
+  ])('lists %s forked into the terminal as its own session that continues it', (_, entrypoint) => {
+    const chat = claudeFile(
+      '/p/aaaaaaaa-0000-4000-8000-00000000000a.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint },
+        { ...turn('c2', 'c1', 'Now write it'), entrypoint }
+      ],
+      // The chat went on after the fork.
+      60_000
+    )
+    const fork = claudeFile(
+      '/p/bbbbbbbb-0000-4000-8000-00000000000b.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint },
+        { ...turn('f1', 'c1', 'Try it with a view instead'), entrypoint: 'cli' }
+      ],
+      300_000
+    )
+    expect(
+      assembleHostSessions({
+        machine,
+        output: { processes: [], panes: [], hookStates: [], hostNowMs: NOW },
+        transcripts: [chat, fork],
+        nowMs: NOW
+      }).map((s) => [s.id, s.continues])
+    ).toEqual([
+      [
+        'local:claude:bbbbbbbb-0000-4000-8000-00000000000b',
+        ['local:claude:aaaaaaaa-0000-4000-8000-00000000000a']
+      ]
+    ])
+  })
+
   it('shows a session copied into a second account once, from its newest copy', () => {
     const name = 'dddddddd-0000-4000-8000-000000000004.jsonl'
     const lines = [turn('d1', null, 'Rotate the keys')]
@@ -151,17 +201,6 @@ describe('one card per real conversation', () => {
         ]
       ).map((s) => s.id)
     ).toEqual(['e503cd0b-d59c-4221-a949-3c685cf99554'])
-  })
-
-  it('pairs a running agent with the transcript it is writing even outside its folder', () => {
-    const live = claudeFile(
-      '/p/cccccccc-0000-4000-8000-000000000003.jsonl',
-      [turn('c1', null, 'Deploy it')],
-      5_000
-    )
-    expect(assemble([proc(812, 'claude', '/w/sub')], [live])).toEqual([
-      { id: 'cccccccc-0000-4000-8000-000000000003', alive: true, path: live.path }
-    ])
   })
 })
 

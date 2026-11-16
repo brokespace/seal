@@ -6,6 +6,7 @@ import {
   structuredAgentSessionTabId
 } from '../../shared/agent-session/view/structured-agent-session-projection'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
 import type { SessionSummaryView } from './session-summarizer'
 
@@ -43,6 +44,8 @@ function session(overrides: Partial<LiveSession> = {}): LiveSession {
     providerSessionId: 'session-abc',
     machine: { hostId: 'local', label: 'mac', kind: 'local', connection: 'local' },
     origin: 'seal',
+    ...sampleSessionSurface('seal'),
+    surface: { kind: 'cli', paneKey: PANE },
     cwd: '/repo',
     project: 'repo',
     title: 'Fix login',

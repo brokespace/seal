@@ -6,6 +6,7 @@ import type {
   LiveSession,
   LiveTranscriptDelta
 } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import { localHost } from '../hosts/live-session-hosts'
 import { LiveTranscriptStreams } from './live-transcript-streams'
 
@@ -32,6 +33,7 @@ describe('watching a session transcript', () => {
       providerSessionId: 'abc',
       machine: host.machine,
       origin: 'seal',
+      ...sampleSessionSurface('seal'),
       cwd: '/repo',
       project: 'repo',
       title: 'Fix login',

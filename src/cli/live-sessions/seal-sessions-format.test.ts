@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { formatLiveSessions } from './seal-sessions-format'
 
 function session(id: string, patch: Partial<LiveSession>): LiveSession {
@@ -9,6 +10,7 @@ function session(id: string, patch: Partial<LiveSession>): LiveSession {
     providerSessionId: id,
     machine: { hostId: 'local', label: 'brian-mbp', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/code/seal',
     project: 'seal',
     title: id,

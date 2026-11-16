@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  structuredAgentSessionPaneKey,
-  structuredAgentSessionTabId
-} from '../../../shared/agent-session/view/structured-agent-session-projection'
-import type {
-  LiveSession,
-  LiveSessionInputRoute
-} from '../../../shared/live-sessions/live-session-types'
+import { structuredAgentSessionTabId } from '../../../shared/agent-session/view/structured-agent-session-projection'
+import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import {
   hasSessionTranscript,
   transcriptOf,
@@ -21,6 +16,7 @@ function session(overrides: Partial<LiveSession>): LiveSession {
     providerSessionId: 'abc',
     machine: { hostId: 'local', label: 'mac', kind: 'local', connection: 'local' },
     origin: 'seal',
+    ...sampleSessionSurface('seal'),
     cwd: '/repo',
     project: 'repo',
     title: 'Fix login',
@@ -58,23 +54,19 @@ function sources(held: string[]) {
   return { all, reads }
 }
 
-const chatPane = (chat: string): LiveSessionInputRoute => ({
-  kind: 'seal-pane',
-  paneKey: structuredAgentSessionPaneKey(structuredAgentSessionTabId(chat), chat)
+const chat = (sessionId: string): Pick<LiveSession, 'surface'> => ({
+  surface: { kind: 'chat', sessionId, tabId: structuredAgentSessionTabId(sessionId) }
 })
 
 describe('transcriptOf', () => {
   it('reads a chat from its journal and every other session from its transcript file', async () => {
     const { all, reads } = sources(['chat-1'])
-    const byRoute = session({ inputRoutes: [chatPane('chat-1')] })
-    const bySurface = session({
-      id: 'local:opencode:xyz',
-      surface: { kind: 'chat', sessionId: 'chat-1', tabId: structuredAgentSessionTabId('chat-1') }
-    })
-    const cli = session({ inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-1:leaf-1' }] })
-    const elsewhere = session({ inputRoutes: [chatPane('chat-2')] })
+    const held = session(chat('chat-1'))
+    const adopted = session({ id: 'local:opencode:xyz', ...chat('chat-1') })
+    const cli = session({ surface: { kind: 'cli', paneKey: 'tab-1:leaf-1' } })
+    const elsewhere = session(chat('chat-2'))
 
-    for (const each of [byRoute, bySurface, cli, elsewhere]) {
+    for (const each of [held, adopted, cli, elsewhere]) {
       await transcriptOf(each, all).page(null)
     }
 
@@ -85,7 +77,7 @@ describe('transcriptOf', () => {
       'file local:claude:abc'
     ])
     expect(
-      [byRoute, cli, session({ transcriptPath: '/t.jsonl' })].map((each) =>
+      [held, cli, session({ transcriptPath: '/t.jsonl' })].map((each) =>
         hasSessionTranscript(each, all)
       )
     ).toEqual([true, false, true])
