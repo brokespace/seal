@@ -38,6 +38,8 @@ export type WorkspaceLinkerDeps = {
   probes: FolderProbes
   /** The machine to ask about a folder; null while it cannot be asked. */
   host: (machineHostId: string) => LiveSessionHost | null
+  /** False for a session this process makes no project for. */
+  creates: (session: LiveSession) => boolean
   localHome: string
   onChange: () => void
   now?: () => number
@@ -87,7 +89,8 @@ export class WorkspaceLinker {
     if (workspace) {
       return { ...session, workspace: sessionWorkspace(workspace) }
     }
-    if (place && isActiveLiveSession(session)) {
+    const creates = place?.hostId !== LOCAL_EXECUTION_HOST_ID || this.deps.creates(session)
+    if (place && creates && isActiveLiveSession(session)) {
       this.resolve(session, place)
     }
     return session
