@@ -21,9 +21,16 @@ export type SessionPlace = {
   tabWorktreeId: string | null
 }
 
-/** What a machine says about a folder; `remotes` is `git remote -v` as printed. */
+/** What a machine says about a folder. */
 export type FolderProbe =
-  | { kind: 'repository'; root: string; remotes: string; home: string | null; tmp: string | null }
+  | {
+      kind: 'repository'
+      root: string
+      /** The main checkout, when `root` is a linked worktree of it. */
+      main?: string
+      home: string | null
+      tmp: string | null
+    }
   | { kind: 'folder'; home: string | null; tmp: string | null }
   | { kind: 'unreadable' }
 
@@ -106,7 +113,7 @@ export function planWorkspace(cwd: string, probe: FolderProbe): WorkspacePlan {
     return { kind: 'unassigned' }
   }
   if (probe.kind === 'repository') {
-    return { kind: 'checkout', path: probe.root }
+    return { kind: 'checkout', path: probe.main ?? probe.root }
   }
   if (isSharedFolder(cwd, probe.home, probe.tmp)) {
     return probe.home ? { kind: 'home', path: probe.home } : { kind: 'unassigned' }

@@ -63,14 +63,26 @@ describe('planWorkspace', () => {
     [
       'a repository: its checkout, not the subfolder',
       '/srv/blog/posts',
-      { kind: 'repository', root: '/srv/blog', remotes: '', home: HOME, tmp: null },
+      { kind: 'repository', root: '/srv/blog', home: HOME, tmp: null },
       { kind: 'checkout', path: '/srv/blog' }
     ],
     [
       'a repository in a temp folder: still its checkout',
       '/tmp/clone/src',
-      { kind: 'repository', root: '/tmp/clone', remotes: '', home: HOME, tmp: null },
+      { kind: 'repository', root: '/tmp/clone', home: HOME, tmp: null },
       { kind: 'checkout', path: '/tmp/clone' }
+    ],
+    [
+      'a linked worktree: its main checkout',
+      '/srv/blog-drafts/posts',
+      {
+        kind: 'repository',
+        root: '/srv/blog-drafts',
+        main: '/srv/blog',
+        home: HOME,
+        tmp: null
+      },
+      { kind: 'checkout', path: '/srv/blog' }
     ],
     [
       'a plain folder: that folder',
