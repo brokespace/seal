@@ -197,6 +197,16 @@ export function bringKeyboardFocusIntoPane(
   }
 }
 
+/** Split view ended on this session or project: the keyboard its closed pane held, or nothing holds, comes to it. */
+export function bringKeyboardFocusIntoSingleViewItem(surface: HTMLElement): void {
+  const active = document.activeElement
+  const owner = active instanceof HTMLElement && active !== document.body ? active : null
+  const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
+  if (owner === null || (content !== null && content !== surface)) {
+    focusItemSurface(surface)
+  }
+}
+
 /** A chord that moves pane focus asks for the pane: a field beside the grid gives the keyboard up. */
 export function releaseKeyboardHeldBesidePanes(): void {
   const active = document.activeElement
