@@ -14,21 +14,27 @@ import type {
   MachineView
 } from '../../../shared/machines/machine-view'
 import { restartManagedOrcadEnvironment } from '../../managed-server/lifecycle/orcad-managed-launch-session'
+import { hasSealServiceManager } from '../../managed-server/service/seal-service-removal'
 import { getSshHostServerStatus } from '../../ssh/host-server/ssh-host-server-status'
 import {
   connectRegisteredSshTarget,
+  getSshConnectionManager,
   getSshTargetRegistryStore
 } from '../../ssh/targets/ssh-target-registry'
 import type { MachineRegistry } from '../registry/machine-registry'
 import { getMachineRegistry } from '../registry/machine-registry-service'
 import {
   joinMachineServerInstall,
+  latestSealServiceOutcome,
   machineServerInstallActivity,
   noteBlockedServerMove,
   whilePm2IsWished
 } from './machine-server-install-activity'
 import { keepOwnServerRunning } from './own-server-service'
 import { sealDeployedServer } from './seal-deployed-server'
+
+const NO_SERVICE_MANAGER =
+  'This machine has no service manager that can keep Seal server running, so it still starts when Seal connects. Seal can use systemd user services, launchd or PM2: install PM2 on the machine, then try again.'
 
 /**
  * Resolves the machine as it ended up: through its server, or over plain SSH with the reason the
@@ -39,11 +45,12 @@ export function installServerOnSshMachine(
 ): Promise<MachineView> {
   const registry = getMachineRegistry()
   const machine = registry.view(request.machineId)
+  // Read again once the install is over: the view it resolves with still says `installing`.
   return joinMachineServerInstall(machine.recordId, () =>
     machine.serverInstallAction === 'keep-running'
       ? keepRunning(registry, machine, request)
       : installOverSsh(registry, machine, request)
-  )
+  ).then(() => registry.view(machine.id))
 }
 
 /** Seal's own server restarts into a service; a server the user runs installs its own. */
@@ -139,6 +146,12 @@ async function keepServerRunning(
   if (!environmentId || !targetId) {
     throw new Error('This machine has no Seal server to keep running')
   }
+  // Checked first: the restart below would stop the server and start it the same way.
+  const connection = getSshConnectionManager()?.getConnection(targetId)
+  const wish = request.manager === 'pm2' ? { prefer: 'pm2' as const } : {}
+  if (connection && !(await hasSealServiceManager(connection, wish))) {
+    throw new Error(NO_SERVICE_MANAGER)
+  }
   registry.edit((store, now) =>
     setMachineServerInstall(
       store,
@@ -166,5 +179,8 @@ async function keepServerRunning(
   const { invalidateRuntimeEnvironmentTransport } =
     await import('../../ipc/runtime-environments/runtime-environments')
   await invalidateRuntimeEnvironmentTransport(environmentId)
+  if (latestSealServiceOutcome(targetId)?.manager === 'detached') {
+    throw new Error(NO_SERVICE_MANAGER)
+  }
   return registry.view(machine.id)
 }

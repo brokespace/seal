@@ -45,7 +45,9 @@ export function sealServiceProbeCommand(managedRoot?: string): string {
     'seal_boot=$(seal_flag test -e "$HOME/Library/LaunchAgents/pm2.$seal_user.plist");',
     'elif [ -d /run/systemd/system ]; then',
     'seal_boot=$(seal_flag systemctl is-enabled "pm2-$seal_user.service");',
-    'elif [ -e "/etc/init.d/pm2-$seal_user" ]; then seal_boot=1; fi;',
+    'elif [ -e "/etc/init.d/pm2-$seal_user" ]; then seal_boot=1;',
+    // A Linux host with neither has nothing that starts PM2 at boot.
+    'elif [ "$(uname -s 2>/dev/null)" = Linux ]; then seal_boot=0; fi;',
     'echo "pm2_startup=$seal_boot"'
   ].join(' ')
 }

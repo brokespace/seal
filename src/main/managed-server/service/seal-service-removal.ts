@@ -17,7 +17,11 @@ import {
   sealServiceBinAssignment
 } from './seal-service-host-layout'
 import { sealServiceUnregisterCommand } from './seal-service-manager-commands'
-import type { SealServiceOutcome } from './seal-service-policy'
+import {
+  selectSealServiceCandidates,
+  type SealServiceProbe
+} from './seal-service-manager-selection'
+import type { SealServiceOutcome, SealServiceWish } from './seal-service-policy'
 import {
   parseSealServiceAnswer,
   parseSealServiceProbe,
@@ -44,21 +48,38 @@ async function isPosixHost(
   return host !== null && !isWindowsRemoteHost(host)
 }
 
-/** Null when no manager holds the server: it is detached, or was never installed. */
-export async function readSealServiceState(
+async function probeHost(
   conn: RemoteInstallTransport,
-  options: SealServiceHostOptions = {}
-): Promise<SealServiceOutcome | null> {
+  options: SealServiceHostOptions
+): Promise<SealServiceProbe | null> {
   if (!(await isPosixHost(conn, options))) {
     return null
   }
-  const probe = parseSealServiceProbe(
+  return parseSealServiceProbe(
     await execCommand(conn, sealServiceProbeCommand(options.managedRoot), {
       wrapCommand: true,
       signal: options.signal
     })
   )
+}
+
+/** Null when no manager holds the server: it is detached, or was never installed. */
+export async function readSealServiceState(
+  conn: RemoteInstallTransport,
+  options: SealServiceHostOptions = {}
+): Promise<SealServiceOutcome | null> {
+  const probe = await probeHost(conn, options)
   return probe?.installed && probe.registered ? sealServiceOutcome(probe.installed, probe) : null
+}
+
+/** False when the host answered and has no manager the server could be registered with. */
+export async function hasSealServiceManager(
+  conn: RemoteInstallTransport,
+  wish: SealServiceWish,
+  options: SealServiceHostOptions = {}
+): Promise<boolean> {
+  const probe = await probeHost(conn, options)
+  return !probe || selectSealServiceCandidates(probe, wish)[0] !== 'detached'
 }
 
 /** Answers `left=` followed by what could not be removed; no marker means there is nothing to remove. */
