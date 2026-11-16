@@ -9,7 +9,11 @@ import {
   clickDesktopNotification,
   readDesktopNotifications
 } from './helpers/desktop-notification-capture'
-import { FINISHED_TURN_REPLY, seedExternalClaudeSession } from './helpers/external-claude-session'
+import {
+  ASKING_TURN_REPLY,
+  FINISHED_TURN_REPLY,
+  seedExternalClaudeSession
+} from './helpers/external-claude-session'
 import { rescanLiveSessions, waitForLiveSession } from './helpers/live-session-registry'
 import {
   expect,
@@ -254,27 +258,26 @@ test.describe('desktop notifications for agent sessions', () => {
     }
   })
 
-  test('a session stopping to ask raises one notification on each surface', async ({
+  test('a session asking outright raises one notification, from the lane that owns it', async ({
     orcaPage,
     electronApp,
     sessionServicesStub,
     testRepoPath
   }) => {
-    // Runs a turn on all three surfaces and waits out the reply classifier and the registry scans for each.
+    // Runs a turn on a terminal agent and an external session and waits out the registry scans for each.
     test.setTimeout(300_000)
     await captureDesktopNotifications(electronApp)
     await useScriptedSessionServices(orcaPage, sessionServicesStub)
     const cli = await startTerminalPaneClaudeSession(electronApp, orcaPage)
-    const chat = await startStubChat(orcaPage, sessionServicesStub)
     const external = await seedExternalClaudeSession(electronApp)
-    const workspace = workspaceLabel(testRepoPath, chat.worktreeId)
     const externalAsked = {
       title: PROMPT,
       body: `Claude Code on ${hostname()} needs you: ${QUESTION}`
     }
-    const cliAsked = { title: `${workspace} - Claude needs input`, body: 'Using AskUserQuestion' }
-    // A question in prose ends the turn like any other; only the registry reads it as asking.
-    const chatAsked = { title: `${workspace} - Claude finished`, body: CHAT_ASKING_REPLY }
+    const cliAsked = {
+      title: `${workspaceLabel(testRepoPath, cli.pane.worktreeId)} - Claude needs input`,
+      body: 'Using AskUserQuestion'
+    }
     try {
       external.submitPrompt(PROMPT)
       await waitForLiveSession(orcaPage, external.sessionId, (found) => found.status === 'working')
@@ -283,19 +286,12 @@ test.describe('desktop notifications for agent sessions', () => {
         .poll(() => readDesktopNotifications(electronApp), { timeout: 60_000 })
         .toEqual([externalAsked])
 
-      // The chat's tab is on screen, so the terminal pane asks from a background tab.
       await cli.submitPrompt(PROMPT)
       await waitForLiveSession(orcaPage, cli.sessionId, (found) => found.status === 'working')
       await cli.askQuestion(QUESTION)
       await expect
         .poll(() => readDesktopNotifications(electronApp), { timeout: 30_000 })
         .toEqual([externalAsked, cliAsked])
-
-      await leaveChatTabOnSend(orcaPage, chat)
-      await sendStubChatPrompt(chat, 'ask-me which fix to make')
-      await expect
-        .poll(() => readDesktopNotifications(electronApp), { timeout: 30_000 })
-        .toEqual([externalAsked, cliAsked, chatAsked])
 
       await waitForLiveSession(
         orcaPage,
@@ -304,7 +300,61 @@ test.describe('desktop notifications for agent sessions', () => {
         { timeout: 90_000 }
       )
       await waitForLiveSession(orcaPage, cli.sessionId, (found) => found.status === 'waiting-input')
-      // The reply-ask classifier turns the chat's finished turn into a question after the fact.
+      await rescanTwice(orcaPage)
+      expect(await readDesktopNotifications(electronApp)).toEqual([externalAsked, cliAsked])
+    } finally {
+      external.stop()
+    }
+  })
+
+  test('a turn that ends on a question in prose is announced as a question', async ({
+    orcaPage,
+    electronApp,
+    sessionServicesStub,
+    testRepoPath
+  }, testInfo) => {
+    // Runs a turn on a chat and an external session and waits out the reply classifier and the registry scans for each.
+    test.setTimeout(300_000)
+    await captureDesktopNotifications(electronApp)
+    await useScriptedSessionServices(orcaPage, sessionServicesStub)
+    const chat = await startStubChat(orcaPage, sessionServicesStub)
+    const terminalTab = otherTabThan(orcaPage, await chat.tab.getAttribute('data-tab-id'))
+    const external = await seedExternalClaudeSession(electronApp)
+    // The registry announces an external session itself, so it waits for the reply to be read.
+    const externalAsked = {
+      title: PROMPT,
+      body: `Claude Code on ${hostname()} needs you: ${ASKING_TURN_REPLY}`
+    }
+    // The chat lane cannot read a reply: it announces the end, and the registry then the question.
+    const chatFinished = {
+      title: `${workspaceLabel(testRepoPath, chat.worktreeId)} - Claude finished`,
+      body: CHAT_ASKING_REPLY
+    }
+    const chatAsked = {
+      title: expect.any(String),
+      body: `Claude Code on ${hostname()} needs you: ${CHAT_ASKING_REPLY}`
+    }
+    try {
+      external.submitPrompt(PROMPT)
+      await waitForLiveSession(orcaPage, external.sessionId, (found) => found.status === 'working')
+      external.finishTurn(ASKING_TURN_REPLY)
+      await expect
+        .poll(() => readDesktopNotifications(electronApp), { timeout: 60_000 })
+        .toEqual([externalAsked])
+      await waitForLiveSession(
+        orcaPage,
+        external.sessionId,
+        (found) => found.status === 'waiting-input' && found.recap !== undefined,
+        { timeout: 90_000 }
+      )
+      await rescanTwice(orcaPage)
+      expect(await readDesktopNotifications(electronApp)).toEqual([externalAsked])
+
+      await leaveChatTabOnSend(orcaPage, chat)
+      await sendStubChatPrompt(chat, 'ask-me which fix to make')
+      await expect
+        .poll(() => readDesktopNotifications(electronApp), { timeout: 60_000 })
+        .toEqual([externalAsked, chatFinished, chatAsked])
       await waitForChatLiveSession(
         orcaPage,
         chat,
@@ -316,9 +366,18 @@ test.describe('desktop notifications for agent sessions', () => {
       await rescanTwice(orcaPage)
       expect(await readDesktopNotifications(electronApp)).toEqual([
         externalAsked,
-        cliAsked,
+        chatFinished,
         chatAsked
       ])
+
+      await expect(terminalTab).toHaveAttribute('data-active', 'true')
+      await clickDesktopNotification(electronApp, 2)
+      await expect(chat.tab).toHaveAttribute('data-active', 'true')
+      await expect(chat.root.getByText(CHAT_ASKING_REPLY)).toBeVisible()
+      await expectWindowStaysInBackground(electronApp)
+      await orcaPage.screenshot({
+        path: testInfo.outputPath('chat-opened-from-question-notification.png')
+      })
     } finally {
       external.stop()
     }
