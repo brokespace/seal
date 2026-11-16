@@ -605,7 +605,7 @@
         },
         "notify": {
           "label": "Notify about sessions outside Seal",
-          "description": "Off, as you left “Notify about agent sessions”. Turn it on and “Agent needs input” and “Agent task complete” in Notifications also cover Claude Code and Codex sessions outside Seal’s own panes. This switch then goes away."
+          "description": "You had “Notify about agent sessions” off. Turn this on and “Agent needs input” and “Agent task complete” in Notifications also cover Claude Code and Codex sessions outside Seal’s own panes. Once on, this switch goes away when you leave Settings."
         },
         "sidebar": {
           "lastMessage": "Last message",

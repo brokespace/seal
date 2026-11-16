@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { GlobalSettings } from '../../../../../shared/global-settings-types'
 import { outsideSessionsMuted } from '../../../../../shared/live-sessions/live-session-settings'
 import { SettingsSwitchRow } from '../../settings/form-controls/SettingsFormControls'
@@ -8,13 +9,21 @@ type Props = {
   updateSettings: (updates: Partial<GlobalSettings>) => void | Promise<void>
 }
 
-/** Shown only to a profile that had the switch off: the way back to hearing about these sessions. */
+/**
+ * Shown only to a profile that had the switch off: the way back to hearing about these sessions.
+ * Once turned on it stays until Settings closes, so a second click never lands on another setting.
+ */
 export function LiveSessionsNotifySetting({
   settings,
   updateSettings
 }: Props): React.JSX.Element | null {
   const t = useTranslate()
-  if (!outsideSessionsMuted(settings)) {
+  const muted = outsideSessionsMuted(settings)
+  const [offered, setOffered] = useState(muted)
+  if (muted && !offered) {
+    setOffered(true)
+  }
+  if (!offered) {
     return null
   }
   return (
@@ -22,10 +31,10 @@ export function LiveSessionsNotifySetting({
       label={t('auto.components.live-sessions.notify.label', 'Notify about sessions outside Seal')}
       description={t(
         'auto.components.live-sessions.notify.description',
-        'Off, as you left “Notify about agent sessions”. Turn it on and “Agent needs input” and “Agent task complete” in Notifications also cover Claude Code and Codex sessions outside Seal’s own panes. This switch then goes away.'
+        'You had “Notify about agent sessions” off. Turn this on and “Agent needs input” and “Agent task complete” in Notifications also cover Claude Code and Codex sessions outside Seal’s own panes. Once on, this switch goes away when you leave Settings.'
       )}
-      checked={false}
-      onChange={() => void updateSettings({ liveSessionsNotify: true })}
+      checked={!muted}
+      onChange={() => void updateSettings({ liveSessionsNotify: muted })}
     />
   )
 }

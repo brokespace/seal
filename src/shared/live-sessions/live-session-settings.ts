@@ -5,7 +5,7 @@ export type LiveSessionSettings = {
   liveSessionsIdleReapMinutes?: number
   /**
    * False keeps sessions outside Seal's panes silent, carried over from the switch the two agent
-   * notification settings replaced. It is never written anew; turning it back on removes it.
+   * notification settings replaced. Turning it back on stores true, which the next start drops.
    */
   liveSessionsNotify?: boolean
 }
