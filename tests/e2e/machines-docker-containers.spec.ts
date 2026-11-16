@@ -49,14 +49,14 @@ test('running containers show their live usage in the CPU and RAM views and open
       await expect(db).toContainText('db')
       await expect(db).toContainText('postgres:16')
       await expect(db).toContainText('12.3%')
-      await expect(db).toContainText('1.50 / 2.00 GB')
+      await expect(db).toContainText('1.50 GB / 2.00 GB')
       await expect(db).toContainText('75.0%')
       await expect(db).toContainText('47.2 KB / 126 B')
       await expect(db).toContainText('202 MB / 1.38 GB')
       await expect(db).toContainText('14')
       const web = containerRow(cpu, containers.web.id)
       await expect(web).toContainText('1.5%')
-      await expect(web).toContainText('0.02 / 2.00 GB')
+      await expect(web).toContainText('24.0 MB / 2.00 GB')
       // Stopped containers are not usage: they are managed with Docker's storage.
       await expect(containerRow(cpu, containers.migrate.id)).toHaveCount(0)
 

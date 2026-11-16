@@ -10,7 +10,7 @@ import type {
   MachineDockerContainers
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
-import { formatBytes, formatBytesOfTotal } from '../model/machine-format'
+import { formatBytes } from '../model/machine-format'
 import { formatGpuIndexes } from '../model/machine-gpu-format'
 import { MachineDiskRowAction } from './MachineDiskRowAction'
 import {
@@ -128,9 +128,9 @@ function ContainerRow({
               })
         }
       >
-        {container.memUsageBytes !== null && container.memLimitBytes !== null
-          ? formatBytesOfTotal(container.memUsageBytes, container.memLimitBytes)
-          : formatBytes(container.memUsageBytes)}
+        {/* Each figure in its own unit: without a limit Docker reports the machine's whole memory. */}
+        {formatBytes(container.memUsageBytes)}
+        {container.memLimitBytes === null ? null : ` / ${formatBytes(container.memLimitBytes)}`}
         {percent === null ? null : (
           <span className="ml-1 text-muted-foreground @max-3xl:hidden">{percent}</span>
         )}
