@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+# Written before systemd starts, so the id is stable across restarts.
+if [ -n "${MACHINE_ID:-}" ]; then
+  printf '%s\n' "$MACHINE_ID" > /etc/machine-id
+elif [ ! -s /etc/machine-id ]; then
+  tr -d '-' < /proc/sys/kernel/random/uuid > /etc/machine-id
+fi
+
+add_key() {
+  # $1 home, $2 owner
+  file="$1/.ssh/authorized_keys"
+  install -d -m 700 -o "$2" -g "$2" "$1/.ssh"
+  touch "$file"
+  grep -qxF "$AUTHORIZED_KEY" "$file" || printf '%s\n' "$AUTHORIZED_KEY" >> "$file"
+  chown "$2:$2" "$file"
+  chmod 600 "$file"
+}
+
+if [ -n "${AUTHORIZED_KEY:-}" ]; then
+  add_key /root root
+  add_key /home/seal seal
+fi
+
+# FIXTURE_LINGER=1 is the host that already lingers; leave it unset to test that Seal enables linger.
+if [ "${FIXTURE_LINGER:-}" = "1" ]; then
+  mkdir -p /var/lib/systemd/linger
+  : > /var/lib/systemd/linger/seal
+fi
+
+exec /lib/systemd/systemd
