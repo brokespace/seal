@@ -1,0 +1,58 @@
+[
+  {
+    "key": "c0f6f4460d33677e517a691fd8dc055a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page.\n\n[m2] AGENT: Dark mode touches the theme tokens across the whole app. Should I do the whole app or only the settings page?\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"asked\": [\n    {\n      \"text\": \"Should dark mode be implemented for the whole app or just the settings page?\",\n      \"ref\": \"m2\"\n    }\n  ]\n}",
+    "neurons": 5.1127
+  },
+  {
+    "key": "a5bc76c6d36b6e94e55f54a907e48b4a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add dark mode to the settings page.\n\n[m2] AGENT: Dark mode touches the theme tokens across the whole app. Should I do the whole app or only the settings page?\n</new_messages>"
+      },
+      {
+        "role": "assistant",
+        "content": "{\n  \"asked\": [\n    {\n      \"text\": \"Should dark mode be implemented for the whole app or just the settings page?\",\n      \"ref\": \"m2\"\n    }\n  ]\n}"
+      },
+      {
+        "role": "user",
+        "content": "That reply could not be used. The JSON object has none of the keys title, goal, standing, add, update, resolve.\nReply again with only the JSON object described, starting with { and ending with }."
+      }
+    ],
+    "reply": "{\n  \"asked\": [\n    {\n      \"text\": \"Dark mode: whole app or only the settings page?\",\n      \"ref\": \"m2\"\n    }\n  ]\n}",
+    "neurons": 5.451099999999999
+  },
+  {
+    "key": "47b3c74e637e65ae3dffa0a5664a9539",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add dark mode to the settings page.\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: never mind dark mode for now\n\n[m2] AGENT: OK, leaving dark mode out.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"resolve\": [\"a1\"],\n  \"resolve\": [\"firstRequest\"]\n}",
+    "neurons": 4.2336
+  },
+  {
+    "key": "c5baf0a1564c48c0ffb1f80b36d94b04",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add dark mode to the settings page.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add dark mode to the settings page.\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: actually do add dark mode, only on settings\n\n[m2] AGENT: Dark mode is on the settings page and follows the system setting.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Add dark mode to settings page.\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Add dark mode to settings page.\", \"state\": \"done\", \"ref\": \"m1\"}]\n  },\n  \"resolve\": [\"a1\"],\n  \"update\": [{\"id\": \"a1\", \"state\": \"done\"}]\n}",
+    "neurons": 6.8311
+  }
+]

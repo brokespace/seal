@@ -1,0 +1,26 @@
+[
+  {
+    "key": "ac73ef78535809f3e70933563d7c00db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Two things: bump the Node version in CI to 22, and audit our npm dependencies fo\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Two things: bump the Node version in CI to 22, and audit our npm dependencies for known vulnerabilities.\n\n[m2] AGENT: CI runs Node 22 now. I started a subagent on the dependency audit; it is still running and I will report what it finds.\n</new_messages>"
+      }
+    ],
+    "reply": "{\"add\": {\"asked\": [{\"text\": \"bump Node version to 22 in CI\", \"ref\": \"m1\"}, {\"text\": \"audit npm dependencies for vulnerabilities\", \"ref\": \"m1\"}], \"did\": [{\"text\": \"bump Node version to 22 in CI\", \"state\": \"done\", \"ref\": \"m1\"}, {\"text\": \"audit npm dependencies\", \"state\": \"in-progress\", \"ref\": \"m2\"}], \"questions\": [{\"text\": \"what vulnerabilities found in dependency audit?\", \"ref\": \"m2\"}]}}",
+    "neurons": 8.2007
+  },
+  {
+    "key": "1a85ab4fc2034a74b5390c612873346b",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Two things: bump the Node version in CI to 22, and audit our npm dependencies fo\",\"asked\":[{\"id\":\"a1\",\"text\":\"bump Node version to 22 in CI\"},{\"id\":\"a2\",\"text\":\"audit npm dependencies for vulnerabilities\"}],\"did\":[{\"id\":\"w4\",\"text\":\"audit npm dependencies\",\"state\":\"in-progress\"},{\"id\":\"w3\",\"text\":\"bump Node version to 22 in CI\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q5\",\"text\":\"what vulnerabilities found in dependency audit?\"}],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] AGENT: The audit is back: 3 high-severity advisories and no critical ones. lodash needs 4.17.21, axios 1.7.4 and minimist 1.2.8.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w4\", \"text\": \"audit npm dependencies\", \"state\": \"done\"},\n    {\"id\": \"q5\", \"text\": \"What vulnerabilities were found in the dependency audit?\"}\n  ],\n  \"standining\": \"Dependency audit found 3 high-severity advisories. Node version 22 issue is completed.\"\n}",
+    "neurons": 6.9786
+  }
+]

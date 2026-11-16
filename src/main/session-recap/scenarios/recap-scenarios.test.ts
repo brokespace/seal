@@ -3,8 +3,9 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { CloudflareAiConfigStore } from '../../utility-model/cloudflare-ai-config'
 import type { CloudflareAiCredentials } from '../../utility-model/cloudflare-workers-ai-provider'
+import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
+import { askLiveRecapModel } from './recap-live-model.test-fixture'
 import {
   addToRecapCassette,
   loadRecapBaseline,
@@ -34,7 +35,7 @@ const env = process.env
 const pendingPath = env.RECAP_SCENARIOS_PENDING
 /** Replies to that file's requests, filed into the cassettes before the run. */
 const repliesPath = env.RECAP_SCENARIOS_REPLIES
-/** Ask the real model for what no recording answers, and record it. Needs the Cloudflare config file. */
+/** Ask the real model for what no recording answers, and record it. Needs a Workers AI credential. */
 const live = env.RECAP_SCENARIOS_LIVE === '1'
 const reportDir = env.RECAP_SCENARIOS_REPORT
 const updateBaseline = env.RECAP_SCENARIOS_UPDATE_BASELINE === '1'
@@ -48,24 +49,12 @@ const scenarios = (await loadRecapScenarios()).filter(
 const baseline = await loadRecapBaseline()
 const rows: RecapMatrixRow[] = []
 const pending: RecapPendingRequest[] = []
+/** Requests of scenarios that say they are not recorded yet: relayed with the rest, but not a gap. */
+const awaited: RecapPendingRequest[] = []
 const results: RecapBaseline = {}
 let credentials: CloudflareAiCredentials | undefined
-
-async function liveCredentials(): Promise<CloudflareAiCredentials> {
-  const store = new CloudflareAiConfigStore({
-    saved: {
-      read: () => null,
-      save: () => undefined,
-      clear: () => undefined,
-      protection: () => null
-    }
-  })
-  const found = (await store.load()).credentials
-  if (!found) {
-    throw new Error('RECAP_SCENARIOS_LIVE needs ~/.config/seal/cloudflare-ai.json')
-  }
-  return found
-}
+/** False while a live run has no checked credential, or once a live request went unanswered. */
+let sound = !live
 
 describe('recap scenarios', () => {
   beforeAll(async () => {
@@ -73,16 +62,21 @@ describe('recap scenarios', () => {
       await mergeRelayedRecapReplies(pendingPath, repliesPath)
     }
     if (live) {
-      credentials = await liveCredentials()
+      credentials = await liveRecapCredentials()
+      sound = true
     }
   })
 
   afterAll(async () => {
     if (pendingPath) {
       const unique = new Map(
-        pending.map((request) => [`${request.scenario} ${request.key}`, request])
+        [...pending, ...awaited].map((request) => [`${request.scenario} ${request.key}`, request])
       )
       await writeFile(pendingPath, `${JSON.stringify([...unique.values()], null, 2)}\n`)
+    }
+    // A run that lost live requests would record the outage as the recap's behaviour.
+    if (!sound) {
+      return
     }
     if (reportDir) {
       rows.sort((a, b) => a.id.localeCompare(b.id))
@@ -99,14 +93,17 @@ describe('recap scenarios', () => {
 
   for (const scenario of scenarios) {
     for (const surface of scenario.surfaces) {
-      it(`${scenario.id}@${surface}: ${scenario.title}`, async () => {
+      const unrecorded = scenario.pending ? ' (not recorded yet)' : ''
+      const timeout = live ? 15 * 60_000 : undefined
+      // A live scenario waits on up to a dozen real requests, one after the other.
+      it(`${scenario.id}@${surface}: ${scenario.title}${unrecorded}`, { timeout }, async () => {
         const recorded: RecapCassetteEntry[] = []
         const model = new RecapScenarioModel({
           scenario: scenario.id,
           cassette: await loadRecapCassette(scenario.id),
           ...(live
             ? {
-                live: (url: string, init: RequestInit) => fetch(url, init),
+                live: askLiveRecapModel,
                 onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry)
               }
             : {})
@@ -115,12 +112,22 @@ describe('recap scenarios', () => {
         if (recorded.length > 0) {
           await addToRecapCassette(scenario.id, recorded)
         }
-        rows.push(recapMatrixRow(run))
+        if (model.liveFailures.length > 0) {
+          sound = false
+          expect.fail(`Workers AI did not answer: ${model.liveFailures.join(', ')}. Run it again.`)
+        }
+        if (scenario.pending && run.status === 'pending') {
+          awaited.push(...model.pending)
+          return
+        }
         pending.push(...model.pending)
+        rows.push(recapMatrixRow(run))
         results[run.id] = failingRecapChecks(run)
         if (recording) {
           return
         }
+        // It has recordings now: drop `pending` from the scenario and add its checks to the baseline.
+        expect(scenario.pending).toBeUndefined()
         // A request with no recorded reply means the prompt or the scenario changed: record it again.
         expect(model.pending.map((request) => request.key)).toEqual([])
         expect(failingRecapChecks(run)).toEqual(baseline[run.id] ?? [])

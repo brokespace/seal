@@ -1,0 +1,80 @@
+{
+  "id": "user-drops-everything-open",
+  "title": "The user drops every open ask at once without naming any of them",
+  "categories": ["withdrawn-or-changed", "multiple-asks"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After turn 1 the export, dark mode and the German emails are open. After the user says to forget the rest, none of the three is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Before the demo: 1) fix the broken avatar upload, 2) add a CSV export to the orders page, 3) add dark mode to settings, 4) translate the onboarding emails to German."
+    },
+    {
+      "edit": "/srv/shop/src/upload/avatar.ts"
+    },
+    {
+      "agent": "The avatar upload is fixed: the size check compared kilobytes with bytes. I have not started the CSV export, dark mode or the German emails."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "csv|export",
+          "why": "the CSV export is asked for and not started"
+        },
+        {
+          "in": "ignored",
+          "has": "dark",
+          "why": "dark mode is asked for and not started"
+        },
+        {
+          "in": "ignored",
+          "has": "german|translat",
+          "why": "the German emails are asked for and not started"
+        }
+      ]
+    },
+    {
+      "user": "we're out of time, forget the rest and ship what we have"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git push origin main"
+        },
+        "output": "To github.com:acme/shop.git\n   4c1e9aa..9d2f3b1  main -> main"
+      }
+    },
+    {
+      "agent": "Pushed. The avatar fix is on main."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "the user dropped everything that was still open"
+        },
+        {
+          "in": "did",
+          "has": "push|avatar",
+          "why": "the push is recorded as done"
+        }
+      ]
+    }
+  ]
+}

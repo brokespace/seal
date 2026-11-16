@@ -7,6 +7,8 @@ An audit of the session recap on `seal/all` at 7a6dc74d5d2, a baseline of how it
 | [01-pipeline-audit.md](./01-pipeline-audit.md)       | How the recap works today, with file and line references, and every bug and weakness found (F1 to F26).       |
 | [02-scenario-baseline.md](./02-scenario-baseline.md) | What was tested, how, and the results: 135 pipeline runs, model variance on 258 samples, and the in-app runs. |
 | [03-overhaul-design.md](./03-overhaul-design.md)     | The proposed design, the builder workstreams and the decisions to make.                                       |
+| [04-critique.md](./04-critique.md)                   | An independent review of the three above, with the changes required before builders start.                    |
+| [labelling-rules.md](./labelling-rules.md)           | How each scenario's requests were labelled, blind, as the ground truth the judge models are scored against.   |
 | [evidence/](./evidence/)                             | The full matrix, the model samples, and screenshots and recap JSON from the app.                              |
 
 ## The regression suite
@@ -35,9 +37,17 @@ The schema for scenarios, with every step and check kind, is `recap-scenario-sch
 | `RECAP_SCENARIOS_ONLY=id1,id2`      | Run only these scenarios.                                                                                                   |
 | `RECAP_SCENARIOS_REPORT=<dir>`      | Also write `matrix.json` and `matrix.md` there: expected, actual and result for every run.                                  |
 | `RECAP_SCENARIOS_UPDATE_BASELINE=1` | Rewrite `baseline.json` from this run. Review the diff: it should only shrink.                                              |
-| `RECAP_SCENARIOS_LIVE=1`            | Ask the real model for anything not recorded and save the reply. Reads `~/.config/seal/cloudflare-ai.json`.                 |
+| `RECAP_SCENARIOS_LIVE=1`            | Ask the real model for anything not recorded and save the reply. Needs a credential (below).                                |
 | `RECAP_SCENARIOS_PENDING=<file>`    | Without a credential: write the unanswered requests to this file instead of failing.                                        |
 | `RECAP_SCENARIOS_REPLIES=<file>`    | With the above: file replies to those requests (`[{ "contentHash", "model", "reply" }]`) into the cassettes before running. |
+
+A scenario with `"pending": true` has no recordings yet. It runs up to its first model request and stops, and is not in the baseline. Once it has recordings the suite fails until the mark is removed.
+
+### The credential
+
+A live run takes `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` from the environment when both are set, and otherwise reads `~/.config/seal/cloudflare-ai.json`. It sends one small request first and stops if Cloudflare turns the credential down, before anything is rewritten. The token is never printed, and Cloudflare's error text is written with the account id replaced.
+
+A live request that gets no answer after four tries fails the run and leaves the baseline and the matrix as they were. What was answered is kept, so the next run asks only for the rest.
 
 ### After changing the prompt or a scenario
 
@@ -49,6 +59,36 @@ A changed prompt changes every request, so every recording is stale.
 4. Read the diff of `baseline.json` and `matrix.md`.
 
 A recording is one sample of a model that varies. [The baseline](./02-scenario-baseline.md#how-much-the-model-varies) measures how much; the design asks for several samples per request before a threshold counts as met.
+
+## Measuring the judge
+
+`recap-judge.test.ts`, in the same folder, scores candidate judge models against labels. It runs with the scenarios.
+
+- `__fixtures__/labels/<id>.json`: for each scenario, what the user asked for and where each request stands at each check, labelled by someone who saw only the script ([the rules](./labelling-rules.md)). `split` is `tune` or `held-out`.
+- `recap-judge-questions.test-fixture.ts`: the questions, one per criterion, each with the action it leads to and the share of wrong firings its threshold may allow.
+- `recap-judge-state.test-fixture.ts`: what a question is asked about: the request, and the conversation after it as a reader would see it.
+- `recap-judge-models.test-fixture.ts`: the candidates, their prices, and how each is asked.
+- `__fixtures__/judge-answers/<model>.json`: what each model answered, keyed on a hash of the model and the request. `__fixtures__/judge-thresholds.json`: each model's thresholds, with the hash of the question wording they were set on.
+
+Offline, the suite checks that every scenario is labelled, that no conversation is on both sides of the split, and that the saved answers still give the saved thresholds. A change to a question, to the state or to a model's answers is therefore a new measurement, not a silent change.
+
+| Environment                      | Effect                                                                                                         |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `RECAP_JUDGE_LIVE=1`             | Ask each model what is not on record, then write the answers, the thresholds and the report.                   |
+| `RECAP_JUDGE_MODELS=name1,name2` | Only these models, by the last part of their id (`clef`, `clef-flash`, `glm-4.7-flash`, `gemma-4-26b-a4b-it`). |
+| `RECAP_JUDGE_MAX_USD=<n>`        | Stop before the first request when the estimate for what must be asked is above this. Default 1.               |
+| `RECAP_JUDGE_CONCURRENCY=<n>`    | Requests in flight per model. Default 4.                                                                       |
+| `RECAP_JUDGE_REPORT=<dir>`       | Where `report.md` and `calls.jsonl` go. Default `docs/recap-audit/evidence/judge`.                             |
+
+`report.md` gives, per model: AUC per question on each split, each threshold and what it catches and fires on wrongly on the held-out split, the addressed requests it would list as not addressed (by name), cost and latency. `calls.jsonl` has one line per request: the model, the item, whether it came from the cache, tokens, cost, time, or the kind of failure.
+
+### One command, on a host with a credential
+
+```
+node config/scripts/session-recap/record-and-measure-recap-models.mjs
+```
+
+It checks the credential, records the replies for scenarios that have none, measures every judge candidate, removes `pending` from the scenarios it recorded, replays everything with no network, and prints the summary and the files to commit. It can be run again at any point: only what is missing is asked for.
 
 ## In the app
 

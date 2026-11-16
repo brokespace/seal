@@ -1,5 +1,9 @@
 // Whether a recap says what a scenario's check expects, and what it said instead.
-import type { RecapItem, SessionRecapView } from '../../../shared/session-recap/session-recap-types'
+import {
+  openRecapItems,
+  type RecapItem,
+  type SessionRecapView
+} from '../../../shared/session-recap/session-recap-types'
 import type { RecapScenarioCheck } from './recap-scenario-schema.test-fixture'
 
 export type RecapCheckContext = {
@@ -77,7 +81,8 @@ export function evaluateRecapCheck(
       actual: value || '(none)'
     }
   }
-  const items = view.recap?.[check.in] ?? []
+  const listed = view.recap?.[check.in] ?? []
+  const items = check.open ? openRecapItems(listed, view.marks) : listed
   const { has, lacks, state } = check
   const found = has === undefined ? [] : items.filter((item) => matches(has, item.text))
   const ok =
