@@ -92,6 +92,8 @@ export function seedRelayEraProfile(
     draftContent?: string
     /** The sidebar shows only this host, which a server's own all-hosts default once refused. */
     sidebarScopedToHost?: boolean
+    /** The remote the checkout was cloned from, which makes it one project with its other clones. */
+    gitRemoteIdentity?: Repo['gitRemoteIdentity']
   } = {}
 ): RelayEraProfile {
   const now = Date.now()
@@ -103,7 +105,8 @@ export function seedRelayEraProfile(
     displayName: 'orcad upgrade E2E',
     badgeColor: '#737373',
     addedAt: now,
-    connectionId: targetId
+    connectionId: targetId,
+    ...(options.gitRemoteIdentity ? { gitRemoteIdentity: options.gitRemoteIdentity } : {})
   }
   const group: ProjectGroup = {
     id: `group-upgrade-${now}`,

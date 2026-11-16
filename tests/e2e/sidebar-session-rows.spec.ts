@@ -7,6 +7,7 @@ import {
   type SeedStatus,
   type SeededLiveSession
 } from './helpers/seeded-live-sessions'
+import { showSidebar } from './helpers/sidebar-session-row'
 import {
   addSeedWorkspaces,
   removeSeedWorkspaces,
@@ -24,11 +25,6 @@ const STATUS_LABELS: readonly { status: SeedStatus; label: string }[] = [
 ]
 
 type CardStyle = 'new' | 'classic' | 'compact'
-
-async function showSidebar(page: Page): Promise<void> {
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await expect(page.locator('[data-repo-header-id]').first()).toBeVisible({ timeout: 60_000 })
-}
 
 function workspaceRows(page: Page, workspace: SeedWorkspace): Locator {
   return page.locator(
