@@ -1,12 +1,12 @@
 import type { SealAccountCandidate } from '../../../shared/seal-accounts/seal-account-candidates'
 import type { SealProvider } from '../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../shared/seal-accounts/seal-accounts-status'
-import { clampUsedPercent } from '../../../shared/usage-percentage-display'
+import { clampUsedPercent } from '../../../shared/agent-usage/display/usage-percentage-display'
 import {
   getUsageWindowSections,
   hasUsageData,
   type UsageWindowSection
-} from '../../../shared/usage-provider-windows'
+} from '../../../shared/agent-usage/display/usage-provider-windows'
 import { usageCheckRemark } from '../../../shared/usage-window-text'
 
 /** The slice of Seal's account manager the assistant uses. */

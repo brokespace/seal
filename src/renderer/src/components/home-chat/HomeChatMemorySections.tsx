@@ -8,7 +8,7 @@ import type {
   HomeChatMachineNote,
   HomeChatMemoryItem
 } from '../../../../shared/home-chat/home-chat-memory-types'
-import { createNonSecureContextUuid } from '../../../../shared/non-secure-context-uuid'
+import { createNonSecureContextUuid } from '../../../../shared/identifiers/non-secure-context-uuid'
 
 function newItem(text: string): HomeChatMemoryItem {
   return { id: createNonSecureContextUuid().slice(0, 8), text, at: Date.now() }

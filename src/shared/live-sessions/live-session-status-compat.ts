@@ -1,6 +1,6 @@
 // Clients built before `running-shell` and `your-turn` existed decode the status as a closed set
 // and drop a session whose status they do not know, so a host answers them in the statuses they have.
-import type { RuntimeCapability } from '../protocol-version'
+import type { RuntimeCapability } from '../remote-runtime/protocol/protocol-version'
 import type {
   LiveSession,
   LiveSessionRegistryEvent,

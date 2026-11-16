@@ -1,5 +1,5 @@
 import { defineFixture } from '../../../component-fixtures/component-fixture'
-import { getDefaultSettings } from '../../../../../shared/constants'
+import { getDefaultSettings } from '../../../../../shared/orca-profiles/constants'
 import type { ShellIntegrationStatus } from '../../../../../shared/shell-integration/shell-integration-installer'
 import { LiveSessionsShellIntegrationSetting } from './LiveSessionsShellIntegrationSetting'
 import { LiveSessionsIdleReapSetting } from './LiveSessionsIdleReapSetting'

@@ -53,7 +53,6 @@ describe.each(['shared', 'one-shot'] as const)('%s request guard', (transport) =
             [],
             undefined,
             undefined,
-            undefined,
             prepareGuard
           )
     return { server, send, close: () => shared.close() }

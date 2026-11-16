@@ -4,7 +4,7 @@ import {
   type FeatureWallMediaTile,
   type FeatureWallMediaTileId
 } from './feature-wall-tiles'
-import { SEAL_REPOSITORY_URL } from './seal-project-links'
+import { SEAL_REPOSITORY_URL } from '../../seal-project-links'
 
 export type FeatureWallWorkflowId =
   | 'tasks'

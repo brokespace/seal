@@ -1,5 +1,5 @@
 import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
-import type { MiniMaxEndpoint } from '../../shared/global-settings-types'
+import type { MiniMaxEndpoint } from '../../shared/settings/global-settings-types'
 import { utilityModelProvider } from '../../shared/utility-model/utility-model-provider-catalog'
 import type {
   UtilityModelCatalogEntry,

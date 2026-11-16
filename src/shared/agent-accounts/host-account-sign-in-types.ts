@@ -2,7 +2,7 @@ import type {
   ClaudeRateLimitAccountsState,
   CodexRateLimitAccountsState
 } from './managed-account-types'
-import type { SealSignInOutcome } from './seal-accounts/seal-sign-in'
+import type { SealSignInOutcome } from '../seal-accounts/seal-sign-in'
 
 export type HostAccountSignInProvider = 'claude' | 'codex'
 

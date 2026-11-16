@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 import { translate as t } from '@/i18n/i18n'
 import { showOpenFailureToast } from '@/components/sidebar/workspace-actions/open/worktree-open-failure-toast'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
-import type { SshTarget } from '../../../../../shared/ssh-types'
+import type { SshTarget } from '../../../../../shared/remote-runtime/ssh/ssh-types'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 /** The `~/.ssh/config` entry that gives an editor a custom-port machine by alias. */

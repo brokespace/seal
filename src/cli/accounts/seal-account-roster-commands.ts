@@ -1,6 +1,6 @@
 import type { CommandHandler, HandlerContext } from '../dispatch/dispatch'
 import { printResult } from '../output/command-result-output'
-import { RuntimeClientError } from '../runtime/types'
+import { RuntimeClientError } from '../runtime/connection/types'
 import { getOptionalStringFlag, getRequiredStringFlag } from '../arguments/flags'
 import { readTextOrFileFlag } from '../arguments/command-body-input'
 import { SEAL_PROVIDERS, type SealProvider } from '../../shared/seal-accounts/seal-accounts-config'

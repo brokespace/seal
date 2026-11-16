@@ -57,7 +57,6 @@ const ROWS = buildWorktreeAgentRows({
     entry(CLAUDE_PANE, { agentType: 'claude', children: [SUBAGENT] }),
     entry(GEMINI_PANE, { agentType: 'gemini' })
   ],
-  retained: [],
   now: NOW
 })
 

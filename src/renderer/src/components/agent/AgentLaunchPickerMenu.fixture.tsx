@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { AgentPickerEntry } from '../../../../shared/agent-launch/picker/agent-launch-picker'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
-import type { NewTabAgentMenuModel } from '../tab-bar/new-tab-agent-menu-model'
+import type { NewTabAgentMenuModel } from './launch-menu/new-tab-agent-menu-model'
 import { TabAgentSurfaceRows } from '../tab-bar/TabAgentSurfaceRows'
 import { AgentLaunchPickerMenu } from './AgentLaunchPickerMenu'
 

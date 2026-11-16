@@ -1,7 +1,7 @@
 // What a Claude Code session leaves running after the turn that started it, as its transcript
 // records it: the launching call, the result that names the task, and the notifications about it.
 import type { LiveSubagentStatus } from '../../../shared/live-sessions/live-session-activity'
-import { isClaudeTerminalBackgroundTaskStatus } from '../../../shared/claude-background-task-inventory'
+import { isClaudeTerminalBackgroundTaskStatus } from '../../../shared/agent-hook-listener/providers/claude/background-tasks/claude-background-task-inventory'
 import { oneLine, str } from './transcript-records'
 import type { TranscriptRecord } from './transcript-records'
 

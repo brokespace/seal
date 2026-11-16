@@ -1,8 +1,11 @@
 import type {
   ClaudeRateLimitAccountsState,
   CodexRateLimitAccountsState
-} from '../managed-account-types'
-import type { ProviderRateLimits, RateLimitState } from '../rate-limit-types'
+} from '../agent-accounts/managed-account-types'
+import type {
+  ProviderRateLimits,
+  RateLimitState
+} from '../agent-usage/rate-limits/rate-limit-types'
 import { isUsageSignInRequired } from '../usage-sign-in-required'
 import type {
   SealAccountKey,

@@ -31,7 +31,7 @@ import { installMainWindowShortcutRouting } from './main-window/main-window-shor
 import { installMainWindowStateLifecycle } from './main-window/main-window-state-lifecycle'
 import { installMainWindowActivityRelay } from './main-window/main-window-activity'
 import { stopHiddenWindowFramePumpOnShow } from './visibility/hidden-window-frame-pump'
-import { APP_PRODUCT_NAME } from '../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../shared/app-lifecycle/identity/app-identity'
 import { wslHostsWindowArguments } from '../wsl/host-lifecycle/wsl-host-gate'
 import {
   formatHiddenWindowFramePumpArgument,

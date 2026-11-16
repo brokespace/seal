@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import type { SecretAtRestProtection } from '../../shared/secret-at-rest-protection'
+import type { SecretAtRestProtection } from '../../shared/secure-storage/secret-at-rest-protection'
 import {
   CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL,
   CLOUDFLARE_AI_DEFAULT_MODEL

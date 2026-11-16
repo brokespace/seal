@@ -6,7 +6,7 @@ import {
   callRuntimeEnvironment,
   subscribeRuntimeEnvironment
 } from '../../ipc/runtime-environments/requests/runtime-environment-transport-routing'
-import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
+import type { RuntimeRpcResponse } from '../../../shared/remote-runtime/rpc/runtime-rpc-envelope'
 import {
   parseMachineHostStreamEvent,
   type MachineHostStreamEvent

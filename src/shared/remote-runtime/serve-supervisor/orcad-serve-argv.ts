@@ -1,5 +1,5 @@
 /** Share the CLI’s exact Electron --serve-* and plain orcad argv with runtime tests; flags previously vanished at this boundary (#30120). */
-import { ORCAD_LOOPBACK_BIND_HOST } from './orcad-bind-address'
+import { ORCAD_LOOPBACK_BIND_HOST } from '../orcad-lifecycle/orcad-bind-address'
 
 export type ServeOrcaAppArgs = {
   json?: boolean

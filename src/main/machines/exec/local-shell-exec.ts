@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runProcess } from '@orca/process-host'
-import { encodePowerShellCommand } from '../../../shared/powershell-command-encoding'
+import { encodePowerShellCommand } from '../../../shared/shell/launch/powershell-command-encoding'
 import { scriptWithCwd } from '../../home-chat/machines/home-chat-machine-scripts'
 import { resolveLoginShellEnvironment } from '../../startup/shell-environment/login-shell-environment'
 

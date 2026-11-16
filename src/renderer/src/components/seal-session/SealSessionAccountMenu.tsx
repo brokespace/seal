@@ -1,7 +1,7 @@
 import { ArrowLeftRight } from 'lucide-react'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { formatResetDuration } from '../../../../shared/rate-limit-reset-format'
+import { formatResetDuration } from '../../../../shared/agent-usage/rate-limits/rate-limit-reset-format'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +19,11 @@ import type {
 } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapTargets } from './seal-session-account-view'
 import { useAppStore } from '../../store'
-import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
-import type { RateLimitWindow } from '../../../../shared/rate-limit-types'
+import { normalizeUsagePercentageDisplay } from '../../../../shared/agent-usage/display/usage-percentage-display'
+import type { RateLimitWindow } from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import { accountUsage } from '../status-bar/AccountUsageReading'
-import { formatBareUsagePercentage } from '../status-bar/usage-percentage-label'
-import { clampUsedPercent } from '../status-bar/tooltip'
+import { formatBareUsagePercentage } from '../status-bar/usage/usage-percentage-label'
+import { clampUsedPercent } from '../../../../shared/agent-usage/display/usage-percentage-display'
 
 type SealSessionAccountMenuProps = {
   session: SealSessionAssignment

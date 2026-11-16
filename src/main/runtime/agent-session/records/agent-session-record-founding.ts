@@ -8,7 +8,7 @@ import {
   type AgentSessionRecord
 } from '../../../../shared/agent-session/lifecycle/agent-session-record'
 import { normalizeAgentSessionConversationName } from '../../../../shared/agent-session/agent-session-conversation-name'
-import { isFloatingWorkspaceId } from '../../../../shared/floating-workspace-worktree'
+import { isFloatingWorkspaceId } from '../../../../shared/workspace/identity/floating-workspace-worktree'
 
 export type AgentSessionRecordIdentity = Pick<
   AgentSessionRecord,

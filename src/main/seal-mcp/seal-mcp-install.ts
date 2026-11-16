@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { getAppEnvironment } from '../../shared/app-environment'
+import { getAppEnvironment } from '../../shared/app-lifecycle/app-environment'
 import type { SealMcpApprovalRequest } from '../../shared/seal-mcp/seal-mcp-types'
 import { requireHomeChat } from '../home-chat/home-chat-install'
 import { getRuntimeDesktopSurface } from '../runtime/construction/runtime-desktop-surface'

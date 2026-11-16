@@ -1,4 +1,9 @@
 import { readForkMarker } from '../history/agent-session-fork-marker'
+import { AGENT_JOURNAL_ITEM_BODY_KINDS } from '../../../../../shared/agent-session/journal/agent-session-journal-schemas'
+import type {
+  AgentJournalItemBody,
+  AgentJournalRenderItem
+} from '../../../../../shared/agent-session/journal/agent-session-journal-types'
 import { structuredAgentSessionOwnerStatus } from '../../host/structured-agent-session-owner-status'
 import type { AgentSessionCurrentRequestsRead } from '../../../../../shared/agent-session/requests/agent-session-current-requests-wire'
 import { readCurrentRequestsPiece } from '../../observations/agent-session-current-requests'
@@ -53,6 +58,18 @@ export class StructuredAgentSessionBackgroundTaskChannel {
       inheritedAnchor,
       compareSubmissions
     )
+
+  /** Every visible item and the head cursor: Seal's live-session transcripts page over this. */
+  journalSnapshot = async (sessionId: string) => {
+    const { reads } = (await this.conversation(sessionId)).journal
+    const items: AgentJournalRenderItem[] = []
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the set holds exactly the known body kinds.
+    const kinds = [...AGENT_JOURNAL_ITEM_BODY_KINDS] as AgentJournalItemBody['kind'][]
+    await reads.visitItems({ kinds }, (_id, _sequence, _body, _attribution, item) => {
+      items.push(item)
+    })
+    return { cursor: await reads.cursor(), items }
+  }
 
   savedContent = async (sessionId: string) =>
     (await this.conversation(sessionId)).journal.reads.savedContent()

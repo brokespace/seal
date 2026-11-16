@@ -18,7 +18,7 @@ import {
   type WalkerInit,
   type WalkerMessage
 } from './disk-index-walk-protocol'
-import { errnoCodeOrUnknown } from '../../../shared/errno-code'
+import { errnoCodeOrUnknown } from '../../../shared/errors/errno-code'
 
 const BATCH_FOLDERS = 2048
 const BATCH_NAME_BYTES = 512 * 1024

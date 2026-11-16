@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { stripAnsiEscapeSequences } from '../../shared/ansi-escape-sequences'
+import { stripAnsiEscapeSequences } from '../../shared/terminal/protocol/escape/ansi-escape-sequences'
 import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
 import { redactString } from '../observability/redactor'
 

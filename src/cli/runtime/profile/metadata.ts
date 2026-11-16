@@ -1,7 +1,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { readFileSync } from 'node:fs'
-import { APP_PRODUCT_NAME } from '../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../../shared/app-lifecycle/identity/app-identity'
 import {
   findTransport,
   getRuntimeMetadataPath,

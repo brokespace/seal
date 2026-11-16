@@ -1,7 +1,7 @@
 import type { PairingOfferUnavailableReason } from '../runtime/rpc/server/runtime-rpc-pairing-types'
 import type { OrcadHealth } from '../orcad/diagnostics/orcad-health'
 import { describePtyProcessCeiling } from '../../shared/terminal/pty/native-process/pty-process-ceiling-state'
-import { bindHostIsNetworkExposed } from '../../shared/orcad-bind-address'
+import { bindHostIsNetworkExposed } from '../../shared/remote-runtime/orcad-lifecycle/orcad-bind-address'
 
 export type ServePairingUnavailableReason = PairingOfferUnavailableReason | 'disabled_by_operator'
 

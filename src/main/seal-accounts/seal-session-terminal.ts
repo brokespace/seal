@@ -1,5 +1,5 @@
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
-import { CLAUDE_PROFILE_POINTER_ENV } from '../../shared/claude-profile-routing'
+import { CLAUDE_PROFILE_POINTER_ENV } from '../../shared/agent-accounts/claude/claude-profile-routing'
 
 export type SealTerminalAction = { text?: string; enter?: boolean; interrupt?: boolean }
 

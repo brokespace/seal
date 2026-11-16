@@ -1,6 +1,6 @@
 import type { RelayDrainMessage } from '../control-channel/relay-control-protocol'
 import type { RelayControlOrigin } from './relay-control-origin'
-import { clampTimerDelayMs } from '../../../../shared/timer-delay'
+import { clampTimerDelayMs } from '../../../../shared/concurrency/timer-delay'
 
 export class RelayOriginRetirement {
   readonly draining = new Set<RelayControlOrigin>()

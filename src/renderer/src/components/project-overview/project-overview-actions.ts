@@ -4,7 +4,7 @@ import { translate as t } from '@/i18n/i18n'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 
 export function openProjectWorkspace(worktree: Worktree): void {

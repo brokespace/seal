@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { ProviderRateLimits, RateLimitState } from '../../../../shared/rate-limit-types'
-import { createEmptyRateLimitState } from '../../../../shared/rate-limit-state-factory'
-import type { ClaudeManagedAccount } from '../../../../shared/managed-account-types'
+import type {
+  ProviderRateLimits,
+  RateLimitState
+} from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
+import { createEmptyRateLimitState } from '../../../../shared/agent-usage/rate-limits/rate-limit-state-factory'
+import type { ClaudeManagedAccount } from '../../../../shared/agent-accounts/managed-account-types'
 import { orcaHomeAccounts } from './orca-home-account-mapping'
 
 function limits(overrides: Partial<ProviderRateLimits>): ProviderRateLimits {

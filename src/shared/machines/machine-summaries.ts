@@ -3,10 +3,10 @@ import {
   toRuntimeExecutionHostId,
   toSshExecutionHostId,
   type ExecutionHostId
-} from '../execution-host'
+} from '../execution-host/execution-host'
 import { LOCAL_MACHINE_ID, type MachineId, type MachineOs } from './machine-types'
 import type { MachineView } from './machine-view'
-import type { SshConnectionState } from '../ssh-types'
+import type { SshConnectionState } from '../remote-runtime/ssh/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../remote-runtime/host-status/runtime-host-status'
 
 export type MachineStatus = 'online' | 'connecting' | 'offline' | 'error'

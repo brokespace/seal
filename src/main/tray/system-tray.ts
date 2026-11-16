@@ -7,7 +7,7 @@ import { translateMain } from '../i18n/main-i18n'
 import { quitAndStopAllSessionsMenuText } from '../menu/app-menu-quit-item'
 import { composeTrayAttentionIcon, tintTrayTemplateForAttention } from './tray-attention-icon'
 import { stampTrayDevBadge } from './tray-dev-badge'
-import { APP_PRODUCT_NAME } from '../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../shared/app-lifecycle/identity/app-identity'
 
 export type SystemTrayOptions = {
   /** App icon id from settings; the tray reuses the app icon image. */

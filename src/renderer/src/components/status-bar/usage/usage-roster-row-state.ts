@@ -3,7 +3,7 @@ import type { Translate } from '@/i18n/use-translate'
 import type { ProviderRateLimits } from '../../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import { getOwnerNotSetUpLabel, getOwnerNotSetUpNote } from './owner-not-set-up-copy'
 import { getProviderUsageStatusLabel } from './usage-error-copy'
-import { isUsageSignInRequired } from '../../../../shared/usage-sign-in-required'
+import { isUsageSignInRequired } from '../../../../../shared/usage-sign-in-required'
 
 export type UsageRosterRowState = {
   kind: 'usage' | 'loading' | 'sign-in' | 'unavailable' | 'error' | 'empty'

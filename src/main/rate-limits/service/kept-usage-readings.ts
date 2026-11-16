@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
-import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
+import type { ProviderRateLimits } from '../../../shared/agent-usage/rate-limits/rate-limit-types'
 import { writeSecureJsonFile } from '../../../shared/secure-storage/secure-file'
 import { LONG_STALE_THRESHOLD_MS } from './service-types'
 

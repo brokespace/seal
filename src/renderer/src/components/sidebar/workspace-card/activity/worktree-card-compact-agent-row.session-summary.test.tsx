@@ -70,7 +70,7 @@ function stoppedAgent(providerSessionId?: string) {
     stateHistory: [],
     ...(providerSessionId ? { providerSession: { key: 'session_id', id: providerSessionId } } : {})
   }
-  return buildWorktreeAgentRows({ tabs: [tab], entries: [entry], retained: [], now: 2_000 })[0]
+  return buildWorktreeAgentRows({ tabs: [tab], entries: [entry], now: 2_000 })[0]
 }
 
 afterEach(() => {

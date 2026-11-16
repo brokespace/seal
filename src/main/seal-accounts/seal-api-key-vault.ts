@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { getSecretStore, hasSecretStore } from '../../shared/secret-store'
+import { getSecretStore, hasSecretStore } from '../../shared/secure-storage/secret-store'
 import { writeSecureJsonFile } from '../../shared/secure-storage/secure-file'
 
 type SealedKeys = Record<string, string>

@@ -4,9 +4,12 @@ import '@testing-library/jest-dom/vitest'
 import { useContext } from 'react'
 import { act, cleanup, render, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import type { ProviderRateLimits, RateLimitState } from '../../../../shared/rate-limit-types'
-import { createEmptyRateLimitState } from '../../../../shared/rate-limit-state-factory'
-import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
+import type {
+  ProviderRateLimits,
+  RateLimitState
+} from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
+import { createEmptyRateLimitState } from '../../../../shared/agent-usage/rate-limits/rate-limit-state-factory'
+import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SealAccountsStatus } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type * as SealHostStore from './seal-session-status-store'

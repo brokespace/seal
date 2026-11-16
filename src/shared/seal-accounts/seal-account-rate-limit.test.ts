@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ProviderRateLimits } from '../rate-limit-types'
+import type { ProviderRateLimits } from '../agent-usage/rate-limits/rate-limit-types'
 import { sealAccountRateLimit } from './seal-account-rate-limit'
 
 const NOW = 1_800_000_000_000

@@ -6,7 +6,7 @@ import {
   useSealMcpApprovals,
   useStableSealMcpTarget
 } from '@/components/seal-mcp/use-seal-mcp-approvals'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type {
   SealMcpClient,
   SealMcpClientCreated

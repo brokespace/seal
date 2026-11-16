@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { GlobalSettings } from '../../../../../shared/global-settings-types'
+import type { GlobalSettings } from '../../../../../shared/settings/global-settings-types'
 import type { ShellIntegrationStatus } from '../../../../../shared/shell-integration/shell-integration-installer'
 import { Button } from '../../ui/button'
 import { SettingsRow, SettingsSwitchRow } from '../../settings/form-controls/SettingsFormControls'

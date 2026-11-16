@@ -4,7 +4,7 @@ import { sessionStorageKeyForHost } from './web-workspace-session-api'
 import { mergeWebUIState } from './web-preference-normalization'
 import { readLocalWebUIState } from './web-preferences-store'
 import { UI_STORAGE_KEY, writeJson } from './web-storage'
-import { APP_PRODUCT_NAME } from '../../../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../../../shared/app-lifecycle/identity/app-identity'
 
 export function createWebAppApi(): Partial<PreloadApi> {
   return {

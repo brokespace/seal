@@ -1,5 +1,5 @@
 import type { GitWorktreeInfo } from '../../../../shared/worktree/types'
-import { windowsLongPathGitArgs } from '../../../../shared/windows-long-path-git-args'
+import { windowsLongPathGitArgs } from '../../../../shared/git/compatibility/windows-long-path-git-args'
 import { gitExecFileAsync } from '../../command-runner/git-exec-file'
 import { bumpWorktreeScanGeneration } from '../catalog/worktree-scan-cache'
 import { gitExecOptions, type GitWorktreeExecOptions } from '../worktree-operation-options'

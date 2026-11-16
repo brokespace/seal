@@ -3,7 +3,7 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
 import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
-import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host/execution-host'
 import { isAiVaultAgent } from '../../../../../shared/ai-vault/contracts/ai-vault-types'
 import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
 import {

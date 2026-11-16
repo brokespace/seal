@@ -1,6 +1,6 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
 import { toMachineId } from '../../../../shared/machines/machine-types'
-import type { SshConnectionState } from '../../../../shared/ssh-types'
+import type { SshConnectionState } from '../../../../shared/remote-runtime/ssh/ssh-types'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/remote-runtime/host-status/runtime-host-status'
 import MachinesPage from './MachinesPage'
 import { fakeMachinesApi, GPU, HOME, KESSEL, NAS, now } from './machine-api-fixture'

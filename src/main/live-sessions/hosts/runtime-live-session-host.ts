@@ -1,5 +1,5 @@
-import { toRuntimeExecutionHostId } from '../../../shared/execution-host'
-import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
+import { toRuntimeExecutionHostId } from '../../../shared/execution-host/execution-host'
+import type { RuntimeRpcResponse } from '../../../shared/remote-runtime/rpc/runtime-rpc-envelope'
 import { DEFAULT_SCRIPT_TIMEOUT_MS } from './local-shell-script'
 import type { LiveSessionHost } from './live-session-hosts'
 

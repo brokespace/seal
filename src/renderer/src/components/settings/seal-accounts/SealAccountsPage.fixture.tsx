@@ -1,5 +1,5 @@
 import { defineFixture } from '../../../component-fixtures/component-fixture'
-import type { HostAccountSignInStatus } from '../../../../../shared/host-account-sign-in-types'
+import type { HostAccountSignInStatus } from '../../../../../shared/agent-accounts/host-account-sign-in-types'
 import type { SealFleetAccount } from '../../../../../shared/seal-accounts/seal-fleet-overview'
 import { SEAL_ACCOUNT_GROUPS } from '../../../../../shared/seal-accounts/seal-fleet-overview'
 import { SealAccountsPageView, type SealAccountsPageActions } from './SealAccountsPageView'

@@ -1,4 +1,4 @@
-import { summarizeSkillMarkdown } from '../../../shared/skill-metadata'
+import { summarizeSkillMarkdown } from '../../../shared/skills/discovery/skill-metadata'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import {
   scanMachineFiles,

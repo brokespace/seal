@@ -2,7 +2,7 @@ import {
   defaultSealAccountsConfig,
   defaultSealAutoSwapSettings
 } from '../../../../../shared/seal-accounts/seal-accounts-config'
-import type { ProviderRateLimits } from '../../../../../shared/rate-limit-types'
+import type { ProviderRateLimits } from '../../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import type { SealAccountCandidate } from '../../../../../shared/seal-accounts/seal-account-candidates'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import {

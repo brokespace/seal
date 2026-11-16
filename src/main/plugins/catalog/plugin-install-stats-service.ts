@@ -6,7 +6,7 @@ import {
 } from '../../../shared/plugins/catalog/plugin-install-stats'
 import { writePluginFileAtomically } from '../installation/plugin-atomic-file-write'
 import { fetchBoundedJson } from './plugin-bounded-json-fetch'
-import { cleanCloudServiceUrl } from '../../../shared/cloud-service-url'
+import { cleanCloudServiceUrl } from '../../../shared/network/cloud-service-url'
 
 const PLUGIN_INSTALL_STATS_MAX_BYTES = 2 * 1024 * 1024
 const PLUGIN_INSTALL_STATS_FETCH_TIMEOUT_MS = 30_000

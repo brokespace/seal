@@ -1,4 +1,7 @@
-import { SENSITIVE_ENV_KEY_PATTERN, SENSITIVE_ENV_VALUE_PATTERN } from '../mcp-server-inspection'
+import {
+  SENSITIVE_ENV_KEY_PATTERN,
+  SENSITIVE_ENV_VALUE_PATTERN
+} from '../mcp/configuration/mcp-server-inspection'
 import { AGENT_CONFIG_SECRET_MASK as MASK } from './agent-config-types'
 import { isPlainObject } from './agent-config-values'
 

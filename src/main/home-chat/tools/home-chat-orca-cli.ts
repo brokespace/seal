@@ -1,5 +1,5 @@
 import { runProcess } from '@orca/process-host'
-import { getAppEnvironment } from '../../../shared/app-environment'
+import { getAppEnvironment } from '../../../shared/app-lifecycle/app-environment'
 import { prependOrcaCliDirToChildPath } from '../../cli/launchers/orca-cli-child-path'
 import type { HomeChatExecResult } from '../machines/home-chat-machine-types'
 

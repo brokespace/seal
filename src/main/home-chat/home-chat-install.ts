@@ -1,11 +1,11 @@
 import { join } from 'node:path'
-import { getAppEnvironment } from '../../shared/app-environment'
+import { getAppEnvironment } from '../../shared/app-lifecycle/app-environment'
 import type { HomeChatEvent } from '../../shared/home-chat/home-chat-types'
 import type {
   ClaudeRateLimitAccountsState,
   CodexManagedAccount
-} from '../../shared/managed-account-types'
-import type { Repo } from '../../shared/repo-types'
+} from '../../shared/agent-accounts/managed-account-types'
+import type { Repo } from '../../shared/repository/repo-types'
 import { getLiveSessionService } from '../live-sessions/live-session-service-instance'
 import { getSealAccountManager } from '../seal-accounts/seal-account-manager'
 import { createHomeChatAccountProvider } from './home-chat-accounts'

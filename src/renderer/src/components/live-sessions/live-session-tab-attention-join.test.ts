@@ -31,7 +31,7 @@ const goneFromPane = (status: LiveSession['status']): LiveSession => ({
 type TabAttention = {
   acknowledgedAgentsByPaneKey: Record<string, number>
   unreadAgentCompletionPanes: Record<string, true>
-  agentStatusByPaneKey: Record<string, true>
+  agentStatusByPaneKey: ReadonlyMap<string, true>
 }
 
 function observable<T>(initial: T) {
@@ -62,7 +62,7 @@ function startJoin(options: {
   const attention = observable<TabAttention>({
     acknowledgedAgentsByPaneKey: {},
     unreadAgentCompletionPanes: {},
-    agentStatusByPaneKey: {},
+    agentStatusByPaneKey: new Map<string, true>(),
     ...options.attention
   })
   const marks = new LiveSessionMarksStore(options.seenAt)
@@ -373,7 +373,10 @@ describe('joinLiveSessionMarksWithTabAttention', () => {
     })
 
     marks.stopped([cliSession])
-    attention.set({ ...attention.get(), agentStatusByPaneKey: { [CLI_PANE_KEY]: true } })
+    attention.set({
+      ...attention.get(),
+      agentStatusByPaneKey: new Map([[CLI_PANE_KEY, true as const]])
+    })
     raiseCompletionMarker(CLI_PANE_KEY)
 
     expect(acknowledged).toEqual([])

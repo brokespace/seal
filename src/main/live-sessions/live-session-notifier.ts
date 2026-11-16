@@ -7,7 +7,7 @@ import type {
   LiveSession,
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
-import { isNotificationSourceEnabled } from '../../shared/notification-source-gate'
+import { isNotificationSourceEnabled } from '../../shared/notifications/notification-source-gate'
 import { liveSessionLabel } from '../../shared/session-recap/live-session-label'
 import {
   liveSessionNotice,

@@ -1,4 +1,4 @@
-import { getAppEnvironment } from '../../../shared/app-environment'
+import { getAppEnvironment } from '../../../shared/app-lifecycle/app-environment'
 import { resolveSealRelayOrigin } from '../../../shared/seal-cloud/seal-service-origins'
 import {
   createSealRelayContextReader,

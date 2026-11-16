@@ -22,9 +22,9 @@ import {
 import { openMachinePathInEditor } from '@/components/machines/editor/machine-editor-open'
 import { openHeaderCreateComposer } from '@/components/sidebar/worktree-list/rows/header-create-workspace-target'
 import { getRepoHeaderCreateState } from '@/components/sidebar/worktree-list/rows/repo-header-create-state'
-import { getRepoExecutionHostId } from '../../../../shared/execution-host'
+import { getRepoExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import type { MachineSummary } from '../../../../shared/machines/machine-summaries'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import {
   copyProjectPath,

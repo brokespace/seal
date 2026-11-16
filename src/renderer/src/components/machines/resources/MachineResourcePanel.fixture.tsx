@@ -1,5 +1,5 @@
 import { defineFixture } from '../../../component-fixtures/component-fixture'
-import { toRuntimeExecutionHostId } from '../../../../../shared/execution-host'
+import { toRuntimeExecutionHostId } from '../../../../../shared/execution-host/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineGpu } from '../../../../../shared/machines/machine-gpu-types'
 import { toMachineId, type MachineMetrics } from '../../../../../shared/machines/machine-types'

@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode, Ref } from 'react'
 import { LogIn } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
+import { formatResetDuration } from '../../../../../shared/agent-usage/rate-limits/rate-limit-reset-format'
 import type { SealQuarantineEntry } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import type {
   SealFleetAccount,

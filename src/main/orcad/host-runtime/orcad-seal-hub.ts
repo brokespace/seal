@@ -1,4 +1,4 @@
-import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-account-types'
+import type { ClaudeRateLimitAccountsState } from '../../../shared/agent-accounts/managed-account-types'
 import { installHomeChat } from '../../home-chat/home-chat-install'
 import type { HomeChatMachineSource } from '../../home-chat/machines/home-chat-machine-provider'
 import { installLiveSessions } from '../../live-sessions/live-sessions-install'

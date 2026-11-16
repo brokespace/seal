@@ -1,4 +1,4 @@
-import type { ProviderRateLimits } from '../rate-limit-types'
+import type { ProviderRateLimits } from '../agent-usage/rate-limits/rate-limit-types'
 import type { SealAccountKey, SealProvider } from './seal-accounts-config'
 import type { SealAccountKind, SealCredentialKind } from './seal-account-candidates'
 import type { SealCandidateSources } from './seal-account-candidate-builder'

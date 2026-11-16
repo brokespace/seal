@@ -2,7 +2,7 @@ import {
   LOCAL_EXECUTION_HOST_ID,
   toRuntimeExecutionHostId,
   toSshExecutionHostId
-} from '../execution-host'
+} from '../execution-host/execution-host'
 import type { MachineSummary } from '../machines/machine-summaries'
 import type { LiveSession, LiveSessionMachine } from './live-session-types'
 

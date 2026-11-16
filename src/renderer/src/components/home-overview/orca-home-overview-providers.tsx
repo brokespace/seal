@@ -7,9 +7,9 @@ import { listAutomationsForTarget } from '@/components/automations/hosts/automat
 import {
   EMPTY_DASHBOARD_SNAPSHOT,
   type DashboardSnapshot
-} from '../../../../shared/dashboard-snapshot'
-import { getLocalExecutionHostLabel } from '../../../../shared/execution-host'
-import type { HostMemory } from '../../../../shared/process-stats-types'
+} from '../../../../shared/agent-status/presentation/dashboard-snapshot'
+import { getLocalExecutionHostLabel } from '../../../../shared/execution-host/execution-host'
+import type { HostMemory } from '../../../../shared/diagnostics/process-stats-types'
 import type {
   HomeAutomationsResult,
   HomeMachine,

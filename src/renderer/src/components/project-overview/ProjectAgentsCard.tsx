@@ -10,7 +10,7 @@ import { showScopeInActiveAgents } from '@/components/live-sessions/links/show-s
 import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
 import { LiveSessionRows } from '@/components/live-sessions/row/LiveSessionRows'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 
 /** The project's agents: running ones under their machine, then the ones that ended in the last day. */
 export function ProjectAgentsCard({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SshConnectionState } from '../../../../shared/ssh-types'
+import type { SshConnectionState } from '../../../../shared/remote-runtime/ssh/ssh-types'
 import { orcaLocalMachine, orcaSshMachines } from './orca-home-machine-mapping'
 
 function sshState(

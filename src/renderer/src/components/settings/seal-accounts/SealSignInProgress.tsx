@@ -5,7 +5,7 @@ import { useClipboardTextCopyFeedback } from '@/hooks/clipboard/use-clipboard-te
 import {
   isHostAccountSignInPage,
   type HostAccountSignInStatus
-} from '../../../../../shared/host-account-sign-in-types'
+} from '../../../../../shared/agent-accounts/host-account-sign-in-types'
 import type { SealProvider } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'

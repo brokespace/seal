@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import { SEAL_PROVIDERS } from '../../../../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
-import { hasUsageData } from '../../../../../shared/usage-provider-windows'
+import { hasUsageData } from '../../../../../shared/agent-usage/display/usage-provider-windows'
 import { mutateSealHost, refreshSealHost } from '../../seal-session/seal-session-status-store'
 import { useSealHostState } from '../../seal-session/use-seal-host-snapshot'
 

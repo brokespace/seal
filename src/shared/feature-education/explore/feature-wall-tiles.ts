@@ -1,4 +1,4 @@
-import { SEAL_REPOSITORY_URL } from './seal-project-links'
+import { SEAL_REPOSITORY_URL } from '../../seal-project-links'
 
 export type FeatureWallTileId =
   | 'tile-01'

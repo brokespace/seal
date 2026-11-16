@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getRepoExecutionHostId } from '../../../shared/execution-host'
+import { getRepoExecutionHostId } from '../../../shared/execution-host/execution-host'
 import { clipToolText, type HomeChatToolResult } from '../../home-chat/tools/home-chat-tool-context'
 import type { SealMcpToolRuntime } from './seal-mcp-scoped-runtime'
 import type { SealMcpRpcToolName } from './seal-mcp-tool-catalog'

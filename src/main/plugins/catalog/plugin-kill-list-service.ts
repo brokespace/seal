@@ -7,7 +7,7 @@ import {
 } from '../../../shared/plugins/catalog/plugin-kill-list'
 import { PluginKillListStore } from './plugin-kill-list-store'
 import { fetchBoundedJson } from './plugin-bounded-json-fetch'
-import { cleanCloudServiceUrl } from '../../../shared/cloud-service-url'
+import { cleanCloudServiceUrl } from '../../../shared/network/cloud-service-url'
 
 const PLUGIN_KILL_LIST_DOWNLOAD_LIMIT = 4 * 1024 * 1024
 // Why: revocations must reach sessions that stay open for days, not only fresh launches.

@@ -1,4 +1,4 @@
-import type { SecretAtRestProtection } from '../../shared/secret-at-rest-protection'
+import type { SecretAtRestProtection } from '../../shared/secure-storage/secret-at-rest-protection'
 import type { UtilityModelCatalogEntry } from '../../shared/utility-model/utility-model-types'
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
 import {

@@ -4,7 +4,7 @@ import {
   type RecapSection,
   type RecapWorkState
 } from '../../shared/session-recap/session-recap-types'
-import { salvagingArray } from '../../shared/zod-salvage'
+import { salvagingArray } from '../../shared/validation/zod-salvage'
 import { isRecord } from '../home-chat/home-chat-record-guard'
 import { withoutMarkdownMarks } from '../session-summaries/session-summary-text'
 

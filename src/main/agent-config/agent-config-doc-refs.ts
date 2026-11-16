@@ -11,7 +11,7 @@ import type {
   AgentConfigSkillBundle
 } from '../../shared/agent-config/agent-config-types'
 import { machinePathBasename, machinePathDirname } from '../../shared/machines/machine-paths'
-import { summarizeSkillMarkdown } from '../../shared/skill-metadata'
+import { summarizeSkillMarkdown } from '../../shared/skills/discovery/skill-metadata'
 import type { MachineFileScanRecord } from '../machines/scan/machine-file-scan'
 
 function relativeTo(root: string, path: string): string {

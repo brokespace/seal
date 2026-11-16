@@ -9,7 +9,7 @@ import {
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
 import { branchName } from '@/lib/source-control/branches/branch-name'
 import type { GitHubWorkItem } from '../../../../shared/github/work-items/work-item-types'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { useProjectOverviewLoad } from './use-project-overview-load'
 

@@ -1,11 +1,11 @@
-import { getRepoExecutionHostId } from '../../../../shared/execution-host'
+import { getRepoExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import type {
   GitConflictOperation,
   GitStatusResult
 } from '../../../../shared/git/status/git-status-types'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import { getRepoHostIdentity } from '../../../../shared/repo-host-identity'
-import type { Repo } from '../../../../shared/repo-types'
+import { getRepoHostIdentity } from '../../../../shared/repository/repo-host-identity'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import { createHostScopedRepoOf } from '../../../../shared/sidebar-list/feed/sidebar-feed-index'
 import { getSidebarLineageChildren } from '../../../../shared/sidebar-list/lineage/pinned-section-worktrees'
 import type { SidebarLineageParentIdentities } from '../../../../shared/sidebar-list/lineage/worktree-lineage-projection'
@@ -18,7 +18,7 @@ import type { WorkspaceSortBy } from '../../../../shared/workspace-view/workspac
 import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'
-import { buildWorktreeOccurrencePlan } from '../../../../shared/worktree-occurrence-plan'
+import { buildWorktreeOccurrencePlan } from '../../../../shared/sidebar-list/lineage/worktree-occurrence-plan'
 import { addVisibleLineageAncestors } from '../../../../shared/sidebar-list/selection/visible-worktrees'
 import type { LiveSessionLink } from '../live-sessions/links/live-session-links'
 
