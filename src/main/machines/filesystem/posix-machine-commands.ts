@@ -16,8 +16,11 @@ export function posixListDirCommand(dir: string): string {
     'for f in "$@"; do if [ -e "$f" ] || [ -L "$f" ]; then files=1; break; fi; done',
     '[ -z "$files" ] && exit 0',
     // Unmatched globs stay literal; stat reports them on stderr and lists the rest.
-    `if stat -c '%F/%s/%Y/%n' -- . >/dev/null 2>&1; then stat -c '%F/%s/%Y/%n' -- "$@" 2>/dev/null`,
-    `else stat -f '%HT/%z/%m/%N' -- "$@" 2>/dev/null; fi`,
+    `if stat -c '%F/%s/%Y/%n' -- . >/dev/null 2>&1; then flag=-c; fields='%F/%s/%Y/%n'`,
+    `else flag=-f; fields='%HT/%z/%m/%N'; fi`,
+    'stat "$flag" "$fields" -- "$@" 2>/dev/null',
+    // 126: more names than one command line holds, so they go in batches.
+    `[ $? -eq 126 ] && printf '%s\\0' "$@" | xargs -0 stat "$flag" "$fields" -- 2>/dev/null`,
     'for f in "$@"; do if [ -L "$f" ] && [ -d "$f" ]; then printf \'L/0/0/%s\\n\' "$f"; fi; done',
     'exit 0'
   ].join('\n')

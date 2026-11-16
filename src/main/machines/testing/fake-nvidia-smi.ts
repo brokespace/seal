@@ -114,8 +114,7 @@ esac
 /** A `docker` that lists the given containers the way `docker ps -a --format` does, and nothing else. */
 export function fakeDockerScript(containers: readonly { id: string; name: string }[]): string {
   const rows = containers.map(
-    (container) =>
-      `${container.id.slice(0, 12)}\t${container.name}\tseal/fixture:latest\tUp 2 hours`
+    (container) => `${container.id}\t${container.name}\tseal/fixture:latest\tUp 2 hours`
   )
   return `#!/bin/sh
 case "$1" in

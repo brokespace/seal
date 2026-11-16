@@ -88,7 +88,7 @@ export function registerMachineHandlers(getMainWindow: () => BrowserWindow | nul
   registerMachineShellHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineWorkHandlers(handle)
   registerAgentConfigHandlers(handle, invalidateParent)
-  registerMachineResourceHandlers(handle)
+  registerMachineResourceHandlers(handle, (channel, payload) => sendToRenderer(channel, payload))
   registerMachineFolderHandlers(handle, {
     directories: () => getServices().directories,
     resolveFileSystem

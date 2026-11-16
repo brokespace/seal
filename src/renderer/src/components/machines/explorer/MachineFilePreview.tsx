@@ -8,6 +8,7 @@ import { detectLanguage } from '../../../../../shared/editor-language/editor-lan
 import type { MachineFileEntry, MachineId } from '../../../../../shared/machines/machine-types'
 import { MACHINE_PREVIEW_MAX_BYTES } from '../../../../../shared/machines/machine-types'
 import { formatBytes, looksBinary, previewKindFor } from '../model/machine-format'
+import type { MachineFilePreviewSource } from './machine-explorer-source'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 type LoadedFile = {
@@ -41,17 +42,24 @@ export function MachineFilePreview({
   onClose,
   onDownload,
   readText,
-  writeFile
+  writeFile,
+  source,
+  readOnly = false
 }: {
   machineId: MachineId
   path: string
   entry: MachineFileEntry
   onClose: () => void
-  onDownload: () => void
+  /** Left out where the file cannot be downloaded. */
+  onDownload?: () => void
   /** Replaces the text shown for a text file, for callers that hide stored secrets. */
   readText?: (path: string) => Promise<string>
   /** Replaces the plain write, for callers that validate or back up first. */
   writeFile?: (path: string, content: string) => Promise<void>
+  /** Reads the file from somewhere other than the machine's own files. */
+  source?: MachineFilePreviewSource
+  /** Shows the file without any way to change it. */
+  readOnly?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
   const [file, setFile] = useState<LoadedFile | null>(null)
@@ -59,7 +67,9 @@ export function MachineFilePreview({
   const [draft, setDraft] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const preview = previewKindFor(entry.name)
-  const tooLarge = entry.size > MACHINE_PREVIEW_MAX_BYTES && preview.kind !== 'text'
+  const maxBytes = source?.maxBytes ?? MACHINE_PREVIEW_MAX_BYTES
+  const tooLarge = entry.size > maxBytes && preview.kind !== 'text'
+  const key = `machine:${machineId}:${source ? `${source.key}:` : ''}${path}`
 
   useEffect(() => {
     let cancelled = false
@@ -74,8 +84,7 @@ export function MachineFilePreview({
     if (tooLarge) {
       return
     }
-    void api
-      .readFile({ machineId, path })
+    void (source ? source.read(path) : api.readFile({ machineId, path }))
       .then(async (result) => {
         const bytes = decodeBase64(result.contentBase64)
         const binary = looksBinary(bytes)
@@ -98,12 +107,14 @@ export function MachineFilePreview({
     return () => {
       cancelled = true
     }
-  }, [machineId, path, tooLarge, t, readText])
+  }, [machineId, path, tooLarge, t, readText, source])
 
+  const canEdit = !readOnly && file?.text !== null && file?.truncated === false
   const save = useCallback(
     async (content: string) => {
       const api = window.api.machines
-      if (!api || saving) {
+      // The editor's save shortcut fires in a read-only view too.
+      if (!api || saving || !canEdit) {
         return
       }
       setSaving(true)
@@ -125,10 +136,9 @@ export function MachineFilePreview({
         t('auto.components.machines.preview.saved', 'Saved {{name}}', { name: entry.name })
       )
     },
-    [machineId, path, entry.name, saving, t, writeFile]
+    [machineId, path, entry.name, saving, t, writeFile, canEdit]
   )
 
-  const canEdit = file?.text !== null && file?.truncated === false
   const dirty = draft !== null && draft !== file?.text
 
   let body: React.JSX.Element
@@ -140,10 +150,12 @@ export function MachineFilePreview({
           'This file is {{size}}, too large to preview here.',
           { size: formatBytes(entry.size) }
         )}
-        <Button type="button" variant="outline" size="sm" onClick={onDownload}>
-          <Download />
-          {t('auto.components.machines.preview.download', 'Download')}
-        </Button>
+        {onDownload ? (
+          <Button type="button" variant="outline" size="sm" onClick={onDownload}>
+            <Download />
+            {t('auto.components.machines.preview.download', 'Download')}
+          </Button>
+        ) : null}
       </div>
     )
   } else if (error) {
@@ -167,15 +179,10 @@ export function MachineFilePreview({
   } else if (preview.kind === 'markdown' && draft === null) {
     body = (
       <div className="scrollbar-editor min-h-0 flex-1 overflow-auto">
-        <MarkdownPreview
-          content={file.text}
-          filePath={path}
-          scrollCacheKey={`machine:${machineId}:${path}`}
-        />
+        <MarkdownPreview content={file.text} filePath={path} scrollCacheKey={key} />
       </div>
     )
   } else {
-    const key = `machine:${machineId}:${path}`
     body = (
       <div className="min-h-0 flex-1">
         <MonacoEditor
@@ -205,7 +212,7 @@ export function MachineFilePreview({
         {file?.truncated ? (
           <span className="shrink-0 text-2xs text-muted-foreground">
             {t('auto.components.machines.preview.truncated', 'Showing first {{size}}', {
-              size: formatBytes(MACHINE_PREVIEW_MAX_BYTES)
+              size: formatBytes(maxBytes)
             })}
           </span>
         ) : null}
@@ -231,15 +238,17 @@ export function MachineFilePreview({
             {t('auto.components.machines.preview.save', 'Save')}
           </Button>
         ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t('auto.components.machines.preview.download', 'Download')}
-          onClick={onDownload}
-        >
-          <Download />
-        </Button>
+        {onDownload ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('auto.components.machines.preview.download', 'Download')}
+            onClick={onDownload}
+          >
+            <Download />
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="ghost"

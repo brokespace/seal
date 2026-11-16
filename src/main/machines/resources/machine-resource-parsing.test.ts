@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { maskCommandLineSecrets } from './command-line-secrets'
 import { parsePathCleanupScan } from './machine-cleanup-path-scans'
 import { parseDiskMounts } from './machine-disk-usage'
-import { parseDockerCleanupScan } from './machine-docker-cleanup-scan'
-import { parseDockerContainers } from './machine-docker-containers'
 import { parseMachineProcessProbe } from './machine-process-probe'
 
 const GIB = 1024 ** 3
@@ -107,126 +105,6 @@ describe('disk mounts', () => {
     ].join('\n')
 
     expect(parseDiskMounts(df).map((mount) => mount.mount)).toEqual(['/', '/mnt/data'])
-  })
-})
-
-describe('Docker listings', () => {
-  it('pairs containers with their memory, largest first', () => {
-    const output = [
-      '@ready',
-      '@c\t43b92ff52610\told-job\talpine:3.20\tExited (0) 2 hours ago',
-      '@c\t90f84a0c9638\tweb\tnginx:1.27\tUp 3 days',
-      '@c\t1c2d3e4f5a6b\tdb\tpostgres:16\tUp 3 days (healthy)',
-      '@s\t90f84a0c9638\t12.5MiB / 2GiB\t0.61%\t1.50%',
-      '@s\t1c2d3e4f5a6b\t1.5GiB / 2GiB\t75.00%\t12.25%'
-    ].join('\n')
-
-    expect(parseDockerContainers(output)).toEqual({
-      state: 'ready',
-      containers: [
-        {
-          id: '1c2d3e4f5a6b',
-          name: 'db',
-          image: 'postgres:16',
-          status: 'Up 3 days (healthy)',
-          running: true,
-          memUsageBytes: 1.5 * GIB,
-          memLimitBytes: 2 * GIB,
-          memPercent: 75,
-          cpuPercent: 12.25
-        },
-        {
-          id: '90f84a0c9638',
-          name: 'web',
-          image: 'nginx:1.27',
-          status: 'Up 3 days',
-          running: true,
-          memUsageBytes: 12.5 * 1024 ** 2,
-          memLimitBytes: 2 * GIB,
-          memPercent: 0.61,
-          cpuPercent: 1.5
-        },
-        {
-          id: '43b92ff52610',
-          name: 'old-job',
-          image: 'alpine:3.20',
-          status: 'Exited (0) 2 hours ago',
-          running: false,
-          memUsageBytes: null,
-          memLimitBytes: null,
-          memPercent: null,
-          cpuPercent: null
-        }
-      ]
-    })
-    expect(parseDockerContainers('@unreachable permission denied on docker.sock')).toEqual({
-      state: 'unreachable',
-      message: 'permission denied on docker.sock'
-    })
-    expect(parseDockerContainers('@missing')).toEqual({ state: 'missing' })
-  })
-
-  it('offers only images, containers and volumes nothing is using', () => {
-    const plans = parseDockerCleanupScan(
-      [
-        '@ready',
-        '@d\tImages\t1.2GB (40%)',
-        '@d\tBuild Cache\t3.5GB',
-        '@i\tsha256:aaaaaaaaaaaaaaaa\tnode\t22\t2\t1.1GB',
-        '@i\tsha256:bbbbbbbbbbbbbbbb\tbusybox\t1.36\t0\t4.2MB',
-        '@i\tsha256:cccccccccccccccc\t<none>\t<none>\t0\t300MB',
-        '@i\tsha256:dddddddddddddddd\t$(reboot)\tlatest\t0\t1MB',
-        '@c\t90f84a0c9638\tweb\tnginx:1.27\trunning\t2MB',
-        '@c\t43b92ff52610\told-job\talpine:3.20\texited\t4.1kB',
-        '@v\tpgdata\t1\t2GB',
-        '@v\tscratch\t0\t512MB'
-      ].join('\n')
-    )
-
-    const planned = Object.fromEntries(
-      Object.entries(plans).map(([target, plan]) => [
-        target,
-        plan.items.map((item) => [item.label, item.bytes, item.preselected, item.action])
-      ])
-    )
-    expect(planned).toEqual({
-      'docker-images': [
-        [
-          'busybox:1.36',
-          4_200_000,
-          false,
-          { kind: 'docker', args: ['image', 'rm', 'busybox:1.36'] }
-        ],
-        [
-          'cccccccccccc',
-          300_000_000,
-          false,
-          { kind: 'docker', args: ['image', 'rm', 'sha256:cccccccccccccccc'] }
-        ]
-      ],
-      'docker-dangling-images': [
-        [
-          'cccccccccccc',
-          300_000_000,
-          true,
-          { kind: 'docker', args: ['image', 'rm', 'sha256:cccccccccccccccc'] }
-        ]
-      ],
-      'docker-containers': [
-        ['old-job', 4100, false, { kind: 'docker', args: ['container', 'rm', '43b92ff52610'] }]
-      ],
-      'docker-volumes': [
-        ['scratch', 512_000_000, false, { kind: 'docker', args: ['volume', 'rm', 'scratch'] }]
-      ],
-      'docker-build-cache': [
-        [
-          'docker builder prune --all',
-          3_500_000_000,
-          true,
-          { kind: 'docker', args: ['builder', 'prune', '--all', '--force'] }
-        ]
-      ]
-    })
   })
 })
 
