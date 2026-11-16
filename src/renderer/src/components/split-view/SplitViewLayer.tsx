@@ -1,12 +1,18 @@
 import { useCallback, useLayoutEffect, useRef } from 'react'
 import { SplitLayoutTree, type SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
+import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
 import { resizeSplitViewPanes } from './split-view-commands'
 import { splitViewStore, useSplitView, useSplitViewNarrow } from './split-view-store'
 import { SplitViewPane } from './SplitViewPane'
 
 /** Below two minimum panes side by side the grid shows the focused pane alone. */
 const NARROW_WIDTH_PX = 480
+
+// A browser page gives up the keyboard on any press outside it, a splitter's included.
+function returnKeyboardAfterResize(): void {
+  bringKeyboardFocusIntoFocusedPane(false)
+}
 
 /**
  * The grid of panes, laid over the workbench. Its root takes no pointer events: a workspace
@@ -71,6 +77,7 @@ export default function SplitViewLayer(): React.JSX.Element | null {
         rootTouchesBottomEdge
         renderLeaf={renderLeaf}
         onRatioChange={resizeSplitViewPanes}
+        onResizeEnd={returnKeyboardAfterResize}
       />
     </div>
   )
