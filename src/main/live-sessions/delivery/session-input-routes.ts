@@ -10,8 +10,9 @@ import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { parseAgentScreen, screenAcceptsInput, type AgentScreen } from '../discovery/agent-screen'
 import { permissionPromptId } from '../discovery/agent-screen-status'
 import { normalizeForMatch, sanitizeTypedText } from './transcript-user-texts'
-import { B64_DECODE, shQuote, unlessResumeRuns } from './headless-resume-command'
+import { B64_DECODE, unlessResumeRuns } from './headless-resume-command'
 import { liveSessionAdapter } from '../adapters/live-session-adapters'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 export type RouteAttempt =
   /** In the agent's hands; the transcript decides when it is delivered. */
@@ -71,12 +72,12 @@ const SEAL_OWNED_ROUTES: ReadonlySet<LiveSessionInputRoute['kind']> = new Set([
 type TmuxRoute = Extract<LiveSessionInputRoute, { kind: 'tmux' }>
 
 function tmux(route: TmuxRoute): string {
-  return route.socket ? `tmux -S ${shQuote(route.socket)}` : 'tmux'
+  return route.socket ? `tmux -S ${quotePosixShell(route.socket)}` : 'tmux'
 }
 
 async function capture(host: LiveSessionHost, route: TmuxRoute): Promise<AgentScreen> {
   const out = await host.run(
-    `${tmux(route)} capture-pane -p -e -t ${shQuote(route.target)} | base64 | tr -d '\\n'; echo`
+    `${tmux(route)} capture-pane -p -e -t ${quotePosixShell(route.target)} | base64 | tr -d '\\n'; echo`
   )
   return parseAgentScreen(Buffer.from(out.trim(), 'base64').toString('utf8'))
 }
@@ -99,8 +100,8 @@ export async function typeIntoTmux(
   const buffer = `seal-${randomBytes(6).toString('hex')}`
   const b64 = Buffer.from(text, 'utf8').toString('base64')
   const out = await host.run(
-    `t=$(mktemp); printf %s ${shQuote(b64)} | ${B64_DECODE} > "$t"; ` +
-      `${tmux(route)} load-buffer -b ${buffer} "$t" && ${tmux(route)} paste-buffer -p -r -d -b ${buffer} -t ${shQuote(route.target)}; ` +
+    `t=$(mktemp); printf %s ${quotePosixShell(b64)} | ${B64_DECODE} > "$t"; ` +
+      `${tmux(route)} load-buffer -b ${buffer} "$t" && ${tmux(route)} paste-buffer -p -r -d -b ${buffer} -t ${quotePosixShell(route.target)}; ` +
       `rc=$?; rm -f "$t"; echo "@@RC $rc"`
   )
   if (!/@@RC 0/.test(out)) {
@@ -109,7 +110,7 @@ export async function typeIntoTmux(
   await sleep(pasteSettleMs(text))
   for (let attempt = 0; attempt < 3; attempt++) {
     const sent = await host.run(
-      `${tmux(route)} send-keys -t ${shQuote(route.target)} Enter && echo "@@RC 0"`
+      `${tmux(route)} send-keys -t ${quotePosixShell(route.target)} Enter && echo "@@RC 0"`
     )
     if (!/@@RC 0/.test(sent)) {
       return {
@@ -137,13 +138,13 @@ type CodexQueueRoute = Extract<LiveSessionInputRoute, { kind: 'codex-queue' }>
 
 /** Codex's own queue: the running TUI takes it as a user turn once any running turn ends. */
 export function codexQueueCommand(route: CodexQueueRoute, text: string): string {
-  const b64 = shQuote(Buffer.from(text, 'utf8').toString('base64'))
-  const codex = route.binary ? shQuote(route.binary) : 'codex'
-  const home = route.codexHome ? `CODEX_HOME=${shQuote(route.codexHome)} ` : ''
+  const b64 = quotePosixShell(Buffer.from(text, 'utf8').toString('base64'))
+  const codex = route.binary ? quotePosixShell(route.binary) : 'codex'
+  const home = route.codexHome ? `CODEX_HOME=${quotePosixShell(route.codexHome)} ` : ''
   return (
     `T=$(printf %s ${b64} | ${B64_DECODE}); ` +
     `command -v ${codex} >/dev/null 2>&1 || { echo "@@MISSING"; exit 0; }; ` +
-    `${home}${codex} queue --thread ${shQuote(route.thread)} --message "$T" </dev/null 2>&1; echo "@@RC $?"`
+    `${home}${codex} queue --thread ${quotePosixShell(route.thread)} --message "$T" </dev/null 2>&1; echo "@@RC $?"`
   )
 }
 
@@ -279,7 +280,7 @@ export class SessionInputRoutes {
       return { ok: false, reason: 'option_not_offered' }
     }
     const out = await host.run(
-      `${tmux(route)} send-keys -t ${shQuote(route.target)} -l ${shQuote(option.keys)} && echo "@@RC 0"`
+      `${tmux(route)} send-keys -t ${quotePosixShell(route.target)} -l ${quotePosixShell(option.keys)} && echo "@@RC 0"`
     )
     return /@@RC 0/.test(out)
       ? { ok: true }

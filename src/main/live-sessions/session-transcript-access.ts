@@ -1,4 +1,3 @@
-import { localChatSessionId } from '../../shared/live-sessions/live-session-paired-server'
 import type {
   LiveSession,
   LiveTranscriptCursor,
@@ -12,7 +11,7 @@ import type {
   LiveTranscriptStreams,
   LiveTranscriptSubscription
 } from './transcripts/live-transcript-streams'
-import type { SessionTranscript } from './transcripts/session-transcript'
+import { chatJournalOf, type SessionTranscript } from './transcripts/session-transcript'
 
 export type SessionTranscriptAccessDeps = {
   session(sessionId: string): LiveSession | null
@@ -27,11 +26,8 @@ export type SessionTranscriptAccessDeps = {
 
 type TranscriptHolder = 'server' | 'journal' | 'files'
 
-/** The journal of a chat this Seal's own host holds, read as the record's transcript; null for any other session. */
-function journalOf(session: LiveSession | null): SessionTranscript | null {
-  const chat = localChatSessionId(session)
-  return session && chat !== null ? structuredChatJournal(chat, session.id) : null
-}
+const journalOf = (session: LiveSession | null): SessionTranscript | null =>
+  chatJournalOf(session, structuredChatJournal)
 
 /** A session's transcript, read from whoever holds it: its server, its chat's journal, or its file. */
 export class SessionTranscriptAccess {

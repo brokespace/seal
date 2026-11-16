@@ -34,6 +34,7 @@ import type { StructuredSessionAccess } from './sources/structured-session-sourc
 import { SessionTranscriptAccess } from './session-transcript-access'
 import { localChatSessionId } from '../../shared/live-sessions/live-session-paired-server'
 import type { FederatedSessions } from './federation/federated-sessions'
+import { errorMessage } from '../../shared/error-message'
 
 export type LiveSessionServiceDeps = {
   userDataPath: string
@@ -252,7 +253,7 @@ export class LiveSessionService {
     ).catch((error: unknown): LivePermissionAnswerResult => ({
       ok: false,
       reason: 'failed',
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     }))
     void this.registry.refresh(session.machine.hostId)
     return result
@@ -267,7 +268,7 @@ export class LiveSessionService {
     ).catch((error: unknown): LiveTakeOverResult => ({
       ok: false,
       reason: 'failed',
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     }))
     if (session) {
       void this.registry.refresh(session.machine.hostId)
@@ -309,7 +310,7 @@ export class LiveSessionService {
           hostIds.add(session.machine.hostId)
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
+        const message = errorMessage(error)
         result.failed.push({ sessionId, reason: 'failed', error: message })
       }
     }

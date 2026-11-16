@@ -9,6 +9,7 @@ import type { StructuredAgentSessionHost } from '../../native-chat/agent-session
 import { mintAgentSessionOperationId } from '../../runtime/orchestration/mailbox/structured-pointer/structured-pointer-operation-id'
 import type { RouteAttempt, StructuredSessionInput } from '../delivery/session-input-routes'
 import { structuredPromptId, structuredSessionRequests } from './structured-session-prompts'
+import { errorMessage } from '../../../shared/error-message'
 
 type InputHost = Pick<
   StructuredAgentSessionHost,
@@ -32,10 +33,6 @@ function sendOperationId(sessionId: string, requestId: string, window: number, a
     attempt
   })
   return `${String(window * SEND_ID_WINDOW_MS).padStart(13, '0')}-${digest.slice(0, 32)}`
-}
-
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 type SendId =
@@ -106,7 +103,7 @@ async function send(
   try {
     id = await freeSendId(host, sessionId, requestId, (deps.now ?? Date.now)())
   } catch (error) {
-    return { outcome: 'unavailable', reason: errorText(error) }
+    return { outcome: 'unavailable', reason: errorMessage(error) }
   }
   if (id.kind === 'taken') {
     return { outcome: 'sent' }
@@ -217,7 +214,7 @@ async function answer(
       error: refusal.message
     }
   } catch (error) {
-    return { ok: false, reason: 'failed', error: errorText(error) }
+    return { ok: false, reason: 'failed', error: errorMessage(error) }
   }
 }
 

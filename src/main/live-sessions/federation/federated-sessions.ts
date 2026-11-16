@@ -16,6 +16,7 @@ import {
   type FederatedServer,
   type FederationTransport
 } from './federation-transport'
+import { errorMessage } from '../../../shared/error-message'
 
 export type { FederatedServer, FederationTransport } from './federation-transport'
 
@@ -27,10 +28,6 @@ const ACTION_TIMEOUT_MS = 60_000
 const UNREADABLE_ANSWER = 'The server gave an answer Seal could not read'
 
 type Target = { feed: FederatedServerFeed; serverId: string }
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
 
 /**
  * The sessions of every paired Seal server, as each server's own registry lists them: the desktop
@@ -147,7 +144,7 @@ export class FederatedSessions {
       const message = sent ? federatedMessage(sent, target.feed.hostId) : null
       return message ? target.feed.messages.fromServer(message) : refused(UNREADABLE_ANSWER)
     } catch (error) {
-      return refused(messageOf(error))
+      return refused(errorMessage(error))
     }
   }
 
@@ -180,7 +177,7 @@ export class FederatedSessions {
       const message = retried ? federatedMessage(retried, feed.hostId) : null
       return message ? feed.messages.fromServer(message) : null
     } catch (error) {
-      return feed.messages.failedToRetry(messageId, messageOf(error))
+      return feed.messages.failedToRetry(messageId, errorMessage(error))
     }
   }
 
@@ -216,7 +213,7 @@ export class FederatedSessions {
         ? (readAnswerResult(response.result) ?? failed(UNREADABLE_ANSWER))
         : failed(response.error.message)
     } catch (error) {
-      return failed(messageOf(error))
+      return failed(errorMessage(error))
     }
   }
 

@@ -16,6 +16,7 @@ import {
   nextScanDelayMs,
   SealPaneStatusChanges
 } from './live-session-host-scan-state'
+import { errorMessage } from '../../shared/error-message'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
@@ -263,7 +264,7 @@ export class LiveSessionRegistry {
     } catch (error) {
       state.failures++
       this.deps.log?.(`[live-sessions] scan of ${hostId} failed`, error)
-      this.setHostError(hostId, error instanceof Error ? error.message : String(error))
+      this.setHostError(hostId, errorMessage(error))
       // Its sessions' last statuses would stand for as long as it stays silent; they leave the
       // list as they do when it disconnects, and its error stays to say why.
       if (state.failures === UNREACHABLE_AFTER_FAILURES && state.sessions.length > 0) {

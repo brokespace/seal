@@ -11,6 +11,7 @@ import {
   type ServerTranscriptSince
 } from './federated-transcript-frames'
 import { SERVER_NOT_CONNECTED, type FederationTransport } from './federation-transport'
+import { errorMessage } from '../../../shared/error-message'
 
 /** Reading a page on the server is one local file or journal read. */
 const READ_TIMEOUT_MS = 30_000
@@ -167,7 +168,7 @@ export class FederatedTranscripts {
               opened.close()
             }
           },
-          (error: unknown) => ended(current, error instanceof Error ? error.message : String(error))
+          (error: unknown) => ended(current, errorMessage(error))
         )
     }
 

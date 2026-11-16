@@ -2,6 +2,7 @@
 // Output is line-framed: `@@<SECTION> fields…`, binary-ish payloads base64 on a single line.
 
 import { TRANSCRIPT_LOG_MARKS, TURN_TAIL_WINDOW_FACTOR } from './transcript-turn-tail'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 export type DiscoveryScriptOptions = {
   /** Transcripts untouched for longer than this are not live, unless a running agent owns them. */
@@ -21,10 +22,6 @@ export type DiscoveryScriptOptions = {
   known: { path: string; size: number }[]
   /** Paths whose head was already read: only their tail is sent when they grow. */
   headKnown: string[]
-}
-
-function shQuote(value: string): string {
-  return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
 /** The agent processes of a host, then `@@PS` when ps listed processes at all. */
@@ -50,8 +47,8 @@ b64() { base64 | tr -d '\\n'; }
 fsize() { stat -c '%s %Y' "$1" 2>/dev/null || stat -f '%z %m' "$1" 2>/dev/null; }
 echo "@@NOW $(date +%s)"
 echo "@@UNAME $(uname -s)"
-KNOWN=${shQuote(known)}
-HEADKNOWN=${shQuote(headKnown)}
+KNOWN=${quotePosixShell(known)}
+HEADKNOWN=${quotePosixShell(headKnown)}
 TTYS='|'
 AGENTS=' '
 PINS="\${TMPDIR:-/tmp}/.seal-live-pins.$$"
@@ -261,7 +258,7 @@ ${subagentSection(options)}  if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; 
   if ! printf '%s\\n' "$HEADKNOWN" | grep -Fxq "$f"; then
     printf '@@HEAD %s ' "$f"; head -c ${options.headBytes} "$f" | b64; echo
   fi
-  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes * TURN_TAIL_WINDOW_FACTOR} "$f" | grep -v -F ${TRANSCRIPT_LOG_MARKS.map((mark) => `-e ${shQuote(mark)}`).join(' ')} | tail -c ${options.tailBytes} | b64; echo
+  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes * TURN_TAIL_WINDOW_FACTOR} "$f" | grep -v -F ${TRANSCRIPT_LOG_MARKS.map((mark) => `-e ${quotePosixShell(mark)}`).join(' ')} | tail -c ${options.tailBytes} | b64; echo
 done; }
 `
 }

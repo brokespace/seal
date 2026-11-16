@@ -18,6 +18,7 @@ import type {
   FederationStreamError,
   FederationTransport
 } from './federation-transport'
+import { errorMessage } from '../../../shared/error-message'
 
 export const LIVE_SESSIONS_WATCH_METHOD = 'liveSessions.watch'
 
@@ -152,7 +153,7 @@ export class FederatedServerFeed {
               typeof error.code === 'string'
                 ? error.code
                 : 'failed',
-            message: error instanceof Error ? error.message : String(error)
+            message: errorMessage(error)
           })
       )
   }

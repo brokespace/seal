@@ -24,9 +24,13 @@ export type SessionTranscriptSources = {
   journal: (chatSessionId: string, recordId: string) => SessionTranscript | null
 }
 
-function journalOf(session: LiveSession, sources: SessionTranscriptSources) {
+/** The journal of a chat this Seal's own host holds, read as the record's transcript; null for any other session. */
+export function chatJournalOf(
+  session: LiveSession | null,
+  journal: SessionTranscriptSources['journal']
+): SessionTranscript | null {
   const chat = localChatSessionId(session)
-  return chat === null ? null : sources.journal(chat, session.id)
+  return session && chat !== null ? journal(chat, session.id) : null
 }
 
 function fileTranscript(sessionId: string, sources: SessionTranscriptSources): SessionTranscript {
@@ -41,14 +45,14 @@ export function transcriptOf(
   session: LiveSession,
   sources: SessionTranscriptSources
 ): SessionTranscript {
-  return journalOf(session, sources) ?? fileTranscript(session.id, sources)
+  return chatJournalOf(session, sources.journal) ?? fileTranscript(session.id, sources)
 }
 
 export function hasSessionTranscript(
   session: LiveSession,
   sources: SessionTranscriptSources
 ): boolean {
-  return Boolean(session.transcriptPath) || journalOf(session, sources) !== null
+  return Boolean(session.transcriptPath) || chatJournalOf(session, sources.journal) !== null
 }
 
 /** Transcripts by registry id, for the services that follow sessions through the registry. */

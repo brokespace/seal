@@ -7,6 +7,7 @@ import { liveSessionTranscriptFiles } from '../../../shared/live-sessions/live-s
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { stopAgentScript } from './session-take-over'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 type Removal = { sessionId: string; removedAt: number }
 
@@ -21,10 +22,6 @@ function isRemoval(item: unknown): item is Removal {
   )
 }
 
-function shQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`
-}
-
 /** `tmux -L seal` serves Seal's wrapper sessions from a socket named `seal`. */
 export function isSealTmuxSocket(socket: string | null | undefined): boolean {
   return socket?.split('/').pop() === 'seal'
@@ -35,14 +32,16 @@ export function sessionCleanupScript(session: LiveSession, request: LiveRemoveRe
   const lines: string[] = []
   const pane = session.inputRoutes.find((route) => route.kind === 'tmux')
   if (request.stop && pane?.kind === 'tmux' && isSealTmuxSocket(pane.socket)) {
-    lines.push(`tmux -S ${shQuote(pane.socket!)} kill-pane -t ${shQuote(pane.target)} 2>/dev/null`)
+    lines.push(
+      `tmux -S ${quotePosixShell(pane.socket!)} kill-pane -t ${quotePosixShell(pane.target)} 2>/dev/null`
+    )
   }
   if (request.deleteTranscripts) {
     for (const file of liveSessionTranscriptFiles(session)) {
       lines.push(
         file.endsWith('/')
-          ? `[ -d ${shQuote(file)} ] && rm -rf -- ${shQuote(file)}`
-          : `rm -f -- ${shQuote(file)}`
+          ? `[ -d ${quotePosixShell(file)} ] && rm -rf -- ${quotePosixShell(file)}`
+          : `rm -f -- ${quotePosixShell(file)}`
       )
     }
   }
