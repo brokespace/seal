@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // On a host that holds a Workers AI credential: records the model replies the recap scenarios still
-// lack, measures every judge candidate on the labelled suite, then replays it all with no network.
+// lack, measures the judge on the labelled suite, then replays it all with no network.
 // The credential is read by the tests themselves and is never printed. docs/recap-audit/README.md.
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -42,7 +42,9 @@ const recorded = run('pnpm', ['test', suite, '--maxWorkers=1'], {
   RECAP_SCENARIOS_LIVE: '1',
   RECAP_SCENARIOS_REPORT: evidence,
   RECAP_SCENARIOS_UPDATE_BASELINE: '1',
-  RECAP_JUDGE_LIVE: '1'
+  RECAP_JUDGE_LIVE: '1',
+  // Only Clef judges and only its answers are kept, so another candidate is asked only by name.
+  RECAP_JUDGE_MODELS: env.RECAP_JUDGE_MODELS ?? 'clef'
 })
 if (!recorded) {
   console.error(

@@ -104,6 +104,10 @@ docs/**
 !docs/session-recap.md
 !docs/recap-audit/
 !docs/recap-audit/**
+# What the recap suite and its specs write on each run stays local; only the judge's report is kept.
+docs/recap-audit/evidence/**
+!docs/recap-audit/evidence/judge/
+!docs/recap-audit/evidence/judge/report.md
 !docs/project-overview.md
 !docs/design/
 !docs/design/agent-status.md

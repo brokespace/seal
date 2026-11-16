@@ -2,14 +2,16 @@
 
 An audit of the session recap on `seal/all` at 7a6dc74d5d2, a baseline of how it behaves before any fix, and a design for its overhaul. No product code is changed here.
 
-|                                                      |                                                                                                               |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [01-pipeline-audit.md](./01-pipeline-audit.md)       | How the recap works today, with file and line references, and every bug and weakness found (F1 to F26).       |
-| [02-scenario-baseline.md](./02-scenario-baseline.md) | What was tested, how, and the results: 135 pipeline runs, model variance on 258 samples, and the in-app runs. |
-| [03-overhaul-design.md](./03-overhaul-design.md)     | The proposed design, the builder workstreams and the decisions to make.                                       |
-| [04-critique.md](./04-critique.md)                   | An independent review of the three above, with the changes required before builders start.                    |
-| [labelling-rules.md](./labelling-rules.md)           | How each scenario's requests were labelled, blind, as the ground truth the judge models are scored against.   |
-| [evidence/](./evidence/)                             | The full matrix, the model samples, and screenshots and recap JSON from the app.                              |
+|                                                        |                                                                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| [01-pipeline-audit.md](./01-pipeline-audit.md)         | How the recap works today, with file and line references, and every bug and weakness found (F1 to F26).       |
+| [02-scenario-baseline.md](./02-scenario-baseline.md)   | What was tested, how, and the results: 135 pipeline runs, model variance on 258 samples, and the in-app runs. |
+| [03-overhaul-design.md](./03-overhaul-design.md)       | The proposed design, the builder workstreams and the decisions to make.                                       |
+| [04-critique.md](./04-critique.md)                     | An independent review of the three above, with the changes required before builders start.                    |
+| [labelling-rules.md](./labelling-rules.md)             | How each scenario's requests were labelled, blind, as the ground truth the judge models are scored against.   |
+| [evidence/judge/report.md](./evidence/judge/report.md) | The judge measurement: every candidate against the labels, and the thresholds that came out of it.            |
+
+The rest of the evidence the audit links to under `evidence/` is not kept on this branch: the full matrix (`matrix.json`, `matrix.md`), the model samples (`variance/`), the screenshots and recap JSON from the app (`e2e/`) and the judge's call log (`judge/calls.jsonl`). It is what a run writes, and `.gitignore` keeps a new run's copy local. The copies the audit was written from are at commit `9704849` (PR #61), for example `git show 9704849:docs/recap-audit/evidence/matrix.md`.
 
 ## The regression suite
 
@@ -56,7 +58,7 @@ A changed prompt changes every request, so every recording is stale.
 1. Delete the cassettes for the scenarios affected (all of them for a prompt change).
 2. `RECAP_SCENARIOS_LIVE=1 pnpm test src/main/session-recap/scenarios --maxWorkers=1`. Without a credential, use the pending and replies files instead and repeat until the pending file is empty: a later request depends on the reply to the earlier one.
 3. `RECAP_SCENARIOS_REPORT=docs/recap-audit/evidence RECAP_SCENARIOS_UPDATE_BASELINE=1 pnpm test src/main/session-recap/scenarios`, then `pnpm exec oxfmt --write src/main/session-recap/scenarios/__fixtures__ docs/recap-audit/evidence/matrix.json`.
-4. Read the diff of `baseline.json` and `matrix.md`.
+4. Read the diff of `baseline.json`, and `matrix.md` (written locally, not committed).
 
 A recording is one sample of a model that varies. [The baseline](./02-scenario-baseline.md#how-much-the-model-varies) measures how much; the design asks for several samples per request before a threshold counts as met.
 
@@ -68,7 +70,7 @@ A recording is one sample of a model that varies. [The baseline](./02-scenario-b
 - `../session-recap-judge-questions.ts`: the questions, one per criterion, each with the action it leads to and the share of wrong firings its threshold may allow.
 - `recap-judge-state.test-fixture.ts`: what a question is asked about: the request, and the conversation after it as a reader would see it.
 - `recap-judge-models.test-fixture.ts`: the candidates, their prices, and how each is asked.
-- `__fixtures__/judge-answers/<model>.json`: what each model answered, keyed on a hash of the model and the request. `__fixtures__/judge-thresholds.json`: each model's thresholds, with the hash of the question wording they were set on.
+- `__fixtures__/judge-answers/<model>.json`: what a model answered, keyed on a hash of the model and the request. Only Clef's is kept, since only Clef judges; the other candidates' answers are at commit `9704849`, and a candidate with no answers on record is skipped offline. `__fixtures__/judge-thresholds.json`: each model's thresholds, with the hash of the question wording they were set on.
 
 Offline, the suite checks that every scenario is labelled, that no conversation is on both sides of the split, and that the saved answers still give the saved thresholds. A change to a question, to the state or to a model's answers is therefore a new measurement, not a silent change.
 
@@ -89,7 +91,7 @@ Two offline checks run the product's own code against the recorded answers:
 | `RECAP_JUDGE_CONCURRENCY=<n>`    | Requests in flight per model. Default 4.                                                                       |
 | `RECAP_JUDGE_REPORT=<dir>`       | Where `report.md` and `calls.jsonl` go. Default `docs/recap-audit/evidence/judge`.                             |
 
-`report.md` gives, per model: AUC per question on each split, each threshold and what it catches and fires on wrongly on the held-out split, the addressed requests it would list as not addressed (by name), cost and latency. `calls.jsonl` has one line per request: the model, the item, whether it came from the cache, tokens, cost, time, or the kind of failure.
+`report.md` gives, per model: AUC per question on each split, each threshold and what it catches and fires on wrongly on the held-out split, the addressed requests it would list as not addressed (by name), cost and latency. `calls.jsonl` has one line per request: the model, the item, whether it came from the cache, tokens, cost, time, or the kind of failure. It is not committed.
 
 ### One command, on a host with a credential
 
@@ -97,7 +99,7 @@ Two offline checks run the product's own code against the recorded answers:
 node config/scripts/session-recap/record-and-measure-recap-models.mjs
 ```
 
-It checks the credential, records the replies for scenarios that have none, measures every judge candidate, removes `pending` from the scenarios it recorded, replays everything with no network, and prints the summary and the files to commit. It can be run again at any point: only what is missing is asked for.
+It checks the credential, records the replies for scenarios that have none, measures Clef (set `RECAP_JUDGE_MODELS` to measure other candidates), removes `pending` from the scenarios it recorded, replays everything with no network, and prints the summary and the files to commit. It can be run again at any point: only what is missing is asked for.
 
 ## In the app
 
@@ -119,4 +121,4 @@ RECAP_E2E=1 RECAP_E2E_EVIDENCE_DIR="$PWD/docs/recap-audit/evidence/e2e" ORCA_BAC
 
 The first run builds the app; add `SKIP_BUILD=1` to reuse that build. `xvfb-run` is for Linux machines without a display. A full run takes about ten minutes: the scheduler leaves four minutes between two automatic passes and the app has no test clock.
 
-Each test saves a screenshot of the hidden window and the recap as the app returned it. After a run that rewrites the evidence, format it before committing: `pnpm exec oxfmt --write docs/recap-audit/evidence`. A test for behaviour that is wrong today is marked `test.fail`, so the spec passes while the bug is present and fails once it is fixed; remove the mark then.
+Each test saves a screenshot of the hidden window and the recap as the app returned it. That folder is not committed. A test for behaviour that is wrong today is marked `test.fail`, so the spec passes while the bug is present and fails once it is fixed; remove the mark then.
