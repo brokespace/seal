@@ -1,13 +1,10 @@
-import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { SessionTranscript } from '../live-sessions/transcripts/session-transcript'
 
 const TRANSCRIPT_TAIL_MESSAGES = 30
 
 /** The newest thing the agent itself said: assistant prose, never tool calls, tool output or reasoning. */
-export async function lastAssistantText(
-  liveSessions: LiveSessionService,
-  sessionId: string
-): Promise<string | null> {
-  const page = await liveSessions.transcriptPage(sessionId, null, TRANSCRIPT_TAIL_MESSAGES)
+export async function lastAssistantText(transcript: SessionTranscript): Promise<string | null> {
+  const page = await transcript.page(null, TRANSCRIPT_TAIL_MESSAGES)
   for (let index = page.messages.length - 1; index >= 0; index--) {
     const message = page.messages[index]
     if (message.role !== 'assistant') {

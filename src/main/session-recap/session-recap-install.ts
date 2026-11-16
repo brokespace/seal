@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { SessionTranscripts } from '../live-sessions/transcripts/session-transcript'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
 import { SessionRecapBudget } from './session-recap-budget'
@@ -8,6 +9,7 @@ import { SessionRecapStore } from './session-recap-store'
 
 export type SessionRecapInstallOptions = {
   liveSessions: LiveSessionService
+  transcripts: SessionTranscripts
   utility: UtilityModelClient
   userDataPath: string
   enabled: () => boolean
@@ -23,7 +25,7 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
   recaps: LiveSessionRecaps
   dispose: () => void
 } {
-  const { liveSessions, utility, log } = options
+  const { liveSessions, transcripts, utility, log } = options
   const folder = join(options.userDataPath, 'session-recaps')
   const store = new SessionRecapStore(join(folder, 'recaps.json'), log)
   const budget = new SessionRecapBudget(join(folder, 'budget.json'), Date.now, log)
@@ -32,8 +34,8 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
   void store.load().then(options.onChange)
   const engine = new SessionRecapEngine({
     transcript: {
-      page: (sessionId, before, limit) => liveSessions.transcriptPage(sessionId, before, limit),
-      since: (sessionId, cursor) => liveSessions.transcriptSince(sessionId, cursor)
+      page: (sessionId, before, limit) => transcripts.of(sessionId).page(before, limit),
+      since: (sessionId, cursor) => transcripts.of(sessionId).since(cursor)
     },
     complete: (request, signal) => utility.complete(request, signal),
     store,
@@ -51,6 +53,7 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
     enabled: options.enabled,
     pausedUntil: () => utility.health().pausedUntil,
     session: (sessionId) => liveSessions.registry.get(sessionId),
+    readable: (session) => transcripts.has(session),
     eager: options.eager,
     setTimer: options.setTimer
   })
