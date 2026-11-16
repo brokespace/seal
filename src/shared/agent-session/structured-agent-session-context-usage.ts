@@ -149,10 +149,29 @@ export function structuredAgentSessionCompactions(
   }
 }
 
+/** A host that wrote a fact supplies usage; one that settled a turn without any never will. */
+function awaitsContextFacts(
+  items: readonly AgentJournalRenderItem[],
+  held: AgentSessionContextUsage
+): boolean {
+  if (held.used || held.window) {
+    return true
+  }
+  let settled = false
+  for (const item of items) {
+    const turn = readAgentJournalTurn(item.body)
+    if (turn?.contextUsage) {
+      return true
+    }
+    settled ||= turn !== null && turn.state !== 'running'
+  }
+  return !settled
+}
+
 /**
  * Fill missing loaded-window facts from the host's whole-journal answer; a floor from another epoch is ignored.
  * A session whose host writes context facts but has none to show yet gets an unmeasured answer (no
- * window), so its ring draws empty instead of disappearing.
+ * window), so its ring draws empty instead of disappearing. Null where the agent supplies none.
  */
 export function selectStructuredAgentSessionContextUsage(
   journalItems: readonly AgentJournalRenderItem[],
@@ -167,18 +186,24 @@ export function selectStructuredAgentSessionContextUsage(
       ? support.contextFloor.sequence
       : 0
   )
-  if (!usage && !support) {
+  const compactions = structuredAgentSessionCompactions(journalItems, historyComplete)
+  if (usage) {
+    return { ...usage, ...compactions }
+  }
+  if (
+    !support ||
+    (compactions.lastCompactedAt === undefined &&
+      !awaitsContextFacts(journalItems, support.current))
+  ) {
     return null
   }
   return {
-    ...(usage ?? {
-      usedTokens: 0,
-      windowTokens: 0,
-      percentage: 0,
-      estimated: false,
-      categories: []
-    }),
-    ...structuredAgentSessionCompactions(journalItems, historyComplete)
+    usedTokens: 0,
+    windowTokens: 0,
+    percentage: 0,
+    estimated: false,
+    categories: [],
+    ...compactions
   }
 }
 

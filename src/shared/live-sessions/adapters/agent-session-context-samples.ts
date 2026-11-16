@@ -202,7 +202,10 @@ export function foldContextSamples(
   }
 }
 
-/** A transcript's parsed records to the session's `context`; null for agents that record no usage. */
+/**
+ * A transcript's parsed records to the session's `context`. Null for agents that record no usage;
+ * unmeasured until a record carries some.
+ */
 export function contextUsageOfRecords(
   decoder: NativeChatTranscriptAgent | null,
   records: Iterable<unknown>,
@@ -212,10 +215,12 @@ export function contextUsageOfRecords(
   if (!decoder || !read) {
     return null
   }
-  return foldContextSamples(samplesOf(records, read), {
-    ...options,
-    exact: EXACT_CONTEXT_SAMPLES.has(decoder)
-  })
+  return (
+    foldContextSamples(samplesOf(records, read), {
+      ...options,
+      exact: EXACT_CONTEXT_SAMPLES.has(decoder)
+    }) ?? unmeasuredContextUsage(options.complete ? { compactions: 0 } : {})
+  )
 }
 
 function* samplesOf(
