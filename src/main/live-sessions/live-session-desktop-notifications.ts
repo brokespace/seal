@@ -2,14 +2,20 @@
 import { app, BrowserWindow, Notification } from 'electron'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
+import { migrateLiveSessionsNotify } from '../../shared/live-sessions/live-session-settings'
 import { getTrustedUIRendererWindow } from '../ipc/ui'
 import { safelyRevealWindow } from '../window/activation/focus-existing-window'
 import { isBackgroundLaunch } from '../window/activation/foreground-activation-policy'
-import { LiveSessionNotifier, type LiveSessionNotification } from './live-session-notifier'
+import {
+  isLiveSessionNoticeEnabled,
+  LiveSessionNotifier,
+  type LiveSessionNotification
+} from './live-session-notifier'
 import type { LiveSessionService } from './live-session-service'
 
 type NotificationSettingsStore = {
   getSettings(): Pick<GlobalSettings, 'liveSessionsNotify' | 'notifications'>
+  updateSettings(updates: Partial<GlobalSettings>): unknown
 }
 
 // Held until clicked or closed: a collected Notification never delivers its click.
@@ -39,15 +45,18 @@ export function installLiveSessionDesktopNotifications(
   service: LiveSessionService,
   store: NotificationSettingsStore
 ): void {
+  const migration = migrateLiveSessionsNotify(store.getSettings())
+  if (migration) {
+    store.updateSettings(migration)
+  }
   const notifier = new LiveSessionNotifier({
-    wanted: () => {
-      const settings = store.getSettings()
+    wanted: (kind) => {
+      const { notifications } = store.getSettings()
       const lookingAtSeal =
-        settings.notifications.suppressWhenFocused &&
+        notifications.suppressWhenFocused &&
         BrowserWindow.getAllWindows().some((window) => !window.isDestroyed() && window.isFocused())
       return (
-        settings.notifications.enabled &&
-        settings.liveSessionsNotify !== false &&
+        isLiveSessionNoticeEnabled(notifications, kind) &&
         !lookingAtSeal &&
         Notification.isSupported()
       )

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
-import { LiveSessionNotifier, type LiveSessionNotification } from './live-session-notifier'
+import {
+  isLiveSessionNoticeEnabled,
+  LiveSessionNotifier,
+  liveSessionNotificationOwner,
+  type LiveSessionNotification
+} from './live-session-notifier'
 
 const base: LiveSession = {
   id: 'box:claude:s1',
@@ -74,16 +79,72 @@ describe('session notifications', () => {
     ])
   })
 
-  it("leave Seal's own panes to their hooks, and a session first seen waiting unannounced", () => {
+  it('leave a session first seen waiting unannounced', () => {
     const { shown, see } = watch()
     see({ status: 'waiting-input' })
-    see({ id: 'local:claude:s2', inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-1:0' }] })
-    see({
-      id: 'local:claude:s2',
-      status: 'waiting-input',
-      inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-1:0' }]
-    })
     expect(shown).toEqual([])
+  })
+
+  it('come from the owner of the surface a session runs on, and only once', () => {
+    const sessions: (Partial<LiveSession> & { id: string })[] = [
+      { id: 'chat', surface: { kind: 'chat', sessionId: 'c1', tabId: 'tab-c1' } },
+      { id: 'cli', surface: { kind: 'cli', paneKey: 'tab-1:0' } },
+      { id: 'pane-route', inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-2:0' }] },
+      { id: 'chat-route', inputRoutes: [{ kind: 'structured', sessionId: 'c2' }] },
+      { id: 'outside', inputRoutes: [{ kind: 'tmux', target: '%3' }] }
+    ]
+    expect(
+      sessions.map((session) => [session.id, liveSessionNotificationOwner({ ...base, ...session })])
+    ).toEqual([
+      ['chat', 'structured-attention'],
+      ['cli', 'agent-hooks'],
+      ['pane-route', 'agent-hooks'],
+      ['chat-route', 'structured-attention'],
+      ['outside', 'live-session-notifier']
+    ])
+
+    const { shown, see } = watch()
+    for (const session of sessions) {
+      see({ ...session, status: 'working' })
+      see({ ...session, status: 'needs-permission' })
+    }
+    expect(shown.map((n) => n.sessionId)).toEqual(['outside'])
+  })
+
+  it("name the agent by its adapter's label, and ask whether that kind of notice is wanted", () => {
+    const asked: string[] = []
+    const shown: LiveSessionNotification[] = []
+    const notifier = new LiveSessionNotifier({
+      wanted: (kind) => {
+        asked.push(kind)
+        return kind === 'finished'
+      },
+      show: (n) => shown.push(n)
+    })
+    const copilot = { ...base, provider: 'copilot' as const, title: null }
+    const steps: Partial<LiveSession>[] = [
+      { status: 'working' },
+      { status: 'waiting-input' },
+      { status: 'working' },
+      { status: 'your-turn' }
+    ]
+    steps.forEach((step, index) =>
+      notifier.onEvent({ type: 'upsert', revision: index, session: { ...copilot, ...step } })
+    )
+    expect(asked).toEqual(['needs-attention', 'finished'])
+    expect(shown.map((n) => n.body)).toEqual(['GitHub Copilot on build-box finished'])
+  })
+
+  it('follow "Agent needs input" and "Agent task complete", each on its own', () => {
+    const on = { enabled: true, agentNeedsInput: true, agentTaskComplete: true, terminalBell: true }
+    const verdicts = (settings: typeof on) => [
+      isLiveSessionNoticeEnabled(settings, 'needs-attention'),
+      isLiveSessionNoticeEnabled(settings, 'finished')
+    ]
+    expect(verdicts(on)).toEqual([true, true])
+    expect(verdicts({ ...on, agentNeedsInput: false })).toEqual([false, true])
+    expect(verdicts({ ...on, agentTaskComplete: false })).toEqual([true, false])
+    expect(verdicts({ ...on, enabled: false })).toEqual([false, false])
   })
 
   it('follow a session to the id its transcript gives it', () => {
