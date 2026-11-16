@@ -164,6 +164,8 @@ test('Docker storage is listed, inspected and cleaned up on an SSH machine', asy
       await expect(preview).toContainText('max_connections = 100')
       await expect(preview.getByRole('button', { name: /Save|Edit|Download/ })).toHaveCount(0)
       await host.shot('05-volume-details-and-files')
+      await preview.locator('.monaco-editor').first().click()
+      await page.keyboard.press('ControlOrMeta+s')
 
       await sheet
         .locator('[data-machine-docker-used-by]')
@@ -175,6 +177,8 @@ test('Docker storage is listed, inspected and cleaned up on an SSH machine', asy
       await expect(sheet.locator('[data-machine-docker-volume-detail="pgdata"]')).toBeVisible()
       await sheet.getByRole('button', { name: 'Close', exact: true }).click()
       await expect(sheet).toBeHidden()
+      // The save shortcut in the preview must not write the file onto the machine itself.
+      expect(host.hasPath('/postgresql.conf')).toBe(false)
     })
 
     await test.step('removing a volume a stopped container uses asks first, and takes the container with it', async () => {

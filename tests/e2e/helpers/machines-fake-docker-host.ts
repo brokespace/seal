@@ -28,6 +28,8 @@ export type FakeDockerHost = {
   /** Puts `docker` on the host's PATH with this state, or replaces the state it has. */
   installDocker: (state?: FakeDockerState) => void
   readState: () => FakeDockerState
+  /** Whether the host's own filesystem has this path. */
+  hasPath: (path: string) => boolean
   /** Opens the panel a CPU, RAM or Disk meter opens. */
   openPanel: (kind: 'cpu' | 'memory' | 'disk') => Promise<Locator>
   shot: (name: string) => Promise<void>
@@ -92,6 +94,11 @@ export async function launchFakeDockerHost(
         )
         return state
       },
+      hasPath: (path) =>
+        execDockerSshHostTargetControlCommand(
+          target,
+          `test -e '${path}' && echo yes || echo no`
+        ).trim() === 'yes',
       openPanel: async (kind) => {
         const panel = page.locator(`[data-machine-resource-panel="${kind}"]`)
         if (!(await panel.isVisible())) {
