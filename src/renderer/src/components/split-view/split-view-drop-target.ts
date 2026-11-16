@@ -16,7 +16,8 @@ import { splitViewStore } from './split-view-store'
 import {
   SPLIT_VIEW_DROP_AREA_ATTRIBUTE,
   SPLIT_VIEW_PANE_ATTRIBUTE,
-  fitSplitViewZoneToSize
+  fitSplitViewZoneToSize,
+  splitViewPaneGridSize
 } from './split-view-pane-size'
 import { splitViewItemKey, type SplitViewItem, type SplitViewZone } from './split-view-types'
 
@@ -187,7 +188,10 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   }
   const paneId = mode === 'grid' ? pane.getAttribute(SPLIT_VIEW_PANE_ATTRIBUTE) : null
   const rect = pane.getBoundingClientRect()
-  let zone = fitSplitViewZoneToSize(resolveDropZone(rect, { x, y }, EDGE_SHARE), rect)
+  let zone = fitSplitViewZoneToSize(
+    resolveDropZone(rect, { x, y }, EDGE_SHARE),
+    splitViewPaneGridSize(paneId, rect)
+  )
   const dragged = new Set(items.map(splitViewItemKey))
   const held = paneKeys(paneId)
   const leavesNothing = held.every((key) => dragged.has(key))

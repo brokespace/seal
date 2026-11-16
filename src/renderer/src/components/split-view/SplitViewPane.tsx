@@ -98,11 +98,13 @@ export function SplitViewPane({
   const activeKey = pane?.activeKey ?? null
   const worktreeId = active?.kind === 'workspace' ? active.worktreeId : null
   const paneRef = useRef<HTMLDivElement>(null)
+  // A tab closed anywhere takes its close button away, and the keyboard with it.
+  const tabCount = Object.values(state.panes).reduce((count, each) => count + each.tabs.length, 0)
   useEffect(() => {
     if (focused && paneRef.current) {
       bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId)
     }
-  }, [focused, paneId, activeKey, worktreeId])
+  }, [focused, paneId, activeKey, worktreeId, tabCount])
   const maximizeLabel = maximized
     ? t('seal.splitView.pane.restore', 'Restore panes')
     : t('seal.splitView.pane.maximize', 'Maximize pane')
