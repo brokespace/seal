@@ -52,7 +52,7 @@ const HOOK_STALE_MS = 2 * 60_000
 
 export function liveSessionId(
   hostId: string,
-  provider: LiveSessionProvider,
+  provider: LiveSession['provider'],
   providerSessionId: string
 ): string {
   return `${hostId}:${provider}:${providerSessionId}`

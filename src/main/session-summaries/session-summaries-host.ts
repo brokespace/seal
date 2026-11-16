@@ -1,13 +1,15 @@
 import { join } from 'node:path'
-import type { AgentPaneChange } from '../agent-hooks/observations/agent-transition-detector'
-import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
-import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import type {
+  AgentSessionSurface,
+  LiveSession
+} from '../../shared/live-sessions/live-session-types'
 import type {
   SessionSummariesListResult,
-  SessionSummariesStatus,
-  SessionSummarySettings
+  SessionSummariesStatus
 } from '../../shared/session-summaries/session-summary-contracts'
-import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
+import { liveSessionTranscripts } from '../live-sessions/transcripts/live-session-transcripts'
+import { structuredChatJournal } from '../live-sessions/transcripts/journal-session-transcript'
 import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
 import { createLiveSessionRecaps } from '../session-recap/session-recap-install'
 import {
@@ -17,48 +19,19 @@ import {
   type UtilityModelTask
 } from '../../shared/utility-model/utility-model-selection'
 import { getUtilityModelHost, type UtilityModelClient } from '../utility-model/utility-model-host'
-import type { UtilityModelHostContext } from '../utility-model/utility-model-provider-sources'
+import { renameCliSessionTab } from './cli-session-tab-title'
 import { lastAssistantText } from './last-assistant-text'
-import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
-import { PaneSessionSummaries } from './pane-session-summaries'
+import { LiveSessionSummaries } from './live-session-summaries'
 import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
+import { sessionPaneWorkspaceId } from './session-pane-workspace'
 import { SessionSummarizer } from './session-summarizer'
+import { createSessionTitleWriteThrough } from './session-title-write-through-install'
 import { unrefTimer } from './unref-timer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
+import type { SessionSummariesInstallOptions } from './session-summaries-install-options'
 
-type SummarySettingsStore = {
-  getSettings(): SessionSummarySettings & ReturnType<UtilityModelHostContext['settings']>
-  updateSettings(updates: SessionSummarySettings): unknown
-  onSettingsChanged(listener: (updates: Partial<SessionSummarySettings>) => void): unknown
-}
-
-type SummaryRuntime = {
-  agentTransitions: {
-    subscribe(listener: (change: AgentPaneChange) => void): () => void
-    latestRow(paneKey: string): AgentStatusIpcPayload | null
-    trackedPaneSeeds(): AgentPaneChange[]
-  }
-  /** The accounts agent CLIs run on; without it only providers with a saved key can be used. */
-  getCommitMessageAgentEnvironmentResolvers?: UtilityModelHostContext['agentEnvironment']
-}
-
-export type SessionSummariesInstallOptions = {
-  runtime: SummaryRuntime
-  store: SummarySettingsStore
-  userDataPath: string
-  /** This host's session registry: its sessions get recaps, and status summaries unless `summarizeLive` is off. */
-  liveSessions?: LiveSessionService | null
-  /** False on a headless server, whose registry sessions the desktop that sees them summarizes. */
-  summarizeLive?: boolean
-  /** Recap every stopped session (the desktop), or only those opened from a client of this host. */
-  recapEagerly?: boolean
-  serverSummaries?: LiveSessionSummariesDeps['serverSummaries']
-  /** A pane's summary changed: clients reading agent rows should read again. */
-  onPaneSummaryChanged?: () => void
-  /** One model for both summaries and recaps, in place of the providers Settings chose. */
-  utilityModel?: UtilityModelClient
-}
+export type { SessionSummariesInstallOptions }
 
 const CONFIGURED_RECHECK_MS = 60_000
 
@@ -66,8 +39,7 @@ const CONFIGURED_RECHECK_MS = 60_000
 export class SessionSummariesHost {
   private readonly models: Record<UtilityModelTask, UtilityModelClient>
   private readonly summarizer: SessionSummarizer
-  private readonly panes: PaneSessionSummaries
-  private readonly live: LiveSessionSummaries | null
+  private readonly sessions: LiveSessionSummaries
   private readonly replyAsks: ReplyAskClassifier | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
@@ -100,27 +72,28 @@ export class SessionSummariesHost {
       onChange: () => this.republishSoon(),
       setTimer: unrefTimer
     })
-    this.panes = new PaneSessionSummaries({
+    const transcripts = liveSessions ? liveSessionTranscripts(liveSessions) : null
+    const summarizeRegistry = transcripts !== null && options.summarizeLive !== false
+    this.sessions = new LiveSessionSummaries({
       summarizer: this.summarizer,
       readHookRow: (paneKey) => options.runtime.agentTransitions.latestRow(paneKey),
-      setTimer: unrefTimer
+      lastAssistantText: async (sessionId) =>
+        transcripts ? await lastAssistantText(transcripts.of(sessionId)) : null,
+      chatLastAssistantText: async (chatSessionId) => {
+        const journal = structuredChatJournal(chatSessionId, chatSessionId)
+        return journal ? await lastAssistantText(journal) : null
+      },
+      summarizeRegistry,
+      serverSummaries: options.serverSummaries,
+      onChange: () => this.republishSoon(),
+      setTimer: unrefTimer,
+      log
     })
-    this.live =
-      liveSessions && options.summarizeLive !== false
-        ? new LiveSessionSummaries({
-            summarizer: this.summarizer,
-            lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
-            paneView: (paneKey) => this.panes.view(paneKey),
-            serverSummaries: options.serverSummaries,
-            onChange: () => this.republishSoon(),
-            setTimer: unrefTimer,
-            log
-          })
-        : null
     this.replyAsks =
-      liveSessions && options.summarizeLive !== false
+      liveSessions && transcripts && summarizeRegistry
         ? createReplyAskClassifier({
             liveSessions,
+            transcripts,
             userDataPath: options.userDataPath,
             model: () => this.model('summaries'),
             enabled: () => this.isAvailable(),
@@ -128,18 +101,20 @@ export class SessionSummariesHost {
             log
           })
         : null
-    this.recap = liveSessions
-      ? createLiveSessionRecaps({
-          liveSessions,
-          utility: this.models.recaps,
-          userDataPath: options.userDataPath,
-          enabled: () => this.recapOn() && this.isConfigured('recaps'),
-          eager: options.recapEagerly !== false,
-          onChange: () => this.republishSoon(),
-          setTimer: unrefTimer,
-          log
-        })
-      : null
+    this.recap =
+      liveSessions && transcripts
+        ? createLiveSessionRecaps({
+            liveSessions,
+            transcripts,
+            utility: this.models.recaps,
+            userDataPath: options.userDataPath,
+            enabled: () => this.recapOn() && this.isConfigured('recaps'),
+            eager: options.recapEagerly !== false,
+            onChange: () => this.republishSoon(),
+            setTimer: unrefTimer,
+            log
+          })
+        : null
   }
 
   /**
@@ -158,7 +133,7 @@ export class SessionSummariesHost {
   start(): void {
     const { runtime, store, liveSessions } = this.options
     this.releases.push(
-      runtime.agentTransitions.subscribe((change) => this.panes.observe(change)),
+      runtime.agentTransitions.subscribe((change) => this.sessions.observePane(change)),
       // Deferred: health changes fire from inside the request that noticed them.
       this.models.summaries.subscribe(() =>
         queueMicrotask(() => void this.refreshAvailability(true))
@@ -166,7 +141,7 @@ export class SessionSummariesHost {
     )
     // Both hosts attach hook status before this starts; its panes were seeded with nobody listening.
     for (const seed of runtime.agentTransitions.trackedPaneSeeds()) {
-      this.panes.observe(seed)
+      this.sessions.observePane(seed)
     }
     store.onSettingsChanged((updates) => {
       const modelsChanged = 'sessionSummaryModels' in updates
@@ -180,11 +155,18 @@ export class SessionSummariesHost {
       }
     })
     if (liveSessions) {
-      const live = this.live
+      const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
+      const titles = createSessionTitleWriteThrough({
+        liveSessions,
+        renameCliTab: (paneKey, title) => renameCliSessionTab(runtime, paneKey, title, log),
+        owedNamesPath: join(this.options.userDataPath, 'session-summaries', 'owed-chat-names.json'),
+        log
+      })
       liveSessions.registry.setDecorator((session) => this.decorate(session))
-      if (live) {
-        this.releases.push(liveSessions.subscribe((event) => live.observe(event)))
-      }
+      this.releases.push(
+        liveSessions.subscribe((event) => this.sessions.observe(event)),
+        titles.dispose
+      )
     }
     void this.refreshAvailability(true)
   }
@@ -194,8 +176,7 @@ export class SessionSummariesHost {
       release()
     }
     this.options.liveSessions?.registry.setDecorator(null)
-    this.panes.dispose()
-    this.live?.dispose()
+    this.sessions.dispose()
     this.replyAsks?.dispose()
     this.recap?.dispose()
     this.summarizer.dispose()
@@ -203,7 +184,7 @@ export class SessionSummariesHost {
 
   /** A pane agent's summary for clients reading agent rows; null while off or when it has none. */
   paneSummary(paneKey: string): string | null {
-    return this.settingOn() ? (this.panes.view(paneKey)?.text ?? null) : null
+    return this.settingOn() ? (this.sessions.paneView(paneKey)?.text ?? null) : null
   }
 
   async status(): Promise<SessionSummariesStatus> {
@@ -224,7 +205,7 @@ export class SessionSummariesHost {
     return {
       status,
       sessions: status.enabled
-        ? this.panes.list().map(({ paneKey, agentType, providerSessionId, text, pending }) => ({
+        ? this.sessions.list().map(({ paneKey, agentType, providerSessionId, text, pending }) => ({
             paneKey,
             agentType,
             providerSessionId,
@@ -266,10 +247,23 @@ export class SessionSummariesHost {
     return this.options.store.getSettings().sessionSummariesEnabled !== false
   }
 
+  /** Whether a session's finished turn ended on a question; 'deciding' while its reply is read. */
+  replyAsk(session: LiveSession): ReplyAskVerdict {
+    return this.settingOn() && this.replyAsks ? this.replyAsks.verdict(session) : 'tells'
+  }
+
+  askedReply(sessionId: string): string | null {
+    return this.replyAsks?.askedReply(sessionId) ?? null
+  }
+
+  paneWorkspaceId(surface: AgentSessionSurface): string | null {
+    return sessionPaneWorkspaceId(this.options.runtime, surface)
+  }
+
   private decorate(session: LiveSession): LiveSession {
     const on = this.settingOn()
     const settled = on && this.replyAsks ? this.replyAsks.decorate(session) : session
-    const summarized = on && this.live ? this.live.decorate(settled) : settled
+    const summarized = on ? this.sessions.decorate(settled) : settled
     return this.recap ? this.recap.recaps.decorate(summarized) : summarized
   }
 
