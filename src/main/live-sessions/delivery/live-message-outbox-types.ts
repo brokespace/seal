@@ -1,5 +1,6 @@
 import type {
   LiveMessage,
+  LiveSendRequest,
   LiveSession,
   LiveSessionInputRoute
 } from '../../../shared/live-sessions/live-session-types'
@@ -30,6 +31,25 @@ export const DEFAULT_OUTBOX_TIMING = {
   /** Finished messages are remembered this long, so a resend is recognised. */
   keepFinishedMs: 72 * 60 * 60_000
 }
+
+/** A message as the outbox first holds it: in line to be sent. */
+export function newOutboxItem(request: LiveSendRequest, now: number): OutboxItem {
+  return {
+    messageId: request.messageId,
+    sessionId: request.sessionId,
+    text: request.text,
+    state: 'queued',
+    route: null,
+    error: null,
+    createdAt: now,
+    updatedAt: now,
+    offset: 0,
+    sentAt: null
+  }
+}
+
+/** What another owner of a session (a paired server) says to a message offered to it. */
+export type OfferedMessage = LiveMessage | { refused: string }
 
 export function publicView(item: OutboxItem): LiveMessage {
   const { offset: _offset, sentAt: _sentAt, unread: _unread, ...message } = item

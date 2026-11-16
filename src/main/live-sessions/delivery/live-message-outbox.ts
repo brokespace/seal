@@ -9,6 +9,8 @@ import {
   publicView,
   type LiveMessageOutboxDeps,
   isOutboxItem,
+  newOutboxItem,
+  type OfferedMessage,
   type OutboxItem as Item
 } from './live-message-outbox-types'
 
@@ -103,19 +105,7 @@ export class LiveMessageOutbox {
     if (existing) {
       return publicView(existing)
     }
-    const now = this.now()
-    const item: Item = {
-      messageId: request.messageId,
-      sessionId: request.sessionId,
-      text: request.text,
-      state: 'queued',
-      route: null,
-      error: null,
-      createdAt: now,
-      updatedAt: now,
-      offset: 0,
-      sentAt: null
-    }
+    const item = newOutboxItem(request, this.now())
     this.items.set(item.messageId, item)
     this.changed(item)
     this.kick(item.sessionId)
@@ -135,26 +125,35 @@ export class LiveMessageOutbox {
   }
 
   /**
-   * Offers a failed message to another owner of its session (`offer` answers why it was refused).
-   * It stays here, and on disk, until that owner has it. Null when there is none to give.
+   * Offers a message to another owner of its session (a paired server), which sends it. Refused,
+   * it is kept here on disk as failed, with why; taken, a copy that failed here is let go.
    */
-  async handOver(
-    messageId: string,
-    offer: (request: LiveSendRequest) => Promise<LiveMessage | { refused: string }>
-  ): Promise<LiveMessage | null> {
+  async offer(
+    request: LiveSendRequest,
+    to: (request: LiveSendRequest) => Promise<OfferedMessage>
+  ): Promise<LiveMessage> {
     await this.start()
-    const item = this.items.get(messageId)
-    if (!item || item.state !== 'failed') {
-      return null
+    const held = this.items.get(request.messageId)
+    if (held && held.state !== 'failed') {
+      return publicView(held)
     }
-    const taken = await offer({ sessionId: item.sessionId, messageId, text: item.text })
-    if ('refused' in taken) {
-      this.set(item, { error: taken.refused })
-      return publicView(item)
+    const taken = await to(request)
+    if (!('refused' in taken)) {
+      this.letGo(request.messageId)
+      return taken
     }
-    this.items.delete(messageId)
-    this.persist()
-    return taken
+    const item = this.items.get(request.messageId) ?? newOutboxItem(request, this.now())
+    this.items.set(item.messageId, item)
+    this.set(item, { state: 'failed', error: taken.refused })
+    return publicView(item)
+  }
+
+  /** Another owner of its session has the message: the copy that failed here is no longer the truth. */
+  letGo(messageId: string): void {
+    if (this.items.get(messageId)?.state === 'failed') {
+      this.items.delete(messageId)
+      this.persist()
+    }
   }
 
   /** The session now goes by another id; its messages follow it, in order. */

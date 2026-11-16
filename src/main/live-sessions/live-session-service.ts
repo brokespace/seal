@@ -145,7 +145,10 @@ export class LiveSessionService {
       this.registry.start()
     )
     void this.outbox.start()
-    this.federation?.subscribeMessages((message) => this.emitMessage(message))
+    this.federation?.subscribeMessages((message) => {
+      this.outbox.letGo(message.messageId)
+      this.emitMessage(message)
+    })
   }
 
   stop(): void {
@@ -202,29 +205,27 @@ export class LiveSessionService {
     return this.federation?.owns(this.registry.currentId(sessionId)) ? this.federation : null
   }
 
+  /** A paired server sends what goes to its sessions. One it does not take stays in the outbox, failed. */
   send(request: LiveSendRequest): Promise<LiveMessage> {
-    const sessionId = this.registry.currentId(request.sessionId)
-    return (this.federated(sessionId) ?? this.outbox).send({ ...request, sessionId })
+    const routed = { ...request, sessionId: this.registry.currentId(request.sessionId) }
+    const server = this.federated(routed.sessionId)
+    return server
+      ? this.outbox.offer(routed, (offered) => server.offer(offered))
+      : this.outbox.send(routed)
   }
 
   async retry(messageId: string): Promise<LiveMessage | null> {
-    // It failed here while its server was away; the server is listed again, so it goes there.
     const held = this.outbox.list().find((message) => message.messageId === messageId)
-    const server = held?.state === 'failed' ? this.federated(held.sessionId) : null
-    const moved = server
-      ? await this.outbox.handOver(messageId, (request) =>
-          server.offer({ ...request, sessionId: this.registry.currentId(request.sessionId) })
-        )
-      : null
-    return moved ?? this.federation?.retry(messageId) ?? this.outbox.retry(messageId)
+    // It failed here while its server was away: the server is listed again, so it goes there.
+    return held?.state === 'failed' && this.federated(held.sessionId)
+      ? this.send({ sessionId: held.sessionId, messageId, text: held.text })
+      : (this.federation?.retry(messageId) ?? this.outbox.retry(messageId))
   }
 
   messages(sessionId?: string): LiveMessage[] {
     const current = sessionId === undefined ? undefined : this.registry.currentId(sessionId)
     const remote = this.federation?.messages(current) ?? []
-    // Seal stopped between a server taking a message and the outbox letting it go: the server's stands.
-    const onServer = new Set(remote.map((message) => message.messageId))
-    const local = this.outbox.list(current).filter((message) => !onServer.has(message.messageId))
+    const local = this.outbox.list(current)
     return remote.length === 0
       ? local
       : [...local, ...remote].sort((a, b) => a.createdAt - b.createdAt)

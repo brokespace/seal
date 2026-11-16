@@ -300,7 +300,6 @@ export class FederatedServerFeed {
     if (replacedBy && from && to) {
       // The desktop registry moves pins, names and marks to a session whose `continues` names the old id.
       this.formerIds.set(replacedBy, [...(this.formerIds.get(replacedBy) ?? []), ...former, from])
-      this.messages.renameSession(from, to)
     }
     this.changed()
   }

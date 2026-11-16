@@ -5,6 +5,7 @@ import type {
   LiveRemoveRequest,
   LiveSendRequest
 } from '../../../shared/live-sessions/live-session-types'
+import type { OfferedMessage } from '../delivery/live-message-outbox-types'
 import type { LiveSessionSource } from '../sources/live-session-source'
 import { FederatedServerFeed } from './federated-server-feed'
 import { federatedMessage, serverSessionId } from './federated-session-records'
@@ -41,7 +42,6 @@ export class FederatedSessions {
   private readonly changeListeners = new Set<() => void>()
   private readonly messageListeners = new Set<(message: LiveMessage) => void>()
   private readonly retryMs: number
-  private readonly now: () => number
   private stopped = false
   /** Each federated session's transcript, read by its server. */
   readonly transcripts: FederatedTranscripts
@@ -58,13 +58,11 @@ export class FederatedSessions {
   constructor(
     private readonly deps: {
       transport: FederationTransport
-      now?: () => number
       log?: (message: string, error?: unknown) => void
       /** Test seam for reconnect waits. */
       retryMs?: number
     }
   ) {
-    this.now = deps.now ?? Date.now
     this.retryMs = deps.retryMs ?? DEFAULT_RETRY_MS
     this.transcripts = new FederatedTranscripts({
       transport: deps.transport,
@@ -123,18 +121,18 @@ export class FederatedSessions {
     return target && { environmentId: target.feed.environmentId, sessionId: target.serverId }
   }
 
-  /** Asks the session's server to take a message; `refused` says why it did not, and the caller keeps it. */
-  offer(request: LiveSendRequest): Promise<LiveMessage | { refused: string }> {
-    return this.offerTo(this.target(request.sessionId), request)
-  }
-
-  private async offerTo(
-    target: Target | null,
-    request: LiveSendRequest
-  ): Promise<LiveMessage | { refused: string }> {
+  /**
+   * Asks the session's server to take a message and send it. `refused` says why it did not: the
+   * caller keeps the message, since nothing here outlives the server's connection.
+   */
+  async offer(request: LiveSendRequest): Promise<OfferedMessage> {
+    const target = this.target(request.sessionId)
     if (!target) {
       return { refused: SERVER_NOT_CONNECTED }
     }
+    // The server already has it: a resend that did not get through changes nothing.
+    const refused = (why: string): OfferedMessage =>
+      target.feed.messages.get(request.messageId) ?? { refused: why }
     try {
       const response = await this.deps.transport.call(
         target.feed.environmentId,
@@ -143,51 +141,21 @@ export class FederatedSessions {
         SEND_TIMEOUT_MS
       )
       if (response.ok !== true) {
-        return { refused: response.error.message }
+        return refused(response.error.message)
       }
       const sent = readServerMessage(response.result)
       const message = sent ? federatedMessage(sent, target.feed.hostId) : null
-      return message ? target.feed.messages.fromServer(message) : { refused: UNREADABLE_ANSWER }
+      return message ? target.feed.messages.fromServer(message) : refused(UNREADABLE_ANSWER)
     } catch (error) {
-      return { refused: messageOf(error) }
+      return refused(messageOf(error))
     }
   }
 
-  async send(request: LiveSendRequest): Promise<LiveMessage> {
-    const target = this.target(request.sessionId)
-    const taken = await this.offerTo(target, request)
-    if (!('refused' in taken)) {
-      return taken
-    }
-    const held = target?.feed.messages.get(request.messageId)
-    if (held && !target?.feed.messages.isUnsent(request.messageId)) {
-      // The server already has it: a resend that did not get through changes nothing.
-      return held
-    }
-    const now = this.now()
-    const message: LiveMessage = {
-      ...request,
-      state: 'failed',
-      route: null,
-      error: taken.refused,
-      createdAt: held?.createdAt ?? now,
-      updatedAt: now
-    }
-    if (target) {
-      return target.feed.messages.failedToSend(message)
-    }
-    this.emitMessage(message)
-    return message
-  }
-
-  /** Null when no federated message has that id. */
+  /** Asks the server to send one of its failed messages again. Null when no server lists that id. */
   retry(messageId: string): Promise<LiveMessage | null> | null {
     for (const feed of this.feeds.values()) {
-      const held = feed.messages.get(messageId)
-      if (held) {
-        return feed.messages.isUnsent(messageId)
-          ? this.send({ sessionId: held.sessionId, messageId, text: held.text })
-          : this.retryOnServer(feed, messageId)
+      if (feed.messages.get(messageId)) {
+        return this.retryOnServer(feed, messageId)
       }
     }
     return null

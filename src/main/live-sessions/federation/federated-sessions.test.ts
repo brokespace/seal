@@ -126,7 +126,6 @@ function federate(sessions: unknown[] = [serverChat()]): ReturnType<typeof fakeS
   const server = fakeServer()
   const federation = new FederatedSessions({
     transport: server.transport,
-    now: () => 7000,
     retryMs: 50
   })
   federation.sync([SERVER])
@@ -304,7 +303,7 @@ describe('a paired server listed from its own registry', () => {
     answers.set('liveSessions.send', () => ok(serverMessage()))
     answers.set('liveSessions.answer', () => ok({ ok: true }))
 
-    const sent = await federation.send({
+    const sent = await federation.offer({
       sessionId: 'machine-7:claude:abc',
       messageId: 'm-1',
       text: 'Run the tests'
@@ -343,46 +342,18 @@ describe('a paired server listed from its own registry', () => {
     expect(heard).toHaveBeenCalledWith(listed)
   })
 
-  it('lists a send that did not reach the server as failed and sends it again on retry', async () => {
-    const { federation, calls, answers } = federate()
+  it('says why a message did not reach the server and keeps nothing of it', async () => {
+    const { federation } = federate()
 
-    const failed = await federation.send({
+    const refused = await federation.offer({
       sessionId: 'machine-7:claude:abc',
       messageId: 'm-1',
       text: 'Run the tests'
     })
-    expect(failed).toEqual({
-      messageId: 'm-1',
-      sessionId: 'machine-7:claude:abc',
-      text: 'Run the tests',
-      state: 'failed',
-      route: null,
-      error: 'The server did not answer',
-      createdAt: 7000,
-      updatedAt: 7000
-    })
-    expect(federation.messages()).toEqual([failed])
-    expect(
-      await federation.answer({ sessionId: failed.sessionId, promptId: 'p', optionId: 'o' })
-    ).toEqual({
-      ok: false,
-      reason: 'failed',
-      error: 'The server did not answer'
-    })
 
-    answers.set('liveSessions.send', () =>
-      ok(serverMessage({ state: 'sent', route: 'structured' }))
-    )
-    const retried = await federation.retry('m-1')
-
-    expect(retried).toMatchObject({ sessionId: 'machine-7:claude:abc', state: 'sent' })
-    expect(calls.at(-1)).toEqual({
-      environmentId: 'env-1',
-      method: 'liveSessions.send',
-      params: { sessionId: 'local:claude:abc', messageId: 'm-1', text: 'Run the tests' }
-    })
-    expect(federation.messages().map((message) => message.state)).toEqual(['sent'])
-    expect(federation.retry('unknown')).toBeNull()
+    expect(refused).toEqual({ refused: 'The server did not answer' })
+    expect(federation.messages()).toEqual([])
+    expect(federation.retry('m-1')).toBeNull()
   })
 
   it('stops a session on its server without hiding it there', async () => {
