@@ -54,9 +54,8 @@ test('a chat that finished its turn shows the scripted summary on its row and a 
     { message: 'the finished chat got no summary and recap' }
   )
 
-  const row = orcaPage.locator(
-    `[data-testid="active-agents"] [data-live-session-row="${sessionId}"]`
-  )
+  // A chat in a workspace is listed under that workspace, not under Active agents.
+  const row = orcaPage.locator(`[data-live-session-row="${sessionId}"]`)
   await expect(row).toBeVisible()
   await expect(row).toHaveAttribute('data-status', 'your-turn')
   await expect(row.locator('[data-session-summary]')).toHaveText(SCRIPTED.summary)
