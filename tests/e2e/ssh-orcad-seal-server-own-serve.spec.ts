@@ -12,6 +12,7 @@ import {
 } from './helpers/docker-ssh-host-own-seal-serve'
 import {
   dockerSystemdSshHostUnavailableReason,
+  OWN_SERVE_PORT,
   startDockerSystemdSshHost,
   type DockerSystemdSshHost
 } from './helpers/docker-ssh-host-systemd-target'
@@ -19,6 +20,7 @@ import {
   addSshMachine,
   openMachinesPage,
   readMachine,
+  SEAL_SERVICE_PORT,
   sealServerFilesOnHost,
   showMachine
 } from './helpers/seal-server-install-machine'
@@ -31,9 +33,6 @@ const TEMPLATE = process.env.ORCA_E2E_ORCAD_CONVERT_TEMPLATE
 const UNAVAILABLE = dockerSystemdSshHostUnavailableReason()
 const MACHINE = 'seal-e2e-own-serve-box'
 const PAIRED_SERVER = 'seal-e2e-own-tunnel-server'
-const OWN_SERVE_PORT = 6768
-// Where a server Seal installs as a service listens.
-const SEAL_SERVICE_PORT = 16768
 const HOST_ANSWER_TIMEOUT_MS = 60_000
 
 test.skip(UNAVAILABLE !== null || !TEMPLATE, UNAVAILABLE ?? 'Set ORCA_E2E_ORCAD_CONVERT_TEMPLATE')

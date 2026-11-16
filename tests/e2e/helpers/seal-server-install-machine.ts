@@ -2,11 +2,15 @@
 import type { Locator, Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 import type { DockerSystemdSshHost } from './docker-ssh-host-systemd-target'
+import { waitForSessionReady } from './store'
 import type { MachineView } from '../../../src/shared/machines/machine-view'
 import type { SshConnectionState } from '../../../src/shared/ssh-types'
 
 /** A fresh install uploads a runtime and a bundle, starts the server and pairs with it. */
 export const SERVER_INSTALL_TIMEOUT_MS = 6 * 60_000
+
+/** Where a server Seal installs as a service listens; it keeps off 6768, the port the user's own `seal serve` takes. */
+export const SEAL_SERVICE_PORT = 16768
 
 export async function openMachinesPage(page: Page): Promise<void> {
   await page.evaluate(() => window.__store!.getState().setActiveView('machines'))
@@ -139,6 +143,31 @@ export async function readMachineServer(
         reason: machine.serverInstall?.reason ?? null
       }
     : null
+}
+
+async function serverListsSessions(page: Page, environmentId: string): Promise<boolean> {
+  return page.evaluate(async (selector) => {
+    const response = await window.api.runtimeEnvironments.call({
+      selector,
+      method: 'terminal.list',
+      params: {}
+    })
+    return response.ok
+  }, environmentId)
+}
+
+/** In an app launched again: connects the saved machine and returns it once its server lists sessions. */
+export async function reconnectThroughServer(page: Page, label: string): Promise<MachineView> {
+  await waitForSessionReady(page)
+  const machine = (await readMachine(page, label))!
+  expect(machine.connection).toBe('server')
+  await page.evaluate((machineId) => window.api.machines!.connect({ machineId }), machine.id)
+  await expect
+    .poll(() => serverListsSessions(page, machine.server!.environmentId), {
+      timeout: 3 * 60_000
+    })
+    .toBe(true)
+  return machine
 }
 
 export async function showMachine(page: Page, label: string): Promise<MachineView> {

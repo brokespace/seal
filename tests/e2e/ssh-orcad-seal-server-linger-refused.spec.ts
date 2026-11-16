@@ -14,6 +14,8 @@ import {
   openMachinesPage,
   readMachine,
   readMachineServer,
+  reconnectThroughServer,
+  SEAL_SERVICE_PORT,
   SERVER_INSTALL_TIMEOUT_MS,
   showMachine
 } from './helpers/seal-server-install-machine'
@@ -23,7 +25,6 @@ const UNAVAILABLE = dockerSystemdSshHostUnavailableReason()
 const MACHINE = 'seal-e2e-linger-refused-box'
 // A second login name for the host's `seal` account, so the SSH details do not carry the name `id -un` gives.
 const SSH_LOGIN = 'seal-ssh-login'
-const SERVICE_PORT = 16768
 
 test.skip(UNAVAILABLE !== null || !TEMPLATE, UNAVAILABLE ?? 'Set ORCA_E2E_ORCAD_CONVERT_TEMPLATE')
 
@@ -32,17 +33,6 @@ async function expectLingerWarning(page: Page): Promise<void> {
   const server = page.getByRole('region', { name: 'Seal server' })
   await expect(server.locator('[data-machine-server-warning="linger-off"]')).toBeVisible()
   await expect(server.getByText('sudo loginctl enable-linger seal', { exact: true })).toBeVisible()
-}
-
-async function serverListsSessions(page: Page, environmentId: string): Promise<boolean> {
-  return page.evaluate(async (selector) => {
-    const response = await window.api.runtimeEnvironments.call({
-      selector,
-      method: 'terminal.list',
-      params: {}
-    })
-    return response.ok
-  }, environmentId)
 }
 
 test('a host that refuses lingering runs Seal server only while its user has a session there', async (// oxlint-disable-next-line no-empty-pattern -- This test owns its app launches and its host.
@@ -76,7 +66,7 @@ test('a host that refuses lingering runs Seal server only while its user has a s
         })
       expect(host.userSystemctl(['is-active', 'seal-server']).stdout).toBe('active')
       expect(host.lingerEnabled()).toBe(false)
-      const serverPid = host.loopbackListenerPid(SERVICE_PORT)
+      const serverPid = host.loopbackListenerPid(SEAL_SERVICE_PORT)
       expect(serverPid).not.toBeNull()
       expect(host.sealServerState()).toEqual({ serviceActive: true, processIds: [serverPid] })
     })
@@ -109,18 +99,7 @@ test('a host that refuses lingering runs Seal server only while its user has a s
     await test.step('the next connect starts the server again and the warning stays', async () => {
       const second = await session.launch()
       app = second.app
-      await waitForSessionReady(second.page)
-      const machine = (await readMachine(second.page, MACHINE))!
-      expect(machine.connection).toBe('server')
-      await second.page.evaluate(
-        (machineId) => window.api.machines!.connect({ machineId }),
-        machine.id
-      )
-      await expect
-        .poll(() => serverListsSessions(second.page, machine.server!.environmentId), {
-          timeout: 3 * 60_000
-        })
-        .toBe(true)
+      await reconnectThroughServer(second.page, MACHINE)
       expect(host.sealServerState().serviceActive).toBe(true)
       expect(host.lingerEnabled()).toBe(false)
       await openMachinesPage(second.page)

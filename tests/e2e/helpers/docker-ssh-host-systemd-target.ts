@@ -37,7 +37,8 @@ const AS_SSH_USER = ['-u', SSH_USER, '-w', SSH_USER_HOME, '-e', SSH_USER_RUNTIME
 const PORT_TAKEN = /port is already allocated|address already in use/i
 const USER_UNIT_DIR = `${SSH_USER_HOME}/.config/systemd/user`
 const OWN_SERVE_UNIT = 'seal-serve.service'
-const OWN_SERVE_PORT = 6768
+/** The port the user's own `seal serve` takes. */
+export const OWN_SERVE_PORT = 6768
 // Holds the port a real `seal serve` would, so a test can tell whether Seal replaced its owner.
 const OWN_SERVE_STAND_IN = [
   '/usr/local/bin/node',

@@ -7,6 +7,7 @@ import { createRestartSession } from './helpers/orca-restart'
 import { waitForSessionReady } from './helpers/store'
 import {
   dockerSystemdSshHostUnavailableReason,
+  OWN_SERVE_PORT,
   startDockerSystemdSshHost,
   type DockerSystemdSshHost
 } from './helpers/docker-ssh-host-systemd-target'
@@ -18,6 +19,8 @@ import {
   reachablePorts,
   readMachine,
   readMachineServer,
+  reconnectThroughServer,
+  SEAL_SERVICE_PORT,
   sealServerFilesOnHost,
   SERVER_INSTALL_TIMEOUT_MS,
   serverInstallConfirmation,
@@ -28,9 +31,6 @@ const TEMPLATE = process.env.ORCA_E2E_ORCAD_CONVERT_TEMPLATE
 const UNAVAILABLE = dockerSystemdSshHostUnavailableReason()
 const MACHINE = 'seal-e2e-service-box'
 const SETTINGS_MACHINE = 'seal-e2e-settings-box'
-// A server run as a service keeps off 6768, the port the user's own `seal serve` takes.
-const SERVER_PORT = 16768
-const OWN_SERVE_PORT = 6768
 const NOTES_FILE = 'service-notes.txt'
 
 test.skip(UNAVAILABLE !== null || !TEMPLATE, UNAVAILABLE ?? 'Set ORCA_E2E_ORCAD_CONVERT_TEMPLATE')
@@ -45,21 +45,10 @@ function listensOn(host: DockerSystemdSshHost, port: number): { loopback: boolea
 /** A TCP connect from inside the host, made by root so no login session appears for the SSH user. */
 function serverAcceptsOnLoopback(host: DockerSystemdSshHost): boolean {
   try {
-    return host.exec(`exec 3<>/dev/tcp/127.0.0.1/${SERVER_PORT} && echo open`) === 'open'
+    return host.exec(`exec 3<>/dev/tcp/127.0.0.1/${SEAL_SERVICE_PORT} && echo open`) === 'open'
   } catch {
     return false
   }
-}
-
-async function serverListsSessions(page: Page, environmentId: string): Promise<boolean> {
-  return page.evaluate(async (selector) => {
-    const response = await window.api.runtimeEnvironments.call({
-      selector,
-      method: 'terminal.list',
-      params: {}
-    })
-    return response.ok
-  }, environmentId)
 }
 
 /** Settings > Machines > Seal servers > "Set up Seal on an SSH host"; returns that dialog. */
@@ -119,7 +108,7 @@ test('a new SSH machine runs Seal server as a service that a host restart brings
       expect(host.userSystemctl(['is-active', 'seal-server']).stdout).toBe('active')
       expect(host.userSystemctl(['is-enabled', 'seal-server']).stdout).toBe('enabled')
       expect(host.lingerEnabled()).toBe(true)
-      expect(listensOn(host, SERVER_PORT)).toEqual([{ loopback: true }])
+      expect(listensOn(host, SEAL_SERVICE_PORT)).toEqual([{ loopback: true }])
       expect(listensOn(host, OWN_SERVE_PORT)).toEqual([])
       // Only sshd is reachable from outside the host: the server opened no port.
       expect(reachablePorts(host)).toEqual([22])
@@ -149,25 +138,14 @@ test('a new SSH machine runs Seal server as a service that a host restart brings
       // Nobody logged in: linger started the user's manager, and the manager started the server.
       expect(host.loginSessions()).toEqual([])
       expect(reachablePorts(host)).toEqual([22])
-      serverPid = host.loopbackListenerPid(SERVER_PORT)
+      serverPid = host.loopbackListenerPid(SEAL_SERVICE_PORT)
       expect(serverPid).not.toBeNull()
     })
 
     await test.step('the desktop reconnects through the server and lists its sessions', async () => {
       const second = await session.launch()
       app = second.app
-      await waitForSessionReady(second.page)
-      const machine = (await readMachine(second.page, MACHINE))!
-      expect(machine.connection).toBe('server')
-      await second.page.evaluate(
-        (machineId) => window.api.machines!.connect({ machineId }),
-        machine.id
-      )
-      await expect
-        .poll(() => serverListsSessions(second.page, machine.server!.environmentId), {
-          timeout: 3 * 60_000
-        })
-        .toBe(true)
+      const machine = await reconnectThroughServer(second.page, MACHINE)
       await second.page.evaluate(() => window.api.liveSessions.refresh())
       const sessions = await second.page.evaluate(() => window.api.liveSessions.snapshot())
       expect(sessions.hostErrors[machine.recordId]).toBeUndefined()
@@ -175,7 +153,7 @@ test('a new SSH machine runs Seal server as a service that a host restart brings
       expect(host.userSystemctl(['show', 'seal-server', '-p', 'NRestarts', '--value']).stdout).toBe(
         '0'
       )
-      expect(host.loopbackListenerPid(SERVER_PORT)).toBe(serverPid)
+      expect(host.loopbackListenerPid(SEAL_SERVICE_PORT)).toBe(serverPid)
       await openMachinesPage(second.page)
       const shown = await showMachine(second.page, MACHINE)
       await expect(second.page.getByRole('region', { name: 'Seal server' })).toHaveAttribute(
@@ -267,7 +245,7 @@ test('Settings installs Seal server on an SSH host only after the confirmation',
           reason: null
         })
       expect(sealServerFilesOnHost(host)).not.toEqual([])
-      expect(listensOn(host, SERVER_PORT)).toEqual([{ loopback: true }])
+      expect(listensOn(host, SEAL_SERVICE_PORT)).toEqual([{ loopback: true }])
       expect(listensOn(host, OWN_SERVE_PORT)).toEqual([])
       await expect(setup).toBeHidden()
       await expect(listedServer).toBeVisible()
