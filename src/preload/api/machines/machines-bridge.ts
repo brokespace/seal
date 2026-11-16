@@ -10,6 +10,11 @@ import {
   type MachineShellOpenResult,
   type MachineTransfer
 } from '../../../shared/machines/machine-types'
+import type {
+  MachineCpuTemperatureSetup,
+  MachineCpuTemperatureSetupAction,
+  MachineCpuTemperatureSetupResult
+} from '../../../shared/machines/machine-cpu-temperature-types'
 import type { MachineConnectionType } from '../../../shared/machines/machine-record'
 import type {
   MachineServerInstallRequest,
@@ -141,6 +146,13 @@ export type MachinesApi = {
     signal: MachineProcessSignal
     startMarker: string
   }) => Promise<MachineProcessSignalResult>
+  /** Where the monitor that gives a Windows machine its CPU temperature stands. */
+  cpuTemperatureSetup: (args: { machineId: MachineId }) => Promise<MachineCpuTemperatureSetup>
+  /** `install` also starts a stopped monitor. Asks for administrator rights on the machine at most once. */
+  runCpuTemperatureSetup: (args: {
+    machineId: MachineId
+    action: MachineCpuTemperatureSetupAction
+  }) => Promise<MachineCpuTemperatureSetupResult>
   listDockerContainers: (args: { machineId: MachineId }) => Promise<MachineDockerContainers>
   dockerContainerAction: (args: {
     machineId: MachineId
@@ -225,6 +237,8 @@ export const machinesApi: MachinesApi = {
   removeWorktree: (args) => ipcRenderer.invoke(MACHINE_IPC.removeWorktree, args),
   listProcesses: (args) => ipcRenderer.invoke(MACHINE_IPC.listProcesses, args),
   signalProcess: (args) => ipcRenderer.invoke(MACHINE_IPC.signalProcess, args),
+  cpuTemperatureSetup: (args) => ipcRenderer.invoke(MACHINE_IPC.cpuTemperatureSetup, args),
+  runCpuTemperatureSetup: (args) => ipcRenderer.invoke(MACHINE_IPC.runCpuTemperatureSetup, args),
   listDockerContainers: (args) => ipcRenderer.invoke(MACHINE_IPC.listDockerContainers, args),
   dockerContainerAction: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerContainerAction, args),
   dockerStorage: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerStorage, args),
