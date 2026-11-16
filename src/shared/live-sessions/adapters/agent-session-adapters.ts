@@ -12,6 +12,7 @@ import {
   shouldStepNativeChatAskAnswer
 } from '../../native-chat/native-chat-agent-support'
 import type { AgentSessionAdapter, AgentSessionChatRuntime } from './agent-session-adapter'
+import { contextSampleReaderOf } from './agent-session-context-samples'
 import {
   AGENT_SESSION_AGENT_IDS,
   isAgentSessionAgentId,
@@ -57,6 +58,7 @@ function cliAnswers(
 function adapterOf(agent: AgentSessionAgentId): AgentSessionAdapter {
   const runtime = CHAT_RUNTIMES[agent]
   const decoder = resolveNativeChatTranscriptAgent(agent)
+  const usageOf = contextSampleReaderOf(decoder)
   return {
     agent,
     label: LABELS[agent] ?? TUI_AGENT_DISPLAY_NAMES[agent],
@@ -82,7 +84,13 @@ function adapterOf(agent: AgentSessionAgentId): AgentSessionAdapter {
         : {})
     },
     ...(decoder
-      ? { transcript: { decoder, remoteReadable: !nativeChatRequiresLocalTranscript(agent) } }
+      ? {
+          transcript: {
+            decoder,
+            remoteReadable: !nativeChatRequiresLocalTranscript(agent),
+            ...(usageOf ? { usageOf } : {})
+          }
+        }
       : {})
   }
 }

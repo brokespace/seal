@@ -10,6 +10,9 @@ export const AGENT_SESSION_CREATE_TAB_ID_RUNTIME_CAPABILITY =
 // Create is strict: advertise tabPlacement before sending it; the host saves its own group/tab IDs for the paired client (L270).
 export const AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY =
   'agentSession.create.tab-placement.v1' as const
+// Create is strict: send launchDirectory only to hosts advertising it; others would start at the workspace root.
+export const AGENT_SESSION_CREATE_LAUNCH_DIRECTORY_RUNTIME_CAPABILITY =
+  'agentSession.create.launch-directory.v1' as const
 // Create is strict: this capability lets the host own the first message from creation.
 export const AGENT_SESSION_CREATE_MESSAGE_RUNTIME_CAPABILITY =
   'agentSession.create.message.v1' as const
@@ -52,6 +55,7 @@ export const AGENT_SESSION_CREATE_RUNTIME_CAPABILITIES = [
   AGENT_SESSION_CREATE_MESSAGE_RUNTIME_CAPABILITY,
   AGENT_SESSION_CREATE_OPTIONS_MODE_RUNTIME_CAPABILITY,
   AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY,
+  AGENT_SESSION_CREATE_LAUNCH_DIRECTORY_RUNTIME_CAPABILITY,
   AGENT_SESSION_SEND_OPTIONS_RUNTIME_CAPABILITY,
   AGENT_SESSION_ACCOUNT_ENV_RUNTIME_CAPABILITY,
   AGENT_SESSION_SEND_SKILLS_RUNTIME_CAPABILITY,

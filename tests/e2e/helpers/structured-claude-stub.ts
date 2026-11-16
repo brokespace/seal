@@ -35,6 +35,33 @@ const STUB_SCRIPT = path.join(
 const SYSTEM_DIRS = ['/usr/bin', '/bin', '/usr/sbin', '/sbin']
 
 export type ClaudeStub = { command: string; launchLog: string }
+export type ClaudeStubLaunch = { pid: number; args: string[]; cwd: string }
+
+/** Every Claude process the app started, as the stub recorded it. */
+export function readClaudeStubLaunches(launchLog: string): ClaudeStubLaunch[] {
+  if (!existsSync(launchLog)) {
+    return []
+  }
+  return readFileSync(launchLog, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const entry: unknown = JSON.parse(line)
+      if (
+        typeof entry !== 'object' ||
+        entry === null ||
+        !('pid' in entry) ||
+        typeof entry.pid !== 'number' ||
+        !('args' in entry) ||
+        !Array.isArray(entry.args) ||
+        !('cwd' in entry) ||
+        typeof entry.cwd !== 'string'
+      ) {
+        throw new Error(`unreadable stub launch: ${line}`)
+      }
+      return { pid: entry.pid, args: entry.args.map(String), cwd: entry.cwd }
+    })
+}
 
 /** Dirs a login shell puts ahead of the launch PATH on macOS (path_helper). */
 function macLoginShellPathDirs(): string[] {

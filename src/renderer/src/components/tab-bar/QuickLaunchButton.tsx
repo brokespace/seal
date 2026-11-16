@@ -1,5 +1,4 @@
 import { readAgentMenuTerminalPending } from './agent-menu-launch-facts'
-import { terminalPendingReason } from './new-tab-agent-menu-model'
 import { useAppStore } from '@/store/index'
 import { useAppStateValue } from '@/store/retained-views/app-state-view'
 import { SubscribedAgentLaunchPickerMenu } from '@/components/agent/AgentLaunchPickerMenu'
@@ -11,6 +10,7 @@ import {
 import React, { useCallback } from 'react'
 import { toast } from 'sonner'
 import { launchAgentInNewTabWithOutcome } from '@/lib/agent-session/launch/new-tab/launch-agent-in-new-tab'
+import { offerSealServerInstall } from '@/lib/agent-session/launch/routing/seal-server-install-offer'
 
 import { createNonSecureContextUuid } from '../../../../shared/non-secure-context-uuid'
 import { captureNativeChatComposerFocusIntent } from '@/components/native-chat/composer/focus/native-chat-composer-focus-intent'
@@ -20,15 +20,9 @@ import {
 } from '@/lib/agent-session/launch/prompt/new-agent-prompt-outcome'
 import { activeAgentNotesSendFailureMessage } from '@/lib/agent-session/messaging/terminal/active-agent-note-send-result'
 import { AgentSettingsMenuItem } from '@/components/agent/AgentSettingsMenuItem'
-import { TabAgentSurfaceChoiceRow } from './TabAgentSurfaceChoiceRow'
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut
-} from '@/components/ui/dropdown-menu'
+import { TabAgentSurfaceRows } from './TabAgentSurfaceRows'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { getAgentCatalog } from '@/lib/agent-catalog/agent-catalog'
-import { AgentIcon } from '@/components/agent/icons/AgentIcon'
-import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useAgentMenuShortcutLabels } from './agent-menu-shortcut-labels'
 import type { AgentPickerInventorySource } from '../agent/use-agent-launch-picker-inventory'
 import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
@@ -40,7 +34,6 @@ import { cn } from '@/lib/class-names'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
 import { useNewTabAgentMenuRows, type NewTabAgentMenuModel } from './use-new-tab-agent-menu-rows'
 import { useAgentDetectionTargetForWorktree } from '@/hooks/useAgentDetectionTarget'
-import { chatUnavailableLabel, rowTitle, rowLabel, rowId } from './tab-agent-row-presentation'
 
 export type QuickLaunchAgentMenuItemsProps = {
   worktreeId: string
@@ -86,11 +79,16 @@ export function useTabAgentMenuLaunch({
 }) {
   const runLaunch = useCallback(
     (row: NewTabAgentMenuRow, draft?: AgentPickerDraft, pickerEntry?: AgentPickerEntry) => {
+      if (row.kind === 'chat-unavailable') {
+        return (
+          !disabled && row.reason === 'needs-server' && offerSealServerInstall(row.executionHostId)
+        )
+      }
+      // A chat that is the agent's CLI in chat view starts as a terminal does.
+      const opensTerminal = row.kind !== 'chat' || row.viaCli === true
       if (
         disabled ||
-        row.kind === 'chat-unavailable' ||
-        (row.kind !== 'chat' &&
-          readAgentMenuTerminalPending(useAppStore.getState(), { worktreeId }))
+        (opensTerminal && readAgentMenuTerminalPending(useAppStore.getState(), { worktreeId }))
       ) {
         return false
       }
@@ -102,8 +100,9 @@ export function useTabAgentMenuLaunch({
         focusIntent: captureNativeChatComposerFocusIntent(),
         ...(row.kind === 'chat' || row.kind === 'cli'
           ? {
-              requestedSurface: row.kind === 'chat' ? ('chat' as const) : ('terminal' as const),
-              selectedExecutionHostId: row.executionHostId
+              requestedSurface: opensTerminal ? ('terminal' as const) : ('chat' as const),
+              selectedExecutionHostId: row.executionHostId,
+              ...(row.kind === 'chat' && row.viaCli ? { opensInChatView: true as const } : {})
             }
           : {}),
         agent,
@@ -111,7 +110,7 @@ export function useTabAgentMenuLaunch({
           ? agentPickerFreshLaunchInputs(
               draft,
               {
-                surface: row.kind === 'chat' ? 'chat' : 'terminal',
+                surface: opensTerminal ? 'terminal' : 'chat',
                 executionHostId: row.executionHostId
               },
               pickerEntry
@@ -203,7 +202,6 @@ export function ProjectedAgentMenuItems({
 }): React.JSX.Element {
   const t = useTranslate()
   const desktopDefaultAgent = useAppStateValue((s) => s.settings?.defaultTuiAgent)
-  const newAgentShortcut = useOptionalShortcutLabel('tab.newAgent')
   const shortcutLabels = useAgentMenuShortcutLabels(pickerInventory ? model : undefined)
   const openAgentSettings = useCallback(() => {
     useAppStore.getState().openSettingsTarget({ pane: 'agents', repoId: null })
@@ -268,88 +266,18 @@ export function ProjectedAgentMenuItems({
           hideSearch={hidePickerSearch}
         />
       ) : (
-        rows.map((row, index) => {
-          const { agent } = row
-          const label = getCatalogEntry(agent)?.label ?? agent
-          // Chat rows come first; the rows that open a terminal start their own group.
-          const startsCliGroup = row.kind === 'cli' && index > 0 && rows[index - 1]?.kind !== 'cli'
-          if (row.kind === 'chat-unavailable') {
-            return (
-              <DropdownMenuItem key={rowId(row)} variant="launch" disabled>
-                <AgentIcon agent={agent} size={14} />
-                <span className="flex-1">{label}</span>
-                <span className="font-normal text-muted-foreground">
-                  {chatUnavailableLabel(row.reason, t)}
-                </span>
-              </DropdownMenuItem>
-            )
-          }
-          const showsDefaultAgentShortcut =
-            newAgentShortcut !== null && defaultAgent !== 'blank' && agent === defaultAgent
-          const pendingReason = terminalPendingReason(model.terminalPending, row, t)
-          const rowContent = (
-            <>
-              <AgentIcon agent={agent} size={14} />
-              <span className="min-w-0 flex-1 truncate">{rowLabel(row, t)}</span>
-              {pendingReason ? (
-                <span className="min-w-0 shrink truncate text-xs text-muted-foreground">
-                  {pendingReason}
-                </span>
-              ) : null}
-              {showsDefaultAgentShortcut ? (
-                <DropdownMenuShortcut>{newAgentShortcut}</DropdownMenuShortcut>
-              ) : null}
-            </>
-          )
-          const other = otherSurfaceRow(row, detectedIds)
-          return (
-            <React.Fragment key={rowId(row)}>
-              {startsCliGroup ? <DropdownMenuSeparator /> : null}
-              {other ? (
-                <TabAgentSurfaceChoiceRow
-                  row={row}
-                  other={other}
-                  label={label}
-                  terminalPending={model.terminalPending}
-                  disabled={disabled}
-                  runLaunch={runLaunch}
-                >
-                  {rowContent}
-                </TabAgentSurfaceChoiceRow>
-              ) : (
-                <DropdownMenuItem
-                  variant="launch"
-                  disabled={disabled || !!pendingReason}
-                  aria-description={pendingReason}
-                  onSelect={(event) => {
-                    if (runLaunch(row) === false) {
-                      event.preventDefault()
-                    }
-                  }}
-                  title={rowTitle(row, label, t)}
-                >
-                  {rowContent}
-                </DropdownMenuItem>
-              )}
-            </React.Fragment>
-          )
-        })
+        <TabAgentSurfaceRows
+          rows={rows}
+          detectedIds={detectedIds}
+          terminalPending={model.terminalPending}
+          disabled={disabled}
+          defaultAgent={defaultAgent}
+          runLaunch={runLaunch}
+        />
       )}
       <AgentSettingsMenuItem onSelect={openAgentSettings} />
     </>
   )
-}
-
-/** The same agent on the other surface: a chat's detected CLI, or a CLI-set agent's chat. */
-function otherSurfaceRow(
-  row: Exclude<NewTabAgentMenuRow, { kind: 'chat-unavailable' }>,
-  detectedIds: readonly TuiAgent[] | null
-): NewTabAgentMenuRow | null {
-  const { agent, executionHostId } = row
-  if (row.kind === 'chat') {
-    return detectedIds?.includes(agent) ? { kind: 'cli', agent, executionHostId } : null
-  }
-  return row.kind === 'cli' && row.chat ? { kind: 'chat', agent, executionHostId } : null
 }
 
 export const QuickLaunchAgentMenuItems = React.memo(QuickLaunchAgentMenuItemsInner)

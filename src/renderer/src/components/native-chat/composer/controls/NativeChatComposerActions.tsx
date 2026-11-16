@@ -304,15 +304,6 @@ export const NativeChatComposerActions = memo(function NativeChatComposerActions
         />
       )
     },
-    ...(contextUsage
-      ? [
-          {
-            id: 'context',
-            priority: 0,
-            content: <NativeChatContextUsageRing usage={contextUsage} />
-          }
-        ]
-      : []),
     { id: 'dictation', priority: 2, content: dictation },
     ...(draftNotSaved
       ? [{ id: 'draft', priority: 1, content: <NativeChatComposerDraftNotSavedIcon shown /> }]
@@ -329,6 +320,10 @@ export const NativeChatComposerActions = memo(function NativeChatComposerActions
             )
           }
         ]
+      : []),
+    // Last and unprioritised: the context ring stays beside Send while the toolbar keeps one row.
+    ...(contextUsage
+      ? [{ id: 'context', content: <NativeChatContextUsageRing usage={contextUsage} /> }]
       : [])
   ]
   return (

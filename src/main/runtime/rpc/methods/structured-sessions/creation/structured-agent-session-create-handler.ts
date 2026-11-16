@@ -115,6 +115,7 @@ async function resolveAndCommitStructuredAgentSessionCreate(
         ...(params.optionsMode ? { optionsMode: params.optionsMode } : {}),
         ...(params.options ? { options: params.options } : {}),
         ...(params.firstMessage ? { firstMessage: params.firstMessage } : {}),
+        ...(params.launchDirectory ? { launchDirectory: params.launchDirectory } : {}),
         atRest: Boolean(
           params.forkFrom ||
           params.firstMessage ||

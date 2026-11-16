@@ -45,6 +45,8 @@ export type StructuredAgentSessionCreateIntentInput = {
   forkFrom?: { sessionId: string; throughItemId: string }
   resumeFrom?: StructuredAgentSessionResumeSource
   structuredAgentCliSourceEvidence?: StructuredAgentCliSourceEvidence
+  /** Requested workspace subfolder, as the client sent it; unvalidated. */
+  launchDirectory?: string
 }
 
 export function resolveCommittedStructuredAgentSessionAdoptionIntent(input: {

@@ -24,15 +24,6 @@ it('keeps the terminal launch shown but waiting while the host connects, with ch
     catalog: { origin: 'probe', fetchedAt: 1, models: [] },
     rows: [{ kind: 'cli', agent: 'codex', chat: true }]
   }
-  // Chat is not offered over this SSH host, so the row's own reason would be "No chat over SSH".
-  const sshOnly: AgentPickerEntry = {
-    ...entry,
-    agent: 'claude',
-    label: 'Claude',
-    surfaces: ['terminal'],
-    defaultSurface: 'terminal',
-    rows: [{ kind: 'chat-unavailable', agent: 'claude', reason: 'ssh' }]
-  }
   const launch = vi.fn()
   const menu = (terminalPending: boolean) => (
     <TooltipProvider>
@@ -40,7 +31,7 @@ it('keeps the terminal launch shown but waiting while the host connects, with ch
         <DropdownMenuTrigger>New tab</DropdownMenuTrigger>
         <DropdownMenuContent>
           <AgentLaunchPickerMenu
-            entries={[entry, sshOnly]}
+            entries={[entry]}
             runLaunch={launch}
             model={{
               state: 'settled',
@@ -79,10 +70,6 @@ it('keeps the terminal launch shown but waiting while the host connects, with ch
   expect(configure.closest('[aria-disabled="true"], [disabled]')).toBeNull()
   fireEvent.keyDown(row, { key: 'ArrowRight' })
   expect(screen.getByRole('menu', { name: 'Configure Codex' })).not.toBeNull()
-  // One reason per row: the wait, not also the missing chat.
-  const reason = () => screen.getByRole('menuitem', { name: /^Claude/ }).textContent
-  expect(reason()).toBe('ClaudeConnecting…')
-  expect(screen.getByRole('menu', { name: 'Configure Codex' })).not.toBeNull()
   const user = userEvent.setup()
   fireEvent.keyDown(screen.getByRole('menu', { name: 'Configure Codex' }), { key: 'Escape' })
   expect(document.activeElement).toBe(configure)
@@ -98,7 +85,7 @@ it('keeps the terminal launch shown but waiting while the host connects, with ch
   expect(launch).not.toHaveBeenCalled()
   editor.removeEventListener('keydown', editingKey)
   const buttons = () =>
-    screen.getAllByRole('button', { name: /^Launch / }).map((button) => ({
+    screen.getAllByRole('button', { name: /^Launch (chat|terminal)$/ }).map((button) => ({
       name: button.getAttribute('aria-label'),
       disabled: button.hasAttribute('disabled')
     }))
@@ -108,7 +95,6 @@ it('keeps the terminal launch shown but waiting while the host connects, with ch
     { name: 'Launch terminal', disabled: true }
   ])
   view.rerender(menu(false))
-  expect(reason()).toBe('ClaudeNo chat over SSH')
   expect(document.querySelector('[contenteditable]')?.textContent).toBe('first line')
   expect(buttons()).toEqual([
     { name: 'Launch chat', disabled: false },

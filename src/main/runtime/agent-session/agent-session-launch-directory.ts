@@ -6,7 +6,7 @@ import type { AgentSessionRecordStore } from './records/agent-session-record-sto
 import { agentSessionPinnedLaunchDirectory } from './records/agent-session-record-launch-directory'
 import { isFloatingWorkspaceId } from '../../../shared/floating-workspace-worktree'
 
-/** Resuming a missing floating launch directory elsewhere would change the conversation. */
+/** Resuming a missing pinned launch directory elsewhere would change the conversation. */
 export function agentSessionLaunchFolderMissing(
   launchDirectory: string
 ): AgentSessionPreSpawnError {
@@ -34,8 +34,8 @@ async function isDirectory(path: string): Promise<boolean> {
   }
 }
 
-/** Floating workspace ids name mutable settings, so resume their pinned folder and refuse if it disappeared.
- * Worktree/folder ids still resolve by id; legacy unpinned floating records are repaired on launch. */
+/** A floating folder or workspace subfolder is resumed where it was pinned, and refused if it disappeared.
+ * Unpinned worktree/folder ids resolve by id; legacy unpinned floating records are repaired on launch. */
 export async function resolveAgentSessionLaunchDirectory(
   deps: AgentSessionLaunchDirectoryDeps,
   record: AgentSessionRecord

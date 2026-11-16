@@ -3,8 +3,7 @@ import {
   MAX_CONTEXT_CATEGORY_NAME_CHARS,
   MAX_CONTEXT_MODEL_ID_CHARS,
   type AgentSessionContextReport,
-  type AgentSessionContextUsageCategory,
-  type AgentSessionTokenUsage
+  type AgentSessionContextUsageCategory
 } from '../../../shared/agent-session/agent-session-context-usage'
 import type { ClaudeStreamJsonConnection } from '../claude-stream-json-connection'
 import type { ClaudeJournalTranslator } from '../structured/journal/claude-journal-translator-contract'
@@ -23,25 +22,6 @@ function positiveCount(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
 }
 
-/** Synthetic responses report zero usage and cannot size the context. */
-export function claudeTokenUsage(value: unknown): AgentSessionTokenUsage | null {
-  if (!isRecord(value)) {
-    return null
-  }
-  const usage = {
-    inputTokens: positiveCount(value.input_tokens),
-    cacheCreationInputTokens: positiveCount(value.cache_creation_input_tokens),
-    cacheReadInputTokens: positiveCount(value.cache_read_input_tokens),
-    outputTokens: positiveCount(value.output_tokens)
-  }
-  const total =
-    usage.inputTokens +
-    usage.cacheCreationInputTokens +
-    usage.cacheReadInputTokens +
-    usage.outputTokens
-  return total > 0 ? usage : null
-}
-
 function modelId(value: unknown): string | null {
   const model = typeof value === 'string' ? value.trim() : ''
   return model.length > 0 && model.length <= MAX_CONTEXT_MODEL_ID_CHARS ? model : null
@@ -53,14 +33,6 @@ function contextBaseModelId(model: string): string {
     .replace(/\[[^\]]*\]$/u, '')
     .trim()
     .toLowerCase()
-}
-
-export function claudeContextWindowHint(model: string): number | null {
-  // Bare names vary by provider and plan mode; only an explicit [1m] gives a reliable hint.
-  if (!/\[1m\]$/iu.test(model.trim())) {
-    return null
-  }
-  return 1_000_000
 }
 
 export type ClaudeMainThreadModel = { initModel: string | null; responseModel: string | null }
