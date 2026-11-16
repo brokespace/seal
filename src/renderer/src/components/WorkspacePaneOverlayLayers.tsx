@@ -3,6 +3,7 @@ import TerminalPaneOverlayLayer from './terminal-pane/mounting/TerminalPaneOverl
 import { RetainedBrowserPaneOverlayLayer } from './browser-pane/assemble-chrome/BrowserPaneOverlayLayer'
 import EmulatorPaneOverlayLayer from './emulator-pane/EmulatorPaneOverlayLayer'
 import StructuredAgentSessionPaneOverlayLayer from './native-chat/pane/routing/StructuredAgentSessionPaneOverlayLayer'
+import ExternalAgentSessionPaneOverlayLayer from './live-sessions/chat/ExternalAgentSessionPaneOverlayLayer'
 import AiVaultSessionDropLayer from './tab-group/AiVaultSessionDropLayer'
 import type { HiddenTerminalPrewarm } from './terminal-pane/controller/terminal-pane-types'
 
@@ -66,6 +67,11 @@ export function WorkspacePaneOverlayLayers({
         <EmulatorPaneOverlayLayer worktreeId={worktreeId} isWorktreeActive={isVisible} />
       ) : null}
       <StructuredAgentSessionPaneOverlayLayer
+        worktreeId={worktreeId}
+        isWorktreeActive={isVisible}
+        isWorktreeFocused={isFocused}
+      />
+      <ExternalAgentSessionPaneOverlayLayer
         worktreeId={worktreeId}
         isWorktreeActive={isVisible}
         isWorktreeFocused={isFocused}

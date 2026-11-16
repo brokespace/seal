@@ -5,96 +5,75 @@ import {
   type MachineDockerContainers
 } from '../../../shared/machines/machine-resource-types'
 import type { MachineConnection } from '../connection/machine-connection'
+import { forgetDockerInventory } from './machine-docker-inventory'
+import {
+  DOCKER_CONTAINER_ID,
+  DOCKER_TRY_FUNCTION,
+  dockerJsonRows,
+  dockerText,
+  parseDockerSizePair,
+  parseDockerUnavailable
+} from './machine-docker-output'
 import { firstErrorLine, runMachineHostScript } from './machine-host-script'
 
 const LIST_TIMEOUT_MS = 30_000
 const ACTION_TIMEOUT_MS = 90_000
-const CONTAINER_ID = /^[0-9a-f]{12,64}$/
 
-const UNIT_BYTES: Record<string, number> = {
-  B: 1,
-  kB: 1e3,
-  KB: 1e3,
-  MB: 1e6,
-  GB: 1e9,
-  TB: 1e12,
-  KiB: 1024,
-  MiB: 1024 ** 2,
-  GiB: 1024 ** 3,
-  TiB: 1024 ** 4
-}
-
-/** Docker prints sizes as `12.2MB` (df) or `328KiB` (stats). */
-export function parseDockerSize(text: string): number | null {
-  const match = /^\s*([\d.]+)\s*([A-Za-z]+)/.exec(text)
-  const unit = match ? UNIT_BYTES[match[2]] : undefined
-  return match && unit ? Math.round(Number(match[1]) * unit) : null
-}
-
-function percent(text: string | undefined): number | null {
-  const value = Number.parseFloat(text ?? '')
+function figure(text: unknown): number | null {
+  const value = Number.parseFloat(dockerText(text))
   return Number.isFinite(value) ? value : null
 }
 
 /** Defines `seal_docker_list`, which fails when Docker is missing or does not answer. */
 export const DOCKER_CONTAINER_LIST_FUNCTION = `
+${DOCKER_TRY_FUNCTION}
 seal_docker_list() {
-  command -v docker >/dev/null 2>&1 || { echo "@missing"; return 1; }
-  if ! seal_docker_listed=$(docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' 2>&1); then
-    printf '@unreachable %s\\n' "$(printf '%s' "$seal_docker_listed" | head -n 1)"
-    return 1
-  fi
-  echo "@ready"
-  printf '%s\\n' "$seal_docker_listed" | sed 's/^/@c\t/'
+  seal_docker_try docker ps -a --no-trunc --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' || return 1
+  printf '%s\\n' "$seal_docker_out" | sed 's/^/@c\t/'
 }
 `
 
 const DOCKER_CONTAINERS_SCRIPT = `
 ${DOCKER_CONTAINER_LIST_FUNCTION}
 seal_docker_list || return 0
-docker stats --no-stream --format '{{.ID}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}' 2>/dev/null | sed 's/^/@s\t/'
+docker stats --no-stream --no-trunc --format '{{json .}}' 2>/dev/null | sed 's/^/@s /'
 `
 
 export function parseDockerContainers(output: string): MachineDockerContainers {
   const lines = output.split(/\r?\n/)
-  if (lines.some((line) => line === '@missing')) {
-    return { state: 'missing' }
+  const unavailable = parseDockerUnavailable(lines)
+  if (unavailable) {
+    return unavailable
   }
-  const unreachable = lines.find((line) => line.startsWith('@unreachable'))
-  if (unreachable || !lines.includes('@ready')) {
-    return {
-      state: 'unreachable',
-      message: unreachable?.slice('@unreachable'.length).trim() || 'Docker did not answer.'
-    }
-  }
-  const stats = new Map<string, string[]>()
-  for (const line of lines) {
-    if (line.startsWith('@s\t')) {
-      const [id, ...rest] = line.split('\t').slice(1)
-      stats.set(id, rest)
-    }
-  }
+  const stats = new Map(dockerJsonRows(lines, '@s ').map((row) => [dockerText(row.ID), row]))
   const containers: MachineDockerContainer[] = []
   for (const line of lines) {
     if (!line.startsWith('@c\t')) {
       continue
     }
     const [id, name, image, status] = line.split('\t').slice(1)
-    if (!id || !CONTAINER_ID.test(id)) {
+    if (!id || !DOCKER_CONTAINER_ID.test(id)) {
       continue
     }
-    const [usage, memPercent, cpuPercent] = stats.get(id) ?? []
-    const [used, limit] = (usage ?? '').split('/')
+    const row = stats.get(id)
+    const [memUsageBytes, memLimitBytes] = parseDockerSizePair(dockerText(row?.MemUsage))
+    const [netRxBytes, netTxBytes] = parseDockerSizePair(dockerText(row?.NetIO))
+    const [blockReadBytes, blockWriteBytes] = parseDockerSizePair(dockerText(row?.BlockIO))
     containers.push({
       id,
       name: name ?? id,
       image: image ?? '',
       status: status ?? '',
       running: /^Up\b/.test(status ?? ''),
-      memUsageBytes: used ? parseDockerSize(used) : null,
-      memLimitBytes: limit ? parseDockerSize(limit) : null,
-      memPercent: percent(memPercent),
-      cpuPercent: percent(cpuPercent)
+      memUsageBytes,
+      memLimitBytes,
+      memPercent: figure(row?.MemPerc),
+      cpuPercent: figure(row?.CPUPerc),
+      netRxBytes,
+      netTxBytes,
+      blockReadBytes,
+      blockWriteBytes,
+      pids: figure(row?.PIDs)
     })
   }
   containers.sort((a, b) => (b.memUsageBytes ?? -1) - (a.memUsageBytes ?? -1))
@@ -115,7 +94,7 @@ export async function runMachineDockerContainerAction(
   containerId: string,
   action: MachineDockerContainerAction
 ): Promise<void> {
-  if (!CONTAINER_ID.test(containerId)) {
+  if (!DOCKER_CONTAINER_ID.test(containerId)) {
     throw new Error('Unknown container')
   }
   if (!MACHINE_DOCKER_CONTAINER_ACTIONS.includes(action)) {
@@ -123,10 +102,14 @@ export async function runMachineDockerContainerAction(
   }
   // Without --force, so Docker itself refuses to remove a container that is still running.
   const command = action === 'remove' ? 'rm' : action
-  const result = await runMachineHostScript(connection, `docker ${command} ${containerId}`, {
-    timeoutMs: ACTION_TIMEOUT_MS
-  })
-  if (result.exitCode !== 0) {
-    throw new Error(firstErrorLine(result))
+  try {
+    const result = await runMachineHostScript(connection, `docker ${command} ${containerId}`, {
+      timeoutMs: ACTION_TIMEOUT_MS
+    })
+    if (result.exitCode !== 0) {
+      throw new Error(firstErrorLine(result))
+    }
+  } finally {
+    forgetDockerInventory(connection)
   }
 }

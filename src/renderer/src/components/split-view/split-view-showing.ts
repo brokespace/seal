@@ -8,12 +8,10 @@ type ItemViewState = Pick<
   'activeView' | 'activePendingCreationId' | 'pendingWorktreeCreations'
 >
 
-/** The main area is on a view that shows items (a workspace, a session, a project), not another page. */
+/** The main area is on a view that shows items (a workspace, a project), not another page. */
 export function selectItemViewShown(state: ItemViewState): boolean {
   return (
-    (state.activeView === 'terminal' ||
-      state.activeView === 'sessions' ||
-      state.activeView === 'project') &&
+    (state.activeView === 'terminal' || state.activeView === 'project') &&
     !selectWorktreeCreationSurfaceShown(state)
   )
 }

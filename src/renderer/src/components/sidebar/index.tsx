@@ -10,7 +10,7 @@ import SetupScriptPromptCard from './SetupScriptPromptCard'
 import WorktreeList from './worktree-list/listing/WorktreeList'
 import WslMovedProjectsSection from './WslMovedProjectsSection'
 import HiddenProjectsSection from './hidden-projects/HiddenProjectsSection'
-import ActiveAgentsSection from '../live-sessions/active-agents/ActiveAgentsSection'
+import SidebarSessions from '../live-sessions/workspace-rows/SidebarSessions'
 import SidebarToolbar from './SidebarToolbar'
 import WorkspaceKanbanDrawer from './workspace-board/surface/WorkspaceKanbanDrawer'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
@@ -155,9 +155,9 @@ function Sidebar({
               <LocalGitToolchainScanBanner />
               <StartupWorktreeRefreshStatus />
               <WorktreeCardsUpdateNotice />
-              {/* Active agents and Projects are sections of one list: both render inside its scroll container. */}
+              {/* Projects and the sessions no workspace holds are sections of one list: both render inside its scroll container. */}
               <SidebarScrollSections
-                leading={<ActiveAgentsSection />}
+                trailing={<SidebarSessions />}
                 pinnedHeader={
                   <SidebarHeader
                     onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}

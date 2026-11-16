@@ -5,7 +5,7 @@ import {
   selectWorktreesByRepo
 } from '@/store/workspaces/catalog/workspace-record-fields'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { useLiveSessions } from '../live-session-registry-store'
+import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
 import {
   projectSessionBadges,
   workspaceLinkFinder,
@@ -44,6 +44,17 @@ function linksFor(inputs: Inputs): LiveSessionLinks {
   }
   memo = { inputs, value: { links, byProject: projectSessionBadges(sessions, links) } }
   return memo.value
+}
+
+/** The same answer outside a render, for an action that runs once. */
+export function readLiveSessionLinks(): LiveSessionLinks {
+  const state = useAppStore.getState()
+  return linksFor([
+    liveSessionRegistryStore.getState().sessions,
+    state.repos,
+    selectWorktreesByRepo(state),
+    selectFolderWorkspaces(state)
+  ])
 }
 
 /** The workspace the registry attached each live session to, and each project's session badge. */

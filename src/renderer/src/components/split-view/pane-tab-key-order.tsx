@@ -2,10 +2,9 @@ import { ITEM_SURFACE_PANE_ATTRIBUTE } from './ItemSurfaceSlot'
 import { ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 
 /**
- * In a grid a session or a project is drawn from a layer that comes before every pane strip, so
- * the browser's own Tab order is all contents first and all strips after. These put back the
- * order a reader expects: a strip, then what it shows, then the next strip. A single view needs
- * none of it: its strip already stands before its content.
+ * In a grid a project is drawn from a layer that comes before every pane strip, so the browser's
+ * own Tab order is all contents first and all strips after. These put back the order a reader
+ * expects: a strip, then what it shows, then the next strip. A single view has no strip.
  */
 
 const TAB_STOP_SELECTOR =
@@ -19,7 +18,7 @@ function isShown(element: HTMLElement): boolean {
 }
 
 function edgeTabStop(root: Element, edge: 'first' | 'last'): HTMLElement | undefined {
-  // A control folded away with `inert` (a session's "Jump to latest") takes no focus.
+  // A control folded away with `inert` takes no focus.
   const isStop = (element: HTMLElement): boolean =>
     element.tabIndex >= 0 && isShown(element) && !element.closest('[inert]')
   const stops = [...root.querySelectorAll<HTMLElement>(TAB_STOP_SELECTOR)]
@@ -41,14 +40,14 @@ function isInside(event: React.KeyboardEvent<HTMLElement>): boolean {
   return event.target instanceof Node && event.currentTarget.contains(event.target)
 }
 
-/** The strips of the grid's panes; the agent-session page's own strip names no pane. */
+/** The strips of the grid's panes. */
 function paneStrips(): HTMLElement[] {
   return [...document.querySelectorAll<HTMLElement>(`[${ITEM_TAB_STRIP_ATTRIBUTE}]`)].filter(
-    (strip) => strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) !== '' && isShown(strip)
+    isShown
   )
 }
 
-/** The session or project a pane's strip has in front; a workspace pane has none here. */
+/** The project a pane's strip has in front; a workspace pane has none here. */
 function surfaceOfStrip(strip: Element): HTMLElement | undefined {
   const paneId = strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE)
   if (!paneId) {
@@ -109,9 +108,6 @@ export function bridgeTabKeyFromItemStrip(event: React.KeyboardEvent<HTMLElement
     return
   }
   const strip = event.currentTarget
-  if (!strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE)) {
-    return
-  }
   skipGuardForThisKey(event.shiftKey ? 'entry' : 'exit')
   if (!event.shiftKey) {
     const surface = event.target === edgeTabStop(strip, 'last') ? surfaceOfStrip(strip) : undefined

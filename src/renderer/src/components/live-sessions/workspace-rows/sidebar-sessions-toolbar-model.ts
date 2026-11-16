@@ -12,7 +12,7 @@ import type {
   LiveSessionMachine,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
-import { isListedLiveSession, machineKnownByHostId } from '../active-agents/active-agents-model'
+import { isListedLiveSession, machineKnownByHostId } from '../row/live-session-machine-listing'
 import { liveSessionStatusLabel } from '../live-session-presentation'
 import {
   hasSidebarSessionFilters,

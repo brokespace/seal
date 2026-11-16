@@ -11,6 +11,7 @@ import type {
 import { formatBytes } from '../model/machine-format'
 import { formatGpuIndexes } from '../model/machine-gpu-format'
 import { MACHINE_AGENT_NAMES } from './machine-agent-names'
+import { MachineSortHeader } from './MachineSortHeader'
 
 export type MachineProcessSort = 'cpu' | 'memory' | 'gpu'
 
@@ -29,7 +30,8 @@ const GPU_MEMORY_COLUMN = 'w-24 shrink-0 text-right'
 // GPU memory takes the room CPU and memory had, until the pane is wide enough for all three.
 const BESIDE_GPU = '@max-lg:hidden'
 
-function Tag({
+/** A small bordered note beside a row's name: its agent, its pane, the GPUs it is on. */
+export function MachineProcessTag({
   icon,
   title,
   whole = false,
@@ -52,30 +54,6 @@ function Tag({
       {icon}
       <span className="truncate">{children}</span>
     </span>
-  )
-}
-
-function SortHeader({
-  label,
-  active,
-  className,
-  onSort
-}: {
-  label: string
-  active: boolean
-  className: string
-  onSort: () => void
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      className={cn(className, 'font-medium hover:text-foreground', active && 'text-foreground')}
-      aria-pressed={active}
-      onClick={onSort}
-    >
-      {label}
-      {active ? ' ↓' : ''}
-    </button>
   )
 }
 
@@ -105,20 +83,20 @@ export function MachineProcessList({
         <span className={cn(PID_COLUMN, 'font-medium')}>
           {t('auto.components.machines.processes.pid', 'PID')}
         </span>
-        <SortHeader
+        <MachineSortHeader
           label={t('auto.components.machines.processes.cpu', 'CPU')}
           active={sort === 'cpu'}
           className={cn(CPU_COLUMN, beside)}
           onSort={() => onSort('cpu')}
         />
-        <SortHeader
+        <MachineSortHeader
           label={t('auto.components.machines.processes.memory', 'Memory')}
           active={sort === 'memory'}
           className={cn(MEMORY_COLUMN, beside)}
           onSort={() => onSort('memory')}
         />
         {gpuUse ? (
-          <SortHeader
+          <MachineSortHeader
             label={t('auto.components.machines.processes.gpuMemory', 'GPU memory')}
             active={sort === 'gpu'}
             className={GPU_MEMORY_COLUMN}
@@ -139,29 +117,31 @@ export function MachineProcessList({
                 <div className="flex min-w-0 flex-1 items-center gap-1.5">
                   <span className="truncate font-medium">{process.name}</span>
                   {process.agent ? (
-                    <Tag icon={<Bot />}>{MACHINE_AGENT_NAMES[process.agent]}</Tag>
+                    <MachineProcessTag icon={<Bot />}>
+                      {MACHINE_AGENT_NAMES[process.agent]}
+                    </MachineProcessTag>
                   ) : null}
                   {process.tmuxPane ? (
-                    <Tag icon={<PanelsTopLeft />}>
+                    <MachineProcessTag icon={<PanelsTopLeft />}>
                       {t('auto.components.machines.processes.inPane', 'tmux {{pane}}', {
                         pane: process.tmuxPane
                       })}
-                    </Tag>
+                    </MachineProcessTag>
                   ) : null}
                   {process.carriesSealConnection ? (
-                    <Tag>
+                    <MachineProcessTag>
                       {t('auto.components.machines.processes.sealConnection', 'Seal connection')}
-                    </Tag>
+                    </MachineProcessTag>
                   ) : null}
                   {gpu && gpu.gpuIndexes.length > 0 ? (
-                    <Tag icon={<Gpu />} whole>
+                    <MachineProcessTag icon={<Gpu />} whole>
                       {t('auto.components.machines.gpu.index', 'GPU {{index}}', {
                         index: formatGpuIndexes(gpu.gpuIndexes)
                       })}
-                    </Tag>
+                    </MachineProcessTag>
                   ) : null}
                   {gpu?.container ? (
-                    <Tag
+                    <MachineProcessTag
                       icon={<Container />}
                       title={t(
                         'auto.components.machines.gpu.inContainer',
@@ -170,7 +150,7 @@ export function MachineProcessList({
                       )}
                     >
                       {gpu.container.name ?? gpu.container.id.slice(0, 12)}
-                    </Tag>
+                    </MachineProcessTag>
                   ) : null}
                 </div>
                 <span className={cn(PID_COLUMN, 'font-mono text-muted-foreground tabular-nums')}>

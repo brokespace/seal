@@ -2,7 +2,9 @@ import { defineFixture } from '../../component-fixtures/component-fixture'
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { sampleSessionSurface } from '../../../../shared/live-sessions/live-session-surface.test-fixture'
-import { LiveSessionChat } from './LiveSessionChat'
+import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
+import { AgentSessionChatFrameView } from './chat/AgentSessionChatFrame'
+import { externalAgentSessionChatRows } from './chat/external-agent-session-chat-rows'
 
 const NOW = 1_800_000_000_000
 
@@ -193,28 +195,31 @@ const session: LiveSession = {
   permission: null
 }
 
-const noop = () => {}
-
 function recorded(messages: NativeChatMessage[], height: string): React.JSX.Element {
   return (
     <div className={`flex ${height}`}>
-      <LiveSessionChat
-        session={session}
-        transcript={{
-          phase: 'ready',
-          error: null,
-          messages,
-          readTo: null,
-          hasMore: false,
-          loadingEarlier: false,
-          loadEarlier: async () => 'exhausted' as const
-        }}
-        pending={[]}
-        onSend={noop}
-        onRetry={noop}
-        onAnswer={noop}
-        answering={null}
-      />
+      <AgentSessionChatFrameView session={session} isVisible>
+        <NativeChatMessageList
+          session={externalAgentSessionChatRows({
+            agent: session.provider,
+            providerSessionId: session.providerSessionId,
+            transcript: {
+              phase: 'ready',
+              error: null,
+              messages,
+              readTo: null,
+              hasMore: false,
+              loadingEarlier: false,
+              loadEarlier: async () => 'exhausted' as const
+            },
+            pending: [],
+            working: false
+          })}
+          isVisible
+          isWorking={false}
+          expandSignal={false}
+        />
+      </AgentSessionChatFrameView>
     </div>
   )
 }

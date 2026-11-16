@@ -5,10 +5,10 @@ import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import {
-  LiveSessionPanelEmpty,
-  LiveSessionPanelSectionTitle,
-  LiveSessionSidePanel
-} from '@/components/live-sessions/workspace/LiveSessionSidePanel'
+  AgentSessionPanelEmpty,
+  AgentSessionPanelSectionTitle,
+  AgentSessionSidePanel
+} from '@/components/live-sessions/chat/AgentSessionSidePanel'
 import type {
   RecapItem,
   RecapItemMark,
@@ -63,11 +63,11 @@ function Section({
 }): React.JSX.Element {
   return (
     <section data-recap-section={name}>
-      <LiveSessionPanelSectionTitle>
+      <AgentSessionPanelSectionTitle>
         {icon}
         <span>{title}</span>
         {count ? <span className="font-normal tabular-nums opacity-70">{count}</span> : null}
-      </LiveSessionPanelSectionTitle>
+      </AgentSessionPanelSectionTitle>
       {children}
     </section>
   )
@@ -130,9 +130,9 @@ function TickSection({
       {open.length > 0 ? (
         <ul>{open.map(row)}</ul>
       ) : (
-        <LiveSessionPanelEmpty>
+        <AgentSessionPanelEmpty>
           {t('seal.sessionRecap.allSettled', 'Nothing open.')}
-        </LiveSessionPanelEmpty>
+        </AgentSessionPanelEmpty>
       )}
       {settled.length > 0 ? (
         <Folded
@@ -317,7 +317,7 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
   const note = view ? recapStateNote(view, t) : null
   const writing = t('seal.sessionRecap.writing', 'Reading the session\u2026')
   return (
-    <LiveSessionSidePanel
+    <AgentSessionSidePanel
       panel="recap"
       title={t('seal.sessionRecap.title', 'Recap')}
       onClose={props.onClose}
@@ -388,6 +388,6 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
       ) : view === null || updating ? (
         <Writing label={writing} />
       ) : null}
-    </LiveSessionSidePanel>
+    </AgentSessionSidePanel>
   )
 }

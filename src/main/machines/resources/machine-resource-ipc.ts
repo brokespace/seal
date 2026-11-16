@@ -2,6 +2,10 @@ import {
   MACHINE_CPU_TEMPERATURE_SETUP_ACTIONS,
   type MachineCpuTemperatureSetupAction
 } from '../../../shared/machines/machine-cpu-temperature-types'
+import type {
+  MachineDockerDetailTarget,
+  MachineDockerStorageKind
+} from '../../../shared/machines/machine-docker-types'
 import {
   MACHINE_CLEANUP_TARGETS,
   MACHINE_DOCKER_CONTAINER_ACTIONS,
@@ -23,12 +27,19 @@ import {
   readWindowsCpuTemperatureSetup,
   runWindowsCpuTemperatureSetup
 } from './machine-cpu-temperature-windows-setup'
-import { readMachineDockerStorage } from './machine-docker-cleanup-scan'
 import { queryMachineDiskIndex } from './machine-disk-index'
+import { readMachineDockerContainerLogs } from './machine-docker-container-logs'
 import {
   listMachineDockerContainers,
   runMachineDockerContainerAction
 } from './machine-docker-containers'
+import { readMachineDockerDetails } from './machine-docker-details'
+import { readMachineDockerStorage } from './machine-docker-inventory'
+import { isDockerJsonRow } from './machine-docker-output'
+import {
+  listMachineDockerVolumeDir,
+  readMachineDockerVolumeFile
+} from './machine-docker-volume-files'
 import { probeMachineProcesses } from './machine-process-probe'
 import { signalMachineProcess } from './machine-process-signal'
 import { rereadMachineSensors } from './machine-sensor-readings'
@@ -59,6 +70,26 @@ function dockerActionOf(value: unknown): MachineDockerContainerAction {
   return action
 }
 
+const DOCKER_DETAIL_KINDS = ['container', 'image', 'volume'] as const
+const DOCKER_STORAGE_KINDS = ['images', 'containers', 'volumes', 'build-cache'] as const
+
+function dockerDetailTargetOf(value: unknown): MachineDockerDetailTarget {
+  const target = isDockerJsonRow(value) ? value : {}
+  const kind = DOCKER_DETAIL_KINDS.find((known) => known === target.kind)
+  if (!kind) {
+    throw new Error('Unknown kind of Docker object')
+  }
+  return { kind, id: requireString(target.id, 'id') }
+}
+
+function dockerStorageKindOf(value: unknown): MachineDockerStorageKind {
+  const kind = DOCKER_STORAGE_KINDS.find((known) => known === value)
+  if (!kind) {
+    throw new Error('Unknown kind of Docker object')
+  }
+  return kind
+}
+
 function cpuTemperatureSetupActionOf(value: unknown): MachineCpuTemperatureSetupAction {
   const action = MACHINE_CPU_TEMPERATURE_SETUP_ACTIONS.find((known) => known === value)
   if (!action) {
@@ -67,7 +98,10 @@ function cpuTemperatureSetupActionOf(value: unknown): MachineCpuTemperatureSetup
   return action
 }
 
-export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar): void {
+export function registerMachineResourceHandlers(
+  handle: MachineInvokeRegistrar,
+  send: (channel: string, payload: unknown) => void
+): void {
   handle(MACHINE_IPC.listProcesses, async (args) =>
     probeMachineProcesses(await connected(args.machineId), { gpus: args.gpus === true })
   )
@@ -114,7 +148,42 @@ export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar):
   )
 
   handle(MACHINE_IPC.dockerStorage, async (args) =>
-    readMachineDockerStorage(await connected(args.machineId))
+    readMachineDockerStorage(await connected(args.machineId), { force: args.force === true })
+  )
+
+  handle(MACHINE_IPC.dockerDetails, async (args) =>
+    readMachineDockerDetails(await connected(args.machineId), dockerDetailTargetOf(args.target))
+  )
+
+  handle(MACHINE_IPC.dockerContainerLogs, async (args) =>
+    readMachineDockerContainerLogs(
+      await connected(args.machineId),
+      requireString(args.containerId, 'containerId')
+    )
+  )
+
+  handle(MACHINE_IPC.dockerVolumeListDir, async (args) =>
+    listMachineDockerVolumeDir(
+      await connected(args.machineId),
+      requireString(args.volume, 'volume'),
+      requireString(args.path, 'path')
+    )
+  )
+
+  handle(MACHINE_IPC.dockerVolumeReadFile, async (args) =>
+    readMachineDockerVolumeFile(
+      await connected(args.machineId),
+      requireString(args.volume, 'volume'),
+      requireString(args.path, 'path')
+    )
+  )
+
+  handle(MACHINE_IPC.planDockerRemoval, async (args) =>
+    cleanups.plan(
+      await connected(args.machineId),
+      dockerStorageKindOf(args.kind),
+      requireStrings(args.keys, 'keys')
+    )
   )
 
   // A newer drill-down for the same machine replaces the one still reading the previous folder.
@@ -144,7 +213,8 @@ export function registerMachineResourceHandlers(handle: MachineInvokeRegistrar):
     cleanups.run(
       await connected(args.machineId),
       requireString(args.token, 'token'),
-      requireStrings(args.itemIds, 'itemIds')
+      requireStrings(args.itemIds, 'itemIds'),
+      (progress) => send(MACHINE_IPC.cleanupProgress, progress)
     )
   )
 }

@@ -156,6 +156,19 @@ describe('LiveSessionRecaps', () => {
     expect(h.passes).toEqual(['auto local:claude:abc'])
   })
 
+  it('recaps a first turn as it stops although the chat was opened before it had said anything', async () => {
+    const h = await harness()
+    h.sessions.set('local:claude:abc', session())
+    h.outcomes.push('empty')
+
+    h.recaps.view('local:claude:abc', true)
+    await h.wait(1_000)
+    h.seen(session({ status: 'waiting-input', lastActivityAt: 2_000 }))
+    await h.wait(3_000)
+
+    expect(h.passes).toEqual(['asked local:claude:abc', 'auto local:claude:abc'])
+  })
+
   it('brings a stale recap up to date when it is opened, and only reads it otherwise', async () => {
     const h = await harness()
     h.sessions.set('local:claude:abc', session({ status: 'working', lastActivityAt: 9_000 }))

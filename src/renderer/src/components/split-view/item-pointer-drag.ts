@@ -8,13 +8,15 @@ import { beginSplitViewPaneDrop, type SplitViewPaneDrop } from './split-view-pan
 import type { SplitViewItem } from './split-view-types'
 
 /**
- * The pointer drag of a sidebar row that only ever lands in panes (an Active agents row). Call
- * from the row's pointer-down. Esc, window blur and a missed release cancel.
+ * The pointer drag of a sidebar row that only ever lands in panes (an agent session's row). Call
+ * from the row's pointer-down. Esc, window blur and a missed release cancel. `onDropped` runs
+ * once the main area took the item.
  */
 export function startItemPointerDrag(
   event: { button: number; clientX: number; clientY: number },
   source: HTMLElement,
-  item: SplitViewItem
+  item: SplitViewItem,
+  onDropped?: () => void
 ): void {
   if (event.button !== 0) {
     return
@@ -55,12 +57,16 @@ export function startItemPointerDrag(
     drop.track(move.clientX, move.clientY)
   }
   const onUp = (up: PointerEvent): void => {
+    let dropped = false
     if (drop) {
       swallowNextClickOnDragHandle(source)
       // Before the drag ends: ending it brings back a hover card that would cover the drop.
-      drop.commit(up.clientX, up.clientY)
+      dropped = drop.commit(up.clientX, up.clientY)
     }
     finish()
+    if (dropped) {
+      onDropped?.()
+    }
   }
   const onKeyDown = (key: KeyboardEvent): void => {
     if (key.key === 'Escape' && drop) {

@@ -17,7 +17,6 @@ import { bridgeTabKeyFromItemStrip } from './pane-tab-key-order'
 import {
   ITEM_TAB_ROW_ATTRIBUTE,
   ITEM_TAB_STRIP_ATTRIBUTE,
-  itemTabStripGroupId,
   useSplitViewDropPreview
 } from './split-view-drop-target'
 import { splitViewItemKey, type SplitViewTab } from './split-view-types'
@@ -44,8 +43,8 @@ function moveTabFocus(event: React.KeyboardEvent<HTMLDivElement>): void {
 }
 
 /**
- * The tabs of a split-view pane, and of the agent-session page: workspaces, sessions and projects
- * in the tab strip every workspace tab group uses, so they lay out, overflow and drag the same.
+ * The tabs of a split-view pane: workspaces and projects in the tab strip every workspace tab
+ * group uses, so they lay out, overflow and drag the same.
  */
 export function ItemTabBar({
   paneId,
@@ -59,8 +58,7 @@ export function ItemTabBar({
   className,
   style
 }: {
-  /** Null for the agent-session page in single view. */
-  paneId: string | null
+  paneId: string
   tabs: readonly SplitViewTab[]
   activeKey: string | null
   /** Names the tablist. */
@@ -73,14 +71,13 @@ export function ItemTabBar({
   className?: string
   style?: React.CSSProperties
 }): React.JSX.Element {
-  const groupId = itemTabStripGroupId(paneId)
   const keys = useMemo(() => tabs.map((tab) => splitViewItemKey(tab.item)), [tabs])
   const navigation = useTabStripOverflowNavigation({
     activeVisibleTabId: activeKey,
     activeDockSlotId: activeKey,
     layoutKey: keys.join('|'),
     // Names the strip, so one that changes hands starts over.
-    worktreeId: groupId
+    worktreeId: paneId
   })
   useSelectedTabKeptInNarrowingStrip(navigation, activeKey)
   const dragScroll = useTabStripDragScrollHandlers(navigation.scrollTabStrip, {
@@ -89,12 +86,12 @@ export function ItemTabBar({
   })
   const insertion = useSplitViewDropPreview()?.insertion
   const dropIndicators = useMemo(() => {
-    const edges = resolveTabIndicatorEdges(keys, insertion?.groupId === groupId ? insertion : null)
+    const edges = resolveTabIndicatorEdges(keys, insertion?.groupId === paneId ? insertion : null)
     return new Map<string, DropIndicator>(edges.map((edge) => [edge.visibleTabId, edge.side]))
-  }, [groupId, insertion, keys])
+  }, [paneId, insertion, keys])
   return (
     <div
-      {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: groupId }}
+      {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: paneId }}
       {...(keepsFocus ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
       className={cn(TAB_STRIP_ROW_CLASSES, '@container/session-tabs flex items-stretch', className)}
       style={style}

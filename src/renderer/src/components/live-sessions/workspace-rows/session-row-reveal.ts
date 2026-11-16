@@ -19,9 +19,10 @@ import {
   matchesSidebarSessionFilters,
   sidebarSessionFilterStore
 } from './sidebar-session-filter-store'
+import { UNASSIGNED_FINISHED_OPEN_KEY, UNASSIGNED_SESSIONS_COLLAPSE_KEY } from './session-fold-keys'
+import { SIDEBAR_LIST, UNASSIGNED_SESSIONS } from './sidebar-session-row-dom'
 import { workspaceFinishedOpenKey } from './workspace-session-rows-model'
 
-const SIDEBAR_LIST = '[data-worktree-sidebar]'
 /** How long a row may take to mount once its project unfolds and its card scrolls in. */
 const ROW_MOUNT_FRAMES = 90
 const HIGHLIGHT_MS = 4000
@@ -76,24 +77,30 @@ export function revealFirstListedSession(sessionIds: readonly string[]): void {
   liveSessionMarksStore.reveal(listed ?? sessionIds[0])
 }
 
-/** Stops what hides a session's row: the filters, and for an ended one the line it sits behind. */
-export function unhideSessionRow(session: LiveSession, finishedOpenKey: string): void {
+/** Stops what hides a session's row: the filters, the fold of the Unassigned group, and for an ended one the line it sits behind. */
+function unhideSessionRow(session: LiveSession, worktreeId: string | undefined): void {
   if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
     sidebarSessionFilterStore.clear()
   }
   const app = useAppStore.getState()
+  const finishedOpenKey = worktreeId
+    ? workspaceFinishedOpenKey(worktreeId)
+    : UNASSIGNED_FINISHED_OPEN_KEY
   if (!isActiveLiveSession(session) && !app.collapsedGroups.has(finishedOpenKey)) {
     app.toggleCollapsedGroup(finishedOpenKey)
+  }
+  if (!worktreeId && app.collapsedGroups.has(UNASSIGNED_SESSIONS_COLLAPSE_KEY)) {
+    app.toggleCollapsedGroup(UNASSIGNED_SESSIONS_COLLAPSE_KEY)
   }
 }
 
 /**
  * Runs `show` once for each session asked for from elsewhere (a badge, a fresh launch, the
- * palette), then fades the row's ring. `show` gets the workspace that lists the session and
- * returns how to stop, or null when the row is another list's.
+ * palette), then fades the row's ring. `show` gets the workspace that lists the session, if one
+ * does, and returns how to stop.
  */
-export function useSessionRowRevealRequest(
-  show: (session: LiveSession, worktreeId: string | undefined) => (() => void) | null
+function useSessionRowRevealRequest(
+  show: (session: LiveSession, worktreeId: string | undefined) => () => void
 ): void {
   const reveal = useLiveSessionMarks().reveal
   const { links } = useLiveSessionLinks()
@@ -115,18 +122,18 @@ export function useSessionRowRevealRequest(
   }, [reveal, showAtRequest])
 }
 
-/** Shows a session row asked for from elsewhere under its workspace. */
-export function useWorkspaceSessionRowReveal(): void {
+/** Shows a session row asked for from elsewhere: under its workspace, or in the Unassigned group. */
+export function useSidebarSessionRowReveal(): void {
   useSessionRowRevealRequest((session, worktreeId) => {
-    if (!worktreeId) {
-      return null
-    }
-    unhideSessionRow(session, workspaceFinishedOpenKey(worktreeId))
-    const selector = `${SIDEBAR_LIST} [data-workspace-session-rows="${CSS.escape(worktreeId)}"] [data-live-session-row="${CSS.escape(session.id)}"]`
+    unhideSessionRow(session, worktreeId)
+    const rowsOf = worktreeId
+      ? `${SIDEBAR_LIST} [data-workspace-session-rows="${CSS.escape(worktreeId)}"]`
+      : UNASSIGNED_SESSIONS
+    const selector = `${rowsOf} [data-live-session-row="${CSS.escape(session.id)}"]`
     const mountedRows = (): HTMLElement[] =>
       Array.from(document.querySelectorAll<HTMLElement>(selector))
     // A row already listed stays where it is: only a folded project or a card scrolled out of the list is brought in.
-    if (mountedRows().length === 0) {
+    if (worktreeId && mountedRows().length === 0) {
       useAppStore.getState().revealWorktreeInSidebar(worktreeId, { behavior: 'auto' })
     }
     let frame = 0
@@ -134,7 +141,8 @@ export function useWorkspaceSessionRowReveal(): void {
     const showRow = (): void => {
       const rows = mountedRows()
       // The card is still scrolling in while its reveal is pending, and would carry the row off again.
-      const settled = useAppStore.getState().pendingRevealWorktree?.worktreeId !== worktreeId
+      const settled =
+        !worktreeId || useAppStore.getState().pendingRevealWorktree?.worktreeId !== worktreeId
       if (rows.length > 0 && settled) {
         // A pinned workspace lists its rows twice: the copy in view must not send the list to the other.
         scrollSidebarSessionRowIntoView(rows.find(isSessionRowInView) ?? rows[0])

@@ -1,8 +1,6 @@
 import { useAppStore } from '@/store/index'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
-import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
-import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
 import {
   activateSplitViewChip,
@@ -26,10 +24,8 @@ import { fitSplitViewZoneToPane } from './split-view-pane-size'
 import { createSplitViewPaneId, splitViewStore } from './split-view-store'
 import {
   activeSplitViewItem,
-  findSplitViewPaneOfKey,
   splitViewItemKey,
   type SplitViewItem,
-  type SplitViewState,
   type SplitViewZone
 } from './split-view-types'
 
@@ -41,7 +37,7 @@ export function workspaceSplitViewItem(workspace: {
   return { kind: 'workspace', worktreeId: workspace.id, hostId: workspace.hostId ?? null }
 }
 
-/** What the main area is about: the active workspace, the active session tab, or the open project. */
+/** What the main area is about: the active workspace or the open project. */
 export function currentSplitViewItem(): SplitViewItem | null {
   const state = useAppStore.getState()
   if (selectWorktreeCreationSurfaceShown(state)) {
@@ -55,10 +51,6 @@ export function currentSplitViewItem(): SplitViewItem | null {
         })
       : null
   }
-  if (state.activeView === 'sessions') {
-    const sessionId = liveSessionTabsStore.getState().activeId
-    return sessionId ? { kind: 'session', sessionId } : null
-  }
   if (state.activeView === 'project') {
     return state.projectOverviewTarget ? { kind: 'project', ...state.projectOverviewTarget } : null
   }
@@ -66,13 +58,7 @@ export function currentSplitViewItem(): SplitViewItem | null {
 }
 
 function canResolve(item: SplitViewItem): boolean {
-  return (
-    resolveSplitViewItem(
-      item,
-      useAppStore.getState(),
-      liveSessionRegistryStore.getState().sessions
-    ) !== null
-  )
+  return resolveSplitViewItem(item, useAppStore.getState()) !== null
 }
 
 /** Makes an item the current one through the open path a sidebar click takes. */
@@ -89,26 +75,14 @@ export function navigateToSplitViewItem(item: SplitViewItem): void {
       })
       return
     }
-    case 'session':
-      liveSessionTabsStore.adopt([item.sessionId])
-      liveSessionTabsStore.activate(item.sessionId)
-      state.openAgentSessionTabs()
-      return
     case 'project': {
       // A project that is gone keeps its placeholder; settle returns focus to the current item.
-      const resolved = resolveSplitViewItem(item, state, [])
+      const resolved = resolveSplitViewItem(item, state)
       if (resolved?.kind === 'project') {
         state.openProjectOverview(resolved.repo)
       }
     }
   }
-}
-
-function adoptSessionChips(state: SplitViewState): void {
-  const sessionIds = Object.values(state.panes).flatMap((pane) =>
-    pane.tabs.flatMap((tab) => (tab.item.kind === 'session' ? [tab.item.sessionId] : []))
-  )
-  liveSessionTabsStore.adopt(sessionIds)
 }
 
 /** After a grid command: the focused pane's active chip becomes the current item, in the same turn. */
@@ -123,7 +97,7 @@ function navigateToFocusedChip(): void {
   requestAnimationFrame(measureAllTabGroupBodies)
 }
 
-/** Focus is navigation: the pane's item becomes the active workspace, session tab or project. */
+/** Focus is navigation: the pane's item becomes the active workspace or project. */
 export function focusSplitViewPane(paneId: string, key?: string): void {
   const before = splitViewStore.getState()
   if (
@@ -154,8 +128,7 @@ export function focusNeighbourSplitViewPane(step: 1 | -1): boolean {
   // A workspace or project that is gone cannot become the current item, so focus passes over it.
   const paneId = neighbourSplitViewPane(state, step, (candidate) => {
     const item = activeSplitViewItem(state, candidate)
-    const isSession = item?.kind === 'session'
-    return !item || isSession || resolveSplitViewItem(item, useAppStore.getState(), []) !== null
+    return !item || canResolve(item)
   })
   if (paneId) {
     focusSplitViewPane(paneId)
@@ -165,60 +138,24 @@ export function focusNeighbourSplitViewPane(step: 1 | -1): boolean {
 
 /**
  * Where navigation lands: the pane that holds the item gets focus and shows it; otherwise it
- * opens in the focused pane as a preview chip. A session preview it replaces closes its tab too.
+ * opens in the focused pane as a preview chip.
  */
 export function revealItemInSplitView(item: SplitViewItem): void {
-  const before = splitViewStore.getState()
-  if (!splitViewStore.update((state) => revealSplitViewItem(state, item))) {
-    return
+  if (splitViewStore.update((state) => revealSplitViewItem(state, item))) {
+    requestAnimationFrame(measureAllTabGroupBodies)
   }
-  const after = new Set(
-    Object.values(splitViewStore.getState().panes).flatMap((pane) =>
-      pane.tabs.map((tab) => splitViewItemKey(tab.item))
-    )
-  )
-  for (const pane of Object.values(before.panes)) {
-    for (const tab of pane.tabs) {
-      if (tab.item.kind === 'session' && !after.has(splitViewItemKey(tab.item))) {
-        liveSessionTabsStore.close(tab.item.sessionId)
-      }
-    }
-  }
-  if (item.kind === 'session') {
-    liveSessionTabsStore.adopt([item.sessionId])
-  }
-  requestAnimationFrame(measureAllTabGroupBodies)
-}
-
-/** False when the item is not in the grid. */
-export function closeItemInSplitView(item: SplitViewItem): boolean {
-  const key = splitViewItemKey(item)
-  if (!findSplitViewPaneOfKey(splitViewStore.getState(), key)) {
-    return false
-  }
-  closeSplitViewItems(new Set([key]))
-  return true
 }
 
 export function keepSplitViewItem(key: string): void {
   splitViewStore.update((state) => keepSplitViewChip(state, key))
 }
 
-/** What single view shows, as the chips of a first pane: every open session tab comes along. */
+/** What single view shows, as the chip of a first pane. */
 function currentViewItems(): { items: SplitViewItem[]; activeKey: string | null } {
   const current = currentSplitViewItem()
-  if (!current) {
-    return { items: [], activeKey: null }
-  }
-  if (current.kind !== 'session') {
-    return { items: [current], activeKey: splitViewItemKey(current) }
-  }
-  return {
-    items: liveSessionTabsStore
-      .getState()
-      .tabs.map((sessionId): SplitViewItem => ({ kind: 'session', sessionId })),
-    activeKey: splitViewItemKey(current)
-  }
+  return current
+    ? { items: [current], activeKey: splitViewItemKey(current) }
+    : { items: [], activeKey: null }
 }
 
 export type SplitViewDropPlace = {
@@ -269,7 +206,6 @@ export function placeItemsInSplitView(
   })
   const next = splitViewStore.getState()
   if (next.layout) {
-    adoptSessionChips(next)
     navigateToFocusedChip()
     return
   }
@@ -283,22 +219,14 @@ export function openItemsInSplitView(items: readonly SplitViewItem[], zone: Spli
 }
 
 /**
- * Closing destroys nothing: the items leave the grid, and a session's tab closes with its chip.
- * The next focus is picked from the grid and navigated to first, so no item the user never
- * placed takes the closed one's place.
+ * Closing destroys nothing: the items leave the grid. The next focus is picked from the grid and
+ * navigated to first, so no item the user never placed takes the closed one's place.
  */
 export function closeSplitViewItems(keys: ReadonlySet<string>): void {
   const state = splitViewStore.getState()
   if (!state.layout || keys.size === 0) {
     return
   }
-  const closedSessionIds = Object.values(state.panes).flatMap((pane) =>
-    pane.tabs.flatMap((tab) =>
-      tab.item.kind === 'session' && keys.has(splitViewItemKey(tab.item))
-        ? [tab.item.sessionId]
-        : []
-    )
-  )
   const current = currentSplitViewItem()
   if (!current || keys.has(splitViewItemKey(current))) {
     const next = splitViewFocusAfterClose(state, keys, canResolve)
@@ -307,9 +235,6 @@ export function closeSplitViewItems(keys: ReadonlySet<string>): void {
     }
   }
   splitViewStore.update((before) => closeSplitViewChips(before, keys))
-  for (const sessionId of closedSessionIds) {
-    liveSessionTabsStore.close(sessionId)
-  }
   navigateToFocusedChip()
 }
 

@@ -3,10 +3,8 @@ import type {
   LiveRemoveRequest,
   LiveSession
 } from '../../../../../shared/live-sessions/live-session-types'
-import type {
-  LiveSessionFocusTarget,
-  LiveSessionOpenMode
-} from '../workspace/live-session-tabs-store'
+import type { AgentSessionFocusTarget } from '../chat/agent-session-focus-requests'
+import type { AgentSessionOpenMode } from '../open/agent-session-open-mode'
 
 export const LIVE_SESSION_MENU_ITEM_IDS = [
   'open',
@@ -51,9 +49,9 @@ export type LiveSessionMenuContext = {
 
 /** Everything a menu item can do. Views implement these once; every menu surface shares them. */
 export type LiveSessionMenuEffects = {
-  open: (sessionId: string, mode: LiveSessionOpenMode) => void
+  open: (sessionId: string, mode: AgentSessionOpenMode) => void
   /** Opens the session and shows that part of its view. */
-  focus: (sessionId: string, target: LiveSessionFocusTarget) => void
+  focus: (sessionId: string, target: AgentSessionFocusTarget) => void
   askRename: (session: LiveSession) => void
   askMessage: (session: LiveSession) => void
   setPinned: (session: LiveSession, pinned: boolean) => void

@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useTranslate } from '@/i18n/use-translate'
+import type { MachineGpuProcess } from '../../../../../shared/machines/machine-gpu-types'
 import type {
   MachineProcess,
   MachineProcessSnapshot
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import { MachineDockerContainerStats } from './MachineDockerContainerStats'
 import { MachineGpuUnlistedProcesses } from './MachineGpuUnlistedProcesses'
 import {
   MachineProcessList,
@@ -24,6 +26,8 @@ import { useMachineProcesses } from './use-machine-processes'
 
 /** The host sends its top 40 per ranking; showing more would rank processes it never compared. */
 const TOP_SHOWN = 40
+
+const NO_GPU_PROCESSES: readonly MachineGpuProcess[] = []
 
 function matches(process: MachineProcess, filter: string): boolean {
   const needle = filter.trim().toLowerCase()
@@ -72,18 +76,17 @@ function inContainer(use: MachineProcessGpuUse | undefined, filter: string): boo
 
 /**
  * Live process table shared by the CPU, memory and GPU details, which differ in ranking and
- * headline. The GPU detail lists only the processes on the GPUs.
+ * headline, with the running containers above it under the same filter. The GPU detail lists only
+ * the processes and containers on the GPUs.
  */
 export function MachineProcessesView({
   machine,
   initialSort,
-  summary,
-  children
+  summary
 }: {
   machine: MachineSummary
   initialSort: MachineProcessSort
   summary: (snapshot: MachineProcessSnapshot | null) => React.ReactNode
-  children?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
   const onGpus = initialSort === 'gpu'
@@ -140,7 +143,6 @@ export function MachineProcessesView({
           onFilter={setFilter}
         />
       ) : null}
-      {children}
       <div>
         <div className="flex items-center gap-2 pb-2">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:max-w-64">
@@ -151,7 +153,7 @@ export function MachineProcessesView({
               value={filter}
               placeholder={t(
                 'auto.components.machines.processes.filter',
-                'Filter by name, command, user, or pid'
+                'Filter by name, command, user, pid, or container'
               )}
               aria-label={t('auto.components.machines.processes.filterLabel', 'Filter processes')}
               onChange={(event) => setFilter(event.target.value)}
@@ -178,6 +180,13 @@ export function MachineProcessesView({
           </span>
         </div>
         {onGpus || !errorLine ? null : <div className="pb-2">{errorLine}</div>}
+        <MachineDockerContainerStats
+          machine={machine}
+          view={initialSort}
+          filter={filter}
+          gpuProcesses={onGpus ? (snapshot?.gpu?.processes ?? NO_GPU_PROCESSES) : undefined}
+          className="mb-3"
+        />
         {snapshot ? (
           shown.length > 0 ? (
             <MachineProcessList

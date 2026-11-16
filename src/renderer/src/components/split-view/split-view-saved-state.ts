@@ -7,7 +7,6 @@ import {
 import { settleSplitView } from './split-view-layout-transitions'
 import {
   EMPTY_SPLIT_VIEW,
-  splitViewItemKey,
   type SplitViewItem,
   type SplitViewPane,
   type SplitViewState
@@ -37,10 +36,6 @@ function parseItem(value: unknown): SplitViewItem | null {
   if (value.kind === 'workspace') {
     const worktreeId = text('worktreeId')
     return worktreeId ? { kind: 'workspace', worktreeId, hostId } : null
-  }
-  if (value.kind === 'session') {
-    const sessionId = text('sessionId')
-    return sessionId ? { kind: 'session', sessionId } : null
   }
   if (value.kind === 'project') {
     const repoId = text('repoId')
@@ -144,39 +139,4 @@ export function serializeSplitView(state: SplitViewState): string | null {
     focusedPaneId: state.focusedPaneId
   }
   return JSON.stringify(saved)
-}
-
-/** A two-up saved by the session page before split view existed becomes two panes. */
-export function splitViewFromSessionTwoUp(
-  sessionIds: readonly string[],
-  activeId: string | null,
-  splitId: string | null,
-  paneIds: { first: string; second: string }
-): SplitViewState {
-  if (!splitId || !activeId || splitId === activeId || !sessionIds.includes(splitId)) {
-    return EMPTY_SPLIT_VIEW
-  }
-  const item = (sessionId: string): SplitViewItem => ({ kind: 'session', sessionId })
-  const rest = sessionIds.filter((id) => id !== splitId).map(item)
-  return settleSplitView({
-    layout: {
-      type: 'split',
-      direction: 'horizontal',
-      first: { type: 'leaf', groupId: paneIds.first },
-      second: { type: 'leaf', groupId: paneIds.second },
-      ratio: 0.5
-    },
-    panes: {
-      [paneIds.first]: {
-        tabs: rest.map((sessionItem) => ({ item: sessionItem, preview: false })),
-        activeKey: splitViewItemKey(item(activeId))
-      },
-      [paneIds.second]: {
-        tabs: [{ item: item(splitId), preview: false }],
-        activeKey: splitViewItemKey(item(splitId))
-      }
-    },
-    focusedPaneId: paneIds.first,
-    maximizedPaneId: null
-  })
 }

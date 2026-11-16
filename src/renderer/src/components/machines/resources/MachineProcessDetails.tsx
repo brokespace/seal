@@ -4,7 +4,6 @@ import type { MachineSummary } from '../../../../../shared/machines/machine-summ
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { formatBytes } from '../model/machine-format'
 import { MachineCpuSensors, MachineCpuTemperatureStat } from './MachineCpuTemperature'
-import { MachineDockerSection } from './MachineDockerSection'
 import { MachineProcessesView } from './MachineProcessesView'
 import { MachineResourceStat, MachineResourceStats } from './MachineResourceStat'
 
@@ -111,8 +110,6 @@ export function MachineMemoryDetail({
           />
         </MachineResourceStats>
       )}
-    >
-      <MachineDockerSection machine={machine} />
-    </MachineProcessesView>
+    />
   )
 }

@@ -8,7 +8,6 @@ import { resolveProjectOverviewRepo } from '@/components/project-overview/projec
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
 import { isWorktreeRetiredByRemoval } from '../../../../shared/worktree/removal/removal-visibility'
-import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type { Repo } from '../../../../shared/repo-types'
 import type { SplitViewItem } from './split-view-types'
 
@@ -23,14 +22,12 @@ export type ResolvedSplitViewItem =
       isFolder: boolean
       repoId: string | null
     }
-  | { kind: 'session'; session: LiveSession }
   | { kind: 'project'; repo: Repo }
 
 /** The live thing an item names, or null while it is not (or no longer) there. */
 export function resolveSplitViewItem(
   item: SplitViewItem,
-  state: CatalogState,
-  sessions: readonly LiveSession[]
+  state: CatalogState
 ): ResolvedSplitViewItem | null {
   switch (item.kind) {
     case 'workspace': {
@@ -63,10 +60,6 @@ export function resolveSplitViewItem(
         isFolder,
         repoId: worktree.repoId
       }
-    }
-    case 'session': {
-      const session = sessions.find((candidate) => candidate.id === item.sessionId)
-      return session ? { kind: 'session', session } : null
     }
     case 'project': {
       const repo = resolveProjectOverviewRepo(state.repos, item)

@@ -4,7 +4,7 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { isLiveSessionUnread, useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
-import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
+import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
 import type { LiveSessionRowProps } from './LiveSessionRow'
 
 export type LiveSessionRowState = Pick<
@@ -17,8 +17,7 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
   const { links } = useLiveSessionLinks()
   const accounts = useLocalSealAccounts()
   const marks = useLiveSessionMarks()
-  const tabs = useLiveSessionTabs()
-  const showingSessions = useAppStore((state) => state.activeView === 'sessions')
+  const isShowing = useIsAgentSessionShowing()
   const activeWorktreeId = useAppStore((state) =>
     state.activeView === 'terminal' ? state.activeWorktreeId : null
   )
@@ -29,20 +28,12 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
         workspaceName: link?.name ?? null,
         account: liveSessionAccountLabel(session, accounts),
         unread: isLiveSessionUnread(session, marks.seenAt),
-        current: showingSessions && session.id === tabs.activeId,
+        current: isShowing(session),
         highlighted:
           marks.highlighted.has(session.id) ||
           (activeWorktreeId !== null && link?.worktreeId === activeWorktreeId)
       }
     },
-    [
-      links,
-      accounts,
-      marks.seenAt,
-      marks.highlighted,
-      showingSessions,
-      tabs.activeId,
-      activeWorktreeId
-    ]
+    [links, accounts, marks.seenAt, marks.highlighted, isShowing, activeWorktreeId]
   )
 }

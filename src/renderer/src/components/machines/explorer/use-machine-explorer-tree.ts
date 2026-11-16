@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
-import { listMachineDirectory } from './machine-explorer-source'
+import { machineFilesSource, type MachineExplorerSource } from './machine-explorer-source'
 import { flattenExplorerRows, type ExplorerRow, type FolderState } from './machine-explorer-rows'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
@@ -13,12 +13,11 @@ type MachineTreeMemory = {
 // Survives page switches so reopening a machine paints its last tree instantly.
 const memory = new Map<string, MachineTreeMemory>()
 
-function memoryFor(machineId: MachineId, startAt: string | undefined): MachineTreeMemory {
-  const key = startAt ? `${machineId}\n${startAt}` : machineId
-  let entry = memory.get(key)
+function memoryFor(source: MachineExplorerSource): MachineTreeMemory {
+  let entry = memory.get(source.key)
   if (!entry) {
-    entry = { root: startAt ?? null, expanded: new Set(), folders: new Map() }
-    memory.set(key, entry)
+    entry = { root: source.startAt ?? null, expanded: new Set(), folders: new Map() }
+    memory.set(source.key, entry)
   }
   return entry
 }
@@ -47,7 +46,17 @@ export function useMachineExplorerTree(
   /** Opens on this folder instead of the home folder, with its own remembered tree. */
   startAt?: string
 ): MachineExplorerTree {
-  const remembered = memoryFor(machineId, startAt)
+  const source = useMemo(() => machineFilesSource(machineId, startAt), [machineId, startAt])
+  return useExplorerTree(source, online, showHidden)
+}
+
+/** The tree over any source; `source` must keep its identity between renders, and callers key by it. */
+export function useExplorerTree(
+  source: MachineExplorerSource,
+  online: boolean,
+  showHidden: boolean
+): MachineExplorerTree {
+  const remembered = memoryFor(source)
   const [root, setRoot] = useState<string | null>(remembered.root)
   const [expanded, setExpanded] = useState<Set<string>>(remembered.expanded)
   const [folders, setFolders] = useState<Map<string, FolderState>>(remembered.folders)
@@ -60,11 +69,11 @@ export function useMachineExplorerTree(
   })
 
   useEffect(() => {
-    const entry = memoryFor(machineId, startAt)
+    const entry = memoryFor(source)
     entry.root = root
     entry.expanded = expanded
     entry.folders = folders
-  }, [machineId, startAt, root, expanded, folders])
+  }, [source, root, expanded, folders])
 
   const patchFolder = useCallback((path: string, patch: Partial<FolderState>) => {
     setFolders((previous) => {
@@ -83,10 +92,7 @@ export function useMachineExplorerTree(
       patchFolder(path, { loading: true })
       const offset = options.append ? (foldersRef.current.get(path)?.entries.length ?? 0) : 0
       try {
-        const listing = await listMachineDirectory(machineId, path, {
-          force: options.force,
-          offset
-        })
+        const listing = await source.list(path, { force: options.force, offset })
         setFolders((previous) => {
           const current = previous.get(path)
           const entries =
@@ -102,7 +108,7 @@ export function useMachineExplorerTree(
         patchFolder(path, { loading: false, error: errorText(error) })
       }
     },
-    [machineId, patchFolder]
+    [source, patchFolder]
   )
 
   // Resolve the home folder first; listings answer with the absolute path they read.
@@ -111,7 +117,8 @@ export function useMachineExplorerTree(
       return
     }
     let cancelled = false
-    void listMachineDirectory(machineId, null)
+    void source
+      .list(null)
       .then((listing) => {
         if (cancelled) {
           return
@@ -134,7 +141,7 @@ export function useMachineExplorerTree(
     return () => {
       cancelled = true
     }
-  }, [machineId, online, root])
+  }, [source, online, root])
 
   // Revalidate the visible tree whenever the machine (re)connects or the root changes.
   useEffect(() => {
@@ -148,30 +155,25 @@ export function useMachineExplorerTree(
     }
   }, [online, root, load])
 
-  useEffect(() => {
-    const api = window.api.machines
-    if (!api) {
-      return
-    }
-    return api.onDirChanged((event) => {
-      if (event.machineId === machineId && foldersRef.current.has(event.path)) {
-        void load(event.path)
-      }
-    })
-  }, [machineId, load])
+  useEffect(
+    () =>
+      source.onChanged?.((path) => {
+        if (foldersRef.current.has(path)) {
+          void load(path)
+        }
+      }),
+    [source, load]
+  )
 
   const watchKey = root && online ? [root, ...expanded].join('\n') : ''
   useEffect(() => {
-    const api = window.api.machines
-    if (!api) {
+    const { watch } = source
+    if (!watch) {
       return
     }
-    const dirs = watchKey ? watchKey.split('\n') : []
-    void api.watchDirs({ machineId, dirs }).catch(() => {})
-    return () => {
-      void api.watchDirs({ machineId, dirs: [] }).catch(() => {})
-    }
-  }, [machineId, watchKey])
+    watch(watchKey ? watchKey.split('\n') : [])
+    return () => watch([])
+  }, [source, watchKey])
 
   const navigate = useCallback((path: string | null) => {
     setRootError(null)

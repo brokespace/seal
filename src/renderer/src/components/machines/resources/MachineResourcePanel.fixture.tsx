@@ -137,13 +137,41 @@ export const cpuWindowsSetupRemoveConfirm = windowsSetup(
 
 export const memory = panel('memory')
 
-export const dockerRemoveConfirm = panel('memory', (frame) => press(frame, 'Remove'))
+export const memoryNarrow = panel('memory', undefined, undefined, undefined, 420)
 
-export const dockerPruneReview = panel('memory', (frame) =>
+export const memoryBesideSidebars = panel('memory', undefined, undefined, undefined, 620)
+
+function pressOnContainer(frame: HTMLElement, name: string): void {
   frame
-    .querySelector<HTMLElement>('[data-machine-cleanup-target="docker-dangling-images"] button')
+    .querySelector<HTMLElement>(`[data-machine-docker-container] button[aria-label="${name}"]`)
     ?.click()
+}
+
+export const dockerStopConfirm = panel('memory', (frame) => pressOnContainer(frame, 'Stop'))
+
+export const dockerContainerDetails = panel('cpu', (frame) =>
+  pressOnContainer(frame, 'Details of container jupyter')
 )
+
+function filterBy(frame: HTMLElement, text: string): void {
+  const input = frame.querySelector<HTMLInputElement>('input[aria-label="Filter processes"]')
+  if (input) {
+    // React tracks the value it set, so only the native setter makes the input event count.
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, text)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+}
+
+export const dockerFiltered = panel('memory', (frame) => filterBy(frame, 'postgres'))
+
+export const dockerNoPermission = panel('memory', undefined, {
+  ...fakeMachinesApi,
+  listDockerContainers: async () => ({
+    state: 'unreachable',
+    reason: 'permission',
+    message: 'permission denied while trying to connect to the Docker daemon socket'
+  })
+})
 
 function gpuPanel(gpus: MachineGpu[], then?: (frame: HTMLElement) => void, width?: number) {
   const metrics = { ...METRICS[toMachineId(KESSEL)]!, gpus }

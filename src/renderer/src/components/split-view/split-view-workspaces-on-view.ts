@@ -5,8 +5,7 @@ import { splitViewStore } from './split-view-store'
  * the grid shows on, or null when that view shows no grid. Reads no app state, so store slices can ask.
  */
 export function splitViewWorkspacesOnView(activeView: string): ReadonlyMap<string, string> | null {
-  const showsItems =
-    activeView === 'terminal' || activeView === 'sessions' || activeView === 'project'
+  const showsItems = activeView === 'terminal' || activeView === 'project'
   return showsItems && splitViewStore.hasLayout() ? splitViewStore.getVisibleWorkspaces() : null
 }
 

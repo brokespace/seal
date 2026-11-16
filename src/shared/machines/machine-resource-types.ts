@@ -1,3 +1,4 @@
+import type { MachineDockerUnavailable } from './machine-docker-types'
 import type { MachineGpuSnapshot } from './machine-gpu-types'
 import type { MachineId } from './machine-types'
 
@@ -60,7 +61,9 @@ export type MachineProcessSignalResult =
   | { outcome: 'replaced' }
   | { outcome: 'failed'; message: string }
 
+/** A container with what `docker stats` reports for it; the figures are null while it is stopped. */
 export type MachineDockerContainer = {
+  /** The full 64-character id. */
   id: string
   name: string
   image: string
@@ -69,33 +72,24 @@ export type MachineDockerContainer = {
   memUsageBytes: number | null
   memLimitBytes: number | null
   memPercent: number | null
+  /** Share of one core, so a container on several cores reads above 100. */
   cpuPercent: number | null
+  /** Received and sent over its networks since it started. */
+  netRxBytes: number | null
+  netTxBytes: number | null
+  /** Read from and written to block devices since it started. */
+  blockReadBytes: number | null
+  blockWriteBytes: number | null
+  pids: number | null
 }
 
 export type MachineDockerContainers =
-  | { state: 'missing' }
-  | { state: 'unreachable'; message: string }
+  | MachineDockerUnavailable
   | { state: 'ready'; containers: MachineDockerContainer[] }
 
 export const MACHINE_DOCKER_CONTAINER_ACTIONS = ['stop', 'start', 'restart', 'remove'] as const
 
 export type MachineDockerContainerAction = (typeof MACHINE_DOCKER_CONTAINER_ACTIONS)[number]
-
-export type MachineDockerStorageKind = 'images' | 'containers' | 'volumes' | 'build-cache'
-
-/** One row of `docker system df`. */
-export type MachineDockerStorageRow = {
-  kind: MachineDockerStorageKind
-  count: number
-  sizeBytes: number
-  /** What Docker itself says pruning this kind would free. */
-  reclaimableBytes: number
-}
-
-export type MachineDockerStorage =
-  | { state: 'missing' }
-  | { state: 'unreachable'; message: string }
-  | { state: 'ready'; rows: MachineDockerStorageRow[] }
 
 export type MachineDiskMount = {
   filesystem: string
@@ -138,12 +132,12 @@ export const MACHINE_CLEANUP_TARGETS = [
 
 export type MachineCleanupTargetId = (typeof MACHINE_CLEANUP_TARGETS)[number]
 
-/** What the Docker panel offers to prune; each maps to a `docker … prune`. */
+/** What "Clean up unused" removes, in order; volumes last, since they are the ones holding data. */
 export const MACHINE_DOCKER_PRUNE_TARGETS = [
   'docker-containers',
   'docker-dangling-images',
-  'docker-volumes',
-  'docker-build-cache'
+  'docker-build-cache',
+  'docker-volumes'
 ] as const satisfies readonly MachineCleanupTargetId[]
 
 /** Dangling images are a subset of unused ones, so the disk cleanup lists only the wider row. */
@@ -160,6 +154,10 @@ export type MachineCleanupItem = {
   modifiedAt: number | null
   /** Ticked when the confirmation opens; risky items start unticked. */
   preselected: boolean
+  /** Containers that still use this Docker image or volume; the confirmation warns before it is ticked. */
+  inUseBy?: string[]
+  /** Why this item cannot be removed from here; it is listed and never ticked. */
+  blocked?: string
 }
 
 export type MachineCleanupScan = {
@@ -179,6 +177,18 @@ export type MachineCleanupResult = {
   removedIds: string[]
   freedBytes: number
   failures: { id: string; label: string; message: string }[]
+}
+
+/** Sent while a cleanup runs, after each batch of items. */
+export type MachineCleanupProgress = {
+  /** The scan token the run was started with. */
+  token: string
+  done: number
+  total: number
+  freedBytes: number
+  failed: number
+  /** The item being removed now; null once the run is over. */
+  current: string | null
 }
 
 export type MachineFolderCompletion = {

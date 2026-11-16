@@ -2,14 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import { useDndMonitor } from '@dnd-kit/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CircleDashed, Folder, GitBranch } from 'lucide-react'
-import { AgentStateDot } from '@/components/AgentStateDot'
-import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
-import {
-  liveSessionDotState,
-  liveSessionStatusText
-} from '@/components/live-sessions/live-session-presentation'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
   TAB_ROOT_CLASSES,
@@ -55,24 +49,10 @@ export function isItemTabDragData(value: unknown): value is ItemTabDragData {
 }
 
 export function ItemTabIcon({
-  item,
   resolved
 }: {
-  item: SplitViewItem
   resolved: ResolvedSplitViewItem | null
-}): React.JSX.Element | null {
-  if (resolved?.kind === 'session') {
-    return (
-      <>
-        <AgentIcon agent={resolved.session.provider} size={13} />
-        <AgentStateDot
-          state={liveSessionDotState(resolved.session.status)}
-          label={liveSessionStatusText(resolved.session)}
-          title={null}
-        />
-      </>
-    )
-  }
+}): React.JSX.Element {
   if (resolved?.kind === 'project') {
     return (
       <RepoIconGlyph
@@ -87,12 +67,11 @@ export function ItemTabIcon({
     const Glyph = resolved.isFolder ? Folder : GitBranch
     return <Glyph className="size-3.5 shrink-0" aria-hidden />
   }
-  // An ended session's tab has no icon, as on the session page before.
-  return item.kind === 'session' ? null : <CircleDashed className="size-3.5 shrink-0" aria-hidden />
+  return <CircleDashed className="size-3.5 shrink-0" aria-hidden />
 }
 
 /**
- * A workspace, session or project as a tab, made of the pieces every tab in a strip is made of:
+ * A workspace or project as a tab, made of the pieces every tab in a strip is made of:
  * the sortable slot, pointer activation, the drop indicator, the label and the close button.
  */
 export function ItemTab({
@@ -135,7 +114,7 @@ export function ItemTab({
   )
   useTabContextMenuDismissal(menuOpen, setMenuOpen)
   const slotProps = useTabStripSlotProps(key, active)
-  const icon = <ItemTabIcon item={item} resolved={resolved} />
+  const icon = <ItemTabIcon resolved={resolved} />
 
   const tabRoot = (
     <div
@@ -144,7 +123,6 @@ export function ItemTab({
       {...listeners}
       aria-selected={active}
       {...{ [ITEM_TAB_KEY_ATTRIBUTE]: key }}
-      data-live-session-tab={item.kind === 'session' ? item.sessionId : undefined}
       data-item-tab-preview={preview ? '' : undefined}
       data-item-tab-drop-edge={dropIndicator ?? undefined}
       className={`${TAB_ROOT_CLASSES} focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${getTabStripBorderClasses(hasTabsToRight)} ${getDropIndicatorClasses(dropIndicator)} ${getTabRootStateClasses(active)}`}
@@ -168,9 +146,7 @@ export function ItemTab({
       }}
     >
       {active && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
-      {resolved || item.kind !== 'session' ? (
-        <span className="mr-1 flex shrink-0 items-center gap-1">{icon}</span>
-      ) : null}
+      <span className="mr-1 flex shrink-0 items-center gap-1">{icon}</span>
       <span className={`${TAB_LABEL_WIDTH_CLASSES} mr-1${preview ? ' italic' : ''}`}>{title}</span>
       <div className="flex size-4 shrink-0 items-center justify-center">
         <EditorFileTabCloseButton
@@ -195,26 +171,16 @@ export function ItemTab({
         disabled={menuOpen}
         title={title}
         programName={
-          resolved?.kind === 'session'
-            ? liveSessionStatusText(resolved.session)
-            : item.kind === 'project'
-              ? t('seal.splitView.item.project', 'Project')
-              : item.kind === 'workspace'
-                ? t('seal.splitView.item.workspace', 'Workspace')
-                : title
+          item.kind === 'project'
+            ? t('seal.splitView.item.project', 'Project')
+            : t('seal.splitView.item.workspace', 'Workspace')
         }
         icon={icon}
-        // A session's tab shows its state as a dot only.
-        showWhenUnclipped={resolved?.kind === 'session'}
       >
         {tabRoot}
       </TabHoverCard>
     </div>
   )
-  // A session that left the registry has nothing its menu could act on.
-  if (item.kind === 'session' && resolved?.kind !== 'session' && !commands.closeOthers) {
-    return slot
-  }
   return (
     <ContextMenu
       open={menuOpen}
@@ -238,7 +204,7 @@ export function ItemTab({
           returnKeyboardLeftByTabMenus()
         }}
       >
-        <ItemTabMenu item={item} resolved={resolved} tabCount={tabCount} commands={commands} />
+        <ItemTabMenu item={item} tabCount={tabCount} commands={commands} />
       </ContextMenuContent>
     </ContextMenu>
   )

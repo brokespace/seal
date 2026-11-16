@@ -8,6 +8,7 @@ import { isWebRuntimeSessionActive } from '../../runtime/web-session-tabs-sync/i
 import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/workspace/ownership/worktree-runtime-owner'
 import { browserWorkspaceHasRemoteOwner } from '@/runtime/browser/ownership/remote-browser-tab-ownership'
 import { activateStructuredAgentSessionTab } from '@/lib/agent-session/structured-agent-session-tab-activation'
+import { activateExternalAgentSessionTab } from '@/components/live-sessions/open/external-agent-session-tab'
 import type { TabGroupWorktreeSnapshot } from './useTabGroupItemProjections'
 
 export function useTabGroupActivationCommands({
@@ -139,7 +140,9 @@ export function useTabGroupActivationCommands({
 
   const activateAgentSession = useCallback(
     (tabId: string) => {
-      activateStructuredAgentSessionTab({ worktreeId, tabId })
+      if (!activateExternalAgentSessionTab(worktreeId, tabId)) {
+        activateStructuredAgentSessionTab({ worktreeId, tabId })
+      }
     },
     [worktreeId]
   )

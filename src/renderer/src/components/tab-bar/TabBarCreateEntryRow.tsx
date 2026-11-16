@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import { tabAgentLaunchOptionDisabled } from './tab-agent-launch-options'
 import { terminalPendingLabel } from './new-tab-agent-menu-model'
 import React, { useEffect, useRef, useState } from 'react'
@@ -258,7 +259,7 @@ function getOpenTabIcon(option: Extract<ActiveOption, { kind: 'tab' }>['option']
   if (contentType === 'editor') {
     return <FileText className="size-3.5 shrink-0" aria-hidden="true" />
   }
-  if (contentType === 'agent-session') {
+  if (isAgentSessionSurfaceTab(contentType)) {
     return <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
   }
   return <GitCompare className="size-3.5 shrink-0" aria-hidden="true" />

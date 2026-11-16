@@ -5,8 +5,8 @@ import { bringKeyboardFocusIntoSingleViewItem } from './pane-keyboard-focus'
 const SPLIT_VIEW_END_SETTLE_MS = 1000
 
 /**
- * Closing the focused pane ends split view on the session or project of the other pane. The
- * keyboard went with the closed pane; it belongs in what is shown now.
+ * Closing the focused pane ends split view on the project of the other pane. The keyboard went
+ * with the closed pane; it belongs in what is shown now.
  */
 export function useKeyboardKeptWhenSplitViewEnds(
   surfaceRef: RefObject<HTMLElement | null>,

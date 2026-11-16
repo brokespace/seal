@@ -2,6 +2,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { externalAgentSessionTab } from './helpers/external-agent-session-tab'
 import { test, expect } from './helpers/orca-app'
 import { getStoreState } from './helpers/store'
 
@@ -80,15 +81,15 @@ test('project name opens the overview, the chevron folds, and agents open and st
   await expect(agent).toContainText('Fix the login bug')
   await orcaPage.screenshot({ path: testInfo.outputPath('project-overview.png') })
   await agent.click()
-  await expect
-    .poll(() => getStoreState<string>(orcaPage, 'activeView'), { timeout: 10_000 })
-    .toBe('sessions')
+  await expect(
+    await externalAgentSessionTab(orcaPage, `local:claude:${SESSION_ID}`)
+  ).toHaveAttribute('data-active', 'true')
+  await expect(
+    orcaPage.locator(`[data-live-session-pane="local:claude:${SESSION_ID}"]`)
+  ).toContainText('Fix the login bug')
 
-  // Closing the tab it opened leads back to the overview, where New agent opens the composer.
-  await orcaPage
-    .locator(`[data-live-session-tab="local:claude:${SESSION_ID}"]`)
-    .getByRole('button', { name: 'Close tab' })
-    .click()
+  // The session opened as a tab of its workspace; back on the overview, New agent opens the composer.
+  await header.locator('[data-project-overview-link]').click()
   await expect(page).toBeVisible()
   await page.locator('[data-project-overview-new-agent]').click()
   await expect

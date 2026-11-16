@@ -27,12 +27,20 @@ import type {
   MachineDiskIndexRequest
 } from '../../../shared/machines/machine-disk-index-types'
 import type {
+  MachineDockerDetails,
+  MachineDockerDetailTarget,
+  MachineDockerLogs,
+  MachineDockerStorage,
+  MachineDockerStorageKind,
+  MachineDockerVolumeListing
+} from '../../../shared/machines/machine-docker-types'
+import type {
+  MachineCleanupProgress,
   MachineCleanupResult,
   MachineCleanupScan,
   MachineCleanupTargetId,
   MachineDockerContainerAction,
   MachineDockerContainers,
-  MachineDockerStorage,
   MachineFolderCompletion,
   MachineFolderOpenResult,
   MachineProcessSignal,
@@ -159,8 +167,44 @@ export type MachinesApi = {
     containerId: string
     action: MachineDockerContainerAction
   }) => Promise<void>
-  /** What `docker system df` reports, with what pruning each kind would free. */
-  dockerStorage: (args: { machineId: MachineId }) => Promise<MachineDockerStorage>
+  /**
+   * Docker's images, containers, volumes and build cache with their sizes and who uses them.
+   * Answers are shared for a few seconds; `force` reads the machine again.
+   */
+  dockerStorage: (args: { machineId: MachineId; force?: boolean }) => Promise<MachineDockerStorage>
+  /** Rejects when the container, image or volume is no longer on the machine. */
+  dockerDetails: (args: {
+    machineId: MachineId
+    target: MachineDockerDetailTarget
+  }) => Promise<MachineDockerDetails>
+  /** The last `MACHINE_DOCKER_LOG_TAIL_LINES` lines a container wrote. */
+  dockerContainerLogs: (args: {
+    machineId: MachineId
+    containerId: string
+  }) => Promise<MachineDockerLogs>
+  /** Read-only: one folder of a volume, `/` being the volume's root. */
+  dockerVolumeListDir: (args: {
+    machineId: MachineId
+    volume: string
+    path: string
+  }) => Promise<MachineDockerVolumeListing>
+  /** Read-only: the first `MACHINE_DOCKER_VOLUME_PREVIEW_MAX_BYTES` of a file in a volume. */
+  dockerVolumeReadFile: (args: {
+    machineId: MachineId
+    volume: string
+    path: string
+  }) => Promise<MachineFileRead>
+  /**
+   * Lists what removing the picked Docker objects would free, as a scan `runCleanup` accepts.
+   * `keys` are image references or ids, container ids, volume names or build cache record ids.
+   * Objects in use come back with `inUseBy` or `blocked` and are never preselected.
+   */
+  planDockerRemoval: (args: {
+    machineId: MachineId
+    kind: MachineDockerStorageKind
+    keys: string[]
+  }) => Promise<MachineCleanupScan>
+  onCleanupProgress: (callback: (progress: MachineCleanupProgress) => void) => () => void
   /** One question to the machine's disk-usage index; a newer `list` for the machine cancels the previous one. */
   diskIndex: (args: {
     machineId: MachineId
@@ -242,6 +286,12 @@ export const machinesApi: MachinesApi = {
   listDockerContainers: (args) => ipcRenderer.invoke(MACHINE_IPC.listDockerContainers, args),
   dockerContainerAction: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerContainerAction, args),
   dockerStorage: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerStorage, args),
+  dockerDetails: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerDetails, args),
+  dockerContainerLogs: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerContainerLogs, args),
+  dockerVolumeListDir: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerVolumeListDir, args),
+  dockerVolumeReadFile: (args) => ipcRenderer.invoke(MACHINE_IPC.dockerVolumeReadFile, args),
+  planDockerRemoval: (args) => ipcRenderer.invoke(MACHINE_IPC.planDockerRemoval, args),
+  onCleanupProgress: (callback) => subscribe(MACHINE_IPC.cleanupProgress, callback),
   diskIndex: (args) => ipcRenderer.invoke(MACHINE_IPC.diskIndex, args),
   scanCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.scanCleanup, args),
   runCleanup: (args) => ipcRenderer.invoke(MACHINE_IPC.runCleanup, args),

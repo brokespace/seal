@@ -1,5 +1,5 @@
 import { workspaceEditorFiles } from '@/store/slices/editor/tabs/workspace-editor-files'
-import type { Tab, TabGroup } from '../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab, type Tab, type TabGroup } from '../../../../shared/tab-types'
 import type { AppState } from '../../store/types'
 import { reconcileTabOrder } from './reconcile-order'
 
@@ -42,7 +42,7 @@ export function getGroupVisibleTabOrder(
     if (tab.contentType === 'simulator') {
       return simulatorTabIds.has(tab.id) ? { type: 'simulator', id: tab.id, tabId: tab.id } : null
     }
-    if (tab.contentType === 'agent-session') {
+    if (isAgentSessionSurfaceTab(tab.contentType)) {
       // Structured chat tabs are self-backed: the unified tab is the entity, so none can be stale.
       return { type: 'agent-session', id: tab.entityId, tabId: tab.id }
     }
@@ -54,7 +54,7 @@ export function getGroupVisibleTabOrder(
   const visibleIdOf = (tab: Tab): string =>
     tab.contentType === 'terminal' ||
     tab.contentType === 'browser' ||
-    tab.contentType === 'agent-session'
+    isAgentSessionSurfaceTab(tab.contentType)
       ? tab.entityId
       : tab.id
 
