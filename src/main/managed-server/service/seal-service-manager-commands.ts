@@ -115,7 +115,9 @@ export function sealServiceUnregisterCommand(manager: SealServiceManager): strin
     case 'systemd-user':
       return (
         `${SEAL_SYSTEMD_USER_SESSION} ` +
-        `systemctl --user disable --now ${SEAL_SERVICE_SYSTEMD_UNIT} >/dev/null 2>&1; ` +
+        // Stopped on its own: a disable that fails would skip the stop of `disable --now`.
+        `systemctl --user stop ${SEAL_SERVICE_SYSTEMD_UNIT} >/dev/null 2>&1; ` +
+        `systemctl --user disable ${SEAL_SERVICE_SYSTEMD_UNIT} >/dev/null 2>&1; ` +
         `rm -f ${SEAL_SERVICE_SYSTEMD_UNIT_WORD} ` +
         `${SEAL_SERVICE_SYSTEMD_UNIT_DIR_WORD}/default.target.wants/${SEAL_SERVICE_SYSTEMD_UNIT}; ` +
         'systemctl --user daemon-reload >/dev/null 2>&1; ' +
