@@ -148,7 +148,8 @@ describe('session notifications', () => {
         asked.push(`${kind} ${surface}`)
         return true
       },
-      show: (n) => shown.push(n)
+      show: (n) => shown.push(n),
+      askedReply: () => 'Tell me which one and should I go ahead'
     })
     const sessions: Partial<LiveSession>[] = [
       { id: 'chat', surface: { kind: 'chat', sessionId: 'c1', tabId: 'tab-c1' } },
@@ -156,7 +157,8 @@ describe('session notifications', () => {
     ]
     const steps: Partial<LiveSession>[] = [
       { status: 'working' },
-      { status: 'your-turn', lastMessage: 'Tell me which one and should I go ahead' },
+      // A chat's row carries no reply of its own.
+      { status: 'your-turn' },
       { status: 'waiting-input', statusSource: 'classifier' },
       { status: 'working' },
       // The owner's hook or attention lane announces a question the agent asked outright.
@@ -172,9 +174,10 @@ describe('session notifications', () => {
         })
       }
     }
-    expect(shown.map((n) => [n.sessionId, n.kind])).toEqual([
-      ['chat', 'needs-attention'],
-      ['cli', 'needs-attention']
+    const body = 'Claude Code on build-box needs you: Tell me which one and should I go ahead'
+    expect(shown.map((n) => [n.sessionId, n.kind, n.body])).toEqual([
+      ['chat', 'needs-attention', body],
+      ['cli', 'needs-attention', body]
     ])
     expect(asked).toEqual(['needs-attention chat', 'needs-attention cli'])
   })

@@ -92,7 +92,8 @@ export function installLiveSessionDesktopNotifications(
     show: (notification) =>
       showSessionNotification(notification, store.getSettings().notifications),
     // Installed after this, and only where replies are classified.
-    replyAsk: (session) => getSessionSummariesHost()?.replyAsk(session) ?? 'tells'
+    replyAsk: (session) => getSessionSummariesHost()?.replyAsk(session) ?? 'tells',
+    askedReply: (sessionId) => getSessionSummariesHost()?.askedReply(sessionId) ?? null
   })
   service.subscribe((event) => notifier.onEvent(event))
 }

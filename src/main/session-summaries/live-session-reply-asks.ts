@@ -3,6 +3,7 @@ import type {
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import { replyAskOf } from '../live-sessions/discovery/reply-ask'
+import { oneLine } from '../live-sessions/discovery/transcript-records'
 import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import type { SessionSummarizer } from './session-summarizer'
 
@@ -19,6 +20,8 @@ type Tracked = {
   stamp: number | null
   reading: boolean
   again: boolean
+  /** The reply the model was asked about, as a notification quotes it. */
+  asked: string | null
 }
 
 function replyAskKey(sessionId: string): string {
@@ -55,11 +58,17 @@ export class LiveSessionReplyAsks {
       return
     }
     const { session } = event
-    const tracked = this.tracked.get(session.id) ?? { stamp: null, reading: false, again: false }
+    const tracked = this.tracked.get(session.id) ?? {
+      stamp: null,
+      reading: false,
+      again: false,
+      asked: null
+    }
     this.tracked.set(session.id, tracked)
     if (!undecided(session)) {
       if (tracked.stamp !== null) {
         tracked.stamp = null
+        tracked.asked = null
         this.deps.classifier.clear(replyAskKey(session.id))
       }
       return
@@ -97,6 +106,11 @@ export class LiveSessionReplyAsks {
     return view?.text === 'asks' ? 'asks' : 'tells'
   }
 
+  /** The reply a session relabelled as asking ended on; null for any other session. */
+  askedReply(sessionId: string): string | null {
+    return this.tracked.get(sessionId)?.asked ?? null
+  }
+
   dispose(): void {
     this.tracked.clear()
   }
@@ -130,8 +144,10 @@ export class LiveSessionReplyAsks {
           return
         }
         if (text && replyAskOf(text) === 'unclear') {
+          tracked.asked = oneLine(text, 200)
           this.deps.classifier.request(replyAskKey(sessionId), text, false)
         } else {
+          tracked.asked = null
           this.deps.classifier.clear(replyAskKey(sessionId))
         }
       })

@@ -32,6 +32,8 @@ export type LiveSessionNotifierDeps = {
   show: (notification: LiveSessionNotification) => void
   /** Absent where nothing reads replies: every finished turn is then announced at once. */
   replyAsk?: (session: LiveSession) => ReplyAskVerdict
+  /** The reply a session relabelled as asking ended on, for one whose row carries none. */
+  askedReply?: (sessionId: string) => string | null
   /** Returns the timer's cancel. */
   setTimer?: (run: () => void, delayMs: number) => () => void
 }
@@ -68,14 +70,18 @@ export function isLiveSessionNoticeEnabled(
   return isNotificationSourceEnabled(settings, 'agent-task-complete', NOTICE_AGENT_STATE[kind])
 }
 
-function describe(session: LiveSession, kind: LiveSessionNotice): LiveSessionNotification {
+function describe(
+  session: LiveSession,
+  kind: LiveSessionNotice,
+  askedReply: string | null
+): LiveSessionNotification {
   const agent = agentSessionAdapter(session.provider)?.label ?? session.provider
   const name = liveSessionLabel(session) ?? agent
   const where = `${agent} on ${session.machine.label}`
   const detail =
     kind === 'finished'
       ? session.lastMessage
-      : (session.permission?.question ?? session.statusDetail ?? session.lastMessage)
+      : (session.permission?.question ?? session.statusDetail ?? session.lastMessage ?? askedReply)
   let lead = `${where} finished`
   if (kind === 'needs-attention') {
     lead = session.status === 'errored' ? `${where} hit an error` : `${where} needs you`
@@ -216,7 +222,10 @@ export class LiveSessionNotifier {
 
   private announce(session: LiveSession, kind: LiveSessionNotice): void {
     if (this.deps.wanted(kind, liveSessionSurfaceOf(session).kind)) {
-      this.deps.show(describe(session, kind))
+      // A chat's row carries no reply; the one read for the question stands in.
+      const askedReply =
+        session.statusSource === 'classifier' ? this.deps.askedReply?.(session.id) : null
+      this.deps.show(describe(session, kind, askedReply ?? null))
     }
   }
 }

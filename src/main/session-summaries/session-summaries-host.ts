@@ -251,6 +251,10 @@ export class SessionSummariesHost {
     return this.settingOn() && this.replyAsks ? this.replyAsks.verdict(session) : 'tells'
   }
 
+  askedReply(sessionId: string): string | null {
+    return this.replyAsks?.askedReply(sessionId) ?? null
+  }
+
   paneWorkspaceId(surface: AgentSessionSurface): string | null {
     return sessionPaneWorkspaceId(this.options.runtime, surface)
   }

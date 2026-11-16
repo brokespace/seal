@@ -14,6 +14,7 @@ import { unrefTimer } from './unref-timer'
 export type ReplyAskClassifier = {
   decorate(session: LiveSession): LiveSession
   verdict(session: LiveSession): ReplyAskVerdict
+  askedReply(sessionId: string): string | null
   /** The model came back: ask again for the replies it failed on. */
   retryFailed(): void
   dispose(): void
@@ -55,6 +56,7 @@ export function createReplyAskClassifier(options: {
   return {
     decorate: (session) => live.decorate(session),
     verdict: (session) => live.verdict(session),
+    askedReply: (sessionId) => live.askedReply(sessionId),
     retryFailed: () => classifier.retryFailed(),
     dispose: () => {
       release()
