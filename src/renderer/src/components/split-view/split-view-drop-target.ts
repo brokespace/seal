@@ -5,6 +5,7 @@ import { acquireWebviewsDragPassthrough } from '@/components/browser-pane/host-g
 import { isWorkspaceKanbanSidebarDropPointInBoard } from '@/components/sidebar/workspace-board/drag/workspace-kanban-sidebar-drop'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import { resolveDropZone } from '../tab-group/tab-drop-zone'
+import type { HoveredTabInsertion } from '../tab-group/tab-insertion'
 import {
   currentSplitViewItem,
   navigateToSplitViewItem,
@@ -34,12 +35,26 @@ export type SplitViewDropPreview = {
   /** In viewport coordinates. */
   rect: Rect
   kind: SplitViewZone | 'insert' | 'open'
+  /** For `insert`: the tab the pointer is on and the side of it, in the strip `groupId` names. */
+  insertion?: HoveredTabInsertion
 }
 
 type ResolvedDrop = { place: SplitViewDropPlace | 'open'; preview: SplitViewDropPreview }
 
 let preview: SplitViewDropPreview | null = null
+let dragCount = 0
 const listeners = new Set<() => void>()
+
+function notify(): void {
+  for (const listener of listeners) {
+    listener()
+  }
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
 
 function setPreview(next: SplitViewDropPreview | null): void {
   const same =
@@ -55,19 +70,21 @@ function setPreview(next: SplitViewDropPreview | null): void {
     return
   }
   preview = next
-  for (const listener of listeners) {
-    listener()
-  }
+  notify()
 }
 
 export function useSplitViewDropPreview(): SplitViewDropPreview | null {
-  return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-    () => preview
-  )
+  return useSyncExternalStore(subscribe, () => preview)
+}
+
+/** Something is being dragged towards the panes: a sidebar row, a project, or a tab. */
+export function useSplitViewDragActive(): boolean {
+  return useSyncExternalStore(subscribe, () => dragCount > 0)
+}
+
+/** The strip name a pane's tabs, or the agent-session page's, go by in an insertion. */
+export function itemTabStripGroupId(paneId: string | null): string {
+  return paneId ?? ''
 }
 
 function contains(rect: Rect, x: number, y: number): boolean {
@@ -132,24 +149,45 @@ function shownKey(paneId: string | null): string | null {
   return current ? splitViewItemKey(current) : null
 }
 
+/** The agent-session page's own tabs dropped on its strip: they change places, no pane comes of it. */
+function sessionPageTabs(
+  place: SplitViewDropPlace,
+  items: readonly SplitViewItem[]
+): string[] | null {
+  if (place.paneId !== null || splitViewStore.hasLayout()) {
+    return null
+  }
+  const open = liveSessionTabsStore.getState().tabs
+  const sessionIds = items.flatMap((item) => (item.kind === 'session' ? [item.sessionId] : []))
+  return sessionIds.length === items.length && sessionIds.every((id) => open.includes(id))
+    ? sessionIds
+    : null
+}
+
 function resolveStripDrop(strip: HTMLElement, x: number, paneId: string | null): ResolvedDrop {
   const stripRect = strip.getBoundingClientRect()
   const tabs = [...strip.querySelectorAll<HTMLElement>(`[${ITEM_TAB_KEY_ATTRIBUTE}]`)]
-  let index = tabs.length
-  let barLeft = tabs.at(-1)?.getBoundingClientRect().right ?? stripRect.left
-  for (const [at, tab] of tabs.entries()) {
+  // The first tab the pointer is left of the middle of; past them all, the end of the last.
+  let index = tabs.findIndex((tab) => {
     const rect = tab.getBoundingClientRect()
-    if (x < rect.left + rect.width / 2) {
-      index = at
-      barLeft = rect.left
-      break
-    }
+    return x < rect.left + rect.width / 2
+  })
+  const side = index === -1 ? 'right' : 'left'
+  const hovered = tabs.at(index)
+  if (index === -1) {
+    index = tabs.length
   }
+  const hoveredRect = hovered?.getBoundingClientRect()
+  const barLeft = hoveredRect ? hoveredRect[side] : stripRect.left
+  const visibleTabId = hovered?.getAttribute(ITEM_TAB_KEY_ATTRIBUTE)
   return {
     place: { paneId, zone: 'center', index },
     preview: {
       kind: 'insert',
-      rect: { left: barLeft - 1, top: stripRect.top, width: 2, height: stripRect.height }
+      rect: { left: barLeft - 1, top: stripRect.top, width: 2, height: stripRect.height },
+      ...(visibleTabId
+        ? { insertion: { groupId: itemTabStripGroupId(paneId), visibleTabId, side } }
+        : {})
     }
   }
 }
@@ -174,13 +212,7 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   }
   const strip = findAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
   if (strip) {
-    const stripPaneId = strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null
-    const held = paneKeys(stripPaneId)
-    // The agent-session page orders its own tabs; only a pane's strip reorders.
-    if (stripPaneId === null && items.every((item) => held.includes(splitViewItemKey(item)))) {
-      return null
-    }
-    return resolveStripDrop(strip, x, stripPaneId)
+    return resolveStripDrop(strip, x, strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null)
   }
   const pane = mode === 'grid' ? findAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
   if (!pane) {
@@ -246,6 +278,13 @@ export function commitSplitViewDrop(
     navigateToSplitViewItem(active)
     return true
   }
+  if (drop.place.index !== undefined) {
+    const ownSessionTabs = sessionPageTabs(drop.place, items)
+    if (ownSessionTabs) {
+      liveSessionTabsStore.move(ownSessionTabs, drop.place.index)
+      return true
+    }
+  }
   placeItemsInSplitView(items, drop.place, splitViewItemKey(active))
   return true
 }
@@ -255,9 +294,18 @@ export function beginSplitViewDrag(): () => void {
   const releaseWebviews = acquireWebviewsDragPassthrough()
   // Hover cards open under a held pointer too, and one under it would take the drop.
   document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, true)
+  dragCount += 1
+  notify()
+  let ended = false
   return () => {
+    if (ended) {
+      return
+    }
+    ended = true
     releaseWebviews()
-    document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, false)
-    setPreview(null)
+    dragCount -= 1
+    document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, dragCount > 0)
+    preview = null
+    notify()
   }
 }

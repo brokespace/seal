@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef } from 'react'
 import { SplitLayoutTree, type SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import { measureAllTabGroupBodies } from '../tab-group/tab-group-body-geometry'
+import { ItemTabDragLayer } from './ItemTabDragLayer'
 import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
 import { resizeSplitViewPanes } from './split-view-commands'
 import { splitViewStore, useSplitView, useSplitViewNarrow } from './split-view-store'
@@ -70,14 +71,16 @@ export default function SplitViewLayer(): React.JSX.Element | null {
       data-split-view-layer=""
       className="split-view-layer pointer-events-none absolute inset-0 flex min-h-0 min-w-0"
     >
-      <SplitLayoutTree
-        layout={layout}
-        soloLeafId={soloPaneId}
-        rootTouchesBottomEdge
-        renderLeaf={renderLeaf}
-        onRatioChange={resizeSplitViewPanes}
-        onResizeEnd={returnKeyboardAfterResize}
-      />
+      <ItemTabDragLayer>
+        <SplitLayoutTree
+          layout={layout}
+          soloLeafId={soloPaneId}
+          rootTouchesBottomEdge
+          renderLeaf={renderLeaf}
+          onRatioChange={resizeSplitViewPanes}
+          onResizeEnd={returnKeyboardAfterResize}
+        />
+      </ItemTabDragLayer>
     </div>
   )
 }

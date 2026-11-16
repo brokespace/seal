@@ -143,6 +143,18 @@ export class LiveSessionTabsStore {
     }
   }
 
+  /** Moves open tabs, in their order, to before the tab now at `index`; past the last, to the end. */
+  move(sessionIds: readonly string[], index: number): void {
+    const { tabs } = this.state
+    const moved = tabs.filter((id) => sessionIds.includes(id))
+    const rest = tabs.filter((id) => !sessionIds.includes(id))
+    const at = tabs.slice(0, index).filter((id) => !sessionIds.includes(id)).length
+    const next = [...rest.slice(0, at), ...moved, ...rest.slice(at)]
+    if (next.some((id, position) => id !== tabs[position])) {
+      this.set({ tabs: next })
+    }
+  }
+
   activate(sessionId: string): void {
     if (this.state.tabs.includes(sessionId)) {
       this.set({ activeId: sessionId })

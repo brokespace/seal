@@ -8,7 +8,7 @@ import {
 import { liveSessionMenuEffects } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { CloseSplitPaneMenuItem } from '@/components/tab-bar/CloseSplitPaneMenuItem'
 import { useTranslate } from '@/i18n/use-translate'
-import type { ItemTabCommands } from './ItemTabStrip'
+import type { ItemTabCommands } from './item-tab-commands'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { SplitViewPlacementMenu } from './SplitViewPlacementMenu'
 import type { SplitViewItem } from './split-view-types'

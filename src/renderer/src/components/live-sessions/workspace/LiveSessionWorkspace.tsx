@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ItemSurfaceSlot } from '@/components/split-view/ItemSurfaceSlot'
-import { ItemTabStrip, type ItemTabCommands } from '@/components/split-view/ItemTabStrip'
+import type { ItemTabCommands } from '@/components/split-view/item-tab-commands'
+import { ItemTabBar } from '@/components/split-view/ItemTabBar'
+import { ItemTabDragLayer } from '@/components/split-view/ItemTabDragLayer'
 import { splitViewItemKey, type SplitViewTab } from '@/components/split-view/split-view-types'
 import { resolveProjectOverviewRepo } from '@/components/project-overview/project-overview-model'
 import { useAppStore } from '@/store'
@@ -68,17 +70,19 @@ export default function LiveSessionWorkspace(): React.JSX.Element {
       className="relative flex h-full min-h-0 flex-1 flex-col bg-background text-foreground"
     >
       {openedFromProject || tabs.tabs.length > 0 ? (
-        <ItemTabStrip
-          paneId={null}
-          tabs={itemTabs}
-          activeKey={
-            tabs.activeId ? splitViewItemKey({ kind: 'session', sessionId: tabs.activeId }) : null
-          }
-          label={t('auto.components.live-sessions.workspace.tabs', 'Open agent sessions')}
-          commands={SESSION_TAB_COMMANDS}
-          before={openedFromProject ? <BackToProjectOverview /> : null}
-          style={{ paddingRight: 'var(--window-controls-width, 0px)' }}
-        />
+        <ItemTabDragLayer>
+          <ItemTabBar
+            paneId={null}
+            tabs={itemTabs}
+            activeKey={
+              tabs.activeId ? splitViewItemKey({ kind: 'session', sessionId: tabs.activeId }) : null
+            }
+            label={t('auto.components.live-sessions.workspace.tabs', 'Open agent sessions')}
+            commands={SESSION_TAB_COMMANDS}
+            before={openedFromProject ? <BackToProjectOverview /> : null}
+            style={{ paddingRight: 'var(--window-controls-width, 0px)' }}
+          />
+        </ItemTabDragLayer>
       ) : null}
       {tabs.activeId ? (
         <ItemSurfaceSlot />

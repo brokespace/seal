@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import type { SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
-import { ItemTabStrip, type ItemTabCommands } from './ItemTabStrip'
+import type { ItemTabCommands } from './item-tab-commands'
+import { ItemTabBar } from './ItemTabBar'
 import { bringKeyboardFocusIntoPane, landsOnStripControl } from './pane-keyboard-focus'
 import {
   closeOtherSplitViewItems,
@@ -125,7 +126,7 @@ export function SplitViewPane({
         }
       }}
     >
-      <ItemTabStrip
+      <ItemTabBar
         paneId={paneId}
         keepsFocus
         tabs={pane?.tabs ?? []}

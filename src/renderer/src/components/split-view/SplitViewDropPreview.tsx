@@ -1,6 +1,4 @@
 import { useTranslate } from '@/i18n/use-translate'
-import { cn } from '@/lib/class-names'
-import { getDropIndicatorClasses } from '../tab-bar/drop-indicator'
 import TabGroupDropOverlay from '../tab-group/TabGroupDropOverlay'
 import {
   useSplitViewDropPreview,
@@ -27,11 +25,11 @@ function useDropLabel(kind: Preview['kind']): string | undefined {
   }
 }
 
-/** Where a dragged row or tab would land. Mounted once; any pointer drag drives it. */
+/** The pane or half a dragged row or tab would land in. A strip draws an insertion on its own tabs. */
 export function SplitViewDropPreview(): React.JSX.Element | null {
   const preview = useSplitViewDropPreview()
   const label = useDropLabel(preview?.kind ?? 'insert')
-  if (!preview) {
+  if (!preview || preview.kind === 'insert') {
     return null
   }
   const { rect } = preview
@@ -39,18 +37,10 @@ export function SplitViewDropPreview(): React.JSX.Element | null {
     <div
       aria-hidden="true"
       data-split-view-drop-preview={preview.kind}
-      className={cn(
-        'pointer-events-none fixed',
-        // The drag ghost (z-index 2147483000) hangs by the pointer, right over the insertion bar.
-        preview.kind === 'insert' ? 'z-[2147483001]' : 'z-[9999]'
-      )}
+      className="pointer-events-none fixed z-[9999]"
       style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
     >
-      {preview.kind === 'insert' ? (
-        <div className={cn('absolute inset-0', getDropIndicatorClasses('left'))} />
-      ) : (
-        <TabGroupDropOverlay zone="center" fillContainer label={label} />
-      )}
+      <TabGroupDropOverlay zone="center" fillContainer label={label} />
     </div>
   )
 }

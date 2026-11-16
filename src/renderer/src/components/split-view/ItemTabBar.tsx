@@ -1,0 +1,121 @@
+import { useMemo } from 'react'
+import type { DropIndicator } from '@/components/tab-bar/drop-indicator'
+import { useTabStripDragScrollHandlers } from '@/components/tab-bar/tab-strip-drag-scroll'
+import { useTabStripOverflowNavigation } from '@/components/tab-bar/tab-strip-overflow-navigation'
+import { TabStripViewport } from '@/components/tab-bar/TabStripViewport'
+import { resolveTabIndicatorEdges } from '@/components/tab-group/tab-insertion'
+import { cn } from '@/lib/class-names'
+import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
+import type { ItemTabCommands } from './item-tab-commands'
+import { ItemTab } from './ItemTab'
+import {
+  ITEM_TAB_STRIP_ATTRIBUTE,
+  itemTabStripGroupId,
+  useSplitViewDropPreview
+} from './split-view-drop-target'
+import { splitViewItemKey, type SplitViewTab } from './split-view-types'
+
+function moveTabFocus(event: React.KeyboardEvent<HTMLDivElement>): void {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+    return
+  }
+  const tabs = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')]
+  const from = event.target instanceof HTMLElement ? tabs.indexOf(event.target) : -1
+  if (from === -1) {
+    return
+  }
+  event.preventDefault()
+  const step = event.key === 'ArrowRight' ? 1 : -1
+  tabs[(from + step + tabs.length) % tabs.length].focus()
+}
+
+/**
+ * The tabs of a split-view pane, and of the agent-session page: workspaces, sessions and projects
+ * in the tab strip every workspace tab group uses, so they lay out, overflow and drag the same.
+ */
+export function ItemTabBar({
+  paneId,
+  tabs,
+  activeKey,
+  label,
+  commands,
+  before,
+  after,
+  keepsFocus = false,
+  className,
+  style
+}: {
+  /** Null for the agent-session page in single view. */
+  paneId: string | null
+  tabs: readonly SplitViewTab[]
+  activeKey: string | null
+  /** Names the tablist. */
+  label: string
+  commands: ItemTabCommands
+  before?: React.ReactNode
+  after?: React.ReactNode
+  /** A press on the strip leaves a terminal its keyboard. */
+  keepsFocus?: boolean
+  className?: string
+  style?: React.CSSProperties
+}): React.JSX.Element {
+  const groupId = itemTabStripGroupId(paneId)
+  const keys = useMemo(() => tabs.map((tab) => splitViewItemKey(tab.item)), [tabs])
+  const navigation = useTabStripOverflowNavigation({
+    activeVisibleTabId: activeKey,
+    activeDockSlotId: activeKey,
+    layoutKey: keys.join('|'),
+    // Names the strip, so one that changes hands starts over.
+    worktreeId: groupId
+  })
+  const dragScroll = useTabStripDragScrollHandlers(navigation.scrollTabStrip, {
+    start: navigation.tabStripOverflowState.canScrollStart,
+    end: navigation.tabStripOverflowState.canScrollEnd
+  })
+  const insertion = useSplitViewDropPreview()?.insertion
+  const dropIndicators = useMemo(() => {
+    const edges = resolveTabIndicatorEdges(keys, insertion?.groupId === groupId ? insertion : null)
+    return new Map<string, DropIndicator>(edges.map((edge) => [edge.visibleTabId, edge.side]))
+  }, [groupId, insertion, keys])
+  return (
+    <div
+      {...{ [ITEM_TAB_STRIP_ATTRIBUTE]: groupId }}
+      {...(keepsFocus ? { [KEEPS_FOCUS_ATTRIBUTE]: '' } : {})}
+      className={cn(
+        '@container/session-tabs flex h-[32px] shrink-0 items-stretch border-b border-border bg-tab-bar',
+        className
+      )}
+      style={style}
+    >
+      {before}
+      <div className="@container/tab-strip flex min-w-0 flex-1 items-stretch">
+        <div className="flex h-full min-w-10 flex-1 items-stretch overflow-hidden">
+          <TabStripViewport
+            sortableIds={keys}
+            navigation={navigation}
+            dragScroll={dragScroll}
+            singleTab={tabs.length === 1}
+            hasTabs={tabs.length > 0}
+            strip={{ role: 'tablist', 'aria-label': label, onKeyDown: moveTabFocus }}
+          >
+            {tabs.map((tab, index) => {
+              const key = keys[index]
+              return (
+                <ItemTab
+                  key={key}
+                  tab={tab}
+                  active={key === activeKey}
+                  tabCount={tabs.length}
+                  hasTabsToRight={index < tabs.length - 1}
+                  dropIndicator={dropIndicators.get(key) ?? null}
+                  commands={commands}
+                />
+              )
+            })}
+          </TabStripViewport>
+        </div>
+      </div>
+      {after}
+    </div>
+  )
+}

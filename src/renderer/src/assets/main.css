@@ -1402,8 +1402,9 @@ html.native-shell .app-layout {
   pointer-events: auto;
 }
 
-/* A hover card that opens under a row being dragged to a pane would take the drop. */
-body[data-split-view-drag] [data-slot='hover-card-content'] {
+/* A hover card that opens under a row or tab being dragged to a pane would take the drop. */
+body[data-split-view-drag] [data-slot='hover-card-content'],
+body[data-split-view-drag] [data-tab-hover-card] {
   display: none;
 }
 

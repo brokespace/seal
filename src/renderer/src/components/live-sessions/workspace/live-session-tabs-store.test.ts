@@ -38,3 +38,19 @@ describe('closing session tabs opened from a project overview', () => {
     expect(closing(store, 'from-shop-overview', 'shop')).toBe(true)
   })
 })
+
+describe('moving session tabs', () => {
+  it('puts a tab before the one at the given place, and at the end past the last', () => {
+    const store = new LiveSessionTabsStore()
+    for (const id of ['a', 'b', 'c', 'd']) {
+      store.open(id, 'tab')
+    }
+    store.move(['a'], 3)
+    expect(store.getState().tabs).toEqual(['b', 'c', 'a', 'd'])
+    store.move(['d'], 0)
+    expect(store.getState().tabs).toEqual(['d', 'b', 'c', 'a'])
+    store.move(['d'], 4)
+    expect(store.getState().tabs).toEqual(['b', 'c', 'a', 'd'])
+    expect(store.getState().activeId).toBe('d')
+  })
+})
