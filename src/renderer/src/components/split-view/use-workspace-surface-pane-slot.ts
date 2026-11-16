@@ -1,12 +1,12 @@
 import { useCallback, useLayoutEffect, type RefObject } from 'react'
-import { holdKeyboardFocusForSurfacePress } from './pane-keyboard-focus'
+import { declineLateWorkspaceFocus, holdKeyboardFocusForSurfacePress } from './pane-keyboard-focus'
 import { reportWorkspaceSurfaceInPane } from './pane-workspace-surfaces'
 import { focusSplitViewPane } from './split-view-commands'
 import { useSurfaceOverSlot } from './use-surface-over-slot'
 
 type PaneFocusHandlers = {
   onPointerDownCapture?: () => void
-  onFocusCapture?: () => void
+  onFocusCapture?: (event: React.FocusEvent<HTMLElement>) => void
 }
 
 const NO_HANDLERS: PaneFocusHandlers = {}
@@ -26,11 +26,14 @@ export function useWorkspaceSurfacePaneSlot(
     [paneId, worktreeId]
   )
 
-  const focusPane = useCallback(() => {
-    if (paneId) {
-      focusSplitViewPane(paneId)
-    }
-  }, [paneId])
+  const focusPane = useCallback(
+    (event: React.FocusEvent<HTMLElement>) => {
+      if (paneId && !declineLateWorkspaceFocus(paneId, event)) {
+        focusSplitViewPane(paneId)
+      }
+    },
+    [paneId]
+  )
   const pressPane = useCallback(() => {
     if (paneId) {
       holdKeyboardFocusForSurfacePress(paneId)

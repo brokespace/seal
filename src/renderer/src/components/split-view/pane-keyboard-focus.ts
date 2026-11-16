@@ -98,6 +98,46 @@ export function keepKeyboardOnStripControl(control: HTMLElement): void {
   window.addEventListener('pointerdown', stop, true)
 }
 
+const TAB_KEY_FOCUS_MS = 100
+let tabKeyAt = Number.NEGATIVE_INFINITY
+globalThis.window?.addEventListener(
+  'keydown',
+  (event) => {
+    if (event.key === 'Tab') {
+      tabKeyAt = performance.now()
+    }
+  },
+  true
+)
+
+/**
+ * A workspace asks for the keyboard a moment after its tab is chosen, and a terminal when it has
+ * started. By then the user may be in another pane: focus that arrives in a pane that is not the
+ * focused one, with no press and no Tab key behind it, is handed back and moves no pane focus.
+ */
+export function declineLateWorkspaceFocus(
+  paneId: string,
+  event: React.FocusEvent<HTMLElement>
+): boolean {
+  const { focusedPaneId } = splitViewStore.getState()
+  if (focusedPaneId === null || focusedPaneId === paneId || surfacePressPaneId === paneId) {
+    return false
+  }
+  const taker = event.target
+  // A page takes the keyboard on a press the window never sees.
+  if (taker.tagName === 'WEBVIEW' || performance.now() - tabKeyAt < TAB_KEY_FOCUS_MS) {
+    return false
+  }
+  const holder = event.relatedTarget
+  if (holder instanceof HTMLElement && holder.isConnected) {
+    holder.focus({ preventScroll: true })
+  } else {
+    taker.blur()
+    bringKeyboardFocusIntoFocusedPane(false)
+  }
+  return true
+}
+
 const keyboardPlaceInSurface = new WeakMap<HTMLElement, HTMLElement>()
 
 /** Where the keyboard is inside a session or a project: it returns there when the tab comes back. */
