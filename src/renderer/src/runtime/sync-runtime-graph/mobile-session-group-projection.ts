@@ -176,7 +176,10 @@ export function buildMobileSessionGroupProjection(
   const order: VisibleTabRef[] = []
   const tabGroups: RuntimeMobileSessionTabGroup[] = []
   for (const group of getOrderedTabGroups(groups, inputs.tabGroupLayout)) {
-    const groupTabs = inputs.unifiedTabs.filter((tab) => tab.groupId === group.id)
+    // Paired clients cannot draw an external session's tab yet, so it is not published.
+    const groupTabs = inputs.unifiedTabs.filter(
+      (tab) => tab.groupId === group.id && tab.contentType !== 'external-agent-session'
+    )
     const visibleOrder = getGroupVisibleTabOrder(
       group,
       groupTabs,

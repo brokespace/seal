@@ -1,10 +1,15 @@
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { openLiveSessionFromRow } from '../menu/live-session-menu-effects'
+import { liveSessionRowOpenMode } from '../menu/live-session-menu-effects'
+import { openAgentSession } from '../open/open-agent-session'
 import { LiveSessionRow, type LiveSessionRowProps } from './LiveSessionRow'
 import { useLiveSessionRowState } from './use-live-session-row-state'
 
+function openFromRow(session: LiveSession, event?: { type: string }): void {
+  openAgentSession(session.id, liveSessionRowOpenMode(event))
+}
+
 /**
- * Session rows on a page or panel: the row, state, menu and open handler Active agents uses, so a
+ * Session rows on a page or panel: the row, state, menu and open handler the sidebar uses, so a
  * session reads and acts the same wherever it is listed.
  */
 export function LiveSessionRows({
@@ -46,9 +51,9 @@ export function LiveSessionRows({
           tone={tone}
           layout={layout}
           showPlace={showPlace}
-          onOpen={openLiveSessionFromRow}
-          // Only Active agents multi-selects; elsewhere a modified click still opens.
-          onPick={(picked) => openLiveSessionFromRow(picked)}
+          onOpen={openFromRow}
+          // Only the sidebar multi-selects; elsewhere a modified click still opens.
+          onPick={(picked) => openFromRow(picked)}
           menu={menu}
         />
       ))}

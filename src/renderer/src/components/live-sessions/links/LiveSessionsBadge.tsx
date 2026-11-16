@@ -1,12 +1,12 @@
 import { useRef } from 'react'
 import type { LiveSessionStatus } from '../../../../../shared/live-sessions/live-session-types'
 import { AgentStateDot } from '@/components/AgentStateDot'
-import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
-import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
 import { liveSessionMarksStore } from '../live-session-marks-store'
+import { useLiveSessions } from '../live-session-registry-store'
+import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
 import { revealFirstListedSession } from '../workspace-rows/session-row-reveal'
 import { useLiveSessionLinks } from './use-live-session-links'
 
@@ -30,16 +30,17 @@ export function liveSessionsCountLabel(
 export function LiveSessionsBadge({ projectId }: { projectId: string }): React.JSX.Element | null {
   const t = useTranslate()
   const { byProject } = useLiveSessionLinks()
-  const tabs = useLiveSessionTabs()
-  const showingSessions = useAppStore((state) => state.activeView === 'sessions')
+  const { sessions } = useLiveSessions()
+  const isShowing = useIsAgentSessionShowing()
   // A click's ring fades by itself: the list scrolling the badge from under the pointer must not end it.
   const ringIsFromClick = useRef(false)
   const badge = byProject.get(projectId)
   if (!badge) {
     return null
   }
-  const current =
-    showingSessions && tabs.activeId !== null && badge.sessionIds.includes(tabs.activeId)
+  const current = sessions.some(
+    (session) => badge.sessionIds.includes(session.id) && isShowing(session)
+  )
   const status = liveSessionStatusLabel(badge.status)
   return (
     <button

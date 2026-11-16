@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import type { OpenFile } from '@/store/slices/editor/types/open-file'
 import type { BrowserWorkspace } from '../../../../shared/browser-workspace-types'
-import type { Tab, TabGroup } from '../../../../shared/tab-types'
+import {
+  isAgentSessionSurfaceTab,
+  type AgentSessionSurfaceTab,
+  type Tab,
+  type TabGroup
+} from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 import { resolveUnifiedTabLabel } from '../../../../shared/tab-title-resolution'
 import type { useAppStore } from '../../store'
@@ -23,7 +28,7 @@ export type TabGroupWorktreeSnapshot = {
 
 export type GroupEditorItem = OpenFile & { tabId: string }
 export type GroupBrowserItem = BrowserWorkspace & { tabId: string }
-export type GroupAgentSessionItem = Tab & { contentType: 'agent-session' }
+export type GroupAgentSessionItem = AgentSessionSurfaceTab
 
 type TerminalTabItem = TerminalTab & { unifiedTabId: string }
 
@@ -128,8 +133,8 @@ export function useTabGroupItemProjections({
 
   const agentSessionItems = useMemo<GroupAgentSessionItem[]>(
     () =>
-      groupTabs.filter(
-        (item): item is GroupAgentSessionItem => item.contentType === 'agent-session'
+      groupTabs.filter((item): item is GroupAgentSessionItem =>
+        isAgentSessionSurfaceTab(item.contentType)
       ),
     [groupTabs]
   )

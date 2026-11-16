@@ -13,22 +13,22 @@ import type { SplitViewItem, SplitViewState, SplitViewTab } from './split-view-t
 
 const alpha: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-alpha', hostId: null }
 const beta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-beta', hostId: 'host-1' }
-const chat: SplitViewItem = { kind: 'session', sessionId: 'host-1:chat' }
+const delta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-delta', hostId: null }
 const docs: SplitViewItem = { kind: 'project', repoId: 'repo-docs', hostId: 'host-1' }
 
 const ALPHA = 'workspace:wt-alpha'
 const BETA = 'workspace:wt-beta'
-const CHAT = 'session:host-1:chat'
+const DELTA = 'workspace:wt-delta'
 const DOCS = 'project:host-1\nrepo-docs'
 
 const alphaTab: SplitViewTab = { item: alpha, preview: false }
 const betaTab: SplitViewTab = { item: beta, preview: false }
-const chatTab: SplitViewTab = { item: chat, preview: false }
+const deltaTab: SplitViewTab = { item: delta, preview: false }
 const docsTab: SplitViewTab = { item: docs, preview: false }
 
 const NO_SPLIT_VIEW = { layout: null, panes: {}, focusedPaneId: null, maximizedPaneId: null }
 
-/** left [alpha, beta] | right [chat] */
+/** left [alpha, beta] | right [delta] */
 const sideBySide: SplitViewState = {
   layout: {
     type: 'split',
@@ -39,13 +39,13 @@ const sideBySide: SplitViewState = {
   },
   panes: {
     left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-    right: { tabs: [chatTab], activeKey: CHAT }
+    right: { tabs: [deltaTab], activeKey: DELTA }
   },
   focusedPaneId: 'left',
   maximizedPaneId: null
 }
 
-/** left [alpha] | top [beta] over bottom [chat, docs] */
+/** left [alpha] | top [beta] over bottom [delta, docs] */
 const threePanes: SplitViewState = {
   layout: {
     type: 'split',
@@ -63,18 +63,18 @@ const threePanes: SplitViewState = {
   panes: {
     left: { tabs: [alphaTab], activeKey: ALPHA },
     top: { tabs: [betaTab], activeKey: BETA },
-    bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+    bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
   },
   focusedPaneId: 'left',
   maximizedPaneId: null
 }
 
-/** left [alpha, beta, docs] showing beta | right [chat] */
+/** left [alpha, beta, docs] showing beta | right [delta] */
 const threeChips: SplitViewState = {
   ...sideBySide,
   panes: {
     left: { tabs: [alphaTab, betaTab, docsTab], activeKey: BETA },
-    right: { tabs: [chatTab], activeKey: CHAT }
+    right: { tabs: [deltaTab], activeKey: DELTA }
   }
 }
 
@@ -85,7 +85,7 @@ describe('activateSplitViewChip', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom'
     })
@@ -99,7 +99,7 @@ describe('activateSplitViewChip', () => {
   })
 
   it('keeps the shown chip when the named chip is not in the pane', () => {
-    const next = activateSplitViewChip({ ...threeChips, focusedPaneId: 'right' }, 'left', CHAT)
+    const next = activateSplitViewChip({ ...threeChips, focusedPaneId: 'right' }, 'left', DELTA)
 
     expect(next.panes.left.activeKey).toBe(BETA)
     expect(next.focusedPaneId).toBe('left')
@@ -128,7 +128,7 @@ describe('revealSplitViewItem', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom'
     })
@@ -139,7 +139,7 @@ describe('revealSplitViewItem', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [alphaTab, betaTab, { item: docs, preview: true }], activeKey: DOCS },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       }
     })
   })
@@ -149,13 +149,13 @@ describe('revealSplitViewItem', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [{ item: alpha, preview: true }, betaTab], activeKey: BETA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       }
     }
 
     expect(revealSplitViewItem(withPreview, docs).panes).toEqual({
       left: { tabs: [{ item: docs, preview: true }, betaTab], activeKey: DOCS },
-      right: { tabs: [chatTab], activeKey: CHAT }
+      right: { tabs: [deltaTab], activeKey: DELTA }
     })
   })
 
@@ -164,13 +164,13 @@ describe('revealSplitViewItem', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-        right: { tabs: [{ item: chat, preview: true }], activeKey: CHAT }
+        right: { tabs: [{ item: delta, preview: true }], activeKey: DELTA }
       }
     }
 
     expect(revealSplitViewItem(previewElsewhere, docs).panes).toEqual({
       left: { tabs: [alphaTab, betaTab, { item: docs, preview: true }], activeKey: DOCS },
-      right: { tabs: [{ item: chat, preview: true }], activeKey: CHAT }
+      right: { tabs: [{ item: delta, preview: true }], activeKey: DELTA }
     })
   })
 })
@@ -180,7 +180,7 @@ describe('keepSplitViewChip', () => {
     ...sideBySide,
     panes: {
       left: { tabs: [alphaTab, { item: beta, preview: true }], activeKey: BETA },
-      right: { tabs: [{ item: chat, preview: true }], activeKey: CHAT }
+      right: { tabs: [{ item: delta, preview: true }], activeKey: DELTA }
     }
   }
 
@@ -189,7 +189,7 @@ describe('keepSplitViewChip', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [alphaTab, betaTab], activeKey: BETA },
-        right: { tabs: [{ item: chat, preview: true }], activeKey: CHAT }
+        right: { tabs: [{ item: delta, preview: true }], activeKey: DELTA }
       }
     })
   })
@@ -212,7 +212,7 @@ describe('closeSplitViewChips', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [betaTab, docsTab], activeKey: BETA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       }
     })
   })
@@ -247,7 +247,7 @@ describe('closeSplitViewChips', () => {
       },
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'left',
       maximizedPaneId: null
@@ -255,7 +255,7 @@ describe('closeSplitViewChips', () => {
   })
 
   it('closes a whole pane at once', () => {
-    expect(closeSplitViewChips(threePanes, new Set([CHAT, DOCS]))).toEqual({
+    expect(closeSplitViewChips(threePanes, new Set([DELTA, DOCS]))).toEqual({
       layout: {
         type: 'split',
         direction: 'horizontal',
@@ -273,7 +273,7 @@ describe('closeSplitViewChips', () => {
   })
 
   it('keeps one pane with several chips as a grid of one', () => {
-    expect(closeSplitViewChips(sideBySide, new Set([CHAT]))).toEqual({
+    expect(closeSplitViewChips(sideBySide, new Set([DELTA]))).toEqual({
       layout: { type: 'leaf', groupId: 'left' },
       panes: { left: { tabs: [alphaTab, betaTab], activeKey: ALPHA } },
       focusedPaneId: 'left',
@@ -282,17 +282,17 @@ describe('closeSplitViewChips', () => {
   })
 
   it('ends split view when one pane with one chip is left', () => {
-    expect(closeSplitViewChips(sideBySide, new Set([BETA, CHAT]))).toEqual(NO_SPLIT_VIEW)
+    expect(closeSplitViewChips(sideBySide, new Set([BETA, DELTA]))).toEqual(NO_SPLIT_VIEW)
   })
 
   it('ends split view when every chip closes', () => {
-    expect(closeSplitViewChips(sideBySide, new Set([ALPHA, BETA, CHAT]))).toEqual(NO_SPLIT_VIEW)
+    expect(closeSplitViewChips(sideBySide, new Set([ALPHA, BETA, DELTA]))).toEqual(NO_SPLIT_VIEW)
   })
 
   it('moves focus to the sibling pane when the focused pane closes', () => {
     const next = closeSplitViewChips(
       { ...threePanes, focusedPaneId: 'bottom' },
-      new Set([CHAT, DOCS])
+      new Set([DELTA, DOCS])
     )
 
     expect(next.focusedPaneId).toBe('top')
@@ -309,7 +309,7 @@ describe('closeSplitViewChips', () => {
       },
       panes: {
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'top',
       maximizedPaneId: null
@@ -325,7 +325,7 @@ describe('closeSplitViewChips', () => {
   it('maximizes the pane that takes focus when the maximized pane closes', () => {
     const next = closeSplitViewChips(
       { ...threePanes, focusedPaneId: 'bottom', maximizedPaneId: 'bottom' },
-      new Set([CHAT, DOCS])
+      new Set([DELTA, DOCS])
     )
 
     expect(next.maximizedPaneId).toBe('top')
@@ -371,7 +371,7 @@ describe('splitViewFocusAfterClose', () => {
   })
 
   it("keeps the focused pane's chip when the closed chips are elsewhere", () => {
-    expect(splitViewFocusAfterClose(sideBySide, new Set([CHAT]))).toEqual({
+    expect(splitViewFocusAfterClose(sideBySide, new Set([DELTA]))).toEqual({
       kind: 'workspace',
       worktreeId: 'wt-alpha',
       hostId: null
@@ -380,7 +380,7 @@ describe('splitViewFocusAfterClose', () => {
 
   it("picks the sibling pane's shown chip when the focused pane empties", () => {
     expect(
-      splitViewFocusAfterClose({ ...threePanes, focusedPaneId: 'bottom' }, new Set([CHAT, DOCS]))
+      splitViewFocusAfterClose({ ...threePanes, focusedPaneId: 'bottom' }, new Set([DELTA, DOCS]))
     ).toEqual({ kind: 'workspace', worktreeId: 'wt-beta', hostId: 'host-1' })
   })
 
@@ -388,7 +388,7 @@ describe('splitViewFocusAfterClose', () => {
     expect(
       splitViewFocusAfterClose(
         { ...threePanes, focusedPaneId: 'bottom' },
-        new Set([CHAT, DOCS]),
+        new Set([DELTA, DOCS]),
         (item) => item.kind === 'workspace' && item.worktreeId === 'wt-alpha'
       )
     ).toEqual({ kind: 'workspace', worktreeId: 'wt-alpha', hostId: null })
@@ -398,14 +398,14 @@ describe('splitViewFocusAfterClose', () => {
     expect(
       splitViewFocusAfterClose(
         { ...threePanes, focusedPaneId: 'bottom' },
-        new Set([CHAT, DOCS]),
+        new Set([DELTA, DOCS]),
         () => false
       )
     ).toEqual({ kind: 'workspace', worktreeId: 'wt-beta', hostId: 'host-1' })
   })
 
   it('has nowhere to go when every chip closes', () => {
-    expect(splitViewFocusAfterClose(sideBySide, new Set([ALPHA, BETA, CHAT]))).toBeNull()
+    expect(splitViewFocusAfterClose(sideBySide, new Set([ALPHA, BETA, DELTA]))).toBeNull()
   })
 })
 

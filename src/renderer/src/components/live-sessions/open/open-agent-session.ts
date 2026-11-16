@@ -1,9 +1,108 @@
-import { openLiveSessionKeepingTab } from '../menu/live-session-menu-effects'
-import type { LiveSessionOpenMode } from '../workspace/live-session-tabs-store'
+import { toast } from 'sonner'
+import { focusTerminalTabSurface } from '@/components/terminal-pane/input/focus/focus-terminal-tab-surface'
+import { translate } from '@/i18n/i18n'
+import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
+import { activateWorkspaceTabPaletteResult } from '@/lib/workspace/search/tabs/workspace-tab-palette-activation'
+import { useAppStore } from '@/store/index'
+import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import type { Tab } from '../../../../../shared/tab-types'
+import { liveSessionMarksStore } from '../live-session-marks-store'
+import { liveSessionTitle } from '../live-session-presentation'
+import { liveSessionRegistryStore } from '../live-session-registry-store'
+import type { AgentSessionOpenMode } from './agent-session-open-mode'
+import { agentSessionWorktreeId } from './agent-session-workspace'
+import {
+  activateExternalAgentSessionTab,
+  findExternalAgentSessionTab,
+  openExternalAgentSessionTab
+} from './external-agent-session-tab'
 
-export type AgentSessionOpenMode = LiveSessionOpenMode
+export type { AgentSessionOpenMode } from './agent-session-open-mode'
+
+function findTab(matches: (tab: Tab) => boolean): Tab | null {
+  for (const tabs of Object.values(useAppStore.getState().unifiedTabsByWorktree)) {
+    const tab = tabs.find(matches)
+    if (tab) {
+      return tab
+    }
+  }
+  return null
+}
+
+function showWorkspaceTab(tab: Tab, contentType: 'agent-session' | 'terminal'): boolean {
+  const shown = activateWorkspaceTabPaletteResult({
+    worktreeId: tab.worktreeId,
+    tabId: tab.id,
+    contentType,
+    entityId: tab.entityId,
+    groupId: tab.groupId,
+    ...(tab.executionHostId ? { executionHostId: tab.executionHostId } : {})
+  })
+  return shown.status !== 'failed'
+}
+
+function showChatTab(chatSessionId: string): boolean {
+  const tab = findTab((t) => t.contentType === 'agent-session' && t.entityId === chatSessionId)
+  return tab !== null && showWorkspaceTab(tab, 'agent-session')
+}
+
+function showTerminalPane(paneKey: string): boolean {
+  const separator = paneKey.lastIndexOf(':')
+  const terminalTabId = paneKey.slice(0, separator)
+  const tab = findTab((t) => t.contentType === 'terminal' && t.entityId === terminalTabId)
+  if (!tab || !showWorkspaceTab(tab, 'terminal')) {
+    return false
+  }
+  focusTerminalTabSurface(terminalTabId, paneKey.slice(separator + 1))
+  return true
+}
+
+/** The record's own tab: where a session started outside Seal shows, and any session whose tab is gone. */
+function showExternalTab(
+  sessionId: string,
+  session: LiveSession | null,
+  mode: AgentSessionOpenMode
+): boolean {
+  const state = useAppStore.getState()
+  const open = findExternalAgentSessionTab(state, sessionId)
+  const worktreeId =
+    open?.worktreeId ?? (session && agentSessionWorktreeId(session)) ?? state.activeWorktreeId
+  if (!worktreeId || (!open && !session)) {
+    return false
+  }
+  if (!activateAndRevealWorkspace(worktreeId)) {
+    return true
+  }
+  if (!session) {
+    return open !== null && activateExternalAgentSessionTab(worktreeId, open.id)
+  }
+  return (
+    openExternalAgentSessionTab({
+      worktreeId,
+      sessionId,
+      mode,
+      label: liveSessionTitle(session),
+      agent: session.provider
+    }) !== null
+  )
+}
 
 /** The one way to show a session by its record id: a preview tab, kept as a tab, or in a split. */
 export function openAgentSession(sessionId: string, mode: AgentSessionOpenMode = 'preview'): void {
-  openLiveSessionKeepingTab(sessionId, mode)
+  const id = liveSessionRegistryStore.currentId(sessionId)
+  const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === id) ?? null
+  liveSessionMarksStore.reveal(id)
+  const surface = session?.surface
+  const shown =
+    (surface?.kind === 'chat' && showChatTab(surface.sessionId)) ||
+    (surface?.kind === 'cli' && showTerminalPane(surface.paneKey)) ||
+    showExternalTab(id, session, mode)
+  if (!shown) {
+    toast.message(
+      translate(
+        'seal.sessionTab.open.noWorkspace',
+        'Open a workspace first: this session has none to open in.'
+      )
+    )
+  }
 }

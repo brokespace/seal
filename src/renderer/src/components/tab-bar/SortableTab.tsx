@@ -81,6 +81,9 @@ export type SortableTabProps = {
   nativeChat?: NativeChatTabSession
   /** A native chat whose generated name failed, unless the user named the tab. */
   namingFailure?: StructuredChatTabNamingFailure | null
+  /** A preview tab draws italic; a double click keeps it instead of renaming. */
+  isPreview?: boolean
+  onMakePermanent?: () => void
 }
 
 export default function SortableTab({
@@ -112,7 +115,9 @@ export default function SortableTab({
   onToggleViewMode,
   canSplitTerminal = true,
   nativeChat,
-  namingFailure
+  namingFailure,
+  isPreview = false,
+  onMakePermanent
 }: SortableTabProps): React.JSX.Element {
   const t = useTranslate()
   const naming = useNativeChatNamingFailure(namingFailure)
@@ -206,6 +211,10 @@ export default function SortableTab({
           return
         }
         e.stopPropagation()
+        if (isPreview && onMakePermanent) {
+          onMakePermanent()
+          return
+        }
         handleRenameOpen()
       }}
       onPointerDown={(e) => {
@@ -265,7 +274,9 @@ export default function SortableTab({
           spellCheck={false}
         />
       ) : (
-        <span className={`${TAB_LABEL_WIDTH_CLASSES} mr-1`}>{displayTitle}</span>
+        <span className={`${TAB_LABEL_WIDTH_CLASSES} mr-1${isPreview ? ' italic' : ''}`}>
+          {displayTitle}
+        </span>
       )}
       {!isEditing && <SealTabAccountBadge tabId={tab.id} worktreeId={tab.worktreeId} />}
       {tab.color && !isEditing && (

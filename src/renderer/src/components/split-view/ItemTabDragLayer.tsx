@@ -46,7 +46,7 @@ function cancelTabDragOnButtonlessMove(): () => void {
 function ItemTabDragPreview({ item }: { item: SplitViewItem }): React.JSX.Element {
   const resolved = useResolvedSplitViewItem(item)
   const title = useSplitViewItemTitle(item, resolved)
-  return <TabDragPreviewChip icon={<ItemTabIcon item={item} resolved={resolved} />} label={title} />
+  return <TabDragPreviewChip icon={<ItemTabIcon resolved={resolved} />} label={title} />
 }
 
 /**

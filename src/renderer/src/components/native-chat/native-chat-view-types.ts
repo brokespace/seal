@@ -56,4 +56,19 @@ export type NativeChatResolvedViewProps = {
   contextMenuActions?: Omit<NativeChatContextMenuActions, 'onPaste'>
 }
 
-export type NativeChatViewProps = NativeChatBridgeViewProps | NativeChatStructuredViewProps
+/** A session started outside Seal, read and written through the live-session registry. */
+export type NativeChatExternalViewProps = {
+  mode: 'external'
+  tabId: string
+  groupId?: string
+  worktreeId: string
+  /** The registry record id. */
+  sessionId: string
+  isVisible: boolean
+  isFocusedGroup: boolean
+}
+
+export type NativeChatViewProps =
+  | NativeChatBridgeViewProps
+  | NativeChatStructuredViewProps
+  | NativeChatExternalViewProps

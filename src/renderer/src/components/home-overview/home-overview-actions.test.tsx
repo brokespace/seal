@@ -6,13 +6,16 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { getLastSelectedMachineId } from '@/components/machines/model/machine-selection'
-import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 
 const navigation = vi.hoisted(() => ({
-  activate: vi.fn((): boolean => true)
+  activate: vi.fn((): boolean => true),
+  openSession: vi.fn()
 }))
 vi.mock('@/lib/workspace/activation/worktree-activation', () => ({
   activateAndRevealWorkspace: navigation.activate
+}))
+vi.mock('@/components/live-sessions/open/open-agent-session', () => ({
+  openAgentSession: navigation.openSession
 }))
 
 const { sealHomeOverviewProviders } = await import('./seal-home-overview-providers')
@@ -39,6 +42,7 @@ beforeEach(() => {
   vi.stubGlobal('api', {})
   useAppStore.setState({ activeView: 'home', settingsNavigationTarget: null })
   navigation.activate.mockClear()
+  navigation.openSession.mockClear()
 })
 
 afterEach(() => {
@@ -57,9 +61,12 @@ it('every Home button navigates away or hands off to a real handler', () => {
   for (const button of buttons) {
     useAppStore.setState({ activeView: 'home' })
     navigation.activate.mockClear()
+    navigation.openSession.mockClear()
     fireEvent.click(button)
     const handled =
-      useAppStore.getState().activeView !== 'home' || navigation.activate.mock.calls.length > 0
+      useAppStore.getState().activeView !== 'home' ||
+      navigation.activate.mock.calls.length > 0 ||
+      navigation.openSession.mock.calls.length > 0
     expect(handled, button.textContent ?? '').toBe(true)
   }
 })
@@ -94,6 +101,5 @@ it('a PR row opens its worktree on its machine', () => {
 it('a session opens as its agent session tab from its row', () => {
   renderHome()
   fireEvent.click(within(panel('Sessions')).getByText('Nightly eval'))
-  expect(useAppStore.getState().activeView).toBe('sessions')
-  expect(liveSessionTabsStore.getState().activeId).toBe('Nightly eval')
+  expect(navigation.openSession).toHaveBeenCalledWith('Nightly eval', 'preview')
 })

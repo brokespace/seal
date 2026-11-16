@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   placeSplitViewItems,
-  renameSplitViewSession,
   seedSplitViewPane,
   setSplitViewRatio,
   settleSplitView,
@@ -13,22 +12,22 @@ import type { SplitViewItem, SplitViewState, SplitViewTab } from './split-view-t
 
 const alpha: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-alpha', hostId: null }
 const beta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-beta', hostId: 'host-1' }
-const chat: SplitViewItem = { kind: 'session', sessionId: 'host-1:chat' }
+const delta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-delta', hostId: null }
 const docs: SplitViewItem = { kind: 'project', repoId: 'repo-docs', hostId: 'host-1' }
 
 const ALPHA = 'workspace:wt-alpha'
 const BETA = 'workspace:wt-beta'
-const CHAT = 'session:host-1:chat'
+const DELTA = 'workspace:wt-delta'
 const DOCS = 'project:host-1\nrepo-docs'
 
 const alphaTab: SplitViewTab = { item: alpha, preview: false }
 const betaTab: SplitViewTab = { item: beta, preview: false }
-const chatTab: SplitViewTab = { item: chat, preview: false }
+const deltaTab: SplitViewTab = { item: delta, preview: false }
 const docsTab: SplitViewTab = { item: docs, preview: false }
 
 const NO_SPLIT_VIEW = { layout: null, panes: {}, focusedPaneId: null, maximizedPaneId: null }
 
-/** left [alpha, beta] | right [chat] */
+/** left [alpha, beta] | right [delta] */
 const sideBySide: SplitViewState = {
   layout: {
     type: 'split',
@@ -39,13 +38,13 @@ const sideBySide: SplitViewState = {
   },
   panes: {
     left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-    right: { tabs: [chatTab], activeKey: CHAT }
+    right: { tabs: [deltaTab], activeKey: DELTA }
   },
   focusedPaneId: 'left',
   maximizedPaneId: null
 }
 
-/** left [alpha] | top [beta] over bottom [chat, docs] */
+/** left [alpha] | top [beta] over bottom [delta, docs] */
 const threePanes: SplitViewState = {
   layout: {
     type: 'split',
@@ -63,7 +62,7 @@ const threePanes: SplitViewState = {
   panes: {
     left: { tabs: [alphaTab], activeKey: ALPHA },
     top: { tabs: [betaTab], activeKey: BETA },
-    bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+    bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
   },
   focusedPaneId: 'left',
   maximizedPaneId: null
@@ -71,21 +70,12 @@ const threePanes: SplitViewState = {
 
 describe('seedSplitViewPane', () => {
   it('turns what the main area showed into one focused pane of kept chips', () => {
-    const other: SplitViewItem = { kind: 'session', sessionId: 'host-1:other' }
-
-    expect(seedSplitViewPane(NO_SPLIT_VIEW, 'seed', [chat, other], 'session:host-1:other')).toEqual(
-      {
-        layout: { type: 'leaf', groupId: 'seed' },
-        panes: {
-          seed: {
-            tabs: [chatTab, { item: other, preview: false }],
-            activeKey: 'session:host-1:other'
-          }
-        },
-        focusedPaneId: 'seed',
-        maximizedPaneId: null
-      }
-    )
+    expect(seedSplitViewPane(NO_SPLIT_VIEW, 'seed', [delta, docs], DOCS)).toEqual({
+      layout: { type: 'leaf', groupId: 'seed' },
+      panes: { seed: { tabs: [deltaTab, docsTab], activeKey: DOCS } },
+      focusedPaneId: 'seed',
+      maximizedPaneId: null
+    })
   })
 
   it('leaves an existing split view as it is', () => {
@@ -162,43 +152,6 @@ describe('placeSplitViewItems: the first placement from a seeded pane', () => {
     })
   })
 
-  it('moves a seeded session tab into the new pane and keeps the others as chips', () => {
-    const other: SplitViewItem = { kind: 'session', sessionId: 'host-1:other' }
-    const third: SplitViewItem = { kind: 'session', sessionId: 'host-1:third' }
-    const sessionPage = seedSplitViewPane(
-      NO_SPLIT_VIEW,
-      'seed',
-      [chat, other, third],
-      'session:host-1:other'
-    )
-
-    expect(
-      placeSplitViewItems(
-        sessionPage,
-        [third],
-        { paneId: 'seed', zone: 'right' },
-        { newPaneId: 'new' }
-      )
-    ).toEqual({
-      layout: {
-        type: 'split',
-        direction: 'horizontal',
-        first: { type: 'leaf', groupId: 'seed' },
-        second: { type: 'leaf', groupId: 'new' },
-        ratio: 0.5
-      },
-      panes: {
-        seed: {
-          tabs: [chatTab, { item: other, preview: false }],
-          activeKey: 'session:host-1:other'
-        },
-        new: { tabs: [{ item: third, preview: false }], activeKey: 'session:host-1:third' }
-      },
-      focusedPaneId: 'new',
-      maximizedPaneId: null
-    })
-  })
-
   it('creates no split view when the only item showing is dropped beside itself', () => {
     expect(
       placeSplitViewItems(seeded, [alpha], { paneId: 'seed', zone: 'right' }, { newPaneId: 'new' })
@@ -217,7 +170,7 @@ describe('placeSplitViewItems: into a strip', () => {
 
     expect(next.panes).toEqual({
       left: { tabs: [alphaTab, docsTab, betaTab], activeKey: DOCS },
-      right: { tabs: [chatTab], activeKey: CHAT }
+      right: { tabs: [deltaTab], activeKey: DELTA }
     })
     expect(next.focusedPaneId).toBe('left')
   })
@@ -232,7 +185,7 @@ describe('placeSplitViewItems: into a strip', () => {
 
     expect(next.panes).toEqual({
       left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-      right: { tabs: [chatTab, docsTab], activeKey: DOCS }
+      right: { tabs: [deltaTab, docsTab], activeKey: DOCS }
     })
     expect(next.focusedPaneId).toBe('right')
   })
@@ -272,7 +225,7 @@ describe('placeSplitViewItems: into a strip', () => {
       },
       panes: {
         left: { tabs: [betaTab], activeKey: BETA },
-        right: { tabs: [chatTab, alphaTab], activeKey: ALPHA }
+        right: { tabs: [deltaTab, alphaTab], activeKey: ALPHA }
       },
       focusedPaneId: 'right',
       maximizedPaneId: null
@@ -294,7 +247,7 @@ describe('placeSplitViewItems: into a strip', () => {
 
     expect(next.panes).toEqual({
       left: { tabs: [betaTab], activeKey: BETA },
-      right: { tabs: [chatTab, { item: alphaOnSecondHost, preview: false }], activeKey: ALPHA }
+      right: { tabs: [deltaTab, { item: alphaOnSecondHost, preview: false }], activeKey: ALPHA }
     })
   })
 
@@ -312,7 +265,7 @@ describe('placeSplitViewItems: into a strip', () => {
     )
 
     expect(next.panes.bottom).toEqual({
-      tabs: [chatTab, docsTab, { item: docsOnSecondHost, preview: false }],
+      tabs: [deltaTab, docsTab, { item: docsOnSecondHost, preview: false }],
       activeKey: 'project:host-2\nrepo-docs'
     })
   })
@@ -322,7 +275,7 @@ describe('placeSplitViewItems: into a strip', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [{ item: alpha, preview: true }, betaTab], activeKey: ALPHA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       }
     }
     const next = placeSplitViewItems(
@@ -332,7 +285,7 @@ describe('placeSplitViewItems: into a strip', () => {
       { newPaneId: 'new' }
     )
 
-    expect(next.panes.right).toEqual({ tabs: [chatTab, alphaTab], activeKey: ALPHA })
+    expect(next.panes.right).toEqual({ tabs: [deltaTab, alphaTab], activeKey: ALPHA })
   })
 
   it('closes a pane whose last chip moves out and collapses the tree', () => {
@@ -353,7 +306,7 @@ describe('placeSplitViewItems: into a strip', () => {
       },
       panes: {
         left: { tabs: [alphaTab, betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'left',
       maximizedPaneId: null
@@ -364,13 +317,13 @@ describe('placeSplitViewItems: into a strip', () => {
     expect(
       placeSplitViewItems(
         sideBySide,
-        [chat],
+        [delta],
         { paneId: 'left', zone: 'center' },
         { newPaneId: 'new' }
       )
     ).toEqual({
       layout: { type: 'leaf', groupId: 'left' },
-      panes: { left: { tabs: [alphaTab, betaTab, chatTab], activeKey: CHAT } },
+      panes: { left: { tabs: [alphaTab, betaTab, deltaTab], activeKey: DELTA } },
       focusedPaneId: 'left',
       maximizedPaneId: null
     })
@@ -386,7 +339,7 @@ describe('placeSplitViewItems: into a strip', () => {
       )
     ).toEqual({
       layout: { type: 'leaf', groupId: 'bottom' },
-      panes: { bottom: { tabs: [chatTab, alphaTab, betaTab, docsTab], activeKey: ALPHA } },
+      panes: { bottom: { tabs: [deltaTab, alphaTab, betaTab, docsTab], activeKey: ALPHA } },
       focusedPaneId: 'bottom',
       maximizedPaneId: null
     })
@@ -419,7 +372,7 @@ describe('placeSplitViewItems: beside a pane in an existing grid', () => {
       panes: {
         left: { tabs: [betaTab], activeKey: BETA },
         new: { tabs: [alphaTab], activeKey: ALPHA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       },
       focusedPaneId: 'new',
       maximizedPaneId: null
@@ -451,7 +404,7 @@ describe('placeSplitViewItems: beside a pane in an existing grid', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         new: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'new',
       maximizedPaneId: null
@@ -483,7 +436,7 @@ describe('placeSplitViewItems: beside a pane in an existing grid', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         new: { tabs: [docsTab, betaTab], activeKey: BETA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       },
       focusedPaneId: 'new',
       maximizedPaneId: null
@@ -494,7 +447,7 @@ describe('placeSplitViewItems: beside a pane in an existing grid', () => {
     expect(
       placeSplitViewItems(
         sideBySide,
-        [chat],
+        [delta],
         { paneId: 'right', zone: 'right' },
         { newPaneId: 'new' }
       )
@@ -508,7 +461,7 @@ describe('placeSplitViewItems: beside a pane in an existing grid', () => {
       },
       panes: {
         left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-        right: { tabs: [chatTab], activeKey: CHAT }
+        right: { tabs: [deltaTab], activeKey: DELTA }
       },
       focusedPaneId: 'right',
       maximizedPaneId: null
@@ -544,7 +497,7 @@ describe('settleSplitView', () => {
       },
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'left',
       maximizedPaneId: null
@@ -555,7 +508,10 @@ describe('settleSplitView', () => {
     expect(
       settleSplitView({
         ...sideBySide,
-        panes: { left: { tabs: [], activeKey: null }, right: { tabs: [chatTab], activeKey: CHAT } }
+        panes: {
+          left: { tabs: [], activeKey: null },
+          right: { tabs: [deltaTab], activeKey: DELTA }
+        }
       })
     ).toEqual(NO_SPLIT_VIEW)
   })
@@ -579,13 +535,13 @@ describe('settleSplitView', () => {
       ...sideBySide,
       panes: {
         left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-        right: { tabs: [alphaTab, chatTab, docsTab], activeKey: ALPHA }
+        right: { tabs: [alphaTab, deltaTab, docsTab], activeKey: ALPHA }
       }
     })
 
     expect(next.panes).toEqual({
       left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-      right: { tabs: [chatTab, docsTab], activeKey: CHAT }
+      right: { tabs: [deltaTab, docsTab], activeKey: DELTA }
     })
   })
 
@@ -597,7 +553,7 @@ describe('settleSplitView', () => {
 
     expect(next.panes).toEqual({
       left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-      right: { tabs: [chatTab], activeKey: CHAT }
+      right: { tabs: [deltaTab], activeKey: DELTA }
     })
   })
 
@@ -635,13 +591,13 @@ describe('settleSplitView', () => {
 describe('withoutSplitViewKeys', () => {
   const panes = {
     left: { tabs: [alphaTab, betaTab, docsTab], activeKey: BETA },
-    right: { tabs: [chatTab], activeKey: CHAT }
+    right: { tabs: [deltaTab], activeKey: DELTA }
   }
 
   it('removes the keys and shows the chip after a removed active chip', () => {
     expect(withoutSplitViewKeys(panes, new Set([BETA]))).toEqual({
       left: { tabs: [alphaTab, docsTab], activeKey: DOCS },
-      right: { tabs: [chatTab], activeKey: CHAT }
+      right: { tabs: [deltaTab], activeKey: DELTA }
     })
   })
 
@@ -660,7 +616,7 @@ describe('withoutSplitViewKeys', () => {
   })
 
   it('leaves an emptied pane with no active chip', () => {
-    expect(withoutSplitViewKeys(panes, new Set([CHAT])).right).toEqual({
+    expect(withoutSplitViewKeys(panes, new Set([DELTA])).right).toEqual({
       tabs: [],
       activeKey: null
     })
@@ -686,7 +642,7 @@ describe('setSplitViewRatio', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
       },
       focusedPaneId: 'left',
       maximizedPaneId: null
@@ -761,33 +717,6 @@ describe('toggleSplitViewMaximize', () => {
 
   it('does nothing for a pane that is not in the grid', () => {
     expect(toggleSplitViewMaximize(sideBySide, 'gone')).toBe(sideBySide)
-  })
-})
-
-describe('renameSplitViewSession', () => {
-  it('keeps the chip in place under its new id, still shown and still a preview', () => {
-    const withPreviewChat: SplitViewState = {
-      ...sideBySide,
-      panes: {
-        left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-        right: { tabs: [docsTab, { item: chat, preview: true }], activeKey: CHAT }
-      }
-    }
-
-    expect(renameSplitViewSession(withPreviewChat, 'host-1:chat', 'host-1:resumed').panes).toEqual({
-      left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-      right: {
-        tabs: [docsTab, { item: { kind: 'session', sessionId: 'host-1:resumed' }, preview: true }],
-        activeKey: 'session:host-1:resumed'
-      }
-    })
-  })
-
-  it('leaves the chips alone when the session is not in the grid', () => {
-    expect(renameSplitViewSession(sideBySide, 'host-1:elsewhere', 'host-1:resumed').panes).toEqual({
-      left: { tabs: [alphaTab, betaTab], activeKey: ALPHA },
-      right: { tabs: [chatTab], activeKey: CHAT }
-    })
   })
 })
 

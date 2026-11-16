@@ -4,49 +4,14 @@ import { splitViewPaneIds } from './split-view-layout-transitions'
 import {
   SPLIT_VIEW_STORAGE_KEY,
   parseSavedSplitView,
-  serializeSplitView,
-  splitViewFromSessionTwoUp
+  serializeSplitView
 } from './split-view-saved-state'
 import { activeSplitViewItem, type SplitViewState } from './split-view-types'
 
-const LEGACY_SESSION_TABS_KEY = 'seal.liveSessionTabs.v1'
 const NO_VISIBLE_WORKSPACES: ReadonlyMap<string, string> = new Map()
 
 export function createSplitViewPaneId(): string {
   return createNonSecureContextUuid()
-}
-
-function restoreSessionTwoUp(): SplitViewState {
-  const saved: unknown = JSON.parse(
-    globalThis.localStorage?.getItem(LEGACY_SESSION_TABS_KEY) ?? 'null'
-  )
-  const fields = new Map<string, unknown>(
-    saved && typeof saved === 'object' ? Object.entries(saved) : []
-  )
-  const tabs = fields.get('tabs')
-  const text = (key: string): string | null => {
-    const value = fields.get(key)
-    return typeof value === 'string' ? value : null
-  }
-  return splitViewFromSessionTwoUp(
-    Array.isArray(tabs) ? tabs.filter((id): id is string => typeof id === 'string') : [],
-    text('activeId'),
-    text('splitId'),
-    { first: createSplitViewPaneId(), second: createSplitViewPaneId() }
-  )
-}
-
-/** Converted once: a grid closed before the session page next saves does not come back. */
-function forgetSessionTwoUp(): void {
-  const saved: unknown = JSON.parse(
-    globalThis.localStorage?.getItem(LEGACY_SESSION_TABS_KEY) ?? 'null'
-  )
-  if (saved && typeof saved === 'object') {
-    globalThis.localStorage?.setItem(
-      LEGACY_SESSION_TABS_KEY,
-      JSON.stringify({ ...saved, splitId: undefined })
-    )
-  }
 }
 
 function save(state: SplitViewState): void {
@@ -64,16 +29,7 @@ function save(state: SplitViewState): void {
 
 function restore(): SplitViewState {
   try {
-    const raw = globalThis.localStorage?.getItem(SPLIT_VIEW_STORAGE_KEY)
-    if (raw) {
-      return parseSavedSplitView(raw)
-    }
-    const converted = restoreSessionTwoUp()
-    if (converted.layout) {
-      save(converted)
-      forgetSessionTwoUp()
-    }
-    return converted
+    return parseSavedSplitView(globalThis.localStorage?.getItem(SPLIT_VIEW_STORAGE_KEY))
   } catch {
     // Unreadable or absent: start with no split view.
     return parseSavedSplitView(null)

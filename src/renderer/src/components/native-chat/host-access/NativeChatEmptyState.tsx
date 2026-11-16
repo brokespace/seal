@@ -14,7 +14,7 @@ export function NativeChatEmptyState({
 }: {
   kind: 'loading' | 'empty' | 'error' | 'not-agent'
   message?: string
-  /** The chat's own sentence for the failure, said once: it takes the generic title's place. */
+  /** The chat's own sentence for a failure or an empty chat, said once: it takes the generic title's place. */
   headline?: string
   agent?: NativeChatSession['agent']
   /** Structured reads retry automatically; show a loading failure without directing users back to a terminal. */
@@ -94,6 +94,9 @@ function emptyStateCopy(
         )
       }
     case 'empty': {
+      if (words.headline) {
+        return { title: words.headline, subtitle: null }
+      }
       const agentName = agent ? formatAgentTypeLabel(agent) : 'the agent'
       return {
         title: t(

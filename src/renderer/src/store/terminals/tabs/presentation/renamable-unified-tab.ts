@@ -1,4 +1,4 @@
-import type { Tab } from '../../../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab, type Tab } from '../../../../../../shared/tab-types'
 
 /** Presentation actions use terminal entityId for backed tabs, unified ID for rowless structured chats. */
 export function findRenamableUnifiedTab(
@@ -8,6 +8,6 @@ export function findRenamableUnifiedTab(
   const unified = Object.values(unifiedTabsByWorktree).flat()
   return (
     unified.find((entry) => entry.contentType === 'terminal' && entry.entityId === tabId) ??
-    unified.find((entry) => entry.contentType === 'agent-session' && entry.id === tabId)
+    unified.find((entry) => isAgentSessionSurfaceTab(entry.contentType) && entry.id === tabId)
   )
 }

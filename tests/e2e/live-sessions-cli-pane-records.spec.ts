@@ -112,7 +112,7 @@ test('a Claude and a Codex CLI in Seal panes are each one session, scan after sc
   ]
 
   await waitForSessionReady(orcaPage)
-  await waitForActiveWorktree(orcaPage)
+  const worktreeId = await waitForActiveWorktree(orcaPage)
   await ensureTerminalVisible(orcaPage)
   await configureDiscoverableStubAgentClis(orcaPage, clis)
   const claude = await launchDiscoverableStubAgentCli(orcaPage, clis[0])
@@ -160,7 +160,9 @@ test('a Claude and a Codex CLI in Seal panes are each one session, scan after sc
     expect(notOnce).toEqual([])
   }
   // The workspace's card lists the sessions in its folder: the two stubs.
-  const rows = orcaPage.locator('[data-workspace-session-rows] [data-live-session-row]')
+  const rows = orcaPage.locator(
+    `[data-workspace-session-rows="${worktreeId}"] [data-live-session-row]`
+  )
   const row = (id: string) => sidebarSessionRow(orcaPage, id)
 
   // Claude names its session as it starts. Codex names none before its first turn: until then

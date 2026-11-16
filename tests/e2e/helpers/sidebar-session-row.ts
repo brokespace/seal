@@ -1,4 +1,4 @@
-// Where the sidebar lists a session: under its workspace's card, or in Active agents when no workspace holds it.
+// Where the sidebar lists a session: under its workspace's card, or in the Unassigned group when no workspace holds it.
 import type { Locator, Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 
@@ -9,7 +9,7 @@ export async function showSidebar(page: Page): Promise<void> {
 }
 
 function inSidebar(page: Page, row: string): Locator {
-  return page.locator(`[data-workspace-session-rows] ${row}, [data-testid="active-agents"] ${row}`)
+  return page.locator(`[data-workspace-session-rows] ${row}`)
 }
 
 export function sidebarSessionRow(page: Page, sessionId: string): Locator {

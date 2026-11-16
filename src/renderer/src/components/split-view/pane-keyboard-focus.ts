@@ -140,7 +140,7 @@ export function declineLateWorkspaceFocus(
 
 const keyboardPlaceInSurface = new WeakMap<HTMLElement, HTMLElement>()
 
-/** Where the keyboard is inside a session or a project: it returns there when the tab comes back. */
+/** Where the keyboard is inside a project: it returns there when the tab comes back. */
 export function noteKeyboardInItemSurface(surface: HTMLElement, holder: HTMLElement): void {
   keyboardPlaceInSurface.set(surface, holder)
 }
@@ -173,7 +173,7 @@ export function bringKeyboardFocusIntoPane(
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null
   const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
-  // A workspace, a session and a project are drawn over the pane, not in it.
+  // A workspace and a project are drawn over the pane, not in it.
   const inThisPane =
     content === pane ||
     content?.getAttribute('data-workspace-surface-pane-id') === paneId ||
@@ -197,7 +197,7 @@ export function bringKeyboardFocusIntoPane(
   }
 }
 
-/** Split view ended on this session or project: the keyboard its closed pane held, or nothing holds, comes to it. */
+/** Split view ended on this project: the keyboard its closed pane held, or nothing holds, comes to it. */
 export function bringKeyboardFocusIntoSingleViewItem(surface: HTMLElement): void {
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null

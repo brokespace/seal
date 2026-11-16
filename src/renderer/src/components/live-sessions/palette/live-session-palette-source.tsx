@@ -12,7 +12,7 @@ import {
   isActiveLiveSession
 } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import type { Tab } from '../../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab, type Tab } from '../../../../../shared/tab-types'
 import {
   liveSessionProviderLabel,
   liveSessionStatusText,
@@ -21,13 +21,16 @@ import {
 import { useLiveSessions } from '../live-session-registry-store'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { openAgentSession } from '../open/open-agent-session'
-import { RECENTLY_FINISHED_MS } from '../active-agents/active-agents-model'
+import { RECENTLY_FINISHED_MS } from '../row/live-session-machine-listing'
 
-/** What a session's workspace tab goes by: a chat by its chat, an agent in a pane by its terminal tab. */
-function liveSessionTabKey(session: Pick<LiveSession, 'surface'>): string | null {
+/** What a session's workspace tab goes by: a chat by its chat, an agent in a pane by its terminal tab, one started outside Seal by its record. */
+function liveSessionTabKey(session: Pick<LiveSession, 'id' | 'surface'>): string | null {
   const { surface } = session
   if (surface.kind === 'chat') {
     return `agent-session:${surface.sessionId}`
+  }
+  if (surface.kind === 'external') {
+    return `external-agent-session:${session.id}`
   }
   if (surface.kind !== 'cli') {
     return null
@@ -38,14 +41,14 @@ function liveSessionTabKey(session: Pick<LiveSession, 'surface'>): string | null
 
 type SessionTab = Pick<Tab, 'contentType' | 'entityId'>
 
-/** The chat and terminal tabs open in any workspace, which Open Tabs lists itself. */
+/** The session and terminal tabs open in any workspace, which Open Tabs lists itself. */
 export function openSessionTabKeys(
   unifiedTabsByWorktree: Readonly<Record<string, readonly SessionTab[] | undefined>>
 ): Set<string> {
   const keys = new Set<string>()
   for (const tabs of Object.values(unifiedTabsByWorktree)) {
     for (const tab of tabs ?? []) {
-      if (tab.contentType === 'agent-session' || tab.contentType === 'terminal') {
+      if (isAgentSessionSurfaceTab(tab.contentType) || tab.contentType === 'terminal') {
         keys.add(`${tab.contentType}:${tab.entityId}`)
       }
     }

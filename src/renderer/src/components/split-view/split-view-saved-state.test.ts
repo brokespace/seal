@@ -1,29 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import {
-  parseSavedSplitView,
-  serializeSplitView,
-  splitViewFromSessionTwoUp
-} from './split-view-saved-state'
+import { parseSavedSplitView, serializeSplitView } from './split-view-saved-state'
 import type { SplitViewItem, SplitViewState, SplitViewTab } from './split-view-types'
 
 const alpha: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-alpha', hostId: null }
 const beta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-beta', hostId: 'host-1' }
-const chat: SplitViewItem = { kind: 'session', sessionId: 'host-1:chat' }
+const delta: SplitViewItem = { kind: 'workspace', worktreeId: 'wt-delta', hostId: null }
 const docs: SplitViewItem = { kind: 'project', repoId: 'repo-docs', hostId: 'host-1' }
 
 const ALPHA = 'workspace:wt-alpha'
 const BETA = 'workspace:wt-beta'
-const CHAT = 'session:host-1:chat'
+const DELTA = 'workspace:wt-delta'
 const DOCS = 'project:host-1\nrepo-docs'
 
 const alphaTab: SplitViewTab = { item: alpha, preview: false }
 const betaTab: SplitViewTab = { item: beta, preview: false }
-const chatTab: SplitViewTab = { item: chat, preview: false }
+const deltaTab: SplitViewTab = { item: delta, preview: false }
 const docsTab: SplitViewTab = { item: docs, preview: false }
 
 const NO_SPLIT_VIEW = { layout: null, panes: {}, focusedPaneId: null, maximizedPaneId: null }
 
-/** left [alpha] | top [beta] over bottom [chat, docs], as saved */
+/** left [alpha] | top [beta] over bottom [delta, docs], as saved */
 const savedThreePanes = {
   layout: {
     type: 'split',
@@ -41,7 +37,7 @@ const savedThreePanes = {
   panes: {
     left: { items: [alpha], activeKey: ALPHA },
     top: { items: [beta], activeKey: BETA },
-    bottom: { items: [chat, docs], activeKey: DOCS }
+    bottom: { items: [delta, docs], activeKey: DOCS }
   },
   focusedPaneId: 'bottom'
 }
@@ -67,7 +63,7 @@ describe('serializeSplitView', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, { item: docs, preview: true }], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, { item: docs, preview: true }], activeKey: DOCS }
       },
       focusedPaneId: 'bottom',
       maximizedPaneId: 'bottom'
@@ -98,7 +94,7 @@ describe('serializeSplitView', () => {
         },
         bottom: {
           items: [
-            { kind: 'session', sessionId: 'host-1:chat' },
+            { kind: 'workspace', worktreeId: 'wt-delta', hostId: null },
             { kind: 'project', repoId: 'repo-docs', hostId: 'host-1' }
           ],
           activeKey: 'project:host-1\nrepo-docs'
@@ -125,7 +121,7 @@ describe('parseSavedSplitView', () => {
       },
       panes: {
         top: { tabs: [alphaTab, { item: beta, preview: true }], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom',
       maximizedPaneId: 'bottom'
@@ -141,7 +137,7 @@ describe('parseSavedSplitView', () => {
       },
       panes: {
         top: { tabs: [alphaTab, betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom',
       maximizedPaneId: null
@@ -166,7 +162,7 @@ describe('parseSavedSplitView', () => {
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
         top: { tabs: [betaTab], activeKey: BETA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom',
       maximizedPaneId: null
@@ -186,11 +182,45 @@ describe('parseSavedSplitView', () => {
       ...savedThreePanes,
       panes: {
         ...savedThreePanes.panes,
-        bottom: { items: [chat, { kind: 'board', boardId: 'b1' }, docs], activeKey: DOCS }
+        bottom: { items: [delta, { kind: 'board', boardId: 'b1' }, docs], activeKey: DOCS }
       }
     })
 
-    expect(restored.panes.bottom).toEqual({ tabs: [chatTab, docsTab], activeKey: DOCS })
+    expect(restored.panes.bottom).toEqual({ tabs: [deltaTab, docsTab], activeKey: DOCS })
+  })
+
+  it('drops the session tabs an earlier version saved, and a pane left with none', () => {
+    const restored = parse({
+      ...savedThreePanes,
+      panes: {
+        left: { items: [alpha], activeKey: ALPHA },
+        top: {
+          items: [{ kind: 'session', sessionId: 'host-1:chat' }],
+          activeKey: 'session:host-1:chat'
+        },
+        bottom: {
+          items: [{ kind: 'session', sessionId: 'host-1:other' }, docs],
+          activeKey: 'session:host-1:other'
+        }
+      },
+      focusedPaneId: 'top'
+    })
+
+    expect(restored).toEqual({
+      layout: {
+        type: 'split',
+        direction: 'horizontal',
+        first: { type: 'leaf', groupId: 'left' },
+        second: { type: 'leaf', groupId: 'bottom' },
+        ratio: 0.6
+      },
+      panes: {
+        left: { tabs: [alphaTab], activeKey: ALPHA },
+        bottom: { tabs: [docsTab], activeKey: DOCS }
+      },
+      focusedPaneId: 'bottom',
+      maximizedPaneId: null
+    })
   })
 
   it('drops items that lack their identity and restores a workspace saved without a host', () => {
@@ -202,8 +232,8 @@ describe('parseSavedSplitView', () => {
           items: [
             { kind: 'workspace', hostId: 'host-1' },
             { kind: 'project', repoId: 'repo-docs' },
-            { kind: 'session', sessionId: '' },
-            'session:host-1:chat',
+            { kind: 'workspace', worktreeId: '' },
+            'workspace:wt-delta',
             { kind: 'workspace', worktreeId: 'wt-gamma' },
             docs
           ],
@@ -227,14 +257,14 @@ describe('parseSavedSplitView', () => {
       panes: {
         left: { items: [alpha, alpha], activeKey: ALPHA },
         top: { items: [beta], activeKey: BETA },
-        bottom: { items: [alpha, chat, docs], activeKey: ALPHA }
+        bottom: { items: [alpha, delta, docs], activeKey: ALPHA }
       }
     })
 
     expect(restored.panes).toEqual({
       left: { tabs: [alphaTab], activeKey: ALPHA },
       top: { tabs: [betaTab], activeKey: BETA },
-      bottom: { tabs: [chatTab, docsTab], activeKey: CHAT }
+      bottom: { tabs: [deltaTab, docsTab], activeKey: DELTA }
     })
   })
 
@@ -253,7 +283,7 @@ describe('parseSavedSplitView', () => {
       },
       panes: {
         left: { tabs: [alphaTab], activeKey: ALPHA },
-        bottom: { tabs: [chatTab, docsTab], activeKey: DOCS }
+        bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS }
       },
       focusedPaneId: 'bottom',
       maximizedPaneId: null
@@ -263,8 +293,9 @@ describe('parseSavedSplitView', () => {
   it('drops what is nested deeper than a layout may be', () => {
     const paneCount = 70
     const item = (index: number): SplitViewItem => ({
-      kind: 'session',
-      sessionId: `host-1:s${index}`
+      kind: 'workspace',
+      worktreeId: `wt-${index}`,
+      hostId: null
     })
     let layout: unknown = { type: 'leaf', groupId: `p${paneCount - 1}` }
     for (let index = paneCount - 2; index >= 0; index--) {
@@ -278,7 +309,7 @@ describe('parseSavedSplitView', () => {
     const panes = Object.fromEntries(
       Array.from({ length: paneCount }, (_, index) => [
         `p${index}`,
-        { items: [item(index)], activeKey: `session:host-1:s${index}` }
+        { items: [item(index)], activeKey: `workspace:wt-${index}` }
       ])
     )
 
@@ -330,7 +361,7 @@ describe('parseSavedSplitView', () => {
       })
     ).toEqual({
       layout: { type: 'leaf', groupId: 'bottom' },
-      panes: { bottom: { tabs: [chatTab, docsTab], activeKey: DOCS } },
+      panes: { bottom: { tabs: [deltaTab, docsTab], activeKey: DOCS } },
       focusedPaneId: 'bottom',
       maximizedPaneId: null
     })
@@ -389,11 +420,11 @@ describe('parseSavedSplitView', () => {
       ...savedThreePanes,
       panes: {
         ...savedThreePanes.panes,
-        bottom: { items: [chat, docs], activeKey: 'workspace:wt-closed' }
+        bottom: { items: [delta, docs], activeKey: 'workspace:wt-closed' }
       }
     })
 
-    expect(restored.panes.bottom).toEqual({ tabs: [chatTab, docsTab], activeKey: CHAT })
+    expect(restored.panes.bottom).toEqual({ tabs: [deltaTab, docsTab], activeKey: DELTA })
   })
 
   it('focuses the first pane when the saved focus names no pane', () => {
@@ -405,62 +436,6 @@ describe('parseSavedSplitView', () => {
       parse({
         ...savedThreePanes,
         panes: { left: { items: [alpha], activeKey: ALPHA }, top: { items: [{ kind: 'board' }] } }
-      })
-    ).toEqual(NO_SPLIT_VIEW)
-  })
-})
-
-describe('splitViewFromSessionTwoUp', () => {
-  it('turns a saved two-up into two panes, the split session alone on the right', () => {
-    expect(
-      splitViewFromSessionTwoUp(
-        ['host-1:one', 'host-1:two', 'host-1:three'],
-        'host-1:three',
-        'host-1:two',
-        {
-          first: 'p1',
-          second: 'p2'
-        }
-      )
-    ).toEqual({
-      layout: {
-        type: 'split',
-        direction: 'horizontal',
-        first: { type: 'leaf', groupId: 'p1' },
-        second: { type: 'leaf', groupId: 'p2' },
-        ratio: 0.5
-      },
-      panes: {
-        p1: {
-          tabs: [
-            { item: { kind: 'session', sessionId: 'host-1:one' }, preview: false },
-            { item: { kind: 'session', sessionId: 'host-1:three' }, preview: false }
-          ],
-          activeKey: 'session:host-1:three'
-        },
-        p2: {
-          tabs: [{ item: { kind: 'session', sessionId: 'host-1:two' }, preview: false }],
-          activeKey: 'session:host-1:two'
-        }
-      },
-      focusedPaneId: 'p1',
-      maximizedPaneId: null
-    })
-  })
-
-  it.each([
-    { name: 'no session was split', activeId: 'host-1:one', splitId: null },
-    {
-      name: 'the split session is not an open tab',
-      activeId: 'host-1:one',
-      splitId: 'host-1:gone'
-    },
-    { name: 'the split session is the active one', activeId: 'host-1:two', splitId: 'host-1:two' }
-  ])('creates no split view when $name', ({ activeId, splitId }) => {
-    expect(
-      splitViewFromSessionTwoUp(['host-1:one', 'host-1:two'], activeId, splitId, {
-        first: 'p1',
-        second: 'p2'
       })
     ).toEqual(NO_SPLIT_VIEW)
   })

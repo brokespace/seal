@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { isAgentSessionSurfaceTab } from '../../../../../../shared/tab-types'
 import { requestNativeChatComposerFocus } from '@/components/native-chat/composer/focus/native-chat-composer-focus-intent'
 import { activePaneIsCoveredByNativeChat } from '@/components/terminal-pane/chat/native-chat-covered-pane'
 import {
@@ -13,7 +14,7 @@ export function focusActiveWorkspaceSurfaceFromSidebar(list: HTMLElement): void 
     state.activeView !== 'terminal' ||
     !state.activeWorktreeId ||
     !tab ||
-    (tab.contentType !== 'terminal' && tab.contentType !== 'agent-session')
+    (tab.contentType !== 'terminal' && !isAgentSessionSurfaceTab(tab.contentType))
   ) {
     return
   }

@@ -26,10 +26,7 @@ export function SessionSelectionBarView({
     'delete-with-transcripts': t('auto.components.live-sessions.sidebar.bulkDelete', 'Delete')
   }
   return (
-    <div
-      data-active-agents-bulk
-      className="flex flex-wrap items-center gap-1 rounded-md border border-worktree-sidebar-border px-1.5 py-1"
-    >
+    <div className="flex flex-wrap items-center gap-1 rounded-md border border-worktree-sidebar-border px-1.5 py-1">
       <span className="flex-1 shrink-0 text-2xs whitespace-nowrap text-muted-foreground">
         {t('auto.components.live-sessions.sidebar.pickedCount', '{{count}} selected', {
           count: pickedSessions.length

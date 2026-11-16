@@ -100,9 +100,9 @@ async function activeView(env: ToolEnv): Promise<string | undefined> {
 /** The window follows wherever it is: each request is made from the page the last one opened. */
 async function openInSeal(env: ToolEnv): Promise<void> {
   const remote = env.targets.find((target) => target.key === 'ssh-bash')!
-  const sessions = await env.call([{ name: 'open_in_seal', args: { target: 'sessions' } }])
-  expect(expectOk(sessions.outcomes[0])).toBe('Showing sessions in Seal.')
-  await expect.poll(() => activeView(env)).toBe('sessions')
+  const tasks = await env.call([{ name: 'open_in_seal', args: { target: 'tasks' } }])
+  expect(expectOk(tasks.outcomes[0])).toBe('Showing tasks in Seal.')
+  await expect.poll(() => activeView(env)).toBe('tasks')
 
   const machine = await env.call([
     { name: 'open_in_seal', args: { target: 'machine', id: remote.machine } }
@@ -113,7 +113,7 @@ async function openInSeal(env: ToolEnv): Promise<void> {
   await expect(env.page.getByRole('heading', { name: remote.label })).toHaveCount(1)
 
   const thread = await env.call([
-    { name: 'open_in_seal', args: { target: 'thread', id: sessions.chatId } },
+    { name: 'open_in_seal', args: { target: 'thread', id: tasks.chatId } },
     { name: 'open_in_seal', args: { target: 'thread' } }
   ])
   expect(expectOk(thread.outcomes[0])).toBe('Showing that thread.')

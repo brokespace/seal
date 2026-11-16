@@ -4,7 +4,11 @@ import {
 } from '@/runtime/native-chat/naming/structured-chat-tab-name'
 import type { BrowserWorkspace } from '../../../../shared/browser-workspace-types'
 import type { GitFileStatus } from '../../../../shared/git/status/git-status-types'
-import type { Tab, WorkspaceVisibleTabType } from '../../../../shared/tab-types'
+import type {
+  AgentSessionSurfaceTab,
+  Tab,
+  WorkspaceVisibleTabType
+} from '../../../../shared/tab-types'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 import { resolveTerminalTabTitle } from '../../../../shared/tab-title-resolution'
 import type { OpenFile } from '../../store/slices/editor/types/open-file'
@@ -51,7 +55,7 @@ export type TabBarItem =
       id: string
       unifiedTabId: string
       isPinned: boolean
-      data: Tab & { contentType: 'agent-session' }
+      data: AgentSessionSurfaceTab
     }
 
 /** The terminal tab as the strip shows it: its title resolved against the generated-titles setting. */
@@ -120,7 +124,7 @@ export function getTabLayoutSignature(
   if (item.type === 'editor') {
     return `${item.type}:${item.id}:${item.isPinned}:${item.data.isDirty}:${item.data.isPreview}:${item.data.externalMutation ?? ''}:${status ?? ''}:${label}`
   }
-  return `${item.type}:${item.id}:${item.isPinned}:${label}`
+  return `${item.type}:${item.id}:${item.isPinned}:${item.data.isPreview === true}:${label}`
 }
 
 export function createUnifiedTabLookup(tabs: readonly Tab[], groupId: string): Map<string, Tab> {
@@ -159,7 +163,7 @@ export function buildOrderedTabItems({
   terminalMap: Map<string, TerminalTab & { unifiedTabId?: string }>
   editorMap: Map<string, OpenFile & { tabId?: string }>
   browserMap: Map<string, BrowserWorkspace & { tabId?: string }>
-  agentSessionMap: Map<string, Tab & { contentType: 'agent-session' }>
+  agentSessionMap: Map<string, AgentSessionSurfaceTab>
   unifiedTabByVisibleId: Map<string, Tab>
 }): TabBarItem[] {
   const ids = reconcileTabOrder(

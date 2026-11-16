@@ -80,19 +80,19 @@ A machine is called what the Machines tab calls it, everywhere. This computer is
 
 Anything that shows a session uses these and nothing else.
 
-| Piece                   | File (under `src/renderer/src/components/live-sessions/` unless noted)                | Use                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Registry hook           | `live-session-registry-store.ts` (`useLiveSessions`)                                  | The only source of sessions in the window.                         |
-| Status pill             | `status/LiveSessionStatusPill.tsx`                                                    | Every status dot and label.                                        |
-| Session row             | `row/LiveSessionRow.tsx`                                                              | One session in any list.                                           |
-| Session list            | `row/LiveSessionRows.tsx`                                                             | A plain list of rows with the shared state, open handler and menu. |
-| Row state               | `row/use-live-session-row-state.ts`                                                   | Workspace name, account, unread and current markers for a row.     |
-| Menu                    | `menu/LiveSessionMenuItems.tsx`, `menu/live-session-menu-effects.ts`                  | Open, rename, pin, take over, stop, delete.                        |
-| Open                    | `openLiveSessionFromRow`, `openLiveSessionView` (`menu/live-session-menu-effects.ts`) | Click previews, double-click pins a tab.                           |
-| Confirmations           | `menu/live-session-dialog-store.ts`, `menu/LiveSessionDialogs.tsx`                    | Stop and delete confirm once, from anywhere.                       |
-| Workspace/project badge | `links/LiveSessionsBadge.tsx`, `links/use-live-session-links.ts`                      | Count and top status of a workspace's or project's sessions.       |
-| By-machine grouping     | `active-agents/active-agents-model.ts` (`buildActiveAgents`)                          | Active agents and Home.                                            |
-| Workspace card          | `sidebar/workspace-card/surface/WorktreeCard.tsx`                                     | Sidebar and board render the same card and the same context menu.  |
+| Piece                   | File (under `src/renderer/src/components/live-sessions/` unless noted) | Use                                                                |
+| ----------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Registry hook           | `live-session-registry-store.ts` (`useLiveSessions`)                   | The only source of sessions in the window.                         |
+| Status pill             | `status/LiveSessionStatusPill.tsx`                                     | Every status dot and label.                                        |
+| Session row             | `row/LiveSessionRow.tsx`                                               | One session in any list.                                           |
+| Session list            | `row/LiveSessionRows.tsx`                                              | A plain list of rows with the shared state, open handler and menu. |
+| Row state               | `row/use-live-session-row-state.ts`                                    | Workspace name, account, unread and current markers for a row.     |
+| Menu                    | `menu/LiveSessionMenuItems.tsx`, `menu/live-session-menu-effects.ts`   | Open, rename, pin, take over, stop, delete.                        |
+| Open                    | `openAgentSession` (`open/open-agent-session.ts`)                      | Click previews, double-click keeps the tab.                        |
+| Confirmations           | `menu/live-session-dialog-store.ts`, `menu/LiveSessionDialogs.tsx`     | Stop and delete confirm once, from anywhere.                       |
+| Workspace/project badge | `links/LiveSessionsBadge.tsx`, `links/use-live-session-links.ts`       | Count and top status of a workspace's or project's sessions.       |
+| By-workspace grouping   | `row/LiveSessionWorkspaceGroups.tsx`                                   | Home and the project overview.                                     |
+| Workspace card          | `sidebar/workspace-card/surface/WorktreeCard.tsx`                      | Sidebar and board render the same card and the same context menu.  |
 
 ## Flows
 
@@ -112,7 +112,7 @@ Once the agent starts, the session appears, without any surface adding it, in Ac
 
 ### Opening a session
 
-`openLiveSessionView(sessionId, mode)` is the only way to open one. A click or Enter previews; a double-click pins a tab. A badge on a workspace or project scopes Active agents to that workspace or project instead of opening its own list.
+`openAgentSession(sessionId, mode)` is the only way to open one. It shows the session's tab in its workspace: its chat tab, its terminal, or a session tab for an agent started outside Seal. A click or Enter previews; a double-click keeps the tab. Sessions no workspace holds are listed under "Unassigned" at the end of the sidebar.
 
 ### Stopping and deleting
 
@@ -134,8 +134,8 @@ Once the agent starts, the session appears, without any surface adding it, in Ac
 | Workspace board  | Workspace cards by lane.                                                                                                                                                                                                                                                                                                                     | Derive lanes from agent state, or draw its own card.        |
 | Home             | Counts, a "needs attention" strip and a by-machine list, all built from registry rows.                                                                                                                                                                                                                                                       | Keep its own session type, status mapping or click handler. |
 | Machines tab     | A machine's resources, files and its sessions as rows. In the CPU and memory details, an agent process that is a registry session carries that session's title (`liveSessionsByPid`).                                                                                                                                                        | Match sessions to machines with its own rules.              |
-| Tabs and panes   | The running terminal of a Seal-launched session; session tabs for the session view.                                                                                                                                                                                                                                                          | Present a pane's agent as a separate session.               |
-| Command palette  | Sessions from the registry (`palette/live-session-palette-source.tsx`), opening through `openLiveSessionView`.                                                                                                                                                                                                                               | Add actions the menu does not have.                         |
+| Tabs and panes   | The running terminal of a Seal-launched session; a session tab for an agent started outside Seal.                                                                                                                                                                                                                                            | Present a pane's agent as a separate session.               |
+| Command palette  | Sessions from the registry (`palette/live-session-palette-source.tsx`), opening through `openAgentSession`.                                                                                                                                                                                                                                  | Add actions the menu does not have.                         |
 | Mobile           | Overview and Sessions list the same registry over RPC, with one `LiveSessionRow` and `LiveSessionGroups`. Dot, attention, finished and by-machine order come from `src/shared/live-sessions/` (`liveSessionDotState`, `liveSessionsNeedingAttention`, `isActiveLiveSession`, `groupLiveSessionsByMachine`). Workspace rows show pane agents. | Interpret statuses itself, or keep a second session model.  |
 | CLI              | `seal sessions list` prints the registry grouped and ordered as Active agents. `seal agent launch` starts a session.                                                                                                                                                                                                                         | Format its own ordering.                                    |
 | Home chat tools  | `list_sessions`, `read_session`, `message_session`, `take_over_session` over the live-session service; `start_session` over the CLI launch; `open_in_seal` reveals Active agents.                                                                                                                                                            | Reach around the service.                                   |

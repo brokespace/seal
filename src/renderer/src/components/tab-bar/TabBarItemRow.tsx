@@ -66,12 +66,13 @@ function TabBarItemRow({
   const t = useTranslate()
   // Why: the tabs' labels come from `translate()`, which a skipped render would leave in the old language.
   useTranslation()
-  const conversationName = useStructuredChatTabConversationName(
-    item.type === 'agent-session' ? item.data : undefined
-  )
-  const namingFailure = useStructuredChatTabNamingFailure(
-    item.type === 'agent-session' ? item.data : undefined
-  )
+  // An external session has no structured host to name it: its tab's label is its title.
+  const chatTab =
+    item.type === 'agent-session' && item.data.contentType === 'agent-session'
+      ? item.data
+      : undefined
+  const conversationName = useStructuredChatTabConversationName(chatTab)
+  const namingFailure = useStructuredChatTabNamingFailure(chatTab)
   const dragData: TabDragItemData = {
     kind: 'tab',
     worktreeId,
@@ -121,7 +122,7 @@ function TabBarItemRow({
     )
   }
   if (item.type === 'agent-session') {
-    const nativeChat = { sessionId: item.data.entityId, agent: item.data.agentSessionAgent }
+    const nativeChat = chatTab && { sessionId: chatTab.entityId, agent: chatTab.agentSessionAgent }
     return (
       <SortableTab
         {...sortableTabProps}
@@ -133,7 +134,7 @@ function TabBarItemRow({
           color: item.data.color
         }}
         // Why: a chat records its provider, so its title or turn state must never re-identify it.
-        agent={agentTypeToIconAgent(nativeChat.agent)}
+        agent={agentTypeToIconAgent(item.data.agentSessionAgent)}
         isExpanded={false}
         onActivate={actions.activateAgentSession}
         onToggleExpand={() => {}}
@@ -141,6 +142,10 @@ function TabBarItemRow({
         nativeChat={nativeChat}
         // A tab the user named does not show the generated name, so neither does its failure.
         namingFailure={item.data.customLabel ? null : namingFailure}
+        isPreview={item.data.isPreview === true}
+        onMakePermanent={() =>
+          actions.makePreviewFilePermanent(item.data.entityId, item.unifiedTabId)
+        }
       />
     )
   }

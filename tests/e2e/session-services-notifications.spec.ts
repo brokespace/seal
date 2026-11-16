@@ -14,6 +14,7 @@ import {
   FINISHED_TURN_REPLY,
   seedExternalClaudeSession
 } from './helpers/external-claude-session'
+import { externalAgentSessionTab } from './helpers/external-agent-session-tab'
 import { rescanLiveSessions, waitForLiveSession } from './helpers/live-session-registry'
 import {
   expect,
@@ -245,9 +246,10 @@ test.describe('desktop notifications for agent sessions', () => {
       await expect(pane).toHaveCount(0)
       await clickDesktopNotification(electronApp, 0)
       await expect(pane).toBeVisible()
-      await expect(
-        orcaPage.locator(`[data-live-session-tab="${session.sessionId}"]`)
-      ).toHaveAttribute('aria-selected', 'true')
+      await expect(await externalAgentSessionTab(orcaPage, session.sessionId)).toHaveAttribute(
+        'data-active',
+        'true'
+      )
       await expect(pane).toContainText(PROMPT)
       await expectWindowStaysInBackground(electronApp)
       await orcaPage.screenshot({

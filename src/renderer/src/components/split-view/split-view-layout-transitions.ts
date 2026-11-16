@@ -205,29 +205,3 @@ export function toggleSplitViewMaximize(state: SplitViewState, paneId?: string):
   }
   return settleSplitView({ ...state, focusedPaneId: target, maximizedPaneId: target })
 }
-
-/** The same session under the id its transcript gave it keeps its chip. */
-export function renameSplitViewSession(
-  state: SplitViewState,
-  fromSessionId: string,
-  toSessionId: string
-): SplitViewState {
-  const fromKey = splitViewItemKey({ kind: 'session', sessionId: fromSessionId })
-  const toItem: SplitViewItem = { kind: 'session', sessionId: toSessionId }
-  const toKey = splitViewItemKey(toItem)
-  if (!state.layout) {
-    return state
-  }
-  const panes = Object.fromEntries(
-    Object.entries(state.panes).map(([paneId, pane]) => [
-      paneId,
-      {
-        tabs: pane.tabs.map((tab) =>
-          splitViewItemKey(tab.item) === fromKey ? { ...tab, item: toItem } : tab
-        ),
-        activeKey: pane.activeKey === fromKey ? toKey : pane.activeKey
-      }
-    ])
-  )
-  return settleSplitView({ ...state, panes })
-}

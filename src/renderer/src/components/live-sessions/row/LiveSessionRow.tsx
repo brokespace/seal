@@ -22,6 +22,8 @@ import { liveSessionSummaryView } from '../../../../../shared/session-summaries/
 import { SessionRecapBadge } from '@/components/session-recap/SessionRecapBadge'
 import { SessionSummaryLine } from '@/components/session-summaries/SessionSummaryLine'
 import { liveSessionTitle } from '../live-session-presentation'
+import { agentSessionWorktreeId } from '../open/agent-session-workspace'
+import { openAgentSession } from '../open/open-agent-session'
 import {
   CONTEXT_MENU_KIT,
   DROPDOWN_MENU_KIT,
@@ -38,8 +40,12 @@ import {
 import { isSidebarPointerDragBlocked } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
 import { startItemPointerDrag } from '@/components/split-view/item-pointer-drag'
 import { ItemSurfaceShownContext } from '@/components/split-view/item-surface-shown-context'
-import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
+import {
+  openItemsInSplitView,
+  workspaceSplitViewItem
+} from '@/components/split-view/split-view-commands'
 import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
+import type { SplitViewItem } from '@/components/split-view/split-view-types'
 
 export type LiveSessionRowProps = {
   session: LiveSession
@@ -70,15 +76,29 @@ export type LiveSessionRowProps = {
   menu?: (session: LiveSession, kit: LiveSessionMenuKit) => React.ReactNode
 }
 
+/** A session is a tab of its workspace: that workspace is what a pane takes. Null without one. */
+function sessionPaneItem(session: LiveSession): SplitViewItem | null {
+  const worktreeId = agentSessionWorktreeId(session)
+  return worktreeId ? workspaceSplitViewItem({ id: worktreeId }) : null
+}
+
 function defaultMenu(session: LiveSession, kit: LiveSessionMenuKit): React.ReactNode {
+  const paneItem = sessionPaneItem(session)
   return (
     <>
-      <SplitViewPlacementMenu
-        menuKind={kit === CONTEXT_MENU_KIT ? 'context' : 'dropdown'}
-        intent="open"
-        onPlace={(zone) => openItemsInSplitView([{ kind: 'session', sessionId: session.id }], zone)}
-      />
-      <kit.Separator />
+      {paneItem ? (
+        <>
+          <SplitViewPlacementMenu
+            menuKind={kit === CONTEXT_MENU_KIT ? 'context' : 'dropdown'}
+            intent="open"
+            onPlace={(zone) => {
+              openItemsInSplitView([paneItem], zone)
+              openAgentSession(session.id, 'tab')
+            }}
+          />
+          <kit.Separator />
+        </>
+      ) : null}
       <LiveSessionMenuItems session={session} kit={kit} />
     </>
   )
@@ -168,12 +188,14 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
               {...rowHandlers}
               onPointerDown={(event) => {
                 rowHandlers.onPointerDown(event)
-                // Dragged onto the main area, a session lands in a split-view pane.
-                if (!isSidebarPointerDragBlocked(event.target, event.currentTarget)) {
-                  startItemPointerDrag(event, event.currentTarget, {
-                    kind: 'session',
-                    sessionId: session.id
-                  })
+                // Dragged onto the main area, its workspace lands in a pane with the session's tab in front.
+                const paneItem = isSidebarPointerDragBlocked(event.target, event.currentTarget)
+                  ? null
+                  : sessionPaneItem(session)
+                if (paneItem) {
+                  startItemPointerDrag(event, event.currentTarget, paneItem, () =>
+                    openAgentSession(session.id, 'tab')
+                  )
                 }
               }}
               onClick={(event) => {

@@ -39,9 +39,6 @@ const ProjectOverviewPage = lazy(() => import('../components/project-overview/Pr
 const ArtifactsPage = lazy(() => import('../components/artifacts/ArtifactsPage'))
 const WorkspaceSpacePage = lazy(() => import('../components/workspace-space/WorkspaceSpacePage'))
 const MobilePage = lazy(() => import('../components/mobile/MobilePage'))
-const LiveSessionWorkspace = lazy(
-  () => import('../components/live-sessions/workspace/LiveSessionWorkspace')
-)
 const Terminal = lazy(() => import('../components/Terminal'))
 const SplitViewLayer = lazy(() => import('../components/split-view/SplitViewLayer'))
 const ItemSurfaceLayer = lazy(() => import('../components/split-view/ItemSurfaceLayer'))
@@ -111,7 +108,7 @@ function HomeOrLanding(): React.JSX.Element {
 
 function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
   const { activeView, hasActiveWorktree, activePendingCreationId, creationLayoutActive } = layout
-  // The grid renders sessions and projects in panes; the pages would draw beside it.
+  // The grid renders projects in panes; the page would draw beside it.
   if (layout.splitViewShowing) {
     return null
   }
@@ -127,7 +124,6 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
       {activeView === 'activity' ? <ActivityPrototypePage /> : null}
       {activeView === 'space' ? <WorkspaceSpacePage /> : null}
       {activeView === 'mobile' ? <MobilePage /> : null}
-      {activeView === 'sessions' ? <LiveSessionWorkspace /> : null}
       {activeView === 'project' ? <ProjectOverviewPage /> : null}
       {activeView === 'terminal' && creationLayoutActive && activePendingCreationId ? (
         <PendingCreationSurface
@@ -144,11 +140,10 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
 
 const renderNothing = (): null => null
 
-/** Sessions and projects, kept mounted while the layout around them changes. */
+/** Projects, kept mounted while the layout around them changes. */
 function ItemSurfaces({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
-  const wanted =
-    layout.splitViewShowing || layout.activeView === 'sessions' || layout.activeView === 'project'
-  // Once loaded it stays: a grid behind another page keeps its sessions' drafts.
+  const wanted = layout.splitViewShowing || layout.activeView === 'project'
+  // Once loaded it stays: a grid behind another page keeps its projects as they were left.
   const [loaded, setLoaded] = useState(wanted)
   if (wanted && !loaded) {
     setLoaded(true)

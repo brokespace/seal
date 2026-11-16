@@ -143,7 +143,6 @@ export type UiViewHistory =
   | 'skills'
   | 'artifacts'
   | 'mobile'
-  | 'sessions'
   | 'project'
 
 export type UISliceCore = {
@@ -186,7 +185,6 @@ export type UISliceCore = {
   previousViewBeforeSkills: Exclude<UiViewHistory, 'skills'>
   previousViewBeforeMobile: Exclude<UiViewHistory, 'mobile'>
   previousViewBeforeArtifacts: Exclude<UiViewHistory, 'artifacts'>
-  previousViewBeforeSessions: Exclude<UiViewHistory, 'sessions'>
   previousViewBeforeProject: Exclude<UiViewHistory, 'project'>
   /** The project the overview page shows; null until one is opened or restored. */
   projectOverviewTarget: ProjectOverviewTarget | null
@@ -242,8 +240,6 @@ export type UISliceCore = {
   closeArtifactsPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
-  openAgentSessionTabs: () => void
-  closeAgentSessionTabs: () => void
   openProjectOverview: (repo: Pick<Repo, 'id' | 'connectionId' | 'executionHostId'>) => void
   closeProjectOverview: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISliceCore['newWorkspaceDraft']>) => void

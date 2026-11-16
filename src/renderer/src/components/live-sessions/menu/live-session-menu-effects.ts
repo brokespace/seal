@@ -1,7 +1,6 @@
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store/index'
-import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { isAiVaultAgent } from '../../../../../shared/ai-vault/contracts/ai-vault-types'
@@ -15,151 +14,32 @@ import {
   quoteCmdDoubleQuoted,
   quotePosixShellUnlessPlain
 } from '../../../../../shared/shell/launch/shell-argument-quoting'
-import {
-  compareLiveSessions,
-  isActiveLiveSession
-} from '../../../../../shared/live-sessions/live-session-status'
 import { liveSessionMachineId } from '../../../../../shared/live-sessions/live-session-machine-id'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { parseMachineId } from '../../../../../shared/machines/machine-types'
 import { rememberMachineSelection } from '../../machines/model/machine-selection'
 import { mutateSealHost } from '../../seal-session/seal-session-status-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
-import {
-  closeItemInSplitView,
-  keepSplitViewItem,
-  openItemsInSplitView,
-  revealItemInSplitView
-} from '../../split-view/split-view-commands'
-import { splitViewStore } from '../../split-view/split-view-store'
-import { findSplitViewPaneOfKey, splitViewItemKey } from '../../split-view/split-view-types'
-import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
-import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
 import {
-  closesProjectVisit,
-  liveSessionTabsStore,
-  type LiveSessionFocusTarget,
-  type LiveSessionOpenMode
-} from '../workspace/live-session-tabs-store'
+  requestAgentSessionFocus,
+  type AgentSessionFocusTarget
+} from '../chat/agent-session-focus-requests'
+import type { AgentSessionOpenMode } from '../open/agent-session-open-mode'
+import { openAgentSession } from '../open/open-agent-session'
 import { liveSessionDialogStore } from './live-session-dialog-store'
 import type { LiveSessionMenuEffects } from './live-session-menu'
 import { sealAssignmentFor } from './live-session-accounts'
 
-/** Shows a session's chat in the main area, as a tab. */
-export function openLiveSessionView(
-  sessionId: string,
-  mode: LiveSessionOpenMode = 'preview'
-): void {
-  const id = liveSessionRegistryStore.currentId(sessionId)
-  const ui = useAppStore.getState()
-  liveSessionMarksStore.reveal(id)
-  if (mode === 'split') {
-    openItemsInSplitView([{ kind: 'session', sessionId: id }], 'right')
-    return
-  }
-  const inGrid = splitViewStore.hasLayout()
-  liveSessionTabsStore.open(
-    id,
-    // The grid owns previews while it exists: replacing the tabs' preview here would close a
-    // session that may be a chip in another pane.
-    inGrid ? 'tab' : mode,
-    ui.activeView === 'project' ? overviewProjectKey(ui.projectOverviewTarget) : undefined
-  )
-  ui.openAgentSessionTabs()
-  if (inGrid) {
-    revealItemInSplitView({ kind: 'session', sessionId: id })
-  }
-}
-
-function overviewProjectKey(target: ProjectOverviewTarget | null): string | undefined {
-  return target ? `${target.hostId}\n${target.repoId}` : undefined
-}
-
-/** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
-export function closeLiveSessionView(sessionId: string): void {
-  if (splitViewStore.hasLayout()) {
-    // The grid picks the next focus; a visit to a project's overview does not end here.
-    if (!closeItemInSplitView({ kind: 'session', sessionId })) {
-      liveSessionTabsStore.close(sessionId)
-    }
-    return
-  }
-  const before = liveSessionTabsStore.getState()
-  liveSessionTabsStore.close(sessionId)
-  const ui = useAppStore.getState()
-  if (
-    ui.activeView === 'sessions' &&
-    ui.previousViewBeforeSessions === 'project' &&
-    closesProjectVisit(
-      before,
-      liveSessionTabsStore.getState(),
-      sessionId,
-      overviewProjectKey(ui.projectOverviewTarget)
-    )
-  ) {
-    ui.closeAgentSessionTabs()
-  }
-}
-
-/** Opens a session and, for `tab`, keeps it: in the grid every open is a preview until kept. */
-export function openLiveSessionKeepingTab(sessionId: string, mode: LiveSessionOpenMode): void {
-  openLiveSessionView(sessionId, mode)
-  if (mode === 'tab') {
-    keepSplitViewItem(
-      splitViewItemKey({
-        kind: 'session',
-        sessionId: liveSessionRegistryStore.currentId(sessionId)
-      })
-    )
-  }
-}
-
-/** "Open in new tab": a kept tab. In the grid it lands beside the focused pane's preview. */
-function openLiveSessionInNewTab(sessionId: string): void {
-  const id = liveSessionRegistryStore.currentId(sessionId)
-  const item = { kind: 'session', sessionId: id } as const
-  const grid = splitViewStore.getState()
-  if (grid.layout && findSplitViewPaneOfKey(grid, splitViewItemKey(item)) === null) {
-    liveSessionMarksStore.reveal(id)
-    openItemsInSplitView([item], 'center')
-    return
-  }
-  openLiveSessionKeepingTab(id, 'tab')
-}
-
 /** How a session's row opens it, on any surface: a click previews, a double click or Enter keeps the tab. */
-export function liveSessionRowOpenMode(event?: { type: string }): LiveSessionOpenMode {
+export function liveSessionRowOpenMode(event?: { type: string }): AgentSessionOpenMode {
   return event?.type === 'dblclick' || event?.type === 'keydown' ? 'tab' : 'preview'
 }
 
-export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
-  openLiveSessionKeepingTab(session.id, liveSessionRowOpenMode(event))
-}
-
-/**
- * Where links to the former Agent sessions page land: the open session tabs, or the session that
- * most needs a look, with Active agents unfolded in the sidebar.
- */
-export function showActiveAgents(): void {
-  const store = useAppStore.getState()
-  if (store.collapsedGroups.has(ACTIVE_AGENTS_COLLAPSE_KEY)) {
-    store.toggleCollapsedGroup(ACTIVE_AGENTS_COLLAPSE_KEY)
-  }
-  const { sessions } = liveSessionRegistryStore.getState()
-  const next = [...sessions].filter(isActiveLiveSession).sort(compareLiveSessions)[0]
-  if (liveSessionTabsStore.getState().tabs.length === 0 && next) {
-    openLiveSessionView(next.id)
-    return
-  }
-  store.openAgentSessionTabs()
-}
-
-function focusLiveSessionView(sessionId: string, target: LiveSessionFocusTarget): void {
+function focusAgentSession(sessionId: string, target: AgentSessionFocusTarget): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
-  const { tabs } = liveSessionTabsStore.getState()
-  openLiveSessionView(id, tabs.includes(id) ? 'tab' : 'preview')
-  liveSessionTabsStore.focus(id, target)
+  openAgentSession(id)
+  requestAgentSessionFocus(id, target)
 }
 
 /** `claude --resume <id>` or `codex resume <id>`, from the session's folder, for its machine's shell. */
@@ -248,9 +128,8 @@ function openMachine(session: LiveSession): void {
 
 /** The one implementation every session menu, shortcut and palette entry runs. */
 export const liveSessionMenuEffects: LiveSessionMenuEffects = {
-  open: (sessionId, mode) =>
-    mode === 'tab' ? openLiveSessionInNewTab(sessionId) : openLiveSessionView(sessionId, mode),
-  focus: focusLiveSessionView,
+  open: openAgentSession,
+  focus: focusAgentSession,
   askRename: (session) => liveSessionDialogStore.show({ kind: 'rename', session }),
   askMessage: (session) => liveSessionDialogStore.show({ kind: 'message', session }),
   setPinned: (session, pinned) =>

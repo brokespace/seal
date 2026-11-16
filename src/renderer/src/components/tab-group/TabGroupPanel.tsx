@@ -16,7 +16,7 @@ import { registerTabGroupBody } from './tab-group-body-geometry'
 import { observeTabGroupBodyGridSize } from '@/runtime/sync-runtime-graph/graph-sync-scheduler'
 import { useTranslate } from '@/i18n/use-translate'
 import type { TabGroup } from '../../../../shared/tab-types'
-import { isStructuredTab } from '../../../../shared/agent-session/view/structured-agent-session-tab'
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { ClientHostedBrowserRow } from '../../../../shared/client-hosted-browser-rows'
 import { useClientHostedBrowserRows } from '@/runtime/browser/client-hosting/client-hosted-browser-row-state'
 import { resolveClientHostedBrowserRowStripGroupId } from '../tab-bar/client-hosted-browser-row-strip-placement'
@@ -143,7 +143,7 @@ export default function TabGroupPanel({
       activeTabId={
         activeTab?.contentType === 'terminal'
           ? activeTab.entityId
-          : activeTab?.contentType === 'agent-session'
+          : activeTab && isAgentSessionSurfaceTab(activeTab.contentType)
             ? activeTab.id
             : null
       }
@@ -154,7 +154,7 @@ export default function TabGroupPanel({
       onActivate={commands.activateTerminal}
       onClose={(terminalId) => {
         const item = resolveGroupTabFromVisibleId(model.groupTabs, terminalId)
-        if (item?.contentType === 'terminal' || item?.contentType === 'agent-session') {
+        if (item?.contentType === 'terminal' || isAgentSessionSurfaceTab(item?.contentType)) {
           commands.closeItem(item.id)
           return
         }
@@ -196,7 +196,7 @@ export default function TabGroupPanel({
       agentSessionTabs={agentSessionItems}
       activeFileId={
         activeTab?.contentType === 'terminal' ||
-        activeTab?.contentType === 'agent-session' ||
+        isAgentSessionSurfaceTab(activeTab?.contentType) ||
         activeTab?.contentType === 'browser' ||
         activeTab?.contentType === 'simulator'
           ? null
@@ -207,7 +207,7 @@ export default function TabGroupPanel({
       activeTabType={
         activeTab?.contentType === 'terminal'
           ? 'terminal'
-          : activeTab?.contentType === 'agent-session'
+          : isAgentSessionSurfaceTab(activeTab?.contentType)
             ? 'agent-session'
             : activeTab?.contentType === 'browser'
               ? 'browser'
@@ -361,7 +361,7 @@ export default function TabGroupPanel({
         // Why: the pane overlays paint terminals and chats above this body; only they show the backdrop.
         data-translucent-tab-body={
           activeTab?.contentType === 'terminal' ||
-          (activeTab && isStructuredTab(activeTab) && backdropActive)
+          (isAgentSessionSurfaceTab(activeTab?.contentType) && backdropActive)
             ? ''
             : undefined
         }
@@ -380,7 +380,7 @@ export default function TabGroupPanel({
         ) : null}
         {activeTab &&
           activeTab.contentType !== 'terminal' &&
-          activeTab.contentType !== 'agent-session' &&
+          !isAgentSessionSurfaceTab(activeTab.contentType) &&
           activeTab.contentType !== 'browser' &&
           activeTab.contentType !== 'simulator' && (
             // Why: a capture-phase owner, so Monaco never sees the drop and the file opens as a tab here.

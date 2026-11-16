@@ -4,13 +4,15 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { liveSessionMarksStore } from '@/components/live-sessions/live-session-marks-store'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-sessions/live-session.test-fixture'
 import { makeRepo } from '../worktree-jump/worktree-jump-palette-test-fixtures'
 import { ProjectAgentsCard } from './ProjectAgentsCard'
 import { ProjectOverviewHeaderActions } from './ProjectOverviewHeaderActions'
 import ProjectOverviewPage from './ProjectOverviewPage'
+
+const openAgentSession = vi.hoisted(() => vi.fn())
+vi.mock('@/components/live-sessions/open/open-agent-session', () => ({ openAgentSession }))
 
 const repo = makeRepo()
 const GPU = { hostId: 'ssh-gpu', label: 'gpu-box', kind: 'remote' } as const
@@ -31,6 +33,7 @@ function renderInApp(ui: React.ReactElement): void {
 const initial = useAppStore.getInitialState()
 beforeEach(() => {
   vi.stubGlobal('api', {})
+  openAgentSession.mockClear()
   useAppStore.setState(initial, true)
   useAppStore.setState({ repos: [repo], activeView: 'project' })
 })
@@ -66,8 +69,7 @@ it("lists the project's running agents under their workspace and the ended ones 
 it('an agent opens as its session', () => {
   renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByText('Pick a dataset'))
-  expect(useAppStore.getState().activeView).toBe('sessions')
-  expect(liveSessionTabsStore.getState().activeId).toBe('Pick a dataset')
+  expect(openAgentSession).toHaveBeenCalledWith('Pick a dataset', 'preview')
 })
 
 it("the sidebar link opens the sidebar on the project's most urgent running agent and stays on the page", () => {
