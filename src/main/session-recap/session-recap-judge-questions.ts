@@ -1,11 +1,16 @@
 // The judge's question book: one yes/no question per criterion, each about `request` and
 // `conversation` alone and each tied to the one thing the recap does when the answer is yes.
+// Thresholds are measured for this wording on one model, so both are pinned to it below.
 import { createHash } from 'node:crypto'
-import type { RecapRequestStanding } from './recap-judge-labels.test-fixture'
+import {
+  RECAP_JUDGE_CRITERIA,
+  type RecapJudgeAnswers,
+  type RecapJudgeCriterion
+} from '../../shared/session-recap/session-recap-types'
 
 export type RecapJudgeQuestion = {
-  /** The standing a yes means: the labels this question is scored against. */
-  truth: Exclude<RecapRequestStanding, 'working'>
+  /** How a request stands when the answer is yes: what the question is scored against. */
+  truth: 'done' | 'partly' | 'declined' | 'withdrawn' | 'open'
   /** What the recap does on a yes. */
   action: string
   /** The share of requests standing otherwise that this may fire on: its threshold is set for it. */
@@ -69,15 +74,46 @@ export const RECAP_JUDGE_QUESTIONS = {
         'It is carried out at least in part, or the agent refused it, or the user took it back.'
     }
   }
-} as const satisfies Record<string, RecapJudgeQuestion>
+} as const satisfies Record<RecapJudgeCriterion, RecapJudgeQuestion>
 
-export type RecapJudgeQuestionId = keyof typeof RECAP_JUDGE_QUESTIONS
-export const RECAP_JUDGE_QUESTION_IDS = Object.keys(RECAP_JUDGE_QUESTIONS).filter(
-  (id): id is RecapJudgeQuestionId => id in RECAP_JUDGE_QUESTIONS
-)
+export type RecapJudgeQuestionId = RecapJudgeCriterion
+export const RECAP_JUDGE_QUESTION_IDS: readonly RecapJudgeQuestionId[] = RECAP_JUDGE_CRITERIA
 
 /** Thresholds are only good for the wording they were set on. */
 export const RECAP_JUDGE_QUESTION_BOOK = createHash('sha256')
   .update(JSON.stringify(RECAP_JUDGE_QUESTIONS))
   .digest('hex')
   .slice(0, 12)
+
+export type RecapJudgeCuts = RecapJudgeAnswers
+
+export type RecapJudgeCalibration = {
+  model: string
+  questionBook: string
+  /** A question fires when its answer is above its cut. */
+  cuts: RecapJudgeCuts
+}
+
+/**
+ * The one judge the recap runs: Cloudflare Clef, with the cuts measured for it on the tune split
+ * of the labelled suite (docs/recap-audit/evidence/judge/report.md). There is no second model:
+ * another model's answers mean something else at the same cut.
+ */
+export const RECAP_JUDGE_CALIBRATION: RecapJudgeCalibration = {
+  model: '@cf/cloudflare/clef',
+  questionBook: 'ba879810db9d',
+  cuts: {
+    done: 0.3785,
+    did_part: 0.9532,
+    declined: 0.9255,
+    withdrawn: 0.2911,
+    left_undone: 0.5738
+  }
+}
+
+/** False when the wording has changed since the cuts were measured: the judge then stays silent. */
+export function recapJudgeIsCalibrated(
+  calibration: RecapJudgeCalibration = RECAP_JUDGE_CALIBRATION
+): boolean {
+  return calibration.questionBook === RECAP_JUDGE_QUESTION_BOOK
+}

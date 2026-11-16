@@ -22,7 +22,11 @@ import {
   type RecapJudgeModel,
   type RecapJudgeRecord
 } from './recap-judge-models.test-fixture'
-import { RECAP_JUDGE_QUESTION_BOOK } from './recap-judge-questions.test-fixture'
+import {
+  RECAP_JUDGE_CALIBRATION,
+  RECAP_JUDGE_QUESTION_BOOK,
+  recapJudgeIsCalibrated
+} from '../session-recap-judge-questions'
 import {
   cutForLoss,
   RECAP_JUDGE_SUMMARY_HEAD,
@@ -215,6 +219,28 @@ describe('recap judge scoring', () => {
     expect(recapShownStanding({ ...none, left_undone: 0.9, done: 0.6 }, cuts)).toBe('addressed')
     expect(recapShownStanding(none, cuts)).toBe('open')
     expect(recapShownStanding(null, cuts)).toBe('open')
+  })
+})
+
+describe('the judge the recap runs', () => {
+  it('is Clef alone, pinned to the wording and the thresholds measured for it', () => {
+    expect(RECAP_JUDGE_CALIBRATION).toEqual({
+      model: '@cf/cloudflare/clef',
+      questionBook: 'ba879810db9d',
+      cuts: {
+        done: 0.3785,
+        did_part: 0.9532,
+        declined: 0.9255,
+        withdrawn: 0.2911,
+        left_undone: 0.5738
+      }
+    })
+    expect(recapJudgeIsCalibrated()).toBe(true)
+    const { questionBook, cuts } = calibrations[RECAP_JUDGE_CALIBRATION.model]
+    expect({ questionBook, cuts }).toEqual({
+      questionBook: RECAP_JUDGE_CALIBRATION.questionBook,
+      cuts: RECAP_JUDGE_CALIBRATION.cuts
+    })
   })
 })
 

@@ -65,7 +65,7 @@ A recording is one sample of a model that varies. [The baseline](./02-scenario-b
 `recap-judge.test.ts`, in the same folder, scores candidate judge models against labels. It runs with the scenarios.
 
 - `__fixtures__/labels/<id>.json`: for each scenario, what the user asked for and where each request stands at each check, labelled by someone who saw only the script ([the rules](./labelling-rules.md)). `split` is `tune` or `held-out`.
-- `recap-judge-questions.test-fixture.ts`: the questions, one per criterion, each with the action it leads to and the share of wrong firings its threshold may allow.
+- `../session-recap-judge-questions.ts`: the questions, one per criterion, each with the action it leads to and the share of wrong firings its threshold may allow.
 - `recap-judge-state.test-fixture.ts`: what a question is asked about: the request, and the conversation after it as a reader would see it.
 - `recap-judge-models.test-fixture.ts`: the candidates, their prices, and how each is asked.
 - `__fixtures__/judge-answers/<model>.json`: what each model answered, keyed on a hash of the model and the request. `__fixtures__/judge-thresholds.json`: each model's thresholds, with the hash of the question wording they were set on.

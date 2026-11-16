@@ -29,6 +29,56 @@ export type RecapItem = {
   state?: RecapWorkState
 }
 
+/** Where a request stands as the recap has settled it. `open` is the neutral default. */
+export const RECAP_REQUEST_STATUSES = [
+  'open',
+  'addressed',
+  'partly',
+  'declined',
+  'withdrawn'
+] as const
+export type RecapRequestStatus = (typeof RECAP_REQUEST_STATUSES)[number]
+
+/** The judge's questions, one per criterion; each answer is its probability of yes. */
+export const RECAP_JUDGE_CRITERIA = [
+  'done',
+  'did_part',
+  'declined',
+  'withdrawn',
+  'left_undone'
+] as const
+export type RecapJudgeCriterion = (typeof RECAP_JUDGE_CRITERIA)[number]
+export type RecapJudgeAnswers = Record<RecapJudgeCriterion, number>
+
+/** The judge's last usable answer about a request, with what the display rule needs to trust it. */
+export type RecapRequestJudgement = {
+  at: number
+  /** The transcript offset the judged conversation ran to. */
+  coveredTo: number
+  /** The model and question wording the answers and their thresholds belong to. */
+  model: string
+  questionBook: string
+  answers: RecapJudgeAnswers
+  /** "Still waiting to be done" fired and no other question did: the one explicit open verdict. */
+  leftUndone: boolean
+  /** The request's turn had ended when the conversation was read. */
+  turnEnded: boolean
+  /** The judge saw the whole conversation since the request: nothing cut, nothing unread. */
+  complete: boolean
+}
+
+/** One thing the user asked for. It shares its id with the `asked` item it was read as. */
+export type RecapRequest = {
+  id: string
+  text: string
+  messageId: string | null
+  at: number
+  status: RecapRequestStatus
+  statusAt: number
+  /** Absent until the judge has answered about it once. */
+  judged?: RecapRequestJudgement
+}
+
 export const RECAP_REFERENCE_KINDS = ['file', 'pr', 'link'] as const
 export type RecapReferenceKind = (typeof RECAP_REFERENCE_KINDS)[number]
 
@@ -56,6 +106,8 @@ export type SessionRecap = { version: typeof SESSION_RECAP_VERSION } & Record<
     /** Transcript byte offset read so far: the next pass starts here. */
     coveredTo: number
     nextItemId: number
+    /** Where each request in `asked` stands. Absent on a recap made before requests were judged. */
+    requests?: RecapRequest[]
     /** The last pass could not use the model's reply and kept only what the host reads itself. */
     degraded?: true
   }
@@ -96,6 +148,8 @@ export type SessionRecapView = {
   /** The provider's reason when `failed`; never holds a credential. */
   failure: string | null
   rev: number
+  /** The session's turn has ended: nothing is running or parked. Absent from an older host. */
+  turnEnded?: boolean
 }
 
 /** What every session row carries, so labels and badges need no fetch. */
@@ -106,6 +160,8 @@ export type LiveSessionRecapBrief = {
   /** Open questions and action items the user has neither ticked nor dismissed. */
   questions: number
   actions: number
+  /** Requests the judge found not addressed and the user has not dismissed. Absent from an older host. */
+  notAddressed?: number
   updating?: true
 }
 

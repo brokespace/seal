@@ -6,16 +6,18 @@ import {
   type RecapRequestStanding
 } from './recap-judge-labels.test-fixture'
 import type { RecapJudgeAnswers } from './recap-judge-models.test-fixture'
+import { recapJudgeVerdict } from '../session-recap-judge'
 import {
   RECAP_JUDGE_QUESTION_IDS,
   RECAP_JUDGE_QUESTIONS,
+  type RecapJudgeCuts,
   type RecapJudgeQuestionId
-} from './recap-judge-questions.test-fixture'
+} from '../session-recap-judge-questions'
+
+export type { RecapJudgeCuts }
 
 /** A judged item with the model's answers; null where the call failed or its reply was unusable. */
 export type RecapJudged = { item: RecapJudgedItem; answers: RecapJudgeAnswers | null }
-
-export type RecapJudgeCuts = Record<RecapJudgeQuestionId, number>
 
 /** What the recap shows for a request. `open` is the neutral row; `not-addressed` is the alarm. */
 export type RecapShownStanding =
@@ -25,23 +27,6 @@ export type RecapShownStanding =
   | 'withdrawn'
   | 'not-addressed'
   | 'open'
-
-const SHOWN: Record<RecapJudgeQuestionId, RecapShownStanding> = {
-  done: 'addressed',
-  did_part: 'partly',
-  declined: 'declined',
-  withdrawn: 'withdrawn',
-  left_undone: 'not-addressed'
-}
-
-// A later word from the user outranks the agent's; the alarm fires only when nothing else does.
-const PRECEDENCE: RecapJudgeQuestionId[] = [
-  'withdrawn',
-  'declined',
-  'done',
-  'did_part',
-  'left_undone'
-]
 
 /** Too narrow a spread of answers to rank anything: the question's state or wording is broken. */
 const FLAT_RANGE = 0.05
@@ -79,8 +64,9 @@ export function recapShownStanding(
   answers: RecapJudgeAnswers | null,
   cuts: RecapJudgeCuts
 ): RecapShownStanding {
-  const fired = answers && PRECEDENCE.find((id) => answers[id] > cuts[id])
-  return fired ? SHOWN[fired] : 'open'
+  // The product's own combination; after it, only code rules can hold the alarm back.
+  const verdict = recapJudgeVerdict(answers, cuts)
+  return verdict === 'left-undone' ? 'not-addressed' : verdict
 }
 
 type Tally = { hit: number; of: number }

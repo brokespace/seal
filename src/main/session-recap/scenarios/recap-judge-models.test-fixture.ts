@@ -1,6 +1,5 @@
 // The models measured as the recap's judge, how each is asked the question book about one state,
 // and the answers kept on a hash of what was asked, so a rerun asks only what changed.
-import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
@@ -17,12 +16,20 @@ import {
   type UtilityModelFetch
 } from '../../utility-model/utility-model-http-request'
 import { UtilityModelError } from '../../utility-model/utility-model-provider'
+import type { RecapJudgeAnswers } from '../../../shared/session-recap/session-recap-types'
+import {
+  recapJudgeAnswersIn as decisionAnswersIn,
+  recapJudgeBody as decisionBody,
+  recapJudgeKey as keyOf,
+  type RecapJudgeState
+} from '../session-recap-judge'
 import {
   RECAP_JUDGE_QUESTION_IDS,
   RECAP_JUDGE_QUESTIONS,
   type RecapJudgeQuestionId
-} from './recap-judge-questions.test-fixture'
-import type { RecapJudgeState } from './recap-judge-state.test-fixture'
+} from '../session-recap-judge-questions'
+
+export type { RecapJudgeAnswers }
 
 export type RecapJudgeModel = {
   id: string
@@ -39,8 +46,6 @@ export const RECAP_JUDGE_MODELS: RecapJudgeModel[] = [
   { id: CLOUDFLARE_AI_DEFAULT_MODEL, kind: 'chat', usdPerMInput: 0.06, usdPerMOutput: 0.4 },
   { id: CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL, kind: 'chat', usdPerMInput: 0.1, usdPerMOutput: 0.3 }
 ]
-
-export type RecapJudgeAnswers = Record<RecapJudgeQuestionId, number>
 
 /** One model's answers about one item. */
 export type RecapJudgeRecord = {
@@ -68,16 +73,7 @@ const modelName = (model: RecapJudgeModel): string => model.id.slice(model.id.la
 
 export function recapJudgeBody(model: RecapJudgeModel, state: RecapJudgeState): unknown {
   if (model.kind === 'decision') {
-    return {
-      model: modelName(model),
-      state,
-      questions: Object.fromEntries(
-        RECAP_JUDGE_QUESTION_IDS.map((id) => {
-          const { instructions, criteria } = RECAP_JUDGE_QUESTIONS[id]
-          return [id, { type: 'noul', instructions, criteria }]
-        })
-      )
-    }
+    return decisionBody(model.id, state)
   }
   const questions = RECAP_JUDGE_QUESTION_IDS.map((id) => {
     const { instructions, criteria } = RECAP_JUDGE_QUESTIONS[id]
@@ -98,10 +94,7 @@ export function recapJudgeBody(model: RecapJudgeModel, state: RecapJudgeState): 
 }
 
 export function recapJudgeKey(model: RecapJudgeModel, body: unknown): string {
-  return createHash('sha256')
-    .update(`${model.id}\n${JSON.stringify(body)}`)
-    .digest('hex')
-    .slice(0, 32)
+  return keyOf(model.id, body)
 }
 
 /** A rough count for the estimate before a run: English prose is about four characters a token. */
@@ -140,15 +133,16 @@ export function recapJudgeAnswersIn(
   model: RecapJudgeModel,
   result: Record<string, unknown> | null
 ): RecapJudgeAnswers | null {
+  if (model.kind === 'decision') {
+    return decisionAnswersIn(result?.answers)
+  }
   const choices = result?.choices
   const first = Array.isArray(choices) ? jsonRecord(choices[0]) : null
   const reply = jsonText(result?.response) ?? jsonText(jsonRecord(first?.message)?.content)
-  const given = model.kind === 'decision' ? jsonRecord(result?.answers) : written(reply ?? '')
-  const scale = model.kind === 'decision' ? 1 : 100
+  const given = written(reply ?? '')
   const answer = (id: RecapJudgeQuestionId): number | null => {
-    const value =
-      model.kind === 'decision' ? count(jsonRecord(given?.[id])?.noul) : count(given?.[id])
-    return value === null || value < 0 || value > scale ? null : value / scale
+    const value = count(given?.[id])
+    return value === null || value < 0 || value > 100 ? null : value / 100
   }
   const [done, didPart, declined, withdrawn, leftUndone] = [
     answer('done'),
