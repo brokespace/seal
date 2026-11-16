@@ -2,6 +2,7 @@ import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
 import { confirmSent, sentBySession } from './live-message-confirmation'
+import { aheadInFlight, nextQueued } from './live-message-order'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
   DEFAULT_OUTBOX_TIMING,
@@ -132,6 +133,18 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
+  /** Gives a failed message up to another owner of its session; null when there is none to give. */
+  async release(messageId: string): Promise<LiveSendRequest | null> {
+    await this.start()
+    const item = this.items.get(messageId)
+    if (!item || item.state !== 'failed') {
+      return null
+    }
+    this.items.delete(messageId)
+    this.persist()
+    return { sessionId: item.sessionId, messageId, text: item.text }
+  }
+
   /** The session now goes by another id; its messages follow it, in order. */
   renameSession(from: string, to: string): void {
     for (const item of this.items.values()) {
@@ -158,34 +171,7 @@ export class LiveMessageOutbox {
   }
 
   private next(sessionId: string): Item | null {
-    let best: Item | null = null
-    for (const item of this.items.values()) {
-      if (
-        item.sessionId === sessionId &&
-        item.state === 'queued' &&
-        !this.claimed.has(item.messageId) &&
-        (!best || item.createdAt < best.createdAt)
-      ) {
-        best = item
-      }
-    }
-    return best
-  }
-
-  private aheadInFlight(item: Item): boolean {
-    const now = this.now()
-    for (const other of this.items.values()) {
-      if (
-        other !== item &&
-        other.sessionId === item.sessionId &&
-        other.createdAt <= item.createdAt &&
-        (this.claimed.has(other.messageId) ||
-          (other.state === 'sent' && now - (other.sentAt ?? now) < this.timing.orderHoldMs))
-      ) {
-        return true
-      }
-    }
-    return false
+    return nextQueued(this.items.values(), sessionId, this.claimed)
   }
 
   private async work(sessionId: string): Promise<void> {
@@ -196,7 +182,10 @@ export class LiveMessageOutbox {
       }
       this.claimed.add(item.messageId)
       try {
-        while (this.aheadInFlight(item) && !this.abort.signal.aborted) {
+        while (
+          aheadInFlight(this.items.values(), item, this.claimed, this.now(), this.timing) &&
+          !this.abort.signal.aborted
+        ) {
           await this.sleep(200)
         }
         await this.deliver(item)

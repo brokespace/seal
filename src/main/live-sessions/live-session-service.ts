@@ -21,10 +21,9 @@ import {
   LiveTranscriptStreams,
   type LiveTranscriptSubscription
 } from './transcripts/live-transcript-streams'
-import { readTranscriptForward } from './transcripts/live-transcript-reader'
 import { SessionInputRoutes, type SealPaneInput } from './delivery/session-input-routes'
 import { LiveMessageOutbox } from './delivery/live-message-outbox'
-import { userTextsOf, type UserText } from './delivery/transcript-user-texts'
+import { userTextsFrom, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
@@ -51,8 +50,6 @@ export type LiveSessionServiceDeps = {
   onHostScanned?: LiveSessionRegistryDeps['onHostScanned']
   log?: (message: string, error?: unknown) => void
 }
-
-const MAX_CONFIRM_READS = 8
 
 /**
  * The main-process session API other features consume (home overview, home chat, mobile RPC):
@@ -209,8 +206,18 @@ export class LiveSessionService {
     return (this.federated(sessionId) ?? this.outbox).send({ ...request, sessionId })
   }
 
-  retry(messageId: string): Promise<LiveMessage | null> {
-    return this.federation?.retry(messageId) ?? this.outbox.retry(messageId)
+  async retry(messageId: string): Promise<LiveMessage | null> {
+    const forwarded = this.federation?.retry(messageId)
+    if (forwarded) {
+      return forwarded
+    }
+    // It failed here while its server was away; the server is listed again, so it goes there.
+    const held = this.outbox.list().find((message) => message.messageId === messageId)
+    const server = held?.state === 'failed' ? this.federated(held.sessionId) : null
+    const released = server ? await this.outbox.release(messageId) : null
+    return server && released
+      ? server.send({ ...released, sessionId: this.registry.currentId(released.sessionId) })
+      : this.outbox.retry(messageId)
   }
 
   messages(sessionId?: string): LiveMessage[] {
@@ -318,19 +325,6 @@ export class LiveSessionService {
       return (await this.chats?.userTexts(chat, from)) ?? []
     }
     const found = this.streams.source(session.id)
-    if (!found) {
-      return []
-    }
-    const out: UserText[] = []
-    let cursor = from
-    for (let i = 0; i < MAX_CONFIRM_READS; i++) {
-      const read = await readTranscriptForward(found.source, found.provider, cursor)
-      out.push(...userTextsOf(found.provider, read.lines))
-      if (read.cursor === cursor || read.cursor >= read.size) {
-        break
-      }
-      cursor = read.cursor
-    }
-    return out
+    return found ? userTextsFrom(found.source, found.provider, from) : []
   }
 }
