@@ -27,7 +27,10 @@ export function useSurfaceOverSlot(
       return
     }
     let placed = false
-    return subscribeTabGroupBodyRect(slotId, container, (rect) => {
+    let slotLaidOut = false
+    let subscribed = true
+    const unsubscribe = subscribeTabGroupBodyRect(slotId, container, (rect) => {
+      slotLaidOut = rect !== null
       if (rect) {
         placed = true
         style.display = ''
@@ -41,9 +44,18 @@ export function useSurfaceOverSlot(
       // Moving to a slot that is not laid out yet, it keeps the last one's box: hiding it would
       // drop the keyboard focus it holds.
       if (placed || style.width === '') {
-        // No slot (the grid is still loading): stay out of layout instead of filling the area.
-        style.display = 'none'
+        // The slot it leaves is gone before this render tells it of the next one: wait for that.
+        queueMicrotask(() => {
+          if (subscribed && !slotLaidOut) {
+            // No slot (the grid is still loading): stay out of layout instead of filling the area.
+            style.display = 'none'
+          }
+        })
       }
     })
+    return () => {
+      subscribed = false
+      unsubscribe()
+    }
   }, [slotId, surfaceRef, keepsBox])
 }
