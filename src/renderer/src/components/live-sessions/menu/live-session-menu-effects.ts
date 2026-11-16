@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/index'
 import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-target'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
+import { isAiVaultAgent } from '../../../../../shared/ai-vault/contracts/ai-vault-types'
 import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
 import {
   compareLiveSessions,
@@ -149,6 +150,10 @@ function focusLiveSessionView(sessionId: string, target: LiveSessionFocusTarget)
 
 /** `claude --resume <id>` or `codex resume <id>`, from the session's folder, for its machine's shell. */
 export function liveSessionResumeCommand(session: LiveSession): string {
+  // No registry lists such an agent yet.
+  if (!isAiVaultAgent(session.provider)) {
+    return ''
+  }
   const local = session.machine.kind === 'local'
   // Sessions under an account folder resume only with that folder as CODEX_HOME.
   const codexHome =

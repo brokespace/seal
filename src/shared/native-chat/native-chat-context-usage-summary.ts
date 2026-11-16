@@ -8,6 +8,15 @@ export type NativeChatContextUsageSummary = {
   estimated: boolean
   /** Largest first, as a share of the window; empty rows are dropped, and deferred rows sit outside the used total. */
   rows: readonly { name: string; tokens: number; percentage: number; deferred?: true }[]
+  /** Tokens at which the agent compacts on its own; absent when unknown or auto-compact is off. */
+  autoCompactAtTokens?: number
+  model?: string
+  /** How many times this session compacted. */
+  compactions?: number
+  /** Epoch ms of its last compaction. */
+  lastCompactedAt?: number
+  /** Epoch ms of the report or record these numbers came from. */
+  updatedAt?: number
 }
 
 /** Past this the window is nearly spent, so the ring turns red to say so. */
