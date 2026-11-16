@@ -3,6 +3,7 @@ import type { LiveMessage } from './live-session-types'
 type TranscriptRow = {
   role: string
   timestamp?: number | null
+  transcriptOffset?: number
   blocks: readonly { type: string; text?: string }[]
 }
 
@@ -43,8 +44,10 @@ export function pendingLiveMessages<M extends SentMessage>(
   messages: readonly M[]
 ): PendingLiveMessage<M>[] {
   let newest = 0
+  const loaded = new Set<number | undefined>()
   for (const row of rows) {
     newest = Math.max(newest, row.timestamp ?? 0)
+    loaded.add(row.transcriptOffset)
   }
   // Why by text at all: a host from before `echoOffset` says only that the message was delivered.
   let said: string[] | null = null
@@ -70,9 +73,12 @@ export function pendingLiveMessages<M extends SentMessage>(
     if (message.updatedAt < newest) {
       return true
     }
-    return typeof message.echoOffset === 'number'
-      ? readTo === null || message.echoOffset < readTo
-      : saidInLoadedRows(spaced(message.text))
+    const echo = message.echoOffset
+    if (typeof echo !== 'number') {
+      return saidInLoadedRows(spaced(message.text))
+    }
+    // Why the loaded row too: a chat's journal counts writes, and its read position is the last one read.
+    return readTo === null || echo < readTo || loaded.has(echo)
   }
   const pending: PendingLiveMessage<M>[] = []
   for (const message of [...messages].sort((a, b) => a.createdAt - b.createdAt)) {

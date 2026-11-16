@@ -74,6 +74,13 @@ describe('pendingLiveMessages', () => {
     expect(pendingLiveMessages(echoed.slice(-20), 6_500, [delivered])).toEqual([])
   })
 
+  it('drops a delivered message whose row is loaded when the read position is that very row', () => {
+    const journal = [row(7, 'assistant', 'done'), row(8, 'user', 'and lint')]
+    const sent = message('a', 'and lint', 'delivered', 50_000, { sentOffset: 8, echoOffset: 8 })
+    expect(pendingLiveMessages(journal, 8, [sent])).toEqual([])
+    expect(ids(pendingLiveMessages(journal.slice(0, 1), 7, [sent]))).toEqual([['a', 8]])
+  })
+
   it('shows a row 51 to 80 messages back exactly once, with or without its echo offset', () => {
     const rows = busyTranscript(60).slice(-80)
     expect(rows[0].role).toBe('user')
