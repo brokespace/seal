@@ -1,0 +1,34 @@
+{
+  "id": "addressed-later-by-tools-on-other-files",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["The login page takes four seconds to load, make it faster"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 3: the agent says it has not looked at the login page yet"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "steps 11-12: lighthouse shows the login page at 0.8 s instead of 3.9 s and the agent says Done"
+        }
+      }
+    },
+    {
+      "quotes": ["add a test for the password reset email"],
+      "at": {
+        "after turn 1": {
+          "is": "done",
+          "why": "step 3: the agent says it added the password reset email test"
+        },
+        "after turn 2": {
+          "is": "done",
+          "why": "step 3: the agent says it added the password reset email test"
+        }
+      }
+    }
+  ],
+  "notRequests": ["ok go on"],
+  "rules": []
+}

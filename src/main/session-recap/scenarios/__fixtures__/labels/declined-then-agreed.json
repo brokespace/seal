@@ -1,0 +1,26 @@
+{
+  "id": "declined-then-agreed",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Turn off TypeScript strict mode"],
+      "at": {
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 6: the user takes the agent's offer to fix the errors instead of turning strict mode off"
+        }
+      }
+    },
+    {
+      "quotes": ["fix them instead"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the three type errors are fixed and the build passes"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

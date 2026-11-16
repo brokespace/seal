@@ -1,0 +1,44 @@
+{
+  "id": "multiple-asks-one-deferred",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["make the search box debounce 300ms"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 4: the agent says the search box debounces by 300ms"
+        }
+      }
+    },
+    {
+      "quotes": ["show a spinner while results load"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 4: the agent says a spinner shows while results load"
+        }
+      }
+    },
+    {
+      "quotes": ["add an empty state when nothing matches"],
+      "at": {
+        "after the turn": {
+          "is": "done",
+          "why": "step 4: the agent says an empty state appears when nothing matches"
+        }
+      }
+    },
+    {
+      "quotes": ["log slow searches over 2s to the server"],
+      "at": {
+        "after the turn": {
+          "is": "open",
+          "why": "step 4: the agent did not add the logging and says it needs a decision from the user first"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

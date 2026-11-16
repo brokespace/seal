@@ -1,0 +1,64 @@
+{
+  "id": "model-fails-twice-then-recovers",
+  "split": "held-out",
+  "requests": [
+    {
+      "quotes": ["Add a CSV export to the orders page"],
+      "at": {
+        "after the first unreadable pass": {
+          "is": "done",
+          "why": "step 5: the agent says an Export CSV button is on the orders page"
+        },
+        "after the second unreadable pass": {
+          "is": "done",
+          "why": "step 5: the agent said an Export CSV button is on the orders page"
+        },
+        "after the model recovers": {
+          "is": "done",
+          "why": "step 5: the agent said an Export CSV button is on the orders page"
+        }
+      }
+    },
+    {
+      "quotes": ["a date filter above the table"],
+      "at": {
+        "after the first unreadable pass": {
+          "is": "done",
+          "why": "step 5: the agent says a date filter is above the table"
+        },
+        "after the second unreadable pass": {
+          "is": "done",
+          "why": "step 5: the agent said a date filter is above the table"
+        },
+        "after the model recovers": {
+          "is": "done",
+          "why": "step 5: the agent said a date filter is above the table"
+        }
+      }
+    },
+    {
+      "quotes": ["make the date filter default to the last 30 days"],
+      "at": {
+        "after the second unreadable pass": {
+          "is": "done",
+          "why": "step 11: the agent says the date filter defaults to the last 30 days now"
+        },
+        "after the model recovers": {
+          "is": "done",
+          "why": "step 11: the agent said the date filter defaults to the last 30 days"
+        }
+      }
+    },
+    {
+      "quotes": ["add a Reset button next to the filter"],
+      "at": {
+        "after the model recovers": {
+          "is": "done",
+          "why": "step 17: the agent says there is a Reset button next to the date filter now"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

@@ -1,0 +1,21 @@
+{
+  "id": "withdrawn-then-asked-again",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Add dark mode to the settings page", "do add dark mode, only on settings"],
+      "at": {
+        "after the user withdraws it": {
+          "is": "withdrawn",
+          "why": "step 5: the user says never mind dark mode for now"
+        },
+        "after the user asks again": {
+          "is": "done",
+          "why": "step 12: the agent says dark mode is on the settings page"
+        }
+      }
+    }
+  ],
+  "notRequests": ["never mind dark mode for now"],
+  "rules": []
+}

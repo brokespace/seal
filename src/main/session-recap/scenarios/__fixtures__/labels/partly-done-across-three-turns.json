@@ -1,0 +1,28 @@
+{
+  "id": "partly-done-across-three-turns",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Replace moment with date-fns in all three packages: api, web and worker",
+        "keep going"
+      ],
+      "at": {
+        "after turn 1": {
+          "is": "partly",
+          "why": "step 3: api is converted but web and worker still use moment"
+        },
+        "after turn 2": {
+          "is": "partly",
+          "why": "step 9: api and web are converted but the agent left worker pending the user's call"
+        },
+        "after turn 3": {
+          "is": "done",
+          "why": "step 16: worker is converted and moment is gone from all three packages"
+        }
+      }
+    }
+  ],
+  "notRequests": ["use date-fns-tz"],
+  "rules": []
+}

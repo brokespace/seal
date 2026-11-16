@@ -1,0 +1,30 @@
+{
+  "id": "changed-ask",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Cache the product list in Redis with a 5 minute TTL"],
+      "at": {
+        "after turn 1": {
+          "is": "open",
+          "why": "step 2: the agent asks whether to add Redis or use an in-process cache and waits"
+        },
+        "after turn 2": {
+          "is": "withdrawn",
+          "why": "step 6: the user says no new services and asks for an in-memory LRU instead"
+        }
+      }
+    },
+    {
+      "quotes": ["in-memory LRU is fine, same TTL"],
+      "at": {
+        "after turn 2": {
+          "is": "done",
+          "why": "step 8: the agent says the product list is cached in an in-memory LRU with a 5 minute TTL"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

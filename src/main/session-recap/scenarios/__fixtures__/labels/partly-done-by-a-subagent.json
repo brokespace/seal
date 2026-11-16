@@ -1,0 +1,19 @@
+{
+  "id": "partly-done-by-a-subagent",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": [
+        "Add an auth check to the three unprotected routes: /export, /admin/stats and /hooks/replay"
+      ],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 3: /export and /admin/stats require auth and /hooks/replay is left unchanged pending the user's answer"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}

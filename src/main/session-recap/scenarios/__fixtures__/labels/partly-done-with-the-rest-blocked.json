@@ -1,0 +1,17 @@
+{
+  "id": "partly-done-with-the-rest-blocked",
+  "split": "tune",
+  "requests": [
+    {
+      "quotes": ["Translate the settings page into German and French"],
+      "at": {
+        "after the turn": {
+          "is": "partly",
+          "why": "step 3: German is translated in locales/de.json but the agent says French is not done"
+        }
+      }
+    }
+  ],
+  "notRequests": [],
+  "rules": []
+}
