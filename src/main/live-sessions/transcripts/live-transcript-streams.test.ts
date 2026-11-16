@@ -26,12 +26,26 @@ describe('watching a session transcript', () => {
   it('answers an empty page for a file not written yet and delivers once it is', async () => {
     const host = localHost('test')
     const transcriptPath = join(dir, 'not-yet.jsonl')
-    const session = {
+    const session: LiveSession = {
       id: 'local:claude:abc',
       provider: 'claude',
+      providerSessionId: 'abc',
       machine: host.machine,
-      transcriptPath
-    } as LiveSession
+      origin: 'seal',
+      cwd: '/repo',
+      project: 'repo',
+      title: 'Fix login',
+      status: 'working',
+      statusSource: 'seal-hooks',
+      statusDetail: null,
+      lastActivityAt: 1_000,
+      startedAt: 500,
+      alive: true,
+      pid: 42,
+      transcriptPath,
+      inputRoutes: [],
+      permission: null
+    }
     const streams = new LiveTranscriptStreams(
       { get: () => session, host: () => host },
       { pollMs: { local: 5, ssh: 5 } }
