@@ -63,6 +63,7 @@ test('every session is a full row under its workspace, labelled with its status'
     process.platform === 'win32',
     'The stub agents are found through the POSIX process table'
   )
+  // Sessions settle over several scans, which come 3 to 12 seconds apart.
   test.setTimeout(180_000)
   await showSidebar(orcaPage)
   const workspaces = await addSeedWorkspaces(orcaPage, 2)
@@ -125,6 +126,7 @@ test('compact and classic cards, with or without inline agents, keep every sessi
     process.platform === 'win32',
     'The stub agents are found through the POSIX process table'
   )
+  // Six card settings are each drawn after sessions settle over scans 3 to 12 seconds apart.
   test.setTimeout(180_000)
   await showSidebar(orcaPage)
   const [workspace] = await addSeedWorkspaces(orcaPage, 1)

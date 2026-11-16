@@ -1,5 +1,8 @@
 import { Monitor, TriangleAlert } from 'lucide-react'
 import { AgentStateDot } from '@/components/AgentStateDot'
+import { HostListOverflowNote } from '@/components/host-picker/HostListOverflowNote'
+import { HostListSearchField } from '@/components/host-picker/HostListSearchField'
+import { useBoundedHostRows } from '@/components/host-picker/use-bounded-host-rows'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { OptionsFilterCountBadge } from '@/components/sidebar/worktree-list/controls/options-filter-count-badge'
 import { Button } from '@/components/ui/button'
@@ -45,6 +48,11 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
       error: machine.error ?? ''
     })
   const failing = machines.filter((machine) => machine.error !== null)
+  // Every configured host whose scan failed is listed, so the list is bounded; the chosen one stays in it.
+  const rows = useBoundedHostRows(
+    machines.map((option) => ({ id: option.hostId, label: machineName(option.machine), option })),
+    selected === null ? undefined : new Set([selected])
+  )
   return (
     <DropdownMenu modal={false}>
       {failing.length > 0 ? (
@@ -94,7 +102,10 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
             <span className={COUNT}>{props.total}</span>
           </DropdownMenuRadioItem>
           {machines.length > 0 ? <DropdownMenuSeparator /> : null}
-          {machines.map((machine) => (
+          {rows.searchable ? (
+            <HostListSearchField value={rows.query} onChange={rows.setQuery} inMenu />
+          ) : null}
+          {rows.shown.map(({ option: machine, label: name }) => (
             <DropdownMenuRadioItem
               key={machine.hostId}
               value={machine.hostId}
@@ -112,7 +123,7 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
                       machine.machine.label === machine.hostId ? undefined : machine.machine.label
                     }
                   >
-                    {machineName(machine.machine)}
+                    {name}
                   </span>
                   {machine.error === null ? null : (
                     <TriangleAlert className="size-3 text-agent-question-text" aria-hidden="true" />
@@ -134,6 +145,7 @@ export function SessionMachineFilter(props: SessionMachineFilterProps): React.JS
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+        <HostListOverflowNote hiddenCount={rows.hiddenCount} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

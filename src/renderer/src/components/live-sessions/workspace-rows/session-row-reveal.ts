@@ -104,7 +104,8 @@ export function useWorkspaceSessionRowReveal(): void {
       if (rows.length > 0 && settled) {
         // A pinned workspace lists its rows twice: the copy in view must not send the list to the other.
         scrollSidebarSessionRowIntoView(rows.find(isSessionRowInView) ?? rows[0])
-      } else if (framesLeft-- > 0) {
+      } else if (framesLeft > 0) {
+        framesLeft -= 1
         frame = requestAnimationFrame(showRow)
       }
     }
