@@ -371,7 +371,14 @@
           "load": "Load average",
           "loadDetail": "1, 5 and 15 minutes",
           "cores": "Cores",
-          "processes": "Processes"
+          "processes": "Processes",
+          "readings": "CPU: {{readings}}",
+          "temperatureHintMac": "Reading a Mac’s sensors needs the Xcode Command Line Tools on that Mac: run xcode-select --install there.",
+          "temperatureHintWindows": "Windows shows no CPU temperature to an account without administrator rights here. Running LibreHardwareMonitor on that machine makes one readable.",
+          "temperatureHintLinux": "This machine exposes no CPU temperature sensor, as most virtual machines do not.",
+          "temperature": "Temperature",
+          "temperatureUnavailable": "no readable sensor",
+          "sensors": "CPU sensors"
         },
         "memory": {
           "used": "Used",

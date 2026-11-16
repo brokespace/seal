@@ -2,7 +2,13 @@ import React from 'react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineMetrics, MachineOs } from '../../../../../shared/machines/machine-types'
-import { cpuLoadPercent, formatBytes, formatUptime, usedPercent } from '../model/machine-format'
+import {
+  cpuLoadPercent,
+  formatBytes,
+  formatTemperature,
+  formatUptime,
+  usedPercent
+} from '../model/machine-format'
 import type { MachineStatus } from '../../../../../shared/machines/machine-summaries'
 import type { MachineResourceKind } from '../resources/machine-resource-requests'
 import {
@@ -83,17 +89,23 @@ export function MachineMeter({
   label,
   percent,
   detail,
+  title,
   compact = false,
   tone = 'pressure'
 }: {
   label: string
   percent: number | null
   detail?: string
+  /** What the bar stands for in full, where a compact one has no room for figures. */
+  title?: string
   compact?: boolean
   tone?: MachineMeterTone
 }): React.JSX.Element {
   return (
-    <div className={cn('min-w-0', compact ? 'flex items-center gap-1.5' : 'space-y-1')}>
+    <div
+      className={cn('min-w-0', compact ? 'flex items-center gap-1.5' : 'space-y-1')}
+      title={title}
+    >
       <div
         className={cn(
           'flex items-baseline gap-1 text-muted-foreground',
@@ -129,6 +141,25 @@ export function MachineMeter({
       </div>
     </div>
   )
+}
+
+/** `load 0.52 · 54 °C`: how busy the processor is, then how hot, leaving out what is not reported. */
+export function useCpuReadings(): (metrics: MachineMetrics | null) => string | undefined {
+  const t = useTranslate()
+  return (metrics) => {
+    const { cpu } = machineMeterValues(metrics)
+    const busy = metrics?.loadAverage
+      ? t('auto.components.machines.vitals.load', 'load {{load}}', {
+          load: metrics.loadAverage[0].toFixed(2)
+        })
+      : cpu === null
+        ? null
+        : `${Math.round(cpu)}%`
+    const temperature = metrics?.cpuTemperature
+      ? formatTemperature(metrics.cpuTemperature.temperatureC)
+      : null
+    return [busy, temperature].filter(Boolean).join(' · ') || undefined
+  }
 }
 
 export function machineMeterValues(metrics: MachineMetrics | null): {
@@ -191,6 +222,7 @@ export function MachineVitalsStrip({
   onSelect?: (kind: MachineResourceKind) => void
 }): React.JSX.Element {
   const t = useTranslate()
+  const cpuReadings = useCpuReadings()
   const values = machineMeterValues(metrics)
   const used = (total: number | null, available: number | null): string =>
     total === null || available === null
@@ -227,13 +259,7 @@ export function MachineVitalsStrip({
           <MachineMeter
             label={t('auto.components.machines.vitals.cpu', 'CPU')}
             percent={values.cpu}
-            detail={
-              metrics?.loadAverage
-                ? t('auto.components.machines.vitals.load', 'load {{load}}', {
-                    load: metrics.loadAverage[0].toFixed(2)
-                  })
-                : undefined
-            }
+            detail={cpuReadings(metrics)}
           />
         </MeterButton>
         <MeterButton
