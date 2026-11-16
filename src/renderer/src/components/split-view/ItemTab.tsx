@@ -37,7 +37,9 @@ import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTabMenu } from './ItemTabMenu'
 import {
   bringKeyboardFocusIntoFocusedPane,
-  keepKeyboardOnStripControl
+  keepKeyboardOnStripControl,
+  noteKeyboardHolderBeforeTabMenu,
+  returnKeyboardLeftByTabMenus
 } from './pane-keyboard-focus'
 import { ITEM_TAB_KEY_ATTRIBUTE } from './split-view-drop-target'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
@@ -219,6 +221,7 @@ export function ItemTab({
       onOpenChange={(open) => {
         if (open) {
           focusedPaneAtOpen.current = splitViewStore.getState().focusedPaneId
+          noteKeyboardHolderBeforeTabMenu()
         }
         handleMenuOpenChange(open)
       }}
@@ -232,6 +235,7 @@ export function ItemTab({
             event.preventDefault()
             bringKeyboardFocusIntoFocusedPane()
           }
+          returnKeyboardLeftByTabMenus()
         }}
       >
         <ItemTabMenu item={item} resolved={resolved} tabCount={tabCount} commands={commands} />

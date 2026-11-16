@@ -207,6 +207,36 @@ export function bringKeyboardFocusIntoSingleViewItem(surface: HTMLElement): void
   }
 }
 
+let keyboardHolderBeforeTabMenus: HTMLElement | null = null
+
+/** A right click on another tab dismisses the open menu first, and the keyboard is on nothing as the next opens. */
+export function noteKeyboardHolderBeforeTabMenu(): void {
+  const active = document.activeElement
+  if (
+    active instanceof HTMLElement &&
+    active !== document.body &&
+    !active.closest('[role="menu"]')
+  ) {
+    keyboardHolderBeforeTabMenus = active
+  }
+}
+
+/** A menu dismissed by a press returns no keyboard, and the menu that follows it has none to return. */
+export function returnKeyboardLeftByTabMenus(): void {
+  // After the menu's own return.
+  queueMicrotask(() => {
+    // The menu that took over returns it.
+    if (document.querySelector('[role="menu"]')) {
+      return
+    }
+    const holder = keyboardHolderBeforeTabMenus
+    keyboardHolderBeforeTabMenus = null
+    if (document.activeElement === document.body && holder?.isConnected) {
+      holder.focus({ preventScroll: true })
+    }
+  })
+}
+
 /** A chord that moves pane focus asks for the pane: a field beside the grid gives the keyboard up. */
 export function releaseKeyboardHeldBesidePanes(): void {
   const active = document.activeElement
