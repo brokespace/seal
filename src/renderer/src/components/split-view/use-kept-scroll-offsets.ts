@@ -26,9 +26,18 @@ export function useKeptScrollOffsets(
     }
     const record = (event: Event): void => {
       const element = event.target
-      if (element instanceof Element) {
-        kept.set(element, { top: element.scrollTop, left: element.scrollLeft })
+      if (!(element instanceof Element)) {
+        return
       }
+      if (!kept.has(element)) {
+        // A surface that stays in front does not go on holding what was scrolled and is gone.
+        for (const known of kept.keys()) {
+          if (!known.isConnected) {
+            kept.delete(known)
+          }
+        }
+      }
+      kept.set(element, { top: element.scrollTop, left: element.scrollLeft })
     }
     surface.addEventListener('scroll', record, { capture: true, passive: true })
     return () => surface.removeEventListener('scroll', record, { capture: true })

@@ -142,9 +142,10 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
   )
 }
 
+const renderNothing = (): null => null
+
 /** Sessions and projects, kept mounted while the layout around them changes. */
 function ItemSurfaces({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
-  const t = useTranslate()
   const wanted =
     layout.splitViewShowing || layout.activeView === 'sessions' || layout.activeView === 'project'
   // Once loaded it stays: a grid behind another page keeps its sessions' drafts.
@@ -157,16 +158,12 @@ function ItemSurfaces({ layout }: { layout: AppChromeLayout }): React.JSX.Elemen
   }
   return (
     <Suspense fallback={null}>
+      {/* Each surface contains its own errors; this one only keeps the layer's from the shell. */}
       <RecoverableRenderErrorBoundary
         boundaryId="item-surfaces"
         surface="page"
         resetKey={layout.activeView}
-        className="absolute inset-0 bg-background"
-        title={t('auto.App.b7a714db1e', 'This page hit an error.')}
-        description={t(
-          'auto.App.03a14f6b5b',
-          'Retry the page or navigate to another Orca surface.'
-        )}
+        fallback={renderNothing}
       >
         <ItemSurfaceLayer />
       </RecoverableRenderErrorBoundary>

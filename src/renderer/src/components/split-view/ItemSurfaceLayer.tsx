@@ -1,8 +1,10 @@
-import { Activity, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { Activity, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { useLiveSessionTabs } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
 import { resolveProjectOverviewRepo } from '@/components/project-overview/project-overview-model'
+import { RecoverableRenderErrorBoundary } from '@/components/error-boundaries/RecoverableRenderErrorBoundary'
+import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { useAppStore } from '@/store/index'
 import { ITEM_SURFACE_PANE_ATTRIBUTE, SINGLE_VIEW_ITEM_SLOT_ID } from './ItemSurfaceSlot'
@@ -80,13 +82,15 @@ function isInSurface(event: React.SyntheticEvent<HTMLElement>): boolean {
 
 function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element {
   const { key, item, paneId, slotId } = place
+  const t = useTranslate()
   const closeProjectOverview = useAppStore((s) => s.closeProjectOverview)
   const surfaceRef = useRef<HTMLDivElement>(null)
   const front = slotId !== null
   useSurfaceOverSlot(surfaceRef, slotId, true)
   useKeptScrollOffsets(surfaceRef, front)
-  // Its effects stop one render after it hides, so the chat first learns that it is out of sight.
-  const wasFront = useDeferredValue(front)
+  // Its effects stop one commit after it hides, so the chat first learns that it is out of sight.
+  const [wasFront, setWasFront] = useState(front)
+  useLayoutEffect(() => setWasFront(front), [front])
   const focusPane = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (paneId && isInSurface(event)) {
       focusSplitViewPane(paneId)
@@ -118,16 +122,27 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
     >
       {/* Out of sight it keeps its draft and its place, and stops marking what arrives as seen. */}
       <Activity mode={front || wasFront ? 'visible' : 'hidden'}>
-        {item.kind === 'session' ? (
-          <div className="flex min-h-0 flex-1">
-            <LiveSessionBody sessionId={item.sessionId} visible={front} />
-          </div>
-        ) : (
-          <ProjectOverviewBody
-            target={item}
-            onClose={paneId ? () => closeSplitViewItems(new Set([key])) : closeProjectOverview}
-          />
-        )}
+        {/* One that fails leaves the others, and their drafts, alone. */}
+        <RecoverableRenderErrorBoundary
+          boundaryId="item-surface"
+          surface="page"
+          title={t('auto.App.b7a714db1e', 'This page hit an error.')}
+          description={t(
+            'auto.App.03a14f6b5b',
+            'Retry the page or navigate to another Orca surface.'
+          )}
+        >
+          {item.kind === 'session' ? (
+            <div className="flex min-h-0 flex-1">
+              <LiveSessionBody sessionId={item.sessionId} visible={front} />
+            </div>
+          ) : (
+            <ProjectOverviewBody
+              target={item}
+              onClose={paneId ? () => closeSplitViewItems(new Set([key])) : closeProjectOverview}
+            />
+          )}
+        </RecoverableRenderErrorBoundary>
       </Activity>
     </div>
   )
