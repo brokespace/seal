@@ -12,13 +12,19 @@ import type {
   SealServiceWish
 } from '../../managed-server/service/seal-service-policy'
 import { readSealServiceState } from '../../managed-server/service/seal-service-removal'
+import { toMachineId } from '../../../shared/machines/machine-types'
 import type { SshManagedServerUpdateNote } from '../../../shared/ssh-types'
 import type { SshServerSetupOutcomes } from '../../ssh/host-server/ssh-direct-connect-policy'
-import { getSshConnectionManager } from '../../ssh/targets/ssh-target-registry'
+import {
+  connectRegisteredSshTarget,
+  getSshConnectionManager
+} from '../../ssh/targets/ssh-target-registry'
 import type { MachineRegistry } from '../registry/machine-registry'
+import { removeServiceOfFailedInstall } from './failed-install-service-cleanup'
 import {
   isPm2Wished,
   isServerBeingRemoved,
+  joinMachineServerInstall,
   latestSealServiceOutcome,
   noteBlockedServerMove,
   noteSealServiceOutcome
@@ -26,9 +32,13 @@ import {
 import {
   blockedServerMove,
   deferredServerInstallReason,
+  hostIsBusyWithAnotherInstall,
   repeatsOverPlainSsh,
   serverInstallFailureReason
 } from './machine-server-install-failure'
+
+// Another desktop's install takes about a minute; after these the machine keeps its Retry.
+const BUSY_HOST_RETRY_DELAYS_MS = [10_000, 30_000, 60_000]
 
 /**
  * The app version the server runs, as far as this connect knows: this app's unless the server kept
@@ -71,6 +81,36 @@ export function createMachineServerSetup(
     }
   }
 
+  const busyHostRetries = new Map<string, number>()
+
+  /** The host was busy with another install: the same connect, again, once that one has had time to end. */
+  const retryWhenHostIsFree = (sshTargetId: string): void => {
+    const tried = busyHostRetries.get(sshTargetId) ?? 0
+    const delay = BUSY_HOST_RETRY_DELAYS_MS[tried]
+    if (delay === undefined) {
+      return
+    }
+    busyHostRetries.set(sshTargetId, tried + 1)
+    const timer = setTimeout(() => {
+      const record = registry.recordForSshTarget(sshTargetId)
+      const install = record?.serverInstall
+      if (!record || install?.state !== 'pending' || !install.reason) {
+        return
+      }
+      void joinMachineServerInstall(record.id, async () => {
+        // Automatic: no sign-in prompt appears and a Disconnect stays.
+        await connectRegisteredSshTarget(sshTargetId, { automatic: true })
+        return registry.view(toMachineId(record.id))
+      }).catch((error: unknown) => {
+        console.info(
+          '[machines] could not try a waiting Seal server install again:',
+          error instanceof Error ? error.message : error
+        )
+      })
+    }, delay)
+    timer.unref()
+  }
+
   const failed = (sshTargetId: string, failure: unknown): boolean => {
     const waiting = registry.recordForSshTarget(sshTargetId)
     if (!awaitsServerInstall(waiting?.serverInstall) || repeatsOverPlainSsh(failure)) {
@@ -84,6 +124,12 @@ export function createMachineServerSetup(
     }
     const deferred = deferredServerInstallReason(failure)
     const reason = deferred ?? serverInstallFailureReason(failure)
+    if (hostIsBusyWithAnotherInstall(failure)) {
+      retryWhenHostIsFree(sshTargetId)
+    } else if ((latestSealServiceOutcome(sshTargetId)?.manager ?? 'detached') !== 'detached') {
+      // Only a launch of this app reports a manager, so the service is this install's own.
+      removeServiceOfFailedInstall(sshTargetId)
+    }
     noteBlockedServerMove(sshTargetId, deferred ? null : blockedServerMove(failure))
     registry.edit((store, now) =>
       (deferred ? deferMachineServerInstall : failMachineServerInstall)(
@@ -116,6 +162,7 @@ export function createMachineServerSetup(
     if (record.serverInstall?.policy !== 'auto') {
       return
     }
+    busyHostRetries.delete(sshTargetId)
     noteBlockedServerMove(sshTargetId, null)
     registry.edit((store, now) =>
       completeMachineServerInstall(

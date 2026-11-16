@@ -14,14 +14,31 @@ import { quitTeardownStartGate } from '../../startup/quit/quit-teardown-start-ga
 type UnservedDecision = Extract<HostServerOnConnectResult, { route: 'unserved' }>
 
 const NO_SPACE = 'no space left on device'
-const READ_ONLY_HOME = 'the home folder is read-only'
+const READ_ONLY_HOME = 'the folder for the server files is read-only'
 const UNWRITABLE_HOME = 'the machine refused to write the server files (permission denied)'
 const DOWNLOAD_BLOCKED = 'the runtime download was blocked on this computer and on the machine'
 const PAIRING_FAILED = 'pairing with the server failed'
 const CONTACT_LOST = 'the connection to the machine was lost during the install'
 const INSTALL_INTERRUPTED =
   'an earlier install on this machine was interrupted and may still be finishing; try again in a few minutes'
+const NEVER_STARTED = 'the server did not start on this machine'
+const OTHER_SERVER_RUNNING =
+  'another Seal or Orca server is already running in this account on the machine; stop it, then try again'
+const HOST_BUSY =
+  'another install is still running on this machine, and Seal tries again when it is done'
 const MAX_REASON_CHARS = 200
+
+// Another desktop, or an install that was cut short, holds the host for a while.
+const HOST_BUSY_CODES: ReadonlySet<string> = new Set([
+  'orcad_activation_fence_busy',
+  'orcad_recovery_transaction_still_fresh'
+])
+const HOST_BUSY_PHRASE = /another run is changing this host|activation fence is held/i
+
+const REASONS_BY_DECISION_CODE: Record<string, string> = {
+  orcad_activation_no_readiness: NEVER_STARTED,
+  orcad_initial_runtime_live: OTHER_SERVER_RUNNING
+}
 
 const UNAVAILABLE_REASONS: Record<OrcadHostUnavailableReason, string> = {
   unsupported_host: 'the platform or architecture of this machine is not supported',
@@ -41,7 +58,8 @@ const REASONS_BY_ERROR_NAME: Record<string, string> = {
   NodeRuntimeUnreachableError: DOWNLOAD_BLOCKED,
   OrcadManagedPairingRejectedError: PAIRING_FAILED,
   OrcadManagedPairingRepairFailedError: PAIRING_FAILED,
-  SshChannelOpenTimeoutError: CONTACT_LOST
+  SshChannelOpenTimeoutError: CONTACT_LOST,
+  RemoteInstallLockBusyError: INSTALL_INTERRUPTED
 }
 
 const REASONS_BY_ERRNO: Record<string, string> = {
@@ -61,7 +79,9 @@ const HOST_ERROR_PHRASES: readonly (readonly [RegExp, string])[] = [
   [/read-only file system|\bEROFS\b/i, READ_ONLY_HOME],
   [/permission denied|\bEACCES\b/i, UNWRITABLE_HOME],
   [/\bpairing\b/i, PAIRING_FAILED],
-  [/activation fence is held/i, INSTALL_INTERRUPTED]
+  [/could not acquire the install lock/i, INSTALL_INTERRUPTED],
+  [/never published an .?orca_server_ready/i, NEVER_STARTED],
+  [/unmanaged runtime owner is still live/i, OTHER_SERVER_RUNNING]
 ]
 
 function isUnservedDecision(failure: unknown): failure is UnservedDecision {
@@ -96,8 +116,22 @@ export function blockedServerMove(failure: unknown): { detail: string | null } |
     : null
 }
 
-/** Set when the move only waits for terminals to end, so a later connect finishes the install. */
+/** True when the host only has to finish another install first, so trying again is all it takes. */
+export function hostIsBusyWithAnotherInstall(failure: unknown): boolean {
+  if (isUnservedDecision(failure)) {
+    return (
+      (failure.code !== undefined && HOST_BUSY_CODES.has(failure.code)) ||
+      (failure.detail !== undefined && HOST_BUSY_PHRASE.test(failure.detail))
+    )
+  }
+  return failure instanceof Error && HOST_BUSY_PHRASE.test(failure.message)
+}
+
+/** Set when the install only waits, for terminals to end or for another install, so a later connect finishes it. */
 export function deferredServerInstallReason(failure: unknown): string | null {
+  if (hostIsBusyWithAnotherInstall(failure)) {
+    return HOST_BUSY
+  }
   if (!isUnservedDecision(failure)) {
     return null
   }
@@ -141,6 +175,9 @@ function decisionReason(decision: UnservedDecision): string {
   }
   if (decision.code && sshHostServerSetupRemedy(decision.code) === 'free-host-space') {
     return NO_SPACE
+  }
+  if (decision.code && Object.hasOwn(REASONS_BY_DECISION_CODE, decision.code)) {
+    return REASONS_BY_DECISION_CODE[decision.code]
   }
   const detail =
     decision.reason === 'failed' || decision.reason === 'deferred' || decision.reason === 'refused'

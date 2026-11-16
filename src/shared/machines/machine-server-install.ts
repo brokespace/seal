@@ -264,7 +264,8 @@ export function machinesAwaitingServerUpgrade(
       activeMachineConnection(machine) === 'server' &&
       machine.serverInstall?.policy === 'auto' &&
       machine.serverInstall.state === 'installed' &&
-      machine.serverInstall.version !== undefined &&
-      compareAppVersions(machine.serverInstall.version, appVersion) < 0
+      // No version: the server was newer than this app when it last connected, and the app may have caught up.
+      (machine.serverInstall.version === undefined ||
+        compareAppVersions(machine.serverInstall.version, appVersion) < 0)
   )
 }

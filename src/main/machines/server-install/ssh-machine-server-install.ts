@@ -23,6 +23,7 @@ import {
 } from '../../ssh/targets/ssh-target-registry'
 import type { MachineRegistry } from '../registry/machine-registry'
 import { getMachineRegistry } from '../registry/machine-registry-service'
+import { failedInstallServiceCleanup } from './failed-install-service-cleanup'
 import {
   joinMachineServerInstall,
   latestSealServiceOutcome,
@@ -110,6 +111,8 @@ async function installOverSsh(
   if (request.moveAnyway) {
     allowMoveLeavingSavedItems(targetId)
   }
+  askHostAgain(targetId)
+  await failedInstallServiceCleanup(targetId)
   noteBlockedServerMove(targetId, null)
   const preferPm2 = request.manager ? request.manager === 'pm2' : prefersPm2(machine.serverInstall)
   registry.edit((store, now) =>
@@ -122,6 +125,14 @@ async function installOverSsh(
     await connectRegisteredSshTarget(targetId)
   }
   return registry.view(machine.id)
+}
+
+/** A host found unable to run the server is remembered per app version; an install the user asks for checks it again. */
+function askHostAgain(sshTargetId: string): void {
+  const targets = getSshTargetRegistryStore()
+  if (targets?.getTarget(sshTargetId)?.managedServerUnavailable) {
+    targets.updateTarget(sshTargetId, { managedServerUnavailable: undefined })
+  }
 }
 
 /** The same store update as upstream's "Move anyway"; the next connect reads it and clears it. */
