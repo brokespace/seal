@@ -49,6 +49,7 @@ function serverInstallView(
   | 'serverMoveBlocked'
   | 'serverStartsAtBoot'
   | 'serverKeeper'
+  | 'serverRunByUser'
   | 'serverServiceRemains'
   | 'serverHostUser'
   | 'serverOwnServe'
@@ -95,6 +96,9 @@ function serverInstallView(
     ...(blocked ? { serverMoveBlocked: blocked } : {}),
     ...(keeper === 'pm2' && reported ? { serverStartsAtBoot: reported.startsAtBoot ?? null } : {}),
     ...(keeper ? { serverKeeper: keeper } : {}),
+    ...(connection === 'server' && managedServer === null
+      ? { serverRunByUser: true as const }
+      : {}),
     ...(connection === 'ssh' && serverServiceRemains(serverInstall)
       ? { serverServiceRemains: true as const }
       : {}),

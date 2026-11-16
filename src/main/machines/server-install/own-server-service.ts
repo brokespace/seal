@@ -102,7 +102,7 @@ export function learnOwnServerServices(views: readonly MachineView[]): void {
     const environmentId = view.server?.environmentId
     if (
       view.connection !== 'server' ||
-      view.serverInstallAction !== 'keep-running' ||
+      view.serverKeeper ||
       !sshTargetId ||
       !environmentId ||
       asked.has(sshTargetId)

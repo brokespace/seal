@@ -136,8 +136,13 @@ describe('machineServerInstallAction', () => {
       'own-server'
     ],
     [
-      'a server the user runs on a machine with SSH details',
+      'a server the user runs before the machine said how it is kept running',
       { ...serverMachine, managedServer: null },
+      'none'
+    ],
+    [
+      'a server the user runs that reports it is not a service',
+      { ...serverMachine, managedServer: null, reportedKeeper: 'detached' },
       'keep-running'
     ],
     [
@@ -147,7 +152,12 @@ describe('machineServerInstallAction', () => {
     ],
     [
       'a server the user runs whose record remembers an earlier Seal install',
-      { ...serverMachine, managedServer: null, serverInstall: auto({ manager: 'systemd-user' }) },
+      {
+        ...serverMachine,
+        managedServer: null,
+        serverInstall: auto({ manager: 'systemd-user' }),
+        reportedKeeper: 'detached'
+      },
       'keep-running'
     ],
     [

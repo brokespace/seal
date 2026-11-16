@@ -36,6 +36,8 @@ export type MachineView = {
   serverMoveBlocked?: { detail: string | null }
   /** PM2 only: whether the user's own `pm2 startup` is set up; null or absent when not known. */
   serverStartsAtBoot?: boolean | null
+  /** The machine is connected through a server its user runs; Seal did not deploy it. */
+  serverRunByUser?: true
   /** How the machine's server is kept running, when known; also set for a server the user runs. */
   serverKeeper?: NonNullable<MachineServerInstall['manager']>
   /** Seal's server was stopped but its service may still be registered here; Remove can run again. */

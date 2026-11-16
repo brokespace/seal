@@ -222,6 +222,7 @@ export function MachineServerStatus({
                 action === 'keep-running'
                   ? {
                       purpose: 'keep-running',
+                      runByUser: view.serverRunByUser,
                       // launchd is never picked automatically, so the earlier choice is asked for again.
                       manager: view.serverLaunchdNeedsLogin ? 'launchd' : undefined
                     }

@@ -18,6 +18,8 @@ export type SealServerInstallOptions = {
   moveAnyway?: boolean
   /** `keep-running`: a server already runs there, and the dialog says it becomes a service. */
   purpose?: SealServerInstallPurpose
+  /** The running server is one the user runs, so its own CLI makes it a service. */
+  runByUser?: boolean
 }
 
 export type SealServerInstall = (

@@ -76,6 +76,7 @@ export function sealServerInstallConfirmation(
     purpose?: SealServerInstallPurpose
     manager?: MachineServiceManagerChoice
     moveAnyway?: boolean
+    runByUser?: boolean
   }
 ): ConfirmationDialogOptions {
   if (options.purpose === 'keep-running') {
@@ -88,24 +89,41 @@ export function sealServerInstallConfirmation(
         ),
         confirmLabel: t('seal.machineServer.server.keepRunning', 'Keep it running as a service')
       },
-      options.manager === 'launchd'
+      options.runByUser
         ? [
             t(
-              'seal.machineServer.keepRunningDialog.serviceLaunchd',
-              'Seal registers the server that already runs on {{name}} as a launchd user service (experimental) and restarts the server once. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to. When no one is logged in at the screen now, no service is registered.',
+              'seal.machineServer.keepRunningDialog.ownCommand',
+              'Seal runs “seal serve service install” on {{name}} over SSH. That command registers the server you run there as a user service (systemd on Linux, launchd on macOS) and restarts the server once.',
               { name }
             ),
-            laterRemovalText(t)
-          ]
-        : [
             t(
-              'seal.machineServer.keepRunningDialog.service',
-              'Seal registers the server that already runs on {{name}} as a user service and restarts the server once. The service is PM2 when the machine has PM2, otherwise a systemd user service.',
-              { name }
+              'seal.machineServer.keepRunningDialog.ownOtherKeeper',
+              'If you already keep this server running another way, such as a service of your own under another name or PM2, choose Cancel: a second service would compete with it for the server’s port.'
             ),
-            lingerText(t),
-            laterRemovalText(t)
+            t(
+              'seal.machineServer.keepRunningDialog.ownUndo',
+              'To undo this later, run “seal serve service uninstall” on {{name}}.',
+              { name }
+            )
           ]
+        : options.manager === 'launchd'
+          ? [
+              t(
+                'seal.machineServer.keepRunningDialog.serviceLaunchd',
+                'Seal registers the server that already runs on {{name}} as a launchd user service (experimental) and restarts the server once. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to. When no one is logged in at the screen now, no service is registered.',
+                { name }
+              ),
+              laterRemovalText(t)
+            ]
+          : [
+              t(
+                'seal.machineServer.keepRunningDialog.service',
+                'Seal registers the server that already runs on {{name}} as a user service and restarts the server once. The service is PM2 when the machine has PM2, otherwise a systemd user service.',
+                { name }
+              ),
+              lingerText(t),
+              laterRemovalText(t)
+            ]
     )
   }
   return confirmation(

@@ -41,10 +41,12 @@ export function machineServerInstallAction(
   if (facts.installing) {
     return 'installing'
   }
-  // The record only knows the keeper of a server Seal installed.
-  const keeper =
-    facts.reportedKeeper ??
-    (facts.managedServer ? installedServerKeeper(facts.serverInstall) : null)
+  if (!facts.managedServer) {
+    // Only the machine can say that a server its user runs is not a service, so nothing is offered until it has.
+    return facts.reportedKeeper === 'detached' ? 'keep-running' : 'none'
+  }
+  // The record knows the keeper of a server Seal installed.
+  const keeper = facts.reportedKeeper ?? installedServerKeeper(facts.serverInstall)
   return keeper && keeper !== 'detached' ? 'none' : 'keep-running'
 }
 

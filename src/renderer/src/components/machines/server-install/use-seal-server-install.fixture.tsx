@@ -37,3 +37,7 @@ export const keepRunningLaunchd = installDialogFixture({
   purpose: 'keep-running',
   manager: 'launchd'
 })
+export const keepRunningOwnServer = installDialogFixture({
+  purpose: 'keep-running',
+  runByUser: true
+})
