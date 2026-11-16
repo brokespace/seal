@@ -120,6 +120,18 @@ describe('pendingLiveMessages', () => {
     ).toEqual([['b', null]])
   })
 
+  it('drops a message on its way once a row written after it says it, before its delivery is seen', () => {
+    const rows = [row(100, 'user', 'ok'), row(200, 'assistant', 'done'), row(300, 'user', 'ok')]
+    const first = message('a', 'ok', 'delivered', 1, { sentOffset: 100, echoOffset: 100 })
+    const second = message('b', 'ok', 'sent', 2, { sentOffset: 300 })
+    const third = message('c', 'ok', 'sending', 3, { sentOffset: 300 })
+    // The row at 300 is the second's; the third says the same and still waits for a row of its own.
+    expect(ids(pendingLiveMessages(rows, 400, [first, second, third]))).toEqual([['c', 300]])
+    // The first's row is its own: a message sent before that row was written does not take it.
+    const early = message('d', 'ok', 'sent', 0, { sentOffset: 50 })
+    expect(ids(pendingLiveMessages(rows.slice(0, 2), 300, [first, early]))).toEqual([['d', 50]])
+  })
+
   it('keeps undelivered messages in send order even when a row says the same', () => {
     const pending = pendingLiveMessages([row(100, 'user', 'ok', 0)], 200, [
       message('c', 'ok', 'failed', 3, { sentOffset: 150 }),

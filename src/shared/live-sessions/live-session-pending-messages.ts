@@ -36,7 +36,8 @@ export function timesSaid(said: string, text: string): number {
  * been read (null before the first read), which may be far past the oldest loaded row.
  *
  * A delivered message is in the transcript: it stays only for the moment between its delivery
- * being seen and the transcript being read that far.
+ * being seen and the transcript being read that far. A message on its way goes as soon as a
+ * loaded row written after it says it, which the transcript can show before its delivery is seen.
  */
 export function pendingLiveMessages<M extends SentMessage>(
   rows: readonly TranscriptRow[],
@@ -49,41 +50,54 @@ export function pendingLiveMessages<M extends SentMessage>(
     newest = Math.max(newest, row.timestamp ?? 0)
     loaded.add(row.transcriptOffset)
   }
-  // Why by time and text at all: a host from before `echoOffset` says only that the message was delivered.
-  let said: string[] | null = null
+  let userRows: { at: number; said: string }[] | null = null
   const taken = new Map<string, number>()
-  const saidInLoadedRows = (text: string): boolean => {
-    said ??= rows
+  /** Whether a loaded user row at one of `offsets` says `text` once more than the messages before this one took. */
+  const takeFromRow = (text: string, offsets: (at: number) => boolean): boolean => {
+    userRows ??= rows
       .filter((row) => row.role === 'user')
-      .map((row) =>
-        spaced(row.blocks.map((block) => (block.type === 'text' ? block.text : '')).join('\n'))
-      )
-    return said.some((row, at) => {
-      const key = `${at}\n${text}`
+      .map((row) => ({
+        at: row.transcriptOffset ?? 0,
+        said: spaced(
+          row.blocks.map((block) => (block.type === 'text' ? block.text : '')).join('\n')
+        )
+      }))
+    return userRows.some((row, index) => {
+      const key = `${index}\n${text}`
       const used = taken.get(key) ?? 0
-      const found = timesSaid(row, text) > used
+      const found = offsets(row.at) && timesSaid(row.said, text) > used
       if (found) {
         taken.set(key, used + 1)
       }
       return found
     })
   }
+  const ordered = [...messages].sort((a, b) => a.createdAt - b.createdAt)
+  // A delivered message's own row is spoken for: a later message saying the same must not take it.
+  for (const { state, text, echoOffset } of ordered) {
+    if (state === 'delivered' && typeof echoOffset === 'number') {
+      takeFromRow(spaced(text), (at) => at === echoOffset)
+    }
+  }
   const inTranscript = (message: M): boolean => {
-    const echo = message.echoOffset
+    const { state, echoOffset: echo, sentOffset: sent } = message
+    if (state === 'sending' || state === 'sent') {
+      return typeof sent === 'number' && takeFromRow(spaced(message.text), (at) => at >= sent)
+    }
+    if (state !== 'delivered') {
+      return false
+    }
     if (typeof echo === 'number') {
       // Offsets only: a row's time is its machine's clock, which need not agree with this one's.
       // Why the loaded row too: a chat's journal counts writes, and its read position is the last one read.
       return readTo === null || echo < readTo || loaded.has(echo)
     }
-    return message.updatedAt < newest || saidInLoadedRows(spaced(message.text))
+    // Why by time and text at all: a host from before `echoOffset` says only that the message was delivered.
+    return message.updatedAt < newest || takeFromRow(spaced(message.text), () => true)
   }
-  const pending: PendingLiveMessage<M>[] = []
-  for (const message of [...messages].sort((a, b) => a.createdAt - b.createdAt)) {
-    if (message.state !== 'delivered' || !inTranscript(message)) {
-      pending.push({ message, at: message.sentOffset ?? null })
-    }
-  }
-  return pending
+  return ordered
+    .filter((message) => !inTranscript(message))
+    .map((message) => ({ message, at: message.sentOffset ?? null }))
 }
 
 /**
