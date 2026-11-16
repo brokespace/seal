@@ -6,6 +6,7 @@ import {
   type RemoteHostPlatform
 } from '../../ssh/remote-host/ssh-remote-platform'
 import { detectRemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform-detection'
+import { ORCAD_ACTIVATION_FILENAME } from '../activation/orcad-activation-record'
 import {
   SEAL_SERVICE_LAUNCH_RECORD_WORD,
   SEAL_SERVICE_LAUNCHD_PLIST_WORD,
@@ -38,6 +39,11 @@ export type SealServiceHostOptions = {
   /** Defaults to the login home's managed root. */
   managedRoot?: string
   signal?: AbortSignal
+}
+
+export type SealServiceRemovalOptions = SealServiceHostOptions & {
+  /** Leaves the service of a host whose server was activated: another desktop may use it. */
+  unlessActivated?: boolean
 }
 
 async function isPosixHost(
@@ -83,7 +89,7 @@ export async function hasSealServiceManager(
 }
 
 /** Answers `left=` followed by what could not be removed; no marker means there is nothing to remove. */
-export function sealServiceRemovalCommand(managedRoot?: string): string {
+export function sealServiceRemovalCommand(managedRoot?: string, unlessActivated = false): string {
   const files = [
     SEAL_SERVICE_LAUNCHER_WORD,
     SEAL_SERVICE_LAUNCH_RECORD_WORD,
@@ -91,6 +97,12 @@ export function sealServiceRemovalCommand(managedRoot?: string): string {
   ]
   return [
     sealServiceBinAssignment(managedRoot),
+    ...(unlessActivated
+      ? [
+          `case "$(cat "$seal_bin/../${ORCAD_ACTIVATION_FILENAME}" 2>/dev/null | tr -d ' \\n')" in`,
+          `*'"active":"'*) echo left=; exit 0;; esac;`
+        ]
+      : []),
     `seal_marker=$(head -n 1 ${SEAL_SERVICE_MANAGER_MARKER_WORD} 2>/dev/null);`,
     'seal_left=;',
     'case "$seal_marker" in',
@@ -106,6 +118,8 @@ export function sealServiceRemovalCommand(managedRoot?: string): string {
     `! { seal_pm2_live && pm2 describe ${SEAL_SERVICE_NAME} >/dev/null 2>&1; } ||`,
     'seal_left="$seal_left pm2-entry";;',
     'esac;',
+    // The marker goes last: while the manager still holds the service, a later removal must find it.
+    '[ -z "$seal_left" ] || { echo "left=$seal_left"; exit 0; };',
     `rm -f ${files.join(' ')} ${SEAL_SERVICE_LAUNCHER_WORD}.log;`,
     `for seal_file in ${files.join(' ')}; do`,
     '[ ! -e "$seal_file" ] || seal_left="$seal_left ${seal_file##*/}"; done;',
@@ -116,12 +130,13 @@ export function sealServiceRemovalCommand(managedRoot?: string): string {
 /** Stops and disables the service and removes all of it; linger stays, the user may rely on it. */
 export async function removeSealService(
   conn: RemoteInstallTransport,
-  options: SealServiceHostOptions = {}
+  options: SealServiceRemovalOptions = {}
 ): Promise<void> {
   if (!(await isPosixHost(conn, options))) {
     return
   }
-  const output = await execCommand(conn, sealServiceRemovalCommand(options.managedRoot), {
+  const command = sealServiceRemovalCommand(options.managedRoot, options.unlessActivated)
+  const output = await execCommand(conn, command, {
     wrapCommand: true,
     timeoutMs: REMOVAL_TIMEOUT_MS,
     signal: options.signal

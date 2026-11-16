@@ -11,6 +11,7 @@ import type { OrcadLaunchSpec } from '../install/orcad-remote-launch'
 import { sealServiceManagedRoot } from './seal-server-launch-record'
 import {
   parseSealServiceInstallAnswer,
+  SEAL_ENABLE_LINGER_COMMAND,
   sealServiceInstallCommand
 } from './seal-service-install-commands'
 import {
@@ -25,6 +26,8 @@ import {
   type SealServiceWish
 } from './seal-service-policy'
 import {
+  parseSealLinger,
+  parseSealServiceAnswer,
   parseSealServiceProbe,
   sealServiceOutcome,
   sealServiceProbeCommand
@@ -91,6 +94,26 @@ async function installWith(
   return null
 }
 
+/** An install cut short before linger was asked for leaves a service that stops at logout. */
+async function withLinger(
+  run: SealServiceRemoteRun,
+  manager: SealServiceManager,
+  probe: SealServiceProbe
+): Promise<SealServiceProbe> {
+  if (manager !== 'systemd-user' || probe.linger === true) {
+    return probe
+  }
+  try {
+    const answer = parseSealServiceAnswer(await run(SEAL_ENABLE_LINGER_COMMAND))
+    return { ...probe, linger: parseSealLinger(answer.get('linger')) }
+  } catch (error) {
+    if (endsTheLaunch(error)) {
+      throw error
+    }
+    return probe
+  }
+}
+
 /** The first candidate that holds the service, installing it where the host has none yet. */
 async function keepRunningWith(
   run: SealServiceRemoteRun,
@@ -104,7 +127,7 @@ async function keepRunningWith(
     }
     const outcome =
       manager === probe.installed && probe.registered
-        ? sealServiceOutcome(manager, probe)
+        ? sealServiceOutcome(manager, await withLinger(run, manager, probe))
         : await installWith(run, manager, managedRoot, probe)
     if (outcome) {
       return { manager, outcome }

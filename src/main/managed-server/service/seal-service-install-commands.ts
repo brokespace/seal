@@ -55,11 +55,13 @@ function registerCommand(manager: SealServiceManager, managedRoot: string): stri
   }
 }
 
+/** Refused where polkit is absent or denies it: the service then lasts only while the user manager runs. */
+export const SEAL_ENABLE_LINGER_COMMAND = `loginctl enable-linger "$(id -un)" >/dev/null 2>&1; ${SEAL_LINGER_ANSWER}`
+
 function afterRegisterCommand(manager: SealServiceManager): string {
   switch (manager) {
     case 'systemd-user':
-      // Refused where polkit is absent or denies it: the service then lasts only while the user manager runs.
-      return `loginctl enable-linger "$(id -un)" >/dev/null 2>&1; ${SEAL_LINGER_ANSWER}`
+      return SEAL_ENABLE_LINGER_COMMAND
     case 'launchd':
       return ''
     case 'pm2':
