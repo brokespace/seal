@@ -59,7 +59,7 @@ export function LiveSessionsBadge({
         current && 'border-agent-working/60 text-foreground'
       )}
     >
-      <AgentStateDot state={liveSessionDotState(badge.status)} title={null} />
+      <AgentStateDot state={liveSessionDotState(badge.status)} label={status} title={null} />
       {badge.count}
     </button>
   )

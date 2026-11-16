@@ -130,6 +130,10 @@ function turnOf(records: TranscriptRecord[]): Turn {
           settled: true
         }
       }
+      if (record.subtype === 'scheduled_task_fire') {
+        // A wake-up the agent scheduled starts a turn with no prompt from the user.
+        return WORKING
+      }
       if (record.subtype === 'turn_duration' || record.subtype === 'stop_hook_summary') {
         return (
           errorBefore(records, i) ?? {

@@ -43,22 +43,33 @@ export function parseHookStates(files: { path: string; text: string }[]): HookSt
   })
 }
 
+/** The transcript's record of a turn's end lands this long after the hook that reported the turn. */
+const TURN_END_AFTER_HOOK_MS = 3_000
+
 export function hookStatus(
-  state: string,
+  hook: Pick<HookState, 'state' | 'updatedMs'>,
   running: boolean,
   summary: TranscriptSummary | undefined,
   /** The host listed its processes and this agent is not among them, nor still writing. */
   gone: boolean
 ): LiveSessionStatus | null {
-  switch (state) {
+  // No hook fires for an interrupted turn, so the file still says `working` after the transcript
+  // has recorded the turn's end.
+  const endedSince =
+    summary?.phase === 'turn-ended' &&
+    summary.settled &&
+    summary.lastAt !== null &&
+    summary.lastAt > hook.updatedMs + TURN_END_AFTER_HOOK_MS
+  switch (hook.state) {
     // An agent killed mid-turn or at its prompt never clears the file; it speaks for no one then.
     case 'working':
-      return gone ? null : 'working'
+      return gone || endedSince ? null : 'working'
     case 'needs':
-      return gone ? null : 'needs-permission'
+      return gone || endedSince ? null : 'needs-permission'
     case 'done':
     case 'idle':
-      return running ? restingStatus(summary) : 'done'
+      // The hook that closes a failed turn says `done` like any other: the failure stays the news.
+      return running ? restingStatus(summary) : summary?.phase === 'errored' ? 'errored' : 'done'
     default:
       return null
   }

@@ -7,6 +7,7 @@ import type {
   LiveSubagentStatus
 } from '../../../shared/live-sessions/live-session-activity'
 import { claudeTodos } from './claude-transcript-activity'
+import type { ClaudeBackgroundLaunch } from './claude-background-launches'
 import type { ClaudeActivityState, ClaudeAgentLaunch } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
 import type { SummarizedTranscript } from './session-assembly'
@@ -17,6 +18,8 @@ const SUBAGENT_FRESH_MS = 3 * 60_000
 const SUBAGENT_STALL_MS = 30 * 60_000
 /** A launch with no transcript and no end in sight for this long is over. */
 const LAUNCH_STALE_MS = 6 * 60 * 60_000
+/** A monitor's last notice, or a wake-up's first record, lands a moment after its time is up. */
+const SELF_END_GRACE_MS = 60_000
 const MAX_LISTED = 40
 
 export type SessionActivityInput = {
@@ -26,6 +29,11 @@ export type SessionActivityInput = {
   running: boolean
   /** Its main turn is in progress, so subagents that block the turn can be running. */
   turnOpen: boolean
+  /**
+   * What the agent's own state or its process tree says of commands left in the background:
+   * some still run, none do, or (null) neither can tell.
+   */
+  backgroundShells?: 'running' | 'none' | null
   nowMs: number
 }
 
@@ -75,6 +83,27 @@ function launchStatus(launch: ClaudeAgentLaunch, input: SessionActivityInput): L
   return launch.startedAt !== null && input.nowMs - launch.startedAt > LAUNCH_STALE_MS
     ? 'completed'
     : 'running'
+}
+
+function backgroundTaskStatus(
+  task: ClaudeBackgroundLaunch,
+  input: SessionActivityInput
+): LiveSubagentStatus {
+  if (task.status !== 'running') {
+    return task.status
+  }
+  if (!input.running) {
+    return 'stopped'
+  }
+  if (task.endsAt !== null && input.nowMs > task.endsAt + SELF_END_GRACE_MS) {
+    return 'completed'
+  }
+  // A command whose end the transcript never showed (its notice fell between two reads, the agent
+  // was restarted) is over once the agent has nothing left in the background.
+  if (task.runsCommand && input.backgroundShells === 'none') {
+    return 'completed'
+  }
+  return 'running'
 }
 
 function newestFirst<T extends { status: LiveSubagentStatus }>(
@@ -128,15 +157,29 @@ export function claudeSessionActivity(input: SessionActivityInput): LiveSessionA
       })
     }
   }
-  const tasks: LiveBackgroundTask[] = [...(input.state?.shells.values() ?? [])]
-    .filter((shell) => shell.taskId !== null)
-    .map((shell) => ({
-      id: shell.taskId!,
-      label: shell.label,
-      status: shell.status === 'running' && !input.running ? 'stopped' : shell.status,
-      startedAt: shell.startedAt,
-      summary: shell.summary
+  const tasks: LiveBackgroundTask[] = [...(input.state?.background.values() ?? [])]
+    .filter((task) => task.taskId !== null)
+    .map((task) => ({
+      id: task.taskId!,
+      label: task.label,
+      status: backgroundTaskStatus(task, input),
+      startedAt: task.startedAt,
+      summary: task.summary
     }))
+  if (
+    input.running &&
+    input.backgroundShells === 'running' &&
+    !tasks.some((task) => task.status === 'running')
+  ) {
+    // The launch scrolled out of what Seal read of the transcript; the agent still vouches for it.
+    tasks.push({
+      id: 'background',
+      label: 'Background command',
+      status: 'running',
+      startedAt: null,
+      summary: null
+    })
+  }
   return {
     subagents: newestFirst(subagents, (s) => s.lastActivityAt ?? 0),
     tasks: newestFirst(tasks, (t) => t.startedAt ?? 0),
@@ -193,6 +236,7 @@ export function sessionActivityOf(input: {
   helperThreads: readonly SummarizedTranscript[]
   running: boolean
   turnOpen: boolean
+  backgroundShells?: 'running' | 'none' | null
   nowMs: number
 }): LiveSessionActivity {
   const { transcript, running, nowMs } = input
@@ -202,6 +246,7 @@ export function sessionActivityOf(input: {
       files: transcript?.subagents ?? [],
       running,
       turnOpen: input.turnOpen,
+      backgroundShells: input.backgroundShells ?? null,
       nowMs
     })
   }
@@ -217,9 +262,21 @@ export function sessionActivityOf(input: {
     lastActivityAt: helper.summary.lastAt ?? helper.mtimeMs,
     transcriptPath: helper.path
   }))
+  // A terminal the rollout still holds counts while the agent runs and a command still runs under
+  // it (or the host cannot say).
+  const live = running && input.backgroundShells !== 'none'
+  const tasks: LiveBackgroundTask[] = [...(transcript.codexTerminals?.running.values() ?? [])].map(
+    (terminal) => ({
+      id: terminal.sessionId,
+      label: terminal.command ?? 'Background terminal',
+      status: live ? 'running' : running ? 'completed' : 'stopped',
+      startedAt: terminal.startedAt,
+      summary: null
+    })
+  )
   return {
     subagents: newestFirst(subagents, (s) => s.lastActivityAt ?? 0),
-    tasks: [],
+    tasks: newestFirst(tasks, (t) => t.startedAt ?? 0),
     todos: transcript.codexPlan ?? []
   }
 }

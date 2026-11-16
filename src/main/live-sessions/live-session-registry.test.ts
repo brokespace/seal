@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LiveSessionRegistryEvent } from '../../shared/live-sessions/live-session-types'
 import type { DiscoveredFile } from './discovery/discovery-output'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
@@ -14,8 +14,14 @@ const WORKING = '04186322-14da-4a67-890c-c5f4a754e99f'
 const ERRORED = 'e503cd0b-d59c-4221-a949-3c685cf99554'
 const FORK = '7f01a62c-a158-4451-a43b-a2e253ed713e'
 
-function transcript(fixture: string, sessionId: string, ageMs: number): DiscoveredFile {
-  const text = readFileSync(join(__dirname, fixture), 'utf8')
+function transcript(
+  fixture: string,
+  sessionId: string,
+  ageMs: number,
+  records = Infinity
+): DiscoveredFile {
+  const lines = readFileSync(join(__dirname, fixture), 'utf8').split('\n')
+  const text = lines.slice(0, records).join('\n')
   return {
     provider: 'claude',
     path: `${DIR}/${sessionId}.jsonl`,
@@ -27,29 +33,51 @@ function transcript(fixture: string, sessionId: string, ageMs: number): Discover
 }
 
 /** A machine whose processes, transcripts and Seal panes the test changes between scans. */
-function machine() {
-  const state: { running: boolean; files: DiscoveredFile[]; panes: SealPane[] } = {
+function machine(clock: () => number = () => NOW) {
+  const state: {
+    running: boolean
+    files: DiscoveredFile[]
+    panes: SealPane[]
+    /** The machine stopped answering: its scans fail. */
+    down: boolean
+  } = {
     running: false,
     files: [],
-    panes: []
+    panes: [],
+    down: false
   }
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
-    run: async () =>
-      [
+    run: async () => {
+      if (state.down) {
+        throw new Error('ssh: connect to host dev-box: Connection timed out')
+      }
+      return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
         ...(state.running ? ['@@PROC 4100 1 pts/3 claude', '@@CWD 4100 /srv/shop'] : []),
         '@@DONE'
-      ].join('\n'),
+      ].join('\n')
+    },
     transcriptFiles: async () => state.files
   }
   const events: LiveSessionRegistryEvent[] = []
+  const paneListeners = new Set<() => void>()
   const registry = new LiveSessionRegistry({
     localMachine: host.machine,
     hosts: () => [host],
     sealPanes: () => state.panes,
-    now: () => NOW
+    subscribeSealPanes: (onChange) => {
+      paneListeners.add(onChange)
+      return () => paneListeners.delete(onChange)
+    },
+    intervalsMs: { local: 60_000, ssh: 60_000 },
+    now: clock
   })
+  /** A hook event changed a pane. */
+  const paneChanged = (panes: SealPane[]) => {
+    state.panes = panes
+    paneListeners.forEach((listener) => listener())
+  }
   registry.subscribe((event) => events.push(event))
   const rows = async () => {
     await registry.refresh()
@@ -59,7 +87,7 @@ function machine() {
     events.flatMap((e) =>
       e.type === 'remove' && e.replacedBy ? [[e.sessionId, e.replacedBy]] : []
     )
-  return { state, registry, rows, replaced }
+  return { state, registry, rows, replaced, paneChanged }
 }
 
 const sealPane: SealPane = {
@@ -73,7 +101,8 @@ const sealPane: SealPane = {
   transcriptPath: `${DIR}/${WORKING}.jsonl`,
   prompt: 'Why does checkout double-charge when the cart has a coupon?',
   receivedAt: NOW - 1_000,
-  permission: null
+  permission: null,
+  silent: false
 }
 
 describe('one row per agent session', () => {
@@ -147,5 +176,59 @@ describe('one row per agent session', () => {
       'Failing build',
       true
     ])
+  })
+})
+
+describe('a machine that stops answering', () => {
+  it('stops vouching for its sessions after three failed scans, and shows them again once it answers', async () => {
+    const { state, registry } = machine()
+    state.running = true
+    state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
+    const shown = async () => {
+      await registry.refresh()
+      const { sessions, hostErrors } = registry.getSnapshot()
+      return { statuses: sessions.map((s) => s.status), error: hostErrors.local ?? null }
+    }
+    expect(await shown()).toEqual({ statuses: ['working'], error: null })
+
+    state.down = true
+    const timedOut = 'ssh: connect to host dev-box: Connection timed out'
+    // One or two lost scans are a hiccup: the last reading stands.
+    expect(await shown()).toEqual({ statuses: ['working'], error: timedOut })
+    expect(await shown()).toEqual({ statuses: ['working'], error: timedOut })
+    expect(await shown()).toEqual({ statuses: [], error: timedOut })
+
+    state.down = false
+    expect(await shown()).toEqual({ statuses: ['working'], error: null })
+  })
+})
+
+describe('a Seal pane whose status changes between scans', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('reads its machine again at once, not a scan later', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(NOW)
+    const { state, registry, paneChanged } = machine(() => Date.now())
+    const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
+    const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
+    state.running = true
+    state.files = [transcript(recorded, WORKING, 0, 7)]
+    state.panes = [{ ...sealPane, status: 'your-turn' }]
+    registry.start()
+    try {
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(shown()).toEqual(['waiting-task'])
+
+      // The command ends and wakes Claude, which answers and stops again.
+      state.files = [transcript(recorded, WORKING, 0)]
+      paneChanged([{ ...sealPane, status: 'working' }])
+      paneChanged([{ ...sealPane, status: 'your-turn' }])
+      // The scan that read the command as running is a minute from its next.
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(shown()).toEqual(['your-turn'])
+    } finally {
+      registry.stop()
+    }
   })
 })

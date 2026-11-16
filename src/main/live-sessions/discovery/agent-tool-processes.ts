@@ -11,16 +11,23 @@ const COMMAND_KINDS: ReadonlySet<DiscoveredChild['kind']> = new Set([
 /** Codex runs commands from its app-server, which outlives the terminal that started it and serves every Codex session on the host. */
 const CODEX_APP_SERVER = /(^|\/)codex(\.js)? app-server( |$)/
 
-/**
- * When each command under an agent started (epoch ms, host clock); null when the host listed no
- * processes, so a caller cannot tell a prompt from a running command.
- */
-export type ToolProcessStarts = (pid: number, provider: LiveSessionProvider) => number[] | null
+export type ToolProcess = {
+  /** When it started (epoch ms, host clock). */
+  startedAt: number
+  /** Claude Code's own Bash tool started it: the one child that is surely a command of the agent's. */
+  claudeBash: boolean
+}
 
-export function toolProcessStarts(
+/**
+ * The commands running under an agent; null when the host listed no processes, so a caller
+ * cannot tell a prompt from a running command.
+ */
+export type ToolProcesses = (pid: number, provider: LiveSessionProvider) => ToolProcess[] | null
+
+export function toolProcesses(
   output: Pick<DiscoveryOutput, 'processes'> & Partial<Pick<DiscoveryOutput, 'children'>>,
   nowMs: number
-): ToolProcessStarts {
+): ToolProcesses {
   const children = output.children ?? null
   if (children === null) {
     return () => null
@@ -46,5 +53,8 @@ export function toolProcessStarts(
   return (pid, provider) =>
     under(provider === 'codex' ? [pid, ...appServers] : [pid])
       .filter((child) => COMMAND_KINDS.has(child.kind))
-      .map((child) => nowMs - child.elapsedMs)
+      .map((child) => ({
+        startedAt: nowMs - child.elapsedMs,
+        claudeBash: child.kind === 'snapshot'
+      }))
 }

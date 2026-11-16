@@ -5,9 +5,14 @@ import type {
   LiveSessionRegistrySnapshot
 } from '../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
-import { HostSessionScanner, scanLimitsFor } from './discovery/host-session-scanner'
 import { mergeSealPanes, type SealPane } from './seal-panes/seal-pane-sessions'
 import { LiveSessionStatusHold } from './live-session-status-hold'
+import {
+  type HostScanState,
+  newHostScanState,
+  nextScanDelayMs,
+  SealPaneStatusChanges
+} from './live-session-host-scan-state'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
@@ -16,6 +21,11 @@ export type LiveSessionRegistryDeps = {
   sealPanes: () => SealPane[]
   /** Pane changes come between scans; the registry republishes on each. */
   subscribeSealPanes?: (onChange: () => void) => () => void
+  /**
+   * Has the pane's host check its agent process. A killed agent fires no hook, so its pane would
+   * keep its last status; the host drops the pane's row once it finds the process gone.
+   */
+  confirmSealPaneAgent?: (paneKey: string) => void
   /** Sessions the user removed from Seal; never published. */
   isRemoved?: (session: LiveSession) => boolean
   /** Adds what the user set on a session in Seal (its name, its pin). */
@@ -26,30 +36,17 @@ export type LiveSessionRegistryDeps = {
   log?: (message: string, error?: unknown) => void
 }
 
-type HostState = {
-  host: LiveSessionHost
-  scanner: HostSessionScanner
-  sessions: LiveSession[]
-  nextScanAt: number
-  scanning: boolean
-  /** Scans in a row that found nothing new; each stretches the wait, up to MAX_IDLE_STRETCH. */
-  idleScans: number
-  /** Scans that returned, for the status hold: a session leaves "working" on the second that says so. */
-  scans: number
-  failures: number
-}
-
 /** New SSH connections are picked up within this. */
 const HOST_SYNC_MS = 5_000
-const MAX_IDLE_STRETCH = 2
-const MAX_FAILURE_STRETCH = 4
+/** A machine that failed this many scans in a row no longer vouches for what its sessions do. */
+const UNREACHABLE_AFTER_FAILURES = 3
 
 /**
  * Every Claude Code and Codex session on every connected machine, whether Seal started it or not.
  * Consumers read `getSnapshot()` once, then apply `subscribe()` events in revision order.
  */
 export class LiveSessionRegistry {
-  private readonly hosts = new Map<string, HostState>()
+  private readonly hosts = new Map<string, HostScanState>()
   private readonly published = new Map<string, { session: LiveSession; json: string }>()
   private readonly hostErrors = new Map<string, string>()
   /** Ids a session had before its transcript named it: a fresh agent is `pid-<pid>` until its first prompt. */
@@ -61,6 +58,7 @@ export class LiveSessionRegistry {
   private releaseSealPanes: (() => void) | null = null
   private decorator: ((session: LiveSession) => LiveSession) | null = null
   private readonly statusHold = new LiveSessionStatusHold()
+  private readonly paneStatuses = new SealPaneStatusChanges()
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }
 
@@ -74,8 +72,16 @@ export class LiveSessionRegistry {
       return
     }
     this.running = true
-    this.releaseSealPanes = this.deps.subscribeSealPanes?.(() => this.publish()) ?? null
+    this.releaseSealPanes = this.deps.subscribeSealPanes?.(() => this.onSealPanesChanged()) ?? null
     this.tick()
+  }
+
+  private onSealPanesChanged(): void {
+    const changed = this.paneStatuses.mark(this.deps.sealPanes(), this.hosts.values(), this.now())
+    this.publish()
+    if (changed) {
+      this.schedule()
+    }
   }
 
   stop(): void {
@@ -179,23 +185,10 @@ export class LiveSessionRegistry {
     }
     for (const [hostId, host] of current) {
       if (!this.hosts.has(hostId)) {
-        this.hosts.set(hostId, {
-          host,
-          scanner: new HostSessionScanner(
-            {
-              machine: host.machine,
-              run: (script, options) => this.hosts.get(hostId)!.host.run(script, options),
-              transcriptFiles: host.transcriptFiles
-            },
-            scanLimitsFor(host.machine)
-          ),
-          sessions: [],
-          nextScanAt: 0,
-          scanning: false,
-          idleScans: 0,
-          scans: 0,
-          failures: 0
-        })
+        this.hosts.set(
+          hostId,
+          newHostScanState(host, () => this.hosts.get(hostId)!.host)
+        )
       }
     }
     if (changed) {
@@ -203,11 +196,12 @@ export class LiveSessionRegistry {
     }
   }
 
-  private async scanHost(state: HostState): Promise<void> {
+  private async scanHost(state: HostScanState): Promise<void> {
     if (state.scanning) {
       return
     }
     state.scanning = true
+    state.paneChanged = false
     const hostId = state.host.machine.hostId
     try {
       const result = await state.scanner.scan(this.now())
@@ -228,14 +222,15 @@ export class LiveSessionRegistry {
       state.failures++
       this.deps.log?.(`[live-sessions] scan of ${hostId} failed`, error)
       this.setHostError(hostId, error instanceof Error ? error.message : String(error))
+      // Its sessions' last statuses would stand for as long as it stays silent; they leave the
+      // list as they do when it disconnects, and its error stays to say why.
+      if (state.failures === UNREACHABLE_AFTER_FAILURES && state.sessions.length > 0) {
+        state.sessions = []
+        this.publish()
+      }
     } finally {
       state.scanning = false
-      const base = state.host.machine.kind === 'local' ? this.intervals.local : this.intervals.ssh
-      const stretch =
-        state.failures > 0
-          ? 2 ** Math.min(state.failures, MAX_FAILURE_STRETCH)
-          : 2 ** Math.min(state.idleScans, MAX_IDLE_STRETCH)
-      state.nextScanAt = this.now() + base * stretch
+      state.nextScanAt = this.now() + nextScanDelayMs(state, this.intervals)
       this.schedule()
     }
   }
@@ -266,7 +261,12 @@ export class LiveSessionRegistry {
     const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
     const decorate = this.decorator
     const now = this.now()
-    const merged = mergeSealPanes(discovered, this.deps.sealPanes(), this.deps.localMachine)
+    const merged = mergeSealPanes(
+      discovered,
+      this.deps.sealPanes(),
+      this.deps.localMachine,
+      this.deps.confirmSealPaneAgent
+    )
       .filter((session) => !this.deps.isRemoved?.(session))
       .map((session) =>
         this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)

@@ -9,6 +9,7 @@ import { assembleHostSessions, type SummarizedTranscript } from './session-assem
 import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
 import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
 import { summarizeSubagentFile, type SubagentFileSummary } from './claude-subagent-files'
+import { foldCodexTerminals, newCodexTerminalState } from './codex-background-terminals'
 import { codexPlan } from './codex-transcript-activity'
 import { recordsOf } from './transcript-records'
 
@@ -113,8 +114,15 @@ export class HostSessionScanner {
       machine: this.host.machine,
       output,
       transcripts,
+      unreadPaths: new Set([...listed].filter((path) => !this.cache.has(path))),
       nowMs
     })
+    for (const session of sessions) {
+      const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
+      if (transcript && session.pid !== null) {
+        transcript.agentPid = session.pid
+      }
+    }
     const ids = new Set(sessions.map((s) => s.id))
     for (const id of this.firstSeen.keys()) {
       if (!ids.has(id)) {
@@ -174,8 +182,11 @@ export class HostSessionScanner {
     // A file that shrank was rewritten: what the old bytes launched no longer holds.
     const grew = cached !== undefined && file.size > cached.size
     const claudeActivity = (grew ? cached.claudeActivity : undefined) ?? newClaudeActivityState()
+    const codexTerminals = (grew ? cached.codexTerminals : undefined) ?? newCodexTerminalState()
     if (file.provider === 'claude') {
       foldClaudeActivity(claudeActivity, records)
+    } else {
+      foldCodexTerminals(codexTerminals, records)
     }
     const next: CachedTranscript = {
       path: file.path,
@@ -191,9 +202,13 @@ export class HostSessionScanner {
       },
       ...(file.provider === 'claude'
         ? { claudeActivity }
-        : { codexPlan: codexPlan(records, (grew ? cached.codexPlan : null) ?? null) }),
+        : {
+            codexPlan: codexPlan(records, (grew ? cached.codexPlan : null) ?? null),
+            codexTerminals
+          }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
-      subagents: cached?.subagents ?? []
+      subagents: cached?.subagents ?? [],
+      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
     }
     this.cache.set(file.path, next)
     if (!cached) {
