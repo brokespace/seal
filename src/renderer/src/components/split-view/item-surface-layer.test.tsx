@@ -102,3 +102,22 @@ it('keeps what was typed to a session when a neighbouring pane closes and when t
   expect(composer()).toBe(field)
   expect(field.value).toBe('unsent words')
 })
+
+it('keeps what was typed to a session while another tab of the session page is in front', async () => {
+  const [first, second] = SESSIONS
+  liveSessionTabsStore.adopt([first.id, second.id])
+  liveSessionTabsStore.activate(first.id)
+  useAppStore.getState().openAgentSessionTabs()
+  render(<MainArea />)
+  const field = await waitFor(composer)
+  fireEvent.change(field, { target: { value: 'unsent words' } })
+
+  act(() => liveSessionTabsStore.activate(second.id))
+  await waitFor(() =>
+    expect(screen.getAllByPlaceholderText('Message this session')).toHaveLength(2)
+  )
+  act(() => liveSessionTabsStore.activate(first.id))
+
+  expect(field.isConnected).toBe(true)
+  expect(field.value).toBe('unsent words')
+})

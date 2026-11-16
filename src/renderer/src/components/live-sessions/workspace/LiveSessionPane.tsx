@@ -44,10 +44,12 @@ type Transcript = ReturnType<typeof useLiveTranscript>
 /** A subagent's own transcript, read-only, in place of its session's chat. */
 function SubagentTranscript({
   session,
-  transcript
+  transcript,
+  isVisible
 }: {
   session: LiveSession
   transcript: LiveTranscriptState & Pick<Transcript, 'loadEarlier'>
+  isVisible?: boolean
 }): React.JSX.Element {
   const chat = useMemo<NativeChatLiveSession>(() => {
     const phase = transcript.phase
@@ -65,7 +67,14 @@ function SubagentTranscript({
       loadEarlier: transcript.loadEarlier
     }
   }, [session.provider, session.providerSessionId, transcript])
-  return <NativeChatMessageList session={chat} isWorking={false} expandSignal={false} />
+  return (
+    <NativeChatMessageList
+      session={chat}
+      isVisible={isVisible}
+      isWorking={false}
+      expandSignal={false}
+    />
+  )
 }
 
 export type LiveSessionPaneViewProps = {
@@ -91,6 +100,8 @@ export type LiveSessionPaneViewProps = {
   }
   /** The header's "…" menu; fixtures leave it out. */
   menu?: React.ReactNode
+  /** False while the view is kept behind another tab. */
+  visible?: boolean
 }
 
 /** One session's view without its data sources, so fixtures can render it. */
@@ -203,7 +214,11 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
                   })}
                 </span>
               </div>
-              <SubagentTranscript session={session} transcript={props.subagentTranscript} />
+              <SubagentTranscript
+                session={session}
+                transcript={props.subagentTranscript}
+                isVisible={props.visible}
+              />
             </>
           ) : (
             <LiveSessionChat
@@ -216,6 +231,7 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
               answering={props.answering}
               composerFocus={props.composerFocus}
               reveal={reveal}
+              isVisible={props.visible}
             />
           )}
         </div>
@@ -273,12 +289,14 @@ export function LiveSessionPane({
   session,
   messages,
   focus,
-  now
+  now,
+  visible
 }: {
   session: LiveSession
   messages: ReadonlyMap<string, LiveMessage>
   focus: LiveSessionTabsState['focus']
   now: number
+  visible?: boolean
 }): React.JSX.Element {
   const transcript = useLiveTranscript(session.id)
   const recap = useSessionRecap(session.id, session.recap)
@@ -362,6 +380,7 @@ export function LiveSessionPane({
       now={now}
       recap={recapProps}
       menu={<SessionMenuButton session={session} />}
+      visible={visible}
     />
   )
 }

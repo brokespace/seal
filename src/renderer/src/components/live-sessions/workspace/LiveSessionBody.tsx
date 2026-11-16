@@ -13,7 +13,14 @@ function Notice({ children }: { children: React.ReactNode }): React.JSX.Element 
 }
 
 /** One session's chat, or why there is none to show. The session page and split-view panes draw it. */
-export function LiveSessionBody({ sessionId }: { sessionId: string | null }): React.JSX.Element {
+export function LiveSessionBody({
+  sessionId,
+  visible
+}: {
+  sessionId: string | null
+  /** False while the view is kept behind another tab. */
+  visible?: boolean
+}): React.JSX.Element {
   const t = useTranslate()
   const registry = useLiveSessions()
   const focus = useLiveSessionTabs().focus
@@ -29,6 +36,7 @@ export function LiveSessionBody({ sessionId }: { sessionId: string | null }): Re
         messages={registry.messages}
         focus={focus}
         now={now}
+        visible={visible}
       />
     )
   }

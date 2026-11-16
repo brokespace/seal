@@ -1,4 +1,4 @@
-import { Activity, useMemo, useRef, useState } from 'react'
+import { Activity, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { useLiveSessionTabs } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
@@ -6,10 +6,12 @@ import { resolveProjectOverviewRepo } from '@/components/project-overview/projec
 import { cn } from '@/lib/class-names'
 import { useAppStore } from '@/store/index'
 import { ITEM_SURFACE_PANE_ATTRIBUTE, SINGLE_VIEW_ITEM_SLOT_ID } from './ItemSurfaceSlot'
+import { noteKeyboardInItemSurface } from './pane-keyboard-focus'
 import { closeSplitViewItems, focusSplitViewPane } from './split-view-commands'
 import { useSplitViewShowing } from './split-view-showing'
 import { useSplitView, useSplitViewNarrow, visibleSplitViewPaneIds } from './split-view-store'
 import { splitViewItemKey, type SplitViewItem } from './split-view-types'
+import { useKeptScrollOffsets } from './use-kept-scroll-offsets'
 import { useSurfaceOverSlot } from './use-surface-over-slot'
 
 type SurfaceItem = Exclude<SplitViewItem, { kind: 'workspace' }>
@@ -23,42 +25,51 @@ type ItemSurfacePlace = {
   slotId: string | null
 }
 
-/** Every session and project the main area holds: the grid's tabs, or single view's one page. */
+/**
+ * Every session and project the main area holds: the grid's tabs, the agent-session page's tabs
+ * and single view's project page.
+ */
 function useItemSurfacePlaces(): ItemSurfacePlace[] {
   const state = useSplitView()
   const narrow = useSplitViewNarrow()
   const showing = useSplitViewShowing()
   const activeView = useAppStore((s) => s.activeView)
   const project = useAppStore((s) => s.projectOverviewTarget)
-  const sessionId = useLiveSessionTabs().activeId
+  const { tabs: sessionTabs, activeId: sessionId } = useLiveSessionTabs()
   const repos = useAppStore((s) => s.repos)
   return useMemo(() => {
-    // The pane or the page says a project is gone, with the way out.
-    const shows = (item: SurfaceItem): boolean =>
-      item.kind === 'session' || resolveProjectOverviewRepo(repos, item) !== null
-    if (state.layout) {
-      const onScreen = new Set(showing ? visibleSplitViewPaneIds(state, narrow) : [])
-      return Object.entries(state.panes).flatMap(([paneId, pane]) =>
-        pane.tabs.flatMap(({ item }): ItemSurfacePlace[] => {
-          if (item.kind === 'workspace' || !shows(item)) {
-            return []
-          }
-          const key = splitViewItemKey(item)
-          const front = onScreen.has(paneId) && pane.activeKey === key
-          return [{ key, item, paneId, slotId: front ? paneId : null }]
-        })
-      )
+    const places = new Map<string, ItemSurfacePlace>()
+    const hold = (item: SurfaceItem, paneId: string | null, slotId: string | null): void => {
+      const key = splitViewItemKey(item)
+      // The pane or the page says a project is gone, with the way out.
+      if (
+        !places.has(key) &&
+        (item.kind === 'session' || resolveProjectOverviewRepo(repos, item))
+      ) {
+        places.set(key, { key, item, paneId, slotId })
+      }
     }
-    const item: SurfaceItem | null =
-      activeView === 'sessions' && sessionId
-        ? { kind: 'session', sessionId }
-        : activeView === 'project' && project
-          ? { kind: 'project', ...project }
-          : null
-    return item && shows(item)
-      ? [{ key: splitViewItemKey(item), item, paneId: null, slotId: SINGLE_VIEW_ITEM_SLOT_ID }]
-      : []
-  }, [state, narrow, showing, activeView, project, sessionId, repos])
+    const grid = state.layout !== null
+    const onScreen = new Set(grid && showing ? visibleSplitViewPaneIds(state, narrow) : [])
+    for (const [paneId, pane] of grid ? Object.entries(state.panes) : []) {
+      for (const { item } of pane.tabs) {
+        if (item.kind !== 'workspace') {
+          const front = onScreen.has(paneId) && pane.activeKey === splitViewItemKey(item)
+          hold(item, paneId, front ? paneId : null)
+        }
+      }
+    }
+    // The session page's tabs stay loaded behind one another, and behind a grid, as a pane's do.
+    for (const id of sessionTabs) {
+      const front = !grid && activeView === 'sessions' && id === sessionId
+      hold({ kind: 'session', sessionId: id }, null, front ? SINGLE_VIEW_ITEM_SLOT_ID : null)
+    }
+    if (!grid && activeView === 'project' && project) {
+      hold({ kind: 'project', ...project }, null, SINGLE_VIEW_ITEM_SLOT_ID)
+    }
+    // A surface that changes place among the others in the page is detached, and so scrolled back.
+    return [...places.values()].sort((a, b) => (a.key < b.key ? -1 : 1))
+  }, [state, narrow, showing, activeView, project, sessionTabs, sessionId, repos])
 }
 
 /** React hands a surface the events of its menus too, which are drawn outside it. */
@@ -70,12 +81,21 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
   const { key, item, paneId, slotId } = place
   const closeProjectOverview = useAppStore((s) => s.closeProjectOverview)
   const surfaceRef = useRef<HTMLDivElement>(null)
-  useSurfaceOverSlot(surfaceRef, slotId)
   const front = slotId !== null
+  useSurfaceOverSlot(surfaceRef, slotId, true)
+  useKeptScrollOffsets(surfaceRef, front)
+  // Its effects stop one render after it hides, so the chat first learns that it is out of sight.
+  const wasFront = useDeferredValue(front)
   const focusPane = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (paneId && isInSurface(event)) {
       focusSplitViewPane(paneId)
     }
+  }
+  const noteFocus = (event: React.FocusEvent<HTMLElement>): void => {
+    if (isInSurface(event) && event.target instanceof HTMLElement) {
+      noteKeyboardInItemSurface(event.currentTarget, event.target)
+    }
+    focusPane(event)
   }
   return (
     <div
@@ -88,13 +108,13 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
         !front && 'hidden'
       )}
       onPointerDownCapture={focusPane}
-      onFocusCapture={focusPane}
+      onFocusCapture={noteFocus}
     >
       {/* Out of sight it keeps its draft and its place, and stops marking what arrives as seen. */}
-      <Activity mode={front ? 'visible' : 'hidden'}>
+      <Activity mode={front || wasFront ? 'visible' : 'hidden'}>
         {item.kind === 'session' ? (
           <div className="flex min-h-0 flex-1">
-            <LiveSessionBody sessionId={item.sessionId} />
+            <LiveSessionBody sessionId={item.sessionId} visible={front} />
           </div>
         ) : (
           <ProjectOverviewBody

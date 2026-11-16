@@ -5,11 +5,13 @@ const BOX_PROPERTIES = ['display', 'inset', 'top', 'left', 'width', 'height']
 
 /**
  * Lays a retained surface over a slot by writing its box from the slot's rect, so a move, resize,
- * split or maximize re-renders and remounts nothing. With no slot id the surface is left alone.
+ * split or maximize re-renders and remounts nothing. With no slot id the surface gets its own
+ * box back, or keeps the slot's (`keepsBox`) to have a size to scroll in when it shows again.
  */
 export function useSurfaceOverSlot(
   surfaceRef: RefObject<HTMLDivElement | null>,
-  slotId: string | null
+  slotId: string | null,
+  keepsBox = false
 ): void {
   useLayoutEffect(() => {
     const surface = surfaceRef.current
@@ -19,7 +21,7 @@ export function useSurfaceOverSlot(
     }
     const { style } = surface
     if (!slotId) {
-      for (const property of BOX_PROPERTIES) {
+      for (const property of keepsBox ? [] : BOX_PROPERTIES) {
         style.removeProperty(property)
       }
       return
@@ -43,5 +45,5 @@ export function useSurfaceOverSlot(
         style.display = 'none'
       }
     })
-  }, [slotId, surfaceRef])
+  }, [slotId, surfaceRef, keepsBox])
 }

@@ -12,7 +12,8 @@ export function landsOnStripControl(target: EventTarget): boolean {
   return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
 }
 
-const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id], [${ITEM_SURFACE_PANE_ATTRIBUTE}]`
+// A surface that left its pane (behind a tab, or its pane drawn over) is found too: the keyboard does not stay there.
+const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-id], [data-split-view-pane-body]`
 
 const SURFACE_PRESS_END_EVENTS = ['pointerup', 'pointercancel', 'pointermove'] as const
 let surfacePressPaneId: string | null = null
@@ -84,6 +85,24 @@ export function keepKeyboardOnTab(tab: HTMLElement): void {
   window.addEventListener('pointerdown', stop, true)
 }
 
+const keyboardPlaceInSurface = new WeakMap<HTMLElement, HTMLElement>()
+
+/** Where the keyboard is inside a session or a project: it returns there when the tab comes back. */
+export function noteKeyboardInItemSurface(surface: HTMLElement, holder: HTMLElement): void {
+  keyboardPlaceInSurface.set(surface, holder)
+}
+
+function focusItemSurface(surface: HTMLElement): void {
+  const last = keyboardPlaceInSurface.get(surface)
+  if (last?.isConnected && surface.contains(last)) {
+    last.focus({ preventScroll: true })
+  }
+  // What held it may be disabled or folded away by now.
+  if (document.activeElement !== last) {
+    surface.focus({ preventScroll: true })
+  }
+}
+
 /**
  * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
  * it in the pane that lost focus, and closing the tab that held it leaves it nowhere. A tab
@@ -116,7 +135,7 @@ export function bringKeyboardFocusIntoPane(
     `[${ITEM_SURFACE_PANE_ATTRIBUTE}="${CSS.escape(paneId)}"]`
   )
   if (body) {
-    body.focus({ preventScroll: true })
+    focusItemSurface(body)
     return
   }
   owner?.blur()
