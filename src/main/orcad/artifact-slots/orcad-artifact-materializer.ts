@@ -301,14 +301,20 @@ export function getOrcadTemplateCandidates(): string[] {
   return [...new Set(candidates)]
 }
 
-export function hasOrcadTemplate(): boolean {
-  return getOrcadTemplateCandidates().some((candidate) => existsSync(candidate))
+/** Null when the template is there; otherwise where it was looked for, the packaged place first. */
+export function missingOrcadTemplate(): string | null {
+  const candidates = getOrcadTemplateCandidates()
+  return candidates.some((candidate) => existsSync(candidate))
+    ? null
+    : `looked in ${candidates.join(', ')}`
 }
 
 function resolveOrcadTemplateDir(): string {
   const found = getOrcadTemplateCandidates().find((candidate) => existsSync(candidate))
   if (!found) {
-    throw new OrcadArtifactsUnavailableError('The packaged orcad deployment template is missing')
+    throw new OrcadArtifactsUnavailableError(
+      `The packaged server files are missing (${missingOrcadTemplate() ?? 'not found'})`
+    )
   }
   return found
 }

@@ -50,6 +50,8 @@ export type HostServerOnConnectResult =
       route: 'unserved'
       reason: SshManagedServerRelayReason
       detail?: string
+      /** What actually went wrong behind an `orcad_unavailable` detail, such as where the server files were looked for. */
+      cause?: string
       code?: string
       terminals?: number
       terminalsElsewhere?: boolean
@@ -79,7 +81,8 @@ export type HostServerOnConnectDeps = {
   ensureServing: (environmentId: string) => Promise<OrcadManagedServing>
   /** Finish retained-source bookkeeping after late commit replies without deleting source rows; resolves how many moved automations the server kept off. */
   retainCommittedSource: (target: SshTarget) => Promise<number>
-  hasTemplate: () => boolean
+  /** Null when this copy of Seal has the server template; otherwise where it was looked for. */
+  missingTemplate: () => string | null
   recordedUnavailable: (target: SshTarget) => string | null
   recordUnavailable: (target: SshTarget, reason: string) => void
   isEmptyHost: (target: SshTarget) => boolean
@@ -177,8 +180,14 @@ async function decide(
     trace.recorded = true
     return { route: 'unserved', reason: 'orcad_unavailable', detail: recorded }
   }
-  if (!deps.hasTemplate()) {
-    return { route: 'unserved', reason: 'orcad_unavailable', detail: 'artifacts_unavailable' }
+  const missingTemplate = deps.missingTemplate()
+  if (missingTemplate) {
+    return {
+      route: 'unserved',
+      reason: 'orcad_unavailable',
+      detail: 'artifacts_unavailable',
+      cause: missingTemplate
+    }
   }
   if (deps.isEmptyHost(target)) {
     try {
