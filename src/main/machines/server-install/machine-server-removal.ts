@@ -9,6 +9,8 @@ import {
 } from '../../../shared/machines/machine-server-install'
 import type { MachineId } from '../../../shared/machines/machine-types'
 import type { MachineView } from '../../../shared/machines/machine-view'
+import { notifyReposChanged } from '../../ipc/repos/repos-changed-notification'
+import { getCurrentMainWindow } from '../../ipc/ssh/ssh-ipc-context'
 import { removeSealService } from '../../managed-server/service/seal-service-removal'
 import { getManagedServerActions } from '../../runtime/hosts/management/managed-server-actions-registry'
 import type { MachineRegistry } from '../registry/machine-registry'
@@ -58,6 +60,8 @@ export async function removeServerFromMachine(machineId: MachineId): Promise<Mac
         )
       }
       returnToPlainSsh(registry, record, sshTargetId)
+      // The stop unhid this machine's SSH projects, and windows list them again only on this event.
+      notifyReposChanged(getCurrentMainWindow())
     }
     await removeServiceOverSsh(
       sshTargetId,
