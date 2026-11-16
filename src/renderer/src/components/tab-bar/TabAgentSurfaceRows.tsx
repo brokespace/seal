@@ -111,14 +111,16 @@ export function TabAgentSurfaceRows({
         const showsDefaultAgentShortcut =
           newAgentShortcut !== null && defaultAgent !== 'blank' && agent === defaultAgent
         const pendingReason = terminalPendingReason(terminalPending, row, t)
+        // One note per row: the wait, else why this agent's CLI is its only surface here.
+        const note =
+          pendingReason ??
+          (row.kind === 'cli' && row.noChat ? chatUnavailableLabel(row.noChat, t) : undefined)
         const rowContent = (
           <>
             <AgentIcon agent={agent} size={14} />
             <span className="min-w-0 flex-1 truncate">{rowLabel(row, t)}</span>
-            {pendingReason ? (
-              <span className="min-w-0 shrink truncate text-xs text-muted-foreground">
-                {pendingReason}
-              </span>
+            {note ? (
+              <span className="min-w-0 shrink truncate text-xs text-muted-foreground">{note}</span>
             ) : null}
             {showsDefaultAgentShortcut ? (
               <DropdownMenuShortcut>{newAgentShortcut}</DropdownMenuShortcut>

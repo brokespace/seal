@@ -78,7 +78,8 @@ export function sameAgentLaunchPickerModel(a: NewTabAgentMenuModel, b: NewTabAge
         row.executionHostId,
         'reason' in row ? row.reason : undefined,
         'viaCli' in row ? row.viaCli : undefined,
-        'needsServer' in row ? row.needsServer : undefined
+        'needsServer' in row ? row.needsServer : undefined,
+        'noChat' in row ? row.noChat : undefined
       ])
     ],
     [
@@ -108,7 +109,8 @@ export function sameAgentLaunchPickerModel(a: NewTabAgentMenuModel, b: NewTabAge
         row.executionHostId,
         'reason' in row ? row.reason : undefined,
         'viaCli' in row ? row.viaCli : undefined,
-        'needsServer' in row ? row.needsServer : undefined
+        'needsServer' in row ? row.needsServer : undefined,
+        'noChat' in row ? row.noChat : undefined
       ])
     ]
   )
