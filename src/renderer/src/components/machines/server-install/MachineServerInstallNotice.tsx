@@ -3,8 +3,48 @@ import { TriangleAlert } from 'lucide-react'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
+import { cn } from '@/lib/class-names'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
-import { serverInstallFailureText } from './seal-server-install-copy'
+import { serverInstallFailureText, serverInstallProgressText } from './seal-server-install-copy'
+
+/** The line shown while an install runs, on the machine's page and in Settings. */
+export function MachineServerInstallProgress({
+  view
+}: {
+  view: Pick<MachineView, 'serverInstallWaitsForHost'>
+}): React.JSX.Element {
+  const t = useTranslate()
+  return (
+    <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
+      <LoadingSpinner className="size-3.5 shrink-0" />
+      {serverInstallProgressText(t, view)}
+    </p>
+  )
+}
+
+/** A question about this machine's server: its text, then the buttons that answer it. */
+function MachineServerQuestionNotice({
+  text,
+  breaksLongNames = false,
+  children
+}: {
+  text: string
+  /** The text carries names the user chose, which can be longer than the line. */
+  breaksLongNames?: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2 text-xs"
+    >
+      <p className={cn('min-w-0 flex-1 basis-64', breaksLongNames && '[overflow-wrap:anywhere]')}>
+        {text}
+      </p>
+      <div className="ml-auto flex shrink-0 items-center gap-1">{children}</div>
+    </div>
+  )
+}
 
 /** The last install failed or waits, so the machine is on plain SSH; a blocked move can still go ahead. */
 export function MachineServerRetryNotice({
@@ -113,38 +153,32 @@ export function MachineServerOfferNotice({
 }): React.JSX.Element {
   const t = useTranslate()
   return (
-    <div
-      role="status"
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2 text-xs"
+    <MachineServerQuestionNotice
+      text={t(
+        'seal.machineServer.notice.offer',
+        'Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing is installed until you confirm.'
+      )}
     >
-      <p className="min-w-0 flex-1 basis-64">
-        {t(
-          'seal.machineServer.notice.offer',
-          'Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing is installed until you confirm.'
-        )}
-      </p>
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          disabled={busy}
-          onClick={onDecline}
-          data-machine-server-action="decline"
-        >
-          {t('seal.machineServer.notice.notNow', 'Not now')}
-        </Button>
-        <Button
-          type="button"
-          size="xs"
-          disabled={busy}
-          onClick={onInstall}
-          data-machine-server-action="install"
-        >
-          {t('seal.machineServer.server.installAction', 'Install Seal server…')}
-        </Button>
-      </div>
-    </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        disabled={busy}
+        onClick={onDecline}
+        data-machine-server-action="decline"
+      >
+        {t('seal.machineServer.notice.notNow', 'Not now')}
+      </Button>
+      <Button
+        type="button"
+        size="xs"
+        disabled={busy}
+        onClick={onInstall}
+        data-machine-server-action="install"
+      >
+        {t('seal.machineServer.server.installAction', 'Install Seal server…')}
+      </Button>
+    </MachineServerQuestionNotice>
   )
 }
 
@@ -162,12 +196,10 @@ export function MachineServerReuseNotice({
   const t = useTranslate()
   const service = view.serverOwnServe?.name
   return (
-    <div
-      role="status"
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2 text-xs"
-    >
-      <p className="min-w-0 flex-1 basis-64 [overflow-wrap:anywhere]">
-        {service
+    <MachineServerQuestionNotice
+      breaksLongNames
+      text={
+        service
           ? t(
               'seal.machineServer.notice.reuseNamed',
               '{{name}} already has a Seal server that you set up as a service ({{service}}). Seal can use it instead of installing a second one.',
@@ -177,20 +209,19 @@ export function MachineServerReuseNotice({
               'seal.machineServer.notice.reuse',
               '{{name}} already has a Seal server that you set up as a service. Seal can use it instead of installing a second one.',
               { name: view.name }
-            )}
-      </p>
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button
-          type="button"
-          size="xs"
-          disabled={busy}
-          onClick={onReuse}
-          data-machine-server-action="reuse"
-        >
-          {busy ? <LoadingSpinner /> : null}
-          {t('seal.machineServer.notice.reuseAction', 'Use this server…')}
-        </Button>
-      </div>
-    </div>
+            )
+      }
+    >
+      <Button
+        type="button"
+        size="xs"
+        disabled={busy}
+        onClick={onReuse}
+        data-machine-server-action="reuse"
+      >
+        {busy ? <LoadingSpinner /> : null}
+        {t('seal.machineServer.notice.reuseAction', 'Use this server…')}
+      </Button>
+    </MachineServerQuestionNotice>
   )
 }

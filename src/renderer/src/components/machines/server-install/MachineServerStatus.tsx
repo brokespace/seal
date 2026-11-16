@@ -12,26 +12,20 @@ import { cn } from '@/lib/class-names'
 import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineCopyableCommand } from './MachineCopyableCommand'
 import {
+  MachineServerInstallProgress,
   MachineServerOfferNotice,
   MachineServerRetryNotice,
   MachineServerReuseNotice
 } from './MachineServerInstallNotice'
 import { MachineServerKeeperNotes, MachineServerWarning } from './MachineServerKeeperNotes'
+import { sealServerRemovalConfirmation } from './seal-server-confirmations'
+import { serverInstallIsRunning, serverManagerText } from './seal-server-install-copy'
+import { declineSealServerInstall, sealServerRequest } from './seal-server-install-requests'
 import {
-  ownSealServerReuseConfirmation,
-  sealServerRemovalConfirmation
-} from './seal-server-confirmations'
-import {
-  serverInstallIsRunning,
-  serverInstallProgressText,
-  serverManagerText
-} from './seal-server-install-copy'
-import {
-  declineSealServerInstall,
-  reuseOwnSealServer,
-  sealServerRequest
-} from './seal-server-install-requests'
-import { useSealServerInstall, type SealServerInstallOptions } from './use-seal-server-install'
+  useOwnSealServerReuse,
+  useSealServerInstall,
+  type SealServerInstallOptions
+} from './use-seal-server-install'
 
 // Why untranslated: a literal shell command.
 const OWN_SERVER_SERVICE_COMMAND = 'seal serve service install'
@@ -51,6 +45,7 @@ export function MachineServerStatus({
   const t = useTranslate()
   const confirm = useConfirmationDialog()
   const confirmAndInstall = useSealServerInstall()
+  const confirmAndReuse = useOwnSealServerReuse()
   const mountedRef = useMountedRef()
   const [busy, setBusy] = useState<Busy | null>(null)
   const action = view.serverInstallAction
@@ -76,6 +71,10 @@ export function MachineServerStatus({
   }
   const installServer = (options?: SealServerInstallOptions): void =>
     run('install', () => confirmAndInstall(view, options))
+  // Busy starts once the user confirmed, so an open or cancelled dialog changes nothing here.
+  const reuseServer = (): void => {
+    const reused = confirmAndReuse(view, () => run('reuse', () => reused))
+  }
   const runConfirmed = (
     kind: Busy,
     confirmation: ConfirmationDialogOptions,
@@ -103,12 +102,7 @@ export function MachineServerStatus({
   )
 
   if (installRuns) {
-    return band(
-      <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
-        <LoadingSpinner className="size-3.5 shrink-0" />
-        {serverInstallProgressText(t, view)}
-      </p>
-    )
+    return band(<MachineServerInstallProgress view={view} />)
   }
   if (action === 'retry') {
     return band(
@@ -132,15 +126,7 @@ export function MachineServerStatus({
   }
   if (action === 'reuse') {
     return band(
-      <MachineServerReuseNotice
-        view={view}
-        busy={busy === 'reuse'}
-        onReuse={() =>
-          runConfirmed('reuse', ownSealServerReuseConfirmation(t, view.name), () =>
-            reuseOwnSealServer(view.id)
-          )
-        }
-      />
+      <MachineServerReuseNotice view={view} busy={busy === 'reuse'} onReuse={reuseServer} />
     )
   }
   if (

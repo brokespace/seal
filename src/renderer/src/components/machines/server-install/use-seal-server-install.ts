@@ -7,10 +7,11 @@ import type {
   MachineView
 } from '../../../../../shared/machines/machine-view'
 import {
+  ownSealServerReuseConfirmation,
   sealServerInstallConfirmation,
   type SealServerInstallPurpose
 } from './seal-server-confirmations'
-import { sealServerRequest } from './seal-server-install-requests'
+import { reuseOwnSealServer, sealServerRequest } from './seal-server-install-requests'
 
 export type SealServerInstallOptions = {
   manager?: MachineServiceManagerChoice
@@ -53,6 +54,32 @@ export function useSealServerInstall(): SealServerInstall {
             api.installServer({ machineId: machine.id, manager, moveAnyway })
           )
         : null
+    },
+    [confirm, t]
+  )
+}
+
+export type OwnSealServerReuse = (
+  machine: { id: MachineId; name: string },
+  /** Runs once the user confirmed, right before the request is sent, so busy states start there. */
+  onConfirmed?: () => void
+) => Promise<MachineView | null>
+
+/**
+ * The one way to connect through the Seal server a machine's user set up there: the dialog says
+ * what happens, and the request is sent only when the user confirms. Resolves null when the user
+ * cancelled, or when the request could not run and the error toast said why. Never rejects.
+ */
+export function useOwnSealServerReuse(): OwnSealServerReuse {
+  const confirm = useConfirmationDialog()
+  const t = useTranslate()
+  return useCallback(
+    async (machine, onConfirmed) => {
+      if (!(await confirm(ownSealServerReuseConfirmation(t, machine.name)))) {
+        return null
+      }
+      onConfirmed?.()
+      return reuseOwnSealServer(machine.id)
     },
     [confirm, t]
   )

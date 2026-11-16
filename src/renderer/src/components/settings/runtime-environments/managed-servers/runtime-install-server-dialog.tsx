@@ -2,21 +2,20 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { MachineView } from '../../../../../../shared/machines/machine-view'
 import type { SshTarget } from '../../../../../../shared/ssh-types'
-import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { useMachineViews } from '@/components/machines/model/use-machines-inventory'
 import { machineOfSshTarget } from '@/components/machines/model/ssh-target-machine'
-import { MachineServerReuseNotice } from '@/components/machines/server-install/MachineServerInstallNotice'
-import { ownSealServerReuseConfirmation } from '@/components/machines/server-install/seal-server-confirmations'
 import {
-  serverInstallIsRunning,
-  serverInstallProgressText
-} from '@/components/machines/server-install/seal-server-install-copy'
-import { reuseOwnSealServer } from '@/components/machines/server-install/seal-server-install-requests'
-import { hasNoSealServerYet } from '@/components/machines/server-install/use-seal-server-install'
+  MachineServerInstallProgress,
+  MachineServerReuseNotice
+} from '@/components/machines/server-install/MachineServerInstallNotice'
+import { serverInstallIsRunning } from '@/components/machines/server-install/seal-server-install-copy'
+import {
+  hasNoSealServerYet,
+  useOwnSealServerReuse
+} from '@/components/machines/server-install/use-seal-server-install'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
-import { LoadingSpinner } from '../../../LoadingSpinner'
 import { Button } from '../../../ui/button'
 import {
   Dialog,
@@ -48,7 +47,7 @@ export function RuntimeInstallServerDialog({
 }: RuntimeInstallServerDialogProps): React.JSX.Element {
   const t = useTranslate()
   const mountedRef = useMountedRef()
-  const confirm = useConfirmationDialog()
+  const confirmAndReuse = useOwnSealServerReuse()
   const installOnHost = useSshHostSealServerInstall()
   const openSettingsTarget = useAppStore((state) => state.openSettingsTarget)
   const { views } = useMachineViews()
@@ -111,23 +110,25 @@ export function RuntimeInstallServerDialog({
     }
   }
 
-  const reuse = async (owner: MachineView): Promise<void> => {
-    if (!(await confirm(ownSealServerReuseConfirmation(t, owner.name)))) {
-      return
-    }
-    await run('reuse', async () => {
-      const view = await reuseOwnSealServer(owner.id)
-      if (view?.connection === 'server') {
-        toast.success(
-          t(
-            'seal.machineServer.settings.reuseDone',
-            'Seal now connects to {{name}} through the Seal server you set up there.',
-            { name: view.name }
-          )
-        )
-      }
-      return view
-    })
+  // `run` starts once the user confirmed, so an open or cancelled dialog leaves this form alone.
+  const reuse = (owner: MachineView): void => {
+    const reused = confirmAndReuse(
+      owner,
+      () =>
+        void run('reuse', async () => {
+          const view = await reused
+          if (view?.connection === 'server') {
+            toast.success(
+              t(
+                'seal.machineServer.settings.reuseDone',
+                'Seal now connects to {{name}} through the Seal server you set up there.',
+                { name: view.name }
+              )
+            )
+          }
+          return view
+        })
+    )
   }
 
   const handleOpenChange = (next: boolean): void => {
@@ -233,13 +234,10 @@ export function RuntimeInstallServerDialog({
             <MachineServerReuseNotice
               view={ownServer}
               busy={busy === 'reuse'}
-              onReuse={() => void reuse(ownServer)}
+              onReuse={() => reuse(ownServer)}
             />
           ) : machine && installing ? (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
-              <LoadingSpinner className="size-3.5 shrink-0" />
-              {serverInstallProgressText(t, machine)}
-            </p>
+            <MachineServerInstallProgress view={machine} />
           ) : null}
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenChange(false)}>
