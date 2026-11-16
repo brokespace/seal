@@ -1,8 +1,8 @@
 # Split view: several workspaces, agents and projects side by side
 
-Status: **final design after review. Not implemented.** This branch holds only this document. The designer's draft was reviewed against the code on `seal/all` at `51496ea453d` (the merge of PR #45). [Review](#review) lists every finding and how this document resolves it. [Build plan](#build-plan) and [End-to-end test plan](#end-to-end-test-plan) are what the builder follows. [Open questions for Brian](#open-questions-for-brian) holds the two product decisions the review did not make for him, and two more that arise only if a build gate fails.
+Status: **implemented.** Built on branch `cursor/multi-pane-workspace-906c` from the build plan below. [As built](#as-built) records the results of the three build gates, the answers used for the open questions, where the build differs from this text, the touch points on the agent-session page, and what is still open. The rest of this document is the reviewed design, unchanged: the designer's draft was reviewed against the code on `seal/all` at `51496ea453d` (the merge of PR #45), and [Review](#review) lists every finding and how this document resolves it.
 
-How far to trust it: the review read the code; it did not run the app. The designer's throwaway prototype showed workspaces side by side and nothing else. [Verified and unverified](#verified-and-unverified) separates the three levels of evidence.
+How far to trust it: every line of the [End-to-end test plan](#end-to-end-test-plan) was run in the real app by eight parallel testers, in several rounds, each on its own hidden app instance with real mouse and keyboard input. The pull request carries the results per lane.
 
 ## The ask
 
@@ -613,6 +613,8 @@ The tab-group tree type and its operations are pure and take only a tree and ids
 
 ## Verified and unverified
 
+This is the state before the build. Every item of the "not yet shown to work" list below has since been run in the real app; [As built](#as-built) has the outcome.
+
 **Run in the real app (by the designer's prototype, since discarded):** two and then three workspaces, placed through the store rather than by dragging, render side by side with live terminals, each retained surface positioned on its slot without being re-parented; each pane shows its strip above the workspace's own strip; the standard titlebar and the right sidebar stay intact. Remounts were not measured.
 
 **Checked by reading the code (this review):** every claim the draft made about existing code, and everything in [Review](#review). Nothing in the review was run.
@@ -628,7 +630,55 @@ The tab-group tree type and its operations are pure and take only a tree and ids
 7. the visible / focused split for browser eviction, hibernation, attention and webview blur;
 8. shortcuts, narrow windows, themes.
 
+## As built
+
+### The three gates of step 1
+
+- **G1 passed.** A 2 × 2 grid of two workspaces, one agent session and one project keeps all four painted while focus moves round them. The workbench is never `hidden` or `inert`, and the titlebar and right sidebar do not move.
+- **G2 passed for the normal restart and uses the "Load" fallback for a cold one.** When the terminal daemon still holds a workspace's shells (quit and relaunch), every unfocused workspace pane reattaches through the background mount with its tabs and scrollback, no shell is started, and a sleeping workspace stays asleep. When the shells are gone (the daemon was stopped, or a shell died while the app was closed), mounting a terminal would start a shell in a pane nobody asked for. Such a pane shows a short "paused" notice with a **Load** button instead and starts nothing until Load is pressed or the pane is focused by a click or a shortcut. The focused pane always loads. A workspace whose front tab is not a terminal (a file, a page) shows that tab at once and only its terminals wait. This is the fallback of open question 3, limited to the one case where restoring live would have started processes.
+- **G3 passed.** Eight panes (six workspaces, five of them streaming a line every 50 ms, and two agent sessions) against single view, on the same machine in the same run, 1280 keys each: typing latency in the focused terminal 4.4 / 13.8 / 61.8 ms (median / 95th percentile / worst) against 4.4 / 10.8 / 43.1 ms, a ratio of 1.28 at the 95th percentile for a budget of 1.5. Six splitter drags across the streaming grid: no long task, no long animation frame, frames at 16.7 ms at the 95th percentile and 33.4 ms at worst. Memory: 1618 MB for the grid with five streams against 1278 MB for single view with one. A terminal behind a chip, or in a workspace that left the grid, stops painting. No pane cap is proposed.
+
+### Answers used for the open questions
+
+1. A card drag no longer opens the Workspace Board. Open the board first to drop on it; status stays in the card's menu.
+2. A plain sidebar click while split view is showing opens the item as a reusable preview tab in the focused pane. A double click, a drag of the chip or a drop keeps it.
+3. See G2: one click to load, only for unfocused workspace panes after a cold start.
+4. Not needed; G3 passed.
+
+### Where the build differs from the text above
+
+- **Minimum pane size.** A split that would leave a pane under 480 px wide or 320 px tall adds the item as a tab instead, and the drop preview says "Add as tab". The size is the pane's share of the grid, not what is drawn, so a maximized pane and the single pane of a narrow window follow the same rule.
+- **Narrow main area.** Under 480 px the main area draws only the focused pane; the grid comes back unchanged when it widens. Maximize is not offered there.
+- **Keyboard follows pane focus.** When focus moves to a pane by shortcut, by navigation, or because a tab closed, the keyboard goes to what that pane has in front: the terminal, the code or Markdown editor, the browser page, or the session or project body. A tab pressed with the pointer never takes the keyboard itself; a tab reached with Tab keeps it, and the arrow keys move between tabs.
+- **Shortcuts stand down under overlays.** The split-view shortcuts do nothing while a dialog or a menu is open.
+- **Sleep.** Putting the focused pane's workspace to sleep moves focus to the nearest pane that is awake; the slept pane stays in the grid and wakes when it is focused.
+- **Unavailable panes.** A pane whose workspace or project is gone cannot take focus (nothing in it can be the current item); the focus shortcuts pass over it and its Close button removes it.
+- **Not saved.** The maximized pane and preview flags are not restored, as the text says; a restored grid comes back with every pane drawn and every chip kept.
+
+### Touch points on the agent-session page
+
+Kept to what the panes need, because a separate effort is merging the session page's tab strip and composer with the project view's.
+
+- `LiveSessionWorkspace.tsx` no longer draws its own two-up. Its tab strip is now `split-view/ItemTabStrip.tsx`, the same strip every pane uses, with the session menu unchanged. A saved `splitId` becomes a two-pane layout on first launch.
+- `LiveSessionBody.tsx` is new: one session's chat or the notice that explains why there is none. The session page and the panes both draw it. It wraps `LiveSessionPane` and changes nothing inside it.
+- `LiveSessionPane.tsx` lost the "Close split" button and its `onCloseSplit` prop. Nothing else in the pane, the transcript or the composer changed.
+- `live-session-tabs-store.ts` lost `splitId`; the `'split'` open mode now places the session in a split-view pane.
+- `live-session-menu-effects.ts`: `openLiveSessionView` and `closeLiveSessionView` go through the grid when it is showing.
+- `LiveSessionRow.tsx` gained the pointer-drag start and the "Open in split view" menu entries; `use-live-session-row-state.ts` no longer reads `splitId`.
+- `StructuredAgentSessionPaneOverlayLayer.tsx` takes a separate `isWorktreeFocused` prop, as every workbench layer does after step 4.
+
+### Still open
+
+- **A real GPU process crash leaves WebGL terminals blank** until the terminal GPU setting is toggled. Measured with software GL and the setting forced on. It needs more than one WebGL terminal mounted, so single view with terminal splits has it too, but a grid makes it likelier. Context loss through `WEBGL_lose_context` recovers in every pane.
+- **Hidden terminals are not unmounted after 30 s** when their tab still has a pending start and a live shell. `seal/all` behaves the same with the same steps in single view; they do stop painting.
+- **A pane squeezed through nested splits** below about 70 px (the clamp is 15 % per split, so two nested clamps multiply) lets its terminal overflow its box. The minimum-size rule prevents new splits there but does not stop splitter drags.
+- **Splitters are mouse-only.** They are `role="separator"` with an orientation but take no keys.
+- **Remote hosts were not tested.** The machine the testers ran on has no container runtime or SSH server. A pane stores which host its workspace runs on, and local workspaces were checked on every route.
+- **The session composer** was only typed into where the test profile allowed it; sessions that run outside a Seal pane have a disabled composer.
+
 ## Open questions for Brian
+
+Answered for this build in [As built](#as-built). The questions as the review left them:
 
 1. **Workspace Board and card drags.** Today, dragging a workspace card opens the Workspace Board over the main area so the card can be dropped on a status column. Split view needs that same area for its drop zones. Recommended: a card drag no longer opens the board by itself; to drop on the board, open it first (toolbar button or shortcut), and status can still be changed from the card's menu. Alternatives: hold a modifier key while dragging to get the board instead of the panes; or keep today's behaviour and place items in split view only through menus, which gives up "just drag it up into a position".
 2. **What a plain sidebar click does while split view is showing.** Recommended: it opens the item as a tab in the focused pane, in a reusable "preview" slot so that browsing does not pile up tabs (double-click keeps it). The alternative is that a click replaces what the focused pane shows, so panes change only by drag or menu. The first matches "open them up in tabs"; the second keeps an arrangement more stable.
