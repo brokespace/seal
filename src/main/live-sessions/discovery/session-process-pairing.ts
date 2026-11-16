@@ -8,6 +8,22 @@ export type ProcessClaim = {
   process: AgentProcess | null
 }
 
+/** `ps` and file times are whole seconds, read moments apart. */
+const CLOCK_SLACK_MS = 2_000
+
+/**
+ * Whether `process` may be what writes a transcript nothing names as its own. Not one another
+ * process was seen writing, and not one last written before this process started.
+ */
+function couldWrite(process: AgentProcess, transcript: SummarizedTranscript): boolean {
+  if (transcript.agentPid !== undefined && transcript.agentPid !== process.pid) {
+    return false
+  }
+  return (
+    process.startedAtMs === undefined || transcript.mtimeMs + CLOCK_SLACK_MS >= process.startedAtMs
+  )
+}
+
 /** A transcript the host listed but this scan's read budget has not reached yet. */
 export type UnreadTranscript = Pick<DiscoveredFile, 'path' | 'provider'>
 
@@ -68,9 +84,17 @@ export function pairProcesses(
   }
   // Newer processes write the newer transcripts in a shared folder.
   pending.sort((a, b) => b.pid - a.pid)
+  /** Processes with no transcript, by provider: each is listed on its own as a new session. */
+  const bare = new Map<string, ProcessClaim[]>()
   for (const process of pending) {
     const match = [...free]
-      .filter((t) => t.summary.provider === process.provider && t.summary.cwd === process.cwd)
+      .filter(
+        (t) =>
+          t.summary.provider === process.provider &&
+          process.cwd !== null &&
+          t.summary.cwd === process.cwd &&
+          couldWrite(process, t)
+      )
       .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
     // One still to be read may be its own (a shared app-server holds it open): shown then.
     const mayBeUnread =
@@ -78,16 +102,26 @@ export function pairProcesses(
     if (!match && mayBeUnread) {
       continue
     }
-    claims.push({ process, transcript: take(match) })
+    const claim = { process, transcript: take(match) }
+    claims.push(claim)
+    if (!match) {
+      bare.set(process.provider, [...(bare.get(process.provider) ?? []), claim])
+    }
   }
-  // A running agent's transcript is being written right now even when its folder says otherwise.
-  for (const provider of ['claude', 'codex'] as const) {
-    const bare = claims.filter((c) => c.process?.provider === provider && !c.transcript)
+  // The one agent whose folder is unknown may write the one transcript being written right now.
+  // That is a guess: the transcript is listed without the process, so nothing is typed into the
+  // agent or stops it on the transcript's behalf, and the agent is not listed a second time.
+  for (const [provider, [only, ...others]] of bare) {
     const fresh = [...free].filter(
       (t) => t.summary.provider === provider && t.mtimeMs >= freshSince
     )
-    if (bare.length === 1 && fresh.length === 1) {
-      bare[0].transcript = take(fresh[0])
+    const agent = others.length === 0 && fresh.length === 1 ? only.process : null
+    if (
+      agent &&
+      (agent.cwd === null || fresh[0].summary.cwd === null) &&
+      couldWrite(agent, fresh[0])
+    ) {
+      claims.splice(claims.indexOf(only), 1)
     }
   }
   claims.push(...unwritten)

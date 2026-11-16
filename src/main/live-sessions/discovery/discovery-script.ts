@@ -122,14 +122,15 @@ echo "@@DONE"
 }
 
 /**
- * What runs under each agent: a shell command it started shows here while its transcript stands
- * still. Only the process's kind and name leave the host, never its arguments.
+ * How long each agent has run, then what runs under it: a shell command it started shows here
+ * while its transcript stands still. Only the process's kind and name leave the host, never its
+ * arguments.
  */
 function childSection(): string {
   return `ps -A -o pid= -o ppid= -o etime= -o args= 2>/dev/null | awk -v roots="$AGENTS" '
 BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
 {
-  if ($1 in under) listed = 1
+  if ($1 in under) { listed = 1; print "@@AGE", $1, $3 }
   pid[NR] = $1; ppid[NR] = $2; et[NR] = $3
   c = $4; sub(/.*\\//, "", c)
   k = "other"

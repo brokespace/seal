@@ -10,6 +10,8 @@ export type DiscoveredProcess = {
   tty: string | null
   args: string
   cwd: string | null
+  /** When it started (host clock), from `ps -o etime`; absent when the host's ps did not say. */
+  startedAtMs?: number
 }
 
 /** What a process under an agent is, as far as its command line shows without leaving the host. */
@@ -178,6 +180,15 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
         const proc = m ? processes.get(Number(m[1])) : undefined
         if (m && proc) {
           proc.cwd = m[2]
+        }
+        break
+      }
+      case 'AGE': {
+        const [pid, etime] = rest.split(' ')
+        const proc = processes.get(Number(pid))
+        const elapsedMs = parseElapsedTime(etime ?? '')
+        if (proc && elapsedMs !== null && out.hostNowMs !== null) {
+          proc.startedAtMs = out.hostNowMs - elapsedMs
         }
         break
       }

@@ -188,17 +188,6 @@ describe('one card per real conversation', () => {
       ).map((s) => s.id)
     ).toEqual(['e503cd0b-d59c-4221-a949-3c685cf99554'])
   })
-
-  it('pairs a running agent with the transcript it is writing even outside its folder', () => {
-    const live = claudeFile(
-      '/p/cccccccc-0000-4000-8000-000000000003.jsonl',
-      [turn('c1', null, 'Deploy it')],
-      5_000
-    )
-    expect(assemble([proc(812, 'claude', '/w/sub')], [live])).toEqual([
-      { id: 'cccccccc-0000-4000-8000-000000000003', alive: true, path: live.path }
-    ])
-  })
 })
 
 describe('agent process detection', () => {

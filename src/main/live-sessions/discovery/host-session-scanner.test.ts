@@ -393,6 +393,51 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
     }
   })
 
+  // The real `ps` says when the stand-in agent started: ten minutes after the transcript's last write.
+  it('lists an agent apart from a transcript in its folder that was last written before it started', async () => {
+    const root = await realpath(home)
+    const cwd = join(root, 'work')
+    const projects = join(root, '.claude/projects', cwd.replace(/[^A-Za-z0-9]/g, '-'))
+    await Promise.all([cwd, projects].map((dir) => mkdir(dir, { recursive: true })))
+    const file = join(projects, `${CLAUDE_ID}.jsonl`)
+    // ast-grep-ignore: test-no-wall-clock -- the transcript is aged against a real process, whose start time `ps` reports on the real clock
+    const written = Date.now() - 600_000
+    await writeFile(
+      file,
+      line({
+        type: 'user',
+        cwd,
+        timestamp: new Date(written).toISOString(),
+        message: { content: 'Fix the login bug' }
+      })
+    )
+    await utimes(file, written / 1000, written / 1000)
+    await writeFile(join(root, 'agent.sh'), 'sleep 60\n')
+    const agent = spawn(
+      'bash',
+      ['-c', 'exec -a claude bash "$1"', 'agent', join(root, 'agent.sh')],
+      { cwd, stdio: 'ignore' }
+    )
+    try {
+      const scanner = new HostSessionScanner(localHost('test'), LOCAL_SCAN_LIMITS)
+      await vi.waitFor(async () => {
+        // ast-grep-ignore: test-no-wall-clock -- the scan reads real processes on the real clock
+        const { sessions } = await scanner.scan(Date.now())
+        expect(
+          sessions
+            .filter((s) => s.pid === agent.pid || s.transcriptPath === file)
+            .map((s) => [s.providerSessionId, s.pid, s.alive])
+            .sort()
+        ).toEqual([
+          [CLAUDE_ID, null, false],
+          [`pid-${agent.pid}`, agent.pid, true]
+        ])
+      })
+    } finally {
+      agent.kill('SIGKILL')
+    }
+  })
+
   // No agent runs for this session, and the real `ps` says so.
   it('ends a session whose approval hook outlived its agent', async () => {
     const root = await realpath(home)
