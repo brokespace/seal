@@ -12407,8 +12407,7 @@
           },
           "description": "Orca 會在空白的 SSH 主機上自行安裝，並自動保持最新版本。",
           "deploy": {
-            "host": "SSH 主機",
-            "name": "伺服器名稱"
+            "host": "SSH 主機"
           },
           "pending": {
             "resume": "繼續"
@@ -12801,11 +12800,9 @@
           "showError": "顯示錯誤訊息",
           "neverConnected": "從未連線",
           "defaultHostEmptyLine": "新增伺服器前，新專案會在此電腦上開啟。",
-          "installNamePlaceholder": "與 SSH 主機相同",
           "setUpDone": "已在 {{name}} 上完成 Orca 設定。",
           "settingUpInBackground": "正在背景中設定 {{name}} 上的 Orca。完成後會顯示在清單中。",
           "setUpOnSshHost": "在 SSH 主機上設定 Orca",
-          "setUp": "設定",
           "overYourSsh": "透過 SSH 連線"
         },
         "sshBulkRemove": {

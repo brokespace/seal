@@ -12586,8 +12586,7 @@
           },
           "description": "Orca installiert sich auf einem leeren SSH-Host und hält sich selbst aktuell.",
           "deploy": {
-            "host": "SSH-Host",
-            "name": "Servername"
+            "host": "SSH-Host"
           },
           "pending": {
             "resume": "Fortsetzen"
@@ -12980,11 +12979,9 @@
           "showError": "Fehler anzeigen",
           "neverConnected": "Noch nie verbunden",
           "defaultHostEmptyLine": "Neue Projekte werden auf diesem Computer geöffnet, bis ein Server hinzugefügt wird.",
-          "installNamePlaceholder": "Wie der SSH-Host",
           "setUpDone": "Orca ist auf {{name}} eingerichtet.",
           "settingUpInBackground": "Orca wird im Hintergrund auf {{name}} eingerichtet. Sobald die Einrichtung abgeschlossen ist, erscheint der Server in der Liste.",
           "setUpOnSshHost": "Orca auf einem SSH-Host einrichten",
-          "setUp": "Einrichten",
           "overYourSsh": "Über die SSH-Verbindung"
         },
         "sshBulkRemove": {
