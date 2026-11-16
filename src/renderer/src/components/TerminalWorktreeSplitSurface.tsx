@@ -13,6 +13,7 @@ import TabGroupSplitLayout from './tab-group/TabGroupSplitLayout'
 import { WorkspacePaneOverlayLayers } from './WorkspacePaneOverlayLayers'
 import type { TerminalPrewarmStage } from './terminal/terminal-worktree-prewarm'
 import { useWorkspaceSurfacePaneSlot } from './split-view/use-workspace-surface-pane-slot'
+import { WorkspaceFileTreePanel } from './workspace-file-tree/WorkspaceFileTreePanel'
 
 export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
   worktreeId,
@@ -77,6 +78,7 @@ export const WorktreeSplitSurface = React.memo(function WorktreeSplitSurface({
       data-workspace-surface-id={worktreeId}
       data-workspace-surface-pane-id={slotPaneId ?? undefined}
     >
+      <WorkspaceFileTreePanel worktreeId={worktreeId} isVisible={isVisible} paneId={slotPaneId} />
       <TabGroupSplitLayout
         layout={layout}
         worktreeId={worktreeId}

@@ -1,7 +1,7 @@
 import { hostname } from 'node:os'
 import { getAppEnvironment } from '../../shared/app-environment'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import type { GlobalSettings } from '../../shared/global-settings-types'
+import type { Store } from '../persistence/loading-store/store'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { localAiVaultScanRoots } from '../ai-vault/discovery/ai-vault-scan-roots'
 import { listLiveSessionMachineSources } from '../machines/machine-services'
@@ -29,11 +29,7 @@ import {
   ShellIntegrationSync,
   wrapAgentsEnabled
 } from './shell-integration/shell-integration-hosts'
-
-type LiveSessionSettingsStore = {
-  getSettings(): Pick<GlobalSettings, 'liveSessionsWrapAgents' | 'liveSessionsIdleReapMinutes'>
-  onSettingsChanged(listener: (updates: Partial<GlobalSettings>) => void): unknown
-}
+import { installWorkspaceLink } from './workspace-link/workspace-link-install'
 
 export type HostShellIntegration = (
   hostId: string,
@@ -43,7 +39,7 @@ export type HostShellIntegration = (
 /** Starts discovery on this host; the desktop additionally wires its window IPC to the result. */
 export function installLiveSessions(
   runtime: OrcaRuntimeService,
-  store: LiveSessionSettingsStore
+  store: Store
 ): { service: LiveSessionService; shellIntegration: HostShellIntegration } | null {
   if (getLiveSessionService()) {
     return null
@@ -103,6 +99,7 @@ export function installLiveSessions(
     minutes: () => idleReapMinutes(store.getSettings().liveSessionsIdleReapMinutes),
     log
   })
+  const workspaceLink = installWorkspaceLink({ runtime, store, log })
   const service = new LiveSessionService({
     userDataPath,
     hosts: () => {
@@ -115,6 +112,7 @@ export function installLiveSessions(
     chats,
     federation,
     onHostScanned: (host, sessions) => reaper.onHostScanned(host, sessions),
+    link: workspaceLink.link,
     log
   })
   const shellIntegration: HostShellIntegration = async (hostId, action) => {
@@ -133,7 +131,11 @@ export function installLiveSessions(
     return status
   }
   setLiveSessionService(service)
+  workspaceLink.start(service.registry)
   service.start()
-  getAppEnvironment().onWillQuit(() => service.stop())
+  getAppEnvironment().onWillQuit(() => {
+    workspaceLink.stop()
+    service.stop()
+  })
   return { service, shellIntegration }
 }

@@ -31,6 +31,7 @@ import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { getRepositoryIconSectionId } from '@/components/settings/repository/repository-settings-targets'
 import { WslMoveProjectMenuItem } from '@/components/wsl-move/WslMoveProjectMenuItem'
+import { ProjectMergeMenuItem } from '@/components/project-merge/ProjectMergeMenuItem'
 import type { ProjectGroup } from '../../../../../../shared/project-group-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { WorktreeVisibilityDefaults } from '../../../../../../shared/global-settings-types'
@@ -202,6 +203,7 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
           </DropdownMenuItem>
         ) : null}
         <WslMoveProjectMenuItem repo={repo} />
+        <ProjectMergeMenuItem repo={repo} label={label} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() =>

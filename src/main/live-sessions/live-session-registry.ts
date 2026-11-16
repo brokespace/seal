@@ -44,6 +44,8 @@ export type LiveSessionRegistryDeps = {
   isRemoved?: (session: LiveSession) => boolean
   /** Adds what the user set on a session in Seal (its name, its pin). */
   annotate?: (session: LiveSession) => LiveSession
+  /** Sets the workspace a session belongs to. */
+  link?: (session: LiveSession) => LiveSession
   onHostScanned?: (host: LiveSessionHost, sessions: LiveSession[]) => void
   now?: () => number
   intervalsMs?: { local: number; ssh: number }
@@ -309,7 +311,6 @@ export class LiveSessionRegistry {
 
   private publish(): void {
     const scanned = [...this.hosts.values()].filter((state) => !this.federated(state))
-    const decorate = this.decorator
     const now = this.now()
     const local = mergeSessionSources({
       discovered: scanned.flatMap((state) => state.sessions),
@@ -324,7 +325,8 @@ export class LiveSessionRegistry {
     const merged = [...local, ...(this.deps.federation?.source.sessions() ?? [])]
       .filter((session) => !this.deps.isRemoved?.(session))
       .map((session) => this.deps.annotate?.(session) ?? session)
-      .map((session) => (decorate ? decorate(session) : session))
+      .map((session) => this.deps.link?.(session) ?? session)
+      .map((session) => this.decorator?.(session) ?? session)
     this.publishFederationNotices()
     this.statusHold.keep(new Set(merged.map((session) => session.id)))
     for (const change of this.published.replace(merged)) {

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { FileExplorerViewSwitch } from './FileExplorerViewSwitch'
+import { useFileExplorerMount } from './file-explorer-mount'
 import type { RightSidebarExplorerView } from '../../../../../../shared/ui-chrome-types'
 
 type FileExplorerQueryStripProps = {
@@ -14,6 +15,7 @@ export function FileExplorerQueryStrip({
   onSelectView,
   children
 }: FileExplorerQueryStripProps): React.JSX.Element {
+  const { embedded } = useFileExplorerMount()
   const stripRef = useRef<HTMLDivElement>(null)
   const focusedQuery = (): HTMLInputElement | null =>
     stripRef.current?.querySelector<HTMLInputElement>('[data-explorer-query-input]:focus') ?? null
@@ -47,7 +49,7 @@ export function FileExplorerQueryStrip({
       }}
     >
       <div className="flex flex-col gap-2">
-        <FileExplorerViewSwitch view={view} onSelectView={handleSelectView} />
+        {embedded ? null : <FileExplorerViewSwitch view={view} onSelectView={handleSelectView} />}
         {children}
       </div>
     </div>

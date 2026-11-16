@@ -111,6 +111,8 @@ export type Repo = {
   orcadRetained?: OrcadRetainedMarker
   /** Dictation terms used only in this repo, kept in Orca (on the repo's host), never in the checkout. */
   dictationTerms?: DictationTerm[]
+  /** Seal made this for an agent session and the user has not touched it since; holds the name it was given. */
+  autoCreated?: { displayName: string }
 }
 
 /** Shared IPC shape for repos:getBaseRefDefault across main/preload/renderer; remoteCount avoids a second hint lookup. */
