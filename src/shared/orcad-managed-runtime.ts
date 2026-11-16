@@ -6,10 +6,11 @@ import type { OrcadDaemonRetirementVerdict } from './orcad-stop-request'
 import type { SshManagedServerLinkedProject } from './ssh-types'
 import type { OrcadStaleLockEvidence } from './orcad-stale-lock-reclaim'
 
+/** WSL hosts only; a server on an SSH host asks for SEAL_MANAGED_SSH_PORT. */
 export const ORCAD_MANAGED_REMOTE_PORT = 6_768
 
-/** Seal: asked for by a managed server that runs as a service; clear of 6768–6799, where a user's own `seal serve` is pinned or falls back. */
-export const SEAL_MANAGED_SERVICE_PORT = 16_768
+/** Seal: asked for by every server Seal deploys on an SSH host, detached or as a service; clear of 6768–6799, where a user's own `seal serve` is pinned or falls back. */
+export const SEAL_MANAGED_SSH_PORT = 16_768
 
 /** Refused because terminals are, or may be, still running on the host. */
 export type OrcadManagedRefusal = {

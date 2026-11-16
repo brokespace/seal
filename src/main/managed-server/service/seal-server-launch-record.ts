@@ -1,7 +1,7 @@
 /** The stable launcher a service manager runs, and the launch record naming the slot it starts. */
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import { SEAL_SERVER_SERVICE_ENV } from '../../../shared/orcad-managed-launch-env'
-import { SEAL_MANAGED_SERVICE_PORT } from '../../../shared/orcad-managed-runtime'
+import { SEAL_MANAGED_SSH_PORT } from '../../../shared/orcad-managed-runtime'
 import {
   joinRemotePath,
   remoteDirname,
@@ -94,8 +94,8 @@ export function sealServiceLaunchTail(
     `${SEAL_SERVER_SERVICE_ENV}=1`,
     ...(manager === 'pm2' ? [] : ['exec']),
     `"$orcad_runtime" $orcad_runtime_flags ${parts.runtimeV8Flags} ${parts.entry}`,
-    // Not `spec.port`: a start at boot must never take the port a user's own `seal serve` is pinned to.
-    `--json --bind ${quotePosixShell(spec.bindHost)} --port ${String(SEAL_MANAGED_SERVICE_PORT)}`
+    // Not `spec.port`: a deployment recorded with 6768 must not take, at boot, the port a user's own `seal serve` is pinned to.
+    `--json --bind ${quotePosixShell(spec.bindHost)} --port ${String(SEAL_MANAGED_SSH_PORT)}`
   ].join(' ')
   const beforeLoginEnv = [
     // A slot removed since the launch leaves nothing to keep running.
