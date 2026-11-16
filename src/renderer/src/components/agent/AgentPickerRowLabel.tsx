@@ -29,10 +29,8 @@ export function AgentPickerRowLabel({
       </span>
       {shortcut && !reasonTakesRoom ? (
         // Why: beside the surface actions the name gives way first; a shortcut wider than the room left is cut, never drawn over the actions.
-        <span className="flex min-w-0">
-          <DropdownMenuShortcut className="min-w-0 shrink truncate">
-            {shortcut}
-          </DropdownMenuShortcut>
+        <span className="min-w-0 truncate text-muted-foreground">
+          <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut>
         </span>
       ) : null}
       {reason ? (
