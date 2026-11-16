@@ -143,6 +143,22 @@ export function failMachineServerInstall(
   return changeMachine(store, machineId, unfinishedServerInstall('failed', reason, now), now)
 }
 
+const INTERRUPTED_INSTALL_REASON = 'Seal was closed before the install finished'
+
+/**
+ * For app start, when no install runs: one that was cut short is never picked up by a later
+ * connect, so the user is asked again. An install that waits says what for, and stays.
+ */
+export function failInterruptedServerInstalls(store: MachineStore, now: number): MachineStore {
+  return store.machines.reduce(
+    (next, machine) =>
+      awaitsServerInstall(machine.serverInstall) && !machine.serverInstall?.reason
+        ? failMachineServerInstall(next, machine.id, INTERRUPTED_INSTALL_REASON, now)
+        : next,
+    store
+  )
+}
+
 /** The install waits for something that ends by itself, so every later connect tries it again. */
 export function deferMachineServerInstall(
   store: MachineStore,

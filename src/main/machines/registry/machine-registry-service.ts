@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { getAppEnvironment } from '../../../shared/app-environment'
+import { failInterruptedServerInstalls } from '../../../shared/machines/machine-server-install'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
 import { isVmToolSshConfigTarget } from '../../../shared/ssh-target-source'
 import {
@@ -129,6 +130,7 @@ export function getMachineRegistry(): MachineRegistry {
   if (!registry) {
     registry = createRegistry(app.getPath('userData'))
     const created = registry
+    created.edit(failInterruptedServerInstalls)
     const setup = createMachineServerSetup(created, () => getAppEnvironment().getVersion())
     onMachineServerInstallActivityChanged(broadcastMachinesChanged)
     setDirectSshConnectPolicy(setup.connectsDirectly, setup.outcomes)
