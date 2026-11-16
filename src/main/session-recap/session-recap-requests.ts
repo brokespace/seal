@@ -45,6 +45,15 @@ const SETTLES: Partial<Record<RecapJudgeVerdict, RecapRequestStatus>> = {
   withdrawn: 'withdrawn'
 }
 
+/** Failures of the account and not of one question: asking about the next request would fail too. */
+const ACCOUNT_FAILURES: ReadonlySet<string> = new Set([
+  'not-configured',
+  'unauthorized',
+  'rate-limited',
+  'plan-unavailable',
+  'model-not-found'
+])
+
 /** Done and taken back are final here: only a new request from the user starts them again. */
 const isFinal = (request: RecapRequest): boolean =>
   request.status === 'addressed' || request.status === 'withdrawn'
@@ -105,6 +114,9 @@ export function createRecapRequestsStep(deps: RecapRequestsDeps): RecapRequestsS
       )
       if ('failed' in reply) {
         // The safe default: it stands as it stood, and an old verdict no longer matches the cursor.
+        if (ACCOUNT_FAILURES.has(reply.failed)) {
+          break
+        }
         continue
       }
       const verdict = recapJudgeVerdict(reply.answers, judge.calibration.cuts)
