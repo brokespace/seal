@@ -366,7 +366,9 @@ export const PR_E2E_SOURCE_ROUTES = [
     specs: [
       'tests/e2e/ssh-orcad-seal-server-service.spec.ts',
       'tests/e2e/ssh-orcad-seal-server-install-fallback.spec.ts',
-      'tests/e2e/ssh-orcad-seal-server-existing-machine.spec.ts'
+      'tests/e2e/ssh-orcad-seal-server-existing-machine.spec.ts',
+      'tests/e2e/ssh-orcad-seal-server-linger-refused.spec.ts',
+      'tests/e2e/ssh-orcad-seal-server-own-serve.spec.ts'
     ],
     matches: (file) =>
       MANAGED_SSH_HARNESS.test(file) ||

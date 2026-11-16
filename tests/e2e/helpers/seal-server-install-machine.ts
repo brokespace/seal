@@ -1,5 +1,5 @@
 // Adds an SSH machine through the Machines page and reads how its Seal server install ended.
-import type { Page } from '@stablyai/playwright-test'
+import type { Locator, Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 import type { DockerSystemdSshHost } from './docker-ssh-host-systemd-target'
 import type { MachineView } from '../../../src/shared/machines/machine-view'
@@ -12,12 +12,33 @@ export async function openMachinesPage(page: Page): Promise<void> {
   await page.waitForSelector('[data-machines-page]')
 }
 
-/** Fills Add machine > Connect over SSH and saves; the server box is left as the dialog shows it unless told otherwise. */
-export async function addSshMachine(
+/** The dialog every install opens first: nothing is written on the machine until it is confirmed. */
+export function serverInstallConfirmation(page: Page): Locator {
+  return page.getByRole('dialog').filter({ hasText: '~/.orca-remote' })
+}
+
+export async function confirmServerInstall(page: Page): Promise<void> {
+  const confirmation = serverInstallConfirmation(page)
+  await confirmation.getByRole('button', { name: 'Install Seal server', exact: true }).click()
+  await expect(confirmation).toBeHidden()
+}
+
+/** What Seal has written for its server on the host; empty until an install is confirmed. */
+export function sealServerFilesOnHost(host: DockerSystemdSshHost): string[] {
+  return host
+    .exec(
+      'ls -A ~/.orca-remote 2>/dev/null; ls ~/.config/systemd/user/seal-server.service 2>/dev/null; true',
+      { user: 'seal' }
+    )
+    .split('\n')
+    .filter(Boolean)
+}
+
+async function saveSshMachine(
   page: Page,
   ssh: DockerSystemdSshHost['ssh'],
   label: string,
-  options: { installServer?: boolean } = {}
+  options: { installServer?: boolean }
 ): Promise<void> {
   await page.getByRole('button', { name: 'Add machine' }).click()
   await page.getByRole('menuitem', { name: 'Connect over SSH…' }).click()
@@ -28,15 +49,40 @@ export async function addSshMachine(
   await dialog.locator('#add-ssh-port').fill(String(ssh.port))
   await dialog.locator('#add-ssh-identity-file').fill(ssh.identityFile)
   const installServer = dialog.getByRole('checkbox', {
-    name: /^Install Seal server on this machine \(recommended\)/
+    name: /^Install Seal server on this machine/
   })
-  await expect(installServer).toBeChecked()
-  if (options.installServer === false) {
+  await expect(installServer).not.toBeChecked()
+  if (options.installServer) {
     await installServer.click()
-    await expect(installServer).not.toBeChecked()
+    await expect(installServer).toBeChecked()
   }
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(dialog).toBeHidden({ timeout: 30_000 })
+}
+
+/** Fills Add machine > Connect over SSH and saves. The server box starts unticked; `installServer` ticks it and confirms the install. */
+export async function addSshMachine(
+  page: Page,
+  ssh: DockerSystemdSshHost['ssh'],
+  label: string,
+  options: { installServer?: boolean } = {}
+): Promise<void> {
+  await saveSshMachine(page, ssh, label, options)
+  if (options.installServer) {
+    await confirmServerInstall(page)
+  }
+  await expect(page.getByRole('dialog')).toBeHidden({ timeout: 30_000 })
+}
+
+/** Add machine with the server box ticked, stopped at the install confirmation so a spec can look at it first. */
+export async function addSshMachineUpToServerInstallConfirmation(
+  page: Page,
+  ssh: DockerSystemdSshHost['ssh'],
+  label: string
+): Promise<Locator> {
+  await saveSshMachine(page, ssh, label, { installServer: true })
+  const confirmation = serverInstallConfirmation(page)
+  await expect(confirmation).toBeVisible({ timeout: 30_000 })
+  return confirmation
 }
 
 export function readMachine(page: Page, label: string): Promise<MachineView | null> {

@@ -16,10 +16,13 @@ import { serverCall } from './helpers/orcad-convert-flow'
 import { seedRelayEraProfile } from './helpers/orcad-upgrade-profile'
 import { mutateStoppedProfileState } from './helpers/persisted-profile-state'
 import {
+  confirmServerInstall,
   openMachinesPage,
   readMachine,
   readMachineServer,
+  sealServerFilesOnHost,
   SERVER_INSTALL_TIMEOUT_MS,
+  serverInstallConfirmation,
   showMachine
 } from './helpers/seal-server-install-machine'
 import { toSshExecutionHostId } from '../../src/shared/execution-host'
@@ -151,18 +154,26 @@ test('an SSH-only machine keeps its workspaces, tabs, pins and sessions when Sea
       await expect(page.locator('[data-seal-server-offers="1"]')).toBeVisible()
       await openMachinesPage(page)
       await showMachine(page, MACHINE)
-      await expect(page.locator('[data-machine-server="offer"]')).toContainText(
-        'Install Seal server on this machine?'
-      )
-      expect(host.exec('ls -A ~/.orca-remote 2>/dev/null || true', { user: 'seal' })).toBe('')
-      await page.screenshot({ path: testInfo.outputPath('offer.png') })
+      await expect(page.locator('[data-machine-server="offer"]')).toBeVisible()
+      expect(sealServerFilesOnHost(host)).toEqual([])
+      await page.screenshot({ path: testInfo.outputPath('offer.png'), animations: 'disabled' })
     })
 
-    await test.step('accepting moves the machine to its server', async () => {
+    await test.step('accepting the offer asks before it writes anything', async () => {
       await page
-        .locator('[data-machine-server="offer"]')
-        .getByRole('button', { name: 'Install Seal server' })
+        .locator('[data-machine-server="offer"] [data-machine-server-action="install"]')
         .click()
+      await expect(serverInstallConfirmation(page)).toBeVisible()
+      expect(sealServerFilesOnHost(host)).toEqual([])
+      expect((await readMachine(page, MACHINE))?.serverInstall).toBeNull()
+      await page.screenshot({
+        path: testInfo.outputPath('offer-confirmation.png'),
+        animations: 'disabled'
+      })
+    })
+
+    await test.step('confirming moves the machine to its server', async () => {
+      await confirmServerInstall(page)
       await expect
         .poll(() => readMachineServer(page, MACHINE), { timeout: SERVER_INSTALL_TIMEOUT_MS })
         .toEqual({
@@ -203,10 +214,11 @@ test('an SSH-only machine keeps its workspaces, tabs, pins and sessions when Sea
         .poll(() => machineSessions(page, after.recordId), { timeout: 60_000 })
         .toEqual([{ id: agentSession, pinned: true }])
       await showMachine(page, MACHINE)
-      await expect(page.getByRole('region', { name: 'Seal server' })).toContainText(
-        'Runs as a system service (systemd)'
+      await expect(page.getByRole('region', { name: 'Seal server' })).toHaveAttribute(
+        'data-machine-server-keeper',
+        'systemd-user'
       )
-      await page.screenshot({ path: testInfo.outputPath('moved.png') })
+      await page.screenshot({ path: testInfo.outputPath('moved.png'), animations: 'disabled' })
     })
   } finally {
     try {
