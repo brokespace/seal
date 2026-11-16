@@ -71,27 +71,28 @@ async function startAgent(name: string, cwd: string, openFile?: string): Promise
 }
 
 describe.skipIf(process.platform === 'win32')('a paired server reached through its runtime', () => {
-  it('lists a running Claude whose transcript is days old, in its tmux-less folder', async () => {
+  it('lists a running Claude with the transcript it writes in its tmux-less folder', async () => {
     const cwd = join(home, 'work/app')
     await mkdir(cwd, { recursive: true })
     const projectDir = join(home, '.claude/projects', cwd.replace(/[^A-Za-z0-9]/g, '-'))
     await mkdir(projectDir, { recursive: true })
     const transcriptPath = join(projectDir, `${CLAUDE_ID}.jsonl`)
+    const pid = await startAgent('claude', cwd)
+    // ast-grep-ignore: test-no-wall-clock -- the agent is a real process: its transcript is written after the start time `ps` reports
+    const written = new Date()
     await writeFile(
       transcriptPath,
       line({
         type: 'user',
         cwd,
-        timestamp: THREE_DAYS_AGO.toISOString(),
+        timestamp: written.toISOString(),
         message: { role: 'user', content: 'Migrate the billing tables' }
       })
     )
-    await utimes(transcriptPath, THREE_DAYS_AGO, THREE_DAYS_AGO)
-    const pid = await startAgent('claude', cwd)
 
     const host = runtimeLiveSessionHost({ id: 'env-1', label: 'kessel-ml' }, serverCall)
     const { sessions, complete } = await new HostSessionScanner(host, RUNTIME_SCAN_LIMITS).scan(
-      THREE_DAYS_AGO.getTime() + 3 * 86_400_000
+      written.getTime()
     )
 
     expect(complete).toBe(true)

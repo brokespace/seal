@@ -36,6 +36,8 @@ function transcript(
 function machine(clock: () => number = () => NOW) {
   const state: {
     running: boolean
+    /** The folder the running agent is in. */
+    cwd: string
     files: DiscoveredFile[]
     panes: SealPane[]
     /** The machine stopped answering: its scans fail. */
@@ -44,6 +46,7 @@ function machine(clock: () => number = () => NOW) {
     disconnected: boolean
   } = {
     running: false,
+    cwd: '/srv/shop',
     files: [],
     panes: [],
     down: false,
@@ -57,7 +60,7 @@ function machine(clock: () => number = () => NOW) {
       }
       return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
-        ...(state.running ? ['@@PROC 4100 1 pts/3 claude', '@@CWD 4100 /srv/shop'] : []),
+        ...(state.running ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`] : []),
         '@@DONE'
       ].join('\n')
     },
@@ -243,6 +246,7 @@ describe('a Seal pane whose status changes between scans', () => {
     const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
     const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
     state.running = true
+    state.cwd = '/tmp/cc-home/work'
     state.files = [transcript(recorded, WORKING, 0, 7)]
     state.panes = [{ ...sealPane, status: 'your-turn' }]
     registry.start()
