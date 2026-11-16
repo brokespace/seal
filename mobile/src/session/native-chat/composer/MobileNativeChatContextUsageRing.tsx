@@ -8,11 +8,12 @@ import {
 } from 'react-native'
 import { memo, useCallback, useRef, useState } from 'react'
 import Svg, { Circle } from 'react-native-svg'
+import type { NativeChatContextUsageSummary } from '../../../../../src/shared/native-chat/native-chat-context-usage-summary'
 import {
   contextUsageRingReadout,
-  keyContextUsageRows,
-  type NativeChatContextUsageSummary
-} from '../../../../../src/shared/native-chat/native-chat-context-usage-summary'
+  isContextUsageMeasured,
+  type NativeChatContextUsageState
+} from '../../../../../src/shared/native-chat/native-chat-context-usage-state'
 import { AnchoredDetailCardLayer } from '../../../components/AnchoredDetailCard'
 import { DetailCardFocusBoundary } from '../../../components/detail-card-host'
 import {
@@ -22,20 +23,43 @@ import {
 import { useDetailCardScope } from '../../../components/use-detail-card-scope'
 import {
   COMPOSER_CONTROL_HIT_SLOP,
+  COMPOSER_CONTROL_SIZE,
   composerInputStyles as inputStyles
 } from '../../../components/composer-input/composer-input-styles'
+import { useNow } from '../../../hooks/use-now'
 import { useKeyboardPersistingTaps } from '../../../platform/keyboard/keyboard-persisting-taps'
 import { useKeyboardOcclusion } from '../../../platform/keyboard/keyboard-occlusion'
+import type { Translate } from '../../../i18n/mobile-i18n'
 import { useMobileTranslation } from '../../../i18n/use-mobile-translation'
 import { colors, radii, spacing, typography } from '../../../theme/mobile-theme'
 import { themedStyleSheet } from '../../../theme/themed-styles'
 import { useMobileColorScheme } from '../../../theme/use-mobile-color-scheme'
 import type { MobileHostHandle } from '../../../platform/host-handle'
+import { MobileNativeChatContextUsageCardBody } from './MobileNativeChatContextUsageCardBody'
 
 const RING_SIZE = 16
 const RING_STROKE = 2
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+/** Often enough for "Compacted" to end near its minute and for the card's "ago" to stay right. */
+const COMPACTION_CLOCK_MS = 30_000
+
+/** The words beside the ring; a ring with nothing to warn about has none. */
+function contextUsageStateText(state: NativeChatContextUsageState, t: Translate): string | null {
+  switch (state) {
+    case 'near':
+      return t('seal.contextIndicator.compactsSoon', 'Compacts soon')
+    case 'critical':
+      return t('seal.contextIndicator.almostFull', 'Context almost full')
+    case 'compacted':
+      return t('seal.contextIndicator.compacted', 'Compacted')
+    // The phone is never told a compaction is running.
+    case 'compacting':
+    case 'unknown':
+    case 'normal':
+      return null
+  }
+}
 
 /** The composer box's props, which the card lines its trailing and bottom edges up with, and the
  *  ring for the action row (null without usage). `obscured` is the composer's own menu, which sits
@@ -123,13 +147,29 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
     },
     [layerRef, cardKeepsKeyboard]
   )
-  const { filled, critical, used, window } = contextUsageRingReadout(usage)
-  const tint = critical ? colors.statusRed : colors.textMuted
-  const label = t(
-    'chat.contextUsage.label',
-    'Context {{used}} of {{window}} tokens, {{percent}}% used',
-    { used, window, percent: String(usage.percentage) }
-  )
+  // Only a compaction makes the readout depend on the time.
+  const now = useNow(COMPACTION_CLOCK_MS, usage.lastCompactedAt !== undefined)
+  const readout = contextUsageRingReadout(usage, { now })
+  const { state, filled, used, window } = readout
+  const measured = isContextUsageMeasured(usage)
+  const warnTint =
+    state === 'near' ? colors.statusAmber : state === 'critical' ? colors.statusRed : null
+  const tint = warnTint ?? colors.textMuted
+  const stateText = contextUsageStateText(state, t)
+  const usageLabel = measured
+    ? t('chat.contextUsage.label', 'Context {{used}} of {{window}} tokens, {{percent}}% used', {
+        used,
+        window,
+        percent: String(usage.percentage)
+      })
+    : t('seal.contextIndicator.empty', 'Context usage appears after the first reply.')
+  const label =
+    stateText === null
+      ? usageLabel
+      : t('seal.contextIndicator.labelWithState', '{{label}} ({{state}})', {
+          label: usageLabel,
+          state: stateText
+        })
   return (
     <>
       <DetailCardFocusBoundary refs={card.boundaryRefs} index={0} active={card.active} />
@@ -139,39 +179,54 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
         accessibilityLabel={label}
         aria-expanded={card.requestedOpen}
         testID="native-chat-context-usage"
-        style={({ pressed }) => [inputStyles.ghostButton, pressed && inputStyles.pressed]}
+        style={({ pressed }) => [
+          styles.opener,
+          stateText !== null && styles.openerWithText,
+          pressed && inputStyles.pressed
+        ]}
         onLayout={card.onAnchorLayout}
         onPress={card.toggle}
         hitSlop={COMPOSER_CONTROL_HIT_SLOP}
       >
-        <Svg
-          width={RING_SIZE}
-          height={RING_SIZE}
-          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-          style={ringStyles.ring}
-          pointerEvents="none"
-        >
-          <Circle
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke={tint}
-            strokeWidth={RING_STROKE}
-            opacity={0.25}
-          />
-          <Circle
-            cx={RING_SIZE / 2}
-            cy={RING_SIZE / 2}
-            r={RING_RADIUS}
-            fill="none"
-            stroke={tint}
-            strokeWidth={RING_STROKE}
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRCUMFERENCE}
-            strokeDashoffset={RING_CIRCUMFERENCE * (1 - filled / 100)}
-          />
-        </Svg>
+        {stateText !== null ? (
+          <Text
+            style={[styles.stateText, { color: tint }]}
+            numberOfLines={1}
+            testID="native-chat-context-usage-text"
+          >
+            {stateText}
+          </Text>
+        ) : null}
+        {/* The state as tests read it: react-native-svg drops a testID on the web. */}
+        <View pointerEvents="none" testID={`native-chat-context-usage-state-${state}`}>
+          <Svg
+            width={RING_SIZE}
+            height={RING_SIZE}
+            viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+            style={ringStyles.ring}
+          >
+            <Circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RING_RADIUS}
+              fill="none"
+              stroke={tint}
+              strokeWidth={RING_STROKE}
+              opacity={0.25}
+            />
+            <Circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RING_RADIUS}
+              fill="none"
+              stroke={tint}
+              strokeWidth={RING_STROKE}
+              strokeLinecap="round"
+              strokeDasharray={RING_CIRCUMFERENCE}
+              strokeDashoffset={RING_CIRCUMFERENCE * (1 - filled / 100)}
+            />
+          </Svg>
+        </View>
       </Pressable>
       <DetailCardFocusBoundary refs={card.boundaryRefs} index={1} active={card.active} />
       <AnchoredDetailCardLayer
@@ -179,28 +234,14 @@ const MobileNativeChatContextUsageRing = memo(function MobileNativeChatContextUs
         obscured={obscured}
         layerRef={attachLayer}
         title={t('chat.contextUsage.title', 'Context')}
-        titleTrailing={`${used}/${window}`}
+        titleTrailing={measured ? `${used}/${window}` : undefined}
       >
-        <View style={styles.track}>
-          <View style={[styles.fill, critical && styles.fillCritical, { width: `${filled}%` }]} />
-        </View>
-        {usage.rows.length > 0 ? (
-          <View style={styles.rows}>
-            {keyContextUsageRows(usage.rows).map(({ key, row }) => (
-              <View key={key} style={styles.row}>
-                <Text style={styles.rowName} numberOfLines={1}>
-                  {row.name}
-                </Text>
-                <Text style={styles.rowValue}>{row.percentage}%</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {usage.estimated ? (
-          <Text style={styles.estimated}>
-            {t('chat.contextUsage.estimated', 'Estimated from the last response.')}
-          </Text>
-        ) : null}
+        <MobileNativeChatContextUsageCardBody
+          usage={usage}
+          readout={readout}
+          now={now}
+          warnTint={warnTint}
+        />
       </AnchoredDetailCardLayer>
     </>
   )
@@ -211,43 +252,26 @@ const ringStyles = StyleSheet.create({
 })
 
 const styles = themedStyleSheet(() => ({
-  track: {
-    height: 6,
-    marginTop: spacing.sm,
-    borderRadius: radii.pill,
-    backgroundColor: colors.translucentFill,
-    overflow: 'hidden'
-  },
-  fill: {
-    height: '100%',
-    borderRadius: radii.pill,
-    backgroundColor: colors.textPrimary
-  },
-  fillCritical: {
-    backgroundColor: colors.statusRed
-  },
-  rows: {
-    marginTop: spacing.md,
-    gap: spacing.xs
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.md
-  },
-  rowName: {
+  // Alone, the ring fills a round control; with words it grows toward the leading controls and
+  // truncates before it can push the mic or Send off a narrow row.
+  opener: {
     flexShrink: 1,
-    color: colors.textPrimary,
-    fontSize: typography.metaSize
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    minWidth: COMPOSER_CONTROL_SIZE,
+    maxWidth: '45%',
+    height: COMPOSER_CONTROL_SIZE,
+    paddingHorizontal: (COMPOSER_CONTROL_SIZE - RING_SIZE) / 2,
+    borderRadius: radii.pill
   },
-  rowValue: {
-    color: colors.textMuted,
+  openerWithText: {
+    paddingLeft: spacing.xs
+  },
+  stateText: {
+    flexShrink: 1,
     fontSize: typography.metaSize,
-    fontVariant: ['tabular-nums']
-  },
-  estimated: {
-    marginTop: spacing.md,
-    color: colors.textMuted,
-    fontSize: typography.metaSize
+    fontWeight: '500'
   }
 }))
