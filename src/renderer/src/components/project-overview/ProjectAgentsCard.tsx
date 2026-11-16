@@ -5,9 +5,9 @@ import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
 import { buildActiveAgents } from '@/components/live-sessions/active-agents/active-agents-model'
-import { liveSessionMarksStore } from '@/components/live-sessions/live-session-marks-store'
 import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
 import { LiveSessionRows } from '@/components/live-sessions/row/LiveSessionRows'
+import { revealFirstListedSession } from '@/components/live-sessions/workspace-rows/session-row-reveal'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 
 /** The project's agents: running ones under their machine, then the ones that ended in the last day. */
@@ -36,7 +36,11 @@ export function ProjectAgentsCard({
               size="xs"
               data-project-overview-filter-agents
               // The sidebar badge's own click, so both lead to the same list and leave the page up.
-              onClick={() => liveSessionMarksStore.reveal(view.machines[0].sessions[0].id)}
+              onClick={() =>
+                revealFirstListedSession(
+                  view.machines.flatMap((machine) => machine.sessions.map((session) => session.id))
+                )
+              }
             >
               {t('seal.projectOverview.agents.showInActiveAgents', 'Show in Active agents')}
             </Button>

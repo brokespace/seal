@@ -65,6 +65,17 @@ export function scrollSidebarSessionRowIntoView(row: HTMLElement): void {
   requestVirtualizedScrollAnchorRecord(list)
 }
 
+/** Asks for the rows of several sessions at once. A filter that lists any of them stays on, so it is that one the list goes to. */
+export function revealFirstListedSession(sessionIds: readonly string[]): void {
+  const filters = sidebarSessionFilterStore.getState()
+  const sessions = liveSessionRegistryStore.getState().sessions
+  const listed = sessionIds.find((id) => {
+    const session = sessions.find((s) => s.id === id)
+    return session !== undefined && matchesSidebarSessionFilters(session, filters)
+  })
+  liveSessionMarksStore.reveal(listed ?? sessionIds[0])
+}
+
 /** Stops what hides a session's row: the filters, and for an ended one the line it sits behind. */
 export function unhideSessionRow(session: LiveSession, finishedOpenKey: string): void {
   if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {

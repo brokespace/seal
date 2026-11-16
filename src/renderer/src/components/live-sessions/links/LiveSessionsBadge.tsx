@@ -6,6 +6,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { liveSessionDotState, liveSessionStatusLabel } from '../live-session-presentation'
 import { useLiveSessionTabs } from '../workspace/live-session-tabs-store'
 import { liveSessionMarksStore } from '../live-session-marks-store'
+import { revealFirstListedSession } from '../workspace-rows/session-row-reveal'
 import { useLiveSessionLinks } from './use-live-session-links'
 
 /** How many sessions run and what the most urgent of them needs, in words. */
@@ -50,7 +51,7 @@ export function LiveSessionsBadge({ projectId }: { projectId: string }): React.J
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        liveSessionMarksStore.reveal(badge.sessionIds[0])
+        revealFirstListedSession(badge.sessionIds)
         // The reveal rings the one row it scrolls to; the badge counts them all.
         liveSessionMarksStore.highlight(badge.sessionIds)
       }}
