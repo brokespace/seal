@@ -59,18 +59,31 @@ export function holdKeyboardFocusForSurfacePress(paneId: string): void {
 }
 
 const TAB_KEYBOARD_HOLD_MS = 1000
+const MAX_KEYBOARD_RETAKES = 3
 
 /**
  * A workspace that becomes the current one focuses its terminal. A tab or a strip button chosen
- * with Enter or Space keeps the keyboard, until the next key or press.
+ * with Enter or Space keeps the keyboard, until the next key or press or for a second at most.
  */
 export function keepKeyboardOnStripControl(control: HTMLElement): void {
+  const takenBack = new WeakMap<Element, number>()
   const retake = (): void => {
     // After the focus has landed where it was sent.
     queueMicrotask(() => {
-      if (control.isConnected && document.activeElement !== control) {
-        control.focus({ preventScroll: true })
+      const holder = document.activeElement
+      if (!control.isConnected || holder === control) {
+        return
       }
+      const times = holder ? (takenBack.get(holder) ?? 0) : 0
+      // What keeps taking the keyboard (a dialog that traps it) is left with it.
+      if (times >= MAX_KEYBOARD_RETAKES) {
+        stop()
+        return
+      }
+      if (holder) {
+        takenBack.set(holder, times + 1)
+      }
+      control.focus({ preventScroll: true })
     })
   }
   const stop = (): void => {

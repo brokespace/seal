@@ -36,6 +36,19 @@ function restoreSessionTwoUp(): SplitViewState {
   )
 }
 
+/** Converted once: a grid closed before the session page next saves does not come back. */
+function forgetSessionTwoUp(): void {
+  const saved: unknown = JSON.parse(
+    globalThis.localStorage?.getItem(LEGACY_SESSION_TABS_KEY) ?? 'null'
+  )
+  if (saved && typeof saved === 'object') {
+    globalThis.localStorage?.setItem(
+      LEGACY_SESSION_TABS_KEY,
+      JSON.stringify({ ...saved, splitId: undefined })
+    )
+  }
+}
+
 function save(state: SplitViewState): void {
   try {
     const saved = serializeSplitView(state)
@@ -56,9 +69,9 @@ function restore(): SplitViewState {
       return parseSavedSplitView(raw)
     }
     const converted = restoreSessionTwoUp()
-    // The session page's next save drops the two-up from its own key.
     if (converted.layout) {
       save(converted)
+      forgetSessionTwoUp()
     }
     return converted
   } catch {

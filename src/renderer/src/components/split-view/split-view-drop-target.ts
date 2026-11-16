@@ -67,7 +67,10 @@ function setPreview(next: SplitViewDropPreview | null): void {
       next.rect.left === preview.rect.left &&
       next.rect.top === preview.rect.top &&
       next.rect.width === preview.rect.width &&
-      next.rect.height === preview.rect.height)
+      next.rect.height === preview.rect.height &&
+      next.insertion?.groupId === preview.insertion?.groupId &&
+      next.insertion?.visibleTabId === preview.insertion?.visibleTabId &&
+      next.insertion?.side === preview.insertion?.side)
   if (same) {
     return
   }
@@ -166,7 +169,12 @@ function sessionPageTabs(
     : null
 }
 
-function resolveStripDrop(strip: HTMLElement, x: number, paneId: string | null): ResolvedDrop {
+function resolveStripDrop(
+  strip: HTMLElement,
+  x: number,
+  paneId: string | null,
+  dragged: ReadonlySet<string>
+): ResolvedDrop {
   const stripRect = strip.getBoundingClientRect()
   const tabs = [...strip.querySelectorAll<HTMLElement>(`[${ITEM_TAB_KEY_ATTRIBUTE}]`)]
   const scroller = strip.querySelector<HTMLElement>('[role="tablist"]')
@@ -198,7 +206,8 @@ function resolveStripDrop(strip: HTMLElement, x: number, paneId: string | null):
     preview: {
       kind: 'insert',
       rect: { left: barLeft - 1, top: stripRect.top, width: 2, height: stripRect.height },
-      ...(visibleTabId
+      // No bar beside the dragged tab itself, as in a workspace's tab row.
+      ...(visibleTabId && !dragged.has(visibleTabId)
         ? { insertion: { groupId: itemTabStripGroupId(paneId), visibleTabId, side } }
         : {})
     }
@@ -223,9 +232,10 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   if (mode === 'open') {
     return { place: 'open', preview: { kind: 'open', rect: areaRect } }
   }
+  const dragged = new Set(items.map(splitViewItemKey))
   const strip = findAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
   if (strip) {
-    return resolveStripDrop(strip, x, strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null)
+    return resolveStripDrop(strip, x, strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null, dragged)
   }
   const pane = mode === 'grid' ? findAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
   if (!pane) {
@@ -237,7 +247,6 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
     resolveDropZone(rect, { x, y }, EDGE_SHARE),
     splitViewPaneGridSize(paneId, rect)
   )
-  const dragged = new Set(items.map(splitViewItemKey))
   const held = paneKeys(paneId)
   const leavesNothing = held.every((key) => dragged.has(key))
   // Nothing would be left to split from: the drop adds tabs instead.
@@ -268,10 +277,6 @@ export function trackSplitViewDrop(x: number, y: number, items: readonly SplitVi
   const drop = resolveDrop(x, y, items)
   setPreview(drop?.preview ?? null)
   return drop !== null
-}
-
-export function clearSplitViewDropPreview(): void {
-  setPreview(null)
 }
 
 /** Commits a release at the pointer. False when the main area did not take the drop. */
