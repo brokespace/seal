@@ -1190,12 +1190,7 @@
       "machine": "Machine: {{machine}}",
       "online": "· {{online}} of {{total}} machines online",
       "machinesTitle": "Machines the assistant can reach",
-      "usage": "{{used}} / {{window}}",
-      "label": "Context: {{usage}} tokens",
-      "title": "Context",
-      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete.",
-      "compactions": "Summaries so far: {{count}}",
-      "compactNow": "Summarize older messages now"
+      "description": "What the model reads on its next turn: {{percent}}% of its window. When it fills, Seal summarizes older messages for the model; the thread you see stays complete."
     },
     "threads": {
       "renameLabel": "Thread name",
@@ -1573,6 +1568,16 @@
       "home": {
         "signInAgain": "Sign in again in Settings > Accounts"
       }
+    },
+    "launcher": {
+      "chat": "Chat",
+      "cli": "CLI",
+      "installServerToChat": "Install Seal server to chat here",
+      "cliNeedsServer": "Install Seal server to use the CLI here",
+      "installServerMachineMissing": "This SSH host is not in Machines. Add it there to install Seal server.",
+      "chatOutsideWorkspace": "No chat outside the workspace",
+      "cliNotInstalledOn": "{{value0}} is not installed on {{value1}}",
+      "cliNotInstalledHere": "{{value0}} is not installed on this computer"
     },
     "session": {
       "liveSwap": {
@@ -2161,6 +2166,22 @@
         "open": "Project Overview",
         "openOverview": "Open project overview"
       }
+    },
+    "contextIndicator": {
+      "compactsSoon": "Compacts soon",
+      "almostFull": "Context almost full",
+      "compacting": "Compacting…",
+      "compacted": "Compacted",
+      "compactedCountLast_one": "Compacted {{count}} time, last {{ago}}",
+      "compactedCountLast_other": "Compacted {{count}} times, last {{ago}}",
+      "compactedCount_one": "Compacted {{count}} time",
+      "compactedCount_other": "Compacted {{count}} times",
+      "lastCompacted": "Last compacted {{ago}}",
+      "usageAbout": "About {{used}} of {{window}} tokens ({{percent}}%)",
+      "usage": "{{used}} of {{window}} tokens ({{percent}}%)",
+      "empty": "Context usage appears after the first reply.",
+      "compactsAt": "Compacts automatically at {{threshold}}: {{left}} left",
+      "compactNow": "Compact now"
     }
   },
   "components": {

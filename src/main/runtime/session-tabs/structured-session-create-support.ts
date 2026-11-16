@@ -26,7 +26,7 @@ import { structuredLaunchSeedOptions } from '../../../shared/native-chat/input/n
 import { hasPersistedStructuredAgentSessionStore as hasPersistedStructuredAgentSessionStoreOnDisk } from '../agent-session/records/agent-session-record-store-slot'
 import { ensureStructuredAgentSessionHostUnlessRefused } from '../agent-session/structured-agent-session-host-refusal'
 import { getProfileUserDataPath } from '../../orca-profiles/profile-storage-paths'
-import { isFloatingWorkspaceSelector } from '../../../shared/floating-workspace-worktree'
+import { resolveStructuredAgentSessionCreateLaunchDirectory } from '../agent-session/agent-session-create-launch-directory'
 import type { AgentSessionAccountHome } from '../../../shared/agent-session/lifecycle/agent-session-account-home'
 import type { StructuredAgentId } from '../../../shared/agent-session/lifecycle/agent-session-provider-handle'
 import type { StructuredAgentCreateSupportReply } from '../../../shared/agent-session/structured-agent-create-support-reply'
@@ -107,9 +107,10 @@ export abstract class OrcaRuntimeWithGetStructuredAgentSessionCreateSupport exte
             (source) => this.getStructuredAgentCliSourceRoute(source)
           )
         : undefined)
-    const hostLaunchDirectory = isFloatingWorkspaceSelector(input.worktree)
-      ? (await this.resolveRuntimeFileTarget(input.worktree)).worktree.path
-      : undefined
+    const hostLaunchDirectory = await resolveStructuredAgentSessionCreateLaunchDirectory(
+      input,
+      async () => (await this.resolveRuntimeFileTarget(input.worktree)).worktree.path
+    )
     if (input.forkFrom) {
       const resolved = await resolveStructuredAgentSessionForkIntent({
         ...input,
@@ -132,7 +133,8 @@ export abstract class OrcaRuntimeWithGetStructuredAgentSessionCreateSupport exte
     }
     const resolved = await this.resolveStructuredAgentSessionIntent(
       { ...input, structuredAgentCliSourceEvidence },
-      resolveAccountHome
+      resolveAccountHome,
+      hostLaunchDirectory
     )
     return hostLaunchDirectory ? { ...resolved, hostLaunchDirectory } : resolved
   }
@@ -166,7 +168,8 @@ export abstract class OrcaRuntimeWithGetStructuredAgentSessionCreateSupport exte
         }
       },
       permissionMode?: string
-    ) => AgentSessionAccountHome | Promise<AgentSessionAccountHome>
+    ) => AgentSessionAccountHome | Promise<AgentSessionAccountHome>,
+    hostLaunchDirectory?: string
   ): Promise<AgentSessionAttachParams> {
     const support = await this.getStructuredAgentSessionCreateSupport(input.worktree, input.agent)
     // Adopting a conversation reads the agent's own transcript, so only an agent registered with an
@@ -206,8 +209,9 @@ export abstract class OrcaRuntimeWithGetStructuredAgentSessionCreateSupport exte
         resumeFrom.providerSessionId
       )
     }
+    // A conversation is adopted from the folder its agent will run in.
     const workspaceCwd = resumeFrom
-      ? (await this.resolveRuntimeFileTarget(input.worktree)).worktree.path
+      ? (hostLaunchDirectory ?? (await this.resolveRuntimeFileTarget(input.worktree)).worktree.path)
       : ''
     const permissionMode = options?.[AGENT_CHAT_PERMISSION_MODE_OPTION_ID]
     const selectedAccountHome = await resolveAccountHome({ launchEnv, location }, permissionMode)

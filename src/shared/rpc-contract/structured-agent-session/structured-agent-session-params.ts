@@ -113,6 +113,8 @@ export const CreateIntentParams = z
     agent: StructuredAgent,
     ...SOURCE_FIELDS,
     ...CREATE_TAB_FIELDS,
+    /** Requires `agentSession.create.launch-directory.v1` on the executing host. */
+    launchDirectory: z.string().min(1).max(4096).optional(),
     /** Both fields require `agentSession.create.message.v1` on the executing host. */
     firstMessage: z
       .object({

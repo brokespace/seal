@@ -8,6 +8,7 @@ import type { NativeChatContextUsageSummary } from '../../../../../shared/native
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 vi.mock('@/i18n/i18n', () => ({
+  i18n: { language: 'en' },
   translate: (_key: string, fallback: string, values?: Record<string, string>) =>
     fallback.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => values?.[name] ?? '')
 }))

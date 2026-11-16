@@ -121,8 +121,11 @@ export async function prepareStructuredChatCliFork(
     }
   }
   const agent = record.provider
+  // A chat started in a workspace subfolder saved its conversation under that folder.
   const cwd =
-    (await host.deps.resolveWorkspacePath?.(record.location.workspaceId)) || record.launchDirectory
+    (record.launchDirectoryInWorkspace && record.launchDirectory) ||
+    (await host.deps.resolveWorkspacePath?.(record.location.workspaceId)) ||
+    record.launchDirectory
   if (!cwd || !isAbsolute(cwd) || isWslUncPath(cwd)) {
     throw new Error('The chat workspace is unavailable on this host.')
   }

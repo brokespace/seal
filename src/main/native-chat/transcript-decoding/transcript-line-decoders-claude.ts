@@ -21,6 +21,7 @@ import {
   claudeMessageWithoutSyntheticText,
   isClaudeInjectedUserMessage
 } from '../../claude/structured/journal/claude-internal-message-content'
+import { claudeTokenUsage } from '../../../shared/agent-session/agent-session-context-usage-claude'
 
 const MAX_EDIT_PATCH_HUNKS = 40
 const MAX_EDIT_PATCH_HUNK_LINES = 400
@@ -136,8 +137,22 @@ export function decodeClaudeTranscriptLine(
         : blocks,
     timestamp,
     source: 'transcript',
-    ...parent
+    ...parent,
+    ...claudeResponseContextFields(record, message)
   }
+}
+
+/** The main thread's responses size the context ring; a subagent's measure its own window. */
+function claudeResponseContextFields(
+  record: Record<string, unknown>,
+  message: Record<string, unknown> | null
+): Pick<NativeChatMessage, 'model' | 'usage'> {
+  if (record.type !== 'assistant' || record.isSidechain === true) {
+    return {}
+  }
+  const model = extractString(message?.model)
+  const usage = claudeTokenUsage(message?.usage)
+  return { ...(model ? { model } : {}), ...(usage ? { usage } : {}) }
 }
 
 /** Mid-turn human prompts exist only as queued_command attachments; decode them to reconcile local echoes. */

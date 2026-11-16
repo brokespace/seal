@@ -8,6 +8,7 @@ import {
   type AgentSessionRecord
 } from '../../../../shared/agent-session/lifecycle/agent-session-record'
 import { normalizeAgentSessionConversationName } from '../../../../shared/agent-session/agent-session-conversation-name'
+import { isFloatingWorkspaceId } from '../../../../shared/floating-workspace-worktree'
 
 export type AgentSessionRecordIdentity = Pick<
   AgentSessionRecord,
@@ -42,6 +43,10 @@ export function agentSessionRecordIdentityFields(
     ...(identity.launchArgs ? { launchArgs: [...identity.launchArgs] } : {}),
     // /clear retains its tab and launch directory.
     ...(identity.launchDirectory ? { launchDirectory: identity.launchDirectory } : {}),
+    // Only a founding names a worktree/folder chat's folder, so records older builds pinned stay unmarked.
+    ...(identity.launchDirectory && !isFloatingWorkspaceId(identity.location.workspaceId)
+      ? { launchDirectoryInWorkspace: true as const }
+      : {}),
     ...(conversationName ? { conversationName } : {}),
     createdAt: now,
     updatedAt: now
