@@ -292,7 +292,7 @@ export class LiveSessionService {
 
   /** Hides sessions for good at once; stops them and deletes their transcripts behind that when asked. */
   async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
-    const { result, sessions } = await removeSessions(request, {
+    const { result, sessions, removed } = await removeSessions(request, {
       session: (sessionId) => this.registry.get(sessionId),
       owner: (session) => ({
         server: session.surface.kind === 'external' ? null : this.federated(session.id),
@@ -304,12 +304,10 @@ export class LiveSessionService {
       now: Date.now
     })
     if (!request.keep) {
-      this.annotations.forget(result.removed)
+      this.annotations.forget([...result.removed, ...removed.map((session) => session.id)])
     }
-    for (const session of sessions) {
-      if (request.stop && result.removed.includes(session.id)) {
-        this.noteStopped(session)
-      }
+    for (const session of request.stop ? removed : []) {
+      this.noteStopped(session)
     }
     for (const hostId of new Set(sessions.map((session) => session.machine.hostId))) {
       void this.registry.refresh(hostId)

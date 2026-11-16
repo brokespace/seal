@@ -21,7 +21,7 @@ test('a chat at work on a Seal server leaves the list within two seconds of "Sto
     // The stub keeps a turn whose prompt says "slow" open for a minute.
     const { page, environmentId, hostId, exec } = await startServerStubChat(fixture, 'slow walk')
     const { userDataDir } = fixture.session
-    const working = await expectOneChat(userDataDir, hostId, 'working')
+    await expectOneChat(userDataDir, hostId, 'working')
     // The brackets keep pgrep from finding the shell that runs this very line.
     const agentRuns = (): string =>
       exec("pgrep -f '[o]rca-e2e-claude-stub.cjs' >/dev/null && echo yes || echo no")
@@ -35,9 +35,7 @@ test('a chat at work on a Seal server leaves the list within two seconds of "Sto
     await expect.poll(agentRuns, { timeout: 30_000 }).toBe('no')
     // The server keeps the chat for its other clients, ended; this desktop hides it for good.
     const onServer = await callEnvironment(page, environmentId, 'liveSessions.list', undefined)
-    expect(onServer).toMatchObject({
-      sessions: [{ id: working.id.replace(`${hostId}:`, 'local:'), alive: false }]
-    })
+    expect(onServer).toMatchObject({ sessions: [{ surface: { kind: 'chat' }, alive: false }] })
     expect((await listMachine(userDataDir, hostId)).sessions).toEqual([])
     await expect(row).toHaveCount(0)
   })

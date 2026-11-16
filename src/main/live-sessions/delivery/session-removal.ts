@@ -127,14 +127,15 @@ export async function removeSessions(
     onListChanged(): void
     now(): number
   }
-): Promise<{ result: LiveRemoveResult; sessions: LiveSession[] }> {
+): Promise<{ result: LiveRemoveResult; sessions: LiveSession[]; removed: LiveSession[] }> {
   // Read before they are hidden: a hidden session is no longer listed.
-  const asked = [...new Set(request.sessionIds)].map((sessionId) => ({
-    sessionId,
-    session: deps.session(sessionId)
-  }))
+  const asked = [...new Set(request.sessionIds)].map((sessionId) => {
+    const session = deps.session(sessionId)
+    // Asked for by an id it has left behind since, it is hidden under the one it goes by now too.
+    return { sessionId, session, ids: [...new Set([sessionId, ...(session ? [session.id] : [])])] }
+  })
   if (!request.keep) {
-    deps.removals.hold(asked.map(({ sessionId }) => sessionId))
+    deps.removals.hold(asked.flatMap(({ ids }) => ids))
     deps.onListChanged()
   }
   const sideBySide = sideBySideHosts()
@@ -144,15 +145,15 @@ export async function removeSessions(
   }
   // Each owner settles on its own: what kept running there is listed again without waiting for the rest.
   const failures = await Promise.all(
-    asked.map(async ({ sessionId, session }) => {
+    asked.map(async ({ sessionId, session, ids }) => {
       const failure = await (session ? stop(session) : NOTHING_TO_STOP).then(
         (outcome) => (outcome === 'removed' ? null : { sessionId, reason: outcome }),
         (error: unknown) => ({ sessionId, reason: 'failed' as const, error: errorMessage(error) })
       )
       if (failure) {
-        deps.removals.release([sessionId])
+        deps.removals.release(ids)
       } else if (!request.keep) {
-        deps.removals.add([sessionId], deps.now())
+        deps.removals.add(ids, deps.now())
       }
       deps.onListChanged()
       return failure
@@ -163,7 +164,8 @@ export async function removeSessions(
       removed: asked.flatMap(({ sessionId }, index) => (failures[index] ? [] : sessionId)),
       failed: failures.flatMap((failure) => failure ?? [])
     },
-    sessions: asked.flatMap(({ session }) => session ?? [])
+    sessions: asked.flatMap(({ session }) => session ?? []),
+    removed: asked.flatMap(({ session }, index) => (session && !failures[index] ? session : []))
   }
 }
 

@@ -154,4 +154,25 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
     })
     expect(listed()).toEqual(['local:claude:quick'])
   })
+
+  it('hides a session asked for by the id it had before its agent named it', async () => {
+    const named = claudeSession(ID, 4300)
+    const removals = new LiveSessionRemovals(join(dir, 'removed.json'))
+    await removals.load()
+
+    const { result, removed } = await removeSessions(
+      { sessionIds: ['local:claude:pid-4300'], stop: false, deleteTranscripts: false },
+      {
+        session: (id) => (id === 'local:claude:pid-4300' ? named : null),
+        owner: () => ({ server: null, chats: null, host: null }),
+        removals,
+        onListChanged: () => {},
+        now: () => 1_800_000_000_000
+      }
+    )
+
+    expect(removals.has(`local:claude:${ID}`)).toBe(true)
+    expect(result).toEqual({ removed: ['local:claude:pid-4300'], failed: [] })
+    expect(removed).toEqual([named])
+  })
 })
