@@ -131,7 +131,7 @@ test.describe('structured chat tabs', () => {
     // A chat the window opens from the New tab menu.
     await page.getByRole('button', { name: 'New tab' }).click({ force: true })
     const claudeOption = page.getByRole('menuitem', {
-      name: 'Claude Configure Claude',
+      name: 'Claude',
       exact: true
     })
     await expect(claudeOption).toBeVisible({ timeout: 15_000 })

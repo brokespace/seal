@@ -11,7 +11,20 @@ import { useUiLanguageRevision } from '@/i18n/use-ui-language-revision'
 import { AgentDefaultContextMenu } from './agent-combobox-items'
 import { AgentLaunchSetupButton, type AgentPickerSetupIdentity } from './AgentLaunchSetupButton'
 import { applyAgentPickerEdit } from '../../../../shared/agent-launch/picker/agent-launch-picker-edits'
-import { chatUnavailableLabel } from '../tab-bar/tab-agent-row-presentation'
+import {
+  chatUnavailableLabel,
+  installServerOfferLabel
+} from '../tab-bar/tab-agent-row-presentation'
+import { offerSealServerInstall } from '@/lib/agent-session/launch/routing/seal-server-install-offer'
+import { AgentPickerRowLabel } from './AgentPickerRowLabel'
+import { AgentPickerSurfaceActions } from './AgentPickerSurfaceActions'
+import { moveAgentRowActionFocus } from './AgentSurfaceLaunchButton'
+import {
+  pickerActionSurfaces,
+  pickerEntryRow,
+  pickerLaunchRow,
+  pickerSurfaceOpensTerminal
+} from './agent-picker-launch-row'
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
 import {
   agentPickerDraft,
@@ -20,14 +33,6 @@ import {
   type AgentPickerSurface
 } from '../../../../shared/agent-launch/picker/agent-launch-picker'
 import { useTranslate } from '@/i18n/use-translate'
-
-function pickerLaunchRow(entry: AgentPickerEntry, surface: AgentPickerSurface): NewTabAgentMenuRow {
-  return {
-    agent: entry.agent,
-    kind: surface === 'chat' ? 'chat' : 'cli',
-    executionHostId: entry.rows[0]?.executionHostId
-  }
-}
 
 export type AgentPickerMenuLaunch = (
   row: NewTabAgentMenuRow,
@@ -106,9 +111,24 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
   const closeMenu = useDropdownMenuClose()
   const surface =
     initial?.surface ?? (mode === 'select' ? selected?.surface : undefined) ?? entry.defaultSurface
-  const launchBlocked = mode !== 'select' && terminalBlocked && surface === 'terminal'
+  const launchBlocked =
+    mode !== 'select' && terminalBlocked && pickerSurfaceOpensTerminal(entry, surface)
   const reasonId = useId()
   const unavailable = entry.rows.find((row) => row.kind === 'chat-unavailable')
+  // An SSH machine without the Seal server still has something to start: the install its chat needs.
+  const offersInstall = mode !== 'select' && entry.chatAction === 'install-server'
+  const inert = !entry.surfaces.length && !offersInstall
+  // Why: a form's picker selects a setup, and its forms read the surface from the setup panel.
+  const showsActions = mode !== 'select' && !preset && pickerActionSurfaces(entry).length > 0
+  const chatNote = offersInstall
+    ? installServerOfferLabel(t)
+    : unavailable?.kind === 'chat-unavailable' && !entry.surfaces.includes('chat')
+      ? chatUnavailableLabel(unavailable.reason, t)
+      : undefined
+  // One reason per row: the wait, not also the chat note.
+  const reason = launchBlocked ? terminalPendingLabel(t) : chatNote
+  // A chat note keeps its own line whether or not the host is still connecting, so rows do not jump.
+  const reasonBelow = showsActions && chatNote !== undefined
   const setDefault =
     onSetDefault && entry.surfaces.length ? () => onSetDefault(entry.agent) : undefined
   if (setupDisabled) {
@@ -152,7 +172,7 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
       mode={mode}
       terminalBlocked={terminalBlocked}
       open={openSetup === setupId}
-      disabled={disabled || setupDisabled || !entry.surfaces.length}
+      disabled={disabled || setupDisabled || inert}
       onOpenChange={(next) => {
         if (next || openSetup === setupId) {
           onSetupOpenChange(next ? { id: setupId, agent: entry.agent, preset, label } : null)
@@ -181,26 +201,29 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
         <div
           data-agent-launch-row
           data-search-default={searchDefault || undefined}
+          // The actions name themselves, so the row's own name stays the agent.
+          aria-label={showsActions ? label : undefined}
+          aria-describedby={showsActions && reason ? reasonId : undefined}
           onClick={(event) => {
             event.preventDefault()
-            if (disabled || launchBlocked || !entry.surfaces.length) {
+            if (disabled || launchBlocked || inert) {
+              return
+            }
+            if (!entry.surfaces.length) {
+              offerSealServerInstall(entry.rows[0]?.executionHostId)
+              closeMenu()
               return
             }
             const draft = initial ?? (mode === 'select' ? selected : undefined)
             const surface = draft?.surface ?? entry.defaultSurface
-            const row = draft
-              ? pickerLaunchRow(entry, surface)
-              : (entry.rows.find((row) =>
-                  surface === 'chat'
-                    ? row.kind === 'chat'
-                    : row.kind === 'terminal' || row.kind === 'cli'
-                ) ?? pickerLaunchRow(entry, surface))
+            const row = draft ? pickerLaunchRow(entry, surface) : pickerEntryRow(entry, surface)
             const result = draft ? runLaunch(row, draft, entry) : runLaunch(row, undefined)
             if (result !== false) {
               closeMenu()
             }
           }}
           onKeyDown={(event) => {
+            moveAgentRowActionFocus(event)
             if (
               event.target === event.currentTarget &&
               (event.key === 'Enter' || event.key === ' ')
@@ -210,32 +233,47 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
             }
           }}
         >
-          {/* Why: the anchor is a Radix sub-trigger's asChild child, so the context menu wraps the label instead. */}
-          <AgentDefaultContextMenu isDefault={isDefault} onSetDefault={setDefault}>
-            <Button
-              type="button"
-              variant="menu-launch"
-              size="menu-launch"
-              aria-disabled={launchBlocked || undefined}
-              aria-describedby={launchBlocked ? reasonId : undefined}
-            >
-              <AgentIcon agent={entry.agent} size={14} />
-              <span className="min-w-0 flex-1 truncate text-left">{label}</span>
-              {shortcut ? <DropdownMenuShortcut>{shortcut}</DropdownMenuShortcut> : null}
-              {launchBlocked ? (
-                <span
-                  id={reasonId}
-                  className="min-w-0 shrink truncate text-xs text-muted-foreground"
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-w-0 items-center">
+              {/* Why: the anchor is a Radix sub-trigger's asChild child, so the context menu wraps the label instead. */}
+              <AgentDefaultContextMenu isDefault={isDefault} onSetDefault={setDefault}>
+                <Button
+                  type="button"
+                  variant="menu-launch"
+                  size="menu-launch"
+                  className={reasonBelow ? 'h-7' : undefined}
+                  aria-disabled={launchBlocked || undefined}
+                  aria-describedby={launchBlocked ? reasonId : undefined}
                 >
-                  {terminalPendingLabel()}
-                </span>
-              ) : unavailable?.kind === 'chat-unavailable' && !entry.surfaces.includes('chat') ? (
-                <span className="text-xs text-muted-foreground">
-                  {chatUnavailableLabel(unavailable.reason)}
-                </span>
+                  <AgentPickerRowLabel
+                    agent={entry.agent}
+                    label={label}
+                    shortcut={shortcut}
+                    reason={reasonBelow ? undefined : reason}
+                    reasonId={reasonId}
+                    besideActions={showsActions}
+                  />
+                </Button>
+              </AgentDefaultContextMenu>
+              {showsActions ? (
+                <AgentPickerSurfaceActions
+                  entry={entry}
+                  disabled={disabled}
+                  terminalBlocked={terminalBlocked}
+                  runLaunch={runLaunch}
+                />
               ) : null}
-            </Button>
-          </AgentDefaultContextMenu>
+            </div>
+            {reason && reasonBelow ? (
+              <span
+                id={reasonId}
+                data-agent-launch-row-note
+                className="truncate pr-2 pb-1.5 pl-7.5 text-xs font-normal text-muted-foreground"
+              >
+                {reason}
+              </span>
+            ) : null}
+          </div>
           {trigger}
         </div>
       )}
