@@ -1,10 +1,12 @@
 import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-account-types'
 import { installHomeChat } from '../../home-chat/home-chat-install'
 import type { HomeChatMachineSource } from '../../home-chat/machines/home-chat-machine-provider'
+import { installLiveSessionNotifier } from '../../live-sessions/live-session-notifier'
 import { installLiveSessions } from '../../live-sessions/live-sessions-install'
 import { startMachineDiskIndexKeeper } from '../../machines/resources/machine-disk-index-keeper'
 import type { Store } from '../../persistence/loading-store/store'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
+import { createExternalSessionPhonePush } from '../../runtime/push/notifications/external-session-phone-push'
 import { installSealMcp } from '../../seal-mcp/seal-mcp-install'
 
 const NO_CLAUDE_ACCOUNTS: ClaudeRateLimitAccountsState = { accounts: [], activeAccountId: null }
@@ -26,7 +28,15 @@ export function installOrcadSealHub(
   store: Store,
   accounts: { claudeAccounts: { listAccounts: () => ClaudeRateLimitAccountsState } } | null
 ): void {
-  installLiveSessions(runtime, store)
+  const liveSessions = installLiveSessions(runtime, store)
+  if (liveSessions) {
+    // No desktop to notify: the sessions this server scans reach its paired phones only.
+    installLiveSessionNotifier(
+      liveSessions.service,
+      store,
+      createExternalSessionPhonePush(runtime, liveSessions.service.registry)
+    )
+  }
   void installHomeChat({
     claudeAccounts: accounts?.claudeAccounts ?? { listAccounts: () => NO_CLAUDE_ACCOUNTS },
     codexAccounts: () => store.getSettings().codexManagedAccounts,

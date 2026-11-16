@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
+import { useAppStore } from '@/store'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { SessionSummariesPausedNote } from '@/components/session-summaries/SessionSummariesPausedNote'
-import { buildActiveAgents } from '@/components/live-sessions/active-agents/active-agents-model'
-import { LiveSessionMachineGroups } from '@/components/live-sessions/row/LiveSessionMachineGroups'
+import { isListedLiveSession } from '@/components/live-sessions/active-agents/active-agents-model'
 import { LiveSessionRows } from '@/components/live-sessions/row/LiveSessionRows'
+import { LiveSessionWorkspaceGroups } from '@/components/live-sessions/row/LiveSessionWorkspaceGroups'
 import { revealFirstListedSession } from '@/components/live-sessions/workspace-rows/session-row-reveal'
+import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
+import { compareListedLiveSessions } from '../../../../shared/live-sessions/live-session-summary'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 
-/** The project's agents: running ones under their machine, then the ones that ended in the last day. */
+/** The project's agents: running ones under their workspace, then the ones that ended in the last day. */
 export function ProjectAgentsCard({
   sessions,
   now
@@ -20,29 +23,37 @@ export function ProjectAgentsCard({
   now: number
 }): React.JSX.Element {
   const t = useTranslate()
-  const view = useMemo(() => buildActiveAgents(sessions, now), [sessions, now])
+  const running = useMemo(
+    () => sessions.filter(isActiveLiveSession).sort(compareListedLiveSessions),
+    [sessions]
+  )
+  const finished = useMemo(
+    () =>
+      sessions
+        .filter((session) => !isActiveLiveSession(session) && isListedLiveSession(session, now))
+        .sort((a, b) => b.lastActivityAt - a.lastActivityAt),
+    [sessions, now]
+  )
   const finishedLabel = t('auto.components.live-sessions.sidebar.finished', 'Recently finished')
-  const empty = view.machines.length === 0 && view.finished.length === 0
   return (
     <PageCard
       title={t('seal.projectOverview.agents.title', 'Agents')}
       action={
         <span className="flex items-center gap-2">
           <SessionSummariesPausedNote />
-          {view.activeCount > 0 ? (
+          {running.length > 0 ? (
             <Button
               type="button"
               variant="ghost"
               size="xs"
               data-project-overview-filter-agents
-              // The sidebar badge's own click, so both lead to the same list and leave the page up.
-              onClick={() =>
-                revealFirstListedSession(
-                  view.machines.flatMap((machine) => machine.sessions.map((session) => session.id))
-                )
-              }
+              // The sidebar badge's own reveal, so both lead to the same rows and leave the page up.
+              onClick={() => {
+                useAppStore.getState().setSidebarOpen(true)
+                revealFirstListedSession(running.map((session) => session.id))
+              }}
             >
-              {t('seal.projectOverview.agents.showInActiveAgents', 'Show in Active agents')}
+              {t('seal.projectOverview.agents.showInSidebar', 'Show in sidebar')}
             </Button>
           ) : null}
           {/* Recently finished has its own count below, so this one says it leaves them out. */}
@@ -51,13 +62,13 @@ export function ProjectAgentsCard({
             className="text-2xs text-muted-foreground tabular-nums"
           >
             {t('seal.projectOverview.agents.active', '{{count}} active', {
-              count: view.activeCount
+              count: running.length
             })}
           </span>
         </span>
       }
     >
-      {empty ? (
+      {running.length === 0 && finished.length === 0 ? (
         <HomeOverviewEmpty>
           {t(
             'seal.projectOverview.agents.empty',
@@ -66,23 +77,18 @@ export function ProjectAgentsCard({
         </HomeOverviewEmpty>
       ) : (
         <div className="divide-y divide-border">
-          {view.machines.length > 0 ? (
-            <LiveSessionMachineGroups machines={view.machines} now={now} />
+          {running.length > 0 ? (
+            <LiveSessionWorkspaceGroups sessions={running} now={now} showProjects={false} />
           ) : null}
-          {view.finished.length > 0 ? (
+          {finished.length > 0 ? (
             <div data-project-overview-finished className="p-2">
               <h3 className="flex items-center gap-1.5 px-1.5 py-1 text-xs font-medium text-foreground">
                 <span className="truncate">{finishedLabel}</span>
                 <span className="text-2xs font-normal text-muted-foreground tabular-nums">
-                  {view.finished.length}
+                  {finished.length}
                 </span>
               </h3>
-              <LiveSessionRows
-                sessions={view.finished}
-                label={finishedLabel}
-                now={now}
-                layout="card"
-              />
+              <LiveSessionRows sessions={finished} label={finishedLabel} now={now} layout="card" />
             </div>
           ) : null}
         </div>

@@ -22,71 +22,51 @@ import type {
   RecapWorkState
 } from '../../../../src/shared/session-recap/session-recap-types'
 
-export type RecapJump = (messageId: string) => void
-
-/** An item's words; with a message behind it, pressing them shows that message in the transcript. */
+/** An item's words. */
 function RecapText({
-  item,
-  onJump,
+  text,
   muted = false,
   struck = false,
   strong = false,
   mono = false
 }: {
-  item: Pick<RecapItem, 'text' | 'messageId'>
-  onJump: RecapJump
+  text: string
   muted?: boolean
   struck?: boolean
   strong?: boolean
   mono?: boolean
 }) {
-  const t = useMobileTranslation()
-  const { messageId } = item
-  const text = (
-    <Text
-      style={[
-        styles.text,
-        muted && styles.textMuted,
-        struck && styles.textStruck,
-        strong && styles.textStrong,
-        mono && styles.textMono
-      ]}
-    >
-      {item.text}
-    </Text>
-  )
-  if (messageId === null) {
-    return <View style={styles.main}>{text}</View>
-  }
   return (
-    <Pressable
-      onPress={() => onJump(messageId)}
-      accessibilityRole="button"
-      accessibilityHint={t('seal.sessionRecap.jump', 'Shows it in the conversation')}
-      testID={`recap-jump-${messageId}`}
-      style={({ pressed }) => [styles.main, pressed && pressedStyle]}
-    >
-      {text}
-    </Pressable>
+    <View style={styles.main}>
+      <Text
+        style={[
+          styles.text,
+          muted && styles.textMuted,
+          struck && styles.textStruck,
+          strong && styles.textStrong,
+          mono && styles.textMono
+        ]}
+      >
+        {text}
+      </Text>
+    </View>
   )
 }
 
 /** A plain line of the recap: something asked, decided or left unaddressed. */
 export function RecapLineRow({
   item,
-  kind,
-  onJump
+  kind
 }: {
   item: RecapItem
   /** Set where items of several kinds share a list. */
   kind?: string
-  onJump: RecapJump
 }) {
   useMobileColorScheme()
   return (
     <View style={styles.row}>
       {kind ? <Text style={styles.kind}>{kind}</Text> : null}
-      <RecapText item={item} onJump={onJump} />
+      <RecapText text={item.text} />
     </View>
   )
 }
@@ -98,15 +78,7 @@ const WORK_ICONS: Record<RecapWorkState, typeof Check> = {
 }
 
 /** Something the agent did, is doing, or is stuck on. */
-export function RecapWorkRow({
-  item,
-  label,
-  onJump
-}: {
-  item: RecapItem
-  label: string
-  onJump: RecapJump
-}) {
+export function RecapWorkRow({ item, label }: { item: RecapItem; label: string }) {
   useMobileColorScheme()
   const state = item.state ?? 'done'
   const Icon = WORK_ICONS[state]
@@ -121,7 +93,7 @@ export function RecapWorkRow({
       <View style={styles.icon} accessible accessibilityLabel={label}>
         <Icon size={15} color={color} strokeWidth={2.2} />
       </View>
-      <RecapText item={item} onJump={onJump} muted={state === 'done'} strong={state !== 'done'} />
+      <RecapText text={item.text} muted={state === 'done'} strong={state !== 'done'} />
     </View>
   )
 }
@@ -131,15 +103,13 @@ export function RecapTickRow({
   item,
   mark,
   isNew = false,
-  onMark,
-  onJump
+  onMark
 }: {
   item: RecapItem
   mark: RecapItemMark | undefined
   /** It came up since the user last looked. */
   isNew?: boolean
   onMark: (itemId: string, mark: RecapItemMark | null) => void
-  onJump: RecapJump
 }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
@@ -152,12 +122,7 @@ export function RecapTickRow({
           accessibilityLabel={t('seal.sessionRecap.tick', 'Done: {{item}}', { item: item.text })}
         />
       </View>
-      <RecapText
-        item={item}
-        onJump={onJump}
-        muted={mark !== undefined}
-        struck={mark !== undefined}
-      />
+      <RecapText text={item.text} muted={mark !== undefined} struck={mark !== undefined} />
       {isNew && mark === undefined ? (
         <Text style={styles.kind} testID="recap-new">
           {t('seal.sessionRecap.new', 'New')}
@@ -192,11 +157,9 @@ const REFERENCE_ICONS = { file: FileText, pr: GitPullRequest, link: Link2 } as c
 /** A file the agent changed, or a pull request or link that came up. */
 export function RecapReferenceRow({
   reference,
-  onJump,
   onOpenLink
 }: {
   reference: RecapReference
-  onJump: RecapJump
   onOpenLink: (url: string) => void
 }) {
   useMobileColorScheme()
@@ -207,11 +170,7 @@ export function RecapReferenceRow({
       <View style={styles.icon}>
         <Icon size={15} color={colors.textMuted} strokeWidth={2} />
       </View>
-      <RecapText
-        item={{ text: reference.label, messageId: reference.messageId }}
-        onJump={onJump}
-        mono={reference.kind === 'file'}
-      />
+      <RecapText text={reference.label} mono={reference.kind === 'file'} />
       {reference.kind === 'file' ? null : (
         <Pressable
           onPress={() => onOpenLink(reference.target)}

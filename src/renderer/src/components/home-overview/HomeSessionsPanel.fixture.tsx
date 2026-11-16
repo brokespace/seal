@@ -1,10 +1,15 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
-import { BUSY_HOME_SESSIONS, EVERY_STATUS_HOME_SESSIONS } from './home-overview.test-fixture'
+import {
+  BUSY_HOME_SESSIONS,
+  EVERY_STATUS_HOME_SESSIONS,
+  HOME_FIXTURE_STORE
+} from './home-overview.test-fixture'
 import { HomeSessionsPanel } from './HomeSessionsPanel'
 
-/** Session rows with a host summary: written, still being written, and none. */
+/** Needs you, then projects and workspaces on two machines; rows with a summary written, pending, and none. */
 export const summaries = defineFixture({
   width: 640,
+  store: HOME_FIXTURE_STORE,
   render: () => <HomeSessionsPanel sessions={BUSY_HOME_SESSIONS} now={Date.now()} />
 })
 

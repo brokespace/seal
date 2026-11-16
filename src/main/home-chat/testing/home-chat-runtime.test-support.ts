@@ -23,7 +23,7 @@ export const unusedWorkers: HomeChatWorkerHost = {
 const unused = (): Promise<never> => Promise.reject(new Error('unused'))
 
 export const unusedSeal: HomeChatSealAccess = {
-  sessions: { list: unused, transcript: unused, send: unused },
+  sessions: { list: unused, currentId: (id) => id, transcript: unused, send: unused },
   accounts: { usage: unused, swap: unused },
   open: () => undefined
 }
