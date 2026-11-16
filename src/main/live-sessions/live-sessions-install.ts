@@ -5,8 +5,16 @@ import type { GlobalSettings } from '../../shared/global-settings-types'
 import { agentHookServer } from '../agent-hooks/server/agent-hook-server'
 import { localAiVaultScanRoots } from '../ai-vault/discovery/ai-vault-scan-roots'
 import { listLiveSessionMachineSources } from '../machines/machine-services'
-import { connectedMachineHosts, LOCAL_HOST_ID, localHost } from './hosts/live-session-hosts'
-import { runtimeScanRunner } from './hosts/connected-runtime-hosts'
+import {
+  connectedMachineHosts,
+  liveSessionMachineOf,
+  LOCAL_HOST_ID,
+  localHost
+} from './hosts/live-session-hosts'
+import { isRuntimeServerReachable, runtimeScanRunner } from './hosts/connected-runtime-hosts'
+import { createStructuredSessionAccess } from './sources/structured-session-source'
+import { FederatedSessions } from './federation/federated-sessions'
+import { runtimeFederationTransport } from './federation/runtime-federation-transport'
 import { aiVaultTranscriptFiles } from './discovery/local-transcript-files'
 import { LiveSessionService } from './live-session-service'
 import { createSealPaneAccess } from './seal-panes/seal-pane-runtime'
@@ -60,6 +68,29 @@ export function installLiveSessions(
       })
     )
   ]
+  const federation = new FederatedSessions({
+    transport: runtimeFederationTransport(userDataPath),
+    log
+  })
+  // A server lists its own machine whatever its platform: only the scan from here needs a POSIX shell.
+  const syncFederation = (): void =>
+    federation.sync(
+      listLiveSessionMachineSources().flatMap(({ environmentId, ...source }) =>
+        environmentId && source.connection.isConnected() && isRuntimeServerReachable(environmentId)
+          ? [{ machine: liveSessionMachineOf(source), environmentId }]
+          : []
+      )
+    )
+  const localMachine = { hostId: LOCAL_HOST_ID, label: hostname(), kind: 'local' as const }
+  const chats = createStructuredSessionAccess(runtime, {
+    // A chat whose agent runs on an SSH machine is still hosted here, and listed under that machine.
+    machineOf: (executionHostId) =>
+      executionHostId === LOCAL_HOST_ID
+        ? (local?.machine ?? localMachine)
+        : (allHosts().find((host) => host.machine.executionHostId === executionHostId)?.machine ??
+          null),
+    log
+  })
   const wrapSync = new ShellIntegrationSync(() => wrapAgentsEnabled(store.getSettings()), log)
   store.onSettingsChanged((updates) => {
     if ('liveSessionsWrapAgents' in updates) {
@@ -80,9 +111,12 @@ export function installLiveSessions(
     hosts: () => {
       const hosts = allHosts()
       wrapSync.reconcile(hosts)
+      syncFederation()
       return hosts
     },
     sealPanes,
+    chats,
+    federation,
     onHostScanned: (host, sessions) => reaper.onHostScanned(host, sessions),
     log
   })

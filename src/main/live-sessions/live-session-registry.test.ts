@@ -100,6 +100,7 @@ const sealPane: SealPane = {
   cwd: '/srv/shop',
   transcriptPath: `${DIR}/${WORKING}.jsonl`,
   prompt: 'Why does checkout double-charge when the cart has a coupon?',
+  lastMessage: null,
   receivedAt: NOW - 1_000,
   permission: null,
   silent: false
