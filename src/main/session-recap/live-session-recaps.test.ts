@@ -63,12 +63,7 @@ async function harness(options: { enabled?: boolean; serverReply?: unknown } = {
   const server =
     options.serverReply === undefined
       ? undefined
-      : new ServerSessionRecaps({
-          call: async () => options.serverReply,
-          onChange: () => undefined,
-          setTimer,
-          now: () => clock.now
-        })
+      : new ServerSessionRecaps({ call: async () => options.serverReply })
   const recaps = new LiveSessionRecaps({
     engine,
     store,
@@ -246,20 +241,18 @@ describe('LiveSessionRecaps', () => {
     expect(h.recaps.decorate(moved).recap?.notAddressed).toBeUndefined()
   })
 
-  it("makes no recap of a session whose server keeps one, and shows the server's on its row", async () => {
+  it("makes no recap of a session a server runs, and keeps the server's brief on its row", async () => {
     const h = await harness({ serverReply: recapServerView() })
-    const remote = recapServerSession({ status: 'your-turn' })
+    const brief = { title: 'Fix login redirect loop', rev: 7, questions: 1, actions: 1 }
+    const remote = recapServerSession({ status: 'your-turn', recap: brief })
 
     h.stop(remote)
     await h.wait(5 * 60_000)
 
     expect(h.passes).toEqual([])
-    expect(h.recaps.decorate(remote).recap).toEqual({
-      title: 'Fix login redirect loop',
-      rev: 7,
-      questions: 1,
-      actions: 1,
-      notAddressed: 1
-    })
+    expect(h.recaps.decorate(remote).recap).toEqual(brief)
+    const view = await h.recaps.get(remote.id, true)
+    expect(view.recap?.title).toBe('Fix login redirect loop')
+    expect(h.passes).toEqual([])
   })
 })

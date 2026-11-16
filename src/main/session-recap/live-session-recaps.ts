@@ -12,7 +12,7 @@ import type {
   SessionRecapView
 } from '../../shared/session-recap/session-recap-types'
 import { unrefTimer } from '../session-summaries/unref-timer'
-import type { ServerSessionRecapsSource } from './server-session-recaps-source'
+import type { ServerSessionRecaps } from './server-session-recaps'
 import type { RecapPassOutcome, SessionRecapEngine } from './session-recap-engine'
 import { recapBrief, recapViewState, shownRecap } from './session-recap-shown'
 import type { SessionRecapStore } from './session-recap-store'
@@ -29,7 +29,7 @@ export type LiveSessionRecapsDeps = {
   /** The session's conversation can be read here: a transcript file, or a chat's journal. */
   readable: (session: LiveSession) => boolean
   /** Paired servers' own recaps. Absent on a host that reaches no server, and on a server itself. */
-  server?: ServerSessionRecapsSource
+  server?: Pick<ServerSessionRecaps, 'owns' | 'view' | 'refresh' | 'mark'>
   setTimer?: (run: () => void, delayMs: number) => { cancel: () => void }
   now?: () => number
 }
@@ -72,7 +72,6 @@ export class LiveSessionRecaps {
       this.tracked.get(event.sessionId)?.timer?.cancel()
       this.tracked.delete(event.sessionId)
       this.deps.engine.forget(event.sessionId)
-      this.deps.server?.forget(event.sessionId)
       if (event.replacedBy) {
         this.deps.store.move(event.sessionId, event.replacedBy)
       }
@@ -84,7 +83,6 @@ export class LiveSessionRecaps {
     const { session } = event
     if (this.deps.server?.owns(session)) {
       // One recap per session: the server that runs it makes it, and this host only shows it.
-      this.deps.server.observe(session)
       this.tracked.get(session.id)?.timer?.cancel()
       this.tracked.delete(session.id)
       return
@@ -127,8 +125,8 @@ export class LiveSessionRecaps {
   /** The session as clients see it: its recap title and what is still open for the user. */
   decorate(session: LiveSession): LiveSession {
     if (this.deps.server?.owns(session)) {
-      const brief = this.deps.server.brief(session)
-      return brief ? { ...session, recap: brief } : session
+      // Its server's record already carries the brief of the recap that server keeps.
+      return session
     }
     if (!this.deps.enabled()) {
       return session
@@ -246,7 +244,7 @@ export class LiveSessionRecaps {
 
   private serverOwned(
     sessionId: string
-  ): { server: ServerSessionRecapsSource; session: LiveSession } | null {
+  ): { server: NonNullable<LiveSessionRecapsDeps['server']>; session: LiveSession } | null {
     const { server } = this.deps
     const session = this.deps.session(sessionId)
     return server && session && server.owns(session) ? { server, session } : null

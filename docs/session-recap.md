@@ -312,11 +312,13 @@ panel shows why, and the next trigger tries again.
 - Clients read and change it over three runtime RPC methods, used alike by the desktop renderer
   and the phone: `sessionRecap.get`, `sessionRecap.refresh`, `sessionRecap.mark`.
 - **A session has one recap, kept by the host that runs it.** A Seal server recaps every session
-  in its registry as it stops. A desktop paired to it makes none for those sessions: it reads the
-  server's recap over the same three methods (`server-session-recaps.ts`) and shows it, ticks
-  included. That holds for a server that makes no recaps too (recaps off, or no utility model on
-  it): its sessions then have none, and the recap's state says `unavailable`. A server from before
-  the judge still answers; nothing it lists is shown as not addressed.
+  in its registry as it stops. A desktop paired to it makes none for those sessions. The row's
+  brief arrives with the server's own record of the session, over the watch the desktop lists a
+  server's sessions from, and the desktop forwards a read, a Refresh or a tick to the server over
+  the same three methods (`server-session-recaps.ts`). That holds for a server that makes no
+  recaps too (recaps off, or no utility model on it): its sessions then have none, and the
+  recap's state says `unavailable`. A server from before the judge still answers; nothing it
+  lists is shown as not addressed.
 - A tick on the phone bumps `rev` on the session; the registry stream delivers it to the desktop,
   which fetches the recap again. No new channel.
 
@@ -362,7 +364,5 @@ where the desktop panel links to the setting and the bar and the phone's banner 
 
 ## Not in this version
 
-- A desktop learns of a change a server made to a recap when the session next changes or its
-  recap is opened; the server does not push it.
 - Resolved questions and finished action items leave the list rather than moving to a history.
 - The recap is not searchable and is not fed back to the agent.

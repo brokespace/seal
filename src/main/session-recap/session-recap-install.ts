@@ -3,7 +3,6 @@ import type { LiveSessionService } from '../live-sessions/live-session-service'
 import type { SessionTranscripts } from '../live-sessions/transcripts/session-transcript'
 import { recapTurnHasEnded } from '../../shared/session-recap/session-recap-request-display'
 import { SessionSummaryCache } from '../session-summaries/session-summary-cache'
-import { unrefTimer } from '../session-summaries/unref-timer'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import type { UtilityModelService } from '../utility-model/utility-model-service'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
@@ -26,7 +25,7 @@ export type SessionRecapInstallOptions = {
   decisions?: Pick<UtilityModelService, 'decide'>
   userDataPath: string
   enabled: () => boolean
-  /** Reaches paired Seal servers, whose own recaps of their sessions are shown in place of ones made here. */
+  /** Reaches paired Seal servers, which keep the recaps of the sessions they run. */
   serverRecapCall?: ServerSessionRecapsDeps['call']
   /** A recap or its ticks changed: the registry should publish its sessions again. */
   onChange: () => void
@@ -98,12 +97,7 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
     log
   })
   const serverRecaps = options.serverRecapCall
-    ? new ServerSessionRecaps({
-        call: options.serverRecapCall,
-        onChange: options.onChange,
-        setTimer: options.setTimer ?? unrefTimer,
-        now: Date.now
-      })
+    ? new ServerSessionRecaps({ call: options.serverRecapCall })
     : null
   const recaps = new LiveSessionRecaps({
     engine,
@@ -126,7 +120,6 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
     dispose: () => {
       unsubscribe()
       recaps.dispose()
-      serverRecaps?.dispose()
       engine.dispose()
     }
   }
