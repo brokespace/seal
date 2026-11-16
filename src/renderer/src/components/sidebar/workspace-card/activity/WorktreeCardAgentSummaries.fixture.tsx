@@ -3,6 +3,7 @@ import WorktreeCardAgents from './WorktreeCardAgents'
 import { buildWorktreeAgentRows } from './worktree-agent-rows'
 import type { AgentStatusEntry } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import type { LiveSession } from '../../../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../../../shared/live-sessions/live-session-surface.test-fixture'
 import type { TerminalTab } from '../../../../../../shared/workspace-layout/terminal-tab-types'
 
 const now = Date.now()
@@ -87,6 +88,7 @@ function setup(): void {
             providerSessionId: agent.id,
             machine: { hostId: 'local', label: 'brian-mbp', kind: 'local' },
             origin: 'seal',
+            ...sampleSessionSurface('seal'),
             cwd: '/Users/brian/code/seal',
             project: 'seal',
             title: agent.prompt,

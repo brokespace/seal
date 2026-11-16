@@ -4,6 +4,7 @@ import type {
   LiveSessionStatus,
   LiveSessionStatusSource
 } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionStatusHold } from './live-session-status-hold'
 
 const T0 = 1_000_000
@@ -19,6 +20,7 @@ function session(
     providerSessionId: 'a',
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/srv/shop',
     project: 'shop',
     title: null,

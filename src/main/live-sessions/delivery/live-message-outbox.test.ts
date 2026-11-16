@@ -7,6 +7,7 @@ import type {
   LiveSession,
   LiveSessionInputRoute
 } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveMessageOutbox } from './live-message-outbox'
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
@@ -17,6 +18,7 @@ const session: LiveSession = {
   providerSessionId: 'abc',
   machine: { hostId: 'local', label: 'mac', kind: 'local' },
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/srv/app',
   project: 'app',
   title: null,

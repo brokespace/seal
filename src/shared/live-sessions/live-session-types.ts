@@ -5,7 +5,7 @@ import type { NativeChatMessage } from '../native-chat/native-chat-types'
 import type { AgentSessionAgentId } from './adapters/agent-session-agent-ids'
 import type { LiveSessionActivity } from './live-session-activity'
 
-/** The agents discovery finds outside Seal, and the only ones the registry admits so far. */
+/** The agents discovery finds outside Seal, whose transcripts Seal decodes. */
 export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
 
@@ -161,10 +161,9 @@ export type LiveSession = {
   titleNamed?: true
   /** Its rolling recap in brief: the title a row shows and what is still open for the user. */
   recap?: LiveSessionRecapBrief
-  /** Absent from registries that do not set it yet; `origin` is the fallback. */
-  surface?: AgentSessionSurface
-  /** Absent from registries that do not set it yet. */
-  capabilities?: AgentSessionCapabilityFlags
+  /** Set by every registry; a record from a server that predates it is filled in from `origin`. */
+  surface: AgentSessionSurface
+  capabilities: AgentSessionCapabilityFlags
   /** The workspace it belongs to, set by the registry's link step. */
   workspace?: { worktreeId: string; projectKey: string }
   context?: NativeChatContextUsageSummary

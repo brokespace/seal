@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionReplyAsks } from './live-session-reply-asks'
 import { REPLY_ASK_TASK } from './reply-ask-task'
 import { SessionSummarizer } from './session-summarizer'
@@ -16,6 +17,7 @@ function session(overrides: Partial<LiveSession> = {}): LiveSession {
     providerSessionId: 'abc',
     machine: { hostId: 'local', label: 'mac', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/repo',
     project: 'repo',
     title: 'Deploy',

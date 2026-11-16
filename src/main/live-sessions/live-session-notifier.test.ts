@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionNotifier, type LiveSessionNotification } from './live-session-notifier'
 
 const base: LiveSession = {
@@ -8,6 +9,7 @@ const base: LiveSession = {
   providerSessionId: 's1',
   machine: { hostId: 'box', label: 'build-box', kind: 'remote' },
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/srv/shop',
   project: 'shop',
   title: 'Fix the coupon bug',

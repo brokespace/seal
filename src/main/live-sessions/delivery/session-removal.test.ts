@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { spawnProcess } from '@orca/process-host'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import { localHost } from '../hosts/live-session-hosts'
 import { LiveSessionRemovals, removeFromHost } from './session-removal'
 
@@ -53,6 +54,7 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
       providerSessionId: ID,
       machine: { hostId: 'local', label: 'mbp', kind: 'local' },
       origin: 'external',
+      ...sampleSessionSurface(),
       cwd: dir,
       project: null,
       title: null,

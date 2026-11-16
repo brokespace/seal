@@ -4,6 +4,7 @@ import {
   liveSessionSnapshotForClient
 } from './live-session-status-compat'
 import type { LiveSession, LiveSessionRegistrySnapshot } from './live-session-types'
+import { sampleSessionSurface } from './live-session-surface.test-fixture'
 
 function session(id: string, patch: Partial<LiveSession>): LiveSession {
   return {
@@ -12,6 +13,7 @@ function session(id: string, patch: Partial<LiveSession>): LiveSession {
     providerSessionId: id,
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/srv/shop',
     project: 'shop',
     title: null,

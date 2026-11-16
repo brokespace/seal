@@ -1,6 +1,7 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../shared/live-sessions/live-session-surface.test-fixture'
 import { LiveSessionChat } from './LiveSessionChat'
 
 const NOW = 1_800_000_000_000
@@ -176,6 +177,7 @@ const session: LiveSession = {
   providerSessionId: '6a278a68-fb5f-4a43-8007-6af95f274293',
   machine: { hostId: 'local', label: 'brian-mbp', kind: 'local' },
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/Users/brian/code/seal',
   project: 'seal',
   title: 'What is the answer?',

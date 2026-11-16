@@ -1,5 +1,43 @@
 import type { AgentListStatus } from '../agent-status/presentation/agent-list-status'
+import type { AgentSessionStatusEvidence } from './adapters/agent-session-adapter'
 import type { LiveSession, LiveSessionStatus } from './live-session-types'
+
+/**
+ * The status of a session whose source reports events, not a transcript: a chat's structured host
+ * and a pane's hook row. No source picks a code itself. First match wins, in the order of
+ * `docs/design/agent-status.md`: the end of the agent, a prompt, the turn, what it left behind.
+ */
+export function liveSessionStatusFromEvidence(
+  evidence: AgentSessionStatusEvidence
+): LiveSessionStatus {
+  if (evidence.ended) {
+    // A failure outlasts its agent.
+    return evidence.turnFailed ? 'errored' : 'done'
+  }
+  if (evidence.pendingApproval) {
+    return 'needs-permission'
+  }
+  if (evidence.pendingQuestion) {
+    return 'waiting-input'
+  }
+  if (evidence.turnRunning) {
+    if (evidence.shellRunning) {
+      return 'running-shell'
+    }
+    return evidence.runningSubagents > 0 ? 'waiting-subagent' : 'working'
+  }
+  // A failed turn stays news while what it left running goes on.
+  if (evidence.turnFailed) {
+    return 'errored'
+  }
+  if (evidence.runningSubagents > 0) {
+    return 'waiting-subagent'
+  }
+  if (evidence.runningBackgroundTasks > 0) {
+    return 'waiting-task'
+  }
+  return evidence.hadTurn ? 'your-turn' : 'idle'
+}
 
 /** Where a status sorts and how it is colored: attention first, then busy, then quiet. */
 export type LiveSessionStatusGroup = 'attention' | 'working' | 'idle' | 'finished'
