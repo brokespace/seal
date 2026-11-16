@@ -309,6 +309,10 @@ export function missingOrcadTemplate(): string | null {
     : `looked in ${candidates.join(', ')}`
 }
 
+export function hasOrcadTemplate(): boolean {
+  return missingOrcadTemplate() === null
+}
+
 function resolveOrcadTemplateDir(): string {
   const found = getOrcadTemplateCandidates().find((candidate) => existsSync(candidate))
   if (!found) {

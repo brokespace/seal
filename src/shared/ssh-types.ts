@@ -318,12 +318,11 @@ export type SshManagedServerStatus =
       launchSessionEnded?: true
     }
   | { kind: 'setting-up'; phase: (typeof SSH_MANAGED_SERVER_PHASES)[number] }
-  /** `detail` names the blocker for a refusal, or why orcad can't run on the host. */
+  /** `detail` names the blocker for a refusal, or why orcad can't run on the host; `cause` says what went wrong behind it. */
   | {
       kind: 'relay'
       reason: SshManagedServerRelayReason
       detail?: string
-      /** What went wrong behind an `orcad_unavailable` detail, in its own words (e.g. where the server files were looked for). */
       cause?: string
       /** The deferral code a stopped setup ended on; absent for thrown errors and older hosts. */
       code?: string
