@@ -128,12 +128,11 @@ function claudeIdentity(
     .filter((r) => r.type === 'summary')
     .map((r) => str(r.leafUuid))
     .filter((id): id is string => id !== null && !headIds.has(id))
-  const startedBy = str(head.find((r) => str(r.entrypoint))?.entrypoint)
-  const lastBy = str(tail.findLast((r) => str(r.entrypoint))?.entrypoint) ?? startedBy
+  const writers = [...head, ...tail].flatMap((r) => str(r.entrypoint) ?? [])
   return {
-    // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
-    // A chat's history a terminal carries on (a fork into the CLI) is that terminal's from then on.
-    headless: isDrivenEntrypoint(startedBy) && isDrivenEntrypoint(lastBy),
+    // A terminal that wrote any of it makes it that terminal's: a headless resume Seal sends
+    // appends `sdk-cli` records, and a fork into the CLI opens with a chat's history.
+    headless: writers.length > 0 && writers.every(isDrivenEntrypoint),
     recordIds: [
       ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
     ],

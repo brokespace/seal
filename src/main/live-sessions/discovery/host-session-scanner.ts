@@ -234,7 +234,9 @@ export class HostSessionScanner {
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
         firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
         lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
-        context: contextAfter(summary.context, grew ? cached.summary.context : null)
+        context: contextAfter(summary.context, grew ? cached.summary.context : null),
+        // A terminal's records can lie between the bytes a scan reads: once its, it stays its.
+        headless: summary.headless && !(grew && !cached.summary.headless)
       },
       ...(file.provider === 'claude'
         ? { claudeActivity }

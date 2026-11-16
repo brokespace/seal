@@ -93,6 +93,20 @@ describe('one card per real conversation', () => {
     ])
   })
 
+  // The fork opens with the chat's history, and the resume's records are the last in it.
+  it("keeps a chat's fork into the terminal listed after Seal resumed it headless", () => {
+    const fork = claudeFile(
+      '/p/bbbbbbbb-0000-4000-8000-00000000000b.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'orca' },
+        { ...turn('f1', 'c1', 'Try it with a view instead'), entrypoint: 'cli' },
+        { ...turn('f2', 'f1', 'Also add a rollback'), entrypoint: 'sdk-cli' }
+      ],
+      600_000
+    )
+    expect(assemble([], [fork]).map((s) => s.id)).toEqual(['bbbbbbbb-0000-4000-8000-00000000000b'])
+  })
+
   it.each([
     ['a Seal chat', 'orca'],
     ['an Agent SDK host', 'sdk-ts']
