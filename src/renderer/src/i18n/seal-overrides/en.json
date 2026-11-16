@@ -2401,6 +2401,21 @@
       "empty": "Context usage appears after the first reply.",
       "compactsAt": "Compacts automatically at {{threshold}}: {{left}} left",
       "compactNow": "Compact now"
+    },
+    "projectMerge": {
+      "action": "Merge into project",
+      "confirmTitle": "Merge {{source}} into {{target}}?",
+      "confirmDescription": "Its workspaces, sessions and pins move to {{target}}. This can't be undone.",
+      "confirm": "Merge"
+    },
+    "fileTree": {
+      "title": "Files",
+      "error": {
+        "title": "The file tree hit an error.",
+        "description": "The workspace is still running. Retry, or hide the files and show them again."
+      },
+      "hide": "Hide files",
+      "show": "Show files"
     }
   },
   "components": {
