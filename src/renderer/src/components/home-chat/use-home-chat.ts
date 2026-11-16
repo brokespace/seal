@@ -191,7 +191,7 @@ export function useHomeChat(api: HomeChatApi) {
     newChat,
     send,
     stop: () => activeId && void guard(() => api.stop({ chatId: activeId })),
-    compact: () => activeId && void guard(() => api.compact({ chatId: activeId })),
+    compact: () => (activeId ? guard(() => api.compact({ chatId: activeId })) : undefined),
     remove: (chatId: string) => void guard(() => api.delete({ chatId })),
     rename: (chatId: string, title: string) => void guard(() => api.update({ chatId, title })),
     respondApproval: (entryId: string, approved: boolean) =>
