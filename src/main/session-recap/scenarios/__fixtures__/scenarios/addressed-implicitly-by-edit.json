@@ -1,0 +1,56 @@
+{
+  "id": "addressed-implicitly-by-edit",
+  "title": "Half of the ask is done by an edit the agent never mentions",
+  "categories": ["addressed-implicitly", "tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "Both the version bump and the changelog entry are done; the bump is known from the edit to package.json even though the agent did not say so.",
+  "steps": [
+    {
+      "user": "Bump the version to 2.4.0 in package.json and add a CHANGELOG entry for the new export feature."
+    },
+    {
+      "edit": "/srv/shop/package.json"
+    },
+    {
+      "edit": "/srv/shop/CHANGELOG.md"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git diff --stat"
+        },
+        "output": " CHANGELOG.md | 6 ++++++\n package.json | 2 +-\n 2 files changed, 7 insertions(+), 1 deletion(-)"
+      }
+    },
+    {
+      "agent": "CHANGELOG has the entry under 2.4.0."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "version|bump|package",
+          "why": "package.json was edited, so the bump is done"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "changelog",
+          "why": "the changelog entry is recorded as done"
+        }
+      ]
+    }
+  ]
+}

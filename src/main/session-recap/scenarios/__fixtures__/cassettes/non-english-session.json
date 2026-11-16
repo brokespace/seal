@@ -1,0 +1,26 @@
+[
+  {
+    "key": "832137d260c5da8da8f165e3b54eafa0",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Añade paginación a la lista de pedidos, 25 por página. Y traduce los mensajes de error del formulario de pago al español.\n\n[m2] AGENT: Listo lo primero: la lista de pedidos ahora tiene paginación de 25 por página. Los mensajes de error del formulario de pago siguen en inglés; todavía no los he traducido.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Paginación y traducción a español\",\n  \"goal\": \"Añadir paginación a pedidos y traducir mensajes al español.\",\n  \"standing\": \"Paginación implementada. Traducción de formularios pendiente.\",\n  \"add\": {\n    \"asked\": [{\"text\": \"Añadir paginación a lista de pedidos\", \"ref\": \"m1\"}, {\"text\": \"Traducir mensajes de error de pago al español\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Implementar paginación de 25 por página\", \"state\": \"done\", \"ref\": \"m2\"}],\n    \"actions\": [{\"text\": \"Traducir mensajes de error de pago al español\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 10.1163
+  },
+  {
+    "key": "ef8ecfb471cc87e3a51ea4e07a601bab",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Paginación y traducción a español\",\"goal\":\"Añadir paginación a pedidos y traducir mensajes al español.\",\"standing\":\"Paginación implementada. Traducción de formularios pendiente.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Añadir paginación a lista de pedidos\"},{\"id\":\"a2\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Implementar paginación de 25 por página\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[{\"id\":\"t4\",\"text\":\"Traducir mensajes de error de pago al español\"}],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: vale, tradúcelos\n\n[m2] AGENT: Hecho: los 14 mensajes de error del formulario de pago están traducidos al español.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"t4\", \"text\": \"Traducir mensajes de error de pago al español\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"a2\"]\n}",
+    "neurons": 5.7642999999999995
+  }
+]

@@ -1,0 +1,124 @@
+{
+  "id": "addressed-several-turns-later",
+  "title": "An ask left open for three turns, then done",
+  "categories": ["addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "While the README is untouched it is listed as not addressed. Once the agent updates it, it leaves that list and shows under what the agent did.",
+  "steps": [
+    {
+      "user": "Rename the Customer model to Account everywhere. And update the README to match when you're done."
+    },
+    {
+      "edit": "/srv/shop/src/models/account.ts"
+    },
+    {
+      "agent": "Renamed Customer to Account across src/ (41 files) and the tests pass. I have not touched the README yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "asked",
+          "has": "rename|account",
+          "why": "the rename is recorded as asked"
+        },
+        {
+          "in": "asked",
+          "has": "readme",
+          "why": "the README update is recorded as asked"
+        },
+        {
+          "in": "ignored",
+          "has": "readme",
+          "why": "the README is asked for and not done yet"
+        }
+      ]
+    },
+    {
+      "user": "The orders page still says 'Customer' in the table header."
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "agent": "Fixed the header in src/pages/orders.tsx; it now reads Account."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "user": "Also the CSV export column."
+    },
+    {
+      "edit": "/srv/shop/src/export/csv.ts"
+    },
+    {
+      "agent": "The CSV export column is now account_name; I updated the export test too."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 3",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "readme",
+          "why": "the README is still not done"
+        },
+        {
+          "in": "ignored",
+          "max": 1,
+          "why": "only the README is open"
+        }
+      ]
+    },
+    {
+      "user": "ok go on"
+    },
+    {
+      "edit": "/srv/shop/README.md"
+    },
+    {
+      "agent": "Updated the README: every mention of Customer is now Account, including the API examples and the schema diagram caption. That was the last open item."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 4",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "readme",
+          "why": "the README was updated, so the ask is addressed"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "readme",
+          "why": "the README update is recorded as done"
+        }
+      ]
+    }
+  ]
+}

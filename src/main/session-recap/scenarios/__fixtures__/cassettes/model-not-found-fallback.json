@@ -1,0 +1,26 @@
+[
+  {
+    "key": "9589d0390279e68331d42aeeb2bfaa0c",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it.\n\n[m2] AGENT: I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts.\n</new_messages>"
+      }
+    ],
+    "reply": "```json\n{\n  \"title\": \"Rate limiting for login endpoint\",\n  \"goal\": \"Add rate limiting to the /login endpoint and a corresponding test.\",\n  \"standing\": \"Rate limiting is implemented in src/routes/login.ts, limiting to 5 attempts per minute per IP.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"implement rate limiter in src/routes/login.ts\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [\n      {\n        \"text\": \"add a test for rate limiting\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"actions\": [],\n    \"decisions\": []\n  }\n}\n```",
+    "neurons": 11.799999237060547
+  },
+  {
+    "key": "b65d7a199adb381233ce03ce1c58f63d",
+    "model": "@cf/google/gemma-4-26b-a4b-it",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":\"Rate limiting for login endpoint\",\"goal\":\"Add rate limiting to the /login endpoint and a corresponding test.\",\"standing\":\"Rate limiting is implemented in src/routes/login.ts, limiting to 5 attempts per minute per IP.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"implement rate limiter in src/routes/login.ts\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[{\"id\":\"i2\",\"text\":\"add a test for rate limiting\"}],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok. anything left?\n\n[m2] AGENT: One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes.\n</new_messages>"
+      }
+    ],
+    "reply": "```json\n{\n  \"standing\": \"Rate limiting is implemented in src/routes/login.ts (5 attempts/min/IP) and a passing test exists in test/login-rate-limit.test.ts.\",\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"create passing rate limit test in test/login-rate-limit.test.ts\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ]\n  },\n  \"resolve\": [\n    \"i2\"\n  ]\n}\n```",
+    "neurons": 10.636363983154297
+  }
+]

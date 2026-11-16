@@ -1,0 +1,84 @@
+{
+  "id": "remote-server-session",
+  "title": "A session on a headless Seal server, which recaps only what a client opens",
+  "categories": ["remote", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "chat-journal"],
+  "expected": "Opening the session writes its recap. Once it has one, the server keeps it up to date, so the documentation leaves the not-addressed list after turn 2.",
+  "lazy": true,
+  "steps": [
+    {
+      "user": "Add a --dry-run flag to the import script and document it in docs/import.md."
+    },
+    {
+      "edit": "/srv/shop/scripts/import.ts"
+    },
+    {
+      "agent": "Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "before anyone opens it",
+      "check": [
+        {
+          "requests": {
+            "max": 0
+          },
+          "why": "a server recaps nothing nobody opened"
+        }
+      ]
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "after a client opens it",
+      "check": [
+        {
+          "view": "exists",
+          "is": true,
+          "why": "opening the session writes its recap"
+        },
+        {
+          "in": "ignored",
+          "has": "doc",
+          "why": "the documentation is asked for and not written yet"
+        }
+      ]
+    },
+    {
+      "user": "document it please"
+    },
+    {
+      "edit": "/srv/shop/docs/import.md"
+    },
+    {
+      "agent": "Documented --dry-run in docs/import.md with an example."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "doc",
+          "why": "the documentation was written"
+        },
+        {
+          "in": "did",
+          "has": "doc",
+          "why": "the documentation is recorded as done"
+        }
+      ]
+    }
+  ]
+}

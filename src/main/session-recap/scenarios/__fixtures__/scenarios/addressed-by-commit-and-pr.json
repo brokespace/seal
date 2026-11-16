@@ -1,0 +1,78 @@
+{
+  "id": "addressed-by-commit-and-pr",
+  "title": "Commit, push and PR done by commands; the reply is only a link",
+  "categories": ["addressed-implicitly"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The commit, push and pull request are recorded as done and nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Fix the flaky date test in test/invoice.test.ts"
+    },
+    {
+      "edit": "/srv/shop/test/invoice.test.ts"
+    },
+    {
+      "agent": "The test compared against new Date() at midnight boundaries; it now uses a fixed clock. It passed 50 runs in a row."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "user": "great, commit and push, then open a PR"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git commit -am 'Use a fixed clock in the invoice date test'"
+        },
+        "output": "[fix/invoice-date 91be2d0] Use a fixed clock in the invoice date test"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "git push -u origin fix/invoice-date"
+        },
+        "output": "branch fix/invoice-date set up to track origin/fix/invoice-date"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "gh pr create --fill"
+        },
+        "output": "https://github.com/acme/shop/pull/212"
+      }
+    },
+    {
+      "agent": "https://github.com/acme/shop/pull/212"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "PR|pull request|push|commit",
+          "why": "the commit, push and PR are recorded as done"
+        }
+      ]
+    }
+  ]
+}

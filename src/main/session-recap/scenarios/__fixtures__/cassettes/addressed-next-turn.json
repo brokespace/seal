@@ -1,0 +1,26 @@
+[
+  {
+    "key": "2d86e9bca6caf48d022ad5501b7468db",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add a test for it.\n\n[m2] AGENT: I added a rate limiter to /login: 5 attempts per minute per IP, returning 429 after that. It lives in src/routes/login.ts.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Add a test\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Added rate limiting to login endpoint\", \"state\": \"done\", \"ref\": \"m2\"}, {\"text\": \"Test not added\", \"state\": \"in-progress\", \"ref\": \"m2\"}]\n  }\n}",
+    "neurons": 6.741300000000001
+  },
+  {
+    "key": "bc1e2150d9ea25f5fa0805d965eaf99e",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add rate limiting to the /login endpoint, 5 attempts per minute per IP. Also add\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a test\"}],\"did\":[{\"id\":\"w3\",\"text\":\"Test not added\",\"state\":\"in-progress\"},{\"id\":\"w2\",\"text\":\"Added rate limiting to login endpoint\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok. anything left?\n\n[m2] AGENT: One thing was left: the test. I wrote test/login-rate-limit.test.ts, which makes 6 attempts from one IP and expects the 6th to get a 429. It passes.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"update\": [\n    {\"id\": \"w3\", \"text\": \"Test not added\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"a1\"]\n}",
+    "neurons": 5.3995
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "key": "a7357a6b5d5aab79f59e359654aef01a",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Set up the staging deploy.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Set up the staging deploy.\n\n[m2] AGENT: I need one choice from you before I can write the workflow.\n\nThe staging workflow is in .github/workflows/staging.yml. It deploys on every push to main.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": \"Staging Deploy Setup\",\n  \"goal\": \"Set up the staging deploy workflow.\",\n  \"standing\": \"Waiting for file path to staging workflow.\",\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"What is the staging workflow path?\",\n        \"ref\": \"m2\"\n      }\n    ]\n  },\n  \"did\": [\n    {\n      \"text\": \"Asked for staging workflow path\",\n      \"state\": \"done\",\n      \"ref\": \"m2\"\n    }\n  ]\n}",
+    "neurons": 7.7411
+  }
+]

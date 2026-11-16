@@ -1,0 +1,74 @@
+{
+  "id": "partly-addressed-then-finished",
+  "title": "Two endpoints asked for, one done, the other a turn later",
+  "categories": ["partly-addressed"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "After turn 1 only /customers is open and /orders is done. After turn 2 nothing is open.",
+  "steps": [
+    {
+      "user": "Add pagination to the /orders and /customers endpoints, 50 per page."
+    },
+    {
+      "edit": "/srv/shop/src/routes/orders.ts"
+    },
+    {
+      "agent": "/orders is paginated now: 50 per page with a next cursor, and the list test covers it. /customers builds its query in a different helper, so I have left it for a follow-up."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "customers",
+          "why": "the /customers half is not done"
+        },
+        {
+          "in": "ignored",
+          "lacks": "^(?!.*customer).*orders",
+          "why": "/orders is done, so it is not listed as unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "orders",
+          "why": "the /orders half is recorded as done"
+        }
+      ]
+    },
+    {
+      "user": "do customers too"
+    },
+    {
+      "edit": "/srv/shop/src/routes/customers.ts"
+    },
+    {
+      "agent": "/customers is paginated the same way, 50 per page, with its own test."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "customers",
+          "why": "the /customers half is recorded as done"
+        }
+      ]
+    }
+  ]
+}

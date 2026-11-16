@@ -1,0 +1,76 @@
+{
+  "id": "question-answered",
+  "title": "The agent asks which provider to use and the user answers",
+  "categories": ["question-answered"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "While the agent waits, its question is open and the request is not shown as overlooked. After the answer the question is gone, the emails are done, and SES is recorded as the decision.",
+  "steps": [
+    {
+      "user": "Add email notifications when an order ships."
+    },
+    {
+      "agent": "I can send them through the existing SES setup or through Postmark, which the marketing emails use. Which one should order emails go through?"
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "questions",
+          "has": "SES|Postmark|which",
+          "why": "the agent is waiting on the user"
+        },
+        {
+          "in": "ignored",
+          "lacks": "email|notif",
+          "why": "the agent is waiting on an answer; it did not overlook the request"
+        }
+      ]
+    },
+    {
+      "user": "SES"
+    },
+    {
+      "edit": "/srv/shop/src/notifications/order-shipped.ts"
+    },
+    {
+      "agent": "Order-shipped emails now go out through SES when an order's status changes to shipped."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "after turn 2",
+      "check": [
+        {
+          "in": "questions",
+          "max": 0,
+          "why": "the user answered"
+        },
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "email|notif",
+          "why": "the emails are recorded as done"
+        },
+        {
+          "in": "decisions",
+          "has": "SES",
+          "why": "the choice of SES is recorded"
+        }
+      ]
+    }
+  ]
+}

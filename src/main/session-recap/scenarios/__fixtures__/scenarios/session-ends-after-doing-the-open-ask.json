@@ -1,0 +1,77 @@
+{
+  "id": "session-ends-after-doing-the-open-ask",
+  "title": "The last turn does the open ask and then the session ends",
+  "categories": ["session-end", "addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The ended session no longer lists the rollback notes as not addressed, before the user opens it and after.",
+  "steps": [
+    {
+      "user": "Write the release notes for 3.2 and add a rollback section to the runbook."
+    },
+    {
+      "edit": "/srv/shop/docs/release-notes/3.2.md"
+    },
+    {
+      "agent": "The 3.2 release notes are in docs/release-notes/3.2.md. I have not written the rollback section yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "rollback",
+          "why": "the rollback section is asked for and not written yet"
+        }
+      ]
+    },
+    {
+      "user": "add the rollback section, then we're done"
+    },
+    {
+      "edit": "/srv/shop/docs/runbook.md"
+    },
+    {
+      "agent": "The runbook has a rollback section now: how to pin the previous image, revert migration 0051, and verify. That is everything."
+    },
+    {
+      "status": "done"
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "four minutes after the session ended",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "rollback",
+          "why": "the rollback section was written before the session ended"
+        }
+      ]
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "after the user opens it",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "rollback",
+          "why": "the rollback section was written before the session ended"
+        },
+        {
+          "in": "did",
+          "has": "rollback",
+          "why": "the rollback section is recorded as done"
+        }
+      ]
+    }
+  ]
+}

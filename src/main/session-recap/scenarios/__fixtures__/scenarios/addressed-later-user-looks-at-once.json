@@ -1,0 +1,85 @@
+{
+  "id": "addressed-later-user-looks-at-once",
+  "title": "The user opens the recap seconds after the turn that did the open ask",
+  "categories": ["addressed-later-turn"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The recap the user opens right after the turn no longer lists the documentation as not addressed.",
+  "steps": [
+    {
+      "user": "Add a --dry-run flag to the import script and document it in docs/import.md."
+    },
+    {
+      "edit": "/srv/shop/scripts/import.ts"
+    },
+    {
+      "agent": "Added --dry-run to scripts/import.ts: it parses and validates every row and writes nothing. I haven't documented it yet."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after turn 1",
+      "check": [
+        {
+          "in": "ignored",
+          "has": "doc",
+          "why": "the documentation is asked for and not written yet"
+        }
+      ]
+    },
+    {
+      "user": "document it please"
+    },
+    {
+      "edit": "/srv/shop/docs/import.md"
+    },
+    {
+      "agent": "Documented --dry-run in docs/import.md with an example."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "open": true
+    },
+    {
+      "label": "the user opens the recap right after turn 2",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "doc",
+          "why": "the documentation was written in the turn that just ended"
+        },
+        {
+          "view": "stale",
+          "is": false,
+          "why": "what the user opens is up to date with the session"
+        }
+      ]
+    },
+    {
+      "advance": 240000
+    },
+    {
+      "label": "four minutes later",
+      "check": [
+        {
+          "in": "ignored",
+          "lacks": "doc",
+          "why": "the documentation was written"
+        },
+        {
+          "in": "did",
+          "has": "doc",
+          "why": "the documentation is recorded as done"
+        }
+      ]
+    }
+  ]
+}

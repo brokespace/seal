@@ -1,0 +1,46 @@
+[
+  {
+    "key": "db7905e859a58d0dafafe1ec4ce68e14",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"add csv export to reports. tests too pls\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: add csv export to reports. tests too pls\n\n[m2] AGENT: Reports have a CSV export button now; it downloads the current filter's rows.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"title\": null,\n  \"goal\": \"add csv export to reports. tests too pls\",\n  \"standing\": \"agent completed csv export feature implementation.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"added report csv export button\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
+    "neurons": 7.7898
+  },
+  {
+    "key": "acf5b6dc63ebee380c0232464adaccff",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"add csv export to reports. tests too pls\",\"standing\":\"agent completed csv export feature implementation.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"added report csv export button\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: thx. unrelated: bump node to 22 in .nvmrc\n\n[m2] AGENT: .nvmrc now says 22.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"actions\": [{\"text\":\"bump node to 22 in .nvmrc\", \"ref\": \"m1\"}]\n}",
+    "neurons": 4.711
+  },
+  {
+    "key": "c2f34ecbf29719340a11efffb92241e9",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":\"add csv export to reports. tests too pls\",\"standing\":\"agent completed csv export feature implementation.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"added report csv export button\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: thx. unrelated: bump node to 22 in .nvmrc\n\n[m2] AGENT: .nvmrc now says 22.\n</new_messages>"
+      },
+      {
+        "role": "assistant",
+        "content": "{\n  \"actions\": [{\"text\":\"bump node to 22 in .nvmrc\", \"ref\": \"m1\"}]\n}"
+      },
+      {
+        "role": "user",
+        "content": "That reply could not be used. The JSON object has none of the keys title, goal, standing, add, update, resolve.\nReply again with only the JSON object described, starting with { and ending with }."
+      }
+    ],
+    "reply": "{\"add\":{\"actions\":[{\"text\":\"bump node to 22 in .nvmrc\",\"ref\":\"m1\"}]}}",
+    "neurons": 5.0142999999999995
+  }
+]

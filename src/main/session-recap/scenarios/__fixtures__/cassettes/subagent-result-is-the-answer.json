@@ -1,0 +1,14 @@
+[
+  {
+    "key": "6ada998ddcae2de4ced622c1880d4a8d",
+    "model": "@cf/zai-org/glm-4.7-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Find out why the nightly export job fails.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Find out why the nightly export job fails.\n\n[m2] AGENT: See the finding above.\n</new_messages>"
+      }
+    ],
+    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Why nightly export job fails\",\n        \"ref\": \"m1\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Found cause of nightly export job failure\",\n        \"state\": \"done\",\n        \"ref\": \"m2\"\n      }\n    ]\n  }\n}",
+    "neurons": 6.371499999999999
+  }
+]

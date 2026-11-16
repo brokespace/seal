@@ -1,0 +1,109 @@
+{
+  "id": "tool-heavy-one-word-reply",
+  "title": "Twelve tool calls and a one-word reply",
+  "categories": ["tool-heavy"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "expected": "The upgrade is recorded as done from the files and commands of the turn; nothing is listed as not addressed.",
+  "steps": [
+    {
+      "user": "Upgrade React Router from v5 to v6 across the app."
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/package.json"
+        },
+        "output": "// package.json"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm add react-router-dom@6"
+        },
+        "output": "react-router-dom 6.28.0"
+      }
+    },
+    {
+      "tool": {
+        "name": "Read",
+        "input": {
+          "file_path": "/srv/shop/src/App.tsx"
+        },
+        "output": "// src/App.tsx"
+      }
+    },
+    {
+      "edit": "/srv/shop/src/App.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/routes/index.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/pages/product.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/pages/checkout.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/pages/orders.tsx"
+    },
+    {
+      "edit": "/srv/shop/src/components/NavLink.tsx"
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm tsc --noEmit"
+        },
+        "output": "no errors"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm test"
+        },
+        "output": "318 passed"
+      }
+    },
+    {
+      "tool": {
+        "name": "Bash",
+        "input": {
+          "command": "pnpm build"
+        },
+        "output": "built in 14.2s"
+      }
+    },
+    {
+      "agent": "Done."
+    },
+    {
+      "status": "your-turn"
+    },
+    {
+      "advance": 3000
+    },
+    {
+      "label": "after the turn",
+      "check": [
+        {
+          "in": "ignored",
+          "max": 0,
+          "why": "nothing the user asked for is left unaddressed"
+        },
+        {
+          "in": "did",
+          "has": "router|upgrade|v6",
+          "why": "the upgrade is recorded as done",
+          "state": "done"
+        }
+      ]
+    }
+  ]
+}
