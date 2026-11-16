@@ -71,7 +71,7 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
     await expect(sidebarMachineSessionRows(page, hostId)).toHaveCount(1)
     await expect(sidebarMachineSessionRows(page, hostId)).toContainText(FIRST_PROMPT)
-    await page.screenshot({ path: testInfo.outputPath('active-agents-before-restart.png') })
+    await page.screenshot({ path: testInfo.outputPath('sidebar-sessions-before-restart.png') })
 
     page = await relaunchManagedApp(fixture)
     const relisted = await expectOneChat(session.userDataDir, hostId, 'your-turn')
@@ -84,7 +84,7 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
     await expect(sidebarMachineSessionRows(page, hostId)).toHaveCount(1)
     await expect(sidebarMachineSessionRows(page, hostId)).toContainText(FIRST_PROMPT)
-    await page.screenshot({ path: testInfo.outputPath('active-agents-after-restart.png') })
+    await page.screenshot({ path: testInfo.outputPath('sidebar-sessions-after-restart.png') })
 
     // Opening the row shows the conversation, read from the server and followed as it grows.
     await sidebarMachineSessionRows(page, hostId).click()
