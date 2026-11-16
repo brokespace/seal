@@ -38,6 +38,7 @@ import {
   waitForRecapPass,
   type RecapPanelLists
 } from './helpers/recap-baseline'
+import { sidebarSessionRow } from './helpers/sidebar-session-row'
 import {
   expect,
   readUtilityRequests,
@@ -376,14 +377,15 @@ test.describe('session recap baseline: agent CLI sessions started outside Seal',
         'a-minute-after-the-session-ended'
       )
 
-      const row = orcaPage.locator(
-        `[data-testid="active-agents"] [data-live-session-row="${session.sessionId}"]`
-      )
-      const finished = orcaPage.locator(
-        '[data-testid="active-agents"] [data-active-agents-finished]'
-      )
+      const row = sidebarSessionRow(orcaPage, session.sessionId)
       baseline.notes.rowShownBeforeUnfolding = await row.isVisible()
-      await finished.locator('button[aria-expanded="false"]').click()
+      // An ended session sits behind its group's "Recently finished" line, folded until asked for.
+      const finished = orcaPage.locator('[data-workspace-sessions-finished-toggle]')
+      for (const toggle of await finished.all()) {
+        if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+          await toggle.click()
+        }
+      }
       await expect(row).toBeVisible()
       const panel = await openRecapPanel(orcaPage, session.sessionId)
       const openedAt = Date.now()
