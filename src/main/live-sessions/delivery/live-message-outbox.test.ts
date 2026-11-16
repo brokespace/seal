@@ -94,6 +94,24 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  it('says where a message was written and, once delivered, where the transcript holds it', async () => {
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })
+    clock += 1
+    await box.send({ sessionId: session.id, messageId: 'm2', text: 'second' })
+    await settle(box, ([a]) => a.state === 'sent')
+    // The agent keeps writing while the first waits in its queue and the second waits behind it.
+    transcript.push({ offset: 300, text: 'a tool result' }, { offset: 500, text: 'first' })
+    await settle(box, ([a, b]) => a.state === 'delivered' && b.state === 'sent')
+    transcript.push({ offset: 900, text: 'second' })
+    await settle(box, ([, b]) => b.state === 'delivered')
+    expect(box.list().map((m) => [m.sentOffset, m.echoOffset])).toEqual([
+      [1, 500],
+      [1, 900]
+    ])
+    box.stop()
+  })
+
   it('holds the next message until the one ahead reaches the transcript', async () => {
     const box = outbox()
     await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })

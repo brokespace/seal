@@ -8,6 +8,7 @@ import {
   publicView,
   type LiveMessageOutboxDeps,
   isOutboxItem,
+  restoredOutboxItem,
   type OutboxItem as Item
 } from './live-message-outbox-types'
 
@@ -47,16 +48,7 @@ export class LiveMessageOutbox {
 
   start(): Promise<void> {
     this.started ??= this.store.load().then((loaded) => {
-      for (const item of loaded) {
-        this.items.set(item.messageId, item)
-      }
-      for (const item of this.items.values()) {
-        if (item.state === 'sending') {
-          // It may already be at the prompt: only the transcript can say, never a second send.
-          item.state = 'sent'
-          item.sentAt ??= this.now()
-        }
-      }
+      loaded.forEach((item) => this.items.set(item.messageId, restoredOutboxItem(item, this.now())))
       for (const sessionId of new Set([...this.items.values()].map((i) => i.sessionId))) {
         this.kick(sessionId)
       }
@@ -117,7 +109,17 @@ export class LiveMessageOutbox {
     this.items.set(item.messageId, item)
     this.changed(item)
     this.kick(item.sessionId)
+    void this.place(item)
     return publicView(item)
+  }
+
+  /** Notes how long the transcript is as the message is written: a chat shows it there, above what the agent writes while it waits. */
+  private async place(item: Item): Promise<void> {
+    const session = this.deps.getSession(item.sessionId)
+    const size = session ? await this.deps.transcriptSize(session).catch(() => null) : null
+    if (size !== null && this.items.get(item.messageId) === item) {
+      this.set(item, { sentOffset: size })
+    }
   }
 
   /** Put a failed message back in line under the same id. */
