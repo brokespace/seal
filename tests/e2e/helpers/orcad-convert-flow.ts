@@ -1,6 +1,7 @@
 import type { Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 import { readPersistedProfileState } from './persisted-profile-state'
+import { installSealServerOverSshTarget } from './seal-server-install-machine'
 import { findOrcadMigrationSourceCutoverForTarget } from '../../../src/main/persistence/migrating-orcad-catalog/cutover-journals/orcad-migration-cutover-journal'
 import { RuntimeClient } from '../../../src/cli/runtime/client'
 
@@ -121,7 +122,8 @@ export async function convertAndRetain(
   userData: string,
   host: ConvertedHost
 ): Promise<void> {
-  const connected = await reconnect(page, host.targetId)
+  // A saved host connects over plain SSH; only a confirmed install converts it.
+  const connected = JSON.stringify(await installSealServerOverSshTarget(page, host.targetId))
   // Polls the whole state so a timeout reports why the host stayed on the relay.
   await expect
     .poll(

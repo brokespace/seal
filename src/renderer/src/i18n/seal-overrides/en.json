@@ -371,7 +371,14 @@
           "load": "Load average",
           "loadDetail": "1, 5 and 15 minutes",
           "cores": "Cores",
-          "processes": "Processes"
+          "processes": "Processes",
+          "readings": "CPU: {{readings}}",
+          "temperatureHintMac": "Reading a Mac’s sensors needs the Xcode Command Line Tools on that Mac: run xcode-select --install there.",
+          "temperatureHintWindows": "Windows shows no CPU temperature to an account without administrator rights here. Running LibreHardwareMonitor on that machine makes one readable.",
+          "temperatureHintLinux": "This machine exposes no CPU temperature sensor, as most virtual machines do not.",
+          "temperature": "Temperature",
+          "temperatureUnavailable": "no readable sensor",
+          "sensors": "CPU sensors"
         },
         "memory": {
           "used": "Used",
@@ -2204,6 +2211,119 @@
       },
       "group": {
         "splitView": "Split view"
+      }
+    },
+    "machineServer": {
+      "add": {
+        "install": "Install Seal server on this machine",
+        "installHelp": "Keeps agents running when this computer disconnects, and enables chat, sessions and file features on the machine. After you save, Seal shows what it writes on the machine and asks before installing.",
+        "manager": "How Seal server is kept running",
+        "managerAuto": "Automatic (recommended)",
+        "managerAutoHelp": "PM2 when the machine has it, otherwise a systemd user service.",
+        "managerPm2": "PM2",
+        "managerPm2Help": "For machines that have PM2 installed.",
+        "managerSystemd": "systemd user service",
+        "managerSystemdHelp": "For Linux machines that run systemd.",
+        "managerLaunchd": "launchd user service (experimental)",
+        "managerLaunchdHelp": "macOS only. Starts when you log in at the Mac’s screen, so not on a headless Mac. Not yet tested on a real Mac."
+      },
+      "server": {
+        "title": "Seal server",
+        "installing": "Installing Seal server…",
+        "installed": "Installed on this machine",
+        "systemd": "Runs as a systemd user service",
+        "launchd": "Runs as a launchd user service (experimental)",
+        "pm2": "Kept running by PM2",
+        "detached": "Starts when Seal connects and stops when idle",
+        "version": "Version {{version}}",
+        "lingerOff": "Lingering is off for your account on this machine, so the machine stops Seal server when your last session there ends. That can be 10 seconds after this computer disconnects. To keep it running, run this on the machine:",
+        "pm2NoBoot": "PM2 is not set to start at boot on this machine. Run <code>pm2 startup</code> there to keep the server across reboots.",
+        "copyCommand": "Copy command",
+        "notInstalled": "Not installed on this machine",
+        "install": "Install Seal server",
+        "keepRunning": "Keep it running as a service",
+        "keepRunningHelp": "As a user service, Seal server keeps running after this computer disconnects.",
+        "ownServer": "To keep this server running as a service, run this on the machine:",
+        "desktopOnly": "Seal server is installed from the Seal desktop app.",
+        "serviceRemains": "Seal server was stopped, but its service is still registered on this machine. Remove it again to finish.",
+        "notService": "Not kept running as a service",
+        "installAction": "Install Seal server…",
+        "launchdLogin": "launchd starts Seal server when you log in at this Mac’s screen. After a reboot the server does not start until you log in, and it never runs on a Mac nobody logs in to.",
+        "launchdNeedsLogin": "launchd could not take the service because no one is logged in at this Mac’s screen, so Seal server starts when Seal connects and stops when idle. After you log in at the Mac, choose “Keep it running as a service” again.",
+        "keepRunningAction": "Keep it running as a service…",
+        "waitsForHost": "Another Seal server install is in progress on this machine. Seal is waiting for it to finish."
+      },
+      "status": {
+        "waitsForHost": "Waiting for another install",
+        "installing": "Installing Seal server"
+      },
+      "notice": {
+        "failed": "Seal server is not installed: {{reason}}.",
+        "failedNoReason": "Seal server is not installed.",
+        "moveBlocked": "Seal server is not installed: some saved items cannot move to the server.",
+        "stillSsh": "This machine still works over SSH.",
+        "retry": "Retry install…",
+        "offer": "Install Seal server on this machine? It keeps agents running when this computer disconnects, and enables chat, sessions and file features here. Nothing is installed until you confirm.",
+        "notNow": "Not now",
+        "callOff": "Don’t install",
+        "moveAnyway": "Move anyway…",
+        "reuseNamed": "{{name}} already has a Seal server that you set up as a service ({{service}}). Seal can use it instead of installing a second one.",
+        "reuse": "{{name}} already has a Seal server that you set up as a service. Seal can use it instead of installing a second one.",
+        "reuseAction": "Use this server…"
+      },
+      "installDialog": {
+        "serviceAuto": "Seal registers a user service that keeps the server running: PM2 when the machine has PM2, otherwise a systemd user service. When the machine has neither, no service is registered, and the server starts when Seal connects and stops when idle.",
+        "serviceSystemd": "Seal registers a systemd user service that keeps the server running, as chosen under Advanced. When the machine cannot run one, Seal uses PM2 when the machine has it.",
+        "servicePm2": "Seal registers the server with PM2, which keeps it running, as chosen under Advanced. When the machine has no PM2, Seal registers a systemd user service instead.",
+        "serviceLaunchd": "Seal registers a launchd user service (experimental) that keeps the server running, as chosen under Advanced. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to.",
+        "pm2": "With PM2, Seal adds the server to PM2’s process list, which PM2 keeps in ~/.pm2. PM2 and ~/.pm2 stay after “Remove Seal server”.",
+        "diskIndex": "With or without the server, the Machines page keeps folder sizes for {{name}} in ~/.seal/disk-index, where a background helper updates them.",
+        "linger": "With systemd, Seal asks the machine to turn on lingering for your account, so the service keeps running after this computer disconnects.",
+        "laterRemoval": "Later, “Remove Seal server” stops the server and removes the service. Lingering stays on, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.",
+        "title": "Install Seal server on {{name}}?",
+        "files": "Seal writes its server files to ~/.orca-remote on {{name}}, then connects to {{name}} through the server instead of plain SSH.",
+        "moveAnyway": "The saved items listed on this machine’s page stay on this computer and do not appear on {{name}}.",
+        "serviceLaunchdFallback": "When no one is logged in at the screen during the install, no service is registered, and the server starts when Seal connects and stops when idle. On a machine without launchd, Seal chooses as it does automatically: PM2 when the machine has PM2, otherwise a systemd user service.",
+        "serverData": "Once it runs, the server keeps its own data in ~/.orca (keys, its database and agent hook settings), writes ~/.claude/keybindings.json and ~/.claude/orca-agent-view.json, and adds its status hooks to the settings of the coding agents it finds on {{name}}, keeping a .bak copy of each settings file it changes."
+      },
+      "keepRunningDialog": {
+        "title": "Keep Seal server running on {{name}} as a service?",
+        "ownCommand": "Seal runs “seal serve service install” on {{name}} over SSH. That command registers the server you run there as a user service (systemd on Linux, launchd on macOS). The server that runs now is not stopped: the service takes over when it ends, for example when the machine restarts.",
+        "ownOtherKeeper": "If you already keep this server running another way, such as a service of your own under another name or PM2, choose Cancel: a second service would compete with it for the server’s port.",
+        "ownUndo": "To undo this later, run “seal serve service uninstall” on {{name}}.",
+        "service": "Seal registers the server that already runs on {{name}} as a user service and restarts the server once. The service is PM2 when the machine has PM2, otherwise a systemd user service.",
+        "serviceLaunchd": "Seal registers the server that already runs on {{name}} as a launchd user service (experimental) and restarts the server once. launchd starts the server when you log in at the Mac’s screen, so the server does not run on a Mac nobody logs in to. When no one is logged in at the screen now, no service is registered."
+      },
+      "reuseDialog": {
+        "title": "Use the Seal server you set up on {{name}}?",
+        "confirm": "Use this server",
+        "connects": "Seal connects to {{name}} through the Seal server you set up there. Over SSH, Seal runs “seal pair” on {{name}} to get an access link from that server: if this computer is already paired with the server, Seal keeps that pairing, otherwise it pairs with the link. Seal adds its own SSH tunnel only when the pairing needs one and has none.",
+        "nothingInstalled": "Nothing is installed on {{name}}, and the server is not restarted."
+      },
+      "remove": {
+        "action": "Remove Seal server…",
+        "title": "Remove Seal server from {{name}}?",
+        "confirm": "Remove Seal server",
+        "stops": "This stops Seal server on {{name}} and removes its service. {{name}} goes back to a plain SSH connection, and projects and sessions opened through the server are no longer shown on this computer.",
+        "stays": "Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings. When PM2 kept the server running, PM2 and ~/.pm2 stay too.",
+        "terminals": "Running terminals block the removal: close the terminals that run through the server first."
+      },
+      "settings": {
+        "asksFirst": "Seal shows what it writes on the host and asks before it installs anything.",
+        "reuseDone": "Seal now connects to {{name}} through the Seal server you set up there."
+      },
+      "list": {
+        "failed": "Install failed",
+        "offer": "Install available",
+        "offerTitle": "Seal server can be installed on this machine",
+        "waiting": "Install waiting",
+        "waitsForHost": "Waiting for other install",
+        "installingTitle": "Seal server is being installed on this machine",
+        "installing": "Installing"
+      },
+      "sidebar": {
+        "offerOne": "Seal server can be installed on {{name}}",
+        "offerMany": "Seal server can be installed on {{count}} machines"
       }
     },
     "contextIndicator": {

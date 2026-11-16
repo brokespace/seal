@@ -7,6 +7,7 @@ import { expect, test } from './helpers/orca-app'
 import { waitForSessionReady } from './helpers/store'
 import { attachRepoAndOpenTerminal, createRestartSession } from './helpers/orca-restart'
 import { managedServer } from './helpers/orcad-convert-flow'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import { seedRelayEraProfile } from './helpers/orcad-upgrade-profile'
 import { mutateStoppedProfileState } from './helpers/persisted-profile-state'
 import { toRuntimeExecutionHostId, toSshExecutionHostId } from '../../src/shared/execution-host'
@@ -338,7 +339,7 @@ test('an SSH host converts while a relay shell named only on its tab runs, and t
       bridgedPtyId
     )
 
-    // Opening the old tab dials the host, which converts while its relay shell runs.
+    // Opening the old tab dials the host over plain SSH; the confirmed install converts it while its relay shell runs.
     const launched = await session.launch({ onStderr: forwardSshLogs })
     app = launched.app
     const page = launched.page
@@ -362,6 +363,7 @@ test('an SSH host converts while a relay shell named only on its tab runs, and t
     record.afterSshActivation = await selectionObserver.evaluate((observer) =>
       observer.checkpoint({ stage: 'after-ssh-activation' })
     )
+    await installSealServerOverSshTarget(page, targetId)
     await expect
       .poll(async () => (record.managedServer = await managedServer(page, targetId)), {
         timeout: 3 * 60_000

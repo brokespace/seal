@@ -12931,8 +12931,7 @@
           },
           "description": "Orca устанавливается на пустой SSH-сервер и поддерживает себя в актуальном состоянии.",
           "deploy": {
-            "host": "SSH-сервер",
-            "name": "Имя сервера"
+            "host": "SSH-сервер"
           },
           "pending": {
             "resume": "Продолжить"
@@ -13331,11 +13330,9 @@
           "showError": "Показать ошибку",
           "neverConnected": "Ещё не подключался",
           "defaultHostEmptyLine": "Новые проекты открываются на этом компьютере, пока вы не добавите сервер.",
-          "installNamePlaceholder": "Как у SSH-сервера",
           "setUpDone": "Orca настроена на {{name}}.",
           "settingUpInBackground": "Orca настраивается на {{name}} в фоне. Сервер появится в списке, когда будет готов.",
           "setUpOnSshHost": "Настроить Orca на SSH-сервере",
-          "setUp": "Настроить",
           "overYourSsh": "Через ваше SSH-подключение"
         },
         "sshBulkRemove": {

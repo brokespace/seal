@@ -13,7 +13,9 @@ export function AddRemoteHostSshFormPanel({
   onSubmit,
   onCancel,
   onFillFromConfig,
-  serverLabel
+  serverLabel,
+  options,
+  advancedOptions
 }: {
   form: EditingTarget
   disabled: boolean
@@ -26,6 +28,10 @@ export function AddRemoteHostSshFormPanel({
   onFillFromConfig?: () => void
   /** Set when the host is saved on a paired server rather than on this client. */
   serverLabel?: string
+  /** Shown between the fields and the buttons. */
+  options?: React.ReactNode
+  /** Shown at the end of Advanced. */
+  advancedOptions?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
   return (
@@ -62,7 +68,10 @@ export function AddRemoteHostSshFormPanel({
         onFormChange={onFormChange}
         onSubmit={onSubmit}
         offerProxyConnectionReuse={!serverLabel}
+        advancedOptions={advancedOptions}
       />
+
+      {options}
 
       <DialogFooter className="sm:justify-between">
         {onFillFromConfig ? (

@@ -14,6 +14,7 @@ import {
   startDockerSshHostTarget,
   type DockerSshHostTarget
 } from './helpers/docker-ssh-host-target'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 
 const HOST = process.env[ORCAD_CONVERT_HOST_ENV]
 const TEMPLATE_SOURCE = process.env.ORCA_E2E_ORCAD_CONVERT_TEMPLATE
@@ -109,17 +110,8 @@ async function connectManagedHost(
   target: DockerSshHostTarget,
   name: string
 ): Promise<{ targetId: string; environmentId: string }> {
-  const connected = await page.evaluate(
-    async (input) => {
-      const { target: created } = await window.api.ssh.addTarget({
-        target: input
-      })
-      const state = await window.api.ssh.connect({ targetId: created.id })
-      return {
-        targetId: created.id,
-        managedServer: state?.managedServer ?? null
-      }
-    },
+  const targetId = await page.evaluate(
+    async (input) => (await window.api.ssh.addTarget({ target: input })).target.id,
     {
       label: `orcad shared home ${name} ${Date.now()}`,
       host: target.host,
@@ -130,11 +122,12 @@ async function connectManagedHost(
       relayGracePeriodSeconds: 1
     }
   )
-  const server = connected.managedServer
+  const installed = await installSealServerOverSshTarget(page, targetId)
+  const server = installed.state?.managedServer
   if (server?.kind !== 'managed') {
-    throw new Error(`host ${name}: expected a managed server, got ${JSON.stringify(server)}`)
+    throw new Error(`host ${name}: expected a managed server, got ${JSON.stringify(installed)}`)
   }
-  return { targetId: connected.targetId, environmentId: server.environmentId }
+  return { targetId, environmentId: server.environmentId }
 }
 
 async function terminalListOk(page: Page, environmentId: string): Promise<boolean> {

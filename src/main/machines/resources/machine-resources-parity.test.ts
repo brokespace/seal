@@ -16,7 +16,7 @@ import {
 } from '../testing/machine-transport-test-doubles'
 import { MachineCleanupRunner } from './machine-cleanup-runner'
 import { listMachineDiskMounts, measureMachineDiskUsage } from './machine-disk-usage'
-import { collectMachineMetricsWithGpus } from './machine-gpu-readings'
+import { collectMachineMetricsWithSensors } from './machine-sensor-readings'
 import { probeMachineProcesses } from './machine-process-probe'
 import { signalMachineProcess } from './machine-process-signal'
 
@@ -163,7 +163,7 @@ describe.skipIf(process.platform !== 'linux').each(cases)(
         )
         try {
           const snapshot = await probeMachineProcesses(machine, { gpus: true })
-          const metrics = await collectMachineMetricsWithGpus(machine)
+          const metrics = await collectMachineMetricsWithSensors(machine)
 
           expect(
             snapshot.gpu?.gpus.map((gpu) => [gpu.index, gpu.name, gpu.utilizationPercent, gpu.mig])

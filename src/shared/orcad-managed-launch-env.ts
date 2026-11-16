@@ -4,3 +4,6 @@ export const ORCAD_MANAGED_ACTIVATION_ROOT_ENV = 'ORCA_ORCAD_MANAGED_ACTIVATION_
 
 /** Host login env naming a machine's own managed-server data on a shared home; clones copy /etc/machine-id. */
 export const ORCA_MACHINE_NAME_ENV = 'ORCA_MACHINE_NAME'
+
+/** Seal: set by the service launcher; a server kept running by a service manager never idle-exits. */
+export const SEAL_SERVER_SERVICE_ENV = 'SEAL_SERVER_SERVICE'

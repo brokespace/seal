@@ -16,7 +16,8 @@ export function SshHostAdvancedFields({
   disabled,
   onFormChange,
   offerProxyConnectionReuse = false,
-  offerReconnectOnLaunch = false
+  offerReconnectOnLaunch = false,
+  extra
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -27,6 +28,8 @@ export function SshHostAdvancedFields({
   offerProxyConnectionReuse?: boolean
   /** Only for hosts this desktop restores at launch; a paired server keeps its own hosts. */
   offerReconnectOnLaunch?: boolean
+  /** Shown after the SSH options. */
+  extra?: React.ReactNode
 }): React.JSX.Element {
   const t = useTranslate()
   return (
@@ -203,6 +206,7 @@ export function SshHostAdvancedFields({
               )}
             />
           </div>
+          {extra}
         </div>
       </CollapsibleContent>
     </Collapsible>
