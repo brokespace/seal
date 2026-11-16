@@ -196,8 +196,8 @@ export class HostSessionScanner {
     }
     const tailIsWholeFile = file.size <= this.limits.tailBytes
     const records = recordsOf(file.tail, !tailIsWholeFile)
-    if (file.tail === null) {
-      // Over this scan's read budget: keep the old summary until a later scan reads it.
+    if (file.tail === null || (cached && !tailIsWholeFile && records.length === 0)) {
+      // Over this scan's read budget, or a tail cut inside one long line: the old summary stands until a scan reads a whole record.
       if (cached) {
         cached.mtimeMs = file.mtimeMs
       }

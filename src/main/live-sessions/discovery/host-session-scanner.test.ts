@@ -156,6 +156,10 @@ it("lists how full a session's context is, and keeps that reading while the tail
       model: 'gpt-5.2-codex'
     }
   ])
+
+  // One record longer than the bytes a scan reads: the start of the file is not the latest word.
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 70_000, 'x'.repeat(500), null)
+  expect((await listed())[0].context?.usedTokens).toBe(136_000)
 })
 
 // Claude names no window: one is told from a response that exceeds the default.
