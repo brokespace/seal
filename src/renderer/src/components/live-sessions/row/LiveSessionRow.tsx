@@ -322,7 +322,13 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
             </div>
           </HoverCardTrigger>
         </ContextMenuTrigger>
-        <HoverCardContent ref={previewCard} side="right" align="start" className="w-72">
+        <HoverCardContent
+          ref={previewCard}
+          side="right"
+          align="start"
+          // A wide sidebar in a narrow window leaves less than the card's width beside the row.
+          className="w-72 max-w-(--radix-hover-card-content-available-width)"
+        >
           <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
         </HoverCardContent>
       </HoverCard>
