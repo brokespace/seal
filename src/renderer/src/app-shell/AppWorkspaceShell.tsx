@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useRef } from 'react'
+import { memo, Suspense, useCallback, useRef, useState } from 'react'
 import { lazyWithRetry as lazy } from '@/app-shell/startup/lazy-with-retry'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
@@ -44,6 +44,7 @@ const LiveSessionWorkspace = lazy(
 )
 const Terminal = lazy(() => import('../components/Terminal'))
 const SplitViewLayer = lazy(() => import('../components/split-view/SplitViewLayer'))
+const ItemSurfaceLayer = lazy(() => import('../components/split-view/ItemSurfaceLayer'))
 
 type WorktreeSidebarScrollRefs = {
   scrollOffsetRef: React.MutableRefObject<number>
@@ -138,6 +139,38 @@ function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element 
         <HomeOrLanding />
       ) : null}
     </>
+  )
+}
+
+/** Sessions and projects, kept mounted while the layout around them changes. */
+function ItemSurfaces({ layout }: { layout: AppChromeLayout }): React.JSX.Element | null {
+  const t = useTranslate()
+  const wanted =
+    layout.splitViewShowing || layout.activeView === 'sessions' || layout.activeView === 'project'
+  // Once loaded it stays: a grid behind another page keeps its sessions' drafts.
+  const [loaded, setLoaded] = useState(wanted)
+  if (wanted && !loaded) {
+    setLoaded(true)
+  }
+  if (!loaded) {
+    return null
+  }
+  return (
+    <Suspense fallback={null}>
+      <RecoverableRenderErrorBoundary
+        boundaryId="item-surfaces"
+        surface="page"
+        resetKey={layout.activeView}
+        className="absolute inset-0 bg-background"
+        title={t('auto.App.b7a714db1e', 'This page hit an error.')}
+        description={t(
+          'auto.App.03a14f6b5b',
+          'Retry the page or navigate to another Orca surface.'
+        )}
+      >
+        <ItemSurfaceLayer />
+      </RecoverableRenderErrorBoundary>
+    </Suspense>
   )
 }
 
@@ -275,6 +308,7 @@ export function AppWorkspaceShell(props: {
                     </RecoverableRenderErrorBoundary>
                   </Suspense>
                 </div>
+                <ItemSurfaces layout={layout} />
                 {layout.splitViewShowing ? (
                   <Suspense fallback={null}>
                     <RecoverableRenderErrorBoundary

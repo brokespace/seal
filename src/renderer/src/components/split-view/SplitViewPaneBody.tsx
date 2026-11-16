@@ -1,7 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
-import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
 import { WslHostStoppedWorkspaceNotice } from '@/components/wsl-host-stopped/WslHostStoppedWorkspaceNotice'
 import { useTranslate } from '@/i18n/use-translate'
 import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
@@ -11,6 +9,7 @@ import {
   requestBackgroundTerminalWorktreeMount
 } from '../terminal/background-terminal-worktree-mount'
 import { registerTabGroupBody } from '../tab-group/tab-group-body-geometry'
+import { ItemSurfaceSlot } from './ItemSurfaceSlot'
 import { resolveReattachableTabIds } from './pane-workspace-reattach'
 import { useWorkspaceSurfaceInPane } from './pane-workspace-surfaces'
 import { closeSplitViewItems, focusSplitViewPane } from './split-view-commands'
@@ -141,8 +140,8 @@ export function SplitViewPaneBody({
   shown: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  // A workspace out of sight follows the hidden-workspace rules: no slot asks to load it.
-  if (!item || (item.kind === 'workspace' && !shown)) {
+  // What is out of sight has no slot: nothing asks to load a workspace or to draw over it.
+  if (!item || !shown) {
     return <div className="flex-1" />
   }
   const close = (): void => closeSplitViewItems(new Set([splitViewItemKey(item)]))
@@ -159,22 +158,12 @@ export function SplitViewPaneBody({
     )
   }
   return (
-    <div
-      data-split-view-pane-body={item.kind}
-      tabIndex={-1}
-      className="pointer-events-auto relative flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground outline-none"
-    >
-      {item.kind === 'session' ? (
-        <div className="flex min-h-0 flex-1">
-          <LiveSessionBody sessionId={item.sessionId} />
-        </div>
-      ) : resolved ? (
-        <ProjectOverviewBody target={item} onClose={close} />
-      ) : (
+    <ItemSurfaceSlot slotId={paneId}>
+      {item.kind === 'project' && !resolved ? (
         <Placeholder onClose={close}>
           {t('seal.splitView.placeholder.projectUnavailable', 'This project is not available.')}
         </Placeholder>
-      )}
-    </div>
+      ) : null}
+    </ItemSurfaceSlot>
   )
 }

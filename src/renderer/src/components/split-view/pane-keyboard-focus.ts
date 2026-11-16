@@ -1,3 +1,4 @@
+import { ITEM_SURFACE_PANE_ATTRIBUTE } from './ItemSurfaceSlot'
 import { focusWorkspacePaneContent } from './pane-workspace-keyboard-focus'
 import { ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 import { SPLIT_VIEW_PANE_ATTRIBUTE } from './split-view-pane-size'
@@ -11,7 +12,7 @@ export function landsOnStripControl(target: EventTarget): boolean {
   return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
 }
 
-const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
+const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id], [${ITEM_SURFACE_PANE_ATTRIBUTE}]`
 
 const SURFACE_PRESS_END_EVENTS = ['pointerup', 'pointercancel', 'pointermove'] as const
 let surfacePressPaneId: string | null = null
@@ -73,15 +74,20 @@ export function bringKeyboardFocusIntoPane(
   const active = document.activeElement
   const owner = active instanceof HTMLElement && active !== document.body ? active : null
   const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
+  // A workspace, a session and a project are drawn over the pane, not in it.
   const inThisPane =
-    content === pane || content?.getAttribute('data-workspace-surface-pane-id') === paneId
+    content === pane ||
+    content?.getAttribute('data-workspace-surface-pane-id') === paneId ||
+    content?.getAttribute(ITEM_SURFACE_PANE_ATTRIBUTE) === paneId
   const stays = tabPressed
     ? inThisPane && owner !== null && !landsOnStripControl(owner)
     : owner !== null && (!content || inThisPane)
   if (stays) {
     return
   }
-  const body = pane.querySelector<HTMLElement>('[data-split-view-pane-body]')
+  const body = document.querySelector<HTMLElement>(
+    `[${ITEM_SURFACE_PANE_ATTRIBUTE}="${CSS.escape(paneId)}"]`
+  )
   if (body) {
     body.focus({ preventScroll: true })
     return

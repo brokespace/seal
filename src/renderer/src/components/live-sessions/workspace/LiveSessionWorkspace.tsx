@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ItemSurfaceSlot } from '@/components/split-view/ItemSurfaceSlot'
 import { ItemTabStrip, type ItemTabCommands } from '@/components/split-view/ItemTabStrip'
 import { splitViewItemKey, type SplitViewTab } from '@/components/split-view/split-view-types'
 import { resolveProjectOverviewRepo } from '@/components/project-overview/project-overview-model'
@@ -79,9 +80,13 @@ export default function LiveSessionWorkspace(): React.JSX.Element {
           style={{ paddingRight: 'var(--window-controls-width, 0px)' }}
         />
       ) : null}
-      <div className="flex min-h-0 flex-1">
-        <LiveSessionBody sessionId={tabs.activeId} />
-      </div>
+      {tabs.activeId ? (
+        <ItemSurfaceSlot />
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <LiveSessionBody sessionId={null} />
+        </div>
+      )}
     </main>
   )
 }

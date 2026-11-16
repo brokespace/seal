@@ -39,8 +39,7 @@ export default function SplitViewLayer(): React.JSX.Element | null {
   }, [])
 
   const { layout } = state
-  // Maximized or too narrow: the focused pane alone. The others stay mounted, so a session keeps
-  // its draft and its place in the transcript.
+  // Maximized or too narrow: the focused pane alone. The others stay mounted, out of the layout.
   const soloPaneId = narrow || state.maximizedPaneId !== null ? state.focusedPaneId : null
   // Nothing to maximize over: one pane, or a main area that already shows one alone.
   const canMaximize = layout?.type === 'split' && (!narrow || state.maximizedPaneId !== null)

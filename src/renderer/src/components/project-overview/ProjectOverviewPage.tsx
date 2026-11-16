@@ -20,6 +20,7 @@ import { useLiveSessionCountsLine } from '@/components/live-sessions/status/use-
 import { useLocalMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import { useMobilePageEscape } from '@/components/mobile/use-mobile-page-escape'
+import { ItemSurfaceSlot } from '@/components/split-view/ItemSurfaceSlot'
 import { agentConfigAvailable } from '@/components/agent-config/model/agent-config-client'
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
@@ -162,5 +163,7 @@ export default function ProjectOverviewPage(): React.JSX.Element {
   const target = useAppStore((s) => s.projectOverviewTarget)
   const close = useAppStore((s) => s.closeProjectOverview)
   useMobilePageEscape(close)
-  return <ProjectOverviewBody target={target} onClose={close} />
+  const found = useAppStore((s) => resolveProjectOverviewRepo(s.repos, target) !== null)
+  // The item surface layer draws the project, and keeps it mounted into split view and back.
+  return found ? <ItemSurfaceSlot /> : <ProjectOverviewBody target={target} onClose={close} />
 }
