@@ -1,6 +1,7 @@
 import type { SshPendingPtyKill } from './ssh-pending-pty-kill'
 import type { OrcadSshProvisioningIntent } from './orcad-ssh-provisioning'
 import type { NodeDistMirrorAttempt } from './node-dist-mirror'
+import type { SshManagedServerRelayReason } from './ssh-managed-server-relay-reasons'
 
 export const MIN_SSH_RELAY_GRACE_PERIOD_SECONDS = 60
 export const MAX_SSH_RELAY_GRACE_PERIOD_SECONDS = 7 * 24 * 60 * 60
@@ -288,18 +289,6 @@ export type SshManagedServerLinkedProject = {
 /** A managed server that did not answer and was not proven serving, with why (and orcad.log's tail). */
 export type SshManagedServerServingNote = { state: 'unverifiable'; detail: string }
 
-export const SSH_MANAGED_SERVER_RELAY_REASONS = [
-  'orcad_unavailable',
-  'relay_terminals_live',
-  'relay_terminals_unverifiable',
-  'source_changed',
-  'deferred',
-  'refused',
-  'failed'
-] as const
-
-export type SshManagedServerRelayReason = (typeof SSH_MANAGED_SERVER_RELAY_REASONS)[number]
-
 export type SshManagedServerStatus =
   | {
       kind: 'managed'
@@ -318,11 +307,12 @@ export type SshManagedServerStatus =
       launchSessionEnded?: true
     }
   | { kind: 'setting-up'; phase: (typeof SSH_MANAGED_SERVER_PHASES)[number] }
-  /** `detail` names the blocker for a refusal, or why orcad can't run on the host. */
+  /** `detail` names the blocker for a refusal, or why orcad can't run on the host; `cause` says what went wrong behind it. */
   | {
       kind: 'relay'
       reason: SshManagedServerRelayReason
       detail?: string
+      cause?: string
       /** The deferral code a stopped setup ended on; absent for thrown errors and older hosts. */
       code?: string
       /** Relay terminals still running, when that is what keeps the host on the relay. */

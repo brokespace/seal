@@ -117,4 +117,20 @@ describe('remote runtime connect bound', () => {
       remoteRuntimeConnectFailureMessage(handshakeTimeoutError(), 'ws://[fd7a:115c:a1e0::1]:6768')
     ).toContain('[fd7a:115c:a1e0::1]:6768')
   })
+  it('names why a connect failed, in fixed words only', () => {
+    const refused = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:16768 token=abc'), {
+      code: 'ECONNREFUSED'
+    })
+    const message = remoteRuntimeConnectFailureMessage(refused, 'ws://127.0.0.1:16768')
+    expect(message).toBe(
+      'Could not connect to the remote Orca runtime at ws://127.0.0.1:16768: nothing is listening there.'
+    )
+    expect(isRecoverableRemoteRuntimeConnectionError({ message })).toBe(true)
+    expect(
+      remoteRuntimeConnectFailureMessage(new Error('socket hang up'), 'ws://127.0.0.1:6768')
+    ).toContain('the connection was dropped')
+    expect(
+      remoteRuntimeConnectFailureMessage(new Error('terminal_gone'), 'ws://127.0.0.1:6768')
+    ).toBe('Could not connect to the remote Orca runtime.')
+  })
 })

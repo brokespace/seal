@@ -16,6 +16,7 @@ export function unservedServerStatus(
     kind: 'relay',
     reason: decision.reason,
     ...(decision.detail ? { detail: decision.detail } : {}),
+    ...(decision.cause ? { cause: decision.cause } : {}),
     ...(decision.code ? { code: decision.code } : {}),
     ...(decision.terminals !== undefined ? { terminals: decision.terminals } : {}),
     ...(decision.terminalsElsewhere ? { terminalsElsewhere: true } : {}),
@@ -71,7 +72,9 @@ export function unservedHostServerMessage(decision: UnservedDecision): string {
     case 'orcad_unavailable':
       return (
         (decision.detail && UNAVAILABLE_MESSAGES[decision.detail]) ||
-        'This SSH host isn’t supported by this version of Orca. To keep using it, install an older version of Orca.'
+        (decision.detail === 'artifacts_unavailable'
+          ? `This copy of Orca doesn’t include its server files${decision.cause ? ` (${decision.cause})` : ''}, so it can’t set up its server on this host. Install a full build of Orca, then connect again.`
+          : 'This SSH host isn’t supported by this version of Orca. To keep using it, install an older version of Orca.')
       )
     case 'relay_terminals_live':
     case 'relay_terminals_unverifiable':
