@@ -2,6 +2,7 @@ import type {
   LiveRemoveRequest,
   LiveSession
 } from '../../../shared/live-sessions/live-session-types'
+import { localChatSessionId } from '../../../shared/live-sessions/live-session-paired-server'
 import { liveSessionTranscriptFiles } from '../../../shared/live-sessions/live-session-transcript-files'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
@@ -84,8 +85,13 @@ export async function removeFromOwner(
       : 'removed'
   }
   if (session.surface.kind === 'chat') {
+    const chat = localChatSessionId(session)
+    if (chat === null) {
+      // A server's chat with its server out of reach: nothing here can end it.
+      return request.stop ? 'still_running' : 'removed'
+    }
     // The chat's host ends its agent: a signal to the pid would leave the host holding a dead chat.
-    const stopped = !request.stop || ((await owner.chats?.stop(session.surface.sessionId)) ?? true)
+    const stopped = !request.stop || ((await owner.chats?.stop(chat)) ?? true)
     return stopped ? 'removed' : 'still_running'
   }
   return owner.host ? removeFromHost(session, owner.host, request) : 'removed'

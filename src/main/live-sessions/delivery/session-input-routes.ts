@@ -5,6 +5,7 @@ import type {
   LiveSession,
   LiveSessionInputRoute
 } from '../../../shared/live-sessions/live-session-types'
+import { isPairedServerLiveSession } from '../../../shared/live-sessions/live-session-paired-server'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { parseAgentScreen, screenAcceptsInput, type AgentScreen } from '../discovery/agent-screen'
 import { permissionPromptId } from '../discovery/agent-screen-status'
@@ -60,6 +61,12 @@ export type SessionInputDeps = {
   structured: StructuredSessionInput | null
   sleep?: (ms: number) => Promise<void>
 }
+
+/** Routes that name a chat or a pane inside one Seal: a paired server's mean nothing in this one. */
+const SEAL_OWNED_ROUTES: ReadonlySet<LiveSessionInputRoute['kind']> = new Set([
+  'structured',
+  'seal-pane'
+])
 
 type TmuxRoute = Extract<LiveSessionInputRoute, { kind: 'tmux' }>
 
@@ -175,6 +182,9 @@ export class SessionInputRoutes {
     if (!typed) {
       return { outcome: 'failed', error: 'The message is empty' }
     }
+    if (isPairedServerLiveSession(session) && SEAL_OWNED_ROUTES.has(route.kind)) {
+      return { outcome: 'unavailable', reason: `${session.machine.label} is not connected` }
+    }
     if (route.kind === 'structured') {
       if (!this.deps.structured) {
         return { outcome: 'unavailable', reason: 'Chats are not reachable from here' }
@@ -227,13 +237,16 @@ export class SessionInputRoutes {
     if (!prompt.options.some((o) => o.id === answer.optionId)) {
       return { ok: false, reason: 'option_not_offered' }
     }
-    const chat = session.inputRoutes.find((r) => r.kind === 'structured')
+    const routes = isPairedServerLiveSession(session)
+      ? session.inputRoutes.filter((r) => !SEAL_OWNED_ROUTES.has(r.kind))
+      : session.inputRoutes
+    const chat = routes.find((r) => r.kind === 'structured')
     if (chat) {
       return this.deps.structured
         ? this.deps.structured.answer(chat.sessionId, answer, AbortSignal.timeout(15_000))
         : { ok: false, reason: 'not_answerable' }
     }
-    const pane = session.inputRoutes.find((r) => r.kind === 'seal-pane')
+    const pane = routes.find((r) => r.kind === 'seal-pane')
     if (pane && session.statusSource !== 'screen' && this.deps.sealPanes) {
       return this.deps.sealPanes.answer(
         pane.paneKey,
@@ -242,7 +255,7 @@ export class SessionInputRoutes {
         AbortSignal.timeout(15_000)
       )
     }
-    const route = session.inputRoutes.find((r): r is TmuxRoute => r.kind === 'tmux')
+    const route = routes.find((r): r is TmuxRoute => r.kind === 'tmux')
     const host = this.deps.host(session.machine.hostId)
     if (!route || !host) {
       return { ok: false, reason: 'not_answerable' }
