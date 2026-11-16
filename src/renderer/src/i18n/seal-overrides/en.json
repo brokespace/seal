@@ -1566,7 +1566,6 @@
       "installServerToChat": "Install Seal server to chat here",
       "cliNeedsServer": "Install Seal server to use the CLI here",
       "installServerMachineMissing": "This SSH host is not in Machines. Add it there to install Seal server.",
-      "installServerFailed": "Could not install Seal server on {{value0}}",
       "chatOutsideWorkspace": "No chat outside the workspace",
       "cliNotInstalledOn": "{{value0}} is not installed on {{value1}}",
       "cliNotInstalledHere": "{{value0}} is not installed on this computer"

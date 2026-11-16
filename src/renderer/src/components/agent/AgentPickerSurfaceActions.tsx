@@ -51,7 +51,7 @@ export function AgentPickerSurfaceActions({
           <AgentSurfaceLaunchButton
             key={surface}
             surface={surface}
-            // The install offer names what it starts: no chat opens until the server is there.
+            // The install offer names where it leads: no chat opens until the server is there.
             title={offersInstall ? installServerOfferLabel(t) : rowTitle(row, entry.label, t)}
             reason={reason}
             disabled={disabled}

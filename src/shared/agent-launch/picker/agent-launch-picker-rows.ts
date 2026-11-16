@@ -43,7 +43,7 @@ export function orderAgentLaunchPickerAgents(
 export type ChatUnavailableReason =
   | 'check-failed'
   | 'not-installed'
-  /** Not a refusal: the row offers to install the Seal server on the machine. */
+  /** Not a refusal: the row leads to the machine, where the Seal server is installed. */
   | 'needs-server'
   | 'wsl'
   | 'outside-workspace'

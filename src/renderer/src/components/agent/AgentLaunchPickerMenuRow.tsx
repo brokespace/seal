@@ -22,7 +22,7 @@ import { moveAgentRowActionFocus } from './AgentSurfaceLaunchButton'
 import {
   pickerActionSurfaces,
   pickerEntryRow,
-  pickerInstallsServerByDefault,
+  pickerOffersServerInstallByDefault,
   pickerLaunchRow,
   pickerSurfaceOpensTerminal
 } from './agent-picker-launch-row'
@@ -114,13 +114,14 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
     initial?.surface ?? (mode === 'select' ? selected?.surface : undefined) ?? entry.defaultSurface
   const reasonId = useId()
   const unavailable = entry.rows.find((row) => row.kind === 'chat-unavailable')
-  // An SSH machine without the Seal server still has something to start: the install its chat needs.
+  // An SSH machine without the Seal server still has somewhere to lead: its machine page, where the server is installed.
   const offersInstall = mode !== 'select' && entry.chatAction === 'install-server'
-  const installsByDefault = offersInstall && !preset && pickerInstallsServerByDefault(entry)
+  const offersInstallByDefault =
+    offersInstall && !preset && pickerOffersServerInstallByDefault(entry)
   const launchBlocked =
     mode !== 'select' &&
     terminalBlocked &&
-    !installsByDefault &&
+    !offersInstallByDefault &&
     pickerSurfaceOpensTerminal(entry, surface)
   const inert = !entry.surfaces.length && !offersInstall
   const noChat = entry.rows.find((row) => row.kind === 'cli' && row.noChat)
@@ -217,7 +218,7 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
             if (disabled || launchBlocked || inert) {
               return
             }
-            if (installsByDefault || !entry.surfaces.length) {
+            if (offersInstallByDefault || !entry.surfaces.length) {
               offerSealServerInstall(entry.rows[0]?.executionHostId)
               closeMenu()
               return

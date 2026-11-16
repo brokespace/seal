@@ -27,16 +27,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('shows the machine behind an SSH execution host and starts its Seal server install', async () => {
-  let startInstall: (args: unknown) => void = () => {}
-  const installStarted = new Promise<unknown>((resolve) => {
-    startInstall = resolve
-  })
+it('shows the machine behind an SSH execution host and installs nothing on it', async () => {
+  const installServer = vi.fn(async () => {})
   vi.stubGlobal('window', {
     api: {
       machines: {
         list: async () => [sshMachine('rec-a', 'target-a'), sshMachine('rec-b', 'target b')],
-        installServer: async (args: unknown) => startInstall(args)
+        installServer
       }
     }
   })
@@ -44,9 +41,9 @@ it('shows the machine behind an SSH execution host and starts its Seal server in
 
   expect(offerSealServerInstall('ssh:target%20b')).toBe(true)
 
-  expect(await installStarted).toEqual({ machineId: 'machine:rec-b' })
+  await vi.waitFor(() => expect(useAppStore.getState().activeView).toBe('machines'))
   expect(getLastSelectedMachineId()).toBe('machine:rec-b')
-  expect(useAppStore.getState().activeView).toBe('machines')
+  expect(installServer).not.toHaveBeenCalled()
 })
 
 it('makes no offer for a host that is not an SSH machine', () => {
