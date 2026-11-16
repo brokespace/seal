@@ -1,5 +1,5 @@
 import { subscribeSystemPowerLifecycle } from '../../../power/system-power-lifecycle'
-import { clampTimerDelayMs } from '../../../../shared/timer-delay'
+import { clampTimerDelayMs } from '../../../../shared/concurrency/timer-delay'
 
 type SubscribeResume = (onResume: () => void) => () => void
 

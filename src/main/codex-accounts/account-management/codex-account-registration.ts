@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import { copyFileSync, mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { isDefinitiveAbsence } from '../../../shared/definitive-filesystem-absence'
+import { isDefinitiveAbsence } from '../../../shared/errors/definitive-filesystem-absence'
 import {
   WINDOWS_RM_MAX_RETRIES,
   WINDOWS_RM_RETRY_DELAY_MS
-} from '../../../shared/windows-transient-lock-removal'
+} from '../../../shared/file-write/windows-transient-lock-removal'
 import type {
   CodexManagedAccount,
   CodexRateLimitAccountsState
-} from '../../../shared/managed-account-types'
+} from '../../../shared/agent-accounts/managed-account-types'
 import type { Store } from '../../persistence/loading-store/store'
 import type { RateLimitService } from '../../rate-limits/service/rate-limit-service'
 import type { CodexRuntimeHomeService } from '../runtime-home-service'
@@ -29,7 +29,7 @@ import {
   normalizeCodexRuntimeSelection,
   setSelectedCodexAccountIdForTarget
 } from './runtime-selection'
-import type { CodexAccountSelectionTarget } from '../../../shared/codex-selection-lane'
+import type { CodexAccountSelectionTarget } from '../../../shared/agent-accounts/codex/codex-selection-lane'
 
 type CodexAccountRegistrationDependencies = {
   store: Store
@@ -147,7 +147,7 @@ export class CodexAccountRegistration {
     )
 
     // Restore this runtime's selection while retaining current validation of other runtimes.
-    this.saveSettings({
+    this.dependencies.selection.saveSettings({
       codexManagedAccounts: updatedAccounts,
       activeCodexManagedAccountId: activeSelection.host,
       activeCodexManagedAccountIdsByRuntime: activeSelection
@@ -232,7 +232,7 @@ export class CodexAccountRegistration {
     const settings = this.dependencies.store.getSettings()
     const selection = normalizeCodexRuntimeSelection(settings)
     const targetSelection = getCodexSelectionTargetForAccount(account)
-    this.saveSettings({
+    this.dependencies.selection.saveSettings({
       codexManagedAccounts: [...settings.codexManagedAccounts, account],
       activeCodexManagedAccountId: targetSelection.runtime === 'host' ? account.id : selection.host,
       activeCodexManagedAccountIdsByRuntime: setSelectedCodexAccountIdForTarget(
@@ -247,7 +247,7 @@ export class CodexAccountRegistration {
       this.dependencies.runtimeHome.syncForCurrentSelection(targetSelection)
     } catch (error) {
       // Restore settings before caller cleanup removes the failed account's home.
-      this.saveSettings({
+      this.dependencies.selection.saveSettings({
         codexManagedAccounts: settings.codexManagedAccounts,
         activeCodexManagedAccountId: settings.activeCodexManagedAccountId,
         activeCodexManagedAccountIdsByRuntime: settings.activeCodexManagedAccountIdsByRuntime
@@ -268,11 +268,6 @@ export class CodexAccountRegistration {
     // Cache outgoing usage without delaying the already-persisted account addition.
     this.startQuotaRefresh(outgoingAccountId, targetSelection)
     return this.dependencies.selection.snapshot()
-  }
-
-  // Seal, the CLI and paired clients change accounts without a window asking, so tell every window.
-  private saveSettings(patch: Parameters<Store['updateSettings']>[0]): void {
-    this.dependencies.store.updateSettings(patch, { notifyListeners: true })
   }
 
   private startQuotaRefresh(

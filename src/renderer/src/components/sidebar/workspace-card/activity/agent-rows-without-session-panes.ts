@@ -20,3 +20,21 @@ export function agentRowsWithoutSessionPanes(
   )
   return kept.length === rows.length ? rows : applyAgentRowLineage(kept)
 }
+
+/** The same rule for a card's keyed root list; the input keeps its identity when nothing is left out. */
+export function agentKeysWithoutSessionPanes(
+  keys: readonly string[],
+  sessionPaneKeys: ReadonlySet<string>,
+  row: (paneKey: string) => Pick<DashboardAgentRow, 'activationPaneKey'> | undefined
+): readonly string[] {
+  if (sessionPaneKeys.size === 0 || keys.length === 0) {
+    return keys
+  }
+  const kept = keys.filter((key) => {
+    const activationPaneKey = row(key)?.activationPaneKey
+    return (
+      !sessionPaneKeys.has(key) && !(activationPaneKey && sessionPaneKeys.has(activationPaneKey))
+    )
+  })
+  return kept.length === keys.length ? keys : kept
+}

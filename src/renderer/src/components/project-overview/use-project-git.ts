@@ -6,7 +6,7 @@ import {
 import { resolveDeleteTargetGitContext } from '@/components/sidebar/workspace-actions/deletion/use-delete-worktree-status-hydration'
 import type { GitHistoryItem } from '../../../../shared/git/history/git-history-types'
 import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { summarizeGitChanges, type GitChangeSummary } from './project-overview-model'
 import { useProjectOverviewLoad, type ProjectOverviewLoad } from './use-project-overview-load'

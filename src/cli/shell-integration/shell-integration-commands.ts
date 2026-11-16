@@ -1,7 +1,7 @@
 import { runProcess } from '@orca/process-host'
 import type { CommandHandler } from '../dispatch/dispatch'
 import { rejectRemoteSelectionFlags } from '../dispatch/remote-selection-flag-rejection'
-import { RuntimeClientError } from '../runtime/types'
+import { RuntimeClientError } from '../runtime/connection/types'
 import {
   parseShellIntegrationStatus,
   shellIntegrationScript,

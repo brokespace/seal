@@ -14,12 +14,12 @@ import {
 } from '../../../orca-runtime-tests/runtime-store-partial-fixture'
 import type { WorktreeMeta } from '../../../../../shared/worktree/meta-types'
 import type { HostWorktreeTarget } from '../../../../../shared/worktree/host-qualified-identity'
-import * as appEnvironment from '../../../../../shared/app-environment'
+import * as appEnvironment from '../../../../../shared/app-lifecycle/app-environment'
 import { RpcDispatcher } from '../../dispatcher'
 import { WORKTREE_METHODS } from './worktree'
 import type { RpcResponse } from '../../core'
 import { installRealWorkerThreadChildProcesses } from '../../../../worker-thread-child-process/worker-thread-child-process-real.test-fixtures'
-import { removeTree } from '../../../../../shared/windows-transient-lock-removal'
+import { removeTree } from '../../../../../shared/file-write/windows-transient-lock-removal'
 import {
   _resetPendingWorktreeRemovalsForTests,
   _settlePendingWorktreeRemovalsForTests,

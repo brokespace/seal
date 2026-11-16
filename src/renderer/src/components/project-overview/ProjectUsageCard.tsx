@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import { formatCost, formatTokens } from '@/components/stats/usage-formatters'
-import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
-import type { Repo } from '../../../../shared/repo-types'
+import {
+  getRepoExecutionHostId,
+  LOCAL_EXECUTION_HOST_ID
+} from '../../../../shared/execution-host/execution-host'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { ProjectUsageTotals } from './project-overview-model'
 import { useProjectUsage } from './use-project-usage'
 

@@ -5,7 +5,7 @@ import {
   type DeviceEntry,
   type TokenDeviceEntry
 } from './device-entry'
-import type { DeviceScope } from '../../../../../shared/runtime-session-contracts'
+import type { DeviceScope } from '../../../../../shared/remote-runtime/session-graph/runtime-session-contracts'
 import type { RuntimeDeviceGrant } from '../../callers/rpc-method-permission'
 
 export const MOBILE_PAIRING_OFFER_TTL_MS = 10 * 60_000

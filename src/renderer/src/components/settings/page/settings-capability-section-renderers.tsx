@@ -4,7 +4,7 @@ import { ClaudeAccountOptionRows } from '../accounts/claude/ClaudeAccountOptionR
 import { getSealAccountsSearchEntries } from '../seal-accounts/seal-accounts-search'
 import { matchesSettingsSearch } from '../search/settings-search'
 import { SealAccountsPage } from '../seal-accounts/SealAccountsPage'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import { getProviderAccountsOwnerKey } from '@/runtime/provider-accounts/observations/runtime-provider-accounts-client'
 import { SessionSummariesSettingsPane } from '../session-summaries/SessionSummariesSettingsPane'
 import { AgentConfigSettingsPane } from '../agent-config/AgentConfigSettingsPane'

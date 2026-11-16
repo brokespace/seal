@@ -1,6 +1,6 @@
-import { hasUsageData } from '../../../../src/shared/usage-provider-windows'
+import { hasUsageData } from '../../../../src/shared/agent-usage/display/usage-provider-windows'
 import type { Translate } from '../../i18n/mobile-i18n'
-import { formatTimeAgo } from '../../worktree/agent-row-display'
+import { formatTimeAgo } from '../../worktree/agent-lineage/agent-row-display'
 import type { ProviderRateLimits } from '../accounts-snapshot'
 
 export function usageUpdatedLabel(updatedAt: number, now: number, t: Translate): string {

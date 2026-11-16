@@ -7,7 +7,7 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { SshTargetList } from './targets/SshTargetList'
 import { SshTargetsEmptyState } from './targets/SshTargetsEmptyState'
 import { SshAutoImportedHostsToggle } from './targets/SshAutoImportedHostsToggle'
-import { isVmToolSshConfigTarget } from '../../../../../shared/ssh-target-source'
+import { isVmToolSshConfigTarget } from '../../../../../shared/remote-runtime/ssh/ssh-target-source'
 import { SshTargetDestructiveActions } from './targets/SshTargetDestructiveActions'
 import { SshHostsHeaderActions, SshHostsListToolbar } from './SshPaneToolbar'
 import { SshHostsHeaderPortal } from './ssh-hosts-header-slot'
@@ -36,12 +36,12 @@ import {
 import { extractIpcErrorMessage } from '@/runtime/errors/ipc-error'
 import { resolveSshHostRemoval } from '../../sidebar/ssh-host-remove-resolution'
 import { getIndexedAllWorktrees } from '@/store/slices/worktrees/listing/worktree-catalog-index'
-import { toSshExecutionHostId } from '../../../../../shared/execution-host'
+import { toSshExecutionHostId } from '../../../../../shared/execution-host/execution-host'
 import { translate } from '@/i18n/i18n'
 import { useTranslate } from '@/i18n/use-translate'
 import { useSshAddTargetIntent } from './targets/use-ssh-add-target-intent'
 import { syncSshConfigTargetsPassively } from '../../../runtime/hosts/ssh/ssh-config-passive-sync'
-import type { SshTarget } from '../../../../../shared/ssh-types'
+import type { SshTarget } from '../../../../../shared/remote-runtime/ssh/ssh-types'
 
 type SshPaneProps = { addTargetIntentSignal?: number }
 

@@ -9,7 +9,7 @@ import {
   type EditingTarget
 } from '@/components/ssh-host-form/ssh-target-draft'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
-import type { SshTarget } from '../../../../../shared/ssh-types'
+import type { SshTarget } from '../../../../../shared/remote-runtime/ssh/ssh-types'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'
 
 async function saveMachineEdit(

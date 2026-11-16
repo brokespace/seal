@@ -1,5 +1,5 @@
 import { shell } from 'electron'
-import { ORCA_APP_ID } from '../../shared/local-build-compatibility'
+import { ORCA_APP_ID } from '../../shared/remote-runtime/orcad-distribution/local-build-compatibility'
 
 const MACOS_PACKAGED_BUNDLE_ID = ORCA_APP_ID
 const MACOS_NOTIFICATION_SETTINGS_URL =

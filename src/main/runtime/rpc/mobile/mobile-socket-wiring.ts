@@ -11,7 +11,7 @@ import {
   type E2EEAuthenticatedDevice
 } from '../server/mobile-e2ee-authenticated-device'
 import { createMobileE2EEOutboundMemoryBudget } from './e2ee/mobile-e2ee-outbound-memory-budget'
-import type { RuntimeCapability } from '../../../../shared/protocol-version'
+import type { RuntimeCapability } from '../../../../shared/remote-runtime/protocol/protocol-version'
 import type { RpcBinarySender } from '../transports/rpc-binary-sender'
 import type { NetworkSourceClass } from '../transports/websocket/source-admission/network-source-class'
 import { authLockoutSource, FailedAuthLockout } from './failed-auth-lockout'

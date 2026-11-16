@@ -1,6 +1,6 @@
 import type { CommandHandler } from '../dispatch/dispatch'
-import { resolveLaunchUserDataPath } from '../runtime/launch-user-data-path'
-import { RuntimeClientError } from '../runtime/types'
+import { resolveLaunchUserDataPath } from '../runtime/profile/launch-user-data-path'
+import { RuntimeClientError } from '../runtime/connection/types'
 import { readProfileRuntimePublicKey } from '../../shared/remote-runtime/host-store/runtime-e2ee-keypair-file'
 import {
   deriveRelayHostId,

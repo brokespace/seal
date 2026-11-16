@@ -20,10 +20,10 @@ import { useLocalMachineName } from '@/components/machines/model/use-local-machi
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import { useMobilePageEscape } from '@/components/mobile/use-mobile-page-escape'
 import { agentConfigAvailable } from '@/components/agent-config/model/agent-config-client'
-import { getRepoExecutionHostId } from '../../../../shared/execution-host'
+import { getRepoExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
-import { isGitRepoKind } from '../../../../shared/repo-kind'
-import type { Repo } from '../../../../shared/repo-types'
+import { isGitRepoKind } from '../../../../shared/repository/repo-kind'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import {
   projectLiveSessions,
   projectRegistrations,

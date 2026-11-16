@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { parseExecutionHostId } from '../../shared/execution-host'
+import { parseExecutionHostId } from '../../shared/execution-host/execution-host'
 import {
   SESSION_SUMMARIES_LIST_METHOD,
   type SessionSummariesListResult

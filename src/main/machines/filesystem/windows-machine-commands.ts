@@ -1,4 +1,4 @@
-import { quotePowerShellLiteral } from '../../../shared/powershell-native-argument'
+import { quotePowerShellLiteral } from '../../../shared/shell/launch/powershell-native-argument'
 import { normalizeWindowsDrivePath } from '../../ssh/filesystem/ssh-remote-directory-browse'
 import { powerShellCommand } from '../../ssh/remote-exec/ssh-remote-powershell'
 import { parseContentLength } from './posix-machine-commands'

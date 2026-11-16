@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto'
 import path from 'node:path'
-import { APP_PRODUCT_NAME, type AppIdentity } from '../../../shared/app-identity'
+import {
+  APP_PRODUCT_NAME,
+  type AppIdentity
+} from '../../../shared/app-lifecycle/identity/app-identity'
 
 const BASE_APP_NAME = APP_PRODUCT_NAME
 const BASE_APP_USER_MODEL_ID = 'com.brokespace.seal'

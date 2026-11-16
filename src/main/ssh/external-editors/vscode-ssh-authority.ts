@@ -1,4 +1,4 @@
-import type { SshTarget } from '../../../shared/ssh-types'
+import type { SshTarget } from '../../../shared/remote-runtime/ssh/ssh-types'
 import type { SshConfigHost } from '../config/ssh-config-parser'
 import { isOpenSshConfigBackedTarget } from '../system-transport/system-ssh-args'
 

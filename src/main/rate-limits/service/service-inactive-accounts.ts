@@ -9,7 +9,7 @@ import {
   INACTIVE_FETCH_DEBOUNCE_MS,
   type InactiveCodexAccountInfo
 } from './service-types'
-import { delayUnlessAborted } from '../../../shared/abort-aware-delay'
+import { delayUnlessAborted } from '../../../shared/concurrency/abort-aware-delay'
 import { AccountReadAdmission } from './account-read-admission'
 
 export abstract class RateLimitServiceInactiveAccounts extends RateLimitServicePolling {
@@ -201,6 +201,7 @@ export abstract class RateLimitServiceInactiveAccounts extends RateLimitServiceP
       // Read the managed home directly; do not materialize credentials in the shared runtime.
       const fresh = await fetchCodexRateLimits({
         codexHomePath: home.managedHomePath,
+        readingAccount: account.readingAccount,
         networkProxySettings: this.networkProxySettingsResolver?.(),
         signal,
         preferBackend

@@ -1,5 +1,5 @@
 import { homedir } from 'node:os'
-import type { SshTarget } from '../../../shared/ssh-types'
+import type { SshTarget } from '../../../shared/remote-runtime/ssh/ssh-types'
 import { mayUserSshConfigClaimAlias } from '../../ssh/config/ssh-config-alias-claim'
 import { buildPlainSshTerminalArgs } from '../../ssh/plain-ssh-terminal/plain-ssh-terminal-args'
 import { findSystemSsh } from '../../ssh/system-transport/system-ssh-binary'

@@ -19,7 +19,7 @@ import {
   getTerminalContent,
   waitForTerminalOutput
 } from './helpers/terminal'
-import type { BuiltInWindowsTerminalShell } from '../../src/shared/windows-terminal-shell'
+import type { BuiltInWindowsTerminalShell } from '../../src/shared/shell/launch/windows-terminal-shell'
 
 // Covers the Windows-only tab-bar launch path that the default-shell test misses.
 

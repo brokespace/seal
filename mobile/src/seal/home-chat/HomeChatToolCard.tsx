@@ -10,7 +10,7 @@ import {
   Wrench,
   X
 } from 'lucide-react-native'
-import { LoadingSpinner } from '../../components/LoadingSpinner'
+import { LoadingSpinner } from '../../components/feedback/LoadingSpinner'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, pressedStyle } from '../../theme/mobile-theme'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'

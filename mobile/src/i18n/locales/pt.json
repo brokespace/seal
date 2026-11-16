@@ -4,7 +4,6 @@
       "agentLogin": "Usar o login do próprio agente",
       "connecting": "Conectando ao host…",
       "connectingTo": "Conectando a {{name}}…",
-      "default": "Padrão do sistema",
       "fableWindow": "Fable",
       "hostNotFound": "Host não encontrado",
       "invalidSnapshot": "Snapshot de contas inválido recebido do host",
@@ -18,7 +17,8 @@
       "title": "Contas",
       "useReset": "Redefinir agora",
       "weeklyWindow": "7d",
-      "pairingInvalidMessage": "Emparelhe novamente este telefone com seu desktop para ver suas contas."
+      "pairingInvalidMessage": "Emparelhe novamente este telefone com seu desktop para ver suas contas.",
+      "default": "Padrão do sistema"
     }
   },
   "agentHistory": {
@@ -110,21 +110,21 @@
       "connecting": "Conectando…",
       "invalidPairingCode": "Código de pareamento inválido — copie-o do seu computador e cole novamente",
       "invalidQrCode": "Código QR do Orca inválido",
-      "downloadQrCode": "Esse é o código de download. Leia o código de pareamento na etapa 2 no seu computador.",
       "openDesktopStep": "Abra o Orca no seu computador",
       "openMobileSettingsStep": "Vá para Configurações → Mobile",
       "openSettings": "Abrir Configurações",
       "pairingFailed": "Falha no pareamento: {{error}}",
       "pairingLog": "Log de pareamento",
       "pasteCodeMessage": "Copie o código que aparece abaixo do QR no seu computador.",
-      "pasteCodePlaceholder": "orca://pair?code=... ou cole o código",
       "pasteCodeTitle": "Colar código de pareamento",
       "pasteInstead": "Colar código em vez disso",
       "pastePairingCode": "Ou colar o código de pareamento",
       "scanCodeStep": "Escaneie o código QR",
       "title": "Parear com desktop",
       "tryAgain": "Tentar novamente",
-      "codeNoLongerValid": "Este código de pareamento expirou, já foi usado ou foi substituído. Mostre um novo código no computador e escaneie novamente."
+      "codeNoLongerValid": "Este código de pareamento expirou, já foi usado ou foi substituído. Mostre um novo código no computador e escaneie novamente.",
+      "downloadQrCode": "Esse é o código de download. Leia o código de pareamento na etapa 2 no seu computador.",
+      "pasteCodePlaceholder": "orca://pair?code=... ou cole o código"
     },
     "terminalSettings": {
       "defaultText": "Padrão (100%)",
@@ -244,6 +244,7 @@
     "message": {
       "copyMessage": "Copiar mensagem",
       "forkFromResponse": "Criar ramificação a partir desta resposta",
+      "scrollMessageToTop": "Rolar esta mensagem para o topo",
       "forkFromResponseHint": "Um novo chat com toda esta resposta, até o fim do turno"
     },
     "messageActionsSheet": {
@@ -708,7 +709,10 @@
       "busy": "Outro chat ou terminal está abrindo. Aguarde e tente ramificar o chat do {{agent}} novamente.",
       "unconfirmed": "{{agent}} não conseguiu confirmar a ramificação. Ela pode ter sido aberta; confira o histórico de sessões antes de tentar novamente.",
       "failed": "{{agent}} não conseguiu ramificar este chat. {{detail}}",
-      "unsupported": "Este host executa uma versão antiga do Orca. Atualize o Orca no host e tente novamente."
+      "unsupported": "Este host executa uma versão antiga do Orca. Atualize o Orca no host e tente novamente.",
+      "mark": "Fork ·",
+      "markedName": "{{mark}} {{name}}",
+      "accessibleName": "Fork: {{name}}"
     }
   },
   "common": {
@@ -1059,9 +1063,7 @@
       "backToHosts": "Voltar para hosts",
       "desktopTooOldBody": "A versão do app desktop pareado é antiga demais para a sua versão atual do Orca Mobile. Atualize o Orca no seu computador e tente se conectar a este host novamente.",
       "getVersion": "Baixar o Orca {{version}}",
-      "mobileTooOldAppStore": "Este desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pela App Store e tente se conectar a este host novamente.",
       "mobileTooOldGitHubReleases": "Este desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pelo GitHub Releases e tente se conectar a este host novamente.",
-      "openAppStore": "Abrir a App Store",
       "openGitHubReleases": "Abrir GitHub Releases",
       "refreshRecoveryNote": "Se esta mensagem persistir, remova este host e faça o pareamento novamente.",
       "refreshWorkspaceBody": "O espaço de trabalho em cache deste host é mais antigo do que o desktop espera. Reconecte-se a este host para baixar a versão atual.",
@@ -1069,8 +1071,10 @@
       "updateDesktopTitle": "Atualizar o Orca no seu computador",
       "updateMobileTitle": "Atualizar o Orca Mobile",
       "updateRecoveryNote": "Já atualizou? Volte para Hosts e atualize a conexão. Se esta mensagem persistir, remova este host e faça o pareamento novamente.",
-      "workspaceNeedsUpdateAppStore": "O espaço de trabalho mobile deste desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pela App Store e tente se conectar a este host novamente.",
-      "workspaceNeedsUpdateGitHubReleases": "O espaço de trabalho mobile deste desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pelo GitHub Releases e tente se conectar a este host novamente."
+      "workspaceNeedsUpdateGitHubReleases": "O espaço de trabalho mobile deste desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pelo GitHub Releases e tente se conectar a este host novamente.",
+      "mobileTooOldAppStore": "Este desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pela App Store e tente se conectar a este host novamente.",
+      "openAppStore": "Abrir a App Store",
+      "workspaceNeedsUpdateAppStore": "O espaço de trabalho mobile deste desktop precisa de uma versão mais recente do Orca Mobile. Atualize o Orca Mobile pela App Store e tente se conectar a este host novamente."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL da imagem",
@@ -3236,10 +3240,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "Não foi possível abrir o link. Tente novamente.",
-      "socialProfile": "Orca no X",
       "sourceCode": "Código-fonte do Orca",
       "tagline": "IDE de código aberto com agentes para quem cria 100x mais",
       "title": "Sobre",
+      "socialProfile": "Orca no X",
       "website": "Site do Orca"
     },
     "appUpdateSettingsRows": {
@@ -3279,12 +3283,14 @@
       "title": "Aparência"
     },
     "browserSettingsScreen": {
+      "askEachTime": "Perguntar sempre",
+      "askEachTimeDescription": "Escolha sempre entre o navegador do Orca, o do celular ou copiar o link.",
       "desktopBrowser": "Navegador do Orca no desktop",
       "desktopBrowserDescription": "Abrir no navegador transmitido pelo seu desktop pareado.",
-      "linksDescription": "Escolha onde abrir os links HTTP(S) ao tocar neles na saída do terminal.",
+      "terminalAndChatLinksDescription": "Escolha onde abrir os links da web ao tocar neles na saída do terminal e no chat.",
       "linksHeading": "LINKS",
       "loadFailed": "Não foi possível carregar as preferências do navegador. Tente novamente.",
-      "openTerminalLinks": "Abrir links do terminal",
+      "openLinks": "Abrir links",
       "phoneBrowser": "Navegador do celular",
       "phoneBrowserDescription": "Abrir no Safari, Chrome ou outro navegador neste celular.",
       "saveFailed": "Não foi possível salvar as preferências do navegador. Tente novamente.",
@@ -3301,8 +3307,8 @@
       "voice": "Voz"
     },
     "menuScreen": {
-      "privacyPolicy": "Política de Privacidade",
-      "support": "Suporte"
+      "support": "Suporte",
+      "privacyPolicy": "Política de Privacidade"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Escolha como as sessões de agentes compatíveis (Claude, Codex e outros agentes com suporte a chat) são abertas neste dispositivo. O Terminal exibe a CLI diretamente; a Interface de Chat exibe uma interface de chat como a do app desktop. Você ainda pode mudar a visualização de cada sessão pelo menu de toque prolongado.",

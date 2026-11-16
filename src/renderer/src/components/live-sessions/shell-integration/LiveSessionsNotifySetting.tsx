@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { GlobalSettings } from '../../../../../shared/global-settings-types'
+import type { GlobalSettings } from '../../../../../shared/settings/global-settings-types'
 import { outsideSessionsMuted } from '../../../../../shared/live-sessions/live-session-settings'
 import { SettingsSwitchRow } from '../../settings/form-controls/SettingsFormControls'
 import { useTranslate } from '@/i18n/use-translate'

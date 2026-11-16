@@ -4,7 +4,6 @@
       "agentLogin": "Usar el inicio de sesión del propio agente",
       "connecting": "Conectando al host…",
       "connectingTo": "Conectando a {{name}}…",
-      "default": "Predeterminado del sistema",
       "fableWindow": "Fable",
       "hostNotFound": "Host no encontrado",
       "invalidSnapshot": "Instantánea de cuentas del host no válida",
@@ -17,7 +16,8 @@
       "switchFailed": "No se pudo cambiar de cuenta",
       "title": "Cuentas",
       "useReset": "Usar un restablecimiento",
-      "weeklyWindow": "7d"
+      "weeklyWindow": "7d",
+      "default": "Predeterminado del sistema"
     }
   },
   "agentHistory": {
@@ -99,21 +99,21 @@
       "connecting": "Conectando…",
       "invalidPairingCode": "No es un código de emparejamiento válido; cópialo de tu ordenador y vuelve a pegarlo.",
       "invalidQrCode": "No es un código QR de Orca válido",
-      "downloadQrCode": "Ese es el código de descarga. Escanea el código de emparejamiento del paso 2 en tu ordenador.",
       "openDesktopStep": "Abre Orca en tu ordenador",
       "openMobileSettingsStep": "Ve a Ajustes → Móvil",
       "openSettings": "Abrir Ajustes",
       "pairingFailed": "Error de emparejamiento: {{error}}",
       "pairingLog": "Registro de emparejamiento",
       "pasteCodeMessage": "Copia el código que aparece debajo del QR en tu ordenador.",
-      "pasteCodePlaceholder": "orca://pair?code=... o pega el código",
       "pasteCodeTitle": "Pegar código de emparejamiento",
       "pasteInstead": "Pegar código en su lugar",
       "pastePairingCode": "O pegar código de emparejamiento",
       "scanCodeStep": "Escanea el código QR",
       "title": "Emparejar con un escritorio",
       "tryAgain": "Reintentar",
-      "codeNoLongerValid": "Este código de emparejamiento caducó, ya se usó o se reemplazó. Muestra un código nuevo en tu ordenador y vuelve a escanear."
+      "codeNoLongerValid": "Este código de emparejamiento caducó, ya se usó o se reemplazó. Muestra un código nuevo en tu ordenador y vuelve a escanear.",
+      "downloadQrCode": "Ese es el código de descarga. Escanea el código de emparejamiento del paso 2 en tu ordenador.",
+      "pasteCodePlaceholder": "orca://pair?code=... o pega el código"
     },
     "terminalSettings": {
       "defaultText": "Predeterminado (100%)",
@@ -226,6 +226,7 @@
     "message": {
       "copyMessage": "Copiar mensaje",
       "forkFromResponse": "Crear una rama desde esta respuesta",
+      "scrollMessageToTop": "Desplazar este mensaje hacia arriba",
       "forkFromResponseHint": "Un chat nuevo con esta respuesta completa, hasta el final de su turno"
     },
     "messageActionsSheet": {
@@ -682,7 +683,10 @@
       "busy": "Se está abriendo otro chat o terminal. Espera y vuelve a crear una rama del chat de {{agent}}.",
       "unconfirmed": "{{agent}} no pudo confirmar la creación de la rama. Es posible que se haya abierto; revisa el historial de sesiones antes de volver a intentarlo.",
       "failed": "{{agent}} no pudo crear una rama de este chat. {{detail}}",
-      "unsupported": "Este host ejecuta una versión anterior de Orca. Actualiza Orca en el host y vuelve a intentarlo."
+      "unsupported": "Este host ejecuta una versión anterior de Orca. Actualiza Orca en el host y vuelve a intentarlo.",
+      "mark": "Rama ·",
+      "markedName": "{{mark}} {{name}}",
+      "accessibleName": "Rama: {{name}}"
     }
   },
   "common": {
@@ -980,9 +984,7 @@
       "backToHosts": "Volver a hosts",
       "desktopTooOldBody": "La aplicación del escritorio emparejado es demasiado antigua para tu versión actual de Orca Mobile. Actualiza Orca en tu equipo y vuelve a intentarlo con este host.",
       "getVersion": "Obtener Orca {{version}}",
-      "mobileTooOldAppStore": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
       "mobileTooOldGitHubReleases": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host.",
-      "openAppStore": "Abrir App Store",
       "openGitHubReleases": "Abrir GitHub Releases",
       "refreshRecoveryNote": "Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
       "refreshWorkspaceBody": "La versión en caché del espacio de trabajo de este host es anterior a la que espera el escritorio. Vuelve a conectarte a este host para descargar la versión actual.",
@@ -990,8 +992,10 @@
       "updateDesktopTitle": "Actualiza Orca en tu equipo",
       "updateMobileTitle": "Actualiza Orca Mobile",
       "updateRecoveryNote": "¿Ya has actualizado? Vuelve a Hosts y actualiza la conexión. Si este mensaje persiste, elimina este host y vuelve a emparejarlo.",
-      "workspaceNeedsUpdateAppStore": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
-      "workspaceNeedsUpdateGitHubReleases": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host."
+      "workspaceNeedsUpdateGitHubReleases": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde GitHub Releases y vuelve a intentarlo con este host.",
+      "mobileTooOldAppStore": "Este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host.",
+      "openAppStore": "Abrir App Store",
+      "workspaceNeedsUpdateAppStore": "El espacio de trabajo móvil de este escritorio necesita una versión más reciente de Orca Mobile. Actualiza Orca Mobile desde la App Store y vuelve a intentarlo con este host."
     },
     "richMarkdownEditor": {
       "imageUrl": "URL de la imagen",
@@ -2825,10 +2829,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "No se pudo abrir el enlace. Vuelve a intentarlo.",
-      "socialProfile": "Orca en X",
       "sourceCode": "Código fuente de Orca",
       "tagline": "IDE de código abierto con agentes para creadores 100x",
       "title": "Acerca de",
+      "socialProfile": "Orca en X",
       "website": "Sitio web de Orca"
     },
     "appUpdateSettingsRows": {
@@ -2868,12 +2872,14 @@
       "title": "Apariencia"
     },
     "browserSettingsScreen": {
+      "askEachTime": "Preguntar cada vez",
+      "askEachTimeDescription": "Elige cada vez entre el navegador de Orca, el del teléfono o copiar el enlace.",
       "desktopBrowser": "Navegador de Orca en el escritorio",
       "desktopBrowserDescription": "Abrir en el navegador de tu escritorio emparejado y verlo en el teléfono.",
-      "linksDescription": "Elige dónde se abren los enlaces HTTP(S) que tocas en la salida de la terminal.",
+      "terminalAndChatLinksDescription": "Elige dónde se abren los enlaces web que tocas en la salida de la terminal y en el chat.",
       "linksHeading": "ENLACES",
       "loadFailed": "No se pudieron cargar las preferencias del navegador. Vuelve a intentarlo.",
-      "openTerminalLinks": "Abrir enlaces de la terminal",
+      "openLinks": "Abrir enlaces",
       "phoneBrowser": "Navegador del teléfono",
       "phoneBrowserDescription": "Abrir en Safari, Chrome u otro navegador de este teléfono.",
       "saveFailed": "No se pudieron guardar las preferencias del navegador. Vuelve a intentarlo.",
@@ -2890,8 +2896,8 @@
       "voice": "Voz"
     },
     "menuScreen": {
-      "privacyPolicy": "Política de privacidad",
-      "support": "Soporte"
+      "support": "Soporte",
+      "privacyPolicy": "Política de privacidad"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "Elige cómo se abren en este dispositivo las sesiones de agentes compatibles (Claude, Codex y otros agentes con funciones de chat). La terminal muestra la CLI tal cual; la interfaz de chat ofrece una vista como la de la app de escritorio. También puedes cambiar la vista de cada sesión desde el menú que aparece al mantenerla pulsada.",

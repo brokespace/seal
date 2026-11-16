@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
-import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SealMcpApprovalRequest } from '../../../../shared/seal-mcp/seal-mcp-types'
 import { useTranslate } from '@/i18n/use-translate'
 import { readSealMcpApprovals, respondSealMcpApproval, watchSealMcp } from './seal-mcp-watch-feed'

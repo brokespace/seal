@@ -5,9 +5,9 @@ import {
   joinMachinePath,
   machinePathDirname
 } from '../../../../src/shared/machines/machine-paths'
-import { ActionSheetModal, type ActionSheetAction } from '../../components/ActionSheetModal'
-import { ConfirmModal } from '../../components/ConfirmModal'
-import { TextInputModal } from '../../components/TextInputModal'
+import { ActionSheetModal, type ActionSheetAction } from '../../components/sheets/ActionSheetModal'
+import { ConfirmModal } from '../../components/sheets/ConfirmModal'
+import { TextInputModal } from '../../components/sheets/TextInputModal'
 import { classifyMobileArtifact } from '../../files/preview/mobile-artifact-kind'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { useClipboardWriter } from '../../platform/clipboard/clipboard'

@@ -1,4 +1,4 @@
-import { ActionSheetModal, type ActionSheetAction } from '../../components/ActionSheetModal'
+import { ActionSheetModal, type ActionSheetAction } from '../../components/sheets/ActionSheetModal'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import type { SealAccountsMutation } from './seal-accounts-operations'
 import {

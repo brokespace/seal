@@ -24,7 +24,7 @@ export type LiveSessionTabAttentionJoinDeps = {
     get: () => {
       acknowledgedAgentsByPaneKey: Readonly<Record<string, number>>
       unreadAgentCompletionPanes: Readonly<Record<string, unknown>>
-      agentStatusByPaneKey: Readonly<Record<string, unknown>>
+      agentStatusByPaneKey: ReadonlyMap<string, unknown>
     }
     /** Fires on every app-store write. */
     subscribe: Subscribe
@@ -84,7 +84,7 @@ export function joinLiveSessionMarksWithTabAttention({
     const attention = tabAttention.get()
     const paneKeys: string[] = []
     for (const [paneKey, agent] of stopped) {
-      const hasRow = Boolean(attention.agentStatusByPaneKey[paneKey])
+      const hasRow = attention.agentStatusByPaneKey.has(paneKey)
       // A marker raised now would be a later agent's, or comes too late to be this stop's.
       if (now() - agent.at > STOPPED_AGENT_MARKER_MS || runsAnotherAgent(paneKey, agent, hasRow)) {
         stopped.delete(paneKey)
@@ -122,7 +122,7 @@ export function joinLiveSessionMarksWithTabAttention({
         stopped.set(surface.paneKey, {
           sessionId: session.id,
           at: now(),
-          rowGone: !attention.agentStatusByPaneKey[surface.paneKey]
+          rowGone: !attention.agentStatusByPaneKey.has(surface.paneKey)
         })
       }
     }

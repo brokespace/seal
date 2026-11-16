@@ -24,7 +24,7 @@ import { resolveHostRemoval } from '@/components/sidebar/host-rename-remove'
 import { cn } from '@/lib/class-names'
 import { PAGE_GUTTER_X } from '@/components/page-layout/PageLayout'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
-import type { SshTarget } from '../../../../../shared/ssh-types'
+import type { SshTarget } from '../../../../../shared/remote-runtime/ssh/ssh-types'
 import { MachineEditorButton } from '../editor/MachineEditorButton'
 import {
   MachineFileExplorer,

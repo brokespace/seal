@@ -1,5 +1,5 @@
 import type { Automation } from '../../../../shared/automations/automation-definition'
-import type { DashboardWorkspace } from '../../../../shared/dashboard-snapshot'
+import type { DashboardWorkspace } from '../../../../shared/agent-status/presentation/dashboard-snapshot'
 import type { HomeAutomation, HomeWorkspace } from './home-overview-model'
 
 export function orcaHomeWorkspaces(workspaces: readonly DashboardWorkspace[]): HomeWorkspace[] {

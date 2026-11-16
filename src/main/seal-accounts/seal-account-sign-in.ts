@@ -1,7 +1,7 @@
 import type {
   HostAccountSignInChannel,
   HostAccountSignInStatus
-} from '../../shared/host-account-sign-in-types'
+} from '../../shared/agent-accounts/host-account-sign-in-types'
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import { oauthAccountKey, sealAccountKeysMatch } from '../../shared/seal-accounts/seal-account-key'

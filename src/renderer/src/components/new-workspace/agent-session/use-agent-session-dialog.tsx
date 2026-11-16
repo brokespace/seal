@@ -4,7 +4,7 @@ import { translate } from '@/i18n/i18n'
 import { getAgentCatalog } from '@/lib/agent-catalog/agent-catalog'
 import type { NewWorkspaceComposerCardProps } from '../composer/new-workspace-composer-card-props'
 import type { TuiAgent } from '../../../../../shared/agent-launch/catalog/tui-agent'
-import { normalizeExecutionHostId } from '../../../../../shared/execution-host'
+import { normalizeExecutionHostId } from '../../../../../shared/execution-host/execution-host'
 import { AgentSessionAccountField } from './AgentSessionAccountField'
 import {
   chooseAgentSessionAccount,

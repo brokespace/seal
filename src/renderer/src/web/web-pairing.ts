@@ -8,7 +8,7 @@ import {
   acceptedPairingSchemePrefixLength,
   isAcceptedPairingProtocol
 } from '../../../shared/remote-runtime/pairing/pairing-url-scheme'
-import type { DeviceScope } from '../../../shared/runtime-types'
+import type { DeviceScope } from '../../../shared/remote-runtime/session-graph/runtime-session-contracts'
 import { classifyRuntimeHostRePair } from '../../../shared/remote-runtime/host-status/runtime-host-pairing-identity'
 import type { StoredWebRuntimeEnvironment } from './web-runtime-environment'
 

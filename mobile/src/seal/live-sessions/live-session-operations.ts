@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 import { defineRpcOperation, runRpcOperation } from '../../transport/rpc/rpc-operation'
 import { rpcResultVariant } from '../../transport/rpc/rpc-operation-result-reader'
 import type { UnvalidatedRpcRequestPort } from '../../transport/rpc/unvalidated-rpc-request-port'

@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { HostAccountSignInChannel } from '../../../shared/host-account-sign-in-types'
+import type { HostAccountSignInChannel } from '../../../shared/agent-accounts/host-account-sign-in-types'
 import { liveAccountCliProcessCount } from '../../provider-process/account-cli-process-reaper'
 import { claudeStateFile, readClaudeFolderLogin } from './claude-account-folder'
 import { runClaudeCommandProcess } from './claude-command-process'

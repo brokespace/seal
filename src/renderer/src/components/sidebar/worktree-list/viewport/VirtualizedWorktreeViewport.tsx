@@ -41,6 +41,7 @@ import { SIDEBAR_KEYBOARD_SECTION_PROPS } from '../../sidebar-section-keyboard-h
 import { cn } from '@/lib/class-names'
 import { toRowBoxVirtualItem } from './virtual-rows'
 import { getScrollSectionMargin } from './scroll-section-insets'
+import { selectDrawsNewWorktreeCards } from '@/store/appearance/worktree-card-style'
 
 const EMPTY_HOST_OPTIONS: NonNullable<VirtualizedWorktreeViewportProps['hostOptions']> = []
 
@@ -77,7 +78,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     repoMap,
     projectGrouping: props.projectGrouping
   })
-  const newCardStyle = settings?.experimentalNewWorktreeCardStyle === true
+  const newCardStyle = useAppStore(selectDrawsNewWorktreeCards)
   const {
     handleOpenRepoSettings,
     handleOpenWorktreeVisibility,

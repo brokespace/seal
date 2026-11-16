@@ -1,4 +1,4 @@
-import { LOCAL_EXECUTION_HOST_ID } from '../../../../src/shared/execution-host'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../src/shared/execution-host/execution-host'
 import * as z from 'zod'
 import { PHONE_MACHINE_PREVIEW_MAX_BYTES } from '../../../../src/shared/rpc-contract/seal-machines-params'
 import type { NO_HOST_LIST_INPUT } from '../../host-screen/catalog/host-list-queries'

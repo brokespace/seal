@@ -12,15 +12,15 @@ import {
   Upload
 } from 'lucide-react-native'
 import { joinMachinePath } from '../../../../src/shared/machines/machine-paths'
-import { ActionSheetModal } from '../../components/ActionSheetModal'
+import { ActionSheetModal } from '../../components/sheets/ActionSheetModal'
 import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
+} from '../../components/feedback/MobileStateView'
 import { NavBar } from '../../components/nav-bar/NavBar'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
-import { TransientToast, useTransientToast } from '../../components/TransientToast'
+import { TransientToast, useTransientToast } from '../../components/feedback/TransientToast'
 import { HOST_LIST_TARGET, NO_HOST_LIST_INPUT } from '../../host-screen/catalog/host-list-queries'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { ImageLibraryPermissionError } from '../../platform/media-picking/media-picker-contract'

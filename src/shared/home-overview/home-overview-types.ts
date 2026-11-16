@@ -1,5 +1,5 @@
 import type { LiveSessionMachineIdentity } from '../live-sessions/live-session-machine-id'
-import type { ProviderRateLimits } from '../rate-limit-types'
+import type { ProviderRateLimits } from '../agent-usage/rate-limits/rate-limit-types'
 
 export type HomeMachineKind = 'local' | 'ssh' | 'runtime'
 export type HomeMachineStatus = 'online' | 'connecting' | 'offline' | 'error'

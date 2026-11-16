@@ -10,10 +10,10 @@ import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
+} from '../../components/feedback/MobileStateView'
 import { NavBar } from '../../components/nav-bar/NavBar'
 import { NavBarButton } from '../../components/nav-bar/NavBarButton'
-import { TransientToast, useTransientToast } from '../../components/TransientToast'
+import { TransientToast, useTransientToast } from '../../components/feedback/TransientToast'
 import { isMarkdownPath } from '../../files/explorer/file-tree'
 import { MobileFileMarkdownPreview } from '../../files/markdown/MobileFileMarkdownPreview'
 import {

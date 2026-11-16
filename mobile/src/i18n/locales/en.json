@@ -18,10 +18,10 @@
     "aboutScreen": {
       "title": "About",
       "tagline": "Open-source agent IDE for 100x builders",
-      "website": "Orca website",
       "sourceCode": "Orca source code",
-      "socialProfile": "Orca on X",
-      "openLinkFailed": "Could not open the link. Try again."
+      "openLinkFailed": "Could not open the link. Try again.",
+      "website": "Orca website",
+      "socialProfile": "Orca on X"
     },
     "appUpdateSettingsRows": {
       "checking": "Checking…",
@@ -42,16 +42,18 @@
       "checkUpdates": "Check for updates"
     },
     "browserSettingsScreen": {
+      "askEachTime": "Ask each time",
+      "askEachTimeDescription": "Choose Orca browser, phone browser, or copy the link each time.",
       "desktopBrowser": "Orca browser on desktop",
       "desktopBrowserDescription": "Open in the streamed browser from your paired desktop.",
       "phoneBrowser": "Phone browser",
       "phoneBrowserDescription": "Open in Safari, Chrome, or another browser on this phone.",
       "title": "Browser",
       "linksHeading": "LINKS",
-      "linksDescription": "Choose where HTTP(S) links tapped in terminal output open.",
+      "terminalAndChatLinksDescription": "Choose where web links tapped in terminal output and chat open.",
       "loadFailed": "Could not load browser preferences. Try again.",
       "saveFailed": "Could not save browser preferences. Try again.",
-      "openTerminalLinks": "Open terminal links"
+      "openLinks": "Open links"
     },
     "menuItems": {
       "appearance": "Appearance",
@@ -119,8 +121,8 @@
       "retryCleanup": "Retry clearing pairing credentials"
     },
     "menuScreen": {
-      "privacyPolicy": "Privacy Policy",
-      "support": "Support"
+      "support": "Support",
+      "privacyPolicy": "Privacy Policy"
     },
     "uiLanguageSettingsSection": {
       "pseudoLanguage": "Pseudo (en-XA)"
@@ -243,7 +245,6 @@
     },
     "pairScan": {
       "invalidQrCode": "Not a valid Orca QR code",
-      "downloadQrCode": "That's the download code. Scan the pairing code in step 2 on your desktop.",
       "invalidPairingCode": "Not a valid pairing code — copy it from your computer and paste again",
       "connectTimedOut": "Couldn't connect within {{seconds}}s — see log below for where it stalled",
       "pairingFailed": "Pairing failed: {{error}}",
@@ -255,7 +256,6 @@
       "pasteInstead": "Paste code instead",
       "pasteCodeTitle": "Paste pairing code",
       "pasteCodeMessage": "Copy the code shown under the QR on your computer.",
-      "pasteCodePlaceholder": "orca://pair?code=... or paste the code",
       "openDesktopStep": "Open Orca on your computer",
       "openMobileSettingsStep": "Go to Settings → Mobile",
       "scanCodeStep": "Scan the QR code",
@@ -263,7 +263,9 @@
       "connecting": "Connecting…",
       "pairingLog": "Pairing log",
       "tryAgain": "Try Again",
-      "codeNoLongerValid": "This pairing code expired, was already used, or was replaced. Show a new code on your desktop and scan again."
+      "codeNoLongerValid": "This pairing code expired, was already used, or was replaced. Show a new code on your desktop and scan again.",
+      "downloadQrCode": "That's the download code. Scan the pairing code in step 2 on your desktop.",
+      "pasteCodePlaceholder": "orca://pair?code=... or paste the code"
     },
     "pair": {
       "missingCode": "Missing pairing code",
@@ -297,7 +299,6 @@
       "invalidSnapshot": "Invalid accounts snapshot from host",
       "hostNotFound": "Host not found",
       "switchFailed": "Could not switch account",
-      "default": "System default",
       "agentLogin": "Use the agent's own login",
       "sessionWindow": "5h",
       "weeklyWindow": "7d",
@@ -311,7 +312,8 @@
       "pairingInvalidMessage": "Re-pair this phone with your desktop to see its accounts.",
       "otherAgents": "Other agents",
       "fableWindow": "Fable",
-      "mcpWindow": "MCP"
+      "mcpWindow": "MCP",
+      "default": "System default"
     }
   },
   "agentHistory": {
@@ -1273,17 +1275,17 @@
       "updateDesktopTitle": "Update Orca on your computer",
       "refreshWorkspaceTitle": "Refresh the mobile workspace",
       "refreshWorkspaceBody": "The workspace cached for this host is older than the desktop expects. Reconnect to this host to download the current one.",
-      "mobileTooOldAppStore": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
       "mobileTooOldGitHubReleases": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again.",
-      "workspaceNeedsUpdateAppStore": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
       "workspaceNeedsUpdateGitHubReleases": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from GitHub Releases, then try this host again.",
       "desktopTooOldBody": "This paired desktop app is too old for your current Orca Mobile app. Update Orca on your computer, then try this host again.",
-      "openAppStore": "Open App Store",
       "openGitHubReleases": "Open GitHub Releases",
       "getVersion": "Get Orca {{version}}",
       "refreshRecoveryNote": "If this message stays, remove this host and pair it again.",
       "updateRecoveryNote": "Already updated? Go back to Hosts and refresh the connection. If this message stays, remove this host and pair it again.",
-      "backToHosts": "Back to hosts"
+      "backToHosts": "Back to hosts",
+      "mobileTooOldAppStore": "This desktop needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
+      "workspaceNeedsUpdateAppStore": "This desktop's mobile workspace needs a newer Orca Mobile app. Update Orca Mobile from the App Store, then try this host again.",
+      "openAppStore": "Open App Store"
     },
     "setupHookTrustDrawer": {
       "scriptChangedTitle": "{{repoName}}'s setup script changed",
@@ -3110,7 +3112,10 @@
       "chooseInAgentPicker": "Choose in agent picker…",
       "setWhenSessionStarts": "Set when the session starts.",
       "availableAfterSessionStarts": "Available after the session starts.",
-      "sessionOptions": "Session options"
+      "sessionOptions": "Session options",
+      "permissionAppliesNextMessage": "{{saved}} applies to your next message; running {{active}}",
+      "permissionAppliesNextMessageCompact": "{{saved}} · next message",
+      "permissionAppliesNextMessageTiming": "Applies next message · running {{active}}"
     },
     "streamFrame": {
       "streamFailed": "Transcript stream failed",
@@ -3136,6 +3141,7 @@
     "message": {
       "copyMessage": "Copy message",
       "forkFromResponse": "Fork from this response",
+      "scrollMessageToTop": "Scroll this message to top",
       "forkFromResponseHint": "A new chat with this whole response, up to the end of its turn"
     },
     "messageActionsSheet": {
@@ -3230,6 +3236,12 @@
     "interruptedContinue": {
       "failed": "Couldn't continue this chat. Try again, or send a message.",
       "explanation": "Continue, and the agent first checks whether its last step finished."
+    },
+    "restartNote": {
+      "continued": "Orca asked this agent to continue after a restart. Your own prompt was not re-sent.",
+      "refused": "Orca couldn't continue this chat after the restart. Send a message to continue it.",
+      "unconfirmed": "Orca asked this agent to continue after the restart but couldn't confirm it did. Check its latest reply before sending another message.",
+      "notConnected": "Orca couldn't reconnect this chat after the restart, so it didn't ask the agent to continue."
     },
     "sendError": {
       "dismiss": "Dismiss"
@@ -3410,7 +3422,10 @@
       "busy": "Another chat or terminal is opening. Wait, then fork the {{agent}} chat again.",
       "unconfirmed": "{{agent}} couldn't confirm the fork. It may have opened anyway; check Session History before forking again.",
       "failed": "{{agent}} couldn't fork this chat. {{detail}}",
-      "unsupported": "This host runs an older Orca. Update Orca on the host, then try again."
+      "unsupported": "This host runs an older Orca. Update Orca on the host, then try again.",
+      "mark": "Fork ·",
+      "markedName": "{{mark}} {{name}}",
+      "accessibleName": "Fork: {{name}}"
     },
     "hostOutage": {
       "offlineAsOf": "{{host}} is offline · as of {{time}}",
@@ -3453,6 +3468,60 @@
       "outcomeUnknownReturned": "Orca couldn't confirm whether the conversation went back to this message. Your message is back in the composer, and Orca checks the conversation before your next message is sent.",
       "timeout": "The chat didn't update after going back to this message. Reopen it to see the latest.",
       "pending": "Wait for the conversation to go back to the earlier message."
+    },
+    "urlRequest": {
+      "title": "Sign-in requested",
+      "open": "Open sign-in page",
+      "decline": "Decline",
+      "opened": "Opened the sign-in page in your browser.",
+      "openAgain": "Open again",
+      "finished": "Sign-in finished",
+      "finishedWith": "Sign-in finished · {{message}}"
+    },
+    "mcp": {
+      "source": {
+        "project": "Project",
+        "local": "Local",
+        "user": "User",
+        "plugin": "Plugin",
+        "session": "Session"
+      },
+      "status": {
+        "connected": "Connected",
+        "pending": "Connecting…",
+        "needsAuth": "Needs sign-in",
+        "failedReason": "Failed: {{error}}",
+        "failed": "Failed",
+        "needsAuthAfterSend": "Needs sign-in. Send a message to sign in here.",
+        "finishOnPage": "Finish on the page that opened",
+        "waitingForSignIn": "Waiting for sign-in…",
+        "tools_one": "{{count}} tool",
+        "tools_other": "{{count}} tools",
+        "off": "Off"
+      },
+      "title": "MCP servers",
+      "notRunning": "MCP servers connect when you send your next message.",
+      "unsupported": "Update Orca on this chat's host to manage MCP servers here.",
+      "readFailed": "Couldn't load MCP servers.",
+      "retry": "Retry",
+      "empty": "No MCP servers are set up for this chat.",
+      "signIn": "Sign in",
+      "reconnect": "Reconnect",
+      "toggleLabel": "Use {{name}}",
+      "actionFailed": "Couldn't do that. Try again.",
+      "openAgain": "Open again",
+      "pastePlaceholder": "Paste address",
+      "pasteLabel": "Sign-in page address",
+      "finish": "Finish",
+      "signInUnfinished": "Sign-in isn't finished yet. Finish it on the page that opened, then tap Done.",
+      "summary": {
+        "signingIn": "signing in to {{name}}",
+        "connected": "{{count}} connected",
+        "needsAuth_one": "{{count}} needs sign-in",
+        "needsAuth_other": "{{count}} need sign-in",
+        "failed": "{{count}} failed"
+      },
+      "pasteHint": "When the browser lands on a page that won't load, copy its address and paste it here."
     }
   },
   "sourceControl": {

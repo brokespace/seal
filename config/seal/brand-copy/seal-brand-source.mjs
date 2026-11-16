@@ -23,7 +23,10 @@ export const SKIPPED_SOURCE_FILES = new Map([
     'generated from skill-guides/ (agent-facing CLI contract)'
   ],
   ['src/main/skills/bundled-skill-install/bundled-skill-sources.ts', 'generated from skills/'],
-  ['src/shared/marine-creature-names-primary.ts', 'the orca whale in random worktree names'],
+  [
+    'src/shared/worktree/naming/marine-creature-names-primary.ts',
+    'the orca whale in random worktree names'
+  ],
   [
     'src/main/claude/theme-sync/claude-code-theme.ts',
     'theme name already installed in Claude Code'
@@ -41,7 +44,6 @@ export const SKIPPED_SOURCE_FILES = new Map([
     'UUIDs hashed from the fixture name'
   ],
   ['src/packages/process-host/src/wsl-distro-allowlist.test.ts', 'distro names, not copy'],
-  ['src/shared/project-host-setup-projection.test.ts', 'upstream GitHub repo identity'],
   [
     'src/main/runtime/agent-session/naming/structured-agent-session-provider-naming-shutdown.test.ts',
     'Codex app-server clientInfo identity'

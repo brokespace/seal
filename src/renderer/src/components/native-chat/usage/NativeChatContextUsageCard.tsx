@@ -3,7 +3,7 @@ import { Progress } from '@/components/ui/progress'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { recomputeOn } from '@/lib/recompute-on'
-import { formatTimeAgo } from '../../status-bar/tooltip'
+import { formatTimeAgo } from '../../status-bar/usage/provider-usage-panel'
 import {
   isContextUsageMeasured,
   type NativeChatContextUsageReadout,

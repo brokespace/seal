@@ -3,7 +3,7 @@ import { MessageSquare, SquareTerminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
-import { surfaceActionLabel } from '../tab-bar/tab-agent-row-presentation'
+import { surfaceActionLabel } from './launch-menu/agent-menu-row-presentation'
 
 type AgentSurfaceLaunchButtonProps = Omit<React.ComponentProps<'button'>, 'children' | 'title'> & {
   title: string

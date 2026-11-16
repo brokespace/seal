@@ -24,7 +24,10 @@ export const BUNDLED_SOURCE_ALLOWLIST = new Map([
     'src/main/native-chat/agent-session-wire/publication/subscribers/agent-session-delta-coalescer.ts',
     'truncation marker stored in saved chats'
   ],
-  ['src/shared/agent-session-handoff-context.ts', 'omission markers stored in saved chats']
+  [
+    'src/shared/native-chat/transcript/agent-session-handoff-context.ts',
+    'omission markers stored in saved chats'
+  ]
 ])
 
 /** Hook points that put the brand pass into a bundler, and this check into `pnpm lint`: [file, text it must contain]. */
@@ -59,9 +62,18 @@ export function IDENTITY_CONSTANTS(branding) {
   return [
     ['package.json', `"productName": "${branding.productName}"`],
     ['package.json', `"${branding.cliCommand}": "./out/cli/index.js"`],
-    ['src/shared/app-identity.ts', `APP_PRODUCT_NAME = '${branding.productName}'`],
-    ['src/shared/local-build-compatibility-contract.ts', `appId: '${branding.appId}'`],
-    ['src/shared/local-build-compatibility-contract.json', `"appId": "${branding.appId}"`],
+    [
+      'src/shared/app-lifecycle/identity/app-identity.ts',
+      `APP_PRODUCT_NAME = '${branding.productName}'`
+    ],
+    [
+      'src/shared/remote-runtime/orcad-distribution/local-build-compatibility-contract.ts',
+      `appId: '${branding.appId}'`
+    ],
+    [
+      'src/shared/remote-runtime/orcad-distribution/local-build-compatibility-contract.json',
+      `"appId": "${branding.appId}"`
+    ],
     [
       'src/main/startup/profile-startup/dev-instance-identity.ts',
       `BASE_APP_USER_MODEL_ID = '${branding.appId}'`
@@ -71,7 +83,7 @@ export function IDENTITY_CONSTANTS(branding) {
       `INSTALLED_CLI_COMMAND_NAME = '${branding.cliCommand}'`
     ],
     [
-      'src/shared/appimage-cache-identity.ts',
+      'src/shared/desktop-distribution/appimage/appimage-cache-identity.ts',
       `LINUX_EXECUTABLE_NAME = '${branding.linux.executableName}'`
     ],
     [

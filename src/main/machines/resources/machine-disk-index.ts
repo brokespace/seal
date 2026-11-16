@@ -7,7 +7,7 @@ import type {
 import type { MachineExecResult } from '../../../shared/machines/machine-host-wire'
 import { joinMachinePath } from '../../../shared/machines/machine-paths'
 import type { MachineId } from '../../../shared/machines/machine-types'
-import { withTimeoutResult } from '../../../shared/promise-timeout-fallback'
+import { withTimeoutResult } from '../../../shared/concurrency/promise-timeout-fallback'
 import { getForkedChildEntryPath } from '../../worker-threads/forked-child-entry-path'
 import type { MachineConnection } from '../connection/machine-connection'
 import { logDiskIndexStart, type DiskIndexKeptState } from './machine-disk-index-log'

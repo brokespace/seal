@@ -1,7 +1,7 @@
 // A Seal pane's hook row and its session are one agent. Where discovery had the say over the row
 // (background work the hooks never reported, a turn they left open), every roll-up of the pane, the
 // tab glyph and the workspace dot, reads the session, so they agree with its row in Active agents.
-import type { AgentPaneActivityFlags } from '../worktree-status-rollup'
+import type { AgentPaneActivityFlags } from '../worktree/row-display/worktree-status-rollup'
 import { isTurnRunningLiveSessionStatus } from './live-session-status'
 import type { LiveSession, LiveSessionStatus } from './live-session-types'
 

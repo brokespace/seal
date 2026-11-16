@@ -6,14 +6,14 @@ import {
   SEAL_PROVIDERS,
   type SealProvider
 } from '../../../../src/shared/seal-accounts/seal-accounts-config'
-import { ConfirmModal } from '../../components/ConfirmModal'
+import { ConfirmModal } from '../../components/sheets/ConfirmModal'
 import { ListGroup, ListRow, SectionHeader } from '../../components/list/ListGroup'
-import { MobileSwitch } from '../../components/MobileSwitch'
+import { MobileSwitch } from '../../components/controls/MobileSwitch'
 import {
   MobileLoadErrorState,
   MobileOfflineState,
   MobileStateView
-} from '../../components/MobileStateView'
+} from '../../components/feedback/MobileStateView'
 import { useNow } from '../../hooks/use-now'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, pressedStyle, spacing } from '../../theme/mobile-theme'

@@ -7,7 +7,7 @@ import {
 import { useLocalMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useMachinesInventory } from '@/components/machines/model/use-machines-inventory'
 import { useSealAccounts } from '@/components/settings/seal-accounts/use-seal-accounts'
-import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import {
   HomeAccountsContext,
   HomeActionsContext,

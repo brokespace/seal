@@ -109,7 +109,7 @@ export function structuredChatJournal(
     return null
   }
   return journalSessionTranscript(recordId, {
-    snapshot: () => host.journalSnapshot(chatSessionId),
+    snapshot: () => host.backgroundTasks.journalSnapshot(chatSessionId),
     working: () => host.readStatusSummary(chatSessionId)?.status === 'working'
   })
 }

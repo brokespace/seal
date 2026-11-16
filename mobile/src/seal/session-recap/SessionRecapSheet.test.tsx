@@ -33,7 +33,7 @@ vi.mock('../../components/bottom-drawer/BottomDrawer', () => ({
   BottomDrawer: ({ children }: { children: unknown }) => children
 }))
 vi.mock('../../components/nav-bar/SheetHeader', () => ({ SheetHeader: 'SheetHeader' }))
-vi.mock('../../components/MobileDiffReviewFileSummary', () => ({
+vi.mock('../../source-control/review/diff-screen/MobileDiffReviewFileSummary', () => ({
   ViewedCheckbox: 'ViewedCheckbox'
 }))
 

@@ -1,6 +1,6 @@
 // Adapted from claude-swap (MIT, https://github.com/realiti4/claude-swap), src/claude_swap/lines.py.
 import type { SealAutoSwapSettings } from './seal-accounts-config'
-import type { RateLimitWindow } from '../rate-limit-types'
+import type { RateLimitWindow } from '../agent-usage/rate-limits/rate-limit-types'
 import type { SealAccountCandidate } from './seal-account-candidates'
 
 export const SESSION_WINDOW_LABEL = '5h'

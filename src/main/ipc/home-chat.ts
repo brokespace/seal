@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type {
   ClaudeRateLimitAccountsState,
   CodexManagedAccount
-} from '../../shared/managed-account-types'
+} from '../../shared/agent-accounts/managed-account-types'
 import type {
   HomeChatCreateArgs,
   HomeChatEvent,
@@ -11,7 +11,7 @@ import type {
   HomeChatUpdateArgs
 } from '../../shared/home-chat/home-chat-types'
 import type { HomeChatMemory } from '../../shared/home-chat/home-chat-memory-types'
-import type { Repo } from '../../shared/repo-types'
+import type { Repo } from '../../shared/repository/repo-types'
 import type { HomeChatService } from '../home-chat/home-chat-service'
 import { installHomeChat, onHomeChatEvent } from '../home-chat/home-chat-install'
 import { getMachineRegistry } from '../machines/registry/machine-registry-service'

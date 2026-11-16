@@ -24,7 +24,7 @@ import {
 import { themedStyleSheet } from '../src/theme/themed-styles'
 import { useMobileColorScheme } from '../src/theme/use-mobile-color-scheme'
 import { useMobileTranslation } from '../src/i18n/use-mobile-translation'
-import { ConnectionLog } from '../src/components/ConnectionLog'
+import { ConnectionLog } from '../src/components/host-connection/ConnectionLog'
 import {
   loadMobileOnboardingSteps,
   mobileOnboardingDestination

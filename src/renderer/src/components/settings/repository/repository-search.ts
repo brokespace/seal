@@ -1,18 +1,16 @@
-import type { Repo } from '../../../../../shared/repo-types'
+import type { Repo } from '../../../../../shared/repository/repo-types'
 import { getRepositoryPresenceSearchEntries } from './repository-project-presence-search'
-import { isFolderRepo } from '../../../../../shared/repo-kind'
+import { isFolderRepo } from '../../../../../shared/repository/repo-kind'
 import {
   getRepoExecutionHostId,
   LOCAL_EXECUTION_HOST_ID
-} from '../../../../../shared/execution-host'
+} from '../../../../../shared/execution-host/execution-host'
 import type { SettingsSearchEntry } from '../search/settings-search'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import { searchKeywordTranslator } from '../search/settings-search-keywords'
 import { getRepositoryGitAuthorSearchEntries } from './source-control/repository-git-author-search-entries'
 import { getRepositoryMcpConfigSearchEntries } from './mcp/mcp-config-search'
-import { getAgentConfigSearchEntries } from '../agent-config/agent-config-search'
-import { agentConfigAvailable } from '../../agent-config/model/agent-config-client'
 import { getRepositoryGitHooksSearchEntries } from './hooks/repository-git-hooks-search-entries'
 import {
   getRepositoryGitWorktreeSearchEntries,
@@ -20,6 +18,7 @@ import {
 } from './worktrees/repository-git-worktree-search-entries'
 import { getRepositoryFormatterSearchEntry } from './RepositoryFormatterSection'
 import { getRepositoryAgentTrustSearchEntry } from './RepositoryAgentTrustSection'
+import { getRepositoryBrowserProfileSearchEntry } from './RepositoryBrowserProfileSection'
 import { getRepositoryWorkspaceCleanupSearchEntry } from './workspace-cleanup/repository-workspace-cleanup-search'
 
 type RepositoryPaneSearchOptions = {
@@ -209,6 +208,7 @@ function getRepositorySearchParts(
   const { removeProject, sidebarVisibility } = getRepositoryPresenceSearchEntries(repo, t)
   return {
     agentTrust: getRepositoryAgentTrustSearchEntry(),
+    browserProfile: getRepositoryBrowserProfileSearchEntry(t),
     jira,
     displayName,
     icon,
@@ -219,10 +219,6 @@ function getRepositorySearchParts(
     removeProject,
     sourceControlAi: isFolder ? undefined : getRepositoryGitAuthorSearchEntries(repo, t),
     mcp: isFolder ? undefined : getRepositoryMcpConfigSearchEntries(repo, t),
-    // Folder projects have agent files too; only the desktop window can reach them.
-    agentConfig: agentConfigAvailable()
-      ? getAgentConfigSearchEntries(repo.displayName, t)
-      : undefined,
     hooks: getRepositoryGitHooksSearchEntries(repo, t)
   }
 }
@@ -236,6 +232,7 @@ export function getRepositoryPaneSearchEntries(
   const entries = [
     getRepositoryFormatterSearchEntry(t),
     parts.agentTrust,
+    parts.browserProfile,
     parts.jira,
     parts.displayName,
     parts.icon
@@ -260,9 +257,6 @@ export function getRepositoryPaneSearchEntries(
   if (parts.mcp) {
     entries.push(...parts.mcp)
   }
-  if (parts.agentConfig) {
-    entries.push(...parts.agentConfig)
-  }
   if (parts.hooks) {
     entries.push(...parts.hooks)
   }
@@ -276,7 +270,13 @@ export function getRepositoryPaneSearchMetadata(
 ) {
   const parts = getRepositorySearchParts(repo, options, t)
   const worktrees = isFolderRepo(repo) ? undefined : getRepositoryGitWorktreeSearchMetadata(repo, t)
-  const identity = [parts.agentTrust, parts.jira, parts.displayName, parts.icon]
+  const identity = [
+    parts.agentTrust,
+    parts.browserProfile,
+    parts.jira,
+    parts.displayName,
+    parts.icon
+  ]
   if (parts.github) {
     identity.push(parts.github)
   }

@@ -1,14 +1,14 @@
 import {
   AGENT_SESSION_FOUNDING_FENCE,
   agentSessionNeverStarted
-} from '../../../../shared/agent-session/lifecycle/agent-session-conversation-view'
+} from '../../../../shared/agent-session/lifecycle/leases/agent-session-conversation-view'
 import { AGENT_CHAT_PERMISSION_MODE_OPTION_ID } from '../../../../shared/agent-launch/permissions/agent-chat-permission-mode'
 import {
   AGENT_SESSION_RECORD_SCHEMA_VERSION,
   type AgentSessionRecord
 } from '../../../../shared/agent-session/lifecycle/agent-session-record'
 import { normalizeAgentSessionConversationName } from '../../../../shared/agent-session/agent-session-conversation-name'
-import { isFloatingWorkspaceId } from '../../../../shared/floating-workspace-worktree'
+import { isFloatingWorkspaceId } from '../../../../shared/workspace/identity/floating-workspace-worktree'
 
 export type AgentSessionRecordIdentity = Pick<
   AgentSessionRecord,

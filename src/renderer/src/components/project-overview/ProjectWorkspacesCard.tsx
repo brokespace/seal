@@ -5,7 +5,7 @@ import { HomeOverviewEmpty } from '@/components/home-overview/HomeOverviewRow'
 import WorktreeContextMenu from '@/components/sidebar/workspace-actions/context-menu/WorktreeContextMenu'
 import WorktreeCard from '@/components/sidebar/workspace-card/surface/WorktreeCard'
 import { getWorktreeHostIdentity } from '../../../../shared/worktree/host-qualified-identity'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
 
 /**

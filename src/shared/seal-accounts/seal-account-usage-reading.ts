@@ -1,4 +1,7 @@
-import type { ProviderRateLimits, RateLimitState } from '../rate-limit-types'
+import type {
+  ProviderRateLimits,
+  RateLimitState
+} from '../agent-usage/rate-limits/rate-limit-types'
 import type { SealAccountCandidate } from './seal-account-candidates'
 import { sealAccountKeysMatch } from './seal-account-key'
 import type { SealAccountsStatus } from './seal-accounts-status'

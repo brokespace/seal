@@ -26,6 +26,13 @@
   "accounts.hostSignIn.verifying",
   "accounts.hostSignIn.waiting",
   "accounts.remoteScopeAccountsAddHere",
+  "accounts.rename.action",
+  "accounts.rename.cancel",
+  "accounts.rename.description",
+  "accounts.rename.label",
+  "accounts.rename.reset",
+  "accounts.rename.save",
+  "accounts.rename.title",
   "agentsSidebarIntro.migrated.description",
   "agentsSidebarIntro.migrated.dismiss",
   "agentsSidebarIntro.migrated.title",
@@ -136,5 +143,7 @@
   "dashboard.sidebar.closeActivity",
   "dashboard.sidebar.openActivity",
   "settings.accounts.claudeRemoveFolder",
+  "settings.accounts.claudeRemoveProfile",
+  "settings.accounts.codexRemoveHome",
   "settings.terminal.windows.administratorDocumentation"
 ]

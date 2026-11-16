@@ -6,7 +6,7 @@ import {
 } from '../../shared/machines/machine-types'
 import type { MachineView } from '../../shared/machines/machine-view'
 import { machinePathDirname } from '../../shared/machines/machine-paths'
-import { getAppEnvironment } from '../../shared/app-environment'
+import { getAppEnvironment } from '../../shared/app-lifecycle/app-environment'
 import type { MachineConnection } from './connection/machine-connection'
 import type { LiveSessionMachineSource } from '../live-sessions/hosts/live-session-hosts'
 import { createLocalMachineConnection } from './connection/local-machine-connection'

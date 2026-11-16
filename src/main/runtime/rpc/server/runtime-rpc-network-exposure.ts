@@ -2,7 +2,7 @@ import { WebSocketTransport } from '../transports/websocket/ws-transport'
 import { writeWsFallbackPort } from '../transports/websocket/ws-fallback-port-store'
 import { RuntimeRpcLifecycle } from './runtime-rpc-lifecycle'
 import { WS_BIND_HOST_ALL_INTERFACES, WS_BIND_HOST_LOOPBACK } from './runtime-rpc-pairing-types'
-import { bindHostIsNetworkExposed } from '../../../../shared/orcad-bind-address'
+import { bindHostIsNetworkExposed } from '../../../../shared/remote-runtime/orcad-lifecycle/orcad-bind-address'
 
 export class RuntimeRpcNetworkExposure extends RuntimeRpcLifecycle {
   // Advertise addresses the widened listener will answer, not its current loopback bind.

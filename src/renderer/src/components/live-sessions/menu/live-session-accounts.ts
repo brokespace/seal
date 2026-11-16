@@ -1,5 +1,5 @@
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SealSessionAssignment } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapTargets } from '../../seal-session/seal-session-account-view'
 import {

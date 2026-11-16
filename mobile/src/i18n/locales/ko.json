@@ -4,7 +4,6 @@
       "agentLogin": "에이전트 자체 로그인 사용",
       "connecting": "호스트에 연결 중…",
       "connectingTo": "{{name}}에 연결 중…",
-      "default": "시스템 기본값",
       "fableWindow": "Fable",
       "hostNotFound": "호스트를 찾을 수 없습니다.",
       "invalidSnapshot": "호스트에서 받은 계정 스냅샷이 유효하지 않습니다.",
@@ -17,7 +16,8 @@
       "switchFailed": "계정을 전환하지 못했습니다.",
       "title": "계정",
       "useReset": "재설정권 사용",
-      "weeklyWindow": "7일"
+      "weeklyWindow": "7일",
+      "default": "시스템 기본값"
     }
   },
   "agentHistory": {
@@ -97,21 +97,21 @@
       "connecting": "연결 중…",
       "invalidPairingCode": "유효한 페어링 코드가 아닙니다. 컴퓨터에서 코드를 복사해 다시 붙여넣으세요.",
       "invalidQrCode": "유효한 Orca QR 코드가 아닙니다.",
-      "downloadQrCode": "다운로드용 코드입니다. 데스크톱의 2단계에 있는 페어링 코드를 스캔하세요.",
       "openDesktopStep": "컴퓨터에서 Orca를 실행하세요",
       "openMobileSettingsStep": "설정 → 모바일로 이동하세요",
       "openSettings": "설정 열기",
       "pairingFailed": "페어링 실패: {{error}}",
       "pairingLog": "페어링 로그",
       "pasteCodeMessage": "컴퓨터의 QR 코드 아래에 표시된 코드를 복사하세요.",
-      "pasteCodePlaceholder": "orca://pair?code=... 또는 코드 붙여넣기",
       "pasteCodeTitle": "페어링 코드 붙여넣기",
       "pasteInstead": "대신 코드 붙여넣기",
       "pastePairingCode": "또는 페어링 코드 붙여넣기",
       "scanCodeStep": "QR 코드를 스캔하세요",
       "title": "데스크톱과 페어링",
       "tryAgain": "다시 시도",
-      "codeNoLongerValid": "이 페어링 코드는 만료되었거나 이미 사용되었거나 교체되었습니다. 데스크톱에서 새 코드를 표시한 후 다시 스캔하세요."
+      "codeNoLongerValid": "이 페어링 코드는 만료되었거나 이미 사용되었거나 교체되었습니다. 데스크톱에서 새 코드를 표시한 후 다시 스캔하세요.",
+      "downloadQrCode": "다운로드용 코드입니다. 데스크톱의 2단계에 있는 페어링 코드를 스캔하세요.",
+      "pasteCodePlaceholder": "orca://pair?code=... 또는 코드 붙여넣기"
     },
     "terminalSettings": {
       "defaultText": "기본 (100%)",
@@ -222,6 +222,7 @@
     "message": {
       "copyMessage": "메시지 복사",
       "forkFromResponse": "이 응답에서 분기",
+      "scrollMessageToTop": "이 메시지를 맨 위로 스크롤",
       "forkFromResponseHint": "이 턴의 끝까지 전체 응답이 포함된 새 채팅"
     },
     "messageActionsSheet": {
@@ -643,7 +644,10 @@
       "busy": "다른 채팅이나 터미널을 여는 중입니다. 기다린 다음 {{agent}} 채팅을 다시 분기하세요.",
       "unconfirmed": "{{agent}}이(가) 분기를 확인하지 못했습니다. 채팅이 열렸을 수 있습니다. 다시 분기하기 전에 세션 기록을 확인하세요.",
       "failed": "{{agent}}이(가) 이 채팅을 분기하지 못했습니다. {{detail}}",
-      "unsupported": "이 호스트에서 이전 버전의 Orca가 실행 중입니다. 호스트의 Orca를 업데이트하고 다시 시도하세요."
+      "unsupported": "이 호스트에서 이전 버전의 Orca가 실행 중입니다. 호스트의 Orca를 업데이트하고 다시 시도하세요.",
+      "mark": "분기 ·",
+      "markedName": "{{mark}} {{name}}",
+      "accessibleName": "분기: {{name}}"
     }
   },
   "common": {
@@ -938,9 +942,7 @@
       "backToHosts": "호스트로 돌아가기",
       "desktopTooOldBody": "페어링된 데스크톱 앱의 버전이 오래되어 현재 Orca 모바일 앱과 호환되지 않습니다. 컴퓨터에서 Orca를 업데이트한 후 이 호스트에 다시 연결하세요.",
       "getVersion": "Orca {{version}} 받기",
-      "mobileTooOldAppStore": "이 데스크톱에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. App Store에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
       "mobileTooOldGitHubReleases": "이 데스크톱에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. GitHub Releases에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
-      "openAppStore": "App Store 열기",
       "openGitHubReleases": "GitHub Releases 열기",
       "refreshRecoveryNote": "이 메시지가 계속 표시되면 이 호스트를 제거한 후 다시 페어링하세요.",
       "refreshWorkspaceBody": "이 호스트용으로 캐시된 워크스페이스가 데스크톱에서 요구하는 버전보다 오래되었습니다. 이 호스트에 다시 연결하여 최신 버전을 다운로드하세요.",
@@ -948,8 +950,10 @@
       "updateDesktopTitle": "컴퓨터의 Orca 업데이트",
       "updateMobileTitle": "Orca 모바일 업데이트",
       "updateRecoveryNote": "이미 업데이트하셨습니까? 호스트 화면으로 돌아가 연결을 새로고침하세요. 이 메시지가 계속 표시되면 이 호스트를 제거한 후 다시 페어링하세요.",
-      "workspaceNeedsUpdateAppStore": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. App Store에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
-      "workspaceNeedsUpdateGitHubReleases": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. GitHub Releases에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요."
+      "workspaceNeedsUpdateGitHubReleases": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. GitHub Releases에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
+      "mobileTooOldAppStore": "이 데스크톱에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. App Store에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요.",
+      "openAppStore": "App Store 열기",
+      "workspaceNeedsUpdateAppStore": "이 데스크톱의 모바일 워크스페이스에는 더 최신 버전의 Orca 모바일 앱이 필요합니다. App Store에서 Orca 모바일을 업데이트한 후 이 호스트에 다시 연결하세요."
     },
     "richMarkdownEditor": {
       "imageUrl": "이미지 URL",
@@ -2751,10 +2755,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "링크를 열지 못했습니다. 다시 시도하세요.",
-      "socialProfile": "Orca X 프로필",
       "sourceCode": "Orca 소스 코드",
       "tagline": "100배의 성과를 내는 개발자를 위한 오픈 소스 에이전트 IDE",
       "title": "정보",
+      "socialProfile": "Orca X 프로필",
       "website": "Orca 웹사이트"
     },
     "appUpdateSettingsRows": {
@@ -2791,12 +2795,14 @@
       "title": "모양"
     },
     "browserSettingsScreen": {
+      "askEachTime": "매번 묻기",
+      "askEachTimeDescription": "Orca 브라우저, 휴대폰 브라우저, 링크 복사 중에서 매번 선택합니다.",
       "desktopBrowser": "데스크톱 Orca 브라우저",
       "desktopBrowserDescription": "페어링된 데스크톱에서 스트리밍되는 브라우저로 엽니다.",
-      "linksDescription": "터미널 출력의 HTTP(S) 링크를 탭했을 때 열 브라우저를 선택하세요.",
+      "terminalAndChatLinksDescription": "터미널 출력과 채팅의 웹 링크를 탭했을 때 열 위치를 선택하세요.",
       "linksHeading": "링크",
       "loadFailed": "브라우저 설정을 불러오지 못했습니다. 다시 시도하세요.",
-      "openTerminalLinks": "터미널 링크 열기",
+      "openLinks": "링크 열기",
       "phoneBrowser": "휴대폰 브라우저",
       "phoneBrowserDescription": "이 휴대폰의 Safari, Chrome 또는 다른 브라우저에서 엽니다.",
       "saveFailed": "브라우저 설정을 저장하지 못했습니다. 다시 시도하세요.",
@@ -2813,8 +2819,8 @@
       "voice": "음성"
     },
     "menuScreen": {
-      "privacyPolicy": "개인정보 처리방침",
-      "support": "지원"
+      "support": "지원",
+      "privacyPolicy": "개인정보 처리방침"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "지원되는 에이전트 세션(Claude, Codex 및 기타 채팅 지원 에이전트)을 이 기기에서 여는 방식을 선택하세요. 터미널은 CLI를 그대로 표시하며, 채팅 UI는 데스크톱 앱과 같은 채팅 인터페이스를 표시합니다. 각 세션의 보기 방식은 길게 눌러 여는 메뉴에서 개별적으로 전환할 수 있습니다.",

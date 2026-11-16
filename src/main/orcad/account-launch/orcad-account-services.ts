@@ -9,8 +9,8 @@ import type {
   AiVaultPrepareSessionResumeArgs,
   AiVaultPrepareSessionResumeResult
 } from '../../../shared/ai-vault/resume/ai-vault-resume-preparation'
-import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
-import type { ClaudeRateLimitAccountsState } from '../../../shared/managed-account-types'
+import type { ClaudeStatusLineRateLimits } from '../../../shared/agent-usage/rate-limits/claude-statusline-rate-limits'
+import type { ClaudeRateLimitAccountsState } from '../../../shared/agent-accounts/managed-account-types'
 import { resolveTuiAgentLaunchEnv } from '../../../shared/agent-launch/choices/tui-agent-launch-defaults'
 import { createProviderAccountServices } from '../../providers/accounts/provider-account-services'
 import { bindSealSessionTerminal } from '../../seal-accounts/seal-runtime-terminal'

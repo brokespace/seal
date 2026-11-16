@@ -3,7 +3,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useTranslate } from '@/i18n/use-translate'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
-import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SessionSummariesStatus } from '../../../../shared/session-summaries/session-summary-contracts'
 
 const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }

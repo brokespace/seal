@@ -1,4 +1,4 @@
-import { createNonSecureContextUuid } from '../../../../shared/non-secure-context-uuid'
+import { createNonSecureContextUuid } from '../../../../shared/identifiers/non-secure-context-uuid'
 import type { LiveMessage } from '../../../../shared/live-sessions/live-session-types'
 import { liveSessionRegistryStore } from './live-session-registry-store'
 

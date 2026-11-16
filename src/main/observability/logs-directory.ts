@@ -1,5 +1,5 @@
-import { getAppEnvironment, hasAppEnvironment } from '../../shared/app-environment'
-import { APP_PRODUCT_NAME } from '../../shared/app-identity'
+import { getAppEnvironment, hasAppEnvironment } from '../../shared/app-lifecycle/app-environment'
+import { APP_PRODUCT_NAME } from '../../shared/app-lifecycle/identity/app-identity'
 import { homedir, platform } from 'node:os'
 import { join } from 'node:path'
 

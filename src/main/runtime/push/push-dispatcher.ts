@@ -1,12 +1,15 @@
-import { reserveNotificationCooldown } from '../../../shared/notification-burst-cooldown'
+import { reserveNotificationCooldown } from '../../../shared/notifications/notification-burst-cooldown'
 // Send background push after socket fan-out without making sockets wait or fail on gateway results.
-import type { MobilePushRegistration } from '../../../shared/mobile-push-contract'
-import { allowsMobilePushDelivery, mobilePushAlertContent } from '../../../shared/mobile-push-alert'
+import type { MobilePushRegistration } from '../../../shared/notifications/mobile-push-contract'
+import {
+  allowsMobilePushDelivery,
+  mobilePushAlertContent
+} from '../../../shared/notifications/mobile-push-alert'
 import type { MobileNotificationEvent } from './notifications/runtime-mobile-notification-controller'
 import type { PushGatewayClient, PushSendNotification } from './push-gateway-client'
 import { PushOutcomeCounters } from './push-outcome-counters'
 import type { MobilePushDeliveryMode } from './mobile-push-delivery-policy'
-import { APP_PRODUCT_NAME } from '../../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../../shared/app-lifecycle/identity/app-identity'
 
 const PUSH_RETRY_DELAY_MS = 2_000
 // Split requests at the gateway's per-send limit so extra paired phones still receive notifications.

@@ -1,5 +1,5 @@
-import type { ClaudeStatusLineRateLimits } from '../../../shared/claude-statusline-rate-limits'
-import type { ProviderRateLimits } from '../../../shared/rate-limit-types'
+import type { ClaudeStatusLineRateLimits } from '../../../shared/agent-usage/rate-limits/claude-statusline-rate-limits'
+import type { ProviderRateLimits } from '../../../shared/agent-usage/rate-limits/rate-limit-types'
 import {
   liveClaudeReading,
   mergeLiveClaudeUsageWindows,

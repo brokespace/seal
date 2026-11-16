@@ -1,6 +1,7 @@
 import { defineFixture } from '../../../../component-fixtures/component-fixture'
 import WorktreeCardAgents from './WorktreeCardAgents'
-import { buildWorktreeAgentRows } from './worktree-agent-rows'
+import { useAppStore } from '@/store'
+import { acceptedAgentStatuses } from '@/store/slices/agent-status/accepted-agent-statuses'
 import type { AgentStatusEntry } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import type { LiveSession } from '../../../../../../shared/live-sessions/live-session-types'
 import type { TerminalTab } from '../../../../../../shared/workspace-layout/terminal-tab-types'
@@ -50,7 +51,7 @@ function paneKey(agent: Agent): string {
   return `${agent.id}-tab:11111111-1111-4111-8111-111111111111`
 }
 
-function rows() {
+function seedRows(): void {
   const tabs: TerminalTab[] = AGENTS.map((agent, index) => ({
     id: `${agent.id}-tab`,
     ptyId: null,
@@ -73,11 +74,15 @@ function rows() {
     stateStartedAt: now - (index + 1) * MIN,
     stateHistory: []
   }))
-  return buildWorktreeAgentRows({ tabs, entries, retained: [], now })
+  useAppStore.setState({
+    tabsByWorktree: { [WORKTREE]: tabs },
+    agentStatusByPaneKey: acceptedAgentStatuses(entries.map((entry) => [entry.paneKey, entry]))
+  })
 }
 
 // The registry is where a pane's summary arrives; the rows read it from there.
 function setup(): void {
+  seedRows()
   const sessions = AGENTS.flatMap((agent) =>
     agent.summary
       ? [
@@ -121,7 +126,7 @@ export const summaries = defineFixture({
   setup,
   render: () => (
     <div className="flex flex-col gap-0.5 bg-sidebar p-2 text-sidebar-foreground">
-      <WorktreeCardAgents worktreeId={WORKTREE} agents={rows()} />
+      <WorktreeCardAgents worktreeId={WORKTREE} />
     </div>
   ),
   // Several agents collapse into one strip; open it to show their rows.

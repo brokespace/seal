@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 import { ProviderRateLimitsSchema } from '../../accounts/accounts-snapshot'
 
 const Timestamp = z.number().finite()

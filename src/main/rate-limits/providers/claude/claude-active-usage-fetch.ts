@@ -1,4 +1,4 @@
-import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
+import type { ProviderRateLimits } from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import {
   classifyClaudeBilling,
   mergeClaudeBillingSignals,
@@ -14,7 +14,7 @@ import { classifyClaudeOAuthUsageError } from './claude-usage-error-classificati
 import { OAuthUsageError } from './claude-oauth-usage-error'
 import type { ClaudeRateLimitFetchOptions } from './claude-usage-fetch-options'
 import { abortedClaudeRateLimitResult, makeClaudeUsageResult } from './claude-usage-result'
-import { CLAUDE_PROFILE_MISSING_MESSAGE } from '../../../../shared/claude-profile-routing'
+import { CLAUDE_PROFILE_MISSING_MESSAGE } from '../../../../shared/agent-accounts/claude/claude-profile-routing'
 import { fetchClaudeOAuthProfileBilling } from './claude-oauth-profile-request'
 import { readClaudeStateBilling } from './claude-state-billing'
 import { getClaudeProfileRouter } from '../../../claude-accounts/profiles/routing/claude-profile-installed-router'
@@ -119,10 +119,23 @@ export async function fetchActiveClaudeRateLimits(
   }
   try {
     const usage = await fetchClaudeOAuthUsage(credentials.token, options?.signal)
-    return withBilling(
+    const billed = withBilling(
       usage,
       await tokenBillingSignals({ ...credentials, token: credentials.token }, options?.signal)
     )
+    // Name the login a reading came from so its plan never follows another account's reading.
+    return billed.status === 'ok'
+      ? {
+          ...billed,
+          usageMetadata: {
+            ...billed.usageMetadata,
+            ...metadata,
+            ...(options?.authPreparation?.readingAccount
+              ? { readingAccount: options.authPreparation.readingAccount }
+              : {})
+          }
+        }
+      : billed
   } catch (error) {
     const { failureKind } = classifyClaudeOAuthUsageError(error)
     if (failureKind === 'stale-token' && !canClaudeRenewLogin(credentials, error)) {

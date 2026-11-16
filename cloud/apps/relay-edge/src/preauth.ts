@@ -6,20 +6,27 @@ import { RELAY_CLOSE_CODE } from '../../../packages/relay-contract/src/close-cod
 import { RELAY_PROTOCOL_LIMITS } from '../../../packages/relay-contract/src/protocol-limits'
 import { sourceAddressKey } from '../../../../src/shared/source-address-key'
 import { edgeConfig, type Env } from './env'
+import type { Ingress } from './ingress'
 import { metric, requestPlace } from './metrics'
 
-// The caller's address as Cloudflare saw it (clients cannot set this header), keyed per IPv6 /64.
-export function sourceKey(request: Request): string {
-  return sourceAddressKey(request.headers.get('cf-connecting-ip'))
+// The caller's address as Cloudflare saw it (clients cannot set this header), or as a verified
+// ingress saw it, keyed per IPv6 /64.
+export function sourceKey(request: Request, ingress?: Ingress | null): string {
+  return sourceAddressKey(ingress?.clientIp ?? request.headers.get('cf-connecting-ip'))
 }
 
 // Counted per source per colo by the Rate Limiting binding. A limiter outage fails open: it must
 // not refuse live users. A deploy without the binding refuses instead (only spike runs go unlimited).
-export async function admitPreAuth(env: Env, request: Request, kind: 'phone' | 'data' | 'health'): Promise<boolean> {
+export async function admitPreAuth(
+  env: Env,
+  request: Request,
+  kind: 'phone' | 'data' | 'health',
+  ingress?: Ingress | null
+): Promise<boolean> {
   if (!env.PREAUTH_LIMITER) { return edgeConfig(env).backend === 'spike' }
   try {
-    const { success } = await env.PREAUTH_LIMITER.limit({ key: `${kind}:${sourceKey(request)}` })
-    if (!success) { metric(env, 'preauth_limited', 1, kind, [], '', requestPlace(request)) }
+    const { success } = await env.PREAUTH_LIMITER.limit({ key: `${kind}:${sourceKey(request, ingress)}` })
+    if (!success) { metric(env, 'preauth_limited', 1, kind, [], '', requestPlace(request, ingress)) }
     return success
   } catch {
     return true

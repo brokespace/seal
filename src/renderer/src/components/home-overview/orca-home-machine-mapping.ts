@@ -2,9 +2,12 @@ import {
   LOCAL_EXECUTION_HOST_ID,
   RUNTIME_OWNED_SSH_TARGET_ID_PREFIX,
   toSshExecutionHostId
-} from '../../../../shared/execution-host'
-import type { HostMemory } from '../../../../shared/process-stats-types'
-import type { SshConnectionState, SshConnectionStatus } from '../../../../shared/ssh-types'
+} from '../../../../shared/execution-host/execution-host'
+import type { HostMemory } from '../../../../shared/diagnostics/process-stats-types'
+import type {
+  SshConnectionState,
+  SshConnectionStatus
+} from '../../../../shared/remote-runtime/ssh/ssh-types'
 import type { HomeMachine, HomeMachineStatus } from './home-overview-model'
 
 export function homeMachineStatusFromSsh(

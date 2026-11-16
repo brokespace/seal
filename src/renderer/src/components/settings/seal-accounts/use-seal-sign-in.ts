@@ -3,8 +3,8 @@ import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import {
   HOST_ACCOUNT_SIGN_IN_SETTLED_PHASES,
   type HostAccountSignInStatus
-} from '../../../../../shared/host-account-sign-in-types'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+} from '../../../../../shared/agent-accounts/host-account-sign-in-types'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type {
   SealSignInOutcome,
   SealSignInRequest

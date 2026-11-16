@@ -1,5 +1,5 @@
 import { TerminalSquare, Undo2 } from 'lucide-react'
-import type { SshConnectionState } from '../../../../../shared/ssh-types'
+import type { SshConnectionState } from '../../../../../shared/remote-runtime/ssh/ssh-types'
 import { DropdownMenuItem } from '../../ui/dropdown-menu'
 import { useTranslate } from '@/i18n/use-translate'
 import { runShellIntegrationAction } from './shell-integration-actions'

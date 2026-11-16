@@ -1,6 +1,6 @@
 import { ShieldQuestion } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
-import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SealMcpApprovalRequest } from '../../../../shared/seal-mcp/seal-mcp-types'
 import { Card } from '../ui/card'
 import { SecuritySurface } from '../ui/security-surface'

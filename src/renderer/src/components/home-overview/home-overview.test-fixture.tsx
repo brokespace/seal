@@ -1,6 +1,6 @@
 /** Static sample data behind the Home fixtures and tests. */
 import type { ReactNode } from 'react'
-import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
+import type { ProviderRateLimits } from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import {
   HomeAccountsContext,
   HomeAutomationsContext,

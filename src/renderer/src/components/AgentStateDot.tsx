@@ -59,7 +59,7 @@ type Props = {
   tooltipSide?: StateIndicatorTooltipSide
   /** Program-reported 0–100; live states then draw a filling ring instead of the spinner/glyph. */
   progress?: number
-  /** Unread completion swaps the check for the workspace unread dot; live and needs-you glyphs keep precedence. */
+  /** Unread completion is spoken in the label only; the card's status lane owns the one unread dot. */
   unread?: boolean
 }
 
@@ -107,9 +107,9 @@ export const AgentStateDot = React.memo(function AgentStateDot({
   const inner = size === 'md' ? 'size-2' : 'size-1.5'
   const icon = size === 'md' ? 'size-3' : 'size-2.5'
   const ring = progressRing(state, progress)
-  const showUnreadDot = unread && state === 'done'
+  const announceUnread = unread && state === 'done'
   const spoken = stateLabel ?? agentStateLabel(state)
-  const label = showUnreadDot
+  const label = announceUnread
     ? t('workspace.activity.unreadLabel', '{{status}} · Unread', { status: spoken })
     : withRingPercent(spoken, ring)
   const tooltipLabel = title === null ? null : (title ?? label)
@@ -141,22 +141,12 @@ export const AgentStateDot = React.memo(function AgentStateDot({
         <Activity className={cn('text-agent-working', icon)} aria-hidden="true" />
       </span>
     )
-  } else if (showUnreadDot) {
-    // Same unread token as the workspace status lane, so one blue dot means unread everywhere.
-    indicator = (
-      <span
-        className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
-        aria-label={label}
-      >
-        <span className={cn('block rounded-full bg-unread', inner)} />
-      </span>
-    )
   } else if (state === 'done') {
     // A check distinguishes reported completion from live/idle dots; sidebar StatusIndicator intentionally differs.
     indicator = (
       <span
         className={cn('inline-flex shrink-0 items-center justify-center', box, className)}
-        aria-label={spoken}
+        aria-label={label}
       >
         <CircleCheck className={cn('text-emerald-500', icon)} aria-hidden="true" />
       </span>

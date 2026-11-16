@@ -4,13 +4,16 @@ import { translate as t } from '@/i18n/i18n'
 import { NO_OPEN_IN_APPLICATIONS } from '@/lib/files/os-open/open-in-application-selection'
 import { openOpenInAppsSettings } from '@/components/sidebar/workspace-actions/open/WorktreeOpenInMenu'
 import { showOpenFailureToast } from '@/components/sidebar/workspace-actions/open/worktree-open-failure-toast'
-import { LOCAL_EXECUTION_HOST_ID, toSshExecutionHostId } from '../../../../../shared/execution-host'
+import {
+  LOCAL_EXECUTION_HOST_ID,
+  toSshExecutionHostId
+} from '../../../../../shared/execution-host/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type {
   ShellEditorLaunchFailure,
   ShellOpenExternalEditorResult
 } from '../../../../../shared/shell/opening/shell-open-types'
-import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
+import type { OpenInApplication } from '../../../../../shared/ui-chrome/ui-chrome-types'
 import { planMachineEditorOpen, type MachineBuiltInEditorReason } from './machine-editor-plan'
 import { copyMachineSshConfigEntry } from './machine-ssh-config-entry'
 import { readIpcErrorMessage } from '@/runtime/errors/ipc-error'

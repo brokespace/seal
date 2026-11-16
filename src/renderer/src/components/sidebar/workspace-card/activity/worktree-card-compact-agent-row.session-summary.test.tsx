@@ -10,8 +10,8 @@ import type { TerminalTab } from '../../../../../../shared/workspace-layout/term
 import { buildWorktreeAgentRows } from './worktree-agent-rows'
 import { CompactAgentRow } from './worktree-card-compact-agent-row'
 
-vi.mock('@/components/dashboard/use-agent-row-conversation-name', () => ({
-  useAgentRowConversationName: () => null
+vi.mock('@/components/dashboard/rows/use-agent-row-conversation-name', () => ({
+  useAgentRowConversationNaming: () => ({ name: null, forked: false })
 }))
 
 vi.mock('./CacheTimer', () => ({
@@ -70,7 +70,7 @@ function stoppedAgent(providerSessionId?: string) {
     stateHistory: [],
     ...(providerSessionId ? { providerSession: { key: 'session_id', id: providerSessionId } } : {})
   }
-  return buildWorktreeAgentRows({ tabs: [tab], entries: [entry], retained: [], now: 2_000 })[0]
+  return buildWorktreeAgentRows({ tabs: [tab], entries: [entry], now: 2_000 })[0]
 }
 
 afterEach(() => {

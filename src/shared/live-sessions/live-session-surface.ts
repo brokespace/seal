@@ -2,7 +2,7 @@ import {
   structuredAgentSessionPaneKey,
   structuredAgentSessionTabId
 } from '../agent-session/view/structured-agent-session-projection'
-import { structuredSessionIdFromNotificationPane } from '../structured-session-notification-pane'
+import { structuredSessionIdFromNotificationPane } from '../agent-session/view/structured-session-notification-pane'
 import type { AgentSessionSurface, LiveSession } from './live-session-types'
 
 function chatSurface(sessionId: string): AgentSessionSurface {

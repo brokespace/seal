@@ -1,7 +1,7 @@
 import { useAppStore } from '@/store'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
-import { normalizeExecutionHostId } from '../../../../shared/execution-host'
+import { normalizeExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import { parseMachineId } from '../../../../shared/machines/machine-types'
 import type { SettingsNavigationTarget } from '../settings/navigation/settings-navigation-types'
 import type { HomeOverviewActions } from './home-overview-model'

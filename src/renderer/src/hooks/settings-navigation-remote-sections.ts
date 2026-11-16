@@ -1,4 +1,4 @@
-import { projectGroupHookOwner } from '../../../shared/workspace-hook-owner'
+import { projectGroupHookOwner } from '../../../shared/workspace-setup/hooks/workspace-hook-owner'
 import { getRepositoryGitHooksSearchEntries } from '@/components/settings/repository/hooks/repository-git-hooks-search-entries'
 import { getAdvancedPaneSearchEntries } from '@/components/settings/advanced/advanced-search'
 import { getDeveloperPermissionsPaneSearchEntries } from '@/components/settings/developer-permissions/developer-permissions-search'
@@ -9,13 +9,14 @@ import {
 } from '@/components/settings/plugins/plugins-search'
 import { getPrivacyPaneSearchEntries } from '@/components/settings/privacy/privacy-search'
 import { getRepositoryPaneSearchEntries } from '@/components/settings/repository/repository-search'
+import { getRepositoryAgentConfigSearchEntries } from '@/components/settings/agent-config/agent-config-search'
 import { buildSettingsProjectList } from '@/components/settings/navigation/settings-project-list'
 import { getSshPaneSearchEntries } from '@/components/settings/ssh/ssh-search'
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsNavSection } from '@/components/settings/navigation/settings-navigation-types'
-import { getRepoKindLabel } from '../../../shared/repo-kind'
-import type { Repo } from '../../../shared/repo-types'
+import { getRepoKindLabel } from '../../../shared/repository/repo-kind'
+import type { Repo } from '../../../shared/repository/repo-types'
 import {
   Blocks,
   Bug,
@@ -185,13 +186,16 @@ export function buildRemoteSettingsSections(
         title: checkoutLabel ?? project.displayName,
         description: `${getRepoKindLabel(project)} • ${hostSummary}`,
         icon: SlidersHorizontal,
-        searchEntries: getRepositoryPaneSearchEntries(
-          representativeRepo,
-          {
-            windowsRuntimeSupported: isWindowsTerminalHost
-          },
-          t
-        ),
+        searchEntries: [
+          ...getRepositoryPaneSearchEntries(
+            representativeRepo,
+            {
+              windowsRuntimeSupported: isWindowsTerminalHost
+            },
+            t
+          ),
+          ...getRepositoryAgentConfigSearchEntries(representativeRepo, t)
+        ],
         group: 'repositories'
       }
     })

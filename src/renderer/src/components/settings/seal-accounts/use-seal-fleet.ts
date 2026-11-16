@@ -2,7 +2,7 @@ import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react
 import { toast } from 'sonner'
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
 import { installWindowVisibilityInterval } from '@/lib/window-activity/window-visibility-interval'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type { SealAccountsStatus } from '../../../../../shared/seal-accounts/seal-accounts-status'
 import {
   buildSealFleetOverview,

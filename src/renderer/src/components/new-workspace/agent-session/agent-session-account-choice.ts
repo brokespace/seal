@@ -1,6 +1,6 @@
 import { callRuntimeRpc } from '@/runtime/rpc/calls/runtime-rpc-call'
-import { parseExecutionHostId } from '../../../../../shared/execution-host'
-import type { RuntimeClientTarget } from '../../../../../shared/runtime-client-target'
+import { parseExecutionHostId } from '../../../../../shared/execution-host/execution-host'
+import type { RuntimeClientTarget } from '../../../../../shared/remote-runtime/host-catalog/runtime-client-target'
 import type {
   SealAccountKey,
   SealProvider

@@ -1,6 +1,7 @@
 import { translate } from '@/i18n/i18n'
 import type { Translate } from '@/i18n/use-translate'
 import type { SettingsSearchEntry } from '../search/settings-search'
+import { agentConfigAvailable } from '../../agent-config/model/agent-config-client'
 
 const KEYWORDS = [
   'claude',
@@ -35,4 +36,12 @@ export function getAgentConfigSearchEntries(
       keywords: [...(scope ? [scope] : []), ...KEYWORDS]
     }
   ]
+}
+
+/** Folder projects have agent files too; only the desktop window can reach them. */
+export function getRepositoryAgentConfigSearchEntries(
+  repo: { displayName: string },
+  t: Translate = translate
+): SettingsSearchEntry[] {
+  return agentConfigAvailable() ? getAgentConfigSearchEntries(repo.displayName, t) : []
 }

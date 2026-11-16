@@ -1,5 +1,5 @@
 import type WebSocket from 'ws'
-import type { RelayHostCloseReason } from '../../../../shared/relay-host-close-reason'
+import type { RelayHostCloseReason } from '../../../../shared/remote-runtime/relay/relay-host-close-reason'
 import { MOBILE_RELAY_CLOSE_CODE } from '../../../../shared/remote-runtime/relay/mobile-relay-close-codes'
 import { closeRemoteRuntimeSocket } from '../../../../shared/remote-runtime/remote-runtime-socket-close'
 

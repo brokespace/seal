@@ -2,9 +2,9 @@ import type {
   InactiveAccountUsage,
   ProviderRateLimits,
   RateLimitState
-} from '../../../../shared/rate-limit-types'
-import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import { hasUsageData } from '../../../../shared/usage-provider-windows'
+} from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
+import type { GlobalSettings } from '../../../../shared/settings/global-settings-types'
+import { hasUsageData } from '../../../../shared/agent-usage/display/usage-provider-windows'
 import type { HomeAccount } from './home-overview-model'
 
 type RateLimitProviderKey = Exclude<

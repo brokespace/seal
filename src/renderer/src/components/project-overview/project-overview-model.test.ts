@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GitStatusResult } from '../../../../shared/git/status/git-status-types'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import { NO_LIVE_SMART_SORT_SOURCES } from '../../../../shared/sidebar-list/sorting/smart-sort'
 import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { Worktree } from '../../../../shared/worktree/types'

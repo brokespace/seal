@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { E2EEKeypair } from '../../rpc/server/pairing/e2ee-keypair'
 import { cancelUnreadResponseBody } from '../../../lib/unread-response-body'
-import { parseRetryAfterHeaderMs } from '../../../../shared/retry-after-header'
+import { parseRetryAfterHeaderMs } from '../../../../shared/network/retry-after-header'
 import {
   isCanonicalRelayOrigin,
   isPinnedRelayCellOrigin

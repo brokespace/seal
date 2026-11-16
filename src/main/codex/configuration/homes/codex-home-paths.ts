@@ -12,7 +12,7 @@ import {
 } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { APP_PRODUCT_NAME } from '../../../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../../../shared/app-lifecycle/identity/app-identity'
 import {
   clearCopiedResourceMarker,
   markCopiedResource,

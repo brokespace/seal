@@ -1,5 +1,5 @@
 import type { PseudoTtyOptions, SFTPWrapper } from 'ssh2'
-import type { SshConnectionState } from '../../../shared/ssh-types'
+import type { SshConnectionState } from '../../../shared/remote-runtime/ssh/ssh-types'
 import type {
   RemoteCommandChannel,
   RemoteInstallTransport

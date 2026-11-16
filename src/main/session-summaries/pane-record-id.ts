@@ -1,6 +1,6 @@
 import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
 import { isAgentSessionAgentId } from '../../shared/live-sessions/adapters/agent-session-agent-ids'
-import { structuredSessionIdFromNotificationPane } from '../../shared/structured-session-notification-pane'
+import { structuredSessionIdFromNotificationPane } from '../../shared/agent-session/view/structured-session-notification-pane'
 import { liveSessionId } from '../live-sessions/discovery/session-assembly'
 import { LOCAL_HOST_ID } from '../live-sessions/hosts/live-session-hosts'
 import { REMOTE_SEAL_MACHINE } from '../live-sessions/seal-panes/seal-pane-sessions'

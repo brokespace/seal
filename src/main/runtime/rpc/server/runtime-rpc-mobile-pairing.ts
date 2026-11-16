@@ -10,7 +10,7 @@ import { createOwnerPairingOffer } from './pairing/pairing-offer-requests'
 import { deviceTokenHashOf } from './pairing/device-entry'
 import type { PairingOffersRpcContext } from '../core'
 import { RuntimeRpcPairing } from './runtime-rpc-pairing'
-import { withTimeout } from '../../../../shared/promise-timeout-fallback'
+import { withTimeout } from '../../../../shared/concurrency/promise-timeout-fallback'
 import {
   DEVICE_REGISTRY_UNAVAILABLE_GUIDANCE,
   pairingUnavailable,

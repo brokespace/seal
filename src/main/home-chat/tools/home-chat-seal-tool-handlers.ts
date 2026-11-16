@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { parseExecutionHostId } from '../../../shared/execution-host'
+import { parseExecutionHostId } from '../../../shared/execution-host/execution-host'
 import type { HomeChatOpenView } from '../../../shared/home-chat/home-chat-types'
 import { isActiveLiveSession } from '../../../shared/live-sessions/live-session-status'
 import { agentTerminalHandle, parseOrcaJson } from '../delegation/home-chat-orca-json'

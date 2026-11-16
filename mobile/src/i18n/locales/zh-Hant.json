@@ -4,7 +4,6 @@
       "agentLogin": "使用代理程式本身的登入資訊",
       "connecting": "正在連線至主機…",
       "connectingTo": "正在連線至 {{name}}…",
-      "default": "系統預設",
       "fableWindow": "Fable",
       "hostNotFound": "找不到主機",
       "invalidSnapshot": "主機傳回的帳戶快照無效",
@@ -17,7 +16,8 @@
       "switchFailed": "無法切換帳戶",
       "title": "帳戶",
       "useReset": "使用重設額度",
-      "weeklyWindow": "7 天"
+      "weeklyWindow": "7 天",
+      "default": "系統預設"
     }
   },
   "agentHistory": {
@@ -97,21 +97,21 @@
       "connecting": "連線中…",
       "invalidPairingCode": "配對碼無效，請從電腦複製後重新貼上",
       "invalidQrCode": "無效的 Orca QR Code",
-      "downloadQrCode": "這是下載碼。請掃描桌面端第 2 步中的配對碼。",
       "openDesktopStep": "在電腦上開啟 Orca",
       "openMobileSettingsStep": "前往「設定」→「行動版」",
       "openSettings": "開啟設定",
       "pairingFailed": "配對失敗：{{error}}",
       "pairingLog": "配對記錄",
       "pasteCodeMessage": "複製電腦上 QR Code 下方顯示的配對碼。",
-      "pasteCodePlaceholder": "orca://pair?code=... 或貼上配對碼",
       "pasteCodeTitle": "貼上配對碼",
       "pasteInstead": "改為貼上配對碼",
       "pastePairingCode": "或貼上配對碼",
       "scanCodeStep": "掃描 QR Code",
       "title": "與電腦配對",
       "tryAgain": "重試",
-      "codeNoLongerValid": "此配對碼已過期、已被使用或已被取代。請在電腦上顯示新的配對碼後重新掃描。"
+      "codeNoLongerValid": "此配對碼已過期、已被使用或已被取代。請在電腦上顯示新的配對碼後重新掃描。",
+      "downloadQrCode": "這是下載碼。請掃描桌面端第 2 步中的配對碼。",
+      "pasteCodePlaceholder": "orca://pair?code=... 或貼上配對碼"
     },
     "terminalSettings": {
       "defaultText": "預設（100%）",
@@ -222,6 +222,7 @@
     "message": {
       "copyMessage": "複製訊息",
       "forkFromResponse": "從此回覆建立分支",
+      "scrollMessageToTop": "將此訊息捲動到頂端",
       "forkFromResponseHint": "新聊天將包含此回合結束前的完整回覆"
     },
     "messageActionsSheet": {
@@ -643,7 +644,10 @@
       "busy": "另一個聊天或終端機正在開啟。請稍候，再次從 {{agent}} 聊天建立分支。",
       "unconfirmed": "{{agent}} 無法確認是否已建立分支。它可能已經開啟；請先檢查工作階段歷史記錄，再試一次。",
       "failed": "{{agent}} 無法從此聊天建立分支。{{detail}}",
-      "unsupported": "此主機執行的是舊版 Orca。請更新主機上的 Orca 後再試一次。"
+      "unsupported": "此主機執行的是舊版 Orca。請更新主機上的 Orca 後再試一次。",
+      "mark": "分支 ·",
+      "markedName": "{{mark}} {{name}}",
+      "accessibleName": "分支：{{name}}"
     }
   },
   "common": {
@@ -938,9 +942,7 @@
       "backToHosts": "返回主機清單",
       "desktopTooOldBody": "已配對的桌面版版本過舊，無法搭配目前的 Orca Mobile 使用。請更新電腦上的 Orca，再重新連線至此主機。",
       "getVersion": "取得 Orca {{version}}",
-      "mobileTooOldAppStore": "此桌面版需要較新版本的 Orca Mobile。請從 App Store 更新 Orca Mobile，再重新連線至此主機。",
       "mobileTooOldGitHubReleases": "此桌面版需要較新版本的 Orca Mobile。請從 GitHub Releases 更新 Orca Mobile，再重新連線至此主機。",
-      "openAppStore": "開啟 App Store",
       "openGitHubReleases": "開啟 GitHub Releases",
       "refreshRecoveryNote": "如果仍顯示此訊息，請移除此主機並重新配對。",
       "refreshWorkspaceBody": "此主機的工作區快取版本低於桌面版要求的版本。請重新連線至此主機，以下載目前版本。",
@@ -948,8 +950,10 @@
       "updateDesktopTitle": "更新電腦上的 Orca",
       "updateMobileTitle": "更新 Orca Mobile",
       "updateRecoveryNote": "已經更新了嗎？請返回「主機」並重新整理連線。如果仍顯示此訊息，請移除此主機並重新配對。",
-      "workspaceNeedsUpdateAppStore": "此桌面版的行動版工作區需要較新版本的 Orca Mobile。請從 App Store 更新 Orca Mobile，再重新連線至此主機。",
-      "workspaceNeedsUpdateGitHubReleases": "此桌面版的行動版工作區需要較新版本的 Orca Mobile。請從 GitHub Releases 更新 Orca Mobile，再重新連線至此主機。"
+      "workspaceNeedsUpdateGitHubReleases": "此桌面版的行動版工作區需要較新版本的 Orca Mobile。請從 GitHub Releases 更新 Orca Mobile，再重新連線至此主機。",
+      "mobileTooOldAppStore": "此桌面版需要較新版本的 Orca Mobile。請從 App Store 更新 Orca Mobile，再重新連線至此主機。",
+      "openAppStore": "開啟 App Store",
+      "workspaceNeedsUpdateAppStore": "此桌面版的行動版工作區需要較新版本的 Orca Mobile。請從 App Store 更新 Orca Mobile，再重新連線至此主機。"
     },
     "richMarkdownEditor": {
       "imageUrl": "圖片網址",
@@ -2751,10 +2755,10 @@
   "settings": {
     "aboutScreen": {
       "openLinkFailed": "無法開啟連結，請再試一次。",
-      "socialProfile": "Orca 的 X 帳號",
       "sourceCode": "Orca 原始碼",
       "tagline": "助開發者發揮 100 倍效率的開源代理程式 IDE",
       "title": "關於",
+      "socialProfile": "Orca 的 X 帳號",
       "website": "Orca 網站"
     },
     "appUpdateSettingsRows": {
@@ -2791,12 +2795,14 @@
       "title": "外觀"
     },
     "browserSettingsScreen": {
+      "askEachTime": "每次詢問",
+      "askEachTimeDescription": "每次選擇 Orca 瀏覽器、手機瀏覽器或複製連結。",
       "desktopBrowser": "電腦上的 Orca 瀏覽器",
       "desktopBrowserDescription": "在已配對電腦的瀏覽器中開啟，並串流至手機。",
-      "linksDescription": "選擇點按終端機輸出中的 HTTP(S) 連結時，要在哪裡開啟。",
+      "terminalAndChatLinksDescription": "選擇點按終端機輸出和聊天中的網頁連結時，要在哪裡開啟。",
       "linksHeading": "連結",
       "loadFailed": "無法載入瀏覽器偏好設定，請再試一次。",
-      "openTerminalLinks": "開啟終端機連結",
+      "openLinks": "開啟連結",
       "phoneBrowser": "手機瀏覽器",
       "phoneBrowserDescription": "在此手機上的 Safari、Chrome 或其他瀏覽器中開啟。",
       "saveFailed": "無法儲存瀏覽器偏好設定，請再試一次。",
@@ -2813,8 +2819,8 @@
       "voice": "語音"
     },
     "menuScreen": {
-      "privacyPolicy": "隱私權政策",
-      "support": "支援"
+      "support": "支援",
+      "privacyPolicy": "隱私權政策"
     },
     "nativeChatSettingsScreen": {
       "defaultViewDescription": "選擇此裝置上受支援的代理程式工作階段（Claude、Codex 及其他支援聊天的代理程式）的開啟方式。「終端機」會顯示原始 CLI；「聊天介面」則提供類似桌面版的聊天介面。您仍可透過長按選單，切換個別工作階段的顯示方式。",

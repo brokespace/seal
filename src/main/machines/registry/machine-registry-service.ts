@@ -1,8 +1,9 @@
 import { app, BrowserWindow } from 'electron'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
-import { isVmToolSshConfigTarget } from '../../../shared/ssh-target-source'
+import { isVmToolSshConfigTarget } from '../../../shared/remote-runtime/ssh/ssh-target-source'
 import { getRuntimeSshAccess } from '../../../shared/remote-runtime/host-catalog/runtime-environments'
-import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store'
+// The registry answers synchronously; this read goes through the store's stat-checked cache.
+import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store-operations'
 import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/connections/runtime-environment-request-connections'
 import { connectRuntimeEnvironmentOnRequest } from '../../ipc/runtime-environments/connectivity/runtime-environment-connectivity-handlers'
 import { setDirectSshConnectPolicy } from '../../ssh/host-server/ssh-direct-connect-policy'

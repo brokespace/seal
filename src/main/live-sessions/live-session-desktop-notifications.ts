@@ -1,10 +1,10 @@
 // Desktop only: the headless server has no window to notify or to bring forward.
 import { app, BrowserWindow, Notification } from 'electron'
-import type { GlobalSettings } from '../../shared/global-settings-types'
+import type { GlobalSettings } from '../../shared/settings/global-settings-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
 import type { AgentSessionSurface } from '../../shared/live-sessions/live-session-types'
 import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
-import type { NotificationSettings } from '../../shared/notification-settings-types'
+import type { NotificationSettings } from '../../shared/notifications/notification-settings-types'
 import {
   migrateLiveSessionsNotify,
   outsideSessionsMuted

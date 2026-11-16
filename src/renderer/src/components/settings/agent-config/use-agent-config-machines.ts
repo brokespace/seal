@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/index'
 import {
   getLocalExecutionHostLabel,
   getRepoExecutionHostId
-} from '../../../../../shared/execution-host'
+} from '../../../../../shared/execution-host/execution-host'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { AgentConfigCopyProject } from '../../agent-config/model/agent-config-context'
 import { useMachinesInventory } from '../../machines/model/use-machines-inventory'

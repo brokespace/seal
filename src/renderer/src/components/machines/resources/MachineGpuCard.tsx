@@ -1,6 +1,6 @@
 import React from 'react'
 import { PageCard } from '@/components/page-layout/PageCard'
-import { Sparkline } from '@/components/status-bar/resource-usage-metrics'
+import { Sparkline } from '@/components/status-bar/resources/popover/resource-usage-metrics'
 import { Badge } from '@/components/ui/badge'
 import { useTranslate } from '@/i18n/use-translate'
 import type { MachineGpu } from '../../../../../shared/machines/machine-gpu-types'

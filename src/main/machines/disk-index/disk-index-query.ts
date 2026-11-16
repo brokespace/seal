@@ -7,7 +7,7 @@ import {
   type MachineDiskIndexListing
 } from '../../../shared/machines/machine-disk-index-types'
 import { NODE_STUB, NODE_UNREADABLE, type DiskIndex } from './disk-index-layout'
-import { errnoCodeOrUnknown } from '../../../shared/errno-code'
+import { errnoCodeOrUnknown } from '../../../shared/errors/errno-code'
 
 /** Direct children sized live per listing; a folder with more shows only what was read. */
 const MAX_LIVE_ENTRIES = 20_000

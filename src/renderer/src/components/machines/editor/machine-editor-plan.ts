@@ -1,6 +1,6 @@
-import { isRemoteSshEditorCommand } from '../../../../../shared/remote-ssh-editor-launcher'
+import { isRemoteSshEditorCommand } from '../../../../../shared/editor/launch/remote-ssh-editor-launcher'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
-import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
+import type { OpenInApplication } from '../../../../../shared/ui-chrome/ui-chrome-types'
 
 type EditorMachine = Pick<MachineSummary, 'connection' | 'sshTargetId'>
 

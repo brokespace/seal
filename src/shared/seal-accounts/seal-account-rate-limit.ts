@@ -1,4 +1,4 @@
-import { rateLimitSpentUntil } from '../rate-limit-spent-windows'
+import { rateLimitSpentUntil } from '../agent-usage/rate-limits/rate-limit-spent-windows'
 import type { SealAccountCandidate } from './seal-account-candidates'
 
 /** How long an agent's printed limit stop counts when no reading names the window's reset. */

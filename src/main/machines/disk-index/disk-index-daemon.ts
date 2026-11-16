@@ -28,7 +28,7 @@ import {
   type ScanProgressCounters
 } from './disk-index-scan-progress'
 import type { DiskIndexDaemonReply, DiskIndexEnvelope } from './disk-index-socket'
-import { errnoCodeOrUnknown } from '../../../shared/errno-code'
+import { errnoCodeOrUnknown } from '../../../shared/errors/errno-code'
 
 const TICK_MS = 30_000
 const ROOTS_FRESH_MS = 5000

@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import { lstat, stat } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join } from 'node:path'
-import { LINUX_EXECUTABLE_NAME } from '../../../shared/appimage-cache-identity'
+import { LINUX_EXECUTABLE_NAME } from '../../../shared/desktop-distribution/appimage/appimage-cache-identity'
 import { resolveAppImageRuntimeIdentity } from '../../updater/linux-package/appimage-runtime-identity'
 import {
   isAppImageExtractionComplete,

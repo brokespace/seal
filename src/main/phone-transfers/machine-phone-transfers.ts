@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { parseExecutionHostId } from '../../shared/execution-host'
+import { parseExecutionHostId } from '../../shared/execution-host/execution-host'
 import type { MachineId, MachineTransfer } from '../../shared/machines/machine-types'
 import type { PhoneDownloadTicket } from '../../shared/rpc-contract/phone-transfer-params'
 import { sourceBasename } from '../machines/transfers/machine-transfer-plan'

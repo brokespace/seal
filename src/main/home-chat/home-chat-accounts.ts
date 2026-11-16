@@ -2,7 +2,7 @@ import type { HomeChatAccountOption } from '../../shared/home-chat/home-chat-typ
 import type {
   ClaudeRateLimitAccountsState,
   CodexManagedAccount
-} from '../../shared/managed-account-types'
+} from '../../shared/agent-accounts/managed-account-types'
 import type { SealAccountCandidate } from '../../shared/seal-accounts/seal-account-candidates'
 import type { SealProvider } from '../../shared/seal-accounts/seal-accounts-config'
 

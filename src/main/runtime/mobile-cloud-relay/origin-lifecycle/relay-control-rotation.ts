@@ -1,7 +1,7 @@
 import type { RelayControlOrigin } from './relay-control-origin'
 import type { RelayAssignment } from '../director/relay-http-client'
 import { relayRenewalDelayMs } from '../session-lifecycle/relay-renewal-jitter'
-import { clampTimerDelayMs } from '../../../../shared/timer-delay'
+import { clampTimerDelayMs } from '../../../../shared/concurrency/timer-delay'
 
 type RotationOptions = {
   current: () => RelayControlOrigin | null

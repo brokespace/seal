@@ -12,8 +12,11 @@ import { createAppUpdateChecker, type AppUpdateState } from './app-update-checke
 // expoConfig is embedded binary manifest because app does not use expo-updates; SDK 55 removed nativeAppVersion. Revisit version source if adopting OTA updates.
 export const installedAppVersion: string | null = Constants.expoConfig?.version ?? null
 
+// Seal never shipped Orca's retired GitHub APK and has no store listing or mobile release channel yet.
+export const isRetiredGithubAndroidApp = false
+export const canCheckForAppUpdates = false
+
 export const appUpdateChecker = createAppUpdateChecker({
-  // Seal has no store listing or mobile release channel to check yet.
   source: null,
   installedVersion: installedAppVersion,
   now: () => Date.now(),

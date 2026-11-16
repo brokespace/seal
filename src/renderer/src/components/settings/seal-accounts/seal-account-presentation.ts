@@ -1,5 +1,5 @@
 import type { Translate } from '@/i18n/use-translate'
-import { formatResetDuration } from '../../../../../shared/rate-limit-reset-format'
+import { formatResetDuration } from '../../../../../shared/agent-usage/rate-limits/rate-limit-reset-format'
 import type {
   SealAccountCandidate,
   SealAccountHealth

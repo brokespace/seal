@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 import { translate as t } from '@/i18n/i18n'
 import { rememberMachineSelection } from '@/components/machines/model/machine-selection'
 import { useAppStore } from '@/store/index'
-import { parseExecutionHostId } from '../../../../../../shared/execution-host'
+import { parseExecutionHostId } from '../../../../../../shared/execution-host/execution-host'
 
 async function showSshMachine(sshTargetId: string): Promise<void> {
   const machine = await window.api.machines

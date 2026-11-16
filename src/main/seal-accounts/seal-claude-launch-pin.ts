@@ -5,7 +5,7 @@ import {
   CLAUDE_INJECTED_CONFIG_DIR_ENV,
   CLAUDE_PROFILE_POINTER_ENV,
   CLAUDE_USER_CONFIG_DIR_ENV
-} from '../../shared/claude-profile-routing'
+} from '../../shared/agent-accounts/claude/claude-profile-routing'
 import type { ClaudeProfileRouter } from '../claude-accounts/profiles/routing/claude-profile-router'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth/runtime-auth-types'
 

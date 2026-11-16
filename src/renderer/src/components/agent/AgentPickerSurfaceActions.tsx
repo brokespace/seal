@@ -4,13 +4,13 @@ import { offerSealServerInstall } from '@/lib/agent-session/launch/routing/seal-
 import type { NewTabAgentMenuRow } from '../../../../shared/agent-launch/picker/agent-launch-picker-rows'
 import type { AgentPickerEntry } from '../../../../shared/agent-launch/picker/agent-launch-picker'
 import { useAgentLaunchHostName } from '../tab-bar/agent-launch-host-name'
-import { terminalPendingLabel } from '../tab-bar/new-tab-agent-menu-model'
+import { terminalPendingLabel } from './launch-menu/new-tab-agent-menu-model'
 import {
   cliMissingReason,
   cliNeedsServerReason,
   installServerOfferLabel,
   rowTitle
-} from '../tab-bar/tab-agent-row-presentation'
+} from './launch-menu/agent-menu-row-presentation'
 import {
   pickerActionSurfaces,
   pickerEntryRow,

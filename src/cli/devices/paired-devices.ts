@@ -1,7 +1,7 @@
 import type { CommandHandler, HandlerContext } from '../dispatch/dispatch'
 import { getOptionalStringFlag } from '../arguments/flags'
-import { resolveLaunchUserDataPath } from '../runtime/launch-user-data-path'
-import { RuntimeClientError, RuntimeRpcFailureError } from '../runtime/types'
+import { resolveLaunchUserDataPath } from '../runtime/profile/launch-user-data-path'
+import { RuntimeClientError, RuntimeRpcFailureError } from '../runtime/connection/types'
 import {
   PAIRED_DEVICES_LIST_METHOD,
   PAIRED_DEVICES_REVOKE_METHOD,

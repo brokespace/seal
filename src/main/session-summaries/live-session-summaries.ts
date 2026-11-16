@@ -7,7 +7,7 @@ import type {
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import type { SessionSummariesListResult } from '../../shared/session-summaries/session-summary-contracts'
-import { structuredSessionIdFromNotificationPane } from '../../shared/structured-session-notification-pane'
+import { structuredSessionIdFromNotificationPane } from '../../shared/agent-session/view/structured-session-notification-pane'
 import { TerminalAgentTurnNews } from '../runtime/push/notifications/terminal-agent-turn-news'
 import { paneRecordId } from './pane-record-id'
 import { ServerSessionSummaries, serverOf } from './server-session-summaries'

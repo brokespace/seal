@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readdir, rename, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { APP_PRODUCT_NAME } from '../../shared/app-identity'
+import { APP_PRODUCT_NAME } from '../../shared/app-lifecycle/identity/app-identity'
 
 export type SpeechModelCacheDir = {
   modelsDir: string

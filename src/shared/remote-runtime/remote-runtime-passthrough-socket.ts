@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import type { PairedRuntimeConnection } from './pairing/paired-runtime-connection'
-import type { RuntimeCapability } from '../protocol-version'
+import type { RuntimeCapability } from './protocol/protocol-version'
 import { sendRemoteRuntimeTokenAuth } from './remote-runtime-client-handshake'
 import { RemoteRuntimeClientError } from './remote-runtime-client-error'
 import { remoteRuntimeReadyError } from './requests/remote-runtime-request-frames'

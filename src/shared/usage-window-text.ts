@@ -1,7 +1,10 @@
-import type { ProviderRateLimits, RateLimitWindow } from './rate-limit-types'
-import { formatResetDuration } from './rate-limit-reset-format'
-import { clampUsedPercent } from './usage-percentage-display'
-import { hasUsageData } from './usage-provider-windows'
+import type {
+  ProviderRateLimits,
+  RateLimitWindow
+} from './agent-usage/rate-limits/rate-limit-types'
+import { formatResetDuration } from './agent-usage/rate-limits/rate-limit-reset-format'
+import { clampUsedPercent } from './agent-usage/display/usage-percentage-display'
+import { hasUsageData } from './agent-usage/display/usage-provider-windows'
 
 /** One usage window for a terminal, rounded and counted down as the usage popover does: `34% (1h 58m)`. */
 export function formatUsageWindowText(

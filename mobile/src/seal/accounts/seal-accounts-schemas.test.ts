@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createEmptyRateLimitState } from '../../../../src/shared/rate-limit-state-factory'
-import type { ProviderRateLimits } from '../../../../src/shared/rate-limit-types'
+import { createEmptyRateLimitState } from '../../../../src/shared/agent-usage/rate-limits/rate-limit-state-factory'
+import type { ProviderRateLimits } from '../../../../src/shared/agent-usage/rate-limits/rate-limit-types'
 import { buildSealCandidates } from '../../../../src/shared/seal-accounts/seal-account-candidate-builder'
 import { sealAccountRateLimit } from '../../../../src/shared/seal-accounts/seal-account-rate-limit'
 import { defaultSealAccountsConfig } from '../../../../src/shared/seal-accounts/seal-accounts-config'

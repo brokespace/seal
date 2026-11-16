@@ -6,7 +6,7 @@ import {
   type MachineDiskIndexReply,
   type MachineDiskIndexRequest
 } from '../../../shared/machines/machine-disk-index-types'
-import { errnoCodeOrUnknown } from '../../../shared/errno-code'
+import { errnoCodeOrUnknown } from '../../../shared/errors/errno-code'
 
 const MAX_REQUEST_BYTES = 64 * 1024
 

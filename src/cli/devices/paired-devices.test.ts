@@ -6,7 +6,7 @@ import { acquireOrcadInstanceLock } from '../../main/orcad/instance-lock/orcad-i
 import { RelayRevokeOutbox } from '../../main/runtime/mobile-cloud-relay/pairing/relay-revoke-outbox'
 import { PushUnregisterOutbox } from '../../main/runtime/push/push-unregister-outbox'
 import { DeviceRegistry } from '../../main/runtime/rpc/server/pairing/device-registry'
-import { RuntimeClientError } from '../runtime/types'
+import { RuntimeClientError } from '../runtime/connection/types'
 import { PAIRED_DEVICES_HANDLERS } from './paired-devices'
 
 let dir: string

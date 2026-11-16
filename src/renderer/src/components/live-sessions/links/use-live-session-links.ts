@@ -8,7 +8,7 @@ import {
 import { getAiVaultResumeWorkspaceExecutionHostId } from '@/lib/agent-session/resume/history/ai-vault-resume-target'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { extendWorktreeIdByTabId } from '../../../../../shared/workspace-session/workspace-session-host-records'
-import { folderWorkspaceKey } from '../../../../../shared/workspace-scope'
+import { folderWorkspaceKey } from '../../../../../shared/workspace/identity/workspace-scope'
 import { useLiveSessions } from '../live-session-registry-store'
 import { liveSessionExecutionHost } from '../take-over/live-session-take-over'
 import {

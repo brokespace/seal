@@ -1,9 +1,9 @@
 import type React from 'react'
 import { useState } from 'react'
 import { ArrowUpToLine, Check, ChevronDown, Pencil, Trash2 } from 'lucide-react'
-import type { GlobalSettings } from '../../../../../shared/global-settings-types'
-import type { OpenInApplication } from '../../../../../shared/ui-chrome-types'
-import { OPEN_IN_APPLICATIONS_MAX } from '../../../../../shared/open-in-applications'
+import type { GlobalSettings } from '../../../../../shared/settings/global-settings-types'
+import type { OpenInApplication } from '../../../../../shared/ui-chrome/ui-chrome-types'
+import { OPEN_IN_APPLICATIONS_MAX } from '../../../../../shared/editor/launch/open-in-applications'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
 import {
@@ -24,7 +24,7 @@ import {
   type OpenInAppPreset
 } from '@/lib/files/os-open/open-in-app-catalog'
 import { useTranslate } from '@/i18n/use-translate'
-import { createNonSecureContextUuid as createBrowserUuid } from '../../../../../shared/non-secure-context-uuid'
+import { createNonSecureContextUuid as createBrowserUuid } from '../../../../../shared/identifiers/non-secure-context-uuid'
 
 type OpenInMenuSettingProps = {
   applications: OpenInApplication[] | undefined

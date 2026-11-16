@@ -10,7 +10,7 @@ import {
   Undo2,
   X
 } from 'lucide-react-native'
-import { ViewedCheckbox } from '../../components/MobileDiffReviewFileSummary'
+import { ViewedCheckbox } from '../../source-control/review/diff-screen/MobileDiffReviewFileSummary'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { colors, pressedStyle, radii, spacing, typography } from '../../theme/mobile-theme'
 import { themedStyleSheet } from '../../theme/themed-styles'

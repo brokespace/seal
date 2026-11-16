@@ -10,19 +10,20 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import NewWorkspaceComposerModal from '../components/NewWorkspaceComposerModal'
 import { CrashReportDialog } from '../components/crash-report/CrashReportDialog'
 import { MarkdownTemplatePicker } from '../components/editor/markdown/documents/MarkdownTemplatePicker'
-import RecentTabSwitcher from '../components/tab-bar/RecentTabSwitcher'
+import RecentTabSwitcher from '../components/tab-bar/recent-switcher/RecentTabSwitcher'
 import { SkillFreshnessUpdateDialog } from '../components/skills/freshness/SkillFreshnessUpdateDialog'
 import { StarNagAgentValueMomentObserver } from '../components/star-nag/StarNagAgentValueMomentObserver'
 import { NativeChatResumeOnRestartModal } from '../components/native-chat-recovery/NativeChatResumeRuntimeModal'
 import { StarNagToastHost } from '../components/star-nag/StarNagToastHost'
+import { LanguagePackDiscoveryHost } from '../components/languages/LanguagePackDiscoveryHost'
+import { PluginInstallTrustDialogHost } from '../components/plugins/dialogs/PluginInstallTrustDialog'
 import { TelemetryFirstLaunchSurface } from '../components/TelemetryFirstLaunchSurface'
 import { ZoomOverlay } from '../components/ZoomOverlay'
 import { WslMoveDialogHost } from '../components/wsl-move/WslMoveDialog'
-import { LiveSessionAppSurface } from '../components/live-sessions/LiveSessionAppSurface'
 import { MacosUpdateRequirementHost } from '../components/macos-update-requirement/MacosUpdateRequirementHost'
 import { shouldRenderPetOverlay } from '../components/pet/pet-overlay-visibility'
 import { useAppStore } from '../store/index'
-import type { UpdateStatus } from '../../../shared/update-status-types'
+import type { UpdateStatus } from '../../../shared/updater/update-status-types'
 import { useLazyModalMounts } from './use-lazy-modal-mounts'
 import { AppNotificationCards } from './AppNotificationCards'
 import { usePreloadWorktreeJumpPalette, WorktreeJumpPalette } from './worktree-jump-palette-preload'
@@ -224,7 +225,6 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
         ) : null}
         {/* Own store, not activeModal: another modal must never evict a running move. */}
         <WslMoveDialogHost />
-        <LiveSessionAppSurface />
         {/* Opened by toast, SSH host row and terminal pane. */}
         {activeModal === 'node-dist-mirror' ? (
           <ModalBoundary boundaryId="modal.node-dist-mirror" resetKey>
@@ -311,6 +311,11 @@ export const AppRootSurfaces = memo(function AppRootSurfaces(props: {
         <StarNagToastHost />
       </OverlayBoundary>
       <StarNagAgentValueMomentObserver />
+      <LanguagePackDiscoveryHost
+        onboardingKnown={onboardingGate.onboarding !== null}
+        onboardingVisible={onboardingGate.shouldRender}
+      />
+      <PluginInstallTrustDialogHost />
       {/* Mount once per session; the internal gate selects pre-telemetry users (telemetry-plan.md §First-launch experience). */}
       <OverlayBoundary boundaryId="overlay.telemetry-first-launch" resetKey={telemetryOptedIn}>
         <TelemetryFirstLaunchSurface />

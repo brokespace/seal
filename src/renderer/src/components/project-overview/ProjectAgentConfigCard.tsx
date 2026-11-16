@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { PageCard } from '@/components/page-layout/PageCard'
 import { ProjectAgentConfigPanel } from '@/components/settings/agent-config/RepositoryAgentConfigSection'
 import { getRepositoryAgentConfigSectionId } from '@/components/settings/repository/repository-settings-targets'
-import type { Repo } from '../../../../shared/repo-types'
+import type { Repo } from '../../../../shared/repository/repo-types'
 import { openProjectSettings } from './project-overview-actions'
 
 /**

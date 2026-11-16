@@ -4,7 +4,7 @@ import type {
   HomeChatSummary
 } from '../../../../src/shared/home-chat/home-chat-types'
 import type { PhoneDownloadTicket } from '../../../../src/shared/rpc-contract/phone-transfer-params'
-import { salvagingArray } from '../../../../src/shared/zod-salvage'
+import { salvagingArray } from '../../../../src/shared/validation/zod-salvage'
 import { defineRpcOperation, runRpcOperation } from '../../transport/rpc/rpc-operation'
 import { rpcResultVariant } from '../../transport/rpc/rpc-operation-result-reader'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'

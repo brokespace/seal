@@ -1,0 +1,36 @@
+import {
+  pairedRuntimeConnectionFromOffer,
+  type PairedRuntimeConnection
+} from '../../../shared/remote-runtime/pairing/paired-runtime-connection'
+import { parsePairingCode } from '../../../shared/remote-runtime/pairing/pairing'
+import { resolveEnvironmentPairingOffer } from './environments'
+import { RuntimeClientError } from '../connection/types'
+
+export async function resolveRemoteConnection(
+  userDataPath: string,
+  pairingCode: string | null,
+  environmentSelector: string | null
+): Promise<PairedRuntimeConnection | null> {
+  if (pairingCode && environmentSelector) {
+    throw new RuntimeClientError(
+      'invalid_argument',
+      'Use either --pairing-code or --environment, not both.'
+    )
+  }
+  if (environmentSelector) {
+    return pairedRuntimeConnectionFromOffer(
+      await resolveEnvironmentPairingOffer(userDataPath, environmentSelector)
+    )
+  }
+  if (!pairingCode) {
+    return null
+  }
+  const pairing = parsePairingCode(pairingCode)
+  if (!pairing) {
+    throw new RuntimeClientError(
+      'invalid_argument',
+      'Invalid remote pairing code. Expected an seal://pair?... URL or bare pairing payload.'
+    )
+  }
+  return pairedRuntimeConnectionFromOffer(pairing)
+}

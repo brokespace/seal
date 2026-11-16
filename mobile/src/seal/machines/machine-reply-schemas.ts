@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { parseExecutionHostId } from '../../../../src/shared/execution-host'
+import { parseExecutionHostId } from '../../../../src/shared/execution-host/execution-host'
 import { parseMachineId } from '../../../../src/shared/machines/machine-types'
 
 const nullableNumber = z.number().finite().nullable().catch(null)

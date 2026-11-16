@@ -1,4 +1,4 @@
-import { encodePowerShellCommand } from '../../../shared/powershell-command-encoding'
+import { encodePowerShellCommand } from '../../../shared/shell/launch/powershell-command-encoding'
 import { posixPathWord } from '../machines/home-chat-machine-paths'
 import { powerShellLiteral } from '../machines/home-chat-machine-scripts'
 import type { HomeChatShellDialect } from '../machines/home-chat-machine-types'
