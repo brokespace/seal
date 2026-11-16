@@ -64,7 +64,7 @@ function lingerText(t: Translate): string {
 function pm2Text(t: Translate): string {
   return t(
     'seal.machineServer.installDialog.pm2',
-    'With PM2, Seal adds the server to PM2’s process list, which PM2 keeps in ~/.pm2.'
+    'With PM2, Seal adds the server to PM2’s process list, which PM2 keeps in ~/.pm2. PM2 and ~/.pm2 stay after “Remove Seal server”.'
   )
 }
 
@@ -223,7 +223,7 @@ export function sealServerRemovalConfirmation(
       ),
       t(
         'seal.machineServer.remove.stays',
-        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings.'
+        'Lingering and your project files stay on the machine, and so do ~/.orca-remote, ~/.orca, ~/.seal/disk-index and its helper, ~/.claude/keybindings.json, ~/.claude/orca-agent-view.json, the status hooks in your coding agents’ settings and the .bak copies of those settings. When PM2 kept the server running, PM2 and ~/.pm2 stay too.'
       ),
       t(
         'seal.machineServer.remove.terminals',
