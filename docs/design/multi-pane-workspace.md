@@ -112,7 +112,7 @@ Every drop has a menu equivalent:
 
 - The workspace card's context menu, the Active agents row's context menu and the project header's actions menu gain **Open in split view ▸ Right / Down / Left / Up / As a tab**, acting on the focused pane. Project headers have no context menu today; their actions are a dropdown (`RepoHeaderProjectActionsMenu`), and the entries go there.
 - A chip's context menu has **Move to new pane ▸ Right / Down / Left / Up**, **Close**, **Close others** and **Close pane**. Session chips keep the session's own menu entries as well.
-- The session menu's existing **Open in split** places the session in a new pane to the right of the focused pane. See [Agent-session tabs](#agent-session-tabs).
+- The session menu's existing **Open in split** places the session in a new pane to the right of the focused pane. See [Agent-session tabs](#agent-session-tabs). From a chip's own menu it splits that chip's pane instead.
 
 ### Panes and their strips
 
@@ -675,6 +675,7 @@ Kept to what the panes need, because a separate effort is merging the session pa
 - **Quitting with an unsaved file moves pane focus.** The app shows the unsaved file to ask about it, as it does in single view, and pane focus follows what the app shows. After the restart the pane with that file is the focused one. With every file saved, the pane focused at quit is focused again.
 - **A pane focused at quit whose workspace was removed while the app was closed** comes back as the focused pane, showing "not available", until another pane is clicked.
 - **Sleep from a card's menu leaves the keyboard on the sidebar list**, in split view as in single view.
+- **A session or project pane is drawn again when the grid around it changes shape** (a neighbouring pane closed, or the pane itself split). A message typed but not sent in a session's composer is lost and the keyboard lands on the pane rather than the composer. The composer keeps its text in the component, as on the session page, where switching session tabs loses it the same way. Keeping the text per session belongs with the composer, which the parity work owns. Workspace panes are not affected: their content lives in the workbench.
 - **Splitters are mouse-only.** They are `role="separator"` with an orientation but take no keys.
 - **Remote hosts were not tested.** The machine the testers ran on has no container runtime or SSH server. A pane stores which host its workspace runs on, and local workspaces were checked on every route.
 - **The session composer** was only typed into where the test profile allowed it; sessions that run outside a Seal pane have a disabled composer.
