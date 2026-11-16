@@ -23,10 +23,17 @@ import {
 import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { hookStatus, parseHookStates } from './agent-hook-states'
-import { agentProcesses, approvalModeFromArgs, codexHomeOf, processBinary } from './agent-processes'
-import { pairProcesses } from './session-process-pairing'
+import {
+  agentProcesses,
+  agentSessionPidOf,
+  approvalModeFromArgs,
+  codexHomeOf,
+  processBinary
+} from './agent-processes'
+import { pairProcesses, type UnreadTranscript } from './session-process-pairing'
 import type { CodexTerminalState } from './codex-background-terminals'
 import { conversations, distinctSessions } from './session-identity'
+import { sessionCapabilities } from '../adapters/session-capabilities'
 
 export type SummarizedTranscript = {
   path: string
@@ -52,7 +59,7 @@ const HOOK_STALE_MS = 2 * 60_000
 
 export function liveSessionId(
   hostId: string,
-  provider: LiveSessionProvider,
+  provider: LiveSession['provider'],
   providerSessionId: string
 ): string {
   return `${hostId}:${provider}:${providerSessionId}`
@@ -94,9 +101,11 @@ function leftoverCommands(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed'>>
+    Partial<
+      Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed' | 'complete'>
+    >
   transcripts: SummarizedTranscript[]
-  unreadPaths?: ReadonlySet<string>
+  unread?: readonly UnreadTranscript[]
   nowMs: number
 }): LiveSession[] {
   const { machine, output } = input
@@ -111,9 +120,11 @@ export function assembleHostSessions(input: {
   )
   const ownedPaths = new Map<number, Set<string>>()
   const openTranscripts = new Set<string>()
+  const sessionPidOf = agentSessionPidOf(output.processes)
   for (const pin of output.pins ?? []) {
     if (pin.kind !== 'cwd') {
-      ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
+      const pid = sessionPidOf(pin.pid)
+      ownedPaths.set(pid, (ownedPaths.get(pid) ?? new Set()).add(pin.path))
     }
     if (pin.kind === 'open') {
       openTranscripts.add(pin.path)
@@ -132,7 +143,8 @@ export function assembleHostSessions(input: {
     claudeSessionByPid,
     ownedPaths,
     now - FRESH_WRITE_MS,
-    input.unreadPaths
+    input.unread,
+    output.complete === false
   )) {
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
@@ -265,12 +277,21 @@ export function assembleHostSessions(input: {
     const continues = (transcript ? (earlierOf.get(transcript) ?? []) : []).map((id) =>
       liveSessionId(machine.hostId, provider, id)
     )
+    const surface = { kind: 'external' as const }
     sessions.push({
       id: liveSessionId(machine.hostId, provider, providerSessionId),
       provider,
       providerSessionId,
       machine,
       origin: 'external',
+      surface,
+      capabilities: sessionCapabilities({
+        provider,
+        providerSessionId,
+        machine,
+        inputRoutes,
+        surface
+      }),
       cwd,
       project: projectOf(cwd),
       title: summary?.title ?? null,

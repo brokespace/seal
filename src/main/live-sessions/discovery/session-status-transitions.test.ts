@@ -16,6 +16,8 @@ type Step = {
   host: ScanOptions
   shows: LiveSessionStatus
   detail?: string | null
+  /** The session's background tasks, as `[command, status]`. */
+  tasks?: [string, string][]
 }
 
 type Transitions = { session: string; fixture: string; steps: Step[] }
@@ -348,6 +350,11 @@ const CLAUDE: Transitions[] = [
   }
 ]
 
+const MEMORY_WATCHER = 'while true; do grep MemAvailable /proc/meminfo; sleep 5; done'
+const WATCHER_A = 'MARK_C3A=1; while true; do sleep 120; done'
+const WATCHER_B = 'MARK_C3B=1; while true; do sleep 120; done'
+const LONG_SCRIPT = 'sleep 300; echo script-finished'
+
 const CODEX: Transitions[] = [
   {
     session: 'an approval Codex asked for',
@@ -406,7 +413,8 @@ const CODEX: Transitions[] = [
       {
         when: 'the command was killed outside Codex',
         host: { listsProcesses: true, children: [] },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        tasks: [[MEMORY_WATCHER, 'completed']]
       },
       { when: 'Codex was killed', host: KILLED, shows: 'done' }
     ]
@@ -428,7 +436,8 @@ const CODEX: Transitions[] = [
       {
         when: 'the poll saw it exit and the turn ended',
         host: { listsProcesses: true, children: [] },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        tasks: [[LONG_SCRIPT, 'completed']]
       },
       {
         when: 'another command runs under the shared app-server',
@@ -449,22 +458,34 @@ const CODEX: Transitions[] = [
         when: 'Codex ended its turn with both running',
         host: { records: 12, listsProcesses: true, children: CODEX_COMMAND('00:20') },
         shows: 'waiting-task',
-        detail: 'Waiting on 2 background tasks'
+        detail: 'Waiting on 2 background tasks',
+        tasks: [
+          [WATCHER_B, 'running'],
+          [WATCHER_A, 'running']
+        ]
       },
       {
         when: 'one was killed and Codex wrote that it ended',
         host: { records: 13, listsProcesses: true, children: CODEX_COMMAND('01:20') },
         shows: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        detail: 'Waiting on 1 background task',
+        tasks: [
+          [WATCHER_B, 'running'],
+          [WATCHER_A, 'stopped']
+        ]
       },
       {
-        when: 'the other ended while another session runs a command under the shared app-server',
+        when: 'the other was killed while another session runs a command under the shared app-server',
         host: {
           listsProcesses: true,
           processes: [CODEX_APP_SERVER],
           children: CODEX_SHELL('00:05')
         },
-        shows: 'your-turn'
+        shows: 'your-turn',
+        tasks: [
+          [WATCHER_B, 'stopped'],
+          [WATCHER_A, 'stopped']
+        ]
       }
     ]
   },
@@ -487,7 +508,8 @@ const CODEX: Transitions[] = [
         when: 'the command ended',
         host: { listsProcesses: true, children: [] },
         shows: 'your-turn',
-        detail: 'Interrupted'
+        detail: 'Interrupted',
+        tasks: [[LONG_SCRIPT, 'completed']]
       }
     ]
   },
@@ -508,35 +530,48 @@ describe.each([
 ])('status transitions of a %s session', (_, sessions) => {
   it.each(sessions)('$session', async ({ fixture, steps }) => {
     const scanOnce = recordedSession(fixture)
-    const seen: Pick<Step, 'when' | 'shows' | 'detail'>[] = []
+    const seen: Omit<Step, 'host'>[] = []
     for (const step of steps) {
       const session = await scanOnce(step.host)
       seen.push({
         when: step.when,
         shows: session.status,
-        ...(step.detail !== undefined ? { detail: session.statusDetail } : {})
+        ...(step.detail !== undefined ? { detail: session.statusDetail } : {}),
+        ...(step.tasks ? { tasks: session.activity?.tasks.map((t) => [t.label, t.status]) } : {})
       })
     }
     expect(seen).toEqual(
-      steps.map(({ when, shows, detail }) => ({
+      steps.map(({ when, shows, detail, tasks }) => ({
         when,
         shows,
-        ...(detail !== undefined ? { detail } : {})
+        ...(detail !== undefined ? { detail } : {}),
+        ...(tasks ? { tasks } : {})
       }))
     )
   })
 })
 
 // A machine that just connected reads a few transcripts per scan (SSH_SCAN_LIMITS).
-it.each([
+it.each<[string, string, ScanOptions, LiveSessionStatus]>([
   [
     'Claude Code',
     'live-claude-background-command-running',
     { registry: { state: 'shell' } },
     'waiting-task'
   ],
-  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'waiting-task']
-] as const)(
+  ['Codex', 'live-codex-background-terminal', { children: CODEX_COMMAND('00:20') }, 'waiting-task'],
+  [
+    'Codex (its rollout held open by a shared app-server, not by its own process)',
+    'live-codex-background-terminal',
+    {
+      unpinned: true,
+      processes: [CODEX_APP_SERVER],
+      heldOpenBy: 4300,
+      children: CODEX_COMMAND('00:20')
+    },
+    'waiting-task'
+  ]
+])(
   'a running %s session shows once its transcript is read, never as idle before',
   async (_, fixture, host, shows) => {
     const scanOnce = recordedSession(fixture)

@@ -100,14 +100,46 @@ export function sessionIdFromArgs(args: string): string | null {
   return null
 }
 
-/** Only the outermost agent process per session: npm's codex wrapper spawns the native binary. */
-export function agentProcesses(
-  processes: DiscoveredProcess[]
-): (DiscoveredProcess & { provider: LiveSessionProvider })[] {
-  const agents = processes.flatMap((p) => {
+export type AgentProcess = DiscoveredProcess & { provider: LiveSessionProvider }
+
+const MAX_WRAPPERS = 8
+
+/**
+ * Each agent process with the pid of its session's process: its own, or the outermost wrapper it
+ * runs under (npm's codex wrapper spawns the native binary, which is the one that holds the rollout).
+ */
+function agentSessionPids(processes: DiscoveredProcess[]): Map<AgentProcess, number> {
+  const agents = processes.flatMap((p): AgentProcess[] => {
     const provider = processProvider(p.args)
     return provider ? [{ ...p, provider }] : []
   })
   const byPid = new Map(agents.map((p) => [p.pid, p]))
-  return agents.filter((p) => byPid.get(p.ppid)?.provider !== p.provider)
+  return new Map(
+    agents.map((agent) => {
+      let outermost = agent
+      for (let hops = 0; hops < MAX_WRAPPERS; hops++) {
+        const parent = byPid.get(outermost.ppid)
+        if (!parent || parent.provider !== agent.provider) {
+          break
+        }
+        outermost = parent
+      }
+      return [agent, outermost.pid]
+    })
+  )
+}
+
+/** Only the outermost agent process per session. */
+export function agentProcesses(processes: DiscoveredProcess[]): AgentProcess[] {
+  return [...agentSessionPids(processes)].flatMap(([agent, pid]) =>
+    agent.pid === pid ? [agent] : []
+  )
+}
+
+/** The session's process for a pid: what an inner process holds open, its session owns. */
+export function agentSessionPidOf(processes: DiscoveredProcess[]): (pid: number) => number {
+  const sessionPids = new Map(
+    [...agentSessionPids(processes)].map(([agent, pid]) => [agent.pid, pid])
+  )
+  return (pid) => sessionPids.get(pid) ?? pid
 }

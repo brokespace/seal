@@ -39,6 +39,15 @@ function transcript(
   }
 }
 
+function rollout(id: string, cwd: string, ageMs: number): SummarizedTranscript {
+  const claude = transcript(id, cwd, ageMs)
+  return {
+    ...claude,
+    path: `/home/b/.codex-work/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${id}.jsonl`,
+    summary: { ...claude.summary, provider: 'codex' }
+  }
+}
+
 const proc = (
   pid: number,
   args: string,
@@ -128,6 +137,36 @@ describe('assembleHostSessions', () => {
     })
   })
 
+  it("pairs a Codex that npm's wrapper started by the rollout its native process holds open", () => {
+    const id = '99999999-9999-4999-8999-999999999999'
+    const prompted = rollout(id, '/srv/api', 60_000)
+    const wrapper = 'node /usr/lib/node_modules/@openai/codex/bin/codex.js'
+    const native =
+      '/usr/lib/node_modules/@openai/codex/vendor/x86_64-unknown-linux-musl/codex/codex'
+    const sessions = assembleHostSessions({
+      machine,
+      output: {
+        processes: [
+          proc(100, wrapper, '/srv/api'),
+          { ...proc(101, native, '/srv/api'), ppid: 100 },
+          // Started later in the same folder and not prompted yet: it has no rollout.
+          proc(200, wrapper, '/srv/api'),
+          { ...proc(201, native, '/srv/api'), ppid: 200 }
+        ],
+        panes: [],
+        hookStates: [],
+        hostNowMs: NOW,
+        pins: [{ pid: 101, kind: 'open', provider: 'codex', path: prompted.path }]
+      },
+      transcripts: [prompted],
+      nowMs: NOW
+    })
+    expect(sessions.map((s) => [s.providerSessionId, s.pid, s.status])).toEqual([
+      [id, 100, 'your-turn'],
+      ['pid-200', 200, 'idle']
+    ])
+  })
+
   it('keeps only the outermost agent process', () => {
     const sessions = assemble(
       [
@@ -185,14 +224,9 @@ describe('assembleHostSessions', () => {
 
   it("routes a live Codex session through its own queue first, with that session's binary and home", () => {
     const id = '99999999-9999-4999-8999-999999999999'
-    const rollout: SummarizedTranscript = {
-      ...transcript(id, '/srv/api', 1_000),
-      path: `/home/b/.codex-work/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${id}.jsonl`,
-      summary: { ...transcript(id, '/srv/api', 1_000).summary, provider: 'codex' }
-    }
     const [session] = assemble(
       [proc(100, '/opt/codex/bin/codex', '/srv/api', 'pts/3')],
-      [rollout],
+      [rollout(id, '/srv/api', 1_000)],
       [pane('pts/3', '\u203a Ask Codex')]
     )
     expect(session.inputRoutes).toEqual([

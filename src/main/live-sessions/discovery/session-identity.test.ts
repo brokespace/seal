@@ -93,6 +93,39 @@ describe('one card per real conversation', () => {
     ])
   })
 
+  it('lists a chat forked into the terminal as its own session that continues the chat', () => {
+    const chat = claudeFile(
+      '/p/aaaaaaaa-0000-4000-8000-00000000000a.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'sdk-ts' },
+        { ...turn('c2', 'c1', 'Now write it'), entrypoint: 'sdk-ts' }
+      ],
+      // The chat went on after the fork.
+      60_000
+    )
+    const fork = claudeFile(
+      '/p/bbbbbbbb-0000-4000-8000-00000000000b.jsonl',
+      [
+        { ...turn('c1', null, 'Plan the migration'), entrypoint: 'sdk-ts' },
+        { ...turn('f1', 'c1', 'Try it with a view instead'), entrypoint: 'cli' }
+      ],
+      300_000
+    )
+    expect(
+      assembleHostSessions({
+        machine,
+        output: { processes: [], panes: [], hookStates: [], hostNowMs: NOW },
+        transcripts: [chat, fork],
+        nowMs: NOW
+      }).map((s) => [s.id, s.continues])
+    ).toEqual([
+      [
+        'local:claude:bbbbbbbb-0000-4000-8000-00000000000b',
+        ['local:claude:aaaaaaaa-0000-4000-8000-00000000000a']
+      ]
+    ])
+  })
+
   it('shows a session copied into a second account once, from its newest copy', () => {
     const name = 'dddddddd-0000-4000-8000-000000000004.jsonl'
     const lines = [turn('d1', null, 'Rotate the keys')]

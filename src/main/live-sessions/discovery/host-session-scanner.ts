@@ -3,8 +3,8 @@ import type {
   LiveSessionMachine
 } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
-import { buildDiscoveryScript } from './discovery-script'
-import { parseDiscoveryOutput, type DiscoveredFile } from './discovery-output'
+import { buildAgentProbeScript, buildDiscoveryScript } from './discovery-script'
+import { parseDiscoveryOutput, type DiscoveredFile, type DiscoveryOutput } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
 import { summarizeClaudeTranscript, summarizeCodexRollout } from './transcript-summary'
 import { foldClaudeActivity, newClaudeActivityState } from './claude-transcript-activity'
@@ -63,15 +63,29 @@ type CachedTranscript = SummarizedTranscript & {
 
 export type HostScanResult = { sessions: LiveSession[]; complete: boolean }
 
+const agentPidsOf = (output: DiscoveryOutput): string =>
+  output.processes
+    .map((process) => process.pid)
+    .sort((a, b) => a - b)
+    .join(' ')
+
 /** Scans one host, re-reading only transcripts that grew since the last scan. */
 export class HostSessionScanner {
   private readonly cache = new Map<string, CachedTranscript>()
   private readonly firstSeen = new Map<string, number>()
+  /** The agent processes of the last whole scan. */
+  private agentPids: string | null = null
 
   constructor(
     private readonly host: LiveSessionHost,
     private readonly limits: HostScanLimits
   ) {}
+
+  /** Whether an agent started or ended since the last scan: one `ps`, not a scan. */
+  async agentsChanged(): Promise<boolean> {
+    const output = parseDiscoveryOutput(await this.host.run(buildAgentProbeScript()))
+    return !output.complete || agentPidsOf(output) !== this.agentPids
+  }
 
   async scan(nowMs: number): Promise<HostScanResult> {
     const cached = [...this.cache.values()]
@@ -88,6 +102,7 @@ export class HostSessionScanner {
       headKnown: findFiles ? [] : headKnown
     })
     const output = parseDiscoveryOutput(await this.host.run(script))
+    this.agentPids = output.complete ? agentPidsOf(output) : null
     if (findFiles) {
       // After the script: it names the transcripts running agents own, which are listed however old.
       output.files = await findFiles({
@@ -109,12 +124,13 @@ export class HostSessionScanner {
         }
       }
     }
-    const transcripts = [...this.cache.values()].filter((t) => listed.has(t.path))
+    // A scan cut short lists only some: the rest stand as earlier scans read them.
+    const transcripts = [...this.cache.values()]
     const sessions = assembleHostSessions({
       machine: this.host.machine,
       output,
       transcripts,
-      unreadPaths: new Set([...listed].filter((path) => !this.cache.has(path))),
+      unread: output.files.filter((file) => !this.cache.has(file.path)),
       nowMs
     })
     for (const session of sessions) {

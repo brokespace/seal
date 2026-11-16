@@ -13,7 +13,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { localHost } from '../hosts/live-session-hosts'
+import { localHost, type LiveSessionHost } from '../hosts/live-session-hosts'
 import { HostSessionScanner, LOCAL_SCAN_LIMITS } from './host-session-scanner'
 import { aiVaultTranscriptFiles } from './local-transcript-files'
 
@@ -33,6 +33,44 @@ beforeEach(async () => {
 afterEach(async () => {
   vi.unstubAllEnvs()
   await rm(home, { recursive: true, force: true })
+})
+
+// An SSH exec that lost its connection mid-output: the processes arrived, the transcripts did not.
+it('keeps a session under its id, and adds no nameless one, when a scan is cut short', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp: at, payload: { type: 'task_started' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const now = Date.parse(at) + 20_000
+  const processes = [
+    `@@NOW ${now / 1000}`,
+    '@@PROC 4100 1 pts/3 codex',
+    '@@CWD 4100 /srv/api',
+    '@@PS'
+  ]
+  const whole = [
+    ...processes,
+    `@@PIN 4100 open codex ${path}`,
+    `@@FILE codex ${Buffer.byteLength(text)} ${Date.parse(at) / 1000} ${path}`,
+    `@@HEAD ${path} ${b64}`,
+    `@@TAIL ${path} ${b64}`,
+    '@@DONE'
+  ]
+  // A second Codex started since; its rollout is in the part of the output that was lost.
+  const cutShort = [...processes, '@@PROC 4200 1 pts/4 codex', '@@CWD 4200 /srv/web']
+  let output = whole
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(now)).sessions.map((s) => [s.providerSessionId, s.pid, s.status])
+  expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
+  output = cutShort
+  expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
 })
 
 const viaAiVault = () =>

@@ -1,23 +1,26 @@
 // Which running agent process writes which transcript.
-import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
-import { sessionIdFromArgs } from './agent-processes'
-import type { DiscoveredProcess } from './discovery-output'
+import { sessionIdFromArgs, type AgentProcess } from './agent-processes'
+import type { DiscoveredFile } from './discovery-output'
 import type { SummarizedTranscript } from './session-assembly'
 
 export type ProcessClaim = {
   transcript: SummarizedTranscript | null
-  process: (DiscoveredProcess & { provider: LiveSessionProvider }) | null
+  process: AgentProcess | null
 }
+
+/** A transcript the host listed but this scan's read budget has not reached yet. */
+export type UnreadTranscript = Pick<DiscoveredFile, 'path' | 'provider'>
 
 /** Pair agent processes with the transcripts they write. */
 export function pairProcesses(
-  processes: (DiscoveredProcess & { provider: LiveSessionProvider })[],
+  processes: AgentProcess[],
   transcripts: SummarizedTranscript[],
   claudeSessionByPid: ReadonlyMap<number, string>,
   ownedPaths: ReadonlyMap<number, ReadonlySet<string>>,
   freshSince: number,
-  /** Transcripts the host listed but this scan's read budget has not reached yet. */
-  unread: ReadonlySet<string> = new Set()
+  unread: readonly UnreadTranscript[] = [],
+  /** The scan ended before the host had listed every transcript. */
+  cutShort = false
 ): ProcessClaim[] {
   const free = new Set(transcripts)
   const claims: ProcessClaim[] = []
@@ -29,15 +32,19 @@ export function pairProcesses(
   }
   const pending: typeof processes = []
   const unwritten: ProcessClaim[] = []
+  /** Unread transcripts no process is known to write: any could be a nameless agent's own. */
+  const unclaimed = new Set(unread)
   for (const process of processes) {
     const registered =
       process.provider === 'claude' ? claudeSessionByPid.get(process.pid) : undefined
     const named = registered ?? sessionIdFromArgs(process.args)
     const owned = ownedPaths.get(process.pid)
+    const own = unread.filter(
+      ({ path }) => owned?.has(path) || (named && path.endsWith(`${named}.jsonl`))
+    )
     // Its own transcript is still to be read: shown then, not as idle or under another session.
-    if (
-      [...unread].some((path) => owned?.has(path) || (named && path.endsWith(`${named}.jsonl`)))
-    ) {
+    if (own.length > 0) {
+      own.forEach((file) => unclaimed.delete(file))
       continue
     }
     const match =
@@ -65,6 +72,12 @@ export function pairProcesses(
     const match = [...free]
       .filter((t) => t.summary.provider === process.provider && t.summary.cwd === process.cwd)
       .sort((a, b) => b.mtimeMs - a.mtimeMs)[0]
+    // One still to be read may be its own (a shared app-server holds it open): shown then.
+    const mayBeUnread =
+      cutShort || [...unclaimed].some((file) => file.provider === process.provider)
+    if (!match && mayBeUnread) {
+      continue
+    }
     claims.push({ process, transcript: take(match) })
   }
   // A running agent's transcript is being written right now even when its folder says otherwise.

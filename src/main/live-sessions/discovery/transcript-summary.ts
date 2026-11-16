@@ -96,9 +96,12 @@ function claudeIdentity(
     .filter((r) => r.type === 'summary')
     .map((r) => str(r.leafUuid))
     .filter((id): id is string => id !== null && !headIds.has(id))
+  const startedBy = str(head.find((r) => str(r.entrypoint))?.entrypoint)
+  const lastBy = str(tail.findLast((r) => str(r.entrypoint))?.entrypoint) ?? startedBy
   return {
     // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
-    headless: str(head.find((r) => str(r.entrypoint))?.entrypoint)?.startsWith('sdk') === true,
+    // A chat's history a terminal carries on (a fork into the CLI) is that terminal's from then on.
+    headless: startedBy?.startsWith('sdk') === true && lastBy?.startsWith('sdk') === true,
     recordIds: [
       ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
     ],

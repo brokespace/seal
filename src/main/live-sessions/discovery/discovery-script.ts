@@ -27,6 +27,20 @@ function shQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
+/** The agent processes of a host, then `@@PS` when ps listed processes at all. */
+const AGENT_PROCESS_LINES = `ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print } END { if (NR) print "@@PS" }'`
+
+/** Only which agents run: a tenth of a scan's cost, to tell whether one started or ended. */
+export function buildAgentProbeScript(): string {
+  return `export LC_ALL=C
+${AGENT_PROCESS_LINES} | while read -r pid ppid tty args; do
+  [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
+  echo "@@PROC $pid $ppid $tty $args"
+done
+echo "@@DONE"
+`
+}
+
 export function buildDiscoveryScript(options: DiscoveryScriptOptions): string {
   const known = options.known.map((k) => `${k.path}|${k.size}`).join('\n')
   const headKnown = options.headKnown.join('\n')
@@ -49,7 +63,7 @@ CLAUDE_ROOTS="$HOME/.claude
 \${CLAUDE_CONFIG_DIR:-}"
 CODEX_ROOTS="$HOME/.codex
 \${CODEX_HOME:-}"
-ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print } END { if (NR) print "@@PS" }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
+${AGENT_PROCESS_LINES} > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 while read -r pid ppid tty args; do
   # The listing ends by saying ps listed processes at all: no agent among them means none runs.
   [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
