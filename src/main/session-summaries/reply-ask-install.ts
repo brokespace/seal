@@ -1,6 +1,8 @@
 import { join } from 'node:path'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
+import type { SessionTranscripts } from '../live-sessions/transcripts/session-transcript'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionReplyAsks } from './live-session-reply-asks'
@@ -11,6 +13,8 @@ import { unrefTimer } from './unref-timer'
 
 export type ReplyAskClassifier = {
   decorate(session: LiveSession): LiveSession
+  verdict(session: LiveSession): ReplyAskVerdict
+  askedReply(sessionId: string): string | null
   /** The model came back: ask again for the replies it failed on. */
   retryFailed(): void
   dispose(): void
@@ -22,13 +26,14 @@ export type ReplyAskClassifier = {
  */
 export function createReplyAskClassifier(options: {
   liveSessions: LiveSessionService
+  transcripts: SessionTranscripts
   userDataPath: string
   model: () => UtilityModelClient
   enabled: () => boolean
   onChange: () => void
   log: (message: string, error?: unknown) => void
 }): ReplyAskClassifier {
-  const { liveSessions, log } = options
+  const { liveSessions, transcripts, log } = options
   const cache = new SessionSummaryCache(
     join(options.userDataPath, 'session-summaries', 'reply-asks.json'),
     log
@@ -44,12 +49,14 @@ export function createReplyAskClassifier(options: {
   })
   const live = new LiveSessionReplyAsks({
     classifier,
-    lastAssistantText: (sessionId) => lastAssistantText(liveSessions, sessionId),
+    lastAssistantText: (sessionId) => lastAssistantText(transcripts.of(sessionId)),
     log
   })
   const release = liveSessions.subscribe((event) => live.observe(event))
   return {
     decorate: (session) => live.decorate(session),
+    verdict: (session) => live.verdict(session),
+    askedReply: (sessionId) => live.askedReply(sessionId),
     retryFailed: () => classifier.retryFailed(),
     dispose: () => {
       release()
