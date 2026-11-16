@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
+import { startLiveSessionTabAttentionJoin } from './live-session-tab-attention-join'
 
 export type LiveSessionMarksState = {
   /** Rows picked for a bulk stop or remove; null when not picking. */
@@ -12,6 +13,9 @@ export type LiveSessionMarksState = {
   /** Per session, the activity time the user last looked at. */
   seenAt: Readonly<Record<string, number>>
 }
+
+/** Keeps the store's read marks in step with another surface's own; returns its stop function. */
+export type LiveSessionMarksJoin = (store: LiveSessionMarksStore) => () => void
 
 const SEEN_KEY = 'seal.liveSessionSeenAt.v1'
 const MAX_SEEN = 500
@@ -39,13 +43,17 @@ export class LiveSessionMarksStore {
   private state: LiveSessionMarksState
   private readonly listeners = new Set<() => void>()
   private nonce = 0
+  private join: LiveSessionMarksJoin | null
 
-  constructor(seenAt: Record<string, number> = restoreSeen()) {
+  /** `join` starts on the first `baseline` or `subscribe`, when there are marks to keep in step. */
+  constructor(seenAt: Record<string, number> = restoreSeen(), join?: LiveSessionMarksJoin) {
     this.state = { picked: null, highlighted: new Set(), reveal: null, seenAt }
+    this.join = join ?? null
   }
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
+    this.startJoin()
     return () => this.listeners.delete(listener)
   }
 
@@ -73,6 +81,7 @@ export class LiveSessionMarksStore {
 
   /** Sessions seen for the first time start out read; only what they write later is news. */
   baseline(sessions: readonly { id: string; lastActivityAt: number }[]): void {
+    this.startJoin()
     const fresh = sessions.filter((session) => this.state.seenAt[session.id] === undefined)
     if (fresh.length === 0) {
       return
@@ -110,6 +119,13 @@ export class LiveSessionMarksStore {
     this.saveSeen()
   }
 
+  private startJoin(): void {
+    const join = this.join
+    // Cleared first: the join subscribes to this store.
+    this.join = null
+    join?.(this)
+  }
+
   private saveSeen(): void {
     try {
       globalThis.localStorage?.setItem(SEEN_KEY, JSON.stringify(this.state.seenAt))
@@ -126,7 +142,10 @@ export class LiveSessionMarksStore {
   }
 }
 
-export const liveSessionMarksStore = new LiveSessionMarksStore()
+export const liveSessionMarksStore = new LiveSessionMarksStore(
+  undefined,
+  startLiveSessionTabAttentionJoin
+)
 
 export function useLiveSessionMarks(): LiveSessionMarksState {
   return useSyncExternalStore(liveSessionMarksStore.subscribe, liveSessionMarksStore.getState)
