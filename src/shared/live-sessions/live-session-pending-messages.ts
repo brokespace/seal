@@ -49,7 +49,7 @@ export function pendingLiveMessages<M extends SentMessage>(
     newest = Math.max(newest, row.timestamp ?? 0)
     loaded.add(row.transcriptOffset)
   }
-  // Why by text at all: a host from before `echoOffset` says only that the message was delivered.
+  // Why by time and text at all: a host from before `echoOffset` says only that the message was delivered.
   let said: string[] | null = null
   const taken = new Map<string, number>()
   const saidInLoadedRows = (text: string): boolean => {
@@ -69,16 +69,13 @@ export function pendingLiveMessages<M extends SentMessage>(
     })
   }
   const inTranscript = (message: M): boolean => {
-    // Why the time: a row written after the delivery means the read is past it, whatever the offsets say.
-    if (message.updatedAt < newest) {
-      return true
-    }
     const echo = message.echoOffset
-    if (typeof echo !== 'number') {
-      return saidInLoadedRows(spaced(message.text))
+    if (typeof echo === 'number') {
+      // Offsets only: a row's time is its machine's clock, which need not agree with this one's.
+      // Why the loaded row too: a chat's journal counts writes, and its read position is the last one read.
+      return readTo === null || echo < readTo || loaded.has(echo)
     }
-    // Why the loaded row too: a chat's journal counts writes, and its read position is the last one read.
-    return readTo === null || echo < readTo || loaded.has(echo)
+    return message.updatedAt < newest || saidInLoadedRows(spaced(message.text))
   }
   const pending: PendingLiveMessage<M>[] = []
   for (const message of [...messages].sort((a, b) => a.createdAt - b.createdAt)) {

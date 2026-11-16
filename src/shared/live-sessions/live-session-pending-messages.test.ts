@@ -74,6 +74,17 @@ describe('pendingLiveMessages', () => {
     expect(pendingLiveMessages(echoed.slice(-20), 6_500, [delivered])).toEqual([])
   })
 
+  it("goes by offsets, not by a remote machine's clock", () => {
+    const hour = 3_600_000
+    const sent = message('a', 'also lint', 'delivered', 5_000, { sentOffset: 300, echoOffset: 700 })
+    // The host's clock runs an hour ahead: its rows look newer than the delivery, yet the echo is not read.
+    const ahead = [row(200, 'assistant', 'on it', hour), row(400, 'assistant', 'tool', hour + 1)]
+    expect(ids(pendingLiveMessages(ahead, 700, [sent]))).toEqual([['a', 300]])
+    // An hour behind: no row looks newer than the delivery, and the echo is read and scrolled out.
+    const behind = [row(800, 'assistant', 'tool', 5_000 - hour), row(900, 'assistant', 'done', 0)]
+    expect(pendingLiveMessages(behind, 1_000, [sent])).toEqual([])
+  })
+
   it('drops a delivered message whose row is loaded when the read position is that very row', () => {
     const journal = [row(7, 'assistant', 'done'), row(8, 'user', 'and lint')]
     const sent = message('a', 'and lint', 'delivered', 50_000, { sentOffset: 8, echoOffset: 8 })
