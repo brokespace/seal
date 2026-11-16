@@ -214,6 +214,51 @@ it('keeps a rollout apart from a Codex started in its folder after its own Codex
   expect(await listed(at + 90_000)).toEqual(apart)
 })
 
+// Two terminals open in one repository, neither prompted yet; nothing ties either to a rollout.
+it('pairs neither of two agents idle in one folder with the rollout one of them begins, even once that one has left', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const scanOf = (pids: number[]) =>
+    [
+      `@@NOW ${(at + 20_000) / 1000}`,
+      ...pids.flatMap((pid) => [`@@PROC ${pid} 1 pts/${pid} codex`, `@@CWD ${pid} /srv/api`]),
+      '@@PS',
+      ...pids.map((pid) => `@@AGE ${pid} 10:00`),
+      `@@FILE codex ${Buffer.byteLength(text)} ${at / 1000} ${path}`,
+      `@@HEAD ${path} ${b64}`,
+      `@@TAIL ${path} ${b64}`,
+      '@@DONE'
+    ].join('\n')
+  let output = scanOf([4100, 4200])
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(at + 20_000)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+  expect(await listed()).toEqual([
+    ['pid-4100', 4100, ''],
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, '']
+  ])
+
+  output = scanOf([4200])
+  expect(await listed()).toEqual([
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, '']
+  ])
+})
+
 const viaAiVault = () =>
   aiVaultTranscriptFiles(async () => ({
     claudeProjectsDir: join(home, '.claude/projects'),

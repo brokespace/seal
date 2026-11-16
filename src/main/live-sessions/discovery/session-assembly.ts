@@ -51,6 +51,8 @@ export type SummarizedTranscript = {
   codexTerminals?: CodexTerminalState
   /** The agent process an earlier scan paired with it. */
   agentPid?: number
+  /** An earlier scan found several agents that could each have written it. */
+  contested?: boolean
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -108,6 +110,8 @@ export function assembleHostSessions(input: {
   transcripts: SummarizedTranscript[]
   unread?: readonly UnreadTranscript[]
   nowMs: number
+  /** Told of each transcript several running agents could each have written. */
+  onContested?: (transcript: SummarizedTranscript) => void
 }): LiveSession[] {
   const { machine, output } = input
   const now = output.hostNowMs ?? input.nowMs
@@ -147,6 +151,9 @@ export function assembleHostSessions(input: {
     input.unread,
     output.complete === false
   )) {
+    if (contested && transcript) {
+      input.onContested?.(transcript)
+    }
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
     // A fresh agent has no transcript until its first prompt; Claude names it in its registry at once.

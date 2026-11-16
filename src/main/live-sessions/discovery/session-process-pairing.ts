@@ -6,7 +6,7 @@ import type { SummarizedTranscript } from './session-assembly'
 export type ProcessClaim = {
   transcript: SummarizedTranscript | null
   process: AgentProcess | null
-  /** Several running agents may each be what writes this transcript: none is paired with it. */
+  /** Several agents could each have written this transcript, and one that could still runs. */
   contested?: boolean
 }
 
@@ -101,9 +101,11 @@ export function pairProcesses(
   /** Processes with no transcript, by provider: each is listed on its own as a new session. */
   const bare = new Map<string, ProcessClaim[]>()
   // Which of two agents started in one folder writes the transcript begun after both is not
-  // known: typing into either on its behalf could reach the wrong one.
+  // known, nor once one of them has left: typing into either could reach the wrong one.
   const contested = new Set(
-    [...free].filter((t) => pending.filter((p) => couldWriteInFolder(p, t)).length > 1)
+    [...free].filter(
+      (t) => t.contested || pending.filter((p) => couldWriteInFolder(p, t)).length > 1
+    )
   )
   for (const process of pending) {
     const match = [...free]
@@ -139,11 +141,9 @@ export function pairProcesses(
   }
   claims.push(...unwritten)
   for (const transcript of free) {
-    claims.push({
-      process: null,
-      transcript,
-      ...(contested.has(transcript) && { contested: true })
-    })
+    // One of the agents still here may be at its prompt with it: a resume would write beside it.
+    const held = contested.has(transcript) && pending.some((p) => couldWriteInFolder(p, transcript))
+    claims.push({ process: null, transcript, ...(held && { contested: true }) })
   }
   return claims
 }

@@ -135,7 +135,13 @@ export class HostSessionScanner {
       output,
       transcripts,
       unread: output.files.filter((file) => !this.cache.has(file.path)),
-      nowMs
+      nowMs,
+      onContested: (transcript) => {
+        const cached = this.cache.get(transcript.path)
+        if (cached) {
+          cached.contested = true
+        }
+      }
     })
     for (const session of sessions) {
       const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
@@ -226,7 +232,8 @@ export class HostSessionScanner {
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
       subagents: cached?.subagents ?? [],
-      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
+      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {}),
+      ...(cached?.contested ? { contested: true } : {})
     }
     this.cache.set(file.path, next)
     if (!cached) {
