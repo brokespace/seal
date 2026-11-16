@@ -168,4 +168,25 @@ describe('SSH IPC handlers', () => {
       clearSshHostServerStatus('ssh-1')
     }
   })
+
+  it('drops a runtime owner the renderer puts on SSH details', async () => {
+    mockSshStore.addTarget.mockReturnValue(target)
+
+    await handlers.get('ssh:addTarget')!(null, {
+      target: {
+        label: 'Server',
+        host: 'example.com',
+        port: 22,
+        username: 'deploy',
+        owner: { type: 'on-demand-runtime', runtimeId: 'forged' }
+      }
+    })
+
+    expect(mockSshStore.addTarget).toHaveBeenCalledWith({
+      label: 'Server',
+      host: 'example.com',
+      port: 22,
+      username: 'deploy'
+    })
+  })
 })

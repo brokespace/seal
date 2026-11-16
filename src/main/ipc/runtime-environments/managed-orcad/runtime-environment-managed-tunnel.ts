@@ -10,6 +10,7 @@ import type {
   SshTarget
 } from '../../../../shared/ssh-types'
 import { managedServerUpdateDeps } from '../../../ssh/host-server/managed-server-update-deps'
+import { connectsDirectlyOverSsh } from '../../../ssh/host-server/ssh-direct-connect-policy'
 import {
   ensureOrcadManagedTunnel,
   rebuildOrcadManagedTunnel
@@ -150,18 +151,19 @@ async function prepareNetworkServerForCall(
     // Fail with the reason instead of waiting out the status timeout against a stopped server.
     throw new OrcadCrashLoopError(crashLoop)
   }
+  const targetId = getOrcadSshDeployment(environment)?.sshTargetId
+  // A machine set to plain SSH keeps the server it has: a call neither updates nor restarts it.
+  if (targetId && connectsDirectlyOverSsh(targetId)) {
+    return
+  }
   const createDeps = () => ({
     ...managedServerUpdateDeps(userDataPath),
-    target: () => {
-      const targetId = getOrcadSshDeployment(environment)?.sshTargetId
-      return targetId ? (getSshTargetRegistryStore()?.getTarget(targetId) ?? null) : null
-    },
+    target: () => (targetId ? (getSshTargetRegistryStore()?.getTarget(targetId) ?? null) : null),
     publish: publishRestoreUpdate
   })
   if (isStoppedElsewhere(serving)) {
     // Await redeployment: another desktop can stop the server mid-session.
     if (await redeployStoppedManagedOrcad(environment.id, createDeps)) {
-      const targetId = getOrcadSshDeployment(environment)?.sshTargetId
       if (targetId) {
         await forgetLaunchSessionVerdictLazily(targetId)
       }
@@ -171,7 +173,6 @@ async function prepareNetworkServerForCall(
   } else {
     // Auto-restored hosts may never get an SSH connect to trigger their update.
     const update = updateManagedOrcadOnRestore(environment.id, createDeps)
-    const targetId = getOrcadSshDeployment(environment)?.sshTargetId
     if (targetId) {
       // Publish the warning after update status settles; import lazily to break the publishing cycle.
       void Promise.resolve(update)

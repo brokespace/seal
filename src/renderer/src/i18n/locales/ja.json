@@ -12025,8 +12025,7 @@
           },
           "description": "Orca は空の SSH ホストに自身をインストールし、常に最新の状態を保ちます。",
           "deploy": {
-            "host": "SSH ホスト",
-            "name": "サーバー名"
+            "host": "SSH ホスト"
           },
           "pending": {
             "resume": "再開"
@@ -12383,12 +12382,10 @@
           "noSavedServers": "保存済みのサーバーはありません",
           "hideError": "エラーを隠す",
           "showError": "エラーを表示",
-          "installNamePlaceholder": "SSH ホストと同じ",
           "defaultHostEmptyLine": "サーバーを追加するまで、新しいプロジェクトはこのコンピューターで開きます。",
           "setUpDone": "{{name}} に Orca をセットアップしました。",
           "settingUpInBackground": "{{name}} に Orca をバックグラウンドでセットアップしています。準備ができるとリストに表示されます。",
           "setUpOnSshHost": "SSH ホストに Orca をセットアップ",
-          "setUp": "セットアップ",
           "overYourSsh": "あなたの SSH 接続経由"
         },
         "networkAddress": {

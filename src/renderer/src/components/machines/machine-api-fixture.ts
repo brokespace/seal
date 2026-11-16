@@ -247,6 +247,10 @@ export const fakeMachinesApi: MachinesApi = {
   setConnection: async ({ machineId }) => machineView(machineId),
   renameMachine: async ({ machineId }) => machineView(machineId),
   adopt: async () => MACHINES[0]!,
+  installServer: async ({ machineId }) => machineView(machineId),
+  declineServerInstall: async ({ machineId }) => machineView(machineId),
+  removeServer: async ({ machineId }) => machineView(machineId),
+  reuseOwnServer: async ({ machineId }) => machineView(machineId),
   separate: async () => MACHINES,
   connect: async () => {},
   shellOpen: async () => ({ ok: false, message: 'Fixture has no shell' }),
@@ -280,7 +284,9 @@ const MACHINES: MachineView[] = [
     name: 'gpu-box',
     connection: 'ssh',
     ssh: sshDetails(GPU, '10.0.0.42', 22, 'brian'),
-    server: null
+    server: null,
+    serverInstall: null,
+    serverInstallAction: 'none'
   },
   {
     id: toMachineId(KESSEL),
@@ -288,7 +294,9 @@ const MACHINES: MachineView[] = [
     name: 'kessel-ml',
     connection: 'server',
     ssh: sshDetails('kessel-ssh', 'kessel-ml', 22, 'brian'),
-    server: { environmentId: KESSEL, name: 'kessel-ml', endpoint: 'ws://kessel-ml:6768' }
+    server: { environmentId: KESSEL, name: 'kessel-ml', endpoint: 'ws://kessel-ml:6768' },
+    serverInstall: null,
+    serverInstallAction: 'none'
   },
   {
     id: toMachineId(NAS),
@@ -296,7 +304,9 @@ const MACHINES: MachineView[] = [
     name: 'nas',
     connection: 'ssh',
     ssh: sshDetails(NAS, 'nas.local', 2222, 'admin'),
-    server: null
+    server: null,
+    serverInstall: null,
+    serverInstallAction: 'none'
   }
 ]
 

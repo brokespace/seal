@@ -56,7 +56,9 @@ function viewFor(connection: MachineConnection): MachineView {
     name: 'loop',
     connection: connection.transport === 'server' ? 'server' : 'ssh',
     ssh: null,
-    server: null
+    server: null,
+    serverInstall: null,
+    serverInstallAction: 'none'
   }
 }
 

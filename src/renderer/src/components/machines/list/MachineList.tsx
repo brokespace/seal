@@ -8,6 +8,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { MachineId, MachineMetrics } from '../../../../../shared/machines/machine-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineView } from '../../../../../shared/machines/machine-view'
 import { MachineGpuListMeter } from '../detail/MachineGpuMeter'
 import {
   MachineMeter,
@@ -17,17 +18,21 @@ import {
   useCpuReadings,
   useMachineStatusLabel
 } from '../detail/MachineVitals'
+import { serverInstallStatusText } from '../server-install/seal-server-install-copy'
+import { MachineServerInstallBadge } from './MachineServerInstallBadge'
 
 const CONNECTION_ICON = { local: Laptop, ssh: Server, server: Cloud }
 
 function MachineListItem({
   machine,
+  view,
   metrics,
   sessionCount,
   selected,
   onSelect
 }: {
   machine: MachineSummary
+  view: MachineView | undefined
   metrics: MachineMetrics | null
   sessionCount: number
   selected: boolean
@@ -56,6 +61,7 @@ function MachineListItem({
         <div className="flex w-full min-w-0 items-center gap-2">
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{machine.label}</span>
+          <MachineServerInstallBadge view={view} connecting={machine.status === 'connecting'} />
           {sessionCount > 0 ? (
             <span
               className="flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground tabular-nums"
@@ -68,7 +74,9 @@ function MachineListItem({
             </span>
           ) : null}
           <MachineStatusDot status={machine.status} />
-          <span className="sr-only">{statusLabel(machine.status)}</span>
+          <span className="sr-only">
+            {serverInstallStatusText(t, view, machine.status) ?? statusLabel(machine.status)}
+          </span>
         </div>
         {subtitle || machine.statusDetail ? (
           <span
@@ -114,12 +122,14 @@ function MachineListItem({
 
 export function MachineList({
   machines,
+  viewsById,
   metricsById,
   sessionCountById,
   selectedId,
   onSelect
 }: {
   machines: readonly MachineSummary[]
+  viewsById: ReadonlyMap<MachineId, MachineView>
   metricsById: ReadonlyMap<MachineId, { metrics: MachineMetrics | null }>
   sessionCountById: ReadonlyMap<MachineId, number>
   selectedId: MachineId | null
@@ -146,6 +156,7 @@ export function MachineList({
           <MachineListItem
             key={machine.id}
             machine={machine}
+            view={viewsById.get(machine.id)}
             metrics={metricsById.get(machine.id)?.metrics ?? null}
             sessionCount={sessionCountById.get(machine.id) ?? 0}
             selected={machine.id === selectedId}
