@@ -173,7 +173,8 @@ function resolveStripDrop(
   strip: HTMLElement,
   x: number,
   paneId: string | null,
-  dragged: ReadonlySet<string>
+  dragged: ReadonlySet<string>,
+  pointerCaptured: boolean
 ): ResolvedDrop {
   const stripRect = strip.getBoundingClientRect()
   const tabs = [...strip.querySelectorAll<HTMLElement>(`[${ITEM_TAB_KEY_ATTRIBUTE}]`)]
@@ -189,8 +190,10 @@ function resolveStripDrop(
       return x < rect.left + rect.width / 2
     })
   }
-  // Beside the scroll buttons, which scroll a held tab along, the end it would land at is shown.
-  if (scroller && (x < row.left || x > row.right)) {
+  // Beside the tabs the end it would land at is shown. A scroll button scrolls a held tab along
+  // itself, unless the drag captured the pointer and the button never sees it.
+  const besideTabs = x <= shown.left || x >= shown.right
+  if (scroller && (x < row.left || x > row.right || (pointerCaptured && besideTabs))) {
     scroller.scrollLeft = index === 0 ? 0 : scroller.scrollWidth
   }
   const side = index === -1 ? 'right' : 'left'
@@ -219,7 +222,12 @@ function resolveStripDrop(
   }
 }
 
-function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): ResolvedDrop | null {
+function resolveDrop(
+  x: number,
+  y: number,
+  items: readonly SplitViewItem[],
+  pointerCaptured = false
+): ResolvedDrop | null {
   const area = document.querySelector<HTMLElement>(`[${SPLIT_VIEW_DROP_AREA_ATTRIBUTE}]`)
   const mode = dropMode()
   if (!area || !mode || items.length === 0) {
@@ -240,7 +248,8 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
   const dragged = new Set(items.map(splitViewItemKey))
   const strip = findAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
   if (strip) {
-    return resolveStripDrop(strip, x, strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null, dragged)
+    const paneId = strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null
+    return resolveStripDrop(strip, x, paneId, dragged, pointerCaptured)
   }
   const pane = mode === 'grid' ? findAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
   if (!pane) {
@@ -278,8 +287,13 @@ function resolveDrop(x: number, y: number, items: readonly SplitViewItem[]): Res
 }
 
 /** Shows where a drop would land. False when the main area is not taking the pointer. */
-export function trackSplitViewDrop(x: number, y: number, items: readonly SplitViewItem[]): boolean {
-  const drop = resolveDrop(x, y, items)
+export function trackSplitViewDrop(
+  x: number,
+  y: number,
+  items: readonly SplitViewItem[],
+  pointerCaptured = false
+): boolean {
+  const drop = resolveDrop(x, y, items, pointerCaptured)
   setPreview(drop?.preview ?? null)
   return drop !== null
 }

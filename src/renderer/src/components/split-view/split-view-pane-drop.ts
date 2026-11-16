@@ -59,7 +59,8 @@ export function beginSplitViewPaneDrop(
   }
   return {
     track: (x, y) => {
-      const taken = trackSplitViewDrop(x, y, items)
+      // A header the sidebar reorders captures the pointer for the length of its drag.
+      const taken = trackSplitViewDrop(x, y, items, ghost === 'over-panes')
       if (taken || ghost === 'everywhere') {
         follow(x, y)
       } else {
