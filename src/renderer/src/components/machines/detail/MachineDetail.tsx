@@ -36,6 +36,12 @@ import type { MachineResourceKind } from '../resources/machine-resource-requests
 import { MachineConnectionBadge } from '../list/MachineConnectionBadge'
 import { refreshMachineMetrics } from '../model/machine-metrics-store'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineView } from '../../../../../shared/machines/machine-view'
+import { MachineServerStatus } from '../server-install/MachineServerStatus'
+import {
+  serverInstallProgressText,
+  serverInstallStatusText
+} from '../server-install/seal-server-install-copy'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { MachineEditDialog } from './MachineEditDialog'
 import { MachineSessionList } from './MachineSessionList'
@@ -48,6 +54,7 @@ import {
 
 export function MachineDetail({
   machine,
+  view,
   metrics,
   metricsError,
   sessions,
@@ -56,6 +63,8 @@ export function MachineDetail({
   onAddSshDetails
 }: {
   machine: MachineSummary
+  /** The stored machine behind the summary; null for this computer. */
+  view: MachineView | null
   metrics: MachineMetrics | null
   metricsError: string | null
   sessions: readonly LiveSession[]
@@ -76,6 +85,7 @@ export function MachineDetail({
   const removal =
     machine.connection === 'local' ? null : resolveHostRemoval(machine.executionHostId)
   const online = machine.status === 'online'
+  const installStatus = serverInstallStatusText(t, view, machine.status)
   const homeDir = metrics?.homeDir ?? null
   // A detail belongs to the machine it was opened on, and needs that machine reachable.
   const resource = online && opened?.machineId === machine.id ? opened.kind : null
@@ -114,8 +124,8 @@ export function MachineDetail({
             <h2 className="truncate text-sm font-semibold">{machine.label}</h2>
             <MachineStatusDot status={machine.status} />
             <MachineConnectionBadge connection={machine.connection} />
-            <span className="shrink-0 text-2xs text-muted-foreground">
-              {statusLabel(machine.status)}
+            <span className="shrink-0 text-2xs text-muted-foreground" data-machine-status-text>
+              {installStatus ?? statusLabel(machine.status)}
             </span>
           </div>
           {machine.address || machine.statusDetail ? (
@@ -227,6 +237,14 @@ export function MachineDetail({
           </DropdownMenu>
         </div>
       </header>
+      {view ? (
+        <MachineServerStatus
+          key={`server:${view.id}`}
+          view={view}
+          connecting={machine.status === 'connecting'}
+          onChanged={onChanged}
+        />
+      ) : null}
       {online ? (
         <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
           <MachineVitalsStrip
@@ -266,6 +284,7 @@ export function MachineDetail({
         homeDir={homeDir}
         hidden={resource !== null}
         folderRequest={folderRequest}
+        unreachableText={view && installStatus ? serverInstallProgressText(t, view) : null}
       />
       <MachineEditDialog
         machineId={machine.id}

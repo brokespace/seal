@@ -23,6 +23,7 @@ import { DEFAULT_LOCAL_ORCA_PROFILE_ID } from '../../src/shared/orca-profiles'
 import { deriveBrowserRoutePartition } from '../../src/main/browser/routing/partitions/browser-route-identity'
 import { sshExecutionHostStorageIdentity } from '../../src/main/browser/routing/identity/browser-execution-host-storage-identity'
 import { reconnect } from './helpers/orcad-convert-flow'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import { navigateGuest } from './helpers/browser-split-guest-probes'
 import { ORCAD_TEMPLATE, skipUnlessManagedDockerHost } from './helpers/orcad-managed-workspace'
 import { getOrcadSshDeployment } from '../../src/shared/remote-runtime/host-catalog/runtime-environments'
@@ -148,6 +149,7 @@ test('retained and new browser tabs keep SSH routing and login cookies after man
       }
     )
     cpSync(ORCAD_TEMPLATE!, template, { recursive: true })
+    await installSealServerOverSshTarget(page, remote.targetId)
     const server = await reconnect(page, remote.targetId)
     console.log('[browser-conversion-connect]', server)
     expect(JSON.parse(server)).toMatchObject({ kind: 'managed' })

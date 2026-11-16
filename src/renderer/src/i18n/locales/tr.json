@@ -12563,8 +12563,7 @@
           },
           "description": "Orca, boş bir SSH sunucusuna kendini kurar ve güncel tutar.",
           "deploy": {
-            "host": "SSH sunucusu",
-            "name": "Sunucu adı"
+            "host": "SSH sunucusu"
           },
           "pending": {
             "resume": "Devam et"
@@ -12957,11 +12956,9 @@
           "showError": "Hatayı göster",
           "neverConnected": "Hiç bağlanılmadı",
           "defaultHostEmptyLine": "Siz bir sunucu ekleyene kadar yeni projeler bu bilgisayarda açılır.",
-          "installNamePlaceholder": "SSH sunucusuyla aynı",
           "setUpDone": "{{name}} üzerinde Orca kuruldu.",
           "settingUpInBackground": "{{name}} üzerinde Orca arka planda kuruluyor. Hazır olduğunda listede görünecek.",
           "setUpOnSshHost": "Bir SSH sunucusuna Orca kur",
-          "setUp": "Kur",
           "overYourSsh": "SSH bağlantınız üzerinden"
         },
         "sshBulkRemove": {

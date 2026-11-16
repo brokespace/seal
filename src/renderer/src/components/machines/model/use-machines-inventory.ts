@@ -19,16 +19,17 @@ export type MachinesInventory = {
   reload: () => void
 }
 
-/** Live machine list; any SSH host or server change anywhere in the app refreshes it. */
-export function useMachinesInventory(localName: string): MachinesInventory {
-  const sshStates = useAppStore((s) => s.sshConnectionStates)
+/** The stored machines, refetched when a machine, SSH host or server changes; nothing polls. */
+export function useMachineViews(): {
+  views: readonly MachineView[]
+  /** Bumps on every refetch, so callers can refresh what they read beside the list. */
+  revision: number
+  reload: () => void
+} {
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
   const [views, setViews] = useState<readonly MachineView[]>([])
-  const [runtimeStatuses, setRuntimeStatuses] = useState<Map<string, RuntimeHostStatusSnapshot>>(
-    () => new Map()
-  )
-  const [reloadToken, setReloadToken] = useState(0)
-  const reload = useCallback(() => setReloadToken((token) => token + 1), [])
+  const [revision, setRevision] = useState(0)
+  const reload = useCallback(() => setRevision((current) => current + 1), [])
 
   useEffect(() => {
     let cancelled = false
@@ -40,6 +41,38 @@ export function useMachinesInventory(localName: string): MachinesInventory {
         }
       })
       .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [revision, sshTargetLabels])
+
+  useEffect(() => {
+    const unsubscribers = [
+      window.api.machines?.onChanged(() => reload()),
+      window.api.ssh.onTargetRemoved?.(() => reload()),
+      window.api.runtimeEnvironments?.onCatalogChanged?.(() => reload())
+    ]
+    return () => {
+      for (const unsubscribe of unsubscribers) {
+        unsubscribe?.()
+      }
+    }
+  }, [reload])
+
+  return { views, revision, reload }
+}
+
+/** Live machine list; any SSH host or server change anywhere in the app refreshes it. */
+export function useMachinesInventory(localName: string): MachinesInventory {
+  const sshStates = useAppStore((s) => s.sshConnectionStates)
+  const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
+  const { views, revision, reload } = useMachineViews()
+  const [runtimeStatuses, setRuntimeStatuses] = useState<Map<string, RuntimeHostStatusSnapshot>>(
+    () => new Map()
+  )
+
+  useEffect(() => {
+    let cancelled = false
     void window.api.runtimeEnvironments
       ?.getStatusSnapshots()
       .then((snapshots) => {
@@ -51,23 +84,15 @@ export function useMachinesInventory(localName: string): MachinesInventory {
     return () => {
       cancelled = true
     }
-  }, [reloadToken, sshTargetLabels])
+  }, [revision, sshTargetLabels])
 
-  useEffect(() => {
-    const unsubscribers = [
-      window.api.machines?.onChanged(() => reload()),
-      window.api.ssh.onTargetRemoved?.(() => reload()),
-      window.api.runtimeEnvironments?.onCatalogChanged?.(() => reload()),
+  useEffect(
+    () =>
       window.api.runtimeEnvironments?.onStatusChanged((snapshot) =>
         setRuntimeStatuses((previous) => new Map(previous).set(snapshot.environmentId, snapshot))
-      )
-    ]
-    return () => {
-      for (const unsubscribe of unsubscribers) {
-        unsubscribe?.()
-      }
-    }
-  }, [reload])
+      ),
+    []
+  )
 
   const machines = useMemo(
     () =>

@@ -16,6 +16,7 @@ import {
 } from './helpers/ssh-remote-only-browser-fixture'
 import { createRetentionFixtureDirectory } from './helpers/host-created-terminal-retention-oracle'
 import { reconnect, serverCall } from './helpers/orcad-convert-flow'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import { ORCAD_TEMPLATE, skipUnlessManagedDockerHost } from './helpers/orcad-managed-workspace'
 import { getOrcadSshDeployment } from '../../src/shared/remote-runtime/host-catalog/runtime-environments'
 
@@ -60,6 +61,7 @@ test('an unavailable browser on a responding managed host does not report a serv
     })
     await waitForSessionReady(page)
     cpSync(ORCAD_TEMPLATE!, template, { recursive: true })
+    await installSealServerOverSshTarget(page, remote.targetId)
     const server = await reconnect(page, remote.targetId)
     console.log('[browser-conversion-connect]', server)
     expect(JSON.parse(server)).toMatchObject({ kind: 'managed' })

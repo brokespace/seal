@@ -14,7 +14,7 @@ import {
   nodeToolchainVersionsMeetRequirements
 } from './ssh-remote-node-toolchain-probe'
 import { isSshSessionLimitError } from '../../connection/ssh-session-limit-error'
-import { buildSshLoginShellCommand } from '../../remote-exec/ssh-login-shell-command'
+import { execInSshLoginShell } from '../../remote-exec/ssh-login-shell-exec'
 import { REMOTE_NODE_PATH_PROBE_SCRIPT } from './ssh-remote-node-probe-script'
 
 // Login fallback covers custom profiles but can hang on interactive setup; keep its deadline short.
@@ -126,30 +126,18 @@ export async function tryResolveViaLoginShell<T>(
   options?: ProbeOptions
 ): Promise<ResolvedCandidate<T> | null> {
   try {
-    // Respect chsh/passwd SHELL for custom profiles; restricted accounts without it use sh.
-    const shellResult = await execCommand(conn, 'echo "${SHELL:-/bin/sh}"', {
+    const probe = await execInSshLoginShell(conn, 'command -v node', {
       timeoutMs: LOGIN_SHELL_PROBE_TIMEOUT_MS,
       signal: options?.signal
     })
-    const shell = shellResult.trim().split('\n')[0]
-    if (!shell) {
-      return null
-    }
-
-    const probe = buildSshLoginShellCommand(shell, 'command -v node')
-    const nodePath = await execCommand(conn, probe.command, {
-      wrapCommand: false,
-      timeoutMs: LOGIN_SHELL_PROBE_TIMEOUT_MS,
-      signal: options?.signal
-    })
-    const candidate = probe.readStdout(nodePath)?.trim().split('\n')[0]
-    if (!candidate) {
+    const candidate = probe?.stdout?.trim().split('\n')[0]
+    if (!probe || !candidate) {
       return null
     }
 
     const result = await check(candidate)
     if (result !== null) {
-      console.log(`[ssh-relay] Found node via login shell (${shell}): ${candidate}`)
+      console.log(`[ssh-relay] Found node via login shell (${probe.shell}): ${candidate}`)
       return { nodePath: candidate, result }
     }
   } catch (err) {

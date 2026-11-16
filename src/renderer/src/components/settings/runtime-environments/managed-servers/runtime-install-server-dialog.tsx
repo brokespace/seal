@@ -1,11 +1,21 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import type { ManagedOrcadPreloadApi } from '../../../../../../preload/api/runtime/managed-orcad-api'
+import type { MachineView } from '../../../../../../shared/machines/machine-view'
 import type { SshTarget } from '../../../../../../shared/ssh-types'
+import { useMachineViews } from '@/components/machines/model/use-machines-inventory'
+import { machineOfSshTarget } from '@/components/machines/model/ssh-target-machine'
+import {
+  MachineServerInstallProgress,
+  MachineServerReuseNotice
+} from '@/components/machines/server-install/MachineServerInstallNotice'
+import { serverInstallIsRunning } from '@/components/machines/server-install/seal-server-install-copy'
+import {
+  hasNoSealServerYet,
+  useOwnSealServerReuse
+} from '@/components/machines/server-install/use-seal-server-install'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useTranslate } from '@/i18n/use-translate'
 import { useAppStore } from '@/store/index'
-import { LoadingSpinner } from '../../../LoadingSpinner'
 import { Button } from '../../../ui/button'
 import {
   Dialog,
@@ -15,23 +25,21 @@ import {
   DialogHeader,
   DialogTitle
 } from '../../../ui/dialog'
-import { Input } from '../../../ui/input'
 import { Label } from '../../../ui/label'
-import { managedServerOutcomeLabel } from './managed-server-copy'
 import { HostCombobox } from '../../../host-picker/HostCombobox'
+import { useSshHostSealServerInstall } from './use-ssh-host-seal-server-install'
 
 type RuntimeInstallServerDialogProps = {
   open: boolean
-  api: ManagedOrcadPreloadApi
   emptyTargets: SshTarget[]
   loadFailed: boolean
   onOpenChange: (open: boolean) => void
   onDeployed: () => Promise<void> | void
 }
 
+/** Chooses the SSH host; the install itself is the machine's own, behind its confirmation dialog. */
 export function RuntimeInstallServerDialog({
   open,
-  api,
   emptyTargets,
   loadFailed,
   onOpenChange,
@@ -39,10 +47,14 @@ export function RuntimeInstallServerDialog({
 }: RuntimeInstallServerDialogProps): React.JSX.Element {
   const t = useTranslate()
   const mountedRef = useMountedRef()
+  const confirmAndReuse = useOwnSealServerReuse()
+  const installOnHost = useSshHostSealServerInstall()
   const openSettingsTarget = useAppStore((state) => state.openSettingsTarget)
-  const [name, setName] = useState('')
+  const { views } = useMachineViews()
   const [targetId, setTargetId] = useState('')
-  const [deploying, setDeploying] = useState(false)
+  const [busy, setBusy] = useState<'install' | 'reuse' | null>(null)
+  // The machine as the last request left it, shown until the machine list has caught up.
+  const [answered, setAnswered] = useState<MachineView | null>(null)
   const openRef = useRef(open)
   // Scope completion resets to the opening session so background installs cannot clear reopened forms.
   const sessionRef = useRef(0)
@@ -53,31 +65,39 @@ export function RuntimeInstallServerDialog({
     }
   }, [open])
   const hostFieldId = useId()
-  const nameFieldId = useId()
-  const targetLabel = emptyTargets.find((target) => target.id === targetId)?.label ?? ''
-  const serverName = name.trim() || targetLabel
-  const canSubmit = !deploying && targetId !== '' && serverName !== ''
+  // A machine that already connects through a Seal server is not a host without one.
+  const hosts = emptyTargets.filter((target) => {
+    const holder = machineOfSshTarget(views, target.id)
+    return !holder || hasNoSealServerYet(holder)
+  })
+  const targetLabel = hosts.find((target) => target.id === targetId)?.label ?? ''
+  const machine =
+    answered?.ssh?.targetId === targetId ? answered : machineOfSshTarget(views, targetId)
+  const ownServer = machine?.serverInstallAction === 'reuse' ? machine : null
+  const installing = machine ? serverInstallIsRunning(machine, false) : false
+  const canSubmit = busy === null && targetLabel !== '' && !ownServer && !installing
 
-  const deploy = async (): Promise<void> => {
+  // Runs one request for the chosen host, then refreshes the list the way a finished setup did before.
+  const run = async (
+    kind: 'install' | 'reuse',
+    request: () => Promise<MachineView | null>
+  ): Promise<void> => {
     const session = sessionRef.current
-    setDeploying(true)
+    setBusy(kind)
+    setAnswered(null)
     try {
-      const result = await api.deploy({ name: serverName, sshTargetId: targetId })
-      if (result.outcome === 'deferred') {
-        toast.message(managedServerOutcomeLabel(result))
-      } else {
-        toast.success(
-          t('auto.components.settings.serverList.setUpDone', 'Orca is set up on {{name}}.', {
-            name: result.environment.name
-          })
-        )
-        const sameSession = session === sessionRef.current
-        if (mountedRef.current && (!openRef.current || sameSession)) {
-          setName('')
-          setTargetId('')
-          if (openRef.current) {
-            onOpenChange(false)
-          }
+      const view = await request()
+      if (!view) {
+        return
+      }
+      if (view.connection !== 'server') {
+        if (mountedRef.current) {
+          setAnswered(view)
+        }
+      } else if (mountedRef.current && (!openRef.current || session === sessionRef.current)) {
+        setTargetId('')
+        if (openRef.current) {
+          onOpenChange(false)
         }
       }
       await onDeployed()
@@ -85,18 +105,39 @@ export function RuntimeInstallServerDialog({
       toast.error(error instanceof Error ? error.message : String(error))
     } finally {
       if (mountedRef.current) {
-        setDeploying(false)
+        setBusy(null)
       }
     }
   }
 
+  // `run` starts once the user confirmed, so an open or cancelled dialog leaves this form alone.
+  const reuse = (owner: MachineView): void => {
+    const reused = confirmAndReuse(
+      owner,
+      () =>
+        void run('reuse', async () => {
+          const view = await reused
+          if (view?.connection === 'server') {
+            toast.success(
+              t(
+                'seal.machineServer.settings.reuseDone',
+                'Seal now connects to {{name}} through the Seal server you set up there.',
+                { name: view.name }
+              )
+            )
+          }
+          return view
+        })
+    )
+  }
+
   const handleOpenChange = (next: boolean): void => {
-    if (!next && deploying) {
+    if (!next && installing) {
       toast.message(
         t(
           'auto.components.settings.serverList.settingUpInBackground',
           'Setting up Orca on {{name}} in the background. It appears in the list when it’s ready.',
-          { name: serverName }
+          { name: targetLabel }
         )
       )
     }
@@ -104,7 +145,7 @@ export function RuntimeInstallServerDialog({
   }
 
   return (
-    // Allow closing long SSH installs because deployment continues in the background.
+    // Allow closing long SSH installs because the install continues in the background.
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <form
@@ -112,7 +153,7 @@ export function RuntimeInstallServerDialog({
           onSubmit={(event) => {
             event.preventDefault()
             if (canSubmit) {
-              void deploy()
+              void run('install', () => installOnHost(targetId))
             }
           }}
         >
@@ -129,9 +170,12 @@ export function RuntimeInstallServerDialog({
                   {t(
                     'auto.components.settings.managedServers.description',
                     'Orca installs itself on an empty SSH host and keeps itself up to date.'
+                  )}{' '}
+                  {t(
+                    'seal.machineServer.settings.asksFirst',
+                    'Seal shows what it writes on the host and asks before it installs anything.'
                   )}
                 </p>
-                {}
                 <p>
                   {t(
                     'auto.components.settings.managedServers.reassurance',
@@ -147,16 +191,17 @@ export function RuntimeInstallServerDialog({
             </Label>
             <HostCombobox
               id={hostFieldId}
-              options={emptyTargets}
+              options={hosts}
               value={targetId}
               onChange={setTargetId}
+              disabled={busy !== null}
               placeholder={t(
                 'auto.components.settings.serverList.installHostPlaceholder',
                 'Choose an SSH host without Orca'
               )}
             />
             <p className="text-xs text-muted-foreground">
-              {emptyTargets.length === 0
+              {hosts.length === 0
                 ? t(
                     'auto.components.settings.serverList.installNoHosts',
                     'No SSH hosts without an Orca server.'
@@ -185,44 +230,31 @@ export function RuntimeInstallServerDialog({
               </p>
             ) : null}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor={nameFieldId}>
-              {t('auto.components.settings.managedServers.deploy.name', 'Server name')}{' '}
-              <span className="font-normal text-muted-foreground">
-                {t('auto.components.settings.RuntimeHostAccessForm.optional', '(optional)')}
-              </span>
-            </Label>
-            <Input
-              id={nameFieldId}
-              value={name}
-              placeholder={
-                targetLabel ||
-                t(
-                  'auto.components.settings.serverList.installNamePlaceholder',
-                  'Same as the SSH host'
-                )
-              }
-              onChange={(event) => setName(event.target.value)}
+          {ownServer ? (
+            <MachineServerReuseNotice
+              view={ownServer}
+              busy={busy === 'reuse'}
+              onReuse={() => reuse(ownServer)}
             />
-          </div>
+          ) : machine && installing ? (
+            <MachineServerInstallProgress view={machine} />
+          ) : null}
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenChange(false)}>
-              {deploying
+              {installing
                 ? t('auto.components.settings.serverList.close', 'Close')
                 : t('auto.components.settings.serverList.cancel', 'Cancel')}
             </Button>
-            <Button type="submit" size="sm" disabled={!canSubmit}>
-              {deploying ? <LoadingSpinner className="size-3.5" /> : null}
-              {deploying
-                ? t(
-                    'auto.components.settings.sshHostServer.deploying',
-                    'Setting up Orca on {{host}}…',
-                    {
-                      host: targetLabel
-                    }
-                  )
-                : t('auto.components.settings.serverList.setUp', 'Set up')}
-            </Button>
+            {ownServer ? null : (
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!canSubmit}
+                data-machine-server-action="install"
+              >
+                {t('seal.machineServer.server.installAction', 'Install Seal server…')}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

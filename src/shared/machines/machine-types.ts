@@ -1,3 +1,4 @@
+import type { MachineCpuTemperature } from './machine-cpu-temperature-types'
 import type { MachineGpu } from './machine-gpu-types'
 
 /** `local`, or `machine:<record id>` whichever transport the machine uses. */
@@ -48,6 +49,8 @@ export type MachineMetrics = {
   homeDir: string | null
   /** Absent on a machine with no GPU that Seal can read. */
   gpus?: MachineGpu[]
+  /** Absent where no sensor of the processor is readable, as on most virtual machines. */
+  cpuTemperature?: MachineCpuTemperature
   collectedAt: number
 }
 
@@ -133,6 +136,10 @@ export const MACHINE_IPC = {
   adopt: 'machines:adopt',
   separate: 'machines:separate',
   connect: 'machines:connect',
+  installServer: 'machines:installServer',
+  declineServerInstall: 'machines:declineServerInstall',
+  removeServer: 'machines:removeServer',
+  reuseOwnServer: 'machines:reuseOwnServer',
   shellOpen: 'machines:shellOpen',
   shellWrite: 'machines:shellWrite',
   shellResize: 'machines:shellResize',

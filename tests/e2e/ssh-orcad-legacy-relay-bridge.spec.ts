@@ -9,6 +9,7 @@ import { createRestartSession } from './helpers/orca-restart'
 import { managedServer } from './helpers/orcad-convert-flow'
 import { seedRelayEraProfile } from './helpers/orcad-upgrade-profile'
 import { readPersistedProfileState } from './helpers/persisted-profile-state'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 
 import { toSshExecutionHostId } from '../../src/shared/execution-host'
 import { toAppSshPtyId } from '../../src/shared/ssh-pty-id'
@@ -111,6 +112,8 @@ test('a bridged tab closed while disconnected stops its shell even after a resta
         tabId: seeded.terminalTabId!
       }
     )
+    // A saved host connects over plain SSH; only a confirmed install converts it.
+    await installSealServerOverSshTarget(page, targetId)
     await expect
       .poll(() => managedServer(page, targetId), { timeout: 8 * 60_000 })
       .toMatchObject({ kind: 'managed' })

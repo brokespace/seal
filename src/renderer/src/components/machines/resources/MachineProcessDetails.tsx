@@ -3,6 +3,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { formatBytes } from '../model/machine-format'
+import { MachineCpuSensors, MachineCpuTemperatureStat } from './MachineCpuTemperature'
 import { MachineDockerSection } from './MachineDockerSection'
 import { MachineProcessesView } from './MachineProcessesView'
 import { MachineResourceStat, MachineResourceStats } from './MachineResourceStat'
@@ -20,31 +21,35 @@ export function MachineCpuDetail({
       machine={machine}
       initialSort="cpu"
       summary={(snapshot) => (
-        <MachineResourceStats>
-          <MachineResourceStat
-            label={t('auto.components.machines.cpu.busy', 'Busy now')}
-            value={
-              snapshot?.cpuBusyPercent === null || snapshot?.cpuBusyPercent === undefined
-                ? '—'
-                : `${snapshot.cpuBusyPercent.toFixed(1)}%`
-            }
-            detail={t('auto.components.machines.cpu.busyDetail', 'all cores, last second')}
-          />
-          <MachineResourceStat
-            label={t('auto.components.machines.cpu.load', 'Load average')}
-            value={metrics?.loadAverage?.map((load) => load.toFixed(2)).join('  ') ?? '—'}
-            detail={t('auto.components.machines.cpu.loadDetail', '1, 5 and 15 minutes')}
-          />
-          <MachineResourceStat
-            label={t('auto.components.machines.cpu.cores', 'Cores')}
-            value={metrics?.cpuCount ? String(metrics.cpuCount) : '—'}
-            detail={metrics?.cpuModel ?? undefined}
-          />
-          <MachineResourceStat
-            label={t('auto.components.machines.cpu.processes', 'Processes')}
-            value={snapshot ? String(snapshot.totalProcesses) : '—'}
-          />
-        </MachineResourceStats>
+        <>
+          <MachineResourceStats columns={5}>
+            <MachineResourceStat
+              label={t('auto.components.machines.cpu.busy', 'Busy now')}
+              value={
+                snapshot?.cpuBusyPercent === null || snapshot?.cpuBusyPercent === undefined
+                  ? '—'
+                  : `${snapshot.cpuBusyPercent.toFixed(1)}%`
+              }
+              detail={t('auto.components.machines.cpu.busyDetail', 'all cores, last second')}
+            />
+            <MachineResourceStat
+              label={t('auto.components.machines.cpu.load', 'Load average')}
+              value={metrics?.loadAverage?.map((load) => load.toFixed(2)).join('  ') ?? '—'}
+              detail={t('auto.components.machines.cpu.loadDetail', '1, 5 and 15 minutes')}
+            />
+            <MachineCpuTemperatureStat metrics={metrics} />
+            <MachineResourceStat
+              label={t('auto.components.machines.cpu.cores', 'Cores')}
+              value={metrics?.cpuCount ? String(metrics.cpuCount) : '—'}
+              detail={metrics?.cpuModel ?? undefined}
+            />
+            <MachineResourceStat
+              label={t('auto.components.machines.cpu.processes', 'Processes')}
+              value={snapshot ? String(snapshot.totalProcesses) : '—'}
+            />
+          </MachineResourceStats>
+          <MachineCpuSensors metrics={metrics} />
+        </>
       )}
     />
   )
