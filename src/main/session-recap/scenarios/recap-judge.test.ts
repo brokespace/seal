@@ -39,6 +39,7 @@ import {
   type RecapJudgeScore,
   type RecapJudgeSpend
 } from './recap-judge-scoring.test-fixture'
+import { judgeLabelledScenario } from './recap-judge-product-run.test-fixture'
 import { recapJudgeState } from './recap-judge-state.test-fixture'
 import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
 import { loadRecapScenarios, writeRecapScenarioJson } from './recap-scenario-files.test-fixture'
@@ -242,6 +243,92 @@ describe('the judge the recap runs', () => {
       cuts: RECAP_JUDGE_CALIBRATION.cuts
     })
   })
+})
+
+describe('the recap judged by its own code', () => {
+  // The labelled suite through the app's transcript readers, the conversation reader, the requests
+  // step, the Clef client and the display rule, with Clef's recorded answers. No model is called.
+  it(
+    'never calls a finished request not addressed, and still catches what was left',
+    { timeout: 120_000 },
+    async () => {
+      const records = onRecord.get(RECAP_JUDGE_CALIBRATION.model) ?? new Map()
+      const judged = (
+        await Promise.all(
+          labelled.flatMap((found) =>
+            found.scenario.surfaces.map((surface) =>
+              judgeLabelledScenario(found.scenario, found.labels, surface, records)
+            )
+          )
+        )
+      ).flat()
+      const ids = (found: typeof judged): string[] =>
+        [...new Set(found.map((entry) => `${entry.item.id} on ${entry.surface}`))].sort()
+
+      // On every surface: the alarm is never raised on finished work or on a turn still running.
+      expect(
+        ids(
+          judged.filter(
+            (found) =>
+              (found.item.truth === 'done' || found.item.truth === 'working') &&
+              found.display === 'not-addressed'
+          )
+        )
+      ).toEqual([])
+
+      // The readers hand the judge the state its thresholds were measured on, but for these. A
+      // pasted stack trace loses its indentation, as all recap prose does. A chat's journal holds
+      // a question as a plain row without the pick, and a running turn's last row not yet.
+      const differs = (surface: string): string[] => [
+        ...new Set(
+          judged
+            .filter((found) => found.surface === surface && !found.sameState)
+            .map((found) => found.item.scenario)
+        )
+      ]
+      expect(differs('claude-cli')).toEqual(['ask-in-the-middle-of-a-long-message'])
+      expect(differs('claude-ssh')).toEqual([])
+      expect(differs('codex-cli')).toEqual(['ask-in-the-middle-of-a-long-message'])
+      expect(differs('chat-journal').sort()).toEqual([
+        'ask-in-the-middle-of-a-long-message',
+        'many-asks-in-one-long-turn',
+        'mid-turn-automatic-recap',
+        'mid-turn-first-look',
+        'mid-turn-refresh',
+        'question-tool-answered',
+        'question-tool-waiting',
+        'second-ask-sent-while-the-agent-works'
+      ])
+      expect(ids(judged.filter((found) => found.sameState && !found.answered))).toEqual([])
+
+      // Counted as the measurement counts: each scenario on its first surface, each state once.
+      const counted = [
+        ...new Map(
+          judged
+            .filter((found) => {
+              const scenario = scenarios.find((candidate) => candidate.id === found.item.scenario)
+              return found.surface === scenario?.surfaces[0]
+            })
+            .map((found) => [`${found.item.truth} ${stateOf(found.item)}`, found])
+        ).values()
+      ]
+      const shown = (truth: string, split: string, display?: string): number =>
+        counted.filter(
+          (found) =>
+            found.item.truth === truth &&
+            found.item.split === split &&
+            (!display || found.display === display)
+        ).length
+      expect(shown('done', 'tune') + shown('done', 'held-out')).toBe(142)
+      expect(
+        shown('done', 'tune', 'not-addressed') + shown('done', 'held-out', 'not-addressed')
+      ).toBe(0)
+      expect([shown('open', 'held-out', 'not-addressed'), shown('open', 'held-out')]).toEqual([
+        13, 13
+      ])
+      expect([shown('open', 'tune', 'not-addressed'), shown('open', 'tune')]).toEqual([14, 17])
+    }
+  )
 })
 
 describe('recap judge models', () => {
