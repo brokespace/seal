@@ -28,7 +28,10 @@ import { useTranslate } from '@/i18n/use-translate'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTabMenu } from './ItemTabMenu'
-import { bringKeyboardFocusIntoFocusedPane, keepKeyboardOnTab } from './pane-keyboard-focus'
+import {
+  bringKeyboardFocusIntoFocusedPane,
+  keepKeyboardOnStripControl
+} from './pane-keyboard-focus'
 import { ITEM_TAB_KEY_ATTRIBUTE } from './split-view-drop-target'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { splitViewStore } from './split-view-store'
@@ -155,7 +158,7 @@ export function ItemTab({
         // Enter and Space on the close button are its own, not the tab's.
         if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault()
-          keepKeyboardOnTab(event.currentTarget)
+          keepKeyboardOnStripControl(event.currentTarget)
           commands.activate(item)
         }
       }}
@@ -184,27 +187,24 @@ export function ItemTab({
         }
       }}
     >
-      {menuOpen ? (
-        tabRoot
-      ) : (
-        <TabHoverCard
-          title={title}
-          programName={
-            resolved?.kind === 'session'
-              ? liveSessionStatusText(resolved.session)
-              : item.kind === 'project'
-                ? t('seal.splitView.item.project', 'Project')
-                : item.kind === 'workspace'
-                  ? t('seal.splitView.item.workspace', 'Workspace')
-                  : title
-          }
-          icon={icon}
-          // A session's tab shows its state as a dot only.
-          showWhenUnclipped={resolved?.kind === 'session'}
-        >
-          {tabRoot}
-        </TabHoverCard>
-      )}
+      <TabHoverCard
+        disabled={menuOpen}
+        title={title}
+        programName={
+          resolved?.kind === 'session'
+            ? liveSessionStatusText(resolved.session)
+            : item.kind === 'project'
+              ? t('seal.splitView.item.project', 'Project')
+              : item.kind === 'workspace'
+                ? t('seal.splitView.item.workspace', 'Workspace')
+                : title
+        }
+        icon={icon}
+        // A session's tab shows its state as a dot only.
+        showWhenUnclipped={resolved?.kind === 'session'}
+      >
+        {tabRoot}
+      </TabHoverCard>
     </div>
   )
   // A session that left the registry has nothing its menu could act on.

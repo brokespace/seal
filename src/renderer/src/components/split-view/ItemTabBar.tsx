@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { DropIndicator } from '@/components/tab-bar/drop-indicator'
 import { useTabStripDragScrollHandlers } from '@/components/tab-bar/tab-strip-drag-scroll'
 import { useTabStripOverflowNavigation } from '@/components/tab-bar/tab-strip-overflow-navigation'
+import { revealTabStripSlot } from '@/components/tab-bar/tab-strip-slot-geometry'
 import { TabStripViewport } from '@/components/tab-bar/TabStripViewport'
 import { resolveTabIndicatorEdges } from '@/components/tab-group/tab-insertion'
 import { cn } from '@/lib/class-names'
@@ -27,7 +28,13 @@ function moveTabFocus(event: React.KeyboardEvent<HTMLDivElement>): void {
   }
   event.preventDefault()
   const step = event.key === 'ArrowRight' ? 1 : -1
-  tabs[(from + step + tabs.length) % tabs.length].focus()
+  const next = tabs[(from + step + tabs.length) % tabs.length]
+  next.focus({ preventScroll: true })
+  // The browser's own scroll leaves a tab under the docked one.
+  const slot = next.closest<HTMLElement>('[data-tab-strip-slot]')
+  if (slot) {
+    revealTabStripSlot(event.currentTarget, slot)
+  }
 }
 
 /**

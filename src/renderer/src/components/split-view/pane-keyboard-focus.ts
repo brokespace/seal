@@ -61,26 +61,26 @@ export function holdKeyboardFocusForSurfacePress(paneId: string): void {
 const TAB_KEYBOARD_HOLD_MS = 1000
 
 /**
- * A workspace that becomes the current one focuses its terminal. A tab chosen with Enter or Space
- * keeps the keyboard, until the next key or press.
+ * A workspace that becomes the current one focuses its terminal. A tab or a strip button chosen
+ * with Enter or Space keeps the keyboard, until the next key or press.
  */
-export function keepKeyboardOnTab(tab: HTMLElement): void {
+export function keepKeyboardOnStripControl(control: HTMLElement): void {
   const retake = (): void => {
     // After the focus has landed where it was sent.
     queueMicrotask(() => {
-      if (tab.isConnected && document.activeElement !== tab) {
-        tab.focus({ preventScroll: true })
+      if (control.isConnected && document.activeElement !== control) {
+        control.focus({ preventScroll: true })
       }
     })
   }
   const stop = (): void => {
     clearTimeout(timer)
-    tab.removeEventListener('focusout', retake)
+    control.removeEventListener('focusout', retake)
     window.removeEventListener('keydown', stop, true)
     window.removeEventListener('pointerdown', stop, true)
   }
   const timer = setTimeout(stop, TAB_KEYBOARD_HOLD_MS)
-  tab.addEventListener('focusout', retake)
+  control.addEventListener('focusout', retake)
   window.addEventListener('keydown', stop, true)
   window.addEventListener('pointerdown', stop, true)
 }

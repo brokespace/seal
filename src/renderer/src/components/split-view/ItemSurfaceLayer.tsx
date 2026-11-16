@@ -7,6 +7,7 @@ import { cn } from '@/lib/class-names'
 import { useAppStore } from '@/store/index'
 import { ITEM_SURFACE_PANE_ATTRIBUTE, SINGLE_VIEW_ITEM_SLOT_ID } from './ItemSurfaceSlot'
 import { noteKeyboardInItemSurface } from './pane-keyboard-focus'
+import { bridgeTabKeyFromItemSurface } from './pane-tab-key-order'
 import { closeSplitViewItems, focusSplitViewPane } from './split-view-commands'
 import { useSplitViewShowing } from './split-view-showing'
 import { useSplitView, useSplitViewNarrow, visibleSplitViewPaneIds } from './split-view-store'
@@ -109,6 +110,11 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
       )}
       onPointerDownCapture={focusPane}
       onFocusCapture={noteFocus}
+      onKeyDown={(event) => {
+        if (paneId && isInSurface(event)) {
+          bridgeTabKeyFromItemSurface(event, paneId)
+        }
+      }}
     >
       {/* Out of sight it keeps its draft and its place, and stops marking what arrives as seen. */}
       <Activity mode={front || wasFront ? 'visible' : 'hidden'}>

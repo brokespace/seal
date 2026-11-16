@@ -9,8 +9,10 @@ import { ItemTabBar } from './ItemTabBar'
 import {
   bringKeyboardFocusIntoFocusedPane,
   bringKeyboardFocusIntoPane,
+  keepKeyboardOnStripControl,
   landsOnStripControl
 } from './pane-keyboard-focus'
+import { bridgeTabKeyFromPaneStrip } from './pane-tab-key-order'
 import {
   closeOtherSplitViewItems,
   closeSplitViewItems,
@@ -122,6 +124,11 @@ export function SplitViewPane({
           event.preventDefault()
         }
       }}
+      onKeyDown={(event) => {
+        if (isInPane(event)) {
+          bridgeTabKeyFromPaneStrip(event, paneId)
+        }
+      }}
       onClick={(event) => {
         // detail is 0 for Enter and Space, which keep the keyboard on the tab.
         if (event.detail > 0 && landsOnTab(event.target)) {
@@ -162,7 +169,13 @@ export function SplitViewPane({
                 aria-label={maximizeLabel}
                 aria-pressed={maximized}
                 title={maximizeLabel}
-                onClick={() => toggleSplitViewPaneMaximized(paneId)}
+                onClick={(event) => {
+                  // detail is 0 for Enter and Space.
+                  if (event.detail === 0) {
+                    keepKeyboardOnStripControl(event.currentTarget)
+                  }
+                  toggleSplitViewPaneMaximized(paneId)
+                }}
               >
                 {maximized ? (
                   <Minimize2 className="size-3.5" />
