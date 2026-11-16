@@ -5,11 +5,8 @@ import type {
   SshManagedServerStatus,
   SshManagedServerUpdateNote
 } from './ssh-types'
-import {
-  SSH_MANAGED_SERVER_PHASES,
-  SSH_MANAGED_SERVER_RELAY_REASONS,
-  SSH_MANAGED_SERVER_UPDATE_STATES
-} from './ssh-types'
+import { SSH_MANAGED_SERVER_PHASES, SSH_MANAGED_SERVER_UPDATE_STATES } from './ssh-types'
+import { SSH_MANAGED_SERVER_RELAY_REASONS } from './ssh-managed-server-relay-reasons'
 import {
   isNonNegativeSafeInteger,
   isSshRetainedIdentifier,

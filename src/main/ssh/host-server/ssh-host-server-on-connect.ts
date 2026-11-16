@@ -3,8 +3,8 @@ import type {
   OrcadManagedConversionResult,
   OrcadManagedDeployResult
 } from '../../../shared/orcad-managed-runtime'
+import type { SshManagedServerRelayReason } from '../../../shared/ssh-managed-server-relay-reasons'
 import type {
-  SshManagedServerRelayReason,
   SshManagedServerLinkedProject,
   SshManagedServerNodeDownloadBlocked,
   SshManagedServerServingNote,
