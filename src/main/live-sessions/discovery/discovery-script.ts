@@ -1,6 +1,8 @@
 // One POSIX sh script gathers everything a scan needs, so an SSH host costs one round trip.
 // Output is line-framed: `@@<SECTION> fields…`, binary-ish payloads base64 on a single line.
 
+import { TRANSCRIPT_LOG_MARKS, TURN_TAIL_WINDOW_FACTOR } from './transcript-turn-tail'
+
 export type DiscoveryScriptOptions = {
   /** Transcripts untouched for longer than this are not live, unless a running agent owns them. */
   maxAgeMinutes: number
@@ -238,7 +240,7 @@ ${subagentSection(options)}  if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; 
   if ! printf '%s\\n' "$HEADKNOWN" | grep -Fxq "$f"; then
     printf '@@HEAD %s ' "$f"; head -c ${options.headBytes} "$f" | b64; echo
   fi
-  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes} "$f" | b64; echo
+  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes * TURN_TAIL_WINDOW_FACTOR} "$f" | grep -v -F ${TRANSCRIPT_LOG_MARKS.map((mark) => `-e ${shQuote(mark)}`).join(' ')} | tail -c ${options.tailBytes} | b64; echo
 done; }
 `
 }

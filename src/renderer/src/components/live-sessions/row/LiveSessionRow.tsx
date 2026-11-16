@@ -13,7 +13,10 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import { runningSubagents } from '../../../../../shared/live-sessions/live-session-activity'
-import { liveSessionStatusGroup } from '../../../../../shared/live-sessions/live-session-status'
+import {
+  isWaitingOnBackgroundWork,
+  liveSessionStatusGroup
+} from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionSummaryView } from '../../../../../shared/session-summaries/live-session-summary-view'
 import { SessionRecapBadge } from '@/components/session-recap/SessionRecapBadge'
@@ -99,10 +102,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const card = props.layout === 'card'
   // What it runs, asks for or failed on. A wait already names what it waits on.
   const detail =
-    card &&
-    group !== 'idle' &&
-    session.status !== 'waiting-subagent' &&
-    session.status !== 'waiting-task'
+    card && group !== 'idle' && !isWaitingOnBackgroundWork(session.status)
       ? (session.statusDetail ?? session.permission?.question)
       : null
 

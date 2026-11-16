@@ -64,6 +64,10 @@ export function normalizeJcodeEvent(
     lastAssistantMessage: errorText ?? snapshot.lastAssistantMessage,
     lastAssistantMessageIsToolOutput: errorIsToolOutput
       ? true
-      : snapshot.lastAssistantMessageIsToolOutput
+      : snapshot.lastAssistantMessageIsToolOutput,
+    mainAgent:
+      eventName === 'turn_end' && hookPayload.status === 'error'
+        ? { state: 'done', outcome: 'failure', stateStartedAt: Date.now() }
+        : undefined
   })
 }

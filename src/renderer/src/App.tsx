@@ -43,6 +43,7 @@ import { PluginShotReplayMount } from './components/plugins/view/PluginShotRepla
 import { AddToChatPointMenuHost } from './components/native-chat/selection-quotes/AddToChatMenu'
 import { installActiveWorktreeRemovalSuccessor } from './lib/workspace/activation/active-worktree-removal-successor'
 import { subscribeHomeChatOpenRequests } from './components/home-chat/home-chat-open-target'
+import { useLiveSessionPaneStatusSync } from './components/live-sessions/links/use-live-session-pane-status-sync'
 
 function App(): React.JSX.Element {
   const layout = useAppChromeLayout()
@@ -67,6 +68,7 @@ function App(): React.JSX.Element {
   // App owns active-selection removal; the Space window only mirrors selection.
   useEffect(() => installActiveWorktreeRemovalSuccessor(), [])
   useEffect(() => subscribeHomeChatOpenRequests(), [])
+  useLiveSessionPaneStatusSync()
 
   // Portaled sheets/dialogs live outside .app-layout and need root offsets to clear Windows/Linux controls.
   useEffect(() => {

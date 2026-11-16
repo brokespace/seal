@@ -4,7 +4,11 @@ import type {
   LiveSessionStatusSource
 } from '../../shared/live-sessions/live-session-types'
 
-type Shown = Pick<LiveSession, 'status' | 'statusSource' | 'statusDetail' | 'permission'>
+// With the activity it was read with: what a waiting session waits on is counted from it.
+type Shown = Pick<
+  LiveSession,
+  'status' | 'statusSource' | 'statusDetail' | 'permission' | 'activity'
+>
 
 type Held = {
   shown: Shown
@@ -71,6 +75,7 @@ function shownOf(session: LiveSession): Shown {
     status: session.status,
     statusSource: session.statusSource,
     statusDetail: session.statusDetail,
-    permission: session.permission
+    permission: session.permission,
+    activity: session.activity
   }
 }

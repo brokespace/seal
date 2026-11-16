@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AgentStatusEntry } from '../../../../shared/agent-status/contracts/agent-status-types'
+import { liveSessionPaneStatuses } from '../../../../shared/live-sessions/live-session-pane-activity'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
 import {
   resetUnreadAgentCompletionTabIdsCacheForTest,
@@ -72,5 +73,54 @@ describe('resolveTerminalTabActivityStatus', () => {
         ptyIdsByTabId: LIVE_PTY
       })
     ).toBe('active')
+  })
+
+  // A pane's session is the same agent as its hook row; the tab shows what the session's row shows.
+  it.each([
+    { row: 'done', session: 'waiting-task', tab: 'monitoring' },
+    { row: 'done', session: 'waiting-subagent', tab: 'working' },
+    { row: 'done', session: 'errored', tab: 'failed' },
+    { row: 'working', session: 'your-turn', tab: 'done' },
+    { row: 'working', session: 'needs-permission', tab: 'permission' },
+    { row: 'working', session: 'done', tab: 'working' }
+  ] as const)(
+    'a pane whose hooks say $row and whose session discovery read as $session shows $tab',
+    ({ row, session, tab }) => {
+      const pane = entry(FIRST_LEAF_ID, row)
+      expect(
+        resolveTerminalTabActivityStatus({
+          tab: TAB,
+          agentStatusByPaneKey: { [pane.paneKey]: pane },
+          agentStatusEpoch: 0,
+          ptyIdsByTabId: LIVE_PTY,
+          sessionStatuses: liveSessionPaneStatuses([
+            {
+              status: session,
+              statusSource: 'transcript',
+              inputRoutes: [{ kind: 'seal-pane', paneKey: pane.paneKey }]
+            }
+          ])
+        })
+      ).toBe(tab)
+    }
+  )
+
+  it('reads the hook row where the session took its status from it', () => {
+    const pane = entry(FIRST_LEAF_ID, 'working')
+    expect(
+      resolveTerminalTabActivityStatus({
+        tab: TAB,
+        agentStatusByPaneKey: { [pane.paneKey]: pane },
+        agentStatusEpoch: 0,
+        ptyIdsByTabId: LIVE_PTY,
+        sessionStatuses: liveSessionPaneStatuses([
+          {
+            status: 'your-turn',
+            statusSource: 'seal-hooks',
+            inputRoutes: [{ kind: 'seal-pane', paneKey: pane.paneKey }]
+          }
+        ])
+      })
+    ).toBe('working')
   })
 })

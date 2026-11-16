@@ -49,7 +49,7 @@ The registry covers Claude Code and Codex. Other terminal agents (Gemini, OpenCo
 | `your-turn`, `idle`                                            | `idle`      | Alive, nothing running. |
 | `done`, or any status once the process has ended               | `finished`  | No longer running.      |
 
-What each status means, its color, and how it is detected: [`session-status.md`](./session-status.md).
+What each status means, its color, and how it is detected: [`design/agent-status.md`](./design/agent-status.md).
 
 - `liveSessionStatusGroup` gives the group; `isActiveLiveSession` says whether it is still running.
 - `liveSessionStatusTone` gives the color a status reads in; `LiveSessionStatusDot` draws it.

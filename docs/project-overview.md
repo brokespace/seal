@@ -93,7 +93,7 @@ Changes and README stay current without a control, the way the Machines page kee
 
 ### Sessions and status
 
-Session status is not interpreted on this page; it is `LiveSession.status` as [session-status.md](./session-status.md) defines it, drawn by the components Home uses:
+Session status is not interpreted on this page; it is `LiveSession.status` as [agent-status.md](./design/agent-status.md) defines it, drawn by the components Home uses:
 
 - Rows are `LiveSessionRow`s in the `card` layout, through `LiveSessionMachineGroups`, the list Home's Sessions card renders. Each leads with the large `LiveSessionStatusDot` and carries the status label from `liveSessionStatusText`, so a session shows the same dot, color and words here, on Home and in Active agents.
 - The header line is `useLiveSessionCountsLine`, shared with Home: "N working · N blocked on you · N waiting on you · N idle", counted over the project's running sessions only. The header also holds the page's actions, so a long project name truncates and, on a page under 60rem, the line gives way to the name (the Agents card below says the same). On a page too narrow for the name and the actions side by side, the actions drop under the name, and the editor button drops its label by the header's own width (the shared button goes by the window's, which the sidebar makes too generous here).

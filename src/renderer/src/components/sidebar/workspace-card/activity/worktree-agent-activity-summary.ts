@@ -18,6 +18,11 @@ import {
 import type { AgentStatusOrchestrationContext } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import { agentVerdictDisplayMark } from '../../../../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
 import { applyAgentPaneActivityFlags } from '../../../../../../shared/worktree-status-rollup'
+import {
+  applyLiveSessionPaneFlags,
+  type LiveSessionPaneStatuses
+} from '../../../../../../shared/live-sessions/live-session-pane-activity'
+import { currentLiveSessionPaneStatuses } from '@/components/live-sessions/links/live-session-pane-statuses'
 import { getTabIdToWorktreeId } from '@/lib/workspace/tabs/tab-worktree-index'
 
 export type WorktreeAgentActivitySummary = {
@@ -67,6 +72,8 @@ export type AgentActivityInput = Pick<
   VisibleOrchestrationState & {
     tabsByWorktree: AgentActivityTabsByWorktree
     runtimeAgentOrchestrationByPaneKey?: AppState['runtimeAgentOrchestrationByPaneKey']
+    /** Pane sessions whose status discovery decided; the registry's own by default. */
+    sessionStatuses?: LiveSessionPaneStatuses
   }
 
 type AgentActivityCache = {
@@ -77,6 +84,7 @@ type AgentActivityCache = {
   migrationUnsupportedByPtyId: AppState['migrationUnsupportedByPtyId']
   retainedAgentsByPaneKey: AppState['retainedAgentsByPaneKey']
   runtimeAgentOrchestrationByPaneKey: AppState['runtimeAgentOrchestrationByPaneKey'] | undefined
+  sessionStatuses: LiveSessionPaneStatuses
   summaries: Map<string, WorktreeAgentActivitySummary>
 }
 
@@ -93,8 +101,10 @@ function getWorktreeAgentActivitySummaries(
   state: AgentActivityInput
 ): Map<string, WorktreeAgentActivitySummary> {
   const runtimeAgentOrchestrationByPaneKey = selectVisibleAgentOrchestration(state)
+  const sessionStatuses = state.sessionStatuses ?? currentLiveSessionPaneStatuses()
   if (
     agentActivityCache &&
+    agentActivityCache.sessionStatuses === sessionStatuses &&
     agentActivityCache.tabsByWorktree === state.tabsByWorktree &&
     agentActivityCache.unifiedTabsByWorktree === state.unifiedTabsByWorktree &&
     agentActivityCache.agentStatusByPaneKey === state.agentStatusByPaneKey &&
@@ -138,6 +148,10 @@ function getWorktreeAgentActivitySummaries(
       continue
     }
     const summary = summaryForWorktree(worktreeId)
+    if (applyLiveSessionPaneFlags(summary, sessionStatuses.get(paneKey))) {
+      addAgentStatusPaneId(summary, paneIdentity.tabId, paneIdentity.paneId)
+      continue
+    }
     if (entry.restoredUnconfirmed) {
       addAgentStatusPaneId(summary, paneIdentity.tabId, paneIdentity.paneId)
       continue
@@ -200,6 +214,7 @@ function getWorktreeAgentActivitySummaries(
     migrationUnsupportedByPtyId: state.migrationUnsupportedByPtyId,
     retainedAgentsByPaneKey: state.retainedAgentsByPaneKey,
     runtimeAgentOrchestrationByPaneKey,
+    sessionStatuses,
     summaries
   }
   return summaries

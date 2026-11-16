@@ -1,11 +1,20 @@
 // What a Claude Code session started besides its main turn, folded from its transcript records:
-// Agent/Task subagents, background shells, and its todo list. Folding the same records twice is safe.
+// Agent/Task subagents, background tasks, and its todo list. Folding the same records twice is safe.
 import type {
   LiveSubagentStatus,
   LiveTodo,
   LiveTodoStatus
 } from '../../../shared/live-sessions/live-session-activity'
 import { LIVE_TODO_STATUSES } from '../../../shared/live-sessions/live-session-activity'
+import {
+  backgroundTaskEnd,
+  dropForegroundCallsBefore,
+  endWakeupsBefore,
+  noteRunningTask,
+  openBackgroundLaunch,
+  settleBackgroundLaunch,
+  type ClaudeBackgroundLaunches
+} from './claude-background-launches'
 import { CLAUDE_SUBAGENT_TOOLS, claudePromptText } from './claude-transcript-phase'
 import { blocks, contentText, oneLine, rec, str, timeOf } from './transcript-records'
 import type { TranscriptRecord } from './transcript-records'
@@ -21,19 +30,10 @@ export type ClaudeAgentLaunch = {
   startedAt: number | null
 }
 
-export type ClaudeBackgroundShell = {
-  toolUseId: string
-  /** Null until the launch's result names the shell. */
-  taskId: string | null
-  label: string
-  status: LiveSubagentStatus
-  startedAt: number | null
-  summary: string | null
-}
-
 export type ClaudeActivityState = {
   agents: Map<string, ClaudeAgentLaunch>
-  shells: Map<string, ClaudeBackgroundShell>
+  /** Shells, monitors, workflows and wake-ups, by the call that launched them. */
+  background: ClaudeBackgroundLaunches
   /** TaskCreate/TaskUpdate's list, by task id. */
   tasks: Map<string, LiveTodo>
   /** TaskCreate calls whose result has not named their task yet. */
@@ -47,7 +47,7 @@ export type ClaudeActivityState = {
 export function newClaudeActivityState(): ClaudeActivityState {
   return {
     agents: new Map(),
-    shells: new Map(),
+    background: new Map(),
     tasks: new Map(),
     creating: new Map(),
     todos: null,
@@ -79,15 +79,6 @@ function tag(xml: string, name: string): string | null {
   return new RegExp(`<${name}>([\\s\\S]*?)</${name}>`).exec(xml)?.[1]?.trim() || null
 }
 
-function endStatus(status: string | null): LiveSubagentStatus {
-  if (status === 'failed' || status === 'error') {
-    return 'failed'
-  }
-  return status === 'killed' || status === 'stopped' || status === 'cancelled'
-    ? 'stopped'
-    : 'completed'
-}
-
 /** The text of a `<task-notification>` this record delivers, as a queued command or a user turn. */
 function notificationOf(record: TranscriptRecord): string | null {
   const attachment = rec(record.attachment)
@@ -116,10 +107,10 @@ function finish(
       found = true
     }
   }
-  for (const shell of state.shells.values()) {
-    if (known.includes(shell.toolUseId) || (shell.taskId && known.includes(shell.taskId))) {
-      shell.status = status
-      shell.summary = summary ?? shell.summary
+  for (const task of state.background.values()) {
+    if (known.includes(task.toolUseId) || (task.taskId && known.includes(task.taskId))) {
+      task.status = status
+      task.summary = summary ?? task.summary
       found = true
     }
   }
@@ -135,27 +126,25 @@ function foldToolUse(state: ClaudeActivityState, tool: TranscriptRecord, at: num
   if (!id) {
     return
   }
-  if (CLAUDE_SUBAGENT_TOOLS.has(name) && !state.agents.has(id)) {
-    state.agents.set(id, {
-      toolUseId: id,
-      agentId: null,
-      title: oneLine(str(input?.description) ?? str(input?.prompt) ?? 'Subagent', 100),
-      agentType: str(input?.subagent_type),
-      model: str(input?.model),
-      background: input?.run_in_background === true,
-      status: 'running',
-      startedAt: at
-    })
-  } else if (name === 'Bash' && input?.run_in_background === true && !state.shells.has(id)) {
-    state.shells.set(id, {
-      toolUseId: id,
-      taskId: null,
-      label: oneLine(str(input.command) ?? str(input.description) ?? 'Background command', 160),
-      status: 'running',
-      startedAt: at,
-      summary: null
-    })
-  } else if (name === 'TodoWrite' && Array.isArray(input?.todos)) {
+  if (CLAUDE_SUBAGENT_TOOLS.has(name)) {
+    if (!state.agents.has(id)) {
+      state.agents.set(id, {
+        toolUseId: id,
+        agentId: null,
+        title: oneLine(str(input?.description) ?? str(input?.prompt) ?? 'Subagent', 100),
+        agentType: str(input?.subagent_type),
+        model: str(input?.model),
+        background: input?.run_in_background === true,
+        status: 'running',
+        startedAt: at
+      })
+    }
+    return
+  }
+  if (openBackgroundLaunch(state.background, { id, name, input, at })) {
+    return
+  }
+  if (name === 'TodoWrite' && Array.isArray(input?.todos)) {
     state.todos = input.todos.map(todoOf).filter((todo) => todo !== null)
   } else if (name === 'TaskCreate') {
     const todo = todoOf(input)
@@ -203,12 +192,9 @@ function foldToolResult(
     }
     return
   }
-  const shell = state.shells.get(id)
-  if (shell) {
-    shell.taskId = str(outcome?.backgroundTaskId) ?? shell.taskId
-    if (!shell.taskId) {
-      state.shells.delete(id)
-    }
+  const launch = state.background.get(id)
+  if (launch) {
+    settleBackgroundLaunch(state.background, launch, outcome)
     return
   }
   const creating = state.creating.get(id)
@@ -227,12 +213,18 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
     }
     const notification = notificationOf(record)
     if (notification) {
-      finish(
-        state,
-        [tag(notification, 'task-id'), tag(notification, 'tool-use-id')],
-        endStatus(tag(notification, 'status')),
-        tag(notification, 'summary')
-      )
+      const ended = backgroundTaskEnd(tag(notification, 'status'))
+      const taskId = tag(notification, 'task-id')
+      const summary = tag(notification, 'summary')
+      if (ended) {
+        finish(state, [taskId, tag(notification, 'tool-use-id')], ended, summary)
+      } else if (!taskId || !state.ended.has(taskId)) {
+        noteRunningTask(state.background, taskId, summary)
+      }
+      continue
+    }
+    if (record.type === 'system' && record.subtype === 'scheduled_task_fire') {
+      endWakeupsBefore(state.background, timeOf(record), 'completed')
       continue
     }
     const content = rec(record.message)?.content
@@ -259,6 +251,7 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
         // A subagent that blocks its turn cannot outlive it. A re-folded prompt is older than
         // what its own turn launched, and must leave that running.
         const at = timeOf(record)
+        dropForegroundCallsBefore(state.background, at)
         for (const agent of state.agents.values()) {
           const launchedBefore = at === null || agent.startedAt === null || agent.startedAt <= at
           if (!agent.background && agent.status === 'running' && launchedBefore) {
