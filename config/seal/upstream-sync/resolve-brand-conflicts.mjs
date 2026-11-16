@@ -28,7 +28,8 @@ function unionDigests(ours, theirs) {
 function settle(path, text) {
   if (!dryRun) {
     writeFileSync(join(root, path), text)
-    git(root, ['add', '--', path])
+    // -f: some tracked paths (docs/reference) match .gitignore and plain add refuses them.
+    git(root, ['add', '-f', '--', path])
   }
 }
 
