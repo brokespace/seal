@@ -207,7 +207,7 @@ Clipping removes more: an agent turn longer than 1,800 characters loses its midd
 
 #### F23. Failures are silent
 
-**C.** RPC errors in the recap hooks are swallowed (`use-session-recap.ts:56,92`). A jump to a message that cannot be found does nothing visible.
+**C.** RPC errors in the recap hooks are swallowed (`use-session-recap.ts:56,92`). A jump to a message that cannot be found does nothing visible. For a chat this may be the common case, and was not tested: the recap takes its message ids from the chat journal (`src/main/live-sessions/transcripts/session-transcript.ts:27-45`), while the session pane opened from the Active agents row reads only the transcript file (`src/main/live-sessions/live-session-service.ts:140-146`).
 
 #### F25. An open panel does not learn that its recap went stale
 

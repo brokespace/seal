@@ -276,7 +276,7 @@ One section, **Requests**, replaces "What you asked" and "Asked but not addresse
 - Whether the recap is behind travels on the session row with the turn state, so a panel that is already open shows it without being read again (F25). Showing the panel counts as a visit.
 - One function, `recapAttention`, gives the count for bar, badge and mobile: open questions, open action items, and requests shown as Not addressed (see [decision 5](#decisions-for-brian)).
 - Desktop and mobile render rows built by the shared view code (`src/shared/session-recap/session-recap-view.ts`), so folds, counts and empty states cannot differ. Components only draw.
-- A failed refresh or a jump that finds nothing says so.
+- A failed refresh or a jump that finds nothing says so. Workstream C checks that a jump from a chat's recap lands in the pane, since the recap reads the journal and the pane reads the transcript file (F23).
 - Tokens from `main.css` and the `Badge` primitive, per `docs/STYLEGUIDE.md`. No new colour.
 
 ## Test strategy

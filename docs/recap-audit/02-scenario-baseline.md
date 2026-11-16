@@ -244,6 +244,7 @@ Also seen in the app:
 
 - An open panel is not told that its recap went stale, and showing the panel is not a visit ([F25](./01-pipeline-audit.md#f25-an-open-panel-does-not-learn-that-its-recap-went-stale)).
 - A relaunch marks a current recap as behind, renames the session to its latest prompt and delays the next pass ([F26](./01-pipeline-audit.md#f26-a-relaunch-disturbs-a-recap-that-was-up-to-date)).
+- In the chat screenshots the conversation beside the recap is empty. The session pane reads only the transcript file, and the scripted chat writes none; the recap is written from the chat journal. Whether a recap item's jump lands in a real chat's pane was not tested ([F23](./01-pipeline-audit.md#f23-failures-are-silent)).
 - Outside the recap: an agent process of another OS user is listed as a session titled "cwd (readlink: Permission denied)", visible in several screenshots. The discovery script takes `lsof`'s error text as the working folder (`src/main/live-sessions/discovery/discovery-script.ts:58-60`). Such a row has no transcript and gets no recap.
 
 ## Cost of this baseline
