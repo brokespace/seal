@@ -122,6 +122,8 @@ export class LiveMessageOutbox {
     }
     this.set(item, { state: 'queued', error: null, route: null, sentAt: null })
     this.kick(item.sessionId)
+    // It is written again now: left at its first place it would wait above everything said since.
+    void this.place(item)
     return publicView(item)
   }
 

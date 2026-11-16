@@ -149,6 +149,21 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  it('places a retried message where it is sent again, not where it first failed', async () => {
+    attempt = async () => ({ outcome: 'busy' })
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })
+    await settle(box, ([m]) => m.state === 'failed')
+    expect(box.list()[0].sentOffset).toBe(1)
+
+    transcript.push({ offset: 700, text: 'what the agent was asked meanwhile' })
+    attempt = async () => ({ outcome: 'sent' })
+    await box.retry('m1')
+    await settle(box, ([m]) => m.state === 'sent')
+    await vi.waitFor(() => expect(box.list()[0].sentOffset).toBe(701))
+    box.stop()
+  })
+
   it('types a message once when its session is renamed while the prompt is busy', async () => {
     let busy = true
     attempt = async (_route, text) => {
