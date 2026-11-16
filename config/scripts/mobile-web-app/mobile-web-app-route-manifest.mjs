@@ -6,7 +6,7 @@ import * as esbuild from 'esbuild'
 export const MOBILE_WEB_APP_ROUTE_ROOT = 'h'
 
 // Undeclared routes always hand off to native, so these subtrees would only cost page bytes and assets.
-const NATIVE_ONLY_ROUTE_DIRS = new Set(['h/[hostId]/seal'])
+export const NATIVE_ONLY_ROUTE_DIRS = new Set(['h/[hostId]/seal'])
 
 const ROUTE_FILE = /\.[tj]sx?$/
 const NOT_A_ROUTE = /(\.(test|spec|d)\.|\+api\.|\+middleware\.)/
@@ -21,7 +21,11 @@ function webSiblingOf(name, siblings) {
 }
 
 // Sort require.context keys deterministically; keys retain native filenames/URLs while modules select web siblings.
-export async function collectMobileWebAppRoutes(appDir, routeRoot = MOBILE_WEB_APP_ROUTE_ROOT) {
+export async function collectMobileWebAppRoutes(
+  appDir,
+  routeRoot = MOBILE_WEB_APP_ROUTE_ROOT,
+  nativeOnlyRouteDirs = NATIVE_ONLY_ROUTE_DIRS
+) {
   const routes = []
   async function walk(directory) {
     const entries = await readdir(directory, { withFileTypes: true })
@@ -29,7 +33,7 @@ export async function collectMobileWebAppRoutes(appDir, routeRoot = MOBILE_WEB_A
     for (const entry of entries) {
       const entryPath = join(directory, entry.name)
       if (entry.isDirectory()) {
-        if (!NATIVE_ONLY_ROUTE_DIRS.has(relative(appDir, entryPath).split('\\').join('/'))) {
+        if (!nativeOnlyRouteDirs.has(relative(appDir, entryPath).split('\\').join('/'))) {
           await walk(entryPath)
         }
       } else if (
