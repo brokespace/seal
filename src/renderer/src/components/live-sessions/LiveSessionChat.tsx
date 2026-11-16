@@ -44,8 +44,11 @@ export function LiveSessionChat({
 }: LiveSessionChatProps): React.JSX.Element {
   const t = useTranslate()
   const listRef = useRef<NativeChatMessageListHandle>(null)
+  const servedReveal = useRef<number | null>(null)
   useEffect(() => {
-    if (reveal) {
+    // A view kept behind a tab runs its effects again when it comes back; a jump is made once.
+    if (reveal && servedReveal.current !== reveal.nonce) {
+      servedReveal.current = reveal.nonce
       listRef.current?.revealMessage(reveal.messageId)
     }
   }, [reveal])
