@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const saved = vi.hoisted(() => ({ environments: [] as unknown[] }))
+const saved = vi.hoisted((): { environments: unknown[] } => ({ environments: [] }))
 
 vi.mock('../../../shared/app-environment', () => ({
   getAppEnvironment: () => ({ getPath: () => '/user-data' })
