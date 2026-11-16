@@ -139,6 +139,7 @@ test('partly-addressed-then-finished in a chat: nothing stays under asked but no
     true,
     'turn 1 lists nothing as not addressed while /customers is open; turn 2 lists the finished /customers work there'
   )
+  // Two turns with the scheduler's 4 minutes between their automatic passes.
   test.setTimeout(600_000)
   await useScriptedSessionServices(orcaPage, sessionServicesStub)
   const { problems, unrecorded } = await runChatScenario(
@@ -159,6 +160,7 @@ test('addressed-same-turn in a chat: the request is listed under what you asked 
   test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
   test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
   test.fail(true, 'the request is missing under what you asked')
+  // One turn, its registry scans and one recap pass.
   test.setTimeout(240_000)
   await useScriptedSessionServices(orcaPage, sessionServicesStub)
   const { problems, unrecorded } = await runChatScenario(
@@ -182,6 +184,7 @@ test('declined-with-a-reason in a chat: a request the agent refused with a reaso
     true,
     'the refused request is listed as asked but not addressed, and where it stands says nothing'
   )
+  // One turn, its registry scans and one recap pass.
   test.setTimeout(240_000)
   await useScriptedSessionServices(orcaPage, sessionServicesStub)
   const { problems, unrecorded } = await runChatScenario(
@@ -218,6 +221,7 @@ test('summarizer failure in a chat: the failed recap is written without new chat
   test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
   test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
   test.fail(true, 'a failed pass is not tried again until new chat activity or Refresh')
+  // A failed pass, the 90 s the test waits for a retry, then a Refresh.
   test.setTimeout(360_000)
   const script = {
     chatTitle: 'Rename export button',
@@ -310,6 +314,7 @@ test('restart-mid-session in a chat: the recap survives a relaunch without a mod
     true,
     'the open tracking ask is never listed as not addressed, and turn 2 lists it again under what you asked'
   )
+  // A relaunch, then two turns with the scheduler's 4 minutes between their automatic passes.
   test.setTimeout(600_000)
   const scenarioId = 'restart-mid-session'
   const { turns, checks } = readRecapScenarioTurns(scenarioId)

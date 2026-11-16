@@ -319,6 +319,7 @@ test.describe('a Claude session on an SSH machine', () => {
   }, testInfo) => {
     test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
     test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
+    // An SSH connect, then two turns with the scheduler's 4 minutes between their automatic passes.
     test.setTimeout(600_000)
     const { turns, checks } = readRecapScenarioTurns('remote-ssh-session')
     const recorded = recordedRecapRepliesWithRepairs('remote-ssh-session')
@@ -377,6 +378,7 @@ test.describe('a Claude session on a machine that runs the Seal server', () => {
   }, testInfo) => {
     test.skip(!RECAP_BASELINE_ENABLED, 'recap baseline runs with RECAP_E2E=1')
     test.skip(!SUPPORTED, 'the stub claude is a POSIX shell wrapper')
+    // A server deployed over SSH, then two turns with the scheduler's 4 minutes between their automatic passes.
     test.setTimeout(720_000)
     const { turns, checks } = readRecapScenarioTurns('remote-server-session')
     const recorded = recordedRecapRepliesWithRepairs('remote-server-session')
