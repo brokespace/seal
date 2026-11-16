@@ -1,4 +1,4 @@
-import { Activity, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { Activity, useMemo, useRef, useState } from 'react'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { useLiveSessionTabs } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
@@ -7,6 +7,7 @@ import { RecoverableRenderErrorBoundary } from '@/components/error-boundaries/Re
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import { useAppStore } from '@/store/index'
+import { ItemSurfaceShownContext } from './item-surface-shown-context'
 import { ITEM_SURFACE_PANE_ATTRIBUTE, SINGLE_VIEW_ITEM_SLOT_ID } from './ItemSurfaceSlot'
 import { noteKeyboardInItemSurface } from './pane-keyboard-focus'
 import { bridgeTabKeyFromItemSurface, PaneTabOrderGuard } from './pane-tab-key-order'
@@ -14,6 +15,7 @@ import { closeSplitViewItems, focusSplitViewPane } from './split-view-commands'
 import { useSplitViewShowing } from './split-view-showing'
 import { useSplitView, useSplitViewNarrow, visibleSplitViewPaneIds } from './split-view-store'
 import { splitViewItemKey, type SplitViewItem } from './split-view-types'
+import { useItemSurfaceEffectsKept } from './use-item-surface-effects-kept'
 import { useKeptScrollOffsets } from './use-kept-scroll-offsets'
 import { useSurfaceOverSlot } from './use-surface-over-slot'
 
@@ -88,9 +90,7 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
   const front = slotId !== null
   useSurfaceOverSlot(surfaceRef, slotId, true)
   useKeptScrollOffsets(surfaceRef, front)
-  // Its effects stop one render after it hides, so the chat first learns that it is out of sight.
-  // The store updates that hide it are synchronous, which is when a deferred value lags.
-  const wasFront = useDeferredValue(front)
+  const effectsKept = useItemSurfaceEffectsKept(front)
   const focusPane = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (paneId && isInSurface(event)) {
       focusSplitViewPane(paneId)
@@ -117,28 +117,30 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
       onKeyDown={bridgeTabKeyFromItemSurface}
     >
       {/* Out of sight it keeps its draft and its place, and stops marking what arrives as seen. */}
-      <Activity mode={front || wasFront ? 'visible' : 'hidden'}>
-        {/* One that fails leaves the others, and their drafts, alone. */}
-        <RecoverableRenderErrorBoundary
-          boundaryId="item-surface"
-          surface="page"
-          title={t('auto.App.b7a714db1e', 'This page hit an error.')}
-          description={t(
-            'auto.App.03a14f6b5b',
-            'Retry the page or navigate to another Orca surface.'
-          )}
-        >
-          {item.kind === 'session' ? (
-            <div className="flex min-h-0 flex-1">
-              <LiveSessionBody sessionId={item.sessionId} visible={front} />
-            </div>
-          ) : (
-            <ProjectOverviewBody
-              target={item}
-              onClose={paneId ? () => closeSplitViewItems(new Set([key])) : closeProjectOverview}
-            />
-          )}
-        </RecoverableRenderErrorBoundary>
+      <Activity mode={effectsKept ? 'visible' : 'hidden'}>
+        <ItemSurfaceShownContext value={front}>
+          {/* One that fails leaves the others, and their drafts, alone. */}
+          <RecoverableRenderErrorBoundary
+            boundaryId="item-surface"
+            surface="page"
+            title={t('auto.App.b7a714db1e', 'This page hit an error.')}
+            description={t(
+              'auto.App.03a14f6b5b',
+              'Retry the page or navigate to another Orca surface.'
+            )}
+          >
+            {item.kind === 'session' ? (
+              <div className="flex min-h-0 flex-1">
+                <LiveSessionBody sessionId={item.sessionId} visible={front} />
+              </div>
+            ) : (
+              <ProjectOverviewBody
+                target={item}
+                onClose={paneId ? () => closeSplitViewItems(new Set([key])) : closeProjectOverview}
+              />
+            )}
+          </RecoverableRenderErrorBoundary>
+        </ItemSurfaceShownContext>
       </Activity>
     </div>
   )

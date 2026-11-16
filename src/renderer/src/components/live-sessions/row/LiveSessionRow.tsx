@@ -33,6 +33,7 @@ import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
 import { isSidebarPointerDragBlocked } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
 import { startItemPointerDrag } from '@/components/split-view/item-pointer-drag'
+import { ItemSurfaceShownContext } from '@/components/split-view/item-surface-shown-context'
 import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
 import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
 
@@ -104,7 +105,12 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const menu = props.menu ?? defaultMenu
   const tone = TONES[props.tone ?? 'sidebar']
   const [preview, setPreview] = React.useState(false)
+  const shown = React.useContext(ItemSurfaceShownContext)
   const [menuOpen, setMenuOpen] = React.useState(false)
+  // The pointer never left a row that went behind a tab; it must not come back previewed.
+  if (!shown && preview) {
+    setPreview(false)
+  }
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
   const runningCount = runningSubagents(session.activity).length
@@ -126,7 +132,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
       <HoverCard
         openDelay={500}
         closeDelay={80}
-        open={preview && !menuOpen}
+        open={preview && !menuOpen && shown}
         onOpenChange={setPreview}
       >
         <ContextMenuTrigger asChild>
@@ -307,9 +313,12 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
             </div>
           </HoverCardTrigger>
         </ContextMenuTrigger>
-        <HoverCardContent side="right" align="start" className="w-72">
-          <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
-        </HoverCardContent>
+        {/* Not closed but gone: a preview that closes behind a tab never finishes closing. */}
+        {shown ? (
+          <HoverCardContent side="right" align="start" className="w-72">
+            <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
+          </HoverCardContent>
+        ) : null}
       </HoverCard>
       <ContextMenuContent>{menu(session, CONTEXT_MENU_KIT)}</ContextMenuContent>
     </ContextMenu>
