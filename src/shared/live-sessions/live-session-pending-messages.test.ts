@@ -100,6 +100,24 @@ describe('pendingLiveMessages', () => {
     expect(pendingLiveMessages(rows, 6_200, [{ ...old, echoOffset: 100 }])).toEqual([])
   })
 
+  it('lists none of 30 delivered messages again, however few rows are loaded', () => {
+    const rows: Row[] = []
+    const withEcho: LiveMessage[] = []
+    for (let i = 1; i <= 30; i++) {
+      const at = i * 1000
+      rows.push(row(at, 'user', `ask ${i}`), row(at + 500, 'assistant', `answer ${i}`))
+      withEcho.push(
+        message(`m${i}`, `ask ${i}`, 'delivered', at, { sentOffset: at, echoOffset: at })
+      )
+    }
+    // A host from before echo offsets says only that each was delivered.
+    const stateOnly = withEcho.map((m) => message(m.messageId, m.text, 'delivered', m.createdAt))
+    for (const loaded of [rows, rows.slice(-50), rows.slice(-10), rows.slice(-1)]) {
+      expect(pendingLiveMessages(loaded, 31_000, withEcho)).toEqual([])
+      expect(pendingLiveMessages(loaded, 31_000, stateOnly)).toEqual([])
+    }
+  })
+
   it('without an echo offset, drops delivered messages joined in one row, once each', () => {
     const pending = pendingLiveMessages([row(100, 'user', 'use pnpm\nok\nok', 0)], 200, [
       message('a', 'use pnpm', 'delivered', 1),
