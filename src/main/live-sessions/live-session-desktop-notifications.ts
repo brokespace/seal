@@ -2,8 +2,12 @@
 import { app, BrowserWindow, Notification } from 'electron'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
+import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
+import type { NotificationSettings } from '../../shared/notification-settings-types'
 import { migrateLiveSessionsNotify } from '../../shared/live-sessions/live-session-settings'
+import { deliverNativeNotification } from '../ipc/native-notification-delivery'
 import { getTrustedUIRendererWindow } from '../ipc/ui'
+import { getSessionSummariesHost } from '../session-summaries/session-summaries-instance'
 import { safelyRevealWindow } from '../window/activation/focus-existing-window'
 import { isBackgroundLaunch } from '../window/activation/foreground-activation-policy'
 import {
@@ -21,7 +25,26 @@ type NotificationSettingsStore = {
 // Held until clicked or closed: a collected Notification never delivers its click.
 const shownNotifications = new Set<Notification>()
 
-function showSessionNotification({ sessionId, title, body }: LiveSessionNotification): void {
+function showSessionNotification(
+  { sessionId, title, body, surface }: LiveSessionNotification,
+  settings: NotificationSettings
+): void {
+  const worktreeId = getSessionSummariesHost()?.paneWorkspaceId(surface)
+  if (worktreeId && surface.kind !== 'external') {
+    // A session in a Seal pane opens where its owner's own notifications do: on its tab.
+    void deliverNativeNotification(
+      {
+        source: 'agent-task-complete',
+        worktreeId,
+        paneKey: liveSessionPaneKeyOf({ surface, inputRoutes: [] }) ?? undefined,
+        surface: surface.kind === 'chat' ? 'agent-session' : 'terminal'
+      },
+      { title, body },
+      // That lane's renderer plays a custom sound; nothing plays one for this notification.
+      { ...settings, customSoundId: 'system' }
+    )
+    return
+  }
   const notification = new Notification({ title, body })
   shownNotifications.add(notification)
   notification.on('close', () => shownNotifications.delete(notification))
@@ -61,7 +84,10 @@ export function installLiveSessionDesktopNotifications(
         Notification.isSupported()
       )
     },
-    show: showSessionNotification
+    show: (notification) =>
+      showSessionNotification(notification, store.getSettings().notifications),
+    // Installed after this, and only where replies are classified.
+    replyAsk: (session) => getSessionSummariesHost()?.replyAsk(session) ?? 'tells'
   })
   service.subscribe((event) => notifier.onEvent(event))
 }

@@ -3,6 +3,7 @@ import type {
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import { replyAskOf } from '../live-sessions/discovery/reply-ask'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import type { SessionSummarizer } from './session-summarizer'
 
 export type LiveSessionReplyAsksDeps = {
@@ -77,6 +78,23 @@ export class LiveSessionReplyAsks {
     return this.deps.classifier.view(replyAskKey(session.id))?.text === 'asks'
       ? { ...session, status: 'waiting-input', statusSource: 'classifier' }
       : session
+  }
+
+  /** Whether the finished turn's reply asks, once it has been read and the model has answered. */
+  verdict(session: LiveSession): ReplyAskVerdict {
+    if (session.status !== 'your-turn' || !session.alive) {
+      return 'tells'
+    }
+    const tracked = this.tracked.get(session.id)
+    // A turn's end reaches whoever asks in the same registry event, maybe before it is seen here.
+    if (!tracked || tracked.stamp !== session.lastActivityAt || tracked.reading) {
+      return 'deciding'
+    }
+    const view = this.deps.classifier.view(replyAskKey(session.id))
+    if (view?.pending) {
+      return 'deciding'
+    }
+    return view?.text === 'asks' ? 'asks' : 'tells'
   }
 
   dispose(): void {

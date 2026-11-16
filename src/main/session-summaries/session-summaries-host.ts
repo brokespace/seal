@@ -1,9 +1,13 @@
 import { join } from 'node:path'
-import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import type {
+  AgentSessionSurface,
+  LiveSession
+} from '../../shared/live-sessions/live-session-types'
 import type {
   SessionSummariesListResult,
   SessionSummariesStatus
 } from '../../shared/session-summaries/session-summary-contracts'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import { liveSessionTranscripts } from '../live-sessions/transcripts/live-session-transcripts'
 import { structuredChatJournal } from '../live-sessions/transcripts/journal-session-transcript'
 import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
@@ -19,6 +23,7 @@ import { renameCliSessionTab } from './cli-session-tab-title'
 import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionSummaries } from './live-session-summaries'
 import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
+import { sessionPaneWorkspaceId } from './session-pane-workspace'
 import { SessionSummarizer } from './session-summarizer'
 import { createSessionTitleWriteThrough } from './session-title-write-through'
 import { unrefTimer } from './unref-timer'
@@ -239,6 +244,15 @@ export class SessionSummariesHost {
 
   private settingOn(): boolean {
     return this.options.store.getSettings().sessionSummariesEnabled !== false
+  }
+
+  /** Whether a session's finished turn ended on a question; 'deciding' while its reply is read. */
+  replyAsk(session: LiveSession): ReplyAskVerdict {
+    return this.settingOn() && this.replyAsks ? this.replyAsks.verdict(session) : 'tells'
+  }
+
+  paneWorkspaceId(surface: AgentSessionSurface): string | null {
+    return sessionPaneWorkspaceId(this.options.runtime, surface)
   }
 
   private decorate(session: LiveSession): LiveSession {

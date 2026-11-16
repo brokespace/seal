@@ -4,7 +4,8 @@ import {
   isLiveSessionNoticeEnabled,
   LiveSessionNotifier,
   liveSessionNotificationOwner,
-  type LiveSessionNotification
+  type LiveSessionNotification,
+  type ReplyAskVerdict
 } from './live-session-notifier'
 
 const base: LiveSession = {
@@ -28,13 +29,25 @@ const base: LiveSession = {
   permission: null
 }
 
-function watch() {
+function watch(replyAsk?: () => ReplyAskVerdict) {
   const shown: LiveSessionNotification[] = []
-  const notifier = new LiveSessionNotifier({ wanted: () => true, show: (n) => shown.push(n) })
+  const timers: { run: () => void; delayMs: number }[] = []
+  const notifier = new LiveSessionNotifier({
+    wanted: () => true,
+    show: (n) => shown.push(n),
+    replyAsk,
+    setTimer: (run, delayMs) => {
+      const timer = { run, delayMs }
+      timers.push(timer)
+      return () => void timers.splice(timers.indexOf(timer), 1)
+    }
+  })
   let revision = 0
   const see = (session: Partial<LiveSession>) =>
     notifier.onEvent({ type: 'upsert', revision: ++revision, session: { ...base, ...session } })
-  return { shown, see, notifier }
+  /** Lets the pending check of a held turn run. */
+  const tick = () => timers.shift()?.run()
+  return { shown, see, notifier, timers, tick }
 }
 
 describe('session notifications', () => {
@@ -52,17 +65,118 @@ describe('session notifications', () => {
         sessionId: 'box:claude:s1',
         kind: 'finished',
         title: 'Fix the coupon bug',
-        body: 'Claude Code on build-box finished: Both reviews are in; nothing blocking.'
+        body: 'Claude Code on build-box finished: Both reviews are in; nothing blocking.',
+        surface: { kind: 'external' }
       }
     ])
   })
 
-  it('announce a finished turn once when its reply is then read as a question', () => {
+  it('hold a turn whose reply is still being read, and announce only the question it ends on', () => {
+    let verdict: ReplyAskVerdict = 'deciding'
+    const { shown, see, timers, tick } = watch(() => verdict)
+    see({ status: 'working' })
+    see({ status: 'your-turn', lastMessage: 'Should I go ahead with staging' })
+    see({ status: 'your-turn', lastMessage: 'Should I go ahead with staging', summary: 'Asks' })
+    expect(shown).toEqual([])
+    tick()
+    expect(shown).toEqual([])
+
+    verdict = 'asks'
+    tick()
+    see({ status: 'waiting-input', statusSource: 'classifier' })
+    expect(shown.map((n) => [n.kind, n.body])).toEqual([
+      ['needs-attention', 'Claude Code on build-box needs you: Should I go ahead with staging']
+    ])
+    expect(timers).toEqual([])
+  })
+
+  it('announce the question when the registry publishes it before the next check', () => {
+    const { shown, see, timers } = watch(() => 'deciding')
+    see({ status: 'working' })
+    see({ status: 'your-turn', lastMessage: 'Should I go ahead with staging' })
+    see({ status: 'waiting-input', statusSource: 'classifier' })
+    expect(shown.map((n) => n.kind)).toEqual(['needs-attention'])
+    expect(timers).toEqual([])
+  })
+
+  it('announce a held turn as finished once its reply is read as telling, or was never read', () => {
+    let verdict: ReplyAskVerdict = 'deciding'
+    const { shown, see, timers, tick } = watch(() => verdict)
+    see({ status: 'working' })
+    see({ status: 'your-turn', lastMessage: 'Deployed. Let me know how it looks.' })
+    verdict = 'tells'
+    tick()
+    expect(shown.map((n) => n.kind)).toEqual(['finished'])
+
+    verdict = 'deciding'
+    see({ id: 'box:claude:s2', status: 'working' })
+    see({ id: 'box:claude:s2', status: 'your-turn' })
+    const waits: number[] = []
+    while (timers.length > 0) {
+      waits.push(timers[0].delayMs)
+      tick()
+    }
+    expect(waits).toEqual([300, 700, 1500, 3000, 5000, 8000])
+    expect(shown.map((n) => [n.sessionId, n.kind])).toEqual([
+      ['box:claude:s1', 'finished'],
+      ['box:claude:s2', 'finished']
+    ])
+  })
+
+  it('drop a held turn end when the agent is back at work before its reply was read', () => {
+    const { shown, see, timers } = watch(() => 'deciding')
+    see({ status: 'working' })
+    see({ status: 'your-turn' })
+    see({ status: 'working' })
+    expect(timers).toEqual([])
+    expect(shown).toEqual([])
+  })
+
+  it('announce a question read into a reply after its turn end was announced', () => {
     const { shown, see } = watch()
     see({ status: 'working' })
     see({ status: 'your-turn', lastMessage: 'Should I go ahead with staging' })
     see({ status: 'waiting-input', statusSource: 'classifier' })
-    expect(shown.map((n) => n.kind)).toEqual(['finished'])
+    expect(shown.map((n) => n.kind)).toEqual(['finished', 'needs-attention'])
+  })
+
+  it('announce the question in a chat or terminal reply, whose turn end its owner announced', () => {
+    const asked: string[] = []
+    const shown: LiveSessionNotification[] = []
+    const notifier = new LiveSessionNotifier({
+      wanted: (kind, surface) => {
+        asked.push(`${kind} ${surface}`)
+        return true
+      },
+      show: (n) => shown.push(n)
+    })
+    const sessions: Partial<LiveSession>[] = [
+      { id: 'chat', surface: { kind: 'chat', sessionId: 'c1', tabId: 'tab-c1' } },
+      { id: 'cli', surface: { kind: 'cli', paneKey: 'tab-1:0' } }
+    ]
+    const steps: Partial<LiveSession>[] = [
+      { status: 'working' },
+      { status: 'your-turn', lastMessage: 'Tell me which one and should I go ahead' },
+      { status: 'waiting-input', statusSource: 'classifier' },
+      { status: 'working' },
+      // The owner's hook or attention lane announces a question the agent asked outright.
+      { status: 'waiting-input', statusSource: 'seal-hooks' }
+    ]
+    let revision = 0
+    for (const session of sessions) {
+      for (const step of steps) {
+        notifier.onEvent({
+          type: 'upsert',
+          revision: ++revision,
+          session: { ...base, ...session, ...step }
+        })
+      }
+    }
+    expect(shown.map((n) => [n.sessionId, n.kind])).toEqual([
+      ['chat', 'needs-attention'],
+      ['cli', 'needs-attention']
+    ])
+    expect(asked).toEqual(['needs-attention chat', 'needs-attention cli'])
   })
 
   it('say what a session asks for, once', () => {

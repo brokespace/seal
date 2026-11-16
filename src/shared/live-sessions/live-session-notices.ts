@@ -14,10 +14,6 @@ export function liveSessionNotice(
   if (!before || before.status === after.status) {
     return null
   }
-  if (before.status === 'your-turn' && after.status === 'waiting-input') {
-    // The same stop, read again as a question; its end was already announced.
-    return null
-  }
   const was = liveSessionStatusGroup(before.status)
   const is = liveSessionStatusGroup(after.status)
   if (is === 'attention') {

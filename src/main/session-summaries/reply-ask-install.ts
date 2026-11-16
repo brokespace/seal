@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import type { ReplyAskVerdict } from '../live-sessions/live-session-notifier'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
 import type { SessionTranscripts } from '../live-sessions/transcripts/session-transcript'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
@@ -12,6 +13,7 @@ import { unrefTimer } from './unref-timer'
 
 export type ReplyAskClassifier = {
   decorate(session: LiveSession): LiveSession
+  verdict(session: LiveSession): ReplyAskVerdict
   /** The model came back: ask again for the replies it failed on. */
   retryFailed(): void
   dispose(): void
@@ -52,6 +54,7 @@ export function createReplyAskClassifier(options: {
   const release = liveSessions.subscribe((event) => live.observe(event))
   return {
     decorate: (session) => live.decorate(session),
+    verdict: (session) => live.verdict(session),
     retryFailed: () => classifier.retryFailed(),
     dispose: () => {
       release()

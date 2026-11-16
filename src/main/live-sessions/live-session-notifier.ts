@@ -1,5 +1,6 @@
 import type { AgentStatusState } from '../../shared/agent-status/contracts/agent-status-types'
 import { agentSessionAdapter } from '../../shared/live-sessions/adapters/agent-session-adapters'
+import { liveSessionStatusGroup } from '../../shared/live-sessions/live-session-status'
 import { liveSessionSurfaceOf } from '../../shared/live-sessions/live-session-surface'
 import type {
   AgentSessionSurface,
@@ -18,12 +19,21 @@ export type LiveSessionNotification = {
   kind: LiveSessionNotice
   title: string
   body: string
+  /** The session's surface, which decides what a click opens. */
+  surface: AgentSessionSurface
 }
 
+/** Whether a finished turn's reply asks the user something, as far as is known yet. */
+export type ReplyAskVerdict = 'asks' | 'tells' | 'deciding'
+
 export type LiveSessionNotifierDeps = {
-  /** The user wants this kind of notice, and is not already looking at Seal. */
-  wanted: (kind: LiveSessionNotice) => boolean
+  /** The user wants this kind of notice from this surface, and is not already looking at Seal. */
+  wanted: (kind: LiveSessionNotice, surface: AgentSessionSurface['kind']) => boolean
   show: (notification: LiveSessionNotification) => void
+  /** Absent where nothing reads replies: every finished turn is then announced at once. */
+  replyAsk?: (session: LiveSession) => ReplyAskVerdict
+  /** Returns the timer's cancel. */
+  setTimer?: (run: () => void, delayMs: number) => () => void
 }
 
 export type LiveSessionNotificationOwner =
@@ -70,17 +80,50 @@ function describe(session: LiveSession, kind: LiveSessionNotice): LiveSessionNot
   if (kind === 'needs-attention') {
     lead = session.status === 'errored' ? `${where} hit an error` : `${where} needs you`
   }
-  return { sessionId: session.id, kind, title: name, body: detail ? `${lead}: ${detail}` : lead }
+  return {
+    sessionId: session.id,
+    kind,
+    title: name,
+    body: detail ? `${lead}: ${detail}` : lead,
+    surface: liveSessionSurfaceOf(session)
+  }
 }
 
-/** Tells the user when a session Seal watches starts needing them or finishes its turn. */
+/** How long a finished turn waits, check by check, for its reply to be read. */
+const REPLY_CHECKS_MS = [300, 700, 1_500, 3_000, 5_000, 8_000]
+
+function unrefTimeout(run: () => void, delayMs: number): () => void {
+  const timer = setTimeout(run, delayMs)
+  timer.unref?.()
+  return () => clearTimeout(timer)
+}
+
+/** Only the registry reads a reply as a question, so no owner of a surface has announced it. */
+function askedAfterTurnEnd(before: LiveSession | undefined, after: LiveSession): boolean {
+  return (
+    before?.status === 'your-turn' &&
+    after.status === 'waiting-input' &&
+    after.statusSource === 'classifier'
+  )
+}
+
+/**
+ * Tells the user when a session Seal watches starts needing them or finishes its turn. A turn that
+ * ends on a reply still being read is announced once the reading says which of the two it is.
+ */
 export class LiveSessionNotifier {
   private readonly known = new Map<string, LiveSession>()
+  /** Finished turns not announced yet, with the cancel of their next check. */
+  private readonly held = new Map<string, () => void>()
+  private readonly setTimer: NonNullable<LiveSessionNotifierDeps['setTimer']>
 
-  constructor(private readonly deps: LiveSessionNotifierDeps) {}
+  constructor(private readonly deps: LiveSessionNotifierDeps) {
+    this.setTimer = deps.setTimer ?? unrefTimeout
+  }
 
   onEvent(event: LiveSessionRegistryEvent): void {
     if (event.type === 'snapshot') {
+      this.dispose()
       this.known.clear()
       for (const session of event.snapshot.sessions) {
         this.known.set(session.id, session)
@@ -88,17 +131,92 @@ export class LiveSessionNotifier {
     } else if (event.type === 'remove') {
       const gone = this.known.get(event.sessionId)
       this.known.delete(event.sessionId)
-      if (gone && event.replacedBy && !this.known.has(event.replacedBy)) {
-        this.known.set(event.replacedBy, gone)
+      const unannounced = this.unhold(event.sessionId)
+      if (gone && event.replacedBy) {
+        if (!this.known.has(event.replacedBy)) {
+          this.known.set(event.replacedBy, gone)
+        }
+        if (unannounced) {
+          this.announce(gone, 'finished')
+        }
       }
     } else if (event.type === 'upsert') {
       const before = this.known.get(event.session.id)
       this.known.set(event.session.id, event.session)
-      const mine = liveSessionNotificationOwner(event.session) === 'live-session-notifier'
-      const kind = mine ? liveSessionNotice(before, event.session) : null
-      if (kind && this.deps.wanted(kind)) {
-        this.deps.show(describe(event.session, kind))
+      this.changed(before, event.session)
+    }
+  }
+
+  dispose(): void {
+    for (const cancel of this.held.values()) {
+      cancel()
+    }
+    this.held.clear()
+  }
+
+  private changed(before: LiveSession | undefined, session: LiveSession): void {
+    if (liveSessionNotificationOwner(session) !== 'live-session-notifier') {
+      if (askedAfterTurnEnd(before, session)) {
+        this.announce(session, 'needs-attention')
       }
+      return
+    }
+    const kind = liveSessionNotice(before, session)
+    if (this.held.has(session.id)) {
+      if (before?.status === session.status) {
+        return
+      }
+      this.unhold(session.id)
+      // A question or an error says more than the end it follows; new work makes that end old news.
+      if (!kind && liveSessionStatusGroup(session.status) !== 'working') {
+        this.announce(session, 'finished')
+      }
+    }
+    if (kind === 'finished' && this.deps.replyAsk?.(session) === 'deciding') {
+      this.hold(session.id, 0)
+    } else if (kind) {
+      this.announce(session, kind)
+    }
+  }
+
+  private hold(sessionId: string, check: number): void {
+    this.held.set(
+      sessionId,
+      this.setTimer(() => this.read(sessionId, check), REPLY_CHECKS_MS[check])
+    )
+  }
+
+  private unhold(sessionId: string): boolean {
+    this.held.get(sessionId)?.()
+    return this.held.delete(sessionId)
+  }
+
+  private read(sessionId: string, check: number): void {
+    this.held.delete(sessionId)
+    const session = this.known.get(sessionId)
+    if (!session) {
+      return
+    }
+    const verdict = this.deps.replyAsk?.(session) ?? 'tells'
+    if (verdict === 'deciding' && check + 1 < REPLY_CHECKS_MS.length) {
+      this.hold(sessionId, check + 1)
+    } else if (verdict === 'asks') {
+      const asking: LiveSession = {
+        ...session,
+        status: 'waiting-input',
+        statusSource: 'classifier'
+      }
+      // The registry publishes the question next; it is no news by then.
+      this.known.set(sessionId, asking)
+      this.announce(asking, 'needs-attention')
+    } else {
+      this.announce(session, 'finished')
+    }
+  }
+
+  private announce(session: LiveSession, kind: LiveSessionNotice): void {
+    if (this.deps.wanted(kind, liveSessionSurfaceOf(session).kind)) {
+      this.deps.show(describe(session, kind))
     }
   }
 }
