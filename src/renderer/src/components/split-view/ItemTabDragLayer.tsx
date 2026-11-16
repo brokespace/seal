@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -64,7 +64,8 @@ export function ItemTabDragLayer({ children }: { children: React.ReactNode }): R
     endSplitViewDragRef.current = null
     setDragged(null)
   }, [releaseMissedEndFallback])
-  clearDragStateRef.current = clearDragState
+  // A layer that goes away under a held tab ends the drag with it.
+  useEffect(() => clearDragState, [clearDragState])
 
   const handlers = useMemo(
     () => ({
@@ -76,6 +77,7 @@ export function ItemTabDragLayer({ children }: { children: React.ReactNode }): R
         tabDragActiveRef.current = true
         draggedRef.current = data.item
         endSplitViewDragRef.current = beginSplitViewDrag()
+        clearDragStateRef.current = clearDragState
         installMissedEndFallback()
         setDragged(data.item)
       },

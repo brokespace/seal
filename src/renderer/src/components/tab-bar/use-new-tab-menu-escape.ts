@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 /** Remembers that Esc closed the new-tab menu, so its close can leave the keyboard on the "+". */
 export function useNewTabMenuEscape(): {
@@ -6,15 +6,13 @@ export function useNewTabMenuEscape(): {
   takeNewTabMenuEscape: () => boolean
 } {
   const escapedRef = useRef(false)
-  const handlersRef = useRef({
-    noteNewTabMenuEscape: (): void => {
-      escapedRef.current = true
-    },
-    takeNewTabMenuEscape: (): boolean => {
-      const escaped = escapedRef.current
-      escapedRef.current = false
-      return escaped
-    }
-  })
-  return handlersRef.current
+  const noteNewTabMenuEscape = useCallback((): void => {
+    escapedRef.current = true
+  }, [])
+  const takeNewTabMenuEscape = useCallback((): boolean => {
+    const escaped = escapedRef.current
+    escapedRef.current = false
+    return escaped
+  }, [])
+  return { noteNewTabMenuEscape, takeNewTabMenuEscape }
 }
