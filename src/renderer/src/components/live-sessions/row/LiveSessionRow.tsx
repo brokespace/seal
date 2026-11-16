@@ -322,7 +322,14 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
             </div>
           </HoverCardTrigger>
         </ContextMenuTrigger>
-        <HoverCardContent ref={previewCard} side="right" align="start" className="w-72">
+        <HoverCardContent
+          ref={previewCard}
+          side="right"
+          align="start"
+          // A keyboard preview outlives the pointer: it must not stay beside a row scrolled out of the list.
+          hideWhenDetached
+          className="w-72"
+        >
           <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
         </HoverCardContent>
       </HoverCard>
