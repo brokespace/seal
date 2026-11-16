@@ -72,6 +72,15 @@ A recording is one sample of a model that varies. [The baseline](./02-scenario-b
 
 Offline, the suite checks that every scenario is labelled, that no conversation is on both sides of the split, and that the saved answers still give the saved thresholds. A change to a question, to the state or to a model's answers is therefore a new measurement, not a silent change.
 
+### The judge as the recap runs it
+
+The recap runs Clef alone (`@cf/cloudflare/clef`), with the thresholds measured for it on the tune split. `RECAP_JUDGE_CALIBRATION` in `../session-recap-judge-questions.ts` pins the model, the hash of the question wording and the five thresholds together; the judge does not run on wording its thresholds were not measured on. There is no second model: when Clef fails or times out the request stays "Open".
+
+Two offline checks run the product's own code against the recorded answers:
+
+- `recap-judge.test.ts`, "the recap judged by its own code": every labelled request goes through the app's transcript readers, the conversation reader (`../session-recap-conversation.ts`), the requests step, the Clef client and the display rule, on every surface a scenario runs on. Each request goes in under the user's own words, as the measurement asked about it. It fails if a finished request or a running turn is ever shown as "Not addressed", if fewer open requests are caught than the measurement caught, or if a reader starts handing the judge a state other than the one measured (the few known differences are listed in the test, with the reason).
+- `recap-scenarios.test.ts` now runs the judge inside the whole pipeline. There the request is the text the read step wrote, so its judge requests differ from the measurement's and have their own recordings: `__fixtures__/judge-answers/recap-scenarios.json`, written by a live run. A judge request with no answer on record is answered with a failure, which the recap takes as it takes any judge failure: the request stays "Open". `matrix.json` counts both under `judge` (`answered`, `unrecorded`), so a replay never passes off a missing recording as the judge's opinion.
+
 | Environment                      | Effect                                                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `RECAP_JUDGE_LIVE=1`             | Ask each model what is not on record, then write the answers, the thresholds and the report.                   |
