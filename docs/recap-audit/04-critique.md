@@ -652,4 +652,4 @@ Not done:
 - **Clef was not called**, only looked up.
 - The labels were not read by a person.
 - No recap from a real session was read (S1).
-- `pnpm check:changed` and the in-app specs were not run for the product; this PR changes test fixtures, a script and documents only.
+- The in-app specs were not run. This PR changes test fixtures, a script and documents only; `pnpm check:changed` passes against its base.
