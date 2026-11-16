@@ -1,4 +1,4 @@
-import { Activity, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Activity, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { LiveSessionBody } from '@/components/live-sessions/workspace/LiveSessionBody'
 import { useLiveSessionTabs } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { ProjectOverviewBody } from '@/components/project-overview/ProjectOverviewPage'
@@ -88,9 +88,9 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
   const front = slotId !== null
   useSurfaceOverSlot(surfaceRef, slotId, true)
   useKeptScrollOffsets(surfaceRef, front)
-  // Its effects stop one commit after it hides, so the chat first learns that it is out of sight.
-  const [wasFront, setWasFront] = useState(front)
-  useLayoutEffect(() => setWasFront(front), [front])
+  // Its effects stop one render after it hides, so the chat first learns that it is out of sight.
+  // The store updates that hide it are synchronous, which is when a deferred value lags.
+  const wasFront = useDeferredValue(front)
   const focusPane = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (paneId && isInSurface(event)) {
       focusSplitViewPane(paneId)
