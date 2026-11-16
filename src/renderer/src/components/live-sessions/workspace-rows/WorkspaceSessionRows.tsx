@@ -55,6 +55,7 @@ function refuseCardDrag(event: React.DragEvent): void {
 function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   event.stopPropagation()
   const rows = event.currentTarget
+  const { pointerId, pointerType } = event
   // A press inside a row's menu comes here through React alone: the menu is drawn outside the rows.
   if (event.button !== 0 || !(event.target instanceof Node) || !rows.contains(event.target)) {
     return
@@ -69,20 +70,28 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   }
   const forget = (): void => {
     window.removeEventListener('click', dropClickOnCard, true)
+    window.removeEventListener('dblclick', dropClickOnCard, true)
     window.removeEventListener('pointerup', onRelease, true)
-    window.removeEventListener('pointercancel', forget, true)
-    window.removeEventListener('pointerdown', forget, true)
+    window.removeEventListener('pointercancel', onLost, true)
+    window.removeEventListener('pointerdown', onLost, true)
   }
   // The click follows its release at once; a later one is not this press's.
-  const onRelease = (): void => {
-    window.setTimeout(forget, 0)
+  const onRelease = (release: PointerEvent): void => {
+    if (release.pointerId === pointerId) {
+      window.setTimeout(forget, 0)
+    }
+  }
+  // A touch that turns into a scroll ends without a release; a new press means the release went unheard.
+  const onLost = (pointer: PointerEvent): void => {
+    if (pointer.pointerId === pointerId || pointer.pointerType === pointerType) {
+      forget()
+    }
   }
   window.addEventListener('click', dropClickOnCard, true)
-  window.addEventListener('pointerup', onRelease, { capture: true, once: true })
-  // A touch that turns into a scroll ends without a release, and without a click.
-  window.addEventListener('pointercancel', forget, { capture: true, once: true })
-  // A press that never reports its release must not claim the next one.
-  window.addEventListener('pointerdown', forget, { capture: true, once: true })
+  window.addEventListener('dblclick', dropClickOnCard, true)
+  window.addEventListener('pointerup', onRelease, true)
+  window.addEventListener('pointercancel', onLost, true)
+  window.addEventListener('pointerdown', onLost, true)
 }
 
 /** One workspace's sessions on its card: a full row each, then the ended ones behind one line. */
