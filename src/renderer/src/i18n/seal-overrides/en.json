@@ -625,7 +625,6 @@
           "settings": "Idle sessions and notifications…",
           "noMatch": "No sessions match.",
           "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
-          "clearScope": "Show all sessions",
           "pickedCount": "{{count}} selected",
           "bulkStop": "Stop",
           "bulkRemove": "Remove",
@@ -668,6 +667,21 @@
           "plan": "Plan",
           "todos": "To-dos",
           "noTodos": "The agent keeps no list."
+        },
+        "sessionRows": {
+          "allUnderWorkspaces": "Every session is listed under its workspace.",
+          "machine": "Machine",
+          "filterByMachine": "Filter sessions by machine",
+          "scanFailed": "Some machines could not be scanned",
+          "allMachines": "All machines",
+          "filterByStatus": "Filter sessions by status",
+          "allStatuses": "All statuses",
+          "clearFilter": "Clear filter",
+          "toolbarTitle": "Sessions",
+          "options": "Session options",
+          "label": "Agent sessions",
+          "finished": "Recently finished · {{count}}",
+          "statusAttention": "Needs you"
         }
       },
       "skills": {
