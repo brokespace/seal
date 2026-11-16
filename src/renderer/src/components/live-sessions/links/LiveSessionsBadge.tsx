@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { LiveSessionStatus } from '../../../../../shared/live-sessions/live-session-types'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { useAppStore } from '@/store/index'
@@ -31,6 +32,8 @@ export function LiveSessionsBadge({ projectId }: { projectId: string }): React.J
   const { byProject } = useLiveSessionLinks()
   const tabs = useLiveSessionTabs()
   const showingSessions = useAppStore((state) => state.activeView === 'sessions')
+  // A click's ring fades by itself: the list scrolling the badge from under the pointer must not end it.
+  const ringIsFromClick = useRef(false)
   const badge = byProject.get(projectId)
   if (!badge) {
     return null
@@ -45,12 +48,20 @@ export function LiveSessionsBadge({ projectId }: { projectId: string }): React.J
       data-status={badge.status}
       data-current={current ? 'true' : undefined}
       title={liveSessionsCountLabel(t, badge.count, badge.status)}
-      onPointerEnter={() => liveSessionMarksStore.highlight(badge.sessionIds)}
-      onPointerLeave={() => liveSessionMarksStore.highlight([])}
+      onPointerEnter={() => {
+        ringIsFromClick.current = false
+        liveSessionMarksStore.highlight(badge.sessionIds)
+      }}
+      onPointerLeave={() => {
+        if (!ringIsFromClick.current) {
+          liveSessionMarksStore.highlight([])
+        }
+      }}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
+        ringIsFromClick.current = true
         revealFirstListedSession(badge.sessionIds)
         // The reveal rings the one row it scrolls to; the badge counts them all.
         liveSessionMarksStore.highlight(badge.sessionIds)
