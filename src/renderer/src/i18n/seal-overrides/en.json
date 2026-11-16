@@ -641,7 +641,6 @@
           "backToProjectOverview": "Back to project overview",
           "subagentOf": "Subagent: {{title}}",
           "goneTab": "Session ended",
-          "closeTab": "Close tab",
           "tabs": "Open agent sessions",
           "gone": "This session is no longer on its machine. Close the tab, or find it under Recently finished in Active agents.",
           "pick": "Pick a session under Active agents in the sidebar to open its chat."

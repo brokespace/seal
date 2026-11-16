@@ -90,10 +90,8 @@ it('keeps what was typed to a session when a neighbouring pane closes and when t
     'Refactor the parser',
     'Write the release notes'
   ])
-  const firstSurface = document.querySelector('[data-item-surface-pane-id]')!
-  expect(within(firstSurface as HTMLElement).getByPlaceholderText('Message this session')).toBe(
-    field
-  )
+  const firstSurface = document.querySelector<HTMLElement>('[data-item-surface-pane-id]')!
+  expect(within(firstSurface).getByPlaceholderText('Message this session')).toBe(field)
 
   // The tree changes shape, then the grid ends and the session page takes over.
   closePaneOf('Refactor the parser')
