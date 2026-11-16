@@ -12,3 +12,11 @@ export function swallowNextClickOnDragHandle(handleEl: HTMLElement): void {
   // Why: never cancelled, so a drop that yields no click cannot leave this eating the next real one.
   setTimeout(() => window.removeEventListener('click', swallow, true), 0)
 }
+
+/** A drag cancelled by key still ends with a release; that release is not a click on its handle. */
+export function swallowClickAfterNextRelease(handleEl: HTMLElement): void {
+  window.addEventListener('pointerup', () => swallowNextClickOnDragHandle(handleEl), {
+    once: true,
+    capture: true
+  })
+}

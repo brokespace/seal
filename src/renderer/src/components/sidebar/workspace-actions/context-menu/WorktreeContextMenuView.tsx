@@ -31,9 +31,15 @@ import {
   shouldUseNativeContextMenu
 } from './worktree-context-menu-policy'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
+import {
+  openItemsInSplitView,
+  workspaceSplitViewItem
+} from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
 
 export default function WorktreeContextMenuView({ model }: { model: WorktreeContextMenuModel }) {
   const {
+    activeContextWorktrees,
     children,
     contentClassName,
     contextMenuOpenedAtRef,
@@ -173,6 +179,16 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
           )}
           <WorktreeContextMenuDeleteItems model={model} />
           <DropdownMenuSeparator />
+          <SplitViewPlacementMenu
+            menuKind="dropdown"
+            intent="open"
+            onPlace={(zone) =>
+              openItemsInSplitView(
+                activeContextWorktrees.map((target) => workspaceSplitViewItem(target)),
+                zone
+              )
+            }
+          />
           {!isMultiContext && (
             <>
               <DropdownMenuItem onSelect={handleRename} disabled={isDeleting}>

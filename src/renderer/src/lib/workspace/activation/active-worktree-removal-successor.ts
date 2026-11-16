@@ -10,6 +10,7 @@ import {
 import { findIndexedWorktreeOwnerForHost } from '@/lib/workspace/ownership/worktree-runtime-owner-index'
 import { worktreeOwnerHostIds } from '@/lib/workspace/ownership/workspace-catalog-owner-index'
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
+import { takeOverRemovedActiveWorktree } from '@/lib/workspace/activation/active-worktree-removal-takeover'
 import { getWorktreeVisitTimestamp } from '@/lib/workspace/activation/worktree-visit-recency'
 import { getDeleteStateForWorktreeHost } from '@/components/sidebar/workspace-actions/deletion/worktree-delete-state-host-match'
 import { createSleepingSweepHiddenCheck } from '@/components/sidebar/worktree-list/listing/sleeping-sweep-visibility'
@@ -159,6 +160,9 @@ export function installActiveWorktreeRemovalSuccessor(store = useAppStore): () =
         return
       }
       witness = null
+      if (takeOverRemovedActiveWorktree(removed.id)) {
+        return
+      }
       const successor = pickActiveWorktreeSuccessor(
         current,
         removed,
@@ -255,6 +259,9 @@ export function installActiveWorktreeRemovalSuccessor(store = useAppStore): () =
         return
       }
       witness = null
+      if (takeOverRemovedActiveWorktree(removed.id)) {
+        return
+      }
       const successor = pickActiveWorktreeSuccessor(
         state,
         removed,

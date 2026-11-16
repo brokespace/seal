@@ -15,6 +15,7 @@ import { installMonacoE2EProbe } from './monaco-e2e-probe'
 import { matchesPendingEditorFocusRequest } from '../commands/pending-editor-focus-request'
 import { installMonacoEditorInputBindings } from './monaco-editor-input-bindings'
 import type { MonacoEditorMountParams } from './monaco-editor-mount-params'
+import { canWorkspaceTakeKeyboardFocus } from '@/components/split-view/split-view-showing'
 import {
   installMonacoViewStateTracking,
   restoreMonacoViewState
@@ -253,7 +254,9 @@ export function useMonacoEditorMount(params: MonacoEditorMountParams): OnMount {
         restoreMonacoViewState(
           editorInstance,
           viewStateKey,
-          reveal?.viewStateId && revealMatchesEditor ? () => false : undefined
+          reveal?.viewStateId && revealMatchesEditor
+            ? () => false
+            : () => canWorkspaceTakeKeyboardFocus(worktreeId)
         )
       }
 

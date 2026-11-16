@@ -62,5 +62,8 @@ export function sendResolvedWindowShortcutAction(
       return
     case 'worktreeHistoryNavigate':
       mainWindow.webContents.send('ui:worktreeHistoryNavigate', action.direction)
+      return
+    case 'splitViewShortcut':
+      mainWindow.webContents.send('ui:splitViewShortcut', action.actionId)
   }
 }

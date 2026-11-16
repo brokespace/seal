@@ -698,13 +698,11 @@
         "workspace": {
           "actions": "Session actions",
           "loading": "Looking for sessions",
-          "closeSplit": "Close split",
           "backToSession": "Back to session",
           "backToProject": "Back to {{project}}",
           "backToProjectOverview": "Back to project overview",
           "subagentOf": "Subagent: {{title}}",
           "goneTab": "Session ended",
-          "closeTab": "Close tab",
           "tabs": "Open agent sessions",
           "gone": "This session is no longer on its machine. Close the tab, or find it under Recently finished in Active agents.",
           "pick": "Pick a session under Active agents in the sidebar to open its chat."
@@ -2213,6 +2211,61 @@
         "collapse": "Collapse {{project}}",
         "open": "Project Overview",
         "openOverview": "Open project overview"
+      }
+    },
+    "splitView": {
+      "error": {
+        "title": "Split view hit an error.",
+        "description": "Retry, or close the other panes to return to a single view.",
+        "leave": "Close other panes"
+      },
+      "drop": {
+        "left": "Split left",
+        "right": "Split right",
+        "up": "Split up",
+        "down": "Split down",
+        "tab": "Add as tab",
+        "open": "Open"
+      },
+      "pane": {
+        "restore": "Restore panes",
+        "maximize": "Maximize pane",
+        "close": "Close pane",
+        "tabs": "Tabs in this pane"
+      },
+      "placeholder": {
+        "close": "Close",
+        "loading": "Loading {{name}}",
+        "workspaceUnavailable": "This workspace is not available.",
+        "projectUnavailable": "This project is not available.",
+        "load": "Load",
+        "paused": "{{name}} starts when you focus this pane."
+      },
+      "menu": {
+        "right": "Right",
+        "down": "Down",
+        "left": "Left",
+        "up": "Up",
+        "asTab": "As a tab",
+        "openInSplitView": "Open in split view",
+        "moveToNewPane": "Move to new pane"
+      },
+      "item": {
+        "project": "Project",
+        "workspace": "Workspace"
+      }
+    },
+    "keybindings": {
+      "title": {
+        "splitViewFocusNextPane": "Split view: focus next pane",
+        "splitViewFocusPreviousPane": "Split view: focus previous pane",
+        "splitViewToggleMaximize": "Split view: maximize / restore",
+        "splitViewMoveTabRight": "Split view: move tab to a pane on the right",
+        "splitViewMoveTabDown": "Split view: move tab to a pane below",
+        "splitViewClosePane": "Split view: close pane"
+      },
+      "group": {
+        "splitView": "Split view"
       }
     },
     "machineServer": {

@@ -29,7 +29,7 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
         workspaceName: link?.name ?? null,
         account: liveSessionAccountLabel(session, accounts),
         unread: isLiveSessionUnread(session, marks.seenAt),
-        current: showingSessions && (session.id === tabs.activeId || session.id === tabs.splitId),
+        current: showingSessions && session.id === tabs.activeId,
         highlighted:
           marks.highlighted.has(session.id) ||
           (activeWorktreeId !== null && link?.worktreeId === activeWorktreeId)
@@ -42,7 +42,6 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
       marks.highlighted,
       showingSessions,
       tabs.activeId,
-      tabs.splitId,
       activeWorktreeId
     ]
   )

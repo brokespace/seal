@@ -46,6 +46,7 @@ import {
 import { useMonacoTheme } from '@/hooks/use-monaco-theme'
 import { cn } from '@/lib/class-names'
 import { wholeFileDiffTintClass } from './whole-file-diff-tint'
+import { canWorkspaceTakeKeyboardFocus } from '@/components/split-view/split-view-showing'
 
 export default function DiffViewer({
   modelKey,
@@ -305,13 +306,21 @@ export default function DiffViewer({
           cleanupModifiedFindShortcut()
           modelContentSub.dispose()
         })
-
-        modifiedEditor.focus()
-      } else {
-        diffEditor.focus()
+      }
+      if (canWorkspaceTakeKeyboardFocus(worktreeId)) {
+        ;(editable ? modifiedEditor : diffEditor).focus()
       }
     },
-    [editable, setupCopy, modelKey, filePath, sideBySide, registerDiffEditor, unregisterDiffEditor]
+    [
+      editable,
+      setupCopy,
+      modelKey,
+      filePath,
+      sideBySide,
+      worktreeId,
+      registerDiffEditor,
+      unregisterDiffEditor
+    ]
   )
 
   // Snapshot on layout cleanup before unmount, avoiding scroll-time writes.

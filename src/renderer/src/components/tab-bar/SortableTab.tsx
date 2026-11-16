@@ -1,5 +1,5 @@
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { X, Minimize2, Pin } from 'lucide-react'
 import { stripLeadingAgentTitleDecoration } from '../../../../shared/agent-status/title/agent-title-decoration'
@@ -14,12 +14,13 @@ import { useAppStore } from '../../store/index'
 import { SealTabAccountBadge } from '../seal-session/SealTabAccountBadge'
 import {
   ACTIVE_TAB_INDICATOR_CLASSES,
+  TAB_ROOT_CLASSES,
   getDropIndicatorClasses,
   getTabRootStateClasses,
   getTabStripBorderClasses,
   type DropIndicator
 } from './drop-indicator'
-import { preventMiddleButtonDefault } from './middle-button-default-guard'
+import { closeTabOnMiddleClick, preventMiddleButtonDefault } from './middle-button-default-guard'
 import { useSortableTabRename } from './use-sortable-tab-rename'
 import { useTabRenameReturnFocus } from './use-tab-rename-return-focus'
 import { SortableTabContextMenu } from './SortableTabContextMenu'
@@ -28,7 +29,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { useTabStripSlotProps } from './use-tab-strip-slot-props'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
-import { useTabContextMenuOpening } from './tab-context-menu-opening'
+import { useTabContextMenuDismissal, useTabContextMenuOpening } from './tab-context-menu-opening'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import {
   isTerminalTabActivityLive,
@@ -172,21 +173,7 @@ export default function SortableTab({
   const showUnreadActivity =
     hasUnreadActivity && !isEditing && !isTerminalTabActivityLive(activityStatus)
 
-  useEffect(() => {
-    const closeMenu = (): void => setMenuOpen(false)
-    window.addEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-    return () => window.removeEventListener(CLOSE_ALL_CONTEXT_MENUS_EVENT, closeMenu)
-  }, [setMenuOpen])
-
-  // Why: webview clicks miss the renderer pointerdown Radix uses for outside-click, so dismiss on window blur instead.
-  useEffect(() => {
-    if (!menuOpen) {
-      return
-    }
-    const dismiss = (): void => setMenuOpen(false)
-    window.addEventListener('blur', dismiss)
-    return () => window.removeEventListener('blur', dismiss)
-  }, [menuOpen, setMenuOpen])
+  useTabContextMenuDismissal(menuOpen, setMenuOpen)
 
   // Why: while editing, drop drag listeners so typing can't start a drag; attributes stay spread to keep dnd-kit a11y.
   const dragListeners = isEditing ? undefined : listeners
@@ -213,7 +200,7 @@ export default function SortableTab({
       data-agent-activity-status={activityStatus}
       {...attributes}
       {...dragListeners}
-      className={`w-full group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_ROOT_CLASSES} ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {
           return
@@ -231,16 +218,8 @@ export default function SortableTab({
       onMouseDown={preventMiddleButtonDefault}
       onMouseUp={preventMiddleButtonDefault}
       onAuxClick={(e) => {
-        if (isEditing) {
-          return
-        }
-        if (e.button === 1) {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isPinned) {
-            return
-          }
-          onClose(tab.id)
+        if (!isEditing) {
+          closeTabOnMiddleClick(e, isPinned ? null : () => onClose(tab.id))
         }
       }}
     >

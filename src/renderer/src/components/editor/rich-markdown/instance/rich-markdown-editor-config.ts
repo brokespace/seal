@@ -38,6 +38,7 @@ import type { DiffComment } from '../../../../../../shared/diff-comment-types'
 import type { RichMarkdownEditorCodec } from '../document/rich-markdown-source-transport'
 import type { RichMarkdownHtmlSuperscriptLinkContext } from '../citations/rich-markdown-html-superscript-link-context'
 import { openSelectedHtmlSuperscriptLink } from '../links/rich-markdown-selected-link-actions'
+import { canWorkspaceTakeKeyboardFocus } from '@/components/split-view/split-view-showing'
 
 export type EditorConfigParams = {
   codec: RichMarkdownEditorCodec
@@ -243,7 +244,9 @@ export function createRichMarkdownEditorConfig(params: EditorConfigParams): UseE
       baseCanonicalRef.current = nextEditor.getMarkdown()
       isInitializingRef.current = false
       cancelAutoFocusRef.current?.()
-      cancelAutoFocusRef.current = autoFocusRichEditor(nextEditor, rootRef.current)
+      cancelAutoFocusRef.current = autoFocusRichEditor(nextEditor, rootRef.current, false, () =>
+        canWorkspaceTakeKeyboardFocus(worktreeId)
+      )
     },
     onBeforeCreate: ({ editor: nextEditor }) => {
       setRichMarkdownImageResolverContext(

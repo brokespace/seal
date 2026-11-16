@@ -165,7 +165,6 @@ describe('legacy terminal panes under the startup terminal hold', () => {
     const controller = {
       activeTabId,
       activeTabType: 'terminal',
-      activeView: 'terminal',
       activityTerminalPortals: [],
       backgroundMountTabIdsByWorktreeRef: {
         current: new Map(restriction ? [[WORKTREE_ID, restriction]] : [])
@@ -176,8 +175,8 @@ describe('legacy terminal panes under the startup terminal hold', () => {
       handlePtyExit: () => {},
       measurableBackgroundWorktreeIdsRef: { current: new Set() },
       mountedWorktreeIdsRef: { current: new Set([WORKTREE_ID]) },
-      renderedActiveWorktreeId: WORKTREE_ID,
       tabsByWorktree: { [WORKTREE_ID]: tabIds.map(terminalTab) },
+      visibleWorkspacePanes: new Map([[WORKTREE_ID, null]]),
       worktreeBrowserTabs: [],
       worktreeFiles: [],
       workspaceSurfaces: [{ id: WORKTREE_ID, path: '/held' }]

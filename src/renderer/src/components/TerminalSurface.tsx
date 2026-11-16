@@ -12,13 +12,15 @@ export function TerminalSurface({
 }: {
   controller: TerminalController
 }): React.JSX.Element {
-  const { renderedActiveWorktreeId } = controller
-  const retainBrowserGuestPaint = useAnyBrowserGuestNeedsPaint(!renderedActiveWorktreeId)
+  const { renderedActiveWorktreeId, splitViewShowing } = controller
+  // Split view shows workspaces in panes whether or not one of them is the active workspace.
+  const showsWorkspaces = Boolean(renderedActiveWorktreeId) || splitViewShowing
+  const retainBrowserGuestPaint = useAnyBrowserGuestNeedsPaint(!showsWorkspaces)
   return (
     <div
       // The workbench already removes hidden content from flow; only keep this ancestor paintable.
       className={`relative flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden${
-        renderedActiveWorktreeId
+        showsWorkspaces
           ? ''
           : retainBrowserGuestPaint
             ? ' opacity-0 pointer-events-none'
@@ -30,7 +32,10 @@ export function TerminalSurface({
       <TerminalTitlebarTabs controller={controller} />
       <TerminalSplitWorkspaceSurfaces controller={controller} />
       <TerminalLegacyWorkspaceSurface controller={controller} />
-      <WslHostStoppedWorkspaceNotice worktreeId={renderedActiveWorktreeId} />
+      {/* Sized to the whole workbench; in split view each workspace pane draws its own. */}
+      <WslHostStoppedWorkspaceNotice
+        worktreeId={splitViewShowing ? null : renderedActiveWorktreeId}
+      />
       <TerminalWorkspaceDialogs controller={controller} />
     </div>
   )

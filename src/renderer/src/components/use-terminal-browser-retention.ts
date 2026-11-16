@@ -24,6 +24,7 @@ export function useTerminalBrowserRetention(
     | 'mountedWorktreeIdsRef'
     | 'renderedActiveWorktreeId'
     | 'setBrowserGuestRetentionRevision'
+    | 'visibleWorkspacePanes'
     | 'workspaceSurfaceIds'
     | 'workspaceSurfaceIdSet'
   >
@@ -35,6 +36,7 @@ export function useTerminalBrowserRetention(
     mountedWorktreeIdsRef,
     renderedActiveWorktreeId,
     setBrowserGuestRetentionRevision,
+    visibleWorkspacePanes,
     workspaceSurfaceIds,
     workspaceSurfaceIdSet
   } = controller
@@ -59,6 +61,9 @@ export function useTerminalBrowserRetention(
       if (browserTabsNeedPaintRetention(state.browserTabsByWorktree[worktreeId] ?? [])) {
         touchBrowserGuestWorktreeRecency(recency, worktreeId)
       }
+    }
+    for (const worktreeId of visibleWorkspacePanes.keys()) {
+      touchBrowserGuestWorktreeRecency(recency, worktreeId)
     }
     if (!renderedActiveWorktreeId) {
       return
@@ -89,6 +94,8 @@ export function useTerminalBrowserRetention(
         ),
       // Guest destruction must honor every paint-retention signal, including remote viewers, and active downloads just like the overlay.
       isEvictable: (worktreeId) =>
+        // A shown workspace is never evicted, focused or not.
+        !visibleWorkspacePanes.has(worktreeId) &&
         !browserTabsVetoGuestEviction(state.browserTabsByWorktree[worktreeId] ?? [])
     })
     for (const worktreeId of evictedWorktreeIds) {
@@ -102,6 +109,7 @@ export function useTerminalBrowserRetention(
     browserGuestWorktreeRecencyRef,
     mountedWorktreeIdsRef,
     renderedActiveWorktreeId,
+    visibleWorkspacePanes,
     workspaceSurfaceIds,
     workspaceSurfaceIdSet,
     browserGuestRetentionBudgetEnabled,

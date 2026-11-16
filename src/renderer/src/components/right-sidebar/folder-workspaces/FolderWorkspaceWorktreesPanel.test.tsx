@@ -63,6 +63,7 @@ vi.mock('@/store/index', () => ({
 }))
 
 vi.mock('@/i18n/i18n', () => ({
+  i18n: { language: 'en' },
   translate: (_key: string, fallback: string, values?: Record<string, unknown>) =>
     fallback.replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
       values && name in values ? String(values[name]) : match

@@ -18,6 +18,7 @@ import {
 import { useAppStore } from '@/store'
 import type { TerminalColdActivationController } from './terminal-cold-activation'
 import { selectParkedEquivalentMountTabIds } from './terminal/startup-terminal-tab-hold'
+import { addWorkspacesWithChangedVisibility } from './split-view/visible-workspace-panes'
 
 // Why shared: surfaces without watchable live tabs need no per-pass allocation.
 const NO_PARKED_TAB_IDS: ReadonlySet<string> = new Set()
@@ -27,7 +28,7 @@ type TerminalWatcherController = Pick<
   | 'activationDeferredMountTabIdsByWorktreeRef'
   | 'activeTabId'
   | 'activeTabIdByWorktree'
-  | 'activeView'
+  | 'visibleWorkspacePanes'
   | 'activeWorktreeId'
   | 'activityTerminalPortals'
   | 'anyMountedWorktreeHasLayout'
@@ -61,7 +62,6 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
     activationDeferredMountTabIdsByWorktreeRef,
     activeTabId,
     activeTabIdByWorktree,
-    activeView,
     activityTerminalPortals,
     anyMountedWorktreeHasLayout,
     backgroundMountRevision,
@@ -80,6 +80,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
     terminalProviderSnapshotCapabilityRevision,
     terminalSshParkingEnabled,
     terminalTitleSnapshotAuthorityEnabled,
+    visibleWorkspacePanes,
     workspaceSessionReady,
     workspaceSurfaceIdSet,
     workspaceSurfaceIds
@@ -115,17 +116,11 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
           dirty.add(renderedActiveWorktreeId)
         }
       }
-      if (
-        previous.activeView !== activeView ||
-        previous.renderedActiveWorktreeId !== renderedActiveWorktreeId
-      ) {
-        if (previous.renderedActiveWorktreeId) {
-          dirty.add(previous.renderedActiveWorktreeId)
-        }
-        if (renderedActiveWorktreeId) {
-          dirty.add(renderedActiveWorktreeId)
-        }
-      }
+      addWorkspacesWithChangedVisibility(
+        dirty,
+        previous.visibleWorkspacePanes,
+        visibleWorkspacePanes
+      )
       if (previous.startupTerminalTabHold !== startupTerminalTabHold) {
         if (previous.startupTerminalTabHold) {
           dirty.add(previous.startupTerminalTabHold.worktreeId)
@@ -196,7 +191,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
       if (!anyMountedWorktreeHasLayout && mountedWorktreeIdsRef.current.has(workspaceId)) {
         const mountedParkedTabIds = new Set<string>()
         parkedTabIds = mountedParkedTabIds
-        const isVisible = activeView === 'terminal' && workspaceId === renderedActiveWorktreeId
+        const isVisible = visibleWorkspacePanes.has(workspaceId)
         const shouldMeasureHiddenWorktree =
           !isVisible && measurableBackgroundWorktreeIdsRef.current.has(workspaceId)
         const parked =
@@ -263,7 +258,7 @@ export function useTerminalWatcherEffects(controller: TerminalWatcherController)
     takeChangedWorkspaces,
     activationDeferredMountTabIdsByWorktreeRef,
     activeTabId,
-    activeView,
+    visibleWorkspacePanes,
     activityTerminalPortals,
     activeTabIdByWorktree,
     anyMountedWorktreeHasLayout,

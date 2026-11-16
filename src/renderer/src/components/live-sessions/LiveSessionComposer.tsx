@@ -19,8 +19,11 @@ export function LiveSessionComposer({
   const t = useTranslate()
   const [draft, setDraft] = useState('')
   const field = useRef<HTMLTextAreaElement>(null)
+  const servedFocusSignal = useRef<number | undefined>(undefined)
   useEffect(() => {
-    if (focusSignal) {
+    // Once per request: a view kept behind a tab runs its effects again when it comes back.
+    if (focusSignal && servedFocusSignal.current !== focusSignal) {
+      servedFocusSignal.current = focusSignal
       field.current?.focus()
     }
   }, [focusSignal])

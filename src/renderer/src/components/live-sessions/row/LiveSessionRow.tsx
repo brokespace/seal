@@ -35,6 +35,11 @@ import {
   LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS,
   useLiveSessionRowPreview
 } from './use-live-session-row-preview'
+import { isSidebarPointerDragBlocked } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
+import { startItemPointerDrag } from '@/components/split-view/item-pointer-drag'
+import { ItemSurfaceShownContext } from '@/components/split-view/item-surface-shown-context'
+import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
 
 export type LiveSessionRowProps = {
   session: LiveSession
@@ -66,7 +71,17 @@ export type LiveSessionRowProps = {
 }
 
 function defaultMenu(session: LiveSession, kit: LiveSessionMenuKit): React.ReactNode {
-  return <LiveSessionMenuItems session={session} kit={kit} />
+  return (
+    <>
+      <SplitViewPlacementMenu
+        menuKind={kit === CONTEXT_MENU_KIT ? 'context' : 'dropdown'}
+        intent="open"
+        onPlace={(zone) => openItemsInSplitView([{ kind: 'session', sessionId: session.id }], zone)}
+      />
+      <kit.Separator />
+      <LiveSessionMenuItems session={session} kit={kit} />
+    </>
+  )
 }
 
 const TONES = {
@@ -106,6 +121,11 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
     rowHandlers
   } = useLiveSessionRowPreview()
   const dropdownDismissedOutside = React.useRef(false)
+  const shown = React.useContext(ItemSurfaceShownContext)
+  // The pointer never left a row that went behind a tab; it must not come back previewed.
+  if (!shown && previewOpen) {
+    onCardOpenChange(false)
+  }
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
   const runningCount = runningSubagents(session.activity).length
@@ -130,7 +150,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
       {/* A preview over an open menu would take the menu's Escape. */}
       <HoverCard
         closeDelay={LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS}
-        open={previewOpen}
+        open={previewOpen && shown}
         onOpenChange={onCardOpenChange}
       >
         <ContextMenuTrigger asChild>
@@ -145,6 +165,17 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
               data-status-group={group}
               data-current={props.current ? 'true' : undefined}
               data-highlighted={props.highlighted ? 'true' : undefined}
+              {...rowHandlers}
+              onPointerDown={(event) => {
+                rowHandlers.onPointerDown(event)
+                // Dragged onto the main area, a session lands in a split-view pane.
+                if (!isSidebarPointerDragBlocked(event.target, event.currentTarget)) {
+                  startItemPointerDrag(event, event.currentTarget, {
+                    kind: 'session',
+                    sessionId: session.id
+                  })
+                }
+              }}
               onClick={(event) => {
                 if (picked !== null || event.metaKey || event.ctrlKey || event.shiftKey) {
                   props.onPick(session, event.shiftKey)
@@ -153,7 +184,6 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 }
               }}
               onDoubleClick={(event) => props.onOpen(session, event)}
-              {...rowHandlers}
               onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) {
                   return
@@ -329,15 +359,18 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
             </div>
           </HoverCardTrigger>
         </ContextMenuTrigger>
-        <HoverCardContent
-          ref={previewCard}
-          side="right"
-          align="start"
-          // A wide sidebar in a narrow window leaves less than the card's width beside the row.
-          className="w-72 max-w-(--radix-hover-card-content-available-width)"
-        >
-          <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
-        </HoverCardContent>
+        {/* Not closed but gone: a preview that closes behind a tab never finishes closing. */}
+        {shown ? (
+          <HoverCardContent
+            ref={previewCard}
+            side="right"
+            align="start"
+            // A wide sidebar in a narrow window leaves less than the card's width beside the row.
+            className="w-72 max-w-(--radix-hover-card-content-available-width)"
+          >
+            <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
+          </HoverCardContent>
+        ) : null}
       </HoverCard>
       <ContextMenuContent>{menu(session, CONTEXT_MENU_KIT)}</ContextMenuContent>
     </ContextMenu>

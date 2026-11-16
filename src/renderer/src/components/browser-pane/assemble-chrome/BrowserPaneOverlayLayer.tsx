@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo } from 'react'
 import { registerBrowserOverlaySlotViewport } from '../host-guest/browser-page-viewport'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '../../../store'
+import { focusSplitViewPaneOfWorkspace } from '../../split-view/split-view-commands'
 import { resolveBrowserWorkspaceOwner } from '@/lib/browser/workspace/browser-workspace-source-resolution'
 import type { BrowserWorkspace } from '../../../../../shared/browser-workspace-types'
 import type { Tab, TabGroup } from '../../../../../shared/tab-types'
@@ -122,10 +123,12 @@ const BrowserOverlaySlot = memo(function BrowserOverlaySlot({
 // Memoize the layer against unrelated parent props; focused-split state comes from its own selector.
 const BrowserPaneOverlayLayer = memo(function BrowserPaneOverlayLayer({
   worktreeId,
-  isWorktreeActive
+  isWorktreeActive,
+  isWorktreeFocused
 }: {
   worktreeId: string
   isWorktreeActive: boolean
+  isWorktreeFocused: boolean
 }): React.JSX.Element {
   const { browserTabs, unifiedTabs, groups, focusedGroupId } = useAppStore(
     useShallow((state) => ({
@@ -192,6 +195,7 @@ const BrowserPaneOverlayLayer = memo(function BrowserPaneOverlayLayer({
         : undefined
       if (groupId) {
         focusOwningGroup(groupId)
+        focusSplitViewPaneOfWorkspace(worktreeId)
       }
     })
   }, [focusOwningGroup, isWorktreeActive, worktreeId])
@@ -203,7 +207,8 @@ const BrowserPaneOverlayLayer = memo(function BrowserPaneOverlayLayer({
         const isActive = Boolean(isWorktreeActive && assignment && assignment.isActiveInGroup)
         const inFocusedGroup =
           knownFocusedGroupId !== undefined && assignment?.groupId === knownFocusedGroupId
-        const chromeShortcutScope: BrowserChromeShortcutScope = !isActive
+        // Chords belong to the focused workspace; a page shown in another split-view pane answers none.
+        const chromeShortcutScope: BrowserChromeShortcutScope = !(isActive && isWorktreeFocused)
           ? 'inactive'
           : // Why: 'focused' means the main window's focused split, so a floating browser answers only its own chords.
             isFloatingWorkspace
@@ -288,15 +293,22 @@ function ClientHostedBrowserRowOverlaySlot({
 export const RetainedBrowserPaneOverlayLayer = memo(function RetainedBrowserPaneOverlayLayer({
   worktreeId,
   isWorktreeActive,
+  isWorktreeFocused = isWorktreeActive,
   mountEligible
 }: {
   worktreeId: string
   isWorktreeActive: boolean
+  /** Keyboard ownership; a workspace can be on screen without it. */
+  isWorktreeFocused?: boolean
   mountEligible: boolean
 }): React.JSX.Element | null {
   return (
     <DeferredBrowserContent mountEligible={mountEligible}>
-      <BrowserPaneOverlayLayer worktreeId={worktreeId} isWorktreeActive={isWorktreeActive} />
+      <BrowserPaneOverlayLayer
+        worktreeId={worktreeId}
+        isWorktreeActive={isWorktreeActive}
+        isWorktreeFocused={isWorktreeFocused}
+      />
     </DeferredBrowserContent>
   )
 })

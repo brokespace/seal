@@ -1,0 +1,201 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Maximize2, Minimize2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/class-names'
+import { useTranslate } from '@/i18n/use-translate'
+import type { SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
+import type { ItemTabCommands } from './item-tab-commands'
+import { ItemTabBar } from './ItemTabBar'
+import {
+  bringKeyboardFocusIntoFocusedPane,
+  bringKeyboardFocusIntoPane,
+  keepKeyboardOnStripControl,
+  landsOnStripControl
+} from './pane-keyboard-focus'
+import {
+  closeOtherSplitViewItems,
+  closeSplitViewItems,
+  closeSplitViewPane,
+  focusSplitViewPane,
+  keepSplitViewItem,
+  placeItemsInSplitView,
+  toggleSplitViewPaneMaximized
+} from './split-view-commands'
+import { ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
+import { SPLIT_VIEW_PANE_ATTRIBUTE } from './split-view-pane-size'
+import { useSplitView } from './split-view-store'
+import { activeSplitViewItem, splitViewItemKey } from './split-view-types'
+import { SplitViewPaneBody } from './SplitViewPaneBody'
+import { useResolvedSplitViewItem, useSplitViewItemTitle } from './use-resolved-split-view-item'
+
+function paneTabCommands(paneId: string): ItemTabCommands {
+  return {
+    activate: (item) => focusSplitViewPane(paneId, splitViewItemKey(item)),
+    keep: (item) => keepSplitViewItem(splitViewItemKey(item)),
+    close: (item) => closeSplitViewItems(new Set([splitViewItemKey(item)])),
+    closeOthers: (item) => closeOtherSplitViewItems(paneId, splitViewItemKey(item)),
+    closePane: () => closeSplitViewPane(paneId),
+    moveToNewPane: (item, edge) => placeItemsInSplitView([item], { paneId, zone: edge })
+  }
+}
+
+function landsOnStrip(target: EventTarget): boolean {
+  return target instanceof Element && target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}]`) !== null
+}
+
+/** React hands a pane the events of its menus too, which are drawn outside it. */
+function isInPane(event: React.SyntheticEvent<HTMLElement>): boolean {
+  return event.target instanceof Node && event.currentTarget.contains(event.target)
+}
+
+function landsOnTab(target: EventTarget): boolean {
+  return (
+    target instanceof Element &&
+    target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}] [role="tab"]`) !== null &&
+    target.closest('button') === null
+  )
+}
+
+/** One rectangle of the grid: its strip of tabs, and the active one's content. */
+export function SplitViewPane({
+  paneId,
+  placement,
+  shown,
+  canMaximize
+}: {
+  paneId: string
+  placement: SplitLayoutLeafPlacement
+  /** False while another pane is drawn alone (maximized, or a main area too narrow for two). */
+  shown: boolean
+  canMaximize: boolean
+}): React.JSX.Element {
+  const t = useTranslate()
+  const state = useSplitView()
+  const pane = state.panes[paneId]
+  const focused = state.focusedPaneId === paneId
+  const maximized = state.maximizedPaneId === paneId
+  const active = activeSplitViewItem(state, paneId)
+  const resolved = useResolvedSplitViewItem(active)
+  const title = useSplitViewItemTitle(active, resolved)
+  const commands = useMemo(() => paneTabCommands(paneId), [paneId])
+  const activeKey = pane?.activeKey ?? null
+  const worktreeId = active?.kind === 'workspace' ? active.worktreeId : null
+  const paneRef = useRef<HTMLDivElement>(null)
+  // A tab closed anywhere takes its close button away, and the keyboard with it.
+  const tabCount = Object.values(state.panes).reduce((count, each) => count + each.tabs.length, 0)
+  const tabPressedRef = useRef(false)
+  const [tabPresses, setTabPresses] = useState(0)
+  useEffect(() => {
+    if (focused && paneRef.current) {
+      bringKeyboardFocusIntoPane(paneId, paneRef.current, worktreeId, tabPressedRef.current)
+    }
+    tabPressedRef.current = false
+  }, [focused, paneId, activeKey, worktreeId, tabCount, tabPresses, state.maximizedPaneId])
+  const maximizeLabel = maximized
+    ? t('seal.splitView.pane.restore', 'Restore panes')
+    : t('seal.splitView.pane.maximize', 'Maximize pane')
+  const closeLabel = t('seal.splitView.pane.close', 'Close pane')
+
+  return (
+    <div
+      ref={paneRef}
+      role="group"
+      aria-label={title}
+      {...{ [SPLIT_VIEW_PANE_ATTRIBUTE]: paneId }}
+      data-split-view-pane-focused={focused ? '' : undefined}
+      className={cn(
+        'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+        !placement.touchesLeftEdge && !placement.suppressLeftBorder && 'border-l border-border'
+      )}
+      onPointerDownCapture={(event) => {
+        if (isInPane(event) && !landsOnStripControl(event.target)) {
+          focusSplitViewPane(paneId)
+        }
+      }}
+      onFocusCapture={(event) => {
+        if (isInPane(event) && !landsOnStripControl(event.target)) {
+          focusSplitViewPane(paneId)
+        }
+      }}
+      onMouseDownCapture={(event) => {
+        // A press on the strip leaves the keyboard where it is; the tab's content gets it instead.
+        if (landsOnStrip(event.target)) {
+          event.preventDefault()
+        }
+      }}
+      onClick={(event) => {
+        // detail is 0 for Enter and Space, which keep the keyboard on the tab.
+        if (event.detail > 0 && landsOnTab(event.target)) {
+          tabPressedRef.current = true
+          setTabPresses((count) => count + 1)
+        } else if (landsOnStrip(event.target) && document.activeElement === document.body) {
+          // A browser page gives up the keyboard on any press outside it: on the bare strip, and on
+          // a button of another pane's strip, which leaves pane focus where it is.
+          bringKeyboardFocusIntoFocusedPane(false)
+        }
+      }}
+    >
+      <ItemTabBar
+        paneId={paneId}
+        keepsFocus
+        tabs={pane?.tabs ?? []}
+        activeKey={activeKey}
+        label={t('seal.splitView.pane.tabs', 'Tabs in this pane')}
+        commands={commands}
+        className={cn(
+          'pointer-events-auto relative',
+          // The focused pane is told apart by a line and by strength, not by color alone. The line runs over the docked tab too.
+          focused
+            ? "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-20 before:h-[2px] before:bg-tab-active-indicator before:content-['']"
+            : '[&_[role=tab][aria-selected=true]]:text-muted-foreground'
+        )}
+        after={
+          <div className="flex shrink-0 items-center gap-0.5 px-1">
+            {canMaximize ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                data-split-view-pane-action="maximize"
+                aria-label={maximizeLabel}
+                aria-pressed={maximized}
+                title={maximizeLabel}
+                onClick={(event) => {
+                  // detail is 0 for Enter and Space.
+                  if (event.detail === 0) {
+                    keepKeyboardOnStripControl(event.currentTarget)
+                  }
+                  toggleSplitViewPaneMaximized(paneId)
+                }}
+              >
+                {maximized ? (
+                  <Minimize2 className="size-3.5" />
+                ) : (
+                  <Maximize2 className="size-3.5" />
+                )}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              data-split-view-pane-action="close"
+              aria-label={closeLabel}
+              title={closeLabel}
+              onClick={() => closeSplitViewPane(paneId)}
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        }
+      />
+      <SplitViewPaneBody
+        paneId={paneId}
+        item={active}
+        resolved={resolved}
+        title={title}
+        shown={shown}
+      />
+    </div>
+  )
+}

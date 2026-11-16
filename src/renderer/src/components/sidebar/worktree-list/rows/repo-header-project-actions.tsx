@@ -48,6 +48,9 @@ import {
   stopRepoHeaderKeyboardToggle,
   stopRepoHeaderMenuEvent
 } from './header-event-guards'
+import { openItemsInSplitView } from '@/components/split-view/split-view-commands'
+import { SplitViewPlacementMenu } from '@/components/split-view/SplitViewPlacementMenu'
+import { projectOverviewTargetFor } from '@/store/slices/ui/project-overview-target'
 
 function getWorktreeVisibilityMenuLabel(
   repo: Repo,
@@ -145,6 +148,13 @@ export const RepoHeaderProjectActionsMenu = React.memo(function RepoHeaderProjec
           <LayoutDashboard className="size-3.5" />
           {t('seal.projectOverview.sidebar.open', 'Project Overview')}
         </DropdownMenuItem>
+        <SplitViewPlacementMenu
+          menuKind="dropdown"
+          intent="open"
+          onPlace={(zone) =>
+            openItemsInSplitView([{ kind: 'project', ...projectOverviewTargetFor(repo) }], zone)
+          }
+        />
         <DropdownMenuItem onSelect={() => actions.onOpenRepoSettings(repo.id)}>
           <SlidersHorizontal className="size-3.5" />
           {t('auto.components.sidebar.WorktreeList.2cdffbc728', 'Project Settings')}

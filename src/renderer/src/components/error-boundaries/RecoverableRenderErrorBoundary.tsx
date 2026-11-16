@@ -22,6 +22,8 @@ type Props = {
   resetKey?: string | number | boolean | null
   title?: string
   description?: string
+  /** A second way out, offered beside Retry. */
+  action?: { label: string; run: () => void }
   fallback?: (args: BoundaryFallbackArgs) => React.ReactNode
 }
 
@@ -65,6 +67,11 @@ export class RecoverableRenderErrorBoundary extends React.Component<Props, State
     this.setState({ error: null })
   }
 
+  runAction = (): void => {
+    this.props.action?.run()
+    this.handleReset()
+  }
+
   render(): React.ReactNode {
     if (!this.state.error) {
       return this.props.children
@@ -102,13 +109,20 @@ export class RecoverableRenderErrorBoundary extends React.Component<Props, State
               )}
           </div>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={this.handleReset}>
-          <RotateCw className="size-3.5" />
-          {translate(
-            'auto.components.error.boundaries.RecoverableRenderErrorBoundary.55001880db',
-            'Retry'
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={this.handleReset}>
+            <RotateCw className="size-3.5" />
+            {translate(
+              'auto.components.error.boundaries.RecoverableRenderErrorBoundary.55001880db',
+              'Retry'
+            )}
+          </Button>
+          {this.props.action ? (
+            <Button type="button" variant="ghost" size="sm" onClick={this.runAction}>
+              {this.props.action.label}
+            </Button>
+          ) : null}
+        </div>
       </div>
     )
   }

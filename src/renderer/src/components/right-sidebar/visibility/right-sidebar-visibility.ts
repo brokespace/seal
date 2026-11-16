@@ -1,4 +1,5 @@
 import type { AppState } from '@/store/types'
+import { splitViewStore } from '@/components/split-view/split-view-store'
 import { getIndexedRepoMap } from '@/store/repos/repository-catalog-index'
 import { getIndexedWorktreeMap } from '@/store/slices/worktrees/listing/worktree-catalog-index'
 import { isFolderRepo } from '../../../../../shared/repo-kind'
@@ -20,6 +21,10 @@ const RIGHT_SIDEBAR_SUPPRESSED_VIEWS = new Set<ActiveView>([
 ])
 
 export function canShowRightSidebarForView(activeView: ActiveView): boolean {
+  // Split view keeps the sidebar on the last focused workspace, as the session page does.
+  if (activeView === 'project' && splitViewStore.hasLayout()) {
+    return true
+  }
   return !RIGHT_SIDEBAR_SUPPRESSED_VIEWS.has(activeView)
 }
 
