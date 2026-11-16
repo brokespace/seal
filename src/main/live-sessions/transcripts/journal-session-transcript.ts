@@ -25,16 +25,15 @@ type Settled = {
   head: number
 }
 
-/** A row is still being written: a running tool call or reasoning, or the newest row of a running turn. */
-function unsettled(item: AgentJournalRenderItem, newest: boolean, working: boolean): boolean {
+/** A row a running turn may still revise: a tool call or reasoning in progress, or the turn's newest row. */
+function unsettled(item: AgentJournalRenderItem, newest: boolean): boolean {
   const { body } = item
   return (
-    (working && newest) ||
-    ((body.kind === 'tool-call' || body.kind === 'message') && body.state === 'running')
+    newest || ((body.kind === 'tool-call' || body.kind === 'message') && body.state === 'running')
   )
 }
 
-/** A journal row keeps its sequence when revised, so a reader past it never sees it finish: reading stops before the first row still being written. */
+/** A journal row keeps its sequence when revised, so a reader past it never sees it finish: while a turn runs, reading stops before the first row still being written. */
 function settled(
   snapshot: Pick<AgentJournalSnapshot, 'cursor' | 'items'>,
   working: boolean
@@ -42,7 +41,10 @@ function settled(
   const root = snapshot.items.filter((item) => isRootAgentJournalItem(item))
   root.sort(compareAgentJournalItems)
   const head = snapshot.cursor.sequence
-  const open = root.find((item, index) => unsettled(item, index === root.length - 1, working))
+  // Only a running turn holds rows back: a call left "running" by a crash must not hide what follows it.
+  const open = working
+    ? root.find((item, index) => unsettled(item, index === root.length - 1))
+    : undefined
   const through = open ? open.sequence - 1 : head
   const messages = root.flatMap((item) => {
     const message = item.sequence <= through ? projectStructuredItemToNativeChat(item) : null
