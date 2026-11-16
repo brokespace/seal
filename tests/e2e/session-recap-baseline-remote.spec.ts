@@ -32,6 +32,7 @@ import {
   type RecapScenarioTurn
 } from './helpers/recap-baseline'
 import { seedRemoteClaudeSession, type RemoteClaudeSession } from './helpers/remote-claude-session'
+import { installSealServerOverSshTarget } from './helpers/seal-server-install-machine'
 import {
   expect,
   readUtilityRequests,
@@ -133,25 +134,22 @@ async function connectOverSsh(page: Page, machine: RemoteMachine, label: string)
     .toBe('connected')
 }
 
-/** Connects the SSH host with a server template at hand: the desktop deploys orcad there and pairs with it. */
+/** Installs the Seal server on the SSH host from the template at hand: the desktop deploys orcad there and pairs with it. */
 async function connectThroughServer(
   page: Page,
   machine: RemoteMachine,
   label: string
 ): Promise<{ targetId: string; environmentId: string }> {
-  const connected = await page.evaluate(
-    async (target) => {
-      const { target: created } = await window.api.ssh.addTarget({ target })
-      const state = await window.api.ssh.connect({ targetId: created.id })
-      return { targetId: created.id, state }
-    },
+  const targetId = await page.evaluate(
+    async (target) => (await window.api.ssh.addTarget({ target })).target.id,
     sshTargetInput(machine, label)
   )
-  const server = connected.state?.managedServer
+  const installed = await installSealServerOverSshTarget(page, targetId)
+  const server = installed.state?.managedServer
   if (server?.kind !== 'managed') {
-    throw new Error(`expected a managed server on ${label}, got ${JSON.stringify(connected.state)}`)
+    throw new Error(`expected a managed server on ${label}, got ${JSON.stringify(installed)}`)
   }
-  return { targetId: connected.targetId, environmentId: server.environmentId }
+  return { targetId, environmentId: server.environmentId }
 }
 
 /** One method of the Seal server's own runtime, as a client paired to that server calls it. */
