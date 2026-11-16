@@ -149,7 +149,10 @@ export function structuredAgentSessionCompactions(
   }
 }
 
-/** A host that wrote a fact supplies usage; one that settled a turn without any never will. */
+/**
+ * A host that wrote a fact supplies usage. A reading can land just after a turn settles (Claude asks
+ * for its report then), so one settled turn without a fact proves nothing; a second does.
+ */
 function awaitsContextFacts(
   items: readonly AgentJournalRenderItem[],
   held: AgentSessionContextUsage
@@ -157,15 +160,17 @@ function awaitsContextFacts(
   if (held.used || held.window) {
     return true
   }
-  let settled = false
+  let settled = 0
   for (const item of items) {
     const turn = readAgentJournalTurn(item.body)
     if (turn?.contextUsage) {
       return true
     }
-    settled ||= turn !== null && turn.state !== 'running'
+    if (turn && turn.state !== 'running') {
+      settled += 1
+    }
   }
-  return !settled
+  return settled < 2
 }
 
 /**
