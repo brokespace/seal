@@ -97,8 +97,8 @@ export const FAKE_DOCKER = {
     postgres: { reference: 'postgres:16', id: `sha256:${hexId('b2')}` },
     /** Used only by stopped `migrate`. */
     node: { reference: 'node:20-alpine', id: `sha256:${hexId('c3')}` },
-    /** Unused. */
-    redis: { reference: 'redis:7', id: `sha256:${hexId('d4')}` },
+    /** Unused, and tagged twice. */
+    redis: { reference: 'redis:7', alias: 'redis:latest', id: `sha256:${hexId('d4')}` },
     /** Unused, the smallest image, and without a shell. */
     distroless: { reference: 'gcr.io/distroless/static:latest', id: `sha256:${hexId('e5')}` },
     /** Unused and untagged. */

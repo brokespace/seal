@@ -24,8 +24,16 @@ const APP_ID = `sha256:${'c'.repeat(64)}`
 const REDIS_ID = `sha256:${'d'.repeat(64)}`
 const DANGLING_ID = `sha256:${'e'.repeat(64)}`
 
-function image(id: string, reference: string | null, usedBy: MachineDockerContainerRef[]) {
-  return { id, reference, sizeBytes: 200, uniqueBytes: 100, createdAt: null, usedBy }
+function image(id: string, tags: string[], usedBy: MachineDockerContainerRef[]) {
+  return {
+    id,
+    reference: tags[0] ?? null,
+    tags,
+    sizeBytes: 200,
+    uniqueBytes: 100,
+    createdAt: null,
+    usedBy
+  }
 }
 
 function container(ref: MachineDockerContainerRef, imageName: string, volumes: string[]) {
@@ -62,12 +70,11 @@ const STORAGE: DockerStorage = {
   state: 'ready',
   rows: [{ kind: 'build-cache', count: 4, sizeBytes: 20, reclaimableBytes: 15 }],
   images: [
-    image(NGINX_ID, 'nginx:1.27', [web, job]),
-    image(NODE_ID, 'node:20', [job]),
-    image(APP_ID, 'app:1', [seed]),
-    image(APP_ID, 'app:latest', [seed]),
-    image(REDIS_ID, 'redis:7', []),
-    image(DANGLING_ID, null, [])
+    image(NGINX_ID, ['nginx:1.27'], [web, job]),
+    image(NODE_ID, ['node:20'], [job]),
+    image(APP_ID, ['app:1', 'app:latest'], [seed]),
+    image(REDIS_ID, ['redis:7', 'redis:latest'], []),
+    image(DANGLING_ID, [], [])
   ],
   containers: [
     container(web, 'nginx:1.27', ['pgdata']),
@@ -106,36 +113,37 @@ describe('a Docker removal plan', () => {
         preselected: false,
         inUseBy: undefined,
         blocked: 'Running container web uses it. Stop the container first.',
-        action: { kind: 'docker-image', target: 'nginx:1.27', force: false }
+        action: { kind: 'docker-image', targets: ['nginx:1.27'], force: false }
       },
       {
         label: 'node:20',
         preselected: false,
         inUseBy: ['job'],
         blocked: undefined,
-        // By id: forcing the only tag away would leave the image behind, untagged.
-        action: { kind: 'docker-image', target: NODE_ID, force: true }
+        // By id: forcing a tag away would leave the image behind, untagged.
+        action: { kind: 'docker-image', targets: [NODE_ID], force: true }
       },
       {
         label: 'app:1',
         preselected: false,
         inUseBy: ['seed'],
         blocked: undefined,
-        action: { kind: 'docker-image', target: 'app:1', force: true }
+        action: { kind: 'docker-image', targets: [APP_ID], force: true }
       },
       {
         label: 'redis:7',
         preselected: true,
         inUseBy: undefined,
         blocked: undefined,
-        action: { kind: 'docker-image', target: 'redis:7', force: false }
+        // Every tag: Docker keeps the image, and its space, until the last one is removed.
+        action: { kind: 'docker-image', targets: ['redis:7', 'redis:latest'], force: false }
       },
       {
         label: 'eeeeeeeeeeee',
         preselected: true,
         inUseBy: undefined,
         blocked: undefined,
-        action: { kind: 'docker-image', target: DANGLING_ID, force: false }
+        action: { kind: 'docker-image', targets: [DANGLING_ID], force: false }
       }
     ])
   })

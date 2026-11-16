@@ -96,7 +96,10 @@ function layoutOf(kind: MachineDockerStorageKind, t: Translate, now: number): La
             cell: (item) => formatBytes(item.freesBytes)
           }
         ],
-        detail: (item) => (item.kind === 'images' ? shortDockerId(item.image.id) : '')
+        detail: (item) =>
+          item.kind === 'images'
+            ? [shortDockerId(item.image.id), ...item.image.tags.slice(1)].join(' · ')
+            : ''
       }
     case 'containers':
       return {

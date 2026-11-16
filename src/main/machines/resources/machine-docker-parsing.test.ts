@@ -35,7 +35,11 @@ const INVENTORY = [
   '@v {"Name":"seal-probe-unused","Links":"0","Size":"0B"}',
   ...CONTAINER_USES,
   '@m {"Name":"seal-probe-unused","Driver":"local","Mountpoint":"/var/lib/docker/volumes/seal-probe-unused/_data"}',
-  '@m {"Name":"seal-probe-vol","Driver":"local","Mountpoint":"/var/lib/docker/volumes/seal-probe-vol/_data"}'
+  '@m {"Name":"seal-probe-vol","Driver":"local","Mountpoint":"/var/lib/docker/volumes/seal-probe-vol/_data"}',
+  // `image ls` names both tags of an image that `system df` lists under one.
+  `@t {"ID":"${BUSYBOX_ID}","Repository":"busybox","Tag":"1.36"}`,
+  `@t {"ID":"${BUSYBOX_ID}","Repository":"seal-probe-copy","Tag":"1"}`,
+  `@t {"ID":"${DANGLING_ID}","Repository":"\\u003cnone\\u003e","Tag":"\\u003cnone\\u003e"}`
 ].join('\n')
 
 const RUN_REF = { id: RUN_ID, name: 'seal-probe-run', state: 'running', running: true }
@@ -55,6 +59,7 @@ describe('the Docker inventory', () => {
         {
           id: DANGLING_ID,
           reference: null,
+          tags: [],
           sizeBytes: 9_960_000,
           uniqueBytes: 2_261_000,
           createdAt: 1_794_858_797_000,
@@ -63,6 +68,7 @@ describe('the Docker inventory', () => {
         {
           id: BUSYBOX_ID,
           reference: 'busybox:1.36',
+          tags: ['busybox:1.36', 'seal-probe-copy:1'],
           sizeBytes: 6_760_000,
           uniqueBytes: 2_210_000,
           createdAt: 1_684_449_257_000,

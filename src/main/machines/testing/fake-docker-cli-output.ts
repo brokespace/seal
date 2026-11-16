@@ -96,9 +96,10 @@ const status = (container) => {
   return 'Exited (' + container.exitCode + ') ' + since(container.finishedAt) + ' ago'
 }
 
+// "system df" (measured) names one tag per image; "image ls" names them all.
 const imageRows = (measured) =>
   state.images.flatMap((image) =>
-    (image.tags.length > 0 ? image.tags : ['<none>:<none>']).map((tag) => ({
+    (image.tags.length > 0 ? image.tags.slice(0, measured ? 1 : undefined) : ['<none>:<none>']).map((tag) => ({
       Containers: String(usersOfImage(image).length),
       CreatedAt: listedTime(image.createdAt),
       CreatedSince: since(image.createdAt) + ' ago',

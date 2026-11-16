@@ -43,7 +43,7 @@ function volume(
 
 describe('docker storage rows', () => {
   it('tells an image a stopped container still holds from one nothing uses', () => {
-    const image = { sizeBytes: 100, uniqueBytes: 40, createdAt: null }
+    const image = { tags: [], sizeBytes: 100, uniqueBytes: 40, createdAt: null }
     const items = dockerStorageItems(
       inventoryOf({
         images: [

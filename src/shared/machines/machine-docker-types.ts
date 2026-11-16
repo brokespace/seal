@@ -28,10 +28,12 @@ export type MachineDockerContainerRef = {
 }
 
 export type MachineDockerImage = {
-  /** `sha256:…`; two tags of one image share it. */
+  /** `sha256:…`. */
   id: string
-  /** `repository:tag`, or null for an untagged (dangling) image. */
+  /** The first of `tags`, or null for an untagged (dangling) image. */
   reference: string | null
+  /** Every `repository:tag` of the image; Docker keeps the image until the last one is removed. */
+  tags: string[]
   sizeBytes: number | null
   /** What removing only this image frees; layers shared with other images stay. */
   uniqueBytes: number | null

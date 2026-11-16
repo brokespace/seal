@@ -11,7 +11,7 @@ export type MachineCleanupAction =
   /** `docker` commands in order; one that fails stops the rest. */
   | { kind: 'docker-sequence'; commands: string[][] }
   /** `docker image rm`; removing a tag another tag shares deletes nothing, so it frees nothing. */
-  | { kind: 'docker-image'; target: string; force: boolean }
+  | { kind: 'docker-image'; targets: string[]; force: boolean }
   /** `docker builder prune --all` of one record, or of every record when `record` is null. */
   | { kind: 'docker-build-cache'; record: string | null }
 

@@ -13,7 +13,6 @@ import type { MachineCleanupPlan, PlannedCleanupItem } from './machine-cleanup-p
 import {
   readMachineDockerStorage,
   type DockerBuildCacheRecord,
-  type DockerInventory,
   type DockerStorage
 } from './machine-docker-inventory'
 import { DOCKER_CONTAINER_ID, DOCKER_NAME, shortDockerId } from './machine-docker-output'
@@ -40,18 +39,15 @@ function runningUserBlock(usedBy: readonly MachineDockerContainerRef[]): string 
   return running ? `Running container ${running.name} uses it. Stop the container first.` : null
 }
 
-function imageItem(
-  inventory: DockerInventory,
-  image: MachineDockerImage,
-  preselected: boolean
-): Draft | null {
-  const target = dockerImageKey(image)
-  if (!DOCKER_NAME.test(target) || !DOCKER_NAME.test(image.id)) {
+function imageItem(image: MachineDockerImage, preselected: boolean): Draft | null {
+  // Docker deletes an image once its last tag is removed, so every tag is named.
+  const targets = image.tags.length > 0 ? image.tags : [image.id]
+  if (![...targets, image.id].every((target) => DOCKER_NAME.test(target))) {
     return null
   }
   const item = {
     label: image.reference ?? shortDockerId(image.id),
-    group: null,
+    group: image.tags.slice(1).join(', ') || null,
     bytes: image.uniqueBytes,
     modifiedAt: null
   }
@@ -61,16 +57,15 @@ function imageItem(
       ...item,
       preselected: !blocked && preselected,
       ...(blocked ? { blocked } : {}),
-      action: { kind: 'docker-image', target, force: false }
+      action: { kind: 'docker-image', targets, force: false }
     }
   }
-  // Forcing a tag away leaves the image behind untagged; by id Docker deletes it.
-  const onlyTag = inventory.images.filter((other) => other.id === image.id).length === 1
   return {
     ...item,
     preselected: false,
     inUseBy: image.usedBy.map((container) => container.name),
-    action: { kind: 'docker-image', target: onlyTag ? image.id : target, force: true }
+    // Forcing a tag away leaves the image behind untagged; by id Docker deletes it.
+    action: { kind: 'docker-image', targets: [image.id], force: true }
   }
 }
 
@@ -200,7 +195,7 @@ export function dockerCleanupPlan(
             (image) =>
               image.usedBy.length === 0 && (target === 'docker-images' || image.reference === null)
           )
-          .map((image) => imageItem(storage, image, ticked))
+          .map((image) => imageItem(image, ticked))
       )
     case 'docker-containers':
       return plan(
@@ -272,7 +267,7 @@ export function dockerRemovalPlan(
     images: () =>
       storage.images
         .filter((image) => picked.has(dockerImageKey(image)))
-        .map((image) => imageItem(storage, image, true)),
+        .map((image) => imageItem(image, true)),
     containers: () =>
       storage.containers
         .filter((container) => picked.has(container.id))

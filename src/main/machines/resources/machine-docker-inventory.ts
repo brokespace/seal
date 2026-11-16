@@ -20,7 +20,8 @@ import {
   parseDockerSize,
   parseDockerTime,
   parseDockerUnavailable,
-  sameDockerId
+  sameDockerId,
+  type DockerJsonRow
 } from './machine-docker-output'
 import { runMachineHostScript } from './machine-host-script'
 
@@ -28,6 +29,7 @@ const READ_TIMEOUT_MS = 3 * 60_000
 /** `docker system df` is slow on a busy daemon; every reader within this window shares one answer. */
 const SHARE_READ_MS = 20_000
 const IMAGE_LIMIT = 500
+const IMAGE_TAG_LIMIT = 1000
 const VOLUME_LIMIT = 500
 const BUILD_CACHE_LIMIT = 500
 
@@ -88,6 +90,7 @@ seal_docker_detail=$(docker system df -v --format '${DETAIL_FORMAT}' 2>/dev/null
 printf '%s\\n' "$seal_docker_detail"
 printf '%s\\n' "$seal_docker_detail" | sed -n 's/^@c {"ID":"\\([0-9a-f]*\\)".*/\\1/p' | ${DOCKER_CONTAINER_USE_COMMAND}
 docker volume ls --format '{"Name":{{json .Name}},"Driver":{{json .Driver}},"Mountpoint":{{json .Mountpoint}}}' 2>/dev/null | head -n ${VOLUME_LIMIT} | sed 's/^/@m /'
+docker image ls --no-trunc --format '{"ID":{{json .ID}},"Repository":{{json .Repository}},"Tag":{{json .Tag}}}' 2>/dev/null | head -n ${IMAGE_TAG_LIMIT} | sed 's/^/@t /'
 `
 
 const STORAGE_KINDS: Record<string, MachineDockerStorageKind> = {
@@ -103,6 +106,49 @@ function size(value: unknown): number | null {
 
 function count(value: unknown): number {
   return Number.parseInt(dockerText(value), 10) || 0
+}
+
+function imageTag(row: DockerJsonRow): string | null {
+  const [repository, tag] = [dockerText(row.Repository), dockerText(row.Tag)]
+  const tagged = repository !== '' && repository !== '<none>' && tag !== '' && tag !== '<none>'
+  return tagged ? `${repository}:${tag}` : null
+}
+
+/** `docker system df` names one tag per image, or one row per tag on older Docker; `image ls` names them all. */
+function parseImages(
+  lines: readonly string[],
+  containers: readonly MachineDockerStoredContainer[]
+): MachineDockerImage[] {
+  const tags = new Map<string, Set<string>>()
+  const rows = dockerJsonRows(lines, '@i ')
+  for (const row of [...rows, ...dockerJsonRows(lines, '@t ')]) {
+    const [id, tag] = [dockerText(row.ID), imageTag(row)]
+    if (tag) {
+      tags.set(id, (tags.get(id) ?? new Set()).add(tag))
+    }
+  }
+  const seen = new Set<string>()
+  return rows.flatMap((row) => {
+    const id = dockerText(row.ID)
+    if (seen.has(id)) {
+      return []
+    }
+    seen.add(id)
+    const all = [...(tags.get(id) ?? [])]
+    return [
+      {
+        id,
+        reference: all[0] ?? null,
+        tags: all,
+        sizeBytes: size(row.Size),
+        uniqueBytes: size(row.UniqueSize),
+        createdAt: parseDockerTime(row.CreatedAt),
+        usedBy: containers
+          .filter((container) => container.imageId !== null && sameDockerId(container.imageId, id))
+          .map(containerRef)
+      }
+    ]
+  })
 }
 
 /** Reads what `DOCKER_INVENTORY_SCRIPT` printed. */
@@ -139,21 +185,7 @@ export function parseDockerInventory(output: string, collectedAt: number): Docke
       volumes: use.mounts.flatMap((mount) => (mount.volume ? [mount.volume] : []))
     }
   })
-  const images: MachineDockerImage[] = dockerJsonRows(lines, '@i ').map((row) => {
-    const id = dockerText(row.ID)
-    const [repository, tag] = [dockerText(row.Repository), dockerText(row.Tag)]
-    const tagged = repository !== '' && repository !== '<none>' && tag !== '' && tag !== '<none>'
-    return {
-      id,
-      reference: tagged ? `${repository}:${tag}` : null,
-      sizeBytes: size(row.Size),
-      uniqueBytes: size(row.UniqueSize),
-      createdAt: parseDockerTime(row.CreatedAt),
-      usedBy: containers
-        .filter((container) => container.imageId !== null && sameDockerId(container.imageId, id))
-        .map(containerRef)
-    }
-  })
+  const images = parseImages(lines, containers)
   const placed = new Map(dockerJsonRows(lines, '@m ').map((row) => [dockerText(row.Name), row]))
   const volumes: MachineDockerVolume[] = dockerJsonRows(lines, '@v ').map((row) => {
     const name = dockerText(row.Name)

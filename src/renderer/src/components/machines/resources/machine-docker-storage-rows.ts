@@ -177,7 +177,7 @@ export function dockerPruneCandidateCount(
 function searchText(item: MachineDockerStorageItem): string[] {
   switch (item.kind) {
     case 'images':
-      return [item.name, item.image.id, ...item.usedBy]
+      return [item.name, item.image.id, ...item.image.tags, ...item.usedBy]
     case 'containers':
       return [
         item.name,

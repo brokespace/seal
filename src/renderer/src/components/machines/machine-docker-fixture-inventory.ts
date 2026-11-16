@@ -56,6 +56,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.cuda,
     reference: 'nvidia/cuda:12.4.1-devel',
+    tags: ['nvidia/cuda:12.4.1-devel'],
     sizeBytes: 18.5 * GB,
     uniqueBytes: 18.5 * GB,
     createdAt: now - 190 * DAY,
@@ -64,6 +65,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.jupyter,
     reference: 'jupyter/pytorch-notebook:latest',
+    tags: ['jupyter/pytorch-notebook:latest'],
     sizeBytes: 11.2 * GB,
     uniqueBytes: 9.8 * GB,
     createdAt: now - 42 * DAY,
@@ -72,6 +74,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.eval,
     reference: 'seal/eval:2026.04',
+    tags: ['seal/eval:2026.04'],
     sizeBytes: 9.6 * GB,
     uniqueBytes: 4.1 * GB,
     createdAt: now - 30 * DAY,
@@ -80,6 +83,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.danglingA,
     reference: null,
+    tags: [],
     sizeBytes: 7.4 * GB,
     uniqueBytes: 7.4 * GB,
     createdAt: now - 12 * DAY,
@@ -88,6 +92,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.danglingB,
     reference: null,
+    tags: [],
     sizeBytes: 5.1 * GB,
     uniqueBytes: 5.1 * GB,
     createdAt: now - 16 * DAY,
@@ -96,6 +101,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.mlflow,
     reference: 'ghcr.io/mlflow/mlflow:v2.9.2',
+    tags: ['ghcr.io/mlflow/mlflow:v2.9.2'],
     sizeBytes: 1.3 * GB,
     uniqueBytes: 1.1 * GB,
     createdAt: now - 400 * DAY,
@@ -104,6 +110,7 @@ export const FAKE_DOCKER_IMAGES: MachineDockerImage[] = [
   {
     id: IMAGE_IDS.postgres,
     reference: 'postgres:16',
+    tags: ['postgres:16', 'postgres:latest'],
     sizeBytes: 432 * MB,
     uniqueBytes: 432 * MB,
     createdAt: now - 75 * DAY,

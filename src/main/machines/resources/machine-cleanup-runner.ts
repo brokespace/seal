@@ -70,7 +70,7 @@ function removalCommand(action: MachineCleanupAction): string {
     case 'docker-sequence':
       return action.commands.map(dockerCommand).join(' && ')
     case 'docker-image':
-      return `seal_docker_image_rm ${action.force ? '--force ' : ''}${quotePosixShell(action.target)}`
+      return `seal_docker_image_rm ${action.force ? '--force ' : ''}${action.targets.map(quotePosixShell).join(' ')}`
     case 'docker-build-cache':
       return `seal_docker_cache_prune ${quotePosixShell(action.record ?? '')}`
   }

@@ -17,7 +17,7 @@ const IDLE_STATS: FakeDockerContainer['stats'] = {
 }
 
 function fakeImage(
-  image: { reference: string | null; id: string },
+  image: { reference: string | null; alias?: string; id: string },
   sizeBytes: number,
   uniqueBytes: number,
   createdAt: string,
@@ -25,7 +25,7 @@ function fakeImage(
 ): FakeDockerImage {
   return {
     id: image.id,
-    tags: image.reference ? [image.reference] : [],
+    tags: [image.reference, image.alias].flatMap((tag) => (tag ? [tag] : [])),
     createdAt,
     sizeBytes,
     uniqueBytes,
