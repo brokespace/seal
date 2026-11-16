@@ -221,7 +221,8 @@
 .tab-drop-overlay__label {
   font-size: 11px;
   color: var(--primary-foreground);
-  background: color-mix(in srgb, var(--chart-2) 20%, transparent);
+  /* Solid: the tinted overlay behind it left the label at 1.5:1. */
+  background: var(--primary);
 }
 
 :root {

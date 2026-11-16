@@ -36,15 +36,27 @@ function transcript(
 function machine(clock: () => number = () => NOW) {
   const state: {
     running: boolean
+    /** The folder the running agent is in. */
+    cwd: string
     files: DiscoveredFile[]
     panes: SealPane[]
     /** The machine stopped answering: its scans fail. */
     down: boolean
+    /** The scan's shell dies before it lists a process. */
+    cutShort: boolean
+    /** The scan's shell dies after the process list, before any transcript. */
+    cutAfterProcesses: boolean
+    /** The machine left the list of connected machines. */
+    disconnected: boolean
   } = {
     running: false,
+    cwd: '/srv/shop',
     files: [],
     panes: [],
-    down: false
+    down: false,
+    cutShort: false,
+    cutAfterProcesses: false,
+    disconnected: false
   }
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
@@ -52,10 +64,17 @@ function machine(clock: () => number = () => NOW) {
       if (state.down) {
         throw new Error('ssh: connect to host dev-box: Connection timed out')
       }
+      if (state.cutShort) {
+        return `@@NOW ${Math.floor(NOW / 1000)}`
+      }
       return [
         `@@NOW ${Math.floor(NOW / 1000)}`,
-        ...(state.running ? ['@@PROC 4100 1 pts/3 claude', '@@CWD 4100 /srv/shop'] : []),
-        '@@DONE'
+        // Started before any transcript here began.
+        ...(state.running
+          ? ['@@PROC 4100 1 pts/3 claude', `@@CWD 4100 ${state.cwd}`, '@@AGE 4100 900-00:00:00']
+          : []),
+        '@@PS',
+        ...(state.cutAfterProcesses ? [] : ['@@DONE'])
       ].join('\n')
     },
     transcriptFiles: async () => state.files
@@ -64,7 +83,7 @@ function machine(clock: () => number = () => NOW) {
   const paneListeners = new Set<() => void>()
   const registry = new LiveSessionRegistry({
     localMachine: host.machine,
-    hosts: () => [host],
+    hosts: () => (state.disconnected ? [] : [host]),
     sealPanes: () => state.panes,
     subscribeSealPanes: (onChange) => {
       paneListeners.add(onChange)
@@ -87,7 +106,7 @@ function machine(clock: () => number = () => NOW) {
     events.flatMap((e) =>
       e.type === 'remove' && e.replacedBy ? [[e.sessionId, e.replacedBy]] : []
     )
-  return { state, registry, rows, replaced, paneChanged }
+  return { state, registry, rows, replaced, paneChanged, events }
 }
 
 const sealPane: SealPane = {
@@ -100,6 +119,7 @@ const sealPane: SealPane = {
   cwd: '/srv/shop',
   transcriptPath: `${DIR}/${WORKING}.jsonl`,
   prompt: 'Why does checkout double-charge when the cart has a coupon?',
+  lastMessage: null,
   receivedAt: NOW - 1_000,
   permission: null,
   silent: false
@@ -121,6 +141,19 @@ describe('one row per agent session', () => {
     expect(registry.get('local:claude:pid-4100')?.inputRoutes).toEqual([
       { kind: 'seal-pane', paneKey: 'tab-1:0' }
     ])
+  })
+
+  it('answers for an agent by its own id once it is listed apart from the session it was taken for', async () => {
+    const { state, registry, rows } = machine()
+    state.running = true
+    await rows()
+    state.panes = [sealPane]
+    expect(await rows()).toEqual([[`local:claude:${WORKING}`, 'seal', 4100]])
+
+    // The pane's session was another agent's: this one is listed under its own id again.
+    state.panes = []
+    expect(await rows()).toEqual([['local:claude:pid-4100', 'external', 4100]])
+    expect(registry.get('local:claude:pid-4100')?.id).toBe('local:claude:pid-4100')
   })
 
   it('keeps an agent started outside Seal as one row once Seal also sees it in a pane', async () => {
@@ -179,6 +212,22 @@ describe('one row per agent session', () => {
   })
 })
 
+describe('a closed session Seal resumed', () => {
+  // Nothing was seen running it, so its fresh writes alone would read as an agent at work.
+  it('keeps its resume route while the resume writes its transcript', async () => {
+    const { state, registry } = machine()
+    state.files = [transcript('discovery/__fixtures__/claude-idle.jsonl', WORKING, 2_000)]
+    const routes = async () => {
+      await registry.refresh()
+      return registry.getSnapshot().sessions.map((s) => s.inputRoutes)
+    }
+    expect(await routes()).toEqual([[]])
+
+    registry.noteResumed(registry.getSnapshot().sessions[0], 7001)
+    expect(await routes()).toEqual([[{ kind: 'resume' }]])
+  })
+})
+
 describe('a machine that stops answering', () => {
   it('stops vouching for its sessions after three failed scans, and shows them again once it answers', async () => {
     const { state, registry } = machine()
@@ -201,6 +250,45 @@ describe('a machine that stops answering', () => {
     state.down = false
     expect(await shown()).toEqual({ statuses: ['working'], error: null })
   })
+
+  // This machine's transcripts are read by Seal itself, so they are listed whatever the shell did;
+  // cut after the process list, the scan has not read what ties an agent to its transcript.
+  it.each(['cutShort', 'cutAfterProcesses'] as const)(
+    'does not take a scan that broke off (%s) as word that its agents left',
+    async (cut) => {
+      const { state, registry } = machine()
+      state.running = true
+      state.files = [transcript('discovery/__fixtures__/claude-working.jsonl', WORKING, 2_000)]
+      const told = async () => {
+        await registry.refresh()
+        return {
+          alive: registry.getSnapshot().sessions.map((s) => s.alive),
+          read: registry.hasRead(`local:claude:${WORKING}`)
+        }
+      }
+      state[cut] = true
+      expect(await told()).toEqual({ alive: [], read: false })
+
+      state[cut] = false
+      expect(await told()).toEqual({ alive: [true], read: true })
+
+      state[cut] = true
+      expect(await told()).toEqual({ alive: [true], read: true })
+    }
+  )
+
+  it('tells its listeners the error is gone when the machine disconnects', async () => {
+    const { state, registry, events } = machine()
+    state.down = true
+    await registry.refresh()
+    state.disconnected = true
+    await registry.refresh()
+
+    expect(events.flatMap((e) => (e.type === 'host-error' ? [[e.hostId, e.error]] : []))).toEqual([
+      ['local', 'ssh: connect to host dev-box: Connection timed out'],
+      ['local', null]
+    ])
+  })
 })
 
 describe('a Seal pane whose status changes between scans', () => {
@@ -213,6 +301,7 @@ describe('a Seal pane whose status changes between scans', () => {
     const shown = () => registry.getSnapshot().sessions.map((s) => s.status)
     const recorded = 'discovery/__fixtures__/live-claude-background-command-finished.jsonl'
     state.running = true
+    state.cwd = '/tmp/cc-home/work'
     state.files = [transcript(recorded, WORKING, 0, 7)]
     state.panes = [{ ...sealPane, status: 'your-turn' }]
     registry.start()

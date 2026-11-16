@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import {
   isLiveSessionNoticeEnabled,
   LiveSessionNotifier,
@@ -14,6 +15,7 @@ const base: LiveSession = {
   providerSessionId: 's1',
   machine: { hostId: 'box', label: 'build-box', kind: 'remote' },
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/srv/shop',
   project: 'shop',
   title: 'Fix the coupon bug',
@@ -206,8 +208,6 @@ describe('session notifications', () => {
     const sessions: (Partial<LiveSession> & { id: string })[] = [
       { id: 'chat', surface: { kind: 'chat', sessionId: 'c1', tabId: 'tab-c1' } },
       { id: 'cli', surface: { kind: 'cli', paneKey: 'tab-1:0' } },
-      { id: 'pane-route', inputRoutes: [{ kind: 'seal-pane', paneKey: 'tab-2:0' }] },
-      { id: 'chat-route', inputRoutes: [{ kind: 'structured', sessionId: 'c2' }] },
       { id: 'outside', inputRoutes: [{ kind: 'tmux', target: '%3' }] }
     ]
     expect(
@@ -215,8 +215,6 @@ describe('session notifications', () => {
     ).toEqual([
       ['chat', 'structured-attention'],
       ['cli', 'agent-hooks'],
-      ['pane-route', 'agent-hooks'],
-      ['chat-route', 'structured-attention'],
       ['outside', 'live-session-notifier']
     ])
 

@@ -33,6 +33,12 @@ const MAX_HOLD_MS = 20_000
  */
 export class LiveSessionStatusHold {
   private readonly held = new Map<string, Held>()
+  private readonly released = new Set<string>()
+
+  /** Seal stopped the session itself: the next reading that says it left "working" is no flicker. */
+  release(sessionId: string): void {
+    this.released.add(sessionId)
+  }
 
   /** `scan` counts the completed scans of the session's host. */
   settle(session: LiveSession, scan: number, now: number): LiveSession {
@@ -44,7 +50,7 @@ export class LiveSessionStatusHold {
       session.status !== 'needs-permission' &&
       session.status !== 'errored' &&
       INFERRED.has(session.statusSource)
-    if (!leavesBusy) {
+    if (!leavesBusy || this.released.delete(session.id)) {
       this.held.set(session.id, { shown: shownOf(session), pending: null })
       return session
     }
@@ -62,9 +68,10 @@ export class LiveSessionStatusHold {
 
   /** Forget sessions that are gone. */
   keep(sessionIds: ReadonlySet<string>): void {
-    for (const id of this.held.keys()) {
+    for (const id of [...this.held.keys(), ...this.released]) {
       if (!sessionIds.has(id)) {
         this.held.delete(id)
+        this.released.delete(id)
       }
     }
   }

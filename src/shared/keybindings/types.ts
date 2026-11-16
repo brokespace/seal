@@ -124,6 +124,12 @@ export type KeybindingActionId =
   | 'terminal.splitDown'
   | 'terminal.switchInputSource'
   | 'terminal.toggleNativeChat'
+  | 'splitView.focusNextPane'
+  | 'splitView.focusPreviousPane'
+  | 'splitView.toggleMaximize'
+  | 'splitView.moveTabRight'
+  | 'splitView.moveTabDown'
+  | 'splitView.closePane'
   | PluginKeybindingActionId
 
 export type KeybindingOverrides = Partial<Record<KeybindingActionId, string[]>>

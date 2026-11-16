@@ -1,4 +1,4 @@
-import type { ConnectorAgent } from '../../shared/external-conversation-link'
+import type { TuiAgent } from '../../shared/agent-launch/catalog/tui-agent'
 import {
   createLaunchedAgentWriteGuard,
   type LaunchedAgentWriteGuardRuntime
@@ -50,7 +50,7 @@ export async function deliverFollowUp(
   followUp: {
     handle: string
     expectedBinding: AgentPromptExpectedBinding
-    agent: ConnectorAgent
+    agent: TuiAgent
     text: string
     requestId: string
     signal: AbortSignal

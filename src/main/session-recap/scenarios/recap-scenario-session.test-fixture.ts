@@ -1,6 +1,7 @@
 // A scenario's session on one surface: the row the registry would hold, the conversation's own
 // file or journal, and the app's transcript readers over it.
 import { join } from 'node:path'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import { runLocalScript } from '../../live-sessions/hosts/local-shell-script'
 import { journalSessionTranscript } from '../../live-sessions/transcripts/journal-session-transcript'
@@ -61,6 +62,7 @@ export function recapScenarioSession(
         connection: remote ? 'ssh' : 'local'
       },
       origin: journal ? 'seal' : 'external',
+      ...sampleSessionSurface(journal ? 'seal' : 'external'),
       cwd: '/srv/shop',
       project: 'shop',
       title: null,

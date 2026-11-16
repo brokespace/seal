@@ -1,5 +1,9 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
-import type { TranscriptLine } from '../transcripts/live-transcript-reader'
+import {
+  readTranscriptForward,
+  type TranscriptLine,
+  type TranscriptSource
+} from '../transcripts/live-transcript-reader'
 import {
   isJsonRecord,
   parseJsonRecord,
@@ -74,6 +78,27 @@ export function userTextsOf(provider: LiveSessionProvider, lines: TranscriptLine
     if (said.trim()) {
       out.push({ offset, text: normalizeForMatch(said) })
     }
+  }
+  return out
+}
+
+const MAX_CONFIRM_READS = 8
+
+/** What the user said in a transcript file from `from` on; bounded, so a huge tail is picked up next time. */
+export async function userTextsFrom(
+  source: TranscriptSource,
+  provider: LiveSessionProvider,
+  from: number
+): Promise<UserText[]> {
+  const out: UserText[] = []
+  let cursor = from
+  for (let i = 0; i < MAX_CONFIRM_READS; i++) {
+    const read = await readTranscriptForward(source, provider, cursor)
+    out.push(...userTextsOf(provider, read.lines))
+    if (read.cursor === cursor || read.cursor >= read.size) {
+      break
+    }
+    cursor = read.cursor
   }
   return out
 }

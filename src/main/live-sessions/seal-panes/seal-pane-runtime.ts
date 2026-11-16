@@ -1,13 +1,11 @@
 import type { AgentStatusIpcPayload } from '../../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { PendingPrompt } from '../../../shared/agent-status/contracts/agent-pending-prompt'
-import {
-  liveSessionProviderOf,
-  type LiveSessionProvider
-} from '../../../shared/live-sessions/live-session-types'
+import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { TerminalAgentPromptAnswers } from '../../runtime/terminal/input/terminal-agent-prompt-answer'
 import { createLaunchedAgentWriteGuard } from '../../runtime/terminal/wait/launched-agent-write-guard'
 import { bindPane, deliverFollowUp } from '../../external-conversations/external-conversation-send'
+import { liveSessionAdapter } from '../adapters/live-session-adapters'
 import type { SealPaneInput } from '../delivery/session-input-routes'
 import { sealPanesFromRows, type SealPane } from './seal-pane-sessions'
 
@@ -24,13 +22,13 @@ const AGENT_CHECK_MS = 15_000
 export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPaneHookRows) {
   const readHookRow = (paneKey: string) => runtime.agentTransitions.latestRow(paneKey)
   const answers = new TerminalAgentPromptAnswers(readHookRow)
-  const target = (paneKey: string, agent: LiveSessionProvider) => ({
+  const target = (paneKey: string, agent: LiveSession['provider']) => ({
     paneKey,
     agent,
     answerable: true
   })
 
-  const pendingPrompt = (paneKey: string, agent: LiveSessionProvider): PendingPrompt | null => {
+  const pendingPrompt = (paneKey: string, agent: LiveSession['provider']): PendingPrompt | null => {
     try {
       return answers.pending(runtime, target(paneKey, agent))
     } catch {
@@ -52,10 +50,9 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
   }
 
   const input: SealPaneInput = {
-    async send(paneKey, sessionAgent, text, requestId, signal) {
-      const agent = liveSessionProviderOf(sessionAgent)
-      if (!agent) {
-        return { outcome: 'unavailable', reason: `Seal cannot type into a ${sessionAgent} pane` }
+    async send(paneKey, agent, text, requestId, signal) {
+      if (!liveSessionAdapter(agent)?.cli) {
+        return { outcome: 'unavailable', reason: `Seal cannot type into a ${agent} pane` }
       }
       const bound = bindPane(runtime, paneKey)
       if (!bound) {
@@ -75,9 +72,8 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
       // `unknown` may have written bytes: only the transcript may decide from here.
       return { outcome: 'sent' }
     },
-    async answer(paneKey, sessionAgent, answer, signal) {
-      const agent = liveSessionProviderOf(sessionAgent)
-      if (!agent) {
+    async answer(paneKey, agent, answer, signal) {
+      if ((liveSessionAdapter(agent)?.cli?.answers ?? 'none') === 'none') {
         return { ok: false, reason: 'not_answerable' }
       }
       const guard = createLaunchedAgentWriteGuard(runtime, agent, {
@@ -111,9 +107,10 @@ export function createSealPaneAccess(runtime: OrcaRuntimeService, rows: SealPane
   return {
     panes,
     input,
-    confirmAgent: (paneKey: string) => {
+    /** `'now'` after Seal stopped the pane's agent: the last check, made while it ran, says nothing. */
+    confirmAgent: (paneKey: string, when?: 'now') => {
       const now = Date.now()
-      if (now - (agentChecks.get(paneKey) ?? -Infinity) < AGENT_CHECK_MS) {
+      if (when !== 'now' && now - (agentChecks.get(paneKey) ?? -Infinity) < AGENT_CHECK_MS) {
         return
       }
       for (const [key, at] of agentChecks) {

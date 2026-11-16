@@ -6,7 +6,7 @@ import type { NativeChatMessageListHandle } from '../native-chat/messages/action
 import type { NativeChatDeliveryNotice } from '../native-chat/messages/rows/NativeChatMessageRow'
 import type { NativeChatLiveSession } from '../native-chat/session/terminal/read/native-chat-live-session-contract'
 import type { NativeChatOlderPageResult } from '../native-chat/viewport/history/native-chat-pagination'
-import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import type { LiveMessage, LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import type { LiveTranscriptState } from './use-live-transcript'
 import type { PendingRow } from './live-session-pending-rows'
 import { LiveSessionComposer } from './LiveSessionComposer'
@@ -18,7 +18,7 @@ export type LiveSessionChatProps = {
   transcript: LiveTranscriptState & { loadEarlier: () => Promise<NativeChatOlderPageResult> }
   pending: readonly PendingRow[]
   onSend: (text: string) => void
-  onRetry: (messageId: string) => void
+  onRetry: (message: LiveMessage) => void
   onAnswer: (optionId: string) => void
   /** The option whose answer is on its way. */
   answering: string | null
@@ -26,6 +26,8 @@ export type LiveSessionChatProps = {
   composerFocus?: number
   /** A message to bring into view; a new `nonce` asks again for the same one. */
   reveal?: { messageId: string; nonce: number } | null
+  /** False while the view is kept behind another tab. */
+  isVisible?: boolean
 }
 
 export function LiveSessionChat({
@@ -37,12 +39,16 @@ export function LiveSessionChat({
   onAnswer,
   answering,
   composerFocus,
-  reveal
+  reveal,
+  isVisible
 }: LiveSessionChatProps): React.JSX.Element {
   const t = useTranslate()
   const listRef = useRef<NativeChatMessageListHandle>(null)
+  const servedReveal = useRef<number | null>(null)
   useEffect(() => {
-    if (reveal) {
+    // A view kept behind a tab runs its effects again when it comes back; a jump is made once.
+    if (reveal && servedReveal.current !== reveal.nonce) {
+      servedReveal.current = reveal.nonce
       listRef.current?.revealMessage(reveal.messageId)
     }
   }, [reveal])
@@ -83,7 +89,7 @@ export function LiveSessionChat({
       if (message.state === 'failed') {
         map.set(row.id, {
           text: liveMessageStateLabel(message),
-          onSend: () => onRetry(message.messageId)
+          onSend: () => onRetry(message)
         })
       } else if (message.state !== 'delivered') {
         map.set(row.id, { sending: true })
@@ -106,6 +112,7 @@ export function LiveSessionChat({
         <NativeChatMessageList
           ref={listRef}
           session={chat}
+          isVisible={isVisible}
           isWorking={working}
           expandSignal={false}
           deliveryNotices={notices}

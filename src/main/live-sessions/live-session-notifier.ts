@@ -1,7 +1,6 @@
 import type { AgentStatusState } from '../../shared/agent-status/contracts/agent-status-types'
 import { agentSessionAdapter } from '../../shared/live-sessions/adapters/agent-session-adapters'
 import { liveSessionStatusGroup } from '../../shared/live-sessions/live-session-status'
-import { liveSessionSurfaceOf } from '../../shared/live-sessions/live-session-surface'
 import type {
   AgentSessionSurface,
   LiveSession,
@@ -51,9 +50,9 @@ const OWNER_BY_SURFACE: Record<AgentSessionSurface['kind'], LiveSessionNotificat
 
 /** The one producer that notifies for a session: whoever owns the surface it runs on. */
 export function liveSessionNotificationOwner(
-  session: Pick<LiveSession, 'surface' | 'inputRoutes'>
+  session: Pick<LiveSession, 'surface'>
 ): LiveSessionNotificationOwner {
-  return OWNER_BY_SURFACE[liveSessionSurfaceOf(session).kind]
+  return OWNER_BY_SURFACE[session.surface.kind]
 }
 
 /** A notice as the agent state the hook and structured lanes report, so one gate reads all three. */
@@ -91,7 +90,7 @@ function describe(
     kind,
     title: name,
     body: detail ? `${lead}: ${detail}` : lead,
-    surface: liveSessionSurfaceOf(session)
+    surface: session.surface
   }
 }
 
@@ -215,7 +214,7 @@ export class LiveSessionNotifier {
   }
 
   private announce(session: LiveSession, kind: LiveSessionNotice): void {
-    if (this.deps.wanted(kind, liveSessionSurfaceOf(session))) {
+    if (this.deps.wanted(kind, session.surface)) {
       // A chat's row carries no reply; the one read for the question stands in.
       const askedReply =
         session.statusSource === 'classifier' ? this.deps.askedReply?.(session.id) : null

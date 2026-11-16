@@ -5,7 +5,16 @@ import type { ProjectOverviewTarget } from '@/store/slices/ui/project-overview-t
 import { activateAndRevealWorktree } from '@/lib/workspace/activation/worktree-activation'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../../shared/execution-host'
 import { isAiVaultAgent } from '../../../../../shared/ai-vault/contracts/ai-vault-types'
-import { buildAiVaultResumeCommand } from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
+import {
+  buildAiVaultResumeCommand,
+  buildAiVaultResumeShellCommand
+} from '../../../../../shared/ai-vault/resume/ai-vault-resume-command'
+import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
+import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
+import {
+  quoteCmdDoubleQuoted,
+  quotePosixShellUnlessPlain
+} from '../../../../../shared/shell/launch/shell-argument-quoting'
 import {
   compareLiveSessions,
   isActiveLiveSession
@@ -16,6 +25,14 @@ import { parseMachineId } from '../../../../../shared/machines/machine-types'
 import { rememberMachineSelection } from '../../machines/model/machine-selection'
 import { mutateSealHost } from '../../seal-session/seal-session-status-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
+import {
+  closeItemInSplitView,
+  keepSplitViewItem,
+  openItemsInSplitView,
+  revealItemInSplitView
+} from '../../split-view/split-view-commands'
+import { splitViewStore } from '../../split-view/split-view-store'
+import { findSplitViewPaneOfKey, splitViewItemKey } from '../../split-view/split-view-types'
 import { ACTIVE_AGENTS_COLLAPSE_KEY } from '../active-agents/active-agents-model'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { takeOverLiveSession } from '../take-over/live-session-take-over'
@@ -36,13 +53,23 @@ export function openLiveSessionView(
 ): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
   const ui = useAppStore.getState()
+  liveSessionMarksStore.reveal(id)
+  if (mode === 'split') {
+    openItemsInSplitView([{ kind: 'session', sessionId: id }], 'right')
+    return
+  }
+  const inGrid = splitViewStore.hasLayout()
   liveSessionTabsStore.open(
     id,
-    mode,
+    // The grid owns previews while it exists: replacing the tabs' preview here would close a
+    // session that may be a chip in another pane.
+    inGrid ? 'tab' : mode,
     ui.activeView === 'project' ? overviewProjectKey(ui.projectOverviewTarget) : undefined
   )
   ui.openAgentSessionTabs()
-  liveSessionMarksStore.reveal(id)
+  if (inGrid) {
+    revealItemInSplitView({ kind: 'session', sessionId: id })
+  }
 }
 
 function overviewProjectKey(target: ProjectOverviewTarget | null): string | undefined {
@@ -51,6 +78,13 @@ function overviewProjectKey(target: ProjectOverviewTarget | null): string | unde
 
 /** Closes a session's tab. The last one of a visit that began on a project's overview ends the visit. */
 export function closeLiveSessionView(sessionId: string): void {
+  if (splitViewStore.hasLayout()) {
+    // The grid picks the next focus; a visit to a project's overview does not end here.
+    if (!closeItemInSplitView({ kind: 'session', sessionId })) {
+      liveSessionTabsStore.close(sessionId)
+    }
+    return
+  }
   const before = liveSessionTabsStore.getState()
   liveSessionTabsStore.close(sessionId)
   const ui = useAppStore.getState()
@@ -68,13 +102,39 @@ export function closeLiveSessionView(sessionId: string): void {
   }
 }
 
+/** Opens a session and, for `tab`, keeps it: in the grid every open is a preview until kept. */
+export function openLiveSessionKeepingTab(sessionId: string, mode: LiveSessionOpenMode): void {
+  openLiveSessionView(sessionId, mode)
+  if (mode === 'tab') {
+    keepSplitViewItem(
+      splitViewItemKey({
+        kind: 'session',
+        sessionId: liveSessionRegistryStore.currentId(sessionId)
+      })
+    )
+  }
+}
+
+/** "Open in new tab": a kept tab. In the grid it lands beside the focused pane's preview. */
+function openLiveSessionInNewTab(sessionId: string): void {
+  const id = liveSessionRegistryStore.currentId(sessionId)
+  const item = { kind: 'session', sessionId: id } as const
+  const grid = splitViewStore.getState()
+  if (grid.layout && findSplitViewPaneOfKey(grid, splitViewItemKey(item)) === null) {
+    liveSessionMarksStore.reveal(id)
+    openItemsInSplitView([item], 'center')
+    return
+  }
+  openLiveSessionKeepingTab(id, 'tab')
+}
+
 /** How a session's row opens it, on any surface: a click previews, a double click or Enter keeps the tab. */
 export function liveSessionRowOpenMode(event?: { type: string }): LiveSessionOpenMode {
   return event?.type === 'dblclick' || event?.type === 'keydown' ? 'tab' : 'preview'
 }
 
 export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
-  openLiveSessionView(session.id, liveSessionRowOpenMode(event))
+  openLiveSessionKeepingTab(session.id, liveSessionRowOpenMode(event))
 }
 
 /**
@@ -104,11 +164,25 @@ function focusLiveSessionView(sessionId: string, target: LiveSessionFocusTarget)
 
 /** `claude --resume <id>` or `codex resume <id>`, from the session's folder, for its machine's shell. */
 export function liveSessionResumeCommand(session: LiveSession): string {
-  // No registry lists such an agent yet.
-  if (!isAiVaultAgent(session.provider)) {
-    return ''
-  }
   const local = session.machine.kind === 'local'
+  // Remote machines are reached over a POSIX shell.
+  const platform = local && navigator.userAgent.includes('Windows') ? 'win32' : 'linux'
+  if (!isAiVaultAgent(session.provider)) {
+    // An agent Session History cannot resume: its adapter says how, or that it cannot.
+    const argv = agentSessionAdapter(session.provider)?.cli?.resumeArgv?.(
+      session.providerSessionId,
+      session.transcriptPath
+    )
+    return argv && !isProvisionalLiveSessionId(session.providerSessionId)
+      ? buildAiVaultResumeShellCommand({
+          resumeCommand: argv
+            .map(platform === 'win32' ? quoteCmdDoubleQuoted : quotePosixShellUnlessPlain)
+            .join(' '),
+          cwd: session.cwd,
+          platform
+        })
+      : ''
+  }
   // Sessions under an account folder resume only with that folder as CODEX_HOME.
   const codexHome =
     session.provider === 'codex' && session.configDir && !/\/\.codex\/?$/.test(session.configDir)
@@ -118,8 +192,7 @@ export function liveSessionResumeCommand(session: LiveSession): string {
     agent: session.provider,
     sessionId: session.providerSessionId,
     cwd: session.cwd,
-    // Remote machines are reached over a POSIX shell.
-    platform: local && navigator.userAgent.includes('Windows') ? 'win32' : 'linux',
+    platform,
     codexHome
   })
 }
@@ -175,7 +248,8 @@ function openMachine(session: LiveSession): void {
 
 /** The one implementation every session menu, shortcut and palette entry runs. */
 export const liveSessionMenuEffects: LiveSessionMenuEffects = {
-  open: openLiveSessionView,
+  open: (sessionId, mode) =>
+    mode === 'tab' ? openLiveSessionInNewTab(sessionId) : openLiveSessionView(sessionId, mode),
   focus: focusLiveSessionView,
   askRename: (session) => liveSessionDialogStore.show({ kind: 'rename', session }),
   askMessage: (session) => liveSessionDialogStore.show({ kind: 'message', session }),

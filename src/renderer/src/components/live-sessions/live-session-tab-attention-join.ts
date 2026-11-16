@@ -3,10 +3,7 @@ import { isTabOnScreen, onScreenWorkspaceIds } from '@/hooks/agent-auto-ack-targ
 import { paneKeyTabId } from '@/store/slices/workspace-attention/workspace-live-markers'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
-import {
-  liveSessionPaneKeyOf,
-  liveSessionSurfaceOf
-} from '../../../../shared/live-sessions/live-session-surface'
+import { liveSessionPaneKeyOf } from '../../../../shared/live-sessions/live-session-surface'
 import type { LiveSessionMarksStore } from './live-session-marks-store'
 import { liveSessionRegistryStore } from './live-session-registry-store'
 
@@ -16,7 +13,7 @@ export type LiveSessionTabAttentionJoinDeps = {
   sessions: {
     get: () => readonly Pick<
       LiveSession,
-      'id' | 'lastActivityAt' | 'surface' | 'inputRoutes' | 'alive' | 'status'
+      'id' | 'lastActivityAt' | 'surface' | 'alive' | 'status'
     >[]
     subscribe: Subscribe
   }
@@ -67,7 +64,7 @@ export function joinLiveSessionMarksWithTabAttention({
       return true
     }
     return sessions.get().some((session) => {
-      const surface = liveSessionSurfaceOf(session)
+      const surface = session.surface
       return (
         surface.kind === 'cli' &&
         surface.paneKey === paneKey &&
@@ -116,7 +113,7 @@ export function joinLiveSessionMarksWithTabAttention({
   const noteStopped: Parameters<LiveSessionMarksStore['onStopped']>[0] = (ended) => {
     const attention = tabAttention.get()
     for (const session of ended) {
-      const surface = liveSessionSurfaceOf(session)
+      const surface = session.surface
       // An agent already gone reports no exit; a chat's tab still holds the reply it stopped on.
       if (session.alive && surface.kind === 'cli') {
         stopped.set(surface.paneKey, {
@@ -217,7 +214,7 @@ export function joinLiveSessionMarksWithTabAttention({
       const ids = new Set<string>()
       for (const session of listed) {
         ids.add(session.id)
-        const surface = liveSessionSurfaceOf(session)
+        const surface = session.surface
         const ran = ranIn.get(session.id)
         if (surface.kind === 'cli') {
           ranIn.set(session.id, { paneKey: surface.paneKey, ended: false })

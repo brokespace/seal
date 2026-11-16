@@ -25,14 +25,14 @@ export function useTerminalParkingFoundation(controller: TerminalEditorCloseCont
     activeTabId,
     activeTabIdByWorktree,
     activeTabType,
-    activeView,
     closeDialogDebounceTimersRef,
     measurableBackgroundWorktreeIdsRef,
     mountedWorktreeIdsRef,
     renderedActiveWorktreeId,
     setActiveTab,
     tabs,
-    terminalWorktreeParkingTimersRef
+    terminalWorktreeParkingTimersRef,
+    visibleWorkspacePanes
   } = controller
 
   useActiveTerminalRepair({
@@ -50,10 +50,7 @@ export function useTerminalParkingFoundation(controller: TerminalEditorCloseCont
   const [parkedTerminalWorktreeIds, setParkedTerminalWorktreeIds] = useState<ReadonlySet<string>>(
     () => new Set()
   )
-  const manuallyParkedTerminalWorktreeIds = useManualTerminalWorktreeParking({
-    activeView,
-    renderedActiveWorktreeId
-  })
+  const manuallyParkedTerminalWorktreeIds = useManualTerminalWorktreeParking(visibleWorkspacePanes)
   const effectiveParkedTerminalWorktreeIds = useMemo(
     () =>
       combineTerminalWorktreeParkIds(parkedTerminalWorktreeIds, manuallyParkedTerminalWorktreeIds),

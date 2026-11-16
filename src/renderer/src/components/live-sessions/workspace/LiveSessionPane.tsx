@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
-import { ArrowLeft, Bot, Ellipsis, ListTodo, NotebookText, X } from 'lucide-react'
+import { ArrowLeft, Bot, Ellipsis, ListTodo, NotebookText } from 'lucide-react'
 import { AgentIcon } from '@/components/agent/icons/AgentIcon'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { useTranslate } from '@/i18n/use-translate'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
@@ -25,7 +26,7 @@ import type { NativeChatLiveSession } from '../../native-chat/session/terminal/r
 import { LiveSessionChat } from '../LiveSessionChat'
 import { pendingRows } from '../live-session-pending-rows'
 import { liveSessionProviderLabel, liveSessionTitle } from '../live-session-presentation'
-import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { retryLiveMessage } from '../live-session-retry'
 import { sendLiveMessage } from '../live-session-send'
 import { DROPDOWN_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
 import { liveSessionMarksStore } from '../live-session-marks-store'
@@ -44,10 +45,12 @@ type Transcript = ReturnType<typeof useLiveTranscript>
 /** A subagent's own transcript, read-only, in place of its session's chat. */
 function SubagentTranscript({
   session,
-  transcript
+  transcript,
+  isVisible
 }: {
   session: LiveSession
   transcript: LiveTranscriptState & Pick<Transcript, 'loadEarlier'>
+  isVisible?: boolean
 }): React.JSX.Element {
   const chat = useMemo<NativeChatLiveSession>(() => {
     const phase = transcript.phase
@@ -65,7 +68,14 @@ function SubagentTranscript({
       loadEarlier: transcript.loadEarlier
     }
   }, [session.provider, session.providerSessionId, transcript])
-  return <NativeChatMessageList session={chat} isWorking={false} expandSignal={false} />
+  return (
+    <NativeChatMessageList
+      session={chat}
+      isVisible={isVisible}
+      isWorking={false}
+      expandSignal={false}
+    />
+  )
 }
 
 export type LiveSessionPaneViewProps = {
@@ -79,7 +89,7 @@ export type LiveSessionPaneViewProps = {
   openSubagentId: string | null
   onOpenSubagent: (subagentId: string | null) => void
   onSend: (text: string) => void
-  onRetry: (messageId: string) => void
+  onRetry: (message: LiveMessage) => void
   onAnswer: (optionId: string) => void
   answering: string | null
   composerFocus?: number
@@ -91,8 +101,8 @@ export type LiveSessionPaneViewProps = {
   }
   /** The header's "…" menu; fixtures leave it out. */
   menu?: React.ReactNode
-  /** Closes the split this pane sits in. */
-  onCloseSplit?: () => void
+  /** False while the view is kept behind another tab. */
+  visible?: boolean
 }
 
 /** One session's view without its data sources, so fixtures can render it. */
@@ -173,17 +183,6 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
           <ListTodo className="size-3.5" />
         </PanelButton>
         {props.menu}
-        {props.onCloseSplit ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={props.onCloseSplit}
-            aria-label={t('auto.components.live-sessions.workspace.closeSplit', 'Close split')}
-          >
-            <X className="size-3.5" />
-          </Button>
-        ) : null}
       </header>
       {recap ? (
         <SessionRecapBar
@@ -216,7 +215,11 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
                   })}
                 </span>
               </div>
-              <SubagentTranscript session={session} transcript={props.subagentTranscript} />
+              <SubagentTranscript
+                session={session}
+                transcript={props.subagentTranscript}
+                isVisible={props.visible}
+              />
             </>
           ) : (
             <LiveSessionChat
@@ -229,6 +232,7 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
               answering={props.answering}
               composerFocus={props.composerFocus}
               reveal={reveal}
+              isVisible={props.visible}
             />
           )}
         </div>
@@ -287,13 +291,13 @@ export function LiveSessionPane({
   messages,
   focus,
   now,
-  onCloseSplit
+  visible
 }: {
   session: LiveSession
   messages: ReadonlyMap<string, LiveMessage>
   focus: LiveSessionTabsState['focus']
   now: number
-  onCloseSplit?: () => void
+  visible?: boolean
 }): React.JSX.Element {
   const transcript = useLiveTranscript(session.id)
   const recap = useSessionRecap(session.id, session.recap)
@@ -340,11 +344,11 @@ export function LiveSessionPane({
     },
     [permission, session.id]
   )
-  const onRetry = useCallback((messageId: string) => {
-    void window.api.liveSessions
-      .retry({ messageId })
-      .then((message) => message && liveSessionRegistryStore.upsertMessage(message))
-  }, [])
+  const confirm = useConfirmationDialog()
+  const onRetry = useCallback(
+    (message: LiveMessage) => void retryLiveMessage(message, confirm),
+    [confirm]
+  )
   const onSend = useCallback((text: string) => sendLiveMessage(session.id, text), [session.id])
   const recapProps = useMemo(
     () => ({
@@ -377,7 +381,7 @@ export function LiveSessionPane({
       now={now}
       recap={recapProps}
       menu={<SessionMenuButton session={session} />}
-      onCloseSplit={onCloseSplit}
+      visible={visible}
     />
   )
 }

@@ -1,9 +1,11 @@
 import { join } from 'node:path'
 import { hostname } from 'node:os'
 import type {
+  LiveSession,
   LiveMessage,
   LivePermissionAnswer,
   LivePermissionAnswerResult,
+  LiveRetryRequest,
   LiveSendRequest,
   LiveSessionAnnotation,
   LiveSessionRegistryEvent,
@@ -20,15 +22,22 @@ import {
   LiveTranscriptStreams,
   type LiveTranscriptSubscription
 } from './transcripts/live-transcript-streams'
-import { readTranscriptForward } from './transcripts/live-transcript-reader'
 import { SessionInputRoutes, type SealPaneInput } from './delivery/session-input-routes'
 import { LiveMessageOutbox } from './delivery/live-message-outbox'
-import { userTextsOf, type UserText } from './delivery/transcript-user-texts'
+import { userTextsFrom, type UserText } from './delivery/transcript-user-texts'
 import { LOCAL_HOST_ID, type LiveSessionHost } from './hosts/live-session-hosts'
 import type { SealPane } from './seal-panes/seal-pane-sessions'
 import { takeOverSession } from './delivery/session-take-over'
-import { LiveSessionRemovals, removeFromHost } from './delivery/session-removal'
+import { LiveSessionRemovals, removeSessions } from './delivery/session-removal'
 import { LiveSessionAnnotations } from './live-session-annotations'
+import type { StructuredSessionAccess } from './sources/structured-session-source'
+import { SessionTranscriptAccess } from './session-transcript-access'
+import {
+  isPairedServerLiveSession,
+  localChatSessionId
+} from '../../shared/live-sessions/live-session-paired-server'
+import type { FederatedSessions } from './federation/federated-sessions'
+import { errorMessage } from '../../shared/error-message'
 
 export type LiveSessionServiceDeps = {
   userDataPath: string
@@ -37,13 +46,15 @@ export type LiveSessionServiceDeps = {
     panes: () => SealPane[]
     input: SealPaneInput
     subscribe: (onChange: () => void) => () => void
-    confirmAgent?: (paneKey: string) => void
+    confirmAgent?: (paneKey: string, when?: 'now') => void
   }
+  /** This machine's chats; absent where no structured host runs. */
+  chats?: StructuredSessionAccess
+  /** Paired servers' own registries; absent on a server, which has none. */
+  federation?: FederatedSessions
   onHostScanned?: LiveSessionRegistryDeps['onHostScanned']
   log?: (message: string, error?: unknown) => void
 }
-
-const MAX_CONFIRM_READS = 8
 
 /**
  * The main-process session API other features consume (home overview, home chat, mobile RPC):
@@ -52,13 +63,18 @@ const MAX_CONFIRM_READS = 8
 export class LiveSessionService {
   readonly registry: LiveSessionRegistry
   readonly streams: LiveTranscriptStreams
+  private readonly transcripts: SessionTranscriptAccess
   private readonly routes: SessionInputRoutes
   private readonly outbox: LiveMessageOutbox
   private readonly messageListeners = new Set<(message: LiveMessage) => void>()
   private readonly removals: LiveSessionRemovals
   private readonly annotations: LiveSessionAnnotations
+  private readonly chats: StructuredSessionAccess | null
+  private readonly federation: FederatedSessions | null
 
-  constructor(deps: LiveSessionServiceDeps) {
+  constructor(private readonly deps: LiveSessionServiceDeps) {
+    this.chats = deps.chats ?? null
+    this.federation = deps.federation ?? null
     this.annotations = new LiveSessionAnnotations(
       join(deps.userDataPath, 'live-sessions', 'annotations.json'),
       deps.log
@@ -75,28 +91,46 @@ export class LiveSessionService {
       sealPanes: () => deps.sealPanes?.panes() ?? [],
       subscribeSealPanes: deps.sealPanes?.subscribe,
       confirmSealPaneAgent: deps.sealPanes?.confirmAgent,
+      chats: deps.chats?.source,
+      federation: deps.federation,
       onHostScanned: deps.onHostScanned,
       log: deps.log
     })
     this.streams = new LiveTranscriptStreams(this.registry, { log: deps.log })
+    this.transcripts = new SessionTranscriptAccess({
+      session: (sessionId) => this.registry.get(sessionId),
+      // Only a chat: a server's CLI session keeps a file this Seal already reads through its host.
+      server: (sessionId) =>
+        this.registry.get(sessionId)?.surface.kind === 'chat'
+          ? (this.federated(sessionId)?.transcripts ?? null)
+          : null,
+      files: this.streams,
+      onSessionsChanged: (listener) => this.registry.subscribe(listener),
+      log: deps.log
+    })
     this.routes = new SessionInputRoutes({
       host: (hostId) => this.registry.host(hostId),
-      sealPanes: deps.sealPanes?.input ?? null
+      sealPanes: deps.sealPanes?.input ?? null,
+      structured: deps.chats?.input ?? null,
+      onResumed: (session, pid) => this.registry.noteResumed(session, pid)
     })
     this.outbox = new LiveMessageOutbox({
       storePath: join(deps.userDataPath, 'live-sessions', 'outbox.json'),
       getSession: (id) => this.registry.get(id),
+      machineRead: (id) => this.registry.hasRead(id),
       attempt: (session, route, text, messageId, signal) =>
         this.routes.attempt(session, route, text, messageId, signal),
       transcriptSize: async (session) => {
+        const chat = localChatSessionId(session)
+        if (chat !== null) {
+          return (await this.chats?.journalSize(chat)) ?? 0
+        }
         const found = this.streams.source(session.id)
         return found ? (await found.source.read(0, 0)).size : 0
       },
-      userTexts: (session, from) => this.userTexts(session.id, from),
+      userTexts: (session, from) => this.userTexts(session, from),
       onChange: (message) => {
-        for (const listener of this.messageListeners) {
-          listener(message)
-        }
+        this.emitMessage(message)
         if (message.state === 'sent') {
           void this.registry.refresh(this.registry.get(message.sessionId)?.machine.hostId)
         }
@@ -118,11 +152,23 @@ export class LiveSessionService {
       this.registry.start()
     )
     void this.outbox.start()
+    this.federation?.subscribeMessages((message) => {
+      this.outbox.letGo(message.messageId)
+      this.emitMessage(message)
+    })
   }
 
   stop(): void {
     this.registry.stop()
     this.outbox.stop()
+    this.federation?.stop()
+    this.chats?.dispose()
+  }
+
+  private emitMessage(message: LiveMessage): void {
+    for (const listener of this.messageListeners) {
+      listener(message)
+    }
   }
 
   snapshot(): LiveSessionRegistrySnapshot {
@@ -142,7 +188,7 @@ export class LiveSessionService {
     before: LiveTranscriptCursor | null,
     limit?: number
   ): Promise<LiveTranscriptPage> {
-    return this.streams.page(sessionId, before, limit)
+    return this.transcripts.page(sessionId, before, limit)
   }
 
   /** What a transcript gained after `cursor`; `shrank` when it was rewritten shorter. */
@@ -150,7 +196,7 @@ export class LiveSessionService {
     sessionId: string,
     cursor: LiveTranscriptCursor
   ): ReturnType<LiveTranscriptStreams['since']> {
-    return this.streams.since(sessionId, cursor)
+    return this.transcripts.since(sessionId, cursor)
   }
 
   watchTranscript(
@@ -158,19 +204,39 @@ export class LiveSessionService {
     fromCursor: LiveTranscriptCursor | null,
     listener: (delta: LiveTranscriptDelta) => void
   ): LiveTranscriptSubscription {
-    return this.streams.subscribe(sessionId, fromCursor, listener)
+    return this.transcripts.watch(sessionId, fromCursor, listener)
   }
 
+  /** A session on a paired server is reached through that server: its routes mean nothing here. */
+  private federated(sessionId: string): FederatedSessions | null {
+    return this.federation?.owns(this.registry.currentId(sessionId)) ? this.federation : null
+  }
+
+  /** A paired server sends what goes to its sessions. One it does not take stays in the outbox, failed. */
   send(request: LiveSendRequest): Promise<LiveMessage> {
-    return this.outbox.send(request)
+    const routed = { ...request, sessionId: this.registry.currentId(request.sessionId) }
+    const server = this.federated(routed.sessionId)
+    return server
+      ? this.outbox.offer(routed, (offered) => server.offer(offered))
+      : this.outbox.send(routed)
   }
 
-  retry(messageId: string): Promise<LiveMessage | null> {
-    return this.outbox.retry(messageId)
+  async retry({ messageId, mayRunTwice }: LiveRetryRequest): Promise<LiveMessage | null> {
+    const held = this.outbox.list().find((message) => message.messageId === messageId)
+    // It failed here while its server was away: the server is listed again, so it goes there.
+    return held?.state === 'failed' && this.federated(held.sessionId)
+      ? this.send({ sessionId: held.sessionId, messageId, text: held.text })
+      : (this.federation?.retry(messageId, mayRunTwice) ??
+          this.outbox.retry(messageId, mayRunTwice))
   }
 
   messages(sessionId?: string): LiveMessage[] {
-    return this.outbox.list(sessionId)
+    const current = sessionId === undefined ? undefined : this.registry.currentId(sessionId)
+    const remote = this.federation?.messages(current) ?? []
+    const local = this.outbox.list(current)
+    return remote.length === 0
+      ? local
+      : [...local, ...remote].sort((a, b) => a.createdAt - b.createdAt)
   }
 
   subscribeMessages(listener: (message: LiveMessage) => void): () => void {
@@ -183,13 +249,16 @@ export class LiveSessionService {
     if (!session) {
       return { ok: false, reason: 'prompt_not_pending' }
     }
-    const result = await this.routes
-      .answer(session, request)
-      .catch((error: unknown): LivePermissionAnswerResult => ({
-        ok: false,
-        reason: 'failed',
-        error: error instanceof Error ? error.message : String(error)
-      }))
+    const remote = this.federated(session.id)
+    const result = await (
+      remote
+        ? remote.answer({ ...request, sessionId: session.id })
+        : this.routes.answer(session, request)
+    ).catch((error: unknown): LivePermissionAnswerResult => ({
+      ok: false,
+      reason: 'failed',
+      error: errorMessage(error)
+    }))
     void this.registry.refresh(session.machine.hostId)
     return result
   }
@@ -203,7 +272,7 @@ export class LiveSessionService {
     ).catch((error: unknown): LiveTakeOverResult => ({
       ok: false,
       reason: 'failed',
-      error: error instanceof Error ? error.message : String(error)
+      error: errorMessage(error)
     }))
     if (session) {
       void this.registry.refresh(session.machine.hostId)
@@ -221,54 +290,45 @@ export class LiveSessionService {
     this.registry.republish()
   }
 
-  /** Hides sessions for good; stops them and deletes their transcripts first when asked. */
+  /** Hides sessions for good at once; stops them and deletes their transcripts behind that when asked. */
   async remove(request: LiveRemoveRequest): Promise<LiveRemoveResult> {
-    const result: LiveRemoveResult = { removed: [], failed: [] }
-    const hostIds = new Set<string>()
-    for (const sessionId of new Set(request.sessionIds)) {
-      const session = this.registry.get(sessionId)
-      const host = session ? this.registry.host(session.machine.hostId) : null
-      try {
-        const outcome = session && host ? await removeFromHost(session, host, request) : 'removed'
-        if (outcome === 'removed') {
-          result.removed.push(sessionId)
-        } else {
-          result.failed.push({ sessionId, reason: outcome })
-        }
-        if (session) {
-          hostIds.add(session.machine.hostId)
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        result.failed.push({ sessionId, reason: 'failed', error: message })
-      }
-    }
+    const { result, sessions, removed } = await removeSessions(request, {
+      session: (sessionId) => this.registry.get(sessionId),
+      owner: (session) => ({
+        server: session.surface.kind === 'external' ? null : this.federated(session.id),
+        chats: this.chats,
+        host: this.registry.host(session.machine.hostId)
+      }),
+      removals: this.removals,
+      onListChanged: () => this.registry.republish(),
+      now: Date.now
+    })
     if (!request.keep) {
-      this.removals.add(result.removed, Date.now())
-      this.annotations.forget(result.removed)
+      this.annotations.forget([...result.removed, ...removed.map((session) => session.id)])
     }
-    this.registry.republish()
-    for (const hostId of hostIds) {
+    for (const session of request.stop ? removed : []) {
+      this.noteStopped(session)
+    }
+    for (const hostId of new Set(sessions.map((session) => session.machine.hostId))) {
       void this.registry.refresh(hostId)
     }
     return result
   }
 
-  private async userTexts(sessionId: string, from: number): Promise<UserText[]> {
-    const found = this.streams.source(sessionId)
-    if (!found) {
-      return []
+  /** Seal stopped it for the user: what is read of it next is shown without a second look. */
+  private noteStopped(session: LiveSession): void {
+    this.registry.statusHold.release(session.id)
+    if (session.surface.kind === 'cli' && !isPairedServerLiveSession(session)) {
+      this.deps.sealPanes?.confirmAgent?.(session.surface.paneKey, 'now')
     }
-    const out: UserText[] = []
-    let cursor = from
-    for (let i = 0; i < MAX_CONFIRM_READS; i++) {
-      const read = await readTranscriptForward(found.source, found.provider, cursor)
-      out.push(...userTextsOf(found.provider, read.lines))
-      if (read.cursor === cursor || read.cursor >= read.size) {
-        break
-      }
-      cursor = read.cursor
+  }
+
+  private async userTexts(session: LiveSession, from: number): Promise<UserText[]> {
+    const chat = localChatSessionId(session)
+    if (chat !== null) {
+      return (await this.chats?.userTexts(chat, from)) ?? []
     }
-    return out
+    const found = this.streams.source(session.id)
+    return found ? userTextsFrom(found.source, found.provider, from) : []
   }
 }

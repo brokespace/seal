@@ -38,18 +38,24 @@ export type LiveSessionMachineSource = {
   serverRun?: LiveSessionHost['run']
 }
 
-/** One host per machine whichever transport it uses, so session ids and routing stay put across switches. */
+/** A machine as sessions name it: one record whichever transport it uses, so ids stay put across switches. */
+export function liveSessionMachineOf(
+  source: Omit<LiveSessionMachineSource, 'serverRun'>
+): LiveSessionMachine {
+  return {
+    hostId: source.recordId,
+    label: source.name,
+    kind: 'remote',
+    machineId: source.machineId,
+    executionHostId: source.executionHostId,
+    connection: source.connection.transport
+  }
+}
+
 export function machineLiveSessionHost(source: LiveSessionMachineSource): LiveSessionHost {
   const { connection } = source
   return {
-    machine: {
-      hostId: source.recordId,
-      label: source.name,
-      kind: 'remote',
-      machineId: source.machineId,
-      executionHostId: source.executionHostId,
-      connection: connection.transport
-    },
+    machine: liveSessionMachineOf(source),
     run:
       source.serverRun ??
       (async (script, options) => {

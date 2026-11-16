@@ -1,6 +1,5 @@
 import { useAppStore } from '@/store'
 import { LiveSessionAnnotateParams } from '../../../../shared/live-sessions/live-session-rpc-params'
-import { liveSessionSurfaceOf } from '../../../../shared/live-sessions/live-session-surface'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { parsePaneKey } from '../../../../shared/workspace-layout/stable-pane-id'
 import type { TerminalTab } from '../../../../shared/workspace-layout/terminal-tab-types'
@@ -15,10 +14,7 @@ export type LiveSessionTabTitleJoinDeps = {
     subscribe: (listener: () => void) => () => void
   }
   sessions: {
-    get: () => readonly Pick<
-      LiveSession,
-      'id' | 'alive' | 'customTitle' | 'surface' | 'inputRoutes'
-    >[]
+    get: () => readonly Pick<LiveSession, 'id' | 'alive' | 'customTitle' | 'surface'>[]
   }
   /** Saves the session's custom title in Seal; null goes back to the agent's own title. */
   annotate: (sessionId: string, customTitle: string | null) => void
@@ -46,7 +42,7 @@ export function joinLiveSessionTitlesWithTabTitles({
       return
     }
     const inTab = sessions.get().filter((session) => {
-      const surface = liveSessionSurfaceOf(session)
+      const surface = session.surface
       return (
         session.alive && surface.kind === 'cli' && parsePaneKey(surface.paneKey)?.tabId === tabId
       )

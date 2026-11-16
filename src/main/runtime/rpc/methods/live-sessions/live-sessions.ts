@@ -8,6 +8,7 @@ import {
   LiveSessionRetryParams,
   LiveSessionSendParams,
   LiveSessionTranscriptParams,
+  LiveSessionTranscriptSinceParams,
   LiveSessionUnwatchParams,
   LiveSessionWatchTranscriptParams
 } from '../../../../../shared/live-sessions/live-session-rpc-params'
@@ -52,6 +53,10 @@ export const LIVE_SESSION_METHODS = [
         emit({
           type: 'ready',
           subscriptionId,
+          // A desktop lists this machine from this feed only when it carries chats; else it scans.
+          ...(process.env.SEAL_LIVE_SESSION_FEDERATION === 'off'
+            ? {}
+            : { surfaces: ['chat', 'cli', 'external'] }),
           snapshot: liveSessionSnapshotForClient(live.snapshot(), ctx.clientCapabilities),
           messages: live.messages()
         })
@@ -68,6 +73,13 @@ export const LIVE_SESSION_METHODS = [
     params: LiveSessionTranscriptParams,
     handler: ({ sessionId, before, limit }) =>
       service().transcriptPage(sessionId, before ?? null, limit)
+  }),
+  // What a paired desktop's recap of a chat here reads: the rows after a cursor it already holds.
+  defineMethod({
+    name: 'liveSessions.transcriptSince',
+    permission: 'workspace',
+    params: LiveSessionTranscriptSinceParams,
+    handler: ({ sessionId, cursor }) => service().transcriptSince(sessionId, cursor)
   }),
   // Resumable: pass the last delta's cursor as fromCursor after a reconnect.
   defineStreamingMethod({
@@ -104,7 +116,7 @@ export const LIVE_SESSION_METHODS = [
     name: 'liveSessions.retry',
     permission: 'workspace',
     params: LiveSessionRetryParams,
-    handler: ({ messageId }) => service().retry(messageId)
+    handler: (request) => service().retry(request)
   }),
   defineMethod({
     name: 'liveSessions.messages',

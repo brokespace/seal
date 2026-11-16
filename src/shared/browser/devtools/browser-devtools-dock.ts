@@ -18,7 +18,7 @@ export function browserDevToolsDockFraction(layout: BrowserDevToolsDockLayout): 
   return layout.side === 'bottom' ? layout.bottomFraction : layout.rightFraction
 }
 
-// The divider's own drag limits (TabGroupSplitNodeTree's ResizeHandle); this guards saved values.
+// The divider's own drag limits (SplitLayoutTree's ResizeHandle); this guards saved values.
 const MIN_FRACTION = 0.15
 const MAX_FRACTION = 0.85
 

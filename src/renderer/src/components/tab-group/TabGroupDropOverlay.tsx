@@ -20,10 +20,13 @@ function getOverlayStyle(zone: TabDropZone): CSSProperties {
 export default function TabGroupDropOverlay({
   zone,
   showPaneColumnLabel = false,
+  label,
   fillContainer = false
 }: {
   zone: TabDropZone
   showPaneColumnLabel?: boolean
+  /** Says what the drop will do, for every zone; replaces the pane-column label. */
+  label?: string
   /** When the parent already sizes the overlay to the target region. */
   fillContainer?: boolean
 }): React.JSX.Element {
@@ -34,9 +37,9 @@ export default function TabGroupDropOverlay({
       className="tab-drop-overlay absolute"
       style={fillContainer ? { inset: 0 } : getOverlayStyle(zone)}
     >
-      {showPaneColumnLabel && zone !== 'center' ? (
+      {label !== undefined || (showPaneColumnLabel && zone !== 'center') ? (
         <span className="tab-drop-overlay__label pointer-events-none absolute bottom-2 left-2 rounded-sm px-1.5 py-0.5 font-medium">
-          {t('auto.components.tab.group.TabGroupDropOverlay.paneColumnLabel', 'New split')}
+          {label ?? t('auto.components.tab.group.TabGroupDropOverlay.paneColumnLabel', 'New split')}
         </span>
       ) : null}
     </div>

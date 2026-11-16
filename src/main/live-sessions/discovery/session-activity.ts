@@ -265,15 +265,15 @@ export function sessionActivityOf(input: {
   // A terminal the rollout still holds counts while the agent runs and a command still runs under
   // it (or the host cannot say).
   const live = running && input.backgroundShells !== 'none'
-  const tasks: LiveBackgroundTask[] = [...(transcript.codexTerminals?.running.values() ?? [])].map(
-    (terminal) => ({
-      id: terminal.sessionId,
-      label: terminal.command ?? 'Background terminal',
-      status: live ? 'running' : running ? 'completed' : 'stopped',
-      startedAt: terminal.startedAt,
-      summary: null
-    })
-  )
+  const tasks: LiveBackgroundTask[] = [
+    ...(transcript.codexTerminals?.terminals.values() ?? [])
+  ].map(({ sessionId, command, startedAt, ended }) => ({
+    id: sessionId,
+    label: command ?? 'Background terminal',
+    status: ended?.status ?? (live ? 'running' : running ? 'completed' : 'stopped'),
+    startedAt,
+    summary: ended?.exitCode ? `exit code ${ended.exitCode}` : null
+  }))
   return {
     subagents: newestFirst(subagents, (s) => s.lastActivityAt ?? 0),
     tasks: newestFirst(tasks, (t) => t.startedAt ?? 0),

@@ -55,6 +55,7 @@ function setup() {
       previewOffsetX: 20,
       previewOffsetY: 20,
       workspaceBoardDragPreviewRequested: false,
+      endSplitViewDrag: null,
       frameId: null,
       reorderIntent: null,
       latestBoardDropTarget: null,

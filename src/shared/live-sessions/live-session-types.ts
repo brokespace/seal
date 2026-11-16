@@ -5,7 +5,7 @@ import type { NativeChatMessage } from '../native-chat/native-chat-types'
 import type { AgentSessionAgentId } from './adapters/agent-session-agent-ids'
 import type { LiveSessionActivity } from './live-session-activity'
 
-/** The agents discovery finds outside Seal, and the only ones the registry admits so far. */
+/** The agents discovery finds outside Seal, whose transcripts Seal decodes. */
 export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
 export type LiveSessionProvider = (typeof LIVE_SESSION_PROVIDERS)[number]
 
@@ -161,10 +161,9 @@ export type LiveSession = {
   titleNamed?: true
   /** Its rolling recap in brief: the title a row shows and what is still open for the user. */
   recap?: LiveSessionRecapBrief
-  /** Absent from registries that do not set it yet; `origin` is the fallback. */
-  surface?: AgentSessionSurface
-  /** Absent from registries that do not set it yet. */
-  capabilities?: AgentSessionCapabilityFlags
+  /** Set by every registry; a record from a server that predates it is filled in from `origin`. */
+  surface: AgentSessionSurface
+  capabilities: AgentSessionCapabilityFlags
   /** The workspace it belongs to, set by the registry's link step. */
   workspace?: { worktreeId: string; projectKey: string }
   context?: NativeChatContextUsageSummary
@@ -223,7 +222,7 @@ export const LIVE_MESSAGE_STATES = ['queued', 'sending', 'sent', 'delivered', 'f
  * sending    being typed right now (never shown as final)
  * sent       handed to the session, not in its transcript yet
  * delivered  the transcript holds it as the user's message
- * failed     it can't get there; `error` says why and a retry is safe
+ * failed     it can't get there, or (`unconfirmed`) nothing showed that it did; `error` says why
  */
 export type LiveMessageState = (typeof LIVE_MESSAGE_STATES)[number]
 
@@ -235,6 +234,8 @@ export type LiveMessage = {
   state: LiveMessageState
   route: LiveSessionInputRoute['kind'] | null
   error: string | null
+  /** Failed for want of a sign that the session got it: it may have, so a retry may run it twice. */
+  unconfirmed?: true
   createdAt: number
   updatedAt: number
   /** How long the transcript was when the message was written: a chat shows it there until it is delivered. */
@@ -244,6 +245,9 @@ export type LiveMessage = {
 }
 
 export type LiveSendRequest = { sessionId: string; messageId: string; text: string }
+
+/** `mayRunTwice` is the user's word that an unconfirmed message may be sent again. */
+export type LiveRetryRequest = { messageId: string; mayRunTwice?: boolean }
 
 export type LivePermissionAnswer = { sessionId: string; promptId: string; optionId: string }
 

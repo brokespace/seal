@@ -3,6 +3,11 @@ import { TOGGLE_WORKSPACE_BOARD_EVENT } from '@/components/sidebar/workspace-boa
 import { activateTabNumberShortcut } from '@/lib/keyboard/tab-number-shortcuts'
 import { emitCmdJRowIndexJump } from '@/lib/workspace/search/palette/cmd-j-row-index-jump'
 import { getVisibleWorktreeShortcutTargets } from '@/components/sidebar/worktree-list/listing/visible-worktrees'
+import {
+  canRunSplitViewShortcut,
+  reportSplitViewShowingToMain,
+  runSplitViewShortcut
+} from '@/components/split-view/split-view-shortcuts'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { runBuiltInOrReplacement } from '@/lib/plugins/commands/plugin-command-replacements'
@@ -54,6 +59,17 @@ export function registerWorkspaceShortcutIpcBridge(unsubs: (() => void)[]): void
         toggleAgentDashboardFromShortcut(useAppStore.getState(), () => {
           void window.api.dashboard.openPopout()
         })
+      })
+    )
+  }
+
+  if (window.api.ui.onSplitViewShortcut) {
+    unsubs.push(
+      reportSplitViewShowingToMain(),
+      window.api.ui.onSplitViewShortcut((actionId) => {
+        if (canRunSplitViewShortcut()) {
+          runSplitViewShortcut(actionId)
+        }
       })
     )
   }

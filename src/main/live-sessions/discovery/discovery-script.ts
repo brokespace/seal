@@ -2,6 +2,7 @@
 // Output is line-framed: `@@<SECTION> fields…`, binary-ish payloads base64 on a single line.
 
 import { TRANSCRIPT_LOG_MARKS, TURN_TAIL_WINDOW_FACTOR } from './transcript-turn-tail'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 export type DiscoveryScriptOptions = {
   /** Transcripts untouched for longer than this are not live, unless a running agent owns them. */
@@ -23,8 +24,18 @@ export type DiscoveryScriptOptions = {
   headKnown: string[]
 }
 
-function shQuote(value: string): string {
-  return `'${value.replaceAll("'", `'\\''`)}'`
+/** The agent processes of a host, then `@@PS` when ps listed processes at all. */
+const AGENT_PROCESS_LINES = `ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print } END { if (NR) print "@@PS" }'`
+
+/** Only which agents run: a tenth of a scan's cost, to tell whether one started or ended. */
+export function buildAgentProbeScript(): string {
+  return `export LC_ALL=C
+${AGENT_PROCESS_LINES} | while read -r pid ppid tty args; do
+  [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
+  echo "@@PROC $pid $ppid $tty $args"
+done
+echo "@@DONE"
+`
 }
 
 export function buildDiscoveryScript(options: DiscoveryScriptOptions): string {
@@ -36,8 +47,8 @@ b64() { base64 | tr -d '\\n'; }
 fsize() { stat -c '%s %Y' "$1" 2>/dev/null || stat -f '%z %m' "$1" 2>/dev/null; }
 echo "@@NOW $(date +%s)"
 echo "@@UNAME $(uname -s)"
-KNOWN=${shQuote(known)}
-HEADKNOWN=${shQuote(headKnown)}
+KNOWN=${quotePosixShell(known)}
+HEADKNOWN=${quotePosixShell(headKnown)}
 TTYS='|'
 AGENTS=' '
 PINS="\${TMPDIR:-/tmp}/.seal-live-pins.$$"
@@ -49,7 +60,7 @@ CLAUDE_ROOTS="$HOME/.claude
 \${CLAUDE_CONFIG_DIR:-}"
 CODEX_ROOTS="$HOME/.codex
 \${CODEX_HOME:-}"
-ps -A -o pid= -o ppid= -o tty= -o args= 2>/dev/null | awk '{ c=$4; s=$5; if (c ~ /(^|\\/)(claude|codex)$/ || c ~ /\\/claude\\/versions\\/[0-9][0-9.]*$/ || (c ~ /(^|\\/)node$/ && (s ~ /(^|\\/)(claude|codex)(\\.js)?$/ || s ~ /claude-code\\/cli\\.js$/ || s ~ /@openai\\/codex\\//))) print } END { if (NR) print "@@PS" }' > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
+${AGENT_PROCESS_LINES} > "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 while read -r pid ppid tty args; do
   # The listing ends by saying ps listed processes at all: no agent among them means none runs.
   [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
@@ -57,7 +68,8 @@ while read -r pid ppid tty args; do
   AGENTS="$AGENTS$pid "
   cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
   if [ -z "$cwd" ] && command -v lsof >/dev/null 2>&1; then
-    cwd=$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)
+    # For another user's process lsof names the link it could not read, not a folder.
+    cwd=$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n '/ (readlink: /d;s/^n//p' | head -n 1)
   fi
   [ -n "$cwd" ] && echo "@@CWD $pid $cwd"
   case "$tty" in ''|'?'|'??') ;; *) TTYS="$TTYS$tty|" ;; esac
@@ -107,15 +119,16 @@ echo "@@DONE"
 }
 
 /**
- * What runs under each agent: a shell command it started shows here while its transcript stands
- * still. Only the process's kind and name leave the host, never its arguments.
+ * How long each agent has run and what it runs under, then what runs under it: a shell command it started shows here
+ * while its transcript stands still. Only the process's kind and name leave the host, never its
+ * arguments.
  */
 function childSection(): string {
   return `ps -A -o pid= -o ppid= -o etime= -o args= 2>/dev/null | awk -v roots="$AGENTS" '
 BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
 {
-  if ($1 in under) listed = 1
-  pid[NR] = $1; ppid[NR] = $2; et[NR] = $3
+  if ($1 in under) { listed = 1; print "@@AGE", $1, $3 }
+  pid[NR] = $1; ppid[NR] = $2; et[NR] = $3; parent[$1] = $2
   c = $4; sub(/.*\\//, "", c)
   k = "other"
   if ($0 ~ /\\/shell[-_]snapshots\\//) k = "snapshot"
@@ -126,6 +139,11 @@ BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
 END {
   # A ps that cannot list this way shows no agent either: say nothing rather than "no children".
   if (!listed) exit
+  for (i = 1; i <= n; i++) {
+    line = "@@UP " r[i]
+    for (p = parent[r[i]]; p > 1 && d[i]++ < 64; p = parent[p]) line = line " " p
+    print line
+  }
   print "@@CHILDREN"
   do {
     grew = 0
@@ -240,7 +258,7 @@ ${subagentSection(options)}  if printf '%s\\n' "$KNOWN" | grep -Fxq "$f|$size"; 
   if ! printf '%s\\n' "$HEADKNOWN" | grep -Fxq "$f"; then
     printf '@@HEAD %s ' "$f"; head -c ${options.headBytes} "$f" | b64; echo
   fi
-  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes * TURN_TAIL_WINDOW_FACTOR} "$f" | grep -v -F ${TRANSCRIPT_LOG_MARKS.map((mark) => `-e ${shQuote(mark)}`).join(' ')} | tail -c ${options.tailBytes} | b64; echo
+  printf '@@TAIL %s ' "$f"; tail -c ${options.tailBytes * TURN_TAIL_WINDOW_FACTOR} "$f" | grep -v -F ${TRANSCRIPT_LOG_MARKS.map((mark) => `-e ${quotePosixShell(mark)}`).join(' ')} | tail -c ${options.tailBytes} | b64; echo
 done; }
 `
 }

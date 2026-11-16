@@ -1,4 +1,9 @@
+import { ORCA_CLAUDE_CHAT_ENTRYPOINT } from '../../../shared/agent-launch/startup/claude-chat-entrypoint'
+import { contextUsageOfRecords } from '../../../shared/live-sessions/adapters/agent-session-context-samples'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
+import { isContextUsageMeasured } from '../../../shared/native-chat/native-chat-context-usage-state'
+import type { NativeChatContextUsageSummary } from '../../../shared/native-chat/native-chat-context-usage-summary'
+import { liveSessionAdapter } from '../adapters/live-session-adapters'
 import { codexUserMessageText } from './codex-user-message'
 import { claudePhase, claudePromptText } from './claude-transcript-phase'
 import { codexPhase } from './codex-transcript-phase'
@@ -60,6 +65,8 @@ export type TranscriptSummary = TranscriptTurn & {
    * `bypassPermissions`, `plan`) or Codex's approval policy (`on-request`, `never`, …).
    */
   approvalMode: string | null
+  /** How full its context window is, as far as the bytes read say; null for an agent that records no usage. */
+  context: NativeChatContextUsageSummary | null
   /** Another program drives it (`claude -p`, an Agent SDK host such as Seal's Home chat, `codex exec`). */
   headless: boolean
   /** Record ids seen in the head and tail, for linking a resumed copy to what it continues. */
@@ -84,7 +91,57 @@ export const UNKNOWN_TURN: TranscriptTurn = {
   lastMessage: null
 }
 
+/** Compactions are counted only when the tail is the whole file. */
+function contextOf(
+  provider: LiveSessionProvider,
+  records: TranscriptRecord[],
+  whole: boolean
+): NativeChatContextUsageSummary | null {
+  const decoder = liveSessionAdapter(provider)?.transcript?.decoder ?? null
+  return contextUsageOfRecords(decoder, records, { complete: whole })
+}
+
+/**
+ * A tail with no response in it says nothing new: the last reading stands until a response or a
+ * compaction replaces it. A new reading keeps what only records before its tail said: the model
+ * its turn began under, and a window that model was already seen to exceed. `sized` is the last
+ * reading that had a size, which a compaction read on its own leaves `earlier` without.
+ */
+export function contextAfter(
+  read: NativeChatContextUsageSummary | null,
+  earlier: NativeChatContextUsageSummary | null,
+  sized: NativeChatContextUsageSummary | null = earlier
+): NativeChatContextUsageSummary | null {
+  if (!earlier || !read) {
+    return read ?? earlier
+  }
+  const model = read.model ?? earlier.model
+  if (!isContextUsageMeasured(read)) {
+    if (read.lastCompactedAt === undefined) {
+      return earlier
+    }
+    return model === undefined ? read : { ...read, model }
+  }
+  const proof = isContextUsageMeasured(earlier) ? earlier : sized
+  const held = read.estimated && proof?.estimated === true && model === proof.model
+  const windowTokens = held ? Math.max(read.windowTokens, proof.windowTokens) : read.windowTokens
+  return {
+    ...read,
+    ...(model === undefined ? {} : { model }),
+    windowTokens,
+    percentage:
+      windowTokens === read.windowTokens
+        ? read.percentage
+        : Math.round((read.usedTokens / windowTokens) * 100)
+  }
+}
+
 const UUID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+
+/** Claude Code started by a program: the Agent SDK, `claude -p`, or a Seal chat. */
+function isDrivenEntrypoint(entrypoint: string | null): boolean {
+  return entrypoint?.startsWith('sdk') === true || entrypoint === ORCA_CLAUDE_CHAT_ENTRYPOINT
+}
 
 function claudeIdentity(
   head: TranscriptRecord[],
@@ -96,9 +153,11 @@ function claudeIdentity(
     .filter((r) => r.type === 'summary')
     .map((r) => str(r.leafUuid))
     .filter((id): id is string => id !== null && !headIds.has(id))
+  const writers = [...head, ...tail].flatMap((r) => str(r.entrypoint) ?? [])
   return {
-    // Who started it decides; a headless resume Seal sends appends `sdk-cli` records to a terminal session.
-    headless: str(head.find((r) => str(r.entrypoint))?.entrypoint)?.startsWith('sdk') === true,
+    // A terminal that wrote any of it makes it that terminal's: a headless resume Seal sends
+    // appends `sdk-cli` records, and a fork into the CLI opens with a chat's history.
+    headless: writers.length > 0 && writers.every(isDrivenEntrypoint),
     recordIds: [
       ...new Set([...headIds, ...tail.map((r) => str(r.uuid)).filter((id) => id !== null)])
     ],
@@ -145,6 +204,7 @@ export function summarizeClaudeTranscript(input: TranscriptEnds): TranscriptSumm
     ...(customTitle ? { titleNamed: true as const } : {}),
     ...claudePhase(tail.length > 0 ? tail : head),
     approvalMode,
+    context: contextOf('claude', tail.length > 0 ? tail : head, input.tailIsWholeFile),
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: null,
@@ -193,6 +253,7 @@ export function summarizeCodexRollout(input: TranscriptEnds): TranscriptSummary 
     title: firstPrompt ? oneLine(firstPrompt, 80) : null,
     ...codexPhase(tail.length > 0 ? tail : head),
     approvalMode,
+    context: contextOf('codex', tail.length > 0 ? tail : head, input.tailIsWholeFile),
     firstAt: head.map(timeOf).find((t) => t !== null) ?? null,
     lastAt: timed.length > 0 ? Math.max(...timed) : null,
     parentSessionId: str(spawn?.parent_thread_id) ?? str(meta?.parent_thread_id),

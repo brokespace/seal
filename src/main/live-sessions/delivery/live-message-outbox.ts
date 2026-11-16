@@ -1,14 +1,18 @@
 import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions/live-session-types'
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
-import { confirmSent, sentBySession } from './live-message-confirmation'
+import { confirmSent, RestingSessions, sentBySession } from './live-message-confirmation'
+import { aheadInFlight, nextQueued } from './live-message-order'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
   restoredOutboxItem,
   DEFAULT_OUTBOX_TIMING,
   publicView,
+  REQUEUED,
   type LiveMessageOutboxDeps,
   isOutboxItem,
+  newOutboxItem,
+  type OfferedMessage,
   type OutboxItem as Item
 } from './live-message-outbox-types'
 
@@ -35,6 +39,7 @@ export class LiveMessageOutbox {
   private readonly timing: typeof DEFAULT_OUTBOX_TIMING
   private confirmTimer: ReturnType<typeof setTimeout> | null = null
   private confirming = false
+  private readonly resting = new RestingSessions()
   private readonly store: LiveSessionJsonStore<Item>
   private started: Promise<void> | null = null
   private readonly abort = new AbortController()
@@ -93,19 +98,7 @@ export class LiveMessageOutbox {
     if (existing) {
       return publicView(existing)
     }
-    const now = this.now()
-    const item: Item = {
-      messageId: request.messageId,
-      sessionId: request.sessionId,
-      text: request.text,
-      state: 'queued',
-      route: null,
-      error: null,
-      createdAt: now,
-      updatedAt: now,
-      offset: 0,
-      sentAt: null
-    }
+    const item = newOutboxItem(request, this.now())
     this.items.set(item.messageId, item)
     this.changed(item)
     this.kick(item.sessionId)
@@ -113,18 +106,50 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
-  /** Put a failed message back in line under the same id. */
-  async retry(messageId: string): Promise<LiveMessage | null> {
+  /** Put a failed message back in line under the same id; one its session may have run only on the user's word. */
+  async retry(messageId: string, mayRunTwice = false): Promise<LiveMessage | null> {
     await this.start()
     const item = this.items.get(messageId)
-    if (!item || item.state !== 'failed') {
+    if (!item || item.state !== 'failed' || (item.unconfirmed && !mayRunTwice)) {
       return item ? publicView(item) : null
     }
-    this.set(item, { state: 'queued', error: null, route: null, sentAt: null })
+    this.set(item, REQUEUED)
     this.kick(item.sessionId)
     // It is written again now: left at its first place it would wait above everything said since.
     void this.place(item)
     return publicView(item)
+  }
+
+  /**
+   * Offers a message to another owner of its session (a paired server), which sends it. Refused,
+   * it is kept here on disk as failed, with why; taken, a copy that failed here is let go.
+   */
+  async offer(
+    request: LiveSendRequest,
+    to: (request: LiveSendRequest) => Promise<OfferedMessage>
+  ): Promise<LiveMessage> {
+    await this.start()
+    const held = this.items.get(request.messageId)
+    if (held && held.state !== 'failed') {
+      return publicView(held)
+    }
+    const taken = await to(request)
+    if (!('refused' in taken)) {
+      this.letGo(request.messageId)
+      return taken
+    }
+    const item = this.items.get(request.messageId) ?? newOutboxItem(request, this.now())
+    this.items.set(item.messageId, item)
+    this.set(item, { state: 'failed', error: taken.refused })
+    return publicView(item)
+  }
+
+  /** Another owner of its session has the message: the copy that failed here is no longer the truth. */
+  letGo(messageId: string): void {
+    if (this.items.get(messageId)?.state === 'failed') {
+      this.items.delete(messageId)
+      this.persist()
+    }
   }
 
   /** The session now goes by another id; its messages follow it, in order. */
@@ -162,34 +187,7 @@ export class LiveMessageOutbox {
   }
 
   private next(sessionId: string): Item | null {
-    let best: Item | null = null
-    for (const item of this.items.values()) {
-      if (
-        item.sessionId === sessionId &&
-        item.state === 'queued' &&
-        !this.claimed.has(item.messageId) &&
-        (!best || item.createdAt < best.createdAt)
-      ) {
-        best = item
-      }
-    }
-    return best
-  }
-
-  private aheadInFlight(item: Item): boolean {
-    const now = this.now()
-    for (const other of this.items.values()) {
-      if (
-        other !== item &&
-        other.sessionId === item.sessionId &&
-        other.createdAt <= item.createdAt &&
-        (this.claimed.has(other.messageId) ||
-          (other.state === 'sent' && now - (other.sentAt ?? now) < this.timing.orderHoldMs))
-      ) {
-        return true
-      }
-    }
-    return false
+    return nextQueued(this.items.values(), sessionId, this.claimed)
   }
 
   private async work(sessionId: string): Promise<void> {
@@ -200,7 +198,10 @@ export class LiveMessageOutbox {
       }
       this.claimed.add(item.messageId)
       try {
-        while (this.aheadInFlight(item) && !this.abort.signal.aborted) {
+        while (
+          aheadInFlight(this.items.values(), item, this.claimed, this.now(), this.timing) &&
+          !this.abort.signal.aborted
+        ) {
           await this.sleep(200)
         }
         await this.deliver(item)
@@ -273,7 +274,7 @@ export class LiveMessageOutbox {
       if (this.now() - queuedAt > this.timing.busyTimeoutMs) {
         this.set(item, {
           state: 'failed',
-          error: 'The session prompt stayed busy (a draft or a dialog)'
+          error: 'The session stayed busy (a draft, a dialog, or an earlier message still running)'
         })
         return
       }
@@ -295,7 +296,8 @@ export class LiveMessageOutbox {
       for (const [sessionId, items] of sentBySession(this.items.values())) {
         const session = this.deps.getSession(sessionId)
         let records: UserText[] = []
-        if (session?.transcriptPath) {
+        // A chat's journal stands in for a transcript file.
+        if (session?.transcriptPath || session?.surface.kind === 'chat') {
           const from = Math.min(...items.map((i) => i.offset))
           records = await this.deps.userTexts(session, from).catch(() => [])
         }
@@ -304,7 +306,9 @@ export class LiveMessageOutbox {
           records,
           session,
           this.now(),
-          this.timing
+          this.timing,
+          this.resting.since(sessionId, session, this.now()),
+          this.deps.machineRead?.(sessionId) ?? true
         )) {
           this.set(item, patch)
         }

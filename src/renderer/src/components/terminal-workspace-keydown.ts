@@ -32,6 +32,7 @@ import {
 } from './agent-tab-shortcut-launch'
 import { handleTerminalWorkspaceEditorShortcut } from './terminal-workspace-editor-shortcuts'
 import type { TerminalActivationController } from './use-terminal-activation-actions'
+import { isSplitViewShowing } from './split-view/split-view-showing'
 
 export function handleTerminalWorkspaceKeyDown(
   event: KeyboardEvent,
@@ -57,6 +58,14 @@ export function handleTerminalWorkspaceKeyDown(
   const context = getKeybindingContext(event.target)
   const floatingWorkspaceFocused =
     isEventTargetInsideFloatingWorkspacePanel(event.target) || isFloatingWorkspacePanelFocused()
+  // A session or project pane has focus: the workspace beside it is not what the keys are for.
+  if (
+    !floatingWorkspaceFocused &&
+    isSplitViewShowing() &&
+    useAppStore.getState().activeView !== 'terminal'
+  ) {
+    return
+  }
   const matchShortcut = (actionId: KeybindingActionId): boolean =>
     keybindingMatchesAction(actionId, event, shortcutPlatform, keybindings, {
       context,

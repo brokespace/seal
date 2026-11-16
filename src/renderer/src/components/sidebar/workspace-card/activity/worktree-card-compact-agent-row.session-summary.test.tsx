@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { AgentStatusEntry } from '../../../../../../shared/agent-status/contracts/agent-status-types'
 import type { LiveSession } from '../../../../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../../../../shared/live-sessions/live-session-surface.test-fixture'
 import type { TerminalTab } from '../../../../../../shared/workspace-layout/terminal-tab-types'
 import { buildWorktreeAgentRows } from './worktree-agent-rows'
 import { CompactAgentRow } from './worktree-card-compact-agent-row'
@@ -29,6 +30,7 @@ function registrySession(overrides: Partial<LiveSession>): LiveSession {
     providerSessionId: 'conversation-1',
     machine: { hostId: 'local', label: 'mbp', kind: 'local' },
     origin: 'seal',
+    ...sampleSessionSurface('seal'),
     cwd: '/Users/brian/seal',
     project: 'seal',
     title: null,

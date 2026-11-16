@@ -23,10 +23,18 @@ import {
 import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import { codexHelperThreads, sessionActivityOf } from './session-activity'
 import { hookStatus, parseHookStates } from './agent-hook-states'
-import { agentProcesses, approvalModeFromArgs, codexHomeOf, processBinary } from './agent-processes'
-import { pairProcesses } from './session-process-pairing'
+import {
+  agentProcesses,
+  agentSessionPidOf,
+  approvalModeFromArgs,
+  codexHomeOf,
+  processBinary,
+  runsInPane
+} from './agent-processes'
+import { pairProcesses, type UnreadTranscript } from './session-process-pairing'
 import type { CodexTerminalState } from './codex-background-terminals'
 import { conversations, distinctSessions } from './session-identity'
+import { sessionCapabilities } from '../adapters/session-capabilities'
 
 export type SummarizedTranscript = {
   path: string
@@ -43,6 +51,8 @@ export type SummarizedTranscript = {
   codexTerminals?: CodexTerminalState
   /** The agent process an earlier scan paired with it. */
   agentPid?: number
+  /** An earlier scan found several agents that could each have written it. */
+  contested?: boolean
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -94,10 +104,14 @@ function leftoverCommands(
 export function assembleHostSessions(input: {
   machine: LiveSessionMachine
   output: Pick<DiscoveryOutput, 'processes' | 'panes' | 'hookStates' | 'hostNowMs'> &
-    Partial<Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed'>>
+    Partial<
+      Pick<DiscoveryOutput, 'claudeSessions' | 'pins' | 'children' | 'processesListed' | 'complete'>
+    >
   transcripts: SummarizedTranscript[]
-  unreadPaths?: ReadonlySet<string>
+  unread?: readonly UnreadTranscript[]
   nowMs: number
+  /** Told of each transcript several running agents could each have written. */
+  onContested?: (transcript: SummarizedTranscript) => void
 }): LiveSession[] {
   const { machine, output } = input
   const now = output.hostNowMs ?? input.nowMs
@@ -111,9 +125,11 @@ export function assembleHostSessions(input: {
   )
   const ownedPaths = new Map<number, Set<string>>()
   const openTranscripts = new Set<string>()
+  const sessionPidOf = agentSessionPidOf(output.processes)
   for (const pin of output.pins ?? []) {
     if (pin.kind !== 'cwd') {
-      ownedPaths.set(pin.pid, (ownedPaths.get(pin.pid) ?? new Set()).add(pin.path))
+      const pid = sessionPidOf(pin.pid)
+      ownedPaths.set(pid, (ownedPaths.get(pid) ?? new Set()).add(pin.path))
     }
     if (pin.kind === 'open') {
       openTranscripts.add(pin.path)
@@ -126,14 +142,18 @@ export function assembleHostSessions(input: {
   const helpers = codexHelperThreads(input.transcripts)
   const found = conversations(input.transcripts.filter((t) => !t.summary.parentSessionId))
   const earlierOf = new Map(found.map((c) => [c.transcript, c.earlier]))
-  for (const { process, transcript } of pairProcesses(
+  for (const { process, transcript, contested, unproven } of pairProcesses(
     agentProcesses(output.processes),
     found.map((c) => c.transcript),
     claudeSessionByPid,
     ownedPaths,
     now - FRESH_WRITE_MS,
-    input.unreadPaths
+    input.unread,
+    output.complete === false
   )) {
+    if (contested && transcript) {
+      input.onContested?.(transcript)
+    }
     const summary = transcript?.summary
     const provider = process?.provider ?? summary!.provider
     // A fresh agent has no transcript until its first prompt; Claude names it in its registry at once.
@@ -157,7 +177,10 @@ export function assembleHostSessions(input: {
     const exited =
       last !== undefined && output.processesListed === true && !heldOpen && !listedPids.has(last)
     const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
-    const pane = process?.tty ? panesByTty.get(process.tty) : undefined
+    // A pairing nothing proves shows the transcript as running, and types nothing into the agent.
+    const onTty = process?.tty && !unproven ? panesByTty.get(process.tty) : undefined
+    // A container's `pts/1` is not this machine's: the pane is the agent's when it runs under it.
+    const pane = onTty && process && runsInPane(process, onTty.panePid) ? onTty : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
     const hook = hooks.get(`${provider}:${providerSessionId}`)
     const gone = output.processesListed === true && !running && !heldOpen
@@ -246,7 +269,7 @@ export function assembleHostSessions(input: {
       statusDetail = summary?.detail === 'Interrupted' ? 'Interrupted' : null
     }
     const inputRoutes: LiveSessionInputRoute[] = []
-    if (provider === 'codex' && process && summary) {
+    if (provider === 'codex' && process && summary && !unproven) {
       inputRoutes.push({
         kind: 'codex-queue',
         thread: providerSessionId,
@@ -258,19 +281,28 @@ export function assembleHostSessions(input: {
       inputRoutes.push({ kind: 'tmux', target: pane.paneId, socket: pane.socket })
     }
     // Resuming next to a live process would fork the conversation, so only closed sessions resume.
-    if (!running && summary && !providerSessionId.startsWith('pid-')) {
+    if (!running && !contested && summary && !providerSessionId.startsWith('pid-')) {
       inputRoutes.push({ kind: 'resume' })
     }
     const cwd = summary?.cwd ?? process?.cwd ?? null
     const continues = (transcript ? (earlierOf.get(transcript) ?? []) : []).map((id) =>
       liveSessionId(machine.hostId, provider, id)
     )
+    const surface = { kind: 'external' as const }
     sessions.push({
       id: liveSessionId(machine.hostId, provider, providerSessionId),
       provider,
       providerSessionId,
       machine,
       origin: 'external',
+      surface,
+      capabilities: sessionCapabilities({
+        provider,
+        providerSessionId,
+        machine,
+        inputRoutes,
+        surface
+      }),
       cwd,
       project: projectOf(cwd),
       title: summary?.title ?? null,
@@ -289,7 +321,9 @@ export function assembleHostSessions(input: {
       lastMessage: summary?.lastMessage ?? null,
       configDir: configDirOf(provider, transcript?.path ?? null),
       ...(continues.length > 0 ? { continues } : {}),
-      ...(summary?.titleNamed ? { titleNamed: true as const } : {})
+      ...(summary?.titleNamed ? { titleNamed: true as const } : {}),
+      ...(summary?.context ? { context: summary.context } : {}),
+      ...(summary?.context?.model ? { model: summary.context.model } : {})
     })
   }
   return distinctSessions(sessions)

@@ -97,7 +97,11 @@ export function useLiveSessionOutbox({
         return
       }
       try {
-        const next = await retryLiveMessage(client, message.messageId)
+        const next = await retryLiveMessage(client, {
+          messageId: message.messageId,
+          // The screen asks first: the host types an unconfirmed message again only on this word.
+          ...(message.unconfirmed && { mayRunTwice: true })
+        })
         if (next) {
           upsertMessage(next)
         }

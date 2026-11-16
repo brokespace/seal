@@ -14,6 +14,7 @@ import {
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { codexRawReasoning, withReasoningSpan } from './live-transcript-reasoning'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
+import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
 /** Raw bytes of one range of a transcript and the file's size when read. */
 export type TranscriptRange = { bytes: Buffer; size: number }
@@ -22,10 +23,6 @@ export type TranscriptSource = {
   read(start: number, length: number): Promise<TranscriptRange>
   /** The most one read may return; SSH output is capped, so remote reads stay small. */
   maxRead: number
-}
-
-function shQuote(value: string): string {
-  return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
 export function localTranscriptSource(path: string): TranscriptSource {
@@ -59,7 +56,7 @@ export function remoteTranscriptSource(host: LiveSessionHost, path: string): Tra
   return {
     maxRead: 640 * 1024,
     async read(start, length) {
-      const f = shQuote(path)
+      const f = quotePosixShell(path)
       const out = await host.run(
         `f=${f}; s=$(wc -c < "$f" 2>/dev/null | tr -d ' '); echo "@@SIZE \${s:-0}"; ` +
           `printf '@@BYTES '; tail -c +${start + 1} "$f" 2>/dev/null | head -c ${length} | base64 | tr -d '\\n'; echo`

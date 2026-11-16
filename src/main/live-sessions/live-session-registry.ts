@@ -5,7 +5,10 @@ import type {
   LiveSessionRegistrySnapshot
 } from '../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from './hosts/live-session-hosts'
-import { mergeSealPanes, type SealPane } from './seal-panes/seal-pane-sessions'
+import type { SealPane } from './seal-panes/seal-pane-sessions'
+import type { LiveSessionSource } from './sources/live-session-source'
+import { mergeSessionSources } from './sources/session-source-merge'
+import { PublishedSessions } from './sources/published-sessions'
 import { LiveSessionStatusHold } from './live-session-status-hold'
 import {
   type HostScanState,
@@ -13,6 +16,7 @@ import {
   nextScanDelayMs,
   SealPaneStatusChanges
 } from './live-session-host-scan-state'
+import { errorMessage } from '../../shared/error-message'
 
 export type LiveSessionRegistryDeps = {
   localMachine: LiveSessionMachine
@@ -26,6 +30,16 @@ export type LiveSessionRegistryDeps = {
    * keep its last status; the host drops the pane's row once it finds the process gone.
    */
   confirmSealPaneAgent?: (paneKey: string) => void
+  /** This machine's chats, as their structured host reports them. */
+  chats?: LiveSessionSource
+  /** Paired servers whose own registries list their machines' sessions. */
+  federation?: {
+    source: LiveSessionSource
+    /** The machine's sessions come from its server: it is not scanned from here. */
+    covers(hostId: string): boolean
+    /** What the machine's row says while its server cannot list everything. */
+    notice(hostId: string): string | null
+  }
   /** Sessions the user removed from Seal; never published. */
   isRemoved?: (session: LiveSession) => boolean
   /** Adds what the user set on a session in Seal (its name, its pin). */
@@ -42,22 +56,21 @@ const HOST_SYNC_MS = 5_000
 const UNREACHABLE_AFTER_FAILURES = 3
 
 /**
- * Every Claude Code and Codex session on every connected machine, whether Seal started it or not.
- * Consumers read `getSnapshot()` once, then apply `subscribe()` events in revision order.
+ * Every agent session on every connected machine: chats, agents in Seal's panes and agents started
+ * outside Seal. Consumers read `getSnapshot()` once, then apply `subscribe()` events in revision order.
  */
 export class LiveSessionRegistry {
   private readonly hosts = new Map<string, HostScanState>()
-  private readonly published = new Map<string, { session: LiveSession; json: string }>()
+  private readonly published = new PublishedSessions()
   private readonly hostErrors = new Map<string, string>()
-  /** Ids a session had before its transcript named it: a fresh agent is `pid-<pid>` until its first prompt. */
-  private readonly renamed = new Map<string, string>()
   private readonly listeners = new Set<(event: LiveSessionRegistryEvent) => void>()
   private revision = 0
   private timer: ReturnType<typeof setTimeout> | null = null
   private running = false
-  private releaseSealPanes: (() => void) | null = null
+  private releaseSources: (() => void)[] = []
   private decorator: ((session: LiveSession) => LiveSession) | null = null
-  private readonly statusHold = new LiveSessionStatusHold()
+  /** Released by whoever stops a session for the user. */
+  readonly statusHold = new LiveSessionStatusHold()
   private readonly paneStatuses = new SealPaneStatusChanges()
   private readonly now: () => number
   private readonly intervals: { local: number; ssh: number }
@@ -72,7 +85,12 @@ export class LiveSessionRegistry {
       return
     }
     this.running = true
-    this.releaseSealPanes = this.deps.subscribeSealPanes?.(() => this.onSealPanesChanged()) ?? null
+    const republish = (): void => this.publish()
+    this.releaseSources = [
+      this.deps.subscribeSealPanes?.(() => this.onSealPanesChanged()),
+      this.deps.chats?.subscribe(republish),
+      this.deps.federation?.source.subscribe(republish)
+    ].filter((release) => release !== undefined)
     this.tick()
   }
 
@@ -90,31 +108,42 @@ export class LiveSessionRegistry {
       clearTimeout(this.timer)
     }
     this.timer = null
-    this.releaseSealPanes?.()
-    this.releaseSealPanes = null
+    for (const release of this.releaseSources.splice(0)) {
+      release()
+    }
   }
 
   getSnapshot(): LiveSessionRegistrySnapshot {
     return {
       revision: this.revision,
-      sessions: [...this.published.values()]
-        .map((p) => p.session)
-        .sort((a, b) => b.lastActivityAt - a.lastActivityAt),
+      sessions: this.published.list().sort((a, b) => b.lastActivityAt - a.lastActivityAt),
       hostErrors: Object.fromEntries(this.hostErrors)
     }
   }
 
   get(sessionId: string): LiveSession | null {
-    return this.published.get(this.currentId(sessionId))?.session ?? null
+    return this.published.get(sessionId)
+  }
+
+  /** Seal resumed a closed session headless as `pid`: the transcript's fresh writes are its own. */
+  noteResumed(session: LiveSession, pid: number): void {
+    if (session.transcriptPath) {
+      this.hosts.get(session.machine.hostId)?.scanner.noteResumed(session.transcriptPath, pid)
+    }
+  }
+
+  /** Whether the session's machine has answered or given up since Seal started; until then a session not listed may still be running. */
+  hasRead(sessionId: string): boolean {
+    return [...this.hosts].some(
+      ([hostId, state]) =>
+        sessionId.startsWith(`${hostId}:`) &&
+        (state.read || state.failures >= UNREACHABLE_AFTER_FAILURES || this.federated(state))
+    )
   }
 
   /** The id a session goes by now, following its renames. */
   currentId(sessionId: string): string {
-    let id = sessionId
-    for (let hops = 0; hops < 8 && this.renamed.has(id); hops++) {
-      id = this.renamed.get(id)!
-    }
-    return id
+    return this.published.currentId(sessionId)
   }
 
   host(hostId: string): LiveSessionHost | null {
@@ -132,6 +161,7 @@ export class LiveSessionRegistry {
     await Promise.all(
       [...this.hosts.values()]
         .filter((state) => !hostId || state.host.machine.hostId === hostId)
+        .filter((state) => !this.federated(state))
         .map((state) => {
           state.idleScans = 0
           return this.scanHost(state)
@@ -144,11 +174,26 @@ export class LiveSessionRegistry {
     this.syncHosts()
     const now = this.now()
     for (const state of this.hosts.values()) {
-      if (!state.scanning && now >= state.nextScanAt) {
+      if (state.scanning || now < state.nextScanAt) {
+        continue
+      }
+      if (this.federated(state)) {
+        // Not scanned, so nothing else moves its due time: left in the past it would wake this at once, forever.
+        state.nextScanAt = now + HOST_SYNC_MS
+      } else {
         void this.scanHost(state)
       }
     }
     this.schedule()
+  }
+
+  /** A machine whose server lists its sessions itself: what a scan of it read no longer stands. */
+  private federated(state: HostScanState): boolean {
+    if (!this.deps.federation?.covers(state.host.machine.hostId)) {
+      return false
+    }
+    state.sessions = []
+    return true
   }
 
   /** Wake for the next host due, or the next host sync, whichever comes first. */
@@ -177,7 +222,7 @@ export class LiveSessionRegistry {
       const host = current.get(hostId)
       if (!host) {
         this.hosts.delete(hostId)
-        this.hostErrors.delete(hostId)
+        this.setHostError(hostId, null)
         changed = true
       } else {
         state.host = host
@@ -208,20 +253,25 @@ export class LiveSessionRegistry {
       if (this.hosts.get(hostId) !== state) {
         return
       }
-      if (result.complete || result.sessions.length >= state.sessions.length) {
+      // A scan cut short would show as gone every agent it did not get to: it changes nothing listed.
+      if (result.complete) {
         const unchanged = JSON.stringify(result.sessions) === JSON.stringify(state.sessions)
         state.idleScans = unchanged ? state.idleScans + 1 : 0
         state.sessions = result.sessions
+        state.read = true
       }
       state.scans++
       state.failures = 0
       this.deps.onHostScanned?.(state.host, state.sessions)
-      this.setHostError(hostId, result.complete ? null : 'The scan was cut short')
+      this.setHostError(
+        hostId,
+        result.complete ? (this.deps.federation?.notice(hostId) ?? null) : 'The scan was cut short'
+      )
       this.publish()
     } catch (error) {
       state.failures++
       this.deps.log?.(`[live-sessions] scan of ${hostId} failed`, error)
-      this.setHostError(hostId, error instanceof Error ? error.message : String(error))
+      this.setHostError(hostId, errorMessage(error))
       // Its sessions' last statuses would stand for as long as it stays silent; they leave the
       // list as they do when it disconnects, and its error stays to say why.
       if (state.failures === UNREACHABLE_AFTER_FAILURES && state.sessions.length > 0) {
@@ -258,61 +308,39 @@ export class LiveSessionRegistry {
   }
 
   private publish(): void {
-    const discovered = [...this.hosts.values()].flatMap((s) => s.sessions)
+    const scanned = [...this.hosts.values()].filter((state) => !this.federated(state))
     const decorate = this.decorator
     const now = this.now()
-    const merged = mergeSealPanes(
-      discovered,
-      this.deps.sealPanes(),
-      this.deps.localMachine,
-      this.deps.confirmSealPaneAgent
+    const local = mergeSessionSources({
+      discovered: scanned.flatMap((state) => state.sessions),
+      panes: this.deps.sealPanes(),
+      chats: this.deps.chats?.sessions() ?? [],
+      localMachine: this.deps.localMachine,
+      onUnseenAgent: this.deps.confirmSealPaneAgent
+    }).map((session) =>
+      this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)
     )
+    // A server's records were settled by its own registry.
+    const merged = [...local, ...(this.deps.federation?.source.sessions() ?? [])]
       .filter((session) => !this.deps.isRemoved?.(session))
-      .map((session) =>
-        this.statusHold.settle(session, this.hosts.get(session.machine.hostId)?.scans ?? 0, now)
-      )
       .map((session) => this.deps.annotate?.(session) ?? session)
       .map((session) => (decorate ? decorate(session) : session))
-    const seen = new Set<string>()
-    for (const session of merged) {
-      if (seen.has(session.id)) {
-        continue
-      }
-      seen.add(session.id)
-      const json = JSON.stringify(session)
-      if (this.published.get(session.id)?.json === json) {
-        continue
-      }
-      this.published.set(session.id, { session, json })
-      this.emit({ type: 'upsert', revision: ++this.revision, session })
+    this.publishFederationNotices()
+    this.statusHold.keep(new Set(merged.map((session) => session.id)))
+    for (const change of this.published.replace(merged)) {
+      this.emit({ ...change, revision: ++this.revision })
     }
-    this.statusHold.keep(seen)
-    for (const [sessionId, { session: gone }] of this.published) {
-      if (seen.has(sessionId)) {
-        continue
+  }
+
+  private publishFederationNotices(): void {
+    const federation = this.deps.federation
+    if (!federation) {
+      return
+    }
+    for (const hostId of this.hosts.keys()) {
+      if (federation.covers(hostId)) {
+        this.setHostError(hostId, federation.notice(hostId))
       }
-      this.published.delete(sessionId)
-      // The same session under a new id: a fresh agent named by its first prompt, or one resumed
-      // into a new transcript after an error.
-      const successor =
-        merged.find((s) => s.continues?.includes(sessionId)) ??
-        (gone.pid !== null && gone.providerSessionId.startsWith('pid-')
-          ? merged.find(
-              (s) =>
-                s.pid === gone.pid &&
-                s.machine.hostId === gone.machine.hostId &&
-                s.provider === gone.provider
-            )
-          : undefined)
-      if (successor) {
-        this.renamed.set(sessionId, successor.id)
-      }
-      this.emit({
-        type: 'remove',
-        revision: ++this.revision,
-        sessionId,
-        ...(successor ? { replacedBy: successor.id } : {})
-      })
     }
   }
 

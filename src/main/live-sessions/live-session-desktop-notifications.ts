@@ -55,7 +55,7 @@ function showSessionNotification(
       {
         source: 'agent-task-complete',
         worktreeId,
-        paneKey: liveSessionPaneKeyOf({ surface, inputRoutes: [] }) ?? undefined,
+        paneKey: liveSessionPaneKeyOf({ surface }) ?? undefined,
         surface: surface.kind === 'chat' ? 'agent-session' : 'terminal'
       },
       { title, body },

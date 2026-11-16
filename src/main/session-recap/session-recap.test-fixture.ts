@@ -1,6 +1,7 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
 import {
@@ -21,6 +22,7 @@ export function recapLiveSession(overrides: Partial<LiveSession> = {}): LiveSess
     providerSessionId: 'abc',
     machine: { hostId: 'local', label: 'mac', kind: 'local', connection: 'local' },
     origin: 'external',
+    ...sampleSessionSurface(),
     cwd: '/repo',
     project: 'repo',
     title: 'fix the login thing',

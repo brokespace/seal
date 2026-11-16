@@ -9,6 +9,7 @@ import {
   setSidebarPointerDragDocumentStyles
 } from './worktree-sidebar-pointer-drag-dom'
 import { getWorktreeSidebarDragGrab } from './worktree-sidebar-drag-geometry'
+import { beginSplitViewDrag, canDropOnSplitView } from '../../../split-view/split-view-drop-target'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from './drop-commit-context'
 import type {
   ShouldShowWorkspaceBoardDropIndicator,
@@ -118,6 +119,7 @@ export function useWorktreePointerDrag(args: {
         draggedCount: drag.draggedIds.length
       })
       drag.active = true
+      drag.endSplitViewDrag = beginSplitViewDrag()
       drag.preview = preview
       drag.previewOffsetX = offsetX
       drag.previewOffsetY = offsetY
@@ -181,7 +183,8 @@ export function useWorktreePointerDrag(args: {
         (session.worktreeDragGroups.find((group) => group.key === sourceGroupKey)?.worktreeIds
           .length ?? 0) <= 1 &&
         !hasWorkspaceKanbanSidebarDropBoard() &&
-        !canPreviewWorkspaceBoardOnDrag
+        !canPreviewWorkspaceBoardOnDrag &&
+        !canDropOnSplitView()
       ) {
         return
       }
@@ -220,6 +223,7 @@ export function useWorktreePointerDrag(args: {
         previewOffsetX: 0,
         previewOffsetY: 0,
         workspaceBoardDragPreviewRequested: false,
+        endSplitViewDrag: null,
         frameId: null,
         reorderIntent: null,
         latestBoardDropTarget: null,

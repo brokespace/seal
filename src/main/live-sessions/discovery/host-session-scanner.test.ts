@@ -13,7 +13,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { localHost } from '../hosts/live-session-hosts'
+import { localHost, type LiveSessionHost } from '../hosts/live-session-hosts'
 import { HostSessionScanner, LOCAL_SCAN_LIMITS } from './host-session-scanner'
 import { aiVaultTranscriptFiles } from './local-transcript-files'
 
@@ -33,6 +33,386 @@ beforeEach(async () => {
 afterEach(async () => {
   vi.unstubAllEnvs()
   await rm(home, { recursive: true, force: true })
+})
+
+// An SSH exec that lost its connection mid-output: the processes arrived, the transcripts did not.
+it('keeps a session under its id, and adds no nameless one, when a scan is cut short', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp: at, payload: { type: 'task_started' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const now = Date.parse(at) + 20_000
+  const processes = [
+    `@@NOW ${now / 1000}`,
+    '@@PROC 4100 1 pts/3 codex',
+    '@@CWD 4100 /srv/api',
+    '@@PS',
+    '@@AGE 4100 10:00'
+  ]
+  const whole = [
+    ...processes,
+    `@@PIN 4100 open codex ${path}`,
+    `@@FILE codex ${Buffer.byteLength(text)} ${Date.parse(at) / 1000} ${path}`,
+    `@@HEAD ${path} ${b64}`,
+    `@@TAIL ${path} ${b64}`,
+    '@@DONE'
+  ]
+  // A second Codex started since; its rollout is in the part of the output that was lost.
+  const cutShort = [...processes, '@@PROC 4200 1 pts/4 codex', '@@CWD 4200 /srv/web']
+  let output = whole
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(now)).sessions.map((s) => [s.providerSessionId, s.pid, s.status])
+  expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
+  output = cutShort
+  expect(await listed()).toEqual([[CODEX_ID, 4100, 'working']])
+})
+
+// Newer transcripts push an old one off the host's list; a later write brings it back, read anew.
+it('remembers who wrote a transcript while it is off the list, so an idle agent in its folder is not taken for its writer', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp: at, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const now = Date.parse(at) + 20_000
+  // Started ten minutes before the transcript began, in its folder, and never wrote it.
+  const idle = ['@@PROC 4100 1 pts/3 codex', '@@CWD 4100 /srv/api', '@@PS', '@@AGE 4100 10:00']
+  const withWriter = [
+    '@@PROC 4200 1 pts/4 codex',
+    '@@CWD 4200 /srv/api',
+    ...idle,
+    '@@AGE 4200 00:25',
+    `@@PIN 4200 open codex ${path}`
+  ]
+  const file = [
+    `@@FILE codex ${Buffer.byteLength(text)} ${Date.parse(at) / 1000} ${path}`,
+    `@@HEAD ${path} ${b64}`,
+    `@@TAIL ${path} ${b64}`
+  ]
+  let output: string[] = []
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => [`@@NOW ${now / 1000}`, ...output, '@@DONE'].join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async (rows: string[]) => {
+    output = rows
+    return (await scanner.scan(now)).sessions.map((s) => [s.providerSessionId, s.pid]).sort()
+  }
+
+  expect(await listed([...withWriter, ...file])).toEqual([
+    [CODEX_ID, 4200],
+    ['pid-4100', 4100]
+  ])
+  expect(await listed([...idle, ...file])).toEqual([
+    [CODEX_ID, null],
+    ['pid-4100', 4100]
+  ])
+  expect(await listed(idle)).toEqual([['pid-4100', 4100]])
+  expect(await listed([...idle, ...file])).toEqual([
+    [CODEX_ID, null],
+    ['pid-4100', 4100]
+  ])
+})
+
+// A long tool result can fill the bytes a scan reads, leaving no response in them.
+it("lists how full a session's context is, and keeps that reading while the tail holds no response", async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const text =
+    line({ type: 'session_meta', timestamp: at, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'turn_context', timestamp: at, payload: { model: 'gpt-5.2-codex' } }) +
+    line({
+      type: 'event_msg',
+      timestamp: at,
+      payload: {
+        type: 'token_count',
+        info: { last_token_usage: { total_tokens: 54_400 }, model_context_window: 272_000 }
+      }
+    })
+  const later = `ut off"}\n${line({
+    type: 'response_item',
+    timestamp: '2026-11-13T10:00:05.000Z',
+    payload: { type: 'function_call_output', call_id: 'call_1', output: 'x'.repeat(200) }
+  })}`
+  const now = Date.parse(at) + 20_000
+  const scanOf = (size: number, tail: string, head: string | null) => [
+    `@@NOW ${now / 1000}`,
+    '@@PROC 4100 1 pts/3 codex',
+    '@@CWD 4100 /srv/api',
+    '@@PS',
+    `@@PIN 4100 open codex ${path}`,
+    `@@FILE codex ${size} ${Date.parse(at) / 1000} ${path}`,
+    ...(head === null ? [] : [`@@HEAD ${path} ${Buffer.from(head).toString('base64')}`]),
+    `@@TAIL ${path} ${Buffer.from(tail).toString('base64')}`,
+    '@@DONE'
+  ]
+  let output = scanOf(Buffer.byteLength(text), text, text)
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(now)).sessions.map((s) => ({ context: s.context, model: s.model }))
+  const reading = {
+    context: {
+      usedTokens: 54_400,
+      windowTokens: 272_000,
+      percentage: 20,
+      estimated: false,
+      rows: [],
+      model: 'gpt-5.2-codex',
+      compactions: 0,
+      updatedAt: Date.parse(at)
+    },
+    model: 'gpt-5.2-codex'
+  }
+  expect(await listed()).toEqual([reading])
+
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 1000, later, null)
+  expect(await listed()).toEqual([reading])
+
+  // The next response is in the tail; the `turn_context` that named its model no longer is.
+  const response = `ut off"}\n${line({
+    type: 'event_msg',
+    timestamp: '2026-11-13T10:00:09.000Z',
+    payload: {
+      type: 'token_count',
+      info: { last_token_usage: { total_tokens: 136_000 }, model_context_window: 272_000 }
+    }
+  })}`
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 2000, response, null)
+  expect(await listed()).toEqual([
+    {
+      context: {
+        usedTokens: 136_000,
+        windowTokens: 272_000,
+        percentage: 50,
+        estimated: false,
+        rows: [],
+        model: 'gpt-5.2-codex',
+        updatedAt: Date.parse('2026-11-13T10:00:09.000Z')
+      },
+      model: 'gpt-5.2-codex'
+    }
+  ])
+
+  // One record longer than the bytes a scan reads: the start of the file is not the latest word.
+  output = scanOf(LOCAL_SCAN_LIMITS.tailBytes + 70_000, 'x'.repeat(500), null)
+  expect((await listed())[0].context?.usedTokens).toBe(136_000)
+})
+
+// Claude names no window: one is told from a response that exceeds the default.
+it('keeps the model and the window it was seen to exceed across a compaction read on its own', async () => {
+  const path = `/home/dev/.claude/projects/-srv-api/${CLAUDE_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const response = (inputTokens: number, timestamp: string) =>
+    line({
+      type: 'assistant',
+      timestamp,
+      message: { model: 'claude-opus-4-5', usage: { input_tokens: inputTokens } }
+    })
+  const text =
+    line({ type: 'user', timestamp: at, cwd: '/srv/api', message: { content: 'Refactor it' } }) +
+    response(250_000, at)
+  const now = Date.parse(at) + 20_000
+  let output: string[] = []
+  const scanOf = (size: number, tail: string, head: string | null) => {
+    output = [
+      `@@NOW ${now / 1000}`,
+      '@@PROC 4100 1 pts/3 claude',
+      '@@CWD 4100 /srv/api',
+      '@@PS',
+      `@@PIN 4100 open claude ${path}`,
+      `@@FILE claude ${size} ${Date.parse(at) / 1000} ${path}`,
+      ...(head === null ? [] : [`@@HEAD ${path} ${Buffer.from(head).toString('base64')}`]),
+      `@@TAIL ${path} ${Buffer.from(tail).toString('base64')}`,
+      '@@DONE'
+    ]
+  }
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const context = async () => (await scanner.scan(now)).sessions[0].context
+
+  scanOf(Buffer.byteLength(text), text, text)
+  expect(await context()).toMatchObject({ usedTokens: 250_000, windowTokens: 1_000_000 })
+
+  const compacted = line({ type: 'user', isCompactSummary: true, timestamp: at })
+  scanOf(LOCAL_SCAN_LIMITS.tailBytes + 1000, `ut off"}\n${compacted}`, null)
+  expect(await context()).toMatchObject({ windowTokens: 0, model: 'claude-opus-4-5' })
+
+  scanOf(LOCAL_SCAN_LIMITS.tailBytes + 2000, `ut off"}\n${response(20_000, at)}`, null)
+  expect(await context()).toMatchObject({
+    usedTokens: 20_000,
+    windowTokens: 1_000_000,
+    percentage: 2
+  })
+})
+
+// Nothing names a Codex's rollout as its own before its first prompt: only its folder does.
+it('keeps a rollout apart from a Codex started in its folder after its own Codex exited', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const scanOf = (input: {
+    now: number
+    pid: number
+    ran: string
+    text: string
+    written: number
+  }) =>
+    [
+      `@@NOW ${input.now / 1000}`,
+      `@@PROC ${input.pid} 1 pts/3 codex`,
+      `@@CWD ${input.pid} /srv/api`,
+      '@@PS',
+      `@@AGE ${input.pid} ${input.ran}`,
+      `@@FILE codex ${Buffer.byteLength(input.text)} ${input.written / 1000} ${path}`,
+      `@@HEAD ${path} ${Buffer.from(input.text).toString('base64')}`,
+      `@@TAIL ${path} ${Buffer.from(input.text).toString('base64')}`,
+      '@@DONE'
+    ].join('\n')
+  let output = ''
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async (now: number) =>
+    (await scanner.scan(now)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+
+  output = scanOf({ now: at + 20_000, pid: 4100, ran: '10:00', text, written: at })
+  expect(await listed(at + 20_000)).toEqual([[CODEX_ID, 4100, '']])
+
+  // The first Codex exited; another started 30 seconds after the rollout's last write.
+  output = scanOf({ now: at + 60_000, pid: 4200, ran: '00:30', text, written: at })
+  const apart = [
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, 'resume']
+  ]
+  expect(await listed(at + 60_000)).toEqual(apart)
+
+  // Seal's resume, or anyone's, wrote to the rollout since: it is still not the second Codex's.
+  const more = text + line({ type: 'event_msg', timestamp, payload: { type: 'task_started' } })
+  output = scanOf({ now: at + 90_000, pid: 4200, ran: '01:00', text: more, written: at + 80_000 })
+  expect(await listed(at + 90_000)).toEqual(apart)
+})
+
+// Seal restarted after one of two agents in a folder left: no scan saw them both, so the one
+// still there is the only agent the rollout could be, and need not be the one that wrote it.
+it('types nothing into the agent it finds beside a rollout after a restart until the agent holds that rollout open', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const scanOf = (pins: string[]) =>
+    [
+      `@@NOW ${(at + 20_000) / 1000}`,
+      '@@PROC 4200 900 pts/3 codex',
+      '@@CWD 4200 /srv/api',
+      '@@TMUX /tmp/tmux-1000/default\t%4\t/dev/pts/3\t900\tmain:0.0',
+      '@@PS',
+      '@@AGE 4200 10:00',
+      ...pins,
+      `@@FILE codex ${Buffer.byteLength(text)} ${at / 1000} ${path}`,
+      `@@HEAD ${path} ${b64}`,
+      `@@TAIL ${path} ${b64}`,
+      '@@DONE'
+    ].join('\n')
+  const listed = async (pins: string[]) => {
+    const host: LiveSessionHost = {
+      machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+      run: async () => scanOf(pins)
+    }
+    const afterRestart = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+    return (await afterRestart.scan(at + 20_000)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+  }
+  expect(await listed([])).toEqual([[CODEX_ID, 4200, '']])
+  expect(await listed([`@@PIN 4200 open codex ${path}`])).toEqual([
+    [CODEX_ID, 4200, 'codex-queue tmux']
+  ])
+})
+
+// Two terminals open in one repository, neither prompted yet; nothing ties either to a rollout.
+it('pairs neither of two agents idle in one folder with the rollout one of them begins, even once that one has left', async () => {
+  const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
+  const at = Date.parse('2026-11-13T10:00:00.000Z')
+  const timestamp = new Date(at).toISOString()
+  const text =
+    line({ type: 'session_meta', timestamp, payload: { id: CODEX_ID, cwd: '/srv/api' } }) +
+    line({ type: 'event_msg', timestamp, payload: { type: 'task_complete' } })
+  const b64 = Buffer.from(text).toString('base64')
+  const scanOf = (pids: number[]) =>
+    [
+      `@@NOW ${(at + 20_000) / 1000}`,
+      ...pids.flatMap((pid) => [`@@PROC ${pid} 1 pts/${pid} codex`, `@@CWD ${pid} /srv/api`]),
+      '@@PS',
+      ...pids.map((pid) => `@@AGE ${pid} 10:00`),
+      `@@FILE codex ${Buffer.byteLength(text)} ${at / 1000} ${path}`,
+      `@@HEAD ${path} ${b64}`,
+      `@@TAIL ${path} ${b64}`,
+      '@@DONE'
+    ].join('\n')
+  let output = scanOf([4100, 4200])
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const listed = async () =>
+    (await scanner.scan(at + 20_000)).sessions.map((s) => [
+      s.providerSessionId,
+      s.pid,
+      s.inputRoutes.map((route) => route.kind).join(' ')
+    ])
+  expect(await listed()).toEqual([
+    ['pid-4100', 4100, ''],
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, '']
+  ])
+
+  output = scanOf([4200])
+  const apart = [
+    ['pid-4200', 4200, ''],
+    [CODEX_ID, null, '']
+  ]
+  expect(await listed()).toEqual(apart)
+
+  // Newer rollouts pushed it off the host's list for a scan: it is read anew when it returns.
+  const whole = output
+  output = whole
+    .split('\n')
+    .filter((row) => !row.includes(path))
+    .join('\n')
+  expect(await listed()).toEqual([['pid-4200', 4200, '']])
+  output = whole
+  expect(await listed()).toEqual(apart)
 })
 
 const viaAiVault = () =>
@@ -275,6 +655,12 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
       }
     )
     try {
+      // Claude names its session in its registry: the transcript began before this stand-in did.
+      await mkdir(join(root, '.claude/sessions'), { recursive: true })
+      await writeFile(
+        join(root, `.claude/sessions/${agent.pid}.json`),
+        JSON.stringify({ pid: agent.pid, sessionId: CLAUDE_ID })
+      )
       const childPid = await vi.waitFor(async () =>
         Number((await readFile(join(root, 'child.pid'), 'utf8')).trim())
       )
@@ -291,6 +677,51 @@ describe.skipIf(process.platform === 'win32')('HostSessionScanner on a real shel
       await vi.waitFor(async () =>
         expect(await ours()).toEqual([agent.pid, 'needs-permission', 'process'])
       )
+    } finally {
+      agent.kill('SIGKILL')
+    }
+  })
+
+  // The real `ps` says when the stand-in agent started: ten minutes after the transcript's last write.
+  it('lists an agent apart from a transcript in its folder that was last written before it started', async () => {
+    const root = await realpath(home)
+    const cwd = join(root, 'work')
+    const projects = join(root, '.claude/projects', cwd.replace(/[^A-Za-z0-9]/g, '-'))
+    await Promise.all([cwd, projects].map((dir) => mkdir(dir, { recursive: true })))
+    const file = join(projects, `${CLAUDE_ID}.jsonl`)
+    // ast-grep-ignore: test-no-wall-clock -- the transcript is aged against a real process, whose start time `ps` reports on the real clock
+    const written = Date.now() - 600_000
+    await writeFile(
+      file,
+      line({
+        type: 'user',
+        cwd,
+        timestamp: new Date(written).toISOString(),
+        message: { content: 'Fix the login bug' }
+      })
+    )
+    await utimes(file, written / 1000, written / 1000)
+    await writeFile(join(root, 'agent.sh'), 'sleep 60\n')
+    const agent = spawn(
+      'bash',
+      ['-c', 'exec -a claude bash "$1"', 'agent', join(root, 'agent.sh')],
+      { cwd, stdio: 'ignore' }
+    )
+    try {
+      const scanner = new HostSessionScanner(localHost('test'), LOCAL_SCAN_LIMITS)
+      await vi.waitFor(async () => {
+        // ast-grep-ignore: test-no-wall-clock -- the scan reads real processes on the real clock
+        const { sessions } = await scanner.scan(Date.now())
+        expect(
+          sessions
+            .filter((s) => s.pid === agent.pid || s.transcriptPath === file)
+            .map((s) => [s.providerSessionId, s.pid, s.alive])
+            .sort()
+        ).toEqual([
+          [CLAUDE_ID, null, false],
+          [`pid-${agent.pid}`, agent.pid, true]
+        ])
+      })
     } finally {
       agent.kill('SIGKILL')
     }

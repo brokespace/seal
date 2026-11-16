@@ -13,7 +13,6 @@ export function TerminalLegacyTerminalPanes({
   const {
     activeTabId,
     activeTabType,
-    activeView,
     activityTerminalPortals,
     backgroundMountTabIdsByWorktreeRef,
     effectiveParkedTerminalWorktreeIds,
@@ -22,8 +21,8 @@ export function TerminalLegacyTerminalPanes({
     handlePtyExit,
     measurableBackgroundWorktreeIdsRef,
     mountedWorktreeIdsRef,
-    renderedActiveWorktreeId,
     tabsByWorktree,
+    visibleWorkspacePanes,
     worktreeBrowserTabs,
     worktreeFiles,
     workspaceSurfaces
@@ -41,7 +40,8 @@ export function TerminalLegacyTerminalPanes({
       {workspaceSurfaces
         .filter((workspace) => mountedWorktreeIdsRef.current.has(workspace.id))
         .map((workspace) => {
-          const isVisible = activeView === 'terminal' && workspace.id === renderedActiveWorktreeId
+          // Legacy panes fill the area: they show only for the single view, never over a pane slot.
+          const isVisible = visibleWorkspacePanes.get(workspace.id) === null
           const shouldMeasureHiddenWorktree =
             !isVisible && measurableBackgroundWorktreeIdsRef.current.has(workspace.id)
           const shouldColdParkTerminalPanes =

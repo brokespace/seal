@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import {
   mergeSealPanes,
   sealPanesFromRows,
@@ -15,6 +16,7 @@ const discovered: LiveSession = {
   providerSessionId: 'pid-812',
   machine: local,
   origin: 'external',
+  ...sampleSessionSurface(),
   cwd: '/w',
   project: 'w',
   title: null,
@@ -40,6 +42,7 @@ const pane: SealPane = {
   cwd: '/w',
   transcriptPath: null,
   prompt: 'Deploy it',
+  lastMessage: null,
   receivedAt: 1000,
   permission: null,
   silent: false
@@ -50,6 +53,16 @@ describe('mergeSealPanes', () => {
     expect(
       mergeSealPanes([discovered], [pane], local).map((s) => [s.id, s.origin, s.pid, s.status])
     ).toEqual([['local:claude:0e7d2c1a-0000-4000-8000-00000000000a', 'seal', 812, 'working']])
+  })
+
+  it('marks a pane session as a CLI in that pane, joined to a discovered session or not', () => {
+    const copilot: SealPane = { ...pane, paneKey: 'tab-2:0', provider: 'copilot' }
+    expect(
+      mergeSealPanes([discovered], [pane, copilot], local).map((s) => [s.provider, s.surface])
+    ).toEqual([
+      ['claude', { kind: 'cli', paneKey: 'tab-1:0' }],
+      ['copilot', { kind: 'cli', paneKey: 'tab-2:0' }]
+    ])
   })
 })
 
@@ -90,6 +103,71 @@ describe('sealPanesFromRows', () => {
     expect(statusOf({ state: 'waiting', toolName: 'AskUserQuestion' })).toEqual([
       ['waiting-input', 'Question for you']
     ])
+  })
+
+  it.each<[string, Partial<SealPaneRow>, LiveSession['status'], string | null]>([
+    ['blocked on a tool', { state: 'blocked', toolName: 'Bash' }, 'needs-permission', null],
+    ['waiting with no tool named', { state: 'waiting' }, 'waiting-input', 'Question for you'],
+    [
+      'waiting on a plan to review',
+      { state: 'waiting', toolName: 'ExitPlanMode' },
+      'waiting-input',
+      'Question for you'
+    ],
+    ['working with no tool named', { state: 'working' }, 'working', null]
+  ])('reads a row %s', (_, patch, status, detail) => {
+    expect(statusOf(patch)).toEqual([[status, detail]])
+  })
+
+  it('reads a question asked through another tool from its prompt', () => {
+    expect(
+      statusOf({ state: 'waiting', toolName: 'mcp__ask' }, () => ({
+        kind: 'question',
+        promptId: 'p2',
+        question: 'Which region?',
+        options: [{ id: 'eu', label: 'EU' }]
+      }))
+    ).toEqual([['waiting-input', 'Question for you']])
+  })
+
+  it.each<[string, Partial<SealPaneRow>, unknown[]]>([
+    [
+      'a Copilot turn that finished',
+      {
+        agentType: 'copilot',
+        state: 'done',
+        providerSession: { key: 'session_id', id: 'cop-1', cwd: '/w' },
+        lastAssistantMessage: 'Deployed.\nAll   checks pass.'
+      },
+      [['copilot', 'cop-1', 'your-turn', 'Deployed. All checks pass.']]
+    ],
+    [
+      'an OpenCode turn at work',
+      {
+        agentType: 'opencode',
+        toolName: 'bash',
+        providerSession: { key: 'session_id', id: 'ses_9', cwd: '/w' },
+        lastAssistantMessage: 'Running the build'
+      },
+      [['opencode', 'ses_9', 'working', 'Running the build']]
+    ],
+    [
+      'an Amp pane, whose hooks name no session',
+      { agentType: 'amp', providerSession: undefined },
+      [['amp', 'pane-tab-1:0', 'working', null]]
+    ],
+    ['a Claude pane before its hooks name its session', { providerSession: undefined }, []],
+    ['a chat, which its structured host lists', { structuredHost: 'owned' }, []],
+    ['an agent with no adapter', { agentType: 'aider' }, []]
+  ])('lists %s', (_, patch, expected) => {
+    expect(
+      sealPanesFromRows([row(patch)], () => null, 2000).map((p) => [
+        p.provider,
+        p.providerSessionId,
+        p.status,
+        p.lastMessage
+      ])
+    ).toEqual(expected)
   })
 })
 

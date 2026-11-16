@@ -115,6 +115,7 @@ docs/**
 !docs/upstream-sync.md
 !docs/design/
 !docs/design/agent-session-architecture.md
+!docs/design/multi-pane-workspace.md
 !docs/STYLEGUIDE.md
 !docs/development.md
 !docs/styleguide/
