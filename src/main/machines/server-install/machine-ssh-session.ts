@@ -4,6 +4,7 @@ import {
   connectRegisteredSshTarget,
   getSshConnectionManager
 } from '../../ssh/targets/ssh-target-registry'
+import { whileSshConnectsDirectly } from './machine-server-install-activity'
 
 export function connectedSshSession(sshTargetId: string): SshConnection | null {
   const manager = getSshConnectionManager()
@@ -23,4 +24,38 @@ export async function sshSessionTo(sshTargetId: string): Promise<SshConnection> 
     throw new Error('Seal could not reach this machine over SSH')
   }
   return connected
+}
+
+/**
+ * Runs `work` on the machine's SSH session. One opened for it deploys nothing on the host and is
+ * closed afterwards, unless `keepsOpened` says the result still needs it; an open one always stays.
+ */
+export async function onPlainSshSession<T>(
+  sshTargetId: string,
+  work: (session: SshConnection) => Promise<T>,
+  keepsOpened: (result: T) => boolean = () => false
+): Promise<T> {
+  const open = connectedSshSession(sshTargetId)
+  const session =
+    open ?? (await whileSshConnectsDirectly(sshTargetId, () => sshSessionTo(sshTargetId)))
+  let keep = open !== null
+  try {
+    const result = await work(session)
+    keep ||= keepsOpened(result)
+    return result
+  } finally {
+    if (!keep) {
+      await closeSshSession(sshTargetId)
+    }
+  }
+}
+
+async function closeSshSession(sshTargetId: string): Promise<void> {
+  try {
+    // Import lazily: the SSH teardown wires the whole SSH stack, and only this one-off needs it.
+    const { disconnectRegisteredSshTarget } = await import('../../ipc/ssh/ssh-session-teardown')
+    await disconnectRegisteredSshTarget(sshTargetId)
+  } catch (error) {
+    console.warn('[machines] could not close an SSH session opened for work on a machine:', error)
+  }
 }

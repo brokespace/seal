@@ -9,6 +9,7 @@ import {
 import { listEnvironments } from '../../../shared/remote-runtime/host-store/runtime-environment-store'
 import { getRuntimeEnvironmentStatusSnapshot } from '../../ipc/runtime-environments/connections/runtime-environment-request-connections'
 import { connectRuntimeEnvironmentOnRequest } from '../../ipc/runtime-environments/connectivity/runtime-environment-connectivity-handlers'
+import { setInstallLockWaits } from '../../managed-server/install/install-lock-wait-policy'
 import {
   onSealServiceOutcome,
   setSealServiceWishes
@@ -30,8 +31,7 @@ import type { MachineAccess } from '../machine-services'
 import { createRuntimeMachineChannel } from '../runtime/runtime-machine-channel'
 import {
   machineServerInstallActivity,
-  onMachineServerInstallActivityChanged,
-  sshConnectsDirectlyNow
+  onMachineServerInstallActivityChanged
 } from '../server-install/machine-server-install-activity'
 import { createMachineServerSetup } from '../server-install/machine-server-setup-outcomes'
 import { MachineRegistry, type MachineRegistryEnvironment } from './machine-registry'
@@ -131,10 +131,8 @@ export function getMachineRegistry(): MachineRegistry {
     const created = registry
     const setup = createMachineServerSetup(created, () => getAppEnvironment().getVersion())
     onMachineServerInstallActivityChanged(broadcastMachinesChanged)
-    setDirectSshConnectPolicy(
-      (targetId) => created.connectsOverSsh(targetId) || sshConnectsDirectlyNow(targetId),
-      setup.outcomes
-    )
+    setDirectSshConnectPolicy(setup.connectsDirectly, setup.outcomes)
+    setInstallLockWaits(setup.installLockWait)
     setSealServiceWishes(setup.serviceWish)
     onSealServiceOutcome(setup.serviceOutcome)
   }

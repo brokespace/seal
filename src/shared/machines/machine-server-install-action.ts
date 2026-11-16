@@ -21,6 +21,8 @@ export type MachineServerInstallFacts = {
   managedServer: 'own-target' | 'other-target' | null
   /** What the host last reported; for Seal's own server the record answers until it has. */
   reportedKeeper: MachineServerKeeper | null
+  /** The host already runs a `seal serve` service of the user's own. */
+  ownServe: boolean
 }
 
 /** What Seal can do about its server on a machine now. */
@@ -54,18 +56,24 @@ function sshMachineAction(facts: MachineServerInstallFacts): MachineServerInstal
     return 'installing'
   }
   const install = facts.serverInstall
+  // On `auto` the user switched this machine to SSH; its server stays one switch away.
+  if (install?.state === 'installed' && !serverServiceRemains(install)) {
+    return 'none'
+  }
+  // The user's own server already runs here, so nothing is installed beside it.
+  if (facts.ownServe) {
+    return 'reuse'
+  }
   switch (install?.state) {
     case undefined:
       return 'offer'
     case 'failed':
       return 'retry'
-    case 'declined':
-      return 'install'
     case 'pending':
       // A reason on a pending install says what it waits for.
       return install.reason ? 'retry' : 'install'
+    case 'declined':
     case 'installed':
-      // On `auto` the user switched this machine to SSH; its server stays one switch away.
-      return serverServiceRemains(install) ? 'install' : 'none'
+      return 'install'
   }
 }

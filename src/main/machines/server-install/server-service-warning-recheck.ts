@@ -43,7 +43,8 @@ export function recheckServerServiceWarnings(views: readonly MachineView[]): voi
         if (
           state &&
           (state.manager !== known?.manager ||
-            state.linger !== known.linger ||
+            // A host that does not say whether linger is on has not changed its answer.
+            (state.linger !== undefined && state.linger !== known.linger) ||
             state.startsAtBoot !== known.startsAtBoot)
         ) {
           reportSealServiceOutcome(sshTargetId, state)

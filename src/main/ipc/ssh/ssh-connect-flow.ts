@@ -201,7 +201,9 @@ async function doConnect(
   // Attribute decision-created transports so cancellation closes only those not adopted by a newer owner.
   const owner = Symbol(targetId)
   if (!quiet && directSsh.connectsDirectlyOverSsh(targetId)) {
-    return connectDirect(target, owner, authority)
+    const state = await connectDirect(target, owner, authority)
+    directSsh.noteSshConnectedDirectly(targetId)
+    return state
   }
   // Deploy/conversion require teardown first; rotated authority still lets concurrent connects join.
   const server = await runAttributedToSshOwner(owner, () => decideHostServer(target)).catch(

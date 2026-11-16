@@ -98,6 +98,8 @@ export type MachinesApi = {
   declineServerInstall: (args: { machineId: MachineId }) => Promise<MachineView>
   /** Stops and removes the service and the server; the machine returns to plain SSH. */
   removeServer: (args: { machineId: MachineId }) => Promise<MachineView>
+  /** Connects an SSH machine through the `seal serve` service its user already runs; installs nothing. */
+  reuseOwnServer: (args: { machineId: MachineId }) => Promise<MachineView>
   separate: (args: { machineId: MachineId }) => Promise<MachineView[]>
   connect: (args: { machineId: MachineId }) => Promise<void>
   /** `agent` starts that agent (with `prompt`) instead of a plain shell. */
@@ -209,6 +211,7 @@ export const machinesApi: MachinesApi = {
   installServer: (args) => ipcRenderer.invoke(MACHINE_IPC.installServer, args),
   declineServerInstall: (args) => ipcRenderer.invoke(MACHINE_IPC.declineServerInstall, args),
   removeServer: (args) => ipcRenderer.invoke(MACHINE_IPC.removeServer, args),
+  reuseOwnServer: (args) => ipcRenderer.invoke(MACHINE_IPC.reuseOwnServer, args),
   separate: (args) => ipcRenderer.invoke(MACHINE_IPC.separate, args),
   connect: (args) => ipcRenderer.invoke(MACHINE_IPC.connect, args),
   shellOpen: (args) => ipcRenderer.invoke(MACHINE_IPC.shellOpen, args),

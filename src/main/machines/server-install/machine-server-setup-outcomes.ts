@@ -1,11 +1,12 @@
 /** Turns what the SSH connect flow and the host's service report into the machine's install record. */
+import { activeMachineConnection } from '../../../shared/machines/machine-record'
 import {
   awaitsServerInstall,
   completeMachineServerInstall,
   deferMachineServerInstall,
   failMachineServerInstall,
   noteMachineServerKeeper,
-  prefersPm2
+  preferredServiceManager
 } from '../../../shared/machines/machine-server-install'
 import type {
   SealServiceOutcome,
@@ -19,15 +20,20 @@ import {
   connectRegisteredSshTarget,
   getSshConnectionManager
 } from '../../ssh/targets/ssh-target-registry'
+import type { InstallLockWait } from '../../managed-server/install/install-lock-wait-policy'
 import type { MachineRegistry } from '../registry/machine-registry'
 import { removeServiceOfFailedInstall } from './failed-install-service-cleanup'
 import {
-  isPm2Wished,
+  hostRunsNoOwnSealServe,
   isServerBeingRemoved,
   joinMachineServerInstall,
   latestSealServiceOutcome,
   noteBlockedServerMove,
-  noteSealServiceOutcome
+  noteInstallWaitsForHost,
+  noteSealServiceOutcome,
+  ownSealServeOn,
+  sshConnectsDirectlyNow,
+  wishedManager
 } from './machine-server-install-activity'
 import {
   blockedServerMove,
@@ -37,9 +43,14 @@ import {
   repeatsOverPlainSsh,
   serverInstallFailureReason
 } from './machine-server-install-failure'
+import { connectedSshSession } from './machine-ssh-session'
+import { checkHostForOwnSealServe } from './own-seal-serve-check'
 
 // Another desktop's install takes about a minute; after these the machine keeps its Retry.
 const BUSY_HOST_RETRY_DELAYS_MS = [10_000, 30_000, 60_000]
+// A live install uploads and unpacks within about a minute. The host is asked once a minute whether
+// the holder of its install lock is gone, so two minutes include one such recovery before giving up.
+const HOST_INSTALL_LOCK_WAIT_MS = 120_000
 
 /**
  * The app version the server runs, as far as this connect knows: this app's unless the server kept
@@ -57,8 +68,11 @@ function servedVersion(
 
 export type MachineServerSetup = {
   outcomes: SshServerSetupOutcomes
+  /** True for a connect that gets a plain session and deploys nothing. */
+  connectsDirectly: (sshTargetId: string) => boolean
   serviceWish: (sshTargetId: string) => SealServiceWish | null
   serviceOutcome: (sshTargetId: string, outcome: SealServiceOutcome) => void
+  installLockWait: (sshTargetId: string) => InstallLockWait | null
 }
 
 export function createMachineServerSetup(
@@ -84,6 +98,26 @@ export function createMachineServerSetup(
 
   const busyHostRetries = new Map<string, number>()
 
+  /** The connect that installs, for a machine whose record still waits for its server. */
+  const runWaitingInstall = (sshTargetId: string, onlyDeferred: boolean): void => {
+    const record = registry.recordForSshTarget(sshTargetId)
+    const install = record?.serverInstall
+    if (!record || !awaitsServerInstall(install) || (onlyDeferred && !install?.reason)) {
+      return
+    }
+    console.info(`[machines] running the waiting Seal server install on ${record.name}`)
+    void joinMachineServerInstall(record.id, async () => {
+      // Automatic: no sign-in prompt appears and a Disconnect stays.
+      await connectRegisteredSshTarget(sshTargetId, { automatic: true })
+      return registry.view(toMachineId(record.id))
+    }).catch((error: unknown) => {
+      console.info(
+        '[machines] could not run a waiting Seal server install:',
+        error instanceof Error ? error.message : error
+      )
+    })
+  }
+
   /** The host was busy with another install: the same connect, again, once that one has had time to end. False when the tries are used up. */
   const retryWhenHostIsFree = (sshTargetId: string): boolean => {
     const tried = busyHostRetries.get(sshTargetId) ?? 0
@@ -92,26 +126,40 @@ export function createMachineServerSetup(
       return false
     }
     busyHostRetries.set(sshTargetId, tried + 1)
-    const timer = setTimeout(() => {
-      const record = registry.recordForSshTarget(sshTargetId)
-      const install = record?.serverInstall
-      if (!record || install?.state !== 'pending' || !install.reason) {
-        return
-      }
-      console.info(`[machines] trying the waiting Seal server install on ${record.name} again`)
-      void joinMachineServerInstall(record.id, async () => {
-        // Automatic: no sign-in prompt appears and a Disconnect stays.
-        await connectRegisteredSshTarget(sshTargetId, { automatic: true })
-        return registry.view(toMachineId(record.id))
-      }).catch((error: unknown) => {
+    const timer = setTimeout(() => runWaitingInstall(sshTargetId, true), delay)
+    timer.unref()
+    return true
+  }
+
+  const awaitsOwnServeCheck = (sshTargetId: string): boolean => {
+    const record = registry.recordForSshTarget(sshTargetId)
+    return (
+      !!record &&
+      activeMachineConnection(record) === 'ssh' &&
+      awaitsServerInstall(record.serverInstall) &&
+      !hostRunsNoOwnSealServe(sshTargetId)
+    )
+  }
+
+  /** A waiting install nobody checked in this app run got a plain session: the host is asked, then it installs. */
+  const connectedDirectly = (sshTargetId: string): void => {
+    const session = connectedSshSession(sshTargetId)
+    // An install the user asked for does its own check on the session it opens.
+    if (!session || sshConnectsDirectlyNow(sshTargetId) || !awaitsOwnServeCheck(sshTargetId)) {
+      return
+    }
+    void checkHostForOwnSealServe(registry, sshTargetId, session)
+      .then((found) => {
+        if (!found) {
+          runWaitingInstall(sshTargetId, false)
+        }
+      })
+      .catch((error: unknown) => {
         console.info(
-          '[machines] could not try a waiting Seal server install again:',
+          '[machines] a waiting Seal server install was not run, because the machine did not say whether it runs a server of its own:',
           error instanceof Error ? error.message : error
         )
       })
-    }, delay)
-    timer.unref()
-    return true
   }
 
   const failed = (sshTargetId: string, failure: unknown): boolean => {
@@ -198,15 +246,39 @@ export function createMachineServerSetup(
         } catch (error) {
           console.warn('[machines] could not record an installed Seal server:', error)
         }
+      },
+      connectedDirectly: (sshTargetId) => {
+        try {
+          connectedDirectly(sshTargetId)
+        } catch (error) {
+          console.warn('[machines] could not run a waiting Seal server install:', error)
+        }
       }
     },
+    connectsDirectly: (sshTargetId) =>
+      registry.connectsOverSsh(sshTargetId) ||
+      sshConnectsDirectlyNow(sshTargetId) ||
+      awaitsOwnServeCheck(sshTargetId),
     serviceWish: (sshTargetId) => {
       const install = registry.recordForSshTarget(sshTargetId)?.serverInstall
-      if (install?.policy !== 'auto' || isServerBeingRemoved(sshTargetId)) {
+      if (
+        install?.policy !== 'auto' ||
+        isServerBeingRemoved(sshTargetId) ||
+        ownSealServeOn(sshTargetId)
+      ) {
         return null
       }
-      return prefersPm2(install) || isPm2Wished(sshTargetId) ? { prefer: 'pm2' } : {}
+      const prefer = wishedManager(sshTargetId) ?? preferredServiceManager(install)
+      return prefer ? { prefer } : {}
     },
-    serviceOutcome
+    serviceOutcome,
+    installLockWait: (sshTargetId) =>
+      awaitsServerInstall(registry.recordForSshTarget(sshTargetId)?.serverInstall)
+        ? {
+            timeoutMs: HOST_INSTALL_LOCK_WAIT_MS,
+            began: () => noteInstallWaitsForHost(sshTargetId, true),
+            ended: () => noteInstallWaitsForHost(sshTargetId, false)
+          }
+        : null
   }
 }

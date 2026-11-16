@@ -19,12 +19,10 @@ const UNWRITABLE_HOME = 'the machine refused to write the server files (permissi
 const DOWNLOAD_BLOCKED = 'the runtime download was blocked on this computer and on the machine'
 const PAIRING_FAILED = 'pairing with the server failed'
 const CONTACT_LOST = 'the connection to the machine was lost during the install'
-const INSTALL_INTERRUPTED =
-  'an earlier install on this machine was interrupted and may still be finishing; try again in a few minutes'
 const NEVER_STARTED = 'the server did not start on this machine'
 const OTHER_SERVER_RUNNING =
   'another Seal or Orca server is already running in this account on the machine; stop it, then try again'
-const HOST_BUSY = 'another install is still running on this machine'
+const HOST_BUSY = 'an earlier install on this machine was interrupted or is still running'
 const MAX_REASON_CHARS = 200
 
 // Another desktop, or an install that was cut short, holds the host for a while.
@@ -32,7 +30,10 @@ const HOST_BUSY_CODES: ReadonlySet<string> = new Set([
   'orcad_activation_fence_busy',
   'orcad_recovery_transaction_still_fresh'
 ])
-const HOST_BUSY_PHRASE = /another run is changing this host|activation fence is held/i
+// A decision carries a thrown setup error only as its message, so the lock's own words are matched too.
+const HOST_BUSY_PHRASE =
+  /another run is changing this host|activation fence is held|could not acquire the install lock/i
+const INSTALL_LOCK_BUSY_ERROR = 'RemoteInstallLockBusyError'
 
 const REASONS_BY_DECISION_CODE: Record<string, string> = {
   orcad_activation_no_readiness: NEVER_STARTED,
@@ -57,8 +58,7 @@ const REASONS_BY_ERROR_NAME: Record<string, string> = {
   NodeRuntimeUnreachableError: DOWNLOAD_BLOCKED,
   OrcadManagedPairingRejectedError: PAIRING_FAILED,
   OrcadManagedPairingRepairFailedError: PAIRING_FAILED,
-  SshChannelOpenTimeoutError: CONTACT_LOST,
-  RemoteInstallLockBusyError: INSTALL_INTERRUPTED
+  SshChannelOpenTimeoutError: CONTACT_LOST
 }
 
 const REASONS_BY_ERRNO: Record<string, string> = {
@@ -78,7 +78,6 @@ const HOST_ERROR_PHRASES: readonly (readonly [RegExp, string])[] = [
   [/read-only file system|\bEROFS\b/i, READ_ONLY_HOME],
   [/permission denied|\bEACCES\b/i, UNWRITABLE_HOME],
   [/\bpairing\b/i, PAIRING_FAILED],
-  [/could not acquire the install lock/i, INSTALL_INTERRUPTED],
   [/never published an .?orca_server_ready/i, NEVER_STARTED],
   [/unmanaged runtime owner is still live/i, OTHER_SERVER_RUNNING]
 ]
@@ -123,13 +122,16 @@ export function hostIsBusyWithAnotherInstall(failure: unknown): boolean {
       (failure.detail !== undefined && HOST_BUSY_PHRASE.test(failure.detail))
     )
   }
-  return failure instanceof Error && HOST_BUSY_PHRASE.test(failure.message)
+  return (
+    failure instanceof Error &&
+    (failure.name === INSTALL_LOCK_BUSY_ERROR || HOST_BUSY_PHRASE.test(failure.message))
+  )
 }
 
 /** Why an install waits for another one, and when Seal tries it again. */
 export function busyHostReason(retriesSoon: boolean): string {
   return retriesSoon
-    ? `${HOST_BUSY}, and Seal tries again when it is done`
+    ? `${HOST_BUSY}, and Seal tries again in a moment`
     : `${HOST_BUSY}, and Seal tries again the next time it connects`
 }
 

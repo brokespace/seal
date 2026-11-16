@@ -16,16 +16,26 @@ export function awaitsServerInstall(install: MachineServerInstall | null | undef
   return install?.policy === 'auto' && install.state === 'pending'
 }
 
-/** While pending, `manager` holds the user's choice of PM2 over the manager Seal would pick. */
-export function prefersPm2(install: MachineServerInstall | null | undefined): boolean {
-  return install?.manager === 'pm2' && install.state !== 'installed'
+/** A manager a user can ask for; `detached` is only ever an outcome. */
+export type MachineServiceManager = Exclude<MachineServerKeeper, 'detached'>
+
+/** Until the server is installed, `manager` holds the manager the user asked for; null leaves the pick to Seal. */
+export function preferredServiceManager(
+  install: MachineServerInstall | null | undefined
+): MachineServiceManager | null {
+  return install?.manager && install.manager !== 'detached' && install.state !== 'installed'
+    ? install.manager
+    : null
 }
 
-export function pendingServerInstall(preferPm2: boolean, now: number): MachineServerInstall {
+export function pendingServerInstall(
+  prefer: MachineServiceManager | null,
+  now: number
+): MachineServerInstall {
   return {
     policy: 'auto',
     state: 'pending',
-    ...(preferPm2 ? { manager: 'pm2' as const } : {}),
+    ...(prefer ? { manager: prefer } : {}),
     attemptedAt: now
   }
 }
@@ -41,18 +51,6 @@ export function keptRunningServerInstall(
     state: 'installed',
     attemptedAt: now
   }
-}
-
-/** `auto` installs on the next connect, `never` keeps plain SSH; anything else leaves the record. */
-export function adoptedServerInstall(
-  choice: unknown,
-  serviceManager: unknown,
-  now: number
-): MachineServerInstall | null {
-  if (choice === 'auto') {
-    return pendingServerInstall(serviceManager === 'pm2', now)
-  }
-  return choice === 'never' ? DECLINED_SERVER_INSTALL : null
 }
 
 /** The keeper a finished install is known to have; a pending or failed one only holds a choice. */
@@ -119,17 +117,20 @@ function unfinishedServerInstall(
   reason: string,
   now: number
 ): (machine: MachineRecord) => ServerInstallChange {
-  return (machine) => ({
-    serverInstall: {
-      policy: 'auto',
-      state,
-      ...(prefersPm2(machine.serverInstall) ? { manager: 'pm2' as const } : {}),
-      reason,
-      attemptedAt: now
-    },
-    // A server the failed setup left registered must not become the machine's transport.
-    ...(machine.sshTargetId ? { connection: 'ssh' as const } : {})
-  })
+  return (machine) => {
+    const prefer = preferredServiceManager(machine.serverInstall)
+    return {
+      serverInstall: {
+        policy: 'auto',
+        state,
+        ...(prefer ? { manager: prefer } : {}),
+        reason,
+        attemptedAt: now
+      },
+      // A server the failed setup left registered must not become the machine's transport.
+      ...(machine.sshTargetId ? { connection: 'ssh' as const } : {})
+    }
+  }
 }
 
 /** The attempt failed, so the machine works over plain SSH until the user retries. */
@@ -152,6 +153,19 @@ export function deferMachineServerInstall(
   return changeMachine(store, machineId, unfinishedServerInstall('pending', reason, now), now)
 }
 
+type ReportedServerKeeper = { manager: MachineServerKeeper; linger?: boolean }
+
+/** A keeper reported without `linger` does not know it, so the answer on record for that manager stays. */
+function keeperOnRecord(
+  previous: MachineServerInstall,
+  keeper: ReportedServerKeeper
+): Pick<MachineServerInstall, 'manager' | 'linger'> {
+  const linger =
+    keeper.linger ??
+    (installedServerKeeper(previous) === keeper.manager ? previous.linger : undefined)
+  return { manager: keeper.manager, ...(linger !== undefined ? { linger } : {}) }
+}
+
 /** The machine connected through the server Seal installed for it. */
 export function completeMachineServerInstall(
   store: MachineStore,
@@ -160,7 +174,7 @@ export function completeMachineServerInstall(
     environmentId: string
     /** `null`: not known; `undefined`: as recorded before. */
     version: string | null | undefined
-    keeper: { manager: MachineServerKeeper; linger?: boolean } | null
+    keeper: ReportedServerKeeper | null
   },
   now: number
 ): MachineStore {
@@ -173,14 +187,13 @@ export function completeMachineServerInstall(
         return null
       }
       const known = installedServerKeeper(previous)
-      const keeper = served.keeper ?? (known ? { manager: known, linger: previous.linger } : null)
+      const keeper = served.keeper ?? (known ? { manager: known } : null)
       const version = served.version === undefined ? previous.version : served.version
       return {
         serverInstall: {
           policy: 'auto',
           state: 'installed',
-          ...(keeper ? { manager: keeper.manager } : {}),
-          ...(keeper?.linger !== undefined ? { linger: keeper.linger } : {}),
+          ...(keeper ? keeperOnRecord(previous, keeper) : {}),
           ...(version ? { version } : {}),
           ...(previous.attemptedAt !== undefined ? { attemptedAt: previous.attemptedAt } : {})
         },
@@ -195,7 +208,7 @@ export function completeMachineServerInstall(
 export function noteMachineServerKeeper(
   store: MachineStore,
   machineId: string,
-  keeper: { manager: MachineServerKeeper; linger?: boolean },
+  keeper: ReportedServerKeeper,
   now: number
 ): MachineStore {
   return changeMachine(
@@ -210,8 +223,7 @@ export function noteMachineServerKeeper(
         serverInstall: {
           policy: 'auto',
           state: 'installed',
-          manager: keeper.manager,
-          ...(keeper.linger !== undefined ? { linger: keeper.linger } : {}),
+          ...keeperOnRecord(previous, keeper),
           ...(previous.version !== undefined ? { version: previous.version } : {}),
           ...(previous.attemptedAt !== undefined ? { attemptedAt: previous.attemptedAt } : {})
         }

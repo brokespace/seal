@@ -10,10 +10,12 @@ import {
   isUnconfirmedSshCommandTermination
 } from '../../ssh/remote-exec/remote-exec-command'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
-import type { OrcadHostTransport } from './orcad-host-transport'
+import { isWslOrcadHostTarget, type OrcadHostTransport } from './orcad-host-transport'
+import { installLockWait } from './install-lock-wait-policy'
+import { readBoundedOrcadRemoteRecord } from './orcad-remote-record-file'
 import { joinRemotePath, type RemoteHostPlatform } from '../../ssh/remote-host/ssh-remote-platform'
 import { ORCAD_INSTALL_MODEL } from './remote-install-model'
-import { acquireInstallLock } from './remote-install-lock'
+import { acquireInstallLock, type InstallLockExitedOwnerProof } from './remote-install-lock'
 import { ORCAD_FENCE_OWNER_FILENAME } from '../activation/orcad-activation-fence-scope'
 import { forgetHeldOrcadFence, rememberHeldOrcadFence } from '../activation/orcad-held-fence-tokens'
 import { exitedOwnLockProof } from '../activation/orcad-exited-own-lock'
@@ -24,6 +26,36 @@ import {
   finalizeInstall,
   isRemoteInstallComplete
 } from './remote-versioned-install'
+
+// Tokens of locks whose removal an ended install of this process could not confirm.
+const unreleasedLockTokens = new Set<string>()
+
+/** Also names the lock an ended install of this process left: its owner would have removed it, had the host answered. */
+function withOwnUnreleasedLocks(
+  proof: InstallLockExitedOwnerProof,
+  target: Parameters<typeof readBoundedOrcadRemoteRecord>[0]
+): InstallLockExitedOwnerProof {
+  return {
+    ...proof,
+    find: async (lockDir) => {
+      const exited = await proof.find(lockDir)
+      if (exited !== null || unreleasedLockTokens.size === 0) {
+        return exited
+      }
+      const owner = await readBoundedOrcadRemoteRecord(
+        target,
+        joinRemotePath(target.host, lockDir, ORCAD_FENCE_OWNER_FILENAME),
+        64
+      ).catch(() => null)
+      const token = owner?.state === 'present' ? owner.raw.trim() : ''
+      return unreleasedLockTokens.has(token) ? token : null
+    },
+    reclaimed: (token) => {
+      unreleasedLockTokens.delete(token)
+      proof.reclaimed(token)
+    }
+  }
+}
 
 export async function installOrcadBundle(
   options: {
@@ -71,23 +103,34 @@ export async function installOrcadBundle(
   // Persist the token so a relaunch can prove ownership of an interrupted upload lock.
   const token = randomUUID()
   rememberHeldOrcadFence(token)
+  // Optional call: transports outside the SSH stack may not name a target.
+  const hostTarget = options.conn.getTarget?.()
+  const wait =
+    hostTarget && !isWslOrcadHostTarget(hostTarget) ? installLockWait(hostTarget.id) : null
+  // SFTP uploads and chmod leave no host workload after this client exits.
+  const exitedOwner = exitedOwnLockProof(options, {
+    baseDir: orcadWindowsBaseDir(options.host, remoteDir),
+    guardsStateMutation: false
+  })
   try {
     await acquireInstallLock(options.conn, remoteDir, options.host, {
       signal: options.signal,
       owner: { fileName: ORCAD_FENCE_OWNER_FILENAME, token },
-      // SFTP uploads and chmod leave no host workload after this client exits.
-      exitedOwner: exitedOwnLockProof(options, {
-        baseDir: orcadWindowsBaseDir(options.host, remoteDir),
-        guardsStateMutation: false
-      })
+      exitedOwner: wait ? withOwnUnreleasedLocks(exitedOwner, options) : exitedOwner,
+      ...(wait ? { waitTimeoutMs: wait.timeoutMs, onHeld: wait.began } : {})
     })
   } catch (error) {
     if (!isUnconfirmedSshCommandTermination(error)) {
       forgetHeldOrcadFence(token)
+    } else {
+      unreleasedLockTokens.add(token)
     }
     throw error
+  } finally {
+    wait?.ended()
   }
   let preserveInstallLock = false
+  let released = false
   try {
     // A sibling may have completed deployment while this client waited for the lock.
     if (
@@ -132,10 +175,17 @@ export async function installOrcadBundle(
     preserveInstallLock = isUnconfirmedSshCommandTermination(error)
     throw error
   } finally {
-    if (!preserveInstallLock) {
-      // Retain ownership proof if interrupted cleanup cannot confirm lock removal.
-      if (await abandonInstall(options.conn, remoteDir, options.host)) {
-        forgetHeldOrcadFence(token)
+    try {
+      if (!preserveInstallLock) {
+        // Retain ownership proof if interrupted cleanup cannot confirm lock removal.
+        if (await abandonInstall(options.conn, remoteDir, options.host)) {
+          forgetHeldOrcadFence(token)
+          released = true
+        }
+      }
+    } finally {
+      if (!released) {
+        unreleasedLockTokens.add(token)
       }
     }
   }

@@ -136,6 +136,7 @@ export const MACHINE_IPC = {
   installServer: 'machines:installServer',
   declineServerInstall: 'machines:declineServerInstall',
   removeServer: 'machines:removeServer',
+  reuseOwnServer: 'machines:reuseOwnServer',
   shellOpen: 'machines:shellOpen',
   shellWrite: 'machines:shellWrite',
   shellResize: 'machines:shellResize',

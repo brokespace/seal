@@ -1,11 +1,14 @@
 import { MachineConnectionTypeSchema } from '../../../shared/machines/machine-record'
 import {
-  adoptedServerInstall,
+  DECLINED_SERVER_INSTALL,
   setMachineServerInstall
 } from '../../../shared/machines/machine-server-install'
 import { MACHINE_IPC } from '../../../shared/machines/machine-types'
+import type { MachineServiceManagerChoice } from '../../../shared/machines/machine-view'
 import { machineIdOf, requireString, type MachineInvokeRegistrar } from '../machine-ipc-args'
 import { removeServerFromMachine } from '../server-install/machine-server-removal'
+import { learnOwnSealServes } from '../server-install/own-seal-serve-check'
+import { reuseOwnServerOnSshMachine } from '../server-install/own-server-reuse'
 import { learnOwnServerServices } from '../server-install/own-server-service'
 import { startMachineServerUpgradeReconnects } from '../server-install/machine-server-upgrade-reconnect'
 import { recheckServerServiceWarnings } from '../server-install/server-service-warning-recheck'
@@ -23,6 +26,17 @@ function connectionTypeOf(value: unknown): 'ssh' | 'server' {
   return parsed.data
 }
 
+const SERVICE_MANAGER_CHOICES: readonly MachineServiceManagerChoice[] = [
+  'auto',
+  'systemd-user',
+  'launchd',
+  'pm2'
+]
+
+function serviceManagerChoiceOf(value: unknown): MachineServiceManagerChoice | null {
+  return SERVICE_MANAGER_CHOICES.find((choice) => choice === value) ?? null
+}
+
 function linkOf(
   args: Record<string, unknown>
 ): { sshTargetId: string } | { environmentId: string } {
@@ -37,7 +51,9 @@ export function registerMachineRegistryHandlers(handle: MachineInvokeRegistrar):
   getMachineRegistry()
 
   handle(MACHINE_IPC.list, () => {
-    const views = getMachineRegistry().list()
+    const registry = getMachineRegistry()
+    const views = registry.list()
+    learnOwnSealServes(registry, views)
     learnOwnServerServices(views)
     recheckServerServiceWarnings(views)
     return views
@@ -63,24 +79,27 @@ export function registerMachineRegistryHandlers(handle: MachineInvokeRegistrar):
       ...(typeof args.name === 'string' && args.name.trim() ? { name: args.name } : {}),
       ...(typeof args.machineId === 'string' ? { machineId: machineIdOf(args.machineId) } : {})
     })
-    // Only a machine's own SSH details can carry Seal's server; a paired server is the user's.
-    const install =
-      'sshTargetId' in link
-        ? adoptedServerInstall(args.serverInstall, args.serviceManager, Date.now())
-        : null
-    if (!install) {
+    // An install is asked for through installServer, which checks the host first; here only "no" is kept.
+    if (!('sshTargetId' in link) || args.serverInstall !== 'never') {
       return adopted
     }
-    registry.edit((store, now) => setMachineServerInstall(store, adopted.recordId, install, now))
+    registry.edit((store, now) =>
+      setMachineServerInstall(store, adopted.recordId, DECLINED_SERVER_INSTALL, now)
+    )
     return registry.view(adopted.id)
   })
 
-  handle(MACHINE_IPC.installServer, (args) =>
-    installServerOnSshMachine({
+  handle(MACHINE_IPC.installServer, (args) => {
+    const manager = serviceManagerChoiceOf(args.manager)
+    return installServerOnSshMachine({
       machineId: machineIdOf(args.machineId),
-      ...(args.manager === 'pm2' || args.manager === 'auto' ? { manager: args.manager } : {}),
+      ...(manager ? { manager } : {}),
       ...(args.moveAnyway === true ? { moveAnyway: true } : {})
     })
+  })
+
+  handle(MACHINE_IPC.reuseOwnServer, (args) =>
+    reuseOwnServerOnSshMachine(machineIdOf(args.machineId))
   )
 
   handle(MACHINE_IPC.declineServerInstall, (args) =>

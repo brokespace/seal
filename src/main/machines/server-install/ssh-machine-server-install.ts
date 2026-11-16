@@ -5,8 +5,9 @@ import {
   DECLINED_SERVER_INSTALL,
   keptRunningServerInstall,
   pendingServerInstall,
-  prefersPm2,
-  setMachineServerInstall
+  preferredServiceManager,
+  setMachineServerInstall,
+  type MachineServiceManager
 } from '../../../shared/machines/machine-server-install'
 import type { MachineId } from '../../../shared/machines/machine-types'
 import type {
@@ -29,17 +30,31 @@ import {
   latestSealServiceOutcome,
   machineServerInstallActivity,
   noteBlockedServerMove,
-  whilePm2IsWished
+  whileManagerIsWished
 } from './machine-server-install-activity'
+import { onPlainSshSession } from './machine-ssh-session'
+import { checkHostForOwnSealServe } from './own-seal-serve-check'
 import { keepOwnServerRunning } from './own-server-service'
 import { sealDeployedServer } from './seal-deployed-server'
 
 const NO_SERVICE_MANAGER =
-  'This machine has no service manager that can keep Seal server running, so it still starts when Seal connects. Seal can use systemd user services, launchd or PM2: install PM2 on the machine, then try again.'
+  'This machine has no service manager that can keep Seal server running, so it still starts when Seal connects. Seal can use PM2 or a systemd user service: install PM2 on the machine, then try again.'
+
+/** `auto` asks for no manager; no choice at all keeps the one the machine's record asks for. */
+function askedManager(
+  request: MachineServerInstallRequest,
+  machine: MachineView
+): MachineServiceManager | null {
+  if (!request.manager) {
+    return preferredServiceManager(machine.serverInstall)
+  }
+  return request.manager === 'auto' ? null : request.manager
+}
 
 /**
- * Resolves the machine as it ended up: through its server, or over plain SSH with the reason the
- * install failed. Rejects only when SSH itself cannot connect, or a running server cannot restart.
+ * Resolves the machine as it ended up: through its server, over plain SSH with the reason the
+ * install failed, or unchanged because its user already runs a server there. Rejects only when SSH
+ * itself cannot connect or answer, or a running server cannot restart.
  */
 export function installServerOnSshMachine(
   request: MachineServerInstallRequest
@@ -108,15 +123,28 @@ async function installOverSsh(
     )
   }
   const targetId = machine.ssh.targetId
+  // Asked before anything changes: a server the user already runs here is theirs, and Seal adds no second one.
+  const ownServe = await onPlainSshSession(
+    targetId,
+    (session) => checkHostForOwnSealServe(registry, targetId, session),
+    (found) => found === null
+  )
+  if (ownServe) {
+    noteBlockedServerMove(targetId, null)
+    registry.edit((store, now) =>
+      setMachineServerInstall(store, machine.recordId, DECLINED_SERVER_INSTALL, now)
+    )
+    return registry.view(machine.id)
+  }
   if (request.moveAnyway) {
     allowMoveLeavingSavedItems(targetId)
   }
   askHostAgain(targetId)
   await failedInstallServiceCleanup(targetId)
   noteBlockedServerMove(targetId, null)
-  const preferPm2 = request.manager ? request.manager === 'pm2' : prefersPm2(machine.serverInstall)
+  const prefer = askedManager(request, machine)
   registry.edit((store, now) =>
-    setMachineServerInstall(store, machine.recordId, pendingServerInstall(preferPm2, now), now)
+    setMachineServerInstall(store, machine.recordId, pendingServerInstall(prefer, now), now)
   )
   await connectRegisteredSshTarget(targetId)
   // A connect that began before the record changed is joined, and that one installed nothing.
@@ -159,8 +187,8 @@ async function keepServerRunning(
   }
   // Checked first: the restart below would stop the server and start it the same way.
   const connection = getSshConnectionManager()?.getConnection(targetId)
-  const wish = request.manager === 'pm2' ? { prefer: 'pm2' as const } : {}
-  if (connection && !(await hasSealServiceManager(connection, wish))) {
+  const prefer = askedManager(request, machine)
+  if (connection && !(await hasSealServiceManager(connection, prefer ? { prefer } : {}))) {
     throw new Error(NO_SERVICE_MANAGER)
   }
   registry.edit((store, now) =>
@@ -173,7 +201,7 @@ async function keepServerRunning(
   )
   const restart = (): ReturnType<typeof restartManagedOrcadEnvironment> =>
     restartManagedOrcadEnvironment(getAppEnvironment().getPath('userData'), environmentId)
-  const result = await (request.manager === 'pm2' ? whilePm2IsWished(targetId, restart) : restart())
+  const result = await (prefer ? whileManagerIsWished(targetId, prefer, restart) : restart())
   if (result.outcome === 'terminals-running') {
     const terminals =
       result.liveSessions === null

@@ -1,5 +1,6 @@
 /** A first install whose server never served must not leave its service: the manager would keep restarting it, at boot too. */
 import { removeSealService } from '../../managed-server/service/seal-service-removal'
+import { sleep } from '../../ssh/connection/ssh-connection-timing'
 import { noteSealServiceOutcome } from './machine-server-install-activity'
 import { connectedSshSession } from './machine-ssh-session'
 
@@ -18,7 +19,7 @@ async function sessionAfterFallback(
     if (session || Date.now() >= deadline) {
       return session
     }
-    await new Promise((resolve) => setTimeout(resolve, SESSION_POLL_MS))
+    await sleep(SESSION_POLL_MS)
   }
 }
 

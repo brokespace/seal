@@ -17,9 +17,16 @@ import type { MachineRegistryEnvironment, MachineRegistrySshTarget } from './mac
 export type MachineServerInstallActivity = {
   installing(recordId: string): boolean
   blockedMove(sshTargetId: string): { detail: string | null } | null
-  reportedKeeper(
-    sshTargetId: string
-  ): { manager: MachineServerKeeper; startsAtBoot?: boolean | null } | null
+  reportedKeeper(sshTargetId: string): {
+    manager: MachineServerKeeper
+    startsAtBoot?: boolean | null
+    hostUser?: string
+    launchdNeedsLogin?: true
+  } | null
+  /** The `seal serve` service the user already runs on the host. */
+  ownServe(sshTargetId: string): NonNullable<MachineView['serverOwnServe']> | null
+  /** An install on this host waits for another one to end or to be given up. */
+  waitsForHost(sshTargetId: string): boolean
 }
 
 function sshAddress(target: MachineRegistrySshTarget): string {
@@ -43,6 +50,10 @@ function serverInstallView(
   | 'serverStartsAtBoot'
   | 'serverKeeper'
   | 'serverServiceRemains'
+  | 'serverHostUser'
+  | 'serverOwnServe'
+  | 'serverLaunchdNeedsLogin'
+  | 'serverInstallWaitsForHost'
 > {
   const serverInstall = record.serverInstall ?? null
   const targetId = record.sshTargetId
@@ -62,22 +73,35 @@ function serverInstallView(
   const keeper =
     reported?.manager ??
     (connection === 'ssh' || managedServer ? installedServerKeeper(serverInstall) : null)
+  const ownServe =
+    targetId && connection === 'ssh' && hasSshDetails
+      ? (activity?.ownServe(targetId) ?? null)
+      : null
+  const waitsForHost =
+    targetId !== null && connection === 'ssh' && (activity?.waitsForHost(targetId) ?? false)
+  const action = machineServerInstallAction({
+    connection,
+    hasSshDetails,
+    serverInstall,
+    // A connect nobody asked through Machines can run a waiting install too.
+    installing: (activity?.installing(record.id) ?? false) || waitsForHost,
+    managedServer,
+    reportedKeeper: reported?.manager ?? null,
+    ownServe: ownServe !== null
+  })
   return {
     serverInstall,
-    serverInstallAction: machineServerInstallAction({
-      connection,
-      hasSshDetails,
-      serverInstall,
-      installing: activity?.installing(record.id) ?? false,
-      managedServer,
-      reportedKeeper: reported?.manager ?? null
-    }),
+    serverInstallAction: action,
     ...(blocked ? { serverMoveBlocked: blocked } : {}),
     ...(keeper === 'pm2' && reported ? { serverStartsAtBoot: reported.startsAtBoot ?? null } : {}),
     ...(keeper ? { serverKeeper: keeper } : {}),
     ...(connection === 'ssh' && serverServiceRemains(serverInstall)
       ? { serverServiceRemains: true as const }
-      : {})
+      : {}),
+    ...(reported?.hostUser ? { serverHostUser: reported.hostUser } : {}),
+    ...(ownServe && action === 'reuse' ? { serverOwnServe: ownServe } : {}),
+    ...(reported?.launchdNeedsLogin ? { serverLaunchdNeedsLogin: true as const } : {}),
+    ...(waitsForHost && action === 'installing' ? { serverInstallWaitsForHost: true as const } : {})
   }
 }
 

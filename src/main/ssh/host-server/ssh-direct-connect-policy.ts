@@ -10,6 +10,8 @@ export type SshServerSetupOutcomes = {
   failed: (targetId: string, failure: unknown) => boolean
   /** `update` is set when the server kept its version on this connect. */
   served: (targetId: string, environmentId: string, update?: SshManagedServerUpdateNote) => void
+  /** The policy's plain session is up, so the host can be asked what the policy waited to know. */
+  connectedDirectly?: (targetId: string) => void
 }
 
 let policy: DirectSshPolicy | null = null
@@ -44,4 +46,8 @@ export function noteSshHostServed(
   update?: SshManagedServerUpdateNote
 ): void {
   outcomes?.served(targetId, environmentId, update)
+}
+
+export function noteSshConnectedDirectly(targetId: string): void {
+  outcomes?.connectedDirectly?.(targetId)
 }

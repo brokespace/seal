@@ -11,7 +11,8 @@ const sshMachine: MachineServerInstallFacts = {
   serverInstall: null,
   installing: false,
   managedServer: null,
-  reportedKeeper: null
+  reportedKeeper: null,
+  ownServe: false
 }
 const serverMachine: MachineServerInstallFacts = {
   ...sshMachine,
@@ -65,6 +66,40 @@ describe('machineServerInstallAction', () => {
       'install'
     ],
     ['an SSH machine whose details are gone', { ...sshMachine, hasSshDetails: false }, 'none'],
+    [
+      'an undecided SSH machine that runs its own seal serve service',
+      { ...sshMachine, ownServe: true },
+      'reuse'
+    ],
+    [
+      'a declined SSH machine that runs its own seal serve service',
+      { ...sshMachine, ownServe: true, serverInstall: { policy: 'never', state: 'declined' } },
+      'reuse'
+    ],
+    [
+      'a failed install on a machine that runs its own seal serve service',
+      {
+        ...sshMachine,
+        ownServe: true,
+        serverInstall: auto({ state: 'failed', reason: 'no space left on device' })
+      },
+      'reuse'
+    ],
+    [
+      'an install in flight on a machine that runs its own seal serve service',
+      { ...sshMachine, ownServe: true, installing: true },
+      'installing'
+    ],
+    [
+      'its own seal serve service on a machine whose SSH details are gone',
+      { ...sshMachine, ownServe: true, hasSshDetails: false },
+      'none'
+    ],
+    [
+      'a machine connected through its own seal serve service',
+      { ...serverMachine, managedServer: null, ownServe: true, reportedKeeper: 'systemd-user' },
+      'none'
+    ],
     [
       'a Seal server kept by systemd',
       { ...serverMachine, serverInstall: auto({ manager: 'systemd-user' }) },
