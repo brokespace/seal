@@ -35,8 +35,8 @@ export type AgentPickerEntry = {
   rows: NewTabAgentMenuRow[]
   surfaces: AgentPickerSurface[]
   defaultSurface: AgentPickerSurface
-  /** The CLI is not installed on the host, so its action is listed disabled with that reason. */
-  terminalMissing?: true
+  /** The CLI action is listed disabled with its reason: not installed there, or the machine needs the Seal server. */
+  terminalMissing?: true | 'needs-server'
   /** What the chat action does when it is not a structured chat. */
   chatAction?: 'install-server' | 'via-cli'
   terminal: AgentDedicatedChoices
@@ -200,7 +200,11 @@ export function agentPickerEntriesFromRows(
       const own = rows.filter((row) => row.agent === agent)
       const chatDefault = own.some((row) => row.kind === 'chat')
       const chat = chatDefault || own.some((row) => row.kind === 'cli' && row.chat)
-      const terminal = detected === null || detected.includes(agent)
+      // An SSH machine that cannot list its agents has no Seal server, and starts no terminal without one.
+      const serverless =
+        detected === null &&
+        own.some((row) => row.kind === 'chat-unavailable' && row.reason === 'needs-server')
+      const terminal = !serverless && (detected === null || detected.includes(agent))
       const needsServer = own.some((row) =>
         row.kind === 'cli'
           ? row.needsServer
@@ -213,7 +217,7 @@ export function agentPickerEntriesFromRows(
         rows: own,
         surfaces: [...(chat ? ['chat' as const] : []), ...(terminal ? ['terminal' as const] : [])],
         defaultSurface: chatDefault ? 'chat' : 'terminal',
-        ...(terminal ? {} : { terminalMissing: true as const }),
+        ...(terminal ? {} : { terminalMissing: serverless ? ('needs-server' as const) : true }),
         ...(needsServer
           ? { chatAction: 'install-server' as const }
           : viaCli

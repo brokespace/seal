@@ -22,6 +22,7 @@ import { moveAgentRowActionFocus } from './AgentSurfaceLaunchButton'
 import {
   pickerActionSurfaces,
   pickerEntryRow,
+  pickerInstallsServerByDefault,
   pickerLaunchRow,
   pickerSurfaceOpensTerminal
 } from './agent-picker-launch-row'
@@ -111,20 +112,27 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
   const closeMenu = useDropdownMenuClose()
   const surface =
     initial?.surface ?? (mode === 'select' ? selected?.surface : undefined) ?? entry.defaultSurface
-  const launchBlocked =
-    mode !== 'select' && terminalBlocked && pickerSurfaceOpensTerminal(entry, surface)
   const reasonId = useId()
   const unavailable = entry.rows.find((row) => row.kind === 'chat-unavailable')
   // An SSH machine without the Seal server still has something to start: the install its chat needs.
   const offersInstall = mode !== 'select' && entry.chatAction === 'install-server'
+  const installsByDefault = offersInstall && !preset && pickerInstallsServerByDefault(entry)
+  const launchBlocked =
+    mode !== 'select' &&
+    terminalBlocked &&
+    !installsByDefault &&
+    pickerSurfaceOpensTerminal(entry, surface)
   const inert = !entry.surfaces.length && !offersInstall
+  const noChat = entry.rows.find((row) => row.kind === 'cli' && row.noChat)
   // Why: a form's picker selects a setup, and its forms read the surface from the setup panel.
   const showsActions = mode !== 'select' && !preset && pickerActionSurfaces(entry).length > 0
   const chatNote = offersInstall
     ? installServerOfferLabel(t)
     : unavailable?.kind === 'chat-unavailable' && !entry.surfaces.includes('chat')
       ? chatUnavailableLabel(unavailable.reason, t)
-      : undefined
+      : noChat?.kind === 'cli' && noChat.noChat
+        ? chatUnavailableLabel(noChat.noChat, t)
+        : undefined
   // One reason per row: the wait, not also the chat note.
   const reason = launchBlocked ? terminalPendingLabel(t) : chatNote
   // A chat note keeps its own line whether or not the host is still connecting, so rows do not jump.
@@ -209,7 +217,7 @@ export const AgentPickerMenuRow = memo(function AgentPickerMenuRow({
             if (disabled || launchBlocked || inert) {
               return
             }
-            if (!entry.surfaces.length) {
+            if (installsByDefault || !entry.surfaces.length) {
               offerSealServerInstall(entry.rows[0]?.executionHostId)
               closeMenu()
               return

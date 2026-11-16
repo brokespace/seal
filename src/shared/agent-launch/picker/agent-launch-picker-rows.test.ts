@@ -5,7 +5,7 @@ import type { TuiAgent } from '../catalog/tui-agent'
 
 function rows(input: {
   surface: 'chat' | 'terminal'
-  installed: TuiAgent[]
+  installed: TuiAgent[] | null
   answer?: HostChatAnswer
   program?: 'available' | 'missing'
 }) {
@@ -115,6 +115,33 @@ describe('buildNewTabAgentMenuRows', () => {
     const cliDefault = rows({ surface: 'terminal', installed: ['claude'], answer: 'needs-server' })
     expect(cliDefault).toEqual([{ kind: 'cli', agent: 'claude', needsServer: true }])
     expect(entries(cliDefault, ['claude'])[0]?.chatAction).toBe('install-server')
+  })
+
+  it('offers the server install when the SSH machine cannot list its agents', () => {
+    const built = rows({ surface: 'terminal', installed: null, answer: 'needs-server' })
+    expect(built).toEqual([
+      { kind: 'chat-unavailable', agent: 'claude', reason: 'needs-server' },
+      { kind: 'chat-unavailable', agent: 'codex', reason: 'needs-server' }
+    ])
+    // No terminal starts there either, so the CLI is listed with that reason instead of launching.
+    expect(entries(built, null)[0]).toEqual({
+      agent: 'claude',
+      surfaces: [],
+      defaultSurface: 'terminal',
+      terminalMissing: 'needs-server',
+      chatAction: 'install-server'
+    })
+  })
+
+  it('keeps the reason beside a CLI whose agent has no chat on Windows', () => {
+    expect(rows({ surface: 'terminal', installed: ['claude'], answer: 'windows' })).toEqual([
+      { kind: 'cli', agent: 'claude', noChat: 'windows' }
+    ])
+    expect(rows({ surface: 'chat', installed: ['claude'], answer: 'windows' })).toEqual([
+      { kind: 'chat-unavailable', agent: 'claude', reason: 'windows' },
+      { kind: 'chat-unavailable', agent: 'codex', reason: 'windows' },
+      { kind: 'cli', agent: 'claude' }
+    ])
   })
 
   it('opens the CLI in chat view where the host runs no structured chat', () => {

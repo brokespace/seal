@@ -50,14 +50,22 @@ export type ChatUnavailableReason =
   | 'not-on-host'
   | 'windows'
 
-export type NewTabAgentMenuRow = /** `viaCli`: the chat is the agent's CLI opened in chat view. */
-(
-  | { kind: 'chat'; agent: TuiAgent; viaCli?: true }
-  | { kind: 'chat-unavailable'; agent: TuiAgent; reason: ChatUnavailableReason }
-  /** `chat`: the agent also has a chat here. `needsServer`: its chat needs the Seal server first. */
-  | { kind: 'cli'; agent: TuiAgent; chat?: true; viaCli?: true; needsServer?: true }
-  | { kind: 'terminal'; agent: TuiAgent }
-) & { executionHostId?: ExecutionHostId }
+export type NewTabAgentMenuRow =
+  /** `viaCli`: the chat is the agent's CLI opened in chat view. */
+  (
+    | { kind: 'chat'; agent: TuiAgent; viaCli?: true }
+    | { kind: 'chat-unavailable'; agent: TuiAgent; reason: ChatUnavailableReason }
+    /** `chat`: the agent also has a chat here. `needsServer`: its chat needs the Seal server first. `noChat`: why it has none. */
+    | {
+        kind: 'cli'
+        agent: TuiAgent
+        chat?: true
+        viaCli?: true
+        needsServer?: true
+        noChat?: 'windows'
+      }
+    | { kind: 'terminal'; agent: TuiAgent }
+  ) & { executionHostId?: ExecutionHostId }
 
 export type NewTabAgentMenuSettings = NativeChatDefaultSettings &
   Partial<Pick<GlobalSettings, 'defaultTuiAgent' | 'disabledTuiAgents'>>
@@ -98,6 +106,7 @@ export function buildNewTabAgentMenuRows(args: {
   const chatToo = new Set<TuiAgent>()
   const viaCli = new Set<TuiAgent>()
   const needsServer = new Set<TuiAgent>()
+  const noChatOnWindows = new Set<TuiAgent>()
   for (const agent of chatAgents) {
     const displayed = nativeChatPreferenceFor(settings, agent)
     const answer = args.hostChatAnswer(agent)
@@ -116,7 +125,8 @@ export function buildNewTabAgentMenuRows(args: {
       continue
     }
     if (answer === 'needs-server') {
-      if (displayed) {
+      // Without its server the machine's agents cannot be listed, so the install is all a row can offer.
+      if (displayed || args.detectedOnHost === null) {
         unavailable.set(agent, 'needs-server')
       } else if (installed.includes(agent)) {
         needsServer.add(agent)
@@ -129,6 +139,8 @@ export function buildNewTabAgentMenuRows(args: {
     if (!displayed) {
       if (answer === 'yes') {
         chatToo.add(agent)
+      } else if (answer === 'windows') {
+        noChatOnWindows.add(agent)
       }
       continue
     }
@@ -175,7 +187,8 @@ export function buildNewTabAgentMenuRows(args: {
       agent,
       ...(chatToo.has(agent) ? { chat: true as const } : {}),
       ...(chatToo.has(agent) && viaCli.has(agent) ? { viaCli: true as const } : {}),
-      ...(needsServer.has(agent) ? { needsServer: true as const } : {})
+      ...(needsServer.has(agent) ? { needsServer: true as const } : {}),
+      ...(noChatOnWindows.has(agent) ? { noChat: 'windows' as const } : {})
     }))
   ]
 }

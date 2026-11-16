@@ -60,6 +60,11 @@ export function cliMissingReason(
       })
 }
 
+/** Why a CLI action is disabled on an SSH machine without the Seal server: no terminal starts there. */
+export function cliNeedsServerReason(t: Translate = translate): string {
+  return t('seal.launcher.cliNeedsServer', 'Install Seal server to use the CLI here')
+}
+
 export function rowTitle(row: NewTabAgentMenuRow, label: string, t: Translate = translate): string {
   return row.kind === 'chat'
     ? t('auto.components.tab.bar.QuickLaunchButton.startChat', 'Start a chat with {{value0}}', {

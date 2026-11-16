@@ -41,15 +41,26 @@ export function pickerSurfaceOpensTerminal(
   return surface === 'terminal' || entry.chatAction === 'via-cli'
 }
 
+/** Chat is this agent's surface here, but the machine has no Seal server: the row starts the install. */
+export function pickerInstallsServerByDefault(entry: AgentPickerEntry): boolean {
+  return (
+    entry.chatAction === 'install-server' &&
+    entry.rows.some((row) => row.kind === 'chat-unavailable' && row.reason === 'needs-server')
+  )
+}
+
 /** The surfaces an agent row names as actions, default first; a host that runs no chats names none. */
 export function pickerActionSurfaces(entry: AgentPickerEntry): AgentPickerSurface[] {
   if (entry.rows.some((row) => row.kind === 'terminal')) {
     return []
   }
-  const other: AgentPickerSurface = entry.defaultSurface === 'chat' ? 'terminal' : 'chat'
-  return [entry.defaultSurface, other].filter((surface) =>
+  const first: AgentPickerSurface = pickerInstallsServerByDefault(entry)
+    ? 'chat'
+    : entry.defaultSurface
+  const other: AgentPickerSurface = first === 'chat' ? 'terminal' : 'chat'
+  return [first, other].filter((surface) =>
     surface === 'chat'
       ? entry.surfaces.includes('chat') || entry.chatAction === 'install-server'
-      : entry.surfaces.includes('terminal') || entry.terminalMissing === true
+      : entry.surfaces.includes('terminal') || !!entry.terminalMissing
   )
 }

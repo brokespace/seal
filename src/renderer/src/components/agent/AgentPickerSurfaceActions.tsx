@@ -7,6 +7,7 @@ import { useAgentLaunchHostName } from '../tab-bar/agent-launch-host-name'
 import { terminalPendingLabel } from '../tab-bar/new-tab-agent-menu-model'
 import {
   cliMissingReason,
+  cliNeedsServerReason,
   installServerOfferLabel,
   rowTitle
 } from '../tab-bar/tab-agent-row-presentation'
@@ -40,7 +41,9 @@ export function AgentPickerSurfaceActions({
         const row = pickerEntryRow(entry, surface)
         const reason =
           surface === 'terminal' && entry.terminalMissing
-            ? cliMissingReason(entry.label, hostName, t)
+            ? entry.terminalMissing === 'needs-server'
+              ? cliNeedsServerReason(t)
+              : cliMissingReason(entry.label, hostName, t)
             : terminalBlocked && !offersInstall && pickerSurfaceOpensTerminal(entry, surface)
               ? terminalPendingLabel(t)
               : undefined
