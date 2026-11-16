@@ -23,6 +23,7 @@ it('jumps to a message once, not again when the view comes back from behind a ta
       phase: 'ready',
       error: null,
       messages: [],
+      readTo: null,
       hasMore: false,
       loadingEarlier: false,
       loadEarlier: async () => 'exhausted'
