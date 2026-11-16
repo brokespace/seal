@@ -19,11 +19,13 @@ import type {
 } from '../../../../shared/seal-accounts/seal-accounts-status'
 import { sessionSwapTargets } from './seal-session-account-view'
 import { useAppStore } from '../../store'
-import { normalizeUsagePercentageDisplay } from '../../../../shared/agent-usage/display/usage-percentage-display'
+import {
+  clampUsedPercent,
+  normalizeUsagePercentageDisplay
+} from '../../../../shared/agent-usage/display/usage-percentage-display'
 import type { RateLimitWindow } from '../../../../shared/agent-usage/rate-limits/rate-limit-types'
 import { accountUsage } from '../status-bar/AccountUsageReading'
 import { formatBareUsagePercentage } from '../status-bar/usage/usage-percentage-label'
-import { clampUsedPercent } from '../../../../shared/agent-usage/display/usage-percentage-display'
 
 type SealSessionAccountMenuProps = {
   session: SealSessionAssignment
