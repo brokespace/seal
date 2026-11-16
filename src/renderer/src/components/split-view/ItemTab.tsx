@@ -28,7 +28,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/overlay-interaction/close-all-context-menus'
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTabMenu } from './ItemTabMenu'
-import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
+import { bringKeyboardFocusIntoFocusedPane, keepKeyboardOnTab } from './pane-keyboard-focus'
 import { ITEM_TAB_KEY_ATTRIBUTE } from './split-view-drop-target'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { splitViewStore } from './split-view-store'
@@ -155,6 +155,7 @@ export function ItemTab({
         // Enter and Space on the close button are its own, not the tab's.
         if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault()
+          keepKeyboardOnTab(event.currentTarget)
           commands.activate(item)
         }
       }}

@@ -86,6 +86,8 @@ export function renderTabBarSurface(
     handleSelectCreateMenuOption,
     launchAgentFromNewTabEntry,
     runPendingNewTabMenuFocusAfterClose,
+    noteNewTabMenuEscape,
+    takeNewTabMenuEscape,
     queueNewActiveTerminalFocusAfterNewTabMenuClose,
     queueFocusAfterNewTabMenuClose,
     showStaticCreateMenuItems
@@ -149,9 +151,12 @@ export function renderTabBarSurface(
           align="start"
           sideOffset={6}
           className="w-96 max-w-[calc(100vw-1rem)]"
+          onEscapeKeyDown={noteNewTabMenuEscape}
           onCloseAutoFocus={(event) => {
-            // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal.
-            event.preventDefault()
+            // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal. Esc opened nothing, so the trigger keeps the keyboard.
+            if (!takeNewTabMenuEscape()) {
+              event.preventDefault()
+            }
             runPendingNewTabMenuFocusAfterClose()
             advanceAgentSessionsTourPastNewTab()
           }}
