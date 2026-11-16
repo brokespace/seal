@@ -1554,6 +1554,16 @@
         "signInAgain": "Sign in again in Settings > Accounts"
       }
     },
+    "launcher": {
+      "chat": "Chat",
+      "cli": "CLI",
+      "installServerToChat": "Install Seal server to chat here",
+      "cliNeedsServer": "Install Seal server to use the CLI here",
+      "installServerMachineMissing": "This SSH host is not in Machines. Add it there to install Seal server.",
+      "chatOutsideWorkspace": "No chat outside the workspace",
+      "cliNotInstalledOn": "{{value0}} is not installed on {{value1}}",
+      "cliNotInstalledHere": "{{value0}} is not installed on this computer"
+    },
     "session": {
       "liveSwap": {
         "inherit": "Follow the global setting",

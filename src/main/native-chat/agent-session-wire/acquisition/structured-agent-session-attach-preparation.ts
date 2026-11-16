@@ -57,12 +57,12 @@ export async function prepareStructuredAgentSessionAttach(
     return opened
   }
   const launchDirectory =
-    !priorRecord && isFloatingWorkspaceId(params.location.workspaceId)
-      ? (options.hostLaunchDirectory ??
-        (await lock.wait(
+    (!priorRecord && options.hostLaunchDirectory) ||
+    (!priorRecord && isFloatingWorkspaceId(params.location.workspaceId)
+      ? await lock.wait(
           Promise.resolve(context.deps.resolveWorkspacePath?.(params.location.workspaceId))
-        )))
-      : undefined
+        )
+      : undefined)
   if (!priorRecord && isFloatingWorkspaceId(params.location.workspaceId) && !launchDirectory) {
     throw new Error('floating_agent_session_launch_directory_unavailable')
   }

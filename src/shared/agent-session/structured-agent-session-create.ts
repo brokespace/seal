@@ -32,6 +32,8 @@ export type StructuredAgentSessionCreateParams = {
   options?: Readonly<Record<string, string>>
   /** Sent only to a host advertising `AGENT_SESSION_CREATE_TAB_PLACEMENT_RUNTIME_CAPABILITY`. */
   tabPlacement?: { groupId?: string; afterTabId?: string }
+  /** Workspace-relative folder the agent starts in. Sent only to a host advertising `AGENT_SESSION_CREATE_LAUNCH_DIRECTORY_RUNTIME_CAPABILITY`. */
+  launchDirectory?: string
 }
 
 export type StructuredAgentSessionFirstMessage = {
@@ -67,6 +69,8 @@ export function structuredAgentSessionCreateParams(args: {
   options?: Readonly<Record<string, string>>
   /** A display hint, outside the fingerprint: a retry may name a place that moved. */
   tabPlacement?: StructuredAgentSessionCreateParams['tabPlacement']
+  /** Outside the fingerprint: the host reads it only when founding the session. */
+  launchDirectory?: string
   randomUuid: () => string
   now?: number
 }): StructuredAgentSessionCreateParams {
@@ -94,6 +98,7 @@ export function structuredAgentSessionCreateParams(args: {
       })
     },
     ...fields,
-    ...(args.tabPlacement ? { tabPlacement: args.tabPlacement } : {})
+    ...(args.tabPlacement ? { tabPlacement: args.tabPlacement } : {}),
+    ...(args.launchDirectory ? { launchDirectory: args.launchDirectory } : {})
   }
 }

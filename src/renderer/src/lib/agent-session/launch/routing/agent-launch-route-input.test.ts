@@ -164,25 +164,84 @@ describe('a cwd that names the workspace root', () => {
     }
   )
 
-  it('still requires a terminal for a subdirectory, which a structured session cannot start in', () => {
-    const args = {
-      agent: 'codex' as const,
-      workspace: { kind: 'git-worktree' as const, worktreeId: 'wt-1' },
-      tuiCustomization: { cwd: '/repo/app/packages/web' }
-    }
-    expect(buildAgentLaunchRouteInput(withRoot(), args).startsOutsideWorkspaceRoot).toBe(true)
-    expect(routeFor(withRoot(), args)).not.toBe('structured-native-chat')
-  })
-
   it('reads a folder workspace root the same way', () => {
-    const workspaceId = folderWorkspaceKey('folder-1')
     const at = (cwd: string) =>
       buildAgentLaunchRouteInput(withRoot(), {
         agent: 'codex',
-        workspace: { kind: 'folder', worktreeId: workspaceId },
+        workspace: { kind: 'folder', worktreeId: folderWorkspaceKey('folder-1') },
         tuiCustomization: { cwd }
-      }).startsOutsideWorkspaceRoot
-    expect(at('/srv/notes/')).toBe(false)
-    expect(at('/srv/notes/drafts')).toBe(true)
+      })
+    expect(at('/srv/notes/')).toMatchObject({ startsOutsideWorkspaceRoot: false })
+    expect(at('/srv/notes/')).not.toHaveProperty('launchDirectory')
+  })
+})
+
+describe('a cwd below the workspace root', () => {
+  beforeEach(() => {
+    stageLocalStructuredHost()
+    mocks.readLocalRuntimeCapabilitiesOrUnknown.mockReturnValue([
+      STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY,
+      'agentSession.create.launch-directory.v1'
+    ])
+  })
+
+  const roots = (): AgentLaunchRouteStore =>
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: only the slices the input reads are staged.
+    ({
+      settings: STRUCTURED_SETTINGS,
+      worktreesByRepo: {
+        'repo-1': [
+          { id: 'wt-1', path: '/repo/app' },
+          { id: 'wt-win', path: 'C:\\Repo\\App' }
+        ]
+      },
+      folderWorkspaces: [{ id: 'folder-1', folderPath: '/srv/notes' }]
+    }) as unknown as AgentLaunchRouteStore
+
+  const launchIn = (worktreeId: string, cwd: string) =>
+    planAgentSessionLaunch(roots(), {
+      agent: 'codex',
+      workspace: {
+        kind: worktreeId.startsWith('folder:') ? 'folder' : 'git-worktree',
+        worktreeId
+      },
+      tuiCustomization: { cwd },
+      requestId: 'route-check'
+    })
+
+  it.each([
+    ['wt-1', '/repo/app/packages/web', 'packages/web'],
+    ['wt-1', 'packages/web/', 'packages/web'],
+    ['wt-1', '/repo/app/src/../packages', 'packages'],
+    ['wt-win', 'c:\\repo\\app\\Packages\\Web', 'Packages/Web'],
+    [folderWorkspaceKey('folder-1'), '/srv/notes/drafts', 'drafts']
+  ])('starts a chat for %s in %s', (worktreeId, cwd, launchDirectory) => {
+    expect(launchIn(worktreeId, cwd)).toMatchObject({
+      route: 'structured-native-chat',
+      launchDirectory
+    })
+  })
+
+  it.each([
+    ['wt-1', '/repo/app2'],
+    ['wt-1', '/repo/app/../other'],
+    ['wt-1', '..'],
+    ['wt-1', '/repo'],
+    ['wt-win', 'C:\\Repo\\App2\\src'],
+    ['wt-win', 'D:\\Repo\\App\\src'],
+    [folderWorkspaceKey('folder-1'), '/srv/notes-old']
+  ])('keeps a terminal for %s at %s, outside the workspace', (worktreeId, cwd) => {
+    const plan = launchIn(worktreeId, cwd)
+    expect(plan.route).toBe('terminal-tui')
+    expect(plan).not.toHaveProperty('launchDirectory')
+  })
+
+  it('keeps a terminal on a host that cannot start a chat in a subfolder', () => {
+    mocks.readLocalRuntimeCapabilitiesOrUnknown.mockReturnValue([
+      STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY
+    ])
+    const plan = launchIn('wt-1', '/repo/app/packages/web')
+    expect(plan.route).toBe('terminal-tui')
+    expect(plan).not.toHaveProperty('launchDirectory')
   })
 })
