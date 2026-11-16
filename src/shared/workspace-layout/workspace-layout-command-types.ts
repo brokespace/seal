@@ -134,7 +134,10 @@ export type LayoutCommand =
       tabId?: string
       /** Main-only opens may derive file ID; wire commands must still provide it. */
       fileId?: string
-      contentType: Exclude<TabContentType, 'terminal' | 'browser' | 'agent-session' | 'simulator'>
+      contentType: Exclude<
+        TabContentType,
+        'terminal' | 'browser' | 'agent-session' | 'external-agent-session' | 'simulator'
+      >
       /** Present for edit-mode files, which are restored after restart. */
       file?: LayoutEditorFile
       /** What the tab shows beyond its file; not saved. */

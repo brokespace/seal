@@ -665,22 +665,16 @@
           "account": "Account",
           "hostError": "Could not scan {{host}}: {{error}}",
           "finished": "Recently finished",
-          "title": "Active agents",
-          "options": "Active agents options",
           "stopPicking": "Done selecting",
           "startPicking": "Select sessions",
           "settings": "Idle sessions and notifications…",
           "noMatch": "No sessions match.",
-          "empty": "No Claude Code or Codex sessions are running on this machine, a connected SSH host or a paired server.",
           "pickedCount": "{{count}} selected",
           "bulkStop": "Stop",
           "bulkRemove": "Remove",
-          "bulkDelete": "Delete",
-          "collapse": "Collapse active agents",
-          "expand": "Expand active agents"
+          "bulkDelete": "Delete"
         },
         "sessionRows": {
-          "allUnderWorkspaces": "Every session is listed under its workspace.",
           "machine": "Machine",
           "filterByMachine": "Filter sessions by machine",
           "scanFailed": "Some machines could not be scanned",
@@ -699,13 +693,7 @@
           "actions": "Session actions",
           "loading": "Looking for sessions",
           "backToSession": "Back to session",
-          "backToProject": "Back to {{project}}",
-          "backToProjectOverview": "Back to project overview",
-          "subagentOf": "Subagent: {{title}}",
-          "goneTab": "Session ended",
-          "tabs": "Open agent sessions",
-          "gone": "This session is no longer on its machine. Close the tab, or find it under Recently finished in Active agents.",
-          "pick": "Pick a session under Active agents in the sidebar to open its chat."
+          "subagentOf": "Subagent: {{title}}"
         },
         "badge": {
           "one": "1 agent session: {{status}}",
@@ -2401,6 +2389,18 @@
       "empty": "Context usage appears after the first reply.",
       "compactsAt": "Compacts automatically at {{threshold}}: {{left}} left",
       "compactNow": "Compact now"
+    },
+    "sessionTab": {
+      "open": {
+        "noWorkspace": "Open a workspace first: this session has none to open in."
+      },
+      "unassigned": "Unassigned",
+      "ended": "This session has ended.",
+      "endedResume": "This session has ended. Send a message to resume it.",
+      "takeOver": "Take over",
+      "unavailable": "This session is no longer available",
+      "promptReadOnly": "Seal can’t answer this prompt. Answer it where the session runs.",
+      "answerFailed": "Seal couldn’t answer this prompt."
     }
   },
   "components": {

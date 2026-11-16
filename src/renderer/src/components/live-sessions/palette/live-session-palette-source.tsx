@@ -18,8 +18,8 @@ import {
 } from '../live-session-presentation'
 import { useLiveSessions } from '../live-session-registry-store'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
-import { openLiveSessionView } from '../menu/live-session-menu-effects'
-import { RECENTLY_FINISHED_MS } from '../active-agents/active-agents-model'
+import { openAgentSession } from '../open/open-agent-session'
+import { RECENTLY_FINISHED_MS } from '../row/live-session-machine-listing'
 
 /** The palette's rows for sessions: running ones first, then those that ended in the last day. */
 export function liveSessionPaletteResults(
@@ -106,7 +106,7 @@ export function useLiveSessionPaletteSource(args: {
       typedPlacement: 'after-workspaces',
       leadsOnTie: false,
       results: liveSessionPaletteResults(sessions, query, now, (sessionId) =>
-        openLiveSessionView(sessionId, 'tab')
+        openAgentSession(sessionId, 'tab')
       )
     }
   }, [sessions, query, visible, now])

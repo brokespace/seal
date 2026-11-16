@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../shared/tab-types'
 import type { AppState } from '@/store/types'
 
 export function resolveActiveTabRenameTarget(
@@ -11,5 +12,5 @@ export function resolveActiveTabRenameTarget(
     return null
   }
   const activeTab = store.getActiveTab(activeWorktreeId)
-  return activeTab?.contentType === 'agent-session' ? activeTab.id : null
+  return activeTab && isAgentSessionSurfaceTab(activeTab.contentType) ? activeTab.id : null
 }

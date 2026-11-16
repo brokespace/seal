@@ -9,7 +9,7 @@ import { getAiVaultResumeWorkspaceExecutionHostId } from '@/lib/agent-session/re
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { extendWorktreeIdByTabId } from '../../../../../shared/workspace-session/workspace-session-host-records'
 import { folderWorkspaceKey } from '../../../../../shared/workspace-scope'
-import { useLiveSessions } from '../live-session-registry-store'
+import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
 import { liveSessionExecutionHost } from '../take-over/live-session-take-over'
 import {
   linkLiveSessions,
@@ -79,6 +79,19 @@ function linksFor(inputs: Inputs): LiveSessionLinks {
   )
   memo = { inputs, value: { links, byProject: projectSessionBadges(sessions, links) } }
   return memo.value
+}
+
+/** The same answer outside a render, for an action that runs once. */
+export function readLiveSessionLinks(): LiveSessionLinks {
+  const state = useAppStore.getState()
+  return linksFor([
+    liveSessionRegistryStore.getState().sessions,
+    state.repos,
+    selectWorktreesByRepo(state),
+    selectFolderWorkspaces(state),
+    state.tabsByWorktree,
+    state.unifiedTabsByWorktree
+  ])
 }
 
 /** Which workspace each live session runs in, and each project's session badge. */

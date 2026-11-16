@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import type { prepareWebSessionTabsSnapshotBrowser } from './apply-preparation-browser'
 import { buildTerminalUnifiedTab } from './tab-builders'
 import { isAgentSessionTab } from './terminal-surfaces'
@@ -174,7 +175,7 @@ export function prepareWebSessionTabsSnapshotUnified(
   const currentVisibleStructuredTabId =
     currentVisibleUnifiedTabId &&
     nextUnifiedTabs?.find(
-      (tab) => tab.id === currentVisibleUnifiedTabId && tab.contentType === 'agent-session'
+      (tab) => tab.id === currentVisibleUnifiedTabId && isAgentSessionSurfaceTab(tab.contentType)
     )
       ? currentVisibleUnifiedTabId
       : null

@@ -1,4 +1,5 @@
-import { useCallback, useImperativeHandle, useMemo, useRef } from 'react'
+import { createContext, useCallback, useContext, useImperativeHandle, useMemo, useRef } from 'react'
+import type { RefObject } from 'react'
 import { useAppStore } from '@/store'
 import { hasAskAnswer } from '../../../../../../shared/native-chat/input/native-chat-ask-answer'
 import { nativeChatScrollsToLatestOnSend } from '../../../../../../shared/native-chat/native-chat-appearance-settings'
@@ -64,6 +65,12 @@ export type NativeChatMessageListHandle = {
   revealMessage: (messageId: string) => void
 }
 
+/** How the frame around a chat brings one of the pane's messages into view. */
+export const NativeChatMessageRevealContext = createContext<RefObject<Pick<
+  NativeChatMessageListHandle,
+  'revealMessage'
+> | null> | null>(null)
+
 /** This pane's own transcript; an unmounted pane's reveal reaches nothing. */
 export function useNativeChatRevealLatest(): {
   messageListRef: React.RefObject<NativeChatMessageListHandle | null>
@@ -71,6 +78,11 @@ export function useNativeChatRevealLatest(): {
   captureRevealLatest: () => () => void
 } {
   const messageListRef = useRef<NativeChatMessageListHandle>(null)
+  useImperativeHandle(
+    useContext(NativeChatMessageRevealContext),
+    () => ({ revealMessage: (messageId) => messageListRef.current?.revealMessage(messageId) }),
+    []
+  )
   const reveal = useCallback((readerWasAtEnd?: boolean) => {
     try {
       messageListRef.current?.revealLatest(readerWasAtEnd)

@@ -31,6 +31,7 @@ import { getActiveUnifiedTabId, isCurrentWorkspaceTab } from './workspace-tab-pa
 import { projectedStructuredChatTabName } from '@/runtime/native-chat/naming/structured-chat-tab-name'
 import { agentTypeToIconAgent } from '../../../../../../shared/agent-status/presentation/agent-type-icon-agent'
 import type { Tab } from '../../../../../../shared/tab-types'
+import { isAgentSessionSurfaceTab } from '../../../../../../shared/tab-types'
 import type {
   BuildSearchableWorkspaceTabsOptions,
   SearchableWorkspaceTab,
@@ -209,7 +210,7 @@ export function buildSearchableWorkspaceTabEntries({
         })
         continue
       }
-      if (tab.contentType === 'agent-session') {
+      if (isAgentSessionSurfaceTab(tab.contentType)) {
         const title = projectedStructuredChatTabName(tab, chatNames)
         seenTabIdentities.add(tabIdentity)
         entries.push({

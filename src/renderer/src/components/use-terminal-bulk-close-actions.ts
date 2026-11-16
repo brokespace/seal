@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../shared/tab-types'
 import { useCallback } from 'react'
 import { hasUnsentBrowserNotes } from '@/store/slices/browser/annotations/browser-page-annotation'
 import { useAppStore } from '../store'
@@ -84,7 +85,7 @@ export function useTerminalBulkCloseActions(
           closeTerminalTab(unifiedTab.entityId, { reason: 'user', skipRunningProcessConfirm: true })
           continue
         }
-        if (unifiedTab?.contentType === 'agent-session') {
+        if (unifiedTab && isAgentSessionSurfaceTab(unifiedTab.contentType)) {
           state.closeUnifiedTab(unifiedTab.id)
           continue
         }

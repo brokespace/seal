@@ -161,6 +161,9 @@ function projectTab(tab: LayoutTab, scope: Scope): RuntimeMobileSessionSnapshotT
     // A simulator needs the desktop to draw it; the window lists none either.
     case 'simulator':
       return []
+    // Old clients have no row kind for a session started outside Seal.
+    case 'external-agent-session':
+      return []
   }
 }
 

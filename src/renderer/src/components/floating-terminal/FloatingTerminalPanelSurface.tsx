@@ -1,3 +1,4 @@
+import { isAgentSessionSurfaceTab } from '../../../../shared/tab-types'
 import TabBar from '@/components/tab-bar/TabBar'
 import { TabGroupSplitNodeTree } from '@/components/tab-group/TabGroupSplitNodeTree'
 import { WorkspaceTabDragLayer } from '@/components/tab-group/WorkspaceTabDragLayer'
@@ -130,7 +131,9 @@ export function renderFloatingTerminalPanelSurface(
                 <TabBar
                   tabs={terminalItems}
                   activeTabId={
-                    activeTab?.contentType === 'agent-session' ? activeTab.id : activeTerminalId
+                    activeTab && isAgentSessionSurfaceTab(activeTab.contentType)
+                      ? activeTab.id
+                      : activeTerminalId
                   }
                   groupId={activeGroup?.id}
                   worktreeId={FLOATING_TERMINAL_WORKTREE_ID}
