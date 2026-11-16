@@ -21,7 +21,7 @@ import {
   type MachineId
 } from '../../../shared/machines/machine-types'
 import type { MachineView } from '../../../shared/machines/machine-view'
-import { buildMachineViews } from './machine-views'
+import { buildMachineViews, type MachineServerInstallActivity } from './machine-views'
 import type { MachineConnection } from '../connection/machine-connection'
 
 export type MachineRegistrySshTarget = MachineSshTargetFacts & {
@@ -33,6 +33,8 @@ export type MachineRegistrySshTarget = MachineSshTargetFacts & {
 
 export type MachineRegistryEnvironment = MachineEnvironmentFacts & {
   preferredEndpoint: string | null
+  /** The SSH target Seal deployed this server over; null for a server the user runs. */
+  managedSshTargetId: string | null
 }
 
 export type MachineRegistryDeps = {
@@ -45,6 +47,7 @@ export type MachineRegistryDeps = {
   serverConnection(machineId: MachineId, environmentId: string): MachineConnection
   changed(): void
   now(): number
+  serverInstallActivity?: MachineServerInstallActivity
   log?(message: string, error?: unknown): void
 }
 
@@ -120,14 +123,22 @@ export class MachineRegistry {
     )
   }
 
-  /** True when this SSH target belongs to a machine the user set to connect over SSH. */
-  connectsOverSsh(targetId: string): boolean {
-    const record = this.recordForSshTarget(targetId)
-    return record ? activeMachineConnection(record) === 'ssh' : false
+  list(): MachineView[] {
+    return buildMachineViews(
+      this.reconcile(),
+      this.deps.sshTargets(),
+      this.deps.environments(),
+      this.deps.serverInstallActivity
+    )
   }
 
-  list(): MachineView[] {
-    return buildMachineViews(this.reconcile(), this.deps.sshTargets(), this.deps.environments())
+  /** Apply a record edit and save it when it changed something. */
+  edit(change: (store: MachineStore, now: number) => MachineStore): void {
+    const store = this.current()
+    const next = change(store, this.deps.now())
+    if (next !== store) {
+      this.persist(next)
+    }
   }
 
   /** The one connection every feature uses for this machine, whichever transport it is set to. */
@@ -229,15 +240,12 @@ export class MachineRegistry {
     if (!trimmed) {
       throw new Error('A machine needs a name')
     }
-    const store = this.current()
-    this.persist({
+    this.edit((store, now) => ({
       ...store,
       machines: store.machines.map((machine) =>
-        machine.id === recordId
-          ? { ...machine, name: trimmed, updatedAt: this.deps.now() }
-          : machine
+        machine.id === recordId ? { ...machine, name: trimmed, updatedAt: now } : machine
       )
-    })
+    }))
     return this.requireView(recordId)
   }
 
@@ -278,6 +286,10 @@ export class MachineRegistry {
     const recordId = this.requireRecordId(machineId)
     this.persist(separateMachine(this.current(), recordId, this.deps.now()))
     return this.list()
+  }
+
+  view(machineId: string): MachineView {
+    return this.requireView(this.requireRecordId(machineId))
   }
 
   private requireRecordId(machineId: string): string {

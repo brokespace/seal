@@ -4,7 +4,10 @@ import { join } from 'node:path'
 import { RELAY_INSTALL_LOCK_NAME } from '../../../../shared/relay-install-lock-name'
 import { hasErrorCode } from '../../../daemon/endpoint/identity/daemon-process-inspection'
 import type { RuntimeRpcClientActivity } from '../../../runtime/rpc/server/runtime-rpc'
-import { ORCAD_MANAGED_ACTIVATION_ROOT_ENV } from '../../../../shared/orcad-managed-launch-env'
+import {
+  ORCAD_MANAGED_ACTIVATION_ROOT_ENV,
+  SEAL_SERVER_SERVICE_ENV
+} from '../../../../shared/orcad-managed-launch-env'
 import {
   ORCAD_IDLE_EXIT_TIMEOUT_MS,
   readOrcadE2EIdleTimeoutMs,
@@ -24,7 +27,7 @@ export function resolveOrcadManagedIdleExit(
   env: NodeJS.ProcessEnv
 ): OrcadManagedIdleExitConfig | null {
   const activationRoot = env[ORCAD_MANAGED_ACTIVATION_ROOT_ENV]
-  if (!activationRoot) {
+  if (!activationRoot || env[SEAL_SERVER_SERVICE_ENV] === '1') {
     return null
   }
   return {

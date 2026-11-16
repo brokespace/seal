@@ -34,7 +34,16 @@ function sshMachine(id: MachineId, connected: boolean): MachineConnection {
 }
 
 function view(id: MachineId): MachineView {
-  return { id, recordId: id, name: id, connection: 'ssh', ssh: null, server: null }
+  return {
+    id,
+    recordId: id,
+    name: id,
+    connection: 'ssh',
+    ssh: null,
+    server: null,
+    serverInstall: null,
+    serverInstallAction: 'none'
+  }
 }
 
 /** A fresh keeper: it starts once per process. `passes` reads what it wrote to the trace file. */

@@ -17,7 +17,8 @@ import { useMachineTransfers } from './transfers/use-machine-transfers'
 
 export default function MachinesPage(): React.JSX.Element {
   const t = useTranslate()
-  const { machines, reload } = useMachinesInventory(useLocalMachineName())
+  const { machines, views, reload } = useMachinesInventory(useLocalMachineName())
+  const viewsById = useMemo(() => new Map(views.map((view) => [view.id, view])), [views])
   const metricsById = useMachineMetricsEntries()
   useMachineMetricsPolling(machines)
   const { sessions } = useLiveSessions()
@@ -60,6 +61,7 @@ export default function MachinesPage(): React.JSX.Element {
         >
           <MachineList
             machines={machines}
+            viewsById={viewsById}
             metricsById={metricsById}
             sessionCountById={sessionCountById}
             selectedId={selected?.id ?? null}
@@ -75,6 +77,7 @@ export default function MachinesPage(): React.JSX.Element {
           {selected ? (
             <MachineDetail
               machine={selected}
+              view={viewsById.get(selected.id) ?? null}
               metrics={selectedMetrics?.metrics ?? null}
               metricsError={selectedMetrics?.error ?? null}
               sessions={sessionsByMachine.get(selected.id) ?? []}

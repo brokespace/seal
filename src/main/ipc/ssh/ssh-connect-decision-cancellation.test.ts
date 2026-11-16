@@ -27,6 +27,7 @@ import type { SshConnection } from '../../ssh/connection/ssh-connection'
 import { recordSshConnectionOpened } from '../../ssh/connection/ssh-connection-attribution'
 import {
   decideHostServer,
+  publishBridgedUnservedHostServer,
   publishHostServerDecisionFailure,
   restoreKeptHostServer,
   publishManagedServerConnect,
@@ -47,6 +48,7 @@ import {
   stopLegacyRelayBridge
 } from '../../ssh/legacy-relay/bridge/legacy-relay-bridge-registry'
 import { createSshIpcHarness } from './ssh-ipc-test-harness'
+import { setDirectSshConnectPolicy } from '../../ssh/host-server/ssh-direct-connect-policy'
 
 const { mockSshStore, mockConnectionManager } = mocks
 
@@ -200,6 +202,31 @@ describe('a quiet retry of a bridged host move (#29626)', () => {
       'SSH connection attempt was cancelled'
     )
     expect(decideHostServer).not.toHaveBeenCalled()
+  })
+
+  it('does not move a host that now takes a plain session', async () => {
+    setDirectSshConnectPolicy(() => true)
+
+    await expect(connectTarget('ssh-1', { quiet: true })).rejects.toThrow(
+      'SSH connection attempt was cancelled'
+    )
+    expect(decideHostServer).not.toHaveBeenCalled()
+  })
+
+  it('reports why the server is not there yet when the host stays connected for its terminals', async () => {
+    const failed = vi.fn(() => false)
+    setDirectSshConnectPolicy(() => false, { failed, served: vi.fn() })
+    const waiting = {
+      route: 'unserved',
+      reason: 'relay_terminals_live',
+      terminals: 1,
+      bridged: true
+    } as const
+    vi.mocked(decideHostServer).mockResolvedValueOnce(waiting)
+
+    await expect(connectTarget('ssh-1')).resolves.toMatchObject({ status: 'connected' })
+    expect(failed).toHaveBeenCalledWith('ssh-1', waiting)
+    expect(publishBridgedUnservedHostServer).toHaveBeenCalledWith(target, waiting)
   })
 })
 

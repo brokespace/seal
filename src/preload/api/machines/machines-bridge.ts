@@ -11,7 +11,12 @@ import {
   type MachineTransfer
 } from '../../../shared/machines/machine-types'
 import type { MachineConnectionType } from '../../../shared/machines/machine-record'
-import type { MachineView, MachineWorktree } from '../../../shared/machines/machine-view'
+import type {
+  MachineServerInstallRequest,
+  MachineServiceManagerChoice,
+  MachineView,
+  MachineWorktree
+} from '../../../shared/machines/machine-view'
 import type {
   MachineDiskIndexReply,
   MachineDiskIndexRequest
@@ -84,7 +89,17 @@ export type MachinesApi = {
     connection: MachineConnectionType
     name?: string
     machineId?: MachineId
+    /** SSH only: `auto` installs Seal's server on the next connect, `never` keeps plain SSH. */
+    serverInstall?: 'auto' | 'never'
+    serviceManager?: MachineServiceManagerChoice
   }) => Promise<MachineView>
+  /** Installs Seal's server on an SSH machine and connects through it; a failure leaves plain SSH. */
+  installServer: (args: MachineServerInstallRequest) => Promise<MachineView>
+  declineServerInstall: (args: { machineId: MachineId }) => Promise<MachineView>
+  /** Stops and removes the service and the server; the machine returns to plain SSH. */
+  removeServer: (args: { machineId: MachineId }) => Promise<MachineView>
+  /** Connects an SSH machine through the `seal serve` service its user already runs; installs nothing. */
+  reuseOwnServer: (args: { machineId: MachineId }) => Promise<MachineView>
   separate: (args: { machineId: MachineId }) => Promise<MachineView[]>
   connect: (args: { machineId: MachineId }) => Promise<void>
   /** `agent` starts that agent (with `prompt`) instead of a plain shell. */
@@ -193,6 +208,10 @@ export const machinesApi: MachinesApi = {
   setConnection: (args) => ipcRenderer.invoke(MACHINE_IPC.setConnection, args),
   renameMachine: (args) => ipcRenderer.invoke(MACHINE_IPC.renameMachine, args),
   adopt: (args) => ipcRenderer.invoke(MACHINE_IPC.adopt, args),
+  installServer: (args) => ipcRenderer.invoke(MACHINE_IPC.installServer, args),
+  declineServerInstall: (args) => ipcRenderer.invoke(MACHINE_IPC.declineServerInstall, args),
+  removeServer: (args) => ipcRenderer.invoke(MACHINE_IPC.removeServer, args),
+  reuseOwnServer: (args) => ipcRenderer.invoke(MACHINE_IPC.reuseOwnServer, args),
   separate: (args) => ipcRenderer.invoke(MACHINE_IPC.separate, args),
   connect: (args) => ipcRenderer.invoke(MACHINE_IPC.connect, args),
   shellOpen: (args) => ipcRenderer.invoke(MACHINE_IPC.shellOpen, args),

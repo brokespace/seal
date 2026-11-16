@@ -2,7 +2,7 @@ import type {
   MachineGpu,
   MachineGpuSummary
 } from '../../../../../shared/machines/machine-gpu-types'
-import { formatBytes, formatBytesOfTotal } from './machine-format'
+import { formatBytes, formatBytesOfTotal, formatTemperature } from './machine-format'
 
 export function formatGpuPercent(percent: number | null): string {
   return percent === null ? '—' : `${Math.round(percent)}%`
@@ -57,7 +57,7 @@ export function formatGpuReadings(gpu: MachineGpu): string {
     gpu.memoryUsedBytes === null && gpu.memoryTotalBytes === null
       ? null
       : formatGpuMemory(gpu.memoryUsedBytes, gpu.memoryTotalBytes),
-    gpu.temperatureC === null ? null : `${Math.round(gpu.temperatureC)} °C`,
+    gpu.temperatureC === null ? null : formatTemperature(gpu.temperatureC),
     gpu.powerDrawWatts === null ? null : formatGpuWatts(gpu.powerDrawWatts)
   ]
     .filter(Boolean)

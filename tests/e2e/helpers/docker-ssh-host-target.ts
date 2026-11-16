@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
@@ -19,40 +19,70 @@ export type DockerSshHostTarget = {
   tempDir: string
 }
 
-function run(command: string, args: string[], opts: { timeoutMs?: number } = {}): string {
-  return execFileSync(command, args, {
+export type DockerSshHostProcessResult = { exitCode: number; stdout: string; stderr: string }
+
+/** Runs a local CLI (docker, ssh-keygen) for a Docker SSH host; a failure is reported in the result, never thrown. */
+export function spawnDockerSshHostProcess(
+  command: string,
+  args: string[],
+  opts: { timeoutMs?: number } = {}
+): DockerSshHostProcessResult {
+  const result = spawnSync(command, args, {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: opts.timeoutMs ?? 30_000
-  }).trim()
+  })
+  return {
+    exitCode: result.status ?? -1,
+    stdout: (result.stdout ?? '').trim(),
+    stderr: (result.stderr ?? '').trim() || (result.error?.message ?? '')
+  }
 }
 
-function tryRun(command: string, args: string[], opts: { timeoutMs?: number } = {}): void {
-  spawnSync(command, args, { stdio: 'ignore', timeout: opts.timeoutMs ?? 10_000 })
+/** Returns stdout; throws on a non-zero exit. */
+export function runDockerSshHostProcess(
+  command: string,
+  args: string[],
+  opts: { timeoutMs?: number } = {}
+): string {
+  const result = spawnDockerSshHostProcess(command, args, opts)
+  if (result.exitCode !== 0) {
+    throw new Error(
+      `Command failed: ${command} ${args.join(' ')} (exit ${result.exitCode})\n${result.stderr || result.stdout}`
+    )
+  }
+  return result.stdout
 }
 
 export function execDockerSshHostTargetCommand(
   target: DockerSshHostTarget,
   command: string
 ): string {
-  return run('docker', ['exec', target.containerName, 'bash', '-lc', command], {
+  return runDockerSshHostProcess('docker', ['exec', target.containerName, 'bash', '-lc', command], {
     timeoutMs: 60_000
   })
 }
 
 export function execDockerSshHostTargetControlCommand(
   target: DockerSshHostTarget,
-  command: string
+  command: string,
+  /** execFlags are `docker exec` flags such as `-u`. */
+  opts: { execFlags?: string[]; timeoutMs?: number } = {}
 ): string {
-  return run('docker', [
-    'exec',
-    target.containerName,
-    'bash',
-    '--noprofile',
-    '--norc',
-    '-c',
-    command
-  ])
+  return runDockerSshHostProcess(
+    'docker',
+    [
+      'exec',
+      ...(opts.execFlags ?? []),
+      target.containerName,
+      'bash',
+      '--noprofile',
+      '--norc',
+      '-c',
+      command
+    ],
+    { timeoutMs: opts.timeoutMs }
+  )
 }
 
 function sshArgs(target: DockerSshHostTarget, command: string): string[] {
@@ -74,7 +104,7 @@ function sshArgs(target: DockerSshHostTarget, command: string): string[] {
   ]
 }
 
-function waitForSsh(target: DockerSshHostTarget): void {
+export function waitForSsh(target: DockerSshHostTarget): void {
   const deadline = Date.now() + 90_000
   let lastError = ''
   while (Date.now() < deadline) {
@@ -98,7 +128,7 @@ function waitForSsh(target: DockerSshHostTarget): void {
   )
 }
 
-function seedRemoteRepo(target: DockerSshHostTarget, repoPath: string): void {
+export function seedRemoteRepo(target: DockerSshHostTarget, repoPath: string): void {
   const sentinel = `${target.containerName}:${repoPath}`
   execDockerSshHostTargetCommand(
     target,
@@ -189,14 +219,14 @@ export function startDockerSshHostTarget(
   const bindHost = host === '127.0.0.1' ? host : '0.0.0.0'
   const tempDir = mkdtempSync(path.join(os.tmpdir(), 'orca-ssh-docker-'))
   const identityFile = path.join(tempDir, 'id_ed25519')
-  run('ssh-keygen', ['-t', 'ed25519', '-N', '', '-f', identityFile, '-q'])
+  runDockerSshHostProcess('ssh-keygen', ['-t', 'ed25519', '-N', '', '-f', identityFile, '-q'])
   const publicKey = readFileSync(`${identityFile}.pub`, 'utf8').trim()
   const containerName = `orca-ssh-e2e-${testInfo.workerIndex}-${Date.now()}-${randomUUID().slice(0, 8)}`
   let target: DockerSshHostTarget | null = null
 
   try {
-    tryRun('docker', ['rm', '-f', containerName])
-    run(
+    spawnDockerSshHostProcess('docker', ['rm', '-f', containerName], { timeoutMs: 10_000 })
+    runDockerSshHostProcess(
       'docker',
       [
         'run',
@@ -232,11 +262,13 @@ export function startDockerSshHostTarget(
       { timeoutMs: 120_000 }
     )
 
-    const port = Number(run('docker', ['port', containerName, '22/tcp']).split(':').at(-1))
+    const port = Number(
+      runDockerSshHostProcess('docker', ['port', containerName, '22/tcp']).split(':').at(-1)
+    )
     if (!Number.isInteger(port) || port <= 0) {
       throw new Error(`Unable to read mapped SSH port for ${containerName}`)
     }
-    const containerIp = run('docker', [
+    const containerIp = runDockerSshHostProcess('docker', [
       'inspect',
       '--format',
       '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
@@ -261,6 +293,6 @@ export function cleanupDockerSshHostTarget(target: DockerSshHostTarget | null): 
   if (!target) {
     return
   }
-  tryRun('docker', ['rm', '-f', target.containerName], { timeoutMs: 20_000 })
+  spawnDockerSshHostProcess('docker', ['rm', '-f', target.containerName], { timeoutMs: 20_000 })
   rmSync(target.tempDir, { recursive: true, force: true })
 }

@@ -12273,8 +12273,7 @@
           },
           "description": "Orca 会将自身安装到空的 SSH 主机上，并自动保持最新",
           "deploy": {
-            "host": "SSH 主机",
-            "name": "服务器名称"
+            "host": "SSH 主机"
           },
           "pending": {
             "resume": "继续"
@@ -12617,12 +12616,10 @@
           "noSavedServers": "没有已保存的服务器",
           "hideError": "隐藏错误",
           "showError": "显示错误",
-          "installNamePlaceholder": "与 SSH 主机相同",
           "defaultHostEmptyLine": "在添加服务器之前，新项目会在此电脑上打开",
           "setUpDone": "已在 {{name}} 上设置好 Orca",
           "settingUpInBackground": "正在后台于 {{name}} 上设置 Orca，准备好后会显示在列表中",
           "setUpOnSshHost": "在 SSH 主机上设置 Orca",
-          "setUp": "设置",
           "overYourSsh": "通过你的 SSH 连接"
         },
         "networkAddress": {

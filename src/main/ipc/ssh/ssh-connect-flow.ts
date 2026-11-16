@@ -32,7 +32,7 @@ import {
 } from './ssh-connect-attempt-registry'
 import { connectionManager, getCurrentMainWindow } from './ssh-ipc-context'
 import { broadcastSshState, getPublicSshState } from './ssh-renderer-broadcast'
-import { connectsDirectlyOverSsh } from '../../ssh/host-server/ssh-direct-connect-policy'
+import * as directSsh from '../../ssh/host-server/ssh-direct-connect-policy'
 import { abandonDecisionTransport } from './ssh-session-teardown'
 import { awaitTargetLifecycle } from './ssh-target-lifecycle-queue'
 import { startLegacyRelayBridge } from '../../ssh/legacy-relay/bridge/legacy-relay-bridge-registry'
@@ -115,11 +115,9 @@ async function admitConnect(
   if (!observedAuthority) {
     throw createCancelledConnectAttemptError()
   }
-  if (existing) {
-    if (connectInFlight.get(targetId) === existing) {
-      connectInFlight.delete(targetId)
-      replacePendingTransport = true
-    }
+  if (existing && connectInFlight.get(targetId) === existing) {
+    connectInFlight.delete(targetId)
+    replacePendingTransport = true
   }
   if (!isCurrentSshProviderAuthority(observedAuthority)) {
     throw createCancelledConnectAttemptError()
@@ -164,10 +162,12 @@ async function doQuietConnect(
   quiet: QuietConnect
 ): Promise<SshConnectionState> {
   // Replacing a pending transport would hang up the session the kept host still uses.
+  // A host whose install was called off meanwhile keeps its plain session: the move is not retried.
   if (
     replacePendingTransport ||
     !isSshHostKeptForBridgedTerminals(getSshHostServerStatus(targetId)) ||
-    connectionManager!.getState(targetId)?.status !== 'connected'
+    connectionManager!.getState(targetId)?.status !== 'connected' ||
+    directSsh.connectsDirectlyOverSsh(targetId)
   ) {
     throw createCancelledConnectAttemptError()
   }
@@ -200,8 +200,10 @@ async function doConnect(
 
   // Attribute decision-created transports so cancellation closes only those not adopted by a newer owner.
   const owner = Symbol(targetId)
-  if (!quiet && connectsDirectlyOverSsh(targetId)) {
-    return connectDirect(target, owner, authority)
+  if (!quiet && directSsh.connectsDirectlyOverSsh(targetId)) {
+    const state = await connectDirect(target, owner, authority)
+    directSsh.noteSshConnectedDirectly(targetId)
+    return state
   }
   // Deploy/conversion require teardown first; rotated authority still lets concurrent connects join.
   const server = await runAttributedToSshOwner(owner, () => decideHostServer(target)).catch(
@@ -218,6 +220,9 @@ async function doConnect(
       }
       // A failed setup leaves no relay to own the transport its decision dialed.
       await abandonDecisionTransport(targetId, owner, authority)
+      if (directSsh.fallsBackToDirectSsh(targetId, error)) {
+        return directSsh.DIRECT_SSH_FALLBACK
+      }
       publishHostServerDecisionFailure(targetId, error)
       throw error
     }
@@ -227,6 +232,9 @@ async function doConnect(
   if (!isCurrentConnectAttempt(targetId, authority)) {
     await abandonDecisionTransport(targetId, owner, authority)
     throw createCancelledConnectAttemptError()
+  }
+  if (server === directSsh.DIRECT_SSH_FALLBACK) {
+    return connectDirect(target, owner, authority)
   }
   adoptCurrentTransport(targetId, owner)
   if (quiet?.active && server.route === 'unserved' && !server.bridged) {
@@ -249,6 +257,7 @@ async function doConnect(
       authority = rotateSshProviderAuthority(targetId)
       quiet.rotated(authority)
     }
+    directSsh.noteSshHostServed(targetId, server.environmentId, server.update)
     const published = publishManagedServerConnect(
       targetId,
       server.environmentId,
@@ -273,14 +282,18 @@ async function doConnect(
       await abandonDecisionTransport(targetId, owner, authority)
       throw createCancelledConnectAttemptError()
     }
+    directSsh.noteSshHostServerWaits(targetId, server)
     return publishBridgedUnservedHostServer(target, server)
   }
   // Unserved hosts have no relay fallback.
   await abandonDecisionTransport(targetId, owner, authority)
+  if (directSsh.fallsBackToDirectSsh(targetId, server)) {
+    return connectDirect(target, owner, authority)
+  }
   throw publishUnservedHostServer(target, server)
 }
 
-/** A machine set to SSH gets a session and nothing else; its features run over this transport. */
+/** A session and nothing else: nothing is deployed on the host, and its features run over this transport. */
 async function connectDirect(
   target: SshTarget,
   owner: symbol,

@@ -4,7 +4,7 @@ import {
   pairedRuntimeConnectionFromOffer,
   type PairedRuntimeConnection
 } from '../../../shared/remote-runtime/pairing/paired-runtime-connection'
-import { ORCAD_MANAGED_REMOTE_PORT } from '../../../shared/orcad-managed-runtime'
+import { SEAL_MANAGED_SSH_PORT } from '../../../shared/orcad-managed-runtime'
 import {
   isRecoverableRemoteRuntimeConnectionError,
   toRemoteRuntimeClientErrorLike
@@ -157,10 +157,10 @@ export function deployedOrcadTunnelChecks(
   let readiness = initial
   return {
     readiness: () => readiness,
-    remotePort: orcadBoundPort(initial) ?? ORCAD_MANAGED_REMOTE_PORT,
+    remotePort: orcadBoundPort(initial) ?? SEAL_MANAGED_SSH_PORT,
     rereadRemotePort: async () => {
       readiness = await rereadReadiness()
-      return orcadBoundPort(readiness) ?? ORCAD_MANAGED_REMOTE_PORT
+      return orcadBoundPort(readiness) ?? SEAL_MANAGED_SSH_PORT
     },
     verify: async (localPort: number): Promise<OrcadTunnelIdentity> => {
       const pairing = parsePairingCode(tunneledOrcadPairingCode(readiness, localPort))

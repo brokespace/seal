@@ -19,7 +19,9 @@ function sshMachine(recordId: string, sshTargetId: string): MachineView {
       identityFile: null,
       jumpHost: null
     },
-    server: null
+    server: null,
+    serverInstall: null,
+    serverInstallAction: 'offer'
   }
 }
 

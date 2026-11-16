@@ -47,6 +47,7 @@ export function MachineFileExplorer({
   homeDir = null,
   hidden = false,
   folderRequest = null,
+  unreachableText = null,
   startAt,
   fileOps,
   onAddSshDetails,
@@ -59,6 +60,8 @@ export function MachineFileExplorer({
   hidden?: boolean
   /** Another part of the page asking the tree to open a folder. */
   folderRequest?: MachineFolderRequest | null
+  /** What the machine is doing while its files cannot be browsed, when that is more than connecting. */
+  unreachableText?: string | null
   startAt?: string
   /** A tree scoped to one feature's files; it has no jump to arbitrary folders. */
   fileOps?: MachineExplorerFileOps
@@ -224,12 +227,13 @@ export function MachineFileExplorer({
           hidden ? 'hidden' : 'flex'
         )}
       >
-        {machine.status === 'connecting'
-          ? t('auto.components.machines.explorer.connecting', 'Connecting…')
-          : t(
-              'auto.components.machines.explorer.offline',
-              'Connect to this machine to browse its files.'
-            )}
+        {unreachableText ??
+          (machine.status === 'connecting'
+            ? t('auto.components.machines.explorer.connecting', 'Connecting…')
+            : t(
+                'auto.components.machines.explorer.offline',
+                'Connect to this machine to browse its files.'
+              ))}
       </div>
     )
   }

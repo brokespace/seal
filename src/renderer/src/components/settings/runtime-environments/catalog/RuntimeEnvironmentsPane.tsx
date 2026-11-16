@@ -260,7 +260,6 @@ export function RuntimeEnvironmentsPane({
       {managedCatalog.api ? (
         <RuntimeInstallServerDialog
           open={dialog === 'install'}
-          api={managedCatalog.api}
           emptyTargets={managedCatalog.emptyTargets}
           loadFailed={managedCatalog.loadFailed}
           onOpenChange={(open) => setDialog(open ? 'install' : null)}
