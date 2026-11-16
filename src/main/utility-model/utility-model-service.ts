@@ -10,7 +10,12 @@ import type {
   UtilityModelRequest,
   UtilityModelTestResult
 } from '../../shared/utility-model/utility-model-types'
-import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
+import {
+  UtilityModelError,
+  type UtilityModelDecision,
+  type UtilityModelDecisionRequest,
+  type UtilityModelProvider
+} from './utility-model-provider'
 
 /** The configured provider and the models it runs when a caller names none, preferred first. */
 export type UtilityModelBackend = {
@@ -115,6 +120,45 @@ export class UtilityModelService {
       throw new UtilityModelError('rate-limited', 'Paused after a rate limit')
     }
     return await this.run(request, signal, options, false)
+  }
+
+  /**
+   * Background work on one decision model. There is no fallback: a decision's thresholds belong to
+   * the model that was measured, so when it cannot answer the caller takes its own safe default.
+   * Shares the provider's pause, so a spent allocation stops these requests too.
+   */
+  async decide(
+    model: string,
+    request: UtilityModelDecisionRequest,
+    signal?: AbortSignal
+  ): Promise<UtilityModelDecision> {
+    this.liftExpiredPause()
+    if (this.pausedUntil !== null) {
+      throw new UtilityModelError('rate-limited', 'Paused after a rate limit')
+    }
+    const { provider } = await this.requireBackend()
+    const refused = this.unavailable.get(model)
+    if (!provider.decide || refused) {
+      throw new UtilityModelError(
+        refused?.kind ?? 'not-configured',
+        refused?.message ?? 'This provider runs no decision models',
+        { model }
+      )
+    }
+    try {
+      const decision = await provider.decide(model, request, signal)
+      this.recordSuccess()
+      return decision
+    } catch (error) {
+      if (!signal?.aborted) {
+        const failure = this.recordFailure(error, null)
+        if (failure.kind === 'plan-unavailable' || failure.kind === 'model-not-found') {
+          this.unavailable.set(model, failure)
+          this.emit()
+        }
+      }
+      throw error
+    }
   }
 
   /** A person asked: runs even while paused or cooling, and a success lifts the pause. */

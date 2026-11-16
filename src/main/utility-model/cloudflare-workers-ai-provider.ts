@@ -2,7 +2,12 @@ import type {
   UtilityModelCatalogEntry,
   UtilityModelRequest
 } from '../../shared/utility-model/utility-model-types'
-import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
+import {
+  UtilityModelError,
+  type UtilityModelDecision,
+  type UtilityModelDecisionRequest,
+  type UtilityModelProvider
+} from './utility-model-provider'
 import {
   clipProviderText,
   jsonRecord as record,
@@ -116,6 +121,30 @@ export function createCloudflareWorkersAiProvider(
         })
       }
       return reply
+    },
+    async decide(
+      model: string,
+      request: UtilityModelDecisionRequest,
+      signal?: AbortSignal
+    ): Promise<UtilityModelDecision> {
+      const body = await call(
+        `/run/${model}`,
+        { method: 'POST', body: JSON.stringify(request.body) },
+        signal,
+        model,
+        request.timeoutMs
+      )
+      const result = record(record(body)?.result)
+      if (result === null || record(result.answers) === null) {
+        throw new UtilityModelError('bad-response', 'Cloudflare answered without any answers', {
+          model
+        })
+      }
+      const tokens = record(result.usage)?.input_tokens
+      return {
+        answers: result.answers,
+        inputTokens: typeof tokens === 'number' && Number.isFinite(tokens) ? tokens : null
+      }
     },
     async listModels(signal?: AbortSignal) {
       const body = await call(

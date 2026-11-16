@@ -126,6 +126,35 @@ describe('Cloudflare Workers AI provider', () => {
     expect(error.message).toBe('Could not reach Cloudflare')
   })
 
+  it('posts a decision model its own body and reads the answers and the tokens billed', async () => {
+    const { provider, fetchImpl } = providerAnswering(
+      json(200, {
+        success: true,
+        result: { answers: { done: { noul: 0.91 } }, usage: { input_tokens: 812 } }
+      })
+    )
+    const body = { model: 'clef', state: { request: 'r' }, questions: { done: { type: 'noul' } } }
+
+    const decision = await provider.decide?.('@cf/cloudflare/clef', { body })
+
+    expect(decision).toEqual({ answers: { done: { noul: 0.91 } }, inputTokens: 812 })
+    const [url, init] = fetchImpl.mock.calls[0]
+    expect(url).toBe(
+      'https://api.cloudflare.com/client/v4/accounts/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/ai/run/@cf/cloudflare/clef'
+    )
+    expect(JSON.parse(String(init.body))).toEqual(body)
+  })
+
+  it('reports a decision reply without answers as a bad response', async () => {
+    const { provider } = providerAnswering(json(200, { success: true, result: {} }))
+
+    const failure = await failureOf(
+      provider.decide?.('@cf/cloudflare/clef', { body: {} }) ?? Promise.resolve()
+    )
+
+    expect(failure.kind).toBe('bad-response')
+  })
+
   it('lists the account text-generation models by id', async () => {
     const { provider, fetchImpl } = providerAnswering(
       json(200, {
