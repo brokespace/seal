@@ -299,9 +299,15 @@ export class LiveSessionRecaps {
     kind: 'auto' | 'asked',
     rebuild: boolean
   ): Promise<RecapPassOutcome> {
-    tracked.lastPassAt = this.now()
+    const previousPassAt = tracked.lastPassAt
+    const startedAt = this.now()
+    tracked.lastPassAt = startedAt
     return this.deps.engine.update(sessionId, kind, rebuild).then((outcome) => {
       tracked.outcome = outcome
+      // A chat opened before its first turn has nothing to recap: that is no pass to wait out.
+      if (outcome === 'empty' && tracked.lastPassAt === startedAt) {
+        tracked.lastPassAt = previousPassAt
+      }
       return outcome
     })
   }
