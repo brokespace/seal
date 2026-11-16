@@ -90,3 +90,31 @@ export function killAllAccountCliProcesses(): void {
 export function liveAccountCliProcessCount(): number {
   return [...live].filter((entry) => !hasExited(entry.child)).length
 }
+
+/** Spawn options for a login CLI that `trackAccountLogin` and `stopAccountLogin` can reach. */
+export function accountLoginSpawnOptions<Stdio, Env>(stdio: Stdio, env: Env) {
+  return {
+    stdio,
+    // Hide the outer wrapper; the dedicated login console remains visible.
+    windowsHide: true,
+    // Its own process group, so a cancel reaches the binary behind an npm wrapper.
+    detached: process.platform !== 'win32',
+    env
+  }
+}
+
+/** Tracks a login CLI spawned detached on POSIX, where it leads its own process group. */
+export function trackAccountLogin<T extends TrackableAccountCliChild>(child: T): T {
+  trackAccountCliProcess(child, { group: process.platform !== 'win32' })
+  return child
+}
+
+/** Stops a login started by `trackAccountLogin`, reaching the binary behind an npm wrapper. */
+export function stopAccountLogin(child: AccountCliChild): void {
+  if (process.platform === 'win32') {
+    child.kill()
+    return
+  }
+  // SIGTERM lets the CLI close its login server; SIGKILL follows if anything is still running.
+  reapAccountCliProcess(child, { group: true })
+}

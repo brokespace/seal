@@ -1,5 +1,6 @@
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { assertWslDistroAllowed } from '@orca/process-host/wsl-distro-allowlist'
+import type { WindowsHostInteractiveLoginSpawn } from '../providers/shell-launch/windows/windows-interactive-login-spawn'
 import type {
   CodexManagedAccount,
   CodexManagedAccountSummary,
@@ -11,13 +12,17 @@ import type { CodexResetCreditExpectedScope } from '../../shared/agent-accounts/
 import type { CodexRuntimeHomeService } from './runtime-home-service'
 import type { Store } from '../persistence/loading-store/store'
 import type { RateLimitService } from '../rate-limits/service/rate-limit-service'
-import { trackAccountCliProcess } from '../provider-process/account-cli-process-reaper'
-import { killLoginProcessTree } from './login/codex-login-process-tree'
+import { admitSelfInitiatedTreeKill } from '../pty/process-retirement/own-chromium-tree-kill-guard'
+import {
+  accountLoginSpawnOptions,
+  stopAccountLogin,
+  trackAccountLogin
+} from '../provider-process/account-cli-process-reaper'
 import type { CodexAccountSelectionTarget } from '../../shared/agent-accounts/codex/codex-selection-lane'
 import { CodexAccountIdentity } from './credentials/codex-account-identity'
 import type { CodexAuthIdentity as ResolvedCodexIdentity } from './credentials/codex-auth-identity'
 import { CodexConfigMirror } from './managed-homes/codex-config-mirror'
-import { runCodexLoginSession } from './login/codex-login-session'
+import { runCodexLoginSession, type CodexLoginChild } from './login/codex-login-session'
 import { CodexManagedHomePath } from './managed-homes/codex-managed-home-path'
 import { CodexManagedHomeLifecycle } from './managed-homes/codex-managed-home-lifecycle'
 import { CodexResetCreditCoordinator } from './reset-credits/codex-reset-credit-coordinator'
@@ -32,6 +37,40 @@ import type {
 import { toCodexManagedAccountSummary } from './account-management/codex-account-service-types'
 import { CODEX_LOGIN_CANCELLED_MESSAGE } from '../../shared/agent-accounts/codex/codex-auth-errors'
 import type { HostAccountSignInChannel } from '../../shared/agent-accounts/host-account-sign-in-types'
+
+const WINDOWS_LOGIN_TREE_KILL_TIMEOUT_MS = 5_000
+
+function killLoginProcessTree(
+  child: CodexLoginChild,
+  interactiveLogin?: WindowsHostInteractiveLoginSpawn | null
+): void {
+  const terminationPid = interactiveLogin?.getTerminationPid?.() ?? child.pid
+  if (
+    process.platform === 'win32' &&
+    typeof terminationPid === 'number' &&
+    child.exitCode === null &&
+    child.signalCode === null &&
+    // Record only attempted kills; Electron-owned PIDs fall back to a direct signal.
+    admitSelfInitiatedTreeKill({
+      pid: terminationPid,
+      site: 'codex-account-login-teardown',
+      scope: 'win-taskkill-tree'
+    })
+  ) {
+    try {
+      // Kill descendants too: their Windows file handles can block post-login home operations.
+      execFileSync('taskkill', ['/pid', String(terminationPid), '/t', '/f'], {
+        windowsHide: true,
+        timeout: WINDOWS_LOGIN_TREE_KILL_TIMEOUT_MS,
+        stdio: 'ignore'
+      })
+      return
+    } catch {
+      // If the tree already exited, still try signaling the direct child.
+    }
+  }
+  stopAccountLogin(child)
+}
 
 export class CodexAccountService {
   // Serialize settings read-modify-write operations to prevent overlapping account changes losing updates.
@@ -282,16 +321,7 @@ export class CodexAccountService {
         wslCommand: 'wsl.exe',
         spawn: ({ command, args, env, stdio }) => {
           assertWslDistroAllowed(command, args)
-          const child = spawn(command, args, {
-            stdio,
-            // Hide the outer wrapper; the dedicated login console remains visible.
-            windowsHide: true,
-            // Its own process group, so a cancel reaches the binary behind an npm wrapper.
-            detached: process.platform !== 'win32',
-            env
-          })
-          trackAccountCliProcess(child, { group: process.platform !== 'win32' })
-          return child
+          return trackAccountLogin(spawn(command, args, accountLoginSpawnOptions(stdio, env)))
         },
         killProcessTree: killLoginProcessTree,
         setCancel: (cancel) => {
