@@ -4,7 +4,6 @@ import { SessionSummariesPausedNote } from '@/components/session-summaries/Sessi
 import { PageCard } from '@/components/page-layout/PageCard'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { buildActiveAgents } from '../live-sessions/active-agents/active-agents-model'
-import { useLiveSessionLinks } from '../live-sessions/links/use-live-session-links'
 import { LiveSessionMachineGroups } from '../live-sessions/row/LiveSessionMachineGroups'
 import { HomeOverviewEmpty } from './HomeOverviewRow'
 
@@ -17,8 +16,7 @@ export function HomeSessionsPanel({
   now: number
 }): React.JSX.Element {
   const t = useTranslate()
-  const { links } = useLiveSessionLinks()
-  const view = useMemo(() => buildActiveAgents(sessions, null, links, now), [sessions, links, now])
+  const view = useMemo(() => buildActiveAgents(sessions, now), [sessions, now])
   return (
     <PageCard
       title={t('home.overview.sessions.title', 'Sessions')}

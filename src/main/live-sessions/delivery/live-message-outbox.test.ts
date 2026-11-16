@@ -99,6 +99,24 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  it('says where a message was written and, once delivered, where the transcript holds it', async () => {
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })
+    clock += 1
+    await box.send({ sessionId: session.id, messageId: 'm2', text: 'second' })
+    await settle(box, ([a]) => a.state === 'sent')
+    // The agent keeps writing while the first waits in its queue and the second waits behind it.
+    transcript.push({ offset: 300, text: 'a tool result' }, { offset: 500, text: 'first' })
+    await settle(box, ([a, b]) => a.state === 'delivered' && b.state === 'sent')
+    transcript.push({ offset: 900, text: 'second' })
+    await settle(box, ([, b]) => b.state === 'delivered')
+    expect(box.list().map((m) => [m.sentOffset, m.echoOffset])).toEqual([
+      [1, 500],
+      [1, 900]
+    ])
+    box.stop()
+  })
+
   it('holds the next message until the one ahead reaches the transcript', async () => {
     const box = outbox()
     await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })
@@ -132,6 +150,21 @@ describe('LiveMessageOutbox', () => {
     await box.send({ sessionId: session.id, messageId: 'm2', text: 'stuck' })
     transcript.push({ offset: 500, text: 'hello' })
     await settle(box, (all) => all[1].state === 'failed')
+    box.stop()
+  })
+
+  it('places a retried message where it is sent again, not where it first failed', async () => {
+    attempt = async () => ({ outcome: 'busy' })
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'hello' })
+    await settle(box, ([m]) => m.state === 'failed')
+    expect(box.list()[0].sentOffset).toBe(1)
+
+    transcript.push({ offset: 700, text: 'what the agent was asked meanwhile' })
+    attempt = async () => ({ outcome: 'sent' })
+    await box.retry('m1')
+    await settle(box, ([m]) => m.state === 'sent')
+    await vi.waitFor(() => expect(box.list()[0].sentOffset).toBe(701))
     box.stop()
   })
 

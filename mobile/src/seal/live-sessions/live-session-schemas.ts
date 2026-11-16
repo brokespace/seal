@@ -116,7 +116,10 @@ export const liveMessageSchema = z.looseObject({
   /** The session may have run it without a sign: the host sends it again only when told it may run twice. */
   unconfirmed: z.literal(true).optional().catch(undefined),
   createdAt: Timestamp,
-  updatedAt: Timestamp
+  updatedAt: Timestamp,
+  /** Where it was written and where the transcript holds it; a host from before them sends neither. */
+  sentOffset: z.number().nullish().catch(undefined),
+  echoOffset: z.number().nullish().catch(undefined)
 })
 
 const registryEventSchema = z.discriminatedUnion('type', [

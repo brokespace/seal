@@ -77,9 +77,13 @@ export function closeLiveSessionView(sessionId: string): void {
   }
 }
 
-/** A click on a session's row, on any surface: a preview tab, kept on double-click. */
+/** How a session's row opens it, on any surface: a click previews, a double click or Enter keeps the tab. */
+export function liveSessionRowOpenMode(event?: { type: string }): LiveSessionOpenMode {
+  return event?.type === 'dblclick' || event?.type === 'keydown' ? 'tab' : 'preview'
+}
+
 export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
-  openLiveSessionView(session.id, event?.type === 'dblclick' ? 'tab' : 'preview')
+  openLiveSessionView(session.id, liveSessionRowOpenMode(event))
 }
 
 /**

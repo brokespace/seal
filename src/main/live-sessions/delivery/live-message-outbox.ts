@@ -5,6 +5,7 @@ import { confirmSent, RestingSessions, sentBySession } from './live-message-conf
 import { aheadInFlight, nextQueued } from './live-message-order'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
+  restoredOutboxItem,
   DEFAULT_OUTBOX_TIMING,
   publicView,
   REQUEUED,
@@ -52,16 +53,7 @@ export class LiveMessageOutbox {
 
   start(): Promise<void> {
     this.started ??= this.store.load().then((loaded) => {
-      for (const item of loaded) {
-        this.items.set(item.messageId, item)
-      }
-      for (const item of this.items.values()) {
-        if (item.state === 'sending') {
-          // It may already be at the prompt: only the transcript can say, never a second send.
-          item.state = 'sent'
-          item.sentAt ??= this.now()
-        }
-      }
+      loaded.forEach((item) => this.items.set(item.messageId, restoredOutboxItem(item, this.now())))
       for (const sessionId of new Set([...this.items.values()].map((i) => i.sessionId))) {
         this.kick(sessionId)
       }
@@ -110,6 +102,7 @@ export class LiveMessageOutbox {
     this.items.set(item.messageId, item)
     this.changed(item)
     this.kick(item.sessionId)
+    void this.place(item)
     return publicView(item)
   }
 
@@ -122,6 +115,8 @@ export class LiveMessageOutbox {
     }
     this.set(item, REQUEUED)
     this.kick(item.sessionId)
+    // It is written again now: left at its first place it would wait above everything said since.
+    void this.place(item)
     return publicView(item)
   }
 
@@ -166,6 +161,15 @@ export class LiveMessageOutbox {
     }
     if (this.next(to)) {
       this.kick(to)
+    }
+  }
+
+  /** Notes how long the transcript is as the message is written: a chat shows it there, above what the agent writes while it waits. */
+  private async place(item: Item): Promise<void> {
+    const session = this.deps.getSession(item.sessionId)
+    const size = session ? await this.deps.transcriptSize(session).catch(() => null) : null
+    if (size !== null && this.items.get(item.messageId) === item) {
+      this.set(item, { sentOffset: size })
     }
   }
 

@@ -238,6 +238,10 @@ export type LiveMessage = {
   unconfirmed?: true
   createdAt: number
   updatedAt: number
+  /** How long the transcript was when the message was written: a chat shows it there until it is delivered. */
+  sentOffset?: number | null
+  /** Where the transcript holds it as the user's message, once delivered. */
+  echoOffset?: number | null
 }
 
 export type LiveSendRequest = { sessionId: string; messageId: string; text: string }

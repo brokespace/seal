@@ -96,3 +96,12 @@ export function isOutboxItem(item: unknown): item is OutboxItem {
     typeof item.sessionId === 'string'
   )
 }
+
+/** A message read back from disk. One being typed when Seal stopped may already be at the prompt: only the transcript can say, never a second send. */
+export function restoredOutboxItem(item: OutboxItem, now: number): OutboxItem {
+  if (item.state === 'sending') {
+    item.state = 'sent'
+    item.sentAt ??= now
+  }
+  return item
+}

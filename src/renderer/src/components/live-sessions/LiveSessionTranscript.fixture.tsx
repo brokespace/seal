@@ -204,6 +204,7 @@ function recorded(messages: NativeChatMessage[], height: string): React.JSX.Elem
           phase: 'ready',
           error: null,
           messages,
+          readTo: null,
           hasMore: false,
           loadingEarlier: false,
           loadEarlier: async () => 'exhausted' as const

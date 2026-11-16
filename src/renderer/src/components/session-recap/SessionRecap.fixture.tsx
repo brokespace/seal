@@ -40,6 +40,7 @@ function Pane({
           phase: 'ready',
           error: null,
           messages: SAMPLE_RECAP_TRANSCRIPT,
+          readTo: null,
           hasMore: false,
           loadingEarlier: false,
           loadEarlier: async () => 'exhausted'
@@ -198,7 +199,7 @@ const ROWS = [
 ]
 
 function Rows(): React.JSX.Element {
-  const view = buildActiveAgents(ROWS, null, new Map(), SAMPLE_NOW)
+  const view = buildActiveAgents(ROWS, SAMPLE_NOW)
   return (
     <div
       role="listbox"

@@ -1,3 +1,4 @@
+import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
 import type {
   LiveRemoveRequest,
   LiveSession
@@ -117,7 +118,10 @@ function isDisabled(
         (session.activity?.tasks.length ?? 0) === 0 && (session.activity?.todos.length ?? 0) === 0
       )
     case 'copy-resume-command':
-      return session.providerSessionId.startsWith('pid-')
+      return (
+        session.providerSessionId.startsWith('pid-') ||
+        !agentSessionAdapter(session.provider)?.cli?.resumeArgv
+      )
     case 'swap-account':
       return context.swapAccounts.length === 0
     case 'take-over':

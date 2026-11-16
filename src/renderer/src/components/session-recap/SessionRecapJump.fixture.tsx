@@ -76,6 +76,7 @@ function PagedPane(): React.JSX.Element {
           phase: 'ready',
           error: null,
           messages: HISTORY.slice(HISTORY.length - loaded),
+          readTo: null,
           hasMore: loaded < HISTORY.length,
           loadingEarlier: false,
           loadEarlier

@@ -5,7 +5,7 @@ import { matchDelivered, type UserText } from './transcript-user-texts'
 
 export type Confirmation = {
   item: OutboxItem
-  patch: Pick<OutboxItem, 'state' | 'error' | 'unconfirmed'>
+  patch: Pick<OutboxItem, 'state' | 'error' | 'unconfirmed' | 'echoOffset'>
 }
 
 /** The session was handed the message and never showed it: it may have run it all the same. */
@@ -37,7 +37,15 @@ export function confirmSent(
   const out: Confirmation[] = []
   for (const item of items) {
     if (delivered.has(item)) {
-      out.push({ item, patch: { state: 'delivered', error: null, unconfirmed: undefined } })
+      out.push({
+        item,
+        patch: {
+          state: 'delivered',
+          error: null,
+          unconfirmed: undefined,
+          echoOffset: delivered.get(item)
+        }
+      })
       continue
     }
     // Already given up as unconfirmed: only its transcript changes that.

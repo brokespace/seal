@@ -59,28 +59,27 @@ export function linkLiveSessions(
 
 export type LiveSessionsBadge = { count: number; status: LiveSessionStatus; sessionIds: string[] }
 
-/** Per workspace and per project: how many live sessions it has and the most urgent status among them. */
-export function liveSessionBadges(
+/** Per project: how many live sessions it has and the most urgent status among them. */
+export function projectSessionBadges(
   sessions: readonly LiveSession[],
   links: ReadonlyMap<string, LiveSessionLink>
-): { byWorktree: Map<string, LiveSessionsBadge>; byProject: Map<string, LiveSessionsBadge> } {
-  const byWorktree = new Map<string, LiveSession[]>()
+): Map<string, LiveSessionsBadge> {
   const byProject = new Map<string, LiveSession[]>()
   for (const session of sessions) {
     const link = links.get(session.id)
     if (!link || !isActiveLiveSession(session)) {
       continue
     }
-    byWorktree.set(link.worktreeId, [...(byWorktree.get(link.worktreeId) ?? []), session])
     byProject.set(link.repoId, [...(byProject.get(link.repoId) ?? []), session])
   }
-  const badge = (group: LiveSession[]): LiveSessionsBadge => ({
-    count: group.length,
-    status: topLiveSessionStatus(group.map((session) => session.status))!,
-    sessionIds: group.map((session) => session.id)
-  })
-  return {
-    byWorktree: new Map([...byWorktree].map(([id, group]) => [id, badge(group)])),
-    byProject: new Map([...byProject].map(([id, group]) => [id, badge(group)]))
-  }
+  return new Map(
+    [...byProject].map(([id, group]) => [
+      id,
+      {
+        count: group.length,
+        status: topLiveSessionStatus(group.map((session) => session.status))!,
+        sessionIds: group.map((session) => session.id)
+      }
+    ])
+  )
 }
