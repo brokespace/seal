@@ -1,4 +1,6 @@
 import { useAppStore } from '@/store'
+import { isTabOnScreen, onScreenWorkspaceIds } from '@/hooks/agent-auto-ack-targets'
+import { paneKeyTabId } from '@/store/slices/workspace-attention/workspace-live-markers'
 import { isActiveLiveSession } from '../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import {
@@ -27,6 +29,8 @@ export type LiveSessionTabAttentionJoinDeps = {
     /** Fires on every app-store write. */
     subscribe: Subscribe
     acknowledgeAgents: (paneKeys: string[]) => void
+    /** The pane's tab is on screen in front of the user. */
+    viewing: (paneKey: string) => boolean
   }
   marks: Pick<LiveSessionMarksStore, 'getState' | 'subscribe' | 'markSeen' | 'onStopped'>
   now?: () => number
@@ -43,7 +47,8 @@ type StoppedAgent = { sessionId: string; at: number; rowGone: boolean }
  * tab, once viewed, marks the record seen; the record, once seen in a session view, acknowledges
  * the tab's attention. A terminal pane whose agent the user had Seal stop gives up the completion
  * marker that stop raises; an agent that exits or crashes by itself keeps its marker and its
- * unread row. Returns the stop function.
+ * unread row. An agent gone from its pane is seen once the tab it ran in is on screen. Returns the
+ * stop function.
  */
 export function joinLiveSessionMarksWithTabAttention({
   sessions,
@@ -194,9 +199,66 @@ export function joinLiveSessionMarksWithTabAttention({
     }
   }
 
+  /** The pane each CLI session ran in: once its agent is gone it is listed without one. */
+  const ranIn = new Map<string, string>()
+  let lastListed: unknown = undefined
+  let lastSeenForGone: unknown = undefined
+  let goneUnread: { id: string; paneKey: string; lastActivityAt: number }[] = []
+
+  const noteGoneAgents = (): void => {
+    const listed = sessions.get()
+    const { seenAt } = marks.getState()
+    if (listed === lastListed && seenAt === lastSeenForGone) {
+      return
+    }
+    lastSeenForGone = seenAt
+    if (listed !== lastListed) {
+      lastListed = listed
+      const ids = new Set<string>()
+      for (const session of listed) {
+        ids.add(session.id)
+        const surface = liveSessionSurfaceOf(session)
+        if (surface.kind === 'cli') {
+          ranIn.set(session.id, surface.paneKey)
+        } else if (session.alive) {
+          // Resumed somewhere else: the pane no longer shows where it stands.
+          ranIn.delete(session.id)
+        }
+      }
+      for (const id of ranIn.keys()) {
+        if (!ids.has(id)) {
+          ranIn.delete(id)
+        }
+      }
+    }
+    goneUnread = listed.flatMap((session) => {
+      const paneKey = ranIn.get(session.id)
+      return paneKey !== undefined &&
+        liveSessionPaneKeyOf(session) === null &&
+        (seenAt[session.id] ?? 0) < session.lastActivityAt
+        ? [{ id: session.id, paneKey, lastActivityAt: session.lastActivityAt }]
+        : []
+    })
+  }
+
+  const markGoneAgentsSeenInViewedTabs = (): void => {
+    noteGoneAgents()
+    markingFromTab = true
+    try {
+      for (const { id, paneKey, lastActivityAt } of goneUnread) {
+        if (tabAttention.viewing(paneKey)) {
+          marks.markSeen(id, lastActivityAt)
+        }
+      }
+    } finally {
+      markingFromTab = false
+    }
+  }
+
   const onStoresChanged = (): void => {
     releaseStoppedAgentMarkers()
     markViewedTabsSeen()
+    markGoneAgentsSeenInViewedTabs()
   }
   const stops = [
     sessions.subscribe(onStoresChanged),
@@ -222,7 +284,17 @@ export function startLiveSessionTabAttentionJoin(marks: LiveSessionMarksStore): 
     tabAttention: {
       get: useAppStore.getState,
       subscribe: useAppStore.subscribe,
-      acknowledgeAgents: (paneKeys) => useAppStore.getState().acknowledgeAgents(paneKeys)
+      acknowledgeAgents: (paneKeys) => useAppStore.getState().acknowledgeAgents(paneKeys),
+      viewing: (paneKey) => {
+        const state = useAppStore.getState()
+        const tabId = paneKeyTabId(paneKey)
+        return (
+          tabId !== null &&
+          onScreenWorkspaceIds(state).some((workspaceId) =>
+            isTabOnScreen(state, workspaceId, tabId, 'terminal')
+          )
+        )
+      }
     },
     marks
   })
