@@ -152,10 +152,10 @@ export class FederatedSessions {
   }
 
   /** Asks the server to send one of its failed messages again. Null when no server lists that id. */
-  retry(messageId: string): Promise<LiveMessage | null> | null {
+  retry(messageId: string, mayRunTwice = false): Promise<LiveMessage | null> | null {
     for (const feed of this.feeds.values()) {
       if (feed.messages.get(messageId)) {
-        return this.retryOnServer(feed, messageId)
+        return this.retryOnServer(feed, messageId, mayRunTwice)
       }
     }
     return null
@@ -163,13 +163,14 @@ export class FederatedSessions {
 
   private async retryOnServer(
     feed: FederatedServerFeed,
-    messageId: string
+    messageId: string,
+    mayRunTwice: boolean
   ): Promise<LiveMessage | null> {
     try {
       const response = await this.deps.transport.call(
         feed.environmentId,
         'liveSessions.retry',
-        { messageId },
+        { messageId, ...(mayRunTwice && { mayRunTwice }) },
         SEND_TIMEOUT_MS
       )
       if (response.ok !== true) {

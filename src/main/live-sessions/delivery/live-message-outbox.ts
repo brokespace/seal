@@ -7,6 +7,7 @@ import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
   DEFAULT_OUTBOX_TIMING,
   publicView,
+  REQUEUED,
   type LiveMessageOutboxDeps,
   isOutboxItem,
   newOutboxItem,
@@ -112,14 +113,14 @@ export class LiveMessageOutbox {
     return publicView(item)
   }
 
-  /** Put a failed message back in line under the same id. */
-  async retry(messageId: string): Promise<LiveMessage | null> {
+  /** Put a failed message back in line under the same id; one its session may have run only on the user's word. */
+  async retry(messageId: string, mayRunTwice = false): Promise<LiveMessage | null> {
     await this.start()
     const item = this.items.get(messageId)
-    if (!item || item.state !== 'failed') {
+    if (!item || item.state !== 'failed' || (item.unconfirmed && !mayRunTwice)) {
       return item ? publicView(item) : null
     }
-    this.set(item, { state: 'queued', error: null, route: null, sentAt: null, unread: false })
+    this.set(item, REQUEUED)
     this.kick(item.sessionId)
     return publicView(item)
   }

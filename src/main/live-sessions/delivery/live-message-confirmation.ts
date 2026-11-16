@@ -5,8 +5,16 @@ import { matchDelivered, type UserText } from './transcript-user-texts'
 
 export type Confirmation = {
   item: OutboxItem
-  patch: Pick<OutboxItem, 'state' | 'error' | 'unread'>
+  patch: Pick<OutboxItem, 'state' | 'error' | 'unread' | 'unconfirmed'>
 }
+
+/** The session was handed the message and never showed it: it may have run it all the same. */
+const unconfirmed = (why: string, unread = false): Confirmation['patch'] => ({
+  state: 'failed',
+  error: `Not confirmed, it may have been delivered: ${why}`,
+  unconfirmed: true,
+  ...(unread && { unread })
+})
 
 /**
  * What the transcript says about one session's sent messages; anything it can't settle waits.
@@ -30,7 +38,10 @@ export function confirmSent(
   const out: Confirmation[] = []
   for (const item of items) {
     if (delivered.has(item)) {
-      out.push({ item, patch: { state: 'delivered', error: null, unread: false } })
+      out.push({
+        item,
+        patch: { state: 'delivered', error: null, unread: false, unconfirmed: undefined }
+      })
       continue
     }
     if (item.unread) {
@@ -45,10 +56,7 @@ export function confirmSent(
       if (since > timing.resumeConfirmMs) {
         out.push({
           item,
-          patch: {
-            state: 'failed',
-            error: 'The session was resumed, but its transcript never showed the message'
-          }
+          patch: unconfirmed('the session was resumed, but its transcript never showed it')
         })
       }
     } else if (item.route === 'structured') {
@@ -56,31 +64,21 @@ export function confirmSent(
       if (since > timing.resumeConfirmMs) {
         out.push({
           item,
-          patch: {
-            state: 'failed',
-            error: 'The chat took the message, but its history never showed it'
-          }
+          patch: unconfirmed('the chat took it, but its history never showed it')
         })
       }
     } else if (item.route === 'codex-queue') {
       // Codex keeps it queued with the thread; it is delivered whenever the session runs again.
       continue
     } else if ((!session || !session.alive) && since > timing.goneGraceMs) {
-      out.push({
-        item,
-        patch: { state: 'failed', error: 'The session closed before it read the message' }
-      })
+      out.push({ item, patch: unconfirmed('the session closed before showing it') })
     } else if (
       restingSince !== null &&
       now - Math.max(restingSince, item.sentAt ?? now) > timing.unreadAfterMs
     ) {
       out.push({
         item,
-        patch: {
-          state: 'failed',
-          error: 'Seal typed the message, but the session never showed it',
-          unread: true
-        }
+        patch: unconfirmed('Seal typed it, but the session never showed it', true)
       })
     }
   }

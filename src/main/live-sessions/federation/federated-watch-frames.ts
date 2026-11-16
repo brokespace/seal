@@ -183,6 +183,7 @@ const messageSchema: z.ZodType<LiveMessage> = z.object({
   state: z.enum(LIVE_MESSAGE_STATES),
   route: z.enum(ROUTE_KINDS).nullable().catch(null),
   error: NullableText,
+  unconfirmed: z.literal(true).optional().catch(undefined),
   createdAt: Finite,
   updatedAt: Finite
 })

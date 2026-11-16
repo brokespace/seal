@@ -166,7 +166,7 @@ describe('LiveMessageOutbox', () => {
     current = { ...session, alive: false }
     clock += 10_000
     await settle(box, ([m]) => m.state === 'failed')
-    expect(box.list()[0].error).toBe('The session closed before it read the message')
+    expect(box.list()[0].unconfirmed).toBe(true)
     box.stop()
   })
 
@@ -214,7 +214,7 @@ describe('LiveMessageOutbox', () => {
 
     machineRead = true
     await settle(box, ([m]) => m.state === 'failed')
-    expect(box.list()[0].error).toBe('The session closed before it read the message')
+    expect(box.list()[0].unconfirmed).toBe(true)
     box.stop()
   })
 
@@ -247,12 +247,39 @@ describe('LiveMessageOutbox', () => {
     await box.confirm()
     clock += 91_000
     await settle(box, ([a, b]) => a.state === 'failed' && b.state === 'sent')
-    expect(box.list()[0].error).toBe('Seal typed the message, but the session never showed it')
     expect(typed).toEqual(['first', 'second'])
 
     // The agent ran it after all: its transcript says so.
     transcript.push({ offset: 500, text: 'first' })
     await settle(box, ([a]) => a.state === 'delivered')
+    box.stop()
+  })
+
+  // The agent may have run it without a sign: typing it again could run it twice.
+  it('types a message that timed out unconfirmed again only once the retry says it may run twice', async () => {
+    const storePath = join(dir, 'outbox.json')
+    current = { ...session, status: 'your-turn' }
+    const first = outbox(storePath)
+    await first.send({ sessionId: session.id, messageId: 'm1', text: 'drop the table' })
+    await settle(first, ([m]) => m.state === 'sent')
+    await first.confirm()
+    clock += 91_000
+    await settle(first, ([m]) => m.state === 'failed')
+    expect(first.list()[0].unconfirmed).toBe(true)
+    await first.flush()
+    first.stop()
+
+    const box = outbox(storePath)
+    expect(await box.retry('m1')).toMatchObject({ state: 'failed', unconfirmed: true })
+    for (let turn = 0; turn < 20; turn++) {
+      await new Promise((resolve) => setImmediate(resolve))
+    }
+    expect(typed).toEqual(['drop the table'])
+
+    await box.retry('m1', true)
+    await settle(box, ([m]) => m.state === 'sent')
+    expect(typed).toEqual(['drop the table', 'drop the table'])
+    expect(box.list()[0].unconfirmed).toBeUndefined()
     box.stop()
   })
 

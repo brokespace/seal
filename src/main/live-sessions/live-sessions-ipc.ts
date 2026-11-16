@@ -120,12 +120,15 @@ export function registerLiveSessionIpc(
     }
     return service.send({ sessionId: args.sessionId, messageId: args.messageId, text: args.text })
   })
-  ipcMain.handle(LIVE_SESSION_IPC.retry, (_event, args: { messageId: unknown }) => {
-    if (!isString(args?.messageId, 128)) {
-      throw new Error('messageId is required')
+  ipcMain.handle(
+    LIVE_SESSION_IPC.retry,
+    (_event, args: { messageId: unknown; mayRunTwice?: unknown }) => {
+      if (!isString(args?.messageId, 128)) {
+        throw new Error('messageId is required')
+      }
+      return service.retry({ messageId: args.messageId, mayRunTwice: args.mayRunTwice === true })
     }
-    return service.retry(args.messageId)
-  })
+  )
   ipcMain.handle(LIVE_SESSION_IPC.messages, (_event, args?: { sessionId?: unknown }) =>
     service.messages(isString(args?.sessionId) ? args.sessionId : undefined)
   )

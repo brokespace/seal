@@ -222,7 +222,7 @@ export const LIVE_MESSAGE_STATES = ['queued', 'sending', 'sent', 'delivered', 'f
  * sending    being typed right now (never shown as final)
  * sent       handed to the session, not in its transcript yet
  * delivered  the transcript holds it as the user's message
- * failed     it can't get there; `error` says why and a retry is safe
+ * failed     it can't get there, or (`unconfirmed`) nothing showed that it did; `error` says why
  */
 export type LiveMessageState = (typeof LIVE_MESSAGE_STATES)[number]
 
@@ -234,11 +234,16 @@ export type LiveMessage = {
   state: LiveMessageState
   route: LiveSessionInputRoute['kind'] | null
   error: string | null
+  /** Failed for want of a sign that the session got it: it may have, so a retry may run it twice. */
+  unconfirmed?: true
   createdAt: number
   updatedAt: number
 }
 
 export type LiveSendRequest = { sessionId: string; messageId: string; text: string }
+
+/** `mayRunTwice` is the user's word that an unconfirmed message may be sent again. */
+export type LiveRetryRequest = { messageId: string; mayRunTwice?: boolean }
 
 export type LivePermissionAnswer = { sessionId: string; promptId: string; optionId: string }
 

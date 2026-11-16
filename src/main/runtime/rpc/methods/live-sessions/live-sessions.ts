@@ -116,7 +116,7 @@ export const LIVE_SESSION_METHODS = [
     name: 'liveSessions.retry',
     permission: 'workspace',
     params: LiveSessionRetryParams,
-    handler: ({ messageId }) => service().retry(messageId)
+    handler: (request) => service().retry(request)
   }),
   defineMethod({
     name: 'liveSessions.messages',

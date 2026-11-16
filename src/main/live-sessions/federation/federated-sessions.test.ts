@@ -362,6 +362,23 @@ describe('a paired server listed from its own registry', () => {
     expect(heard.mock.calls.map(([message]) => message.state)).toEqual(['sending'])
   })
 
+  // The server types it again only on the user's word, so the desktop must know to ask and pass it on.
+  it('lists a server message its session may have run as unconfirmed, and hands on the word that it may run twice', async () => {
+    const { federation, streams, calls, answers } = federate()
+    const failed = serverMessage({ state: 'failed', error: 'never shown', unconfirmed: true })
+    streams[0].handlers.onFrame({ type: 'message', message: failed })
+    answers.set('liveSessions.retry', () => ok(failed))
+
+    expect(federation.messages()[0].unconfirmed).toBe(true)
+    await federation.retry('m-1')
+    await federation.retry('m-1', true)
+
+    expect(calls.map((call) => call.params)).toEqual([
+      { messageId: 'm-1' },
+      { messageId: 'm-1', mayRunTwice: true }
+    ])
+  })
+
   it('says why a message did not reach the server and keeps nothing of it', async () => {
     const { federation } = federate()
 

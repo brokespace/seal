@@ -22,7 +22,10 @@ export const LiveSessionSendParams = z.object({
   text: z.string().min(1).max(100_000)
 })
 
-export const LiveSessionRetryParams = z.object({ messageId: z.string().min(1).max(128) })
+export const LiveSessionRetryParams = z.object({
+  messageId: z.string().min(1).max(128),
+  mayRunTwice: z.boolean().optional()
+})
 
 export const LiveSessionMessagesParams = z.object({ sessionId: SessionId.optional() })
 

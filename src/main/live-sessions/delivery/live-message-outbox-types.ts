@@ -48,6 +48,16 @@ export function newOutboxItem(request: LiveSendRequest, now: number): OutboxItem
   }
 }
 
+/** A failed message put back in line: nothing of its last attempt stays. */
+export const REQUEUED: Partial<OutboxItem> = {
+  state: 'queued',
+  error: null,
+  route: null,
+  sentAt: null,
+  unread: false,
+  unconfirmed: undefined
+}
+
 /** What another owner of a session (a paired server) says to a message offered to it. */
 export type OfferedMessage = LiveMessage | { refused: string }
 

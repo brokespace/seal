@@ -3,6 +3,7 @@ import type {
   LiveMessage,
   LivePermissionAnswer,
   LivePermissionAnswerResult,
+  LiveRetryRequest,
   LiveSendRequest,
   LiveSessionAnnotation,
   LiveSessionRegistryEvent,
@@ -39,7 +40,7 @@ export type LiveSessionsApi = {
     callback: (payload: { watchId: string; delta: LiveTranscriptDelta }) => void
   ) => () => void
   send: (request: LiveSendRequest) => Promise<LiveMessage>
-  retry: (args: { messageId: string }) => Promise<LiveMessage | null>
+  retry: (args: LiveRetryRequest) => Promise<LiveMessage | null>
   messages: (args?: { sessionId?: string }) => Promise<LiveMessage[]>
   onMessage: (callback: (message: LiveMessage) => void) => () => void
   /** The user clicked a session's desktop notification. */

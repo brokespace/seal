@@ -5,6 +5,7 @@ import type {
   LiveMessage,
   LivePermissionAnswer,
   LivePermissionAnswerResult,
+  LiveRetryRequest,
   LiveSendRequest,
   LiveSessionAnnotation,
   LiveSessionRegistryEvent,
@@ -215,12 +216,13 @@ export class LiveSessionService {
       : this.outbox.send(routed)
   }
 
-  async retry(messageId: string): Promise<LiveMessage | null> {
+  async retry({ messageId, mayRunTwice }: LiveRetryRequest): Promise<LiveMessage | null> {
     const held = this.outbox.list().find((message) => message.messageId === messageId)
     // It failed here while its server was away: the server is listed again, so it goes there.
     return held?.state === 'failed' && this.federated(held.sessionId)
       ? this.send({ sessionId: held.sessionId, messageId, text: held.text })
-      : (this.federation?.retry(messageId) ?? this.outbox.retry(messageId))
+      : (this.federation?.retry(messageId, mayRunTwice) ??
+          this.outbox.retry(messageId, mayRunTwice))
   }
 
   messages(sessionId?: string): LiveMessage[] {
