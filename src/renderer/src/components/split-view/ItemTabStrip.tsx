@@ -15,10 +15,12 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { ItemTabMenu } from './ItemTabMenu'
 import { startItemPointerDrag } from './item-pointer-drag'
+import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { preventMiddleButtonDefault } from '@/components/tab-bar/middle-button-default-guard'
 import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import { ITEM_TAB_KEY_ATTRIBUTE, ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
+import { splitViewStore } from './split-view-store'
 import {
   splitViewItemKey,
   type SplitViewEdge,
@@ -91,6 +93,7 @@ function ItemTab({
   const key = splitViewItemKey(item)
   const resolved = useResolvedSplitViewItem(item)
   const title = useSplitViewItemTitle(item, resolved)
+  const focusedPaneAtOpen = useRef<string | null>(null)
   const element = (
     <div
       role="tab"
@@ -157,9 +160,24 @@ function ItemTab({
     return element
   }
   return (
-    <ContextMenu>
+    <ContextMenu
+      onOpenChange={(open) => {
+        if (open) {
+          focusedPaneAtOpen.current = splitViewStore.getState().focusedPaneId
+        }
+      }}
+    >
       <ContextMenuTrigger asChild>{element}</ContextMenuTrigger>
-      <ContextMenuContent>
+      <ContextMenuContent
+        onCloseAutoFocus={(event) => {
+          // An entry that moved pane focus takes the keyboard along; otherwise it returns where it was.
+          const focusedPaneId = splitViewStore.getState().focusedPaneId
+          if (focusedPaneId !== null && focusedPaneId !== focusedPaneAtOpen.current) {
+            event.preventDefault()
+            bringKeyboardFocusIntoFocusedPane()
+          }
+        }}
+      >
         <ItemTabMenu item={item} resolved={resolved} tabCount={tabCount} commands={commands} />
       </ContextMenuContent>
     </ContextMenu>

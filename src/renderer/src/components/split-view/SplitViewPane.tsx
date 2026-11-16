@@ -5,7 +5,7 @@ import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import type { SplitLayoutLeafPlacement } from '../tab-group/SplitLayoutTree'
 import { ItemTabStrip, type ItemTabCommands } from './ItemTabStrip'
-import { focusWorkspacePaneContent } from './pane-workspace-keyboard-focus'
+import { bringKeyboardFocusIntoPane, landsOnStripControl } from './pane-keyboard-focus'
 import {
   closeOtherSplitViewItems,
   closeSplitViewItems,
@@ -33,13 +33,6 @@ function paneTabCommands(paneId: string): ItemTabCommands {
   }
 }
 
-const STRIP_CONTROL_SELECTOR = `[${ITEM_TAB_STRIP_ATTRIBUTE}] [role="tab"], [${ITEM_TAB_STRIP_ATTRIBUTE}] button`
-
-/** A press or focus on a tab or a strip button is its own business: it acts on the pane itself. */
-function landsOnStripControl(target: EventTarget): boolean {
-  return target instanceof Element && target.closest(STRIP_CONTROL_SELECTOR) !== null
-}
-
 function landsOnStrip(target: EventTarget): boolean {
   return target instanceof Element && target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}]`) !== null
 }
@@ -55,41 +48,6 @@ function landsOnTab(target: EventTarget): boolean {
     target.closest(`[${ITEM_TAB_STRIP_ATTRIBUTE}] [role="tab"]`) !== null &&
     target.closest('button') === null
   )
-}
-
-const PANE_CONTENT_SELECTOR = `[${SPLIT_VIEW_PANE_ATTRIBUTE}], [data-workspace-surface-pane-id]`
-
-/**
- * Keyboard focus belongs in the focused pane. Focusing a pane by shortcut or by navigation leaves
- * it in the pane that lost focus, and closing the tab that held it leaves it nowhere. A tab
- * pressed with the pointer asks for it outright, wherever it was.
- */
-function bringKeyboardFocusIntoPane(
-  paneId: string,
-  pane: HTMLElement,
-  worktreeId: string | null,
-  tabPressed: boolean
-): void {
-  const active = document.activeElement
-  const owner = active instanceof HTMLElement && active !== document.body ? active : null
-  const content = owner?.closest(PANE_CONTENT_SELECTOR) ?? null
-  const inThisPane =
-    content === pane || content?.getAttribute('data-workspace-surface-pane-id') === paneId
-  const stays = tabPressed
-    ? inThisPane && owner !== null && !landsOnStripControl(owner)
-    : owner !== null && (!content || inThisPane)
-  if (stays) {
-    return
-  }
-  const body = pane.querySelector<HTMLElement>('[data-split-view-pane-body]')
-  if (body) {
-    body.focus({ preventScroll: true })
-    return
-  }
-  owner?.blur()
-  if (worktreeId) {
-    focusWorkspacePaneContent(paneId, worktreeId)
-  }
 }
 
 /** One rectangle of the grid: its strip of tabs, and the active one's content. */
