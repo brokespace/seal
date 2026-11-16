@@ -35,9 +35,11 @@ function Warning({ children }: { children: React.ReactNode }): React.JSX.Element
 /** Whether Seal's server is on the machine, how it is kept running, and what can be done about it. */
 export function MachineServerStatus({
   view,
+  connecting,
   onChanged
 }: {
   view: MachineView
+  connecting: boolean
   onChanged: () => void
 }): React.JSX.Element | null {
   const t = useTranslate()
@@ -79,7 +81,11 @@ export function MachineServerStatus({
     </section>
   )
 
-  if (action === 'installing') {
+  // A connect runs an install that waited for terminals, so its notice no longer applies.
+  if (
+    action === 'installing' ||
+    (connecting && action === 'retry' && install?.state === 'pending')
+  ) {
     return band(
       <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status">
         <LoadingSpinner className="size-3.5 shrink-0" />

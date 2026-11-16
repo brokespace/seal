@@ -19,6 +19,8 @@ const UNWRITABLE_HOME = 'the machine refused to write the server files (permissi
 const DOWNLOAD_BLOCKED = 'the runtime download was blocked on this computer and on the machine'
 const PAIRING_FAILED = 'pairing with the server failed'
 const CONTACT_LOST = 'the connection to the machine was lost during the install'
+const INSTALL_INTERRUPTED =
+  'an earlier install on this machine was interrupted and may still be finishing; try again in a few minutes'
 const MAX_REASON_CHARS = 200
 
 const UNAVAILABLE_REASONS: Record<OrcadHostUnavailableReason, string> = {
@@ -58,7 +60,8 @@ const HOST_ERROR_PHRASES: readonly (readonly [RegExp, string])[] = [
   ],
   [/read-only file system|\bEROFS\b/i, READ_ONLY_HOME],
   [/permission denied|\bEACCES\b/i, UNWRITABLE_HOME],
-  [/\bpairing\b/i, PAIRING_FAILED]
+  [/\bpairing\b/i, PAIRING_FAILED],
+  [/activation fence is held/i, INSTALL_INTERRUPTED]
 ]
 
 function isUnservedDecision(failure: unknown): failure is UnservedDecision {

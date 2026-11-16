@@ -233,7 +233,12 @@ export function MachineDetail({
         </div>
       </header>
       {view ? (
-        <MachineServerStatus key={`server:${view.id}`} view={view} onChanged={onChanged} />
+        <MachineServerStatus
+          key={`server:${view.id}`}
+          view={view}
+          connecting={machine.status === 'connecting'}
+          onChanged={onChanged}
+        />
       ) : null}
       {online ? (
         <section className={cn('shrink-0 space-y-3 border-b border-border py-3', PAGE_GUTTER_X)}>
