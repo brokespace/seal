@@ -92,6 +92,15 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const tone = TONES[props.tone ?? 'sidebar']
   const [preview, setPreview] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
+  // A menu hands focus back to the row when it closes, which would open the preview with the pointer elsewhere.
+  const previewHeld = React.useRef(false)
+  const onMenuOpenChange = (open: boolean): void => {
+    setMenuOpen(open)
+    if (open) {
+      previewHeld.current = true
+      setPreview(false)
+    }
+  }
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
   const runningCount = runningSubagents(session.activity).length
@@ -115,13 +124,13 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
     .join(' ')
 
   return (
-    <ContextMenu onOpenChange={setMenuOpen}>
+    <ContextMenu onOpenChange={onMenuOpenChange}>
       {/* A preview over an open menu would take the menu's Escape. */}
       <HoverCard
         openDelay={500}
         closeDelay={80}
         open={preview && !menuOpen}
-        onOpenChange={setPreview}
+        onOpenChange={(open) => setPreview(open && !previewHeld.current)}
       >
         <ContextMenuTrigger asChild>
           <HoverCardTrigger asChild>
@@ -142,6 +151,14 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 }
               }}
               onDoubleClick={(event) => props.onOpen(session, event)}
+              onPointerEnter={() => {
+                previewHeld.current = false
+              }}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  previewHeld.current = false
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) {
                   return
@@ -274,7 +291,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <SessionSummaryLine summary={summary} tooltip={false} className="text-2xs" />
                 ) : null}
               </span>
-              <DropdownMenu onOpenChange={setMenuOpen}>
+              <DropdownMenu onOpenChange={onMenuOpenChange}>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
