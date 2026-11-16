@@ -7,14 +7,18 @@ import {
   type NativeChatContextUsageSummary
 } from '../../../../../src/shared/native-chat/native-chat-context-usage-summary'
 
-/** The composer ring's readout, from desktop's rule; an older host's missing answer leaves the loaded window's facts. */
+/**
+ * The composer ring's readout, from desktop's rule; an older host's missing answer leaves the loaded
+ * window's facts. With no older page left unloaded, the compactions in view are all of them.
+ */
 export function useMobileStructuredContextUsage(
   journalItems: readonly AgentJournalRenderItem[],
   support: AgentSessionOptionsResult['contextUsage'],
-  journalEpoch: string | null
+  journal: { epoch: string | null; hasOlder: boolean }
 ): NativeChatContextUsageSummary | null {
+  const { epoch, hasOlder } = journal
   return useMemo(() => {
-    const usage = selectStructuredAgentSessionContextUsage(journalItems, support, journalEpoch)
+    const usage = selectStructuredAgentSessionContextUsage(journalItems, support, epoch, !hasOlder)
     return usage ? summarizeContextUsage(usage) : null
-  }, [journalItems, support, journalEpoch])
+  }, [journalItems, support, epoch, hasOlder])
 }

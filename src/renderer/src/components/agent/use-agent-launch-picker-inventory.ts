@@ -216,7 +216,7 @@ export function useAgentLaunchPickerInventorySource(
     model.state === 'settled'
       ? agentPickerEntriesFromRows(
           model.rows,
-          model.detection.detectedIds ?? [],
+          model.detection.detectedIds,
           (agent) => agentPickerChoiceSeeds(agent, defaults),
           formatAgentTypeLabel,
           model.defaultTuiAgent

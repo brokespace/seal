@@ -27,6 +27,8 @@ export type AgentLaunchRoutingInput = {
   launchText?: string
   nativeChatTranscriptIsLocalReadable?: boolean
   startsOutsideWorkspaceRoot?: boolean
+  /** Workspace-relative subfolder the launch starts in; absent at the workspace root. */
+  launchDirectory?: string
   /** The agents the target host listed as structured; absent until it has. */
   hostStructuredAgents?: readonly string[]
 }
@@ -56,6 +58,7 @@ export function structuredAgentLaunchSupport(input: Omit<AgentLaunchRoutingInput
     projectExecutionKind: input.projectExecutionKind,
     projectRuntime: input.projectRuntime,
     startsOutsideWorkspaceRoot: input.startsOutsideWorkspaceRoot,
+    ...(input.launchDirectory ? { startsInWorkspaceSubfolder: true } : {}),
     ...(input.hostStructuredAgents ? { hostStructuredAgents: input.hostStructuredAgents } : {})
   })
 }

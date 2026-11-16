@@ -68,6 +68,8 @@ export type AgentSessionLaunchVerdict = Pick<
   draftFromScope?: string
   launchOptions?: Readonly<Record<string, string>>
   chatLaunchOptions?: Readonly<Record<string, string>>
+  /** Workspace-relative subfolder a chat starts in; absent at the workspace root. */
+  launchDirectory?: string
 }
 
 export type AgentSessionStructuredFeasibilityRequest = AgentLaunchRouteArgs & {
@@ -110,6 +112,7 @@ function structuredLaunchOptions(verdict: AgentSessionLaunchVerdict): Structured
     ...(verdict.promptKeptByCaller ? { promptKeptByCaller: true as const } : {}),
     ...(verdict.draftFromScope ? { draftFromScope: verdict.draftFromScope } : {}),
     ...(verdict.executionHostId ? { executionHostId: verdict.executionHostId } : {}),
+    ...(verdict.launchDirectory ? { launchDirectory: verdict.launchDirectory } : {}),
     ...(verdict.chatLaunchOptions !== undefined || verdict.launchOptions !== undefined
       ? { launchOptions: verdict.chatLaunchOptions ?? verdict.launchOptions }
       : {})
@@ -310,6 +313,9 @@ export function planAgentSessionLaunch(
     ...(request.launchOptions ? { launchOptions: request.launchOptions } : {}),
     ...(request.chatLaunchOptions !== undefined
       ? { chatLaunchOptions: request.chatLaunchOptions }
+      : {}),
+    ...(route === 'structured-native-chat' && input.launchDirectory
+      ? { launchDirectory: input.launchDirectory }
       : {})
   })
 }

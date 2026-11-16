@@ -23,19 +23,23 @@ export type NativeChatTabDirectoryResolution =
   | { status: 'awaiting-pin' }
   | { status: 'unavailable' }
 
-/** Use the host-pinned directory for floating structured chats; settings can move after launch. Other tabs resolve by workspace id. */
+/** Use the host-pinned directory for floating structured chats; settings can move after launch. Other tabs resolve by workspace id, or by the subfolder their chat started in. */
 export function resolveNativeChatTabDirectoryResolution(
   state: NativeChatTabDirectoryState,
   tabId: string,
   worktreeId: string,
   executionHostId?: ExecutionHostId | null
 ): NativeChatTabDirectoryResolution {
-  const structuredTab = isFloatingWorkspaceId(worktreeId)
-    ? // The status bridge's own predicate, so no tab waits on a pin it never mirrors.
-      firstRegisteredStructuredChatTab(state.unifiedTabsByWorktree?.[worktreeId], tabId)
-    : undefined
+  // The status bridge's own predicate, so no tab waits on a pin it never mirrors.
+  const chatTab = firstRegisteredStructuredChatTab(state.unifiedTabsByWorktree?.[worktreeId], tabId)
+  const structuredTab = isFloatingWorkspaceId(worktreeId) ? chatTab : undefined
   if (!structuredTab) {
-    const directory = resolveWorkspaceDirectory(state, worktreeId, executionHostId)
+    // A workspace chat started in a subfolder runs there, so its relative paths resolve there too.
+    const subfolder = state.structuredSessionLaunchDirectoryByTabId?.[tabId]
+    const directory =
+      chatTab && subfolder && subfolder.sessionId === chatTab.entityId
+        ? subfolder.launchDirectory
+        : resolveWorkspaceDirectory(state, worktreeId, executionHostId)
     return directory ? { status: 'resolved', directory } : { status: 'unavailable' }
   }
   // Why: a floating chat only runs on the local host, so no other host holds its folder.

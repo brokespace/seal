@@ -97,6 +97,8 @@ export async function prepareStructuredAgentSessionCreateForWorktree(args: {
   /** Use the caller-reserved tab id at publication; absent, derive the legacy id. Keep it outside launch fingerprints. */
   tabId?: string
   firstMessage?: StructuredAgentSessionFirstMessage
+  /** Workspace subfolder the agent starts in; outside the fingerprint, read only when founding. */
+  launchDirectory?: string
   atRest?: boolean
 }): Promise<PreparedStructuredAgentSessionCreate> {
   const fork = args.forkFrom
@@ -123,7 +125,8 @@ export async function prepareStructuredAgentSessionCreateForWorktree(args: {
     callerKey: args.caller.callerKey,
     structuredAgentCliSourceEvidence,
     ...(args.resumeFrom ? { resumeFrom: args.resumeFrom } : {}),
-    ...(args.forkFrom ? { forkFrom: args.forkFrom } : {})
+    // A fork starts where its source ran, never in a folder the client names.
+    ...(args.forkFrom ? { forkFrom: args.forkFrom } : { launchDirectory: args.launchDirectory })
   })
   const attachFingerprint = computeAgentSessionPayloadFingerprint({
     method: 'agentSession.attach',

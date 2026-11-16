@@ -33,6 +33,7 @@ import '@/lib/agent-session/launch/routing/agent-launch-route-input'
 import { workspaceKindForWorktreeId } from '../../../../../../shared/agent-launch/contracts/workspace-launch-kind'
 import { launchOnceHostAnswered, routeNewTabLaunch } from './launch-agent-in-new-tab-host-agents'
 import type { AgentTabLaunchOutcome } from './launch-agent-in-new-tab-host-agents'
+import { terminalLaunchChatView } from './terminal-launch-chat-view'
 
 /**
  * Create a new terminal tab and queue the agent's launch command, optionally
@@ -199,7 +200,7 @@ function openAgentInNewTab(
       actionAgentArgs: args.actionAgentArgs,
       launchPlatform: resolvedLaunchPlatform,
       launchShell: queuedShell,
-      viewMode: 'terminal',
+      viewMode: terminalLaunchChatView(store, args)?.viewMode ?? 'terminal',
       ...(activate === false ? { activate } : {}),
       onPromptDelivered
     })
@@ -237,6 +238,7 @@ function openAgentInNewTab(
       quickCommandLabel,
       ...(activate === false ? { activate: false } : {}),
       ...(pendingActivationSpawn ? { pendingActivationSpawn: true } : {}),
+      ...terminalLaunchChatView(store, args),
       pasteContent: pasteDraftAfterLaunch,
       submit: submitPastedPrompt,
       ...(onPromptDelivered ? { onPromptDelivered } : {}),
@@ -255,6 +257,7 @@ function openAgentInNewTab(
     ...(initialCwd?.trim() ? { startupCwd: initialCwd } : {}),
     ...(pendingActivationSpawn ? { pendingActivationSpawn: true } : {}),
     ...(activate === false ? { activate: false } : {}),
+    ...terminalLaunchChatView(store, args),
     pendingStartup: {
       ...(trustWorktreeId ? { trustWorktreeId } : {}),
       command: startupPlan.launchCommand,
