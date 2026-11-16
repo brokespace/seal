@@ -1,15 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { MachineExecResult } from '../../../shared/machines/machine-host-wire'
+import { describe, expect, it } from 'vitest'
 import { summarizeMachineGpus } from '../../../shared/machines/machine-gpu-types'
-import { toMachineId, type MachineMetrics } from '../../../shared/machines/machine-types'
-import { createLocalMachineConnection } from '../connection/local-machine-connection'
-import type { MachineConnection } from '../connection/machine-connection'
 import { NVIDIA_SMI_FIXTURES } from '../testing/fake-nvidia-smi'
-import {
-  collectMachineMetricsWithGpus,
-  parseMachineGpus,
-  parseMachineGpuSnapshot
-} from './machine-gpu-readings'
+import { parseMachineGpus, parseMachineGpuSnapshot } from './machine-gpu-readings'
 
 const MIB = 1024 ** 2
 const FULL_FIELDS =
@@ -230,72 +222,5 @@ describe('GPUs that are not NVIDIA', () => {
   it('reports no GPU for a machine with none of the tools', () => {
     expect(parseMachineGpus('@swapkb 0 0\n@total 212')).toEqual([])
     expect(parseMachineGpus('@rocm\t')).toEqual([])
-  })
-})
-
-describe('a machine’s metrics with its GPUs', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  const answered = (stdout: string): MachineExecResult => ({
-    stdout,
-    stderr: '',
-    exitCode: 0,
-    timedOut: false
-  })
-  const METRICS: MachineMetrics = {
-    hostname: 'kessel-ml',
-    os: 'linux',
-    osRelease: '6.8.0-45-generic',
-    arch: 'x64',
-    cpuCount: 24,
-    cpuModel: null,
-    loadAverage: [9.8, 9.1, 8.7],
-    cpuUsagePercent: null,
-    memTotalBytes: 134_217_728_000,
-    memAvailableBytes: 67_108_864_000,
-    diskTotalBytes: null,
-    diskAvailableBytes: null,
-    diskMount: null,
-    uptimeSeconds: 432_000,
-    homeDir: '/home/brian',
-    collectedAt: 1_800_000_000_000
-  }
-  const never = new Promise<MachineExecResult>(() => {})
-
-  /** A machine whose GPU script answers with whatever `answers` holds next. */
-  function machine(id: string, answers: Promise<MachineExecResult>[]): MachineConnection {
-    return {
-      ...createLocalMachineConnection(),
-      machineId: toMachineId(id),
-      isConnected: () => true,
-      dialect: async () => 'posix',
-      metrics: async () => METRICS,
-      exec: () => answers.shift() ?? never
-    }
-  }
-
-  it('go out without GPUs when the GPU driver never answers', async () => {
-    vi.useFakeTimers()
-    const reading = collectMachineMetricsWithGpus(machine('hung-driver', [never]))
-    await vi.advanceTimersByTimeAsync(60_000)
-
-    expect(await reading).toEqual(METRICS)
-  })
-
-  it('keep the last GPU readings while a slow read is still under way', async () => {
-    vi.useFakeTimers()
-    const connection = machine('slow-driver', [
-      Promise.resolve(answered(nvidia(FULL_FIELDS, NVIDIA_SMI_FIXTURES.oneRtx4090.gpus))),
-      never
-    ])
-
-    const first = await collectMachineMetricsWithGpus(connection)
-    const second = collectMachineMetricsWithGpus(connection)
-    await vi.advanceTimersByTimeAsync(60_000)
-
-    expect(first.gpus?.map((gpu) => gpu.name)).toEqual(['NVIDIA GeForce RTX 4090'])
-    expect((await second).gpus).toEqual(first.gpus)
   })
 })

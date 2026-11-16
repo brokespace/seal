@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge'
 import { useTranslate } from '@/i18n/use-translate'
 import type { MachineGpu } from '../../../../../shared/machines/machine-gpu-types'
 import { MachineMeter } from '../detail/MachineVitals'
+import { formatTemperature } from '../model/machine-format'
 import { formatGpuMemory, formatGpuWatts } from '../model/machine-gpu-format'
 import { machineGpuMemoryPercent, type MachineGpuHistory } from '../model/machine-gpu-history'
+import { MachineResourceFact } from './MachineResourceStat'
 
 // A little past both ends, so a line at 0% or 100% is not drawn on the edge of its box.
 const PERCENT_DOMAIN = [-8, 108] as const
@@ -36,23 +38,6 @@ function MeterWithHistory({
   )
 }
 
-function Fact({
-  label,
-  value,
-  title
-}: {
-  label: string
-  value: string
-  title?: string
-}): React.JSX.Element {
-  return (
-    <div className="flex min-w-0 items-baseline justify-between gap-2" title={title}>
-      <dt className="shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="truncate font-mono tabular-nums">{value}</dd>
-    </div>
-  )
-}
-
 /** Everything one GPU reports; a figure its driver does not give is left out. */
 export function MachineGpuCard({
   gpu,
@@ -67,7 +52,7 @@ export function MachineGpuCard({
       ? null
       : {
           label: t('auto.components.machines.gpu.temperature', 'Temperature'),
-          value: `${Math.round(gpu.temperatureC)} °C`
+          value: formatTemperature(gpu.temperatureC)
         },
     gpu.powerDrawWatts === null
       ? null
@@ -139,7 +124,7 @@ export function MachineGpuCard({
         {facts.length > 0 ? (
           <dl className="grid gap-x-6 gap-y-1 text-2xs @[22rem]:grid-cols-2">
             {facts.map((fact) => (
-              <Fact key={fact.label} {...fact} />
+              <MachineResourceFact key={fact.label} {...fact} />
             ))}
           </dl>
         ) : null}

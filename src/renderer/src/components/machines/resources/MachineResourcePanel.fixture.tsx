@@ -4,6 +4,7 @@ import type { MachineSummary } from '../../../../../shared/machines/machine-summ
 import type { MachineGpu } from '../../../../../shared/machines/machine-gpu-types'
 import { toMachineId, type MachineMetrics } from '../../../../../shared/machines/machine-types'
 import { fakeMachinesApi, KESSEL, METRICS } from '../machine-api-fixture'
+import { RYZEN_LIBRE_HARDWARE_MONITOR } from '../machine-cpu-temperature-fixture-data'
 import { A100_80GB, asMig, fakeGpus, fakeGpuSnapshot, RTX_4090 } from '../machine-gpu-fixture-data'
 import { fakeDiskIndexNotStartedReply } from '../machine-disk-index-fixture-data'
 import { MachineResourcePanel } from './MachineResourcePanel'
@@ -66,6 +67,21 @@ function panel(
 }
 
 export const cpu = panel('cpu')
+
+export const cpuNarrow = panel('cpu', undefined, undefined, undefined, 420)
+
+const { cpuTemperature: _reading, ...NO_SENSOR } = METRICS[toMachineId(KESSEL)]!
+
+export const cpuNoSensor = panel('cpu', undefined, undefined, NO_SENSOR)
+
+const WINDOWS: MachineMetrics = { ...NO_SENSOR, os: 'win32', loadAverage: null }
+
+export const cpuWindows = panel('cpu', undefined, undefined, {
+  ...WINDOWS,
+  cpuTemperature: RYZEN_LIBRE_HARDWARE_MONITOR
+})
+
+export const cpuWindowsNoSensor = panel('cpu', undefined, undefined, WINDOWS)
 
 export const memory = panel('memory')
 
