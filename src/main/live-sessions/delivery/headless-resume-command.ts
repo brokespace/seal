@@ -8,6 +8,13 @@ export function shQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
+/** Ends the script while the resume started as `pid` still runs: a second one beside it would fork the conversation. */
+export function unlessResumeRuns(pid: number | undefined, command: string): string {
+  return pid === undefined
+    ? command
+    : `kill -0 ${pid} 2>/dev/null && { echo "@@RUNNING"; exit 0; }; ${command}`
+}
+
 /**
  * A closed session: the CLI resumes it headless, which appends to the same transcript. `run` is
  * the agent's own one-shot command, given the quoted session id; the message is in `$T`.
@@ -25,6 +32,6 @@ export function headlessResumeCommand(
     `command -v ${agent.binary} >/dev/null 2>&1 || { echo "@@MISSING"; exit 0; }; ` +
     // One turn, then it exits; the time limit ends a turn that hangs instead of leaving it behind.
     `TO=$(command -v timeout || command -v gtimeout); ` +
-    `nohup env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT \${TO:+"$TO" ${RESUME_TURN_LIMIT_S}} ${agent.run(shQuote(session.providerSessionId))} </dev/null >/dev/null 2>&1 & echo "@@STARTED"`
+    `nohup env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT \${TO:+"$TO" ${RESUME_TURN_LIMIT_S}} ${agent.run(shQuote(session.providerSessionId))} </dev/null >/dev/null 2>&1 & echo "@@STARTED $!"`
   )
 }

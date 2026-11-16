@@ -10,13 +10,13 @@ import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { parseAgentScreen, screenAcceptsInput, type AgentScreen } from '../discovery/agent-screen'
 import { permissionPromptId } from '../discovery/agent-screen-status'
 import { normalizeForMatch, sanitizeTypedText } from './transcript-user-texts'
-import { B64_DECODE, shQuote } from './headless-resume-command'
+import { B64_DECODE, shQuote, unlessResumeRuns } from './headless-resume-command'
 import { liveSessionAdapter } from '../adapters/live-session-adapters'
 
 export type RouteAttempt =
   /** In the agent's hands; the transcript decides when it is delivered. */
   | { outcome: 'sent' }
-  /** The prompt isn't free (a draft, a dialog); try again shortly. */
+  /** The prompt isn't free (a draft, a dialog), or Seal's last resume still runs; try again shortly. */
   | { outcome: 'busy' }
   /** Nothing reached the session; the next route may try. */
   | { outcome: 'unavailable'; reason: string }
@@ -166,6 +166,8 @@ export function codexQueueOutcome(out: string): RouteAttempt {
 
 export class SessionInputRoutes {
   private readonly sleep: (ms: number) => Promise<void>
+  /** The process of each session's last headless resume. */
+  private readonly resumes = new Map<string, number>()
 
   constructor(private readonly deps: SessionInputDeps) {
     this.sleep = deps.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))
@@ -214,14 +216,21 @@ export class SessionInputRoutes {
         reason: `${session.provider} cannot resume a closed session`
       }
     }
-    const out = await host.run(command)
+    const out = await host.run(unlessResumeRuns(this.resumes.get(session.id), command))
+    if (out.includes('@@RUNNING')) {
+      return { outcome: 'busy' }
+    }
     if (out.includes('@@MISSING')) {
       return {
         outcome: 'unavailable',
         reason: `${session.provider} is not installed on ${session.machine.label}`
       }
     }
-    return out.includes('@@STARTED')
+    const started = /@@STARTED(?: (\d+))?/.exec(out)
+    if (started?.[1]) {
+      this.resumes.set(session.id, Number(started[1]))
+    }
+    return started
       ? { outcome: 'sent' }
       : { outcome: 'failed', error: 'The resume command did not start' }
   }

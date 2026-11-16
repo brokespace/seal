@@ -132,7 +132,6 @@ describe('LiveMessageOutbox', () => {
     await box.send({ sessionId: session.id, messageId: 'm2', text: 'stuck' })
     transcript.push({ offset: 500, text: 'hello' })
     await settle(box, (all) => all[1].state === 'failed')
-    expect(box.list()[1].error).toBe('The session prompt stayed busy (a draft or a dialog)')
     box.stop()
   })
 

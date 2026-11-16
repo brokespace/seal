@@ -270,7 +270,7 @@ export class LiveMessageOutbox {
       if (this.now() - queuedAt > this.timing.busyTimeoutMs) {
         this.set(item, {
           state: 'failed',
-          error: 'The session prompt stayed busy (a draft or a dialog)'
+          error: 'The session stayed busy (a draft, a dialog, or an earlier message still running)'
         })
         return
       }
