@@ -33,12 +33,22 @@ export function holdKeyboardFocusForSurfacePress(paneId: string): void {
     for (const type of SURFACE_PRESS_END_EVENTS) {
       window.removeEventListener(type, release, true)
     }
-    // After the press's own click handlers.
+    // After the release's own handlers, which bring a pressed tab to the front.
     setTimeout(() => {
       surfacePressPaneId = null
-      if (splitViewStore.getState().focusedPaneId === paneId) {
-        bringKeyboardFocusIntoFocusedPane(false)
+      if (splitViewStore.getState().focusedPaneId !== paneId) {
+        return
       }
+      // A pressed or dragged workspace tab holds the keyboard itself; the pane wants it in what is in front.
+      const active = document.activeElement
+      if (
+        active instanceof HTMLElement &&
+        active.matches('[data-tab-id]') &&
+        active.closest(`[data-workspace-surface-pane-id="${CSS.escape(paneId)}"]`)
+      ) {
+        active.blur()
+      }
+      bringKeyboardFocusIntoFocusedPane(false)
     }, 0)
   }
   for (const type of SURFACE_PRESS_END_EVENTS) {
