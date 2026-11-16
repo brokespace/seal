@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Server } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { Button } from '../ui/button'
@@ -81,6 +81,61 @@ function MachinesPopover({
   )
 }
 
+/** A press that starts no compaction stops waiting for one after this. */
+const COMPACTION_START_WAIT_MS = 5_000
+
+type WatchedCompaction = {
+  chatId: string
+  count: number
+  lastCompactedAt?: number
+  /** "Compact now" was pressed; `ran` once the thread went to work on it. */
+  requested?: { ran: boolean }
+}
+
+/** The thread summary carries a compaction count and no time, so the ring times what it sees happen. */
+function useWatchedCompaction(chat: HomeChatSummary): {
+  lastCompactedAt?: number
+  compacting: boolean
+  request: () => void
+} {
+  const { id: chatId, updatedAt } = chat
+  const count = chat.context.compactions
+  const running = chat.status === 'running'
+  const [watch, setWatch] = useState<WatchedCompaction>({ chatId, count })
+  const { requested } = watch
+  if (watch.chatId !== chatId) {
+    setWatch({ chatId, count })
+  } else if (watch.count !== count) {
+    setWatch({
+      chatId,
+      count,
+      lastCompactedAt: count > watch.count ? updatedAt : watch.lastCompactedAt
+    })
+  } else if (requested && requested.ran !== running) {
+    setWatch({ ...watch, requested: running ? { ran: true } : undefined })
+  }
+  const waiting = requested?.ran === false
+  useEffect(() => {
+    if (!waiting) {
+      return
+    }
+    const timer = setTimeout(
+      () => setWatch((current) => ({ ...current, requested: undefined })),
+      COMPACTION_START_WAIT_MS
+    )
+    return () => clearTimeout(timer)
+  }, [waiting])
+  const request = useCallback(
+    () => setWatch((current) => ({ ...current, requested: { ran: false } })),
+    []
+  )
+  return {
+    ...(watch.lastCompactedAt === undefined ? {} : { lastCompactedAt: watch.lastCompactedAt }),
+    compacting: requested !== undefined && running,
+    request
+  }
+}
+
 function ContextRing({
   chat,
   onCompact
@@ -92,6 +147,7 @@ function ContextRing({
   const { usedTokens, windowTokens, compactions } = chat.context
   const percentage = windowTokens > 0 ? Math.round((usedTokens / windowTokens) * 100) : 0
   const compactDisabled = chat.status === 'running'
+  const { lastCompactedAt, compacting, request } = useWatchedCompaction(chat)
   const usage = useMemo<NativeChatContextUsageRingInput>(
     () => ({
       usedTokens,
@@ -101,10 +157,25 @@ function ContextRing({
       estimated: true,
       rows: [],
       compactions,
-      onCompact,
+      ...(lastCompactedAt === undefined ? {} : { lastCompactedAt }),
+      compacting,
+      onCompact: () => {
+        request()
+        onCompact()
+      },
       compactDisabled
     }),
-    [usedTokens, windowTokens, percentage, compactions, onCompact, compactDisabled]
+    [
+      usedTokens,
+      windowTokens,
+      percentage,
+      compactions,
+      lastCompactedAt,
+      compacting,
+      request,
+      onCompact,
+      compactDisabled
+    ]
   )
 
   return (
