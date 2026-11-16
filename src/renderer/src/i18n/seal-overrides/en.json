@@ -373,8 +373,8 @@
           "cores": "Cores",
           "processes": "Processes",
           "readings": "CPU: {{readings}}",
-          "temperatureHintMac": "Reading a Mac’s sensors needs the Xcode Command Line Tools on that Mac: run xcode-select --install there.",
-          "temperatureHintWindows": "Windows shows no CPU temperature to an account without administrator rights here. Running LibreHardwareMonitor on that machine makes one readable.",
+          "temperatureHintMac": "Reading a Mac’s sensors needs Xcode or its Command Line Tools on that Mac: run xcode-select --install there.",
+          "temperatureHintWindows": "Windows gives no CPU temperature to an ordinary account on this machine. “Set up CPU temperature” in the CPU details installs a monitor that makes one readable.",
           "temperatureHintLinux": "This machine exposes no CPU temperature sensor, as most virtual machines do not.",
           "temperature": "Temperature",
           "temperatureUnavailable": "no readable sensor",
@@ -416,7 +416,8 @@
             "start": "Start now",
             "retry": "Set up again",
             "install": "Set up CPU temperature",
-            "remove": "Remove"
+            "remove": "Remove",
+            "needsAdminLocal": "{{account}} is not an administrator on this PC. Sign in to Windows with an administrator account and set it up from Seal there."
           }
         },
         "memory": {

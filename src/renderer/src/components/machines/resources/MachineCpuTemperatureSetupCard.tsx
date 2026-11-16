@@ -55,11 +55,17 @@ function useSetupCopy(machine: MachineSummary): SetupCopy {
     blocker: (setup) => {
       switch (setup.elevation) {
         case 'needs-admin':
-          return t(
-            'auto.components.machines.cpu.setup.needsAdmin',
-            '{{account}} is not an administrator on {{machine}}, so this cannot be done over this connection. Connect with an administrator account.',
-            { ...names, account: setup.account }
-          )
+          return machine.connection === 'local'
+            ? t(
+                'auto.components.machines.cpu.setup.needsAdminLocal',
+                '{{account}} is not an administrator on this PC. Sign in to Windows with an administrator account and set it up from Seal there.',
+                { account: setup.account }
+              )
+            : t(
+                'auto.components.machines.cpu.setup.needsAdmin',
+                '{{account}} is not an administrator on {{machine}}, so this cannot be done over this connection. Connect with an administrator account.',
+                { ...names, account: setup.account }
+              )
         case 'no-desktop':
           return t(
             'auto.components.machines.cpu.setup.noDesktop',
@@ -261,9 +267,8 @@ export function MachineCpuTemperatureSetupCard({
       void refreshMachineMetrics(machineId)
     } catch (err) {
       setError(resourceErrorText(err))
-    } finally {
-      setBusy(null)
     }
+    setBusy(null)
   }
 
   // Another monitor already gives this machine a reading, so there is nothing to offer.
