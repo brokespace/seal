@@ -201,13 +201,18 @@ function resolveStripDrop(
   const hoveredRect = hovered?.getBoundingClientRect()
   const barLeft = hoveredRect ? hoveredRect[side] : stripRect.left
   const visibleTabId = hovered?.getAttribute(ITEM_TAB_KEY_ATTRIBUTE)
+  const under = tabs.find((tab) => {
+    const rect = tab.getBoundingClientRect()
+    return x >= rect.left && x < rect.right
+  })
+  const overItself = dragged.has(under?.getAttribute(ITEM_TAB_KEY_ATTRIBUTE) ?? '')
   return {
     place: { paneId, zone: 'center', index },
     preview: {
       kind: 'insert',
       rect: { left: barLeft - 1, top: stripRect.top, width: 2, height: stripRect.height },
-      // No bar beside the dragged tab itself, as in a workspace's tab row.
-      ...(visibleTabId && !dragged.has(visibleTabId)
+      // No bar while over the dragged tab itself, as in a workspace's tab row.
+      ...(visibleTabId && !overItself
         ? { insertion: { groupId: itemTabStripGroupId(paneId), visibleTabId, side } }
         : {})
     }
