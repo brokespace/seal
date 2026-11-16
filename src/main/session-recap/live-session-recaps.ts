@@ -22,6 +22,8 @@ export type LiveSessionRecapsDeps = {
   pausedUntil: () => number | null
   /** The session as the registry holds it, by any id it has gone by. */
   session: (sessionId: string) => LiveSession | null
+  /** The session's conversation can be read here: a transcript file, or a chat's journal. */
+  readable: (session: LiveSession) => boolean
   /**
    * Whether every stopped session gets a recap, or only those someone opened here. A headless
    * server leaves the rest to the desktop that also sees them.
@@ -94,7 +96,7 @@ export class LiveSessionRecaps {
       return
     }
     const { session } = event
-    const readable = session.alive && session.transcriptPath
+    const readable = session.alive && this.deps.readable(session)
     if (readable && AT_WORK.has(session.status)) {
       const tracked = this.track(session.id)
       tracked.stamp = null
@@ -169,7 +171,8 @@ export class LiveSessionRecaps {
     if (
       look &&
       (stale || recap === null) &&
-      session?.transcriptPath &&
+      session &&
+      this.deps.readable(session) &&
       this.available() &&
       now - Math.max(tracked.lastPassAt, tracked.lastWorkingPassAt) > OPEN_INTERVAL_MS
     ) {
@@ -192,7 +195,7 @@ export class LiveSessionRecaps {
   async refresh(sessionId: string): Promise<SessionRecapView> {
     const session = this.deps.session(sessionId)
     const id = session?.id ?? sessionId
-    if (this.deps.enabled() && session?.transcriptPath) {
+    if (this.deps.enabled() && session && this.deps.readable(session)) {
       const tracked = this.track(id)
       if ((await this.run(id, tracked, 'asked', false)) === 'current') {
         await this.run(id, tracked, 'asked', true)

@@ -74,6 +74,7 @@ async function harness(options: { eager?: boolean; enabled?: boolean } = {}) {
     enabled: () => options.enabled ?? true,
     pausedUntil: () => null,
     session: (sessionId) => sessions.get(sessionId) ?? null,
+    readable: (session) => session.transcriptPath !== null,
     eager: options.eager ?? true,
     setTimer: (run, delayMs) => {
       const timer = { run, at: clock.now + delayMs }
