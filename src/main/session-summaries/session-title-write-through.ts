@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-import type { AgentSessionStatusEvent } from '../../shared/agent-session/agent-session-wire'
 import { liveSessionSurfaceOf } from '../../shared/live-sessions/live-session-surface'
 import type {
   AgentSessionSurface,
@@ -7,8 +5,9 @@ import type {
   LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
-import type { StructuredAgentSessionHost } from '../native-chat/agent-session-wire/host/structured-agent-session-host'
 import { getStructuredAgentSessionHost } from '../native-chat/agent-session-wire/host/structured-agent-session-registry'
+import { followStructuredChatNames } from './structured-chat-name-feed'
+import { unrefTimer } from './unref-timer'
 
 type ChatName = { name: string | null; user: boolean }
 
@@ -23,10 +22,26 @@ export type SessionTitleWriteThroughDeps = {
   renameCliTab: (paneKey: string, title: string | null) => void
   /** Saves the session's custom title in Seal (the annotation). */
   annotate: (sessionId: string, customTitle: string | null) => void
+  /** Waits out the backoff before a chat is asked again to take a name. */
+  setTimer?: (run: () => void, delayMs: number) => { cancel: () => void }
   log?: (message: string, error?: unknown) => void
 }
 
+const FIRST_RETRY_MS = 5_000
+const LONGEST_RETRY_MS = 5 * 60_000
+const MAX_ATTEMPTS = 6
+
+/** A row name its chat has not taken; the row keeps it for as long as this stands. */
+type Unsent = {
+  /** The chat's user-given name when the write began: a different one since is the user's own. */
+  chatHad: string | null
+  attempts: number
+  cancelRetry: (() => void) | null
+}
+
 type Agreed = {
+  /** The session's id now; it changes when its transcript names it. */
+  recordId: string
   /** The custom title the row and the session's owner last agreed on. */
   title: string | null
   /** The chat or pane the session runs on; one that moves to another is met afresh. */
@@ -35,6 +50,7 @@ type Agreed = {
   replacing?: string | null
   /** A chat this host does not hold yet: nothing is agreed, `title` is only the row's. */
   unheld?: true
+  unsent?: Unsent
 }
 
 function chatOwner(chatSessionId: string): string {
@@ -49,8 +65,8 @@ function ownerOf(surface: AgentSessionSurface): string {
 }
 
 /** Only a name the user gave is a custom title; an automatic one stays the chat's own. */
-function userGivenName(chat: ChatName): string | null {
-  return (chat.user && chat.name) || null
+function userGivenName(chat: ChatName | null): string | null {
+  return (chat?.user && chat.name) || null
 }
 
 /**
@@ -61,9 +77,12 @@ export class SessionTitleWriteThrough {
   private readonly agreed = new Map<string, Agreed>()
   /** Renames of ours in flight, by chat. */
   private readonly renaming = new Map<string, number>()
+  private readonly setTimer: NonNullable<SessionTitleWriteThroughDeps['setTimer']>
   private stopWatchingChats: (() => void) | null = null
 
-  constructor(private readonly deps: SessionTitleWriteThroughDeps) {}
+  constructor(private readonly deps: SessionTitleWriteThroughDeps) {
+    this.setTimer = deps.setTimer ?? unrefTimer
+  }
 
   observe(event: LiveSessionRegistryEvent): void {
     if (event.type === 'snapshot') {
@@ -77,7 +96,10 @@ export class SessionTitleWriteThrough {
       this.agreed.delete(event.sessionId)
       // The successor's own sighting, when the registry published it first, is the newer word.
       if (known && event.replacedBy && !this.agreed.has(event.replacedBy)) {
+        known.recordId = event.replacedBy
         this.agreed.set(event.replacedBy, known)
+      } else if (known) {
+        this.dropUnsent(known)
       }
     }
   }
@@ -85,6 +107,9 @@ export class SessionTitleWriteThrough {
   dispose(): void {
     this.stopWatchingChats?.()
     this.stopWatchingChats = null
+    for (const known of this.agreed.values()) {
+      this.dropUnsent(known)
+    }
     this.agreed.clear()
     this.renaming.clear()
   }
@@ -99,7 +124,8 @@ export class SessionTitleWriteThrough {
     }
     const known = this.agreed.get(session.id)
     if (!known || known.owner !== owner || known.unheld) {
-      this.firstSighting(session.id, surface.kind === 'chat' ? surface.sessionId : null, {
+      this.firstSighting(surface.kind === 'chat' ? surface.sessionId : null, {
+        recordId: session.id,
         title,
         owner
       })
@@ -116,15 +142,19 @@ export class SessionTitleWriteThrough {
     known.title = title
     delete known.replacing
     if (surface.kind === 'chat') {
-      this.renameChat(surface.sessionId, title ?? '')
+      this.sendToChat(known, surface.sessionId)
     } else if (surface.kind === 'cli') {
       this.deps.renameCliTab(surface.paneKey, title)
     }
   }
 
   /** A tab keeps the title it had before Seal first saw its session; only a chat is brought to agree. */
-  private firstSighting(recordId: string, chatSessionId: string | null, row: Agreed): void {
-    this.agreed.set(recordId, row)
+  private firstSighting(chatSessionId: string | null, row: Agreed): void {
+    const before = this.agreed.get(row.recordId)
+    if (before) {
+      this.dropUnsent(before)
+    }
+    this.agreed.set(row.recordId, row)
     if (chatSessionId === null) {
       return
     }
@@ -135,10 +165,10 @@ export class SessionTitleWriteThrough {
     }
     const name = userGivenName(chat)
     if (name !== null) {
-      this.nameRow(recordId, row, name)
+      this.nameRow(row, name)
     } else if (row.title !== null) {
       // A row named before row names reached chats.
-      this.renameChat(chatSessionId, row.title)
+      this.sendToChat(row, chatSessionId)
     }
   }
 
@@ -148,19 +178,21 @@ export class SessionTitleWriteThrough {
       return
     }
     const owner = chatOwner(chatSessionId)
-    for (const [recordId, known] of this.agreed) {
+    const name = userGivenName(chat)
+    for (const known of this.agreed.values()) {
       if (known.owner !== owner) {
         continue
       }
       if (known.unheld) {
-        this.firstSighting(recordId, chatSessionId, { title: known.title, owner })
-      } else {
-        this.nameRow(recordId, known, userGivenName(chat))
+        this.firstSighting(chatSessionId, { recordId: known.recordId, title: known.title, owner })
+      } else if (!known.unsent || (name !== null && name !== known.unsent.chatHad)) {
+        this.dropUnsent(known)
+        this.nameRow(known, name)
       }
     }
   }
 
-  private nameRow(recordId: string, known: Agreed, title: string | null): void {
+  private nameRow(known: Agreed, title: string | null): void {
     if (known.title === title) {
       return
     }
@@ -168,73 +200,84 @@ export class SessionTitleWriteThrough {
       known.replacing = known.title
     }
     known.title = title
-    this.deps.annotate(recordId, title)
+    this.deps.annotate(known.recordId, title)
   }
 
-  private renameChat(chatSessionId: string, name: string): void {
+  private dropUnsent(known: Agreed): void {
+    known.unsent?.cancelRetry?.()
+    delete known.unsent
+  }
+
+  /** The row's title goes to its chat; a name starts over, a cleared one is the chat's to refuse. */
+  private sendToChat(known: Agreed, chatSessionId: string): void {
+    this.dropUnsent(known)
+    if (known.title !== null) {
+      const chatHad = userGivenName(this.deps.chatName(chatSessionId))
+      known.unsent = { chatHad, attempts: 1, cancelRetry: null }
+    }
+    this.renameChat(known, chatSessionId, known.unsent ?? null)
+  }
+
+  private renameChat(known: Agreed, chatSessionId: string, unsent: Unsent | null): void {
     this.renaming.set(chatSessionId, (this.renaming.get(chatSessionId) ?? 0) + 1)
     void this.deps
-      .renameChat(chatSessionId, name)
-      .catch((error: unknown) => this.deps.log?.('[session-titles] renaming a chat failed', error))
-      .then(() => {
+      .renameChat(chatSessionId, known.title ?? '')
+      .then(
+        (applied): { applied: boolean; error?: unknown } => ({ applied }),
+        (error: unknown) => ({ applied: false, error })
+      )
+      .then(({ applied, error }) => {
         const left = (this.renaming.get(chatSessionId) ?? 1) - 1
         if (left > 0) {
           this.renaming.set(chatSessionId, left)
-          return
+        } else {
+          this.renaming.delete(chatSessionId)
         }
-        this.renaming.delete(chatSessionId)
-        // Whatever the host made of the name (refused it, trimmed it), the row takes the chat's.
-        this.chatNameChanged(chatSessionId)
+        if (unsent && known.unsent === unsent) {
+          this.attempted(known, chatSessionId, unsent, applied, error)
+        } else if (applied && known.unsent) {
+          // An earlier write of ours landed: its name is not the user renaming the chat.
+          known.unsent.chatHad = userGivenName(this.deps.chatName(chatSessionId))
+        } else if (error !== undefined) {
+          this.deps.log?.('[session-titles] renaming a chat failed', error)
+        }
+        if (left === 0) {
+          // Whatever the host made of the name (refused it, trimmed it), the row takes the chat's.
+          this.chatNameChanged(chatSessionId)
+        }
       })
   }
-}
 
-function chatsNamedIn(event: AgentSessionStatusEvent): Set<string> {
-  if (event.type === 'status') {
-    return new Set([event.session.sessionId])
-  }
-  if (event.type !== 'snapshot') {
-    return new Set()
-  }
-  // A rename reaches a chat with no status row only through `conversationNames`.
-  return new Set(
-    [...event.sessions, ...(event.conversationNames ?? [])].map((chat) => chat.sessionId)
-  )
-}
-
-/** Chat names from the structured host installed now; `follow` moves to one installed since. */
-function followStructuredChatNames(
-  listener: (chatSessionId: string) => void,
-  log?: (message: string, error?: unknown) => void
-): { follow: () => void; stop: () => void } {
-  const id = `session-titles:${randomUUID()}`
-  let host: StructuredAgentSessionHost | null = null
-  let release: (() => void) | null = null
-  const emit = (event: AgentSessionStatusEvent): void => {
-    try {
-      chatsNamedIn(event).forEach(listener)
-    } catch (error) {
-      // The feed drops a subscriber that throws.
-      log?.('[session-titles] reading a chat name failed', error)
-    }
-  }
-  const follow = (): void => {
-    const current = getStructuredAgentSessionHost()
-    if (current === host) {
+  /** A name the chat did not take stays on the row and is written again, a few times, further apart. */
+  private attempted(
+    known: Agreed,
+    chatSessionId: string,
+    unsent: Unsent,
+    applied: boolean,
+    error: unknown
+  ): void {
+    const name = userGivenName(this.deps.chatName(chatSessionId))
+    if (applied || name === known.title || (name !== null && name !== unsent.chatHad)) {
+      delete known.unsent
       return
     }
-    release?.()
-    host = current
-    release = current?.subscribeStatus({ id, emit }) ?? null
-  }
-  follow()
-  return {
-    follow,
-    stop: () => {
-      release?.()
-      release = null
-      host = null
+    if (unsent.attempts >= MAX_ATTEMPTS) {
+      this.deps.log?.(
+        `[session-titles] a chat did not take its row's name in ${MAX_ATTEMPTS} attempts; the row keeps it`,
+        error
+      )
+      return
     }
+    const delayMs = Math.min(FIRST_RETRY_MS * 2 ** (unsent.attempts - 1), LONGEST_RETRY_MS)
+    this.deps.log?.(
+      `[session-titles] a chat did not take its row's name; the row keeps it, next attempt in ${delayMs / 1000} s`,
+      error
+    )
+    unsent.cancelRetry = this.setTimer(() => {
+      unsent.cancelRetry = null
+      unsent.attempts++
+      this.renameChat(known, chatSessionId, unsent)
+    }, delayMs).cancel
   }
 }
 
@@ -270,6 +313,7 @@ export function createSessionTitleWriteThrough(options: {
       void liveSessions
         .annotate({ sessionId, customTitle })
         .catch((error: unknown) => log?.('[session-titles] saving a session title failed', error)),
+    setTimer: unrefTimer,
     log
   })
   const observe = (event: LiveSessionRegistryEvent): void => {

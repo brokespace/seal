@@ -85,6 +85,10 @@ function harness(chats: Record<string, ChatName> = {}) {
   const listeners = new Set<(chatSessionId: string) => void>()
   const held: { apply: (applied: boolean) => void; fail: (error: Error) => void }[] = []
   let holding = false
+  /** What the next renames come to: an error is a failed store write, false a refusal. */
+  const outcomes: (Error | false)[] = []
+  const timers: { run: () => void; ms: number; cancelled: boolean }[] = []
+  const logs: unknown[][] = []
   const nameChat = (chatSessionId: string, name: string | null, user = true) => {
     names.set(chatSessionId, { name, user })
     for (const listener of listeners) {
@@ -98,6 +102,10 @@ function harness(chats: Record<string, ChatName> = {}) {
       if (holding) {
         return new Promise<boolean>((apply, fail) => held.push({ apply, fail }))
       }
+      const outcome = outcomes.shift()
+      if (outcome !== undefined) {
+        return outcome === false ? Promise.resolve(false) : Promise.reject(outcome)
+      }
       // As the structured host does: no empty names, and the name is announced before the call returns.
       if (!name) {
         return Promise.resolve(false)
@@ -110,13 +118,26 @@ function harness(chats: Record<string, ChatName> = {}) {
       return () => listeners.delete(listener)
     },
     renameCliTab: (paneKey, title) => void calls.push(['renameCliTab', paneKey, title]),
-    annotate: (sessionId, customTitle) => void calls.push(['annotate', sessionId, customTitle])
+    annotate: (sessionId, customTitle) => void calls.push(['annotate', sessionId, customTitle]),
+    setTimer: (run, ms) => {
+      const timer = { run, ms, cancelled: false }
+      timers.push(timer)
+      return {
+        cancel: () => {
+          timer.cancelled = true
+        }
+      }
+    },
+    log: (message, error) => void logs.push([message, error])
   })
   return {
     titles,
     calls,
     listeners,
     held,
+    outcomes,
+    timers,
+    logs,
     nameChat,
     holdRenames: () => {
       holding = true
@@ -262,18 +283,154 @@ describe('SessionTitleWriteThrough', () => {
     expect(h.calls).toEqual([['renameChat', 'chat-1', 'Fix the build']])
   })
 
-  it('takes the row name back when the rename fails', async () => {
+  it('keeps a carried-over row name when the chat write fails, and writes it again after a wait', async () => {
     const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
-    h.holdRenames()
-    h.see(CHAT)
-    h.see(CHAT, 'Fix the build')
+    const storeBusy = new Error('store busy')
+    h.outcomes.push(storeBusy)
 
-    h.held[0].fail(new Error('store closed'))
+    h.see(CHAT, 'Fix the build')
+    await settle()
+    h.nameChat('chat-1', 'Login failure', false)
+    h.see(CHAT, 'Fix the build', { status: 'working' })
+    await settle()
+
+    expect(h.calls).toEqual([['renameChat', 'chat-1', 'Fix the build']])
+    expect(h.timers.map((timer) => timer.ms)).toEqual([5_000])
+    expect(h.logs.map(([, error]) => error)).toEqual([storeBusy])
+
+    h.timers[0].run()
     await settle()
 
     expect(h.calls).toEqual([
       ['renameChat', 'chat-1', 'Fix the build'],
-      ['annotate', 'local:claude:abc', null]
+      ['renameChat', 'chat-1', 'Fix the build']
+    ])
+    expect(h.timers).toHaveLength(1)
+  })
+
+  it('keeps a row name its chat refuses every time, and stops asking after six attempts', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    h.outcomes.push(false, false, false, false, false, false)
+
+    h.see(CHAT, 'Fix the build')
+    await settle()
+    for (const fired of [0, 1, 2, 3, 4]) {
+      h.timers[fired].run()
+      await settle()
+    }
+
+    expect(h.calls).toEqual([
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build']
+    ])
+    expect(h.timers.map((timer) => timer.ms)).toEqual([5_000, 10_000, 20_000, 40_000, 80_000])
+    expect(h.logs).toHaveLength(6)
+  })
+
+  it('lets a chat renamed in its tab win over a row name still waiting to be written', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    h.outcomes.push(new Error('store busy'))
+    h.see(CHAT, 'Fix the build')
+    await settle()
+
+    h.nameChat('chat-1', 'Ship it')
+
+    expect(h.calls).toEqual([
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['annotate', 'local:claude:abc', 'Ship it']
+    ])
+    expect(h.timers.map((timer) => timer.cancelled)).toEqual([true])
+  })
+
+  it('keeps the name a row was just given when the chat write fails, not the chat name before it', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: true } })
+    h.see(CHAT, 'Login bug')
+    h.outcomes.push(new Error('store busy'))
+
+    h.see(CHAT, 'Fix the build')
+    await settle()
+
+    expect(h.calls).toEqual([['renameChat', 'chat-1', 'Fix the build']])
+    expect(h.timers.map((timer) => timer.ms)).toEqual([5_000])
+  })
+
+  it('writes the newer name when a row is renamed again while its last name waits', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    h.see(CHAT)
+    h.outcomes.push(new Error('store busy'))
+    h.see(CHAT, 'Fix the build')
+    await settle()
+
+    h.see(CHAT, 'Fix the tests')
+    await settle()
+
+    expect(h.calls).toEqual([
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the tests']
+    ])
+    expect(h.timers.map((timer) => timer.cancelled)).toEqual([true])
+  })
+
+  it('keeps the newer of two row names when only the older one reaches the chat', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    h.holdRenames()
+    h.see(CHAT)
+    h.see(CHAT, 'Fix the build')
+    h.see(CHAT, 'Fix the tests')
+
+    h.nameChat('chat-1', 'Fix the build')
+    h.held[0].apply(true)
+    await settle()
+    h.held[1].fail(new Error('store busy'))
+    await settle()
+
+    expect(h.calls).toEqual([
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the tests']
+    ])
+    expect(h.timers.map((timer) => timer.ms)).toEqual([5_000])
+  })
+
+  it('stops waiting to write a name once its session is removed or it is disposed', async () => {
+    const removed = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    removed.outcomes.push(new Error('store busy'))
+    removed.see(CHAT, 'Fix the build')
+    const disposed = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    disposed.outcomes.push(new Error('store busy'))
+    disposed.see(CHAT, 'Fix the build')
+    await settle()
+
+    removed.titles.observe({ type: 'remove', revision: 2, sessionId: 'local:claude:abc' })
+    disposed.titles.dispose()
+
+    expect(removed.timers.map((timer) => timer.cancelled)).toEqual([true])
+    expect(disposed.timers.map((timer) => timer.cancelled)).toEqual([true])
+  })
+
+  it('keeps writing a waiting name for a session that gets its lasting id', async () => {
+    const h = harness({ 'chat-1': { name: 'Login bug', user: false } })
+    h.outcomes.push(new Error('store busy'), false)
+    h.see(CHAT, 'Fix the build', { id: 'local:claude:pid-42' })
+    await settle()
+
+    h.titles.observe({
+      type: 'remove',
+      revision: 2,
+      sessionId: 'local:claude:pid-42',
+      replacedBy: 'local:claude:abc'
+    })
+    h.timers[0].run()
+    await settle()
+    h.nameChat('chat-1', 'Ship it')
+
+    expect(h.calls).toEqual([
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['renameChat', 'chat-1', 'Fix the build'],
+      ['annotate', 'local:claude:abc', 'Ship it']
     ])
   })
 
