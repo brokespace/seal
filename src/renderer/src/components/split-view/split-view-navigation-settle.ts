@@ -8,9 +8,12 @@ import {
   selectFolderWorkspaces,
   selectWorktreesByRepo
 } from '@/store/workspaces/catalog/workspace-record-fields'
+import { hasWorktreeSleepIntent } from '@/lib/workspace/sleep/worktree-sleep-intent'
+import { neighbourSplitViewPane } from './split-view-chip-transitions'
 import {
   closeSplitViewItems,
   currentSplitViewItem,
+  focusSplitViewPane,
   navigateToSplitViewItem,
   revealItemInSplitView,
   workspaceSplitViewItem
@@ -19,12 +22,36 @@ import { resolveSplitViewItem } from './split-view-item-resolution'
 import { renameSplitViewSession } from './split-view-layout-transitions'
 import { isSplitViewShowing } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
-import { activeSplitViewItem, splitViewItemKey, type SplitViewItem } from './split-view-types'
+import {
+  activeSplitViewItem,
+  splitViewItemKey,
+  type SplitViewItem,
+  type SplitViewState
+} from './split-view-types'
 
 function gridItems(): SplitViewItem[] {
   return Object.values(splitViewStore.getState().panes).flatMap((pane) =>
     pane.tabs.map((tab) => tab.item)
   )
+}
+
+/**
+ * The user put the focused pane's workspace to sleep. Opening it again would wake it, so focus
+ * moves on, as single view leaves a workspace it puts to sleep.
+ */
+function leaveSleepingPane(state: SplitViewState): void {
+  const app = useAppStore.getState()
+  const paneId = neighbourSplitViewPane(state, 1, (candidate) => {
+    const item = activeSplitViewItem(state, candidate)
+    if (!item || item.kind === 'session') {
+      return item !== null
+    }
+    const asleep = item.kind === 'workspace' && hasWorktreeSleepIntent(item.worktreeId)
+    return !asleep && resolveSplitViewItem(item, app, []) !== null
+  })
+  if (paneId) {
+    focusSplitViewPane(paneId)
+  }
 }
 
 /**
@@ -83,7 +110,9 @@ export function installSplitViewNavigationSettle(): () => void {
     workspaceBeforeCreation = undefined
     const current = creationCancelled ? null : currentSplitViewItem()
     if (!current) {
-      if (focused) {
+      if (focused?.kind === 'workspace' && hasWorktreeSleepIntent(focused.worktreeId)) {
+        leaveSleepingPane(state)
+      } else if (focused) {
         navigateToSplitViewItem(focused)
       }
       return

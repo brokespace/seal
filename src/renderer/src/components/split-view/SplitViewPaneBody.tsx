@@ -29,6 +29,8 @@ function Placeholder({
   return (
     <div
       data-split-view-placeholder={onClose ? 'unavailable' : onLoad ? 'paused' : 'loading'}
+      // What cannot take focus must not take the keyboard from the pane that has it.
+      onMouseDown={onClose ? (event) => event.preventDefault() : undefined}
       className="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center text-sm text-muted-foreground"
     >
       <p>{children}</p>

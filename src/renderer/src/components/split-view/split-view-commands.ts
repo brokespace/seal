@@ -130,6 +130,10 @@ export function focusSplitViewPane(paneId: string, key?: string): void {
     before.focusedPaneId === paneId &&
     (key === undefined || before.panes[paneId]?.activeKey === key)
   ) {
+    // Its workspace was put to sleep and nothing is current: focusing it again wakes it.
+    if (!currentSplitViewItem()) {
+      navigateToFocusedChip()
+    }
     return
   }
   if (splitViewStore.update((state) => activateSplitViewChip(state, paneId, key))) {
