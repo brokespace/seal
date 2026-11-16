@@ -15,6 +15,7 @@ import {
   MachineStatusDot,
   machineMeterValues,
   machineOsLabel,
+  useCpuReadings,
   useMachineStatusLabel
 } from '../detail/MachineVitals'
 import { serverInstallStatusText } from '../server-install/seal-server-install-copy'
@@ -39,6 +40,7 @@ function MachineListItem({
 }): React.JSX.Element {
   const t = useTranslate()
   const statusLabel = useMachineStatusLabel()
+  const cpuReadings = useCpuReadings()(metrics)
   const Icon = CONNECTION_ICON[machine.connection]
   const values = machineMeterValues(metrics)
   const os = machineOsLabel(metrics?.os ?? machine.os)
@@ -92,6 +94,13 @@ function MachineListItem({
               compact
               label={t('auto.components.machines.vitals.cpu', 'CPU')}
               percent={values.cpu}
+              title={
+                cpuReadings
+                  ? t('auto.components.machines.cpu.readings', 'CPU: {{readings}}', {
+                      readings: cpuReadings
+                    })
+                  : undefined
+              }
             />
             <MachineMeter
               compact
