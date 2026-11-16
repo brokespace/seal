@@ -74,7 +74,7 @@ function sshArgs(target: DockerSshHostTarget, command: string): string[] {
   ]
 }
 
-function waitForSsh(target: DockerSshHostTarget): void {
+export function waitForSsh(target: DockerSshHostTarget): void {
   const deadline = Date.now() + 90_000
   let lastError = ''
   while (Date.now() < deadline) {
@@ -98,7 +98,7 @@ function waitForSsh(target: DockerSshHostTarget): void {
   )
 }
 
-function seedRemoteRepo(target: DockerSshHostTarget, repoPath: string): void {
+export function seedRemoteRepo(target: DockerSshHostTarget, repoPath: string): void {
   const sentinel = `${target.containerName}:${repoPath}`
   execDockerSshHostTargetCommand(
     target,
