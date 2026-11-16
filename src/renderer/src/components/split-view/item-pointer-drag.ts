@@ -1,25 +1,15 @@
-import {
-  createSidebarDragPreview,
-  setSidebarPointerDragDocumentStyles,
-  updateSidebarDragPreviewPosition
-} from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
+import { setSidebarPointerDragDocumentStyles } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
+import { PROJECT_HEADER_DRAG_THRESHOLD_PX } from '@/components/sidebar/worktree-list/drag/project-header-drag-contract'
 import {
   swallowClickAfterNextRelease,
   swallowNextClickOnDragHandle
 } from '@/components/sidebar/worktree-list/drag/header-drag-click-swallow'
-import {
-  beginSplitViewDrag,
-  commitSplitViewDrop,
-  trackSplitViewDrop
-} from './split-view-drop-target'
-import { splitViewItemKey, type SplitViewItem } from './split-view-types'
-
-/** The sidebar's own threshold, so every row and tab starts dragging at the same distance. */
-const DRAG_THRESHOLD_PX = 4
+import { beginSplitViewPaneDrop, type SplitViewPaneDrop } from './split-view-pane-drop'
+import type { SplitViewItem } from './split-view-types'
 
 /**
- * One pointer drag for things that only ever land in panes: Active agents rows and tabs in an
- * item strip. Call from the source's pointer-down. Esc, window blur and a missed release cancel.
+ * The pointer drag of a sidebar row that only ever lands in panes (an Active agents row). Call
+ * from the row's pointer-down. Esc, window blur and a missed release cancel.
  */
 export function startItemPointerDrag(
   event: { button: number; clientX: number; clientY: number },
@@ -29,11 +19,9 @@ export function startItemPointerDrag(
   if (event.button !== 0) {
     return
   }
-  const items = [item]
   const startX = event.clientX
   const startY = event.clientY
-  let drag: { preview: HTMLElement; offsetX: number; offsetY: number; end: () => void } | null =
-    null
+  let drop: SplitViewPaneDrop | null = null
 
   const finish = (): void => {
     window.removeEventListener('pointermove', onMove)
@@ -41,11 +29,10 @@ export function startItemPointerDrag(
     window.removeEventListener('pointercancel', finish)
     window.removeEventListener('keydown', onKeyDown, true)
     window.removeEventListener('blur', finish)
-    if (drag) {
-      drag.preview.remove()
-      drag.end()
+    if (drop) {
+      drop.end()
       setSidebarPointerDragDocumentStyles(false)
-      drag = null
+      drop = null
     }
   }
   const onMove = (move: PointerEvent): void => {
@@ -54,43 +41,29 @@ export function startItemPointerDrag(
       finish()
       return
     }
-    if (!drag) {
-      if (Math.hypot(move.clientX - startX, move.clientY - startY) < DRAG_THRESHOLD_PX) {
+    if (!drop) {
+      if (
+        Math.hypot(move.clientX - startX, move.clientY - startY) < PROJECT_HEADER_DRAG_THRESHOLD_PX
+      ) {
         return
       }
       // The press may have started a text selection before selection was turned off.
       window.getSelection()?.removeAllRanges()
-      const end = beginSplitViewDrag()
       setSidebarPointerDragDocumentStyles(true)
-      drag = {
-        ...createSidebarDragPreview({
-          sourceRow: source,
-          pointerX: move.clientX,
-          pointerY: move.clientY,
-          draggedCount: 1
-        }),
-        end
-      }
+      drop = beginSplitViewPaneDrop([item], source, 'everywhere')
     }
-    updateSidebarDragPreviewPosition({
-      preview: drag.preview,
-      pointerX: move.clientX,
-      pointerY: move.clientY,
-      offsetX: drag.offsetX,
-      offsetY: drag.offsetY
-    })
-    trackSplitViewDrop(move.clientX, move.clientY, items)
+    drop.track(move.clientX, move.clientY)
   }
   const onUp = (up: PointerEvent): void => {
-    if (drag) {
+    if (drop) {
       swallowNextClickOnDragHandle(source)
       // Before the drag ends: ending it brings back a hover card that would cover the drop.
-      commitSplitViewDrop(up.clientX, up.clientY, items, splitViewItemKey(item))
+      drop.commit(up.clientX, up.clientY)
     }
     finish()
   }
   const onKeyDown = (key: KeyboardEvent): void => {
-    if (key.key === 'Escape' && drag) {
+    if (key.key === 'Escape' && drop) {
       key.preventDefault()
       key.stopPropagation()
       finish()

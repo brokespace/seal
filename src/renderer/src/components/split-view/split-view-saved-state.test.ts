@@ -260,6 +260,34 @@ describe('parseSavedSplitView', () => {
     })
   })
 
+  it('drops what is nested deeper than a layout may be', () => {
+    const paneCount = 70
+    const item = (index: number): SplitViewItem => ({
+      kind: 'session',
+      sessionId: `host-1:s${index}`
+    })
+    let layout: unknown = { type: 'leaf', groupId: `p${paneCount - 1}` }
+    for (let index = paneCount - 2; index >= 0; index--) {
+      layout = {
+        type: 'split',
+        direction: 'horizontal',
+        first: { type: 'leaf', groupId: `p${index}` },
+        second: layout
+      }
+    }
+    const panes = Object.fromEntries(
+      Array.from({ length: paneCount }, (_, index) => [
+        `p${index}`,
+        { items: [item(index)], activeKey: `session:host-1:s${index}` }
+      ])
+    )
+
+    const restored = parse({ layout, panes, focusedPaneId: 'p0' })
+
+    expect(Object.keys(restored.panes)).toHaveLength(64)
+    expect(Object.keys(restored.panes).at(-1)).toBe('p63')
+  })
+
   it('replaces a split that has a malformed child with its other child', () => {
     const restored = parse({
       ...savedThreePanes,

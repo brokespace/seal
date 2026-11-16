@@ -36,10 +36,31 @@ function restoreSessionTwoUp(): SplitViewState {
   )
 }
 
+function save(state: SplitViewState): void {
+  try {
+    const saved = serializeSplitView(state)
+    if (saved === null) {
+      globalThis.localStorage?.removeItem(SPLIT_VIEW_STORAGE_KEY)
+    } else {
+      globalThis.localStorage?.setItem(SPLIT_VIEW_STORAGE_KEY, saved)
+    }
+  } catch {
+    // Storage full or unavailable: the layout still works for this run.
+  }
+}
+
 function restore(): SplitViewState {
   try {
     const raw = globalThis.localStorage?.getItem(SPLIT_VIEW_STORAGE_KEY)
-    return raw ? parseSavedSplitView(raw) : restoreSessionTwoUp()
+    if (raw) {
+      return parseSavedSplitView(raw)
+    }
+    const converted = restoreSessionTwoUp()
+    // The session page's next save drops the two-up from its own key.
+    if (converted.layout) {
+      save(converted)
+    }
+    return converted
   } catch {
     // Unreadable or absent: start with no split view.
     return parseSavedSplitView(null)
@@ -84,16 +105,7 @@ export class SplitViewStore {
       return false
     }
     this.state = next
-    try {
-      const saved = serializeSplitView(next)
-      if (saved === null) {
-        globalThis.localStorage?.removeItem(SPLIT_VIEW_STORAGE_KEY)
-      } else {
-        globalThis.localStorage?.setItem(SPLIT_VIEW_STORAGE_KEY, saved)
-      }
-    } catch {
-      // Storage full or unavailable: the layout still works for this run.
-    }
+    save(next)
     this.notify()
     return true
   }

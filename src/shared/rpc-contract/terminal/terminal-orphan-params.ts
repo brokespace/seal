@@ -6,6 +6,11 @@ import {
   isPtyIncarnationId,
   type PtyIncarnationId
 } from '../../terminal/pty/lifecycle/pty-incarnation'
+import {
+  TAB_GROUP_ID_MAX_LENGTH,
+  TAB_GROUP_LAYOUT_MAX_DEPTH,
+  TAB_GROUP_LAYOUT_MAX_NODES
+} from '../../workspace-layout/tab-groups/tab-group-layout-limits'
 
 export function parseOrphanGroupLayout(value: unknown): TabGroupLayoutNode | null {
   const stack: { value: unknown; depth: number }[] = [{ value, depth: 0 }]
@@ -13,8 +18,8 @@ export function parseOrphanGroupLayout(value: unknown): TabGroupLayoutNode | nul
   while (stack.length > 0) {
     const current = stack.pop()!
     if (
-      current.depth > 64 ||
-      ++count > 1_024 ||
+      current.depth > TAB_GROUP_LAYOUT_MAX_DEPTH ||
+      ++count > TAB_GROUP_LAYOUT_MAX_NODES ||
       !current.value ||
       typeof current.value !== 'object'
     ) {
@@ -25,7 +30,7 @@ export function parseOrphanGroupLayout(value: unknown): TabGroupLayoutNode | nul
       if (
         typeof node.groupId !== 'string' ||
         node.groupId.length < 1 ||
-        node.groupId.length > 256
+        node.groupId.length > TAB_GROUP_ID_MAX_LENGTH
       ) {
         return null
       }

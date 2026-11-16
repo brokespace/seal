@@ -1,4 +1,9 @@
 import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
+import {
+  TAB_GROUP_ID_MAX_LENGTH,
+  TAB_GROUP_LAYOUT_MAX_DEPTH,
+  TAB_GROUP_LAYOUT_MAX_NODES
+} from '../../../../shared/workspace-layout/tab-groups/tab-group-layout-limits'
 import { settleSplitView } from './split-view-layout-transitions'
 import {
   EMPTY_SPLIT_VIEW,
@@ -44,27 +49,36 @@ function parseItem(value: unknown): SplitViewItem | null {
   return null
 }
 
-/** A subtree with no usable pane is dropped and its sibling takes the space. */
-function parseLayout(value: unknown, seen: Set<string>): TabGroupLayoutNode | null {
-  if (!isRecord(value)) {
+type LayoutWalk = { seen: Set<string>; nodes: number }
+
+/** A subtree with no usable pane, or past what a layout may hold, is dropped and its sibling takes the space. */
+function parseLayout(value: unknown, walk: LayoutWalk, depth = 0): TabGroupLayoutNode | null {
+  if (
+    !isRecord(value) ||
+    depth > TAB_GROUP_LAYOUT_MAX_DEPTH ||
+    ++walk.nodes > TAB_GROUP_LAYOUT_MAX_NODES
+  ) {
     return null
   }
   if (value.type === 'leaf') {
     const groupId = value.groupId
     // An id such as `__proto__` would read a pane off Object.prototype.
     const usable =
-      typeof groupId === 'string' && groupId.length > 0 && !(groupId in Object.prototype)
-    if (!usable || seen.has(groupId)) {
+      typeof groupId === 'string' &&
+      groupId.length > 0 &&
+      groupId.length <= TAB_GROUP_ID_MAX_LENGTH &&
+      !(groupId in Object.prototype)
+    if (!usable || walk.seen.has(groupId)) {
       return null
     }
-    seen.add(groupId)
+    walk.seen.add(groupId)
     return { type: 'leaf', groupId }
   }
   if (value.type !== 'split') {
     return null
   }
-  const first = parseLayout(value.first, seen)
-  const second = parseLayout(value.second, seen)
+  const first = parseLayout(value.first, walk, depth + 1)
+  const second = parseLayout(value.second, walk, depth + 1)
   if (!first || !second) {
     return first ?? second
   }
@@ -89,7 +103,7 @@ export function parseSavedSplitView(raw: string | null | undefined): SplitViewSt
   if (!isRecord(saved)) {
     return EMPTY_SPLIT_VIEW
   }
-  const layout = parseLayout(saved.layout, new Set())
+  const layout = parseLayout(saved.layout, { seen: new Set(), nodes: 0 })
   const savedPanes = isRecord(saved.panes) ? saved.panes : {}
   const panes: Record<string, SplitViewPane> = {}
   for (const [paneId, savedPane] of Object.entries(savedPanes)) {
