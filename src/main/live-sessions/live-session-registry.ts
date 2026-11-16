@@ -198,7 +198,7 @@ export class LiveSessionRegistry {
       const host = current.get(hostId)
       if (!host) {
         this.hosts.delete(hostId)
-        this.hostErrors.delete(hostId)
+        this.setHostError(hostId, null)
         changed = true
       } else {
         state.host = host

@@ -40,11 +40,14 @@ function machine(clock: () => number = () => NOW) {
     panes: SealPane[]
     /** The machine stopped answering: its scans fail. */
     down: boolean
+    /** The machine left the list of connected machines. */
+    disconnected: boolean
   } = {
     running: false,
     files: [],
     panes: [],
-    down: false
+    down: false,
+    disconnected: false
   }
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
@@ -64,7 +67,7 @@ function machine(clock: () => number = () => NOW) {
   const paneListeners = new Set<() => void>()
   const registry = new LiveSessionRegistry({
     localMachine: host.machine,
-    hosts: () => [host],
+    hosts: () => (state.disconnected ? [] : [host]),
     sealPanes: () => state.panes,
     subscribeSealPanes: (onChange) => {
       paneListeners.add(onChange)
@@ -87,7 +90,7 @@ function machine(clock: () => number = () => NOW) {
     events.flatMap((e) =>
       e.type === 'remove' && e.replacedBy ? [[e.sessionId, e.replacedBy]] : []
     )
-  return { state, registry, rows, replaced, paneChanged }
+  return { state, registry, rows, replaced, paneChanged, events }
 }
 
 const sealPane: SealPane = {
@@ -122,6 +125,19 @@ describe('one row per agent session', () => {
     expect(registry.get('local:claude:pid-4100')?.inputRoutes).toEqual([
       { kind: 'seal-pane', paneKey: 'tab-1:0' }
     ])
+  })
+
+  it('answers for an agent by its own id once it is listed apart from the session it was taken for', async () => {
+    const { state, registry, rows } = machine()
+    state.running = true
+    await rows()
+    state.panes = [sealPane]
+    expect(await rows()).toEqual([[`local:claude:${WORKING}`, 'seal', 4100]])
+
+    // The pane's session was another agent's: this one is listed under its own id again.
+    state.panes = []
+    expect(await rows()).toEqual([['local:claude:pid-4100', 'external', 4100]])
+    expect(registry.get('local:claude:pid-4100')?.id).toBe('local:claude:pid-4100')
   })
 
   it('keeps an agent started outside Seal as one row once Seal also sees it in a pane', async () => {
@@ -201,6 +217,19 @@ describe('a machine that stops answering', () => {
 
     state.down = false
     expect(await shown()).toEqual({ statuses: ['working'], error: null })
+  })
+
+  it('tells its listeners the error is gone when the machine disconnects', async () => {
+    const { state, registry, events } = machine()
+    state.down = true
+    await registry.refresh()
+    state.disconnected = true
+    await registry.refresh()
+
+    expect(events.flatMap((e) => (e.type === 'host-error' ? [[e.hostId, e.error]] : []))).toEqual([
+      ['local', 'ssh: connect to host dev-box: Connection timed out'],
+      ['local', null]
+    ])
   })
 })
 

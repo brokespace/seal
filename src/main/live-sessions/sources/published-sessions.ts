@@ -22,7 +22,8 @@ export class PublishedSessions {
   /** The id a session goes by now, following its renames. */
   currentId(sessionId: string): string {
     let id = sessionId
-    for (let hops = 0; hops < 8 && this.renamed.has(id); hops++) {
+    // A listed id is its own: a process paired with another's transcript for a scan is listed again.
+    for (let hops = 0; hops < 8 && !this.published.has(id) && this.renamed.has(id); hops++) {
       id = this.renamed.get(id)!
     }
     return id
@@ -37,6 +38,7 @@ export class PublishedSessions {
         continue
       }
       seen.add(session.id)
+      this.renamed.delete(session.id)
       const json = JSON.stringify(session)
       if (this.published.get(session.id)?.json !== json) {
         this.published.set(session.id, { session, json })
