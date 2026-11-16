@@ -59,10 +59,11 @@ function publishRepoReadoptions(repoReadoptions: SshRepoReadoption[]): SshRepoRe
   return repoReadoptions
 }
 
-// Generation, provisioning, fences and runtime ladder cache are main-owned; strip renderer claims.
+// Generation, provisioning, fences, the runtime owner and runtime ladder cache are main-owned; strip renderer claims.
 function omitRendererSshTargetGeneration<
   T extends {
     generation?: unknown
+    owner?: unknown
     orcadProvisioning?: unknown
     orcadFence?: unknown
     managedServerUnavailable?: unknown
@@ -77,6 +78,7 @@ function omitRendererSshTargetGeneration<
 ): Omit<
   T,
   | 'generation'
+  | 'owner'
   | 'orcadProvisioning'
   | 'orcadFence'
   | 'managedServerUnavailable'
@@ -88,6 +90,7 @@ function omitRendererSshTargetGeneration<
 > {
   const {
     generation: _generation,
+    owner: _owner,
     orcadProvisioning: _orcadProvisioning,
     orcadFence: _orcadFence,
     managedServerUnavailable: _managedServerUnavailable,
