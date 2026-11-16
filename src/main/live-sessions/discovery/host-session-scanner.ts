@@ -120,7 +120,7 @@ export class HostSessionScanner {
     for (const session of sessions) {
       const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
       if (transcript && session.pid !== null) {
-        transcript.agent = { pid: session.pid, seenAtMs: output.hostNowMs ?? nowMs }
+        transcript.agentPid = session.pid
       }
     }
     const ids = new Set(sessions.map((s) => s.id))
@@ -208,7 +208,7 @@ export class HostSessionScanner {
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
       subagents: cached?.subagents ?? [],
-      ...(cached?.agent ? { agent: cached.agent } : {})
+      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
     }
     this.cache.set(file.path, next)
     if (!cached) {

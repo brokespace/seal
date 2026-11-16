@@ -23,6 +23,8 @@ type Transitions = { session: string; fixture: string; steps: Step[] }
 const GONE: ScanOptions = { alive: false, listsProcesses: true, quietMs: 10 * 60_000 }
 /** Its process left the host's list seconds after its last write. */
 const KILLED: ScanOptions = { alive: false, listsProcesses: true }
+/** It exited by itself, writing to its transcript on the way out, after the scan that last saw it. */
+const LEFT: ScanOptions = { ...KILLED, closedAfterMs: 40_000 }
 
 // One scanner follows each session from scan to scan. Claude transcripts were recorded from Claude
 // Code 2.1.325 (docs/design/agent-status.md says how); `records` is how much of one was written.
@@ -322,6 +324,26 @@ const CLAUDE: Transitions[] = [
     steps: [
       { when: 'Claude says it is busy', host: { registry: { state: 'busy' } }, shows: 'working' },
       { when: 'Claude says it is idle', host: { registry: { state: 'idle' } }, shows: 'your-turn' }
+    ]
+  },
+  {
+    session: 'a Claude that leaves on its own (/exit, a closed terminal) at its prompt',
+    fixture: 'claude-idle',
+    steps: [
+      { when: 'it sits at its prompt', host: {}, shows: 'your-turn' },
+      { when: 'it wrote its closing records and left', host: LEFT, shows: 'done' }
+    ]
+  },
+  {
+    session: 'a Claude that leaves on its own while its background command runs',
+    fixture: 'live-claude-background-command-running',
+    steps: [
+      {
+        when: 'it waits on its command',
+        host: { registry: { state: 'shell' }, children: CLAUDE_SHELL('00:20') },
+        shows: 'waiting-task'
+      },
+      { when: 'it left, and took its command with it', host: LEFT, shows: 'done' }
     ]
   }
 ]

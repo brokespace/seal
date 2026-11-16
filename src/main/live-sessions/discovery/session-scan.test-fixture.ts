@@ -53,6 +53,8 @@ export type ScanOptions = {
   unread?: boolean
   /** The agent holds no transcript open (a Claude that has not written its own yet). */
   unpinned?: boolean
+  /** The agent wrote its closing records, which carry no stamp, this long after its last stamped one. */
+  closedAfterMs?: number
 }
 
 function fixtureFile(name: string, options: ScanOptions = {}): DiscoveredFile {
@@ -70,7 +72,7 @@ function fixtureFile(name: string, options: ScanOptions = {}): DiscoveredFile {
         : `${CODEX_DIR}/rollout-2026-11-13T10-00-00-${id}.jsonl`,
     // A read that starts mid-file is larger than the scanner's tail, which then drops its first line.
     size: options.readFrom ? LOCAL_SCAN_LIMITS.tailBytes + 1 : Buffer.byteLength(text),
-    mtimeMs: lastWriteOf(text),
+    mtimeMs: lastWriteOf(text) + (options.closedAfterMs ?? 0),
     head: options.unread ? null : text,
     tail: options.unread
       ? null

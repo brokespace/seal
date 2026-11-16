@@ -41,8 +41,8 @@ export type SummarizedTranscript = {
   codexPlan?: LiveTodo[] | null
   /** Codex: the background terminals its rollout left running, folded scan after scan. */
   codexTerminals?: CodexTerminalState
-  /** The agent process an earlier scan paired with it, and that scan's time on the host's clock. */
-  agent?: { pid: number; seenAtMs: number }
+  /** The agent process an earlier scan paired with it. */
+  agentPid?: number
 }
 
 /** A transcript written this recently belongs to a running agent even if `ps` missed it. */
@@ -151,15 +151,11 @@ export function assembleHostSessions(input: {
     )
     // One Codex app-server holds many threads open but pairs with one; the rest still have it.
     const heldOpen = transcript !== null && openTranscripts.has(transcript.path)
-    // The process seen writing it is off the host's list and nothing wrote since: it exited,
-    // however fresh its last write.
-    const last = transcript?.agent
+    // The process seen running it is off the host's list: it exited, however fresh its last
+    // write (Claude writes its closing records on its way out).
+    const last = transcript?.agentPid
     const exited =
-      last !== undefined &&
-      output.processesListed === true &&
-      !heldOpen &&
-      !listedPids.has(last.pid) &&
-      lastWrite <= last.seenAtMs
+      last !== undefined && output.processesListed === true && !heldOpen && !listedPids.has(last)
     const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
     const pane = process?.tty ? panesByTty.get(process.tty) : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
