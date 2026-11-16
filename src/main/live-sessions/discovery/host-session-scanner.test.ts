@@ -295,10 +295,21 @@ it('pairs neither of two agents idle in one folder with the rollout one of them 
   ])
 
   output = scanOf([4200])
-  expect(await listed()).toEqual([
+  const apart = [
     ['pid-4200', 4200, ''],
     [CODEX_ID, null, '']
-  ])
+  ]
+  expect(await listed()).toEqual(apart)
+
+  // Newer rollouts pushed it off the host's list for a scan: it is read anew when it returns.
+  const whole = output
+  output = whole
+    .split('\n')
+    .filter((row) => !row.includes(path))
+    .join('\n')
+  expect(await listed()).toEqual([['pid-4200', 4200, '']])
+  output = whole
+  expect(await listed()).toEqual(apart)
 })
 
 const viaAiVault = () =>

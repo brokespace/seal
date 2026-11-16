@@ -77,6 +77,8 @@ const agentPidsOf = (output: DiscoveryOutput): string =>
 export class HostSessionScanner {
   private readonly cache = new Map<string, CachedTranscript>()
   private readonly firstSeen = new Map<string, number>()
+  /** Transcripts a scan found several possible writers for; outlives the read cache. */
+  private readonly contested = new Set<string>()
   /** The agent processes of the last whole scan. */
   private agentPids: string | null = null
 
@@ -129,19 +131,16 @@ export class HostSessionScanner {
       }
     }
     // A scan cut short lists only some: the rest stand as earlier scans read them.
-    const transcripts = [...this.cache.values()]
+    const transcripts = [...this.cache.values()].map((transcript) =>
+      this.contested.has(transcript.path) ? { ...transcript, contested: true } : transcript
+    )
     const sessions = assembleHostSessions({
       machine: this.host.machine,
       output,
       transcripts,
       unread: output.files.filter((file) => !this.cache.has(file.path)),
       nowMs,
-      onContested: (transcript) => {
-        const cached = this.cache.get(transcript.path)
-        if (cached) {
-          cached.contested = true
-        }
-      }
+      onContested: (transcript) => this.contested.add(transcript.path)
     })
     for (const session of sessions) {
       const transcript = session.transcriptPath ? this.cache.get(session.transcriptPath) : undefined
@@ -232,8 +231,7 @@ export class HostSessionScanner {
           }),
       subagentFiles: cached?.subagentFiles ?? new Map(),
       subagents: cached?.subagents ?? [],
-      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {}),
-      ...(cached?.contested ? { contested: true } : {})
+      ...(cached?.agentPid !== undefined ? { agentPid: cached.agentPid } : {})
     }
     this.cache.set(file.path, next)
     if (!cached) {
