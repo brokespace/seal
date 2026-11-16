@@ -594,7 +594,7 @@
           "task": "1 background task",
           "tasks": "{{count}} background tasks",
           "label": "Waiting on {{what}}",
-          "and": " and "
+          "stillRunning": "{{what}} still running"
         },
         "rename": {
           "title": "Rename session",

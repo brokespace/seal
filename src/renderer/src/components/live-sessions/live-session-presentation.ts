@@ -45,33 +45,47 @@ export function liveSessionStatusLabel(status: LiveSessionStatus): string {
   }
 }
 
-/** "Waiting on 2 subagents and 1 background task": what a busy-but-quiet session waits on. */
-export function liveSessionWaitLabel(session: Pick<LiveSession, 'activity'>): string | null {
+function subagentCount(session: Pick<LiveSession, 'activity'>): string | null {
   const subagents = runningSubagents(session.activity).length
+  if (subagents === 0) {
+    return null
+  }
+  return subagents === 1
+    ? translate('auto.components.live-sessions.wait.subagent', '1 subagent')
+    : translate('auto.components.live-sessions.wait.subagents', '{{count}} subagents', {
+        count: subagents
+      })
+}
+
+function backgroundTaskCount(session: Pick<LiveSession, 'activity'>): string | null {
   const tasks = runningBackgroundTasks(session.activity).length
-  const parts = [
-    ...(subagents === 1
-      ? [translate('auto.components.live-sessions.wait.subagent', '1 subagent')]
-      : subagents > 1
-        ? [
-            translate('auto.components.live-sessions.wait.subagents', '{{count}} subagents', {
-              count: subagents
-            })
-          ]
-        : []),
-    ...(tasks === 1
-      ? [translate('auto.components.live-sessions.wait.task', '1 background task')]
-      : tasks > 1
-        ? [
-            translate('auto.components.live-sessions.wait.tasks', '{{count}} background tasks', {
-              count: tasks
-            })
-          ]
-        : [])
-  ]
-  return parts.length > 0
-    ? translate('auto.components.live-sessions.wait.label', 'Waiting on {{what}}', {
-        what: parts.join(translate('auto.components.live-sessions.wait.and', ' and '))
+  if (tasks === 0) {
+    return null
+  }
+  return tasks === 1
+    ? translate('auto.components.live-sessions.wait.task', '1 background task')
+    : translate('auto.components.live-sessions.wait.tasks', '{{count}} background tasks', {
+        count: tasks
+      })
+}
+
+/** "Waiting on 2 subagents", "Waiting on 1 background task": what a waiting session is blocked on. */
+export function liveSessionWaitLabel(
+  session: Pick<LiveSession, 'status' | 'activity'>
+): string | null {
+  const what =
+    session.status === 'waiting-task' ? backgroundTaskCount(session) : subagentCount(session)
+  return what
+    ? translate('auto.components.live-sessions.wait.label', 'Waiting on {{what}}', { what })
+    : null
+}
+
+/** "2 background tasks still running": what the session left running, which it does not wait on. */
+export function liveSessionLeftoverLabel(session: Pick<LiveSession, 'activity'>): string | null {
+  const what = backgroundTaskCount(session)
+  return what
+    ? translate('auto.components.live-sessions.wait.stillRunning', '{{what}} still running', {
+        what
       })
     : null
 }
