@@ -4,7 +4,6 @@ import type { TabGroupLayoutNode } from '../../../../shared/tab-types'
 export type SplitViewItem =
   // Why worktreeId alone: one workspace surface exists per id, whichever host lists it.
   | { kind: 'workspace'; worktreeId: string; hostId: string | null }
-  | { kind: 'session'; sessionId: string }
   | { kind: 'project'; repoId: string; hostId: string }
 
 export type SplitViewTab = { item: SplitViewItem; preview: boolean }
@@ -37,8 +36,6 @@ export function splitViewItemKey(item: SplitViewItem): string {
   switch (item.kind) {
     case 'workspace':
       return `workspace:${item.worktreeId}`
-    case 'session':
-      return `session:${item.sessionId}`
     case 'project':
       return `project:${item.hostId}\n${item.repoId}`
   }

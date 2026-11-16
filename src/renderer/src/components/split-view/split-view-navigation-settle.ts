@@ -1,7 +1,5 @@
 import { useAppStore } from '@/store/index'
 import type { AppState } from '@/store/types'
-import { liveSessionRegistryStore } from '@/components/live-sessions/live-session-registry-store'
-import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { registerRemovedActiveWorktreeTakeover } from '@/lib/workspace/activation/active-worktree-removal-takeover'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import {
@@ -19,7 +17,6 @@ import {
   workspaceSplitViewItem
 } from './split-view-commands'
 import { resolveSplitViewItem } from './split-view-item-resolution'
-import { renameSplitViewSession } from './split-view-layout-transitions'
 import { isSplitViewShowing } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
 import {
@@ -43,11 +40,11 @@ function leaveSleepingPane(state: SplitViewState): void {
   const app = useAppStore.getState()
   const paneId = neighbourSplitViewPane(state, 1, (candidate) => {
     const item = activeSplitViewItem(state, candidate)
-    if (!item || item.kind === 'session') {
-      return item !== null
+    if (!item) {
+      return false
     }
     const asleep = item.kind === 'workspace' && hasWorktreeSleepIntent(item.worktreeId)
-    return !asleep && resolveSplitViewItem(item, app, []) !== null
+    return !asleep && resolveSplitViewItem(item, app) !== null
   })
   if (paneId) {
     focusSplitViewPane(paneId)
@@ -69,12 +66,8 @@ export function installSplitViewNavigationSettle(): () => void {
     const state = useAppStore.getState()
     const vanished = new Set<string>()
     for (const item of gridItems()) {
-      // A session that left the registry keeps its chip and says so in its pane.
-      if (item.kind === 'session') {
-        continue
-      }
       const key = splitViewItemKey(item)
-      if (resolveSplitViewItem(item, state, [])) {
+      if (resolveSplitViewItem(item, state)) {
         seenKeys.add(key)
       } else if (seenKeys.has(key)) {
         vanished.add(key)
@@ -143,18 +136,7 @@ export function installSplitViewNavigationSettle(): () => void {
       schedule()
     }
   })
-  let activeSessionId = liveSessionTabsStore.getState().activeId
-  const stopWatchingSessionTabs = liveSessionTabsStore.subscribe(() => {
-    const next = liveSessionTabsStore.getState().activeId
-    if (next !== activeSessionId) {
-      activeSessionId = next
-      schedule()
-    }
-  })
   const stopWatchingGrid = splitViewStore.subscribe(schedule)
-  const stopFollowingRenames = liveSessionRegistryStore.onRename((from, to) => {
-    splitViewStore.update((state) => renameSplitViewSession(state, from, to))
-  })
   // The removed workspace's successor comes from the grid, never from outside it.
   const stopTakingOver = registerRemovedActiveWorktreeTakeover((worktreeId) => {
     const key = splitViewItemKey(workspaceSplitViewItem({ id: worktreeId }))
@@ -169,9 +151,7 @@ export function installSplitViewNavigationSettle(): () => void {
 
   return () => {
     stopWatchingApp()
-    stopWatchingSessionTabs()
     stopWatchingGrid()
-    stopFollowingRenames()
     stopTakingOver()
   }
 }

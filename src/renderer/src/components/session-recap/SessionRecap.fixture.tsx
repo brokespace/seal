@@ -1,9 +1,10 @@
 import { defineFixture } from '../../component-fixtures/component-fixture'
-import { ActiveAgentsGroups } from '../live-sessions/active-agents/ActiveAgentsGroups'
-import { buildActiveAgents } from '../live-sessions/active-agents/active-agents-model'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-sessions/live-session.test-fixture'
-import { LiveSessionPaneView } from '../live-sessions/workspace/LiveSessionPane'
-import type { LiveSessionPanel } from '../live-sessions/workspace/live-session-tabs-store'
+import { WorkspaceSessionRowList } from '../live-sessions/workspace-rows/WorkspaceSessionRows'
+import { buildWorkspaceSessionRows } from '../live-sessions/workspace-rows/workspace-session-rows-model'
+import { AgentSessionChatFrameView } from '../live-sessions/chat/AgentSessionChatFrame'
+import { externalAgentSessionChatRows } from '../live-sessions/chat/external-agent-session-chat-rows'
+import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
 import type { SessionRecapView } from '../../../../shared/session-recap/session-recap-types'
 import {
   SAMPLE_RECAP_BRIEF,
@@ -23,48 +24,35 @@ const SESSION = sampleLiveSession('billing', {
   recap: SAMPLE_RECAP_BRIEF
 })
 
-function Pane({
-  panel,
-  view,
-  height
-}: {
-  panel: LiveSessionPanel | null
-  view: SessionRecapView
-  height: number
-}): React.JSX.Element {
+function Pane({ view, height }: { view: SessionRecapView; height: number }): React.JSX.Element {
   return (
     <div className="flex" style={{ height }}>
-      <LiveSessionPaneView
+      <AgentSessionChatFrameView
         session={SESSION}
-        transcript={{
-          phase: 'ready',
-          error: null,
-          messages: SAMPLE_RECAP_TRANSCRIPT,
-          readTo: null,
-          hasMore: false,
-          loadingEarlier: false,
-          loadEarlier: async () => 'exhausted'
-        }}
-        subagentTranscript={null}
-        messages={[]}
-        panel={panel}
-        onPanel={() => {}}
-        openSubagentId={null}
-        onOpenSubagent={() => {}}
-        onSend={() => {}}
-        onRetry={() => {}}
-        onAnswer={() => {}}
-        answering={null}
-        now={SAMPLE_NOW}
-        recap={{
-          view,
-          refreshing: false,
-          refresh: () => {},
-          mark: () => {},
-          onOpenLink: () => {},
-          onOpenSettings: () => {}
-        }}
-      />
+        isVisible
+        recap={{ view, refreshing: false, refresh: () => {}, mark: () => {} }}
+      >
+        <NativeChatMessageList
+          session={externalAgentSessionChatRows({
+            agent: SESSION.provider,
+            providerSessionId: SESSION.providerSessionId,
+            transcript: {
+              phase: 'ready',
+              error: null,
+              messages: SAMPLE_RECAP_TRANSCRIPT,
+              readTo: null,
+              hasMore: false,
+              loadingEarlier: false,
+              loadEarlier: async () => 'exhausted'
+            },
+            pending: [],
+            working: false
+          })}
+          isVisible
+          isWorking={false}
+          expandSignal={false}
+        />
+      </AgentSessionChatFrameView>
     </div>
   )
 }
@@ -72,13 +60,16 @@ function Pane({
 /** A session reopened after three hours, with its recap beside the chat. */
 export const open = defineFixture({
   width: 1180,
-  render: () => <Pane panel="recap" view={sampleRecapView()} height={880} />
+  render: () => <Pane view={sampleRecapView()} height={880} />,
+  interact: (frame) => {
+    frame.querySelector<HTMLButtonElement>('[data-live-session-panel-toggle="recap"]')?.click()
+  }
 })
 
 /** The same session with the recap folded to its one line under the header. */
 export const folded = defineFixture({
   width: 860,
-  render: () => <Pane panel={null} view={sampleRecapView()} height={560} />
+  render: () => <Pane view={sampleRecapView()} height={560} />
 })
 
 function Panels(): React.JSX.Element {
@@ -199,28 +190,24 @@ const ROWS = [
 ]
 
 function Rows(): React.JSX.Element {
-  const view = buildActiveAgents(ROWS, SAMPLE_NOW)
   return (
     <div
       role="listbox"
       className="flex flex-col bg-worktree-sidebar p-2 text-worktree-sidebar-foreground"
     >
-      <ActiveAgentsGroups
-        view={view}
-        collapsedMachines={new Set()}
+      <WorkspaceSessionRowList
+        worktreeId={null}
+        view={buildWorkspaceSessionRows(ROWS, { machine: null, status: null }, SAMPLE_NOW)}
         finishedOpen={false}
-        hostErrors={{}}
         rowState={(session) => ({
           workspaceName: null,
           account: null,
           unread: false,
           current: session.id === 'billing',
           highlighted: false,
-          picked: null,
-          tabStop: session.id === 'billing'
+          picked: null
         })}
         now={SAMPLE_NOW}
-        onToggleMachine={() => {}}
         onToggleFinished={() => {}}
         onOpen={() => {}}
         onPick={() => {}}

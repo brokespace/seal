@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 import { useAppStore } from '@/store/index'
-import { liveSessionTabsStore } from '@/components/live-sessions/workspace/live-session-tabs-store'
 import { acquireWebviewsDragPassthrough } from '@/components/browser-pane/host-guest/webview-drag-passthrough'
 import { isWorkspaceKanbanSidebarDropPointInBoard } from '@/components/sidebar/workspace-board/drag/workspace-kanban-sidebar-drop'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
@@ -23,7 +22,7 @@ import {
 import { splitViewItemKey, type SplitViewItem, type SplitViewZone } from './split-view-types'
 
 const SPLIT_VIEW_DRAG_ATTRIBUTE = 'data-split-view-drag'
-/** On a strip: its pane id, or empty for the agent-session page's strip in single view. */
+/** On a strip: the id of its pane. */
 export const ITEM_TAB_STRIP_ATTRIBUTE = 'data-item-tab-strip'
 export const ITEM_TAB_KEY_ATTRIBUTE = 'data-item-tab-key'
 /** On the part of a strip its tabs and their scroll buttons take. */
@@ -87,11 +86,6 @@ export function useSplitViewDragActive(): boolean {
   return useSyncExternalStore(subscribe, () => dragCount > 0)
 }
 
-/** The strip name a pane's tabs, or the agent-session page's, go by in an insertion. */
-export function itemTabStripGroupId(paneId: string | null): string {
-  return paneId ?? ''
-}
-
 function contains(rect: Rect, x: number, y: number): boolean {
   return (
     x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height
@@ -137,11 +131,6 @@ function paneKeys(paneId: string | null): string[] {
     )
   }
   const current = currentSplitViewItem()
-  if (current?.kind === 'session') {
-    return liveSessionTabsStore
-      .getState()
-      .tabs.map((sessionId) => splitViewItemKey({ kind: 'session', sessionId }))
-  }
   return current ? [splitViewItemKey(current)] : []
 }
 
@@ -154,25 +143,10 @@ function shownKey(paneId: string | null): string | null {
   return current ? splitViewItemKey(current) : null
 }
 
-/** The agent-session page's own tabs dropped on its strip: they change places, no pane comes of it. */
-function sessionPageTabs(
-  place: SplitViewDropPlace,
-  items: readonly SplitViewItem[]
-): string[] | null {
-  if (place.paneId !== null || splitViewStore.hasLayout()) {
-    return null
-  }
-  const open = liveSessionTabsStore.getState().tabs
-  const sessionIds = items.flatMap((item) => (item.kind === 'session' ? [item.sessionId] : []))
-  return sessionIds.length === items.length && sessionIds.every((id) => open.includes(id))
-    ? sessionIds
-    : null
-}
-
 function resolveStripDrop(
   strip: HTMLElement,
   x: number,
-  paneId: string | null,
+  paneId: string,
   dragged: ReadonlySet<string>,
   pointerCaptured: boolean
 ): ResolvedDrop {
@@ -214,9 +188,7 @@ function resolveStripDrop(
       kind: 'insert',
       rect: { left: barLeft, top: hoveredRect.top, width: barWidth, height: hoveredRect.height },
       // No bar while over the dragged tab itself, as in a workspace's tab row.
-      ...(visibleTabId && !overItself
-        ? { insertion: { groupId: itemTabStripGroupId(paneId), visibleTabId, side } }
-        : {})
+      ...(visibleTabId && !overItself ? { insertion: { groupId: paneId, visibleTabId, side } } : {})
     }
   }
 }
@@ -246,9 +218,9 @@ function resolveDrop(
   }
   const dragged = new Set(items.map(splitViewItemKey))
   const strip = findAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
-  if (strip) {
-    const paneId = strip.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE) || null
-    return resolveStripDrop(strip, x, paneId, dragged, pointerCaptured)
+  const stripPaneId = strip?.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE)
+  if (strip && stripPaneId) {
+    return resolveStripDrop(strip, x, stripPaneId, dragged, pointerCaptured)
   }
   const pane = mode === 'grid' ? findAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
   if (!pane) {
@@ -313,13 +285,6 @@ export function commitSplitViewDrop(
   if (drop.place === 'open') {
     navigateToSplitViewItem(active)
     return true
-  }
-  if (drop.place.index !== undefined) {
-    const ownSessionTabs = sessionPageTabs(drop.place, items)
-    if (ownSessionTabs) {
-      liveSessionTabsStore.move(ownSessionTabs, drop.place.index)
-      return true
-    }
   }
   placeItemsInSplitView(items, drop.place, splitViewItemKey(active))
   return true

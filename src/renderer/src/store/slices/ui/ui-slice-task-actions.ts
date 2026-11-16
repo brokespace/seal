@@ -27,7 +27,6 @@ export function createUiTaskActions(set: UISliceSet, get: UISliceGet): Partial<U
     pendingSkillsSharedView: false,
     previousViewBeforeMobile: 'terminal',
     previousViewBeforeArtifacts: 'terminal',
-    previousViewBeforeSessions: 'terminal',
     previousViewBeforeProject: 'terminal',
     projectOverviewTarget: readSavedProjectOverviewTarget(),
     setActiveView: (view) => set({ activeView: view }),

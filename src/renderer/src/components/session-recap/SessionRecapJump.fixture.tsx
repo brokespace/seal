@@ -1,7 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { defineFixture } from '../../component-fixtures/component-fixture'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-sessions/live-session.test-fixture'
-import { LiveSessionPaneView } from '../live-sessions/workspace/LiveSessionPane'
+import { AgentSessionChatFrameView } from '../live-sessions/chat/AgentSessionChatFrame'
+import { externalAgentSessionChatRows } from '../live-sessions/chat/external-agent-session-chat-rows'
+import { NativeChatMessageList } from '../native-chat/NativeChatMessageList'
+import type { NativeChatMessageListHandle } from '../native-chat/messages/actions/use-native-chat-reveal-latest'
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
 import {
   SAMPLE_RECAP_BRIEF,
@@ -61,6 +64,7 @@ const SESSION = sampleLiveSession('billing', {
 
 function PagedPane(): React.JSX.Element {
   const [loaded, setLoaded] = useState(PAGE)
+  const listRef = useRef<NativeChatMessageListHandle>(null)
   const loadEarlier = useCallback(async () => {
     if (loaded >= HISTORY.length) {
       return 'exhausted' as const
@@ -70,36 +74,34 @@ function PagedPane(): React.JSX.Element {
   }, [loaded])
   return (
     <div className="flex h-[640px]">
-      <LiveSessionPaneView
+      <AgentSessionChatFrameView
         session={SESSION}
-        transcript={{
-          phase: 'ready',
-          error: null,
-          messages: HISTORY.slice(HISTORY.length - loaded),
-          readTo: null,
-          hasMore: loaded < HISTORY.length,
-          loadingEarlier: false,
-          loadEarlier
-        }}
-        subagentTranscript={null}
-        messages={[]}
-        panel="recap"
-        onPanel={() => {}}
-        openSubagentId={null}
-        onOpenSubagent={() => {}}
-        onSend={() => {}}
-        onRetry={() => {}}
-        onAnswer={() => {}}
-        answering={null}
-        now={SAMPLE_NOW}
-        recap={{
-          view: VIEW,
-          refreshing: false,
-          refresh: () => {},
-          mark: () => {},
-          onOpenLink: () => {}
-        }}
-      />
+        isVisible
+        onRevealMessage={(messageId) => listRef.current?.revealMessage(messageId)}
+        recap={{ view: VIEW, refreshing: false, refresh: () => {}, mark: () => {} }}
+      >
+        <NativeChatMessageList
+          ref={listRef}
+          session={externalAgentSessionChatRows({
+            agent: SESSION.provider,
+            providerSessionId: SESSION.providerSessionId,
+            transcript: {
+              phase: 'ready',
+              error: null,
+              messages: HISTORY.slice(HISTORY.length - loaded),
+              readTo: null,
+              hasMore: loaded < HISTORY.length,
+              loadingEarlier: false,
+              loadEarlier
+            },
+            pending: [],
+            working: false
+          })}
+          isVisible
+          isWorking={false}
+          expandSignal={false}
+        />
+      </AgentSessionChatFrameView>
     </div>
   )
 }
@@ -109,6 +111,8 @@ export const toEarlierMessage = defineFixture({
   width: 1100,
   render: () => <PagedPane />,
   interact: async (frame) => {
+    frame.querySelector<HTMLButtonElement>('[data-live-session-panel-toggle="recap"]')?.click()
+    await new Promise((resolve) => setTimeout(resolve, 100))
     frame.querySelector<HTMLButtonElement>(`[data-recap-jump="${TARGET}"]`)?.click()
     await new Promise((resolve) => setTimeout(resolve, 1500))
   }
