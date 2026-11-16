@@ -28,7 +28,8 @@ import {
   agentSessionPidOf,
   approvalModeFromArgs,
   codexHomeOf,
-  processBinary
+  processBinary,
+  runsInPane
 } from './agent-processes'
 import { pairProcesses, type UnreadTranscript } from './session-process-pairing'
 import type { CodexTerminalState } from './codex-background-terminals'
@@ -169,7 +170,9 @@ export function assembleHostSessions(input: {
     const exited =
       last !== undefined && output.processesListed === true && !heldOpen && !listedPids.has(last)
     const running = process !== null || (!exited && now - lastWrite < FRESH_WRITE_MS)
-    const pane = process?.tty ? panesByTty.get(process.tty) : undefined
+    const onTty = process?.tty ? panesByTty.get(process.tty) : undefined
+    // A container's `pts/1` is not this machine's: the pane is the agent's when it runs under it.
+    const pane = onTty && process && runsInPane(process, onTty.panePid) ? onTty : undefined
     const screen = pane?.screen ? parseAgentScreen(pane.screen) : null
     const hook = hooks.get(`${provider}:${providerSessionId}`)
     const gone = output.processesListed === true && !running && !heldOpen

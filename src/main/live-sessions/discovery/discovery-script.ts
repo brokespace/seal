@@ -122,7 +122,7 @@ echo "@@DONE"
 }
 
 /**
- * How long each agent has run, then what runs under it: a shell command it started shows here
+ * How long each agent has run and what it runs under, then what runs under it: a shell command it started shows here
  * while its transcript stands still. Only the process's kind and name leave the host, never its
  * arguments.
  */
@@ -131,7 +131,7 @@ function childSection(): string {
 BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
 {
   if ($1 in under) { listed = 1; print "@@AGE", $1, $3 }
-  pid[NR] = $1; ppid[NR] = $2; et[NR] = $3
+  pid[NR] = $1; ppid[NR] = $2; et[NR] = $3; parent[$1] = $2
   c = $4; sub(/.*\\//, "", c)
   k = "other"
   if ($0 ~ /\\/shell[-_]snapshots\\//) k = "snapshot"
@@ -142,6 +142,11 @@ BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) under[r[i]] = 1 }
 END {
   # A ps that cannot list this way shows no agent either: say nothing rather than "no children".
   if (!listed) exit
+  for (i = 1; i <= n; i++) {
+    line = "@@UP " r[i]
+    for (p = parent[r[i]]; p > 1 && d[i]++ < 64; p = parent[p]) line = line " " p
+    print line
+  }
   print "@@CHILDREN"
   do {
     grew = 0

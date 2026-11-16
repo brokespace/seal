@@ -129,6 +129,19 @@ function agentSessionPids(processes: DiscoveredProcess[]): Map<AgentProcess, num
   )
 }
 
+/**
+ * Whether the pane on a process's tty is the one it runs in: its first process is the agent or
+ * one the agent runs under. Taken as so when the host did not say what either runs under.
+ */
+export function runsInPane(process: DiscoveredProcess, panePid: number): boolean {
+  return (
+    process.ancestors === undefined ||
+    panePid === 0 ||
+    process.pid === panePid ||
+    process.ancestors.includes(panePid)
+  )
+}
+
 /** Only the outermost agent process per session. */
 export function agentProcesses(processes: DiscoveredProcess[]): AgentProcess[] {
   return [...agentSessionPids(processes)].flatMap(([agent, pid]) =>

@@ -207,6 +207,20 @@ describe('assembleHostSessions', () => {
     expect(live.status).toBe('your-turn')
   })
 
+  // `ps` lists a container's agent on `pts/3` too: another device than this machine's `pts/3`.
+  it('gives an agent no way into a pane on its tty that it does not run under', () => {
+    const routes = (ancestors: number[]) =>
+      assemble(
+        [{ ...proc(100, 'claude', '/srv/app', 'pts/3'), ancestors }],
+        [transcript('55555555-5555-4555-8555-555555555555', '/srv/app', 1_000)],
+        [pane('pts/3', [RULE, '\u276f ', RULE].join('\n'))]
+      )[0].inputRoutes
+    expect(routes([4321, 77])).toEqual([])
+    expect(routes([850, 900])).toEqual([
+      { kind: 'tmux', target: '%4', socket: '/tmp/tmux-1000/default' }
+    ])
+  })
+
   it("names a fresh Claude from Claude's session registry and skips daemons and tool commands", () => {
     const id = '88888888-8888-4888-8888-888888888888'
     const sessions = assemble(
