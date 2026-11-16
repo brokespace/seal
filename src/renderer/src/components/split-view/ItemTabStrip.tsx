@@ -16,6 +16,7 @@ import { useTranslate } from '@/i18n/use-translate'
 import { ItemTabMenu } from './ItemTabMenu'
 import { startItemPointerDrag } from './item-pointer-drag'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
+import { preventMiddleButtonDefault } from '@/components/tab-bar/middle-button-default-guard'
 import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-press'
 import { ITEM_TAB_KEY_ATTRIBUTE, ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 import {
@@ -108,6 +109,8 @@ function ItemTab({
       }}
       onClick={() => commands.activate(item)}
       onDoubleClick={() => commands.keep(item)}
+      onMouseDown={preventMiddleButtonDefault}
+      onMouseUp={preventMiddleButtonDefault}
       onAuxClick={(event) => {
         if (event.button === 1) {
           commands.close(item)

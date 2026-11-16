@@ -2,14 +2,43 @@ import { X } from 'lucide-react'
 import { ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu'
 import {
   CONTEXT_MENU_KIT,
-  LiveSessionMenuItems
+  LiveSessionMenuItemsView,
+  useLiveSessionMenuContext
 } from '@/components/live-sessions/menu/LiveSessionMenuItems'
+import { liveSessionMenuEffects } from '@/components/live-sessions/menu/live-session-menu-effects'
 import { CloseSplitPaneMenuItem } from '@/components/tab-bar/CloseSplitPaneMenuItem'
 import { useTranslate } from '@/i18n/use-translate'
 import type { ItemTabCommands } from './ItemTabStrip'
 import type { ResolvedSplitViewItem } from './split-view-item-resolution'
 import { SplitViewPlacementMenu } from './SplitViewPlacementMenu'
 import type { SplitViewItem } from './split-view-types'
+import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+
+/** A session's own entries; "Open in split" on a pane's tab splits that pane, not the focused one. */
+function SessionTabMenuItems({
+  session,
+  splitOwnPane
+}: {
+  session: LiveSession
+  splitOwnPane: (() => void) | null
+}): React.JSX.Element {
+  const context = useLiveSessionMenuContext(session)
+  const effects = splitOwnPane
+    ? {
+        ...liveSessionMenuEffects,
+        open: (sessionId: string, mode: Parameters<typeof liveSessionMenuEffects.open>[1]) =>
+          mode === 'split' ? splitOwnPane() : liveSessionMenuEffects.open(sessionId, mode)
+      }
+    : liveSessionMenuEffects
+  return (
+    <LiveSessionMenuItemsView
+      session={session}
+      context={context}
+      kit={CONTEXT_MENU_KIT}
+      effects={effects}
+    />
+  )
+}
 
 /** A tab's right-click menu: where it sits in the grid, then the session's own entries. */
 export function ItemTabMenu({
@@ -60,7 +89,10 @@ export function ItemTabMenu({
       {resolved?.kind === 'session' ? (
         <>
           {closeOthers ? <ContextMenuSeparator /> : null}
-          <LiveSessionMenuItems session={resolved.session} kit={CONTEXT_MENU_KIT} />
+          <SessionTabMenuItems
+            session={resolved.session}
+            splitOwnPane={moveToNewPane && tabCount > 1 ? () => moveToNewPane(item, 'right') : null}
+          />
         </>
       ) : null}
     </>
