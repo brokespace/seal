@@ -127,7 +127,10 @@ async function connectOwnServer(
   const saved = findEnvironmentWithHostKey(servers, offer.publicKeyB64)
   if (saved) {
     // A server that is already paired keeps its pairing; only a tunnel it lacks is added.
-    return getRuntimeSshAccess(saved) || getPreferredLoopbackRuntimePort(saved) === null
+    // One paired through a tunnel the user runs keeps that tunnel: the link refuses a second.
+    return getRuntimeSshAccess(saved) ||
+      saved.connectionDependency === 'ssh-tunnel' ||
+      getPreferredLoopbackRuntimePort(saved) === null
       ? saved
       : linkThroughSsh(userDataPath, saved, sshTargetId)
   }
@@ -136,11 +139,8 @@ async function connectOwnServer(
     return pairDirectly(userDataPath, name, pairingUrl)
   }
   // A server that listens on the machine's loopback is reached only through the SSH tunnel.
-  const added = addEnvironmentFromPairingCode(userDataPath, {
-    name,
-    pairingCode: pairingUrl,
-    connectionDependency: 'ssh-tunnel'
-  })
+  // Saved without a tunnel of the user's own: the link below refuses a server that depends on one.
+  const added = addEnvironmentFromPairingCode(userDataPath, { name, pairingCode: pairingUrl })
   clearRuntimeEnvironmentManualDisconnect(added.id)
   try {
     return await linkThroughSsh(userDataPath, added, sshTargetId)
