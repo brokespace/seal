@@ -15,13 +15,41 @@ export async function stopAndRemoveFromRow(
   const confirm = page.getByTestId('live-session-danger-confirm')
   await expect(confirm).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('stop-and-remove-dialog.png') })
-  const confirmedAt = Date.now()
+  // Timed in the page, from the click as the app gets it: Playwright takes up to two seconds to land one in the hidden window.
+  await row.evaluate(
+    (rowElement, confirmElement) => {
+      const id = rowElement.getAttribute('data-live-session-row')
+      const listed = (): boolean =>
+        id === null
+          ? rowElement.isConnected
+          : document.querySelector(`[data-live-session-row="${CSS.escape(id)}"]`) !== null
+      delete document.body.dataset.rowGoneAfterMs
+      confirmElement?.addEventListener(
+        'click',
+        () => {
+          const clickedAt = performance.now()
+          const observer = new MutationObserver(() => {
+            if (!listed()) {
+              observer.disconnect()
+              document.body.dataset.rowGoneAfterMs = String(
+                Math.round(performance.now() - clickedAt)
+              )
+            }
+          })
+          observer.observe(document.body, { childList: true, subtree: true })
+        },
+        { capture: true, once: true }
+      )
+    },
+    await confirm.elementHandle()
+  )
   await confirm.click()
-  await expect(row).toHaveCount(0, { timeout: ROW_GONE_WITHIN_MS })
-  testInfo.annotations.push({
-    type: 'row-gone-after-ms',
-    description: String(Date.now() - confirmedAt)
-  })
+  const timed = page.locator('body[data-row-gone-after-ms]')
+  await expect(timed).toHaveCount(1, { timeout: ROW_GONE_WITHIN_MS })
+  const goneAfterMs = Number(await timed.getAttribute('data-row-gone-after-ms'))
+  testInfo.annotations.push({ type: 'row-gone-after-ms', description: String(goneAfterMs) })
+  expect(goneAfterMs).toBeLessThan(ROW_GONE_WITHIN_MS)
+  await expect(row).toHaveCount(0)
   await expect(confirm).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('stop-and-remove-row-gone.png') })
 }
