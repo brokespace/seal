@@ -1,13 +1,9 @@
 import { join } from 'node:path'
-import type { AgentPaneChange } from '../agent-hooks/observations/agent-transition-detector'
-import type { AgentStatusIpcPayload } from '../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { LiveSession } from '../../shared/live-sessions/live-session-types'
 import type {
   SessionSummariesListResult,
-  SessionSummariesStatus,
-  SessionSummarySettings
+  SessionSummariesStatus
 } from '../../shared/session-summaries/session-summary-contracts'
-import type { LiveSessionService } from '../live-sessions/live-session-service'
 import { liveSessionTranscripts } from '../live-sessions/transcripts/live-session-transcripts'
 import { structuredChatJournal } from '../live-sessions/transcripts/journal-session-transcript'
 import type { LiveSessionRecaps } from '../session-recap/live-session-recaps'
@@ -19,47 +15,18 @@ import {
   type UtilityModelTask
 } from '../../shared/utility-model/utility-model-selection'
 import { getUtilityModelHost, type UtilityModelClient } from '../utility-model/utility-model-host'
-import type { UtilityModelHostContext } from '../utility-model/utility-model-provider-sources'
+import { renameCliSessionTab } from './cli-session-tab-title'
 import { lastAssistantText } from './last-assistant-text'
-import { LiveSessionSummaries, type LiveSessionSummariesDeps } from './live-session-summaries'
+import { LiveSessionSummaries } from './live-session-summaries'
 import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
 import { SessionSummarizer } from './session-summarizer'
+import { createSessionTitleWriteThrough } from './session-title-write-through'
 import { unrefTimer } from './unref-timer'
 import { SessionSummaryCache } from './session-summary-cache'
 import { getSessionSummariesHost, setSessionSummariesHost } from './session-summaries-instance'
+import type { SessionSummariesInstallOptions } from './session-summaries-install-options'
 
-type SummarySettingsStore = {
-  getSettings(): SessionSummarySettings & ReturnType<UtilityModelHostContext['settings']>
-  updateSettings(updates: SessionSummarySettings): unknown
-  onSettingsChanged(listener: (updates: Partial<SessionSummarySettings>) => void): unknown
-}
-
-type SummaryRuntime = {
-  agentTransitions: {
-    subscribe(listener: (change: AgentPaneChange) => void): () => void
-    latestRow(paneKey: string): AgentStatusIpcPayload | null
-    trackedPaneSeeds(): AgentPaneChange[]
-  }
-  /** The accounts agent CLIs run on; without it only providers with a saved key can be used. */
-  getCommitMessageAgentEnvironmentResolvers?: UtilityModelHostContext['agentEnvironment']
-}
-
-export type SessionSummariesInstallOptions = {
-  runtime: SummaryRuntime
-  store: SummarySettingsStore
-  userDataPath: string
-  /** This host's session registry: its sessions get recaps, and status summaries unless `summarizeLive` is off. */
-  liveSessions?: LiveSessionService | null
-  /** False on a headless server, whose registry sessions the desktop that sees them summarizes. */
-  summarizeLive?: boolean
-  /** Recap every stopped session (the desktop), or only those opened from a client of this host. */
-  recapEagerly?: boolean
-  serverSummaries?: LiveSessionSummariesDeps['serverSummaries']
-  /** A pane's summary changed: clients reading agent rows should read again. */
-  onPaneSummaryChanged?: () => void
-  /** One model for both summaries and recaps, in place of the providers Settings chose. */
-  utilityModel?: UtilityModelClient
-}
+export type { SessionSummariesInstallOptions }
 
 const CONFIGURED_RECHECK_MS = 60_000
 
@@ -183,8 +150,17 @@ export class SessionSummariesHost {
       }
     })
     if (liveSessions) {
+      const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
+      const titles = createSessionTitleWriteThrough({
+        liveSessions,
+        renameCliTab: (paneKey, title) => renameCliSessionTab(runtime, paneKey, title, log),
+        log
+      })
       liveSessions.registry.setDecorator((session) => this.decorate(session))
-      this.releases.push(liveSessions.subscribe((event) => this.sessions.observe(event)))
+      this.releases.push(
+        liveSessions.subscribe((event) => this.sessions.observe(event)),
+        titles.dispose
+      )
     }
     void this.refreshAvailability(true)
   }
