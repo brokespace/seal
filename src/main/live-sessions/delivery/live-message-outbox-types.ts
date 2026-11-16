@@ -10,6 +10,8 @@ export type OutboxItem = LiveMessage & {
   /** Transcript size before it went in; its user record must come after this. */
   offset: number
   sentAt: number | null
+  /** Typed, but its session rested without showing it. Its transcript may still show it. */
+  unread?: boolean
 }
 
 export const DEFAULT_OUTBOX_TIMING = {
@@ -21,6 +23,8 @@ export const DEFAULT_OUTBOX_TIMING = {
   goneGraceMs: 5_000,
   /** A headless resume has this long to write the message to its transcript. */
   resumeConfirmMs: 90_000,
+  /** A session at its prompt this long that still has not shown a typed message did not read it. */
+  unreadAfterMs: 90_000,
   /** A sent message stops holding back the next one after this (a long tool run, a lost echo). */
   orderHoldMs: 15 * 60_000,
   /** Finished messages are remembered this long, so a resend is recognised. */
@@ -28,7 +32,7 @@ export const DEFAULT_OUTBOX_TIMING = {
 }
 
 export function publicView(item: OutboxItem): LiveMessage {
-  const { offset: _offset, sentAt: _sentAt, ...message } = item
+  const { offset: _offset, sentAt: _sentAt, unread: _unread, ...message } = item
   return message
 }
 

@@ -197,6 +197,32 @@ describe('LiveMessageOutbox', () => {
     box.stop()
   })
 
+  // The CLI took the keys but never ran them: a menu was open, or it kept them as a draft.
+  it('gives up on a typed message its session never shows once the agent is at its prompt, and types the next', async () => {
+    current = { ...session, status: 'working' }
+    const box = outbox()
+    await box.send({ sessionId: session.id, messageId: 'm1', text: 'first' })
+    clock += 1
+    await box.send({ sessionId: session.id, messageId: 'm2', text: 'second' })
+    await settle(box, ([a]) => a.state === 'sent')
+    // A working agent keeps what is typed in its own queue: nothing says it was lost.
+    clock += 300_000
+    await box.confirm()
+    expect(box.list().map((m) => m.state)).toEqual(['sent', 'queued'])
+
+    current = { ...session, status: 'your-turn' }
+    await box.confirm()
+    clock += 91_000
+    await settle(box, ([a, b]) => a.state === 'failed' && b.state === 'sent')
+    expect(box.list()[0].error).toBe('Seal typed the message, but the session never showed it')
+    expect(typed).toEqual(['first', 'second'])
+
+    // The agent ran it after all: its transcript says so.
+    transcript.push({ offset: 500, text: 'first' })
+    await settle(box, ([a]) => a.state === 'delivered')
+    box.stop()
+  })
+
   // Its session is on a paired server now: a retry offers the message to that server.
   it('keeps a failed message on disk, as failed, until the owner it is handed to has it', async () => {
     current = null

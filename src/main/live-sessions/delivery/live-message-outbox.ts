@@ -1,7 +1,7 @@
 import type { LiveMessage, LiveSendRequest } from '../../../shared/live-sessions/live-session-types'
 import type { RouteAttempt } from './session-input-routes'
 import type { UserText } from './transcript-user-texts'
-import { confirmSent, sentBySession } from './live-message-confirmation'
+import { confirmSent, RestingSessions, sentBySession } from './live-message-confirmation'
 import { aheadInFlight, nextQueued } from './live-message-order'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import {
@@ -35,6 +35,7 @@ export class LiveMessageOutbox {
   private readonly timing: typeof DEFAULT_OUTBOX_TIMING
   private confirmTimer: ReturnType<typeof setTimeout> | null = null
   private confirming = false
+  private readonly resting = new RestingSessions()
   private readonly store: LiveSessionJsonStore<Item>
   private started: Promise<void> | null = null
   private readonly abort = new AbortController()
@@ -128,7 +129,7 @@ export class LiveMessageOutbox {
     if (!item || item.state !== 'failed') {
       return item ? publicView(item) : null
     }
-    this.set(item, { state: 'queued', error: null, route: null, sentAt: null })
+    this.set(item, { state: 'queued', error: null, route: null, sentAt: null, unread: false })
     this.kick(item.sessionId)
     return publicView(item)
   }
@@ -301,7 +302,8 @@ export class LiveMessageOutbox {
           records,
           session,
           this.now(),
-          this.timing
+          this.timing,
+          this.resting.since(sessionId, session, this.now())
         )) {
           this.set(item, patch)
         }
