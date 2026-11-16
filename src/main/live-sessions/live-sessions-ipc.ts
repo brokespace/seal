@@ -91,10 +91,17 @@ export function registerLiveSessionIpc(
       const unsubscribe = () => {
         subscription.unsubscribe()
         watches.delete(watchId)
+        sender.removeListener('destroyed', unsubscribe)
       }
       watches.set(watchId, { sender, unsubscribe })
       sender.once('destroyed', unsubscribe)
-      return { watchId, page: await subscription.ready }
+      try {
+        return { watchId, page: await subscription.ready }
+      } catch (error) {
+        // The window never learns this watch's id, so nothing else would end it.
+        unsubscribe()
+        throw error
+      }
     }
   )
   ipcMain.handle(LIVE_SESSION_IPC.unwatchTranscript, (event, args: { watchId: unknown }) => {
