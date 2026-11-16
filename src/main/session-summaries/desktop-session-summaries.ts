@@ -40,7 +40,7 @@ export function installDesktopSessionSummaries(
     method: string,
     params: unknown,
     timeoutMs: number
-  ): Promise<unknown | null> => {
+  ): Promise<unknown> => {
     const host = parseExecutionHostId(executionHostId)
     if (host?.kind !== 'runtime') {
       return null

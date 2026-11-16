@@ -14,7 +14,7 @@ export type ServerSessionRecapsDeps = {
     method: string,
     params: unknown,
     timeoutMs: number
-  ) => Promise<unknown | null>
+  ) => Promise<unknown>
 }
 
 const READ_TIMEOUT_MS = 15_000
