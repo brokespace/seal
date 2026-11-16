@@ -46,6 +46,15 @@ const COMMAND_TIMEOUT = /" timed out after [\d.]+s\b/u
 const MISSING_PROGRAM =
   /(?<![\w./+-])([A-Za-z_][\w.+-]*): (?:command )?not found\b|\bcommand not found: ([\w.+-]+)/u
 
+// tar runs its decompressor itself: `tar (child): gzip: Cannot exec: No such file or directory`.
+const MISSING_HELPER_PROGRAM = /\b([\w.+-]+): Cannot exec: No such file or directory/u
+const UNPACKERS: ReadonlySet<string> = new Set(['tar', 'gzip', 'xz', 'bzip2', 'unzip'])
+
+// Claiming the folder fails as `… could not claim this host's <folder>: <step>[: <what the host printed>]. <advice>`.
+const FOLDER_CLAIM_FAILURE =
+  /could not claim this host's [^:]+: ([^\n]*?)\. (?:The filesystem holding|Check that) /u
+const FOLDER_NOT_PREPARED = `the machine could not prepare ~/${RELAY_REMOTE_DIR} for the server`
+
 const INTERNAL_NAME = /orcad|orca_/iu
 // Markers the install commands print for Seal, and shell syntax, are not the host's words.
 const NOT_PROSE = /[A-Z0-9]_[A-Z0-9]|[$`{}|;\\]|&&/u
@@ -245,10 +254,32 @@ function messageReason(message: string): string {
   if (!exit) {
     return COMMAND_TIMEOUT.test(message)
       ? COMMAND_TIMED_OUT
-      : (hostPhraseReason(message) ?? statedReason(message))
+      : (hostPhraseReason(message) ?? folderClaimReason(message) ?? statedReason(message))
   }
   const printed = message.slice(exit[0].length)
-  return hostPhraseReason(printed) ?? hostLineReason(printed) ?? COMMAND_FAILED
+  const helper = MISSING_HELPER_PROGRAM.exec(printed)?.[1]
+  return (
+    hostPhraseReason(printed) ??
+    (helper ? missingProgramReason(helper) : hostLineReason(printed)) ??
+    COMMAND_FAILED
+  )
+}
+
+/** The host's own error for the folder Seal could not prepare, which is the last thing the failed step printed. */
+function folderClaimReason(message: string): string | null {
+  const failed = FOLDER_CLAIM_FAILURE.exec(message)?.[1]
+  if (failed === undefined) {
+    return null
+  }
+  const said = failed.includes(': ') ? failed.slice(failed.lastIndexOf(': ') + 2).trim() : ''
+  return said && !INTERNAL_NAME.test(said)
+    ? `${FOLDER_NOT_PREPARED} (“${said}”)`
+    : FOLDER_NOT_PREPARED
+}
+
+function missingProgramReason(program: string): string {
+  const purpose = UNPACKERS.has(program) ? 'unpack' : 'install'
+  return `the machine has no “${program}” program, which Seal needs to ${purpose} its server. Install ${program} there, then try again`
 }
 
 /** The last thing the host said in words: stderr comes before the markers a command prints for Seal. */
@@ -269,11 +300,9 @@ function hostLineReason(printed: string): string | null {
   }
   const missing = MISSING_PROGRAM.exec(line)
   const program = missing?.[1] ?? missing?.[2]
-  if (!program) {
-    return `the machine reported “${line.replace(/[.\s]+$/u, '')}”`
-  }
-  const purpose = program === 'tar' ? 'unpack' : 'install'
-  return `the machine has no “${program}” program, which Seal needs to ${purpose} its server. Install ${program} there, then try again`
+  return program
+    ? missingProgramReason(program)
+    : `the machine reported “${line.replace(/[.\s]+$/u, '')}”`
 }
 
 /** The first sentence of a longer message, without its full stop; never one that names Seal's internals. */

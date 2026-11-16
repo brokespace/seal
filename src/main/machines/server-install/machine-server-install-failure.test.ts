@@ -61,6 +61,31 @@ describe('serverInstallFailureReason', () => {
       FOLDER_IS_A_FILE
     ],
     [
+      'no gzip on the machine, which tar reports before its own last line',
+      failedSetup(
+        commandFailure(
+          'tar (child): gzip: Cannot exec: No such file or directory\n' +
+            'tar (child): Error is not recoverable: exiting now\n' +
+            'tar: Child returned status 2\n' +
+            'tar: Error is not recoverable: exiting now',
+          'ORCA_NODE_RUNTIME_EXTRACT_FAILED'
+        )
+      ),
+      'the machine has no “gzip” program, which Seal needs to unpack its server. Install gzip there, then try again'
+    ],
+    [
+      '~/.orca-remote cannot be created for a reason Seal has no words for',
+      failedSetup(
+        new Error(
+          "orcad could not claim this host's .orca-remote: could not create ~/.orca-remote: " +
+            "mkdir: cannot create directory '/home/dev/.orca-remote': Input/output error. " +
+            'Check that ~/.orca-remote belongs to this user and is writable, and that its filesystem ' +
+            '(an NFS or other network home included) is mounted read-write and not over quota, then reconnect.'
+        )
+      ),
+      'the machine could not prepare ~/.orca-remote for the server (“Input/output error”)'
+    ],
+    [
       'a failed command whose output is only markers',
       failedSetup(commandFailure('', 'ORCA_NODE_RUNTIME_HASH_MISMATCH')),
       'the install command failed on the machine'
