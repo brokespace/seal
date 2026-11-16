@@ -20,7 +20,6 @@ import {
   toMachineId,
   type MachineId
 } from '../../../shared/machines/machine-types'
-import { awaitsServerInstall } from '../../../shared/machines/machine-server-install'
 import type { MachineView } from '../../../shared/machines/machine-view'
 import { buildMachineViews, type MachineServerInstallActivity } from './machine-views'
 import type { MachineConnection } from '../connection/machine-connection'
@@ -122,14 +121,6 @@ export class MachineRegistry {
     return (
       this.current().machines.find((machine) => machine.environmentId === environmentId) ?? null
     )
-  }
-
-  /** True for a machine set to SSH, unless it still waits for Seal's server to be installed. */
-  connectsOverSsh(targetId: string): boolean {
-    const record = this.recordForSshTarget(targetId)
-    return record
-      ? activeMachineConnection(record) === 'ssh' && !awaitsServerInstall(record.serverInstall)
-      : false
   }
 
   list(): MachineView[] {

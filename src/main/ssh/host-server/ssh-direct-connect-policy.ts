@@ -1,7 +1,7 @@
 import type { SshManagedServerUpdateNote } from '../../../shared/ssh-types'
 import type { HostServerOnConnectResult } from './ssh-host-server-on-connect'
 
-/** Machines set to connect over SSH get a plain session: no Seal server is deployed or converted. */
+/** True for a connect that gets a plain session: no Seal server is deployed or converted. */
 type DirectSshPolicy = (targetId: string) => boolean
 
 /** How a machine that asked for a Seal server takes the outcome of its setup. */
@@ -15,6 +15,7 @@ export type SshServerSetupOutcomes = {
 }
 
 let policy: DirectSshPolicy | null = null
+let policyWithoutMachines: DirectSshPolicy | null = null
 let outcomes: SshServerSetupOutcomes | null = null
 
 export function setDirectSshConnectPolicy(
@@ -25,8 +26,13 @@ export function setDirectSshConnectPolicy(
   outcomes = setup
 }
 
+/** Decides until Machines sets its own policy, and for good where Machines never runs, as in `seal serve`. */
+export function setDirectSshConnectPolicyWithoutMachines(next: DirectSshPolicy | null): void {
+  policyWithoutMachines = next
+}
+
 export function connectsDirectlyOverSsh(targetId: string): boolean {
-  return policy?.(targetId) ?? false
+  return (policy ?? policyWithoutMachines)?.(targetId) ?? false
 }
 
 /** Stands in for the decision of a setup that failed on a machine that takes plain SSH instead. */
@@ -38,6 +44,14 @@ export const DIRECT_SSH_FALLBACK: HostServerOnConnectResult = {
 /** `failure` is the thrown error or the unserved decision. */
 export function fallsBackToDirectSsh(targetId: string, failure: unknown): boolean {
   return outcomes?.failed(targetId, failure) ?? false
+}
+
+/** The host stays connected for terminals its move waits on, so the setup that asked for the server learns why it is not there yet. */
+export function noteSshHostServerWaits(
+  targetId: string,
+  decision: Extract<HostServerOnConnectResult, { route: 'unserved' }>
+): void {
+  outcomes?.failed(targetId, decision)
 }
 
 export function noteSshHostServed(

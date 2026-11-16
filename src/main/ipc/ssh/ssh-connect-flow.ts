@@ -115,11 +115,9 @@ async function admitConnect(
   if (!observedAuthority) {
     throw createCancelledConnectAttemptError()
   }
-  if (existing) {
-    if (connectInFlight.get(targetId) === existing) {
-      connectInFlight.delete(targetId)
-      replacePendingTransport = true
-    }
+  if (existing && connectInFlight.get(targetId) === existing) {
+    connectInFlight.delete(targetId)
+    replacePendingTransport = true
   }
   if (!isCurrentSshProviderAuthority(observedAuthority)) {
     throw createCancelledConnectAttemptError()
@@ -164,10 +162,12 @@ async function doQuietConnect(
   quiet: QuietConnect
 ): Promise<SshConnectionState> {
   // Replacing a pending transport would hang up the session the kept host still uses.
+  // A host whose install was called off meanwhile keeps its plain session: the move is not retried.
   if (
     replacePendingTransport ||
     !isSshHostKeptForBridgedTerminals(getSshHostServerStatus(targetId)) ||
-    connectionManager!.getState(targetId)?.status !== 'connected'
+    connectionManager!.getState(targetId)?.status !== 'connected' ||
+    directSsh.connectsDirectlyOverSsh(targetId)
   ) {
     throw createCancelledConnectAttemptError()
   }
@@ -282,6 +282,7 @@ async function doConnect(
       await abandonDecisionTransport(targetId, owner, authority)
       throw createCancelledConnectAttemptError()
     }
+    directSsh.noteSshHostServerWaits(targetId, server)
     return publishBridgedUnservedHostServer(target, server)
   }
   // Unserved hosts have no relay fallback.
@@ -292,7 +293,7 @@ async function doConnect(
   throw publishUnservedHostServer(target, server)
 }
 
-/** A machine set to SSH gets a session and nothing else; its features run over this transport. */
+/** A session and nothing else: nothing is deployed on the host, and its features run over this transport. */
 async function connectDirect(
   target: SshTarget,
   owner: symbol,

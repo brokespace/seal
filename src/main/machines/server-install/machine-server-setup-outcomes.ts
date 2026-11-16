@@ -45,11 +45,12 @@ import {
 } from './machine-server-install-failure'
 import { connectedSshSession } from './machine-ssh-session'
 import { checkHostForOwnSealServe } from './own-seal-serve-check'
+import { sshConnectUsesSealServer } from './server-install-consent'
 
 // Another desktop's install takes about a minute; after these the machine keeps its Retry.
 const BUSY_HOST_RETRY_DELAYS_MS = [10_000, 30_000, 60_000]
-// A live install uploads and unpacks within about a minute. The host is asked once a minute whether
-// the holder of its install lock is gone, so two minutes include one such recovery before giving up.
+// A live install uploads and unpacks within about a minute. A lock this app run left unreleased is
+// taken over only after 180 s of quiet, so that first wait times out and a retry above recovers it.
 const HOST_INSTALL_LOCK_WAIT_MS = 120_000
 
 /**
@@ -256,9 +257,7 @@ export function createMachineServerSetup(
       }
     },
     connectsDirectly: (sshTargetId) =>
-      registry.connectsOverSsh(sshTargetId) ||
-      sshConnectsDirectlyNow(sshTargetId) ||
-      awaitsOwnServeCheck(sshTargetId),
+      sshConnectsDirectlyNow(sshTargetId) || !sshConnectUsesSealServer(registry, sshTargetId),
     serviceWish: (sshTargetId) => {
       const install = registry.recordForSshTarget(sshTargetId)?.serverInstall
       if (

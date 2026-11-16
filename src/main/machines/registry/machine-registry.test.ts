@@ -86,18 +86,12 @@ describe('MachineRegistry', () => {
       { machineId: 'machine:ssh-kessel', transport: 'ssh', link: 'ssh-kessel' }
     ])
     expect([onServer.transport, onSsh.transport]).toEqual(['server', 'ssh'])
-    expect(registry.connectsOverSsh('ssh-kessel')).toBe(true)
     expect(scanOnServer.map((source) => [source.recordId, source.executionHostId])).toEqual([
       ['ssh-kessel', 'runtime:env-kessel']
     ])
     expect(scanOnSsh.map((source) => [source.recordId, source.executionHostId])).toEqual([
       ['ssh-kessel', 'ssh:ssh-kessel']
     ])
-  })
-
-  it('keeps a server-connected machine from starting an SSH session for its stored details', () => {
-    const { registry } = registryFor([kesselSsh], [kesselServer])
-    expect(registry.connectsOverSsh('ssh-kessel')).toBe(false)
   })
 
   it('merges two machines once each transport reports the same OS machine id', async () => {
