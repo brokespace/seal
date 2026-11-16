@@ -1,4 +1,5 @@
 import { useTranslate } from '@/i18n/use-translate'
+import type { MachineDockerStorageKind } from '../../../../../shared/machines/machine-docker-types'
 import type { MachineCleanupTargetId } from '../../../../../shared/machines/machine-resource-types'
 
 export type MachineCleanupCopy = {
@@ -129,4 +130,134 @@ export function useMachineCleanupCopy(): Record<MachineCleanupTargetId, MachineC
       )
     }
   }
+}
+
+export type MachineDockerRemovalCopy = {
+  /** The confirmation's title for that many picked objects. */
+  title: (count: number, machine: string) => string
+  removal: string
+}
+
+/** Removing objects picked in the Docker storage manager, where in-use ones are listed too. */
+export function useMachineDockerRemovalCopy(): Record<
+  MachineDockerStorageKind,
+  MachineDockerRemovalCopy
+> {
+  const t = useTranslate()
+  return {
+    images: {
+      title: (count, machine) =>
+        t(
+          'auto.components.machines.cleanup.removeImages.title',
+          'Remove {{count}} images from {{machine}}?',
+          { count, machine, defaultValue_one: 'Remove {{count}} image from {{machine}}?' }
+        ),
+      removal: t(
+        'auto.components.machines.cleanup.removeImages.removal',
+        'Runs docker image rm for each ticked image. Layers another image shares stay, so each size is what that image alone frees.'
+      )
+    },
+    containers: {
+      title: (count, machine) =>
+        t(
+          'auto.components.machines.cleanup.removeContainers.title',
+          'Remove {{count}} containers from {{machine}}?',
+          { count, machine, defaultValue_one: 'Remove {{count}} container from {{machine}}?' }
+        ),
+      removal: t(
+        'auto.components.machines.cleanup.removeContainers.removal',
+        'Runs docker container rm for each ticked container. Files written inside it are deleted. Its image and named volumes stay.'
+      )
+    },
+    volumes: {
+      title: (count, machine) =>
+        t(
+          'auto.components.machines.cleanup.removeVolumes.title',
+          'Remove {{count}} volumes from {{machine}}?',
+          { count, machine, defaultValue_one: 'Remove {{count}} volume from {{machine}}?' }
+        ),
+      removal: t(
+        'auto.components.machines.cleanup.removeVolumes.removal',
+        'Runs docker volume rm for each ticked volume. The data stored in it is deleted for good.'
+      )
+    },
+    'build-cache': {
+      title: (count, machine) =>
+        t(
+          'auto.components.machines.cleanup.removeBuildCache.title',
+          'Remove {{count}} build cache records from {{machine}}?',
+          {
+            count,
+            machine,
+            defaultValue_one: 'Remove {{count}} build cache record from {{machine}}?'
+          }
+        ),
+      removal: t(
+        'auto.components.machines.cleanup.removeBuildCache.removal',
+        'Runs docker builder prune for each ticked record. A build that needs it runs that step again.'
+      )
+    }
+  }
+}
+
+export type MachineCleanupInUseCopy = {
+  /** Under a listed item that stopped containers still use. */
+  item: (containers: readonly string[]) => string
+  /** Beside the confirm button once that many such items are ticked. */
+  ticked: (count: number) => string
+}
+
+/** What removing an image or volume does to the stopped containers that still use it. */
+export function useMachineCleanupInUseCopy(): (
+  target: MachineCleanupTargetId
+) => MachineCleanupInUseCopy {
+  const t = useTranslate()
+  return (target) =>
+    target === 'docker-volumes'
+      ? {
+          item: (containers) =>
+            t(
+              'auto.components.machines.cleanup.inUse.volume',
+              'Used by stopped containers {{names}}. Removing the volume also removes those containers, and its data is gone for good.',
+              {
+                count: containers.length,
+                names: containers.join(', '),
+                defaultValue_one:
+                  'Used by stopped container {{names}}. Removing the volume also removes that container, and its data is gone for good.'
+              }
+            ),
+          ticked: (count) =>
+            t(
+              'auto.components.machines.cleanup.inUse.volumesTicked',
+              '{{count}} ticked volumes are used by stopped containers. Those containers are removed too, and the data cannot be recovered.',
+              {
+                count,
+                defaultValue_one:
+                  '{{count}} ticked volume is used by a stopped container. That container is removed too, and the data cannot be recovered.'
+              }
+            )
+        }
+      : {
+          item: (containers) =>
+            t(
+              'auto.components.machines.cleanup.inUse.image',
+              'Used by stopped containers {{names}}. Removing the image leaves those containers unable to start.',
+              {
+                count: containers.length,
+                names: containers.join(', '),
+                defaultValue_one:
+                  'Used by stopped container {{names}}. Removing the image leaves that container unable to start.'
+              }
+            ),
+          ticked: (count) =>
+            t(
+              'auto.components.machines.cleanup.inUse.imagesTicked',
+              '{{count}} ticked images are used by stopped containers. Those containers cannot start once the images are gone.',
+              {
+                count,
+                defaultValue_one:
+                  '{{count}} ticked image is used by a stopped container. That container cannot start once the image is gone.'
+              }
+            )
+        }
 }

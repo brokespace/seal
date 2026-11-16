@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -16,14 +16,54 @@ import type {
   MachineDockerContainerAction
 } from '../../../../../shared/machines/machine-resource-types'
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
+import type { MachineId } from '../../../../../shared/machines/machine-types'
 import { machineResourceApi, resourceErrorText } from './machine-resource-requests'
 
 /** Starting a container interrupts nothing, so only these three ask first. */
 export type MachineDockerConfirmedAction = Exclude<MachineDockerContainerAction, 'start'>
 
+type DockerContainerNamed = Pick<MachineDockerContainer, 'id' | 'name'>
+
 export type MachineDockerContainerRequest = {
-  container: MachineDockerContainer
+  container: DockerContainerNamed & Pick<MachineDockerContainer, 'image'>
   action: MachineDockerConfirmedAction
+}
+
+/** Starts a container without asking first; `starting` holds the ids still on their way up. */
+export function useMachineDockerContainerStart(
+  machineId: MachineId,
+  /** The container stays marked as starting until this settles, so its row does not flip back early. */
+  onDone: () => void | Promise<void>
+): { starting: ReadonlySet<string>; start: (container: DockerContainerNamed) => Promise<void> } {
+  const t = useTranslate()
+  const [starting, setStarting] = useState<ReadonlySet<string>>(new Set())
+  const start = useCallback(
+    async (container: DockerContainerNamed): Promise<void> => {
+      setStarting((previous) => new Set(previous).add(container.id))
+      try {
+        await machineResourceApi().dockerContainerAction({
+          machineId,
+          containerId: container.id,
+          action: 'start'
+        })
+        toast.success(
+          t('auto.components.machines.docker.started', 'Started {{name}}.', {
+            name: container.name
+          })
+        )
+      } catch (err) {
+        toast.error(resourceErrorText(err))
+      }
+      await onDone()
+      setStarting((previous) => {
+        const next = new Set(previous)
+        next.delete(container.id)
+        return next
+      })
+    },
+    [machineId, onDone, t]
+  )
+  return { starting, start }
 }
 
 type ActionCopy = { title: string; description: string; confirm: string; done: string }
@@ -132,7 +172,7 @@ export function MachineDockerContainerDialog({
         </DialogHeader>
         {request ? (
           <p className="font-mono text-2xs text-muted-foreground [overflow-wrap:anywhere]">
-            {`${request.container.image} · ${request.container.id}`}
+            {`${request.container.image} · ${request.container.id.slice(0, 12)}`}
           </p>
         ) : null}
         {error ? (

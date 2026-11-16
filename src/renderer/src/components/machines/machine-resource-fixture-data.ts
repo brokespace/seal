@@ -8,6 +8,7 @@ import type { MachineGpu } from '../../../../shared/machines/machine-gpu-types'
 import type { MachineFileEntry, MachineId } from '../../../../shared/machines/machine-types'
 import { WINDOWS_SETUP_NOT_SET_UP } from './machine-cpu-temperature-fixture-data'
 import { fakeDiskIndexReply } from './machine-disk-index-fixture-data'
+import { fakeMachineDockerApi } from './machine-docker-fixture-data'
 import { fakeGpuSnapshot, GPU_PROCESSES } from './machine-gpu-fixture-data'
 
 const now = Date.now()
@@ -94,6 +95,12 @@ type MachineResourceApi = Pick<
   | 'listDockerContainers'
   | 'dockerContainerAction'
   | 'dockerStorage'
+  | 'dockerDetails'
+  | 'dockerContainerLogs'
+  | 'dockerVolumeListDir'
+  | 'dockerVolumeReadFile'
+  | 'planDockerRemoval'
+  | 'onCleanupProgress'
   | 'diskIndex'
   | 'scanCleanup'
   | 'runCleanup'
@@ -127,54 +134,7 @@ export function fakeMachineResourceApi(
       detail: null,
       setup: { ...WINDOWS_SETUP_NOT_SET_UP, state: 'running' }
     }),
-    listDockerContainers: async () => ({
-      state: 'ready',
-      containers: [
-        {
-          id: '1c2d3e4f5a6b',
-          name: 'postgres',
-          image: 'postgres:16',
-          status: 'Up 3 days',
-          running: true,
-          memUsageBytes: 1.5 * 1024 ** 3,
-          memLimitBytes: 4 * 1024 ** 3,
-          memPercent: 37.5,
-          cpuPercent: 2.1
-        },
-        {
-          id: '7a8b9c0d1e2f',
-          name: 'jupyter',
-          image: 'jupyter/pytorch-notebook:latest',
-          status: 'Up 5 hours',
-          running: true,
-          memUsageBytes: 6.2 * GB,
-          memLimitBytes: 32 * GB,
-          memPercent: 19.4,
-          cpuPercent: 11.8
-        },
-        {
-          id: '43b92ff52610',
-          name: 'eval-run-0412',
-          image: 'seal/eval:2026.04',
-          status: 'Exited (0) 2 weeks ago',
-          running: false,
-          memUsageBytes: null,
-          memLimitBytes: null,
-          memPercent: null,
-          cpuPercent: null
-        }
-      ]
-    }),
-    dockerContainerAction: async () => {},
-    dockerStorage: async () => ({
-      state: 'ready',
-      rows: [
-        { kind: 'images', count: 14, sizeBytes: 86 * GB, reclaimableBytes: 31 * GB },
-        { kind: 'containers', count: 3, sizeBytes: 2.4 * GB, reclaimableBytes: 1.9 * GB },
-        { kind: 'volumes', count: 6, sizeBytes: 212 * GB, reclaimableBytes: 18 * GB },
-        { kind: 'build-cache', count: 240, sizeBytes: 44 * GB, reclaimableBytes: 44 * GB }
-      ]
-    }),
+    ...fakeMachineDockerApi,
     diskIndex: async ({ request }) => fakeDiskIndexReply(home, request),
     scanCleanup: async ({ machineId, target }) => ({
       machineId,

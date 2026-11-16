@@ -215,7 +215,6 @@
           "freed": "Freed {{size}} on {{machine}}.",
           "dialogTitle": "Clean up {{what}} on {{machine}}?",
           "permanent": "This cannot be undone.",
-          "partial": "Removed {{removed}} items ({{size}}). {{failed}} could not be removed:",
           "selected": "{{count}} of {{total}} selected",
           "close": "Close",
           "cancel": "Cancel",
@@ -270,6 +269,46 @@
             "title": "Dangling Docker images",
             "description": "Untagged image layers left behind by rebuilds and pulls.",
             "removal": "Runs docker image rm for each ticked image, like docker image prune. Tagged images and images a container uses are never listed."
+          },
+          "partialToast_one": "{{count}} item could not be removed from {{machine}}.",
+          "partialToast_other": "{{count}} items could not be removed from {{machine}}.",
+          "partialResult_one": "Removed {{count}} item ({{size}}). {{failed}} could not be removed:",
+          "partialResult_other": "Removed {{count}} items ({{size}}). {{failed}} could not be removed:",
+          "allBlocked": "None of these can be removed from here. Each line says what is holding it.",
+          "keepsRunning": "Closing this does not stop the removal.",
+          "confirmAnyway": "Remove anyway",
+          "removing": "Removing {{current}}",
+          "removingAny": "Removing…",
+          "progress": "{{done}} of {{total}}",
+          "removeImages": {
+            "title_one": "Remove {{count}} image from {{machine}}?",
+            "title_other": "Remove {{count}} images from {{machine}}?",
+            "removal": "Runs docker image rm for each ticked image. Layers another image shares stay, so each size is what that image alone frees."
+          },
+          "removeContainers": {
+            "title_one": "Remove {{count}} container from {{machine}}?",
+            "title_other": "Remove {{count}} containers from {{machine}}?",
+            "removal": "Runs docker container rm for each ticked container. Files written inside it are deleted. Its image and named volumes stay."
+          },
+          "removeVolumes": {
+            "title_one": "Remove {{count}} volume from {{machine}}?",
+            "title_other": "Remove {{count}} volumes from {{machine}}?",
+            "removal": "Runs docker volume rm for each ticked volume. The data stored in it is deleted for good."
+          },
+          "removeBuildCache": {
+            "title_one": "Remove {{count}} build cache record from {{machine}}?",
+            "title_other": "Remove {{count}} build cache records from {{machine}}?",
+            "removal": "Runs docker builder prune for each ticked record. A build that needs it runs that step again."
+          },
+          "inUse": {
+            "volume_one": "Used by stopped container {{names}}. Removing the volume also removes that container, and its data is gone for good.",
+            "volume_other": "Used by stopped containers {{names}}. Removing the volume also removes those containers, and its data is gone for good.",
+            "volumesTicked_one": "{{count}} ticked volume is used by a stopped container. That container is removed too, and the data cannot be recovered.",
+            "volumesTicked_other": "{{count}} ticked volumes are used by stopped containers. Those containers are removed too, and the data cannot be recovered.",
+            "image_one": "Used by stopped container {{names}}. Removing the image leaves that container unable to start.",
+            "image_other": "Used by stopped containers {{names}}. Removing the image leaves those containers unable to start.",
+            "imagesTicked_one": "{{count}} ticked image is used by a stopped container. That container cannot start once the image is gone.",
+            "imagesTicked_other": "{{count}} ticked images are used by stopped containers. Those containers cannot start once the images are gone."
           }
         },
         "disk": {
@@ -326,7 +365,9 @@
             "pending": "not measured yet"
           },
           "listingAge": "Folder sizes are from the index, {{age}} old. Files are listed as they are now.",
-          "loading": "Reading this folder…"
+          "loading": "Reading this folder…",
+          "dockerManage": "Manage",
+          "dockerTab": "Docker"
         },
         "goTo": {
           "label": "Go to folder",
@@ -345,8 +386,6 @@
           "cancel": "Cancel",
           "restartConfirm": "Restart container",
           "stopConfirm": "Stop container",
-          "title": "Docker containers",
-          "none": "No containers on this machine.",
           "restart": "Restart",
           "stop": "Stop",
           "removeTitle": "Remove container {{name}}?",
@@ -356,7 +395,6 @@
           "start": "Start",
           "remove": "Remove",
           "started": "Started {{name}}.",
-          "pruneTitle": "Free up Docker space",
           "storage": {
             "images": "Images",
             "containers": "Containers",
@@ -518,6 +556,206 @@
           "noProcesses": "No process is using a GPU.",
           "clocksDetail": "Core clock / memory clock",
           "inContainer": "In Docker container {{container}}"
+        },
+        "dockerCleanUp": {
+          "failed": "Failed",
+          "freed": "Freed {{size}}",
+          "skipped": "Left alone",
+          "nothing": "Nothing to remove",
+          "volumesCaution": "Volumes hold data. Removing a volume cannot be undone.",
+          "someFailed_one": "{{count}} removal failed.",
+          "someFailed_other": "{{count}} removals failed.",
+          "notRemoved_one": "{{count}} item could not be removed:",
+          "notRemoved_other": "{{count}} items could not be removed:",
+          "total": "Ticked categories free",
+          "confirm": "Clean up ({{size}})",
+          "title": "Clean up unused Docker data on {{machine}}?",
+          "description": "Removes stopped containers, dangling images and build cache that nothing uses. Tagged images and networks are left alone."
+        },
+        "dockerDetails": {
+          "health": {
+            "healthy": "Healthy",
+            "unhealthy": "Unhealthy",
+            "starting": "Health check starting"
+          },
+          "readOnly": "ro",
+          "status": "Status",
+          "stopFirst": "Stop it first",
+          "started": "Started",
+          "finished": "Finished",
+          "restarts": "Restarts",
+          "restartPolicy": "Restart policy",
+          "memory": "Memory",
+          "oomKilled": "Killed for using more memory than its limit",
+          "error": "Error",
+          "usage": "Usage now",
+          "ofOneCore": "of one core",
+          "ofLimit": "of {{total}} · {{percent}}%",
+          "netDetail": "received / sent",
+          "blockDetail": "read / written",
+          "setup": "Setup",
+          "image": "Image",
+          "id": "ID",
+          "copyId": "Copy the full ID",
+          "command": "Command",
+          "created": "Created",
+          "ports": "Ports",
+          "noPorts": "None published",
+          "networks": "Networks",
+          "mounts": "Mounts",
+          "noMounts": "None",
+          "logs": {
+            "title": "Logs",
+            "tail_one": "Showing the last line. Older lines were not fetched.",
+            "tail_other": "Showing the last {{count}} lines. Older lines were not fetched.",
+            "lines_one": "{{count}} line",
+            "lines_other": "{{count}} lines",
+            "follow": "Follow",
+            "refresh": "Refresh logs",
+            "copy": "Copy logs",
+            "copied": "Copied the logs",
+            "empty": "This container has not written any logs."
+          },
+          "copyFailed": "Could not copy",
+          "state": {
+            "running": "Running",
+            "exited": "Exited",
+            "exitedWith": "Exited ({{code}})",
+            "paused": "Paused",
+            "restarting": "Restarting",
+            "dead": "Dead",
+            "created": "Created"
+          },
+          "copied": "Copied",
+          "kind": {
+            "container": "Container",
+            "image": "Image",
+            "volume": "Volume"
+          },
+          "back": "Back",
+          "kindOn": "{{kind}} on {{machine}}",
+          "refresh": "Refresh",
+          "close": "Close",
+          "tags": "Tags",
+          "untagged": "Untagged",
+          "digests": "Digests",
+          "size": "Size",
+          "platform": "Platform",
+          "usedBy": "Containers that use it",
+          "imageUnused": "No container was made from this image.",
+          "layers": "Layers",
+          "newestFirst": "newest first",
+          "noLayers": "Docker lists no build history for this image.",
+          "showAllLayers": "Show all {{count}}",
+          "volume": "Volume",
+          "name": "Name",
+          "driver": "Driver",
+          "mountpoint": "Mountpoint",
+          "copyMountpoint": "Copy the mountpoint",
+          "scope": "Scope",
+          "labels": "Labels",
+          "noLabels": "No labels",
+          "options": "Options",
+          "noOptions": "No options",
+          "volumeUnused": "No container mounts this volume.",
+          "files": "Files (read-only)",
+          "volumeEmpty": "This volume is empty.",
+          "filesOf": "Files in {{volume}}",
+          "showingOf": "Showing {{shown}} of {{total}}"
+        },
+        "containers": {
+          "net": "Net I/O",
+          "block": "Block I/O",
+          "pids": "PIDs",
+          "noPermission": "Docker is installed, but this account cannot use it.",
+          "notRunning": "Docker is installed, but its daemon is not running.",
+          "open": "Details of container {{name}}",
+          "memoryShare": "{{percent}} of its limit",
+          "netDetail": "Received {{received}}, sent {{sent}} since it started",
+          "blockDetail": "Read {{read}}, written {{written}} since it started",
+          "title": "Containers",
+          "onGpus": "{{count}} using a GPU",
+          "running": "{{count}} running",
+          "noMatches": "No container matches.",
+          "container": "Container"
+        },
+        "dockerStorage": {
+          "shown": "{{shown}} of {{total}} shown",
+          "freesNote": "Frees is what removing that image alone gives back. Layers another image shares stay.",
+          "buildCacheOmitted": "Showing the {{shown}} largest of {{total}} records. Prune build cache removes all unused records.",
+          "filter": "Filter by name or id",
+          "noMatches": "Nothing matches.",
+          "selected": "{{count}} selected · {{size}}",
+          "clear": "Clear",
+          "removeSelected": "Remove selected",
+          "column": {
+            "size": "Size",
+            "usedBy": "Used by",
+            "created": "Created",
+            "image": "Image",
+            "frees": "Frees",
+            "container": "Container",
+            "volumes": "Volumes",
+            "volume": "Volume",
+            "driver": "Driver",
+            "record": "Record",
+            "type": "Type",
+            "lastUsed": "Last used",
+            "status": "Status"
+          },
+          "untagged": "<untagged>",
+          "selectAll": "Select all shown",
+          "select": "Select {{name}}",
+          "usedBy": "used by {{names}}",
+          "showAll": "Show all {{count}}",
+          "refresh": "Refresh",
+          "updated": "Updated {{time}}",
+          "morePrunes": "More ways to remove",
+          "cleanUp": "Clean up unused",
+          "missing": {
+            "title": "Docker is not installed on {{machine}}.",
+            "hint": "Seal looks for the `docker` command on the machine's PATH."
+          },
+          "permission": {
+            "title": "{{user}} cannot use Docker on {{machine}}.",
+            "titleNoUser": "This account cannot use Docker on {{machine}}.",
+            "hint": "Add the account to the `docker` group, then sign in again."
+          },
+          "notRunning": {
+            "title": "Docker is installed, but its daemon is not running."
+          },
+          "other": {
+            "title": "Docker did not answer."
+          },
+          "unusedOnly": "Unused only",
+          "status": {
+            "inUse": "In use",
+            "stoppedOnly": "Used by stopped container",
+            "dangling": "Dangling",
+            "shared": "Shared",
+            "unused": "Unused"
+          },
+          "empty": {
+            "images": "No images.",
+            "containers": "No containers.",
+            "volumes": "No volumes.",
+            "buildCache": "No build cache."
+          },
+          "stoppedOnly": "Stopped only",
+          "prune": {
+            "danglingImages": "Prune dangling images",
+            "unusedImages": "Remove all unused images",
+            "stoppedContainers": "Remove stopped containers",
+            "unusedVolumes": "Remove unused volumes",
+            "buildCache": "Prune build cache"
+          },
+          "nothing": {
+            "danglingImages": "No dangling images to remove.",
+            "unusedImages": "No unused images to remove.",
+            "stoppedContainers": "No stopped containers to remove.",
+            "unusedVolumes": "No unused volumes to remove.",
+            "buildCache": "No build cache to remove."
+          }
         }
       },
       "live-sessions": {

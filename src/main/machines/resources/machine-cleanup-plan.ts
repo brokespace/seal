@@ -8,6 +8,12 @@ export type MachineCleanupAction =
   | { kind: 'empty'; paths: string[] }
   /** `docker <args…>`; every argument is passed as one quoted word. */
   | { kind: 'docker'; args: string[] }
+  /** `docker` commands in order; one that fails stops the rest. */
+  | { kind: 'docker-sequence'; commands: string[][] }
+  /** `docker image rm`; removing a tag another tag shares deletes nothing, so it frees nothing. */
+  | { kind: 'docker-image'; target: string; force: boolean }
+  /** `docker builder prune --all` of one record, or of every record when `record` is null. */
+  | { kind: 'docker-build-cache'; record: string | null }
 
 export type PlannedCleanupItem = MachineCleanupItem & { action: MachineCleanupAction }
 
