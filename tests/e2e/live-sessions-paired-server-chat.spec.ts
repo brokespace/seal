@@ -7,6 +7,7 @@ import type {
   LiveSession,
   LiveSessionRegistrySnapshot
 } from '../../src/shared/live-sessions/live-session-types'
+import type { NativeChatMessage } from '../../src/shared/native-chat/native-chat-types'
 import { orcaCliResult } from './helpers/compiled-orca-cli'
 import { expect, test } from './helpers/orca-app'
 import {
@@ -67,6 +68,17 @@ async function expectOneChat(
   return listing.sessions[0]!
 }
 
+/** What the user and the agent said, in order: `role:text`. */
+function said(messages: NativeChatMessage[]): string[] {
+  return messages.flatMap((message) =>
+    message.role === 'user' || message.role === 'assistant'
+      ? message.blocks.flatMap((block) =>
+          block.type === 'text' ? [`${message.role}:${block.text}`] : []
+        )
+      : []
+  )
+}
+
 function activeAgentRows(page: Page, hostId: string): ReturnType<Page['locator']> {
   return page
     .getByTestId('active-agents')
@@ -74,7 +86,7 @@ function activeAgentRows(page: Page, hostId: string): ReturnType<Page['locator']
     .getByRole('option')
 }
 
-test('a chat on a Seal server is listed under its machine, and again after a restart', async (// oxlint-disable-next-line no-empty-pattern -- Owns its app launch through a restart session.
+test('a chat on a Seal server is listed and read under its machine, and again after a restart', async (// oxlint-disable-next-line no-empty-pattern -- Owns its app launch through a restart session.
 {}, testInfo) => {
   // Installing the server on the Docker host and two one-minute stub turns come before the last check.
   test.setTimeout(10 * 60_000)
@@ -166,6 +178,14 @@ test('a chat on a Seal server is listed under its machine, and again after a res
       sessions: [{ id: finished.id.replace(`${hostId}:`, 'local:'), machine: { hostId: 'local' } }]
     })
 
+    // The chat's history is a journal on the server: the desktop reads it through the server.
+    const history = await page.evaluate(
+      (sessionId) => window.api.liveSessions.transcriptPage({ sessionId }),
+      finished.id
+    )
+    expect(history.sessionId).toBe(finished.id)
+    expect(said(history.messages)).toEqual([`user:${FIRST_PROMPT}`, 'assistant:Stub reply.'])
+
     await page.evaluate(() => window.__store?.getState().setActiveView('home'))
     await expect(activeAgentRows(page, hostId)).toHaveCount(1)
     await expect(activeAgentRows(page, hostId)).toContainText(FIRST_PROMPT)
@@ -184,6 +204,21 @@ test('a chat on a Seal server is listed under its machine, and again after a res
     await expect(activeAgentRows(page, hostId)).toContainText(FIRST_PROMPT)
     await page.screenshot({ path: testInfo.outputPath('active-agents-after-restart.png') })
 
+    // Opening the row shows the conversation, read from the server and followed as it grows.
+    await activeAgentRows(page, hostId).click()
+    const transcript = page.locator(`[data-live-session-pane="${relisted.id}"]`)
+    await expect(transcript).toContainText('Stub reply.', { timeout: 60_000 })
+    await page.screenshot({ path: testInfo.outputPath('server-chat-transcript.png') })
+    await page.evaluate((sessionId) => {
+      const followed = window as unknown as { __followedTranscript: NativeChatMessage[] }
+      followed.__followedTranscript = []
+      window.api.liveSessions.onTranscriptDelta(({ delta }) => {
+        if (delta.sessionId === sessionId) {
+          followed.__followedTranscript.push(...delta.messages)
+        }
+      })
+    }, relisted.id)
+
     // A send from the desktop, by the desktop's id, reaches the agent on the server.
     const sent = await page.evaluate(
       (params) => window.api.runtime.call({ method: 'liveSessions.send', params }),
@@ -195,5 +230,21 @@ test('a chat on a Seal server is listed under its machine, and again after a res
     })
     await expectOneChat(session.userDataDir, hostId, 'working')
     expect(exec(`grep -c '"type":"user"' ${STUB_REQUESTS}`)).toBe('2')
+    // The open view's watch on the server delivers the new turn; nothing here reads a file.
+    await expect
+      .poll(
+        async () =>
+          said(
+            await page.evaluate(
+              () =>
+                (window as unknown as { __followedTranscript: NativeChatMessage[] })
+                  .__followedTranscript
+            )
+          ),
+        { timeout: 60_000, message: "the server chat's new turn never reached the open transcript" }
+      )
+      .toContain('user:slow swim')
+    await expect(transcript).toContainText('slow swim')
+    await page.screenshot({ path: testInfo.outputPath('server-chat-transcript-followed.png') })
   })
 })
