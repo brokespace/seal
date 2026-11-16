@@ -1,5 +1,5 @@
 // Seal's identity, in one place. Build scripts read it from here instead of carrying their own
-// copy; the constants compiled into the app (src/shared/app-identity.ts and the files
+// copy; the constants compiled into the app (src/shared/app-lifecycle/identity/app-identity.ts and the files
 // seal-rebrand-check.mjs lists) are checked against it. See docs/upstream-sync.md.
 const productName = 'Seal'
 const appId = 'com.brokespace.seal'

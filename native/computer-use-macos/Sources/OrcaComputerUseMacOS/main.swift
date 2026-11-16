@@ -3585,7 +3585,7 @@ private enum Input {
                 let cover = if case let .focused(other) = topmost {
                     "pid \(other.ownerPID) window \(other.windowID) covers the click point"
                 } else {
-                    "Orca can't tell which window is at the click point"
+                    "Seal can't tell which window is at the click point"
                 }
                 throw ProviderError.coded(
                     "window_not_focused",
