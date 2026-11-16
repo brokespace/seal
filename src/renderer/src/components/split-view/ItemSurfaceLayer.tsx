@@ -18,6 +18,7 @@ import { splitViewItemKey, type SplitViewItem } from './split-view-types'
 import { useItemSurfaceEffectsKept } from './use-item-surface-effects-kept'
 import { useKeptScrollOffsets } from './use-kept-scroll-offsets'
 import { useKeyboardKeptWhenSplitViewEnds } from './use-keyboard-kept-when-split-view-ends'
+import { usePointerLeftWhenSurfaceHides } from './use-pointer-left-when-surface-hides'
 import { useSurfaceOverSlot } from './use-surface-over-slot'
 
 type SurfaceItem = Exclude<SplitViewItem, { kind: 'workspace' }>
@@ -92,6 +93,7 @@ function ItemSurface({ place }: { place: ItemSurfacePlace }): React.JSX.Element 
   useSurfaceOverSlot(surfaceRef, slotId, true)
   useKeptScrollOffsets(surfaceRef, front)
   const effectsKept = useItemSurfaceEffectsKept(front)
+  usePointerLeftWhenSurfaceHides(surfaceRef, front)
   useKeyboardKeptWhenSplitViewEnds(surfaceRef, paneId, front)
   const focusPane = (event: React.SyntheticEvent<HTMLElement>): void => {
     if (paneId && isInSurface(event)) {
