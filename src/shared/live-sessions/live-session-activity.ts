@@ -67,13 +67,15 @@ function counted(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`
 }
 
-/** "Waiting on 2 subagents and 1 background task"; null when nothing runs in the background. */
-export function backgroundWaitLabel(subagents: number, tasks: number): string | null {
-  const parts = [
-    ...(subagents > 0 ? [counted(subagents, 'subagent', 'subagents')] : []),
-    ...(tasks > 0 ? [counted(tasks, 'background task', 'background tasks')] : [])
-  ]
-  return parts.length > 0 ? `Waiting on ${parts.join(' and ')}` : null
+/** "Waiting on 2 subagents"; null when none runs. */
+export function backgroundWaitLabel(subagents: number): string | null {
+  return subagents > 0 ? `Waiting on ${counted(subagents, 'subagent', 'subagents')}` : null
+}
+
+/** "2 background tasks still running": what a turn that ended left behind, noted beside its status. */
+export function backgroundLeftoverLabel(activity: LiveSessionActivity | undefined): string | null {
+  const tasks = runningBackgroundTasks(activity).length
+  return tasks > 0 ? `${counted(tasks, 'background task', 'background tasks')} still running` : null
 }
 
 const SUBAGENT_TRANSCRIPT_MARK = '#subagent:'

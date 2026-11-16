@@ -15,8 +15,10 @@ import type {
   HomeOverviewProviders,
   HomeWorkspace
 } from './home-overview-model'
+import type { AppState } from '@/store/types'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { sampleLiveSession } from '../live-sessions/live-session.test-fixture'
+import { makeRepo, makeWorktree } from '../worktree-jump/worktree-jump-palette-test-fixtures'
 
 const NOW = Date.now()
 const MIN = 60_000
@@ -38,17 +40,48 @@ function session(title: string, patch: Partial<LiveSession>): LiveSession {
   })
 }
 
+const SEAL_REPO = { ...makeRepo(), id: 'seal', path: '/code/seal', displayName: 'seal' }
+
+function sealWorkspace(name: string): NonNullable<LiveSession['workspace']> & { cwd: string } {
+  const cwd = `/code/seal-${name}`
+  return { worktreeId: `seal::${cwd}`, projectKey: 'github:brokespace/seal', cwd }
+}
+
+const HOME_OVERVIEW = sealWorkspace('home-overview')
+const REBRAND = sealWorkspace('rebrand')
+const MULTI_ACCOUNT = sealWorkspace('multi-account')
+
+/** The catalogue that names the fixture sessions' project and workspaces. */
+export const HOME_FIXTURE_STORE: Pick<AppState, 'repos' | 'worktreesByRepo'> = {
+  repos: [SEAL_REPO],
+  worktreesByRepo: {
+    [SEAL_REPO.id]: [HOME_OVERVIEW, REBRAND, MULTI_ACCOUNT].map(({ worktreeId, cwd }) =>
+      makeWorktree(worktreeId, cwd.slice('/code/seal-'.length), { repoId: SEAL_REPO.id, path: cwd })
+    )
+  }
+}
+
+function placed({ cwd, ...workspace }: ReturnType<typeof sealWorkspace>): Partial<LiveSession> {
+  return { cwd, workspace }
+}
+
+// A chat, an agent in a pane and sessions started outside Seal, on two machines.
 const SESSIONS: LiveSession[] = [
   session('Add Home overview page', {
+    ...placed(HOME_OVERVIEW),
     origin: 'seal',
+    surface: { kind: 'chat', sessionId: 'chat-home-overview', tabId: 'tab-home-overview' },
     lastMessage: 'Wired the sessions provider; running the typecheck now.'
   }),
   session('Rebrand app icons', {
+    ...placed(REBRAND),
     origin: 'seal',
+    surface: { kind: 'cli', paneKey: 'tab-rebrand:pane-1' },
     status: 'needs-permission',
     statusDetail: 'Run `pnpm build:icons`?'
   }),
   session('Multi-account switcher', {
+    ...placed(MULTI_ACCOUNT),
     provider: 'codex',
     status: 'your-turn',
     lastMessage:
@@ -72,6 +105,15 @@ const SESSIONS: LiveSession[] = [
     status: 'errored',
     statusDetail: 'CUDA out of memory',
     lastActivityAt: NOW - 40 * MIN
+  }),
+  session('Sweep learning rates', {
+    machine: GPU_BOX,
+    origin: 'seal',
+    surface: { kind: 'chat', sessionId: 'chat-sweep', tabId: 'tab-sweep' },
+    project: 'ml-experiments',
+    cwd: '/srv/ml-experiments',
+    statusDetail: 'Bash: python sweep.py --trials 40',
+    startedAt: NOW - 50 * MIN
   })
 ]
 
@@ -79,6 +121,7 @@ const SESSIONS: LiveSession[] = [
 export const BUSY_HOME_SESSIONS: LiveSession[] = [
   ...SESSIONS,
   session('Fix flaky upload test', {
+    ...placed(HOME_OVERVIEW),
     status: 'your-turn',
     lastActivityAt: NOW - 1 * MIN,
     lastMessage: 'The retry now waits for the server to close the stream.',

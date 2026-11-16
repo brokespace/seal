@@ -5,7 +5,7 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import type { MachineSummary } from '../../../../../shared/machines/machine-summaries'
 import type { MachineId } from '../../../../../shared/machines/machine-types'
 
-/** Each machine's running sessions from the registry, in Active agents' order. */
+/** Each machine's running sessions from the registry, whatever their agent or surface, in listed order. */
 export function activeLiveSessionsByMachine(
   machines: readonly MachineSummary[],
   sessions: readonly LiveSession[]

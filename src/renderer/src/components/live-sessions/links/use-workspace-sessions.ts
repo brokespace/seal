@@ -55,7 +55,7 @@ export function useWorkspaceSessions(worktreeId: string): readonly LiveSession[]
   return useGroupedSessions().byWorkspace.get(worktreeId) ?? NONE
 }
 
-/** Every session no workspace holds. */
+/** Every session no workspace holds, or whose workspace this window does not list (yet). */
 export function useUnassignedSessions(): readonly LiveSession[] {
   return useGroupedSessions().unassigned
 }

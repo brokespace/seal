@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { parseExecutionHostId } from '../../../shared/execution-host'
 import type { HomeChatOpenView } from '../../../shared/home-chat/home-chat-types'
-import { isActiveLiveSession } from '../../../shared/live-sessions/live-session-status'
+import { isLiveSessionPlaceInProject } from '../../../shared/live-sessions/live-session-workspace-groups'
 import { agentTerminalHandle, parseOrcaJson } from '../delegation/home-chat-orca-json'
 import { LOCAL_MACHINE_ID, type HomeChatMachineInfo } from '../machines/home-chat-machine-types'
 import type { HomeChatSessionSummary } from '../seal/home-chat-session-access'
@@ -41,14 +41,24 @@ function ago(at: number): string {
   return minutes < 90 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago`
 }
 
+const SURFACE_WORDS: Record<HomeChatSessionSummary['surface'], string> = {
+  chat: 'a Seal chat',
+  cli: 'in a Seal pane',
+  external: 'outside Seal'
+}
+
 function sessionLine(session: HomeChatSessionSummary): string {
-  const where = session.cwd ?? session.project ?? 'unknown folder'
   const flags = [
-    session.origin === 'seal' ? 'in a Seal pane' : 'outside Seal',
-    session.alive ? null : 'process not running',
+    SURFACE_WORDS[session.surface],
+    // A chat at rest has no process: its host starts the agent again with the next message.
+    session.alive || session.surface === 'chat' ? null : 'process not running',
     session.canTakeOver ? 'can be taken over' : null
   ].filter(Boolean)
-  return `- ${session.id}\n  ${session.agent} on ${session.machineLabel} (${session.machineId}) in ${where}\n  ${session.status}${session.statusDetail ? `: ${session.statusDetail}` : ''}, active ${ago(session.lastActivityAt)}, ${flags.join(', ')}${session.title ? `\n  title: ${session.title}` : ''}`
+  const place = [
+    session.place.project ? `project: ${session.place.project}` : null,
+    session.worktreeId ? `workspace: worktree:${session.worktreeId}` : null
+  ].filter(Boolean)
+  return `- ${session.id}\n  ${session.agent} on ${session.machineLabel} (${session.machineId}) in ${session.cwd ?? 'unknown folder'}\n  ${session.status}${session.statusDetail ? `: ${session.statusDetail}` : ''}, active ${ago(session.lastActivityAt)}, ${flags.join(', ')}${place.length ? `\n  ${place.join(', ')}` : ''}${session.title ? `\n  title: ${session.title}` : ''}`
 }
 
 async function listSessions(
@@ -57,18 +67,20 @@ async function listSessions(
 ): Promise<HomeChatToolResult> {
   const machine = optionalStr(input.machine)
   const machineId = machine ? (await ctx.machines.open(machine)).info.id : null
+  const project = optionalStr(input.project)
   const { sessions, errors } = await ctx.services.seal.sessions.list()
   const shown = sessions.filter(
     (session) =>
       (!machineId || session.machineId === machineId) &&
-      (input.include_done === true || isActiveLiveSession(session))
+      (!project || isLiveSessionPlaceInProject(session.place, project)) &&
+      (input.include_done === true || session.active)
   )
   const notes = errors.length
     ? `\n\nMachines that could not be scanned:\n- ${errors.join('\n- ')}`
     : ''
   if (shown.length === 0) {
     return ok(
-      `No ${input.include_done === true ? '' : 'active '}agent sessions${machineId ? ` on ${machineId}` : ''}.${notes}`
+      `No ${input.include_done === true ? '' : 'active '}agent sessions${machineId ? ` on ${machineId}` : ''}${project ? ` in project ${project}` : ''}.${notes}`
     )
   }
   return ok(`${shown.map(sessionLine).join('\n')}${notes}`)
@@ -78,8 +90,9 @@ async function findSession(
   ctx: HomeChatToolContext,
   sessionId: string
 ): Promise<HomeChatSessionSummary> {
-  const { sessions } = await ctx.services.seal.sessions.list()
-  const session = sessions.find((candidate) => candidate.id === sessionId.trim())
+  const access = ctx.services.seal.sessions
+  const id = access.currentId(sessionId.trim())
+  const session = (await access.list()).sessions.find((candidate) => candidate.id === id)
   if (!session) {
     throw new Error(
       `No session ${sessionId}. Call list_sessions (include_done to see finished ones) and use an id from it.`
@@ -99,7 +112,12 @@ async function messageSession(
       `The message did not reach ${session.id}: ${sent.error ?? 'unknown reason'}. Check the session with list_sessions; a session whose process is gone can be continued with start_session instead.`
     )
   }
-  const how = sent.route ? ` through its ${sent.route}` : ''
+  const how =
+    sent.route === 'structured'
+      ? ' as a chat message'
+      : sent.route
+        ? ` through its ${sent.route}`
+        : ''
   return ok(
     sent.state === 'delivered'
       ? `Delivered to ${session.id}${how}; it is in the session's transcript. Read its answer with read_session.`
@@ -215,9 +233,9 @@ export async function executeSealTool(
       const session = await findSession(ctx, str(input.session_id))
       if (!session.canTakeOver) {
         return failed(
-          session.origin === 'seal'
-            ? `${session.id} already runs in a Seal pane; message it with message_session.`
-            : `${session.id} cannot be taken over yet: Seal has not seen its transcript. Send it a message first, then try again.`
+          session.surface === 'external'
+            ? `${session.id} cannot be taken over yet: Seal has not seen its transcript. Send it a message first, then try again.`
+            : `${session.id} already runs ${session.surface === 'chat' ? 'as a Seal chat' : 'in a Seal pane'}; message it with message_session.`
         )
       }
       seal.open({ kind: 'take-over', sessionId: session.id })

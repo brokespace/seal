@@ -7,52 +7,41 @@ import { selectWorktreesByRepo } from '@/store/workspaces/catalog/workspace-reco
 import { getAiVaultResumeWorkspaceExecutionHostId } from '@/lib/agent-session/resume/history/ai-vault-resume-target'
 import { buildAiVaultResumeStartupForWorktree } from '@/lib/agent-session/resume/history/ai-vault-resume-command'
 import { launchAiVaultSessionAndReveal } from '@/lib/agent-session/resume/history/launch-ai-vault-session-and-reveal'
-import {
-  LOCAL_EXECUTION_HOST_ID,
-  parseExecutionHostId,
-  toSshExecutionHostId,
-  type ExecutionHostId
-} from '../../../../../shared/execution-host'
+import { liveSessionExecutionHost } from '../../../../../shared/live-sessions/live-session-execution-host'
 import type {
   LiveSession,
   LiveSessionMachine,
   LiveTakeOverResult
 } from '../../../../../shared/live-sessions/live-session-types'
+import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { workspaceLinkFinder } from '../links/live-session-links'
 
 export function canTakeOver(session: LiveSession): boolean {
   return session.origin === 'external' && !session.providerSessionId.startsWith('pid-')
 }
 
-/** Take-over opens on the transport the machine uses now, SSH or Seal server alike. */
-export function liveSessionExecutionHost(machine: LiveSessionMachine): ExecutionHostId {
-  const current = machine.executionHostId ? parseExecutionHostId(machine.executionHostId) : null
-  if (current) {
-    return current.id
-  }
-  return machine.kind === 'remote' ? toSshExecutionHostId(machine.hostId) : LOCAL_EXECUTION_HOST_ID
-}
-
-/** The workspace the session's folder belongs to on its host, else the active one there. */
-export function takeOverWorktreeId(
+/** The session's workspace when this window lists it, else the active one on its host, else any there. */
+function takeOverWorktreeId(
   state: AppState,
-  machine: LiveSessionMachine,
-  cwd: string | null
+  session: LiveSession,
+  machine: LiveSessionMachine
 ): string | null {
+  const id = liveSessionRegistryStore.currentId(session.id)
+  // A take-over result names no workspace; the registry's copy is newer than the caller's.
+  const workspace =
+    liveSessionRegistryStore.getState().sessions.find((current) => current.id === id)?.workspace ??
+    session.workspace
+  const own = workspace && workspaceLinkFinder(state)(workspace.worktreeId)
+  if (own) {
+    return own.worktreeId
+  }
   const host = liveSessionExecutionHost(machine)
-  const onHost = [...getIndexedWorktreeMap(selectWorktreesByRepo(state) ?? {}).values()].filter(
-    (worktree) => getAiVaultResumeWorkspaceExecutionHostId(state, worktree.id) === host
-  )
-  const containing = cwd
-    ? onHost
-        .filter((worktree) => cwd === worktree.path || cwd.startsWith(`${worktree.path}/`))
-        .sort((a, b) => b.path.length - a.path.length)[0]
-    : undefined
-  const active =
-    state.activeWorktreeId &&
-    getAiVaultResumeWorkspaceExecutionHostId(state, state.activeWorktreeId) === host
-      ? state.activeWorktreeId
-      : null
-  return containing?.id ?? active ?? onHost[0]?.id ?? null
+  const onHost = (worktreeId: string): boolean =>
+    getAiVaultResumeWorkspaceExecutionHostId(state, worktreeId) === host
+  if (state.activeWorktreeId && onHost(state.activeWorktreeId)) {
+    return state.activeWorktreeId
+  }
+  return [...getIndexedWorktreeMap(selectWorktreesByRepo(state) ?? {}).keys()].find(onHost) ?? null
 }
 
 function failureText(result: Extract<LiveTakeOverResult, { ok: false }>): string {
@@ -85,7 +74,7 @@ function failureText(result: Extract<LiveTakeOverResult, { ok: false }>): string
 /** Stops the external process and resumes its conversation in a new Seal pane. */
 export async function takeOverLiveSession(session: LiveSession): Promise<boolean> {
   const before = useAppStore.getState()
-  if (!takeOverWorktreeId(before, session.machine, session.cwd)) {
+  if (!takeOverWorktreeId(before, session, session.machine)) {
     toast.error(
       translate(
         'auto.components.live-sessions.takeOver.noWorkspace',
@@ -107,7 +96,7 @@ export async function takeOverLiveSession(session: LiveSession): Promise<boolean
     return false
   }
   const state = useAppStore.getState()
-  const worktreeId = takeOverWorktreeId(state, result.machine, result.cwd)
+  const worktreeId = takeOverWorktreeId(state, session, result.machine)
   if (!worktreeId) {
     return false
   }

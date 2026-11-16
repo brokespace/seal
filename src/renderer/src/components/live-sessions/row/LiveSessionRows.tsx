@@ -18,6 +18,7 @@ export function LiveSessionRows({
   now,
   tone = 'surface',
   layout,
+  showPlace,
   menu
 }: {
   sessions: readonly LiveSession[]
@@ -26,6 +27,7 @@ export function LiveSessionRows({
   now: number
   tone?: LiveSessionRowProps['tone']
   layout?: LiveSessionRowProps['layout']
+  showPlace?: LiveSessionRowProps['showPlace']
   menu?: LiveSessionRowProps['menu']
 }): React.JSX.Element {
   const rowState = useLiveSessionRowState()
@@ -48,6 +50,7 @@ export function LiveSessionRows({
           now={now}
           tone={tone}
           layout={layout}
+          showPlace={showPlace}
           onOpen={openFromRow}
           // Only the sidebar multi-selects; elsewhere a modified click still opens.
           onPick={(picked) => openFromRow(picked)}

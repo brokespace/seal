@@ -25,8 +25,8 @@ export type AgentSessionStatusEvidence = {
   turnFailed: boolean
   /** Subagents the session waits on. */
   runningSubagents: number
-  /** Background tasks still running after the turn ended. */
-  runningBackgroundTasks: number
+  /** The running turn is blocked on a command or task it started earlier (a pending output or wait call). */
+  waitsOnBackgroundTask: boolean
   /** The session has taken at least one turn. */
   hadTurn: boolean
   /** The session closed or its host is gone. */

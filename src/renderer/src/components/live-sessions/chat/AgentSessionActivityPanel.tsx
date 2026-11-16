@@ -12,6 +12,7 @@ import type {
   LiveTodo
 } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { liveSessionLeftoverLabel } from '../live-session-presentation'
 import type { AgentSessionPanel } from './agent-session-focus-requests'
 import {
   AgentSessionPanelEmpty as Empty,
@@ -198,6 +199,7 @@ export function AgentSessionActivityPanel({
   const subagents = activity?.subagents ?? []
   const tasks = activity?.tasks ?? []
   const todos = activity?.todos ?? []
+  const leftover = liveSessionLeftoverLabel({ activity })
   const titles: Record<AgentSessionActivityPanelKind, string> = {
     subagents: t('auto.components.live-sessions.activity.subagents', 'Subagents'),
     tasks: t('auto.components.live-sessions.activity.tasks', 'Tasks')
@@ -231,6 +233,11 @@ export function AgentSessionActivityPanel({
           <SectionTitle>
             {t('auto.components.live-sessions.activity.backgroundTasks', 'Background tasks')}
           </SectionTitle>
+          {leftover ? (
+            <p data-live-session-leftover className="px-3 pb-1 text-xs text-muted-foreground">
+              {leftover}
+            </p>
+          ) : null}
           {tasks.length > 0 ? (
             <ul>
               {tasks.map((task) => (

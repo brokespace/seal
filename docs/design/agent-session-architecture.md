@@ -296,8 +296,8 @@ To be ratified against `docs/design/agent-status.md` when the status-sweep pull 
 | Chat: a turn is running with a foreground shell tool in flight                                  | `running-shell`                                                          |
 | Chat: a turn is running. Hook: `working`                                                        | `working`                                                                |
 | Chat: waiting only on `children`. Hook: `working` with `workingMode: 'monitoring'` on subagents | `waiting-subagent`                                                       |
-| Chat: turn ended, `backgroundTasks` still running. Hook: the status-sweep's background evidence | `waiting-task`                                                           |
-| Chat: turn ended successfully, nothing running. Hook: `done`                                    | `your-turn`, which the reply-ask classifier may raise to `waiting-input` |
+| Chat: a turn is running and waits on the output of a task it started earlier                    | `waiting-task`                                                           |
+| Chat: turn ended successfully, `backgroundTasks` running or not. Hook: `done`                   | `your-turn`, which the reply-ask classifier may raise to `waiting-input` |
 | Chat: created, no turn yet                                                                      | `idle`                                                                   |
 | Chat: closed or its host is gone. Hook: session end, pane closed                                | `done`                                                                   |
 

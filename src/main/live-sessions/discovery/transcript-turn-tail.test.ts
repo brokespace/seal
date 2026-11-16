@@ -34,7 +34,7 @@ describe.skipIf(process.platform === 'win32')('the end of a transcript a scan re
     ['the script', () => undefined],
     ['AI Vault discovery', viaAiVault]
   ])(
-    'still holds a background launch through %s when Claude Code logged its next request after it',
+    'still lists a background launch through %s when Claude Code logged its next request after it',
     async (_, source) => {
       const recorded = (
         await readFile(join(FIXTURES, 'live-claude-background-command-running.jsonl'), 'utf8')
@@ -69,8 +69,8 @@ describe.skipIf(process.platform === 'win32')('the end of a transcript a scan re
 
       const session = sessions.find((s) => s.transcriptPath === file)
       expect({ status: session?.status, detail: session?.statusDetail }).toEqual({
-        status: 'waiting-task',
-        detail: 'Waiting on 1 background task'
+        status: 'your-turn',
+        detail: '1 background task still running'
       })
     }
   )

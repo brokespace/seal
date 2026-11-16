@@ -1,20 +1,14 @@
 import { useAppStore } from '@/store/index'
 import type { AppState } from '@/store/types'
-import { getIndexedWorktreeMap } from '@/store/slices/worktrees/listing/worktree-catalog-index'
 import {
   selectFolderWorkspaces,
   selectWorktreesByRepo
 } from '@/store/workspaces/catalog/workspace-record-fields'
-import { getAiVaultResumeWorkspaceExecutionHostId } from '@/lib/agent-session/resume/history/ai-vault-resume-target'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { extendWorktreeIdByTabId } from '../../../../../shared/workspace-session/workspace-session-host-records'
-import { folderWorkspaceKey } from '../../../../../shared/workspace-scope'
 import { liveSessionRegistryStore, useLiveSessions } from '../live-session-registry-store'
-import { liveSessionExecutionHost } from '../take-over/live-session-take-over'
 import {
-  linkLiveSessions,
   projectSessionBadges,
-  type LinkableWorktree,
+  workspaceLinkFinder,
   type LiveSessionLink,
   type LiveSessionsBadge
 } from './live-session-links'
@@ -24,42 +18,11 @@ export type LiveSessionLinks = {
   byProject: ReadonlyMap<string, LiveSessionsBadge>
 }
 
-function linkableWorktrees(state: AppState): LinkableWorktree[] {
-  const projectNames = new Map(state.repos.map((repo) => [repo.id, repo.displayName]))
-  const worktrees = [...getIndexedWorktreeMap(selectWorktreesByRepo(state) ?? {}).values()].map(
-    (worktree) => {
-      const project = projectNames.get(worktree.repoId)
-      return {
-        id: worktree.id,
-        repoId: worktree.repoId,
-        path: worktree.path,
-        // "shop / checkout"; a primary checkout named for its branch alone says little.
-        name:
-          project && project !== worktree.displayName
-            ? `${project} / ${worktree.displayName}`
-            : worktree.displayName,
-        hostId: getAiVaultResumeWorkspaceExecutionHostId(state, worktree.id)
-      }
-    }
-  )
-  // Folder workspaces hold sessions too; they have no git worktree behind them.
-  const folders = (selectFolderWorkspaces(state) ?? []).map((folder) => ({
-    id: folderWorkspaceKey(folder.id),
-    repoId: folder.projectGroupId,
-    path: folder.folderPath,
-    name: folder.name,
-    hostId: getAiVaultResumeWorkspaceExecutionHostId(state, folderWorkspaceKey(folder.id))
-  }))
-  return [...worktrees, ...folders]
-}
-
 type Inputs = readonly [
   readonly LiveSession[],
   AppState['repos'],
-  ReturnType<typeof selectWorktreesByRepo>,
-  ReturnType<typeof selectFolderWorkspaces>,
-  AppState['tabsByWorktree'],
-  AppState['unifiedTabsByWorktree']
+  AppState['worktreesByRepo'],
+  AppState['folderWorkspaces']
 ]
 
 let memo: { inputs: Inputs; value: LiveSessionLinks } | null = null
@@ -69,14 +32,16 @@ function linksFor(inputs: Inputs): LiveSessionLinks {
   if (memo && memo.inputs.every((input, index) => input === inputs[index])) {
     return memo.value
   }
-  const state = useAppStore.getState()
-  const [sessions, , , , tabsByWorktree, unifiedTabsByWorktree] = inputs
-  const links = linkLiveSessions(
-    sessions,
-    linkableWorktrees(state),
-    extendWorktreeIdByTabId(new Map(), { tabsByWorktree, unifiedTabsByWorktree }),
-    (session) => liveSessionExecutionHost(session.machine)
-  )
+  const [sessions, repos, worktreesByRepo, folderWorkspaces] = inputs
+  const find = workspaceLinkFinder({ repos, worktreesByRepo, folderWorkspaces })
+  const links = new Map<string, LiveSessionLink>()
+  for (const session of sessions) {
+    // Unlinked until the catalog lists its workspace, so it shows as unassigned, never nowhere.
+    const link = session.workspace && find(session.workspace.worktreeId)
+    if (link) {
+      links.set(session.id, link)
+    }
+  }
   memo = { inputs, value: { links, byProject: projectSessionBadges(sessions, links) } }
   return memo.value
 }
@@ -88,26 +53,15 @@ export function readLiveSessionLinks(): LiveSessionLinks {
     liveSessionRegistryStore.getState().sessions,
     state.repos,
     selectWorktreesByRepo(state),
-    selectFolderWorkspaces(state),
-    state.tabsByWorktree,
-    state.unifiedTabsByWorktree
+    selectFolderWorkspaces(state)
   ])
 }
 
-/** Which workspace each live session runs in, and each project's session badge. */
+/** The workspace the registry attached each live session to, and each project's session badge. */
 export function useLiveSessionLinks(): LiveSessionLinks {
   const { sessions } = useLiveSessions()
   const repos = useAppStore((state) => state.repos)
   const worktreesByRepo = useAppStore(selectWorktreesByRepo)
   const folderWorkspaces = useAppStore(selectFolderWorkspaces)
-  const tabsByWorktree = useAppStore((state) => state.tabsByWorktree)
-  const unifiedTabsByWorktree = useAppStore((state) => state.unifiedTabsByWorktree)
-  return linksFor([
-    sessions,
-    repos,
-    worktreesByRepo,
-    folderWorkspaces,
-    tabsByWorktree,
-    unifiedTabsByWorktree
-  ])
+  return linksFor([sessions, repos, worktreesByRepo, folderWorkspaces])
 }

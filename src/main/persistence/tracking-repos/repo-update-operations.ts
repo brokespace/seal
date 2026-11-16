@@ -114,6 +114,7 @@ export class RepoUpdatePersistenceOperations {
         | 'worktreeVisibilitySourcePreferences'
         | 'projectGroupId'
         | 'projectHostSetupMethod'
+        | 'autoCreated'
       >
     > & {
       projectGroupOrder?: number | null

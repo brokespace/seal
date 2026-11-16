@@ -4,20 +4,6 @@ import type {
   LiveSessionMachine
 } from '../../../../../shared/live-sessions/live-session-types'
 import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
-import {
-  groupLiveSessionsByMachine,
-  type LiveSessionMachineGroup
-} from '../../../../../shared/live-sessions/live-session-summary'
-
-export type ActiveAgentsMachine = LiveSessionMachineGroup<LiveSession>
-
-export type ActiveAgentsView = {
-  machines: ActiveAgentsMachine[]
-  /** Ended in the last day; still resumable or deletable. */
-  finished: LiveSession[]
-  /** Active sessions on every machine. */
-  activeCount: number
-}
 
 export const RECENTLY_FINISHED_MS = 24 * 60 * 60 * 1000
 
@@ -37,24 +23,4 @@ export function isListedLiveSession(session: LiveSession, now: number): boolean 
 /** A machine with no session to name it, as a failed scan reports it: by its host id. */
 export function machineKnownByHostId(hostId: string): Pick<LiveSessionMachine, 'kind' | 'label'> {
   return { kind: hostId === LOCAL_EXECUTION_HOST_ID ? 'local' : 'remote', label: hostId }
-}
-
-/** Machines (this one first), each with its sessions: pinned, then needs-attention, working, idle. */
-export function buildActiveAgents(sessions: readonly LiveSession[], now: number): ActiveAgentsView {
-  const running: LiveSession[] = []
-  const finished: LiveSession[] = []
-  let activeCount = 0
-  for (const session of sessions) {
-    if (isActiveLiveSession(session)) {
-      activeCount++
-      running.push(session)
-    } else if (isRecentlyFinishedLiveSession(session, now)) {
-      finished.push(session)
-    }
-  }
-  return {
-    machines: groupLiveSessionsByMachine(running),
-    finished: finished.sort((a, b) => b.lastActivityAt - a.lastActivityAt),
-    activeCount
-  }
 }

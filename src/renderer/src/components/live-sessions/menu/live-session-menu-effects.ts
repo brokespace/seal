@@ -14,10 +14,6 @@ import {
   quoteCmdDoubleQuoted,
   quotePosixShellUnlessPlain
 } from '../../../../../shared/shell/launch/shell-argument-quoting'
-import {
-  compareLiveSessions,
-  isActiveLiveSession
-} from '../../../../../shared/live-sessions/live-session-status'
 import { liveSessionMachineId } from '../../../../../shared/live-sessions/live-session-machine-id'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { parseMachineId } from '../../../../../shared/machines/machine-types'
@@ -38,15 +34,6 @@ import { sealAssignmentFor } from './live-session-accounts'
 /** How a session's row opens it, on any surface: a click previews, a double click or Enter keeps the tab. */
 export function liveSessionRowOpenMode(event?: { type: string }): AgentSessionOpenMode {
   return event?.type === 'dblclick' || event?.type === 'keydown' ? 'tab' : 'preview'
-}
-
-/** Where links to the former Agent sessions page land: the session that most needs a look. */
-export function showAgentSessions(): void {
-  const { sessions } = liveSessionRegistryStore.getState()
-  const next = [...sessions].filter(isActiveLiveSession).sort(compareLiveSessions)[0]
-  if (next) {
-    openAgentSession(next.id)
-  }
 }
 
 function focusAgentSession(sessionId: string, target: AgentSessionFocusTarget): void {

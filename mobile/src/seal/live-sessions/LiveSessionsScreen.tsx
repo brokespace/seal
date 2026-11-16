@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pressable, RefreshControl, ScrollView, Text } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Radio } from 'lucide-react-native'
@@ -8,22 +8,22 @@ import {
   MobileStateView
 } from '../../components/MobileStateView'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
-import { useRouteHandoff } from '../../navigation/route-handoff'
+import { liveSessionsNeedingAttention } from '../../../../src/shared/live-sessions/live-session-summary'
 import { colors, pressedStyle, spacing } from '../../theme/mobile-theme'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 import { useHostClient } from '../../transport/connection/host-client-hooks'
-import { sealSessionHref } from '../seal-route-hrefs'
 import { sealStyles } from '../seal-screen-styles'
 import { SealScreenFrame, useSealHostName } from '../SealScreenFrame'
 import { liveSessionFinished } from './live-session-presentation'
-import { LiveSessionGroups } from './LiveSessionRow'
+import { liveSessionPlaceResolver, useKnownSessionWorkspaces } from './live-session-workspace-place'
 import { useLiveSessionsFeed } from './live-sessions-feed'
+import { LiveSessionsNeedingYou, LiveSessionWorkspaceGroups } from './LiveSessionWorkspaceGroups'
+import { useOpenLiveSession } from './use-open-live-session'
 
-/** Every agent session the host sees, Seal's and external ones, by machine and project. */
+/** Every agent session the host sees: what needs the person first, then all of them by project and workspace. */
 export function LiveSessionsScreen({ hostId }: { hostId: string }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
-  const router = useRouteHandoff()
   const insets = useSafeAreaInsets()
   const hostName = useSealHostName(hostId)
   const { client, state } = useHostClient(hostId)
@@ -31,9 +31,13 @@ export function LiveSessionsScreen({ hostId }: { hostId: string }) {
   const [showFinished, setShowFinished] = useState(false)
   const [pulling, setPulling] = useState(false)
   const connected = state === 'connected'
+  const workspaces = useKnownSessionWorkspaces(hostId, client, connected)
+  const placeOf = useMemo(() => liveSessionPlaceResolver(workspaces), [workspaces])
+  const { open, openingId } = useOpenLiveSession(hostId, client, workspaces)
 
   const finished = feed.sessions.filter(liveSessionFinished)
   const shown = showFinished ? feed.sessions : feed.sessions.filter((s) => !liveSessionFinished(s))
+  const attention = liveSessionsNeedingAttention(shown)
 
   let body
   if (!feed.loaded && !connected) {
@@ -49,7 +53,7 @@ export function LiveSessionsScreen({ hostId }: { hostId: string }) {
         title={t('seal.liveSessions.emptyTitle', 'No agent sessions')}
         message={t(
           'seal.liveSessions.emptyMessage',
-          'Claude Code and Codex sessions on this computer and its SSH hosts show up here.'
+          'Chats and agent sessions on this computer and its SSH hosts show up here.'
         )}
       />
     )
@@ -74,10 +78,14 @@ export function LiveSessionsScreen({ hostId }: { hostId: string }) {
           {feed.error ? (
             <Text style={[sealStyles.hint, sealStyles.errorText]}>{feed.error}</Text>
           ) : null}
-          <LiveSessionGroups
+          <LiveSessionsNeedingYou attention={attention} openingId={openingId} onOpen={open} />
+          <LiveSessionWorkspaceGroups
             sessions={shown}
+            placeOf={placeOf}
             hostErrors={feed.hostErrors}
-            onOpen={(session) => router.push(sealSessionHref(hostId, session.id))}
+            first={attention.length === 0}
+            openingId={openingId}
+            onOpen={open}
           />
           {finished.length > 0 ? (
             <Pressable

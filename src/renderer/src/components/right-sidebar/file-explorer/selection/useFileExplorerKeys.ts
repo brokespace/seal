@@ -22,6 +22,7 @@ import { keybindingMatchesAction } from '../../../../../../shared/keybindings'
 import { translate } from '@/i18n/i18n'
 import { isEditableTarget } from '@/lib/text-input/focus/editable-target'
 import { addAppKeyListener, removeAppKeyListener } from '@/lib/keyboard/app-keyboard-router'
+import { useFileExplorerMount } from '../panel/file-explorer-mount'
 
 export function shouldIgnoreFileExplorerKeyTarget(target: EventTarget | null): boolean {
   return (
@@ -50,9 +51,12 @@ export function useFileExplorerKeys(opts: {
   activeWorktreeId: string | null
   pathOwner: LocalPathOpenOwner
 }): void {
-  const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
-  const rightSidebarTab = useAppStore((s) => s.rightSidebarTab)
-  const rightSidebarExplorerView = useAppStore((s) => s.rightSidebarExplorerView)
+  const { embedded } = useFileExplorerMount()
+  const rightSidebarOpen = useAppStore((s) => embedded || s.rightSidebarOpen)
+  const rightSidebarTab = useAppStore((s) => (embedded ? 'explorer' : s.rightSidebarTab))
+  const rightSidebarExplorerView = useAppStore((s) =>
+    embedded ? 'files' : s.rightSidebarExplorerView
+  )
   const keybindings = useAppStore((s) => s.keybindings)
 
   const rowProjectionRef = useRef(opts.rowProjection)

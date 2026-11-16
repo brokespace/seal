@@ -2,62 +2,11 @@
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
-import type { ElectronApplication, Locator, Page } from '@stablyai/playwright-test'
+import type { Locator } from '@stablyai/playwright-test'
 import { expect, test } from './helpers/orca-app'
+import { addMcpClient, connectMcpOverStdio, openMcpSettings } from './helpers/seal-mcp-client'
 
 const CLIENT_NAME = 'Deploy assistant'
-
-async function openMcpSettings(page: Page): Promise<Locator> {
-  await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.evaluate(() => {
-    const state = window.__store?.getState()
-    state?.openSettingsTarget({ pane: 'mcp', repoId: null })
-    state?.openSettingsPage()
-  })
-  const settings = page.locator('[data-slot="seal-mcp-settings"]')
-  await expect(settings.getByRole('button', { name: 'Add client' })).toBeVisible()
-  return settings
-}
-
-/** Adds a client in Settings and returns the token the app shows once. */
-async function addClient(page: Page, settings: Locator): Promise<string> {
-  await settings.getByRole('button', { name: 'Add client' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByLabel('Name').fill(CLIENT_NAME)
-  await dialog.getByLabel('Files', { exact: true }).check()
-  await dialog.getByLabel('Destructive', { exact: true }).check()
-  await dialog.getByRole('button', { name: 'Create client' }).click()
-  const shown = page.locator('[data-seal-mcp-token]')
-  await expect(shown).toHaveText(/^smcp_[0-9a-f]{12}_[A-Za-z0-9_-]{43}$/)
-  const token = await shown.innerText()
-  await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
-  await expect(shown).toBeHidden()
-  return token
-}
-
-async function connectOverStdio(app: ElectronApplication, token: string): Promise<Client> {
-  const userDataDir = await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData'))
-  const client = new Client({ name: 'seal-e2e', version: '0.0.0' })
-  await client.connect(
-    new StdioClientTransport({
-      command: process.execPath,
-      args: [path.join(process.cwd(), 'out', 'cli', 'index.js'), 'mcp'],
-      env: {
-        ...Object.fromEntries(
-          Object.entries(process.env).filter(
-            (entry): entry is [string, string] => typeof entry[1] === 'string'
-          )
-        ),
-        ORCA_USER_DATA_PATH: userDataDir,
-        ORCA_DEV_CLI_INVOCATION: '1',
-        SEAL_MCP_TOKEN: token
-      }
-    })
-  )
-  return client
-}
 
 /** Answers the prompt; Approve ignores presses for a moment after a request appears, so it is retried. */
 async function answer(prompt: Locator, button: 'Approve' | 'Deny'): Promise<void> {
@@ -75,9 +24,9 @@ test('an MCP client added in Settings has its destructive call held for an answe
   const victim = path.join(scratch, 'build-output.txt')
   writeFileSync(victim, 'delete me')
   const settings = await openMcpSettings(orcaPage)
-  const token = await addClient(orcaPage, settings)
+  const token = await addMcpClient(orcaPage, settings, CLIENT_NAME, ['Files', 'Destructive'])
   await expect(settings.getByText(CLIENT_NAME)).toBeVisible()
-  const client = await connectOverStdio(electronApp, token)
+  const client = await connectMcpOverStdio(electronApp, token)
   const prompt = orcaPage.locator('[data-seal-mcp-approval-prompt]')
 
   try {

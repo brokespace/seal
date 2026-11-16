@@ -91,7 +91,7 @@ Anything that shows a session uses these and nothing else.
 | Open                    | `openAgentSession` (`open/open-agent-session.ts`)                      | Click previews, double-click keeps the tab.                        |
 | Confirmations           | `menu/live-session-dialog-store.ts`, `menu/LiveSessionDialogs.tsx`     | Stop and delete confirm once, from anywhere.                       |
 | Workspace/project badge | `links/LiveSessionsBadge.tsx`, `links/use-live-session-links.ts`       | Count and top status of a workspace's or project's sessions.       |
-| By-machine grouping     | `row/live-session-machine-listing.ts` (`buildActiveAgents`)            | Home and the Machines tab.                                         |
+| By-workspace grouping   | `row/LiveSessionWorkspaceGroups.tsx`                                   | Home and the project overview.                                     |
 | Workspace card          | `sidebar/workspace-card/surface/WorktreeCard.tsx`                      | Sidebar and board render the same card and the same context menu.  |
 
 ## Flows

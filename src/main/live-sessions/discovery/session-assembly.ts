@@ -10,7 +10,10 @@ import type { DiscoveredPane, DiscoveryOutput } from './discovery-output'
 import { parseAgentScreen } from './agent-screen'
 import { withAgentScreen } from './agent-screen-status'
 import type { TranscriptSummary } from './transcript-summary'
-import type { LiveTodo } from '../../../shared/live-sessions/live-session-activity'
+import {
+  backgroundLeftoverLabel,
+  type LiveTodo
+} from '../../../shared/live-sessions/live-session-activity'
 import type { ClaudeActivityState } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
 import { pendingCallStatus, turnStatus, withBackgroundWait } from './session-status'
@@ -265,8 +268,11 @@ export function assembleHostSessions(input: {
     if (status !== 'working' && status !== 'needs-permission' && statusDetail === 'Thinking') {
       statusDetail = null
     }
-    if (isRestingLiveSessionStatus(status) || status === 'done') {
+    if (status === 'done') {
       statusDetail = summary?.detail === 'Interrupted' ? 'Interrupted' : null
+    } else if (isRestingLiveSessionStatus(status)) {
+      statusDetail =
+        summary?.detail === 'Interrupted' ? 'Interrupted' : backgroundLeftoverLabel(activity)
     }
     const inputRoutes: LiveSessionInputRoute[] = []
     if (provider === 'codex' && process && summary && !unproven) {

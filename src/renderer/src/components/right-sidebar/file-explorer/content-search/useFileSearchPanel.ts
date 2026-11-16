@@ -34,9 +34,12 @@ export type FileSearchPanelModel = {
   focusQueryInput: () => void
 }
 
-export function useFileSearchPanel(explorerView: 'files' | 'search'): FileSearchPanelModel {
+export function useFileSearchPanel(
+  explorerView: 'files' | 'search',
+  enabled = true
+): FileSearchPanelModel {
   const activeWorktree = useActiveWorktree()
-  const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
+  const activeWorktreeId = useAppStore((s) => (enabled ? s.activeWorktreeId : null))
   const openFile = useAppStore((s) => s.openFile)
   const setPendingEditorReveal = useAppStore((s) => s.setPendingEditorReveal)
 
@@ -96,7 +99,7 @@ export function useFileSearchPanel(explorerView: 'files' | 'search'): FileSearch
     [activeWorktreeId, toggleFileSearchCollapsedFile]
   )
 
-  const worktreePath = activeWorktree?.path ?? null
+  const worktreePath = enabled ? (activeWorktree?.path ?? null) : null
   const { executeSearch, cancelPendingSearch } = useFileSearchRunner({
     activeWorktreeId,
     worktreePath,

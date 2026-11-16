@@ -12,6 +12,11 @@ import {
   liveSessionNotice,
   type LiveSessionNotice
 } from '../../shared/live-sessions/live-session-notices'
+import {
+  outsideSessionsMuted,
+  type LiveSessionSettings
+} from '../../shared/live-sessions/live-session-settings'
+import { getSessionSummariesHost } from '../session-summaries/session-summaries-instance'
 import { unrefTimer } from '../session-summaries/unref-timer'
 
 export type LiveSessionNotification = {
@@ -27,7 +32,7 @@ export type LiveSessionNotification = {
 export type ReplyAskVerdict = 'asks' | 'tells' | 'deciding'
 
 export type LiveSessionNotifierDeps = {
-  /** The user wants this kind of notice from this surface, and is not already looking at Seal. */
+  /** The user wants this kind of notice from this surface. */
   wanted: (kind: LiveSessionNotice, surface: AgentSessionSurface) => boolean
   show: (notification: LiveSessionNotification) => void
   /** Absent where nothing reads replies: every finished turn is then announced at once. */
@@ -56,17 +61,39 @@ export function liveSessionNotificationOwner(
 }
 
 /** A notice as the agent state the hook and structured lanes report, so one gate reads all three. */
-const NOTICE_AGENT_STATE: Record<LiveSessionNotice, AgentStatusState> = {
+export const LIVE_SESSION_NOTICE_AGENT_STATE: Record<LiveSessionNotice, AgentStatusState> = {
   'needs-attention': 'waiting',
   finished: 'done'
 }
 
+type NoticeSourceSettings = Parameters<typeof isNotificationSourceEnabled>[0]
+
 /** "Agent needs input" and "Agent task complete" decide for external sessions as they do in Seal. */
 export function isLiveSessionNoticeEnabled(
-  settings: Parameters<typeof isNotificationSourceEnabled>[0],
+  settings: NoticeSourceSettings,
   kind: LiveSessionNotice
 ): boolean {
-  return isNotificationSourceEnabled(settings, 'agent-task-complete', NOTICE_AGENT_STATE[kind])
+  return isNotificationSourceEnabled(
+    settings,
+    'agent-task-complete',
+    LIVE_SESSION_NOTICE_AGENT_STATE[kind]
+  )
+}
+
+type LiveSessionNoticeSettings = Pick<LiveSessionSettings, 'liveSessionsNotify'> & {
+  notifications: NoticeSourceSettings
+}
+
+/** What the desktop notification and the phone push both ask; being looked at is the desktop's alone. */
+export function isLiveSessionNoticeWanted(
+  settings: LiveSessionNoticeSettings,
+  kind: LiveSessionNotice,
+  surface: AgentSessionSurface
+): boolean {
+  return (
+    isLiveSessionNoticeEnabled(settings.notifications, kind) &&
+    !(surface.kind === 'external' && outsideSessionsMuted(settings))
+  )
 }
 
 function describe(
@@ -221,4 +248,20 @@ export class LiveSessionNotifier {
       this.deps.show(describe(session, kind, askedReply ?? null))
     }
   }
+}
+
+/** Announces a registry's sessions on this host: `show` gets each notice the settings let through, once. */
+export function installLiveSessionNotifier(
+  service: { subscribe(listener: (event: LiveSessionRegistryEvent) => void): unknown },
+  store: { getSettings(): LiveSessionNoticeSettings },
+  show: LiveSessionNotifierDeps['show']
+): void {
+  const notifier = new LiveSessionNotifier({
+    wanted: (kind, surface) => isLiveSessionNoticeWanted(store.getSettings(), kind, surface),
+    show,
+    // Installed after this, and only where replies are classified.
+    replyAsk: (session) => getSessionSummariesHost()?.replyAsk(session) ?? 'tells',
+    askedReply: (sessionId) => getSessionSummariesHost()?.askedReply(sessionId) ?? null
+  })
+  service.subscribe((event) => notifier.onEvent(event))
 }

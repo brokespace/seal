@@ -553,8 +553,8 @@ export async function buildMobileWebAppScripts(routes) {
     : esbuild.build(mobileWebAppBuildOptions(routes, sharedModules, anchoredLazyModules))
 }
 
-export async function bundleMobileWebApp({ appDir = defaultAppDir } = {}) {
-  const routes = await collectMobileWebAppRoutes(appDir)
+export async function bundleMobileWebApp({ appDir = defaultAppDir, nativeOnlyRouteDirs } = {}) {
+  const routes = await collectMobileWebAppRoutes(appDir, undefined, nativeOnlyRouteDirs)
   await assertRoutesCarryNoSynchronousExports(routes)
   const result = await buildMobileWebAppScripts(routes)
   assertNoZodLocaleTables(result.metafile)
@@ -615,6 +615,8 @@ export async function buildMobileWebAppBundle({
   appDir,
   outDir = defaultOutDir,
   pageRoutes = MOBILE_WEB_PAGE_ROUTES,
+  // A phone check of Seal's hub screens bundles the subtree the shipped page leaves to native.
+  nativeOnlyRouteDirs,
   // Only the shipped tree pays for brotli-11; tests and verify's scratch builds read raw assets.
   brotli = false
 } = {}) {
@@ -627,7 +629,7 @@ export async function buildMobileWebAppBundle({
   ] = await Promise.all([
     readDesktopVersion(),
     readProtocolWindow(),
-    bundleMobileWebApp({ appDir }),
+    bundleMobileWebApp({ appDir, nativeOnlyRouteDirs }),
     readLocaleCatalogs(),
     readFile(join(projectDir, 'src/shared/styles/scrollbar-sleek.css'), 'utf8').then((style) =>
       // The shared desktop stylesheet can be checked out as CRLF on Windows.
