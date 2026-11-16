@@ -104,21 +104,27 @@ function contextOf(
 /**
  * A tail with no response in it says nothing new: the last reading stands until a response or a
  * compaction replaces it. A new reading keeps what only records before its tail said: the model
- * its turn began under, and a window that model was already seen to exceed.
+ * its turn began under, and a window that model was already seen to exceed. `sized` is the last
+ * reading that had a size, which a compaction read on its own leaves `earlier` without.
  */
 export function contextAfter(
   read: NativeChatContextUsageSummary | null,
-  earlier: NativeChatContextUsageSummary | null
+  earlier: NativeChatContextUsageSummary | null,
+  sized: NativeChatContextUsageSummary | null = earlier
 ): NativeChatContextUsageSummary | null {
   if (!earlier || !read) {
     return read ?? earlier
   }
-  if (!isContextUsageMeasured(read)) {
-    return read.lastCompactedAt !== undefined ? read : earlier
-  }
   const model = read.model ?? earlier.model
-  const held = read.estimated && earlier.estimated && model === earlier.model
-  const windowTokens = held ? Math.max(read.windowTokens, earlier.windowTokens) : read.windowTokens
+  if (!isContextUsageMeasured(read)) {
+    if (read.lastCompactedAt === undefined) {
+      return earlier
+    }
+    return model === undefined ? read : { ...read, model }
+  }
+  const proof = isContextUsageMeasured(earlier) ? earlier : sized
+  const held = read.estimated && proof?.estimated === true && model === proof.model
+  const windowTokens = held ? Math.max(read.windowTokens, proof.windowTokens) : read.windowTokens
   return {
     ...read,
     ...(model === undefined ? {} : { model }),

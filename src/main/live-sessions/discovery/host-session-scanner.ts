@@ -62,6 +62,8 @@ export function scanLimitsFor(machine: LiveSessionMachine): HostScanLimits {
 
 type CachedTranscript = SummarizedTranscript & {
   head: string | null
+  /** The last context reading that had a size; a compaction read on its own has none. */
+  sizedContext: SummarizedTranscript['summary']['context']
   subagentFiles: Map<string, SubagentFileSummary>
 }
 
@@ -192,6 +194,8 @@ export class HostSessionScanner {
       cached.mtimeMs = file.mtimeMs
       return
     }
+    const tailIsWholeFile = file.size <= this.limits.tailBytes
+    const records = recordsOf(file.tail, !tailIsWholeFile)
     if (file.tail === null) {
       // Over this scan's read budget: keep the old summary until a later scan reads it.
       if (cached) {
@@ -201,9 +205,7 @@ export class HostSessionScanner {
     }
     const head = file.head ?? cached?.head ?? null
     const summarize = file.provider === 'claude' ? summarizeClaudeTranscript : summarizeCodexRollout
-    const tailIsWholeFile = file.size <= this.limits.tailBytes
     const summary = summarize({ path: file.path, head, tail: file.tail, tailIsWholeFile })
-    const records = recordsOf(file.tail, !tailIsWholeFile)
     // A file that shrank was rewritten: what the old bytes launched no longer holds.
     const grew = cached !== undefined && file.size > cached.size
     const claudeActivity = (grew ? cached.claudeActivity : undefined) ?? newClaudeActivityState()
@@ -213,18 +215,21 @@ export class HostSessionScanner {
     } else {
       foldCodexTerminals(codexTerminals, records)
     }
+    const sized = grew ? cached.sizedContext : null
+    const context = contextAfter(summary.context, grew ? cached.summary.context : null, sized)
     const next: CachedTranscript = {
       path: file.path,
       size: file.size,
       mtimeMs: file.mtimeMs,
       head,
+      sizedContext: context && context.windowTokens > 0 ? context : sized,
       summary: {
         ...summary,
         title: summary.title ?? cached?.summary.title ?? null,
         cwd: summary.cwd ?? cached?.summary.cwd ?? null,
         firstAt: summary.firstAt ?? cached?.summary.firstAt ?? null,
         lastMessage: summary.lastMessage ?? cached?.summary.lastMessage ?? null,
-        context: contextAfter(summary.context, grew ? cached.summary.context : null),
+        context,
         // A terminal's records can lie between the bytes a scan reads: once its, it stays its.
         headless: summary.headless && !(grew && !cached.summary.headless)
       },

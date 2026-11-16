@@ -158,6 +158,56 @@ it("lists how full a session's context is, and keeps that reading while the tail
   ])
 })
 
+// Claude names no window: one is told from a response that exceeds the default.
+it('keeps the model and the window it was seen to exceed across a compaction read on its own', async () => {
+  const path = `/home/dev/.claude/projects/-srv-api/${CLAUDE_ID}.jsonl`
+  const at = '2026-11-13T10:00:00.000Z'
+  const response = (inputTokens: number, timestamp: string) =>
+    line({
+      type: 'assistant',
+      timestamp,
+      message: { model: 'claude-opus-4-5', usage: { input_tokens: inputTokens } }
+    })
+  const text =
+    line({ type: 'user', timestamp: at, cwd: '/srv/api', message: { content: 'Refactor it' } }) +
+    response(250_000, at)
+  const now = Date.parse(at) + 20_000
+  let output: string[] = []
+  const scanOf = (size: number, tail: string, head: string | null) => {
+    output = [
+      `@@NOW ${now / 1000}`,
+      '@@PROC 4100 1 pts/3 claude',
+      '@@CWD 4100 /srv/api',
+      '@@PS',
+      `@@PIN 4100 open claude ${path}`,
+      `@@FILE claude ${size} ${Date.parse(at) / 1000} ${path}`,
+      ...(head === null ? [] : [`@@HEAD ${path} ${Buffer.from(head).toString('base64')}`]),
+      `@@TAIL ${path} ${Buffer.from(tail).toString('base64')}`,
+      '@@DONE'
+    ]
+  }
+  const host: LiveSessionHost = {
+    machine: { hostId: 'ssh-1', label: 'build-box', kind: 'remote' },
+    run: async () => output.join('\n')
+  }
+  const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
+  const context = async () => (await scanner.scan(now)).sessions[0].context
+
+  scanOf(Buffer.byteLength(text), text, text)
+  expect(await context()).toMatchObject({ usedTokens: 250_000, windowTokens: 1_000_000 })
+
+  const compacted = line({ type: 'user', isCompactSummary: true, timestamp: at })
+  scanOf(LOCAL_SCAN_LIMITS.tailBytes + 1000, `ut off"}\n${compacted}`, null)
+  expect(await context()).toMatchObject({ windowTokens: 0, model: 'claude-opus-4-5' })
+
+  scanOf(LOCAL_SCAN_LIMITS.tailBytes + 2000, `ut off"}\n${response(20_000, at)}`, null)
+  expect(await context()).toMatchObject({
+    usedTokens: 20_000,
+    windowTokens: 1_000_000,
+    percentage: 2
+  })
+})
+
 // Nothing names a Codex's rollout as its own before its first prompt: only its folder does.
 it('keeps a rollout apart from a Codex started in its folder after its own Codex exited', async () => {
   const path = `/home/dev/.codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-${CODEX_ID}.jsonl`
