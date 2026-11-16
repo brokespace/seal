@@ -681,6 +681,7 @@
           "options": "Session options",
           "label": "Agent sessions",
           "finished": "Recently finished · {{count}}",
+          "hiddenByFilters": "{{count}} hidden by filters",
           "statusAttention": "Needs you"
         }
       },

@@ -14,6 +14,7 @@ import { liveSessionRowOpenMode } from '../menu/live-session-menu-effects'
 import { openAgentSession } from '../open/open-agent-session'
 import { LiveSessionRow, type LiveSessionRowProps } from '../row/LiveSessionRow'
 import { useLiveSessionRowState } from '../row/use-live-session-row-state'
+import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { pickSidebarSessionRow } from './session-row-picking'
 import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from '@/components/sidebar/workspace-actions/context-menu/worktree-context-menu-policy'
 import { useSidebarSessionFilters } from './sidebar-session-filter-store'
@@ -119,6 +120,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
     top === null
       ? t('auto.components.live-sessions.sessionRows.label', 'Agent sessions')
       : liveSessionsCountLabel(t, view.running.length, top)
+  const hiddenTop = topLiveSessionStatus(view.hidden)
   return (
     <div
       role="group"
@@ -156,6 +158,23 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
           </button>
           {props.finishedOpen ? view.finished.map(row) : null}
         </>
+      ) : null}
+      {hiddenTop !== null ? (
+        // What the card's badge kept saying while a filter narrowed the list: how many run here and the most urgent of them.
+        <p
+          data-workspace-sessions-hidden
+          title={liveSessionsCountLabel(t, view.hidden.length, hiddenTop)}
+          className="flex h-5 min-w-0 items-center gap-1.5 px-1.5 text-2xs leading-none text-muted-foreground"
+        >
+          <LiveSessionStatusDot status={hiddenTop} />
+          <span className="min-w-0 truncate">
+            {t(
+              'auto.components.live-sessions.sessionRows.hiddenByFilters',
+              '{{count}} hidden by filters',
+              { count: view.hidden.length }
+            )}
+          </span>
+        </p>
       ) : null}
     </div>
   )
@@ -206,7 +225,7 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
     () => toggleCollapsedGroup(finishedKey),
     [toggleCollapsedGroup, finishedKey]
   )
-  if (view.running.length === 0 && view.finished.length === 0) {
+  if (view.running.length === 0 && view.finished.length === 0 && view.hidden.length === 0) {
     return null
   }
   return (

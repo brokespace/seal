@@ -5,10 +5,11 @@ import type {
 } from '../../../../../shared/live-sessions/live-session-types'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-session.test-fixture'
 import { WorkspaceSessionRowList, type WorkspaceSessionRowState } from './WorkspaceSessionRows'
+import type { SidebarSessionFilters } from './sidebar-session-filter-store'
 import { buildWorkspaceSessionRows } from './workspace-session-rows-model'
 
 const MIN = 60_000
-const NO_FILTERS = { machine: null, status: null }
+const NO_FILTERS: SidebarSessionFilters = { machine: null, status: null }
 const SERVER = { hostId: 'gpu-box', label: 'gpu-box', kind: 'remote' as const }
 
 const RUNNING_STATUSES: readonly { status: LiveSessionStatus; title: string; summary: string }[] = [
@@ -121,10 +122,12 @@ function rowState(
 
 function CardRows({
   sessions,
+  filters = NO_FILTERS,
   finishedOpen = false,
   picked = null
 }: {
   sessions: readonly LiveSession[]
+  filters?: SidebarSessionFilters
   finishedOpen?: boolean
   picked?: ReadonlySet<string> | null
 }): React.JSX.Element {
@@ -133,7 +136,7 @@ function CardRows({
       <span className="text-[13px] leading-5 font-medium">checkout-flow</span>
       <WorkspaceSessionRowList
         worktreeId="workspace-1"
-        view={buildWorkspaceSessionRows(sessions, NO_FILTERS, SAMPLE_NOW)}
+        view={buildWorkspaceSessionRows(sessions, filters, SAMPLE_NOW)}
         finishedOpen={finishedOpen}
         rowState={(session) => rowState(session, picked)}
         now={SAMPLE_NOW}
@@ -174,4 +177,11 @@ export const finishedOpen = defineFixture({
 export const selecting = defineFixture({
   width: 300,
   render: () => <CardRows sessions={MARKED} picked={new Set(['unread', 'remote'])} />
+})
+
+export const hiddenByFilters = defineFixture({
+  width: 300,
+  render: () => (
+    <CardRows sessions={statusSessions(true)} filters={{ machine: null, status: 'attention' }} />
+  )
 })
