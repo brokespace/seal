@@ -8,7 +8,9 @@ import { LiveSessionJsonStore } from '../live-sessions/live-session-json-store'
 /** Neurons per 1,000 tokens, from Workers AI's pricing table. */
 const RATES: Record<string, { input: number; output: number }> = {
   [CLOUDFLARE_AI_DEFAULT_MODEL]: { input: 5.5, output: 36.4 },
-  [CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL]: { input: 9.091, output: 27.273 }
+  [CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL]: { input: 9.091, output: 27.273 },
+  // The judge: $0.24 per million input tokens at $0.011 per thousand neurons; its answers are free.
+  '@cf/cloudflare/clef': { input: 21.818, output: 0 }
 }
 /** A model with no known rate is counted at the dearer of each side. */
 const UNKNOWN_RATE = { input: 9.091, output: 36.4 }
@@ -45,16 +47,31 @@ function isBudgetDay(value: unknown): value is BudgetDay {
   )
 }
 
+/** What a request the provider counted the tokens of cost; a model with no known rate is counted dear. */
+export function recapNeuronsForTokens(
+  model: string,
+  inputTokens: number,
+  outputTokens: number
+): number {
+  const rate = RATES[model] ?? UNKNOWN_RATE
+  return (inputTokens / 1000) * rate.input + (outputTokens / 1000) * rate.output
+}
+
+/** A rough token count for text the provider did not count. */
+export function estimateRecapTokens(chars: number): number {
+  return chars / CHARS_PER_TOKEN
+}
+
 export function estimateRecapNeurons(
   model: string,
   request: UtilityModelRequest,
   reply: string
 ): number {
-  const rate = RATES[model] ?? UNKNOWN_RATE
   const inputChars = request.messages.reduce((sum, message) => sum + message.content.length, 0)
-  return (
-    (inputChars / CHARS_PER_TOKEN / 1000) * rate.input +
-    (reply.length / CHARS_PER_TOKEN / 1000) * rate.output
+  return recapNeuronsForTokens(
+    model,
+    estimateRecapTokens(inputChars),
+    estimateRecapTokens(reply.length)
   )
 }
 

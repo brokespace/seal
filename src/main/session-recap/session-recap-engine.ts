@@ -11,6 +11,7 @@ import {
   type SessionRecapBudget
 } from './session-recap-budget'
 import { parseRecapDelta, type RecapDeltaResult } from './session-recap-delta'
+import type { RecapRequestsStep } from './session-recap-judge'
 import {
   addRecapReferences,
   applyRecapDelta,
@@ -57,6 +58,8 @@ export type SessionRecapEngineDeps = {
   ) => Promise<{ text: string; model: string }>
   store: SessionRecapStore
   budget: SessionRecapBudget
+  /** Where each request stands, settled after the read step. Absent on a host with no judge. */
+  requests?: RecapRequestsStep
   /** The session's first prompt as the registry titles it, for a recap that starts later. */
   firstPrompt: (sessionId: string) => string | null
   onChange: (sessionId: string) => void
@@ -156,21 +159,25 @@ export class SessionRecapEngine {
       if (!base) {
         return 'empty'
       }
-      // Tool calls alone moved the transcript: only the cursor and the files touched change.
-      const next = addRecapReferences(
+      // Tool calls alone moved the transcript: the cursor and the files touched change, and so
+      // may where a request stands, since work is done with tools and a turn can end without a word.
+      const read = addRecapReferences(
         { ...base, coveredTo: reading.coveredTo },
         digest.references,
         this.now()
       )
-      const added = next.references.length !== base.references.length
-      if (added || next.coveredTo !== base.coveredTo) {
+      const next = await this.withRequests(sessionId, kind, base, read, reading.messages)
+      const changed =
+        next.references.length !== base.references.length ||
+        JSON.stringify(next.requests) !== JSON.stringify(base.requests)
+      if (changed || next.coveredTo !== base.coveredTo) {
         store.setRecap(
           sessionId,
-          added ? { ...next, updatedAt: this.now() } : next,
+          changed ? { ...next, updatedAt: this.now() } : next,
           stored?.marks ?? {}
         )
       }
-      return added ? 'updated' : 'current'
+      return changed ? 'updated' : 'current'
     }
     if (digest.entries.reduce((sum, entry) => sum + entry.text.length, 0) < minProseChars) {
       return 'current'
@@ -205,13 +212,20 @@ export class SessionRecapEngine {
     const firstKeptOffset = reading.messages.find(
       (message) => message.id === firstKept
     )?.transcriptOffset
-    const next: SessionRecap = {
+    const read: SessionRecap = {
       ...addRecapReferences(recap, digest.references, this.now()),
       coveredFrom: base ? base.coveredFrom : (firstKeptOffset ?? reading.coveredFrom),
       coveredTo: reading.coveredTo,
       updatedAt: this.now(),
       degraded: degraded ? true : undefined
     }
+    const next = await this.withRequests(
+      sessionId,
+      kind,
+      stored?.recap ?? null,
+      read,
+      reading.messages
+    )
     store.setRecap(
       sessionId,
       next,
@@ -219,6 +233,29 @@ export class SessionRecapEngine {
     )
     this.failures.delete(sessionId)
     return 'updated'
+  }
+
+  /** The recap with its requests settled; one made without the step keeps none. */
+  private async withRequests(
+    sessionId: string,
+    kind: RecapPassKind,
+    before: SessionRecap | null,
+    recap: SessionRecap,
+    messages: readonly NativeChatMessage[]
+  ): Promise<SessionRecap> {
+    if (!this.deps.requests) {
+      return recap
+    }
+    const requests = await this.deps.requests({
+      sessionId,
+      kind,
+      before: before?.requests ?? [],
+      asked: recap.asked,
+      messages,
+      coveredTo: recap.coveredTo,
+      signal: this.abort.signal
+    })
+    return { ...recap, requests }
   }
 
   /** What this pass has to read: the transcript since the recap, or its recent end for a first one. */

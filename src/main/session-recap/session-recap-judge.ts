@@ -1,6 +1,7 @@
 // The judge contract: one request and the conversation after it go to one decision model, which
 // answers every question of the book with a probability. Code turns the answers into a verdict.
 import { createHash } from 'node:crypto'
+import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
 import type {
   RecapJudgeAnswers,
   RecapJudgeCriterion,
@@ -122,6 +123,8 @@ export type RecapRequestsPass = {
   before: readonly RecapRequest[]
   /** The `asked` items the read step left: each is one request, under the same id. */
   asked: readonly Pick<RecapRequest, 'id' | 'text' | 'messageId' | 'at'>[]
+  /** The messages this pass read, where a new request's own message is found. */
+  messages: readonly NativeChatMessage[]
   /** The transcript offset this pass read to. */
   coveredTo: number
   signal: AbortSignal

@@ -72,6 +72,8 @@ export type RecapRequest = {
   id: string
   text: string
   messageId: string | null
+  /** Where its message sits in the transcript: reading for the judge starts there. */
+  offset?: number
   at: number
   status: RecapRequestStatus
   statusAt: number

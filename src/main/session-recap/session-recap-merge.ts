@@ -44,7 +44,8 @@ const TITLE_NOISE = new Set([
   'task'
 ])
 
-function sameText(a: string, b: string): boolean {
+/** Two recap texts say the same thing once case and punctuation are gone. */
+export function sameRecapText(a: string, b: string): boolean {
   const plain = (text: string): string =>
     text
       .toLowerCase()
@@ -83,7 +84,7 @@ export function acceptsRecapTitle(
   const had = titleWords(current)
   const next = titleWords(proposed)
   if (had.size === 0 || next.size === 0) {
-    return !sameText(current, proposed) && had.size === 0
+    return !sameRecapText(current, proposed) && had.size === 0
   }
   const shared = [...next].filter((word) => had.has(word)).length
   return shared / Math.min(had.size, next.size) < 0.5
@@ -139,7 +140,7 @@ export function applyRecapDelta(
           }
         })
       for (const added of delta.add[section]) {
-        if (kept.some((item) => sameText(item.text, added.text))) {
+        if (kept.some((item) => sameRecapText(item.text, added.text))) {
           continue
         }
         kept.push({
@@ -223,7 +224,7 @@ export function carryRecapMarks(
   const next: RecapMarks = {}
   for (const section of RECAP_SECTIONS) {
     for (const item of after[section]) {
-      const twin = before?.[section].find((old) => sameText(old.text, item.text))
+      const twin = before?.[section].find((old) => sameRecapText(old.text, item.text))
       const mark = marks[item.id] ?? (twin ? marks[twin.id] : undefined)
       if (mark) {
         next[item.id] = mark

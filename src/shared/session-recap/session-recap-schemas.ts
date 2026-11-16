@@ -40,6 +40,7 @@ const recapRequestSchema: z.ZodType<RecapRequest> = z.object({
   id: z.string().min(1),
   text: z.string(),
   messageId: z.string().nullable(),
+  offset: z.number().nonnegative().optional(),
   at: Timestamp,
   status: z.enum(RECAP_REQUEST_STATUSES),
   statusAt: Timestamp,
