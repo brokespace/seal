@@ -4,6 +4,7 @@ import type {
   LiveMessage,
   LiveSession,
   LiveSessionRegistrySnapshot,
+  LiveSessionStatus,
   LiveTranscriptPage
 } from '../../../shared/live-sessions/live-session-types'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
@@ -24,7 +25,7 @@ export type HomeChatSessionSummary = {
   project: string | null
   cwd: string | null
   title: string | null
-  status: string
+  status: LiveSessionStatus
   statusDetail: string | null
   lastActivityAt: number
   alive: boolean

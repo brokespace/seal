@@ -66,7 +66,11 @@ function SessionTab({
       {session ? (
         <>
           <AgentIcon agent={session.provider} size={13} />
-          <AgentStateDot state={liveSessionDotState(session.status)} title={null} />
+          <AgentStateDot
+            state={liveSessionDotState(session.status)}
+            label={liveSessionStatusText(session)}
+            title={null}
+          />
         </>
       ) : null}
       <span className={cn('min-w-0 truncate', preview && 'italic')}>{title}</span>

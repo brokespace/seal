@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { parseExecutionHostId } from '../../../shared/execution-host'
 import type { HomeChatOpenView } from '../../../shared/home-chat/home-chat-types'
+import { isActiveLiveSession } from '../../../shared/live-sessions/live-session-status'
 import { agentTerminalHandle, parseOrcaJson } from '../delegation/home-chat-orca-json'
 import { LOCAL_MACHINE_ID, type HomeChatMachineInfo } from '../machines/home-chat-machine-types'
 import type { HomeChatSessionSummary } from '../seal/home-chat-session-access'
@@ -60,7 +61,7 @@ async function listSessions(
   const shown = sessions.filter(
     (session) =>
       (!machineId || session.machineId === machineId) &&
-      (input.include_done === true || session.status !== 'done')
+      (input.include_done === true || isActiveLiveSession(session))
   )
   const notes = errors.length
     ? `\n\nMachines that could not be scanned:\n- ${errors.join('\n- ')}`

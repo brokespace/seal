@@ -10,6 +10,8 @@ import {
   runningSubagents
 } from '../../../../shared/live-sessions/live-session-activity'
 
+import { isWaitingOnBackgroundWork } from '../../../../shared/live-sessions/live-session-status'
+
 export { liveSessionDotState } from '../../../../shared/live-sessions/live-session-status'
 
 export function liveSessionStatusLabel(status: LiveSessionStatus): string {
@@ -76,7 +78,7 @@ export function liveSessionWaitLabel(session: Pick<LiveSession, 'activity'>): st
 
 /** The status in words, naming what a waiting session waits on. */
 export function liveSessionStatusText(session: Pick<LiveSession, 'status' | 'activity'>): string {
-  const waiting = session.status === 'waiting-subagent' || session.status === 'waiting-task'
+  const waiting = isWaitingOnBackgroundWork(session.status)
   return (waiting ? liveSessionWaitLabel(session) : null) ?? liveSessionStatusLabel(session.status)
 }
 

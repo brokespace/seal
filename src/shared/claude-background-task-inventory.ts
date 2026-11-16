@@ -24,6 +24,11 @@ const CLAUDE_TERMINAL_BACKGROUND_TASK_STATUSES = new Set([
   'timed_out'
 ])
 
+/** A status Claude gives a background task that is over; any other, or none, is a task still going. */
+export function isClaudeTerminalBackgroundTaskStatus(status: string): boolean {
+  return CLAUDE_TERMINAL_BACKGROUND_TASK_STATUSES.has(status)
+}
+
 /** Agent entries from Stop/SubagentStop background_tasks; non-agent tasks do not become rows. */
 export type ClaudeBackgroundAgentTask = {
   id: string

@@ -1,7 +1,7 @@
+import { isSettledLiveSessionStatus } from '../../shared/live-sessions/live-session-status'
 import type {
   LiveSession,
-  LiveSessionRegistryEvent,
-  LiveSessionStatus
+  LiveSessionRegistryEvent
 } from '../../shared/live-sessions/live-session-types'
 import type {
   SessionSummariesListResult,
@@ -56,17 +56,8 @@ export function liveSummaryKey(sessionId: string): string {
   return `live:${sessionId}`
 }
 
-/** Stopped for its user, or parked on a subagent or background task: the moments a summary describes. */
-const SUMMARIZED_STATUSES: ReadonlySet<LiveSessionStatus> = new Set([
-  'waiting-input',
-  'your-turn',
-  'idle',
-  'waiting-subagent',
-  'waiting-task'
-])
-
 function stopped(session: LiveSession): boolean {
-  return SUMMARIZED_STATUSES.has(session.status)
+  return isSettledLiveSessionStatus(session.status)
 }
 
 function sealPaneKey(session: LiveSession): string | null {
