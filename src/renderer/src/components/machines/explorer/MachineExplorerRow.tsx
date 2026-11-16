@@ -10,13 +10,19 @@ import type { ExplorerRow } from './machine-explorer-rows'
 export const MACHINE_EXPLORER_ROW_HEIGHT = 26
 const INDENT_PX = 14
 
+/** Where a row's content starts at its depth in the tree, for lines a caller draws itself. */
+export function machineExplorerRowPadding(depth: number): React.CSSProperties {
+  return { paddingLeft: 8 + depth * INDENT_PX }
+}
+
 export type MachineExplorerRowHandlers = {
   onClick: (row: Extract<ExplorerRow, { type: 'entry' }>, event: React.MouseEvent) => void
-  onDoubleClick: (row: Extract<ExplorerRow, { type: 'entry' }>) => void
-  onContextMenu: (row: Extract<ExplorerRow, { type: 'entry' }>) => void
-  onMouseDown: (row: Extract<ExplorerRow, { type: 'entry' }>, event: React.MouseEvent) => void
-  onDragStart: (row: Extract<ExplorerRow, { type: 'entry' }>, event: React.DragEvent) => void
-  canDragOut: (row: Extract<ExplorerRow, { type: 'entry' }>) => boolean
+  /** A tree that only shows files leaves out the handlers from here down to `canDragOut`. */
+  onDoubleClick?: (row: Extract<ExplorerRow, { type: 'entry' }>) => void
+  onContextMenu?: (row: Extract<ExplorerRow, { type: 'entry' }>) => void
+  onMouseDown?: (row: Extract<ExplorerRow, { type: 'entry' }>, event: React.MouseEvent) => void
+  onDragStart?: (row: Extract<ExplorerRow, { type: 'entry' }>, event: React.DragEvent) => void
+  canDragOut?: (row: Extract<ExplorerRow, { type: 'entry' }>) => boolean
   onRetry: (path: string) => void
   onLoadMore: (path: string) => void
 }
@@ -46,7 +52,7 @@ export const MachineExplorerRow = React.memo(function MachineExplorerRow({
   handlers: MachineExplorerRowHandlers
 }): React.JSX.Element {
   const t = useTranslate()
-  const padding = { paddingLeft: 8 + row.depth * INDENT_PX }
+  const padding = machineExplorerRowPadding(row.depth)
   if (row.type === 'loading') {
     return (
       <div className="flex h-full items-center gap-2 text-xs text-muted-foreground" style={padding}>
@@ -102,7 +108,7 @@ export const MachineExplorerRow = React.memo(function MachineExplorerRow({
       aria-selected={selected}
       aria-expanded={isDir ? row.expanded : undefined}
       data-machine-drop-dir={isDir ? row.path : (machinePathDirname(row.path) ?? row.path)}
-      draggable={handlers.canDragOut(row)}
+      draggable={handlers.canDragOut?.(row) ?? false}
       className={cn(
         'flex h-full min-w-0 cursor-default items-center gap-1.5 pr-3 text-[13px] select-none',
         selected ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50',
@@ -111,10 +117,10 @@ export const MachineExplorerRow = React.memo(function MachineExplorerRow({
       style={padding}
       title={row.path}
       onClick={(event) => handlers.onClick(row, event)}
-      onDoubleClick={() => handlers.onDoubleClick(row)}
-      onContextMenu={() => handlers.onContextMenu(row)}
-      onMouseDown={(event) => handlers.onMouseDown(row, event)}
-      onDragStart={(event) => handlers.onDragStart(row, event)}
+      onDoubleClick={() => handlers.onDoubleClick?.(row)}
+      onContextMenu={() => handlers.onContextMenu?.(row)}
+      onMouseDown={(event) => handlers.onMouseDown?.(row, event)}
+      onDragStart={(event) => handlers.onDragStart?.(row, event)}
     >
       <ChevronRight
         className={cn(
