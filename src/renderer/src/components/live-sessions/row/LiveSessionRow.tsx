@@ -32,6 +32,9 @@ import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
 
+/** Row menus open anywhere: no row previews beside a menu, whichever row it belongs to. */
+let openRowMenus = 0
+
 export type LiveSessionRowProps = {
   session: LiveSession
   /** The project or worktree it runs in, when Seal knows one. */
@@ -96,20 +99,35 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const [preview, setPreview] = React.useState(false)
   const row = React.useRef<HTMLDivElement>(null)
   const openMenus = React.useRef(0)
-  // Why held past the menu's close: the closing menu hands focus back to the row, and a hover timer
-  // started before it opened still fires; either would open the preview with the pointer elsewhere.
+  // Why held past the menu's close: the closing menu hands focus back to the row, which is not
+  // the user coming to it. The pointer entering the row, or focus leaving it, ends the hold.
   const previewHeld = React.useRef(false)
+  // Focus that arrived by the keyboard asks for the preview; a click's focus does not.
+  const focusAsksPreview = React.useRef(false)
   const onMenuOpenChange = (open: boolean): void => {
-    openMenus.current = Math.max(0, openMenus.current + (open ? 1 : -1))
+    const change = open ? 1 : -1
+    openMenus.current = Math.max(0, openMenus.current + change)
+    openRowMenus = Math.max(0, openRowMenus + change)
     previewHeld.current = true
     setPreview(false)
   }
-  // The pointer coming to the row, or a key pressed on it, asks for the preview afresh.
+  React.useEffect(
+    () => () => {
+      openRowMenus = Math.max(0, openRowMenus - openMenus.current)
+    },
+    []
+  )
   const releasePreview = (): void => {
     if (openMenus.current === 0) {
       previewHeld.current = false
     }
   }
+  // Why asked again when the hover card wants to open: its timers outlive the hover or focus that
+  // started them, so the row must still be pointed at or focused by the keyboard at that moment.
+  const mayPreview = (): boolean =>
+    !previewHeld.current &&
+    openRowMenus === 0 &&
+    (row.current?.matches(':hover') === true || focusAsksPreview.current)
   const dropdownDismissedOutside = React.useRef(false)
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
@@ -137,7 +155,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
         openDelay={500}
         closeDelay={80}
         open={preview}
-        onOpenChange={(open) => setPreview(open && !previewHeld.current)}
+        onOpenChange={(open) => setPreview(open && mayPreview())}
       >
         <ContextMenuTrigger asChild>
           <HoverCardTrigger asChild>
@@ -160,11 +178,22 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
               }}
               onDoubleClick={(event) => props.onOpen(session, event)}
               onPointerEnter={releasePreview}
+              onFocus={(event) => {
+                if (event.target === event.currentTarget) {
+                  focusAsksPreview.current =
+                    !previewHeld.current && event.currentTarget.matches(':focus-visible')
+                }
+              }}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  focusAsksPreview.current = false
+                  releasePreview()
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) {
                   return
                 }
-                releasePreview()
                 if (event.key === 'Enter') {
                   event.preventDefault()
                   props.onOpen(session, event)
@@ -316,6 +345,8 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 <DropdownMenuContent
                   align="start"
                   onClick={(event) => event.stopPropagation()}
+                  // Why: React carries a press on an item up to the row, which would count as a press on the row.
+                  onPointerDown={(event) => event.stopPropagation()}
                   onInteractOutside={() => {
                     dropdownDismissedOutside.current = true
                   }}
