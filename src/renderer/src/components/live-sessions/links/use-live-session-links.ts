@@ -13,7 +13,7 @@ import { useLiveSessions } from '../live-session-registry-store'
 import { liveSessionExecutionHost } from '../take-over/live-session-take-over'
 import {
   linkLiveSessions,
-  liveSessionBadges,
+  projectSessionBadges,
   type LinkableWorktree,
   type LiveSessionLink,
   type LiveSessionsBadge
@@ -21,7 +21,6 @@ import {
 
 export type LiveSessionLinks = {
   links: ReadonlyMap<string, LiveSessionLink>
-  byWorktree: ReadonlyMap<string, LiveSessionsBadge>
   byProject: ReadonlyMap<string, LiveSessionsBadge>
 }
 
@@ -78,11 +77,11 @@ function linksFor(inputs: Inputs): LiveSessionLinks {
     extendWorktreeIdByTabId(new Map(), { tabsByWorktree, unifiedTabsByWorktree }),
     (session) => liveSessionExecutionHost(session.machine)
   )
-  memo = { inputs, value: { links, ...liveSessionBadges(sessions, links) } }
+  memo = { inputs, value: { links, byProject: projectSessionBadges(sessions, links) } }
   return memo.value
 }
 
-/** Which workspace each live session runs in, and each workspace's and project's session badge. */
+/** Which workspace each live session runs in, and each project's session badge. */
 export function useLiveSessionLinks(): LiveSessionLinks {
   const { sessions } = useLiveSessions()
   const repos = useAppStore((state) => state.repos)

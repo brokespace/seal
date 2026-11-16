@@ -48,7 +48,7 @@ const SESSIONS = [
 ]
 
 function Summaries(): React.JSX.Element {
-  const view = buildActiveAgents(SESSIONS, null, new Map(), SAMPLE_NOW)
+  const view = buildActiveAgents(SESSIONS, SAMPLE_NOW)
   return (
     <div
       role="listbox"

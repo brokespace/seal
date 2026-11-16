@@ -1823,6 +1823,22 @@ body[data-split-view-drag] [data-tab-hover-card] {
   --border: color-mix(in oklab, var(--worktree-sidebar-foreground) 5%, var(--worktree-sidebar));
 }
 
+/* Seal: a sleeping workspace's agent sessions may still run or wait on the user, so their rows keep the card's undimmed text. */
+:has(> [data-worktree-sleeping-dim]) {
+  --worktree-undimmed-foreground: var(--foreground);
+  --worktree-undimmed-muted-foreground: var(--muted-foreground);
+  --worktree-undimmed-muted: var(--muted);
+  --worktree-undimmed-border: var(--border);
+}
+
+[data-worktree-sleeping-dim] [data-workspace-session-rows] {
+  color: var(--worktree-sidebar-foreground);
+  --foreground: var(--worktree-undimmed-foreground);
+  --muted-foreground: var(--worktree-undimmed-muted-foreground);
+  --muted: var(--worktree-undimmed-muted);
+  --border: var(--worktree-undimmed-border);
+}
+
 .worktree-agent-row-hover:hover {
   background: var(--worktree-sidebar-accent);
 }

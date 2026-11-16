@@ -31,6 +31,10 @@ import {
 import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
 import { LiveSessionPreview } from './LiveSessionPreview'
+import {
+  LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS,
+  useLiveSessionRowPreview
+} from './use-live-session-row-preview'
 import { isSidebarPointerDragBlocked } from '@/components/sidebar/worktree-list/drag/worktree-sidebar-pointer-drag-dom'
 import { startItemPointerDrag } from '@/components/split-view/item-pointer-drag'
 import { ItemSurfaceShownContext } from '@/components/split-view/item-surface-shown-context'
@@ -41,6 +45,10 @@ export type LiveSessionRowProps = {
   session: LiveSession
   /** The project or worktree it runs in, when Seal knows one. */
   workspaceName: string | null
+  /** Off under the workspace itself, where the place would repeat the card above the row. */
+  showPlace?: boolean
+  /** The machine it runs on, where the list around the row does not already say. */
+  machine?: string | null
   account: string | null
   unread: boolean
   /** Its chat is the one showing in the main area. */
@@ -104,12 +112,19 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   const { session, picked, now } = props
   const menu = props.menu ?? defaultMenu
   const tone = TONES[props.tone ?? 'sidebar']
-  const [preview, setPreview] = React.useState(false)
+  const {
+    open: previewOpen,
+    row,
+    card: previewCard,
+    onCardOpenChange,
+    onMenuOpenChange,
+    rowHandlers
+  } = useLiveSessionRowPreview()
+  const dropdownDismissedOutside = React.useRef(false)
   const shown = React.useContext(ItemSurfaceShownContext)
-  const [menuOpen, setMenuOpen] = React.useState(false)
   // The pointer never left a row that went behind a tab; it must not come back previewed.
-  if (!shown && preview) {
-    setPreview(false)
+  if (!shown && previewOpen) {
+    onCardOpenChange(false)
   }
   const group = liveSessionStatusGroup(session.status)
   const subagents = session.activity?.subagents.length ?? 0
@@ -117,7 +132,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
   // A busy session shows how long it has run; a quiet one, how long it has been quiet.
   const since =
     group === 'working' ? (session.startedAt ?? session.lastActivityAt) : session.lastActivityAt
-  const place = props.workspaceName ?? session.project
+  const place = props.showPlace === false ? null : (props.workspaceName ?? session.project)
   const summary = liveSessionSummaryView(session)
   const card = props.layout === 'card'
   // What it runs, asks for or failed on. A wait already names what it waits on.
@@ -125,19 +140,23 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
     card && group !== 'idle' && !isWaitingOnBackgroundWork(session.status)
       ? (session.statusDetail ?? session.permission?.question)
       : null
+  const after = [detail, place]
+    .filter(Boolean)
+    .map((part) => `\u00b7 ${part}`)
+    .join(' ')
 
   return (
-    <ContextMenu onOpenChange={setMenuOpen}>
+    <ContextMenu onOpenChange={onMenuOpenChange}>
       {/* A preview over an open menu would take the menu's Escape. */}
       <HoverCard
-        openDelay={500}
-        closeDelay={80}
-        open={preview && !menuOpen && shown}
-        onOpenChange={setPreview}
+        closeDelay={LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS}
+        open={previewOpen && shown}
+        onOpenChange={onCardOpenChange}
       >
         <ContextMenuTrigger asChild>
           <HoverCardTrigger asChild>
             <div
+              ref={row}
               role="option"
               tabIndex={props.tabStop ? 0 : -1}
               aria-selected={picked ?? props.current}
@@ -146,7 +165,9 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
               data-status-group={group}
               data-current={props.current ? 'true' : undefined}
               data-highlighted={props.highlighted ? 'true' : undefined}
+              {...rowHandlers}
               onPointerDown={(event) => {
+                rowHandlers.onPointerDown(event)
                 // Dragged onto the main area, a session lands in a split-view pane.
                 if (!isSidebarPointerDragBlocked(event.target, event.currentTarget)) {
                   startItemPointerDrag(event, event.currentTarget, {
@@ -176,7 +197,8 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                 }
               }}
               className={cn(
-                'group/agent relative flex min-w-0 cursor-pointer items-start rounded-md pr-1 outline-none',
+                // select-none: dragging a row must not select its title.
+                'group/agent relative flex min-w-0 cursor-pointer items-start rounded-md pr-1 outline-none select-none',
                 card ? 'gap-2 py-1.5 pl-2' : 'gap-1.5 py-1 pl-1.5',
                 'focus-visible:ring-2 focus-visible:ring-inset',
                 tone.row,
@@ -241,14 +263,10 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <LiveSessionStatusPill
                     session={session}
                     dot={!card}
-                    className={cn('max-w-[70%] shrink-0', card && 'font-medium')}
+                    // With nothing after it the label takes the line; under about 260 px the longest ones still end in an ellipsis.
+                    className={cn(after ? 'max-w-[70%] shrink-0' : 'shrink', card && 'font-medium')}
                   />
-                  <span className="min-w-0 flex-1 truncate">
-                    {[detail, place]
-                      .filter(Boolean)
-                      .map((part) => `\u00b7 ${part}`)
-                      .join(' ')}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate">{after}</span>
                   {/* The card's status says whether it waits on the user; counts beside it only repeat that. */}
                   {card ? null : <SessionRecapBadge brief={session.recap} />}
                   {subagents > 0 ? (
@@ -266,6 +284,18 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                     >
                       <Bot className="size-3" />
                       {subagents}
+                    </span>
+                  ) : null}
+                  {props.machine ? (
+                    <span
+                      data-live-session-machine
+                      className={cn(
+                        'max-w-20 shrink-0 truncate rounded-sm border px-1 leading-[14px]',
+                        tone.account
+                      )}
+                      title={t('auto.components.live-sessions.sessionRows.machine', 'Machine')}
+                    >
+                      {props.machine}
                     </span>
                   ) : null}
                   {props.account ? (
@@ -286,7 +316,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   <SessionSummaryLine summary={summary} tooltip={false} className="text-2xs" />
                 ) : null}
               </span>
-              <DropdownMenu onOpenChange={setMenuOpen}>
+              <DropdownMenu onOpenChange={onMenuOpenChange}>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
@@ -306,7 +336,23 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                     <Ellipsis className="size-3.5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" onClick={(event) => event.stopPropagation()}>
+                <DropdownMenuContent
+                  align="start"
+                  onClick={(event) => event.stopPropagation()}
+                  // Why: React carries a press on an item up to the row, which would count as a press on the row.
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onInteractOutside={() => {
+                    dropdownDismissedOutside.current = true
+                  }}
+                  onCloseAutoFocus={(event) => {
+                    // Why the row: its button is hidden once the pointer has left, so focus would fall out of the list.
+                    if (!dropdownDismissedOutside.current) {
+                      event.preventDefault()
+                      row.current?.focus({ preventScroll: true })
+                    }
+                    dropdownDismissedOutside.current = false
+                  }}
+                >
                   {menu(session, DROPDOWN_MENU_KIT)}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -315,7 +361,13 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
         </ContextMenuTrigger>
         {/* Not closed but gone: a preview that closes behind a tab never finishes closing. */}
         {shown ? (
-          <HoverCardContent side="right" align="start" className="w-72">
+          <HoverCardContent
+            ref={previewCard}
+            side="right"
+            align="start"
+            // A wide sidebar in a narrow window leaves less than the card's width beside the row.
+            className="w-72 max-w-(--radix-hover-card-content-available-width)"
+          >
             <LiveSessionPreview session={session} workspaceName={props.workspaceName} />
           </HoverCardContent>
         ) : null}

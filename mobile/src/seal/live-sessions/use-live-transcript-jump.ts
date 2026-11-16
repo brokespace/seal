@@ -15,16 +15,18 @@ type Target = { messageId: string; pages: number; until: number }
 
 /**
  * Shows one message of a session's transcript at the top of the list, loading earlier pages until
- * it is there. Transcript messages lead the list's rows, so a message's place is its row.
+ * it is there. Pending messages sit among the list's rows, so `indexOf` says which row a message is.
  */
 export function useLiveTranscriptJump<Row>({
   list,
   atBottom,
-  transcript
+  transcript,
+  indexOf
 }: {
   list: RefObject<FlatList<Row> | null>
   atBottom: RefObject<boolean>
   transcript: Transcript
+  indexOf: (messageId: string) => number
 }): {
   jumpTo: (messageId: string) => void
   onScrollToIndexFailed: (info: { index: number; averageItemLength: number }) => void
@@ -41,7 +43,7 @@ export function useLiveTranscriptJump<Row>({
       target.current = null
       return
     }
-    const index = messages.findIndex((message) => message.id === wanted.messageId)
+    const index = indexOf(wanted.messageId)
     if (index !== -1) {
       target.current = null
       // Why: a reader sent to an older message must not be pulled back down by the next delta.

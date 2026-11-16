@@ -114,8 +114,8 @@ export function LiveSessionPaneView(props: LiveSessionPaneViewProps): React.JSX.
   const subagents = activity?.subagents ?? []
   const openSubagent = subagents.find((subagent) => subagent.id === openSubagentId) ?? null
   const pending = useMemo(
-    () => pendingRows(transcript.messages, props.messages),
-    [transcript.messages, props.messages]
+    () => pendingRows(transcript.messages, transcript.readTo, props.messages),
+    [transcript.messages, transcript.readTo, props.messages]
   )
   const toggle = (next: LiveSessionPanel) => props.onPanel(panel === next ? null : next)
   const onOpenSubagent = (id: string | null): void => {

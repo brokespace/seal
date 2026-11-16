@@ -2,7 +2,10 @@ import type { LiveSession } from '../../../shared/live-sessions/live-session-typ
 import type { DEFAULT_OUTBOX_TIMING, OutboxItem } from './live-message-outbox-types'
 import { matchDelivered, type UserText } from './transcript-user-texts'
 
-export type Confirmation = { item: OutboxItem; patch: Pick<OutboxItem, 'state' | 'error'> }
+export type Confirmation = {
+  item: OutboxItem
+  patch: Pick<OutboxItem, 'state' | 'error' | 'echoOffset'>
+}
 
 /** What the transcript says about one session's sent messages; anything it can't settle waits. */
 export function confirmSent(
@@ -16,7 +19,10 @@ export function confirmSent(
   const out: Confirmation[] = []
   for (const item of items) {
     if (delivered.has(item)) {
-      out.push({ item, patch: { state: 'delivered', error: null } })
+      out.push({
+        item,
+        patch: { state: 'delivered', error: null, echoOffset: delivered.get(item) }
+      })
       continue
     }
     const since = now - (item.sentAt ?? now)

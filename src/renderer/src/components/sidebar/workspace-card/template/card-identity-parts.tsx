@@ -28,7 +28,6 @@ import {
   WorktreeCardTitleStatus
 } from '../surface/worktree-card-title-status'
 import { cardElement } from './card-template-compiler'
-import { LiveSessionsBadge } from '@/components/live-sessions/links/LiveSessionsBadge'
 
 type Card = WorktreeCardController
 const part = cardElement<Card>
@@ -132,11 +131,6 @@ export const CARD_IDENTITY_PARTS = {
       card={card}
       hasHoverDetails={props.hasHoverDetails === true}
       directories={card.worktree.sparseDirectories}
-    />
-  )),
-  LiveSessionsBadge: part([], (_props, _children, card) => (
-    <LiveSessionsBadge
-      scope={{ kind: 'worktree', id: card.worktree.id, label: card.visibleCardTitle }}
     />
   )),
   DeleteQuickAction: part([], (_props, _children, card) => (

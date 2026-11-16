@@ -93,34 +93,39 @@ export function closeLiveSessionView(sessionId: string): void {
   }
 }
 
+/** Opens a session and, for `tab`, keeps it: in the grid every open is a preview until kept. */
+export function openLiveSessionKeepingTab(sessionId: string, mode: LiveSessionOpenMode): void {
+  openLiveSessionView(sessionId, mode)
+  if (mode === 'tab') {
+    keepSplitViewItem(
+      splitViewItemKey({
+        kind: 'session',
+        sessionId: liveSessionRegistryStore.currentId(sessionId)
+      })
+    )
+  }
+}
+
 /** "Open in new tab": a kept tab. In the grid it lands beside the focused pane's preview. */
 function openLiveSessionInNewTab(sessionId: string): void {
   const id = liveSessionRegistryStore.currentId(sessionId)
   const item = { kind: 'session', sessionId: id } as const
-  const key = splitViewItemKey(item)
   const grid = splitViewStore.getState()
-  if (grid.layout && findSplitViewPaneOfKey(grid, key) === null) {
+  if (grid.layout && findSplitViewPaneOfKey(grid, splitViewItemKey(item)) === null) {
     liveSessionMarksStore.reveal(id)
     openItemsInSplitView([item], 'center')
     return
   }
-  openLiveSessionView(id, 'tab')
-  keepSplitViewItem(key)
+  openLiveSessionKeepingTab(id, 'tab')
 }
 
-/** A click on a session's row, on any surface: a preview tab, kept on double-click. */
+/** How a session's row opens it, on any surface: a click previews, a double click or Enter keeps the tab. */
+export function liveSessionRowOpenMode(event?: { type: string }): LiveSessionOpenMode {
+  return event?.type === 'dblclick' || event?.type === 'keydown' ? 'tab' : 'preview'
+}
+
 export function openLiveSessionFromRow(session: LiveSession, event?: { type: string }): void {
-  const keep = event?.type === 'dblclick'
-  openLiveSessionView(session.id, keep ? 'tab' : 'preview')
-  if (keep) {
-    // In the grid every open is a preview; only the double-click asks to keep it.
-    keepSplitViewItem(
-      splitViewItemKey({
-        kind: 'session',
-        sessionId: liveSessionRegistryStore.currentId(session.id)
-      })
-    )
-  }
+  openLiveSessionKeepingTab(session.id, liveSessionRowOpenMode(event))
 }
 
 /**

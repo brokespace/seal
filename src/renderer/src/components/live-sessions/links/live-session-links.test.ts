@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { sampleLiveSession as session } from '../live-session.test-fixture'
-import { linkLiveSessions, liveSessionBadges, type LiveSessionLink } from './live-session-links'
+import { linkLiveSessions, projectSessionBadges, type LiveSessionLink } from './live-session-links'
 
 const BUILD_BOX = { hostId: 'ssh-1', label: 'build-box', kind: 'remote' } as const
 
@@ -49,8 +49,8 @@ describe('linkLiveSessions', () => {
   })
 })
 
-describe('liveSessionBadges', () => {
-  it('counts live sessions per workspace and project with the most urgent status', () => {
+describe('projectSessionBadges', () => {
+  it('counts live sessions per project with the most urgent status', () => {
     const sessions = [
       session('a', { status: 'waiting-subagent' }),
       session('b', { status: 'idle' }),
@@ -63,17 +63,7 @@ describe('liveSessionBadges', () => {
       ['c', { worktreeId: 'wt-2', repoId: 'repo-1', name: 'feat' }],
       ['ended', { worktreeId: 'wt-2', repoId: 'repo-1', name: 'feat' }]
     ])
-    const { byWorktree, byProject } = liveSessionBadges(sessions, links)
-    expect(byWorktree.get('wt-1')).toEqual({
-      count: 2,
-      status: 'waiting-subagent',
-      sessionIds: ['a', 'b']
-    })
-    expect(byWorktree.get('wt-2')).toEqual({
-      count: 1,
-      status: 'needs-permission',
-      sessionIds: ['c']
-    })
+    const byProject = projectSessionBadges(sessions, links)
     expect(byProject.get('repo-1')).toEqual({
       count: 3,
       status: 'needs-permission',
