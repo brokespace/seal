@@ -26,8 +26,9 @@ export function parseDockerLogs(
   }
   const cut = Buffer.byteLength(output) >= maxBytes
   if (cut) {
-    // The cap lands mid-line, so the first line is dropped whole.
-    text = text.slice(text.indexOf('\n') + 1)
+    // The cap lands mid-line, so the first line is dropped whole, unless it is the only one.
+    const later = text.slice(text.indexOf('\n') + 1)
+    text = later.trim() === '' ? text : later
   }
   const lines = text === '' ? 0 : text.replace(/\n$/, '').split('\n').length
   return { text, truncated: cut || lines >= MACHINE_DOCKER_LOG_TAIL_LINES, collectedAt }

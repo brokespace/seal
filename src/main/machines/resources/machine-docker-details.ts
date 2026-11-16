@@ -190,9 +190,13 @@ export async function readMachineDockerDetails(
   const result = await runMachineHostScript(connection, script(quotePosixShell(target.id)), {
     timeoutMs: DETAILS_TIMEOUT_MS
   })
-  const details = result.exitCode === 0 ? parseDockerDetails(target.kind, result.stdout) : null
-  if (!details) {
+  if (result.exitCode !== 0) {
     throw dockerExecError(target.kind, result)
+  }
+  const details = parseDockerDetails(target.kind, result.stdout)
+  if (!details) {
+    // A document past the transport's output cap arrives cut short.
+    throw new Error(`Docker's description of this ${target.kind} is too large to read.`)
   }
   return details
 }

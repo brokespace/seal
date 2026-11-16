@@ -366,6 +366,15 @@ describe('container logs', () => {
     })
   })
 
+  it('keeps the end of a line that alone is longer than one answer', () => {
+    const output = 'xxxx end of one long line\n\n@status 0\n'
+    expect(parseDockerLogs(output, 5, output.length)).toEqual({
+      text: 'xxxx end of one long line\n',
+      truncated: true,
+      collectedAt: 5
+    })
+  })
+
   it('reports a container that is gone in plain words', () => {
     expect(() =>
       parseDockerLogs('Error response from daemon: No such container: 4f1a\n\n@status 1\n', 0)
