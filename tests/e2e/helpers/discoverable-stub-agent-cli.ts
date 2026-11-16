@@ -14,6 +14,8 @@ export type DiscoverableStubAgent = 'claude' | 'codex'
 /** A prompt containing this keeps its turn running until `STUB_CLI_FINISH_TURN` is submitted. */
 export const STUB_CLI_KEEPS_WORKING = '[keeps-working]'
 export const STUB_CLI_FINISH_TURN = '[finish-turn]'
+/** A prompt containing this makes the stub ignore SIGTERM from then on, as an agent hung in a tool does. */
+export const STUB_CLI_IGNORES_SIGTERM = '[ignores-sigterm]'
 
 /**
  * Claude names its session at startup (SessionStart hook, `sessions/<pid>.json`) and writes its
@@ -147,6 +149,7 @@ const finish = (message) => {
 
 const turn = (text) => {
   state = 'working'
+  ignoresSigterm = ignoresSigterm || text.includes(${JSON.stringify(STUB_CLI_IGNORES_SIGTERM)})
   turnId = randomUUID()
   if (agent === 'codex' && !transcriptPath) {
     startCodexSession()
@@ -216,8 +219,10 @@ process.stdin.on('data', (chunk) => {
 })
 process.stdin.setRawMode?.(true)
 process.stdin.resume()
+let ignoresSigterm = false
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-  process.on(signal, exit)
+  const ignored = () => signal === 'SIGTERM' && ignoresSigterm
+  process.on(signal, () => (ignored() ? log({ event: 'ignored-sigterm' }) : exit()))
 }
 
 if (agent === 'claude') {
@@ -246,6 +251,7 @@ export type StubAgentCliEvent =
   | { event: 'session'; sessionId: string; transcriptPath: string }
   | { event: 'turn'; text: string }
   | { event: 'finished'; message: string }
+  | { event: 'ignored-sigterm' }
   | { event: 'exited' }
 
 export type DiscoverableStubAgentCli = {
