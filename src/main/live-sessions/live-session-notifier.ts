@@ -28,7 +28,7 @@ export type ReplyAskVerdict = 'asks' | 'tells' | 'deciding'
 
 export type LiveSessionNotifierDeps = {
   /** The user wants this kind of notice from this surface, and is not already looking at Seal. */
-  wanted: (kind: LiveSessionNotice, surface: AgentSessionSurface['kind']) => boolean
+  wanted: (kind: LiveSessionNotice, surface: AgentSessionSurface) => boolean
   show: (notification: LiveSessionNotification) => void
   /** Absent where nothing reads replies: every finished turn is then announced at once. */
   replyAsk?: (session: LiveSession) => ReplyAskVerdict
@@ -221,7 +221,7 @@ export class LiveSessionNotifier {
   }
 
   private announce(session: LiveSession, kind: LiveSessionNotice): void {
-    if (this.deps.wanted(kind, liveSessionSurfaceOf(session).kind)) {
+    if (this.deps.wanted(kind, liveSessionSurfaceOf(session))) {
       // A chat's row carries no reply; the one read for the question stands in.
       const askedReply =
         session.statusSource === 'classifier' ? this.deps.askedReply?.(session.id) : null

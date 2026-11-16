@@ -2,6 +2,7 @@
 import { app, BrowserWindow, Notification } from 'electron'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import { LIVE_SESSION_IPC } from '../../shared/live-sessions/live-session-ipc-channels'
+import type { AgentSessionSurface } from '../../shared/live-sessions/live-session-types'
 import { liveSessionPaneKeyOf } from '../../shared/live-sessions/live-session-surface'
 import type { NotificationSettings } from '../../shared/notification-settings-types'
 import {
@@ -10,6 +11,7 @@ import {
 } from '../../shared/live-sessions/live-session-settings'
 import { deliverNativeNotification } from '../ipc/native-notification-delivery'
 import { getTrustedUIRendererWindow } from '../ipc/ui'
+import { activeSessionWorkspaceId } from '../runtime/terminal/wait/active-worktree-context-fallback'
 import { getSessionSummariesHost } from '../session-summaries/session-summaries-instance'
 import { safelyRevealWindow } from '../window/activation/focus-existing-window'
 import { isBackgroundLaunch } from '../window/activation/foreground-activation-policy'
@@ -23,6 +25,20 @@ import type { LiveSessionService } from './live-session-service'
 type NotificationSettingsStore = {
   getSettings(): Pick<GlobalSettings, 'liveSessionsNotify' | 'notifications'>
   updateSettings(updates: Partial<GlobalSettings>): unknown
+  getWorkspaceSession(): Parameters<typeof activeSessionWorkspaceId>[0]
+}
+
+/** A focused Seal shows a pane session only in its own workspace, the rule its owner's lane follows. */
+function lookingAt(surface: AgentSessionSurface, store: NotificationSettingsStore): boolean {
+  if (
+    !BrowserWindow.getAllWindows().some((window) => !window.isDestroyed() && window.isFocused())
+  ) {
+    return false
+  }
+  const workspaceId = getSessionSummariesHost()?.paneWorkspaceId(surface) ?? null
+  return (
+    workspaceId === null || workspaceId === activeSessionWorkspaceId(store.getWorkspaceSession())
+  )
 }
 
 // Held until clicked or closed: a collected Notification never delivers its click.
@@ -79,13 +95,10 @@ export function installLiveSessionDesktopNotifications(
     wanted: (kind, surface) => {
       const settings = store.getSettings()
       const { notifications } = settings
-      const lookingAtSeal =
-        notifications.suppressWhenFocused &&
-        BrowserWindow.getAllWindows().some((window) => !window.isDestroyed() && window.isFocused())
       return (
         isLiveSessionNoticeEnabled(notifications, kind) &&
-        !(surface === 'external' && outsideSessionsMuted(settings)) &&
-        !lookingAtSeal &&
+        !(surface.kind === 'external' && outsideSessionsMuted(settings)) &&
+        !(notifications.suppressWhenFocused && lookingAt(surface, store)) &&
         Notification.isSupported()
       )
     },

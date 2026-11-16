@@ -145,7 +145,7 @@ describe('session notifications', () => {
     const shown: LiveSessionNotification[] = []
     const notifier = new LiveSessionNotifier({
       wanted: (kind, surface) => {
-        asked.push(`${kind} ${surface}`)
+        asked.push(`${kind} ${surface.kind}`)
         return true
       },
       show: (n) => shown.push(n),
