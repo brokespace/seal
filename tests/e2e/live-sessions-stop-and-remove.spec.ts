@@ -51,6 +51,7 @@ test.describe('a Claude CLI at work in a Seal pane', () => {
     registerPostElectronShutdownCleanup
   }, testInfo) => {
     test.skip(process.platform === 'win32', 'Sessions are not scanned for on Windows')
+    // A pane, an agent and the scan that pairs them come before the first check.
     test.setTimeout(180_000)
     const userDataDir = await electronApp.evaluate(({ app }) => app.getPath('userData'))
     const stubDir = mkdtempSync(path.join(os.tmpdir(), 'orca-e2e-stub-cli-'))
@@ -97,6 +98,7 @@ chatTest.describe('a chat at work', () => {
   chatTest(
     'leaves the list within two seconds of "Stop and remove", then its agent ends',
     async ({ orcaPage: page, electronApp, claudeStub }, testInfo) => {
+      // The chat's agent starts and takes a turn before the first check.
       chatTest.setTimeout(180_000)
       const userDataDir = await electronApp.evaluate(({ app }) => app.getPath('userData'))
       const chat = await openStubChat(page, claudeStub.command)

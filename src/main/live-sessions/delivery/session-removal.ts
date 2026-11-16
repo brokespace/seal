@@ -8,6 +8,7 @@ import { localChatSessionId } from '../../../shared/live-sessions/live-session-p
 import { liveSessionTranscriptFiles } from '../../../shared/live-sessions/live-session-transcript-files'
 import { LiveSessionJsonStore } from '../live-session-json-store'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
+import { sideBySideHosts } from '../hosts/side-by-side-host-run'
 import { stopAgentScript } from './session-take-over'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 
@@ -113,7 +114,8 @@ const NOTHING_TO_STOP: ReturnType<typeof removeFromOwner> = Promise.resolve('rem
 
 /**
  * Removes sessions the way the user sees it: they leave the list at once, then all of them are
- * stopped and cleaned up together. One that kept running, or could not be reached, is listed again.
+ * stopped and cleaned up together, a machine's sessions in one run. One that kept running, or
+ * could not be reached, is listed again.
  */
 export async function removeSessions(
   request: LiveRemoveRequest,
@@ -135,12 +137,15 @@ export async function removeSessions(
     deps.removals.hold(asked.map(({ sessionId }) => sessionId))
     deps.onListChanged()
   }
-  // Each settles on its own: one that kept running is listed again without waiting for the rest.
+  const sideBySide = sideBySideHosts()
+  const stop = (session: LiveSession): ReturnType<typeof removeFromOwner> => {
+    const owner = deps.owner(session)
+    return removeFromOwner(session, request, { ...owner, host: sideBySide(owner.host) })
+  }
+  // Each owner settles on its own: what kept running there is listed again without waiting for the rest.
   const failures = await Promise.all(
     asked.map(async ({ sessionId, session }) => {
-      const failure = await (
-        session ? removeFromOwner(session, request, deps.owner(session)) : NOTHING_TO_STOP
-      ).then(
+      const failure = await (session ? stop(session) : NOTHING_TO_STOP).then(
         (outcome) => (outcome === 'removed' ? null : { sessionId, reason: outcome }),
         (error: unknown) => ({ sessionId, reason: 'failed' as const, error: errorMessage(error) })
       )

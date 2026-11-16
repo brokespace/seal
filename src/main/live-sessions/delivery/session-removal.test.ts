@@ -105,8 +105,8 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
       args: ['-c', '"$0" & echo $!; exec sleep 300', binary],
       stdio: ['ignore', 'pipe', 'ignore']
     })
-    const [printed] = (await once(child.stdout!, 'data')) as [Buffer]
-    const session = claudeSession(ID, Number(printed.toString().trim()))
+    const [printed] = await once(child.stdout!, 'data')
+    const session = claudeSession(ID, Number(String(printed).trim()))
 
     const outcome = await removeFromHost(session, localHost('mbp'), {
       sessionIds: [session.id],
@@ -120,12 +120,12 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
   it('hides the sessions at once, stops them together and lists again the one that kept running', async () => {
     const [quick, slow] = [claudeSession('quick', 4100), claudeSession('slow', 4200)]
     const finish = new Map<number, (output: string) => void>()
-    const host: LiveSessionHost = {
-      machine: quick.machine,
+    // Each on a machine of its own: a machine's sessions are stopped in one run and settle together.
+    const hostOf = (session: LiveSession): LiveSessionHost => ({
+      machine: { ...session.machine, hostId: session.providerSessionId! },
       run: (script) =>
-        new Promise((resolve) => finish.set(Number(/^p=(\d+)$/m.exec(script)![1]), resolve)),
-      transcriptFiles: async () => []
-    }
+        new Promise((resolve) => finish.set(Number(/^p=(\d+)$/m.exec(script)![1]), resolve))
+    })
     const removals = new LiveSessionRemovals(join(dir, 'removed.json'))
     await removals.load()
     const listed = (): string[] =>
@@ -135,7 +135,7 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
       { sessionIds: [slow.id, quick.id], stop: true, deleteTranscripts: false },
       {
         session: (id) => [quick, slow].find((session) => session.id === id) ?? null,
-        owner: () => ({ server: null, chats: null, host }),
+        owner: (session) => ({ server: null, chats: null, host: hostOf(session) }),
         removals,
         onListChanged: () => {},
         now: () => 1_800_000_000_000
@@ -143,6 +143,7 @@ describe.skipIf(process.platform === 'win32')('removing a session', () => {
     )
     expect(listed()).toEqual([])
 
+    await vi.waitFor(() => expect([...finish.keys()]).toEqual([4200, 4100]))
     finish.get(4100)!('@@ALIVE\n@@DONE')
     await vi.waitFor(() => expect(listed()).toEqual(['local:claude:quick']))
 
