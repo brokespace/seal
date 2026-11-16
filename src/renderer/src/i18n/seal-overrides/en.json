@@ -603,10 +603,6 @@
         "palette": {
           "section": "Go to agent session"
         },
-        "notify": {
-          "label": "Notify about agent sessions",
-          "description": "A desktop notification when a Claude Code or Codex session outside Seal’s own panes needs permission or an answer, fails, or finishes. Follows the notification settings: nothing shows while notifications are off."
-        },
         "sidebar": {
           "lastMessage": "Last message",
           "pick": "Select session",
