@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
 import { liveSessionStatusGroup } from '../../../../shared/live-sessions/live-session-status'
 import { startLiveSessionTabAttentionJoin } from './live-session-tab-attention-join'
+import { startLiveSessionTabTitleJoin } from './live-session-tab-title-join'
 
 export type LiveSessionMarksState = {
   /** Rows picked for a bulk stop or remove; null when not picking. */
@@ -142,10 +143,15 @@ export class LiveSessionMarksStore {
   }
 }
 
-export const liveSessionMarksStore = new LiveSessionMarksStore(
-  undefined,
-  startLiveSessionTabAttentionJoin
-)
+// Tab names start being followed with the marks: both joins need the registry the app has loaded by then.
+export const liveSessionMarksStore = new LiveSessionMarksStore(undefined, (marks) => {
+  const stopAttention = startLiveSessionTabAttentionJoin(marks)
+  const stopTitles = startLiveSessionTabTitleJoin()
+  return () => {
+    stopAttention()
+    stopTitles()
+  }
+})
 
 export function useLiveSessionMarks(): LiveSessionMarksState {
   return useSyncExternalStore(liveSessionMarksStore.subscribe, liveSessionMarksStore.getState)
