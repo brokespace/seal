@@ -47,8 +47,6 @@ export type SeededLiveSession = {
   stop(options?: { ageMs?: number }): Promise<void>
 }
 
-export type SeedWorkspace = { id: string; path: string; name: string }
-
 type Recipe = {
   fixture: string
   /** Only the fixture's opening record is kept: a session that has had no turn. */
@@ -57,6 +55,8 @@ type Recipe = {
   neverAsks?: true
   /** The stub runs a shell, which the scanner reads as the pending call's command. */
   shell?: true
+  /** Claude's own record says commands it left in the background still run; the transcript alone reads `your-turn`. */
+  backgroundShells?: true
 }
 
 // Each status is the one session-status-fixtures.test.ts reads from the same fixture.
@@ -68,7 +68,7 @@ const RECIPES: Record<SeedProvider, Partial<Record<SeedStatus, Recipe>>> = {
     working: { fixture: 'claude-working', neverAsks: true },
     'running-shell': { fixture: 'live-claude-shell-pending', shell: true },
     'waiting-subagent': { fixture: 'claude-waiting-foreground-subagent' },
-    'waiting-task': { fixture: 'claude-waiting-background-task' },
+    'waiting-task': { fixture: 'claude-waiting-background-task', backgroundShells: true },
     'your-turn': { fixture: 'claude-idle' },
     idle: { fixture: 'claude-idle', noTurn: true }
   },
@@ -220,6 +220,28 @@ function writeTranscript(session: Seeded, status: SeedStatus, lastAt: number): v
     fs.rmSync(previous.replace(/\.jsonl$/, ''), { recursive: true, force: true })
   }
   session.child?.stdin?.write(recipe.shell ? 'shell\n' : 'no-shell\n')
+  writeClaudeRegistry(session, recipe.backgroundShells === true)
+}
+
+/** `~/.claude/sessions/<pid>.json`, which Claude Code keeps for a process that has background work. */
+function writeClaudeRegistry(session: Seeded, backgroundShells: boolean): void {
+  const pid = session.child?.pid
+  if (session.provider !== 'claude' || pid === undefined) {
+    return
+  }
+  const file = path.join(session.home, '.claude/sessions', `${pid}.json`)
+  if (!backgroundShells) {
+    fs.rmSync(file, { force: true })
+    return
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  const entry = {
+    pid,
+    sessionId: session.providerSessionId,
+    status: 'shell',
+    statusUpdatedAt: Date.now()
+  }
+  fs.writeFileSync(file, JSON.stringify(entry))
 }
 
 function kill(child: ChildProcess | null): Promise<void> {
@@ -279,6 +301,7 @@ export async function seedLiveSession(
       writeTranscript(session, next, Date.now() - QUIET_MS)
     },
     stop: async (stopOptions) => {
+      writeClaudeRegistry(session, false)
       await kill(session.child)
       session.child = null
       writeTranscript(session, status, endedAt(stopOptions?.ageMs))
@@ -320,38 +343,4 @@ export async function waitForLiveSessions(
       { timeout: options.timeout ?? 30_000, message: 'seeded live sessions never settled' }
     )
     .toEqual(expected)
-}
-
-/** Adds workspaces (git worktrees) to the app's first project, the fixture's seeded repo. */
-export async function addSeedWorkspaces(page: Page, count: number): Promise<SeedWorkspace[]> {
-  return page.evaluate(
-    async ({ count, prefix }) => {
-      const state = window.__store!.getState()
-      const repoId = state.repos[0].id
-      const created: { id: string; path: string; name: string }[] = []
-      for (let index = 1; index <= count; index++) {
-        const name = `${prefix}-${index}`
-        const { worktree } = await state.createWorktree(repoId, name, undefined, 'skip')
-        created.push({ id: worktree.id, path: worktree.path, name: worktree.displayName })
-      }
-      await state.fetchWorktrees(repoId)
-      return created
-    },
-    { count, prefix: `seed-${randomUUID().slice(0, 8)}` }
-  )
-}
-
-/** The seeded repo outlives the test: remove what `addSeedWorkspaces` added. */
-export async function removeSeedWorkspaces(
-  page: Page,
-  workspaces: readonly SeedWorkspace[]
-): Promise<void> {
-  const ids = workspaces.map((workspace) => workspace.id)
-  await page.evaluate(async (ids) => {
-    const state = window.__store!.getState()
-    for (const id of ids) {
-      const executionHostId = state.getKnownWorktreeById(id)?.hostId ?? null
-      await state.removeWorktree({ id, executionHostId }, true)
-    }
-  }, ids)
 }

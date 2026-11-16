@@ -1,17 +1,19 @@
 import type { Locator, Page } from '@stablyai/playwright-test'
 import { test, expect } from './helpers/orca-app'
 import {
-  addSeedWorkspaces,
-  removeSeedWorkspaces,
   seedLiveSession,
   stopAllSeededSessions,
   waitForLiveSessions,
   type SeedStatus,
-  type SeedWorkspace,
   type SeededLiveSession
 } from './helpers/seeded-live-sessions'
+import {
+  addSeedWorkspaces,
+  removeSeedWorkspaces,
+  type SeedWorkspace
+} from './helpers/seeded-workspaces'
 
-// The words docs/session-status.md gives each status.
+// The words docs/design/agent-status.md gives each status.
 const STATUS_LABELS: readonly { status: SeedStatus; label: string }[] = [
   { status: 'needs-permission', label: 'Waiting for approval' },
   { status: 'waiting-input', label: 'Asking you a question' },
