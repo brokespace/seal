@@ -5,7 +5,7 @@ import { LiveSessionRow, type LiveSessionRowProps } from './LiveSessionRow'
 import { useLiveSessionRowState } from './use-live-session-row-state'
 
 function openFromRow(session: LiveSession, event?: { type: string }): void {
-  openAgentSession(session.id, liveSessionRowOpenMode(event))
+  openAgentSession(session, liveSessionRowOpenMode(event))
 }
 
 /**

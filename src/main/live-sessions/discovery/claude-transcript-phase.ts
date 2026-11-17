@@ -12,16 +12,7 @@ import {
 import type { TranscriptRecord } from './transcript-records'
 import { replyAskOf } from './reply-ask'
 import type { PendingCallKind, TranscriptTurn } from './transcript-summary'
-
-/** Tools that hand the turn to the user: the call stays open until they answer. */
-const ASK_TOOLS: Partial<Record<string, string>> = {
-  AskUserQuestion: 'Question for you',
-  ExitPlanMode: 'Plan ready for review'
-}
-
-export function isClaudeAskTool(name: string): boolean {
-  return ASK_TOOLS[name] !== undefined
-}
+import { CLAUDE_ASK_TOOLS } from '../../../shared/live-sessions/claude-ask-tools'
 
 /** The tools that start a subagent (`Task` before Claude Code 2.x renamed it). */
 export const CLAUDE_SUBAGENT_TOOLS: ReadonlySet<string> = new Set(['Agent', 'Task'])
@@ -104,7 +95,7 @@ function errorBefore(records: TranscriptRecord[], index: number): Turn | null {
 
 function pendingTool(tool: TranscriptRecord, record: TranscriptRecord): Turn {
   const name = str(tool.name) ?? 'Tool'
-  const ask = ASK_TOOLS[name]
+  const ask = CLAUDE_ASK_TOOLS[name]
   return ask
     ? {
         phase: 'input-requested',

@@ -4,6 +4,7 @@ import type {
   LiveSession,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
+import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
 import { isListedLiveSession } from '../row/live-session-machine-listing'
 import { SESSION_FOLD_KEY_PREFIX } from './session-fold-keys'
 import {
@@ -45,6 +46,16 @@ export function buildWorkspaceSessionRows(
     finished: finished.sort((a, b) => b.lastActivityAt - a.lastActivityAt),
     hidden
   }
+}
+
+/** A row's identity in its list: the chat or pane it shows, so the row stays itself when the registry's record takes over from this window's. */
+export function sessionRowKey(session: LiveSession): string {
+  const { surface } = session
+  if (surface.kind === 'chat') {
+    return `chat:${surface.sessionId}`
+  }
+  // A paired host's record names the pane as that host does; this window's own row, as its mirror tab.
+  return surface.kind === 'cli' ? `pane:${toHostSessionPaneKey(surface.paneKey)}` : session.id
 }
 
 /** Present in `collapsedGroups` while a workspace's ended sessions are unfolded; the prefix survives a Projects regrouping. */

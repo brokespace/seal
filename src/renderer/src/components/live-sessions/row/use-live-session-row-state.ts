@@ -5,6 +5,7 @@ import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { isLiveSessionUnread, useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
 import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
+import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import type { LiveSessionRowProps } from './LiveSessionRow'
 
 export type LiveSessionRowState = Pick<
@@ -31,7 +32,8 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
         current: isShowing(session),
         highlighted:
           marks.highlighted.has(session.id) ||
-          (activeWorktreeId !== null && link?.worktreeId === activeWorktreeId)
+          (activeWorktreeId !== null &&
+            (link?.worktreeId ?? windowAgentSessionWorktreeId(session)) === activeWorktreeId)
       }
     },
     [links, accounts, marks.seenAt, marks.highlighted, isShowing, activeWorktreeId]

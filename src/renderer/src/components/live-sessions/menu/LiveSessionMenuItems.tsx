@@ -42,6 +42,7 @@ import { useTranslate, type Translate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { canTakeOver } from '../take-over/live-session-take-over'
+import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import { liveSessionSwapTargets, useLocalSealAccounts } from './live-session-accounts'
 import {
   liveSessionMenuItems,
@@ -154,10 +155,12 @@ export function liveSessionMenuLabel(
 export function useLiveSessionMenuContext(session: LiveSession): LiveSessionMenuContext {
   const { links } = useLiveSessionLinks()
   const accounts = useLocalSealAccounts()
+  const windowWorktreeId = windowAgentSessionWorktreeId(session)
   return {
-    worktreeId: links.get(session.id)?.worktreeId ?? null,
+    worktreeId: links.get(session.id)?.worktreeId ?? windowWorktreeId,
     swapAccounts: liveSessionSwapTargets(session, accounts),
-    canTakeOver: canTakeOver(session)
+    canTakeOver: canTakeOver(session),
+    listed: windowWorktreeId === null
   }
 }
 

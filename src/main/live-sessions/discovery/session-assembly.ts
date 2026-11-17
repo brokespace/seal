@@ -39,6 +39,7 @@ import { pairProcesses, type UnreadTranscript } from './session-process-pairing'
 import type { CodexTerminalState } from './codex-background-terminals'
 import { conversations, distinctSessions } from './session-identity'
 import { sessionCapabilities } from '../adapters/session-capabilities'
+import { liveSessionId, projectOf } from '../../../shared/live-sessions/live-session-id'
 
 export type SummarizedTranscript = {
   path: string
@@ -64,21 +65,7 @@ const FRESH_WRITE_MS = 2 * 60_000
 /** A hook state older than the transcript by more than this has gone quiet; the transcript wins. */
 const HOOK_STALE_MS = 2 * 60_000
 
-export function liveSessionId(
-  hostId: string,
-  provider: LiveSession['provider'],
-  providerSessionId: string
-): string {
-  return `${hostId}:${provider}:${providerSessionId}`
-}
-
-export function projectOf(cwd: string | null): string | null {
-  if (!cwd) {
-    return null
-  }
-  const parts = cwd.split(/[\\/]/).filter(Boolean)
-  return parts.at(-1) ?? null
-}
+export { liveSessionId, projectOf }
 
 /** The provider config folder a transcript lives under: `<dir>/projects/…` or `<dir>/sessions/…`. */
 export function configDirOf(provider: LiveSessionProvider, path: string | null): string | null {

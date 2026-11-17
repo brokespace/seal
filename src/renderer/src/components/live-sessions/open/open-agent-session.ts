@@ -1,14 +1,16 @@
 import { toast } from 'sonner'
-import { focusTerminalTabSurface } from '@/components/terminal-pane/input/focus/focus-terminal-tab-surface'
 import { translate } from '@/i18n/i18n'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
+import { activateTabAndFocusPane } from '@/lib/workspace/tabs/activate-tab-and-focus-pane'
 import { activateWorkspaceTabPaletteResult } from '@/lib/workspace/search/tabs/workspace-tab-palette-activation'
 import { useAppStore } from '@/store/index'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { Tab } from '../../../../../shared/tab-types'
+import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { liveSessionTitle } from '../live-session-presentation'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import type { AgentSessionOpenMode } from './agent-session-open-mode'
 import { agentSessionWorktreeId } from './agent-session-workspace'
 import {
@@ -47,13 +49,33 @@ function showChatTab(chatSessionId: string): boolean {
 }
 
 function showTerminalPane(paneKey: string): boolean {
-  const separator = paneKey.lastIndexOf(':')
-  const terminalTabId = paneKey.slice(0, separator)
-  const tab = findTab((t) => t.contentType === 'terminal' && t.entityId === terminalTabId)
+  const leafId = paneKey.slice(paneKey.lastIndexOf(':') + 1)
+  // A paired host's record names the pane by that host's tab, which this window mirrors under its own id.
+  const hostPaneKey = toHostSessionPaneKey(paneKey)
+  const tab = findTab(
+    (t) =>
+      t.contentType === 'terminal' &&
+      toHostSessionPaneKey(`${t.entityId}:${leafId}`) === hostPaneKey
+  )
   if (!tab || !showWorkspaceTab(tab, 'terminal')) {
     return false
   }
-  focusTerminalTabSurface(terminalTabId, paneKey.slice(separator + 1))
+  // Makes the pane its split's active one, as a click on it does.
+  activateTabAndFocusPane(tab.entityId, leafId, {
+    ackPaneKeyOnSuccess: `${tab.entityId}:${leafId}`,
+    flashFocusedPane: true,
+    scrollToBottomIfOutputSinceLastView: true
+  })
+  return true
+}
+
+/** A session only this window lists has no record a tab could read: its workspace is all there is to show once its pane is gone. */
+function showOwnWorkspace(session: LiveSession | null): boolean {
+  const worktreeId = session && windowAgentSessionWorktreeId(session)
+  if (!worktreeId) {
+    return false
+  }
+  activateAndRevealWorkspace(worktreeId)
   return true
 }
 
@@ -87,15 +109,24 @@ function showExternalTab(
   )
 }
 
-/** The one way to show a session by its record id: a preview tab, kept as a tab, or in a split. */
-export function openAgentSession(sessionId: string, mode: AgentSessionOpenMode = 'preview'): void {
-  const id = liveSessionRegistryStore.currentId(sessionId)
-  const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === id) ?? null
+/**
+ * The one way to show a session: a preview tab, kept as a tab, or in a split. A row passes the
+ * record it shows, which the registry may not list yet; anything else names it by its record id.
+ */
+export function openAgentSession(
+  target: string | LiveSession,
+  mode: AgentSessionOpenMode = 'preview'
+): void {
+  const id = liveSessionRegistryStore.currentId(typeof target === 'string' ? target : target.id)
+  const session =
+    liveSessionRegistryStore.getState().sessions.find((s) => s.id === id) ??
+    (typeof target === 'string' ? null : target)
   liveSessionMarksStore.reveal(id)
   const surface = session?.surface
   const shown =
     (surface?.kind === 'chat' && showChatTab(surface.sessionId)) ||
     (surface?.kind === 'cli' && showTerminalPane(surface.paneKey)) ||
+    showOwnWorkspace(session) ||
     showExternalTab(id, session, mode)
   if (!shown) {
     toast.message(

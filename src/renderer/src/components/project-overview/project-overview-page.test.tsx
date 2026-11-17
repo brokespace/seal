@@ -69,7 +69,10 @@ it("lists the project's running agents under their workspace and the ended ones 
 it('an agent opens as its session', () => {
   renderInApp(<ProjectAgentsCard sessions={sessions} now={SAMPLE_NOW} />)
   fireEvent.click(screen.getByText('Pick a dataset'))
-  expect(openAgentSession).toHaveBeenCalledWith('Pick a dataset', 'preview')
+  expect(openAgentSession).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'Pick a dataset' }),
+    'preview'
+  )
 })
 
 it("the sidebar link opens the sidebar on the project's most urgent running agent and stays on the page", () => {

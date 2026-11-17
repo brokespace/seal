@@ -70,6 +70,8 @@ export async function startServerStubChat(
   environmentId: string
   /** The server's machine record on the desktop. */
   hostId: string
+  /** The server's workspace the chat runs in, by the desktop's id for it. */
+  worktreeId: string
   exec: NonNullable<ManagedHostFixture['host']['exec']>
 }> {
   const { host, session } = fixture
@@ -137,5 +139,5 @@ export async function startServerStubChat(
   await chat.getByRole('textbox').click()
   await page.keyboard.type(prompt)
   await chat.getByRole('button', { name: 'Send', exact: true }).click()
-  return { page, environmentId, hostId, exec }
+  return { page, environmentId, hostId, worktreeId, exec }
 }

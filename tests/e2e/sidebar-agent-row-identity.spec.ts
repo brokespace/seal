@@ -8,7 +8,6 @@ import {
 } from './helpers/terminal'
 import { runNodeScriptInTerminal } from './helpers/run-node-script-in-terminal'
 import { waitForRestoredTerminalInputReady } from './helpers/restored-terminal-input-readiness'
-import { worktreeRow } from './worktree-row-locators'
 
 // Use real PTY OSC titles to retain hookless Cursor’s literal cursor agent (#10258) and keep OpenCode ownership when its task merely mentions claude (#8940).
 
@@ -83,13 +82,13 @@ async function openAgentTab(
   return { tabId, ptyId }
 }
 
-// Read rendered icon tooltips in one evaluate so rerender cannot split the snapshot.
+// Read each row's agent, the second part of its session id, in one evaluate so rerender cannot split the snapshot.
 function sidebarAgentRowIdentities(page: Page, agentListSelector: string): Promise<string[]> {
   return page.evaluate((selector) => {
     const list = document.querySelector(selector)
     return list
-      ? [...list.children]
-          .map((row) => row.querySelector('span[title]')?.getAttribute('title') ?? '')
+      ? [...list.querySelectorAll('[data-live-session-row]')]
+          .map((row) => row.getAttribute('data-live-session-row')?.split(':')[1] ?? '')
           .filter((identity) => identity.length > 0)
           .sort()
       : []
@@ -157,19 +156,24 @@ test('sidebar keeps a Cursor pane visible and an OpenCode pane out of Claude Cod
   // Require emitter output before judging literal-title filtering.
   await waitForTerminalOutput(orcaPage, PANE_HOLD_MARKER, 15_000)
 
-  // Only the active worktree's card has agents, so this resolves to one list.
-  const agentListSelector = `[data-worktree-sidebar] [aria-label="Agents"]`
-  const agentList = worktreeRow(orcaPage, worktreeId).locator('[aria-label="Agents"]')
-  await expect(agentList.locator('> div').first()).toBeVisible()
+  const agentListSelector = `[data-worktree-sidebar] [data-workspace-session-rows="${worktreeId}"]`
+  const agentList = orcaPage.locator(agentListSelector)
+  const paneRows = (tabId: string) =>
+    agentList.locator(`[data-live-session-row*=":pane-${tabId}:"]`)
+  await expect(agentList.locator('[data-live-session-row]').first()).toBeVisible()
 
   expect(await settledSidebarAgentRowIdentities(orcaPage, agentListSelector)).toEqual([
-    'Cursor',
-    'OpenCode'
+    'cursor',
+    'opencode'
   ])
 
-  await expect(agentList.locator('> div')).toHaveCount(2)
-  await expect(agentList).toContainText('Cursor')
-  await expect(agentList).toContainText('use Claude Sonnet')
+  await expect(agentList.locator('[data-live-session-row]')).toHaveCount(2)
+  await expect(paneRows(cursor.tabId)).toHaveCount(1)
+  await expect(paneRows(cursor.tabId)).toHaveAttribute('data-status', 'idle')
+  await expect(paneRows(cursor.tabId)).toContainText('Cursor')
+  await expect(paneRows(openCode.tabId)).toHaveCount(1)
+  await expect(paneRows(openCode.tabId)).toHaveAttribute('data-status', 'working')
+  await expect(paneRows(openCode.tabId)).toContainText('use Claude Sonnet')
 
   openCodeScript.cleanup()
   cursorScript.cleanup()

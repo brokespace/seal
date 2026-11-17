@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import { sampleSessionSurface } from '../../../shared/live-sessions/live-session-surface.test-fixture'
 import { mergeSessionSources } from './session-source-merge'
-import { sessionSuccessor } from './session-succession'
+import { sessionSuccessor } from '../../../shared/live-sessions/session-succession'
 
 const LOCAL = { hostId: 'local', label: 'desk', kind: 'local' } as const
 

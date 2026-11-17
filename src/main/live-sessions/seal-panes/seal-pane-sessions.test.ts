@@ -55,6 +55,14 @@ describe('mergeSealPanes', () => {
     ).toEqual([['local:claude:0e7d2c1a-0000-4000-8000-00000000000a', 'seal', 812, 'working']])
   })
 
+  it("titles the pane's agent by its prompt until discovery reads a title", () => {
+    const titled = { ...discovered, title: 'Ship the release' }
+    expect([
+      mergeSealPanes([discovered], [pane], local)[0].title,
+      mergeSealPanes([titled], [pane], local)[0].title
+    ]).toEqual(['Deploy it', 'Ship the release'])
+  })
+
   it('marks a pane session as a CLI in that pane, joined to a discovered session or not', () => {
     const copilot: SealPane = { ...pane, paneKey: 'tab-2:0', provider: 'copilot' }
     expect(
@@ -158,7 +166,7 @@ describe('sealPanesFromRows', () => {
     ],
     ['a Claude pane before its hooks name its session', { providerSession: undefined }, []],
     ['a chat, which its structured host lists', { structuredHost: 'owned' }, []],
-    ['an agent with no adapter', { agentType: 'aider' }, []]
+    ['an agent the launcher does not know', { agentType: 'my-own-agent' }, []]
   ])('lists %s', (_, patch, expected) => {
     expect(
       sealPanesFromRows([row(patch)], () => null, 2000).map((p) => [
