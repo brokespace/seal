@@ -9,6 +9,7 @@ import type { Tab } from '../../../../../shared/tab-types'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { liveSessionTitle } from '../live-session-presentation'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
+import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import type { AgentSessionOpenMode } from './agent-session-open-mode'
 import { agentSessionWorktreeId } from './agent-session-workspace'
 import {
@@ -57,6 +58,16 @@ function showTerminalPane(paneKey: string): boolean {
   return true
 }
 
+/** A session only this window lists has no record a tab could read: its workspace is all there is to show once its pane is gone. */
+function showOwnWorkspace(session: LiveSession | null): boolean {
+  const worktreeId = session && windowAgentSessionWorktreeId(session)
+  if (!worktreeId) {
+    return false
+  }
+  activateAndRevealWorkspace(worktreeId)
+  return true
+}
+
 /** The record's own tab: where a session started outside Seal shows, and any session whose tab is gone. */
 function showExternalTab(
   sessionId: string,
@@ -87,15 +98,24 @@ function showExternalTab(
   )
 }
 
-/** The one way to show a session by its record id: a preview tab, kept as a tab, or in a split. */
-export function openAgentSession(sessionId: string, mode: AgentSessionOpenMode = 'preview'): void {
-  const id = liveSessionRegistryStore.currentId(sessionId)
-  const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === id) ?? null
+/**
+ * The one way to show a session: a preview tab, kept as a tab, or in a split. A row passes the
+ * record it shows, which the registry may not list yet; anything else names it by its record id.
+ */
+export function openAgentSession(
+  target: string | LiveSession,
+  mode: AgentSessionOpenMode = 'preview'
+): void {
+  const id = liveSessionRegistryStore.currentId(typeof target === 'string' ? target : target.id)
+  const session =
+    liveSessionRegistryStore.getState().sessions.find((s) => s.id === id) ??
+    (typeof target === 'string' ? null : target)
   liveSessionMarksStore.reveal(id)
   const surface = session?.surface
   const shown =
     (surface?.kind === 'chat' && showChatTab(surface.sessionId)) ||
     (surface?.kind === 'cli' && showTerminalPane(surface.paneKey)) ||
+    showOwnWorkspace(session) ||
     showExternalTab(id, session, mode)
   if (!shown) {
     toast.message(

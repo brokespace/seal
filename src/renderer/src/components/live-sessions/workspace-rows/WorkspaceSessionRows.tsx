@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/index'
 import { cn } from '@/lib/class-names'
 import { useTranslate } from '@/i18n/use-translate'
 import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
+import type { ExecutionHostId } from '../../../../../shared/execution-host'
 import { topLiveSessionStatus } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionClock } from '../live-session-clock'
@@ -20,6 +21,7 @@ import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from '@/components/sidebar/workspac
 import { useSidebarSessionFilters } from './sidebar-session-filter-store'
 import {
   buildWorkspaceSessionRows,
+  sessionRowKey,
   workspaceFinishedOpenKey,
   type WorkspaceSessionRowsView
 } from './workspace-session-rows-model'
@@ -100,11 +102,15 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
 export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): React.JSX.Element {
   const t = useTranslate()
   const { view } = props
+  const keys = new Set<string>()
   const row = (session: LiveSession): React.JSX.Element => {
     const state = props.rowState(session)
+    const shown = sessionRowKey(session)
+    const key = keys.has(shown) ? session.id : shown
+    keys.add(key)
     return (
       <LiveSessionRow
-        key={session.id}
+        key={key}
         session={session}
         // The card above the row names the workspace; a row no card holds names its place itself.
         showPlace={props.worktreeId === null}
@@ -185,7 +191,7 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
 }
 
 function openFromRow(session: LiveSession, event: { type: string }): void {
-  openAgentSession(session.id, liveSessionRowOpenMode(event))
+  openAgentSession(session, liveSessionRowOpenMode(event))
 }
 
 export type SessionRowList = Pick<
@@ -260,12 +266,15 @@ const WorkspaceSessionRowsBody = React.memo(function WorkspaceSessionRowsBody({
 /** Every agent session of a workspace as rows on its card. A workspace without sessions adds nothing. */
 export const WorkspaceSessionRows = React.memo(function WorkspaceSessionRows({
   worktreeId,
+  hostId,
   className
 }: {
   worktreeId: string
+  /** The host whose card this is, where a workspace has one per host. */
+  hostId?: ExecutionHostId
   className?: string
 }): React.JSX.Element | null {
-  const sessions = useWorkspaceSessions(worktreeId)
+  const sessions = useWorkspaceSessions(worktreeId, hostId)
   // Only a card with sessions pays for the clock, the marks and the row state.
   return sessions.length > 0 ? (
     <WorkspaceSessionRowsBody worktreeId={worktreeId} sessions={sessions} className={className} />

@@ -95,7 +95,7 @@ function defaultMenu(session: LiveSession, kit: LiveSessionMenuKit): React.React
             intent="open"
             onPlace={(zone) => {
               openItemsInSplitView([paneItem], zone)
-              openAgentSession(session.id, 'tab')
+              openAgentSession(session, 'tab')
             }}
           />
           <kit.Separator />
@@ -196,7 +196,7 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                   : sessionPaneItem(session)
                 if (paneItem) {
                   startItemPointerDrag(event, event.currentTarget, paneItem, () =>
-                    openAgentSession(session.id, 'tab')
+                    openAgentSession(session, 'tab')
                   )
                 }
               }}

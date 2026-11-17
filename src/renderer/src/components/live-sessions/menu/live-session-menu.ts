@@ -1,4 +1,5 @@
 import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
+import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
 import type {
   LiveRemoveRequest,
   LiveSession
@@ -45,11 +46,13 @@ export type LiveSessionMenuContext = {
   /** Accounts it can move to; empty when Seal did not launch it or has no other login. */
   swapAccounts: readonly { key: string; label: string; current: boolean }[]
   canTakeOver: boolean
+  /** False while only this window knows the session: the registry has no record to act on yet. */
+  listed: boolean
 }
 
 /** Everything a menu item can do. Views implement these once; every menu surface shares them. */
 export type LiveSessionMenuEffects = {
-  open: (sessionId: string, mode: AgentSessionOpenMode) => void
+  open: (session: LiveSession, mode: AgentSessionOpenMode) => void
   /** Opens the session and shows that part of its view. */
   focus: (sessionId: string, target: AgentSessionFocusTarget) => void
   askRename: (session: LiveSession) => void
@@ -90,11 +93,25 @@ const DESTRUCTIVE: ReadonlySet<LiveSessionMenuItemId> = new Set([
   'delete-with-transcripts'
 ])
 
+/** What a session can do before the registry lists it: be opened, named and found. */
+const NEEDS_NO_RECORD: ReadonlySet<LiveSessionMenuItemId> = new Set([
+  'open',
+  'open-new-tab',
+  'open-split',
+  'copy-session-id',
+  'copy-resume-command',
+  'open-worktree',
+  'open-machine'
+])
+
 function isDisabled(
   id: LiveSessionMenuItemId,
   session: LiveSession,
   context: LiveSessionMenuContext
 ): boolean {
+  if (!context.listed && !NEEDS_NO_RECORD.has(id)) {
+    return true
+  }
   switch (id) {
     case 'open':
     case 'open-new-tab':
@@ -117,7 +134,7 @@ function isDisabled(
       )
     case 'copy-resume-command':
       return (
-        session.providerSessionId.startsWith('pid-') ||
+        isProvisionalLiveSessionId(session.providerSessionId) ||
         !agentSessionAdapter(session.provider)?.cli?.resumeArgv
       )
     case 'swap-account':
@@ -165,11 +182,11 @@ export function runLiveSessionMenuItem(
 ): void {
   switch (id) {
     case 'open':
-      return effects.open(session.id, 'preview')
+      return effects.open(session, 'preview')
     case 'open-new-tab':
-      return effects.open(session.id, 'tab')
+      return effects.open(session, 'tab')
     case 'open-split':
-      return effects.open(session.id, 'split')
+      return effects.open(session, 'split')
     case 'send-message':
       return effects.askMessage(session)
     case 'answer-permission':

@@ -67,14 +67,15 @@ const context: LiveSessionMenuContext = {
     { key: 'claude:personal', label: 'personal', current: true },
     { key: 'claude:work', label: 'work', current: false }
   ],
-  canTakeOver: true
+  canTakeOver: true,
+  listed: true
 }
 
 /** What selecting each item must do, and nothing else. */
 const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...unknown[]]> = {
-  open: ['open', SESSION_ID, 'preview'],
-  'open-new-tab': ['open', SESSION_ID, 'tab'],
-  'open-split': ['open', SESSION_ID, 'split'],
+  open: ['open', session, 'preview'],
+  'open-new-tab': ['open', session, 'tab'],
+  'open-split': ['open', session, 'split'],
   'send-message': ['askMessage', session],
   'answer-permission': ['focus', SESSION_ID, 'permission'],
   'view-subagents': ['focus', SESSION_ID, 'subagents'],
@@ -175,7 +176,7 @@ describe('session menu', () => {
         <DropdownMenuContent>
           <LiveSessionMenuItemsView
             session={quiet}
-            context={{ worktreeId: null, swapAccounts: [], canTakeOver: false }}
+            context={{ worktreeId: null, swapAccounts: [], canTakeOver: false, listed: true }}
             kit={DROPDOWN_MENU_KIT}
             effects={recordingEffects()}
           />

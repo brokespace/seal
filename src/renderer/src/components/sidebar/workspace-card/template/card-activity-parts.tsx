@@ -13,7 +13,7 @@ import {
 } from '../metadata/worktree-card-meta-items'
 import { WorktreeCardStatusLane } from '../surface/worktree-card-status-lane'
 import { WorktreeLineageToggle } from '../identity/WorktreeLineageToggle'
-import { WorkspaceSessionRows } from '@/components/live-sessions/workspace-rows/WorkspaceSessionRows'
+import { WorkspaceCardSessions } from '@/components/live-sessions/workspace-rows/WorkspaceCardSessions'
 import { cardElement } from './card-template-compiler'
 
 type Card = WorktreeCardController
@@ -59,18 +59,23 @@ export const CARD_ACTIVITY_PARTS = {
       lane
     )
   }),
-  // Seal: every agent session of the workspace, on every card style.
+  // Seal: one row per agent session on every card style; upstream's agent list is only what a note picks its recipient from.
   SessionRows: part([], (_props, _children, card) => (
-    // Why -mt-1: the rows carry their own padding, so they sit as close to the title as inline agents do.
-    <WorkspaceSessionRows worktreeId={card.worktree.id} className="-mt-1" />
-  )),
-  Agents: part(['tight'], (props, _children, card) => (
-    <WorktreeCardAgents
+    <WorkspaceCardSessions
       worktreeId={card.worktree.id}
-      executionHostId={card.worktree.hostId}
-      agents={card.inlineAgentRows}
-      // Why: counterbalance the card stack gap so agents right after the title read as one group.
-      className={props.tight === true ? '-mt-1' : 'mt-0'}
+      hostId={card.worktree.hostId}
+      // Why -mt-1: the rows carry their own padding, so they sit close to the title.
+      className="-mt-1"
+      sendTargets={
+        card.showInlineAgentList ? (
+          <WorktreeCardAgents
+            worktreeId={card.worktree.id}
+            executionHostId={card.worktree.hostId}
+            agents={card.inlineAgentRows}
+            className="-mt-1"
+          />
+        ) : null
+      }
     />
   )),
   RemoteBranchConflict: part([], (_props, _children, { remoteBranchConflict }) =>
