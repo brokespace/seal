@@ -1,9 +1,10 @@
 // An image-heavy Claude Code transcript in the record shapes the CLI writes: pasted screenshots,
 // screenshots a tool read back, and prompts queued with an image while the agent was busy.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { extname, join, resolve } from 'node:path'
+import { extname, join } from 'node:path'
 
-const REPO_ROOT = resolve(import.meta.dirname, '../../../..')
+// Run from the repository root, as its scripts and specs are; Playwright loads this as CommonJS.
+const REPO_ROOT = process.cwd()
 const IMAGE_FOLDERS = ['resources/onboarding/feature-wall', 'docs/assets/readme-features']
 const MEDIA_TYPES: Record<string, string> = {
   '.webp': 'image/webp',
@@ -95,6 +96,10 @@ export function writeImageHeavyClaudeTranscript(
     type: 'image',
     source: { type: 'base64', media_type: image.mediaType, data: image.base64 }
   })
+
+  // A session opens on words: its first lines tell a scan its folder and its title.
+  user('The dashboard layout breaks on small screens. Help me fix it.')
+  assistant([{ type: 'text', text: 'Paste the first screen and I will take a look.' }])
 
   for (let turn = 0; turn < turns; turn++) {
     const pasted = images[turn % images.length]

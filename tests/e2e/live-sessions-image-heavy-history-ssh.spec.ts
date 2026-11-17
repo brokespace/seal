@@ -27,8 +27,10 @@ test('a chat on an SSH machine opens on its newest messages without its images, 
       `mkdir -p ${cwd} "$(dirname ~/${transcript.relativePath})" && cat > ~/${transcript.relativePath}`,
       transcript.bytes
     )
-    // A process named `claude` in the folder its transcript was recorded in: what the scan lists.
-    user.sh(`cd ${cwd} && (setsid bash -c 'exec -a claude sleep 900' </dev/null >/dev/null 2>&1 &)`)
+    // What a scan lists: a process that `ps` shows as `claude --resume <id>`, in the session's folder.
+    user.sh(
+      `cd ${cwd} && (setsid perl -e '$0 = shift; sleep 900' 'claude --resume ${transcript.providerSessionId}' </dev/null >/dev/null 2>&1 &)`
+    )
 
     await expectNewestHistoryBeforeAndAfterRestart({
       testInfo,

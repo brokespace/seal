@@ -18,10 +18,11 @@ import { cleanupTestRepository } from '../global-teardown'
 import { expect } from './orca-app'
 import { attachRepoAndOpenTerminal, type createRestartSession } from './orca-restart'
 import { createSeededTestRepo } from './seeded-test-repo'
+import { dismissSetupScriptPrompts } from './sidebar-setup-prompt'
 import { waitForSessionReady } from './store'
 
 const TURNS = 40
-/** The transcript's last prompt and its first: the newest page holds one and not the other. */
+/** The transcript's last prompt and one of its first: the newest page holds one and not the other. */
 const NEWEST_PROMPT = `Thanks, apply that fix to screen ${TURNS} and keep going.`
 const OLDEST_PROMPT = 'Screen 1: what is wrong with this layout?'
 /** The most messages one page of history holds. */
@@ -150,14 +151,16 @@ export async function expectNewestHistoryBeforeAndAfterRestart(args: {
     await expectNewestPageWithoutImageBytes(first.page, listed.id)
 
     await showSidebar(first.page)
-    await clickSidebarSessionRow(first.page, listed.id)
+    await dismissSetupScriptPrompts(first.page)
     const opened = externalAgentSessionPane(first.page, listed.id)
-    await expect(opened).toContainText(NEWEST_PROMPT, { timeout: 60_000 })
+    // A workspace shown for the first time opens its terminal over the chat; the row shows it again.
+    await expect(async () => {
+      await clickSidebarSessionRow(first.page, listed.id)
+      await expect(opened).toContainText(NEWEST_PROMPT, { timeout: 20_000 })
+      // An inline image of the newest page is read from the machine once it is on view.
+      await expect(opened.locator('img[src^="blob:"]').first()).toBeVisible({ timeout: 20_000 })
+    }).toPass({ timeout: 120_000 })
     await expect(opened).not.toContainText(OLDEST_PROMPT)
-    // An inline image of the newest page is read from the machine once it is on view.
-    await expect(opened.locator('img[src^="data:image/"]').first()).toBeVisible({
-      timeout: 60_000
-    })
     await first.page.screenshot({ path: testInfo.outputPath('history-opened.png') })
 
     await session.close(app)
@@ -184,6 +187,7 @@ export async function expectNewestHistoryBeforeAndAfterRestart(args: {
     await expect(restored).not.toContainText(OLDEST_PROMPT)
     // Reconnecting reads one page; it does not replay the conversation from its start.
     expect((await delivered.jsonValue()).length).toBeLessThanOrEqual(PAGE_MESSAGES)
+    await expect(restored.locator('img[src^="blob:"]').first()).toBeVisible({ timeout: 60_000 })
     await page.screenshot({ path: testInfo.outputPath('history-after-restart.png') })
   } finally {
     await session.dispose(app ?? undefined)
