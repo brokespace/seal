@@ -348,4 +348,16 @@ describe('what discovery adds to a Seal pane', () => {
   ])('hooks say %s, discovery read %s from %s: shows %s', (hooks, read, from, shows, word) => {
     expect(merged(hooks, read, from)).toEqual([shows, word])
   })
+
+  it('hooks say your-turn, discovery read the ended turn waiting on a command it started: shows waiting-task', () => {
+    const waiting: LiveSession = {
+      ...discovered,
+      status: 'waiting-task',
+      statusSource: 'transcript',
+      backgroundWait: { reply: null, endedAt: null, registry: 'shell', commands: [] }
+    }
+    expect(
+      mergeSealPanes([waiting], [{ ...pane, status: 'your-turn' }], local).map((s) => s.status)
+    ).toEqual(['waiting-task'])
+  })
 })

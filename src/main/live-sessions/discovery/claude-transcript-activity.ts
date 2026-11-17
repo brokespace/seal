@@ -42,6 +42,8 @@ export type ClaudeActivityState = {
   todos: LiveTodo[] | null
   /** Background work reported finished whose launch this state never saw, by task and tool id. */
   ended: Map<string, LiveSubagentStatus>
+  /** When the user last spoke or interrupted: what was launched since is the newest turn's own. */
+  userSpokeAt: number | null
 }
 
 export function newClaudeActivityState(): ClaudeActivityState {
@@ -51,7 +53,8 @@ export function newClaudeActivityState(): ClaudeActivityState {
     tasks: new Map(),
     creating: new Map(),
     todos: null,
-    ended: new Map()
+    ended: new Map(),
+    userSpokeAt: null
   }
 }
 
@@ -264,6 +267,7 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
         // A subagent that blocks its turn cannot outlive it. A re-folded prompt is older than
         // what its own turn launched, and must leave that running.
         const at = timeOf(record)
+        state.userSpokeAt = Math.max(state.userSpokeAt ?? 0, at ?? 0) || null
         dropForegroundCallsBefore(state.background, at)
         for (const agent of state.agents.values()) {
           const launchedBefore = at === null || agent.startedAt === null || agent.startedAt <= at

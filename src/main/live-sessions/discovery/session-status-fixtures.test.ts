@@ -70,12 +70,9 @@ describe('status of a Claude Code session, from its transcript, process and scre
     expect(session.activity?.subagents.map((s) => s.status)).toEqual(['completed', 'completed'])
   })
 
-  it('waiting on the user after its turn ended, noting the background command it left running', async () => {
+  it('waiting on the background command its turn started before it ended', async () => {
     const [session] = await scan('claude-waiting-background-task')
-    expect([session.status, session.statusDetail]).toEqual([
-      'your-turn',
-      '1 background task still running'
-    ])
+    expect([session.status, session.statusDetail]).toEqual(['waiting-task', null])
     expect(session.activity?.tasks).toEqual([
       {
         id: 'bash_4',

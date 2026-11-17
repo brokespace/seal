@@ -17,7 +17,8 @@ import {
 import type { ClaudeActivityState } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
 import { pendingCallStatus, turnStatus, withBackgroundWait } from './session-status'
-import { toolProcesses, type ToolProcess } from './agent-tool-processes'
+import { toolProcesses } from './agent-tool-processes'
+import { backgroundWaitOf, claudeBackgroundWait, leftoverCommands } from './claude-background-wait'
 import {
   claudeRegistryBackgroundShells,
   claudeRegistryHoldsBusy,
@@ -83,25 +84,6 @@ export function projectOf(cwd: string | null): string | null {
 export function configDirOf(provider: LiveSessionProvider, path: string | null): string | null {
   const at = path?.lastIndexOf(provider === 'claude' ? '/projects/' : '/sessions/') ?? -1
   return at > 0 ? path!.slice(0, at) : null
-}
-
-/**
- * A host with no word from the agent itself still shows what runs under it: a command of its
- * Bash tool that outlives a settled turn was left in the background, and with none left, none is.
- */
-function leftoverCommands(
-  commands: readonly ToolProcess[] | null,
-  turn: TranscriptSummary | undefined,
-  status: LiveSessionStatus
-): 'running' | 'none' | null {
-  if (commands === null) {
-    return null
-  }
-  if (!commands.some((command) => command.claudeBash)) {
-    return 'none'
-  }
-  const settled = turn?.phase === 'turn-ended' && turn.settled && isRestingLiveSessionStatus(status)
-  return settled ? 'running' : null
 }
 
 export function assembleHostSessions(input: {
@@ -233,7 +215,9 @@ export function assembleHostSessions(input: {
             (registry?.state ? null : leftoverCommands(commands, summary, status))),
       nowMs: now
     })
-    ;({ status, statusDetail } = withBackgroundWait({ status, statusDetail }, summary, activity))
+    const left = claudeBackgroundWait(transcript, activity, commands, registry)
+    const waits = withBackgroundWait({ status, statusDetail }, summary, activity, left)
+    ;({ status, statusDetail } = waits)
     if (claudeRegistryHoldsBusy({ status, statusDetail }, summary, registry)) {
       status = 'working'
       statusSource = 'agent-state'
@@ -325,6 +309,7 @@ export function assembleHostSessions(input: {
       permission,
       activity,
       lastMessage: summary?.lastMessage ?? null,
+      ...backgroundWaitOf(left, status),
       configDir: configDirOf(provider, transcript?.path ?? null),
       ...(continues.length > 0 ? { continues } : {}),
       ...(summary?.titleNamed ? { titleNamed: true as const } : {}),

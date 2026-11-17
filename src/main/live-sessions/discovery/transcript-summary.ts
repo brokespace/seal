@@ -50,6 +50,8 @@ export type TranscriptTurn = {
   settled: boolean
   /** The agent's newest reply, one line. */
   lastMessage: string | null
+  /** Claude: that reply's first and last words, where it says what it waits on. */
+  replyExcerpt?: string
 }
 
 export type TranscriptSummary = TranscriptTurn & {

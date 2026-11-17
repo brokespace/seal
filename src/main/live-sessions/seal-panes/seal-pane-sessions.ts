@@ -201,7 +201,9 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
       found.status === 'needs-permission' ||
       found.status === 'waiting-input')
   if (pane.status === 'your-turn') {
-    return RESTS_ON.has(found.status) || agentSays
+    // A wait read with what the ended turn left running is that turn's; any other is a stale read.
+    const endedOnWait = found.status === 'waiting-task' && found.backgroundWait !== undefined
+    return RESTS_ON.has(found.status) || agentSays || endedOnWait
   }
   if (pane.status === 'working') {
     return WORKS_ON.has(found.status) || (agentSays && found.status !== 'working')

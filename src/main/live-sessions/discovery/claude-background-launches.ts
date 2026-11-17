@@ -18,6 +18,9 @@ export type ClaudeBackgroundLaunch = {
   /** Null until the launch's result names the task: a call that stays in the foreground never does. */
   taskId: string | null
   label: string
+  /** What it runs and what the agent called it, for whoever asks what the agent waits on. */
+  command: string | null
+  description: string | null
   status: LiveSubagentStatus
   startedAt: number | null
   summary: string | null
@@ -37,6 +40,8 @@ const BACKGROUND_TOOLS: Partial<Record<string, ClaudeBackgroundTaskKind>> = {
   ScheduleWakeup: 'wakeup'
 }
 
+const LAUNCH_WORDING_CHARS = 400
+
 function launchLabel(kind: ClaudeBackgroundTaskKind, input: TranscriptRecord | null): string {
   if (kind === 'wakeup') {
     const reason = str(input?.reason)
@@ -53,6 +58,9 @@ function launchLabel(kind: ClaudeBackgroundTaskKind, input: TranscriptRecord | n
   )
 }
 
+const wording = (value: unknown): string | null =>
+  str(value) ? oneLine(str(value)!, LAUNCH_WORDING_CHARS) : null
+
 /** Records a call that may leave something running; false when the tool never does. */
 export function openBackgroundLaunch(
   launches: ClaudeBackgroundLaunches,
@@ -68,6 +76,8 @@ export function openBackgroundLaunch(
       kind,
       taskId: null,
       label: oneLine(launchLabel(kind, call.input), 160),
+      command: wording(call.input?.command),
+      description: wording(call.input?.description),
       status: 'running',
       startedAt: call.at,
       summary: null,
@@ -196,6 +206,8 @@ export function noteRunningTask(
     kind: monitor !== undefined ? 'monitor' : 'shell',
     taskId,
     label: oneLine(label, 160),
+    command: command === undefined ? null : oneLine(command, LAUNCH_WORDING_CHARS),
+    description: null,
     status: 'running',
     startedAt: null,
     summary: null,

@@ -4,6 +4,7 @@ import type { NativeChatContextUsageSummary } from '../native-chat/native-chat-c
 import type { NativeChatMessage } from '../native-chat/native-chat-types'
 import type { AgentSessionAgentId } from './adapters/agent-session-agent-ids'
 import type { LiveSessionActivity } from './live-session-activity'
+import type { BackgroundWaitEvidence } from './live-session-background-wait'
 
 /** The agents discovery finds outside Seal, whose transcripts Seal decodes. */
 export const LIVE_SESSION_PROVIDERS = ['claude', 'codex'] as const
@@ -20,10 +21,10 @@ export function liveSessionProviderOf(agent: string): LiveSessionProvider | null
  * working           the agent is generating or calling tools
  * running-shell     a shell command the agent started is still running (looks paused, is busy)
  * waiting-subagent  the agent waits for subagents it started (still busy, nothing for the user to do)
- * waiting-task      the agent's turn is blocked on a background command or task it started earlier
+ * waiting-task      the agent waits on a background command it started: inside a turn, or after a turn that ended to wait for it
  * needs-permission  a permission prompt is up: a tool or command waits for the user's approval
  * waiting-input     the agent asked the user a question
- * your-turn         the agent finished its turn and waits for the user's next message, whatever it left running
+ * your-turn         the agent finished its turn and waits for the user's next message, whatever leftovers still run
  * idle              the agent is running and has not been given anything to do yet
  * done              the agent process has ended
  * errored           the last turn failed
@@ -145,6 +146,8 @@ export type LiveSession = {
   activity?: LiveSessionActivity
   /** The agent's newest message, one line. */
   lastMessage?: string | null
+  /** Claude: what a turn that ended left running, while that decides between `your-turn` and `waiting-task`. */
+  backgroundWait?: BackgroundWaitEvidence
   /** The name the user gave it in Seal; shown instead of `title`. */
   customTitle?: string | null
   /** The provider config folder it runs under (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`), which names its account. */
