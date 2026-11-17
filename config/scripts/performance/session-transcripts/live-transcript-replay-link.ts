@@ -2,7 +2,12 @@
 // crosses it and models the time that takes.
 import { performance } from 'node:perf_hooks'
 import { COMPRESSED_FRAMES_CLIENT_CAPABILITY } from '../../../../src/shared/remote-runtime/e2ee/paired-e2ee-compressed-frame'
+import {
+  LiveSessionTranscriptParams,
+  LiveSessionWatchTranscriptParams
+} from '../../../../src/shared/live-sessions/live-session-rpc-params'
 import type { LiveSession } from '../../../../src/shared/live-sessions/live-session-types'
+import type { RuntimeRpcResponse } from '../../../../src/shared/runtime-rpc-envelope'
 import { sampleSessionSurface } from '../../../../src/shared/live-sessions/live-session-surface.test-fixture'
 import { FederatedTranscripts } from '../../../../src/main/live-sessions/federation/federated-transcripts'
 import type { FederationTransport } from '../../../../src/main/live-sessions/federation/federation-transport'
@@ -73,6 +78,7 @@ export class MeteredLink {
 let polled: (ms: number) => void = () => {}
 
 const realSetTimeout = globalThis.setTimeout
+// oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: every call goes on to the real setTimeout; only its `__promisify__` is absent, which nothing measured uses.
 globalThis.setTimeout = ((handler: () => void, ms?: number, ...rest: unknown[]) => {
   if (ms !== undefined && Math.abs((ms % 1) - POLL_MARK) < 1e-6) {
     polled(ms)
@@ -138,19 +144,24 @@ export function replayDesktop(route: ReplayRoute, transcriptPath: string, link: 
     async call(_environmentId, method, params, _timeoutMs) {
       const request = JSON.stringify({ id: 'r', deviceToken: 't', method, params })
       link.request(request)
-      const args = params as { sessionId: string; before?: number | null; limit?: number }
+      const args = LiveSessionTranscriptParams.parse(params)
       const result =
         method === 'liveSessions.transcript'
           ? await serverAccess.page(args.sessionId, args.before ?? null, args.limit)
           : null
-      const response = { id: 'r', ok: true as const, result }
+      const response: RuntimeRpcResponse<unknown> = {
+        id: 'r',
+        ok: true,
+        result,
+        _meta: { runtimeId: SERVER_ENVIRONMENT }
+      }
       link.reply(request, response)
-      return response as Awaited<ReturnType<FederationTransport['call']>>
+      return response
     },
     async subscribe(_environmentId, method, params, handlers) {
       const request = JSON.stringify({ id: 's', deviceToken: 't', method, params })
       link.request(request)
-      const args = params as { sessionId: string; fromCursor?: number | null }
+      const args = LiveSessionWatchTranscriptParams.parse(params)
       const frame = (result: unknown): void => {
         link.reply(request, { id: 's', ok: true, streaming: true, result })
         handlers.onFrame(result)

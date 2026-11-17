@@ -78,7 +78,7 @@ export function writeImageHeavyClaudeTranscript(
   }
   const user = (content: unknown, extra: Record<string, unknown> = {}): void =>
     record({ type: 'user', message: { role: 'user', content }, ...extra })
-  const assistant = (content: unknown[]): void =>
+  const assistant = (content: { type: string; [field: string]: unknown }[]): void =>
     record({
       type: 'assistant',
       message: {
@@ -87,9 +87,7 @@ export function writeImageHeavyClaudeTranscript(
         role: 'assistant',
         model: 'claude-opus-4-7',
         content,
-        stop_reason: content.some((block) => (block as { type: string }).type === 'tool_use')
-          ? 'tool_use'
-          : 'end_turn',
+        stop_reason: content.some((block) => block.type === 'tool_use') ? 'tool_use' : 'end_turn',
         usage: { input_tokens: 1200, output_tokens: 240 }
       }
     })
