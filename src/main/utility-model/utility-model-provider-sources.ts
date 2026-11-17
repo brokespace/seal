@@ -117,7 +117,7 @@ export function createUtilityModelProviderSources(deps: {
       }
     },
     openrouter: async () => {
-      const account = deps.openRouter.load()
+      const account = await deps.openRouter.load()
       return {
         configured: account.apiKey !== null,
         source: account.source,

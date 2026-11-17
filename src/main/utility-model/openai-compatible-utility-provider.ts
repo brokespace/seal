@@ -152,11 +152,15 @@ export function createOpenAiCompatibleProvider(
   }
 }
 
-/** A provider's JSON listing, read with the same failure classes as a completion. */
-export async function requestOpenAiCompatibleListing(input: {
+/** One JSON request beside the completions: a listing or a decision, with a completion's failure classes. */
+export async function requestOpenAiCompatibleJson(input: {
   label: string
   url: string
   apiKey: string | null
+  /** A GET when left out. */
+  body?: unknown
+  model?: string
+  timeoutMs?: number
   signal?: AbortSignal
   fetchImpl?: UtilityModelFetch
 }): Promise<unknown> {
@@ -164,13 +168,18 @@ export async function requestOpenAiCompatibleListing(input: {
     fetchImpl: input.fetchImpl ?? utilityModelFetch,
     provider: input.label,
     url: input.url,
-    init: { method: 'GET' },
+    init:
+      input.body === undefined
+        ? { method: 'GET' }
+        : { method: 'POST', body: JSON.stringify(input.body) },
     apiKey: input.apiKey,
-    signal: input.signal
+    signal: input.signal,
+    model: input.model,
+    timeoutMs: input.timeoutMs
   })
   const error = providerError(response, body, input.label)
   if (error) {
-    throw failureOf(response, error)
+    throw failureOf(response, error, input.model)
   }
   return body
 }

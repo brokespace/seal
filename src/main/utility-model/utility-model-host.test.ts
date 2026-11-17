@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   normalizeSessionSummaryModels,
@@ -39,6 +41,8 @@ function memoryOpenRouter(): OpenRouterAccountStore {
   let saved: string | null = null
   return new OpenRouterAccountStore({
     env: () => undefined,
+    // This computer's own key file is not the test's.
+    configFilePath: join(tmpdir(), 'seal-test-no-openrouter.json'),
     saved: {
       read: () => saved,
       save: (value) => {
