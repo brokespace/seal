@@ -326,41 +326,57 @@ panel shows why, and the next trigger tries again.
 
 Desktop, inside the session view (`LiveSessionPane`):
 
-- **Recap button** in the header, before Subagents and Tasks, with the number of
-  open questions and action items in the attention colour.
+- **Recap button** in the header, before Subagents and Tasks, with the number of open questions,
+  open action items and requests not addressed in the attention colour.
 - **Recap bar** under the header, one line: where it stands (else the goal), "N new" when
-  something arrived since he last looked, the open question and action item counts, and "Updated
-  5m ago". It is what he sees on open without doing anything. The whole bar is a button that
-  opens and closes the panel.
+  something arrived since he last looked, the same three counts, and "Updated 5m ago", or
+  "Checking the last turn…" while a turn that ended is still unread. It is what he sees on open
+  without doing anything. The whole bar is a button that opens and closes the panel.
 - **Recap panel**, a right-side panel with the chrome Subagents and Tasks use
   (`LiveSessionSidePanel`). Top to bottom: a note when the recap is not fresh; goal; where it
   stands; since you last looked; questions for you and your action items (checkbox for done, X to
   dismiss; settled ones fold under "N done or dismissed", where they can be unticked or brought
-  back); asked but not addressed; what you asked (the last six, the rest behind "N earlier"); what
-  the agent did (in progress, blocked, then done); decisions; files, PRs and links. The footer has
-  "Updated 5m ago", "recent history only" when older history was left out, and Refresh recap.
+  back); requests; what the agent did (in progress, blocked, then done); decisions; files, PRs and
+  links. The footer has "Updated 5m ago", "recent history only" when older history was left out,
+  and Refresh recap.
+- **Requests**, one section for everything the user asked for. Each row is the request, a chip
+  with where it stands, and the judge's answer that put it there ("Judged done in part · 96%").
+  Order: Not addressed, Partly done, Open and In progress, Declined; then Done, Withdrawn and
+  Dismissed behind "N done, withdrawn or dismissed". An unsettled row has Mark done and Dismiss;
+  a row the user ticked has Not done, a dismissed one Bring back. All four go through
+  `sessionRecap.mark`, and the user's mark stands over the judge's status. A verdict of the
+  judge's own cannot be undone from the row. A recap from a host that keeps no `requests` lists
+  what was asked as plain rows.
+- **The open panel follows the session's row.** The view it read is re-read against the row's
+  status and last activity (`recapViewOnSession`), with the host's own rule, so a turn that starts
+  turns "Not addressed" into "In progress" at once, and a turn that ended but is not read yet
+  shows "Checking the last turn" and calls nothing not addressed.
 - **Jumping.** Every item with a message behind it is a button. It closes any subagent transcript
   and reveals the message through the chat list's own navigation (`revealMessage`), which pages
   older history in until the message is loaded and lands on it the way the turn rail does. A PR or
   link also has an open-in-browser button.
-- **Badge** on session rows (Active agents): open questions and open action items, in the
-  attention colour, absent at zero.
+- **Badge** on session rows: open questions, open action items and requests not addressed, in the
+  attention colour, absent at zero. The button, the bar, the badge and the phone take their counts
+  from one function, `recapAttention`.
 
 Mobile, over the same RPC and the same synced session:
 
 - The same badge on session rows, and the same label precedence.
-- A recap banner above the transcript: the headline and the two counts. Tapping it opens a
-  sheet with the same sections, ticks, dismissals and Refresh. Tapping an item closes the sheet
+- A recap banner above the transcript: the headline and the counts. Tapping it opens a
+  sheet with the same sections, the same Requests rows and actions, ticks, dismissals and Refresh. Tapping an item closes the sheet
   and scrolls the transcript to its message, loading earlier pages (up to 12) until it is there.
 - Opening the session, and bringing the app back to the foreground, count as a visit.
 
 Both clients read a recap through `session-recap-view.ts` (what is new, what is open, the order
-of work), so they cannot disagree about what a recap says.
+of work, the request rows with their order, fold and actions), so they cannot disagree about what
+a recap says. Neither reads `recap.ignored`; that list is for clients from before the judge.
 
 States: writing the first recap; up to date; out of date ("the session has moved on"); updating;
 paused (rate limit) with the time it resumes; budget spent for today; failed with the provider's
 reason; degraded (the model's reply was unusable); recaps off or no utility model on this host,
-where the desktop panel links to the setting and the bar and the phone's banner are absent.
+where the desktop panel links to the setting and the bar and the phone's banner are absent. For a
+session a Seal server runs, the panel names that server and says the setting is there, with no
+link to this computer's settings.
 
 ## Not in this version
 

@@ -2265,7 +2265,7 @@
       "setting": {
         "title": "Session recaps",
         "searchDescription": "Keep a recap of each agent session: goal, open questions, action items.",
-        "description": "Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Your messages, the agent’s replies, the paths of files it read or edited and the command lines it ran (credentials redacted) are sent. What tools print and the contents of files are never sent."
+        "description": "Keep a recap of each session: what it is for, where it stands, what you asked, and the questions and action items still on you. It also names sessions you have not named. Your messages, the agent’s replies, the paths of files it read or edited, the command lines it ran (credentials redacted), and what it asked of a subagent and the subagent’s final report are sent. What tools print and the contents of files are never sent."
       },
       "toggleFailed": "Could not change session recaps."
     },
