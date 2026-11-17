@@ -1,4 +1,4 @@
-import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import type { LiveSession } from './live-session-types'
 
 function sameAgentAndHost(a: LiveSession, b: LiveSession): boolean {
   return a.provider === b.provider && a.machine.hostId === b.machine.hostId
@@ -18,6 +18,16 @@ function sameSurface(gone: LiveSession, session: LiveSession): boolean {
   )
 }
 
+/** The same process, chat or pane under the id its agent gave it since. */
+export function isSessionRenamedTo(gone: LiveSession, session: LiveSession): boolean {
+  return (
+    session.id !== gone.id &&
+    sameAgentAndHost(gone, session) &&
+    ((gone.pid !== null && gone.providerSessionId.startsWith('pid-') && session.pid === gone.pid) ||
+      sameSurface(gone, session))
+  )
+}
+
 /**
  * The record a session that left the list lives on in: one that continues it (a resume into a new
  * transcript, a fork), or the same process, chat or pane under the id its agent gave it since.
@@ -28,13 +38,6 @@ export function sessionSuccessor(
 ): LiveSession | undefined {
   return (
     sessions.find((session) => session.continues?.includes(gone.id)) ??
-    sessions.find(
-      (session) =>
-        sameAgentAndHost(gone, session) &&
-        ((gone.pid !== null &&
-          gone.providerSessionId.startsWith('pid-') &&
-          session.pid === gone.pid) ||
-          sameSurface(gone, session))
-    )
+    sessions.find((session) => isSessionRenamedTo(gone, session))
   )
 }

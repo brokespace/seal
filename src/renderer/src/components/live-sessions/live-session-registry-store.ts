@@ -1,16 +1,34 @@
 import { useSyncExternalStore } from 'react'
+import { isProvisionalLiveSessionId } from '../../../../shared/live-sessions/live-session-provisional-id'
 import type {
   LiveMessage,
   LiveSession,
   LiveSessionRegistryEvent,
   LiveSessionRegistrySnapshot
 } from '../../../../shared/live-sessions/live-session-types'
+import { isSessionRenamedTo } from '../../../../shared/live-sessions/session-succession'
 
 export type LiveSessionsState = {
   loaded: boolean
   sessions: LiveSession[]
   hostErrors: LiveSessionRegistrySnapshot['hostErrors']
   messages: ReadonlyMap<string, LiveMessage>
+}
+
+/**
+ * The list with `session` in it, newest activity first. A rename reaches this window as the new
+ * record and then the removal of the made-up id: the new record alone is that session from the start.
+ */
+export function upsertLiveSession(
+  sessions: readonly LiveSession[],
+  session: LiveSession
+): LiveSession[] {
+  const rest = sessions.filter(
+    (listed) =>
+      listed.id !== session.id &&
+      !(isProvisionalLiveSessionId(listed.providerSessionId) && isSessionRenamedTo(listed, session))
+  )
+  return [session, ...rest].sort((a, b) => b.lastActivityAt - a.lastActivityAt)
 }
 
 const EMPTY: LiveSessionsState = {
@@ -114,9 +132,10 @@ class LiveSessionRegistryStore {
     }
     this.revision = event.revision
     if (event.type === 'upsert') {
-      const rest = this.state.sessions.filter((s) => s.id !== event.session.id)
-      const sessions = [event.session, ...rest].sort((a, b) => b.lastActivityAt - a.lastActivityAt)
-      this.set({ ...this.state, sessions })
+      this.set({
+        ...this.state,
+        sessions: upsertLiveSession(this.state.sessions, event.session)
+      })
     } else if (event.type === 'remove') {
       if (event.replacedBy) {
         this.renamed.set(event.sessionId, event.replacedBy)

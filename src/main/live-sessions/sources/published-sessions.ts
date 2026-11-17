@@ -1,5 +1,5 @@
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
-import { sessionSuccessor } from './session-succession'
+import { sessionSuccessor } from '../../../shared/live-sessions/session-succession'
 
 export type PublishedSessionChange =
   | { type: 'upsert'; session: LiveSession }
