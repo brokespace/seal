@@ -14,13 +14,14 @@ import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-se
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { liveSessionMarksStore, useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
-import { useLiveSessionLinks } from '../links/use-live-session-links'
+import type { SidebarSessionPlace } from '../links/sidebar-session-groups'
+import { readSidebarSessionGroups } from '../links/use-workspace-sessions'
 import {
   matchesSidebarSessionFilters,
   sidebarSessionFilterStore
 } from './sidebar-session-filter-store'
-import { UNASSIGNED_FINISHED_OPEN_KEY, UNASSIGNED_SESSIONS_COLLAPSE_KEY } from './session-fold-keys'
-import { SIDEBAR_LIST, UNASSIGNED_SESSIONS } from './sidebar-session-row-dom'
+import { sessionGroupCollapseKey, sessionGroupFinishedOpenKey } from './session-fold-keys'
+import { SESSION_GROUP, SIDEBAR_LIST } from './sidebar-session-row-dom'
 import { workspaceFinishedOpenKey } from './workspace-session-rows-model'
 
 /** How long a row may take to mount once its project unfolds and its card scrolls in. */
@@ -77,37 +78,46 @@ export function revealFirstListedSession(sessionIds: readonly string[]): void {
   liveSessionMarksStore.reveal(listed ?? sessionIds[0])
 }
 
-/** Stops what hides a session's row: the filters, the fold of the Unassigned group, and for an ended one the line it sits behind. */
-function unhideSessionRow(session: LiveSession, worktreeId: string | undefined): void {
+/** Stops what hides a session's row: the filters, the fold of its project or group, and for an ended one the line it sits behind. */
+function unhideSessionRow(session: LiveSession, place: SidebarSessionPlace | undefined): void {
   if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
     sidebarSessionFilterStore.clear()
   }
+  if (!place) {
+    return
+  }
   const app = useAppStore.getState()
-  const finishedOpenKey = worktreeId
-    ? workspaceFinishedOpenKey(worktreeId)
-    : UNASSIGNED_FINISHED_OPEN_KEY
+  const finishedOpenKey =
+    place.kind === 'workspace'
+      ? workspaceFinishedOpenKey(place.worktreeId)
+      : sessionGroupFinishedOpenKey(place.group)
   if (!isActiveLiveSession(session) && !app.collapsedGroups.has(finishedOpenKey)) {
     app.toggleCollapsedGroup(finishedOpenKey)
   }
-  if (!worktreeId && app.collapsedGroups.has(UNASSIGNED_SESSIONS_COLLAPSE_KEY)) {
-    app.toggleCollapsedGroup(UNASSIGNED_SESSIONS_COLLAPSE_KEY)
+  const foldKey =
+    place.kind === 'header'
+      ? place.headerKey
+      : place.kind === 'group'
+        ? sessionGroupCollapseKey(place.group)
+        : null
+  if (foldKey && app.collapsedGroups.has(foldKey)) {
+    app.toggleCollapsedGroup(foldKey)
   }
 }
 
 /**
  * Runs `show` once for each session asked for from elsewhere (a badge, a fresh launch, the
- * palette), then fades the row's ring. `show` gets the workspace that lists the session, if one
- * does, and returns how to stop.
+ * palette), then fades the row's ring. `show` gets where the sidebar lists the session and
+ * returns how to stop.
  */
 function useSessionRowRevealRequest(
-  show: (session: LiveSession, worktreeId: string | undefined) => () => void
+  show: (session: LiveSession, place: SidebarSessionPlace | undefined) => () => void
 ): void {
   const reveal = useLiveSessionMarks().reveal
-  const { links } = useLiveSessionLinks()
   // Read at the moment of the request: later session updates must not move the list again.
   const showAtRequest = useLatestHandler((sessionId: string) => {
     const session = liveSessionRegistryStore.getState().sessions.find((s) => s.id === sessionId)
-    return session ? show(session, links.get(session.id)?.worktreeId) : null
+    return session ? show(session, readSidebarSessionGroups().places.get(session.id)) : null
   })
   useEffect(() => {
     const stop = reveal ? showAtRequest(reveal.sessionId) : null
@@ -122,19 +132,25 @@ function useSessionRowRevealRequest(
   }, [reveal, showAtRequest])
 }
 
-/** Shows a session row asked for from elsewhere: under its workspace, or in the Unassigned group. */
+/** Shows a session row asked for from elsewhere: under its workspace, or under its project. */
 export function useSidebarSessionRowReveal(): void {
-  useSessionRowRevealRequest((session, worktreeId) => {
-    unhideSessionRow(session, worktreeId)
+  useSessionRowRevealRequest((session, place) => {
+    unhideSessionRow(session, place)
+    const worktreeId = place?.kind === 'workspace' ? place.worktreeId : undefined
     const rowsOf = worktreeId
       ? `${SIDEBAR_LIST} [data-workspace-session-rows="${CSS.escape(worktreeId)}"]`
-      : UNASSIGNED_SESSIONS
+      : SESSION_GROUP
     const selector = `${rowsOf} [data-live-session-row="${CSS.escape(session.id)}"]`
     const mountedRows = (): HTMLElement[] =>
       Array.from(document.querySelectorAll<HTMLElement>(selector))
     // A row already listed stays where it is: only a folded project or a card scrolled out of the list is brought in.
     if (worktreeId && mountedRows().length === 0) {
       useAppStore.getState().revealWorktreeInSidebar(worktreeId, { behavior: 'auto' })
+    } else if (place?.kind === 'header' && mountedRows().length === 0) {
+      // Its rows sit right under the project's header, which the list knows how to reach.
+      useAppStore
+        .getState()
+        .revealSidebarRow(place.headerKey, { behavior: 'auto', highlight: false })
     }
     let frame = 0
     let framesLeft = ROW_MOUNT_FRAMES

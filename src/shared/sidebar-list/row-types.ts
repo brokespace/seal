@@ -134,8 +134,17 @@ export type FolderWorkspaceRow = {
 /** Stable create/repo identity only: subscribing to full progress records would rebuild the list on phase/loader churn. */
 export type PendingCreationRef = { creationId: string; repoId: string }
 
+/** A project's agent sessions that none of its workspaces holds, right under its header. Only the desktop lists them. */
+export type ProjectSessionsRow = {
+  type: 'project-sessions'
+  key: string
+  headerKey: string
+  groupDepth: number
+}
+
 export type Row =
   | GroupHeaderRow
+  | ProjectSessionsRow
   | WorktreeRow
   | ImportedWorktreesCardRow
   | NewExternalWorktreesInboxRow

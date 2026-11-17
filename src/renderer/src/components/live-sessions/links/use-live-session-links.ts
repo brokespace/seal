@@ -36,7 +36,7 @@ function linksFor(inputs: Inputs): LiveSessionLinks {
   const find = workspaceLinkFinder({ repos, worktreesByRepo, folderWorkspaces })
   const links = new Map<string, LiveSessionLink>()
   for (const session of sessions) {
-    // Unlinked until the catalog lists its workspace, so it shows as unassigned, never nowhere.
+    // Unlinked until the catalog lists its workspace, so it shows under its project, never nowhere.
     const link = session.workspace && find(session.workspace.worktreeId)
     if (link) {
       links.set(session.id, link)

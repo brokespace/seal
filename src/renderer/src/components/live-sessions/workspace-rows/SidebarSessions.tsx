@@ -5,7 +5,7 @@ import { useSidebarScrollSectionHosts } from '@/components/sidebar/sidebar-scrol
 import { useSidebarSessionRowKeyboard } from './session-row-keyboard'
 import { useSidebarSessionRowReveal } from './session-row-reveal'
 import { SidebarSessionsToolbar } from './SidebarSessionsToolbar'
-import { UnassignedSessionRows } from './UnassignedSessionRows'
+import { SessionGroups } from './SessionGroups'
 
 function SidebarSessionsBody(): React.JSX.Element {
   const hosts = useSidebarScrollSectionHosts()
@@ -16,15 +16,15 @@ function SidebarSessionsBody(): React.JSX.Element {
   useSidebarSessionRowReveal()
   return (
     <>
-      <UnassignedSessionRows />
+      <SessionGroups />
       {mounted && hosts ? createPortal(<SidebarSessionsToolbar />, hosts.pinnedHeader) : null}
     </>
   )
 }
 
 /**
- * What the sidebar list shows of sessions besides the rows on its workspace cards: the toolbar
- * pinned over the whole list, and the Unassigned group after the last workspace.
+ * What the sidebar list shows of sessions besides the rows under its projects: the toolbar pinned
+ * over the whole list, and after the last workspace the projects the list has no header for.
  */
 const SidebarSessions = React.memo(function SidebarSessions() {
   // Windows without the registry (a paired web client) have no sessions to list or filter.

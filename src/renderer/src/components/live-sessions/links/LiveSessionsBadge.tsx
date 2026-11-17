@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
+import { isActiveLiveSession } from '../../../../../shared/live-sessions/live-session-status'
 import type { LiveSessionStatus } from '../../../../../shared/live-sessions/live-session-types'
 import { AgentStateDot } from '@/components/AgentStateDot'
 import { cn } from '@/lib/class-names'
@@ -8,7 +9,9 @@ import { liveSessionMarksStore } from '../live-session-marks-store'
 import { useLiveSessions } from '../live-session-registry-store'
 import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
 import { revealFirstListedSession } from '../workspace-rows/session-row-reveal'
+import { liveSessionsBadge } from './live-session-links'
 import { useLiveSessionLinks } from './use-live-session-links'
+import { useSidebarSessionGroups } from './use-workspace-sessions'
 
 /** How many sessions run and what the most urgent of them needs, in words. */
 export function liveSessionsCountLabel(
@@ -24,17 +27,36 @@ export function liveSessionsCountLabel(
 
 /**
  * On a project's header: how many live sessions it has and what the most urgent one needs.
- * The sessions themselves are rows under their workspaces; pointing here rings them, clicking
- * unfolds the project down to the first of them and rings them all.
+ * The sessions themselves are rows under their workspaces or right under the header; pointing
+ * here rings them, clicking unfolds the project down to the first of them and rings them all.
  */
-export function LiveSessionsBadge({ projectId }: { projectId: string }): React.JSX.Element | null {
+export function LiveSessionsBadge({
+  projectId,
+  headerKey
+}: {
+  projectId: string
+  headerKey: string
+}): React.JSX.Element | null {
   const t = useTranslate()
   const { byProject } = useLiveSessionLinks()
+  const { places, byHeader } = useSidebarSessionGroups()
   const { sessions } = useLiveSessions()
   const isShowing = useIsAgentSessionShowing()
   // A click's ring fades by itself: the list scrolling the badge from under the pointer must not end it.
   const ringIsFromClick = useRef(false)
-  const badge = byProject.get(projectId)
+  const badge = useMemo(() => {
+    const onCards = new Set(byProject.get(projectId)?.sessionIds)
+    const underHeader = new Set(byHeader.get(headerKey)?.map((session) => session.id))
+    return liveSessionsBadge(
+      sessions.filter(
+        (session) =>
+          isActiveLiveSession(session) &&
+          // A session moved to another project left its workspace's card, and this count.
+          (underHeader.has(session.id) ||
+            (onCards.has(session.id) && places.get(session.id)?.kind === 'workspace'))
+      )
+    )
+  }, [byProject, byHeader, places, sessions, projectId, headerKey])
   if (!badge) {
     return null
   }

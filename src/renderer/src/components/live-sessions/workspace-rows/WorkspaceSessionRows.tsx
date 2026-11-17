@@ -32,8 +32,10 @@ export type WorkspaceSessionRowState = Pick<
 >
 
 export type WorkspaceSessionRowListProps = {
-  /** Null lists the sessions no workspace holds. */
+  /** Null lists sessions no workspace holds. */
   worktreeId: string | null
+  /** The project those are listed under, which a row in a folder of that name need not repeat. */
+  project?: string | null
   view: WorkspaceSessionRowsView
   finishedOpen: boolean
   rowState: (session: LiveSession) => WorkspaceSessionRowState
@@ -98,7 +100,7 @@ function keepPressFromCard(event: React.PointerEvent<HTMLElement>): void {
   window.addEventListener('pointerdown', onLost, true)
 }
 
-/** One workspace's sessions on its card, or the unassigned ones: a full row each, then the ended ones behind one line. */
+/** One workspace's sessions on its card, or one project's that no workspace holds: a full row each, then the ended ones behind one line. */
 export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): React.JSX.Element {
   const t = useTranslate()
   const { view } = props
@@ -113,7 +115,10 @@ export function WorkspaceSessionRowList(props: WorkspaceSessionRowListProps): Re
         key={key}
         session={session}
         // The card above the row names the workspace; a row no card holds names its place itself.
-        showPlace={props.worktreeId === null}
+        showPlace={
+          props.worktreeId === null &&
+          (state.workspaceName ?? session.project)?.toLowerCase() !== props.project?.toLowerCase()
+        }
         {...state}
         // Tab stops on the row of the session on screen, in its place; arrow keys reach the others from the list.
         tabStop={state.current}
@@ -199,7 +204,7 @@ export type SessionRowList = Pick<
   'view' | 'finishedOpen' | 'rowState' | 'now' | 'onToggleFinished' | 'onOpen' | 'onPick'
 >
 
-/** The rows one sidebar list shows and what they do, under a workspace or unassigned. */
+/** The rows one sidebar list shows and what they do, under a workspace or a project. */
 export function useSessionRowList(
   sessions: readonly LiveSession[],
   finishedKey: string

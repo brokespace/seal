@@ -26,7 +26,8 @@ import type { LineageToggleHandler } from '../../workspace-card/identity/worktre
 import {
   renderImportedWorktreesVirtualRow,
   renderNewExternalWorktreesInboxVirtualRow,
-  renderPendingCreationVirtualRow
+  renderPendingCreationVirtualRow,
+  renderProjectSessionsVirtualRow
 } from './notice-rows'
 import { renderWorktreeItemRow, type WorktreeItemRowContext } from './item-row'
 import { renderWorktreeSectionHeaderRow } from './SectionHeader'
@@ -168,6 +169,16 @@ export function renderWorktreeVirtualRow(
       actionState: ctx.newExternalWorktreeInboxActionState.get(row.repo.id),
       onReview: ctx.onOpenWorktreeVisibility,
       onSuppress: ctx.onOpenSuppressExternalWorktreeInbox
+    })
+  }
+
+  if (row.type === 'project-sessions') {
+    const header = ctx.renderRows[vItem.index - 1]
+    return renderProjectSessionsVirtualRow({
+      row,
+      project: header?.type === 'header' ? (header.label ?? null) : null,
+      vItem,
+      measureVirtualRowElement: ctx.measureVirtualRowElement
     })
   }
 

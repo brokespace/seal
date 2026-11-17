@@ -101,6 +101,8 @@ export function serializeSidebarRow(
         field('path', row.occurrence ? sectionPath(row.occurrence) : undefined),
         field('parent', row.occurrence?.parent?.key)
       ])
+    case 'project-sessions':
+      return line('PROJECT-SESSIONS', [field('key', row.key)])
     case 'pending-creation':
       return line('PENDING', [
         field('key', row.key),
