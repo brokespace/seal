@@ -34,7 +34,7 @@ function WorkspaceRows({
   return <div ref={rows} data-workspace-rows {...SIDEBAR_KEYBOARD_SECTION_PROPS} />
 }
 
-/** The sidebar's one list: the workspace rows, then the Unassigned group, in one scroll container. */
+/** The sidebar's one list: the workspace rows, then the sessions no listed project holds, in one scroll container. */
 function SidebarList({
   onEnterWorkspaces
 }: {
@@ -55,7 +55,7 @@ function sessionRows(): HTMLElement[] {
 }
 
 function groupLabel(): HTMLElement {
-  return document.querySelector<HTMLElement>('[data-unassigned-sessions-toggle]')!
+  return document.querySelector<HTMLElement>('[data-session-group-toggle]')!
 }
 
 async function renderList(
@@ -87,9 +87,10 @@ afterEach(() => {
   useAppStore.setState(initialState, true)
 })
 
-it('lists the sessions no workspace holds under one label, the ended ones behind their line', async () => {
+it('lists the sessions no workspace holds under the project their folder names, the ended ones behind their line', async () => {
   await renderList()
 
+  expect(groupLabel().textContent).toContain('seal')
   expect(groupLabel().getAttribute('aria-expanded')).toBe('true')
   expect(sessionRows().map((row) => row.dataset.liveSessionRow)).toEqual(['first', 'last'])
   expect(document.querySelector('[data-workspace-sessions-finished-toggle]')).not.toBeNull()
@@ -152,7 +153,7 @@ it('saves its fold with the other folds and keeps its label as the one stop whil
 
   fireEvent.click(groupLabel())
 
-  expect(saveUi.mock.calls).toEqual([[{ collapsedGroups: ['active-agents:unassigned'] }]])
+  expect(saveUi.mock.calls).toEqual([[{ collapsedGroups: ['active-agents:project:seal'] }]])
   expect(sessionRows()).toEqual([])
   expect(groupLabel().getAttribute('aria-expanded')).toBe('false')
   expect(
@@ -166,14 +167,14 @@ it('is absent while the filters leave none of its sessions', async () => {
 
   act(() => sidebarSessionFilterStore.setStatus('attention'))
 
-  expect(document.querySelector('[data-unassigned-sessions]')).toBeNull()
+  expect(document.querySelector('[data-session-group]')).toBeNull()
 })
 
 // Last: the marks store keeps the request, and a list mounted after it would show the row again.
 it('unfolds the group and the ended sessions for a row asked for from elsewhere', async () => {
-  useAppStore.setState({ collapsedGroups: new Set(['active-agents:unassigned']) })
+  useAppStore.setState({ collapsedGroups: new Set(['active-agents:project:seal']) })
   render(<SidebarList onEnterWorkspaces={() => true} />)
-  await waitFor(() => expect(document.querySelector('[data-unassigned-sessions]')).not.toBeNull())
+  await waitFor(() => expect(document.querySelector('[data-session-group]')).not.toBeNull())
   expect(sessionRows()).toEqual([])
 
   act(() => liveSessionMarksStore.reveal('ended'))

@@ -134,6 +134,9 @@ export const liveSessionMenuEffects: LiveSessionMenuEffects = {
   askMessage: (session) => liveSessionDialogStore.show({ kind: 'message', session }),
   setPinned: (session, pinned) =>
     void window.api.liveSessions.annotate({ sessionId: session.id, pinned }),
+  moveToProject: (session, project) =>
+    void window.api.liveSessions.annotate({ sessionId: session.id, project }),
+  askNewProject: (session) => liveSessionDialogStore.show({ kind: 'project', session }),
   copy: (text, what) => void copyText(text, what),
   swapAccount: (session, accountKey) => {
     const assignment = sealAssignmentFor(session)

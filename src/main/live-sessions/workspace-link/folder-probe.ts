@@ -1,4 +1,6 @@
 import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
+import { deriveGitRemoteIdentity } from '../../../shared/git/remotes/git-remote-identity'
+import { getProjectIdentityKey } from '../../../shared/project-host-setup-projection'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import type { FolderProbe } from './workspace-link-rules'
@@ -9,7 +11,7 @@ const UNREADABLE_RETRY_MS = 10_000
 /** A plain folder can become a repository: what a machine said stands this long. */
 const ANSWER_TTL_MS = 60_000
 
-/** Prints where a folder is: the machine's home and temp folder, its checkout and that checkout's main checkout. */
+/** Prints where a folder is: the machine's home and temp folder, its checkout, that checkout's remotes and its main checkout. */
 export function folderProbeScript(folder: string): string {
   return `cd ${quotePosixShell(folder)} 2>/dev/null || { echo @@UNREADABLE; exit 0; }
 echo "@@HOME $HOME"
@@ -17,6 +19,7 @@ echo "@@TMP \${TMPDIR:-}"
 root=$(git rev-parse --show-toplevel 2>/dev/null) || root=
 [ -n "$root" ] || { echo @@DONE; exit 0; }
 echo "@@ROOT $root"
+(cd "$root" && git remote -v 2>/dev/null) | sed 's/^/@@REMOTE /'
 common=$(cd "$root" && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd -P) || common=
 case $common in
   */.git)
@@ -28,9 +31,15 @@ echo @@DONE
 `
 }
 
+function markedLines(output: string, marker: string): string[] {
+  return output
+    .split('\n')
+    .filter((line) => line.startsWith(`${marker} `))
+    .map((line) => line.slice(marker.length + 1))
+}
+
 function marked(output: string, marker: string): string | null {
-  const line = output.split('\n').find((candidate) => candidate.startsWith(`${marker} `))
-  return line?.slice(marker.length + 1).trim() || null
+  return markedLines(output, marker)[0]?.trim() || null
 }
 
 export function parseFolderProbe(output: string): FolderProbe {
@@ -48,7 +57,17 @@ export function parseFolderProbe(output: string): FolderProbe {
   const linked =
     main !== null &&
     normalizeRuntimePathForComparison(main) !== normalizeRuntimePathForComparison(root)
-  return { kind: 'repository', root, ...(linked ? { main } : {}), home, tmp }
+  const identity = deriveGitRemoteIdentity(markedLines(output, '@@REMOTE').join('\n'))
+  return {
+    kind: 'repository',
+    root,
+    ...(linked ? { main } : {}),
+    ...(identity
+      ? { projectKey: getProjectIdentityKey({ id: '', gitRemoteIdentity: identity }) }
+      : {}),
+    home,
+    tmp
+  }
 }
 
 /** What each machine said about each folder, asked once at a time. */

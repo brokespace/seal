@@ -1,9 +1,15 @@
-import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
+import {
+  getRuntimePathBasename,
+  normalizeRuntimePathForComparison
+} from '../../../shared/cross-platform-path'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
 import { liveSessionExecutionHost } from '../../../shared/live-sessions/live-session-execution-host'
 import { isPairedServerLiveSession } from '../../../shared/live-sessions/live-session-paired-server'
 import { isActiveLiveSession } from '../../../shared/live-sessions/live-session-status'
-import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
+import type {
+  LiveSession,
+  LiveSessionRepository
+} from '../../../shared/live-sessions/live-session-types'
 import type { Repo } from '../../../shared/repo-types'
 import { getRepoMainWorktreeId, worktreeIdsEqual } from '../../../shared/worktree/id'
 import type { Store } from '../../persistence/loading-store/store'
@@ -13,11 +19,13 @@ import {
 } from '../../session-summaries/session-pane-workspace'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import type { FolderProbes } from './folder-probe'
+import { RepositoryIdentification } from './repository-identification'
 import type { WorkspaceCreation } from './workspace-creation'
 import { storedSessionWorkspace, type WorkspaceLinkCatalog } from './workspace-link-catalog'
 import {
   planWorkspace,
   workspaceForSession,
+  type FolderProbe,
   type LinkableWorkspace,
   type SessionWorkspace
 } from './workspace-link-rules'
@@ -29,6 +37,8 @@ const RETRY_MS = { later: 10_000, unassigned: 60_000, failed: 300_000 }
 type Outcome = 'linked' | keyof typeof RETRY_MS
 
 type FolderPlace = { hostId: string; cwd: string; key: string }
+
+type ReadableProbe = Exclude<FolderProbe, { kind: 'unreadable' }>
 
 export type WorkspaceLinkerDeps = {
   runtime: PaneWorkspaceRuntime
@@ -65,7 +75,16 @@ function sessionWorkspace(workspace: SessionWorkspace): SessionWorkspace {
   return { worktreeId: workspace.worktreeId, projectKey: workspace.projectKey }
 }
 
-/** Gives every session the workspace it belongs to, making one for a running session no workspace holds. */
+function repositoryOf(probe: ReadableProbe): LiveSessionRepository | null {
+  if (probe.kind !== 'repository') {
+    return null
+  }
+  const name = getRuntimePathBasename(probe.main ?? probe.root)
+  // A checkout at the filesystem root has no name to be listed by.
+  return name ? { name, ...(probe.projectKey ? { projectKey: probe.projectKey } : {}) } : null
+}
+
+/** Gives every session the workspace it belongs to, making one for a running session no workspace holds, and names the repository of one left without. */
 export class WorkspaceLinker {
   private readonly homes = new Map<string, string | null>()
   /** Links the folder rule cannot repeat: a shared folder's home workspace, a hidden checkout's project. */
@@ -73,11 +92,19 @@ export class WorkspaceLinker {
   private readonly resolving = new Set<string>()
   private readonly retryAt = new Map<string, number>()
   private readonly matches = new Map<string, LinkableWorkspace | null>()
+  /** The repository each folder's machine said it is in; null for a plain folder. */
+  private readonly repositories = new Map<string, LiveSessionRepository | null>()
+  private readonly identification: RepositoryIdentification
   private listed: readonly LinkableWorkspace[] = []
   private listedById = new Map<string, LinkableWorkspace>()
 
   constructor(private readonly deps: WorkspaceLinkerDeps) {
     this.homes.set(LOCAL_EXECUTION_HOST_ID, deps.localHome)
+    this.identification = new RepositoryIdentification({
+      retryMs: RETRY_MS.failed,
+      now: deps.now ?? Date.now,
+      log: deps.log
+    })
   }
 
   link(session: LiveSession): LiveSession {
@@ -89,11 +116,18 @@ export class WorkspaceLinker {
     if (workspace) {
       return { ...session, workspace: sessionWorkspace(workspace) }
     }
-    const creates = place?.hostId !== LOCAL_EXECUTION_HOST_ID || this.deps.creates(session)
-    if (place && creates && isActiveLiveSession(session)) {
-      this.resolve(session, place)
+    if (!place) {
+      return session
     }
-    return session
+    const creates = place.hostId !== LOCAL_EXECUTION_HOST_ID || this.deps.creates(session)
+    if (creates && isActiveLiveSession(session)) {
+      this.resolve(session, place)
+    } else if (!this.repositories.has(place.key) && Number.isFinite(this.deps.catalog.ageMs())) {
+      // Not before the workspaces are listed: until then every session looks like one no workspace holds.
+      this.identification.request(place.key, () => this.identify(session.machine.hostId, place))
+    }
+    const repository = this.repositories.get(place.key)
+    return repository ? { ...session, repository } : session
   }
 
   private workspaces(): readonly LinkableWorkspace[] {
@@ -194,14 +228,8 @@ export class WorkspaceLinker {
     if (probe.kind === 'unreadable') {
       return 'later'
     }
-    if (!this.homes.has(place.hostId)) {
-      this.homes.set(place.hostId, probe.home)
-      this.matches.clear()
-      if (this.holder(place)) {
-        return 'linked'
-      }
-      // The machine's other sessions were waiting for its home too.
-      this.deps.onChange()
+    if (this.learn(place, probe)) {
+      return 'linked'
     }
     // Seal adds projects on an SSH host only through that host's own server.
     const plan =
@@ -226,6 +254,40 @@ export class WorkspaceLinker {
       await catalog.refresh()
     }
     return 'failed'
+  }
+
+  /** Keeps what a machine said of a folder; true when a workspace holds the folder now that the machine's home is known. */
+  private learn(place: FolderPlace, probe: ReadableProbe): boolean {
+    const repository = repositoryOf(probe)
+    const known = this.repositories.get(place.key) ?? null
+    let changed = known?.name !== repository?.name || known?.projectKey !== repository?.projectKey
+    this.repositories.set(place.key, repository)
+    if (!this.homes.has(place.hostId)) {
+      this.homes.set(place.hostId, probe.home)
+      this.matches.clear()
+      if (this.holder(place)) {
+        return true
+      }
+      // The machine's other sessions were waiting for its home too.
+      changed = true
+    }
+    if (changed) {
+      this.deps.onChange()
+    }
+    return false
+  }
+
+  /** For a session no workspace is made for (an ended one, or one `creates` refuses); false when its folder could not be read. */
+  private async identify(machineHostId: string, place: FolderPlace): Promise<boolean> {
+    const host = this.deps.host(machineHostId)
+    const probe = host ? await this.deps.probes.read(host, place.cwd) : null
+    if (!probe || probe.kind === 'unreadable') {
+      return false
+    }
+    if (this.learn(place, probe)) {
+      this.deps.onChange()
+    }
+    return true
   }
 
   private primaryWorkspace(repo: Repo): LinkableWorkspace | null {

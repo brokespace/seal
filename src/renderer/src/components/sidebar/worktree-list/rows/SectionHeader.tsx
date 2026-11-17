@@ -352,7 +352,7 @@ export function renderWorktreeSectionHeaderRow(
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />
                 {isRepoHeader ? <RepoScanUnavailableIndicator repo={row.repo!} /> : null}
                 {liveSessionsProjectId ? (
-                  <LiveSessionsBadge projectId={liveSessionsProjectId} />
+                  <LiveSessionsBadge projectId={liveSessionsProjectId} headerKey={row.key} />
                 ) : null}
               </div>
             </div>

@@ -10,18 +10,20 @@ import { liveSessionMarksStore } from '../live-session-marks-store'
 import { scrollSidebarSessionRowIntoView } from './session-row-reveal'
 import {
   SIDEBAR_LIST as LIST,
-  SIDEBAR_SESSION_ROW,
-  UNASSIGNED_SESSIONS,
-  UNASSIGNED_SESSIONS_TOGGLE
+  SESSION_GROUP,
+  SESSION_GROUP_TOGGLE,
+  SIDEBAR_SESSION_ROW
 } from './sidebar-session-row-dom'
 
-const SESSIONS = `${LIST}, ${UNASSIGNED_SESSIONS}`
+const SESSIONS = `${LIST}, ${SESSION_GROUP}`
 const WORKSPACE_ROWS_SECTION = '[data-worktree-sidebar-content]'
 const WORKSPACE_OPTION = '[role="option"][data-worktree-id]'
 const CARD = '[data-worktree-card-surface]'
-// The lines that unfold ended sessions and the Unassigned group are stops too, or the keyboard could not open them.
-const SESSION_ROW = `[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle]), ${UNASSIGNED_SESSIONS_TOGGLE}`
-const TAB_STOP_ROW = `${SIDEBAR_SESSION_ROW}, ${UNASSIGNED_SESSIONS_TOGGLE}`
+// A project's sessions under its header: no card holds them, and they are no section of their own.
+const HEADER_GROUP = `${WORKSPACE_ROWS_SECTION} ${SESSION_GROUP}`
+// The lines that unfold ended sessions and a group are stops too, or the keyboard could not open them.
+const SESSION_ROW = `[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle]), ${SESSION_GROUP_TOGGLE}`
+const TAB_STOP_ROW = `${SIDEBAR_SESSION_ROW}, ${SESSION_GROUP_TOGGLE}`
 const KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape'])
 
 // Why closest(): a card can hold other workspaces' cards, whose rows are not its own.
@@ -91,6 +93,32 @@ function enterWorkspaceCard(list: HTMLElement, card: Element): void {
   })
 }
 
+function groupStops(group: Element | null): HTMLElement[] {
+  return group ? Array.from(group.querySelectorAll<HTMLElement>(SESSION_ROW)) : []
+}
+
+/** What the arrow keys step through between workspaces: each card, and each project's sessions under its header. */
+function listStops(list: HTMLElement): Element[] {
+  return Array.from(list.querySelectorAll(`${CARD}, ${HEADER_GROUP}`))
+}
+
+/** Moves on to the card or group beside `from`; false at the list's own end. */
+function moveToListStop(list: HTMLElement, from: Element, up: boolean): boolean {
+  const stops = listStops(list)
+  const at = stops.indexOf(from)
+  const stop = at === -1 ? undefined : stops[at + (up ? -1 : 1)]
+  if (!stop) {
+    return false
+  }
+  if (!stop.matches(CARD)) {
+    return focusSessionRow(up ? groupStops(stop).at(-1) : groupStops(stop)[0])
+  }
+  if (!up || !focusSessionRow(sessionRowsOf(stop).at(-1))) {
+    enterWorkspaceCard(list, stop)
+  }
+  return true
+}
+
 function moveFromList(list: HTMLElement, event: KeyboardEvent): boolean {
   // A held key only previews workspaces; the switch that follows its release would pull focus off a session row.
   if (event.repeat || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) {
@@ -100,33 +128,41 @@ function moveFromList(list: HTMLElement, event: KeyboardEvent): boolean {
   if (!card) {
     return false
   }
-  if (event.key === 'ArrowDown') {
-    return focusSessionRow(sessionRowsOf(card)[0])
+  const up = event.key === 'ArrowUp'
+  if (!up && focusSessionRow(sessionRowsOf(card)[0])) {
+    return true
   }
-  const cards = Array.from(list.querySelectorAll(CARD))
-  const previous = cards[cards.indexOf(card) - 1]
-  return previous ? focusSessionRow(sessionRowsOf(previous).at(-1)) : false
+  const stops = listStops(list)
+  const beside = stops[stops.indexOf(card) + (up ? -1 : 1)]
+  if (!beside) {
+    return false
+  }
+  // A workspace beside this one is the list's own to move to; only its last session row is ours.
+  return beside.matches(CARD)
+    ? up && focusSessionRow(sessionRowsOf(beside).at(-1))
+    : focusSessionRow(up ? groupStops(beside).at(-1) : groupStops(beside)[0])
 }
 
-function unassignedStops(group: Element | null): HTMLElement[] {
-  return group ? Array.from(group.querySelectorAll<HTMLElement>(SESSION_ROW)) : []
-}
-
-/** The Unassigned group takes the cursor a neighbouring sidebar section offers, on its first or last stop. */
-export function enterUnassignedSessions(
-  group: Element | null,
-  edge: SidebarSectionEntryEdge
-): boolean {
-  const stops = unassignedStops(group)
+/** A group after the workspaces takes the cursor a neighbouring sidebar section offers, on its first or last stop. */
+export function enterSessionGroup(group: Element | null, edge: SidebarSectionEntryEdge): boolean {
+  const stops = groupStops(group)
   return focusSessionRow(edge === 'first' ? stops[0] : stops.at(-1))
 }
 
-function moveInUnassignedSessions(group: Element, row: HTMLElement, event: KeyboardEvent): boolean {
-  const stops = unassignedStops(group)
+function moveInSessionGroup(group: Element, row: HTMLElement, event: KeyboardEvent): boolean {
+  const stops = groupStops(group)
   const up = event.key === 'ArrowUp'
-  if (!focusSessionRow(stops[stops.indexOf(row) + (up ? -1 : 1)])) {
+  if (focusSessionRow(stops[stops.indexOf(row) + (up ? -1 : 1)])) {
+    return true
+  }
+  const list = group.matches(HEADER_GROUP) ? group.closest<HTMLElement>(LIST) : null
+  if (!list || !moveToListStop(list, group, up)) {
     // Past its own ends the cursor moves on through the sidebar list, or stays when no workspace takes it.
-    offerSidebarSectionKeyboardCursor(group, up ? 'up' : 'down', event.repeat)
+    offerSidebarSectionKeyboardCursor(
+      list ? list.querySelector(WORKSPACE_ROWS_SECTION) : group,
+      up ? 'up' : 'down',
+      event.repeat
+    )
   }
   return true
 }
@@ -134,8 +170,8 @@ function moveInUnassignedSessions(group: Element, row: HTMLElement, event: Keybo
 function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
   const list = row.closest<HTMLElement>(LIST)
   const card = row.closest(CARD)
-  // A stop no card holds is the Unassigned group's, a section of its own after the workspaces.
-  const group = card ? null : row.closest(UNASSIGNED_SESSIONS)
+  // A stop no card holds is a group's: a project's sessions under its header, or a section after the workspaces.
+  const group = card ? null : row.closest(SESSION_GROUP)
   const sessions = list ?? group
   if (!sessions || (!card && !group)) {
     return false
@@ -145,7 +181,7 @@ function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
     return focusSessionRow(event.key === 'Home' ? rows[0] : rows.at(-1))
   }
   if (!list || !card) {
-    return group !== null && moveInUnassignedSessions(group, row, event)
+    return group !== null && moveInSessionGroup(group, row, event)
   }
   const rows = sessionRowsOf(card)
   const at = rows.indexOf(row)
@@ -155,14 +191,7 @@ function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
     }
     return true
   }
-  if (focusSessionRow(rows[at + 1])) {
-    return true
-  }
-  const cards = Array.from(list.querySelectorAll(CARD))
-  const next = cards[cards.indexOf(card) + 1]
-  if (next) {
-    enterWorkspaceCard(list, next)
-  } else {
+  if (!focusSessionRow(rows[at + 1]) && !moveToListStop(list, card, false)) {
     // Past the last workspace the cursor moves on through the sidebar list, as it does from a workspace row.
     offerSidebarSectionKeyboardCursor(
       list.querySelector(WORKSPACE_ROWS_SECTION),

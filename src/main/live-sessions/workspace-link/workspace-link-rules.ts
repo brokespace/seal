@@ -28,6 +28,8 @@ export type FolderProbe =
       root: string
       /** The main checkout, when `root` is a linked worktree of it. */
       main?: string
+      /** The project its remotes name, keyed as `getProjectIdentityKey` keys a project. */
+      projectKey?: string
       home: string | null
       tmp: string | null
     }

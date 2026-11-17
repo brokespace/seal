@@ -884,7 +884,10 @@
           "copiedId": "Session id copied",
           "copiedResume": "Resume command copied",
           "transcriptRemote": "The transcript is on {{host}}. Its path was copied.",
-          "transcriptMissing": "Could not show the transcript file. It may have been moved or deleted."
+          "transcriptMissing": "Could not show the transcript file. It may have been moved or deleted.",
+          "moveToProject": "Move to project",
+          "newProject": "New project…",
+          "resetProject": "Reset to automatic"
         },
         "palette": {
           "section": "Go to agent session"
@@ -964,6 +967,12 @@
           "unconfirmedTitle": "Send it again?",
           "unconfirmedDescription": "Seal could not confirm that the session got this message. It may already have run it, so sending it again could run it twice.",
           "unconfirmedConfirm": "Send again"
+        },
+        "project": {
+          "title": "Move to a new project",
+          "description": "Sessions in a folder or repository of this name, on any machine, are listed under it.",
+          "field": "Project name",
+          "save": "Move"
         }
       },
       "skills": {

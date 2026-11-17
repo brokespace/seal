@@ -66,14 +66,13 @@ export function projectSessionBadges(
     }
     byProject.set(link.repoId, [...(byProject.get(link.repoId) ?? []), session])
   }
-  return new Map(
-    [...byProject].map(([id, group]) => [
-      id,
-      {
-        count: group.length,
-        status: topLiveSessionStatus(group.map((session) => session.status))!,
-        sessionIds: group.map((session) => session.id)
-      }
-    ])
-  )
+  return new Map([...byProject].map(([id, group]) => [id, liveSessionsBadge(group)!]))
+}
+
+/** How many sessions these are and the most urgent status among them; null for none. */
+export function liveSessionsBadge(sessions: readonly LiveSession[]): LiveSessionsBadge | null {
+  const status = topLiveSessionStatus(sessions.map((session) => session.status))
+  return status
+    ? { count: sessions.length, status, sessionIds: sessions.map((session) => session.id) }
+    : null
 }

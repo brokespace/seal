@@ -5,6 +5,7 @@ import type { LiveSessionDangerKind } from './live-session-menu'
 export type LiveSessionDialog =
   | { kind: 'rename'; session: LiveSession }
   | { kind: 'message'; session: LiveSession }
+  | { kind: 'project'; session: LiveSession }
   | { kind: 'danger'; danger: LiveSessionDangerKind; sessions: LiveSession[] }
 
 let current: LiveSessionDialog | null = null

@@ -28,6 +28,7 @@ export function getWorktreeDragGroups(rows: HostSectionRow[]): WorktreeDragGroup
       row.type === 'imported-worktrees-card' ||
       row.type === 'new-external-worktrees-inbox' ||
       row.type === 'pending-creation' ||
+      row.type === 'project-sessions' ||
       row.type === 'folder-workspace'
     ) {
       continue

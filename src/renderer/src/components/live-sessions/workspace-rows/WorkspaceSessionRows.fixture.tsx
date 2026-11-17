@@ -4,7 +4,7 @@ import type {
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
 import { SAMPLE_NOW, sampleLiveSession } from '../live-session.test-fixture'
-import { UnassignedSessionRowsView } from './UnassignedSessionRows'
+import { SessionGroupView } from './SessionGroups'
 import { WorkspaceSessionRowList, type WorkspaceSessionRowState } from './WorkspaceSessionRows'
 import type { SidebarSessionFilters } from './sidebar-session-filter-store'
 import { buildWorkspaceSessionRows } from './workspace-session-rows-model'
@@ -150,10 +150,18 @@ function CardRows({
   )
 }
 
-function UnassignedGroup({ open }: { open: boolean }): React.JSX.Element {
+function SessionGroup({
+  open,
+  project = null
+}: {
+  open: boolean
+  project?: string | null
+}): React.JSX.Element {
   return (
     <div className="bg-worktree-sidebar text-worktree-sidebar-foreground">
-      <UnassignedSessionRowsView
+      <SessionGroupView
+        group={project ?? 'unassigned'}
+        project={project}
         list={{
           view: buildWorkspaceSessionRows(MARKED, NO_FILTERS, SAMPLE_NOW),
           finishedOpen: false,
@@ -204,12 +212,17 @@ export const selecting = defineFixture({
 
 export const unassigned = defineFixture({
   width: 300,
-  render: () => <UnassignedGroup open />
+  render: () => <SessionGroup open />
+})
+
+export const projectGroup = defineFixture({
+  width: 300,
+  render: () => <SessionGroup open project="seal" />
 })
 
 export const unassignedFolded = defineFixture({
   width: 300,
-  render: () => <UnassignedGroup open={false} />
+  render: () => <SessionGroup open={false} />
 })
 
 export const hiddenByFilters = defineFixture({

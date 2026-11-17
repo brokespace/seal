@@ -55,6 +55,7 @@ import {
   selectDetectedWorktreesByRepo,
   selectFolderWorkspaces
 } from '@/store/workspaces/catalog/workspace-record-fields'
+import { useProjectSessionRows } from './use-project-session-rows'
 
 type WorktreeListProps = {
   scrollOffsetRef: React.MutableRefObject<number>
@@ -283,8 +284,10 @@ const WorktreeList = React.memo(function WorktreeList({
     },
     [announceProjectCollapse, toggleGroup]
   )
+  const listEmpty = rowModel.rows.length === 0 || filtersHideAllRows
+  const viewportRows = useProjectSessionRows(rowModel, visibleScope, listEmpty ? null : groupBy)
   // Clear Filters must outrank empty project headers when filtering hides every workspace.
-  if (rowModel.rows.length === 0 || filtersHideAllRows) {
+  if (listEmpty) {
     return <SidebarWorktreeListEmptyState hasFilters={hasFilters} onClearFilters={clearFilters} />
   }
 
@@ -320,7 +323,7 @@ const WorktreeList = React.memo(function WorktreeList({
       <VirtualizedWorktreeViewport
         // Wake moves status headers; preserve viewport identity across those changes.
         key={`group:${groupBy}:host:${filterState.visibleWorkspaceHostIds?.join(',') ?? 'all'}:lineage`}
-        rows={rowModel.sectionRows}
+        rows={viewportRows}
         hostOptions={rowModel.hostOptions}
         occurrencePlan={rowModel.occurrencePlan}
         visibleProjectRepoIdsBySection={visibleProjectRepoIdsBySection}

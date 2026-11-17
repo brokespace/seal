@@ -22,6 +22,8 @@ import type {
 import { liveSessionTitle } from '../live-session-presentation'
 import { sendLiveMessage } from '../live-session-send'
 import { liveSessionMarksStore } from '../live-session-marks-store'
+import { sessionProjectNamed } from '../links/session-project-choices'
+import { useSessionProjectCatalog } from '../links/use-workspace-sessions'
 import {
   liveSessionDialogStore,
   useLiveSessionDialog,
@@ -76,6 +78,55 @@ function RenameDialog({ session }: { session: LiveSession }): React.JSX.Element 
             {t('auto.components.live-sessions.dialog.cancel', 'Cancel')}
           </Button>
           <Button type="submit">{t('auto.components.live-sessions.rename.save', 'Rename')}</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  )
+}
+
+function ProjectDialog({ session }: { session: LiveSession }): React.JSX.Element {
+  const t = useTranslate()
+  const catalog = useSessionProjectCatalog()
+  const [name, setName] = useState('')
+  return (
+    <DialogContent className="max-w-md sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>
+          {t('auto.components.live-sessions.project.title', 'Move to a new project')}
+        </DialogTitle>
+        <DialogDescription>
+          {t(
+            'auto.components.live-sessions.project.description',
+            'Sessions in a folder or repository of this name, on any machine, are listed under it.'
+          )}
+        </DialogDescription>
+      </DialogHeader>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (!name.trim()) {
+            return
+          }
+          const project = sessionProjectNamed(name, catalog)
+          void window.api.liveSessions.annotate({ sessionId: session.id, project })
+          close()
+        }}
+      >
+        <Input
+          autoFocus
+          value={name}
+          maxLength={200}
+          onChange={(event) => setName(event.target.value)}
+          aria-label={t('auto.components.live-sessions.project.field', 'Project name')}
+        />
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={close}>
+            {t('auto.components.live-sessions.dialog.cancel', 'Cancel')}
+          </Button>
+          <Button type="submit" disabled={!name.trim()}>
+            {t('auto.components.live-sessions.project.save', 'Move')}
+          </Button>
         </DialogFooter>
       </form>
     </DialogContent>
@@ -280,6 +331,8 @@ function dialogBody(dialog: LiveSessionDialog): React.JSX.Element {
   switch (dialog.kind) {
     case 'rename':
       return <RenameDialog key={dialog.session.id} session={dialog.session} />
+    case 'project':
+      return <ProjectDialog key={dialog.session.id} session={dialog.session} />
     case 'message':
       return <MessageDialog key={dialog.session.id} session={dialog.session} />
     case 'danger':

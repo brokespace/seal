@@ -1,4 +1,4 @@
-// Where the sidebar lists a session: under its workspace's card, or in the Unassigned group when no workspace holds it.
+// Where the sidebar lists a session: under its workspace's card, or under its project when no workspace holds it.
 import type { Locator, Page } from '@stablyai/playwright-test'
 import { expect } from './orca-app'
 
