@@ -55,6 +55,14 @@ describe('mergeSealPanes', () => {
     ).toEqual([['local:claude:0e7d2c1a-0000-4000-8000-00000000000a', 'seal', 812, 'working']])
   })
 
+  it("titles the pane's agent by its prompt until discovery reads a title", () => {
+    const titled = { ...discovered, title: 'Ship the release' }
+    expect([
+      mergeSealPanes([discovered], [pane], local)[0].title,
+      mergeSealPanes([titled], [pane], local)[0].title
+    ]).toEqual(['Deploy it', 'Ship the release'])
+  })
+
   it('marks a pane session as a CLI in that pane, joined to a discovered session or not', () => {
     const copilot: SealPane = { ...pane, paneKey: 'tab-2:0', provider: 'copilot' }
     expect(

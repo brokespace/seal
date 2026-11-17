@@ -168,6 +168,7 @@ export function mergeSealPanes(
         ...named,
         origin: 'seal' as const,
         surface,
+        title: found.title ?? pane.prompt,
         status: fromDiscovery ? found.status : pane.status,
         statusSource: fromDiscovery ? found.statusSource : 'seal-hooks',
         statusDetail:
