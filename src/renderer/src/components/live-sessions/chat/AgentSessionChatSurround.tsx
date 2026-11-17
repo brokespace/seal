@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '@/store'
+import { useSessionMachineName } from '@/components/machines/model/use-local-machine-name'
 import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
 import type { LiveSubagent } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { recapViewOnSession } from '../../../../../shared/session-recap/session-recap-view'
 import { SessionRecapBar } from '../../session-recap/SessionRecapBar'
 import { SessionRecapPanel } from '../../session-recap/SessionRecapPanel'
 import type { SessionRecapModel } from '../../session-recap/use-session-recap'
@@ -67,10 +69,16 @@ export function AgentSessionChatSurround({
   const recap = givenRecap ?? readRecap
   const hasRecap = session.capabilities.recap
   const canReveal = onRevealMessage !== undefined
-  const recapView = useMemo(
-    () => (recap.view && !canReveal ? recapViewWithoutMessageJumps(recap.view) : recap.view),
-    [recap.view, canReveal]
-  )
+  const machineName = useSessionMachineName()
+  const { status, lastActivityAt } = session
+  // Read once, then kept in step with the row: a turn that starts takes "Not addressed" off at once.
+  const recapView = useMemo(() => {
+    if (!recap.view) {
+      return null
+    }
+    const view = recapViewOnSession(recap.view, { status, lastActivityAt })
+    return canReveal ? view : recapViewWithoutMessageJumps(view)
+  }, [recap.view, canReveal, status, lastActivityAt])
 
   // A menu elsewhere asked this view to show something.
   const request = useAgentSessionFocusRequest(session.id)
@@ -146,6 +154,7 @@ export function AgentSessionChatSurround({
               onJump={onJump}
               onOpenLink={openRecapLink}
               onOpenSettings={openRecapSettings}
+              server={session.machine.connection === 'server' ? machineName(session.machine) : null}
               onClose={closePanel}
             />
           </div>

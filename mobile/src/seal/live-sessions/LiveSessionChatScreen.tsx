@@ -195,8 +195,7 @@ export function LiveSessionChatScreen({
       {session ? (
         <SessionRecapOverview
           client={client}
-          sessionId={session.id}
-          brief={session.recap}
+          session={session}
           open={sheet === 'recap'}
           onClose={closeSheet}
         />

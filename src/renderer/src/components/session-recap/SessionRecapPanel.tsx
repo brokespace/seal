@@ -20,19 +20,19 @@ import {
   recapItemIsNew,
   recapItemsByMark,
   recapNewsSinceLastLook,
-  recapWorkByState
+  recapRequestList,
+  recapWorkByState,
+  type RecapRequestRow as RecapRequestRowModel
 } from '../../../../shared/session-recap/session-recap-view'
 import { recapItemKindLabel, recapStateNote, recapUpdatedLabel } from './session-recap-copy'
 import {
   RecapLineRow,
   RecapReferenceRow,
+  RecapRequestRow,
   RecapTickRow,
   RecapWorkRow,
   type RecapJump
 } from './SessionRecapItems'
-
-/** How many of the user's own messages show before "earlier" folds the rest away. */
-const ASKED_SHOWN = 6
 
 export type SessionRecapPanelProps = {
   /** Null until the host has answered once. */
@@ -43,8 +43,10 @@ export type SessionRecapPanelProps = {
   onMark: (itemId: string, mark: RecapItemMark | null) => void
   onJump: RecapJump
   onOpenLink: (url: string) => void
-  /** Where a Cloudflare account is set up; shown when recaps cannot run. */
+  /** Where a Cloudflare account is set up; shown when recaps cannot run on this computer. */
   onOpenSettings?: () => void
+  /** The Seal server that runs the session and keeps its recap; null when this computer does. */
+  server?: string | null
   onClose: () => void
 }
 
@@ -147,6 +149,48 @@ function TickSection({
   )
 }
 
+/** Everything the user asked for, each with where it stands; what is settled folds away. */
+function RequestsSection({
+  view,
+  onMark,
+  onJump
+}: Pick<SessionRecapPanelProps, 'onMark' | 'onJump'> & {
+  view: SessionRecapView
+}): React.JSX.Element | null {
+  const t = useTranslate()
+  const { shown, folded } = recapRequestList(view)
+  if (shown.length + folded.length === 0) {
+    return null
+  }
+  const row = (request: RecapRequestRowModel): React.JSX.Element => (
+    <RecapRequestRow key={request.id} row={request} onMark={onMark} onJump={onJump} />
+  )
+  return (
+    <Section
+      name="requests"
+      title={t('seal.sessionRecap.requests', 'Requests')}
+      count={shown.length}
+    >
+      {shown.length > 0 ? (
+        <ul>{shown.map(row)}</ul>
+      ) : (
+        <AgentSessionPanelEmpty>
+          {t('seal.sessionRecap.allSettled', 'Nothing open.')}
+        </AgentSessionPanelEmpty>
+      )}
+      {folded.length > 0 ? (
+        <Folded
+          label={t('seal.sessionRecap.requestsSettled', '{{count}} done, withdrawn or dismissed', {
+            count: folded.length
+          })}
+        >
+          <ul>{folded.map(row)}</ul>
+        </Folded>
+      ) : null}
+    </Section>
+  )
+}
+
 function RecapBody({
   recap,
   view,
@@ -161,11 +205,6 @@ function RecapBody({
   const t = useTranslate()
   const news = recapNewsSinceLastLook(view)
   const work = recapWorkByState(recap.did)
-  const earlierAsked = recap.asked.slice(0, Math.max(0, recap.asked.length - ASKED_SHOWN))
-  const recentAsked = recap.asked.slice(earlierAsked.length)
-  const line = (item: RecapItem): React.JSX.Element => (
-    <RecapLineRow key={item.id} item={item} onJump={onJump} />
-  )
   return (
     <>
       {recap.goal ? (
@@ -228,33 +267,7 @@ function RecapBody({
         onMark={onMark}
         onJump={onJump}
       />
-      {recap.ignored.length > 0 ? (
-        <Section
-          name="ignored"
-          title={t('seal.sessionRecap.ignored', 'Asked but not addressed')}
-          count={recap.ignored.length}
-        >
-          <ul>{recap.ignored.map(line)}</ul>
-        </Section>
-      ) : null}
-      {recap.asked.length > 0 ? (
-        <Section
-          name="asked"
-          title={t('seal.sessionRecap.asked', 'What you asked')}
-          count={recap.asked.length}
-        >
-          {earlierAsked.length > 0 ? (
-            <Folded
-              label={t('seal.sessionRecap.earlier', '{{count}} earlier', {
-                count: earlierAsked.length
-              })}
-            >
-              <ul>{earlierAsked.map(line)}</ul>
-            </Folded>
-          ) : null}
-          <ul>{recentAsked.map(line)}</ul>
-        </Section>
-      ) : null}
+      <RequestsSection view={view} onMark={onMark} onJump={onJump} />
       {work.length > 0 ? (
         <Section name="did" title={t('seal.sessionRecap.did', 'What the agent did')}>
           <ul>
@@ -273,7 +286,11 @@ function RecapBody({
       ) : null}
       {recap.decisions.length > 0 ? (
         <Section name="decisions" title={t('seal.sessionRecap.decisions', 'Decisions')}>
-          <ul>{recap.decisions.map(line)}</ul>
+          <ul>
+            {recap.decisions.map((item) => (
+              <RecapLineRow key={item.id} item={item} onJump={onJump} />
+            ))}
+          </ul>
         </Section>
       ) : null}
       {recap.references.length > 0 ? (
@@ -314,7 +331,7 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
   const { view, now } = props
   const recap = view?.recap ?? null
   const updating = props.refreshing || view?.state === 'updating'
-  const note = view ? recapStateNote(view, t) : null
+  const note = view ? recapStateNote(view, t, props.server) : null
   const writing = t('seal.sessionRecap.writing', 'Reading the session\u2026')
   return (
     <AgentSessionSidePanel
@@ -361,7 +378,7 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
           className="border-b border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground"
         >
           {note}
-          {view?.state === 'unavailable' && props.onOpenSettings ? (
+          {view?.state === 'unavailable' && !props.server && props.onOpenSettings ? (
             <>
               {' '}
               <button

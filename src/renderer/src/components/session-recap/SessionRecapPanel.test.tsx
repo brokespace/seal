@@ -89,9 +89,56 @@ it('folds ticked and dismissed items away, and brings one back when it is untick
   ])
 })
 
-it('lists what the agent did since the last visit, newest first, and nothing on a first visit', () => {
+const requestStates = (root: HTMLElement): string[] =>
+  [...root.querySelectorAll('[data-recap-request]')].map(
+    (row) =>
+      `${row.getAttribute('data-recap-request')}:${row.getAttribute('data-recap-request-state')}`
+  )
+
+const requestAction = (id: string, action: string): HTMLElement =>
+  section('requests').querySelector<HTMLElement>(
+    `[data-recap-request="${id}"] [data-recap-request-action="${action}"]`
+  )!
+
+it('lists requests by where they stand, and lets the user settle one or take his tick back', () => {
+  const calls = renderPanel(sampleRecapView({ marks: { a11: 'done' } }))
+
+  expect(requestStates(section('requests'))).toEqual([
+    'a8:not-addressed',
+    'a20:open',
+    'a12:declined'
+  ])
+  expect(
+    section('requests').querySelector('[data-recap-request="a8"] [data-recap-request-reason]')
+  ).toHaveTextContent('Judged still waiting to be done · 91%')
+
+  fireEvent.click(requestAction('a8', 'done'))
+  fireEvent.click(requestAction('a20', 'dismiss'))
+  fireEvent.click(within(section('requests')).getByRole('button', { expanded: false }))
+
+  expect(requestStates(section('requests')).slice(3)).toEqual([
+    'a1:done',
+    'a2:done',
+    'a3:done',
+    'a5:done',
+    'a6:withdrawn',
+    'a11:done',
+    'a14:done'
+  ])
+  // The judge's own verdict is not the user's to undo; his tick is.
+  expect(requestAction('a1', 'not-done')).toBeNull()
+  fireEvent.click(requestAction('a11', 'not-done'))
+
+  expect(calls.onMark.mock.calls).toEqual([
+    ['a8', 'done'],
+    ['a20', 'dismissed'],
+    ['a11', null]
+  ])
+})
+
+it('lists what happened since the last visit, newest first, and nothing on a first visit', () => {
   renderPanel()
-  expect(itemIds(section('news'))).toEqual(['w13', 'w12', 'w9'])
+  expect(itemIds(section('news'))).toEqual(['a8', 'w13', 'w12', 'w9'])
 
   cleanup()
   renderPanel(sampleRecapView({ since: null }))

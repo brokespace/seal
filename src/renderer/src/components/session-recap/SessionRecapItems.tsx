@@ -19,6 +19,17 @@ import type {
   RecapReference,
   RecapWorkState
 } from '../../../../shared/session-recap/session-recap-types'
+import {
+  recapRequestActionMark,
+  type RecapRequestAction,
+  type RecapRequestRow as RecapRequestRowModel,
+  type RecapRequestRowState
+} from '../../../../shared/session-recap/session-recap-view'
+import {
+  recapRequestActionLabel,
+  recapRequestReasonLabel,
+  recapRequestStateLabel
+} from './session-recap-copy'
 
 export type RecapJump = (messageId: string) => void
 
@@ -36,7 +47,10 @@ export function RecapItemText({
   const { messageId } = item
   if (messageId === null) {
     return (
-      <span className={cn('min-w-0 flex-1 text-xs leading-5 break-words', className)}>
+      <span
+        data-recap-item-text=""
+        className={cn('min-w-0 flex-1 text-xs leading-5 break-words', className)}
+      >
         {item.text}
       </span>
     )
@@ -44,6 +58,7 @@ export function RecapItemText({
   return (
     <button
       type="button"
+      data-recap-item-text=""
       data-recap-jump={messageId}
       title={t('seal.sessionRecap.jump', 'Show in the conversation')}
       onClick={() => onJump(messageId)}
@@ -61,7 +76,7 @@ const ROW = 'group/recap flex items-start gap-2 px-3 py-1'
 const ROW_ACTION =
   'flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm text-muted-foreground opacity-0 outline-none group-hover/recap:opacity-100 hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring'
 
-/** A plain line of the recap: something asked, decided or left unaddressed. */
+/** A plain line of the recap: something decided, or found not addressed since the last visit. */
 export function RecapLineRow({
   item,
   kind,
@@ -180,6 +195,77 @@ export function RecapTickRow({
           <X className="size-3.5" />
         </button>
       ) : null}
+    </li>
+  )
+}
+
+const REQUEST_ACTION_ICONS: Record<RecapRequestAction, typeof Check> = {
+  done: Check,
+  dismiss: X,
+  'not-done': Undo2,
+  restore: Undo2
+}
+
+/** Only "Not addressed" says something was missed, so only it is drawn in the attention color. */
+const REQUEST_STATE_TONE: Partial<Record<RecapRequestRowState, string>> = {
+  'not-addressed': 'border-agent-question/40 text-agent-question-text',
+  'in-progress': 'text-agent-working'
+}
+
+/** One thing the user asked for: where it stands, why, and what the user can make of it. */
+export function RecapRequestRow({
+  row,
+  onMark,
+  onJump
+}: {
+  row: RecapRequestRowModel
+  onMark: (itemId: string, mark: RecapItemMark | null) => void
+  onJump: RecapJump
+}): React.JSX.Element {
+  const t = useTranslate()
+  const { state } = row
+  const settled = state === 'done' || state === 'withdrawn' || state === 'dismissed'
+  return (
+    <li data-recap-request={row.id} data-recap-request-state={state ?? 'unknown'} className={ROW}>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <RecapItemText
+          item={row}
+          onJump={onJump}
+          className={cn('flex-none', settled && 'text-muted-foreground')}
+        />
+        {state ? (
+          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+            <Badge variant="referenceLabel" className={REQUEST_STATE_TONE[state]}>
+              {recapRequestStateLabel(state, t)}
+            </Badge>
+            {row.reason ? (
+              <span
+                data-recap-request-reason=""
+                className="text-2xs leading-4 text-muted-foreground"
+              >
+                {recapRequestReasonLabel(row.reason, t)}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+      {row.actions.map((action) => {
+        const Icon = REQUEST_ACTION_ICONS[action]
+        const { title, label } = recapRequestActionLabel(action, t)
+        return (
+          <button
+            key={action}
+            type="button"
+            data-recap-request-action={action}
+            aria-label={label(row.text)}
+            title={title}
+            onClick={() => onMark(row.id, recapRequestActionMark(action))}
+            className={ROW_ACTION}
+          >
+            <Icon className="size-3.5" />
+          </button>
+        )
+      })}
     </li>
   )
 }

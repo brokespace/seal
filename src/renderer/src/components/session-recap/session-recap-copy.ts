@@ -1,10 +1,17 @@
 import type { Translate } from '@/i18n/use-translate'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import type {
+  RecapJudgeCriterion,
   RecapItem,
-  RecapSection,
   SessionRecapView
 } from '../../../../shared/session-recap/session-recap-types'
+import {
+  recapIsChecking,
+  type RecapNewsSection,
+  type RecapRequestAction,
+  type RecapRequestReason,
+  type RecapRequestRowState
+} from '../../../../shared/session-recap/session-recap-view'
 
 export function recapUpdatedLabel(updatedAt: number, now: number, t: Translate): string {
   const age = formatShortTimeAgo(updatedAt, now)
@@ -14,18 +21,16 @@ export function recapUpdatedLabel(updatedAt: number, now: number, t: Translate):
 }
 
 /** The kind of thing an item is, where items of several sections share one list. */
-export function recapItemKindLabel(section: RecapSection, item: RecapItem, t: Translate): string {
+export function recapItemKindLabel(
+  section: RecapNewsSection,
+  item: RecapItem,
+  t: Translate
+): string {
   switch (section) {
-    case 'questions':
-      return t('seal.sessionRecap.kind.question', 'Question')
-    case 'actions':
-      return t('seal.sessionRecap.kind.action', 'To do')
     case 'decisions':
       return t('seal.sessionRecap.kind.decision', 'Decision')
     case 'ignored':
-      return t('seal.sessionRecap.kind.ignored', 'Not addressed')
-    case 'asked':
-      return t('seal.sessionRecap.kind.asked', 'Asked')
+      return t('seal.sessionRecap.request.state.notAddressed', 'Not addressed')
     case 'did':
       return item.state === 'in-progress'
         ? t('seal.sessionRecap.kind.inProgress', 'In progress')
@@ -35,8 +40,112 @@ export function recapItemKindLabel(section: RecapSection, item: RecapItem, t: Tr
   }
 }
 
-/** Why the recap is not fresh, in words; null when it is, or while it is being written. */
-export function recapStateNote(view: SessionRecapView, t: Translate): string | null {
+/** The word on a request's chip. */
+export function recapRequestStateLabel(state: RecapRequestRowState, t: Translate): string {
+  switch (state) {
+    case 'not-addressed':
+      return t('seal.sessionRecap.request.state.notAddressed', 'Not addressed')
+    case 'partly':
+      return t('seal.sessionRecap.request.state.partly', 'Partly done')
+    case 'open':
+      return t('seal.sessionRecap.request.state.open', 'Open')
+    case 'in-progress':
+      return t('seal.sessionRecap.request.state.inProgress', 'In progress')
+    case 'declined':
+      return t('seal.sessionRecap.request.state.declined', 'Declined')
+    case 'done':
+      return t('seal.sessionRecap.request.state.done', 'Done')
+    case 'withdrawn':
+      return t('seal.sessionRecap.request.state.withdrawn', 'Withdrawn')
+    case 'dismissed':
+      return t('seal.sessionRecap.request.state.dismissed', 'Dismissed')
+  }
+}
+
+function recapJudgedLabel(criterion: RecapJudgeCriterion, percent: number, t: Translate): string {
+  switch (criterion) {
+    case 'left_undone':
+      return t(
+        'seal.sessionRecap.request.reason.leftUndone',
+        'Judged still waiting to be done \u00b7 {{percent}}%',
+        { percent }
+      )
+    case 'did_part':
+      return t(
+        'seal.sessionRecap.request.reason.didPart',
+        'Judged done in part \u00b7 {{percent}}%',
+        { percent }
+      )
+    case 'declined':
+      return t(
+        'seal.sessionRecap.request.reason.declined',
+        'Judged declined by the agent \u00b7 {{percent}}%',
+        { percent }
+      )
+    case 'withdrawn':
+      return t(
+        'seal.sessionRecap.request.reason.withdrawn',
+        'Judged taken back by you \u00b7 {{percent}}%',
+        { percent }
+      )
+    case 'done':
+      return t('seal.sessionRecap.request.reason.done', 'Judged done \u00b7 {{percent}}%', {
+        percent
+      })
+  }
+}
+
+/** Why a request stands where its chip says, under the request. */
+export function recapRequestReasonLabel(reason: RecapRequestReason, t: Translate): string {
+  switch (reason.by) {
+    case 'judge':
+      return recapJudgedLabel(reason.criterion, Math.round(reason.score * 100), t)
+    case 'user':
+      return t('seal.sessionRecap.request.reason.marked', 'Marked done by you')
+    case 'nobody':
+      return t('seal.sessionRecap.request.reason.unjudged', 'Not checked yet')
+  }
+}
+
+/** What a request's action is called, for its tooltip and, with the request, for a screen reader. */
+export function recapRequestActionLabel(
+  action: RecapRequestAction,
+  t: Translate
+): { title: string; label: (item: string) => string } {
+  switch (action) {
+    case 'done':
+      return {
+        title: t('seal.sessionRecap.request.action.doneTitle', 'Mark done'),
+        label: (item) => t('seal.sessionRecap.request.action.done', 'Mark done: {{item}}', { item })
+      }
+    case 'not-done':
+      return {
+        title: t('seal.sessionRecap.request.action.notDoneTitle', 'Not done'),
+        label: (item) =>
+          t('seal.sessionRecap.request.action.notDone', 'Not done: {{item}}', { item })
+      }
+    case 'dismiss':
+      return {
+        title: t('seal.sessionRecap.dismissTitle', 'Dismiss'),
+        label: (item) => t('seal.sessionRecap.dismiss', 'Dismiss: {{item}}', { item })
+      }
+    case 'restore':
+      return {
+        title: t('seal.sessionRecap.restoreTitle', 'Bring back'),
+        label: (item) => t('seal.sessionRecap.restore', 'Bring back: {{item}}', { item })
+      }
+  }
+}
+
+/**
+ * Why the recap is not fresh, in words; null when it is, or while it is being written. `server`
+ * names the Seal server that keeps the recap of a session it runs.
+ */
+export function recapStateNote(
+  view: SessionRecapView,
+  t: Translate,
+  server: string | null = null
+): string | null {
   switch (view.state) {
     case 'paused': {
       const time =
@@ -69,10 +178,16 @@ export function recapStateNote(view: SessionRecapView, t: Translate): string | n
           })
         : t('seal.sessionRecap.state.failed', 'The last update failed.')
     case 'unavailable':
-      return t(
-        'seal.sessionRecap.state.unavailable',
-        'Recaps are off, or the model provider chosen for them is not set up on this computer.'
-      )
+      return server
+        ? t(
+            'seal.sessionRecap.state.unavailableOnServer',
+            'This session\u2019s recap is kept by {{server}}, the Seal server that runs it. Recaps are off there, or it has no model provider for them. That is set on the server, not here.',
+            { server }
+          )
+        : t(
+            'seal.sessionRecap.state.unavailable',
+            'Recaps are off, or the model provider chosen for them is not set up on this computer.'
+          )
     case 'empty':
       return t(
         'seal.sessionRecap.state.empty',
@@ -83,6 +198,12 @@ export function recapStateNote(view: SessionRecapView, t: Translate): string | n
         return t(
           'seal.sessionRecap.state.degraded',
           'The model\u2019s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.'
+        )
+      }
+      if (recapIsChecking(view)) {
+        return t(
+          'seal.sessionRecap.state.checking',
+          'Checking the last turn. Until it is read, no request is called not addressed.'
         )
       }
       return view.stale

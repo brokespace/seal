@@ -41,8 +41,15 @@ it('offers a recap item as a jump only to a chat that can scroll to its message'
   const recap: SessionRecapModel = {
     view: sampleRecapView({
       recap: sampleSessionRecap({
-        asked: [
-          { id: 'a1', text: 'Find the double charge', messageId: 'o400', at: SAMPLE_NOW - 60_000 }
+        requests: [
+          {
+            id: 'a1',
+            text: 'Find the double charge',
+            messageId: 'o400',
+            at: SAMPLE_NOW - 60_000,
+            status: 'open',
+            statusAt: SAMPLE_NOW - 60_000
+          }
         ]
       })
     }),

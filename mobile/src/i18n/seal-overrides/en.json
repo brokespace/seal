@@ -415,6 +415,7 @@
       "writing": "Reading the session…",
       "badgeQuestions": "Questions for you: {{count}}",
       "badgeActions": "Your action items: {{count}}",
+      "badgeNotAddressed": "Requests not addressed: {{count}}",
       "tick": "Done: {{item}}",
       "new": "New",
       "restore": "Bring back: {{item}}",
@@ -429,8 +430,33 @@
       "news": "Since you last looked",
       "questions": "Questions for you",
       "actions": "Your action items",
-      "ignored": "Asked but not addressed",
-      "asked": "What you asked",
+      "requests": "Requests",
+      "requestsSettled": "{{count}} done, withdrawn or dismissed",
+      "request": {
+        "state": {
+          "notAddressed": "Not addressed",
+          "partly": "Partly done",
+          "open": "Open",
+          "inProgress": "In progress",
+          "declined": "Declined",
+          "done": "Done",
+          "withdrawn": "Withdrawn",
+          "dismissed": "Dismissed"
+        },
+        "reason": {
+          "leftUndone": "Judged still waiting to be done · {{percent}}%",
+          "didPart": "Judged done in part · {{percent}}%",
+          "declined": "Judged declined by the agent · {{percent}}%",
+          "withdrawn": "Judged taken back by you · {{percent}}%",
+          "done": "Judged done · {{percent}}%",
+          "marked": "Marked done by you",
+          "unjudged": "Not checked yet"
+        },
+        "action": {
+          "done": "Mark done: {{item}}",
+          "notDone": "Not done: {{item}}"
+        }
+      },
       "did": "What the agent did",
       "decisions": "Decisions",
       "references": "Files, PRs and links",
@@ -440,11 +466,7 @@
       "refreshShort": "Refresh",
       "partialLong": "This recap covers the recent part of a long session.",
       "kind": {
-        "question": "Question",
-        "action": "To do",
         "decision": "Decision",
-        "ignored": "Not addressed",
-        "asked": "Asked",
         "inProgress": "In progress",
         "blocked": "Blocked",
         "done": "Done"
@@ -455,10 +477,11 @@
         "overBudget": "Today’s budget for recaps is used. It resets at midnight UTC.",
         "failedWhy": "The last update failed: {{reason}}",
         "failed": "The last update failed.",
-        "unavailable": "Recaps are off, or the model provider chosen for them is not set up on the computer running Seal.",
+        "unavailable": "Recaps are off, or the model provider chosen for them is not set up on the computer that runs this session.",
         "empty": "Nothing to recap yet. A recap is written when the agent stops or waits for you.",
         "degraded": "The model’s last reply could not be used, so the newest part lists only what you asked. Refresh to try again.",
-        "stale": "The session has moved on since this was written."
+        "stale": "The session has moved on since this was written.",
+        "checking": "Checking the last turn. Until it is read, no request is called not addressed."
       }
     },
     "contextIndicator": {

@@ -19,11 +19,19 @@ import {
   recapItemIsNew,
   recapItemsByMark,
   recapNewsSinceLastLook,
-  recapWorkByState
+  recapRequestList,
+  recapWorkByState,
+  type RecapRequestRow as RecapRequestRowModel
 } from '../../../../src/shared/session-recap/session-recap-view'
 import { sealStyles } from '../seal-screen-styles'
 import { recapClockTime, recapItemKindLabel, recapStateNote } from './session-recap-copy'
-import { RecapLineRow, RecapReferenceRow, RecapTickRow, RecapWorkRow } from './SessionRecapRows'
+import {
+  RecapLineRow,
+  RecapReferenceRow,
+  RecapRequestRow,
+  RecapTickRow,
+  RecapWorkRow
+} from './SessionRecapRows'
 
 type Handlers = {
   onMark: (itemId: string, mark: RecapItemMark | null) => void
@@ -96,18 +104,57 @@ function TickSection({
   )
 }
 
-function Section({
-  title,
-  count,
-  children
-}: {
-  title: string
-  count?: number
-  children: React.ReactNode
-}) {
+/** Everything the user asked for: what needs a look first, what is settled behind a disclosure. */
+function RequestsSection({ view, onMark }: Pick<Handlers, 'onMark'> & { view: SessionRecapView }) {
+  const t = useMobileTranslation()
+  const [showSettled, setShowSettled] = useState(false)
+  const { shown, folded } = recapRequestList(view)
+  if (shown.length + folded.length === 0) {
+    return null
+  }
+  const row = (request: RecapRequestRowModel) => (
+    <RecapRequestRow key={request.id} row={request} onMark={onMark} />
+  )
   return (
     <View>
-      <SectionHeader title={title} trailing={count ? String(count) : undefined} />
+      <SectionHeader
+        title={t('seal.sessionRecap.requests', 'Requests')}
+        trailing={String(shown.length)}
+      />
+      <ListGroup>
+        {shown.map(row)}
+        {shown.length === 0 ? (
+          <ListRow key="none" title={t('seal.sessionRecap.allSettled', 'Nothing open.')} disabled />
+        ) : null}
+        {folded.length > 0 ? (
+          <ListRow
+            key="settled"
+            title={t(
+              'seal.sessionRecap.requestsSettled',
+              '{{count}} done, withdrawn or dismissed',
+              {
+                count: folded.length
+              }
+            )}
+            value={
+              showSettled
+                ? t('seal.sessionRecap.hide', 'Hide')
+                : t('seal.sessionRecap.show', 'Show')
+            }
+            onPress={() => setShowSettled((open) => !open)}
+            testID="recap-requests-settled"
+          />
+        ) : null}
+        {showSettled ? folded.map(row) : null}
+      </ListGroup>
+    </View>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View>
+      <SectionHeader title={title} />
       <ListGroup>{children}</ListGroup>
     </View>
   )
@@ -171,19 +218,7 @@ function RecapSections({
         view={view}
         onMark={onMark}
       />
-      {recap.ignored.length > 0 ? (
-        <Section
-          title={t('seal.sessionRecap.ignored', 'Asked but not addressed')}
-          count={recap.ignored.length}
-        >
-          {recap.ignored.map(line)}
-        </Section>
-      ) : null}
-      {recap.asked.length > 0 ? (
-        <Section title={t('seal.sessionRecap.asked', 'What you asked')} count={recap.asked.length}>
-          {recap.asked.map(line)}
-        </Section>
-      ) : null}
+      <RequestsSection view={view} onMark={onMark} />
       {work.length > 0 ? (
         <Section title={t('seal.sessionRecap.did', 'What the agent did')}>
           {work.flatMap((group) =>

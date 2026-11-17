@@ -74,12 +74,16 @@ export const folded = defineFixture({
 
 function Panels(): React.JSX.Element {
   const noop = (): void => {}
-  const panel = (view: SessionRecapView | null, refreshing = false): React.JSX.Element => (
+  const panel = (
+    view: SessionRecapView | null,
+    server: string | null = null
+  ): React.JSX.Element => (
     <div className="flex h-64 justify-self-start border border-border">
       <SessionRecapPanel
         view={view}
-        refreshing={refreshing}
+        refreshing={false}
         now={SAMPLE_NOW}
+        server={server}
         onRefresh={noop}
         onMark={noop}
         onJump={noop}
@@ -103,6 +107,10 @@ function Panels(): React.JSX.Element {
       )}
       {panel(sampleRecapView({ recap: null, state: 'unavailable', marks: {}, since: null }))}
       {panel(sampleRecapView({ recap: null, state: 'empty', marks: {}, since: null }))}
+      {panel(
+        sampleRecapView({ recap: null, state: 'unavailable', marks: {}, since: null }),
+        'build-box'
+      )}
     </div>
   )
 }
@@ -127,7 +135,13 @@ function PanelHalves(): React.JSX.Element {
     <div className="flex items-start gap-4 bg-background p-4">
       {half(
         sampleRecapView({
-          recap: sampleSessionRecap({ asked: [], did: [], decisions: [], references: [] }),
+          recap: sampleSessionRecap({
+            asked: [],
+            requests: [],
+            did: [],
+            decisions: [],
+            references: []
+          }),
           since: null
         })
       )}
@@ -153,7 +167,67 @@ export const sections = defineFixture({
   render: () => <PanelHalves />
 })
 
-/** The recap before it exists: being written, paused by the daily limit, not set up, nothing yet. */
+const REQUESTS_ONLY = sampleSessionRecap({
+  goal: null,
+  standing: null,
+  questions: [],
+  actions: [],
+  did: [],
+  decisions: [],
+  references: []
+})
+
+function RequestPanels(): React.JSX.Element {
+  const noop = (): void => {}
+  const panel = (name: string, patch: Partial<SessionRecapView>): React.JSX.Element => (
+    <div data-fixture-requests={name} className="flex border border-border">
+      <SessionRecapPanel
+        view={sampleRecapView({ recap: REQUESTS_ONLY, since: null, ...patch })}
+        refreshing={false}
+        now={SAMPLE_NOW}
+        onRefresh={noop}
+        onMark={noop}
+        onJump={noop}
+        onOpenLink={noop}
+        onClose={noop}
+      />
+    </div>
+  )
+  return (
+    <div className="flex items-start gap-4 bg-background p-4">
+      {panel('judged', { marks: { a11: 'done', a12: 'dismissed' } })}
+      <div className="flex flex-col gap-4">
+        {panel('working', { turnEnded: false })}
+        {panel('checking', { stale: true })}
+        {panel('older-host', {
+          recap: { ...REQUESTS_ONLY, requests: undefined },
+          turnEnded: undefined
+        })}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The Requests section in every standing: judged with the settled ones unfolded, while the agent
+ * works, while the last turn is unread, and from a host that keeps no status for requests.
+ */
+export const requests = defineFixture({
+  width: 720,
+  render: () => <RequestPanels />,
+  interact: (frame) => {
+    frame
+      .querySelector<HTMLButtonElement>(
+        '[data-fixture-requests="judged"] [data-recap-section="requests"] button[aria-expanded="false"]'
+      )
+      ?.click()
+  }
+})
+
+/**
+ * The recap before it exists: being written, paused by the daily limit, not set up here, nothing
+ * yet, and not set up on the server that keeps it.
+ */
 export const states = defineFixture({
   width: 720,
   render: () => <Panels />
