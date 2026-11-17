@@ -254,11 +254,7 @@ export function recapConversationSince(
     }
     for (const block of message.blocks) {
       if (block.type === 'text') {
-        // Codex records one compaction twice: as the summary it kept and as the event.
-        if (
-          block.presentation === 'compaction' &&
-          lines.at(-1) !== recapConversationLine.compacted
-        ) {
+        if (block.presentation === 'compaction') {
           say(recapConversationLine.compacted, false)
         }
       } else if (block.type === 'tool-call') {

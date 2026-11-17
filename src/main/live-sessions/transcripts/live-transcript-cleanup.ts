@@ -11,8 +11,6 @@ const SPLICED = /<(system-reminder|earlier_conversation|seal_notification)>[\s\S
 const LEADING_WRAPPER = /^\s*<([a-z][a-z0-9_-]*)(?:\s[^>]*)?>[\s\S]*?<\/\1>\s*/
 const INJECTED_PREFIX =
   /^\s*(?:# AGENTS\.md instructions|Caveat: The messages below were generated)/
-const SUMMARIZED = /^\s*<earlier_conversation>/
-const CLAUDE_CONTINUATION = /^\s*This session is being continued from a previous conversation/
 
 export type LiveTranscriptClass = 'conversation' | 'hidden' | 'summarized'
 
@@ -27,14 +25,14 @@ export function classifyLiveTranscriptRecord(
     return 'hidden'
   }
   if (provider === 'claude') {
+    // A session's file may hold its subagents' records; they read only in the subagent's own view.
+    if (record.isSidechain === true && options.subagent !== true) {
+      return 'hidden'
+    }
     if (record.isCompactSummary === true) {
       return 'summarized'
     }
-    // A session's file may hold its subagents' records; they read only in the subagent's own view.
-    const sidechain = record.isSidechain === true && options.subagent !== true
-    return record.type === 'summary' || record.type === 'system' || sidechain
-      ? 'hidden'
-      : 'conversation'
+    return record.type === 'summary' || record.type === 'system' ? 'hidden' : 'conversation'
   }
   if (record.type === 'compacted') {
     return 'summarized'
@@ -67,29 +65,20 @@ function cleanBlock(block: NativeChatBlock, role: NativeChatMessage['role']): Na
   return [{ ...block, text }]
 }
 
-export function summarizedDivider(id: string, timestamp: number | null): NativeChatMessage {
+export function summarizedDivider(id: string): NativeChatMessage {
   return {
     id,
     role: 'system',
     blocks: [
       { type: 'text', text: NATIVE_CHAT_NOTICE_COPY.compaction, presentation: 'compaction' }
     ],
-    timestamp,
+    timestamp: null,
     source: 'transcript'
   }
 }
 
-/** The message as the user should read it: wrappers gone, a handed-over summary folded to a divider. */
-export function cleanLiveTranscriptMessage(message: NativeChatMessage): NativeChatMessage[] {
-  const first = message.blocks[0]
-  const lead = message.role === 'user' && first?.type === 'text' ? first.text : ''
+/** The message as the user should read it: wrappers gone, null when nothing is left. */
+export function cleanLiveTranscriptMessage(message: NativeChatMessage): NativeChatMessage | null {
   const blocks = message.blocks.flatMap((block) => cleanBlock(block, message.role))
-  if (CLAUDE_CONTINUATION.test(lead)) {
-    return [summarizedDivider(message.id, message.timestamp)]
-  }
-  if (!SUMMARIZED.test(lead)) {
-    return blocks.length > 0 ? [{ ...message, blocks }] : []
-  }
-  const divider = summarizedDivider(`${message.id}s`, message.timestamp)
-  return blocks.length > 0 ? [divider, { ...message, blocks }] : [divider]
+  return blocks.length > 0 ? { ...message, blocks } : null
 }

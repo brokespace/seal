@@ -18,6 +18,7 @@ import { timeOf, type TranscriptRecord } from '../discovery/transcript-records'
 import { codexRawReasoning, withReasoningSpan } from './live-transcript-reasoning'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import { liveTranscriptImageUrl } from '../../../shared/live-sessions/live-transcript-image-ref'
+import { isNativeChatCompactionBoundary } from '../../../shared/native-chat/native-chat-context-usage'
 import { readElidedRun } from './transcript-base64-elision'
 import type { TranscriptLine, TranscriptSource } from './transcript-file-source'
 
@@ -65,17 +66,25 @@ export function decodeTranscriptLines(
     const record = parseJsonRecord(text)
     const decoded =
       kind === 'summarized'
-        ? summarizedDivider(id, null)
+        ? summarizedDivider(id)
         : (decode(text, id) ?? (record ? undecodedRecordMessage(provider, record, id) : null))
-    return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => {
-      const row = record ? withReasoningSpan(message, record) : message
-      return {
+    // Codex writes a compaction as an event too; its `compacted` record already drew the divider.
+    const message =
+      decoded && (kind === 'summarized' || !isNativeChatCompactionBoundary(decoded))
+        ? cleanLiveTranscriptMessage({ ...decoded, id })
+        : null
+    if (!message) {
+      return []
+    }
+    const row = record ? withReasoningSpan(message, record) : message
+    return [
+      {
         ...row,
         blocks: row.blocks.map((block) => withImageReference(block, offset)),
         transcriptOffset: offset,
         transcriptOrder: offset
       }
-    })
+    ]
   })
 }
 

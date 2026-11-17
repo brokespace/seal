@@ -29,17 +29,17 @@ export function NativeChatComposerWorkspace({
   isWorking?: boolean
 }): React.JSX.Element {
   const t = useTranslate()
-  const { worktreeId, runtimeEnvironmentId } = structuredTransport ?? {}
+  const { worktreeId, runtimeEnvironmentId, sessionPlace } = structuredTransport ?? {}
   const hasTransport = structuredTransport !== undefined
   const selector = useMemo(
     () =>
       createNativeChatComposerWorkspaceSelector(
         terminalTabId,
         hasTransport
-          ? { worktreeId, runtimeEnvironmentId: runtimeEnvironmentId ?? null }
+          ? { worktreeId, runtimeEnvironmentId: runtimeEnvironmentId ?? null, sessionPlace }
           : undefined
       ),
-    [terminalTabId, worktreeId, runtimeEnvironmentId, hasTransport]
+    [terminalTabId, worktreeId, runtimeEnvironmentId, hasTransport, sessionPlace]
   )
   const {
     worktreeId: rowWorktreeId,
@@ -83,7 +83,9 @@ export function NativeChatComposerWorkspace({
       ? t('components.native-chat.composerWorkspace.folder', 'Folder')
       : kind === 'main'
         ? t('components.native-chat.composerWorkspace.mainCheckout', 'Main checkout')
-        : t('components.native-chat.composerWorkspace.worktree', 'Worktree')
+        : kind === 'worktree'
+          ? t('components.native-chat.composerWorkspace.worktree', 'Worktree')
+          : null
 
   const copyIdentityButton =
     identity && label ? (
@@ -156,11 +158,13 @@ export function NativeChatComposerWorkspace({
             >
               <Folder className="size-3" aria-hidden />
               <span className={FOOTER_TEXT}>{checkout}</span>
-              <span
-                className={`${FOOTER_TEXT} max-w-[max(0px,calc(100%_-_var(--spacing)*5))] shrink-0 font-normal text-chat-foreground-faint`}
-              >
-                · {kindLabel}
-              </span>
+              {kindLabel && (
+                <span
+                  className={`${FOOTER_TEXT} max-w-[max(0px,calc(100%_-_var(--spacing)*5))] shrink-0 font-normal text-chat-foreground-faint`}
+                >
+                  · {kindLabel}
+                </span>
+              )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>

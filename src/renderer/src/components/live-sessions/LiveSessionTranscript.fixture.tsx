@@ -11,20 +11,6 @@ const NOW = 1_800_000_000_000
 // Rows the live reader decodes from the recorded Claude Code 2.1.325 transcripts in main/live-sessions/transcripts/__fixtures__.
 const handOff: NativeChatMessage[] = [
   {
-    id: 'o439s',
-    role: 'system',
-    source: 'transcript',
-    timestamp: 1799999400000,
-    transcriptOffset: 439,
-    blocks: [
-      {
-        type: 'text',
-        text: 'Context compacted',
-        presentation: 'compaction'
-      }
-    ]
-  },
-  {
     id: 'o439',
     role: 'user',
     source: 'transcript',

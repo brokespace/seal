@@ -2,7 +2,10 @@ import { formatNativeChatFileReference } from '../../../../../shared/agent-image
 import type { StructuredAgentContextUsage } from '../../../../../shared/agent-session/structured-agent-session-context-usage'
 import type { AgentSessionCapabilityFlags } from '../../../../../shared/live-sessions/live-session-types'
 import type { NativeChatContextUsageSummary } from '../../../../../shared/native-chat/native-chat-context-usage-summary'
-import type { NativeChatStructuredComposerTransport } from '../../native-chat/composer/submit/native-chat-structured-composer-transport'
+import type {
+  NativeChatComposerSessionPlace,
+  NativeChatStructuredComposerTransport
+} from '../../native-chat/composer/submit/native-chat-structured-composer-transport'
 
 export type ExternalAgentSessionComposerInput = {
   /** The record id. */
@@ -11,6 +14,8 @@ export type ExternalAgentSessionComposerInput = {
   worktreeId: string
   /** The paired server the tab's workspace is on; null on this machine or over SSH. */
   runtimeEnvironmentId: string | null
+  /** Where the record says the session runs; null while the registry lists none. */
+  sessionPlace: NativeChatComposerSessionPlace | null
   /** Said by the composer when a workspace on a paired server takes no file from this machine. */
   attachmentsUnavailableNotice: string
   /** Said by the disabled Send button while `capabilities.send` is false. */
@@ -60,6 +65,7 @@ export function externalAgentSessionComposerTransport(
     sessionId: input.sessionId,
     worktreeId: input.worktreeId,
     runtimeEnvironmentId: input.runtimeEnvironmentId,
+    sessionPlace: input.sessionPlace,
     runtime: onPairedServer ? 'remote' : 'local',
     // Why: an upload goes into a structured session's store, which this session has none of.
     ...(onPairedServer
