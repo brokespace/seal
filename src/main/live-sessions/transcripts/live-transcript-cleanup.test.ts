@@ -32,10 +32,16 @@ describe('live transcript cleanup on real recordings', () => {
     ])
   })
 
-  it('folds the summary Seal hands a fresh session into a divider', () => {
+  it('shows no compaction for the earlier turns Seal hands a fresh session', () => {
     expect(rows('claude', '__fixtures__/claude-2.1.325-seal-home-chat-preamble.jsonl')).toEqual([
-      'system: [compaction]',
       'user: What failed on the last deploy?',
+      'assistant: <summary>The user asked for the answer; it is 42.</summary>'
+    ])
+  })
+
+  it('shows no compaction for a prompt that only reads like a compaction summary', () => {
+    expect(rows('claude', '__fixtures__/claude-2.1.325-continuation-text-prompt.jsonl')).toEqual([
+      'user: This session is being continued from a previous conversation. Last time we agreed to ship the retry fix; pick it up from there.',
       'assistant: <summary>The user asked for the answer; it is 42.</summary>'
     ])
   })
