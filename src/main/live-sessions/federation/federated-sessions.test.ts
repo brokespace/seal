@@ -541,12 +541,12 @@ describe("a server chat's transcript", () => {
       {
         environmentId: 'env-1',
         method: 'liveSessions.transcript',
-        params: { sessionId: 'local:claude:abc', before: 9, limit: 50 }
+        params: { sessionId: 'local:claude:abc', before: 9, limit: 50, images: 'refs' }
       },
       {
         environmentId: 'env-1',
         method: 'liveSessions.transcriptSince',
-        params: { sessionId: 'local:claude:abc', cursor: 9 }
+        params: { sessionId: 'local:claude:abc', cursor: 9, images: 'refs' }
       }
     ])
   })
@@ -588,7 +588,11 @@ describe("a server chat's transcript", () => {
     streams[1].handlers.onClose()
     await vi.advanceTimersToNextTimerAsync()
     expect(streams[1].closed).toBe(true)
-    expect(streams[2].params).toEqual({ sessionId: 'local:claude:abc', fromCursor: 5 })
+    expect(streams[2].params).toEqual({
+      sessionId: 'local:claude:abc',
+      fromCursor: 5,
+      images: 'refs'
+    })
 
     watch.unsubscribe()
     expect(streams[2].closed).toBe(true)

@@ -9,6 +9,10 @@ import {
   LiveSessionAnnotateParams,
   LiveSessionRemoveParams
 } from '../../shared/live-sessions/live-session-rpc-params'
+import {
+  parseLiveTranscriptImageUrl,
+  readLiveTranscriptImage
+} from '../../shared/live-sessions/live-transcript-image-ref'
 import type { LiveSessionService } from './live-session-service'
 import type {
   ShellIntegrationAction,
@@ -110,6 +114,19 @@ export function registerLiveSessionIpc(
       watch.unsubscribe()
     }
   })
+  ipcMain.handle(
+    LIVE_SESSION_IPC.transcriptImage,
+    async (_event, args: { sessionId: unknown; url: unknown }) => {
+      const ref = isString(args?.url) ? parseLiveTranscriptImageUrl(args.url) : null
+      if (!isString(args?.sessionId) || !ref) {
+        return null
+      }
+      const { sessionId } = args
+      return readLiveTranscriptImage(ref, (start, length) =>
+        service.transcriptImageBase64(sessionId, start, length)
+      ).catch(() => null)
+    }
+  )
   ipcMain.handle(LIVE_SESSION_IPC.send, (_event, args: LiveSendRequest) => {
     if (
       !isString(args?.sessionId) ||

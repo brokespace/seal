@@ -1,19 +1,35 @@
 import * as z from 'zod'
+import { LIVE_TRANSCRIPT_IMAGE_PIECE_BYTES } from './live-transcript-image-ref'
 
 const SessionId = z.string().min(1).max(4096)
 const Cursor = z.number().int().nonnegative()
 
+/** `refs`: inline images arrive as references read with `liveSessions.transcriptImage`; absent, as data URLs. */
+const Images = z.literal('refs').optional()
+
 export const LiveSessionTranscriptParams = z.object({
   sessionId: SessionId,
   before: Cursor.nullish(),
-  limit: z.number().int().min(1).max(500).optional()
+  limit: z.number().int().min(1).max(500).optional(),
+  images: Images
 })
 
-export const LiveSessionTranscriptSinceParams = z.object({ sessionId: SessionId, cursor: Cursor })
+export const LiveSessionTranscriptSinceParams = z.object({
+  sessionId: SessionId,
+  cursor: Cursor,
+  images: Images
+})
 
 export const LiveSessionWatchTranscriptParams = z.object({
   sessionId: SessionId,
-  fromCursor: Cursor.nullish()
+  fromCursor: Cursor.nullish(),
+  images: Images
+})
+
+export const LiveSessionTranscriptImageParams = z.object({
+  sessionId: SessionId,
+  start: Cursor,
+  length: z.number().int().min(1).max(LIVE_TRANSCRIPT_IMAGE_PIECE_BYTES)
 })
 
 export const LiveSessionSendParams = z.object({

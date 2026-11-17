@@ -1,9 +1,6 @@
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
-import {
-  readTranscriptForward,
-  type TranscriptLine,
-  type TranscriptSource
-} from '../transcripts/live-transcript-reader'
+import { readTranscriptForward } from '../transcripts/live-transcript-reader'
+import type { TranscriptLine, TranscriptSource } from '../transcripts/transcript-file-source'
 import {
   isJsonRecord,
   parseJsonRecord,

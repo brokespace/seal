@@ -36,6 +36,8 @@ export type LiveSessionsApi = {
     fromCursor?: LiveTranscriptCursor | null
   }) => Promise<{ watchId: string; page: LiveTranscriptPage | null }>
   unwatchTranscript: (args: { watchId: string }) => Promise<void>
+  /** An inline image a transcript row refers to (`url` is the row's), as a data URL; null when it can't be read. */
+  transcriptImage: (args: { sessionId: string; url: string }) => Promise<string | null>
   onTranscriptDelta: (
     callback: (payload: { watchId: string; delta: LiveTranscriptDelta }) => void
   ) => () => void
@@ -71,6 +73,7 @@ export const liveSessionsApi: LiveSessionsApi = {
   transcriptPage: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.transcriptPage, args),
   watchTranscript: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.watchTranscript, args),
   unwatchTranscript: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.unwatchTranscript, args),
+  transcriptImage: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.transcriptImage, args),
   onTranscriptDelta: (callback) => listen(LIVE_SESSION_IPC.transcriptDelta, callback),
   send: (request) => ipcRenderer.invoke(LIVE_SESSION_IPC.send, request),
   retry: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.retry, args),

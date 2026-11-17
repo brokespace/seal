@@ -1,5 +1,7 @@
-import { open } from 'node:fs/promises'
-import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
+import type {
+  NativeChatBlock,
+  NativeChatMessage
+} from '../../../shared/native-chat/native-chat-types'
 import type {
   LiveSessionProvider,
   LiveTranscriptPage
@@ -11,99 +13,11 @@ import {
   cleanLiveTranscriptMessage,
   summarizedDivider
 } from './live-transcript-cleanup'
-import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { codexRawReasoning, withReasoningSpan } from './live-transcript-reasoning'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
-import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
-
-/** Raw bytes of one range of a transcript and the file's size when read. */
-export type TranscriptRange = { bytes: Buffer; size: number }
-
-export type TranscriptSource = {
-  read(start: number, length: number): Promise<TranscriptRange>
-  /** The most one read may return; SSH output is capped, so remote reads stay small. */
-  maxRead: number
-}
-
-export function localTranscriptSource(path: string): TranscriptSource {
-  return {
-    maxRead: 4 * 1024 * 1024,
-    async read(start, length) {
-      // A session is listed before its agent writes the file: that reads as empty, as on a remote host.
-      const handle = await open(path, 'r').catch((error: NodeJS.ErrnoException) => {
-        if (error.code === 'ENOENT') {
-          return null
-        }
-        throw error
-      })
-      if (!handle) {
-        return { bytes: Buffer.alloc(0), size: 0 }
-      }
-      try {
-        const { size } = await handle.stat()
-        const want = Math.max(0, Math.min(length, size - start))
-        const bytes = Buffer.alloc(want)
-        const { bytesRead } = want > 0 ? await handle.read(bytes, 0, want, start) : { bytesRead: 0 }
-        return { bytes: bytes.subarray(0, bytesRead), size }
-      } finally {
-        await handle.close()
-      }
-    }
-  }
-}
-
-export function remoteTranscriptSource(host: LiveSessionHost, path: string): TranscriptSource {
-  return {
-    maxRead: 640 * 1024,
-    async read(start, length) {
-      const f = quotePosixShell(path)
-      const out = await host.run(
-        `f=${f}; s=$(wc -c < "$f" 2>/dev/null | tr -d ' '); echo "@@SIZE \${s:-0}"; ` +
-          `printf '@@BYTES '; tail -c +${start + 1} "$f" 2>/dev/null | head -c ${length} | base64 | tr -d '\\n'; echo`
-      )
-      const size = Number(/@@SIZE (\d+)/.exec(out)?.[1] ?? 0)
-      const b64 = /@@BYTES (\S*)/.exec(out)?.[1] ?? ''
-      return { bytes: Buffer.from(b64, 'base64'), size }
-    }
-  }
-}
-
-export function transcriptSourceFor(host: LiveSessionHost, path: string): TranscriptSource {
-  return host.machine.kind === 'local'
-    ? localTranscriptSource(path)
-    : remoteTranscriptSource(host, path)
-}
-
-export type TranscriptLine = { offset: number; text: string }
-
-/** Complete lines in `bytes` (which starts at `start`); a trailing partial line is left unread. */
-export function completeLines(
-  bytes: Buffer,
-  start: number,
-  dropLeadingPartial: boolean
-): { lines: TranscriptLine[]; end: number } {
-  const lines: TranscriptLine[] = []
-  let at = 0
-  if (dropLeadingPartial) {
-    const nl = bytes.indexOf(0x0a)
-    if (nl === -1) {
-      return { lines, end: start }
-    }
-    at = nl + 1
-  }
-  for (;;) {
-    const nl = bytes.indexOf(0x0a, at)
-    if (nl === -1) {
-      break
-    }
-    const text = bytes.subarray(at, nl).toString('utf8')
-    if (text.trim()) {
-      lines.push({ offset: start + at, text })
-    }
-    at = nl + 1
-  }
-  return { lines, end: start + at }
-}
+import { liveTranscriptImageUrl } from '../../../shared/live-sessions/live-transcript-image-ref'
+import { readElidedRun } from './transcript-base64-elision'
+import type { TranscriptLine, TranscriptSource } from './transcript-file-source'
 
 export type TranscriptDecodeOptions = {
   /** Reading a subagent's own transcript, where every record is a sidechain record. */
@@ -129,16 +43,44 @@ export function decodeTranscriptLines(
         ? summarizedDivider(id, null)
         : (decode(text, id) ??
           (record && provider === 'codex' ? codexRawReasoning(record, id) : null))
-    return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => ({
-      ...(record ? withReasoningSpan(message, record) : message),
-      transcriptOffset: offset,
-      transcriptOrder: offset
-    }))
+    return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => {
+      const row = record ? withReasoningSpan(message, record) : message
+      return {
+        ...row,
+        blocks: row.blocks.map((block) => withImageReference(block, offset)),
+        transcriptOffset: offset,
+        transcriptOrder: offset
+      }
+    })
   })
 }
 
-const BACK_CHUNK = 256 * 1024
-const FORWARD_CHUNK = 512 * 1024
+const ELIDED_IMAGE = /^data:(image\/[a-z0-9.+-]+);base64,(.*)$/
+
+/** An inline image whose base64 the reader left in the file is named by where that base64 sits. */
+function withImageReference(block: NativeChatBlock, lineOffset: number): NativeChatBlock {
+  if (block.type !== 'image-ref' || !block.url) {
+    return block
+  }
+  const image = ELIDED_IMAGE.exec(block.url)
+  const run = image ? readElidedRun(image[2]) : null
+  return image && run
+    ? {
+        ...block,
+        url: liveTranscriptImageUrl({
+          mimeType: image[1],
+          start: lineOffset + run.at,
+          length: run.length
+        })
+      }
+    : block
+}
+
+/** A page stops growing past this much record text, so one reply stays under every frame cap. */
+const PAGE_TEXT_BYTES = 1536 * 1024
+
+const textBytes = (lines: TranscriptLine[]): number =>
+  lines.reduce((bytes, line) => bytes + line.text.length, 0)
 
 /** Messages before `before` (the file's end when null), newest `limit` of them. */
 export async function readTranscriptPage(
@@ -149,36 +91,21 @@ export async function readTranscriptPage(
   limit: number,
   options: TranscriptDecodeOptions = {}
 ): Promise<LiveTranscriptPage> {
-  const probe = await source.read(0, 0)
-  const end = before === null ? probe.size : Math.min(before, probe.size)
-  let start = end
-  let messages: NativeChatMessage[] = []
-  const firstChunk = Math.min(BACK_CHUNK, source.maxRead)
-  let chunk = firstChunk
-  while (start > 0 && messages.length < limit) {
-    const from = Math.max(0, start - chunk)
-    const { bytes } = await source.read(from, start - from)
-    const { lines } = completeLines(bytes, from, from > 0)
-    if (lines.length === 0 && from > 0) {
-      // A record bigger than one read is skipped rather than read whole.
-      if (chunk >= source.maxRead) {
-        start = from
-        chunk = firstChunk
-      } else {
-        chunk = Math.min(chunk * 2, source.maxRead)
-      }
-      continue
-    }
-    const firstLine = from > 0 ? lines[0].offset : 0
-    messages = [...decodeTranscriptLines(provider, lines, options), ...messages]
-    start = firstLine
-    chunk = firstChunk
+  let read = await source.linesBefore(before)
+  const cursor = before === null ? read.end : Math.min(before, read.size)
+  let messages = decodeTranscriptLines(provider, read.lines, options)
+  let text = textBytes(read.lines)
+  while (read.start > 0 && messages.length < limit && text < PAGE_TEXT_BYTES) {
+    read = await source.linesBefore(read.start)
+    messages = [...decodeTranscriptLines(provider, read.lines, options), ...messages]
+    text += textBytes(read.lines)
   }
+  let start = read.start
   if (messages.length > limit) {
     messages = messages.slice(-limit)
     start = messages[0].transcriptOffset ?? start
   }
-  return { sessionId, messages, cursor: end, start, more: start > 0 }
+  return { sessionId, messages, cursor, start, more: start > 0 }
 }
 
 export type ForwardRead = {
@@ -197,33 +124,15 @@ export async function readTranscriptForward(
   cursor: number,
   options: TranscriptDecodeOptions = {}
 ): Promise<ForwardRead> {
-  let chunk = Math.min(FORWARD_CHUNK, source.maxRead)
-  for (;;) {
-    const { bytes, size } = await source.read(cursor, chunk)
-    if (size < cursor) {
-      return { messages: [], lines: [], cursor, size, shrank: true }
-    }
-    const { lines, end } = completeLines(bytes, cursor, false)
-    if (lines.length > 0 || end > cursor || bytes.length < chunk || cursor + bytes.length >= size) {
-      return {
-        messages: decodeTranscriptLines(provider, lines, options),
-        lines,
-        cursor: end,
-        size,
-        shrank: false
-      }
-    }
-    if (chunk >= source.maxRead) {
-      // One enormous record: step past it instead of stalling every reader behind it.
-      const next = bytes.indexOf(0x0a)
-      return {
-        messages: [],
-        lines: [],
-        cursor: cursor + (next !== -1 ? next + 1 : bytes.length),
-        size,
-        shrank: false
-      }
-    }
-    chunk = Math.min(chunk * 2, source.maxRead)
+  const { size, lines, end } = await source.linesFrom(cursor)
+  if (size < cursor) {
+    return { messages: [], lines: [], cursor, size, shrank: true }
+  }
+  return {
+    messages: decodeTranscriptLines(provider, lines, options),
+    lines,
+    cursor: end,
+    size,
+    shrank: false
   }
 }

@@ -7,6 +7,7 @@ export const MOBILE_SEAL_RPC_METHODS = [
   'liveSessions.send',
   'liveSessions.takeOver',
   'liveSessions.transcript',
+  'liveSessions.transcriptImage',
   'liveSessions.unwatch',
   'liveSessions.watch',
   'liveSessions.watchTranscript',

@@ -101,11 +101,9 @@ export class LiveSessionService {
     this.streams = new LiveTranscriptStreams(this.registry, { log: deps.log })
     this.transcripts = new SessionTranscriptAccess({
       session: (sessionId) => this.registry.get(sessionId),
-      // Only a chat: a server's CLI session keeps a file this Seal already reads through its host.
+      // A server reads its own sessions' files and journals and sends rows: one round trip, no raw bytes.
       server: (sessionId) =>
-        this.registry.get(sessionId)?.surface.kind === 'chat'
-          ? (this.federated(sessionId)?.transcripts ?? null)
-          : null,
+        this.registry.get(sessionId) ? (this.federated(sessionId)?.transcripts ?? null) : null,
       files: this.streams,
       onSessionsChanged: (listener) => this.registry.subscribe(listener),
       log: deps.log
@@ -128,7 +126,7 @@ export class LiveSessionService {
           return (await this.chats?.journalSize(chat)) ?? 0
         }
         const found = this.streams.source(session.id)
-        return found ? (await found.source.read(0, 0)).size : 0
+        return found ? found.source.size() : 0
       },
       userTexts: (session, from) => this.userTexts(session, from),
       onChange: (message) => {
@@ -199,6 +197,11 @@ export class LiveSessionService {
     cursor: LiveTranscriptCursor
   ): ReturnType<LiveTranscriptStreams['since']> {
     return this.transcripts.since(sessionId, cursor)
+  }
+
+  /** A base64 run of a transcript, for an inline image one of its rows refers to. */
+  transcriptImageBase64(sessionId: string, start: number, length: number): Promise<string> {
+    return this.transcripts.imageBase64(sessionId, start, length)
   }
 
   watchTranscript(

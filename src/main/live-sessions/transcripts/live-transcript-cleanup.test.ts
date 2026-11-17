@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { completeLines, decodeTranscriptLines } from './live-transcript-reader'
+import { decodeTranscriptLines } from './live-transcript-reader'
+import { completeLines } from './transcript-file-source'
 import type { LiveSessionProvider } from '../../../shared/live-sessions/live-session-types'
 
 function rows(provider: LiveSessionProvider, file: string): string[] {

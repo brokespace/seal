@@ -4,6 +4,7 @@ export const LIVE_SESSION_IPC = {
   transcriptPage: 'liveSessions:transcriptPage',
   watchTranscript: 'liveSessions:watchTranscript',
   unwatchTranscript: 'liveSessions:unwatchTranscript',
+  transcriptImage: 'liveSessions:transcriptImage',
   send: 'liveSessions:send',
   retry: 'liveSessions:retry',
   messages: 'liveSessions:messages',

@@ -23,7 +23,11 @@ const COMPRESSIBLE_REPLY_METHODS: ReadonlySet<string> = new Set([
   'agentSession.history',
   'agentSession.subscribe',
   'nativeChat.readSession',
-  'nativeChat.subscribe'
+  'nativeChat.subscribe',
+  'liveSessions.transcript',
+  'liveSessions.transcriptSince',
+  'liveSessions.transcriptImage',
+  'liveSessions.watchTranscript'
 ])
 
 // Why bounded: listed requests are small, so a large one is a write whose reply stays plain unparsed.

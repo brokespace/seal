@@ -45,6 +45,8 @@ const deltaSchema = z.object({
 
 const sinceSchema = z.object({ messages: messagesSchema, cursor: Cursor, shrank: z.boolean() })
 
+const imageSchema = z.object({ base64: z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/) })
+
 const frameSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ready'), page: pageSchema.nullable() }),
   z.object({ type: z.literal('delta'), delta: deltaSchema }),
@@ -66,5 +68,7 @@ export const readTranscriptPage = (value: unknown): LiveTranscriptPage | null =>
   readFromServer(pageSchema, value)
 export const readTranscriptSince = (value: unknown): ServerTranscriptSince | null =>
   readFromServer(sinceSchema, value)
+export const readTranscriptImage = (value: unknown): string =>
+  readFromServer(imageSchema, value)?.base64 ?? ''
 export const readTranscriptFrame = (value: unknown): ServerTranscriptFrame | null =>
   readFromServer(frameSchema, value)

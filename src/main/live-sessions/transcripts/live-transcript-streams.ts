@@ -13,10 +13,9 @@ import { parseSubagentTranscriptId } from '../../../shared/live-sessions/live-se
 import {
   readTranscriptForward,
   readTranscriptPage,
-  transcriptSourceFor,
-  type TranscriptDecodeOptions,
-  type TranscriptSource
+  type TranscriptDecodeOptions
 } from './live-transcript-reader'
+import { transcriptSourceFor, type TranscriptSource } from './transcript-file-source'
 
 export type TranscriptSessionLookup = {
   get(sessionId: string): LiveSession | null
@@ -29,8 +28,18 @@ export type LiveTranscriptSubscription = {
   unsubscribe(): void
 }
 
+type ReadableTranscript = {
+  source: TranscriptSource
+  session: LiveSession
+  provider: LiveSessionProvider
+  decode: TranscriptDecodeOptions
+}
+
 const DEFAULT_PAGE = 80
 const MAX_SINCE_READS = 64
+/** A watcher further behind than this many reads is given the newest page, not the whole gap. */
+const MAX_CATCH_UP_READS = 4
+const MAX_CATCH_UP_MESSAGES = 4 * DEFAULT_PAGE
 
 /** Tails session transcripts for chat views; every delta names the cursor it continues from. */
 export class LiveTranscriptStreams {
@@ -46,12 +55,7 @@ export class LiveTranscriptStreams {
   }
 
   /** `transcriptId` is a session id, or a subagent's (`subagentTranscriptId`): its own transcript. */
-  source(transcriptId: string): {
-    source: TranscriptSource
-    session: LiveSession
-    provider: LiveSessionProvider
-    decode: TranscriptDecodeOptions
-  } | null {
+  source(transcriptId: string): ReadableTranscript | null {
     const { sessionId, subagentId } = parseSubagentTranscriptId(transcriptId)
     const session = this.sessions.get(sessionId)
     const host = session ? this.sessions.host(session.machine.hostId) : null
@@ -113,6 +117,16 @@ export class LiveTranscriptStreams {
     return { messages, cursor: at, shrank: false }
   }
 
+  /** A base64 run of the transcript, for an image one of its rows refers to; empty when it is not there. */
+  async imageBase64(sessionId: string, start: number, length: number): Promise<string> {
+    return (await this.source(sessionId)?.source.base64Run(start, length)) ?? ''
+  }
+
+  /**
+   * Deltas continue from `fromCursor`, or from the newest page when it is null. A watcher that is
+   * far behind the file's end (a cursor from before a restart, or zero for a session that was not
+   * listed yet) gets the newest page as a `reset` delta instead of the history in between.
+   */
   subscribe(
     sessionId: string,
     fromCursor: LiveTranscriptCursor | null,
@@ -123,6 +137,45 @@ export class LiveTranscriptStreams {
     let timer: ReturnType<typeof setTimeout> | null = null
     let failures = 0
 
+    const catchUp = async (found: ReadableTranscript): Promise<void> => {
+      const from = cursor
+      const messages: NativeChatMessage[] = []
+      let at = from
+      let behind = false
+      for (let reads = 0; ; reads++) {
+        const read = await readTranscriptForward(found.source, found.provider, at, found.decode)
+        if (stopped) {
+          return
+        }
+        if (read.shrank) {
+          behind = true
+          break
+        }
+        messages.push(...read.messages)
+        const caughtUp = read.cursor === at || read.cursor >= read.size
+        at = read.cursor
+        if (
+          messages.length > MAX_CATCH_UP_MESSAGES ||
+          (!caughtUp && reads + 1 >= MAX_CATCH_UP_READS)
+        ) {
+          behind = true
+        }
+        if (behind || caughtUp) {
+          break
+        }
+      }
+      if (behind) {
+        const page = await this.page(sessionId, null)
+        if (!stopped) {
+          cursor = page.cursor
+          listener({ sessionId, from, cursor, messages: page.messages, reset: true })
+        }
+      } else if (at !== from) {
+        cursor = at
+        listener({ sessionId, from, cursor, messages })
+      }
+    }
+
     const poll = async (): Promise<void> => {
       if (stopped) {
         return
@@ -130,29 +183,7 @@ export class LiveTranscriptStreams {
       const found = this.source(sessionId)
       if (found) {
         try {
-          const read = await readTranscriptForward(
-            found.source,
-            found.provider,
-            cursor,
-            found.decode
-          )
-          if (stopped) {
-            return
-          }
-          if (read.shrank) {
-            const page = await this.page(sessionId, null)
-            listener({
-              sessionId,
-              from: cursor,
-              cursor: page.cursor,
-              messages: page.messages,
-              reset: true
-            })
-            cursor = page.cursor
-          } else if (read.cursor !== cursor) {
-            listener({ sessionId, from: cursor, cursor: read.cursor, messages: read.messages })
-            cursor = read.cursor
-          }
+          await catchUp(found)
           failures = 0
         } catch (error) {
           failures++
