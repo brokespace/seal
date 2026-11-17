@@ -14,6 +14,8 @@
   "addressed-implicitly-by-edit@chat-journal": [],
   "addressed-implicitly-by-edit@claude-cli": [],
   "addressed-implicitly-by-edit@codex-cli": [],
+  "addressed-implicitly-by-edit@copilot-chat": [],
+  "addressed-implicitly-by-edit@opencode-chat": [],
   "addressed-in-the-middle-of-a-long-turn@chat-journal": [],
   "addressed-in-the-middle-of-a-long-turn@claude-cli": [],
   "addressed-in-the-middle-of-a-long-turn@codex-cli": [],
@@ -357,6 +359,7 @@
   "subagent-does-the-work@chat-journal": [],
   "subagent-does-the-work@claude-cli": [],
   "subagent-does-the-work@codex-cli": [],
+  "subagent-does-the-work@opencode-chat": [],
   "subagent-result-is-the-answer@chat-journal": [
     "after the turn: the finding is recorded as what the agent did"
   ],
