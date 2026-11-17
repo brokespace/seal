@@ -25,6 +25,7 @@ function transportFor(overrides: Partial<ExternalAgentSessionComposerInput> = {}
     capabilities: WRITABLE,
     worktreeId: 'wt-1',
     runtimeEnvironmentId: null,
+    sessionPlace: null,
     attachmentsUnavailableNotice: 'no files here',
     sendUnavailableReason: 'no route',
     context: {

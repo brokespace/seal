@@ -1,18 +1,24 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { useTranslate } from '@/i18n/use-translate'
+import { useAppStore } from '@/store/index'
 import type { AgentSessionChatSource } from '../../../../../shared/live-sessions/agent-session-chat-source'
+import { liveSessionExecutionHost } from '../../../../../shared/live-sessions/live-session-execution-host'
 import type {
   AgentSessionCapabilityFlags,
   LiveSession
 } from '../../../../../shared/live-sessions/live-session-types'
 import { nativeChatLocalAttachmentUnsupportedNotice } from '../../native-chat/attachments/intake/native-chat-attachment-notices'
-import type { NativeChatStructuredComposerTransport } from '../../native-chat/composer/submit/native-chat-structured-composer-transport'
+import type {
+  NativeChatComposerSessionPlace,
+  NativeChatStructuredComposerTransport
+} from '../../native-chat/composer/submit/native-chat-structured-composer-transport'
 import { useTranscriptContextUsage } from '../../native-chat/usage/use-native-chat-context-usage-summary'
 import { pendingRows, type PendingRow } from '../live-session-pending-rows'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import { retryLiveMessage } from '../live-session-retry'
 import { sendLiveMessage } from '../live-session-send'
+import { agentSessionWorktreeId } from '../open/agent-session-workspace'
 import { useLiveTranscriptFeed, type LiveTranscript } from '../use-live-transcript'
 import { externalAgentSessionSendHold } from './external-agent-session-composer-notices'
 import { externalAgentSessionComposerTransport } from './external-agent-session-composer-transport'
@@ -44,6 +50,20 @@ function useSameWhileEqual<T>(value: T): T {
     return value
   }
   return held.value
+}
+
+/** The same object while the record places the session the same. */
+function useSessionPlace(session: LiveSession | null): NativeChatComposerSessionPlace | null {
+  // Read on every render: the link follows the registry's record as well as this window's catalog.
+  const worktreeId = useAppStore(() => (session ? agentSessionWorktreeId(session) : null))
+  const executionHostId = session ? liveSessionExecutionHost(session.machine) : null
+  const machine = session?.machine.label ?? ''
+  const cwd = session?.cwd ?? null
+  const project = session?.project ?? null
+  return useMemo(
+    () => (executionHostId ? { executionHostId, machine, cwd, project, worktreeId } : null),
+    [executionHostId, machine, cwd, project, worktreeId]
+  )
 }
 
 export type ExternalAgentSessionChatSourceArgs = {
@@ -103,6 +123,7 @@ export function useExternalAgentSessionChatSource(args: ExternalAgentSessionChat
       : { agent: session?.provider, messages: transcript.messages, recorded }
   )
   const sendHold = session ? externalAgentSessionSendHold(session, t) : null
+  const sessionPlace = useSessionPlace(session)
   const composer = useMemo(
     () =>
       externalAgentSessionComposerTransport({
@@ -110,6 +131,7 @@ export function useExternalAgentSessionChatSource(args: ExternalAgentSessionChat
         capabilities,
         worktreeId,
         runtimeEnvironmentId,
+        sessionPlace,
         attachmentsUnavailableNotice: nativeChatLocalAttachmentUnsupportedNotice(),
         sendUnavailableReason: sendHold ?? '',
         context,
@@ -123,6 +145,7 @@ export function useExternalAgentSessionChatSource(args: ExternalAgentSessionChat
       capabilities,
       worktreeId,
       runtimeEnvironmentId,
+      sessionPlace,
       sendHold,
       context,
       onError,
