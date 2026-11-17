@@ -1,0 +1,419 @@
+[
+  {
+    "id": "gh-run-watch",
+    "truth": "waiting",
+    "why": "A command that follows one CI run to its end, and a reply that promises the result.",
+    "endedAgoSeconds": 420,
+    "reply": "Pushed `fix/flaky-upload` and opened the PR. CI is running; I'll report when it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 6,
+        "description": "Watch CI run",
+        "command": "gh run watch 18840112233 --exit-status",
+        "state": "running",
+        "runs": ["gh"]
+      }
+    ]
+  },
+  {
+    "id": "cargo-build-release",
+    "truth": "waiting",
+    "why": "A release build in the background, with the work that follows it named.",
+    "endedAgoSeconds": 180,
+    "reply": "Release build started in the background (about 8 minutes on this machine). I'll continue with the benchmarks once it's done.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 5,
+        "description": "Build release binary",
+        "command": "cargo build --release 2>&1 | tail -n 40",
+        "state": "running",
+        "runs": ["cargo", "rustc", "tail"]
+      }
+    ]
+  },
+  {
+    "id": "earlier-turn-training-still-reported",
+    "truth": "waiting",
+    "why": "The job was started turns ago, so the last-turn rule alone would call it a leftover; the newest reply still reports on it and promises its result.",
+    "endedAgoSeconds": 60,
+    "reply": "Quick status: the training run from earlier is at epoch 14 of 40, loss 0.31 and still falling. Nothing to act on yet. I'll report the final metrics when it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 7200,
+        "description": "Train exp-17",
+        "command": "python train.py --config configs/exp-17.yaml",
+        "state": "running",
+        "runs": ["python"]
+      }
+    ]
+  },
+  {
+    "id": "unread-command-says-waiting",
+    "truth": "waiting",
+    "why": "The command's launch was not read, but the reply says the agent waits on work that is still going.",
+    "endedAgoSeconds": 1200,
+    "reply": "Still waiting on the evaluation: 1,840 of 5,000 samples scored. I'll post the table when it's done.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": null,
+        "startedBeforeEndSeconds": null,
+        "description": null,
+        "command": null,
+        "state": "running",
+        "runs": ["python3"]
+      }
+    ]
+  },
+  {
+    "id": "download-then-convert",
+    "truth": "waiting",
+    "why": "A download that ends by itself, and the step after it named in the reply.",
+    "endedAgoSeconds": 120,
+    "reply": "Downloading the weights (4.2 GB) in the background. Once the download completes I'll run the conversion script.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 4,
+        "description": "Download model weights",
+        "command": "curl -L --fail -o models/base.safetensors https://huggingface.co/acme/base/resolve/main/model.safetensors",
+        "state": "running",
+        "runs": ["curl"]
+      }
+    ]
+  },
+  {
+    "id": "tests-while-you-review",
+    "truth": "waiting",
+    "why": "The reply hands the user a diff to read and still waits on the test run to report it.",
+    "endedAgoSeconds": 50,
+    "reply": "The refactor is in place across the four modules. The test suite is running in the background while you look over the diff; I'll report the results.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 8,
+        "description": "Run tests",
+        "command": "pnpm test --maxWorkers=2 > /tmp/test-run.log 2>&1",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "flag-file-waiter-hours-later",
+    "truth": "waiting",
+    "why": "The 2299 shape hours into the wait, with a flag file in place of a process.",
+    "endedAgoSeconds": 10800,
+    "reply": "The hyperparameter sweep is underway: 6 of 48 configurations finished, about 5 hours left at this rate. I'll summarize the results when it completes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 6,
+        "description": "Wait for sweep to finish",
+        "command": "until [ -f out/sweep/DONE ]; do sleep 120; done; cat out/sweep/summary.json",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "terraform-apply",
+    "truth": "waiting",
+    "why": "An apply that ends by itself; the reply says what the agent does after it.",
+    "endedAgoSeconds": 540,
+    "reply": "The plan looked right (3 to add, 1 to change, 0 to destroy), so I started the apply. It's creating the RDS instance now, which takes a while. I'll confirm the outputs after it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 15,
+        "description": "Apply terraform plan",
+        "command": "terraform apply -auto-approve tfplan",
+        "state": "running",
+        "runs": ["terraform"]
+      }
+    ]
+  },
+  {
+    "id": "kubectl-rollout-status-terse",
+    "truth": "waiting",
+    "why": "A command that waits for a rollout, started as the turn's last act, under a reply that says nothing of waiting.",
+    "endedAgoSeconds": 60,
+    "reply": "Applied the manifest.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 2,
+        "description": "Wait for rollout to complete",
+        "command": "kubectl rollout status deployment/api -n prod --timeout=15m",
+        "state": "running",
+        "runs": ["kubectl"]
+      }
+    ]
+  },
+  {
+    "id": "file-waiter-says-nothing",
+    "truth": "waiting",
+    "why": "A command that blocks until a results file is written, and no reply at all.",
+    "endedAgoSeconds": 1500,
+    "reply": null,
+    "registry": null,
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 3,
+        "description": "Wait for eval results file",
+        "command": "inotifywait -q -e close_write results/eval.json && jq .accuracy results/eval.json",
+        "state": "running",
+        "runs": ["inotifywait"]
+      }
+    ]
+  },
+  {
+    "id": "old-typecheck-watch",
+    "truth": "leftover",
+    "why": "A typechecker in watch mode from an earlier turn; the reply is a finished answer.",
+    "endedAgoSeconds": 360,
+    "reply": "Done: `parseRange` now rejects reversed bounds and the error message names the offending value. Added two cases to `range.test.ts`.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 7200,
+        "description": "Typecheck in watch mode",
+        "command": "pnpm tsc --watch --noEmit",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "log-tail-left-for-the-user",
+    "truth": "leftover",
+    "why": "A log tail started in the final turn, for the user to watch: the last-turn rule alone would call it a wait.",
+    "endedAgoSeconds": 120,
+    "reply": "Request logging is on. I left a tail running on `logs/requests.log` so you can watch the calls come in as you click through the app.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 30,
+        "description": "Tail request log",
+        "command": "tail -f logs/requests.log",
+        "state": "running",
+        "runs": ["tail"]
+      }
+    ]
+  },
+  {
+    "id": "old-docker-compose-up",
+    "truth": "leftover",
+    "why": "A local stack brought up hours ago; the reply reports a finished change.",
+    "endedAgoSeconds": 1800,
+    "reply": "The N+1 query is gone: `listOrders` now loads line items in one query (1 query instead of 51 on the seed data). The existing tests pass.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 10800,
+        "description": "Start local stack",
+        "command": "docker compose up",
+        "state": "running",
+        "runs": ["docker"]
+      }
+    ]
+  },
+  {
+    "id": "tell-me-when-with-old-tunnel",
+    "truth": "leftover",
+    "why": "The agent hands the next step to the user and waits for a word from them, not for a command; a tunnel from before is still up.",
+    "endedAgoSeconds": 240,
+    "reply": "I can't trigger the deploy from here: it needs your approval in the dashboard. Let me know when it's out and I'll verify the endpoints.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 4200,
+        "description": "Expose local server",
+        "command": "ngrok http 3000",
+        "state": "running",
+        "runs": ["ngrok"]
+      }
+    ]
+  },
+  {
+    "id": "waiter-finished-old-watcher-up",
+    "truth": "leftover",
+    "why": "The final turn's waiter is over and its result reported; a test watcher from before still runs.",
+    "endedAgoSeconds": 60,
+    "reply": "The migration finished: all 11 tables copied, row counts match, and the old columns are dropped. That completes the split.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 7200,
+        "description": "Run tests in watch mode",
+        "command": "pnpm vitest --watch",
+        "state": "running",
+        "runs": ["node"]
+      },
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 840,
+        "description": "Wait for migration 0042",
+        "command": "./scripts/wait-for-migration.sh 0042",
+        "state": "completed",
+        "runs": null
+      }
+    ]
+  },
+  {
+    "id": "preview-server-this-turn",
+    "truth": "leftover",
+    "why": "A preview server started in the final turn for the user to open.",
+    "endedAgoSeconds": 300,
+    "reply": "The report is built. I'm serving it at http://localhost:8000/report.html. Open it and let me know if the charts read well.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 10,
+        "description": "Serve report locally",
+        "command": "python -m http.server 8000 --directory out/report",
+        "state": "running",
+        "runs": ["python"]
+      }
+    ]
+  },
+  {
+    "id": "old-ssh-tunnel",
+    "truth": "leftover",
+    "why": "A tunnel to a database opened turns ago; the reply is a finished finding.",
+    "endedAgoSeconds": 720,
+    "reply": "The query plan confirms it: the new index on `(tenant_id, created_at)` turns the seq scan into an index scan, 840 ms down to 6 ms.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 5700,
+        "description": "Open tunnel to staging database",
+        "command": "ssh -N -L 5433:db.internal:5432 bastion",
+        "state": "running",
+        "runs": ["ssh"]
+      }
+    ]
+  },
+  {
+    "id": "periodic-sync-loop-from-earlier",
+    "truth": "leftover",
+    "why": "A loop that sleeps like a waiter does but never ends: it syncs every five minutes, and was left from an earlier turn.",
+    "endedAgoSeconds": 7200,
+    "reply": "Added the `--dry-run` flag to the CLI and documented it in `docs/cli.md`.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 14400,
+        "description": "Sync build to staging every 5 minutes",
+        "command": "while true; do rsync -az build/ staging:/srv/app/; sleep 300; done",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "nohup-backfill-old-server-up",
+    "truth": "leftover",
+    "why": "A backfill detached with nohup and disown, which wakes nobody when it ends; the agent's own running command is a Rails server.",
+    "endedAgoSeconds": 180,
+    "reply": "I launched the backfill with `nohup` and `disown` so it keeps running if this terminal closes (PID 7731, log in `/var/tmp/backfill.log`). It'll take a few hours; the last line of the log shows progress.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 7200,
+        "description": "Start Rails server",
+        "command": "bin/rails server -p 3000",
+        "state": "running",
+        "runs": ["ruby"]
+      }
+    ]
+  },
+  {
+    "id": "unread-command-nothing-said",
+    "truth": "other",
+    "why": "Something runs whose launch was not read, the host cannot say what is under it, and there is no reply.",
+    "endedAgoSeconds": 93600,
+    "reply": null,
+    "registry": null,
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": null,
+        "startedBeforeEndSeconds": null,
+        "description": null,
+        "command": null,
+        "state": "running",
+        "runs": null
+      }
+    ]
+  },
+  {
+    "id": "nohup-job-nothing-else",
+    "truth": "other",
+    "why": "The reply says it will wait for a nohup job, but no command of the agent's runs: code settles it without the model.",
+    "endedAgoSeconds": 180,
+    "reply": "Started the export under `nohup` (PID 9120). I'll wait for it to finish and then validate the output.",
+    "registry": "idle",
+    "commands": []
+  },
+  {
+    "id": "build-finished-nothing-running",
+    "truth": "other",
+    "why": "The final turn's build is over and nothing else runs: code settles it without the model.",
+    "endedAgoSeconds": 60,
+    "reply": "Build succeeded.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 120,
+        "description": "Production build",
+        "command": "pnpm build",
+        "state": "completed",
+        "runs": null
+      }
+    ]
+  }
+]
