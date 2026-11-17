@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { expect, type Locator, type Page, type TestInfo } from '@stablyai/playwright-test'
 import { evaluateRecapCheck } from '../../../src/main/session-recap/scenarios/recap-scenario-checks.test-fixture'
+import { RECAP_AUTO_INTERVAL_MS } from '../../../src/main/session-recap/session-recap-pass-schedule'
 import {
   recapScenarioSchema,
   type RecapScenarioCheck
@@ -99,8 +100,11 @@ export async function saveRecapEvidence(
   return view
 }
 
-/** Longer than the 4 minutes the scheduler leaves between two automatic passes. */
-export const NEXT_AUTOMATIC_PASS_MS = 330_000
+/**
+ * The specs' utility model is the `claude` CLI, and an agent CLI's turn-end passes stay this far
+ * apart; the rest is for the pass itself.
+ */
+export const NEXT_AUTOMATIC_PASS_MS = RECAP_AUTO_INTERVAL_MS + 90_000
 
 export type RecapPanelLists = Record<RecapSection, string[]>
 export type RecapScenarioChecks = { label: string; check: RecapScenarioCheck[] }[]
