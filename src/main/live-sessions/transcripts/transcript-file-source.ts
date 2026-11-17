@@ -1,5 +1,6 @@
 import { open } from 'node:fs/promises'
-import { gunzipSync } from 'node:zlib'
+import { promisify } from 'node:util'
+import { gunzip } from 'node:zlib'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
 import { quotePosixShell } from '../../../shared/shell/launch/shell-argument-quoting'
 import { ELIDING_LINES_AWK, elideBase64Runs } from './transcript-base64-elision'
@@ -162,6 +163,8 @@ function remoteByteRanges(host: LiveSessionHost, path: string): ReadBytes {
   }
 }
 
+const inflate = promisify(gunzip)
+
 type ElidedWindow = {
   size: number
   /** The bytes of the file the host looked at. */
@@ -206,7 +209,7 @@ export function remoteTranscriptSource(host: LiveSessionHost, path: string): Tra
     if (!window || !packed || !out.includes('@@DONE')) {
       throw new Error('The transcript read came back cut off')
     }
-    const [skipped, ...rows] = gunzipSync(Buffer.from(packed[1], 'base64'))
+    const [skipped, ...rows] = (await inflate(Buffer.from(packed[1], 'base64')))
       .toString('utf8')
       .split('\n')
     const lines: TranscriptLine[] = []
