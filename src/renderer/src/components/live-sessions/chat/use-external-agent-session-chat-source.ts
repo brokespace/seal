@@ -82,7 +82,8 @@ export function useExternalAgentSessionChatSource(args: ExternalAgentSessionChat
   )
   const outbox = useSyncExternalStore(subscribe, () => liveSessionRegistryStore.getState().messages)
   const feed = useMemo(() => liveTranscriptFeed(sessionId), [sessionId])
-  const transcript = useLiveTranscriptFeed(feed, args.enabled)
+  // Nothing reads an unlisted session: its first page waits for its machine to list it.
+  const transcript = useLiveTranscriptFeed(feed, args.enabled && session !== null, session)
   const sent = useMemo(
     () =>
       [...outbox.values()].filter(

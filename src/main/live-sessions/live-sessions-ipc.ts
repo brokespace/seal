@@ -61,7 +61,9 @@ export function registerLiveSessionIpc(
   let nextWatch = 0
 
   ipcMain.handle(LIVE_SESSION_IPC.snapshot, () => service.snapshot())
-  ipcMain.handle(LIVE_SESSION_IPC.refresh, () => service.refresh())
+  ipcMain.handle(LIVE_SESSION_IPC.refresh, (_event, hostId?: unknown) =>
+    service.refresh(typeof hostId === 'string' ? hostId : undefined)
+  )
   ipcMain.handle(
     LIVE_SESSION_IPC.transcriptPage,
     (_event, args: { sessionId: unknown; before?: unknown; limit?: unknown }) => {

@@ -11,6 +11,7 @@ import type { LiveSession } from '../../../../../shared/live-sessions/live-sessi
 import { NativeChatMessageList } from '../../native-chat/NativeChatMessageList'
 import type { NativeChatLiveSession } from '../../native-chat/session/terminal/read/native-chat-live-session-contract'
 import { useLiveTranscript } from '../use-live-transcript'
+import { LiveTranscriptImagesContext } from './use-live-transcript-image'
 
 /** A subagent's own transcript, read-only, in place of its session's chat. */
 export function AgentSessionSubagentTranscript({
@@ -27,9 +28,9 @@ export function AgentSessionSubagentTranscript({
   className?: string
 }): React.JSX.Element {
   const t = useTranslate()
-  const { phase, error, messages, hasMore, loadingEarlier, loadEarlier } = useLiveTranscript(
-    subagentTranscriptId(session.id, subagent.id)
-  )
+  const transcriptId = subagentTranscriptId(session.id, subagent.id)
+  const { phase, error, messages, hasMore, loadingEarlier, loadEarlier } =
+    useLiveTranscript(transcriptId)
   const chat = useMemo<NativeChatLiveSession>(() => {
     const ready = messages.length ? 'ready' : 'empty'
     return {
@@ -70,12 +71,16 @@ export function AgentSessionSubagentTranscript({
           })}
         </span>
       </div>
-      <NativeChatMessageList
-        session={chat}
-        isVisible={isVisible}
-        isWorking={false}
-        expandSignal={false}
-      />
+      <LiveTranscriptImagesContext value={transcriptId}>
+        <NativeChatMessageList
+          session={chat}
+          isVisible={isVisible}
+          isWorking={false}
+          expandSignal={false}
+          // No workspace owns these rows: images the transcript holds draw, files they name stay labels.
+          runtimeContext={null}
+        />
+      </LiveTranscriptImagesContext>
     </div>
   )
 }

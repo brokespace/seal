@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Image as ImageIcon } from 'lucide-react'
+import { Image as ImageIcon, ImageOff } from 'lucide-react'
 import { cn } from '../../../../lib/class-names'
 import { useTranslate } from '../../../../i18n/use-translate'
 import { basename } from '../../../../lib/path'
@@ -15,6 +15,7 @@ import { isNativeChatPastedImagePath } from '../../../../../../shared/native-cha
 import { nativeChatImageLabel } from './native-chat-image-label'
 import { chatImageAccess } from '../../../../lib/files/access/local-file-access'
 import { observeTranscriptVisibility } from './native-chat-image-visibility'
+import { useLiveTranscriptImage } from '../../../live-sessions/chat/use-live-transcript-image'
 
 function renderableImageSource(source: string | undefined): boolean {
   return Boolean(source && /^(?:https?|data|blob):/i.test(source))
@@ -57,14 +58,15 @@ function TranscriptImagePreview({
   const filePath = block.path ?? source ?? ''
   const external = renderableImageSource(source)
   const leaseActive = near || open
+  const inline = useLiveTranscriptImage(source, leaseActive)
   const localSrc = useLocalImageSrc(
-    leaseActive && !external && runtimeContext !== undefined ? source : undefined,
+    leaseActive && !external && !inline && runtimeContext !== undefined ? source : undefined,
     filePath,
     runtimeContext?.connectionId,
     runtimeContext,
     TRANSCRIPT_IMAGE_ACCESS
   )
-  const displaySrc = external && leaseActive ? source : localSrc
+  const displaySrc = inline ? inline.src : external && leaseActive ? source : localSrc
   const copySrc = copyableNativeChatImageSrc(displaySrc)
   const label = nativeChatImageLabel(block)
   const viewImageLabel = t('components.native-chat.composer.viewAttachment', 'View image')
@@ -86,7 +88,7 @@ function TranscriptImagePreview({
     return observeTranscriptVisibility(element, setNear)
   }, [])
 
-  const previewable = Boolean(source) && (external || runtimeContext !== null)
+  const previewable = Boolean(source) && (external || inline !== null || runtimeContext !== null)
   const showPreview =
     previewable && leaseActive && Boolean(displaySrc) && displaySrc !== thumbnailErrorSrc
 
@@ -95,14 +97,27 @@ function TranscriptImagePreview({
   }
   // Offscreen or loading keeps the thumbnail's square so scrolling never rewraps the row.
   if (!showPreview) {
+    const unavailable =
+      inline !== null && (inline.failed || (leaseActive && displaySrc === thumbnailErrorSrc))
     return (
       <div
         ref={ref}
         className="flex size-20 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-border bg-chat-canvas px-1.5 text-xs text-chat-foreground-faint"
         title={label}
       >
-        <ImageIcon className="size-4 shrink-0" />
-        <span className="max-w-full truncate">{label}</span>
+        {unavailable ? (
+          <>
+            <ImageOff className="size-4 shrink-0" />
+            <span className="line-clamp-2 max-w-full break-words text-center leading-tight">
+              {t('components.native-chat.composer.imageUnavailable', 'Preview unavailable')}
+            </span>
+          </>
+        ) : (
+          <>
+            <ImageIcon className="size-4 shrink-0" />
+            <span className="max-w-full truncate">{label}</span>
+          </>
+        )}
       </div>
     )
   }

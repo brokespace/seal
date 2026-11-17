@@ -48,18 +48,27 @@ function unread(feed: AgentSessionTranscriptFeed | null): Held {
 /**
  * Holds what a chat source's transcript feed has read. Messages are keyed by id, so a page and a
  * delta that overlap merge instead of doubling. While `enabled` is false nothing is watched; the
- * feed catches up from where it stopped when it is watched again.
+ * feed catches up from where it stopped when it is watched again. A first page that could not be
+ * read is read again when `retryOn` changes.
  */
 export function useLiveTranscriptFeed(
   feed: AgentSessionTranscriptFeed | null,
-  enabled = true
+  enabled = true,
+  retryOn?: unknown
 ): LiveTranscript {
   const held = useRef<Held>(unread(null))
   const [state, setState] = useState(UNREAD)
   const [shown, setShown] = useState(feed)
+  const [attempt, setAttempt] = useState({ on: retryOn, count: 0 })
   if (shown !== feed) {
     setShown(feed)
     setState(UNREAD)
+  } else if (attempt.on !== retryOn) {
+    const failed = state.phase === 'error'
+    setAttempt({ on: retryOn, count: attempt.count + (failed ? 1 : 0) })
+    if (failed) {
+      setState(UNREAD)
+    }
   }
 
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup -- cleanup stops the watch, including one started after the first page.
@@ -126,7 +135,7 @@ export function useLiveTranscriptFeed(
       closed = true
       stop?.()
     }
-  }, [feed, enabled])
+  }, [feed, enabled, attempt.count])
 
   const loadEarlier = useCallback(async (): Promise<NativeChatOlderPageResult> => {
     const mine = held.current
