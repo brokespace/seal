@@ -207,9 +207,14 @@ const REQUEST_ACTION_ICONS: Record<RecapRequestAction, typeof Check> = {
 }
 
 /** Only "Not addressed" says something was missed, so only it is drawn in the attention color. */
-const REQUEST_STATE_TONE: Partial<Record<RecapRequestRowState, string>> = {
-  'not-addressed': 'border-agent-question/40 text-agent-question-text',
-  'in-progress': 'text-agent-working'
+function RequestStateIcon({ state }: { state: RecapRequestRowState }): React.JSX.Element | null {
+  if (state === 'not-addressed') {
+    return <CircleAlert aria-hidden className="size-3.5 shrink-0 text-agent-question-text" />
+  }
+  if (state === 'in-progress') {
+    return <CircleDot aria-hidden className="size-3.5 shrink-0 text-agent-working" />
+  }
+  return null
 }
 
 /** One thing the user asked for: where it stands, why, and what the user can make of it. */
@@ -231,13 +236,16 @@ export function RecapRequestRow({
         <RecapItemText
           item={row}
           onJump={onJump}
-          className={cn('flex-none', settled && 'text-muted-foreground')}
+          className={cn(
+            'flex-none',
+            settled && 'text-muted-foreground',
+            state === 'not-addressed' && 'font-medium'
+          )}
         />
         {state ? (
           <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <Badge variant="referenceLabel" className={REQUEST_STATE_TONE[state]}>
-              {recapRequestStateLabel(state, t)}
-            </Badge>
+            <RequestStateIcon state={state} />
+            <Badge variant="referenceLabel">{recapRequestStateLabel(state, t)}</Badge>
             {row.reason ? (
               <span
                 data-recap-request-reason=""
