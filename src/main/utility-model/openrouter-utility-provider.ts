@@ -3,9 +3,10 @@ import type { UtilityModelCatalogEntry } from '../../shared/utility-model/utilit
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
 import {
   createOpenAiCompatibleProvider,
-  requestOpenAiCompatibleListing
+  requestOpenAiCompatibleJson
 } from './openai-compatible-utility-provider'
-import type { UtilityModelProvider } from './utility-model-provider'
+import { SealConfigFile, sealConfigFilePath } from './seal-config-file'
+import { UtilityModelError, type UtilityModelProvider } from './utility-model-provider'
 import {
   jsonRecord as record,
   jsonText as text,
@@ -13,6 +14,8 @@ import {
 } from './utility-model-http-request'
 
 export const OPENROUTER_API_ROOT = 'https://openrouter.ai/api/v1'
+/** Decision models answer here only: chat/completions turns them down. Alpha, so its shape may change. */
+export const OPENROUTER_DECISIONS_URL = 'https://openrouter.ai/api/alpha/decisions'
 export const OPENROUTER_API_KEY_ENV = 'OPENROUTER_API_KEY'
 
 export type OpenRouterKeyStore = {
@@ -24,20 +27,36 @@ export type OpenRouterKeyStore = {
 
 export type OpenRouterAccount = {
   apiKey: string | null
-  /** Saved from Settings, or the `OPENROUTER_API_KEY` this process started with. */
-  source: 'settings' | 'environment' | null
+  /** Saved from Settings, the `OPENROUTER_API_KEY` this process started with, or the config file. */
+  source: 'settings' | 'environment' | 'config-file' | null
   /** The key's last four characters, enough to tell two keys apart. */
   hint: string | null
   protection: SecretAtRestProtection | null
+}
+
+/** `~/.config/seal/openrouter.json`, holding `{ "apiKey": "…" }`: the key of a host with no Settings UI. */
+export function openRouterConfigFilePath(): string {
+  return sealConfigFilePath('openrouter.json')
 }
 
 /** This host's OpenRouter key: sealed like every other provider key, never logged or returned. */
 export class OpenRouterAccountStore {
   private readonly saved: OpenRouterKeyStore
   private readonly env: () => string | undefined
+  private readonly configFile: SealConfigFile
 
-  constructor(deps: { saved?: OpenRouterKeyStore; env?: () => string | undefined } = {}) {
+  constructor(
+    deps: {
+      saved?: OpenRouterKeyStore
+      env?: () => string | undefined
+      configFilePath?: string
+    } = {}
+  ) {
     this.env = deps.env ?? (() => process.env[OPENROUTER_API_KEY_ENV])
+    this.configFile = new SealConfigFile(
+      deps.configFilePath ?? openRouterConfigFilePath(),
+      'OpenRouter'
+    )
     this.saved =
       deps.saved ??
       createEncryptedApiKeyFileStore({
@@ -48,12 +67,14 @@ export class OpenRouterAccountStore {
       })
   }
 
-  load(): OpenRouterAccount {
+  async load(): Promise<OpenRouterAccount> {
     const saved = this.readSaved()
-    const apiKey = saved ?? (this.env()?.trim() || null)
+    const fromEnv = saved ? null : this.env()?.trim() || null
+    const fromFile = saved || fromEnv ? null : text(record(await this.configFile.read())?.apiKey)
+    const apiKey = saved ?? fromEnv ?? fromFile
     return {
       apiKey,
-      source: saved ? 'settings' : apiKey ? 'environment' : null,
+      source: saved ? 'settings' : fromEnv ? 'environment' : fromFile ? 'config-file' : null,
       hint: apiKey ? apiKey.slice(-4) : null,
       protection: saved ? this.saved.protection() : null
     }
@@ -63,7 +84,7 @@ export class OpenRouterAccountStore {
     this.saved.save(apiKey.trim())
   }
 
-  /** Forgets what Settings saved; a key in the environment keeps working. */
+  /** Forgets what Settings saved; a key in the environment or the config file keeps working. */
   clear(): void {
     this.saved.clear()
   }
@@ -94,7 +115,7 @@ export async function listOpenRouterModels(
     baseUrl?: string
   } = {}
 ): Promise<UtilityModelCatalogEntry[]> {
-  const body = await requestOpenAiCompatibleListing({
+  const body = await requestOpenAiCompatibleJson({
     label: 'OpenRouter',
     url: `${options.baseUrl ?? OPENROUTER_API_ROOT}/models`,
     apiKey: options.apiKey ?? null,
@@ -122,7 +143,7 @@ export function createOpenRouterProvider(
   options: { fetchImpl?: UtilityModelFetch; baseUrl?: string } = {}
 ): UtilityModelProvider {
   const baseUrl = options.baseUrl ?? OPENROUTER_API_ROOT
-  return createOpenAiCompatibleProvider(
+  const chat = createOpenAiCompatibleProvider(
     {
       id: 'openrouter',
       label: 'OpenRouter',
@@ -135,4 +156,34 @@ export function createOpenRouterProvider(
     },
     options.fetchImpl
   )
+  return {
+    ...chat,
+    /** `body` is the Decisions request whole: `model`, `state`, the typed `questions`, any routing. */
+    async decide(model, request, signal) {
+      const body = record(
+        await requestOpenAiCompatibleJson({
+          label: 'OpenRouter',
+          url: OPENROUTER_DECISIONS_URL,
+          apiKey,
+          body: request.body,
+          model,
+          timeoutMs: request.timeoutMs,
+          signal,
+          fetchImpl: options.fetchImpl
+        })
+      )
+      // One typed answer per question id; a question the host declined is `{ type: 'refusal' }`.
+      const answers = record(body?.answers)
+      if (answers === null) {
+        throw new UtilityModelError('bad-response', 'OpenRouter answered without any answers', {
+          model
+        })
+      }
+      const tokens = record(body?.usage)?.input_tokens
+      return {
+        answers,
+        inputTokens: typeof tokens === 'number' && Number.isFinite(tokens) ? tokens : null
+      }
+    }
+  }
 }

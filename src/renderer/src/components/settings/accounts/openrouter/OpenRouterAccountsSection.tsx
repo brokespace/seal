@@ -38,6 +38,18 @@ function sourceLine(
           { host: hostLabel }
         )
   }
+  if (status.source === 'config-file') {
+    return hostLabel === null
+      ? t(
+          'seal.openRouter.status.fromFile',
+          'Read from ~/.config/seal/openrouter.json on this computer.'
+        )
+      : t(
+          'seal.openRouter.status.fromFileOnHost',
+          'Read from ~/.config/seal/openrouter.json on {{host}}.',
+          { host: hostLabel }
+        )
+  }
   return hostLabel === null
     ? t('seal.openRouter.status.stored', 'Stored on this computer and sent only to OpenRouter.')
     : t(

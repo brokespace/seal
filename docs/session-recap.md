@@ -191,10 +191,22 @@ The model that writes the recap does not decide what was left undone. After each
 step (`session-recap-requests.ts`) keeps one request per _What I asked_ item and asks a judge
 where each unsettled one stands. Everything else is code.
 
-- **One model, no fallback.** The judge is Cloudflare Clef (`@cf/cloudflare/clef`), a decision
-  model, on the Workers AI account, whichever provider writes the recap. When it fails, times
-  out or the account has no credential, the request stays "Open". No other model is asked: the
-  thresholds below belong to Clef alone.
+- **One model, no fallback to another.** The judge is Cloudflare Clef, a decision model,
+  whichever provider writes the recap. When it fails, times out or the host has no account for
+  it, the request stays "Open". No other model is asked: the thresholds below belong to Clef
+  alone.
+- **Two accounts for the one model** (`utility-model/clef-decisions.ts`). Clef is asked on
+  OpenRouter when the host has an OpenRouter key (`cloudflare/clef`, at
+  `POST /api/alpha/decisions`), and on the Workers AI account (`@cf/cloudflare/clef`) when it
+  has none, when OpenRouter fails, or when OpenRouter's share of the day is spent. OpenRouter
+  also lists copies of Clef on other hosts, some quantized; the request allows Cloudflare's own
+  host only (`provider.only`), so the answers are the ones the thresholds were measured on. The
+  question book and the cache are the same on both. Any other judge on the host asks through
+  the same client: `getUtilityModelHost().clef.decide(model, { body })`, where `model` is `clef`
+  or `clef-flash` and `body` holds the `state` and the typed `questions`.
+- **The OpenRouter key** is the one Settings > Accounts > OpenRouter saves; on a host with no
+  Settings it is `OPENROUTER_API_KEY` in the environment, or `apiKey` in
+  `~/.config/seal/openrouter.json`.
 - **One question per criterion.** Clef is sent the request and the conversation after it, and
   answers five yes/no questions with a probability each: done, did part, declined, withdrawn,
   left undone (`session-recap-judge-questions.ts`). Each has its own threshold, measured on
@@ -288,10 +300,12 @@ most 15 passes an hour, about 270 neurons. The host keeps its own tally (per UTC
   says updates resume tomorrow.
 - **Passes he asks for** (open, Refresh) run until 30,000.
 - **One tally per provider.** The read step is counted against the provider it runs on, and the
-  judge against Workers AI, where it always runs. A recap written on OpenRouter or an agent CLI
-  does not use up the judge's share, and the judge's calls stop with the tier of the pass they
-  follow on Workers AI's tally. A model with no Workers AI rate is counted at the dearest one
-  (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps hold on every provider.
+  judge against the account that answered it: OpenRouter or Workers AI. The judge's calls stop
+  with the tier of the pass they follow on each account's own tally, so when OpenRouter's is
+  spent Workers AI is asked, and the judge rests when both are. Clef costs the same on
+  Cloudflare's host either way, so one rate counts both. A model with no Workers AI rate is
+  counted at the dearest one (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps
+  hold on every provider.
 - A 429 or a spent allocation pauses every utility request to that provider through its
   `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note,
   and the pass that failed runs again when the pause ends.
@@ -327,8 +341,8 @@ A failure of the provider itself (network, auth, rate limit) is different: nothi
 panel shows why, and the retries above apply. Inside the provider's service, a model that times
 out or answers with a server error is that model's failure and not the provider's: it is rested
 for a minute and the fallback model answers the same request
-(`utility-model-service.ts`). None of this applies to the judge, which is one model with no
-fallback.
+(`utility-model-service.ts`). None of this applies to the judge, which is one model: its only
+second try is the same model on the host's other account.
 
 ```jsonc
 {

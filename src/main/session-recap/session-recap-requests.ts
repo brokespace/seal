@@ -110,7 +110,8 @@ export function createRecapRequestsStep(deps: RecapRequestsDeps): RecapRequestsS
       const fitted = fitRecapConversation(conversation.lines)
       const reply = await judge.ask(
         { request: request.text, conversation: fitted.text },
-        pass.signal
+        pass.signal,
+        pass.kind
       )
       if ('failed' in reply) {
         // The safe default: it stands as it stood, and an old verdict no longer matches the cursor.

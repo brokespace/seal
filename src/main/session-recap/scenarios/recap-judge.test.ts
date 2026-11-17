@@ -3,6 +3,8 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { liveModelAccount } from '../../utility-model/live-model-account.test-fixture'
+import { liveWorkersAiFetch } from '../../utility-model/live-workers-ai-fetch.test-fixture'
 import {
   loadRecapLabels,
   RECAP_LABEL_SPLITS,
@@ -41,7 +43,6 @@ import {
 } from './recap-judge-scoring.test-fixture'
 import { judgeLabelledScenario } from './recap-judge-product-run.test-fixture'
 import { recapJudgeState } from './recap-judge-state.test-fixture'
-import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
 import { loadRecapScenarios, writeRecapScenarioJson } from './recap-scenario-files.test-fixture'
 import { recapScenarioSteps } from './recap-scenario-schema.test-fixture'
 
@@ -350,7 +351,13 @@ describe('recap judge models', () => {
     'asks each model what is not on record, within the cost cap',
     { timeout: 4 * 60 * 60_000 },
     async () => {
-      const credentials = await liveRecapCredentials()
+      const account = await liveModelAccount()
+      const transport = liveWorkersAiFetch(account)
+      // On OpenRouter the request is still written as Workers AI's, and its address is never dialled.
+      const credentials =
+        account.provider === 'cloudflare-workers-ai'
+          ? account.credentials
+          : { accountId: 'openrouter', apiToken: 'openrouter' }
       const todo = models.map((model) => {
         const records = new Map(onRecord.get(model.id))
         const missing = items
@@ -379,9 +386,7 @@ describe('recap judge models', () => {
         const ask = async (
           next: (typeof missing)[number]
         ): Promise<'answered' | 'refused' | 'failed'> => {
-          const call = await askRecapJudge(model, next.body, credentials, (url, init) =>
-            fetch(url, init)
-          )
+          const call = await askRecapJudge(model, next.body, credentials, transport)
           const entry = { model: model.id, item: next.item.id, key: next.key, cached: false }
           if ('failed' in call) {
             failed[call.failed] = (failed[call.failed] ?? 0) + 1

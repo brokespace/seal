@@ -37,8 +37,8 @@ const DAILY_LIMITS: Record<RecapPassKind, number> = {
   asked: RECAP_ASKED_DAILY_NEURONS
 }
 
-/** The judge's provider, and the one a tally saved before tallies were per provider belongs to. */
-export const RECAP_JUDGE_PROVIDER: UtilityModelProviderId = 'cloudflare-workers-ai'
+/** Whose tally a spend that names no provider is on, as is one saved before tallies were per provider. */
+const UNNAMED_PROVIDER: UtilityModelProviderId = 'cloudflare-workers-ai'
 
 type BudgetDay = { day: string; neurons: number; provider?: string }
 
@@ -102,7 +102,7 @@ export class SessionRecapBudget {
   async load(): Promise<void> {
     const today = this.today()
     for (const saved of await this.file.load()) {
-      const provider = saved.provider ?? RECAP_JUDGE_PROVIDER
+      const provider = saved.provider ?? UNNAMED_PROVIDER
       // A spend recorded while loading counts on top of what was saved.
       if (saved.day === today) {
         this.spent.set(provider, {
@@ -114,11 +114,11 @@ export class SessionRecapBudget {
     }
   }
 
-  allows(kind: RecapPassKind, provider: string = RECAP_JUDGE_PROVIDER): boolean {
+  allows(kind: RecapPassKind, provider: string = UNNAMED_PROVIDER): boolean {
     return this.day(provider).neurons < DAILY_LIMITS[kind]
   }
 
-  spend(neurons: number, provider: string = RECAP_JUDGE_PROVIDER): void {
+  spend(neurons: number, provider: string = UNNAMED_PROVIDER): void {
     const day = this.day(provider)
     this.spent.set(provider, { ...day, neurons: day.neurons + neurons })
     this.file.save([...this.spent.values()])

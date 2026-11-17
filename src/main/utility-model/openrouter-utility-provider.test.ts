@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   OpenRouterAccountStore,
@@ -201,14 +204,82 @@ describe('OpenRouter provider', () => {
   })
 })
 
+describe('OpenRouter decisions', () => {
+  // Hand-made from OpenRouter's reference for POST /api/alpha/decisions (alpha: the shape may change).
+  const answered = async (): Promise<unknown> =>
+    JSON.parse(
+      await readFile(
+        join(import.meta.dirname, '__fixtures__', 'openrouter-decisions-response.json'),
+        'utf8'
+      )
+    )
+  const BODY = {
+    model: 'cloudflare/clef',
+    state: { request: 'add a retry', conversation: 'USER: add a retry\nAGENT: Added.' },
+    questions: {
+      done: { type: 'noul', instructions: 'Is it done?', criteria: { true: 'Yes.', false: 'No.' } }
+    }
+  }
+
+  it('posts the questions to the decisions endpoint and reads one typed answer per question', async () => {
+    const { provider, fetchImpl } = providerAnswering(json(200, await answered()))
+
+    const decision = await provider.decide?.('cloudflare/clef', { body: BODY })
+
+    expect(decision).toEqual({
+      answers: {
+        done: { type: 'noul', noul: 0.9412 },
+        did_part: { type: 'noul', noul: 0.0611 },
+        declined: { type: 'noul', noul: 0.0102 },
+        withdrawn: { type: 'noul', noul: 0.0043 },
+        left_undone: { type: 'noul', noul: 0.0377 }
+      },
+      inputTokens: 812
+    })
+    const [url, init] = fetchImpl.mock.calls[0]
+    expect(url).toBe('https://openrouter.ai/api/alpha/decisions')
+    expect(init.method).toBe('POST')
+    expect(new Headers(init.headers).get('authorization')).toBe(`Bearer ${API_KEY}`)
+    expect(JSON.parse(String(init.body))).toEqual(BODY)
+  })
+
+  it('reads an account out of credits as its plan, not as an answer', async () => {
+    const { provider } = providerAnswering(
+      json(402, { error: { code: 402, message: 'Insufficient credits.' } })
+    )
+
+    const failure = await failureOf(
+      provider.decide?.('cloudflare/clef', { body: BODY }) ?? Promise.resolve()
+    )
+
+    expect(failure.kind).toBe('plan-unavailable')
+    expect(failure.detail.model).toBe('cloudflare/clef')
+  })
+})
+
 describe('OpenRouter account store', () => {
-  it('prefers the saved key, falls back to the environment, and shows only a hint', () => {
+  it('prefers the saved key, then the environment, then the config file, and shows only a hint', async () => {
+    const configFilePath = join(
+      await mkdtemp(join(tmpdir(), 'seal-openrouter-')),
+      'openrouter.json'
+    )
+    await writeFile(configFilePath, JSON.stringify({ apiKey: 'sk-or-v1-from-config-file-9876' }))
+    let env: string | undefined
     const store = new OpenRouterAccountStore({
       saved: memoryKeyStore(),
-      env: () => 'sk-or-v1-from-environment-wxyz'
+      env: () => env,
+      configFilePath
     })
 
-    expect(store.load()).toEqual({
+    expect(await store.load()).toEqual({
+      apiKey: 'sk-or-v1-from-config-file-9876',
+      source: 'config-file',
+      hint: '9876',
+      protection: null
+    })
+
+    env = 'sk-or-v1-from-environment-wxyz'
+    expect(await store.load()).toEqual({
       apiKey: 'sk-or-v1-from-environment-wxyz',
       source: 'environment',
       hint: 'wxyz',
@@ -216,7 +287,7 @@ describe('OpenRouter account store', () => {
     })
 
     store.save(` ${API_KEY} `)
-    expect(store.load()).toEqual({
+    expect(await store.load()).toEqual({
       apiKey: API_KEY,
       source: 'settings',
       hint: 'cdef',
@@ -224,6 +295,6 @@ describe('OpenRouter account store', () => {
     })
 
     store.clear()
-    expect(store.load().source).toBe('environment')
+    expect((await store.load()).source).toBe('environment')
   })
 })

@@ -1,7 +1,8 @@
-// The judge as the recap runs it: Cloudflare Clef and nothing else. An answer is kept on the hash
-// of what was asked, so an unchanged request and conversation are never paid for twice, and every
-// call is logged with its model, cost and whether the cache answered.
+// The judge as the recap runs it: Cloudflare Clef and nothing else, on OpenRouter or Workers AI.
+// An answer is kept on the hash of what was asked, so an unchanged request and conversation are
+// never paid for twice, and every call is logged with its model, cost and whether the cache answered.
 import type { RecapJudgeAnswers } from '../../shared/session-recap/session-recap-types'
+import type { UtilityModelProviderId } from '../../shared/utility-model/utility-model-types'
 import { LiveSessionJsonStore } from '../live-sessions/live-session-json-store'
 import type { SessionSummaryCache } from '../session-summaries/session-summary-cache'
 import {
@@ -9,7 +10,11 @@ import {
   type UtilityModelDecision,
   type UtilityModelDecisionRequest
 } from '../utility-model/utility-model-provider'
-import { estimateRecapTokens, recapNeuronsForTokens } from './session-recap-budget'
+import {
+  estimateRecapTokens,
+  recapNeuronsForTokens,
+  type RecapPassKind
+} from './session-recap-budget'
 import {
   recapJudgeAnswersIn,
   recapJudgeBody,
@@ -26,6 +31,8 @@ import {
 export type RecapJudgeCall = {
   at: number
   model: string
+  /** The account that answered; absent on a cached answer and on a call nobody answered. */
+  provider?: UtilityModelProviderId
   questionBook: string
   /** The content hash of what was asked. */
   key: string
@@ -78,14 +85,16 @@ export class RecapJudgeCallLog {
 }
 
 export type ClefRecapJudgeDeps = {
-  /** The Workers AI account's one path for a decision model; throws UtilityModelError. */
+  /** This host's one path to Clef, on whichever account `kind` still has allowance; throws UtilityModelError. */
   decide: (
     model: string,
     request: UtilityModelDecisionRequest,
-    signal?: AbortSignal
-  ) => Promise<UtilityModelDecision>
+    signal: AbortSignal,
+    kind: RecapPassKind
+  ) => Promise<UtilityModelDecision & { provider?: UtilityModelProviderId }>
   cache: Pick<SessionSummaryCache, 'get' | 'set'>
-  spend: (neurons: number) => void
+  /** `provider` is the account that answered, when the path says which. */
+  spend: (neurons: number, provider?: UtilityModelProviderId) => void
   record: (call: RecapJudgeCall) => void
   calibration?: RecapJudgeCalibration
   now?: () => number
@@ -109,7 +118,7 @@ export function createClefRecapJudge(deps: ClefRecapJudgeDeps): RecapJudge {
   return {
     calibration,
     available: () => recapJudgeIsCalibrated(calibration),
-    async ask(state, signal) {
+    async ask(state, signal, kind) {
       const { model, questionBook } = calibration
       const body = recapJudgeBody(model, state)
       const key = recapJudgeKey(model, body)
@@ -121,16 +130,23 @@ export function createClefRecapJudge(deps: ClefRecapJudgeDeps): RecapJudge {
       }
       const started = now()
       try {
-        const decision = await deps.decide(model, { body }, signal)
-        const inputTokens = decision.inputTokens
+        const decision = await deps.decide(model, { body }, signal, kind)
+        const { inputTokens, provider } = decision
         const neurons = recapNeuronsForTokens(
           model,
           inputTokens ?? estimateRecapTokens(JSON.stringify(body).length),
           0
         )
-        deps.spend(neurons)
+        deps.spend(neurons, provider)
         const answers = recapJudgeAnswersIn(decision.answers)
-        const made = { ...call, cached: false, ms: now() - started, inputTokens, neurons }
+        const made = {
+          ...call,
+          ...(provider ? { provider } : {}),
+          cached: false,
+          ms: now() - started,
+          inputTokens,
+          neurons
+        }
         if (!answers) {
           deps.record({ ...made, outcome: 'unusable-reply' })
           return { failed: 'unusable-reply' }
@@ -141,7 +157,7 @@ export function createClefRecapJudge(deps: ClefRecapJudgeDeps): RecapJudge {
       } catch (error) {
         // Whatever went wrong, no other model is asked: its answers would mean something else.
         const failed = error instanceof UtilityModelError ? error.kind : 'error'
-        // With no Workers AI account nothing was called, so there is no call to log.
+        // With no account for Clef nothing was called, so there is no call to log.
         if (failed !== 'not-configured') {
           deps.record({ ...call, cached: false, ms: now() - started, outcome: failed })
         }

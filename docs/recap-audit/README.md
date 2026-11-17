@@ -33,21 +33,23 @@ The schema for scenarios, with every step and check kind, is `recap-scenario-sch
 
 ### Modes
 
-| Environment                         | Effect                                                                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| (none)                              | Replay. Fails on a request with no recorded reply, and on any difference from `baseline.json`.                              |
-| `RECAP_SCENARIOS_ONLY=id1,id2`      | Run only these scenarios.                                                                                                   |
-| `RECAP_SCENARIOS_REPORT=<dir>`      | Also write `matrix.json` and `matrix.md` there: expected, actual and result for every run.                                  |
-| `RECAP_SCENARIOS_UPDATE_BASELINE=1` | Rewrite `baseline.json` from this run. Review the diff: it should only shrink.                                              |
-| `RECAP_SCENARIOS_LIVE=1`            | Ask the real model for anything not recorded and save the reply. Needs a credential (below).                                |
-| `RECAP_SCENARIOS_PENDING=<file>`    | Without a credential: write the unanswered requests to this file instead of failing.                                        |
-| `RECAP_SCENARIOS_REPLIES=<file>`    | With the above: file replies to those requests (`[{ "contentHash", "model", "reply" }]`) into the cassettes before running. |
+| Environment                         | Effect                                                                                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| (none)                              | Replay. Fails on a request with no recorded reply, and on any difference from `baseline.json`.                               |
+| `RECAP_SCENARIOS_ONLY=id1,id2`      | Run only these scenarios.                                                                                                    |
+| `RECAP_SCENARIOS_REPORT=<dir>`      | Also write `matrix.json` and `matrix.md` there: expected, actual and result for every run.                                   |
+| `RECAP_SCENARIOS_UPDATE_BASELINE=1` | Rewrite `baseline.json` from this run. Review the diff: it should only shrink.                                               |
+| `RECAP_SCENARIOS_LIVE=1`            | Ask the real model for anything not recorded and save the reply. Needs an OpenRouter key or a Workers AI credential (below). |
+| `RECAP_SCENARIOS_PENDING=<file>`    | Without a credential: write the unanswered requests to this file instead of failing.                                         |
+| `RECAP_SCENARIOS_REPLIES=<file>`    | With the above: file replies to those requests (`[{ "contentHash", "model", "reply" }]`) into the cassettes before running.  |
 
 A scenario with `"pending": true` has a request with no recording: it is new, or a change to the pipeline changed what it asks. It runs up to its first unrecorded request and stops. The checks it reaches before that are held to the baseline like any other; the ones after it are not run. Once it has recordings the suite fails until the mark is removed.
 
 ### The credential
 
-A live run takes `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` from the environment when both are set, and otherwise reads `~/.config/seal/cloudflare-ai.json`. It sends one small request first and stops if Cloudflare turns the credential down, before anything is rewritten. The token is never printed, and Cloudflare's error text is written with the account id replaced.
+A live run uses OpenRouter when the host has a key for it: `OPENROUTER_API_KEY` in the environment, else `apiKey` in `~/.config/seal/openrouter.json`. With no OpenRouter key it uses Workers AI: `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` from the environment when both are set, else `~/.config/seal/cloudflare-ai.json`. It asks the provider about the credential first and stops if it is turned down, before anything is rewritten. No key or token is printed, and Cloudflare's error text is written with the account id replaced.
+
+On OpenRouter the same models are asked through the app's own provider (`src/main/utility-model/live-workers-ai-fetch.test-fixture.ts`): `z-ai/glm-4.7-flash` and `google/gemma-4-26b-a4b-it` for the read step, and `cloudflare/clef` on Cloudflare's own host for the judge. Recordings are filed under the Workers AI ids either way, so a replay does not depend on which account recorded them. A chat reply recorded through OpenRouter carries no token count.
 
 A live request that gets no answer after four tries fails the run and leaves the baseline and the matrix as they were. What was answered is kept, so the next run asks only for the rest.
 
@@ -76,7 +78,7 @@ Offline, the suite checks that every scenario is labelled, that no conversation 
 
 ### The judge as the recap runs it
 
-The recap runs Clef alone (`@cf/cloudflare/clef`), with the thresholds measured for it on the tune split. `RECAP_JUDGE_CALIBRATION` in `../session-recap-judge-questions.ts` pins the model, the hash of the question wording and the five thresholds together; the judge does not run on wording its thresholds were not measured on. There is no second model: when Clef fails or times out the request stays "Open".
+The recap runs Clef alone (`@cf/cloudflare/clef`, or the same model as `cloudflare/clef` on OpenRouter), with the thresholds measured for it on the tune split. `RECAP_JUDGE_CALIBRATION` in `../session-recap-judge-questions.ts` pins the model, the hash of the question wording and the five thresholds together; the judge does not run on wording its thresholds were not measured on. There is no second model: when Clef fails or times out the request stays "Open".
 
 Two offline checks run the product's own code against the recorded answers:
 
@@ -85,7 +87,7 @@ Two offline checks run the product's own code against the recorded answers:
 
 | Environment                      | Effect                                                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `RECAP_JUDGE_LIVE=1`             | Ask each model what is not on record, then write the answers, the thresholds and the report.                   |
+| `RECAP_JUDGE_LIVE=1`             | Ask each model what is not on record, then write the answers, the thresholds and the report. Same credential.  |
 | `RECAP_JUDGE_MODELS=name1,name2` | Only these models, by the last part of their id (`clef`, `clef-flash`, `glm-4.7-flash`, `gemma-4-26b-a4b-it`). |
 | `RECAP_JUDGE_MAX_USD=<n>`        | Stop before the first request when the estimate for what must be asked is above this. Default 1.               |
 | `RECAP_JUDGE_CONCURRENCY=<n>`    | Requests in flight per model. Default 4.                                                                       |

@@ -1,6 +1,11 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { SessionSummaryCache } from '../session-summaries/session-summary-cache'
+import { createClefDecisions } from '../utility-model/clef-decisions'
+import { createOpenRouterProvider } from '../utility-model/openrouter-utility-provider'
 import { UtilityModelError } from '../utility-model/utility-model-provider'
+import { UtilityModelService } from '../utility-model/utility-model-service'
 import { createClefRecapJudge, type RecapJudgeCall } from './session-recap-clef-judge'
 
 const STATE = { request: 'add a retry', conversation: 'USER: add a retry\nAGENT: Added.' }
@@ -27,7 +32,7 @@ function harness(decide: () => Promise<{ answers: unknown; inputTokens: number |
     record: (call) => calls.push(call),
     now: () => 7000
   })
-  const ask = () => judge.ask(STATE, new AbortController().signal)
+  const ask = () => judge.ask(STATE, new AbortController().signal, 'auto')
   return { ask, asked, calls, spent }
 }
 
@@ -80,6 +85,67 @@ describe('Clef recap judge', () => {
       }
     ])
     expect(JSON.stringify(calls)).not.toContain('retry')
+  })
+
+  it('asks the same question book on OpenRouter when this host has a key for it', async () => {
+    const answered = await readFile(
+      join(import.meta.dirname, '../utility-model/__fixtures__/openrouter-decisions-response.json'),
+      'utf8'
+    )
+    const sent: { url: string; body: Record<string, unknown> }[] = []
+    const openRouter = new UtilityModelService({
+      backend: async () => ({
+        provider: createOpenRouterProvider('sk-or-v1-test', {
+          fetchImpl: async (url, init) => {
+            sent.push({ url, body: JSON.parse(String(init.body)) })
+            return new Response(answered, { status: 200 })
+          }
+        }),
+        models: []
+      })
+    })
+    const workersAi = new UtilityModelService({ backend: async () => null })
+    const clef = createClefDecisions((id) => (id === 'openrouter' ? openRouter : workersAi))
+    const spent: unknown[][] = []
+    const judge = createClefRecapJudge({
+      decide: (model, request, signal) => clef.decide(model, request, signal),
+      cache: new SessionSummaryCache(null),
+      spend: (...spend) => spent.push(spend),
+      record: () => undefined
+    })
+
+    const reply = await judge.ask(STATE, new AbortController().signal, 'auto')
+
+    expect(reply).toEqual({
+      answers: {
+        done: 0.9412,
+        did_part: 0.0611,
+        declined: 0.0102,
+        withdrawn: 0.0043,
+        left_undone: 0.0377
+      },
+      cached: false
+    })
+    expect(sent.map((request) => request.url)).toEqual([
+      'https://openrouter.ai/api/alpha/decisions'
+    ])
+    const { questions, ...envelope } = sent[0].body
+    expect(envelope).toEqual({
+      model: 'cloudflare/clef',
+      state: STATE,
+      provider: { only: ['cloudflare'] }
+    })
+    expect(
+      Object.entries(Object(questions)).map(([id, asked]) => [id, Object(asked).type])
+    ).toEqual([
+      ['done', 'noul'],
+      ['did_part', 'noul'],
+      ['declined', 'noul'],
+      ['withdrawn', 'noul'],
+      ['left_undone', 'noul']
+    ])
+    // 812 input tokens at Clef's rate, on OpenRouter's tally.
+    expect(spent).toEqual([[expect.closeTo(17.716, 3), 'openrouter']])
   })
 
   it('fails without asking another model, and keeps nothing', async () => {

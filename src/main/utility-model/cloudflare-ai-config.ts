@@ -1,6 +1,3 @@
-import { readFile, stat } from 'node:fs/promises'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
 import type { SecretAtRestProtection } from '../../shared/secret-at-rest-protection'
 import {
   CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL,
@@ -9,6 +6,7 @@ import {
 import { createEncryptedApiKeyFileStore } from '../credentials/encrypted-api-key-file-store'
 import { isRecord } from '../home-chat/home-chat-record-guard'
 import type { CloudflareAiCredentials } from './cloudflare-workers-ai-provider'
+import { SealConfigFile, sealConfigFilePath } from './seal-config-file'
 
 export type CloudflareAiConfig = {
   credentials: CloudflareAiCredentials | null
@@ -52,7 +50,7 @@ function fieldsOf(value: unknown): CloudflareAiConfigFields {
 
 /** `~/.config/seal/cloudflare-ai.json`: lets a headless Seal server run with no Settings UI. */
 export function cloudflareAiConfigFilePath(): string {
-  return join(homedir(), '.config', 'seal', 'cloudflare-ai.json')
+  return sealConfigFilePath('cloudflare-ai.json')
 }
 
 /**
@@ -61,9 +59,7 @@ export function cloudflareAiConfigFilePath(): string {
  */
 export class CloudflareAiConfigStore {
   private readonly saved: CloudflareAiSavedStore
-  private readonly configFilePath: string
-  private file: { mtimeMs: number; fields: CloudflareAiConfigFields } | null = null
-  private warnedUnreadableFile = false
+  private readonly configFile: SealConfigFile
 
   constructor(deps: { saved?: CloudflareAiSavedStore; configFilePath?: string } = {}) {
     this.saved =
@@ -74,12 +70,15 @@ export class CloudflareAiConfigStore {
         providerLabel: 'Cloudflare AI',
         logScope: 'utility-model'
       })
-    this.configFilePath = deps.configFilePath ?? cloudflareAiConfigFilePath()
+    this.configFile = new SealConfigFile(
+      deps.configFilePath ?? cloudflareAiConfigFilePath(),
+      'Cloudflare AI'
+    )
   }
 
   async load(): Promise<CloudflareAiConfig> {
     const saved = this.readSaved()
-    const fields = { ...(await this.readConfigFile()), ...saved }
+    const fields = { ...fieldsOf(await this.configFile.read()), ...saved }
     const credentials =
       fields.accountId && fields.apiToken
         ? { accountId: fields.accountId, apiToken: fields.apiToken }
@@ -112,35 +111,5 @@ export class CloudflareAiConfigStore {
       // Sealed by another install or unreadable: behave as if nothing was saved.
       return {}
     }
-  }
-
-  private async readConfigFile(): Promise<CloudflareAiConfigFields> {
-    let mtimeMs: number
-    try {
-      mtimeMs = (await stat(this.configFilePath)).mtimeMs
-    } catch {
-      this.file = null
-      return {}
-    }
-    if (this.file?.mtimeMs === mtimeMs) {
-      return this.file.fields
-    }
-    try {
-      this.file = {
-        mtimeMs,
-        fields: fieldsOf(JSON.parse(await readFile(this.configFilePath, 'utf8')))
-      }
-      this.warnedUnreadableFile = false
-    } catch {
-      this.file = { mtimeMs, fields: {} }
-      if (!this.warnedUnreadableFile) {
-        this.warnedUnreadableFile = true
-        // A JSON parse error quotes the text it choked on, so the error itself is never logged.
-        console.warn(
-          '[utility-model] the Cloudflare AI config file is not readable JSON; ignoring it'
-        )
-      }
-    }
-    return this.file.fields
   }
 }
