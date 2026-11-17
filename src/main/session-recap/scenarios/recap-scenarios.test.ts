@@ -3,7 +3,10 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { CloudflareAiCredentials } from '../../utility-model/cloudflare-workers-ai-provider'
+import {
+  liveModelAccount,
+  type LiveModelAccount
+} from '../../utility-model/live-model-account.test-fixture'
 import { RECAP_JUDGE_CALIBRATION } from '../session-recap-judge-questions'
 import {
   loadRecapJudgeRecords,
@@ -12,8 +15,7 @@ import {
   saveRecapJudgeRecords,
   type RecapJudgeRecord
 } from './recap-judge-models.test-fixture'
-import { liveRecapCredentials } from './recap-live-credentials.test-fixture'
-import { askLiveRecapModel } from './recap-live-model.test-fixture'
+import { liveRecapModel } from './recap-live-model.test-fixture'
 import {
   addToRecapCassette,
   loadRecapBaseline,
@@ -43,7 +45,7 @@ const env = process.env
 const pendingPath = env.RECAP_SCENARIOS_PENDING
 /** Replies to that file's requests, filed into the cassettes before the run. */
 const repliesPath = env.RECAP_SCENARIOS_REPLIES
-/** Ask the real model for what no recording answers, and record it. Needs a Workers AI credential. */
+/** Ask the real model for what no recording answers, and record it. Needs an OpenRouter key or a Workers AI credential. */
 const live = env.RECAP_SCENARIOS_LIVE === '1'
 const reportDir = env.RECAP_SCENARIOS_REPORT
 const updateBaseline = env.RECAP_SCENARIOS_UPDATE_BASELINE === '1'
@@ -69,7 +71,7 @@ const pending: RecapPendingRequest[] = []
 /** Requests of scenarios that say they are not recorded yet: relayed with the rest, but not a gap. */
 const awaited: RecapPendingRequest[] = []
 const results: RecapBaseline = {}
-let credentials: CloudflareAiCredentials | undefined
+let account: LiveModelAccount | undefined
 /** False while a live run has no checked credential, or once a live request went unanswered. */
 let sound = !live
 
@@ -79,7 +81,7 @@ describe('recap scenarios', () => {
       await mergeRelayedRecapReplies(pendingPath, repliesPath)
     }
     if (live) {
-      credentials = await liveRecapCredentials()
+      account = await liveModelAccount()
       sound = true
     }
   })
@@ -131,9 +133,9 @@ describe('recap scenarios', () => {
           scenario: scenario.id,
           cassette: await loadRecapCassette(scenario.id),
           judged,
-          ...(live
+          ...(account
             ? {
-                live: askLiveRecapModel,
+                live: liveRecapModel(account),
                 onRecorded: (entry: RecapCassetteEntry) => recorded.push(entry),
                 onJudgeRecorded: (answer) => {
                   const record = {
@@ -149,7 +151,12 @@ describe('recap scenarios', () => {
               }
             : {})
         })
-        const run = await runRecapScenario(scenario, surface, model, credentials)
+        const run = await runRecapScenario(
+          scenario,
+          surface,
+          model,
+          account?.provider === 'cloudflare-workers-ai' ? account.credentials : undefined
+        )
         judgeTotals.answered += run.judge.answered
         judgeTotals.unrecorded += run.judge.unrecorded
         if (recorded.length > 0) {
@@ -157,7 +164,7 @@ describe('recap scenarios', () => {
         }
         if (model.liveFailures.length > 0) {
           sound = false
-          expect.fail(`Workers AI did not answer: ${model.liveFailures.join(', ')}. Run it again.`)
+          expect.fail(`The model did not answer: ${model.liveFailures.join(', ')}. Run it again.`)
         }
         const awaitsRecording = scenario.pending === true && run.status === 'pending'
         ;(awaitsRecording ? awaited : pending).push(...model.pending)

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// On a host that holds a Workers AI credential: records the model replies the recap scenarios still
+// On a host that holds an OpenRouter key or a Workers AI credential: records the model replies the recap scenarios still
 // lack, measures the judge on the labelled suite, then replays it all with no network.
 // The credential is read by the tests themselves and is never printed. docs/recap-audit/README.md.
 import { spawnSync } from 'node:child_process'
@@ -24,19 +24,28 @@ function run(command, args, extraEnv = {}) {
   return result.status === 0
 }
 
-const fromEnv =
-  Boolean(env.CLOUDFLARE_ACCOUNT_ID) &&
-  Boolean(env.CLOUDFLARE_API_TOKEN ?? env.CLOUDFLARE_AUTH_TOKEN)
-const configFile = join(homedir(), '.config', 'seal', 'cloudflare-ai.json')
-if (!fromEnv && !existsSync(configFile)) {
+// Mirrors `liveModelAccount`: OpenRouter when this host has a key for it, else Workers AI.
+const seal = join(homedir(), '.config', 'seal')
+const account = [
+  [Boolean(env.OPENROUTER_API_KEY), 'OpenRouter key: the environment'],
+  [existsSync(join(seal, 'openrouter.json')), 'OpenRouter key: ~/.config/seal/openrouter.json'],
+  [
+    Boolean(env.CLOUDFLARE_ACCOUNT_ID) &&
+      Boolean(env.CLOUDFLARE_API_TOKEN ?? env.CLOUDFLARE_AUTH_TOKEN),
+    'Workers AI credential: the environment'
+  ],
+  [
+    existsSync(join(seal, 'cloudflare-ai.json')),
+    'Workers AI credential: ~/.config/seal/cloudflare-ai.json'
+  ]
+].find(([found]) => found)
+if (!account) {
   console.error(
-    'No Workers AI credential: set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN, or write ~/.config/seal/cloudflare-ai.json.'
+    'No credential: set OPENROUTER_API_KEY or write ~/.config/seal/openrouter.json, or else set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN or write ~/.config/seal/cloudflare-ai.json.'
   )
   process.exit(1)
 }
-console.log(
-  `Workers AI credential: ${fromEnv ? 'the environment' : '~/.config/seal/cloudflare-ai.json'}`
-)
+console.log(account[1])
 
 const recorded = run('pnpm', ['test', suite, '--maxWorkers=1'], {
   RECAP_SCENARIOS_LIVE: '1',
