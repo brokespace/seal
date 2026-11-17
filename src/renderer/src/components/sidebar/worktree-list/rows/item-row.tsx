@@ -26,6 +26,8 @@ export type WorktreeItemRowContext = {
   nativeLineageDropTargetIdentity: string | null
   activeWorktreeId: string | null
   activeWorkspaceExecutionHostId: ExecutionHostId | null
+  /** False while the main area shows a session: its row carries the mark, not the active card. */
+  marksActiveCard: boolean
   currentWorktreeId: string | null
   highlightedRevealRowKey: string | null
   selectedWorktreeIds: ReadonlySet<string>
@@ -111,7 +113,7 @@ export function renderWorktreeItemRow(
         isActive={isActiveWorktree}
         isCurrentWorktree={ctx.currentWorktreeId === itemRow.worktree.id}
         // Why: a child-active parent should look active without the active-card side effects (e.g. SSH reconnect UI).
-        isActiveSurface={forceActiveSurface || isActiveWorktree}
+        isActiveSurface={ctx.marksActiveCard && (forceActiveSurface || isActiveWorktree)}
         activeSurfaceVariant={isActiveWorktree ? ctx.getActiveSurfaceVariant(itemRow) : 'primary'}
         isMultiSelected={isMultiSelected}
         revealHighlight={ctx.highlightedRevealRowKey === itemRow.rowKey}

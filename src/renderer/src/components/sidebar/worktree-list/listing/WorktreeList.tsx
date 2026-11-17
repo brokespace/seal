@@ -24,6 +24,7 @@ import { SidebarWorktreeListDialogs } from '../rows/ProjectGroupDialogs'
 import { SidebarWorkspacesEmptyNotice, SidebarWorktreeListEmptyState } from './EmptyState'
 import { VirtualizedWorktreeViewport } from '../viewport/VirtualizedWorktreeViewport'
 import { markSidebarWorktreeActiveImmediately } from '../rows/option-dom'
+import { isSessionOnViewIn } from '@/components/live-sessions/open/use-agent-session-showing'
 import { EMPTY_PROJECT_GROUPS } from '../viewport/viewport-props'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from '../drag/drop-commit-context'
 import { useAgentSendTargetWorktreeId } from './use-agent-send-target'
@@ -200,7 +201,7 @@ const WorktreeList = React.memo(function WorktreeList({
 
   const handleImmediateWorktreeActivate = useCallback((worktreeId: string, rowKey?: string) => {
     // Update the active row directly on pointer input to avoid virtualized rerender latency; store state reconciles afterward.
-    markSidebarWorktreeActiveImmediately(worktreeId, rowKey)
+    markSidebarWorktreeActiveImmediately(worktreeId, rowKey, !isSessionOnViewIn(worktreeId))
   }, [])
 
   const handleOpenRepoSettings = useCallback(

@@ -1,11 +1,9 @@
 import { useCallback } from 'react'
-import { useAppStore } from '@/store/index'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { isLiveSessionUnread, useLiveSessionMarks } from '../live-session-marks-store'
 import { liveSessionAccountLabel, useLocalSealAccounts } from '../menu/live-session-accounts'
 import { useIsAgentSessionShowing } from '../open/use-agent-session-showing'
-import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import type { LiveSessionRowProps } from './LiveSessionRow'
 
 export type LiveSessionRowState = Pick<
@@ -19,23 +17,14 @@ export function useLiveSessionRowState(): (session: LiveSession) => LiveSessionR
   const accounts = useLocalSealAccounts()
   const marks = useLiveSessionMarks()
   const isShowing = useIsAgentSessionShowing()
-  const activeWorktreeId = useAppStore((state) =>
-    state.activeView === 'terminal' ? state.activeWorktreeId : null
-  )
   return useCallback(
-    (session) => {
-      const link = links.get(session.id)
-      return {
-        workspaceName: link?.name ?? null,
-        account: liveSessionAccountLabel(session, accounts),
-        unread: isLiveSessionUnread(session, marks.seenAt),
-        current: isShowing(session),
-        highlighted:
-          marks.highlighted.has(session.id) ||
-          (activeWorktreeId !== null &&
-            (link?.worktreeId ?? windowAgentSessionWorktreeId(session)) === activeWorktreeId)
-      }
-    },
-    [links, accounts, marks.seenAt, marks.highlighted, isShowing, activeWorktreeId]
+    (session) => ({
+      workspaceName: links.get(session.id)?.name ?? null,
+      account: liveSessionAccountLabel(session, accounts),
+      unread: isLiveSessionUnread(session, marks.seenAt),
+      current: isShowing(session),
+      highlighted: marks.highlighted.has(session.id)
+    }),
+    [links, accounts, marks.seenAt, marks.highlighted, isShowing]
   )
 }

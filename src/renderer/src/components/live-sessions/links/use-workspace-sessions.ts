@@ -6,6 +6,7 @@ import {
   type StructuredTab
 } from '@/components/native-chat/session/status/structured-agent-session-tabs'
 import { useWorktreeAgentRows } from '@/components/sidebar/workspace-card/activity/useWorktreeAgentRows'
+import { getSharedWorktreeAgentRowsSelector } from '@/components/sidebar/workspace-card/activity/worktree-agent-rows-projection'
 import { getStructuredChatTabNames } from '@/runtime/native-chat/naming/structured-chat-name-observation'
 import { readStructuredChatTabSavedName } from '@/runtime/native-chat/naming/structured-chat-tab-name'
 import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
@@ -176,6 +177,31 @@ export function useWorkspaceSessions(
       }),
     [listed, all, rows, chats, worktreeId]
   )
+}
+
+let workspaceMemo: { inputs: readonly unknown[]; value: readonly LiveSession[] } | null = null
+
+/** The same list outside a render, for every host of the workspace; the same array while nothing it is made from changes. */
+export function readWorkspaceSessions(worktreeId: string): readonly LiveSession[] {
+  const state = useAppStore.getState()
+  const listed = readSidebarSessionGroups().byWorkspace.get(worktreeId) ?? NONE
+  const all = liveSessionRegistryStore.getState().sessions
+  const rows = getSharedWorktreeAgentRowsSelector(worktreeId)(state)
+  const chats = getStructuredAgentSessionTabsByPaneKey(state.unifiedTabsByWorktree)
+  const inputs = [worktreeId, listed, all, rows, chats]
+  if (!workspaceMemo || !same(workspaceMemo.inputs, inputs)) {
+    workspaceMemo = {
+      inputs,
+      value: workspaceSessionList({
+        listed,
+        all,
+        rows,
+        chats,
+        build: windowSessionBuilder(worktreeId, all)
+      })
+    }
+  }
+  return workspaceMemo.value
 }
 
 /** The sessions no workspace holds that sit right under a project's header in the list. */
