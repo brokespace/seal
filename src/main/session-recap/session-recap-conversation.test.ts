@@ -62,7 +62,7 @@ describe('recapConversationSince', () => {
       role: 'user' | 'assistant',
       blocks: NativeChatMessage['blocks']
     ): NativeChatMessage => ({ id, role, blocks, timestamp: null, source: 'transcript' })
-    const row = (state: 'running' | 'completed', lastMessage?: string): NativeChatMessage =>
+    const row = (state: 'working' | 'completed', lastMessage?: string): NativeChatMessage =>
       message('3', 'assistant', [
         {
           type: 'subagent',
@@ -88,7 +88,7 @@ describe('recapConversationSince', () => {
       ])
     ]
 
-    expect(conversation([...launch, row('running')])?.complete).toBe(false)
+    expect(conversation([...launch, row('working')])?.complete).toBe(false)
     expect(conversation([...launch, row('completed', 'No errors found.')])).toEqual({
       lines: [
         'USER: Audit the logs in the background',
