@@ -39,6 +39,14 @@ const transcriptPage = defineRpcOperation({
   read: rpcResultVariant('page', liveTranscriptPageSchema)
 })
 
+const transcriptImage = defineRpcOperation({
+  name: 'live-sessions.transcript-image',
+  method: 'liveSessions.transcriptImage',
+  acceptance: 'require-result-or-throw-message',
+  barrier: 'on-settle',
+  read: rpcResultVariant('image-piece', z.looseObject({ base64: z.string() }))
+})
+
 const sendMessage = defineRpcOperation({
   name: 'live-sessions.send',
   method: 'liveSessions.send',
@@ -86,7 +94,16 @@ export function readLiveTranscriptPage(
   sessionId: string,
   before: number
 ): Promise<LiveTranscriptPage> {
-  return runRpcOperation(client, transcriptPage, { sessionId, before })
+  return runRpcOperation(client, transcriptPage, { sessionId, before, images: 'refs' })
+}
+
+/** One piece of the base64 an inline image's reference names; empty when the transcript no longer holds it. */
+export async function readLiveTranscriptImagePiece(
+  client: Port,
+  piece: { sessionId: string; start: number; length: number },
+  signal: AbortSignal
+): Promise<string> {
+  return (await runRpcOperation(client, transcriptImage, piece, { signal })).base64
 }
 
 export function sendLiveMessage(

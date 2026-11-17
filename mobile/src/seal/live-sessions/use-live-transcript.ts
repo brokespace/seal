@@ -44,10 +44,14 @@ const LOADING: LiveTranscriptState = {
  * Streams one session's transcript over `liveSessions.watchTranscript`. Messages are keyed by id, so a
  * page and a delta that overlap merge instead of doubling; a delta this view can't place re-attaches
  * from the cursor it holds.
+ *
+ * The host reads a session it does not list as empty, as it does right after a reconnect, before the
+ * session's machine is scanned. Such a read is not shown: the watch opens again once `listed`.
  */
 export function useLiveTranscript(
   client: RpcClient | null,
-  sessionId: string | null
+  sessionId: string | null,
+  listed: boolean
 ): LiveTranscriptState & { loadEarlier: () => Promise<void>; retry: () => void } {
   const held = useRef<Held>({ byId: new Map(), cursor: null, start: null })
   const [state, setState] = useState<LiveTranscriptState>(LOADING)
@@ -70,6 +74,11 @@ export function useLiveTranscript(
         hasMore: hasMore ?? s.hasMore
       }))
     const applyPage = (page: LiveTranscriptPage) => {
+      const read = held.current.cursor
+      // A watch replayed after a long gap brings a page that starts past the rows held: it can't join them.
+      if (read !== null && page.start > read) {
+        held.current = { byId: new Map(), cursor: null, start: null }
+      }
       for (const m of page.messages) {
         held.current.byId.set(m.id, m)
       }
@@ -99,7 +108,7 @@ export function useLiveTranscript(
     }
     const close = client.subscribe(
       'liveSessions.watchTranscript',
-      { sessionId, fromCursor: held.current.cursor },
+      { sessionId, fromCursor: held.current.cursor, images: 'refs' },
       (raw) => {
         const parsed = liveTranscriptFrameSchema.safeParse(raw)
         if (closed || !parsed.success) {
@@ -108,10 +117,10 @@ export function useLiveTranscript(
         const frame = parsed.data
         if (frame.type === 'ready') {
           ready = true
-          if (frame.page) {
-            applyPage(frame.page)
-          } else {
+          if (!frame.page) {
             publish()
+          } else if (listed || frame.page.messages.length > 0) {
+            applyPage(frame.page)
           }
           for (const delta of early.splice(0)) {
             applyDelta(delta)
@@ -134,7 +143,7 @@ export function useLiveTranscript(
       closed = true
       close()
     }
-  }, [client, sessionId, attach])
+  }, [client, sessionId, attach, listed])
 
   const loadEarlier = useCallback(async () => {
     const before = held.current.start
@@ -144,6 +153,11 @@ export function useLiveTranscript(
     setState((s) => ({ ...s, olderPages: 'loading' }))
     try {
       const page = await readLiveTranscriptPage(client, sessionId, before)
+      // The rows held were replaced while this read was out: its page is no longer the one before them.
+      if (held.current.start !== before) {
+        setState((s) => ({ ...s, olderPages: 'idle' }))
+        return
+      }
       for (const m of page.messages) {
         held.current.byId.set(m.id, m)
       }

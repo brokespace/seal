@@ -155,7 +155,10 @@ export function LiveSessionChat({
       }
 
   return (
-    <MobileNativeChatRowOverlaysHost conversation={{ surfaceId, sessionId }}>
+    <MobileNativeChatRowOverlaysHost
+      conversation={{ surfaceId, sessionId }}
+      imageSource={source.images}
+    >
       <MobileNativeChatReplyRevealsContext.Provider value={replyReveals}>
         <MobileNativeChatNoticeContext.Provider value={notice}>
           <MobileNativeChatView
