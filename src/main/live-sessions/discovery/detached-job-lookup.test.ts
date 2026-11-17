@@ -34,9 +34,11 @@ describe.skipIf(process.platform === 'win32')('a job a shell call left running b
     await run('mkfifo', [join(dir, 'hold')])
     await writeFile(script, `read -r held < '${join(dir, 'hold')}'\n`)
     const command = `nohup sh ${script} > /dev/null 2>&1 < /dev/null &`
+    // ast-grep-ignore: test-no-wall-clock -- A real process starts on the machine's own clock.
     const from = Math.floor(Date.now() / 1000)
     const { stdout } = await run('/bin/sh', ['-c', `${command} echo $!`])
     job = Number(stdout.trim())
+    // ast-grep-ignore: test-no-wall-clock -- A real process starts on the machine's own clock.
     const until = Math.floor(Date.now() / 1000)
     const names = detachedJobNames(command)
     const asked = [
@@ -52,6 +54,6 @@ describe.skipIf(process.platform === 'win32')('a job a shell call left running b
     expect(names).toEqual(['fq_cache_build.sh'])
     expect(await found()).toEqual([{ query: 1, pid: job, runs: 'sh' }])
     process.kill(job)
-    expect(await found()).toEqual([])
+    await expect.poll(found).toEqual([])
   })
 })
