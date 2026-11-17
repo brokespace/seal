@@ -32,7 +32,9 @@ import {
 } from '../menu/LiveSessionMenuItems'
 import { LiveSessionStatusDot } from '../status/LiveSessionStatusDot'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
+import { LiveSessionCacheTimer } from './LiveSessionCacheTimer'
 import { LiveSessionPreview } from './LiveSessionPreview'
+import { LiveSessionRowChips } from './LiveSessionRowChips'
 import {
   LIVE_SESSION_PREVIEW_CLOSE_DELAY_MS,
   useLiveSessionRowPreview
@@ -308,30 +310,13 @@ export const LiveSessionRow = React.memo(function LiveSessionRow(
                       {subagents}
                     </span>
                   ) : null}
-                  {props.machine ? (
-                    <span
-                      data-live-session-machine
-                      className={cn(
-                        'max-w-20 shrink-0 truncate rounded-sm border px-1 leading-[14px]',
-                        tone.account
-                      )}
-                      title={t('auto.components.live-sessions.sessionRows.machine', 'Machine')}
-                    >
-                      {props.machine}
-                    </span>
-                  ) : null}
-                  {props.account ? (
-                    <span
-                      data-live-session-account
-                      className={cn(
-                        'max-w-16 shrink-0 truncate rounded-sm border px-1 leading-[14px]',
-                        tone.account
-                      )}
-                      title={t('auto.components.live-sessions.sidebar.account', 'Account')}
-                    >
-                      {props.account}
-                    </span>
-                  ) : null}
+                  <LiveSessionRowChips
+                    session={session}
+                    machine={props.machine}
+                    account={props.account}
+                    borderClassName={tone.account}
+                  />
+                  <LiveSessionCacheTimer session={session} />
                 </span>
                 {/* The hover preview shows the whole sentence. */}
                 {summary ? (
