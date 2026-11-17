@@ -1,5 +1,6 @@
 import {
   ListChecks,
+  ListX,
   MessageCircleQuestion,
   NotebookText,
   PanelRightClose,
@@ -8,8 +9,9 @@ import {
 import { useTranslate } from '@/i18n/use-translate'
 import type { SessionRecapView } from '../../../../shared/session-recap/session-recap-types'
 import {
+  recapAttention,
   recapHeadline,
-  recapItemsByMark,
+  recapIsChecking,
   recapNewCount
 } from '../../../../shared/session-recap/session-recap-view'
 import { recapUpdatedLabel } from './session-recap-copy'
@@ -62,8 +64,7 @@ export function SessionRecapBar({
   if (view === null || view.state === 'unavailable' || (headline === null && !writing)) {
     return null
   }
-  const questions = recap ? recapItemsByMark(recap.questions, view.marks).open.length : 0
-  const actions = recap ? recapItemsByMark(recap.actions, view.marks).open.length : 0
+  const { questions, actions, notAddressed } = recapAttention(view)
   const news = recapNewCount(view)
   const PanelIcon = open ? PanelRightClose : PanelRightOpen
   return (
@@ -104,11 +105,21 @@ export function SessionRecapBar({
       >
         <ListChecks className="size-3" aria-hidden />
       </Count>
+      <Count
+        count={notAddressed}
+        label={t('seal.sessionRecap.badgeNotAddressed', 'Requests not addressed: {{count}}', {
+          count: notAddressed
+        })}
+      >
+        <ListX className="size-3" aria-hidden />
+      </Count>
       {recap ? (
         <span className="hidden shrink-0 text-2xs text-muted-foreground @2xl:inline">
           {writing
             ? t('seal.sessionRecap.updating', 'Updating\u2026')
-            : recapUpdatedLabel(recap.updatedAt, now, t)}
+            : recapIsChecking(view)
+              ? t('seal.sessionRecap.checking', 'Checking the last turn\u2026')
+              : recapUpdatedLabel(recap.updatedAt, now, t)}
         </span>
       ) : null}
       <PanelIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />

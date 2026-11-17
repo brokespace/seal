@@ -181,11 +181,35 @@ export async function openRecapPanel(page: Page, sessionId: string): Promise<Loc
   return panel
 }
 
+/** Where the panel draws each list the recap holds; requests carry what was asked and what was missed. */
+const PANEL_ITEMS: Record<RecapSection, string> = {
+  questions: '[data-recap-section="questions"] li',
+  actions: '[data-recap-section="actions"] li',
+  did: '[data-recap-section="did"] li',
+  decisions: '[data-recap-section="decisions"] li',
+  asked: '[data-recap-request] [data-recap-item-text]',
+  ignored: '[data-recap-request-state="not-addressed"] [data-recap-item-text]'
+}
+
+/** One list of the recap as the panel draws it, each item by its words. */
+export function recapPanelItems(panel: Locator, section: RecapSection): Locator {
+  return panel.locator(PANEL_ITEMS[section])
+}
+
+/** Done, withdrawn and dismissed requests sit behind a count until the user unfolds them. */
+export async function unfoldSettledRecapRequests(panel: Locator): Promise<void> {
+  const fold = panel.locator('[data-recap-section="requests"] button[aria-expanded="false"]')
+  if ((await fold.count()) > 0) {
+    await fold.click()
+  }
+}
+
 export async function readRecapPanelLists(panel: Locator): Promise<RecapPanelLists> {
+  await unfoldSettledRecapRequests(panel)
   const entries = await Promise.all(
     RECAP_SECTIONS.map(async (section) => [
       section,
-      await panel.locator(`[data-recap-section="${section}"] li`).allTextContents()
+      await recapPanelItems(panel, section).allTextContents()
     ])
   )
   return Object.fromEntries(entries)
@@ -267,9 +291,9 @@ export async function captureRecapCheckpoint(
 ): Promise<RecapCheckpoint> {
   const panel = await openRecapPanel(page, sessionId)
   await expect(panel.locator('[data-recap-section], [data-recap-note]').first()).toBeVisible()
-  const ignored = panel.locator('[data-recap-section="ignored"]')
-  if ((await ignored.count()) > 0) {
-    await ignored.scrollIntoViewIfNeeded()
+  const requests = panel.locator('[data-recap-section="requests"]')
+  if ((await requests.count()) > 0) {
+    await requests.scrollIntoViewIfNeeded()
   }
   const view = await saveRecapEvidence(page, testInfo, name, sessionId, stub)
   return {

@@ -37,11 +37,7 @@ export function LiveSessionRow({
       value={
         session.origin === 'external' ? t('seal.liveSessions.external', 'External') : undefined
       }
-      accessory={
-        session.recap ? (
-          <SessionRecapCounts questions={session.recap.questions} actions={session.recap.actions} />
-        ) : undefined
-      }
+      accessory={<SessionRecapCounts brief={session.recap} />}
       navigates
       busy={opening}
       testID={`${listTestId}-${session.id}`}

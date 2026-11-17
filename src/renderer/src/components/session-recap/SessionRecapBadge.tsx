@@ -1,9 +1,10 @@
-import { ListChecks, MessageCircleQuestion } from 'lucide-react'
+import { ListChecks, ListX, MessageCircleQuestion } from 'lucide-react'
 import { useTranslate } from '@/i18n/use-translate'
 import { cn } from '@/lib/class-names'
 import type { LiveSessionRecapBrief } from '../../../../shared/session-recap/session-recap-types'
+import { recapAttention } from '../../../../shared/session-recap/session-recap-view'
 
-/** On a session's row: how many questions and action items still wait on the user. Nothing at zero. */
+/** On a session's row: the questions, action items and unaddressed requests that wait on the user. Nothing at zero. */
 export function SessionRecapBadge({
   brief,
   className
@@ -12,18 +13,20 @@ export function SessionRecapBadge({
   className?: string
 }): React.JSX.Element | null {
   const t = useTranslate()
-  if (!brief || brief.questions + brief.actions === 0) {
+  const { questions, actions, notAddressed, total } = recapAttention(brief)
+  if (total === 0) {
     return null
   }
   const label = [
-    brief.questions > 0
-      ? t('seal.sessionRecap.badgeQuestions', 'Questions for you: {{count}}', {
-          count: brief.questions
-        })
+    questions > 0
+      ? t('seal.sessionRecap.badgeQuestions', 'Questions for you: {{count}}', { count: questions })
       : null,
-    brief.actions > 0
-      ? t('seal.sessionRecap.badgeActions', 'Your action items: {{count}}', {
-          count: brief.actions
+    actions > 0
+      ? t('seal.sessionRecap.badgeActions', 'Your action items: {{count}}', { count: actions })
+      : null,
+    notAddressed > 0
+      ? t('seal.sessionRecap.badgeNotAddressed', 'Requests not addressed: {{count}}', {
+          count: notAddressed
         })
       : null
   ]
@@ -39,16 +42,22 @@ export function SessionRecapBadge({
         className
       )}
     >
-      {brief.questions > 0 ? (
+      {questions > 0 ? (
         <span className="flex items-center gap-0.5">
           <MessageCircleQuestion className="size-3" aria-hidden />
-          {brief.questions}
+          {questions}
         </span>
       ) : null}
-      {brief.actions > 0 ? (
+      {actions > 0 ? (
         <span className="flex items-center gap-0.5">
           <ListChecks className="size-3" aria-hidden />
-          {brief.actions}
+          {actions}
+        </span>
+      ) : null}
+      {notAddressed > 0 ? (
+        <span className="flex items-center gap-0.5">
+          <ListX className="size-3" aria-hidden />
+          {notAddressed}
         </span>
       ) : null}
     </span>

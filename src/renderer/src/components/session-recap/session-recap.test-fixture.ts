@@ -4,6 +4,9 @@ import {
   emptySessionRecap,
   type LiveSessionRecapBrief,
   type RecapItem,
+  type RecapJudgeAnswers,
+  type RecapRequest,
+  type RecapRequestStatus,
   type RecapWorkState,
   type SessionRecap,
   type SessionRecapView
@@ -22,6 +25,79 @@ function item(
   return { id, text, messageId, at: SAMPLE_NOW - agoMs, ...(state ? { state } : {}) }
 }
 
+const SAMPLE_COVERED_TO = 35_000
+const NO_ANSWER: RecapJudgeAnswers = {
+  done: 0.03,
+  did_part: 0.02,
+  declined: 0.01,
+  withdrawn: 0.01,
+  left_undone: 0.04
+}
+
+/** A request as the judge left it; `answers` holds the one question that fired, if any did. */
+function request(
+  asked: RecapItem,
+  status: RecapRequestStatus,
+  answers: Partial<RecapJudgeAnswers> | null,
+  judgedAgoMs = 4 * MIN
+): RecapRequest {
+  const judgedAt = SAMPLE_NOW - judgedAgoMs
+  return {
+    id: asked.id,
+    text: asked.text,
+    messageId: asked.messageId,
+    at: asked.at,
+    status,
+    statusAt: answers && status !== 'open' ? judgedAt : asked.at,
+    ...(answers
+      ? {
+          judged: {
+            at: judgedAt,
+            coveredTo: SAMPLE_COVERED_TO,
+            model: '@cf/cloudflare/clef',
+            questionBook: 'ba879810db9d',
+            answers: { ...NO_ANSWER, ...answers },
+            leftUndone: answers.left_undone !== undefined,
+            turnEnded: true,
+            complete: true
+          }
+        }
+      : {})
+  }
+}
+
+const ASKED = {
+  doubleCharge: item(
+    'a1',
+    'Find out why some customers were charged twice last week',
+    'o120',
+    26 * HOUR
+  ),
+  queue: item('a2', 'Move webhook handling onto the job queue', 'o2210', 25 * HOUR),
+  idempotency: item('a3', 'Add an idempotency key so retries are safe', 'o4830', 25 * HOUR),
+  flag: item('a5', 'Put it behind a flag, off by default', 'o9120', 22 * HOUR),
+  slackAlert: item('a6', 'Post every retry to the billing Slack channel', 'o9120', 22 * HOUR),
+  eventId: item('a8', 'Also log the Stripe event id on every job', 'o15310', 21 * HOUR),
+  backfill: item('a11', 'Write a backfill for the charges already duplicated', 'o22400', 3 * HOUR),
+  skipReview: item('a12', 'Merge the worker PR without waiting for review', 'o30870', 2 * HOUR),
+  pr: item('a14', 'Open a PR for the worker and keep the backfill separate', 'o30870', 2 * HOUR),
+  carryOn: item('a20', 'Carry on with the backfill while I look', 'o32600', 40 * MIN)
+}
+
+/** One request in every standing the judge can leave it in. */
+const SAMPLE_REQUESTS: RecapRequest[] = [
+  request(ASKED.doubleCharge, 'addressed', { done: 0.97 }, 25 * HOUR),
+  request(ASKED.queue, 'addressed', { done: 0.94 }, 24 * HOUR),
+  request(ASKED.idempotency, 'addressed', { done: 0.91 }, 23 * HOUR),
+  request(ASKED.flag, 'addressed', { done: 0.88 }, 22 * HOUR),
+  request(ASKED.slackAlert, 'withdrawn', { withdrawn: 0.62 }, 21 * HOUR),
+  request(ASKED.eventId, 'open', { left_undone: 0.91 }),
+  request(ASKED.backfill, 'partly', { did_part: 0.96 }),
+  request(ASKED.skipReview, 'declined', { declined: 0.95 }, 110 * MIN),
+  request(ASKED.pr, 'addressed', { done: 0.93 }, 110 * MIN),
+  request(ASKED.carryOn, 'open', null)
+]
+
 /** A session a day into a billing migration, for tests and fixtures. */
 export function sampleSessionRecap(patch: Partial<SessionRecap> = {}): SessionRecap {
   return {
@@ -31,15 +107,8 @@ export function sampleSessionRecap(patch: Partial<SessionRecap> = {}): SessionRe
     goal: 'Stop Stripe webhook retries from double-charging by moving webhook handling onto the job queue, behind an idempotency key.',
     standing:
       'The queue worker and idempotency table are merged behind a flag; the backfill script is written but waits on your answer about refunds before it runs.',
-    asked: [
-      item('a1', 'Find out why some customers were charged twice last week', 'o120', 26 * HOUR),
-      item('a2', 'Move webhook handling onto the job queue', 'o2210', 25 * HOUR),
-      item('a3', 'Add an idempotency key so retries are safe', 'o4830', 25 * HOUR),
-      item('a5', 'Put it behind a flag, off by default', 'o9120', 22 * HOUR),
-      item('a8', 'Also log the Stripe event id on every job', 'o15310', 21 * HOUR),
-      item('a11', 'Write a backfill for the charges already duplicated', 'o22400', 3 * HOUR),
-      item('a14', 'Open a PR for the worker and keep the backfill separate', 'o30870', 2 * HOUR)
-    ],
+    asked: Object.values(ASKED),
+    requests: SAMPLE_REQUESTS,
     did: [
       item(
         'w2',
@@ -86,9 +155,8 @@ export function sampleSessionRecap(patch: Partial<SessionRecap> = {}): SessionRe
         110 * MIN
       )
     ],
-    ignored: [
-      item('i15', 'Log the Stripe event id on every job (asked, not done yet)', 'o15310', 21 * HOUR)
-    ],
+    // As the host hands it over: the requests the judge found not addressed.
+    ignored: [{ ...ASKED.eventId, at: SAMPLE_NOW - 4 * MIN }],
     actions: [
       item(
         't16',
@@ -145,7 +213,7 @@ export function sampleSessionRecap(patch: Partial<SessionRecap> = {}): SessionRe
         at: SAMPLE_NOW - 25 * HOUR
       }
     ],
-    coveredTo: 35_000,
+    coveredTo: SAMPLE_COVERED_TO,
     nextItemId: 21,
     ...patch
   }
@@ -163,6 +231,7 @@ export function sampleRecapView(patch: Partial<SessionRecapView> = {}): SessionR
     pausedUntil: null,
     failure: null,
     rev: 12,
+    turnEnded: true,
     ...patch
   }
 }
@@ -171,7 +240,8 @@ export const SAMPLE_RECAP_BRIEF: LiveSessionRecapBrief = {
   title: 'Move billing webhooks to the queue',
   rev: 12,
   questions: 2,
-  actions: 2
+  actions: 2,
+  notAddressed: 1
 }
 
 function message(

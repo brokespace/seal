@@ -52,8 +52,10 @@ it('keeps the name the user gave a session over its recap title', () => {
 })
 
 it('badges a session with what still waits on the user, and not one with nothing open', () => {
-  renderRow(sampleLiveSession('a', { recap: { ...recap, questions: 3, actions: 1 } }))
-  expect(document.querySelector('[data-session-recap-badge]')).toHaveTextContent('31')
+  renderRow(
+    sampleLiveSession('a', { recap: { ...recap, questions: 3, actions: 1, notAddressed: 2 } })
+  )
+  expect(document.querySelector('[data-session-recap-badge]')).toHaveTextContent('312')
 
   cleanup()
   renderRow(sampleLiveSession('a', { recap }))
