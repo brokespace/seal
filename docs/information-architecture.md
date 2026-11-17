@@ -112,7 +112,7 @@ Once the agent starts, the session appears, without any surface adding it, in Ac
 
 ### Opening a session
 
-`openAgentSession(sessionId, mode)` is the only way to open one. It shows the session's tab in its workspace: its chat tab, its terminal, or a session tab for an agent started outside Seal. A click or Enter previews; a double-click keeps the tab. Sessions no workspace holds are listed under "Unassigned" at the end of the sidebar.
+`openAgentSession(sessionId, mode)` is the only way to open one. It shows the session's tab in its workspace: its chat tab, its terminal, or a session tab for an agent started outside Seal. A click or Enter previews; a double-click keeps the tab. A session no workspace holds is listed under its project: the project of its repository, else the one named by its folder, else the one the user moved it to. Only a session with no folder is listed under "Unassigned" at the end of the sidebar.
 
 ### Stopping and deleting
 
