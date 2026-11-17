@@ -56,7 +56,8 @@ export async function requestUtilityModelJson(input: {
       throw error
     }
     // The cause can carry the request URL; only its class of failure is reported.
-    if (timeout.aborted) {
+    // The HTTP client's own deadline is the same failure as ours.
+    if (timeout.aborted || (error instanceof Error && error.name === 'TimeoutError')) {
       // A model that is too slow is that model's own failure: the next one may answer in time.
       throw new UtilityModelError(
         'network',

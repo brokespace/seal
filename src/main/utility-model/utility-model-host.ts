@@ -32,6 +32,8 @@ export type UtilityModelClient = {
   /** The chosen provider has an account on this host. */
   isConfigured(): Promise<boolean>
   health(): { pausedUntil: number | null }
+  /** The provider it runs on now. Absent on a model handed in from outside this host's choices. */
+  provider?(): UtilityModelProviderId
   /** Fires when a provider's health changes: a pause starts or ends, or a model turns out unavailable. */
   subscribe(listener: () => void): () => void
 }
@@ -101,6 +103,7 @@ export class UtilityModelHost {
       },
       isConfigured: () => this.provider(choice().provider).isConfigured(),
       health: () => this.provider(choice().provider).health(),
+      provider: () => choice().provider,
       subscribe: (listener) => this.subscribe(listener)
     }
   }
