@@ -351,6 +351,8 @@ Desktop, inside the session view (`LiveSessionPane`):
   status and last activity (`recapViewOnSession`), with the host's own rule, so a turn that starts
   turns "Not addressed" into "In progress" at once, and a turn that ended but is not read yet
   shows "Checking the last turn" and calls nothing not addressed.
+- **Unanswered asks.** A Refresh or a tick the host does not answer says so at the top of the
+  panel and the sheet until the next try, and a tick that was never saved is taken back.
 - **Jumping.** Every item with a message behind it is a button. It closes any subagent transcript
   and reveals the message through the chat list's own navigation (`revealMessage`), which pages
   older history in until the message is loaded and lands on it the way the turn rail does. A PR or

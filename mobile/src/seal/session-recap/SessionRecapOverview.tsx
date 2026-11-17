@@ -30,6 +30,7 @@ export function SessionRecapOverview({
       visible={open}
       view={view}
       refreshing={recap.refreshing}
+      failed={recap.failed}
       onRefresh={recap.refresh}
       onMark={recap.mark}
       onOpenLink={(url) => void Linking.openURL(url)}

@@ -12,10 +12,15 @@ import {
   refreshSessionRecap
 } from './session-recap-operations'
 
+/** Something the user asked of the recap that the host did not answer. */
+export type SessionRecapFailure = 'refresh' | 'mark'
+
 type SessionRecapModel = {
   /** Null until the host has answered, and on a host from before recaps. */
   view: SessionRecapView | null
   refreshing: boolean
+  /** His last Refresh or tick got no answer; cleared when he tries again. */
+  failed: SessionRecapFailure | null
   refresh: () => void
   mark: (itemId: string, mark: RecapItemMark | null) => void
 }
@@ -40,19 +45,24 @@ export function useSessionRecap(
 ): SessionRecapModel {
   const [held, setHeld] = useState<{ sessionId: string; view: SessionRecapView } | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [failed, setFailed] = useState<{ sessionId: string; what: SessionRecapFailure } | null>(
+    null
+  )
   // Answers land in the order asked: a slow read never replaces a newer one.
   const latest = useRef(0)
 
+  /** Resolves to whether the host answered. */
   const take = useCallback(
-    (reading: Promise<SessionRecapView>): Promise<void> => {
+    (reading: Promise<SessionRecapView>): Promise<boolean> => {
       const asked = ++latest.current
       return reading.then(
         (view) => {
           if (asked === latest.current) {
             setHeld({ sessionId, view })
           }
+          return true
         },
-        () => {}
+        () => false
       )
     },
     [sessionId]
@@ -84,7 +94,13 @@ export function useSessionRecap(
       return
     }
     setRefreshing(true)
-    void take(refreshSessionRecap(client, sessionId)).then(() => setRefreshing(false))
+    setFailed(null)
+    void take(refreshSessionRecap(client, sessionId)).then((answered) => {
+      setRefreshing(false)
+      if (!answered) {
+        setFailed({ sessionId, what: 'refresh' })
+      }
+    })
   }, [client, sessionId, take])
 
   const mark = useCallback(
@@ -97,7 +113,16 @@ export function useSessionRecap(
           ? { sessionId, view: withMark(current.view, itemId, next) }
           : current
       )
-      void take(markSessionRecapItem(client, { sessionId, itemId, mark: next }))
+      setFailed(null)
+      void take(markSessionRecapItem(client, { sessionId, itemId, mark: next })).then(
+        (answered) => {
+          if (!answered) {
+            setFailed({ sessionId, what: 'mark' })
+            // The tick shown was never saved: show what the host holds.
+            void take(readSessionRecap(client, sessionId, false))
+          }
+        }
+      )
     },
     [client, sessionId, take]
   )
@@ -105,6 +130,7 @@ export function useSessionRecap(
   return {
     view: held?.sessionId === sessionId ? held.view : null,
     refreshing,
+    failed: failed?.sessionId === sessionId ? failed.what : null,
     refresh,
     mark
   }

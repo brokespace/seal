@@ -118,6 +118,16 @@ export function recapRequestActionLabel(action: RecapRequestAction, item: string
   }
 }
 
+/** What the user asked for and the host never answered. */
+export function recapFailureNote(failed: 'refresh' | 'mark'): string {
+  return failed === 'refresh'
+    ? translate(
+        'seal.sessionRecap.failed.refresh',
+        'The refresh got no answer from the computer that keeps this recap. Try again.'
+      )
+    : translate('seal.sessionRecap.failed.mark', 'That change was not saved. Try again.')
+}
+
 /** Why the recap is not fresh, in words; null when it is, or while it is being written. */
 export function recapStateNote(view: SessionRecapView): string | null {
   switch (view.state) {

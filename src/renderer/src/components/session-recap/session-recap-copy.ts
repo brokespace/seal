@@ -137,6 +137,16 @@ export function recapRequestActionLabel(
   }
 }
 
+/** What the user asked for and the host never answered. */
+export function recapFailureNote(failed: 'refresh' | 'mark', t: Translate): string {
+  return failed === 'refresh'
+    ? t(
+        'seal.sessionRecap.failed.refresh',
+        'The refresh got no answer from the computer that keeps this recap. Try again.'
+      )
+    : t('seal.sessionRecap.failed.mark', 'That change was not saved. Try again.')
+}
+
 /**
  * Why the recap is not fresh, in words; null when it is, or while it is being written. `server`
  * names the Seal server that keeps the recap of a session it runs.

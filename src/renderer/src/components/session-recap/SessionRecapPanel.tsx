@@ -1,12 +1,9 @@
-import { useState } from 'react'
-import { ChevronRight, ListChecks, MessageCircleQuestion, RefreshCw } from 'lucide-react'
+import { ListChecks, MessageCircleQuestion, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTranslate } from '@/i18n/use-translate'
-import { cn } from '@/lib/class-names'
 import { formatShortTimeAgo } from '@/lib/time-format/short-time-ago'
 import {
   AgentSessionPanelEmpty,
-  AgentSessionPanelSectionTitle,
   AgentSessionSidePanel
 } from '@/components/live-sessions/chat/AgentSessionSidePanel'
 import type {
@@ -24,7 +21,10 @@ import {
   recapWorkByState,
   type RecapRequestRow as RecapRequestRowModel
 } from '../../../../shared/session-recap/session-recap-view'
-import { recapItemKindLabel, recapStateNote, recapUpdatedLabel } from './session-recap-copy'
+import { recapItemKindLabel, recapUpdatedLabel } from './session-recap-copy'
+import { SessionRecapNotes } from './SessionRecapNotes'
+import { RecapFold, RecapPanelSection } from './SessionRecapSection'
+import type { SessionRecapFailure } from './use-session-recap'
 import {
   RecapLineRow,
   RecapReferenceRow,
@@ -38,6 +38,8 @@ export type SessionRecapPanelProps = {
   /** Null until the host has answered once. */
   view: SessionRecapView | null
   refreshing: boolean
+  /** The user's last Refresh or tick got no answer from the host. */
+  failed?: SessionRecapFailure | null
   now: number
   onRefresh: () => void
   onMark: (itemId: string, mark: RecapItemMark | null) => void
@@ -48,49 +50,6 @@ export type SessionRecapPanelProps = {
   /** The Seal server that runs the session and keeps its recap; null when this computer does. */
   server?: string | null
   onClose: () => void
-}
-
-function Section({
-  name,
-  title,
-  count,
-  icon,
-  children
-}: {
-  name: string
-  title: string
-  count?: number
-  icon?: React.ReactNode
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <section data-recap-section={name}>
-      <AgentSessionPanelSectionTitle>
-        {icon}
-        <span>{title}</span>
-        {count ? <span className="font-normal tabular-nums opacity-70">{count}</span> : null}
-      </AgentSessionPanelSectionTitle>
-      {children}
-    </section>
-  )
-}
-
-function Folded({ label, children }: { label: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((shown) => !shown)}
-        className="flex cursor-pointer items-center gap-1 rounded-sm px-3 py-1 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ChevronRight className={cn('size-3 transition-transform', open && 'rotate-90')} />
-        {label}
-      </button>
-      {open ? children : null}
-    </>
-  )
 }
 
 /** Open questions or action items, then the ones already ticked or dismissed, folded away. */
@@ -128,7 +87,7 @@ function TickSection({
     />
   )
   return (
-    <Section name={name} title={title} icon={icon} count={open.length}>
+    <RecapPanelSection name={name} title={title} icon={icon} count={open.length}>
       {open.length > 0 ? (
         <ul>{open.map(row)}</ul>
       ) : (
@@ -137,15 +96,15 @@ function TickSection({
         </AgentSessionPanelEmpty>
       )}
       {settled.length > 0 ? (
-        <Folded
+        <RecapFold
           label={t('seal.sessionRecap.settled', '{{count}} done or dismissed', {
             count: settled.length
           })}
         >
           <ul>{settled.map(row)}</ul>
-        </Folded>
+        </RecapFold>
       ) : null}
-    </Section>
+    </RecapPanelSection>
   )
 }
 
@@ -166,7 +125,7 @@ function RequestsSection({
     <RecapRequestRow key={request.id} row={request} onMark={onMark} onJump={onJump} />
   )
   return (
-    <Section
+    <RecapPanelSection
       name="requests"
       title={t('seal.sessionRecap.requests', 'Requests')}
       count={shown.length}
@@ -179,15 +138,15 @@ function RequestsSection({
         </AgentSessionPanelEmpty>
       )}
       {folded.length > 0 ? (
-        <Folded
+        <RecapFold
           label={t('seal.sessionRecap.requestsSettled', '{{count}} done, withdrawn or dismissed', {
             count: folded.length
           })}
         >
           <ul>{folded.map(row)}</ul>
-        </Folded>
+        </RecapFold>
       ) : null}
-    </Section>
+    </RecapPanelSection>
   )
 }
 
@@ -208,17 +167,20 @@ function RecapBody({
   return (
     <>
       {recap.goal ? (
-        <Section name="goal" title={t('seal.sessionRecap.goal', 'Goal')}>
+        <RecapPanelSection name="goal" title={t('seal.sessionRecap.goal', 'Goal')}>
           <p className="px-3 py-1 text-xs leading-5 break-words">{recap.goal}</p>
-        </Section>
+        </RecapPanelSection>
       ) : null}
       {recap.standing ? (
-        <Section name="standing" title={t('seal.sessionRecap.standing', 'Where it stands')}>
+        <RecapPanelSection
+          name="standing"
+          title={t('seal.sessionRecap.standing', 'Where it stands')}
+        >
           <p className="px-3 py-1 text-xs leading-5 break-words">{recap.standing}</p>
-        </Section>
+        </RecapPanelSection>
       ) : null}
       {news.length > 0 && view.since !== null ? (
-        <Section
+        <RecapPanelSection
           name="news"
           title={t('seal.sessionRecap.news', 'Since you last looked')}
           count={news.length}
@@ -247,7 +209,7 @@ function RecapBody({
               )
             )}
           </ul>
-        </Section>
+        </RecapPanelSection>
       ) : null}
       <TickSection
         name="questions"
@@ -269,7 +231,7 @@ function RecapBody({
       />
       <RequestsSection view={view} onMark={onMark} onJump={onJump} />
       {work.length > 0 ? (
-        <Section name="did" title={t('seal.sessionRecap.did', 'What the agent did')}>
+        <RecapPanelSection name="did" title={t('seal.sessionRecap.did', 'What the agent did')}>
           <ul>
             {work.flatMap((group) =>
               group.items.map((item) => (
@@ -282,19 +244,19 @@ function RecapBody({
               ))
             )}
           </ul>
-        </Section>
+        </RecapPanelSection>
       ) : null}
       {recap.decisions.length > 0 ? (
-        <Section name="decisions" title={t('seal.sessionRecap.decisions', 'Decisions')}>
+        <RecapPanelSection name="decisions" title={t('seal.sessionRecap.decisions', 'Decisions')}>
           <ul>
             {recap.decisions.map((item) => (
               <RecapLineRow key={item.id} item={item} onJump={onJump} />
             ))}
           </ul>
-        </Section>
+        </RecapPanelSection>
       ) : null}
       {recap.references.length > 0 ? (
-        <Section
+        <RecapPanelSection
           name="references"
           title={t('seal.sessionRecap.references', 'Files, PRs and links')}
         >
@@ -308,7 +270,7 @@ function RecapBody({
               />
             ))}
           </ul>
-        </Section>
+        </RecapPanelSection>
       ) : null}
     </>
   )
@@ -331,7 +293,6 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
   const { view, now } = props
   const recap = view?.recap ?? null
   const updating = props.refreshing || view?.state === 'updating'
-  const note = view ? recapStateNote(view, t, props.server) : null
   const writing = t('seal.sessionRecap.writing', 'Reading the session\u2026')
   return (
     <AgentSessionSidePanel
@@ -372,27 +333,12 @@ export function SessionRecapPanel(props: SessionRecapPanelProps): React.JSX.Elem
         </footer>
       }
     >
-      {note ? (
-        <p
-          data-recap-note={view?.state}
-          className="border-b border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground"
-        >
-          {note}
-          {view?.state === 'unavailable' && !props.server && props.onOpenSettings ? (
-            <>
-              {' '}
-              <button
-                type="button"
-                data-recap-open-settings=""
-                onClick={props.onOpenSettings}
-                className="cursor-pointer rounded-sm text-foreground underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {t('seal.sessionRecap.openSettings', 'Open settings')}
-              </button>
-            </>
-          ) : null}
-        </p>
-      ) : null}
+      <SessionRecapNotes
+        view={view}
+        failed={props.failed ?? null}
+        server={props.server ?? null}
+        onOpenSettings={props.onOpenSettings}
+      />
       {view !== null && recapHasContent(recap) ? (
         <RecapBody
           recap={recap}

@@ -2184,6 +2184,10 @@
       "badgeQuestions": "Questions for you: {{count}}",
       "badgeActions": "Your action items: {{count}}",
       "badgeNotAddressed": "Requests not addressed: {{count}}",
+      "failed": {
+        "refresh": "The refresh got no answer from the computer that keeps this recap. Try again.",
+        "mark": "That change was not saved. Try again."
+      },
       "barLabel": "Recap",
       "writing": "Reading the session…",
       "barNews": "{{count}} new",

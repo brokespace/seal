@@ -30,7 +30,7 @@ function Pane({ view, height }: { view: SessionRecapView; height: number }): Rea
       <AgentSessionChatFrameView
         session={SESSION}
         isVisible
-        recap={{ view, refreshing: false, refresh: () => {}, mark: () => {} }}
+        recap={{ view, refreshing: false, failed: null, refresh: () => {}, mark: () => {} }}
       >
         <NativeChatMessageList
           session={externalAgentSessionChatRows({

@@ -20,6 +20,7 @@ import { recapViewWithoutMessageJumps } from './recap-view-without-message-jumps
 const NO_RECAP: SessionRecapModel = {
   view: null,
   refreshing: false,
+  failed: null,
   refresh: () => {},
   mark: () => {}
 }
@@ -148,6 +149,7 @@ export function AgentSessionChatSurround({
             <SessionRecapPanel
               view={recapView}
               refreshing={recap.refreshing}
+              failed={recap.failed}
               now={now}
               onRefresh={recap.refresh}
               onMark={recap.mark}

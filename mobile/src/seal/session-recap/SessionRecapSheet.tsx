@@ -24,7 +24,13 @@ import {
   type RecapRequestRow as RecapRequestRowModel
 } from '../../../../src/shared/session-recap/session-recap-view'
 import { sealStyles } from '../seal-screen-styles'
-import { recapClockTime, recapItemKindLabel, recapStateNote } from './session-recap-copy'
+import {
+  recapClockTime,
+  recapFailureNote,
+  recapItemKindLabel,
+  recapStateNote
+} from './session-recap-copy'
+import type { SessionRecapFailure } from './use-session-recap'
 import {
   RecapLineRow,
   RecapReferenceRow,
@@ -43,6 +49,8 @@ export type SessionRecapSheetProps = Handlers & {
   /** Null until the host has answered. */
   view: SessionRecapView | null
   refreshing: boolean
+  /** The user's last Refresh or tick got no answer from the host. */
+  failed?: SessionRecapFailure | null
   onRefresh: () => void
   onClose: () => void
 }
@@ -253,6 +261,7 @@ export function SessionRecapSheet({
   visible,
   view,
   refreshing,
+  failed = null,
   onRefresh,
   onClose,
   ...handlers
@@ -282,6 +291,11 @@ export function SessionRecapSheet({
         }}
         trailing={{ label: t('common.done', 'Done'), onPress: onClose }}
       />
+      {failed ? (
+        <Text style={sealStyles.hint} accessibilityRole="alert" testID="recap-failed">
+          {recapFailureNote(failed)}
+        </Text>
+      ) : null}
       {note ? <Text style={sealStyles.hint}>{note}</Text> : null}
       {recap && recap.coveredFrom > 0 ? (
         <Text style={sealStyles.hint}>

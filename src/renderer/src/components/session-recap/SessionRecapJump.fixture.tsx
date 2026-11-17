@@ -78,7 +78,7 @@ function PagedPane(): React.JSX.Element {
         session={SESSION}
         isVisible
         onRevealMessage={(messageId) => listRef.current?.revealMessage(messageId)}
-        recap={{ view: VIEW, refreshing: false, refresh: () => {}, mark: () => {} }}
+        recap={{ view: VIEW, refreshing: false, failed: null, refresh: () => {}, mark: () => {} }}
       >
         <NativeChatMessageList
           ref={listRef}

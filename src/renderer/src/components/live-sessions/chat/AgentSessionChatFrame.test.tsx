@@ -54,6 +54,7 @@ it('offers a recap item as a jump only to a chat that can scroll to its message'
       })
     }),
     refreshing: false,
+    failed: null,
     refresh: () => {},
     mark: () => {}
   }
