@@ -257,8 +257,8 @@
   },
   {
     "id": "nohup-job-not-a-child-storybook-up",
-    "truth": "leftover",
-    "why": "The long job runs under nohup outside the agent's commands, so its end wakes nobody; what the agent does have running is a Storybook server.",
+    "truth": "waiting",
+    "why": "The reply says a training job it started this turn under nohup is still running, so the move is not the user's yet, though the only command the app could list is an older Storybook server.",
     "endedAgoSeconds": 60,
     "reply": "Training is started under `nohup` (PID 48213) so it survives this session; output goes to `runs/exp-17/train.log`. It should take about 3 hours. You can follow it with `tail -f runs/exp-17/train.log`. Tell me when it's done and I'll analyze the results.",
     "registry": "shell",
@@ -272,7 +272,8 @@
         "state": "running",
         "runs": ["node"]
       }
-    ]
+    ],
+    "relabelled": "Was `leftover` (a job outside the agent's commands wakes nobody) when Clef Flash answered. A job started since the user last spoke is now a wait whether or not Claude Code tracks it, so the label follows the rule."
   },
   {
     "id": "build-finished-old-server-still-up",
@@ -422,6 +423,139 @@
         "command": "until ! pgrep -f bench.py >/dev/null; do sleep 30; done",
         "state": "completed",
         "runs": null
+      }
+    ]
+  },
+  {
+    "id": "subagent-detached-cache-build-sweep-chained",
+    "truth": "waiting",
+    "why": "A subagent started the cache build with setsid in this turn and chained the sweep behind it; both still run and the reply says the agent waits on them.",
+    "endedAgoSeconds": 420,
+    "reply": "The size sweep is running. The SMALL exploration (110-130 GB) built its plan, started the cache build for the three sizes, and chained the sweep behind it so it starts as soon as the caches exist. Expect about 2 hours end to end: the cache pass dominates. Nothing is needed from you. I'm waiting on that job and will report the best size, with the per-size table, when it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 48,
+        "description": "Start the cache build detached",
+        "command": "setsid numactl --interleave=all nice -n 5 python fq_cache.py --sizes 110,120,130 --out cache2 > cache2.log 2>&1 < /dev/null &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached",
+        "subagent": true
+      },
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 38,
+        "description": "Run the size sweep once the caches exist",
+        "command": "until ! pgrep -f fq_cache.py >/dev/null; do sleep 60; done; ./run_a13.sh > a13.log 2>&1",
+        "state": "running",
+        "runs": ["sleep"],
+        "subagent": true
+      }
+    ]
+  },
+  {
+    "id": "subagent-detached-job-alone-terse",
+    "truth": "waiting",
+    "why": "The only thing running is the job a subagent started with setsid in this turn; the reply is two words about it still going.",
+    "endedAgoSeconds": 2400,
+    "reply": "Sweep running (~2 h).",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 300,
+        "description": "Start the cache build detached",
+        "command": "setsid numactl --interleave=all nice -n 5 python fq_cache.py --sizes 110,120,130 --out cache2 > cache2.log 2>&1 < /dev/null &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached",
+        "subagent": true
+      }
+    ]
+  },
+  {
+    "id": "detached-training-main-thread",
+    "truth": "waiting",
+    "why": "The agent itself started the run with nohup in this turn, it still runs, and the reply promises the result.",
+    "endedAgoSeconds": 90,
+    "reply": "Pruning pass 3 is running under `nohup` so it survives a dropped connection (log: `runs/prune-3/train.log`, roughly 90 minutes on this box). I'll compare perplexity against pass 2 as soon as it finishes.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 35,
+        "description": "Start pruning pass 3",
+        "command": "nohup python prune.py --config configs/pass3.yaml --resume runs/prune-2/last.pt > runs/prune-3/train.log 2>&1 &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached"
+      }
+    ]
+  },
+  {
+    "id": "named-job-launch-not-read",
+    "truth": "waiting",
+    "why": "No call that was read started it, but the reply names a script that the machine shows running since the user last spoke, and says the agent waits for it.",
+    "endedAgoSeconds": 600,
+    "reply": "Still waiting on quantize_shards.py: 14 of 32 shards written so far. I'll run the checksum pass when it exits.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 1500,
+        "description": null,
+        "command": null,
+        "state": "running",
+        "runs": ["python3"],
+        "origin": "named",
+        "named": "quantize_shards.py"
+      }
+    ]
+  },
+  {
+    "id": "detached-dev-server-this-turn",
+    "truth": "leftover",
+    "why": "A dev server started with nohup in this turn for the user to look at; it never ends by itself and the reply hands over.",
+    "endedAgoSeconds": 120,
+    "reply": "The header now collapses under 720px. I left the dev server running under `nohup` on http://localhost:5173 so you can check it on your phone; kill it with `pkill -f vite` when you're done.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 200,
+        "description": "Start the dev server",
+        "command": "nohup pnpm dev --host 0.0.0.0 --port 5173 > /tmp/dev.log 2>&1 &",
+        "state": "running",
+        "runs": ["node"],
+        "origin": "detached"
+      }
+    ]
+  },
+  {
+    "id": "detached-sync-from-earlier-turn-answer-done",
+    "truth": "leftover",
+    "why": "The detached mirror sync is from an earlier turn; this turn answered an unrelated question and is finished.",
+    "endedAgoSeconds": 180,
+    "reply": "Yes: `--interleave=all` only changes where pages are allocated, not how many. The 126 GB peak you saw is the mmap of the full checkpoint plus the calibration set, so it will not fit in 110 GB without the streaming loader.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 9000,
+        "description": "Mirror the checkpoints to the NAS",
+        "command": "setsid ./sync_mirror.sh /data/ckpt nas:/backup/ckpt > sync.log 2>&1 &",
+        "state": "running",
+        "runs": ["bash"],
+        "origin": "detached"
       }
     ]
   }

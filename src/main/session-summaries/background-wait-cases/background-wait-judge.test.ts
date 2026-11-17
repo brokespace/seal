@@ -51,6 +51,8 @@ import {
 const env = process.env
 /** Ask Clef Flash for every answer not on record, then write the answers, the cut and the report. */
 const live = env.BACKGROUND_WAIT_JUDGE_LIVE === '1'
+/** Call no model: score the answers on record against the labels as they stand, and write the cut and the report. */
+const rescore = !live && env.BACKGROUND_WAIT_JUDGE_RESCORE === '1'
 /** Ask the held-out split even when the tune split is not separated: a result, not a tuning run. */
 const heldOutAnyway = env.BACKGROUND_WAIT_JUDGE_HELD_OUT === '1'
 const maxUsd = Number(env.BACKGROUND_WAIT_JUDGE_MAX_USD ?? 0.25)
@@ -132,6 +134,44 @@ function measuredFrom(judged: readonly BackgroundWaitJudged[]): Measured {
   }
 }
 
+/** Writes what the answers give: the cut the app is pinned to, and the report. */
+async function writeMeasurement(found: {
+  records: ReadonlyMap<string, AnswerOnRecord>
+  asked: number
+  ms: number[]
+  heldOutHeldBack: boolean
+}): Promise<Measured> {
+  // Only answers to what is asked today are kept: a reworded question's old answers go.
+  const kept = judgedCases.flatMap((item) => {
+    const record = found.records.get(keyOf(item))
+    return record ? [record] : []
+  })
+  await writeRecapScenarioJson(ANSWERS, kept)
+  const judged = judgedBy(found.records).filter(
+    ({ item }) => item.split === 'tune' || !found.heldOutHeldBack
+  )
+  const result = measuredFrom(judged)
+  await writeRecapScenarioJson(MEASURED, result)
+  const inputTokens = kept.reduce((sum, record) => sum + (record.inputTokens ?? 0), 0)
+  const markdown = backgroundWaitReportMarkdown({
+    model: `${MODEL} on ${[...new Set(kept.map((record) => record.provider))].join(', ')}`,
+    questionBook: BACKGROUND_WAIT_QUESTION_BOOK,
+    judged,
+    settledByCode,
+    score: scoreBackgroundWaitJudge(judged, result.waitingCut),
+    spend: {
+      asked: found.asked,
+      inputTokens,
+      usd: recapJudgeUsd(PRICE, inputTokens, 0),
+      ms: found.ms
+    },
+    heldOutHeldBack: found.heldOutHeldBack
+  })
+  await writeFile(report, markdown)
+  console.info(`\n${markdown.slice(0, markdown.indexOf('\n| case |')).trim()}\n`)
+  return result
+}
+
 /** The keys of a reply and the type under each: enough to see a shape, with none of its content. */
 function shapeOf(value: unknown, depth = 0): string {
   if (Array.isArray(value)) {
@@ -184,12 +224,10 @@ describe('background wait cases', () => {
     expect(settledByCode.map((found) => found.id)).toEqual([
       'check-back-promise-no-process',
       'waiter-finished-nothing-running',
-      'nohup-job-nothing-else',
       'build-finished-nothing-running'
     ])
     expect(settledByCode.filter((found) => found.truth === 'waiting')).toEqual([])
     expect(settledByCode.map((found) => backgroundWaitCaseSession(found).status)).toEqual([
-      'your-turn',
       'your-turn',
       'your-turn',
       'your-turn'
@@ -199,7 +237,7 @@ describe('background wait cases', () => {
 
 describe('the judge of background waits', () => {
   // Nothing is on record until the first live run; from then on the app is pinned to it.
-  it.skipIf(live || measured === null)(
+  it.skipIf(live || rescore || measured === null)(
     'is Clef Flash alone, on the wording and the cut the answers on record give',
     () => {
       // A held-out split not asked yet is not a split of unanswered cases.
@@ -215,8 +253,9 @@ describe('the judge of background waits', () => {
   )
 
   // The labelled cases through the app's judge client, its cache and its status rule, with Clef
-  // Flash's recorded answers. No model is called.
-  it.skipIf(live || measured === null)(
+  // Flash's recorded answers. No model is called; a case with no answer on record keeps the status
+  // the last-turn rule gave it.
+  it.skipIf(live || rescore || measured === null)(
     'shows every labelled wait as waiting on background tasks and every leftover as your turn',
     async () => {
       const shown = await Promise.all(
@@ -243,11 +282,14 @@ describe('the judge of background waits', () => {
           return { item, session: waits.decorate(session) }
         })
       )
-      expect(
-        shown
-          .filter(({ session }) => session.statusSource !== 'classifier')
-          .map(({ item }) => item.id)
-      ).toEqual([])
+      const leftToTheRule = shown
+        .filter(({ session }) => session.statusSource !== 'classifier')
+        .map(({ item }) => item.id)
+      expect(leftToTheRule).toEqual(expect.arrayContaining(measured!.unanswered))
+      // `other` is its likeliest standing: neither a wait nor a leftover.
+      expect(leftToTheRule.filter((id) => !measured!.unanswered.includes(id))).toEqual([
+        'unread-command-nothing-said'
+      ])
       const wrong = (split: string): string[] =>
         shown
           .filter(
@@ -256,11 +298,21 @@ describe('the judge of background waits', () => {
               (session.status === 'waiting-task') !== (item.truth === 'waiting')
           )
           .map(({ item }) => item.id)
-      expect(wrong('tune')).toEqual([])
-      // Its launch was not read, so the model has only the reply to go on: 0.63, under the cut.
-      expect(wrong('held-out')).toEqual(['unread-command-says-waiting'])
+      // Neither has an answer on record: a server left up by a call this turn is a wait to the rule.
+      expect(wrong('tune')).toEqual(['detached-dev-server-this-turn'])
+      expect(wrong('held-out')).toEqual(['detached-tunnel-left-for-reviewer'])
     }
   )
+
+  it.runIf(rescore)('scores the answers on record again, asking no model', async () => {
+    const result = await writeMeasurement({
+      records: onRecord,
+      asked: 0,
+      ms: [],
+      heldOutHeldBack: false
+    })
+    expect(result.questionBook).toBe(BACKGROUND_WAIT_CALIBRATION.questionBook)
+  })
 
   it.runIf(live)(
     'asks Clef Flash what is not on record: the tune split, then the held-out split once tune separates',
@@ -337,29 +389,7 @@ describe('the judge of background waits', () => {
         await askAll(of('held-out'))
       }
 
-      // Only answers to what is asked today are kept: a reworded question's old answers go.
-      const kept = judgedCases.flatMap((found) => {
-        const record = records.get(keyOf(found))
-        return record ? [record] : []
-      })
-      await writeRecapScenarioJson(ANSWERS, kept)
-      const judged = judgedBy(records).filter(
-        ({ item }) => item.split === 'tune' || !heldOutHeldBack
-      )
-      const result = measuredFrom(judged)
-      await writeRecapScenarioJson(MEASURED, result)
-      const inputTokens = kept.reduce((sum, record) => sum + (record.inputTokens ?? 0), 0)
-      const markdown = backgroundWaitReportMarkdown({
-        model: `${MODEL} on ${[...new Set(kept.map((record) => record.provider))].join(', ')}`,
-        questionBook: BACKGROUND_WAIT_QUESTION_BOOK,
-        judged,
-        settledByCode,
-        score: scoreBackgroundWaitJudge(judged, result.waitingCut),
-        spend: { asked: requests, inputTokens, usd: recapJudgeUsd(PRICE, inputTokens, 0), ms },
-        heldOutHeldBack
-      })
-      await writeFile(report, markdown)
-      console.info(`\n${markdown.slice(0, markdown.indexOf('\n| case |')).trim()}\n`)
+      const result = await writeMeasurement({ records, asked: requests, ms, heldOutHeldBack })
       expect(result.unanswered, 'cases Clef Flash gave no usable answer for').toEqual([])
     }
   )

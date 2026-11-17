@@ -352,8 +352,8 @@
   },
   {
     "id": "nohup-backfill-old-server-up",
-    "truth": "leftover",
-    "why": "A backfill detached with nohup and disown, which wakes nobody when it ends; the agent's own running command is a Rails server.",
+    "truth": "waiting",
+    "why": "The reply says a backfill it started this turn with nohup and disown runs for hours, though the only command the app could list is an older Rails server.",
     "endedAgoSeconds": 180,
     "reply": "I launched the backfill with `nohup` and `disown` so it keeps running if this terminal closes (PID 7731, log in `/var/tmp/backfill.log`). It'll take a few hours; the last line of the log shows progress.",
     "registry": "shell",
@@ -367,7 +367,8 @@
         "state": "running",
         "runs": ["ruby"]
       }
-    ]
+    ],
+    "relabelled": "Was `leftover` (a job outside the agent's commands wakes nobody) when Clef Flash answered. A job started since the user last spoke is now a wait whether or not Claude Code tracks it, so the label follows the rule."
   },
   {
     "id": "unread-command-nothing-said",
@@ -390,12 +391,23 @@
   },
   {
     "id": "nohup-job-nothing-else",
-    "truth": "other",
-    "why": "The reply says it will wait for a nohup job, but no command of the agent's runs: code settles it without the model.",
+    "truth": "waiting",
+    "why": "The export was started this turn under nohup and the machine shows it running; the reply says the agent waits for it.",
     "endedAgoSeconds": 180,
     "reply": "Started the export under `nohup` (PID 9120). I'll wait for it to finish and then validate the output.",
     "registry": "idle",
-    "commands": []
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 170,
+        "description": "Start the export in the background",
+        "command": "nohup python tools/export_parquet.py --table events --out /data/exports/events > export.log 2>&1 &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached"
+      }
+    ]
   },
   {
     "id": "build-finished-nothing-running",
@@ -413,6 +425,117 @@
         "command": "pnpm build",
         "state": "completed",
         "runs": null
+      }
+    ]
+  },
+  {
+    "id": "subagent-detached-benchmark-says-running",
+    "truth": "waiting",
+    "why": "A subagent started the benchmark in a detached tmux session in this turn; it still runs and the reply says results come when it ends.",
+    "endedAgoSeconds": 900,
+    "reply": "The latency benchmark is running in the tmux session `bench` (attach with `tmux attach -t bench` if you want to watch). It walks all eight batch sizes, about 40 minutes in total. I'll post the p50/p99 table when it completes.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 240,
+        "description": "Run the latency benchmark in tmux",
+        "command": "tmux new-session -d -s bench 'python bench_latency.py --batches 1,2,4,8,16,32,64,128 --out results/latency.json'",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached",
+        "subagent": true
+      }
+    ]
+  },
+  {
+    "id": "named-pid-still-running",
+    "truth": "waiting",
+    "why": "The reply gives the job by its process id, the machine shows that process running since the user last spoke, and the agent says it reports when the job is done.",
+    "endedAgoSeconds": 1500,
+    "reply": "Still going: PID 48213 is at step 1,200 of 5,000 and the loss is falling. I'll report the final numbers when it's done.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 3000,
+        "description": null,
+        "command": null,
+        "state": "running",
+        "runs": ["python"],
+        "origin": "named",
+        "named": "PID 48213"
+      }
+    ]
+  },
+  {
+    "id": "detached-eval-beside-old-server",
+    "truth": "waiting",
+    "why": "The evaluation was started with nohup in this turn and still runs; the reply waits for it. The older server is beside the point.",
+    "endedAgoSeconds": 300,
+    "reply": "Kicked off the full evaluation (5,000 samples) with `nohup`; it writes to `eval/full.jsonl`. I'll build the comparison table once it finishes, probably in 25 minutes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 60,
+        "description": "Run the full evaluation",
+        "command": "nohup python eval.py --split full --out eval/full.jsonl > eval/full.log 2>&1 &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached"
+      },
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 5400,
+        "description": "Start the inference server",
+        "command": "python -m vllm.entrypoints.openai.api_server --model ./ckpt --port 8000",
+        "state": "running",
+        "runs": ["python"]
+      }
+    ]
+  },
+  {
+    "id": "detached-tunnel-left-for-reviewer",
+    "truth": "leftover",
+    "why": "A tunnel started with nohup in this turn so someone else can reach the app; it stays up until stopped and the reply hands over.",
+    "endedAgoSeconds": 240,
+    "reply": "The preview is reachable at https://preview-7f3a.example.dev through the tunnel I started. Send that link to the reviewer; the tunnel stays up until you stop it (`pkill cloudflared`).",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 150,
+        "description": "Open a tunnel to the preview",
+        "command": "nohup cloudflared tunnel --url http://localhost:4173 > /tmp/tunnel.log 2>&1 &",
+        "state": "running",
+        "runs": ["cloudflared"],
+        "origin": "detached"
+      }
+    ]
+  },
+  {
+    "id": "detached-backfill-from-earlier-turn-new-fix-done",
+    "truth": "leftover",
+    "why": "The detached backfill is hours old and from an earlier turn; this turn fixed something else and reports it done.",
+    "endedAgoSeconds": 120,
+    "reply": "Fixed: the retry wrapper swallowed `TimeoutError`, so the worker never backed off. It re-raises now and the three tests around it pass.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 14400,
+        "description": "Start the backfill",
+        "command": "nohup python scripts/backfill_embeddings.py --since 2026-01-01 > /var/tmp/backfill.log 2>&1 &",
+        "state": "running",
+        "runs": ["python"],
+        "origin": "detached"
       }
     ]
   }

@@ -81,7 +81,7 @@ export type BackgroundWaitCalibration = {
 export const BACKGROUND_WAIT_CALIBRATION: BackgroundWaitCalibration = {
   model: 'clef-flash',
   questionBook: '7d0976546dbd',
-  waitingCut: 0.7678
+  waitingCut: 0.5197
 }
 
 /** False when the wording changed since the cut was measured: the last-turn rule then stands alone. */
@@ -133,7 +133,8 @@ function started(command: BackgroundWaitCommand, endedAt: number | null): string
   if (command.turn === null) {
     return 'before the part of the session that was read'
   }
-  const turn = command.turn === 'final' ? 'in this turn' : 'in an earlier turn'
+  const by = command.subagent ? ' by a subagent of the agent' : ''
+  const turn = `${command.turn === 'final' ? 'in this turn' : 'in an earlier turn'}${by}`
   return command.startedAt === null || endedAt === null
     ? turn
     : `${turn}, ${span(endedAt - command.startedAt)} before this turn ended`
@@ -146,9 +147,29 @@ function doing(command: BackgroundWaitCommand): string {
   if (command.runs === null) {
     return 'still running'
   }
+  if (command.origin) {
+    return `still running by itself; its processes right now: ${command.runs.join(', ')}`
+  }
   return command.runs.length > 0
     ? `still running; under its shell right now: ${command.runs.join(', ')}`
     : 'still running; nothing under its shell right now'
+}
+
+function tool(command: BackgroundWaitCommand): string {
+  if (command.origin === 'named') {
+    return 'not known: the call that started it was not read; `final_message` names it and it runs on the machine'
+  }
+  if (command.origin === 'detached') {
+    return 'Bash; the call returned and left this job running by itself (nohup, setsid, & or a detached terminal)'
+  }
+  return command.kind === 'monitor' ? 'Monitor' : 'Bash, run in the background'
+}
+
+function wording(command: BackgroundWaitCommand): string {
+  if (command.named) {
+    return `(not known) \`final_message\` calls it ${command.named}`
+  }
+  return command.command ? clipped(command.command, COMMAND_CHARS) : '(not known)'
 }
 
 const REGISTRY: Partial<Record<string, string>> = {
@@ -189,9 +210,9 @@ export function backgroundWaitState(
     .sort((a, b) => weight(b) - weight(a))
     .map((command) => ({
       started: started(command, evidence.endedAt),
-      tool: command.kind === 'monitor' ? 'Monitor' : 'Bash, run in the background',
+      tool: tool(command),
       description: command.description ? clipped(command.description, DESCRIPTION_CHARS) : '(none)',
-      command: command.command ? clipped(command.command, COMMAND_CHARS) : '(not known)',
+      command: wording(command),
       now: doing(command)
     }))
   const listing = (listed: number): BackgroundWaitState => ({
@@ -250,13 +271,22 @@ export function backgroundWaitAnswersIn(answers: unknown): BackgroundWaitAnswers
   }
 }
 
-/** Only `waiting` above its cut holds the turn; below it, the likelier of the other two. */
-export function backgroundWaitStanding(
+/** What the model's answer settles; `unsure` leaves the session on what the last-turn rule gave it. */
+export type BackgroundWaitVerdict = 'waiting' | 'leftover' | 'unsure'
+
+/**
+ * `waiting` above its cut holds the turn, and `leftover` hands it to the user only where it is
+ * the likeliest standing. A `waiting` under the cut says neither: it must not take a turn away
+ * from a command that still runs since the user last spoke.
+ */
+export function backgroundWaitVerdict(
   answers: BackgroundWaitAnswers,
   waitingCut: number
-): BackgroundWaitStanding {
+): BackgroundWaitVerdict {
   if (answers.waiting > waitingCut) {
     return 'waiting'
   }
-  return answers.other > answers.leftover ? 'other' : 'leftover'
+  return answers.leftover > answers.waiting && answers.leftover >= answers.other
+    ? 'leftover'
+    : 'unsure'
 }
