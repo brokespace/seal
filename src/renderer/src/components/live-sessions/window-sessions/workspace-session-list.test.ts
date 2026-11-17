@@ -95,7 +95,7 @@ function list(
     build: (row, chat, subagents) =>
       windowAgentSession(
         row,
-        { worktreeId: 'wt-dev', machine: SERVER, chat, name: null, subagents },
+        { worktreeId: 'wt-dev', machine: SERVER, chat, name: null, cwd: '/srv/dev', subagents },
         NOW
       )
   })

@@ -4,7 +4,7 @@ import type { StructuredTab } from '@/components/native-chat/session/status/stru
 import { agentNoUpdateLabel } from '../../../../../shared/agent-status/presentation/agent-row-decay-state'
 import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
 import type { LiveSubagent } from '../../../../../shared/live-sessions/live-session-activity'
-import { liveSessionId } from '../../../../../shared/live-sessions/live-session-id'
+import { liveSessionId, projectOf } from '../../../../../shared/live-sessions/live-session-id'
 import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
 import type {
   AgentSessionCapabilityFlags,
@@ -43,6 +43,8 @@ export type WindowAgentSessionPlace = {
   chat: StructuredTab | undefined
   /** The name its tab shows where the prompt is not the title: a named chat, or a pane known by its title alone. */
   name: string | null
+  /** The workspace's folder, where the agent runs unless its hooks say otherwise. */
+  cwd: string | null
   /** The row's child rows, which the card listed under it. */
   subagents: readonly DashboardAgentRow[]
 }
@@ -118,6 +120,7 @@ export function windowAgentSession(
       ? `seal-${chat.entityId}`
       : pane.providerSessionId
   const status = statusOf(row, pane)
+  const cwd = pane.cwd ?? place.cwd
   const titleOnly = entry.observation?.origin === 'title'
   const model = entry.model?.trim()
   const subagents = windowSubagents(place.subagents)
@@ -125,6 +128,8 @@ export function windowAgentSession(
     ...sealPaneRecord(pane, place.machine),
     id: liveSessionId(place.machine.hostId, adapter.agent, providerSessionId),
     providerSessionId,
+    cwd,
+    project: projectOf(cwd),
     ...(place.name ? { title: place.name } : {}),
     status,
     statusDetail:

@@ -8,6 +8,7 @@ import {
 import { useWorktreeAgentRows } from '@/components/sidebar/workspace-card/activity/useWorktreeAgentRows'
 import { getStructuredChatTabNames } from '@/runtime/native-chat/naming/structured-chat-name-observation'
 import { readStructuredChatTabSavedName } from '@/runtime/native-chat/naming/structured-chat-tab-name'
+import { findWorktreeById } from '@/store/github/refresh/worktree-refresh'
 import { useAppStore } from '@/store/index'
 import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../shared/execution-host'
@@ -97,6 +98,7 @@ function windowSessionBuilder(
 ): WorkspaceSessionListInputs['build'] {
   const now = Date.now()
   const state = useAppStore.getState()
+  const cwd = findWorktreeById(state, worktreeId)?.path ?? null
   return (row, chat, subagents) =>
     windowAgentSession(
       row,
@@ -105,6 +107,7 @@ function windowSessionBuilder(
         machine: windowAgentSessionMachine(state, row, worktreeId, all),
         chat,
         name: windowSessionName(state, row, chat),
+        cwd,
         subagents
       },
       now

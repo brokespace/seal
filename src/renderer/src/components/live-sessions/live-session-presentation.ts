@@ -1,4 +1,5 @@
 import { translate } from '@/i18n/i18n'
+import { formatAgentTypeLabel } from '../../../../shared/agent-status/presentation/agent-type-label'
 import type {
   LiveMessage,
   LiveSession,
@@ -103,7 +104,7 @@ export function liveSessionTitle(session: LiveSession): string {
 }
 
 export function liveSessionProviderLabel(session: LiveSession): string {
-  return session.provider === 'claude' ? 'Claude Code' : 'Codex'
+  return session.provider === 'claude' ? 'Claude Code' : formatAgentTypeLabel(session.provider)
 }
 
 /** Copy for a message still on its way; never claims the agent read it before the transcript does. */
