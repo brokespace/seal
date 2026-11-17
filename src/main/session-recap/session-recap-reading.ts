@@ -7,8 +7,8 @@ import { digestTranscript } from './session-recap-transcript'
 export const RECAP_CHUNK_CHARS = 24_000
 /** The newest three chunks are read, by a first pass as by a rebuild; older history is left out. */
 export const RECAP_MAX_CHUNKS = 3
-const BACKFILL_PAGE_MESSAGES = 200
-const MAX_BACKFILL_PAGES = 8
+export const BACKFILL_PAGE_MESSAGES = 200
+export const MAX_BACKFILL_PAGES = 8
 
 export type RecapTranscript = {
   /** The newest `limit` messages before `before`; the file's end when null. */

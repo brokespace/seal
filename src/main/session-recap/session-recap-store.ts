@@ -10,6 +10,7 @@ import {
   type SessionRecap
 } from '../../shared/session-recap/session-recap-types'
 import { LiveSessionJsonStore } from '../live-sessions/live-session-json-store'
+import type { RecapMessageTimes } from './session-recap-message-times'
 
 export type StoredRecap = {
   sessionId: string
@@ -20,6 +21,8 @@ export type StoredRecap = {
   lookedAt: number | null
   previousLookedAt: number | null
   rev: number
+  /** What finds the recap's messages again once its session carries on in another transcript. */
+  times?: RecapMessageTimes
 }
 
 const storedSchema: z.ZodType<StoredRecap> = z.object({
@@ -28,7 +31,8 @@ const storedSchema: z.ZodType<StoredRecap> = z.object({
   marks: recapMarksSchema,
   lookedAt: z.number().nullable(),
   previousLookedAt: z.number().nullable(),
-  rev: z.number()
+  rev: z.number(),
+  times: z.record(z.string(), z.string()).optional()
 })
 
 const isStored = (value: unknown): value is StoredRecap => storedSchema.safeParse(value).success
@@ -74,11 +78,17 @@ export class SessionRecapStore {
   }
 
   /** Saves a pass's result; ticks on items the recap no longer holds go with them. */
-  setRecap(sessionId: string, recap: SessionRecap, marks: RecapMarks): StoredRecap {
+  setRecap(
+    sessionId: string,
+    recap: SessionRecap,
+    marks: RecapMarks,
+    times?: RecapMessageTimes
+  ): StoredRecap {
     const ids = itemIds(recap)
     return this.put(sessionId, {
       recap,
-      marks: Object.fromEntries(Object.entries(marks).filter(([id]) => ids.has(id)))
+      marks: Object.fromEntries(Object.entries(marks).filter(([id]) => ids.has(id))),
+      ...(times ? { times } : {})
     })
   }
 
