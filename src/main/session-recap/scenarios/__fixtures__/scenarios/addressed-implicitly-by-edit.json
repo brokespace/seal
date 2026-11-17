@@ -2,7 +2,7 @@
   "id": "addressed-implicitly-by-edit",
   "title": "Half of the ask is done by an edit the agent never mentions",
   "categories": ["addressed-implicitly", "tool-heavy"],
-  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal", "opencode-chat", "copilot-chat"],
   "expected": "Both the version bump and the changelog entry are done; the bump is known from the edit to package.json even though the agent did not say so.",
   "steps": [
     {

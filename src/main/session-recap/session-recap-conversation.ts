@@ -2,6 +2,7 @@
 // of the session would see. No ids, no statuses, no tool output. The judge's thresholds were
 // measured on these exact line shapes, so a reader for a new surface writes its lines with them.
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
+import { editFilesFromBeginPatch } from '../../shared/native-chat/tools/native-chat-begin-patch'
 import {
   editFilesFromToolPair,
   isEditToolName
@@ -11,8 +12,10 @@ import {
   normalizeToolInput,
   toolFilePath
 } from '../../shared/native-chat/tools/native-chat-tool-summary'
+import { codexExecCellCalls } from '../live-sessions/transcripts/codex-exec-cell'
 import { clipProseMiddle, sessionProse } from '../session-summaries/session-summary-text'
 import { jsonRecord } from '../utility-model/utility-model-http-request'
+import { asksSomething } from './session-recap-transcript'
 
 const MAX_COMMAND_CHARS = 120
 /** The largest state a judge is sent. A decision model cuts a longer one without saying so. */
@@ -40,6 +43,9 @@ export const recapConversationLine = {
   compacted: '(the agent compacted its context here)'
 } as const
 
+/** Claude's, Codex's, and OpenCode 1's and 2's as they reach a chat's journal. */
+const SUBAGENT_TOOLS = new Set(['Task', 'Agent', 'spawn_agent', 'task', 'subagent'])
+
 /** The line for a tool call that is not an edit, a question or a finished subagent. */
 export function recapToolLine(
   name: string,
@@ -54,7 +60,7 @@ export function recapToolLine(
   const started =
     said('description' in fields ? fields.description : null) ??
     said('prompt' in fields ? fields.prompt : null)
-  if ((name === 'Task' || name === 'Agent') && started) {
+  if (SUBAGENT_TOOLS.has(name) && started) {
     return recapConversationLine.startedSubagent(started)
   }
   return recapConversationLine.used(name, toolFilePath(input))
@@ -114,8 +120,8 @@ export type RecapConversation = {
   complete: boolean
 }
 
-const SUBAGENT_TOOLS = new Set(['Task', 'Agent', 'spawn_agent'])
 const QUESTION_TOOLS = new Set(['AskUserQuestion', 'request_user_input'])
+const BACKGROUND_ENDS: ReadonlySet<string> = new Set(['completed', 'failed', 'stopped'])
 // The thresholds were measured on whole messages: these only keep a paste from filling the state.
 const USER_HEAD_CHARS = 4000
 const USER_TAIL_CHARS = 2000
@@ -129,6 +135,8 @@ type OpenCall = {
   kind: 'question' | 'subagent' | 'other'
   question: string | null
   prompt: string | null
+  /** Told to outlive its call: `launched` once the call returned, and its report still to come. */
+  background: 'launching' | 'launched' | null
 }
 
 const field = (input: unknown, key: string): unknown => jsonRecord(input)?.[key]
@@ -162,6 +170,31 @@ function editedPaths(name: string, input: unknown): string[] {
   return path
     ? [path]
     : (editFilesFromToolPair({ name, input, state: 'completed' })?.map((file) => file.path) ?? [])
+}
+
+/** What a Codex code-mode cell ran, one line per tool it called; null for any other call. */
+function execCellLines(
+  name: string,
+  input: unknown,
+  redact: (command: string) => string
+): string[] | null {
+  const calls = name === 'exec' && typeof input === 'string' ? codexExecCellCalls(input) : []
+  if (calls.length === 0) {
+    return null
+  }
+  return calls.flatMap(({ tool, text }) => {
+    if (tool === 'exec_command' && text) {
+      return [recapToolLine(tool, { cmd: text }, redact)]
+    }
+    // A poll of a command already running, or keys sent to it: the command has its own line.
+    if (tool === 'write_stdin') {
+      return []
+    }
+    const edited = tool === 'apply_patch' && text ? editFilesFromBeginPatch(text) : []
+    return edited.length > 0
+      ? edited.map((file) => recapConversationLine.edited(file.path))
+      : [recapConversationLine.used(tool, null)]
+  })
 }
 
 /** The option the user picked, from a question tool's result as Claude or Codex writes it. */
@@ -207,7 +240,7 @@ export function recapConversationSince(
       continue
     }
     const prose = proseOf(message)
-    if (message.role === 'user' && prose) {
+    if (message.role === 'user' && asksSomething(message, prose)) {
       userTurns += 1
       say(
         recapConversationLine.user(clipProseMiddle(prose, USER_HEAD_CHARS, USER_TAIL_CHARS)),
@@ -232,23 +265,23 @@ export function recapConversationSince(
         // Codex hands a call's arguments over as a JSON string.
         const input = normalizeToolInput(block.input)
         const asked = QUESTION_TOOLS.has(block.name) ? questionOf(input) : null
-        const edited = asked ? [] : editedPaths(block.name, input)
-        const background = field(input, 'run_in_background') === true
-        // A background subagent reports in a record no reader here follows.
-        complete &&= !background
+        const cell = asked ? null : execCellLines(block.name, input, redact)
+        const edited = asked || cell ? [] : editedPaths(block.name, input)
         open.push({
           index: lines.length,
           callId: block.callId,
-          kind: asked
-            ? 'question'
-            : SUBAGENT_TOOLS.has(block.name) && !background
-              ? 'subagent'
-              : 'other',
+          kind: asked ? 'question' : SUBAGENT_TOOLS.has(block.name) ? 'subagent' : 'other',
           question: asked?.question ?? null,
-          prompt: said(field(input, 'prompt')) ?? said(field(input, 'message'))
+          prompt: said(field(input, 'prompt')) ?? said(field(input, 'message')),
+          background:
+            field(input, 'run_in_background') === true || field(input, 'background') === true
+              ? 'launching'
+              : null
         })
         if (asked) {
           say(recapConversationLine.asked(asked.question, asked.options), false)
+        } else if (cell) {
+          cell.forEach((line) => say(line, false))
         } else if (edited.length === 0) {
           say(recapToolLine(block.name, input, redact), false)
         }
@@ -257,6 +290,12 @@ export function recapConversationSince(
         }
       } else if (block.type === 'tool-result') {
         const at = block.callId ? open.findIndex((call) => call.callId === block.callId) : 0
+        const found = at === -1 ? undefined : open[at]
+        if (found?.background === 'launching') {
+          // The call returns as it launches the work; what the work found comes in a later record.
+          found.background = 'launched'
+          continue
+        }
         const [call] = at === -1 ? [] : open.splice(at, 1)
         const output = block.output.trim()
         if (call?.kind === 'question') {
@@ -268,13 +307,28 @@ export function recapConversationSince(
           lines[call.index] = recapConversationLine.startedSubagent(call.prompt)
           say(recapConversationLine.subagentReported(sessionProse(output)), false)
         }
-      } else if (
-        block.type === 'background-task' ||
-        (block.type === 'subagent' && block.background)
-      ) {
-        complete = false
+      } else if (block.type === 'subagent' && block.background) {
+        if (!BACKGROUND_ENDS.has(block.state)) {
+          complete = false
+          continue
+        }
+        // A chat's journal keeps a background subagent's result on its own row once it has ended,
+        // and the call that launched it gets no second result: it waits for nothing more.
+        const launched = open.findIndex(
+          (call) => call.kind === 'subagent' && call.background !== null
+        )
+        if (launched !== -1) {
+          open.splice(launched, 1)
+        }
+        if (block.lastMessage?.trim()) {
+          say(recapConversationLine.subagentReported(sessionProse(block.lastMessage)), false)
+        }
+      } else if (block.type === 'background-task') {
+        complete &&= block.state === 'done'
       }
     }
   }
+  // Work still running in the background has not reported: the judge has not seen all of it.
+  complete &&= open.every((call) => call.background === null)
   return { lines, userTurns: Math.max(0, userTurns), endsOnUser, complete }
 }

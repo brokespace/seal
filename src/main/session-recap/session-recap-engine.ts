@@ -10,6 +10,7 @@ import {
 } from './session-recap-budget'
 import type { RecapRequestsStep } from './session-recap-judge'
 import { addRecapReferences, carryRecapMarks } from './session-recap-merge'
+import { recapMessageTimes, repointMovedRecap } from './session-recap-message-times'
 import { readRecapChunks } from './session-recap-model-read'
 import {
   RECAP_CHUNK_CHARS,
@@ -146,7 +147,20 @@ export class SessionRecapEngine {
   ): Promise<RecapPassOutcome> {
     const { store, budget } = this.deps
     await store.load()
-    const stored = store.get(sessionId)
+    let stored = store.get(sessionId)
+    const anchor = stored?.recap?.anchor
+    if (!rebuild && stored?.recap && stored.times && anchor && anchor.sessionId !== sessionId) {
+      // Its session carries on in another transcript: its messages have other ids and offsets there.
+      const repointed = await repointMovedRecap(
+        this.deps.transcript,
+        sessionId,
+        stored.recap,
+        stored.times
+      )
+      if (repointed) {
+        stored = store.setRecap(sessionId, repointed.recap, stored.marks, repointed.times)
+      }
+    }
     const reading = await readForRecap(
       this.deps.transcript,
       sessionId,
@@ -181,7 +195,8 @@ export class SessionRecapEngine {
         store.setRecap(
           sessionId,
           changed ? { ...next, updatedAt: this.now() } : next,
-          stored?.marks ?? {}
+          stored?.marks ?? {},
+          recapMessageTimes(stored?.times, reading.messages, next)
         )
       }
       return changed ? 'updated' : 'current'
@@ -237,7 +252,12 @@ export class SessionRecapEngine {
         updatedAt: this.now(),
         degraded: true
       }
-      this.save(sessionId, stored, await this.withRequests(sessionId, kind, base, held, reading))
+      this.save(
+        sessionId,
+        stored,
+        await this.withRequests(sessionId, kind, base, held, reading),
+        reading
+      )
       return 'degraded'
     }
     const read: SessionRecap = {
@@ -251,7 +271,8 @@ export class SessionRecapEngine {
     this.save(
       sessionId,
       stored,
-      await this.withRequests(sessionId, kind, stored?.recap ?? null, read, reading)
+      await this.withRequests(sessionId, kind, stored?.recap ?? null, read, reading),
+      reading
     )
     this.failures.delete(sessionId)
     this.unread.delete(sessionId)
@@ -261,12 +282,14 @@ export class SessionRecapEngine {
   private save(
     sessionId: string,
     stored: ReturnType<SessionRecapStore['get']>,
-    recap: SessionRecap
+    recap: SessionRecap,
+    reading: RecapReading
   ): void {
     this.deps.store.setRecap(
       sessionId,
       recap,
-      carryRecapMarks(stored?.marks ?? {}, stored?.recap ?? null, recap)
+      carryRecapMarks(stored?.marks ?? {}, stored?.recap ?? null, recap),
+      recapMessageTimes(stored?.times, reading.messages, recap)
     )
   }
 

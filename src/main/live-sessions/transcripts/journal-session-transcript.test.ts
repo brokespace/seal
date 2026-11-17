@@ -79,6 +79,35 @@ describe('journalSessionTranscript', () => {
     expect(after).toMatchObject({ cursor: 6, shrank: false })
   })
 
+  it('starts the conversation at the latest /clear, and tells a cursor from before it to start over', async () => {
+    const { transcript } = journal(
+      [
+        said(1, 'user', 'Fix the login redirect'),
+        said(2, 'assistant', 'Patched it.'),
+        {
+          itemId: 'item-3',
+          revision: 0,
+          sequence: 3,
+          observedAt: 3_000,
+          body: {
+            kind: 'status',
+            text: 'Context cleared',
+            contextClear: { operationId: 'clear-1', afterFence: 2, clearedAt: 3_000 }
+          }
+        },
+        said(4, 'user', 'Add a rate limiter'),
+        said(5, 'assistant', 'Added one.')
+      ],
+      5
+    )
+
+    const page = await transcript.page(null)
+    expect(page.messages.map((message) => message.id)).toEqual(['item-3', 'item-4', 'item-5'])
+    expect({ start: page.start, more: page.more }).toEqual({ start: 0, more: false })
+    expect(await transcript.since(2)).toEqual({ messages: [], cursor: 2, shrank: true })
+    expect(texts((await transcript.since(4)).messages)).toEqual(['Added one.'])
+  })
+
   it('says the journal was started over when the cursor is past its end', async () => {
     const { transcript } = journal([said(1, 'user', 'Hello')], 1)
 

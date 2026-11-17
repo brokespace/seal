@@ -8,13 +8,16 @@ import {
 
 /**
  * How the session's conversation is kept, which decides the reader the recap goes through:
- * a Claude or Codex transcript file, that file on an SSH host, or a chat's journal.
+ * a Claude or Codex transcript file, that file on an SSH host, or a chat's journal, which is all
+ * an OpenCode or a Copilot chat has.
  */
 export const RECAP_SCENARIO_SURFACES = [
   'claude-cli',
   'codex-cli',
   'claude-ssh',
-  'chat-journal'
+  'chat-journal',
+  'opencode-chat',
+  'copilot-chat'
 ] as const
 export type RecapScenarioSurface = (typeof RECAP_SCENARIO_SURFACES)[number]
 
