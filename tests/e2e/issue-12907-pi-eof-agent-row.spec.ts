@@ -38,7 +38,7 @@ test('Pi EOF removes the completed agent row from the live Electron sidebar (#12
   await sendToTerminal(orcaPage, ptyId, `${script.command}; exit\r`)
   try {
     await waitForTerminalOutput(orcaPage, 'PI_EOF_AGENT_READY', 15_000)
-    const agentRows = worktreeRow(orcaPage, worktreeId).locator('[aria-label="Agents"] > div')
+    const agentRows = worktreeRow(orcaPage, worktreeId).locator('[data-live-session-row]')
     await expect(agentRows).toHaveCount(1)
     await orcaPage.screenshot({ path: testInfo.outputPath('pi-row-before-eof.png') })
 

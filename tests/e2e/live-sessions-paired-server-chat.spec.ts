@@ -42,7 +42,19 @@ test('a chat on a Seal server is listed and read under its machine, and again af
     const { environmentId, hostId, exec } = started
     let page = started.page
 
+    // The workspace's card lists the chat at once from this window's own feed, as the full row.
+    const cardRows = page.locator(
+      `[data-workspace-session-rows="${started.worktreeId}"] [data-live-session-row]`
+    )
+    await expect(cardRows).toHaveCount(1, { timeout: 5_000 })
+    await expect(cardRows).toHaveAttribute('data-status', 'working')
+    await expect(cardRows).toContainText(FIRST_PROMPT)
+    await expect(cardRows.locator('[data-live-session-machine]')).toBeVisible()
+
     const working = await expectOneChat(session.userDataDir, hostId, 'working')
+    // The server's record takes the row over: still one, under the record's id.
+    await expect(cardRows).toHaveAttribute('data-live-session-row', working.id)
+    await expect(cardRows).toHaveCount(1)
     expect(working.id.startsWith(`${hostId}:claude:`), working.id).toBe(true)
     expect(working).toMatchObject({
       machine: { hostId, kind: 'remote', executionHostId: `runtime:${environmentId}` },
