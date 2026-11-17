@@ -3,7 +3,6 @@
   "title": "An ask put off at the start is done more than twenty turns later",
   "categories": ["long-session", "addressed-later-turn"],
   "surfaces": ["claude-cli"],
-  "pending": true,
   "expected": "LOG_LEVEL is open after the first turn and through the twenty-two turns that follow. When the user asks for it again and the agent adds it, it is done: not listed as not addressed, and not left behind as a second, forever open request.",
   "steps": [
     {

@@ -1,46 +1,24 @@
 [
   {
-    "key": "32da805012e88755e0b490a7247dc58c",
+    "key": "64763e6f6d89ad12de84ac241e38a551",
     "model": "@cf/zai-org/glm-4.7-flash",
     "messages": [
       {
         "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\n\n[m2] AGENT: Starting with the TOTP setup page.\n</new_messages>"
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\n\n[m2] AGENT: Starting with the TOTP setup page.\n</new_messages>\nThe agent is still working and its last message is unfinished: record what it is doing as \"in-progress\", never \"done\", and say in \"standing\" what it is doing now."
       }
     ],
-    "reply": "{\n  \"firstRequest\": \"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\n  \"did\": [{\"text\": \"Starting with the TOTP setup page\", \"ref\": \"m2\"}]\n}",
-    "neurons": 5.6684
+    "reply": "{\n  \"title\": \"Add 2FA to login\",\n  \"goal\": \"Add TOTP setup, login verification, and backup codes to the login flow.\",\n  \"standing\": \"Agent is starting the TOTP setup page implementation.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\n        \"text\": \"Starting TOTP setup page implementation\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m2\"\n      }\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
   },
   {
-    "key": "d9868fa202965ffd03d435a272930cee",
+    "key": "b84c87da6c2ccf40985691480e2ebebe",
     "model": "@cf/zai-org/glm-4.7-flash",
     "messages": [
       {
         "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\n\n[m2] AGENT: Starting with the TOTP setup page.\n</new_messages>"
-      },
-      {
-        "role": "assistant",
-        "content": "{\n  \"firstRequest\": \"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\n  \"did\": [{\"text\": \"Starting with the TOTP setup page\", \"ref\": \"m2\"}]\n}"
-      },
-      {
-        "role": "user",
-        "content": "That reply could not be used. The JSON object has none of the keys title, goal, standing, add, update, resolve.\nReply again with only the JSON object described, starting with { and ending with }."
+        "content": "<recap>\n{\"title\":\"Add 2FA to login\",\"goal\":\"Add TOTP setup, login verification, and backup codes to the login flow.\",\"standing\":\"Agent is starting the TOTP setup page implementation.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Starting TOTP setup page implementation\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] AGENT: 2FA is in: the TOTP setup page, the verify step at login, and ten one-time backup codes per user.\n</new_messages>"
       }
     ],
-    "reply": "{\n  \"goals\": [\n    {\n      \"id\": \"2fa-initial\",\n      \"text\": \"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\n      \"state\": \"in-progress\"\n    }\n  ],\n  \"add\": {\n    \"did\": [\n      {\n        \"text\": \"Starting with the TOTP setup page\",\n        \"state\": \"in-progress\",\n        \"ref\": \"m2\"\n      }\n    ]\n  }\n}",
-    "neurons": 8.043899999999999
-  },
-  {
-    "key": "08651bd12096ed82f6df38fe0b7433f5",
-    "model": "@cf/zai-org/glm-4.7-flash",
-    "messages": [
-      {
-        "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add 2FA to login: a TOTP setup page, a verify step at login, and backup codes.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Starting with the TOTP setup page\",\"state\":\"in-progress\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] AGENT: 2FA is in: the TOTP setup page, the verify step at login, and ten one-time backup codes per user.\n</new_messages>"
-      }
-    ],
-    "reply": "{\n  \"update\": [\n    {\"id\": \"w1\", \"text\": \"Added TOTP setup page and login verify step\", \"state\": \"done\"}\n  ],\n  \"resolve\": [\"d1\"]\n}",
-    "neurons": 5.3649
+    "reply": "{\n  \"update\": [\n    {\n      \"id\": \"w1\",\n      \"text\": \"TOTP setup page implementation in progress\",\n      \"state\": \"in-progress\"\n    }\n  ],\n  \"standing\": \"Implementation includes TOTP setup page and login verification step. Ten backup codes added per user.\"\n}"
   }
 ]

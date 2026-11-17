@@ -3,7 +3,6 @@
   "title": "The primary model answers HTTP 500",
   "categories": ["model-failure"],
   "surfaces": ["claude-cli"],
-  "pending": true,
   "expected": "The fallback model writes the recap.",
   "steps": [
     {

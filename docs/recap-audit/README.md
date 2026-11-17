@@ -121,6 +121,6 @@ RECAP_E2E=1 RECAP_E2E_EVIDENCE_DIR="$PWD/docs/recap-audit/evidence/e2e" ORCA_BAC
   tests/e2e/session-recap-baseline-external-cli.spec.ts tests/e2e/session-recap-baseline-remote.spec.ts --workers=3
 ```
 
-The first run builds the app; add `SKIP_BUILD=1` to reuse that build. `xvfb-run` is for Linux machines without a display. A full run takes about ten minutes: the scheduler leaves four minutes between two automatic passes and the app has no test clock.
+The first run builds the app; add `SKIP_BUILD=1` to reuse that build. `xvfb-run` is for Linux machines without a display. A full run takes about ten minutes: the specs' utility model is the `claude` CLI, an agent CLI's turn-end passes stay four minutes apart, and the app has no test clock. The specs wait on that interval by name (`NEXT_AUTOMATIC_PASS_MS` in `tests/e2e/helpers/recap-baseline.ts`).
 
 Each test saves a screenshot of the hidden window and the recap as the app returned it. That folder is not committed. A test for behaviour that is wrong today is marked `test.fail`, so the spec passes while the bug is present and fails once it is fixed; remove the mark then.

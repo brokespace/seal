@@ -1,0 +1,520 @@
+[
+  {
+    "key": "2a9cdd86e7111dbae34266339eeb6ab2",
+    "answers": {
+      "done": 0.8935,
+      "did_part": 0.477,
+      "declined": 0.2106,
+      "withdrawn": 0.0116,
+      "left_undone": 0.1453
+    },
+    "inputTokens": 793,
+    "item": "duplicate-reminder@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "399aad4a3ea6181cbf2dbe6f4e44e21d",
+    "answers": {
+      "done": 0.1069,
+      "did_part": 0.9355,
+      "declined": 0.0167,
+      "withdrawn": 0.0105,
+      "left_undone": 0.1368
+    },
+    "inputTokens": 701,
+    "item": "duplicate-reminder@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "91f0a0b3aea33a6f23e9d35d04387762",
+    "answers": {
+      "done": 0.0427,
+      "did_part": 0.3429,
+      "declined": 0.9069,
+      "withdrawn": 0.0142,
+      "left_undone": 0.8715
+    },
+    "inputTokens": 716,
+    "item": "duplicate-reminder@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "d06b9135d0192135628d13fd4d96c6e6",
+    "answers": {
+      "done": 0.4378,
+      "did_part": 0.3692,
+      "declined": 0.8175,
+      "withdrawn": 0.0172,
+      "left_undone": 0.3333
+    },
+    "inputTokens": 739,
+    "item": "duplicate-reminder@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "df6a99961cd3c4d80abbead0351209b4",
+    "answers": {
+      "done": 0.0338,
+      "did_part": 0.972,
+      "declined": 0.8757,
+      "withdrawn": 0.0108,
+      "left_undone": 0.3654
+    },
+    "inputTokens": 770,
+    "item": "duplicate-reminder@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "b33ff82d1a9dab93efa24b5a5b18da87",
+    "answers": {
+      "done": 0.0244,
+      "did_part": 0.3722,
+      "declined": 0.4776,
+      "withdrawn": 0.0107,
+      "left_undone": 0.9037
+    },
+    "inputTokens": 5960,
+    "item": "long-session-first-recap@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "cc3d5c0c20717fef9bd68c5e3bb3c168",
+    "answers": {
+      "done": 0.9492,
+      "did_part": 0.1276,
+      "declined": 0.019,
+      "withdrawn": 0.0097,
+      "left_undone": 0.0286
+    },
+    "inputTokens": 682,
+    "item": "model-fails-twice-then-recovers@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "d5e424f7dd9d8b8354d87c4d681ac239",
+    "answers": {
+      "done": 0.9469,
+      "did_part": 0.0735,
+      "declined": 0.0182,
+      "withdrawn": 0.01,
+      "left_undone": 0.0316
+    },
+    "inputTokens": 753,
+    "item": "model-fails-twice-then-recovers@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "7e034fbb9e6471241da8085533a4a898",
+    "answers": {
+      "done": 0.941,
+      "did_part": 0.1748,
+      "declined": 0.0231,
+      "withdrawn": 0.013,
+      "left_undone": 0.0258
+    },
+    "inputTokens": 690,
+    "item": "model-reply-not-json@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "9f751d5735a5db71dba360fc28f3d828",
+    "answers": {
+      "done": 0.9336,
+      "did_part": 0.1865,
+      "declined": 0.0232,
+      "withdrawn": 0.0133,
+      "left_undone": 0.0437
+    },
+    "inputTokens": 711,
+    "item": "model-reply-not-json@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "0c25428f03315307367bb9b9d78fce38",
+    "answers": {
+      "done": 0.9329,
+      "did_part": 0.1509,
+      "declined": 0.0262,
+      "withdrawn": 0.0151,
+      "left_undone": 0.0779
+    },
+    "inputTokens": 5200,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "17acf29b07d2e7d1bc10de7fe33c2fbc",
+    "answers": {
+      "done": 0.9441,
+      "did_part": 0.1714,
+      "declined": 0.0229,
+      "withdrawn": 0.0134,
+      "left_undone": 0.0491
+    },
+    "inputTokens": 5548,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "1f851d3e7f31e217ad599334e5293e6c",
+    "answers": {
+      "done": 0.886,
+      "did_part": 0.1347,
+      "declined": 0.0279,
+      "withdrawn": 0.0198,
+      "left_undone": 0.1143
+    },
+    "inputTokens": 2734,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "29e23bf93ab3a143d243eea3066d6134",
+    "answers": {
+      "done": 0.8607,
+      "did_part": 0.2053,
+      "declined": 0.029,
+      "withdrawn": 0.0225,
+      "left_undone": 0.1516
+    },
+    "inputTokens": 3082,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "3715aac429a12c09e6533e84cf3cada6",
+    "answers": {
+      "done": 0.9491,
+      "did_part": 0.1705,
+      "declined": 0.024,
+      "withdrawn": 0.0139,
+      "left_undone": 0.052
+    },
+    "inputTokens": 5896,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "3eebd8b8a64f6fe520bb5013e3bca7bc",
+    "answers": {
+      "done": 0.9089,
+      "did_part": 0.1687,
+      "declined": 0.0288,
+      "withdrawn": 0.017,
+      "left_undone": 0.1359
+    },
+    "inputTokens": 3778,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "603fbdb26086eecc1bdc52302f32faf5",
+    "answers": {
+      "done": 0.8675,
+      "did_part": 0.2012,
+      "declined": 0.0259,
+      "withdrawn": 0.0188,
+      "left_undone": 0.1719
+    },
+    "inputTokens": 3430,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "72d4c0c0047cfccbc80dbd4883d1ec4f",
+    "answers": {
+      "done": 0.9174,
+      "did_part": 0.1177,
+      "declined": 0.0248,
+      "withdrawn": 0.0231,
+      "left_undone": 0.0993
+    },
+    "inputTokens": 2387,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "76df5f04e065101f3fe65413b3f6c90f",
+    "answers": {
+      "done": 0.938,
+      "did_part": 0.2066,
+      "declined": 0.0232,
+      "withdrawn": 0.0141,
+      "left_undone": 0.079
+    },
+    "inputTokens": 4852,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "906ae6f5f5a3e974387bed56d275ee16",
+    "answers": {
+      "done": 0.0172,
+      "did_part": 0.1414,
+      "declined": 0.8565,
+      "withdrawn": 0.0127,
+      "left_undone": 0.8649
+    },
+    "inputTokens": 707,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "aa95cd1c577475485d371497dcd1be5e",
+    "answers": {
+      "done": 0.9545,
+      "did_part": 0.1646,
+      "declined": 0.0241,
+      "withdrawn": 0.0116,
+      "left_undone": 0.0511
+    },
+    "inputTokens": 6235,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "b49b4d711c143e5e7e3316670654684b",
+    "answers": {
+      "done": 0.9421,
+      "did_part": 0.1821,
+      "declined": 0.0237,
+      "withdrawn": 0.0131,
+      "left_undone": 0.0669
+    },
+    "inputTokens": 4117,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "e3d6d82554733340ee8f5b7a6265ede4",
+    "answers": {
+      "done": 0.0935,
+      "did_part": 0.2187,
+      "declined": 0.4998,
+      "withdrawn": 0.0152,
+      "left_undone": 0.8535
+    },
+    "inputTokens": 706,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "e8b81c5b38620de907daf87f7a913bb9",
+    "answers": {
+      "done": 0.9388,
+      "did_part": 0.1536,
+      "declined": 0.0227,
+      "withdrawn": 0.0136,
+      "left_undone": 0.104
+    },
+    "inputTokens": 4504,
+    "item": "open-ask-done-after-many-turns@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "74ef1cba7e1677fa8182148b06e99ce5",
+    "answers": {
+      "done": 0.9479,
+      "did_part": 0.1394,
+      "declined": 0.021,
+      "withdrawn": 0.0104,
+      "left_undone": 0.0875
+    },
+    "inputTokens": 742,
+    "item": "remote-server-session@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "fa391b0cb208fb873c1cd5a4dbdee808",
+    "answers": {
+      "done": 0.014,
+      "did_part": 0.9785,
+      "declined": 0.0206,
+      "withdrawn": 0.0101,
+      "left_undone": 0.3924
+    },
+    "inputTokens": 711,
+    "item": "remote-server-session@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "458acea37998a9eb316626479ca8b7f1",
+    "answers": {
+      "done": 0.9602,
+      "did_part": 0.1203,
+      "declined": 0.0232,
+      "withdrawn": 0.0112,
+      "left_undone": 0.0571
+    },
+    "inputTokens": 706,
+    "item": "second-ask-sent-while-the-agent-works@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "bc66df734420fc8fef9a8ef995e9a4a2",
+    "answers": {
+      "done": 0.2669,
+      "did_part": 0.5871,
+      "declined": 0.0367,
+      "withdrawn": 0.0116,
+      "left_undone": 0.8924
+    },
+    "inputTokens": 659,
+    "item": "second-ask-sent-while-the-agent-works@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "600818c38be481b2fd670317d6e289ac",
+    "answers": {
+      "done": 0.0357,
+      "did_part": 0.5729,
+      "declined": 0.0256,
+      "withdrawn": 0.0125,
+      "left_undone": 0.7188
+    },
+    "inputTokens": 725,
+    "item": "subagent-still-running-when-the-agent-stops@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "7feccd9451711c475c058470a746725f",
+    "answers": {
+      "done": 0.6433,
+      "did_part": 0.7385,
+      "declined": 0.0249,
+      "withdrawn": 0.014,
+      "left_undone": 0.1164
+    },
+    "inputTokens": 730,
+    "item": "subagent-still-running-when-the-agent-stops@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "9371269ad74b29f69563a5b4d1226e98",
+    "answers": {
+      "done": 0.8677,
+      "did_part": 0.2484,
+      "declined": 0.0264,
+      "withdrawn": 0.0106,
+      "left_undone": 0.0626
+    },
+    "inputTokens": 773,
+    "item": "subagent-still-running-when-the-agent-stops@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "901aef8a62c3135d214d425fb67c04dd",
+    "answers": {
+      "done": 0.9066,
+      "did_part": 0.3574,
+      "declined": 0.0368,
+      "withdrawn": 0.0101,
+      "left_undone": 0.0296
+    },
+    "inputTokens": 765,
+    "item": "terse-confirmations@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "a90c84475c2d6e68ec7c951ea228ba9c",
+    "answers": {
+      "done": 0.0145,
+      "did_part": 0.3326,
+      "declined": 0.2648,
+      "withdrawn": 0.0097,
+      "left_undone": 0.932
+    },
+    "inputTokens": 725,
+    "item": "terse-confirmations@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "094c41526cfed0f4dad85253cf288eb5",
+    "answers": {
+      "done": 0.0154,
+      "did_part": 0.9737,
+      "declined": 0.021,
+      "withdrawn": 0.01,
+      "left_undone": 0.3266
+    },
+    "inputTokens": 703,
+    "item": "withdrawn-because-someone-else-does-it@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "cf8d07ed3df12dec009109376e90de9c",
+    "answers": {
+      "done": 0.0379,
+      "did_part": 0.9169,
+      "declined": 0.0915,
+      "withdrawn": 0.5713,
+      "left_undone": 0.1993
+    },
+    "inputTokens": 751,
+    "item": "withdrawn-because-someone-else-does-it@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "04d24b3ab086f7706c4d236d68a4bc9f",
+    "answers": {
+      "done": 0.0143,
+      "did_part": 0.1371,
+      "declined": 0.0624,
+      "withdrawn": 0.0088,
+      "left_undone": 0.9262
+    },
+    "inputTokens": 682,
+    "item": "withdrawn-then-asked-again@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  },
+  {
+    "key": "b57ecd5c03d5cfc63ff87f2a3a4b132e",
+    "answers": {
+      "done": 0.0366,
+      "did_part": 0.0788,
+      "declined": 0.5741,
+      "withdrawn": 0.958,
+      "left_undone": 0.0746
+    },
+    "inputTokens": 700,
+    "item": "withdrawn-then-asked-again@claude-cli",
+    "outputTokens": null,
+    "ms": 0
+  }
+]
