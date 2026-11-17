@@ -7,6 +7,7 @@ import type {
   LiveSession,
   LiveSessionMachine
 } from '../../../../../shared/live-sessions/live-session-types'
+import { sampleLiveSession } from '../live-session.test-fixture'
 import { windowAgentSession } from './window-agent-session'
 import { workspaceSessionList } from './workspace-session-list'
 
@@ -18,7 +19,18 @@ const SERVER: LiveSessionMachine = {
   executionHostId: 'runtime:env-7',
   connection: 'server'
 }
-const CHAT = { id: 'tab-chat', entityId: 'chat-1', contentType: 'agent-session' } as StructuredTab
+const CHAT: StructuredTab = {
+  id: 'tab-chat',
+  entityId: 'chat-1',
+  groupId: 'group-1',
+  worktreeId: 'wt-dev',
+  contentType: 'agent-session',
+  label: 'Claude',
+  customLabel: null,
+  color: null,
+  sortOrder: 0,
+  createdAt: 0
+}
 const CHAT_PANE = 'tab-chat:leaf'
 
 function agentRow(
@@ -32,7 +44,16 @@ function agentRow(
     state: 'working',
     rowSource: 'live',
     startedAt: NOW - 60_000,
-    tab: { id: paneKey.slice(0, paneKey.lastIndexOf(':')) },
+    tab: {
+      id: paneKey.slice(0, paneKey.lastIndexOf(':')),
+      worktreeId: 'wt-dev',
+      ptyId: null,
+      title: 'Agent',
+      customTitle: null,
+      color: null,
+      sortOrder: 0,
+      createdAt: 0
+    },
     entry: {
       paneKey,
       state: 'working',
@@ -43,32 +64,21 @@ function agentRow(
       ...entry
     },
     ...patch
-  } as DashboardAgentRow
+  }
 }
 
 function record(patch: Partial<LiveSession>): LiveSession {
-  return {
-    id: 'server-7:claude:5f0c',
-    provider: 'claude',
+  return sampleLiveSession('server-7:claude:5f0c', {
     providerSessionId: '5f0c',
     machine: SERVER,
     origin: 'seal',
     ...sampleSessionSurface('external'),
-    cwd: '/srv/dev',
-    project: 'dev',
     title: 'Claude identity question',
     status: 'your-turn',
     statusSource: 'seal-hooks',
-    statusDetail: null,
-    lastActivityAt: NOW - 1000,
-    startedAt: NOW - 60_000,
-    alive: true,
-    pid: null,
-    transcriptPath: null,
     inputRoutes: [{ kind: 'structured', sessionId: 'chat-1' }],
-    permission: null,
     ...patch
-  } as LiveSession
+  })
 }
 
 function list(
@@ -167,9 +177,14 @@ describe('a workspace card lists each agent session once', () => {
           kind: 'agent',
           id: 'child-1',
           name: 'Audit payments',
+          displayState: 'working',
+          detail: null,
           settled: false,
-          firstObservedAt: NOW - 5000
-        } as DashboardAgentRow['childRow']
+          canStop: false,
+          firstObservedAt: NOW - 5000,
+          recencyAt: NOW - 5000,
+          owned: []
+        }
       }
     )
     const counted = [[['Audit payments', 'running']]]
