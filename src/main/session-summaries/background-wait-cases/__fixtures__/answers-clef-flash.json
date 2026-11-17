@@ -1,0 +1,1322 @@
+[
+  {
+    "key": "9b81c0242d61d3560425184627e2c55e",
+    "item": "until-pgrep-waiter-says-still-running",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8852,
+          "leftover": 0.0732,
+          "other": 0.0416
+        },
+        "confidence": 0.686
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.3917,
+          "command_waits": 0.3893,
+          "command_is_the_work": 0.0849,
+          "serves_the_user": 0.0395,
+          "work_reported_done": 0.0254,
+          "nothing_waits_for_it": 0.0587,
+          "cannot_tell": 0.0105
+        },
+        "confidence": 0.2043
+      }
+    },
+    "inputTokens": 972,
+    "ms": 358,
+    "provider": "openrouter"
+  },
+  {
+    "key": "dfae2a4cdce3af61093ef9612db11c71",
+    "item": "sleep-then-check-ci",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8079,
+          "leftover": 0.1299,
+          "other": 0.0622
+        },
+        "confidence": 0.5102
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.2915,
+          "command_waits": 0.5166,
+          "command_is_the_work": 0.0461,
+          "serves_the_user": 0.0196,
+          "work_reported_done": 0.0228,
+          "nothing_waits_for_it": 0.093,
+          "cannot_tell": 0.0104
+        },
+        "confidence": 0.2576
+      }
+    },
+    "inputTokens": 949,
+    "ms": 362,
+    "provider": "openrouter"
+  },
+  {
+    "key": "cf83a0df281ef6211eee4db5dd1890b2",
+    "item": "pytest-in-background-terse",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8756,
+          "leftover": 0.084,
+          "other": 0.0404
+        },
+        "confidence": 0.663
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.3984,
+          "command_waits": 0.0499,
+          "command_is_the_work": 0.3892,
+          "serves_the_user": 0.0328,
+          "work_reported_done": 0.0337,
+          "nothing_waits_for_it": 0.0869,
+          "cannot_tell": 0.0091
+        },
+        "confidence": 0.2097
+      }
+    },
+    "inputTokens": 909,
+    "ms": 461,
+    "provider": "openrouter"
+  },
+  {
+    "key": "4e1c32b745a75bec6a8afc33ae97b712",
+    "item": "waiter-says-nothing",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8693,
+          "leftover": 0.0753,
+          "other": 0.0554
+        },
+        "confidence": 0.6465
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.0666,
+          "command_waits": 0.8059,
+          "command_is_the_work": 0.0402,
+          "serves_the_user": 0.0237,
+          "work_reported_done": 0.0201,
+          "nothing_waits_for_it": 0.0344,
+          "cannot_tell": 0.0091
+        },
+        "confidence": 0.6007
+      }
+    },
+    "inputTokens": 916,
+    "ms": 606,
+    "provider": "openrouter"
+  },
+  {
+    "key": "05ba20573011cfcc2a01175591680f58",
+    "item": "monitor-until-rollout-healthy",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8472,
+          "leftover": 0.1041,
+          "other": 0.0487
+        },
+        "confidence": 0.5965
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.5366,
+          "command_waits": 0.2255,
+          "command_is_the_work": 0.063,
+          "serves_the_user": 0.0975,
+          "work_reported_done": 0.0214,
+          "nothing_waits_for_it": 0.0472,
+          "cannot_tell": 0.0088
+        },
+        "confidence": 0.2475
+      }
+    },
+    "inputTokens": 944,
+    "ms": 591,
+    "provider": "openrouter"
+  },
+  {
+    "key": "58b683a07219164b11a82a5d7f50f1dd",
+    "item": "docker-build-then-continue",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.9012,
+          "leftover": 0.0674,
+          "other": 0.0314
+        },
+        "confidence": 0.7264
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.442,
+          "command_waits": 0.044,
+          "command_is_the_work": 0.3768,
+          "serves_the_user": 0.0251,
+          "work_reported_done": 0.0333,
+          "nothing_waits_for_it": 0.0702,
+          "cannot_tell": 0.0086
+        },
+        "confidence": 0.237
+      }
+    },
+    "inputTokens": 948,
+    "ms": 473,
+    "provider": "openrouter"
+  },
+  {
+    "key": "35c397c23abcc1e1104bbfd51ecc50e6",
+    "item": "waiter-beside-old-dev-server",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8364,
+          "leftover": 0.1171,
+          "other": 0.0465
+        },
+        "confidence": 0.5732
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.4309,
+          "command_waits": 0.3358,
+          "command_is_the_work": 0.098,
+          "serves_the_user": 0.0379,
+          "work_reported_done": 0.0236,
+          "nothing_waits_for_it": 0.0652,
+          "cannot_tell": 0.0086
+        },
+        "confidence": 0.2001
+      }
+    },
+    "inputTokens": 1008,
+    "ms": 441,
+    "provider": "openrouter"
+  },
+  {
+    "key": "4217ebab30653f81e1e8bad7f35e8dbd",
+    "item": "wait-for-health-then-smoke",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8605,
+          "leftover": 0.0876,
+          "other": 0.0519
+        },
+        "confidence": 0.6262
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.2569,
+          "command_waits": 0.5529,
+          "command_is_the_work": 0.0449,
+          "serves_the_user": 0.0325,
+          "work_reported_done": 0.0308,
+          "nothing_waits_for_it": 0.0724,
+          "cannot_tell": 0.0096
+        },
+        "confidence": 0.2779
+      }
+    },
+    "inputTokens": 928,
+    "ms": 508,
+    "provider": "openrouter"
+  },
+  {
+    "key": "0d83825e75034a6d1f5ca407c5dd071f",
+    "item": "second-reviewer-in-background",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8443,
+          "leftover": 0.0965,
+          "other": 0.0592
+        },
+        "confidence": 0.5884
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.7466,
+          "command_waits": 0.0697,
+          "command_is_the_work": 0.0598,
+          "serves_the_user": 0.023,
+          "work_reported_done": 0.034,
+          "nothing_waits_for_it": 0.0563,
+          "cannot_tell": 0.0106
+        },
+        "confidence": 0.4994
+      }
+    },
+    "inputTokens": 941,
+    "ms": 398,
+    "provider": "openrouter"
+  },
+  {
+    "key": "4969323cba77426589bfaa8e8c170c41",
+    "item": "old-dev-server-button-renamed",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1616,
+          "leftover": 0.711,
+          "other": 0.1274
+        },
+        "confidence": 0.3218
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0812,
+          "command_waits": 0.072,
+          "command_is_the_work": 0.0811,
+          "serves_the_user": 0.1459,
+          "work_reported_done": 0.4792,
+          "nothing_waits_for_it": 0.1217,
+          "cannot_tell": 0.0189
+        },
+        "confidence": 0.1651
+      }
+    },
+    "inputTokens": 917,
+    "ms": 566,
+    "provider": "openrouter"
+  },
+  {
+    "key": "ebdc1f903fd629a631cad3dd9f9c3579",
+    "item": "dev-server-started-this-turn",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1787,
+          "leftover": 0.7125,
+          "other": 0.1088
+        },
+        "confidence": 0.3271
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0753,
+          "command_waits": 0.0499,
+          "command_is_the_work": 0.0983,
+          "serves_the_user": 0.4474,
+          "work_reported_done": 0.1881,
+          "nothing_waits_for_it": 0.1288,
+          "cannot_tell": 0.0122
+        },
+        "confidence": 0.1485
+      }
+    },
+    "inputTokens": 928,
+    "ms": 2060,
+    "provider": "openrouter"
+  },
+  {
+    "key": "da2492f35a3870646205b3cc5da87da0",
+    "item": "old-log-tail-fix-done",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.2691,
+          "leftover": 0.615,
+          "other": 0.1159
+        },
+        "confidence": 0.196
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.0627,
+          "command_waits": 0.4462,
+          "command_is_the_work": 0.0636,
+          "serves_the_user": 0.2708,
+          "work_reported_done": 0.0661,
+          "nothing_waits_for_it": 0.076,
+          "cannot_tell": 0.0146
+        },
+        "confidence": 0.1726
+      }
+    },
+    "inputTokens": 932,
+    "ms": 505,
+    "provider": "openrouter"
+  },
+  {
+    "key": "490d6bf3073dfb5df92f5779b7347753",
+    "item": "check-back-promise-with-only-a-server",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.216,
+          "leftover": 0.6925,
+          "other": 0.0915
+        },
+        "confidence": 0.3019
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "nothing_waits_for_it",
+        "probabilities": {
+          "says_waiting": 0.0936,
+          "command_waits": 0.0632,
+          "command_is_the_work": 0.1047,
+          "serves_the_user": 0.0949,
+          "work_reported_done": 0.2293,
+          "nothing_waits_for_it": 0.401,
+          "cannot_tell": 0.0133
+        },
+        "confidence": 0.1207
+      }
+    },
+    "inputTokens": 929,
+    "ms": 490,
+    "provider": "openrouter"
+  },
+  {
+    "key": "55d96eb1b1a137ffde0cc63f7af7377f",
+    "item": "nohup-job-not-a-child-storybook-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.7278,
+          "leftover": 0.2057,
+          "other": 0.0665
+        },
+        "confidence": 0.3646
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.4361,
+          "command_waits": 0.0521,
+          "command_is_the_work": 0.2724,
+          "serves_the_user": 0.0504,
+          "work_reported_done": 0.0272,
+          "nothing_waits_for_it": 0.1523,
+          "cannot_tell": 0.0095
+        },
+        "confidence": 0.1759
+      }
+    },
+    "inputTokens": 967,
+    "ms": 358,
+    "provider": "openrouter"
+  },
+  {
+    "key": "aab03f27be05aaea26782c7e9b4cfb9d",
+    "item": "build-finished-old-server-still-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1318,
+          "leftover": 0.7705,
+          "other": 0.0977
+        },
+        "confidence": 0.4309
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0784,
+          "command_waits": 0.095,
+          "command_is_the_work": 0.1795,
+          "serves_the_user": 0.1632,
+          "work_reported_done": 0.4019,
+          "nothing_waits_for_it": 0.0672,
+          "cannot_tell": 0.0148
+        },
+        "confidence": 0.1137
+      }
+    },
+    "inputTokens": 955,
+    "ms": 824,
+    "provider": "openrouter"
+  },
+  {
+    "key": "314c30a07b71941d442259a943e94e13",
+    "item": "test-database-left-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.3116,
+          "leftover": 0.5683,
+          "other": 0.1201
+        },
+        "confidence": 0.1517
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0856,
+          "command_waits": 0.0383,
+          "command_is_the_work": 0.1109,
+          "serves_the_user": 0.1025,
+          "work_reported_done": 0.4563,
+          "nothing_waits_for_it": 0.1942,
+          "cannot_tell": 0.0122
+        },
+        "confidence": 0.1573
+      }
+    },
+    "inputTokens": 946,
+    "ms": 748,
+    "provider": "openrouter"
+  },
+  {
+    "key": "80d8ea8637a59930fa3cb90701b67926",
+    "item": "watch-mode-left-on-purpose",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.2727,
+          "leftover": 0.6569,
+          "other": 0.0704
+        },
+        "confidence": 0.2663
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.1315,
+          "command_waits": 0.1613,
+          "command_is_the_work": 0.2134,
+          "serves_the_user": 0.3112,
+          "work_reported_done": 0.0872,
+          "nothing_waits_for_it": 0.0841,
+          "cannot_tell": 0.0113
+        },
+        "confidence": 0.0673
+      }
+    },
+    "inputTokens": 915,
+    "ms": 594,
+    "provider": "openrouter"
+  },
+  {
+    "key": "e209bae9b29d478905359f2ab9be2120",
+    "item": "old-monitor-on-access-log",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.2033,
+          "leftover": 0.6827,
+          "other": 0.114
+        },
+        "confidence": 0.2806
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0387,
+          "command_waits": 0.3851,
+          "command_is_the_work": 0.0428,
+          "serves_the_user": 0.402,
+          "work_reported_done": 0.0696,
+          "nothing_waits_for_it": 0.0467,
+          "cannot_tell": 0.0151
+        },
+        "confidence": 0.2072
+      }
+    },
+    "inputTokens": 928,
+    "ms": 527,
+    "provider": "openrouter"
+  },
+  {
+    "key": "b2b9b38a22df7021d29efeeb5ba0fed2",
+    "item": "jupyter-from-earlier",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1515,
+          "leftover": 0.7486,
+          "other": 0.0999
+        },
+        "confidence": 0.39
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0634,
+          "command_waits": 0.0615,
+          "command_is_the_work": 0.1341,
+          "serves_the_user": 0.1392,
+          "work_reported_done": 0.4585,
+          "nothing_waits_for_it": 0.1246,
+          "cannot_tell": 0.0187
+        },
+        "confidence": 0.1498
+      }
+    },
+    "inputTokens": 928,
+    "ms": 1069,
+    "provider": "openrouter"
+  },
+  {
+    "key": "be35806bc3c57df3a4a07c26f26f673a",
+    "item": "unread-command-message-unrelated",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1809,
+          "leftover": 0.4208,
+          "other": 0.3983
+        },
+        "confidence": 0.0526
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0537,
+          "command_waits": 0.1126,
+          "command_is_the_work": 0.1628,
+          "serves_the_user": 0.0895,
+          "work_reported_done": 0.3621,
+          "nothing_waits_for_it": 0.1417,
+          "cannot_tell": 0.0776
+        },
+        "confidence": 0.0752
+      }
+    },
+    "inputTokens": 892,
+    "ms": 473,
+    "provider": "openrouter"
+  },
+  {
+    "key": "c45cdfc25549577ad273ebde4f7f70c6",
+    "item": "gh-run-watch",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8861,
+          "leftover": 0.0788,
+          "other": 0.0351
+        },
+        "confidence": 0.689
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.6722,
+          "command_waits": 0.0934,
+          "command_is_the_work": 0.0977,
+          "serves_the_user": 0.0339,
+          "work_reported_done": 0.0275,
+          "nothing_waits_for_it": 0.0651,
+          "cannot_tell": 0.0102
+        },
+        "confidence": 0.3891
+      }
+    },
+    "inputTokens": 920,
+    "ms": 1345,
+    "provider": "openrouter"
+  },
+  {
+    "key": "6bdba29b61b3afbdfce0939bc11fdc3c",
+    "item": "cargo-build-release",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8984,
+          "leftover": 0.0677,
+          "other": 0.0339
+        },
+        "confidence": 0.7194
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.6994,
+          "command_waits": 0.0396,
+          "command_is_the_work": 0.1703,
+          "serves_the_user": 0.0233,
+          "work_reported_done": 0.0238,
+          "nothing_waits_for_it": 0.036,
+          "cannot_tell": 0.0076
+        },
+        "confidence": 0.4426
+      }
+    },
+    "inputTokens": 924,
+    "ms": 329,
+    "provider": "openrouter"
+  },
+  {
+    "key": "c16981df680fb0013cd9fd795b9c4754",
+    "item": "earlier-turn-training-still-reported",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8507,
+          "leftover": 0.1053,
+          "other": 0.044
+        },
+        "confidence": 0.605
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.5188,
+          "command_waits": 0.0389,
+          "command_is_the_work": 0.3281,
+          "serves_the_user": 0.0251,
+          "work_reported_done": 0.0235,
+          "nothing_waits_for_it": 0.0573,
+          "cannot_tell": 0.0083
+        },
+        "confidence": 0.28
+      }
+    },
+    "inputTokens": 939,
+    "ms": 1496,
+    "provider": "openrouter"
+  },
+  {
+    "key": "63ea572c7fe6b7ed58003950b481a847",
+    "item": "unread-command-says-waiting",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.6277,
+          "leftover": 0.197,
+          "other": 0.1753
+        },
+        "confidence": 0.1954
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.4103,
+          "command_waits": 0.0486,
+          "command_is_the_work": 0.3498,
+          "serves_the_user": 0.0253,
+          "work_reported_done": 0.0229,
+          "nothing_waits_for_it": 0.1317,
+          "cannot_tell": 0.0114
+        },
+        "confidence": 0.197
+      }
+    },
+    "inputTokens": 913,
+    "ms": 476,
+    "provider": "openrouter"
+  },
+  {
+    "key": "64c648fd6cfc5dc80091e3a44c27b87d",
+    "item": "download-then-convert",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.853,
+          "leftover": 0.101,
+          "other": 0.046
+        },
+        "confidence": 0.6099
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.5977,
+          "command_waits": 0.0937,
+          "command_is_the_work": 0.1744,
+          "serves_the_user": 0.0331,
+          "work_reported_done": 0.0329,
+          "nothing_waits_for_it": 0.058,
+          "cannot_tell": 0.0102
+        },
+        "confidence": 0.3024
+      }
+    },
+    "inputTokens": 932,
+    "ms": 471,
+    "provider": "openrouter"
+  },
+  {
+    "key": "342010fd0bf8931dccf49e7ad21fa820",
+    "item": "tests-while-you-review",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.9023,
+          "leftover": 0.0562,
+          "other": 0.0415
+        },
+        "confidence": 0.7287
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.5637,
+          "command_waits": 0.0695,
+          "command_is_the_work": 0.2198,
+          "serves_the_user": 0.0288,
+          "work_reported_done": 0.0406,
+          "nothing_waits_for_it": 0.0675,
+          "cannot_tell": 0.0101
+        },
+        "confidence": 0.2744
+      }
+    },
+    "inputTokens": 926,
+    "ms": 417,
+    "provider": "openrouter"
+  },
+  {
+    "key": "3ae6e491140581b8a1e3cd3886d7928a",
+    "item": "flag-file-waiter-hours-later",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.9006,
+          "leftover": 0.0619,
+          "other": 0.0375
+        },
+        "confidence": 0.7246
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.366,
+          "command_waits": 0.4549,
+          "command_is_the_work": 0.0563,
+          "serves_the_user": 0.0278,
+          "work_reported_done": 0.0238,
+          "nothing_waits_for_it": 0.0609,
+          "cannot_tell": 0.0103
+        },
+        "confidence": 0.2408
+      }
+    },
+    "inputTokens": 937,
+    "ms": 1256,
+    "provider": "openrouter"
+  },
+  {
+    "key": "05bb12b97f6a5995918732c6d68109f2",
+    "item": "terraform-apply",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8738,
+          "leftover": 0.0828,
+          "other": 0.0434
+        },
+        "confidence": 0.6584
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.6972,
+          "command_waits": 0.047,
+          "command_is_the_work": 0.1139,
+          "serves_the_user": 0.0267,
+          "work_reported_done": 0.0277,
+          "nothing_waits_for_it": 0.0796,
+          "cannot_tell": 0.0079
+        },
+        "confidence": 0.4273
+      }
+    },
+    "inputTokens": 936,
+    "ms": 479,
+    "provider": "openrouter"
+  },
+  {
+    "key": "8d6f2ca6ea8e0a0d42b4224ea0d1fdc3",
+    "item": "kubectl-rollout-status-terse",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.8028,
+          "leftover": 0.1367,
+          "other": 0.0605
+        },
+        "confidence": 0.5002
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.1542,
+          "command_waits": 0.5743,
+          "command_is_the_work": 0.1067,
+          "serves_the_user": 0.0399,
+          "work_reported_done": 0.0526,
+          "nothing_waits_for_it": 0.0572,
+          "cannot_tell": 0.0151
+        },
+        "confidence": 0.2684
+      }
+    },
+    "inputTokens": 899,
+    "ms": 513,
+    "provider": "openrouter"
+  },
+  {
+    "key": "a4f7f662855bfbbf8c1919ed3f0704b9",
+    "item": "file-waiter-says-nothing",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.7691,
+          "leftover": 0.137,
+          "other": 0.0939
+        },
+        "confidence": 0.4286
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.1023,
+          "command_waits": 0.6963,
+          "command_is_the_work": 0.061,
+          "serves_the_user": 0.0582,
+          "work_reported_done": 0.0242,
+          "nothing_waits_for_it": 0.0432,
+          "cannot_tell": 0.0148
+        },
+        "confidence": 0.4226
+      }
+    },
+    "inputTokens": 897,
+    "ms": 545,
+    "provider": "openrouter"
+  },
+  {
+    "key": "aa9d11a51da7162c7c2dcf58a9563ab2",
+    "item": "old-typecheck-watch",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.2756,
+          "leftover": 0.6114,
+          "other": 0.113
+        },
+        "confidence": 0.1938
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0636,
+          "command_waits": 0.1903,
+          "command_is_the_work": 0.1303,
+          "serves_the_user": 0.2993,
+          "work_reported_done": 0.2228,
+          "nothing_waits_for_it": 0.0816,
+          "cannot_tell": 0.0121
+        },
+        "confidence": 0.0705
+      }
+    },
+    "inputTokens": 922,
+    "ms": 384,
+    "provider": "openrouter"
+  },
+  {
+    "key": "da4c5ae4288d621f2e48666476016cd3",
+    "item": "log-tail-left-for-the-user",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1211,
+          "leftover": 0.8007,
+          "other": 0.0782
+        },
+        "confidence": 0.4929
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0497,
+          "command_waits": 0.0988,
+          "command_is_the_work": 0.0699,
+          "serves_the_user": 0.6486,
+          "work_reported_done": 0.0291,
+          "nothing_waits_for_it": 0.0886,
+          "cannot_tell": 0.0153
+        },
+        "confidence": 0.3545
+      }
+    },
+    "inputTokens": 917,
+    "ms": 425,
+    "provider": "openrouter"
+  },
+  {
+    "key": "483f36b5921a28879c54c781cbd4cef2",
+    "item": "old-docker-compose-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.2759,
+          "leftover": 0.6139,
+          "other": 0.1102
+        },
+        "confidence": 0.1977
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "work_reported_done",
+        "probabilities": {
+          "says_waiting": 0.0711,
+          "command_waits": 0.0541,
+          "command_is_the_work": 0.1409,
+          "serves_the_user": 0.1398,
+          "work_reported_done": 0.4516,
+          "nothing_waits_for_it": 0.1312,
+          "cannot_tell": 0.0113
+        },
+        "confidence": 0.1467
+      }
+    },
+    "inputTokens": 921,
+    "ms": 457,
+    "provider": "openrouter"
+  },
+  {
+    "key": "1fbcbdad0cb468743e685336c544e81e",
+    "item": "tell-me-when-with-old-tunnel",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1479,
+          "leftover": 0.7672,
+          "other": 0.0849
+        },
+        "confidence": 0.4265
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "nothing_waits_for_it",
+        "probabilities": {
+          "says_waiting": 0.1468,
+          "command_waits": 0.1285,
+          "command_is_the_work": 0.059,
+          "serves_the_user": 0.2234,
+          "work_reported_done": 0.1394,
+          "nothing_waits_for_it": 0.2825,
+          "cannot_tell": 0.0204
+        },
+        "confidence": 0.0563
+      }
+    },
+    "inputTokens": 922,
+    "ms": 373,
+    "provider": "openrouter"
+  },
+  {
+    "key": "a02a0420742f5d38ecb2094bc8890a6f",
+    "item": "waiter-finished-old-watcher-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.3819,
+          "leftover": 0.5438,
+          "other": 0.0743
+        },
+        "confidence": 0.1707
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.144,
+          "command_waits": 0.2705,
+          "command_is_the_work": 0.0943,
+          "serves_the_user": 0.1628,
+          "work_reported_done": 0.2378,
+          "nothing_waits_for_it": 0.0817,
+          "cannot_tell": 0.0089
+        },
+        "confidence": 0.058
+      }
+    },
+    "inputTokens": 971,
+    "ms": 408,
+    "provider": "openrouter"
+  },
+  {
+    "key": "3af95fe5e7172fe15566a8ed8e6a1b7e",
+    "item": "preview-server-this-turn",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1592,
+          "leftover": 0.7652,
+          "other": 0.0756
+        },
+        "confidence": 0.4248
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0634,
+          "command_waits": 0.0491,
+          "command_is_the_work": 0.0737,
+          "serves_the_user": 0.4925,
+          "work_reported_done": 0.2113,
+          "nothing_waits_for_it": 0.0961,
+          "cannot_tell": 0.0139
+        },
+        "confidence": 0.1932
+      }
+    },
+    "inputTokens": 925,
+    "ms": 347,
+    "provider": "openrouter"
+  },
+  {
+    "key": "96d452cea6526b9eada44aa8a880713e",
+    "item": "old-ssh-tunnel",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.1357,
+          "leftover": 0.7267,
+          "other": 0.1376
+        },
+        "confidence": 0.3481
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "serves_the_user",
+        "probabilities": {
+          "says_waiting": 0.0512,
+          "command_waits": 0.1554,
+          "command_is_the_work": 0.1101,
+          "serves_the_user": 0.3108,
+          "work_reported_done": 0.2021,
+          "nothing_waits_for_it": 0.1411,
+          "cannot_tell": 0.0293
+        },
+        "confidence": 0.0633
+      }
+    },
+    "inputTokens": 940,
+    "ms": 424,
+    "provider": "openrouter"
+  },
+  {
+    "key": "d2e399dada97df692d589f5dea08d38a",
+    "item": "periodic-sync-loop-from-earlier",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "leftover",
+        "probabilities": {
+          "waiting": 0.3285,
+          "leftover": 0.5289,
+          "other": 0.1426
+        },
+        "confidence": 0.112
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_waits",
+        "probabilities": {
+          "says_waiting": 0.0431,
+          "command_waits": 0.4366,
+          "command_is_the_work": 0.1426,
+          "serves_the_user": 0.0749,
+          "work_reported_done": 0.2003,
+          "nothing_waits_for_it": 0.0829,
+          "cannot_tell": 0.0196
+        },
+        "confidence": 0.1434
+      }
+    },
+    "inputTokens": 927,
+    "ms": 409,
+    "provider": "openrouter"
+  },
+  {
+    "key": "f77e8eecfa20c83e427ab6642127856c",
+    "item": "nohup-backfill-old-server-up",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "waiting",
+        "probabilities": {
+          "waiting": 0.7136,
+          "leftover": 0.2406,
+          "other": 0.0458
+        },
+        "confidence": 0.3539
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "command_is_the_work",
+        "probabilities": {
+          "says_waiting": 0.2149,
+          "command_waits": 0.064,
+          "command_is_the_work": 0.3443,
+          "serves_the_user": 0.113,
+          "work_reported_done": 0.0384,
+          "nothing_waits_for_it": 0.2138,
+          "cannot_tell": 0.0116
+        },
+        "confidence": 0.1003
+      }
+    },
+    "inputTokens": 949,
+    "ms": 388,
+    "provider": "openrouter"
+  },
+  {
+    "key": "81612256d96b9d719cebe0ef9ff63809",
+    "item": "unread-command-nothing-said",
+    "answers": {
+      "standing": {
+        "type": "choice",
+        "choice": "other",
+        "probabilities": {
+          "waiting": 0.1181,
+          "leftover": 0.1869,
+          "other": 0.695
+        },
+        "confidence": 0.2979
+      },
+      "reason": {
+        "type": "choice",
+        "choice": "says_waiting",
+        "probabilities": {
+          "says_waiting": 0.2311,
+          "command_waits": 0.1849,
+          "command_is_the_work": 0.1589,
+          "serves_the_user": 0.075,
+          "work_reported_done": 0.0787,
+          "nothing_waits_for_it": 0.1122,
+          "cannot_tell": 0.1592
+        },
+        "confidence": 0.023
+      }
+    },
+    "inputTokens": 866,
+    "ms": 1236,
+    "provider": "openrouter"
+  }
+]
