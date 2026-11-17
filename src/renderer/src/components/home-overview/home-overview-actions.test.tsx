@@ -101,5 +101,8 @@ it('a PR row opens its worktree on its machine', () => {
 it('a session opens as its agent session tab from its row', () => {
   renderHome()
   fireEvent.click(within(panel('Sessions')).getByText('Nightly eval'))
-  expect(navigation.openSession).toHaveBeenCalledWith('Nightly eval', 'preview')
+  expect(navigation.openSession).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'Nightly eval' }),
+    'preview'
+  )
 })
