@@ -1,3 +1,7 @@
+import {
+  agentSessionTranscriptRows,
+  latestAgentSessionContextClearSequence
+} from '../../../shared/agent-session/agent-session-context-clear'
 import { compareAgentJournalItems } from '../../../shared/agent-session/journal/agent-session-journal-position'
 import { isRootAgentJournalItem } from '../../../shared/agent-session/journal/agent-session-journal-producer'
 import type {
@@ -23,6 +27,8 @@ type Settled = {
   /** The journal sequence everything in `messages` is at or before. */
   through: number
   head: number
+  /** The latest `/clear`: the conversation starts there, as the chat view shows it. 0 for none. */
+  floor: number
 }
 
 /** A row a running turn may still revise: a tool call or reasoning in progress, or the turn's newest row. */
@@ -38,8 +44,10 @@ function settled(
   snapshot: Pick<AgentJournalSnapshot, 'cursor' | 'items'>,
   working: boolean
 ): Settled {
-  const root = snapshot.items.filter((item) => isRootAgentJournalItem(item))
-  root.sort(compareAgentJournalItems)
+  const floor = latestAgentSessionContextClearSequence(snapshot.items)
+  const root = agentSessionTranscriptRows(snapshot.items, floor)
+    .filter((item) => isRootAgentJournalItem(item))
+    .sort(compareAgentJournalItems)
   const head = snapshot.cursor.sequence
   // Only a running turn holds rows back: a call left "running" by a crash must not hide what follows it.
   const open = working
@@ -51,7 +59,7 @@ function settled(
     // Rows of one write share a sequence, as split projections of one file record share an offset.
     return message ? [{ ...message, transcriptOffset: item.sequence }] : []
   })
-  return { messages, through, head }
+  return { messages, through, head, floor }
 }
 
 const sequenceOf = (message: NativeChatMessage): number => message.transcriptOffset ?? 0
@@ -85,9 +93,10 @@ export function journalSessionTranscript(
       }
     },
     async since(cursor) {
-      const { messages, through, head } = await current()
-      // A journal started over counts from the beginning, as a rewritten file is shorter.
-      if (cursor > head) {
+      const { messages, through, head, floor } = await current()
+      // A journal started over counts from the beginning, as a rewritten file is shorter; one
+      // cleared since the cursor no longer holds what the cursor stood on.
+      if (cursor > head || cursor < floor) {
         return { messages: [], cursor, shrank: true }
       }
       return {
