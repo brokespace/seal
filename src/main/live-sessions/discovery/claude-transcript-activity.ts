@@ -93,6 +93,19 @@ function notificationOf(record: TranscriptRecord): string | null {
   return NOTIFICATION.exec(text)?.[1] ?? null
 }
 
+/** How a background task ended, from the record that tells its parent: the call that launched it and what it handed back. */
+export function claudeTaskReport(
+  record: TranscriptRecord
+): { toolUseId: string; report: string } | null {
+  const notification = notificationOf(record)
+  if (!notification || !backgroundTaskEnd(tag(notification, 'status'))) {
+    return null
+  }
+  const toolUseId = tag(notification, 'tool-use-id')
+  const report = tag(notification, 'result') ?? tag(notification, 'summary')
+  return toolUseId && report ? { toolUseId, report } : null
+}
+
 function finish(
   state: ClaudeActivityState,
   ids: (string | null)[],

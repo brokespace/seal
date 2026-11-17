@@ -12,6 +12,7 @@ import {
 } from '../../live-sessions/transcripts/session-transcript'
 import {
   chatJournalScenario,
+  type ChatJournalAgent,
   type ChatJournalScenario
 } from './recap-scenario-chat-journal.test-fixture'
 import {
@@ -29,6 +30,13 @@ export const RECAP_SCENARIO_SESSION_IDS = [
   '7d0c1c0e-5a51-4f0a-9d0b-2a6f3c1e8b02'
 ]
 
+/** The agent of each surface that is a chat, read from its journal. */
+const CHAT_AGENTS: Partial<Record<RecapScenarioSurface, ChatJournalAgent>> = {
+  'chat-journal': 'claude',
+  'opencode-chat': 'opencode',
+  'copilot-chat': 'copilot'
+}
+
 /** A scenario's session as the registry would hold it on one surface, and where its conversation is written. */
 export function recapScenarioSession(
   surface: RecapScenarioSurface,
@@ -43,7 +51,9 @@ export function recapScenarioSession(
   const provider = surface === 'codex-cli' ? 'codex' : 'claude'
   const remote = surface === 'claude-ssh'
   const hostId = remote ? 'ssh-build-box' : 'local'
-  const journal = surface === 'chat-journal' ? chatJournalScenario() : null
+  const chatAgent = CHAT_AGENTS[surface]
+  const journal = chatAgent ? chatJournalScenario(chatAgent) : null
+  const agent = chatAgent ?? provider
   const transcriptPath = join(folder, 'session-1.jsonl')
   return {
     provider,
@@ -52,8 +62,8 @@ export function recapScenarioSession(
     fileConversation: (path, id) =>
       provider === 'codex' ? codexScenarioTranscript(path, id) : claudeScenarioTranscript(path, id),
     session: {
-      id: `${hostId}:${provider}:${RECAP_SCENARIO_SESSION_IDS[0]}`,
-      provider,
+      id: `${hostId}:${agent}:${RECAP_SCENARIO_SESSION_IDS[0]}`,
+      provider: agent,
       providerSessionId: RECAP_SCENARIO_SESSION_IDS[0],
       machine: {
         hostId,

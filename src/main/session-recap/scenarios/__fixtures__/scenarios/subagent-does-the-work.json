@@ -2,7 +2,7 @@
   "id": "subagent-does-the-work",
   "title": "The agent hands the job to a subagent and reports its result",
   "categories": ["subagent", "agent-surface"],
-  "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "surfaces": ["claude-cli", "codex-cli", "chat-journal", "opencode-chat"],
   "expected": "Only the user's request is listed as asked. What the parent told the subagent, and what the subagent told the parent, is neither a request nor an action for the user.",
   "steps": [
     {

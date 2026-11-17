@@ -1,4 +1,5 @@
 // Where a Codex rollout's newest turn stands, read from its last records.
+import { codexExecCellCalls } from '../transcripts/codex-exec-cell'
 import { codexUserMessageText } from './codex-user-message'
 import { replyAskOf } from './reply-ask'
 import { askedQuestion, oneLine, rec, str, timeOf } from './transcript-records'
@@ -45,12 +46,6 @@ const CODEX_CALL_OUTPUTS: ReadonlySet<string> = new Set([
   'custom_tool_call_output',
   'local_shell_call_output'
 ])
-/** `tools.exec_command({ cmd: "…" })` inside a code-mode `exec` cell (Codex 0.169+). */
-const EXEC_CELL_COMMAND = /\bexec_command\(\s*\{[^}]*?\bcmd:\s*(["'`])((?:\\.|(?!\1).)*)\1/s
-
-/** `tools.write_stdin({ session_id })` polls a command that outlived the `exec_command` that started it. */
-const EXEC_CELL_POLL = /\bwrite_stdin\(/
-
 type Turn = Pick<TranscriptTurn, 'phase' | 'detail' | 'pendingTool' | 'settled'> &
   Partial<Pick<TranscriptTurn, 'pendingKind' | 'pendingSince'>>
 
@@ -93,12 +88,13 @@ function pendingCall(
     return shellCall(commandText(rec(payload.action)?.command), record)
   }
   if (kind === 'custom_tool_call') {
-    const input = str(payload.input) ?? ''
-    const command = EXEC_CELL_COMMAND.exec(input)
-    if (name === 'exec' && command) {
-      return shellCall(command[2], record)
+    const cell = name === 'exec' ? codexExecCellCalls(str(payload.input) ?? '') : []
+    const command = cell.find((call) => call.tool === 'exec_command' && call.text !== null)
+    if (command) {
+      return shellCall(command.text, record)
     }
-    if (name === 'exec' && EXEC_CELL_POLL.test(input)) {
+    // `write_stdin` polls a command that outlived the `exec_command` that started it.
+    if (cell.some((call) => call.tool === 'write_stdin')) {
       return shellCall(null, record, 'shell-wait')
     }
     if (name === 'apply_patch') {

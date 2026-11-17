@@ -1,10 +1,11 @@
 // Runs one scenario through the recap as the app wires it: the real transcript readers, engine, scheduler, store, budget and utility-model service. Only the clock and the model's HTTP endpoint are the scenario's.
-import { copyFile, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { LiveSession } from '../../../shared/live-sessions/live-session-types'
 import { recapTurnHasEnded } from '../../../shared/session-recap/session-recap-request-display'
 import type { SessionRecapView } from '../../../shared/session-recap/session-recap-types'
+import { classifyLiveTranscriptRecord } from '../../live-sessions/transcripts/live-transcript-cleanup'
 import { SessionSummaryCache } from '../../session-summaries/session-summary-cache'
 import {
   createCloudflareWorkersAiProvider,
@@ -252,13 +253,13 @@ export async function runRecapScenario(
     } else if ('resume' in step) {
       const before = session.id
       if (!journal) {
-        // `--resume` carries the conversation into a new file under a new session id.
+        // A fork carries the conversation into a new file under a new session id, without the
+        // records that are not conversation: nothing in it sits at the offset it had.
         const next = join(folder, 'session-2.jsonl')
-        await copyFile(transcriptPath, next)
-        await writeFile(
-          next,
-          (await readFile(next, 'utf8')).replaceAll(SESSION_IDS[0], SESSION_IDS[1])
-        )
+        const carried = (await readFile(transcriptPath, 'utf8'))
+          .split('\n')
+          .filter((line) => classifyLiveTranscriptRecord(provider, line) !== 'hidden')
+        await writeFile(next, `${carried.join('\n')}\n`.replaceAll(SESSION_IDS[0], SESSION_IDS[1]))
         transcriptPath = next
         conversation = fileConversation(next, SESSION_IDS[1])
       }

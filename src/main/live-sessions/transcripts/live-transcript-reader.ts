@@ -13,6 +13,8 @@ import {
   cleanLiveTranscriptMessage,
   summarizedDivider
 } from './live-transcript-cleanup'
+import { claudeTaskReport } from '../discovery/claude-transcript-activity'
+import { timeOf, type TranscriptRecord } from '../discovery/transcript-records'
 import { codexRawReasoning, withReasoningSpan } from './live-transcript-reasoning'
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import { liveTranscriptImageUrl } from '../../../shared/live-sessions/live-transcript-image-ref'
@@ -22,6 +24,29 @@ import type { TranscriptLine, TranscriptSource } from './transcript-file-source'
 export type TranscriptDecodeOptions = {
   /** Reading a subagent's own transcript, where every record is a sidechain record. */
   subagent?: boolean
+}
+
+/** A background task's end reads as the late result of the call that launched it. */
+function claudeTaskReportMessage(record: TranscriptRecord, id: string): NativeChatMessage | null {
+  const report = claudeTaskReport(record)
+  return report
+    ? {
+        id,
+        role: 'tool',
+        blocks: [{ type: 'tool-result', callId: report.toolUseId, output: report.report }],
+        timestamp: timeOf(record),
+        source: 'transcript'
+      }
+    : null
+}
+
+/** What a live session reads in a record the shared decoders leave out. */
+function undecodedRecordMessage(
+  provider: LiveSessionProvider,
+  record: TranscriptRecord,
+  id: string
+): NativeChatMessage | null {
+  return provider === 'codex' ? codexRawReasoning(record, id) : claudeTaskReportMessage(record, id)
 }
 
 export function decodeTranscriptLines(
@@ -41,8 +66,7 @@ export function decodeTranscriptLines(
     const decoded =
       kind === 'summarized'
         ? summarizedDivider(id, null)
-        : (decode(text, id) ??
-          (record && provider === 'codex' ? codexRawReasoning(record, id) : null))
+        : (decode(text, id) ?? (record ? undecodedRecordMessage(provider, record, id) : null))
     return (decoded ? cleanLiveTranscriptMessage({ ...decoded, id }) : []).map((message) => {
       const row = record ? withReasoningSpan(message, record) : message
       return {

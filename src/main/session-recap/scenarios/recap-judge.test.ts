@@ -299,6 +299,9 @@ describe('the recap judged by its own code', () => {
         'question-tool-waiting',
         'second-ask-sent-while-the-agent-works'
       ])
+      // An OpenCode or Copilot chat names its tools its own way and gives the judge the same state.
+      expect(differs('opencode-chat')).toEqual([])
+      expect(differs('copilot-chat')).toEqual([])
       expect(ids(judged.filter((found) => found.sameState && !found.answered))).toEqual([])
 
       // Counted as the measurement counts: each scenario on its first surface, each state once.
