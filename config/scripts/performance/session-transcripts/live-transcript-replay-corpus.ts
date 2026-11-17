@@ -11,8 +11,13 @@ const MEDIA_TYPES: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.gif': 'image/gif'
 }
-const TURNS = 72
-const SESSION_ID = '7d1c3a52-8f0e-4c55-9a43-2b6f1e0d9c11'
+
+export type ImageHeavyTranscriptOptions = {
+  /** Each turn is a pasted screenshot, a screenshot read back by a tool, and their replies. */
+  turns?: number
+  sessionId?: string
+  cwd?: string
+}
 
 type Image = { name: string; mediaType: string; base64: string; bytes: number }
 
@@ -41,7 +46,13 @@ const PROSE = [
 ]
 
 /** Writes the transcript and returns its path. */
-export function writeImageHeavyClaudeTranscript(path: string): string {
+export function writeImageHeavyClaudeTranscript(
+  path: string,
+  options: ImageHeavyTranscriptOptions = {}
+): string {
+  const turns = options.turns ?? 72
+  const sessionId = options.sessionId ?? '7d1c3a52-8f0e-4c55-9a43-2b6f1e0d9c11'
+  const cwd = options.cwd ?? '/home/brian/app'
   const images = repoImages()
   const lines: string[] = []
   let sequence = 0
@@ -54,8 +65,8 @@ export function writeImageHeavyClaudeTranscript(path: string): string {
         parentUuid: parent,
         isSidechain: false,
         userType: 'external',
-        cwd: '/home/brian/app',
-        sessionId: SESSION_ID,
+        cwd,
+        sessionId,
         version: '2.1.0',
         gitBranch: 'main',
         uuid,
@@ -87,10 +98,10 @@ export function writeImageHeavyClaudeTranscript(path: string): string {
     source: { type: 'base64', media_type: image.mediaType, data: image.base64 }
   })
 
-  for (let turn = 0; turn < TURNS; turn++) {
+  for (let turn = 0; turn < turns; turn++) {
     const pasted = images[turn % images.length]
     const read = images[(turn * 7 + 3) % images.length]
-    const pastedPath = `/home/brian/shots/${turn}-${pasted.name}`
+    const pastedPath = `${cwd}/shots/${turn}-${pasted.name}`
     const prose = PROSE[turn % PROSE.length]
 
     user([
@@ -100,7 +111,7 @@ export function writeImageHeavyClaudeTranscript(path: string): string {
     user([{ type: 'text', text: `[Image: source: ${pastedPath}]` }], { isMeta: true })
 
     const toolUseId = `toolu_${turn.toString().padStart(6, '0')}`
-    const readPath = `/home/brian/app/screens/${turn}-${read.name}`
+    const readPath = `${cwd}/screens/${turn}-${read.name}`
     assistant([
       { type: 'text', text: `Let me look at the current render. ${prose}` },
       { type: 'tool_use', id: toolUseId, name: 'Read', input: { file_path: readPath } }
