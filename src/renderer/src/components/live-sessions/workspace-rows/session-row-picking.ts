@@ -6,7 +6,7 @@ import { SIDEBAR_SESSION_ROW } from './sidebar-session-row-dom'
 /** Where a Shift-pick range starts: one for the whole sidebar, so a range can span sections and workspaces. */
 let anchor: string | null = null
 
-/** The session rows the sidebar list shows, top to bottom: each workspace's and project's, then the ones after the list. */
+/** The session rows the sidebar list shows, top to bottom: each workspace's and each header's. */
 export function sidebarSessionRowIds(): string[] {
   const ids = new Set<string>()
   for (const row of document.querySelectorAll<HTMLElement>(SIDEBAR_SESSION_ROW)) {

@@ -18,14 +18,10 @@ import {
 } from '../../../../../../shared/execution-host'
 import { getActiveSidebarWorkspaceId } from '../../../../../../shared/workspace-scope'
 import { getPinnedWorktreeDisplayPolicy } from '../../../../../../shared/sidebar-list/row-types'
-import {
-  getProjectGroupHeaderKey,
-  isProjectSectionGroupKey
-} from '../../../../../../shared/sidebar-list/sections/group-keys'
 import { selectWorktreeListReviewCacheInputs } from './review-cache-inputs'
 import type { VirtualizedScrollAnchor } from '@/hooks/useVirtualizedScrollAnchor'
 import { SidebarWorktreeListDialogs } from '../rows/ProjectGroupDialogs'
-import { SidebarWorktreeListEmptyState } from './EmptyState'
+import { SidebarWorkspacesEmptyNotice, SidebarWorktreeListEmptyState } from './EmptyState'
 import { VirtualizedWorktreeViewport } from '../viewport/VirtualizedWorktreeViewport'
 import { markSidebarWorktreeActiveImmediately } from '../rows/option-dom'
 import { EMPTY_PROJECT_GROUPS } from '../viewport/viewport-props'
@@ -48,6 +44,7 @@ import { useProjectsCollapseShortcut } from '../controls/use-projects-collapse-s
 import { useProjectsCollapseAllAnnouncement } from '../controls/use-projects-collapse-all-announcement'
 import {
   areAllProjectsCollapsed,
+  countProjectSections,
   getRenderedProjectCollapseKeys,
   setAllProjectsCollapsed
 } from './project-collapse-all'
@@ -172,11 +169,7 @@ const WorktreeList = React.memo(function WorktreeList({
     [groupBy, rowModel.sectionRows]
   )
   const projectSectionCount = useMemo(
-    () =>
-      new Set([
-        ...rowModel.occurrencePlan.sections.map(({ key }) => key).filter(isProjectSectionGroupKey),
-        ...visibleScope.visibleProjectGroupsForRows.map(({ id }) => getProjectGroupHeaderKey(id))
-      ]).size,
+    () => countProjectSections(rowModel.occurrencePlan, visibleScope.visibleProjectGroupsForRows),
     [rowModel.occurrencePlan, visibleScope.visibleProjectGroupsForRows]
   )
   const allProjectsCollapsed = areAllProjectsCollapsed(
@@ -284,10 +277,10 @@ const WorktreeList = React.memo(function WorktreeList({
     },
     [announceProjectCollapse, toggleGroup]
   )
-  const listEmpty = rowModel.rows.length === 0 || filtersHideAllRows
-  const viewportRows = useProjectSessionRows(rowModel, visibleScope, listEmpty ? null : groupBy)
   // Clear Filters must outrank empty project headers when filtering hides every workspace.
-  if (listEmpty) {
+  const noWorkspaces = rowModel.rows.length === 0 || filtersHideAllRows
+  const viewportRows = useProjectSessionRows(rowModel, visibleScope, noWorkspaces ? null : groupBy)
+  if (viewportRows.length === 0) {
     return <SidebarWorktreeListEmptyState hasFilters={hasFilters} onClearFilters={clearFilters} />
   }
 
@@ -324,6 +317,12 @@ const WorktreeList = React.memo(function WorktreeList({
         // Wake moves status headers; preserve viewport identity across those changes.
         key={`group:${groupBy}:host:${filterState.visibleWorkspaceHostIds?.join(',') ?? 'all'}:lineage`}
         rows={viewportRows}
+        // Sessions that need no workspace are still listed; the notice follows them.
+        footer={
+          noWorkspaces ? (
+            <SidebarWorkspacesEmptyNotice hasFilters={hasFilters} onClearFilters={clearFilters} />
+          ) : null
+        }
         hostOptions={rowModel.hostOptions}
         occurrencePlan={rowModel.occurrencePlan}
         visibleProjectRepoIdsBySection={visibleProjectRepoIdsBySection}

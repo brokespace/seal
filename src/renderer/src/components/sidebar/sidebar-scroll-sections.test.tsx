@@ -6,22 +6,19 @@ import { SidebarScrollSections, SidebarScrollSectionSlots } from './sidebar-scro
 
 afterEach(cleanup)
 
-function UnassignedSection(): React.JSX.Element {
+function ProjectsHeader(): React.JSX.Element {
   const [opened, setOpened] = useState(0)
   return (
-    <button data-unassigned onClick={() => setOpened(opened + 1)}>
+    <button data-projects-header onClick={() => setOpened(opened + 1)}>
       {opened}
     </button>
   )
 }
 
-/** The sidebar shell: sections are owned outside the list, which renders them inside its scroll container. */
+/** The sidebar shell: the header is owned outside the list, which renders it inside its scroll container. */
 function Shell({ listKey }: { listKey: string }): React.JSX.Element {
   return (
-    <SidebarScrollSections
-      pinnedHeader={<span data-projects-header />}
-      trailing={<UnassignedSection />}
-    >
+    <SidebarScrollSections pinnedHeader={<ProjectsHeader />}>
       <div key={listKey} data-scroll-container>
         <SidebarScrollSectionSlots />
         <div data-project-rows />
@@ -34,32 +31,21 @@ function scrollContainers(): HTMLElement[] {
   return [...document.querySelectorAll<HTMLElement>('[data-scroll-container]')]
 }
 
-it('puts both sections in the one scroll container, the header ahead of the project rows and the trailing one after them', () => {
-  render(<Shell listKey="repo" />)
-  const [container, ...others] = scrollContainers()
-  expect(others).toEqual([])
-  const order = [
-    ...container.querySelectorAll<HTMLElement>(
-      '[data-unassigned], [data-projects-header], [data-project-rows]'
-    )
-  ].map((element) => Object.keys(element.dataset)[0])
-  expect(order).toEqual(['projectsHeader', 'projectRows', 'unassigned'])
-})
-
-it('keeps a section mounted when the list replaces its scroll container', () => {
+it('keeps the header mounted, ahead of the rows, when the list replaces its scroll container', () => {
   const view = render(<Shell listKey="repo" />)
-  const unassigned = document.querySelector<HTMLElement>('[data-unassigned]')!
-  fireEvent.click(unassigned)
+  const header = document.querySelector<HTMLElement>('[data-projects-header]')!
+  fireEvent.click(header)
   const firstContainer = scrollContainers()[0]
 
   view.rerender(<Shell listKey="none" />)
 
-  const [container] = scrollContainers()
+  const [container, ...others] = scrollContainers()
+  expect(others).toEqual([])
   expect(container).not.toBe(firstContainer)
   const order = [
-    ...container.querySelectorAll<HTMLElement>('[data-unassigned], [data-project-rows]')
+    ...container.querySelectorAll<HTMLElement>('[data-projects-header], [data-project-rows]')
   ].map((element) => Object.keys(element.dataset)[0])
-  expect(order).toEqual(['projectRows', 'unassigned'])
-  expect(container.querySelector('[data-unassigned]')).toBe(unassigned)
-  expect(unassigned.textContent).toBe('1')
+  expect(order).toEqual(['projectsHeader', 'projectRows'])
+  expect(container.querySelector('[data-projects-header]')).toBe(header)
+  expect(header.textContent).toBe('1')
 })

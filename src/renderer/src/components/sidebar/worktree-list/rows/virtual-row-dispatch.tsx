@@ -173,10 +173,8 @@ export function renderWorktreeVirtualRow(
   }
 
   if (row.type === 'project-sessions') {
-    const header = ctx.renderRows[vItem.index - 1]
     return renderProjectSessionsVirtualRow({
       row,
-      project: header?.type === 'header' ? (header.label ?? null) : null,
       vItem,
       measureVirtualRowElement: ctx.measureVirtualRowElement
     })

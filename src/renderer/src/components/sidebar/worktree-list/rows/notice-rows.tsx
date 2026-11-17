@@ -118,8 +118,6 @@ export function renderNewExternalWorktreesInboxVirtualRow(args: {
 
 export function renderProjectSessionsVirtualRow(args: {
   row: Extract<Row, { type: 'project-sessions' }>
-  /** The header the row sits under, as it is labelled. */
-  project: string | null
   vItem: VirtualItem
   measureVirtualRowElement: (element: HTMLDivElement | null) => void
 }): React.JSX.Element {
@@ -131,7 +129,7 @@ export function renderProjectSessionsVirtualRow(args: {
     >
       <ProjectHeaderSessionRows
         headerKey={args.row.headerKey}
-        project={args.project}
+        project={args.row.project}
         groupDepth={args.row.groupDepth}
       />
     </NoticeRowFrame>

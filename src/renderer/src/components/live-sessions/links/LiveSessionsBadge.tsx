@@ -34,7 +34,8 @@ export function LiveSessionsBadge({
   projectId,
   headerKey
 }: {
-  projectId: string
+  /** Absent on a header the sessions brought themselves: the list has no workspace of that project. */
+  projectId?: string
   headerKey: string
 }): React.JSX.Element | null {
   const t = useTranslate()
@@ -45,7 +46,7 @@ export function LiveSessionsBadge({
   // A click's ring fades by itself: the list scrolling the badge from under the pointer must not end it.
   const ringIsFromClick = useRef(false)
   const badge = useMemo(() => {
-    const onCards = new Set(byProject.get(projectId)?.sessionIds)
+    const onCards = new Set(projectId ? byProject.get(projectId)?.sessionIds : undefined)
     const underHeader = new Set(byHeader.get(headerKey)?.map((session) => session.id))
     return liveSessionsBadge(
       sessions.filter(

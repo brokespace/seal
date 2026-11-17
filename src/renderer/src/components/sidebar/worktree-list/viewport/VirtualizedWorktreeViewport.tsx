@@ -413,6 +413,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
               : null
           })}
         </div>
+        {props.footer}
       </div>
       {showScrollToTop ? (
         <WorktreeListScrollToTopButton

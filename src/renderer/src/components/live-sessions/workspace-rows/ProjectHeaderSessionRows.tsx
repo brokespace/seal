@@ -1,15 +1,14 @@
 import React from 'react'
 import { getProjectGroupHeaderPaddingLeft } from '@/components/sidebar/worktree-list/rows/indentation'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { headerSessionGroup } from '../links/sidebar-session-groups'
 import { useProjectHeaderSessions } from '../links/use-workspace-sessions'
-import { sessionGroupFinishedOpenKey } from './session-fold-keys'
+import { headerSessionGroup, sessionGroupFinishedOpenKey } from './session-fold-keys'
 import { SESSION_GROUP_ATTRIBUTE } from './sidebar-session-row-dom'
 import { useSessionRowList, WorkspaceSessionRowList } from './WorkspaceSessionRows'
 
 type Props = {
   headerKey: string
-  /** The project header's label, which its rows need not repeat. */
+  /** The project the header names, which its rows need not repeat. */
   project: string | null
   groupDepth: number
 }
@@ -37,7 +36,7 @@ const ProjectHeaderSessionRowsBody = React.memo(function ProjectHeaderSessionRow
   )
 })
 
-/** A project's sessions that none of its workspaces holds, as rows right under its header. */
+/** The sessions no workspace holds, as rows right under their header: a project's own, or the header they brought. */
 export const ProjectHeaderSessionRows = React.memo(function ProjectHeaderSessionRows(
   props: Props
 ): React.JSX.Element | null {

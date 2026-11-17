@@ -41,6 +41,8 @@ export type VirtualizedWorktreeViewportProps = {
   occurrencePlan?: WorktreeOccurrencePlan<Worktree>
   visibleProjectRepoIdsBySection?: ReadonlyMap<string, ReadonlySet<string>>
   rows: HostSectionRow[]
+  /** Follows the last row in the scroll container. */
+  footer?: React.ReactNode
   hostOptions?: readonly ExecutionHostRegistryEntry[]
   activeWorktreeId: string | null
   activeWorkspaceExecutionHostId: ExecutionHostId | null

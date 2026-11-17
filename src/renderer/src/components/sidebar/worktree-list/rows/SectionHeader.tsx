@@ -82,8 +82,10 @@ export function renderWorktreeSectionHeaderRow(
     isProjectGroupHeader && !row.repo && typeof row.projectGroup?.id === 'string'
       ? row.projectGroup.id
       : undefined
+  // A header the sessions brought reads and folds as a project's does.
+  const isProjectHeader = isRepoHeader || isProjectGroupHeader || row.sessionsOnly === true
   const liveSessionsProjectId =
-    ctx.groupBy === 'repo' ? (row.repo?.id ?? projectGroupIdForHeader) : null
+    ctx.groupBy === 'repo' ? (row.repo?.id ?? projectGroupIdForHeader) : undefined
   const projectGroupDragIdForHeader =
     row.repeated && !usesRootProjectDrag ? undefined : projectGroupIdForHeader
   // Why: rename/delete must route to the host that owns this row, not to whichever host has focus.
@@ -176,8 +178,7 @@ export function renderWorktreeSectionHeaderRow(
       : toggleHeader(event)
   // Why: repo/project/status/pinned share compact section chrome; flat "All" stays a simple label.
   const showHeaderCollapseAffordance =
-    row.count > 0 &&
-    (isRepoHeader || isProjectGroupHeader || headerWorkspaceStatus !== null || isPinnedHeader)
+    row.count > 0 && (isProjectHeader || headerWorkspaceStatus !== null || isPinnedHeader)
   const foldsOnClick = showHeaderCollapseAffordance && !overviewRepo
   const fold = { label, collapsed: isHeaderCollapsed, onToggle: toggleHeader }
   return (
@@ -263,10 +264,9 @@ export function renderWorktreeSectionHeaderRow(
           )}
           style={{
             // Why: non-project headers like "All" are flat-list labels; don't reserve project hierarchy indent.
-            paddingLeft:
-              isRepoHeader || isProjectGroupHeader
-                ? getProjectGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
-                : WORKTREE_SECTION_HEADER_PADDING_LEFT
+            paddingLeft: isProjectHeader
+              ? getProjectGroupHeaderPaddingLeft(row.projectGroupDepth ?? 0)
+              : WORKTREE_SECTION_HEADER_PADDING_LEFT
           }}
           onDragOver={
             isPinnedHeader
@@ -351,7 +351,7 @@ export function renderWorktreeSectionHeaderRow(
                 <RepoForkIndicator upstream={row.repo?.upstream} />
                 <FolderPathStatusIndicator status={projectGroupPathStatus} />
                 {isRepoHeader ? <RepoScanUnavailableIndicator repo={row.repo!} /> : null}
-                {liveSessionsProjectId ? (
+                {liveSessionsProjectId || row.sessionsOnly ? (
                   <LiveSessionsBadge projectId={liveSessionsProjectId} headerKey={row.key} />
                 ) : null}
               </div>

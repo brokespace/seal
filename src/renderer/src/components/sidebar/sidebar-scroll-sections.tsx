@@ -8,8 +8,6 @@ export type SidebarScrollSectionHosts = {
   leading: HTMLElement
   /** The Projects header, pinned while its rows scroll under it. */
   pinnedHeader: HTMLElement
-  /** Sections that scroll after the Projects rows. */
-  trailing: HTMLElement
 }
 
 // -top-px covers the scroll container's 1px top padding, where rows would otherwise show through.
@@ -27,48 +25,31 @@ export function useSidebarScrollSectionHosts(): SidebarScrollSectionHosts | unde
 /** Owns the sections; the list in `children` shows them in its scroll container through SidebarScrollSectionSlots. */
 export function SidebarScrollSections({
   pinnedHeader,
-  trailing,
   children
 }: {
   pinnedHeader: React.ReactNode
-  trailing: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
   // Why stable nodes: regrouping remounts the scroll root, and sections rendered into it would lose their menus and state.
-  const [hosts] = useState<SidebarScrollSectionHosts>(() => {
-    const trailingHost = document.createElement('div')
-    // Cancels the list's own gutter, as the header's slot does.
-    trailingHost.className = '-ml-1 -mr-1 shrink-0'
-    return {
-      leading: document.createElement('div'),
-      pinnedHeader: document.createElement('div'),
-      trailing: trailingHost
-    }
-  })
+  const [hosts] = useState<SidebarScrollSectionHosts>(() => ({
+    leading: document.createElement('div'),
+    pinnedHeader: document.createElement('div')
+  }))
   return (
     <SidebarScrollSectionHostsContext.Provider value={hosts}>
       {createPortal(pinnedHeader, hosts.pinnedHeader)}
-      {createPortal(trailing, hosts.trailing)}
       {children}
     </SidebarScrollSectionHostsContext.Provider>
   )
 }
 
-/** Renders inside the scroll container, ahead of its rows; the trailing sections follow the last of them. */
+/** Renders inside the scroll container, ahead of its rows. */
 export function SidebarScrollSectionSlots(): React.JSX.Element | null {
   const hosts = useSidebarScrollSectionHosts()
   const adopt = useCallback(
     (slot: HTMLDivElement | null) => {
-      if (!slot || !hosts) {
-        return
-      }
-      if (hosts.pinnedHeader.parentElement !== slot) {
+      if (slot && hosts && hosts.pinnedHeader.parentElement !== slot) {
         slot.appendChild(hosts.pinnedHeader)
-      }
-      // Why by hand: the list renders one slot, ahead of its rows, and these sections go after everything it renders.
-      const scroller = slot.parentElement
-      if (scroller && hosts.trailing.parentElement !== scroller) {
-        scroller.appendChild(hosts.trailing)
       }
     },
     [hosts]

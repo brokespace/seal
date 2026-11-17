@@ -6,12 +6,19 @@ export function isSessionFoldKey(key: string): boolean {
   return key.startsWith(SESSION_FOLD_KEY_PREFIX)
 }
 
-/** A group of sessions no workspace card holds: a project's own (`header:<key>`, `project:<name>`) or the ones with no folder. */
+/** The sessions under one header: a project's own (`header:<key>`, `project:<name>`) or the ones with no folder. */
 export const UNASSIGNED_SESSION_GROUP = 'unassigned'
 
-/** Present while that group is folded. A project's own sessions under its header fold with the header instead. */
-export function sessionGroupCollapseKey(group: string): string {
+/** The key of the header the sessions bring for such a group, which also folds it. A project of the list keeps its own. */
+export function sessionsHeaderKey(group: string): string {
   return `${SESSION_FOLD_KEY_PREFIX}${group}`
+}
+
+/** The group of the sessions under a header: its own for one they brought, `header:<key>` under a project of the list. */
+export function headerSessionGroup(headerKey: string): string {
+  return isSessionFoldKey(headerKey)
+    ? headerKey.slice(SESSION_FOLD_KEY_PREFIX.length)
+    : `header:${headerKey}`
 }
 
 /** Present while that group's ended sessions are unfolded: they start folded away. */
