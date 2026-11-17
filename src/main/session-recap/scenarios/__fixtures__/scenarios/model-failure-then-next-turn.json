@@ -7,7 +7,7 @@
   "steps": [
     {
       "fault": {
-        "kind": "timeout",
+        "kind": "no-text",
         "model": "primary",
         "times": 1
       }

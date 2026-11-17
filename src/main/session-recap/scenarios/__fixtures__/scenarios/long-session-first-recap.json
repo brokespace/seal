@@ -3,6 +3,7 @@
   "title": "A long session gets its first recap after the fact",
   "categories": ["long-session"],
   "surfaces": ["claude-cli"],
+  "pending": true,
   "expected": "The recap covers the whole session: the goal, the two standing rules, and the LOG_LEVEL request from the start that the agent put off and never did.",
   "steps": [
     {

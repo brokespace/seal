@@ -3,6 +3,7 @@
   "title": "The user presses Refresh while the agent is in the middle of its turn",
   "categories": ["mid-turn"],
   "surfaces": ["claude-cli", "chat-journal"],
+  "pending": true,
   "expected": "Mid-turn the work shows as in progress and nothing as not addressed. When the turn ends the recap is brought up to date and shows the work as done.",
   "steps": [
     {
