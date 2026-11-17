@@ -1,5 +1,3 @@
-import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
-import type { LiveTranscriptPage } from '../../shared/live-sessions/live-session-types'
 import {
   emptySessionRecap,
   type SessionRecap
@@ -10,35 +8,24 @@ import {
   type RecapPassKind,
   type SessionRecapBudget
 } from './session-recap-budget'
-import { parseRecapDelta, type RecapDeltaResult } from './session-recap-delta'
 import type { RecapRequestsStep } from './session-recap-judge'
+import { addRecapReferences, carryRecapMarks } from './session-recap-merge'
+import { readRecapChunks } from './session-recap-model-read'
 import {
-  addRecapReferences,
-  applyRecapDelta,
-  carryRecapMarks,
-  recapFallbackDelta
-} from './session-recap-merge'
-import { recapPrompt, recapRepairRequest } from './session-recap-prompt'
+  RECAP_CHUNK_CHARS,
+  RECAP_MAX_CHUNKS,
+  readForRecap,
+  recapAnchorAfter,
+  type RecapReading,
+  type RecapTranscript
+} from './session-recap-reading'
+import { recapWithHostRequests } from './session-recap-request-sources'
 import type { SessionRecapStore } from './session-recap-store'
 import { chunkRecapEntries, digestTranscript } from './session-recap-transcript'
 
-/** About 6,900 tokens of conversation per request. */
-export const RECAP_CHUNK_CHARS = 24_000
-/** A first pass nobody asked for reads one chunk; one the user asked for, three. */
-const AUTO_FIRST_CHUNKS = 1
-const MAX_CHUNKS = 3
-const BACKFILL_PAGE_MESSAGES = 200
-const MAX_BACKFILL_PAGES = 8
-
-export type RecapTranscript = {
-  /** The newest `limit` messages before `before`; the file's end when null. */
-  page(sessionId: string, before: number | null, limit: number): Promise<LiveTranscriptPage>
-  /** Everything from `cursor` on. */
-  since(
-    sessionId: string,
-    cursor: number
-  ): Promise<{ messages: NativeChatMessage[]; cursor: number; shrank: boolean }>
-}
+/** Passes in a row whose replies could not be read before the host writes the requests down itself. */
+const UNREAD_PASSES_BEFORE_HOST_REQUESTS = 2
+const UNREADABLE = "The model's reply could not be read"
 
 export type RecapPassOutcome =
   /** The recap changed. */
@@ -48,14 +35,26 @@ export type RecapPassOutcome =
   /** The transcript holds nothing to recap. */
   | 'empty'
   | 'over-budget'
+  /**
+   * No model's reply could be read for the second pass running. The recap holds the requests the
+   * host reads itself, and the cursor stays where it was so the model reads the span once it can.
+   */
+  | 'degraded'
+  /** Nothing was written and nothing marked as read: the provider failed, or its reply was unusable. */
   | 'failed'
 
 export type SessionRecapEngineDeps = {
   transcript: RecapTranscript
+  /** `avoid` names models whose reply to this request could not be used: another one is asked. */
   complete: (
     request: UtilityModelRequest,
-    signal: AbortSignal
-  ) => Promise<{ text: string; model: string }>
+    signal: AbortSignal,
+    options?: { avoid?: readonly string[] }
+  ) => Promise<{ text: string; model: string; provider?: string }>
+  /** The provider the read step runs on now, whose daily tally it is counted against. */
+  provider?: () => string | undefined
+  /** The session's turn is over. Absent, only a pass made while it works reads an unfinished turn. */
+  turnEnded?: (sessionId: string) => boolean
   store: SessionRecapStore
   budget: SessionRecapBudget
   /** Where each request stands, settled after the read step. Absent on a host with no judge. */
@@ -67,13 +66,6 @@ export type SessionRecapEngineDeps = {
   log?: (message: string, error?: unknown) => void
 }
 
-type Reading = {
-  base: SessionRecap | null
-  messages: NativeChatMessage[]
-  coveredFrom: number
-  coveredTo: number
-}
-
 /**
  * Brings one session's recap up to date: the recap so far plus what the transcript gained since,
  * never the transcript from its start. One pass at a time across all sessions.
@@ -81,6 +73,8 @@ type Reading = {
 export class SessionRecapEngine {
   private readonly running = new Map<string, Promise<RecapPassOutcome>>()
   private readonly failures = new Map<string, string>()
+  /** Passes in a row, by session, that got replies and could read none of them. */
+  private readonly unread = new Map<string, number>()
   private readonly abort = new AbortController()
   private queue: Promise<unknown> = Promise.resolve()
 
@@ -90,13 +84,14 @@ export class SessionRecapEngine {
     return this.running.has(sessionId)
   }
 
-  /** Why the last pass for this session could not reach the provider; null once one does. */
+  /** Why the last pass for this session wrote nothing the model read; null once one does. */
   failure(sessionId: string): string | null {
     return this.failures.get(sessionId) ?? null
   }
 
   forget(sessionId: string): void {
     this.failures.delete(sessionId)
+    this.unread.delete(sessionId)
   }
 
   dispose(): void {
@@ -152,7 +147,11 @@ export class SessionRecapEngine {
     const { store, budget } = this.deps
     await store.load()
     const stored = store.get(sessionId)
-    const reading = await this.read(sessionId, rebuild ? null : (stored?.recap ?? null))
+    const reading = await readForRecap(
+      this.deps.transcript,
+      sessionId,
+      rebuild ? null : (stored?.recap ?? null)
+    )
     const digest = digestTranscript(reading.messages)
     const { base } = reading
     if (digest.entries.length === 0) {
@@ -162,15 +161,23 @@ export class SessionRecapEngine {
       // Tool calls alone moved the transcript: the cursor and the files touched change, and so
       // may where a request stands, since work is done with tools and a turn can end without a word.
       const read = addRecapReferences(
-        { ...base, coveredTo: reading.coveredTo },
+        {
+          ...base,
+          coveredTo: reading.coveredTo,
+          ...recapAnchorAfter(sessionId, base.anchor, reading.messages)
+        },
         digest.references,
         this.now()
       )
-      const next = await this.withRequests(sessionId, kind, base, read, reading.messages)
+      const next = await this.withRequests(sessionId, kind, base, read, reading)
       const changed =
         next.references.length !== base.references.length ||
         JSON.stringify(next.requests) !== JSON.stringify(base.requests)
-      if (changed || next.coveredTo !== base.coveredTo) {
+      const moved =
+        next.coveredTo !== base.coveredTo ||
+        next.anchor?.sessionId !== base.anchor?.sessionId ||
+        next.anchor?.at !== base.anchor?.at
+      if (changed || moved) {
         store.setRecap(
           sessionId,
           changed ? { ...next, updatedAt: this.now() } : next,
@@ -182,57 +189,85 @@ export class SessionRecapEngine {
     if (digest.entries.reduce((sum, entry) => sum + entry.text.length, 0) < minProseChars) {
       return 'current'
     }
-    if (!budget.allows(kind)) {
+    if (!budget.allows(kind, this.deps.provider?.())) {
       return 'over-budget'
     }
-    const maxChunks = !base && kind !== 'asked' ? AUTO_FIRST_CHUNKS : MAX_CHUNKS
-    const { chunks, dropped } = chunkRecapEntries(digest.entries, RECAP_CHUNK_CHARS, maxChunks)
+    const { chunks, dropped } = chunkRecapEntries(
+      digest.entries,
+      RECAP_CHUNK_CHARS,
+      RECAP_MAX_CHUNKS
+    )
     // A rebuilt recap keeps counting ids, so none it hands out was ever another item's.
-    let recap: SessionRecap = base ?? {
+    const start: SessionRecap = base ?? {
       ...emptySessionRecap(this.now()),
       nextItemId: stored?.recap?.nextItemId ?? 1
-    }
-    let degraded = false
-    for (const chunk of chunks) {
-      const prompt = recapPrompt(
-        recap,
-        chunk,
-        this.deps.firstPrompt(sessionId),
-        kind === 'working' && chunk === chunks.at(-1)
-      )
-      const parsed = await this.ask(prompt.request)
-      degraded ||= !parsed.ok
-      recap = applyRecapDelta(
-        recap,
-        parsed.ok ? parsed.delta : recapFallbackDelta(chunk, prompt.refOf),
-        { now: this.now(), refs: prompt.refs }
-      )
     }
     const firstKept = dropped > 0 ? chunks[0]?.[0]?.messageId : undefined
     const firstKeptOffset = reading.messages.find(
       (message) => message.id === firstKept
     )?.transcriptOffset
+    const coveredFrom = base ? base.coveredFrom : (firstKeptOffset ?? reading.coveredFrom)
+    const stillWorking = this.deps.turnEnded ? !this.deps.turnEnded(sessionId) : kind === 'working'
+    const written = await readRecapChunks(start, chunks, {
+      firstPrompt: this.deps.firstPrompt(sessionId),
+      stillWorking,
+      now: () => this.now(),
+      complete: (request, avoid) => this.complete(request, avoid)
+    })
+    if (written === null) {
+      this.failures.set(sessionId, UNREADABLE)
+      // A rebuild that cannot be read leaves the recap it would have replaced.
+      if (rebuild) {
+        return 'failed'
+      }
+      const unread = (this.unread.get(sessionId) ?? 0) + 1
+      this.unread.set(sessionId, unread)
+      if (unread < UNREAD_PASSES_BEFORE_HOST_REQUESTS) {
+        return 'failed'
+      }
+      // The cursor and its anchor stay put: the span is the model's to read once it answers again.
+      const held: SessionRecap = {
+        ...addRecapReferences(
+          recapWithHostRequests(start, chunks, this.now()),
+          digest.references,
+          this.now()
+        ),
+        coveredFrom,
+        coveredTo: base ? base.coveredTo : reading.coveredFrom,
+        updatedAt: this.now(),
+        degraded: true
+      }
+      this.save(sessionId, stored, await this.withRequests(sessionId, kind, base, held, reading))
+      return 'degraded'
+    }
     const read: SessionRecap = {
-      ...addRecapReferences(recap, digest.references, this.now()),
-      coveredFrom: base ? base.coveredFrom : (firstKeptOffset ?? reading.coveredFrom),
+      ...addRecapReferences(written, digest.references, this.now()),
+      coveredFrom,
       coveredTo: reading.coveredTo,
       updatedAt: this.now(),
-      degraded: degraded ? true : undefined
+      degraded: undefined,
+      ...recapAnchorAfter(sessionId, base?.anchor, reading.messages)
     }
-    const next = await this.withRequests(
+    this.save(
       sessionId,
-      kind,
-      stored?.recap ?? null,
-      read,
-      reading.messages
-    )
-    store.setRecap(
-      sessionId,
-      next,
-      carryRecapMarks(stored?.marks ?? {}, stored?.recap ?? null, next)
+      stored,
+      await this.withRequests(sessionId, kind, stored?.recap ?? null, read, reading)
     )
     this.failures.delete(sessionId)
+    this.unread.delete(sessionId)
     return 'updated'
+  }
+
+  private save(
+    sessionId: string,
+    stored: ReturnType<SessionRecapStore['get']>,
+    recap: SessionRecap
+  ): void {
+    this.deps.store.setRecap(
+      sessionId,
+      recap,
+      carryRecapMarks(stored?.marks ?? {}, stored?.recap ?? null, recap)
+    )
   }
 
   /** The recap with its requests settled; one made without the step keeps none. */
@@ -241,7 +276,7 @@ export class SessionRecapEngine {
     kind: RecapPassKind,
     before: SessionRecap | null,
     recap: SessionRecap,
-    messages: readonly NativeChatMessage[]
+    reading: RecapReading
   ): Promise<SessionRecap> {
     if (!this.deps.requests) {
       return recap
@@ -251,63 +286,27 @@ export class SessionRecapEngine {
       kind,
       before: before?.requests ?? [],
       asked: recap.asked,
-      messages,
-      coveredTo: recap.coveredTo,
+      messages: reading.messages,
+      // How far the judge read. A recap whose cursor is held short of it shows no "Not addressed".
+      coveredTo: reading.coveredTo,
       signal: this.abort.signal
     })
     return { ...recap, requests }
   }
 
-  /** What this pass has to read: the transcript since the recap, or its recent end for a first one. */
-  private async read(sessionId: string, base: SessionRecap | null): Promise<Reading> {
-    const { transcript } = this.deps
-    if (base) {
-      const read = await transcript.since(sessionId, base.coveredTo)
-      if (!read.shrank) {
-        return {
-          base,
-          messages: read.messages,
-          coveredFrom: base.coveredFrom,
-          coveredTo: read.cursor
-        }
-      }
-    }
-    let messages: NativeChatMessage[] = []
-    let before: number | null = null
-    let coveredTo = 0
-    let coveredFrom = 0
-    for (let pages = 0; pages < MAX_BACKFILL_PAGES; pages++) {
-      const page = await transcript.page(sessionId, before, BACKFILL_PAGE_MESSAGES)
-      if (before === null) {
-        coveredTo = page.cursor
-      }
-      messages = [...page.messages, ...messages]
-      coveredFrom = page.start
-      const prose = digestTranscript(messages).entries.reduce(
-        (sum, entry) => sum + entry.text.length,
-        0
-      )
-      if (!page.more || page.messages.length === 0 || prose >= RECAP_CHUNK_CHARS * MAX_CHUNKS) {
-        break
-      }
-      before = page.start
-    }
-    return { base: null, messages, coveredFrom, coveredTo }
-  }
-
-  /** The model's delta for one request, asked again once when its reply cannot be read. */
-  private async ask(request: UtilityModelRequest): Promise<RecapDeltaResult> {
-    const first = await this.complete(request)
-    const parsed = parseRecapDelta(first)
-    if (parsed.ok) {
-      return parsed
-    }
-    return parseRecapDelta(await this.complete(recapRepairRequest(request, first, parsed.error)))
-  }
-
-  private async complete(request: UtilityModelRequest): Promise<string> {
-    const reply = await this.deps.complete(request, this.abort.signal)
-    this.deps.budget.spend(estimateRecapNeurons(reply.model, request, reply.text))
-    return reply.text
+  private async complete(
+    request: UtilityModelRequest,
+    avoid?: readonly string[]
+  ): Promise<{ text: string; model: string }> {
+    const reply = await this.deps.complete(
+      request,
+      this.abort.signal,
+      avoid ? { avoid } : undefined
+    )
+    this.deps.budget.spend(
+      estimateRecapNeurons(reply.model, request, reply.text),
+      reply.provider ?? this.deps.provider?.()
+    )
+    return reply
   }
 }

@@ -2,7 +2,10 @@ import {
   CLOUDFLARE_AI_DEFAULT_FALLBACK_MODEL,
   CLOUDFLARE_AI_DEFAULT_MODEL
 } from '../../shared/utility-model/utility-model-types'
-import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
+import type {
+  UtilityModelProviderId,
+  UtilityModelRequest
+} from '../../shared/utility-model/utility-model-types'
 import { LiveSessionJsonStore } from '../live-sessions/live-session-json-store'
 
 /** Neurons per 1,000 tokens, from Workers AI's pricing table. */
@@ -17,12 +20,13 @@ const UNKNOWN_RATE = { input: 9.091, output: 36.4 }
 const CHARS_PER_TOKEN = 3.5
 
 /**
- * Of the 10,000 free neurons a day: where passes on sessions still at work stop, then passes on
- * stops nobody asked for, then all. Each tier leaves room for the one above it.
+ * Where a provider's recap spending stops for the day (UTC): passes on sessions still at work first,
+ * then passes at a turn's end, then all. A pass runs at every turn end, so the tiers sit above
+ * Workers AI's 10,000 free neurons: the last one is about $0.22 a day past the allowance.
  */
-export const RECAP_WORKING_DAILY_NEURONS = 3000
-export const RECAP_AUTO_DAILY_NEURONS = 6000
-export const RECAP_ASKED_DAILY_NEURONS = 9000
+export const RECAP_WORKING_DAILY_NEURONS = 5000
+export const RECAP_AUTO_DAILY_NEURONS = 20_000
+export const RECAP_ASKED_DAILY_NEURONS = 30_000
 
 /** `working` runs while a session works; `auto` when it stops; `asked` is the user opening or refreshing. */
 export type RecapPassKind = 'working' | 'auto' | 'asked'
@@ -33,7 +37,10 @@ const DAILY_LIMITS: Record<RecapPassKind, number> = {
   asked: RECAP_ASKED_DAILY_NEURONS
 }
 
-type BudgetDay = { day: string; neurons: number }
+/** The judge's provider, and the one a tally saved before tallies were per provider belongs to. */
+export const RECAP_JUDGE_PROVIDER: UtilityModelProviderId = 'cloudflare-workers-ai'
+
+type BudgetDay = { day: string; neurons: number; provider?: string }
 
 function isBudgetDay(value: unknown): value is BudgetDay {
   return (
@@ -43,7 +50,8 @@ function isBudgetDay(value: unknown): value is BudgetDay {
     typeof value.day === 'string' &&
     'neurons' in value &&
     typeof value.neurons === 'number' &&
-    Number.isFinite(value.neurons)
+    Number.isFinite(value.neurons) &&
+    (!('provider' in value) || typeof value.provider === 'string')
   )
 }
 
@@ -75,10 +83,13 @@ export function estimateRecapNeurons(
   )
 }
 
-/** This host's own tally of what recaps cost today (UTC, as Cloudflare counts the allocation). */
+/**
+ * This host's own tally of what recaps cost today (UTC, as Cloudflare counts the allocation), one
+ * per provider: the read step on another provider leaves the judge's allowance alone.
+ */
 export class SessionRecapBudget {
   private readonly file: LiveSessionJsonStore<BudgetDay>
-  private current: BudgetDay = { day: '', neurons: 0 }
+  private readonly spent = new Map<string, BudgetDay>()
 
   constructor(
     path: string,
@@ -89,36 +100,41 @@ export class SessionRecapBudget {
   }
 
   async load(): Promise<void> {
-    const [saved] = await this.file.load()
-    // A spend recorded while loading counts on top of what was saved.
-    if (saved && saved.day === this.today()) {
-      this.current = { day: saved.day, neurons: saved.neurons + this.day().neurons }
+    const today = this.today()
+    for (const saved of await this.file.load()) {
+      const provider = saved.provider ?? RECAP_JUDGE_PROVIDER
+      // A spend recorded while loading counts on top of what was saved.
+      if (saved.day === today) {
+        this.spent.set(provider, {
+          day: today,
+          provider,
+          neurons: saved.neurons + this.day(provider).neurons
+        })
+      }
     }
   }
 
-  allows(kind: RecapPassKind): boolean {
-    return this.day().neurons < DAILY_LIMITS[kind]
+  allows(kind: RecapPassKind, provider: string = RECAP_JUDGE_PROVIDER): boolean {
+    return this.day(provider).neurons < DAILY_LIMITS[kind]
   }
 
-  spend(neurons: number): void {
-    const day = this.day()
-    this.current = { day: day.day, neurons: day.neurons + neurons }
-    this.file.save([this.current])
-  }
-
-  spentToday(): number {
-    return this.day().neurons
+  spend(neurons: number, provider: string = RECAP_JUDGE_PROVIDER): void {
+    const day = this.day(provider)
+    this.spent.set(provider, { ...day, neurons: day.neurons + neurons })
+    this.file.save([...this.spent.values()])
   }
 
   private today(): string {
     return new Date(this.now()).toISOString().slice(0, 10)
   }
 
-  private day(): BudgetDay {
+  private day(provider: string): BudgetDay {
     const today = this.today()
-    if (this.current.day !== today) {
-      this.current = { day: today, neurons: 0 }
+    let day = this.spent.get(provider)
+    if (!day || day.day !== today) {
+      day = { day: today, provider, neurons: 0 }
+      this.spent.set(provider, day)
     }
-    return this.current
+    return day
   }
 }

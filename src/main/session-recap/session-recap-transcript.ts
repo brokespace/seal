@@ -1,5 +1,9 @@
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
 import { isEditToolName } from '../../shared/native-chat/tools/native-chat-edit-normalize'
+import {
+  isImageSourceUserTurn,
+  stripImagePromptMarker
+} from '../../shared/native-chat/transcript/native-chat-image-transcript-markers'
 import { createToolInputDisplay } from '../../shared/native-chat/tools/native-chat-tool-summary'
 import type {
   RecapReference,
@@ -77,6 +81,18 @@ function fileReferences(message: NativeChatMessage): Omit<RecapReference, 'at'>[
   })
 }
 
+/** The agent's own record of a stop, and a `!` command the user ran in the agent's shell. */
+const NOT_A_PROMPT = /^\[Request interrupted|^!/
+
+/** Rows on the user's side that ask the agent for nothing would each read as a request nobody addressed. */
+function asksSomething(message: NativeChatMessage, prose: string): boolean {
+  return (
+    !NOT_A_PROMPT.test(prose) &&
+    !isImageSourceUserTurn(message) &&
+    stripImagePromptMarker(prose).trim().length > 0
+  )
+}
+
 /**
  * What a recap pass reads from a run of transcript messages: the user's messages and the agent's
  * own words, never tool calls, tool output or reasoning.
@@ -116,7 +132,7 @@ export function digestTranscript(messages: readonly NativeChatMessage[]): RecapD
       continue
     }
     const prose = sessionProse(textOf(message))
-    if (!prose) {
+    if (!prose || !asksSomething(message, prose)) {
       continue
     }
     closeTurn()

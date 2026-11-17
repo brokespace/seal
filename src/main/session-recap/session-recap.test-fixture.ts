@@ -10,7 +10,8 @@ import {
 } from '../../shared/session-recap/session-recap-types'
 import type { UtilityModelRequest } from '../../shared/utility-model/utility-model-types'
 import { SessionRecapBudget } from './session-recap-budget'
-import { SessionRecapEngine, type RecapTranscript } from './session-recap-engine'
+import { SessionRecapEngine } from './session-recap-engine'
+import type { RecapTranscript } from './session-recap-reading'
 import type { RecapRequestsStep } from './session-recap-judge'
 import { SessionRecapStore } from './session-recap-store'
 
@@ -128,10 +129,13 @@ export async function recapHarness(
   const budget = new SessionRecapBudget(join(folder, 'budget.json'), () => clock.now)
   const clock = { now: 50_000 }
   const requests: UtilityModelRequest[] = []
+  /** The models each request was told to pass over. */
+  const avoided: (readonly string[] | undefined)[] = []
   const engine = new SessionRecapEngine({
     transcript: recapTranscript(messages),
-    complete: async (request) => {
+    complete: async (request, _signal, options) => {
       requests.push(request)
+      avoided.push(options?.avoid)
       const reply = replies.shift()
       if (reply === undefined || reply instanceof Error) {
         throw reply ?? new Error('no reply queued')
@@ -145,7 +149,7 @@ export async function recapHarness(
     onChange: () => undefined,
     now: () => clock.now
   })
-  return { engine, store, budget, requests, clock, path }
+  return { engine, store, budget, requests, avoided, clock, path }
 }
 
 /** The text of the request's last message: the recap carried forward and the new messages. */
