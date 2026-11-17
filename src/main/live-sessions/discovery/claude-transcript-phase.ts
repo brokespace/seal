@@ -223,6 +223,17 @@ function lastReply(records: TranscriptRecord[]): string | null {
   return null
 }
 
+const EXCERPT_HEAD_CHARS = 240
+const EXCERPT_TAIL_CHARS = 480
+
+/** A long reply opens with what it did and closes with what comes next: both ends are kept. */
+function replyExcerpt(reply: string): string {
+  const flat = reply.replace(/\s+/g, ' ').trim()
+  return flat.length <= EXCERPT_HEAD_CHARS + EXCERPT_TAIL_CHARS
+    ? flat
+    : `${flat.slice(0, EXCERPT_HEAD_CHARS)} … ${flat.slice(-EXCERPT_TAIL_CHARS)}`
+}
+
 export function claudePhase(records: TranscriptRecord[]): TranscriptTurn {
   const turn = turnOf(records)
   const reply = lastReply(records)
@@ -231,6 +242,7 @@ export function claudePhase(records: TranscriptRecord[]): TranscriptTurn {
     pendingSince: null,
     ...turn,
     lastMessage: reply ? oneLine(reply, 200) : null,
+    ...(reply && turn.phase === 'turn-ended' ? { replyExcerpt: replyExcerpt(reply) } : {}),
     replyAsk: turn.phase === 'turn-ended' && turn.detail === null ? replyAskOf(reply) : 'tells'
   }
 }

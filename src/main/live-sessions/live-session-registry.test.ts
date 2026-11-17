@@ -307,7 +307,7 @@ describe('a Seal pane whose status changes between scans', () => {
     registry.start()
     try {
       await vi.advanceTimersByTimeAsync(1_000)
-      expect(shown()).toEqual([['your-turn', '1 background task still running']])
+      expect(shown()).toEqual([['waiting-task', null]])
 
       // The command ends and wakes Claude, which answers and stops again.
       state.files = [transcript(recorded, WORKING, 0)]

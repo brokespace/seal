@@ -1,0 +1,428 @@
+[
+  {
+    "id": "until-pgrep-waiter-says-still-running",
+    "truth": "waiting",
+    "why": "The session on 2299: a loop that sleeps until the job's process is gone, started 8 seconds before the turn ended, and a reply that says the job is still running.",
+    "endedAgoSeconds": 20,
+    "reply": "The run is still in progress: 2 of 6 tasks are done and task 3 is at step 41/120 according to `logs/clef-coding.log`. Nothing has failed so far. I'll report the scores once it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 8,
+        "description": "Wait for Clef coding run to finish",
+        "command": "until ! pgrep -f run_clef_coding.py >/dev/null; do sleep 60; done; tail -n 5 logs/clef-coding.log",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "sleep-then-check-ci",
+    "truth": "waiting",
+    "why": "A timer the agent set for itself: it sleeps, then looks at CI, and the reply says so.",
+    "endedAgoSeconds": 240,
+    "reply": "CI for `a41c9e2` is still queued behind two other runs. I've set a 10-minute timer and will look at the run again when it fires.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 5,
+        "description": "Check CI again in 10 minutes",
+        "command": "sleep 600; gh run view 18834521907 --json status,conclusion",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "pytest-in-background-terse",
+    "truth": "waiting",
+    "why": "The test run is the work, started as the turn's last act; the reply barely says so.",
+    "endedAgoSeconds": 90,
+    "reply": "Running the full suite now.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 6,
+        "description": "Run full test suite",
+        "command": "python -m pytest tests/ -x -q 2>&1 | tee /tmp/pytest-full.log",
+        "state": "running",
+        "runs": ["python", "tee"]
+      }
+    ]
+  },
+  {
+    "id": "waiter-says-nothing",
+    "truth": "waiting",
+    "why": "A waiter started in the final turn and no reply at all: only the command says what the agent is doing.",
+    "endedAgoSeconds": 40,
+    "reply": null,
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 3,
+        "description": "Wait for export process to exit",
+        "command": "while kill -0 48213 2>/dev/null; do sleep 30; done; echo \"export finished\"",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "monitor-until-rollout-healthy",
+    "truth": "waiting",
+    "why": "A Monitor that ends at the first line saying how the rollout went, and a reply that promises word of it.",
+    "endedAgoSeconds": 360,
+    "reply": "The rollout has started (`api`: 1 of 4 pods updated). I'm watching the deploy log and will tell you as soon as it reports healthy or fails.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "monitor",
+        "turn": "final",
+        "startedBeforeEndSeconds": 10,
+        "description": "Watch rollout log for healthy or failed",
+        "command": "tail -f /var/log/deploy/api-rollout.log | grep --line-buffered -m1 -E \"rollout (healthy|failed)\"",
+        "state": "running",
+        "runs": ["grep", "tail"]
+      }
+    ]
+  },
+  {
+    "id": "docker-build-then-continue",
+    "truth": "waiting",
+    "why": "A build that ends by itself, with the steps that follow it named in the reply.",
+    "endedAgoSeconds": 120,
+    "reply": "The image build is running in the background (the `torch` layer alone takes about 6 minutes). Once it's built I'll push it and update `deploy/values.yaml` with the new tag.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 12,
+        "description": "Build the PR image",
+        "command": "docker build -t registry.internal/app:pr-112 . > /tmp/build-pr-112.log 2>&1",
+        "state": "running",
+        "runs": ["docker"]
+      }
+    ]
+  },
+  {
+    "id": "waiter-beside-old-dev-server",
+    "truth": "waiting",
+    "why": "Two commands run: a waiter of this turn and a dev server from long before. The waiter decides it.",
+    "endedAgoSeconds": 180,
+    "reply": "Migration `0042_split_orders` is running against staging: 3 of 11 tables copied so far. I'll verify the row counts when it completes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 7,
+        "description": "Wait for migration 0042 to finish",
+        "command": "until psql \"$STAGING_URL\" -tAc \"select done from migration_status where id = 42\" | grep -q t; do sleep 20; done",
+        "state": "running",
+        "runs": ["sleep"]
+      },
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 2820,
+        "description": "Start dev server",
+        "command": "pnpm dev",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "wait-for-health-then-smoke",
+    "truth": "waiting",
+    "why": "A loop that polls a health endpoint and ends when it answers; the reply names what comes after.",
+    "endedAgoSeconds": 30,
+    "reply": "Restarted the service with the new config. Waiting for it to come up, then I'll run the smoke tests.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 4,
+        "description": "Wait for service health",
+        "command": "until curl -sf http://localhost:8080/healthz >/dev/null; do sleep 5; done",
+        "state": "running",
+        "runs": ["sleep"]
+      }
+    ]
+  },
+  {
+    "id": "second-reviewer-in-background",
+    "truth": "waiting",
+    "why": "Another agent run in the background, whose notes the reply says it will fold in.",
+    "endedAgoSeconds": 300,
+    "reply": "I've addressed the three comments on the parser. A second review pass is running in the background on the full diff; I'll fold its notes in when it finishes.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 9,
+        "description": "Run independent review",
+        "command": "claude -p \"Review the diff on this branch for correctness bugs only\" --output-format text > /tmp/review-2.md",
+        "state": "running",
+        "runs": ["claude"]
+      }
+    ]
+  },
+  {
+    "id": "old-dev-server-button-renamed",
+    "truth": "leftover",
+    "why": "A dev server from an earlier turn, and a reply that is a finished answer about something else.",
+    "endedAgoSeconds": 120,
+    "reply": "Renamed the button to **Save draft** in `EditorToolbar.tsx` and updated the two tests that matched on the old label. Both pass.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 2280,
+        "description": "Start the dev server",
+        "command": "pnpm dev",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "dev-server-started-this-turn",
+    "truth": "leftover",
+    "why": "A dev server started in the final turn, for the user to look at: the last-turn rule alone would call it a wait.",
+    "endedAgoSeconds": 60,
+    "reply": "The dev server is up at http://localhost:5173. The new settings page is under **Settings → Integrations**. Take a look and tell me what you'd like changed.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 25,
+        "description": "Start dev server",
+        "command": "npm run dev -- --port 5173",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "old-log-tail-fix-done",
+    "truth": "leftover",
+    "why": "A log tail left from an earlier turn; the reply reports a finished fix.",
+    "endedAgoSeconds": 600,
+    "reply": "Fixed: the retry loop in `sync/worker.ts` was swallowing `ECONNRESET`. It now backs off and retries up to 5 times, and I added a test that fails on the old code.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 4800,
+        "description": "Follow worker log",
+        "command": "tail -f logs/worker.log",
+        "state": "running",
+        "runs": ["tail"]
+      }
+    ]
+  },
+  {
+    "id": "check-back-promise-with-only-a-server",
+    "truth": "leftover",
+    "why": "The reply promises to check back, but nothing that runs waits for CI: only an old dev server is up, and the agent cannot wake itself.",
+    "endedAgoSeconds": 180,
+    "reply": "I've pushed the fix as `f3e21ab`. CI usually takes about 10 minutes on this repo. I'll check back on it later, or ping me if you want me to look sooner.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 7200,
+        "description": "Start dev server",
+        "command": "pnpm dev",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "nohup-job-not-a-child-storybook-up",
+    "truth": "leftover",
+    "why": "The long job runs under nohup outside the agent's commands, so its end wakes nobody; what the agent does have running is a Storybook server.",
+    "endedAgoSeconds": 60,
+    "reply": "Training is started under `nohup` (PID 48213) so it survives this session; output goes to `runs/exp-17/train.log`. It should take about 3 hours. You can follow it with `tail -f runs/exp-17/train.log`. Tell me when it's done and I'll analyze the results.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 3300,
+        "description": "Start Storybook",
+        "command": "pnpm storybook --port 6006",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "build-finished-old-server-still-up",
+    "truth": "leftover",
+    "why": "The final turn's build is over and reported; what still runs is the dev server from before.",
+    "endedAgoSeconds": 45,
+    "reply": "Build passes: `dist/` is 412 kB gzipped, down from 468 kB. The change is ready for review.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 3600,
+        "description": "Start dev server",
+        "command": "pnpm dev",
+        "state": "running",
+        "runs": ["node"]
+      },
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 180,
+        "description": "Production build",
+        "command": "pnpm build",
+        "state": "completed",
+        "runs": null
+      }
+    ]
+  },
+  {
+    "id": "test-database-left-up",
+    "truth": "leftover",
+    "why": "A database container started in the final turn for the tests, which are done; it stays up until someone stops it.",
+    "endedAgoSeconds": 120,
+    "reply": "All 212 integration tests pass against the local Postgres I started for this. Do you want me to stop the database container, or leave it up for you?",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 240,
+        "description": "Start Postgres for integration tests",
+        "command": "docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=dev postgres:16",
+        "state": "running",
+        "runs": ["docker"]
+      }
+    ]
+  },
+  {
+    "id": "watch-mode-left-on-purpose",
+    "truth": "leftover",
+    "why": "A test runner in watch mode, started in the final turn and left for the user on purpose.",
+    "endedAgoSeconds": 20,
+    "reply": "Tests are green. I left vitest in watch mode so it reruns as you edit `src/parser/`.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 120,
+        "description": "Run parser tests in watch mode",
+        "command": "pnpm vitest --watch src/parser",
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "old-monitor-on-access-log",
+    "truth": "leftover",
+    "why": "A Monitor on a log that never ends, left from hours ago; the reply is about a README.",
+    "endedAgoSeconds": 900,
+    "reply": "Updated the README: the install section now covers Node 22 and the pnpm workspace layout.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "monitor",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 10800,
+        "description": "Watch for 5xx responses",
+        "command": "tail -f /var/log/nginx/access.log | grep --line-buffered \" 5[0-9][0-9] \"",
+        "state": "running",
+        "runs": ["grep", "tail"]
+      }
+    ]
+  },
+  {
+    "id": "jupyter-from-earlier",
+    "truth": "leftover",
+    "why": "A notebook server from hours ago, hours after a turn that reported finished work.",
+    "endedAgoSeconds": 14400,
+    "reply": "The notebook now loads the parquet files lazily; memory peaks at 1.9 GB instead of 7 GB. I reran all cells top to bottom and they pass.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "earlier",
+        "startedBeforeEndSeconds": 18000,
+        "description": "Start Jupyter",
+        "command": "jupyter lab --no-browser --port 8888",
+        "state": "running",
+        "runs": ["python3"]
+      }
+    ]
+  },
+  {
+    "id": "unread-command-message-unrelated",
+    "truth": "other",
+    "why": "Something of the agent's runs, but its launch lies before what was read, and the reply does not speak of it.",
+    "endedAgoSeconds": 300,
+    "reply": "Fixed the typo in `CONTRIBUTING.md`.",
+    "registry": "shell",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": null,
+        "startedBeforeEndSeconds": null,
+        "description": null,
+        "command": null,
+        "state": "running",
+        "runs": ["node"]
+      }
+    ]
+  },
+  {
+    "id": "check-back-promise-no-process",
+    "truth": "other",
+    "why": "The reply promises to check back and nothing runs at all: code settles it without the model.",
+    "endedAgoSeconds": 120,
+    "reply": "The deploy pipeline is running on their side. I'll check back in 10 minutes to confirm it went green.",
+    "registry": "idle",
+    "commands": []
+  },
+  {
+    "id": "waiter-finished-nothing-running",
+    "truth": "other",
+    "why": "The final turn's waiter has exited and nothing else runs: code settles it without the model.",
+    "endedAgoSeconds": 120,
+    "reply": "The benchmark is still running; I'll report the numbers when it finishes.",
+    "registry": "idle",
+    "commands": [
+      {
+        "kind": "shell",
+        "turn": "final",
+        "startedBeforeEndSeconds": 5,
+        "description": "Wait for benchmark to finish",
+        "command": "until ! pgrep -f bench.py >/dev/null; do sleep 30; done",
+        "state": "completed",
+        "runs": null
+      }
+    ]
+  }
+]

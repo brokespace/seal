@@ -16,6 +16,8 @@ export type ToolProcess = {
   startedAt: number
   /** Claude Code's own Bash tool started it: the one child that is surely a command of the agent's. */
   claudeBash: boolean
+  /** The programs running under it right now, by name: `sleep` for a loop between two checks. */
+  runs: string[]
 }
 
 /**
@@ -55,6 +57,13 @@ export function toolProcesses(
       .filter((child) => COMMAND_KINDS.has(child.kind))
       .map((child) => ({
         startedAt: nowMs - child.elapsedMs,
-        claudeBash: child.kind === 'snapshot'
+        claudeBash: child.kind === 'snapshot',
+        runs: [
+          ...new Set(
+            under([child.pid])
+              .filter((below) => below.kind === 'other')
+              .map((below) => below.command)
+          )
+        ].sort()
       }))
 }

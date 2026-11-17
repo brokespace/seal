@@ -5,6 +5,10 @@ import {
   runningSubagents,
   type LiveSessionActivity
 } from '../../../shared/live-sessions/live-session-activity'
+import {
+  waitsOnFinalTurnCommand,
+  type BackgroundWaitEvidence
+} from '../../../shared/live-sessions/live-session-background-wait'
 import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import { CLAUDE_SUBAGENT_TOOLS } from './claude-transcript-phase'
 import type { PendingCallKind, TranscriptTurn } from './transcript-summary'
@@ -150,13 +154,15 @@ export type StatusAndDetail = { status: LiveSessionStatus; statusDetail: string 
 
 /**
  * An agent waiting for subagents it started is still busy: nothing for the user to do. Only a
- * question it put to the user explicitly outranks that. Commands, monitors and wake-ups a turn
- * left behind hold nothing: the turn ended, and the next move is the user's.
+ * question it put to the user explicitly outranks that. A turn that ended still has the move
+ * while a command it started since the user last spoke runs: the agent is woken when it exits.
+ * Older commands, wake-ups and workflows hold nothing: the next move is the user's.
  */
 export function withBackgroundWait(
   current: StatusAndDetail,
   turn: TranscriptTurn | undefined,
-  activity: LiveSessionActivity
+  activity: LiveSessionActivity,
+  left: BackgroundWaitEvidence | null = null
 ): StatusAndDetail {
   const subagents = runningSubagents(activity).length
   if (current.status === 'working' && waitsOnSubagentCall(turn)) {
@@ -167,6 +173,9 @@ export function withBackgroundWait(
     (current.status === 'waiting-input' && turn?.phase !== 'input-requested')
   if (resting && subagents > 0) {
     return { status: 'waiting-subagent', statusDetail: backgroundWaitLabel(subagents) }
+  }
+  if (current.status === 'your-turn' && left && waitsOnFinalTurnCommand(left)) {
+    return { status: 'waiting-task', statusDetail: null }
   }
   return current
 }

@@ -1,0 +1,10 @@
+{
+  "model": "clef-flash",
+  "questionBook": "7d0976546dbd",
+  "waitingCut": 0.7678,
+  "wrong": {
+    "tune": [],
+    "held-out": ["unread-command-says-waiting"]
+  },
+  "unanswered": []
+}

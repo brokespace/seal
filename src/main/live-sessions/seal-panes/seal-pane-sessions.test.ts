@@ -348,4 +348,23 @@ describe('what discovery adds to a Seal pane', () => {
   ])('hooks say %s, discovery read %s from %s: shows %s', (hooks, read, from, shows, word) => {
     expect(merged(hooks, read, from)).toEqual([shows, word])
   })
+
+  // By the last-turn rule, or by the judge of a paired server.
+  it.each(['transcript', 'classifier'] as const)(
+    'hooks say your-turn, discovery read the ended turn waiting on a command it started (%s): shows waiting-task',
+    (statusSource) => {
+      const waiting: LiveSession = {
+        ...discovered,
+        status: 'waiting-task',
+        statusSource,
+        backgroundWait: { reply: null, endedAt: null, registry: 'shell', commands: [] }
+      }
+      expect(
+        mergeSealPanes([waiting], [{ ...pane, status: 'your-turn' }], local).map((s) => [
+          s.status,
+          s.statusSource
+        ])
+      ).toEqual([['waiting-task', statusSource]])
+    }
+  )
 })

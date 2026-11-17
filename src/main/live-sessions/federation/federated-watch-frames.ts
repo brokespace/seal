@@ -6,6 +6,7 @@ import {
   LIVE_TODO_STATUSES,
   type LiveSessionActivity
 } from '../../../shared/live-sessions/live-session-activity'
+import type { BackgroundWaitEvidence } from '../../../shared/live-sessions/live-session-background-wait'
 import {
   LIVE_MESSAGE_STATES,
   LIVE_SESSION_STATUSES,
@@ -105,6 +106,23 @@ const activitySchema: z.ZodType<LiveSessionActivity> = z.object({
   )
 })
 
+const backgroundWaitSchema: z.ZodType<BackgroundWaitEvidence> = z.object({
+  reply: NullableText,
+  endedAt: Finite.nullable(),
+  registry: NullableText,
+  commands: salvagingArray(
+    z.object({
+      kind: z.enum(['shell', 'monitor']),
+      command: NullableText,
+      description: NullableText,
+      turn: z.enum(['final', 'earlier']).nullable(),
+      startedAt: Finite.nullable(),
+      state: z.enum(LIVE_SUBAGENT_STATUSES),
+      runs: z.array(z.string()).nullable()
+    })
+  )
+})
+
 const contextSchema: z.ZodType<NativeChatContextUsageSummary> = z.object({
   usedTokens: Finite,
   windowTokens: Finite,
@@ -154,6 +172,7 @@ const serverSessionSchema = z.object({
     .nullable(),
   activity: activitySchema.optional().catch(undefined),
   lastMessage: z.string().nullish().catch(undefined),
+  backgroundWait: backgroundWaitSchema.optional().catch(undefined),
   customTitle: z.string().nullish().catch(undefined),
   configDir: z.string().nullish().catch(undefined),
   pinned: z.boolean().optional().catch(undefined),

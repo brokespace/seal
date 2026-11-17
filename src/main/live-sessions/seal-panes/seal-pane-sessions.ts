@@ -188,6 +188,14 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
   if (found.statusSource === 'screen') {
     return found.permission !== null
   }
+  // A wait read with what the ended turn left running is that turn's; any other is a stale read.
+  const endedOnWait =
+    pane.status === 'your-turn' &&
+    found.status === 'waiting-task' &&
+    found.backgroundWait !== undefined
+  if (endedOnWait) {
+    return true
+  }
   if (found.statusSource === 'classifier') {
     return false
   }
