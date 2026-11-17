@@ -158,7 +158,7 @@ describe('sealPanesFromRows', () => {
     ],
     ['a Claude pane before its hooks name its session', { providerSession: undefined }, []],
     ['a chat, which its structured host lists', { structuredHost: 'owned' }, []],
-    ['an agent with no adapter', { agentType: 'aider' }, []]
+    ['an agent the launcher does not know', { agentType: 'my-own-agent' }, []]
   ])('lists %s', (_, patch, expected) => {
     expect(
       sealPanesFromRows([row(patch)], () => null, 2000).map((p) => [
