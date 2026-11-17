@@ -26,6 +26,8 @@ export type UtilityModelBackend = {
 export type UtilityModelCallOptions = {
   /** The caller's own model and fallback, tried before the provider's. */
   choice?: Pick<UtilityModelChoice, 'model' | 'fallbackModel'>
+  /** Models whose reply to this request the caller could not use: the next ones are asked instead. */
+  avoid?: readonly string[]
 }
 
 export type UtilityModelHealth = {
@@ -220,9 +222,13 @@ export class UtilityModelService {
       options.choice ?? { model: null, fallbackModel: null },
       backend.models
     ).slice(0, MAX_MODELS_PER_REQUEST)
-    const usable = models.filter((model) => !this.unavailable.has(model))
+    const offered = models.filter((model) => !options.avoid?.includes(model))
+    if (offered.length === 0 && models.length > 0) {
+      throw new UtilityModelError('not-configured', 'No other model is configured')
+    }
+    const usable = offered.filter((model) => !this.unavailable.has(model))
     if (usable.length === 0) {
-      const refused = this.unavailable.get(models[0] ?? '')
+      const refused = this.unavailable.get(offered[0] ?? '')
       throw new UtilityModelError(
         refused?.kind ?? 'not-configured',
         refused?.message ?? 'No model is configured',

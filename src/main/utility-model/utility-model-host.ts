@@ -13,14 +13,22 @@ import {
   type UtilityModelHostContext,
   type UtilityModelProviderSource
 } from './utility-model-provider-sources'
-import { UtilityModelService, type UtilityModelReply } from './utility-model-service'
+import {
+  UtilityModelService,
+  type UtilityModelCallOptions,
+  type UtilityModelReply
+} from './utility-model-service'
 
 /**
  * A utility model as a feature calls it: the provider and models are whoever chose them, the
  * fallbacks, pauses and failure classes are the same for all. Throws UtilityModelError.
  */
 export type UtilityModelClient = {
-  complete(request: UtilityModelRequest, signal?: AbortSignal): Promise<UtilityModelReply>
+  complete(
+    request: UtilityModelRequest,
+    signal?: AbortSignal,
+    options?: Pick<UtilityModelCallOptions, 'avoid'>
+  ): Promise<UtilityModelReply>
   /** The chosen provider has an account on this host. */
   isConfigured(): Promise<boolean>
   health(): { pausedUntil: number | null }
@@ -84,9 +92,10 @@ export class UtilityModelHost {
   /** The utility model a feature runs on; `choice` is read on every call, so a settings change applies at once. */
   client(choice: () => UtilityModelChoice): UtilityModelClient {
     return {
-      complete: (request, signal) => {
+      complete: (request, signal, options) => {
         const { provider, model, fallbackModel } = choice()
         return this.provider(provider).complete(request, signal, {
+          ...options,
           choice: { model, fallbackModel }
         })
       },

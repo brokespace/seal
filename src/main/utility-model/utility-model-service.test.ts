@@ -185,6 +185,16 @@ describe('UtilityModelService', () => {
     ])
   })
 
+  it('asks the next model when the caller could not use the reply of the first', async () => {
+    const { service } = serviceWith(async (model) => `from ${model}`)
+
+    const other = await service.complete(REQUEST, undefined, { avoid: [PRIMARY] })
+    const none = service.complete(REQUEST, undefined, { avoid: [PRIMARY, FALLBACK] })
+
+    expect(other).toMatchObject({ text: `from ${FALLBACK}`, model: FALLBACK })
+    await expect(none).rejects.toMatchObject({ kind: 'not-configured' })
+  })
+
   it('asks a decision model alone: its failure reaches the caller, and no other model is tried', async () => {
     const asked: string[] = []
     const provider: UtilityModelProvider = {
