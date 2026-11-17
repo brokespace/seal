@@ -3,7 +3,6 @@
   "title": "One-word and one-letter messages from the user",
   "categories": ["non-english-terse", "question-answered"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
-  "pending": true,
   "expected": "The 'y' answers the agent's question and 'ship it' is done; neither leaves anything open, and the 'y' is not listed as a request.",
   "steps": [
     {

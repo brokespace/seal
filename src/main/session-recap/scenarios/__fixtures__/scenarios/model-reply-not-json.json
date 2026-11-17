@@ -3,7 +3,6 @@
   "title": "No model's reply can be read, so the pass is tried again and then the host writes the requests down",
   "categories": ["model-failure"],
   "surfaces": ["claude-cli"],
-  "pending": true,
   "expected": "The first unreadable pass writes nothing and is tried again. After the second the recap holds the user's requests as the host reads them, marked as not written by the model, and claims nothing it cannot know. The next good pass reads the same turn again and fills in what the agent did.",
   "steps": [
     {

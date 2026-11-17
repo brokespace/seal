@@ -3,7 +3,6 @@
   "title": "The user reminds the agent of something it skipped; it then needs the user",
   "categories": ["duplicate-asks", "question-answered"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
-  "pending": true,
   "expected": "The schema docs are listed once while open, become an action for the user when the agent asks them to run the generator, and are closed when the user has run it.",
   "steps": [
     {

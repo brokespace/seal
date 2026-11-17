@@ -3,7 +3,6 @@
   "title": "The user opens the recap seconds after the turn that did the open ask",
   "categories": ["addressed-later-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
-  "pending": true,
   "expected": "The recap the user opens right after the turn no longer lists the documentation as not addressed.",
   "steps": [
     {

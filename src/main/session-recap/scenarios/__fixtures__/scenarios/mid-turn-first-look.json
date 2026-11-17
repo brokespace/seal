@@ -3,7 +3,6 @@
   "title": "The user opens a session that has no recap yet while its first turn is running",
   "categories": ["mid-turn", "multiple-asks"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
-  "pending": true,
   "expected": "Mid-turn nothing is listed as not addressed: the agent is still on it. After the turn all three parts are done.",
   "steps": [
     {

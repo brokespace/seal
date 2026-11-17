@@ -3,7 +3,6 @@
   "title": "An open ask is done a turn later with tools, on files the ask never names, and the agent says only Done",
   "categories": ["addressed-later-turn", "addressed-implicitly", "tool-heavy"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
-  "pending": true,
   "expected": "The slow login page is open after turn 1. After turn 2, which measures, edits and measures again and says only Done, it is no longer listed as not addressed, and the speed-up is recorded as work.",
   "steps": [
     {

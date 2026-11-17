@@ -8,39 +8,17 @@
         "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"The login page takes four seconds to load, make it faster. And add a test for th\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: The login page takes four seconds to load, make it faster. And add a test for the password reset email.\n\n[m2] AGENT: Added a test for the password reset email; it covers the link and the expiry. I have not looked at the login page yet.\n</new_messages>"
       }
     ],
-    "reply": "{\n  \"asked\": [{\"text\": \"optimize login page loading speed\", \"ref\": \"m1\"}, {\"text\": \"add test for password reset email\", \"ref\": \"m1\"}],\n  \"did\": [{\"text\": \"add test for password reset email\", \"state\": \"done\", \"ref\": \"m2\"}],\n  \"decisions\": [{\"text\": \"login page not yet examined\", \"ref\": \"m2\"}]\n}",
-    "neurons": 7.212400000000001
+    "reply": "{\n  \"goal\": \"Speed up slow login page and add password reset email test.\",\n  \"standing\": \"Agent added password reset email test but has not examined login page yet.\",\n  \"add\": {\n    \"asked\": [],\n    \"did\": [\n      {\"text\": \"Added password reset email test\", \"state\": \"done\", \"ref\": \"m1\"}\n    ],\n    \"questions\": [],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"update\": [],\n  \"resolve\": []\n}"
   },
   {
-    "key": "f622f35a906f24bc1aae461ee601eb0b",
+    "key": "d74b96557de1d7d209430940f7d5c15b",
     "model": "@cf/zai-org/glm-4.7-flash",
     "messages": [
       {
         "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"The login page takes four seconds to load, make it faster. And add a test for th\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: The login page takes four seconds to load, make it faster. And add a test for the password reset email.\n\n[m2] AGENT: Added a test for the password reset email; it covers the link and the expiry. I have not looked at the login page yet.\n</new_messages>"
-      },
-      {
-        "role": "assistant",
-        "content": "{\n  \"asked\": [{\"text\": \"optimize login page loading speed\", \"ref\": \"m1\"}, {\"text\": \"add test for password reset email\", \"ref\": \"m1\"}],\n  \"did\": [{\"text\": \"add test for password reset email\", \"state\": \"done\", \"ref\": \"m2\"}],\n  \"decisions\": [{\"text\": \"login page not yet examined\", \"ref\": \"m2\"}]\n}"
-      },
-      {
-        "role": "user",
-        "content": "That reply could not be used. The JSON object has none of the keys title, goal, standing, add, update, resolve.\nReply again with only the JSON object described, starting with { and ending with }."
+        "content": "<recap>\n{\"title\":null,\"goal\":\"Speed up slow login page and add password reset email test.\",\"standing\":\"Agent added password reset email test but has not examined login page yet.\",\"asked\":[],\"did\":[{\"id\":\"w1\",\"text\":\"Added password reset email test\",\"state\":\"done\"}],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Done.\n</new_messages>"
       }
     ],
-    "reply": "{\n  \"title\": null,\n  \"goal\": null,\n  \"standing\": \"Added a test for the password reset email. Login page optimization is pending.\",\n  \"add\": {\n    \"asked\": [{\"text\": \"optimize login page loading speed\", \"ref\": \"m1\"}, {\"text\": \"add test for password reset email\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"add test for password reset email\", \"state\": \"done\", \"ref\": \"m2\"}],\n    \"questions\": [{\"text\": \"login page not yet examined\", \"ref\": \"m2\"}]\n  },\n  \"update\": [],\n  \"resolve\": []\n}",
-    "neurons": 9.7351
-  },
-  {
-    "key": "c0e38a307c5da1cc0e9e8864ce278f0f",
-    "model": "@cf/zai-org/glm-4.7-flash",
-    "messages": [
-      {
-        "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":\"Added a test for the password reset email. Login page optimization is pending.\",\"firstRequest\":\"The login page takes four seconds to load, make it faster. And add a test for th\",\"asked\":[{\"id\":\"a1\",\"text\":\"optimize login page loading speed\"},{\"id\":\"a2\",\"text\":\"add test for password reset email\"}],\"did\":[{\"id\":\"w3\",\"text\":\"add test for password reset email\",\"state\":\"done\"}],\"questions\":[{\"id\":\"q4\",\"text\":\"login page not yet examined\"}],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: ok go on\n\n[m2] AGENT: Done.\n</new_messages>"
-      }
-    ],
-    "reply": "{\n  \"add\": {\n    \"asked\": [\n      {\"text\": \"optimize login page loading speed\", \"ref\": \"m1\"}\n    ],\n    \"did\": [\n      {\"text\": \"add test for password reset email\", \"state\": \"done\", \"ref\": \"m2\"}\n    ],\n    \"questions\": [{\"id\": \"q4\", \"text\": \"login page not yet examined\", \"ref\": \"m1\"}],\n    \"ignored\": [],\n    \"actions\": [],\n    \"decisions\": []\n  },\n  \"resolve\": [\"a2\"]\n}",
-    "neurons": 8.2709
+    "reply": "{\"update\":[{\"id\":\"w1\",\"state\":\"done\"}],\"resolve\":[\"w1\"]}"
   }
 ]

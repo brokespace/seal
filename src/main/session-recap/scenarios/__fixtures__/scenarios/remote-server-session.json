@@ -3,7 +3,6 @@
   "title": "A session on a headless Seal server, which recaps it before any client opens it",
   "categories": ["remote", "addressed-later-turn"],
   "surfaces": ["claude-cli", "chat-journal"],
-  "pending": true,
   "expected": "The server writes the recap when the turn stops, with no client looking, and keeps it up to date, so the documentation leaves the not-addressed list after turn 2.",
   "steps": [
     {

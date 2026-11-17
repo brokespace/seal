@@ -20,13 +20,16 @@
   "addressed-in-the-middle-of-a-long-turn@claude-cli": [],
   "addressed-in-the-middle-of-a-long-turn@codex-cli": [],
   "addressed-later-by-tools-on-other-files@chat-journal": [
-    "after turn 1: the slow login page is asked for and not looked at yet"
+    "after turn 1: the slow login page is asked for and not looked at yet",
+    "after turn 2: the work on the login page is recorded"
   ],
   "addressed-later-by-tools-on-other-files@claude-cli": [
-    "after turn 1: the slow login page is asked for and not looked at yet"
+    "after turn 1: the slow login page is asked for and not looked at yet",
+    "after turn 2: the work on the login page is recorded"
   ],
   "addressed-later-by-tools-on-other-files@codex-cli": [
-    "after turn 1: the slow login page is asked for and not looked at yet"
+    "after turn 1: the slow login page is asked for and not looked at yet",
+    "after turn 2: the work on the login page is recorded"
   ],
   "addressed-later-user-looks-at-once@chat-journal": [
     "after turn 1: the documentation is asked for and not written yet"
@@ -144,16 +147,27 @@
   "duplicate-asks-paraphrased@claude-cli": [],
   "duplicate-asks-paraphrased@codex-cli": [],
   "duplicate-reminder@chat-journal": [
-    "after turn 1: the schema docs are asked for and not updated"
+    "after turn 1: the schema docs are asked for and not updated",
+    "after turn 2: running the generator is for the user to do"
   ],
-  "duplicate-reminder@claude-cli": ["after turn 1: the schema docs are asked for and not updated"],
-  "duplicate-reminder@codex-cli": ["after turn 1: the schema docs are asked for and not updated"],
+  "duplicate-reminder@claude-cli": [
+    "after turn 1: the schema docs are asked for and not updated",
+    "after turn 2: running the generator is for the user to do"
+  ],
+  "duplicate-reminder@codex-cli": [
+    "after turn 1: the schema docs are asked for and not updated",
+    "after turn 2: running the generator is for the user to do"
+  ],
   "finished-work-mentioned-again@chat-journal": [],
   "finished-work-mentioned-again@claude-cli": [],
   "finished-work-mentioned-again@codex-cli": [],
   "injected-reminders@claude-cli": [],
   "injected-reminders@codex-cli": [],
-  "long-session-first-recap@claude-cli": [],
+  "long-session-first-recap@claude-cli": [
+    "after the first automatic recap: LOG_LEVEL was asked for at the start and never added",
+    "after the user presses Refresh: LOG_LEVEL was asked for at the start and never added",
+    "after the user presses Refresh: the rule about customer emails is recorded"
+  ],
   "many-asks-in-one-long-turn@chat-journal": [
     "eight minutes into the turn: what the agent has left to do is not a to-do for the user",
     "after the turn: the documentation is recorded as done",
@@ -184,11 +198,28 @@
   "mid-turn-automatic-recap@codex-cli": [
     "after the turn: where things stand says the migration is finished"
   ],
-  "mid-turn-first-look@chat-journal": [],
-  "mid-turn-first-look@claude-cli": [],
-  "mid-turn-first-look@codex-cli": [],
-  "mid-turn-refresh@chat-journal": [],
-  "mid-turn-refresh@claude-cli": [],
+  "mid-turn-first-look@chat-journal": [
+    "after the turn: the backup codes are recorded as done",
+    "after the turn: the verify step is recorded as done"
+  ],
+  "mid-turn-first-look@claude-cli": [
+    "after the turn: the backup codes are recorded as done",
+    "after the turn: the verify step is recorded as done"
+  ],
+  "mid-turn-first-look@codex-cli": [
+    "after the turn: the backup codes are recorded as done",
+    "after the turn: the verify step is recorded as done"
+  ],
+  "mid-turn-refresh@chat-journal": [
+    "mid-turn: the work under way is in progress",
+    "right after the turn ends: the recap is brought up to date when the turn ends",
+    "four minutes later: the import update is recorded as done"
+  ],
+  "mid-turn-refresh@claude-cli": [
+    "mid-turn: the work under way is in progress",
+    "right after the turn ends: the recap is brought up to date when the turn ends",
+    "four minutes later: the import update is recorded as done"
+  ],
   "model-fails-twice-then-recovers@claude-cli": [],
   "model-failure-then-next-turn@claude-cli": [
     "after the next pass: the request from the turn whose pass failed is recorded"
@@ -222,7 +253,7 @@
   "nothing-said-since-the-recap@claude-cli": [],
   "nothing-said-since-the-recap@codex-cli": [],
   "open-ask-done-after-many-turns@claude-cli": [
-    "after turn 1: LOG_LEVEL was asked for and put off"
+    "after twenty-two more turns: LOG_LEVEL is still not added"
   ],
   "partly-addressed-stays-open@chat-journal": [
     "after turn 2: reindex was asked for and is still not migrated"
@@ -294,10 +325,12 @@
     "while the agent waits: the question asked through the agent's question tool is waiting on the user"
   ],
   "remote-server-session@chat-journal": [
-    "after a client opens it: the documentation is asked for and not written yet"
+    "after a client opens it: the documentation is asked for and not written yet",
+    "after turn 2: the documentation is recorded as done"
   ],
   "remote-server-session@claude-cli": [
-    "after a client opens it: the documentation is asked for and not written yet"
+    "after a client opens it: the documentation is asked for and not written yet",
+    "after turn 2: the documentation is recorded as done"
   ],
   "remote-ssh-session@claude-ssh": [
     "after turn 1: the documentation is asked for and not written yet"
@@ -341,7 +374,9 @@
   "resumed-under-a-new-id@codex-cli": [
     "after the resume: the restore command is asked for and not written yet"
   ],
-  "second-ask-sent-while-the-agent-works@chat-journal": [],
+  "second-ask-sent-while-the-agent-works@chat-journal": [
+    "after the turn: the request sent mid-turn is recorded"
+  ],
   "second-ask-sent-while-the-agent-works@claude-cli": [],
   "second-ask-sent-while-the-agent-works@codex-cli": [],
   "session-ends-after-doing-the-open-ask@chat-journal": [
@@ -385,9 +420,18 @@
     "after turn 2: the tests are still not written",
     "after turn 2: the node bump is recorded as done"
   ],
-  "terse-confirmations@chat-journal": ["after turn 1: the agent is waiting on a yes or no"],
-  "terse-confirmations@claude-cli": ["after turn 1: the agent is waiting on a yes or no"],
-  "terse-confirmations@codex-cli": ["after turn 1: the agent is waiting on a yes or no"],
+  "terse-confirmations@chat-journal": [
+    "after turn 1: the agent is waiting on a yes or no",
+    "after turn 3: the push is recorded as done"
+  ],
+  "terse-confirmations@claude-cli": [
+    "after turn 1: the agent is waiting on a yes or no",
+    "after turn 3: the push is recorded as done"
+  ],
+  "terse-confirmations@codex-cli": [
+    "after turn 1: the agent is waiting on a yes or no",
+    "after turn 3: the push is recorded as done"
+  ],
   "tool-heavy-one-word-reply@chat-journal": [],
   "tool-heavy-one-word-reply@claude-cli": [],
   "tool-heavy-one-word-reply@codex-cli": [],

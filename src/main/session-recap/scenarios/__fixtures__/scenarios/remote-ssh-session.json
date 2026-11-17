@@ -3,7 +3,6 @@
   "title": "A Claude session on an SSH host, read through the host's shell",
   "categories": ["remote", "addressed-later-turn"],
   "surfaces": ["claude-ssh"],
-  "pending": true,
   "expected": "The same as on this machine: the documentation is not addressed after turn 1 and leaves the list after turn 2.",
   "steps": [
     {

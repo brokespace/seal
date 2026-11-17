@@ -1,14 +1,13 @@
 [
   {
-    "key": "d5bed77b752e1c5f90eaafb41faff420",
+    "key": "f9a6b6904eaaa88ccd1a1e03a4c3a0e7",
     "model": "@cf/zai-org/glm-4.7-flash",
     "messages": [
       {
         "role": "user",
-        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a CSV export to the orders page and a date filter above the table.\",\"asked\":[{\"id\":\"a1\",\"text\":\"Add a CSV export to the orders page and a date filter above the table.\"},{\"id\":\"a2\",\"text\":\"make the date filter default to the last 30 days\"}],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: and add a Reset button next to the filter\n\n[m2] AGENT: There is a Reset button next to the date filter now.\n</new_messages>"
+        "content": "<recap>\n{\"title\":null,\"goal\":null,\"standing\":null,\"firstRequest\":\"Add a CSV export to the orders page and a date filter above the table.\",\"asked\":[],\"did\":[],\"questions\":[],\"ignored\":[],\"actions\":[],\"decisions\":[]}\n</recap>\n<new_messages>\n[m1] USER: Add a CSV export to the orders page and a date filter above the table.\n\n[m2] AGENT: Both are on the orders page: a date filter above the table and an Export CSV button that exports the filtered rows.\n\n[m3] USER: make the date filter default to the last 30 days\n\n[m4] AGENT: The date filter defaults to the last 30 days now.\n\n[m5] USER: and add a Reset button next to the filter\n\n[m6] AGENT: There is a Reset button next to the date filter now.\n</new_messages>"
       }
     ],
-    "reply": "{\n  \"add\": {\n    \"asked\": [{\"text\": \"Add a CSV export to the orders page.\", \"ref\": \"a1\"}, {\"text\": \"Make the date filter default to last 30 days.\", \"ref\": \"a2\"}, {\"text\": \"Add a Reset button next to the filter.\", \"ref\": \"m1\"}],\n    \"did\": [{\"text\": \"Add a Reset button next to the date filter.\", \"state\": \"done\", \"ref\": \"m2\"}]\n  },\n  \"resolve\": [\"a1\"],\n  \"update\": [{\"id\": \"a1\", \"state\": \"blocked\"}]\n}",
-    "neurons": 8.7289
+    "reply": "{\n  \"title\": \"Add CSV export and date filter to orders page\",\n  \"goal\": \"Add CSV export and date filter to the orders page so staff can easily export filtered order data.\",\n  \"standing\": \"The date filter defaults to the last 30 days and has a Reset button next to it. The orders page now includes an Export CSV button.\",\n  \"add\": {\n    \"asked\": [\n      {\n        \"text\": \"Make date filter default to last 30 days\",\n        \"ref\": \"m3\"\n      },\n      {\n        \"text\": \"Add Reset button next to filter\",\n        \"ref\": \"m5\"\n      }\n    ],\n    \"did\": [\n      {\n        \"text\": \"Add date filter above table\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Add CSV export button\",\n        \"ref\": \"m2\"\n      },\n      {\n        \"text\": \"Set date filter default to last 30 days\",\n        \"ref\": \"m4\"\n      },\n      {\n        \"text\": \"Add Reset button next to filter\",\n        \"ref\": \"m6\"\n      }\n    ]\n  },\n  \"resolve\": [\n    \"firstRequest\"\n  ]\n}"
   }
 ]
