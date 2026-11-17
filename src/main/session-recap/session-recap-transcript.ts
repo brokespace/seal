@@ -85,7 +85,7 @@ function fileReferences(message: NativeChatMessage): Omit<RecapReference, 'at'>[
 const NOT_A_PROMPT = /^\[Request interrupted|^!/
 
 /** Rows on the user's side that ask the agent for nothing would each read as a request nobody addressed. */
-function asksSomething(message: NativeChatMessage, prose: string): boolean {
+export function asksSomething(message: NativeChatMessage, prose: string): boolean {
   return (
     !NOT_A_PROMPT.test(prose) &&
     !isImageSourceUserTurn(message) &&
