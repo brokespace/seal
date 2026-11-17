@@ -4,7 +4,11 @@ import type { StructuredTab } from '@/components/native-chat/session/status/stru
 import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapters/agent-session-adapters'
 import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { findAgentSessionRecord } from '../chat/use-agent-session-record'
+import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
+import {
+  findAgentSessionRecord,
+  type AgentSessionFrameLookup
+} from '../chat/use-agent-session-record'
 import { windowSubagents } from './window-agent-session'
 
 export type WorkspaceSessionListInputs = {
@@ -45,11 +49,13 @@ function recordOf(
   row: DashboardAgentRow,
   chat: StructuredTab | undefined
 ): LiveSession | null {
-  const record = findAgentSessionRecord(
-    all,
-    chat ? { kind: 'chat', sessionId: chat.entityId } : { kind: 'pane', paneKey: row.paneKey },
-    (sessionId) => sessionId
-  )
+  const find = (lookup: AgentSessionFrameLookup): LiveSession | null =>
+    findAgentSessionRecord(all, lookup, (sessionId) => sessionId)
+  const record = chat
+    ? find({ kind: 'chat', sessionId: chat.entityId })
+    : (find({ kind: 'pane', paneKey: row.paneKey }) ??
+      // A paired host's record names the pane as that host does.
+      find({ kind: 'pane', paneKey: toHostSessionPaneKey(row.paneKey) }))
   const named = row.entry.providerSession?.id
   return record ?? (named ? (namedRecords(all).get(named) ?? null) : null)
 }

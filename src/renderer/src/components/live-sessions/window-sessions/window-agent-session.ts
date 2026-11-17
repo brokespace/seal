@@ -12,6 +12,7 @@ import type {
   LiveSessionMachine,
   LiveSessionStatus
 } from '../../../../../shared/live-sessions/live-session-types'
+import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
 import {
   sealPaneFromRow,
   sealPaneRecord,
@@ -114,11 +115,12 @@ export function windowAgentSession(
     now
   )
   const { chat } = place
-  // A chat its provider has not named goes by the id its host's record will carry.
-  const providerSessionId =
-    chat && isProvisionalLiveSessionId(pane.providerSessionId)
+  // An agent its provider has not named goes by the id its host's record will carry.
+  const providerSessionId = !isProvisionalLiveSessionId(pane.providerSessionId)
+    ? pane.providerSessionId
+    : chat
       ? `seal-${chat.entityId}`
-      : pane.providerSessionId
+      : `pane-${toHostSessionPaneKey(row.paneKey)}`
   const status = statusOf(row, pane)
   const cwd = pane.cwd ?? place.cwd
   const titleOnly = entry.observation?.origin === 'title'

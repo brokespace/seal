@@ -196,6 +196,15 @@ describe('a workspace card lists each agent session once', () => {
     expect(subagents(list([agentRow('tab-1:0', {}), child], listed))).toEqual(counted)
   })
 
+  it("leaves a paired host's terminal agent to the record that names its pane as that host does", () => {
+    const leaf = '1515e460-427e-4df1-af28-daca0675b0ad'
+    const listed = [record({ surface: { kind: 'cli', paneKey: `tab-9:${leaf}` } })]
+    expect(list([agentRow(`web-terminal-tab-9:${leaf}`, {})], listed)).toBe(listed)
+    expect(list([agentRow(`web-terminal-tab-9:${leaf}`, {})], []).map((s) => s.id)).toEqual([
+      `server-7:claude:pane-tab-9:${leaf}`
+    ])
+  })
+
   it('shows the model this window knows on a record that has none', () => {
     const listed = [record({ surface: { kind: 'cli', paneKey: 'tab-1:0' } })]
     const sessions = list([agentRow('tab-1:0', { model: 'gpt-5.6' })], listed)

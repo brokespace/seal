@@ -6,6 +6,7 @@ import { activateWorkspaceTabPaletteResult } from '@/lib/workspace/search/tabs/w
 import { useAppStore } from '@/store/index'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { Tab } from '../../../../../shared/tab-types'
+import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { liveSessionTitle } from '../live-session-presentation'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
@@ -48,15 +49,20 @@ function showChatTab(chatSessionId: string): boolean {
 }
 
 function showTerminalPane(paneKey: string): boolean {
-  const separator = paneKey.lastIndexOf(':')
-  const terminalTabId = paneKey.slice(0, separator)
-  const tab = findTab((t) => t.contentType === 'terminal' && t.entityId === terminalTabId)
+  const leafId = paneKey.slice(paneKey.lastIndexOf(':') + 1)
+  // A paired host's record names the pane by that host's tab, which this window mirrors under its own id.
+  const hostPaneKey = toHostSessionPaneKey(paneKey)
+  const tab = findTab(
+    (t) =>
+      t.contentType === 'terminal' &&
+      toHostSessionPaneKey(`${t.entityId}:${leafId}`) === hostPaneKey
+  )
   if (!tab || !showWorkspaceTab(tab, 'terminal')) {
     return false
   }
   // Makes the pane its split's active one, as a click on it does.
-  activateTabAndFocusPane(terminalTabId, paneKey.slice(separator + 1), {
-    ackPaneKeyOnSuccess: paneKey,
+  activateTabAndFocusPane(tab.entityId, leafId, {
+    ackPaneKeyOnSuccess: `${tab.entityId}:${leafId}`,
     flashFocusedPane: true,
     scrollToBottomIfOutputSinceLastView: true
   })
