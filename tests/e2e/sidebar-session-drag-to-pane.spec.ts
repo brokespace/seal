@@ -28,6 +28,7 @@ test('a session with a project but no workspace is dragged onto the main area an
   registerPostElectronShutdownCleanup
 }) => {
   test.skip(process.platform === 'win32', 'Sessions are not scanned for on Windows')
+  // The session is listed by a scan that comes 3 to 12 s after it is seeded, on top of app start.
   test.setTimeout(120_000)
   await showSidebar(page)
   await waitForSessionReady(page)
