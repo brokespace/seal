@@ -12,6 +12,7 @@ import {
   MobileNativeChatView,
   type MobileNativeChatInputLockReason
 } from '../../session/native-chat/MobileNativeChatView'
+import { MobileNativeChatHistoryRetentionContext } from '../../session/native-chat/transcript/mobile-native-chat-history-retention-context'
 import { MobileNativeChatNoticeContext } from '../../session/native-chat/transcript/mobile-native-chat-notice-context'
 import {
   MobileNativeChatReplyRevealsContext,
@@ -161,51 +162,53 @@ export function LiveSessionChat({
     >
       <MobileNativeChatReplyRevealsContext.Provider value={replyReveals}>
         <MobileNativeChatNoticeContext.Provider value={notice}>
-          <MobileNativeChatView
-            messages={messages.messages}
-            folded={folded}
-            status={messages.phase === 'loading' ? 'loading' : 'ready'}
-            agent={agent || null}
-            sessionLive={session?.alive === true}
-            agentWorking={
-              session?.alive === true && liveSessionStatusGroup(session.status) === 'working'
-            }
-            // The registry has no call that stops a turn.
-            canStop={false}
-            streaming={null}
-            hasMore={messages.hasMore}
-            olderPages={messages.olderPages}
-            onLoadEarlier={() => void messages.loadEarlier()}
-            onSend={onSend}
-            sendSurfaceId={surfaceId}
-            getSendCompletionGeneration={NO_GENERATION}
-            getComposerEditGeneration={NO_GENERATION}
-            pending={pending}
-            draftKey={surfaceId}
-            composerScopeKey={surfaceId}
-            onComposerTextChange={onComposerTextChange}
-            inputLockReason={inputLockReason}
-            inputLockText={inputLockText}
-            hostOutage={hostOutage}
-            sendErrorMessage={source.answerError}
-            onClearSendError={source.clearAnswerError}
-            onDismissSendError={source.clearAnswerError}
-            contextUsage={session?.context ?? null}
-            permission={permission}
-            onRespondPermission={answer}
-            question={question}
-            onAnswerQuestion={answer}
-            promptKey={card?.promptId ?? null}
-            composerTray={{
-              content: (
-                <LiveSessionUndeliveredSends
-                  messages={undelivered}
-                  onRetry={connected ? onRetry : null}
-                />
-              )
-            }}
-            keyboardInset={keyboardInset}
-          />
+          <MobileNativeChatHistoryRetentionContext.Provider value={messages.retainHistory}>
+            <MobileNativeChatView
+              messages={messages.messages}
+              folded={folded}
+              status={messages.phase === 'loading' ? 'loading' : 'ready'}
+              agent={agent || null}
+              sessionLive={session?.alive === true}
+              agentWorking={
+                session?.alive === true && liveSessionStatusGroup(session.status) === 'working'
+              }
+              // The registry has no call that stops a turn.
+              canStop={false}
+              streaming={null}
+              hasMore={messages.hasMore}
+              olderPages={messages.olderPages}
+              onLoadEarlier={() => void messages.loadEarlier()}
+              onSend={onSend}
+              sendSurfaceId={surfaceId}
+              getSendCompletionGeneration={NO_GENERATION}
+              getComposerEditGeneration={NO_GENERATION}
+              pending={pending}
+              draftKey={surfaceId}
+              composerScopeKey={surfaceId}
+              onComposerTextChange={onComposerTextChange}
+              inputLockReason={inputLockReason}
+              inputLockText={inputLockText}
+              hostOutage={hostOutage}
+              sendErrorMessage={source.answerError}
+              onClearSendError={source.clearAnswerError}
+              onDismissSendError={source.clearAnswerError}
+              contextUsage={session?.context ?? null}
+              permission={permission}
+              onRespondPermission={answer}
+              question={question}
+              onAnswerQuestion={answer}
+              promptKey={card?.promptId ?? null}
+              composerTray={{
+                content: (
+                  <LiveSessionUndeliveredSends
+                    messages={undelivered}
+                    onRetry={connected ? onRetry : null}
+                  />
+                )
+              }}
+              keyboardInset={keyboardInset}
+            />
+          </MobileNativeChatHistoryRetentionContext.Provider>
         </MobileNativeChatNoticeContext.Provider>
       </MobileNativeChatReplyRevealsContext.Provider>
     </MobileNativeChatRowOverlaysHost>

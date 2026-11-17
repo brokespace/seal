@@ -29,7 +29,7 @@ export function AgentSessionSubagentTranscript({
 }): React.JSX.Element {
   const t = useTranslate()
   const transcriptId = subagentTranscriptId(session.id, subagent.id)
-  const { phase, error, messages, hasMore, loadingEarlier, loadEarlier } =
+  const { phase, error, messages, hasMore, loadingEarlier, loadEarlier, retainHistory } =
     useLiveTranscript(transcriptId)
   const chat = useMemo<NativeChatLiveSession>(() => {
     const ready = messages.length ? 'ready' : 'empty'
@@ -43,7 +43,8 @@ export function AgentSessionSubagentTranscript({
       hasMore,
       loadingEarlier,
       olderHistoryGeneration: 0,
-      loadEarlier
+      loadEarlier,
+      retainHistory
     }
   }, [
     session.provider,
@@ -53,7 +54,8 @@ export function AgentSessionSubagentTranscript({
     messages,
     hasMore,
     loadingEarlier,
-    loadEarlier
+    loadEarlier,
+    retainHistory
   ])
   return (
     <div className={cn('flex min-h-0 min-w-0 flex-col bg-chat-pane', className)}>

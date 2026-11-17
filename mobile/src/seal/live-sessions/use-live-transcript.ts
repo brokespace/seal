@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { readLiveTranscriptPage } from './live-session-operations'
+import { LiveTranscriptReaderHold } from '../../../../src/shared/live-sessions/live-transcript-reader-hold'
 import type { NativeChatMessage } from '../../../../src/shared/native-chat/native-chat-types'
 import {
   liveTranscriptFrameSchema,
@@ -47,14 +48,35 @@ const LOADING: LiveTranscriptState = {
  *
  * The host reads a session it does not list as empty, as it does right after a reconnect, before the
  * session's machine is scanned. Such a read is not shown: the watch opens again once `listed`.
+ *
+ * A newest page that would replace the rows a reader has scrolled away from waits until they are
+ * back at the end; `retainHistory` is how the view says a reader left it.
  */
 export function useLiveTranscript(
   client: RpcClient | null,
   sessionId: string | null,
   listed: boolean
-): LiveTranscriptState & { loadEarlier: () => Promise<void>; retry: () => void } {
+): LiveTranscriptState & {
+  loadEarlier: () => Promise<void>
+  retry: () => void
+  retainHistory: () => () => void
+} {
   const held = useRef<Held>({ byId: new Map(), cursor: null, start: null })
   const [state, setState] = useState<LiveTranscriptState>(LOADING)
+  const [hold] = useState(
+    () =>
+      new LiveTranscriptReaderHold((rows) => {
+        held.current = { byId: rows.byId, cursor: rows.cursor, start: rows.start }
+        setState((s) => ({
+          ...s,
+          phase: 'ready',
+          error: null,
+          messages: ordered(rows.byId),
+          readTo: rows.cursor,
+          hasMore: rows.more
+        }))
+      })
+  )
   const [attach, setAttach] = useState(0)
 
   useEffect(() => {
@@ -73,11 +95,20 @@ export function useLiveTranscript(
         readTo: held.current.cursor,
         hasMore: hasMore ?? s.hasMore
       }))
+    const readTo = () => hold.waitingCursor ?? held.current.cursor
     const applyPage = (page: LiveTranscriptPage) => {
-      const read = held.current.cursor
+      const read = readTo()
       // A watch replayed after a long gap brings a page that starts past the rows held: it can't join them.
       if (read !== null && page.start > read) {
-        held.current = { byId: new Map(), cursor: null, start: null }
+        const byId = new Map(page.messages.map((m) => [m.id, m]))
+        hold.replace(
+          { byId, start: page.start, cursor: page.cursor, more: page.more },
+          held.current.byId.size > 0
+        )
+        return
+      }
+      if (hold.append(page.messages, page.cursor)) {
+        return
       }
       for (const m of page.messages) {
         held.current.byId.set(m.id, m)
@@ -88,16 +119,21 @@ export function useLiveTranscript(
     }
     const applyDelta = (delta: LiveTranscriptDelta) => {
       if (delta.reset) {
-        held.current.byId = new Map(delta.messages.map((m) => [m.id, m]))
-        held.current.cursor = delta.cursor
-        held.current.start = delta.messages[0] ? offsetOf(delta.messages[0]) : delta.cursor
-        publish(held.current.start > 0)
+        const start = delta.messages[0] ? offsetOf(delta.messages[0]) : delta.cursor
+        const byId = new Map(delta.messages.map((m) => [m.id, m]))
+        hold.replace(
+          { byId, start, cursor: delta.cursor, more: start > 0 },
+          held.current.byId.size > 0
+        )
         return
       }
-      if (delta.from !== held.current.cursor) {
+      if (delta.from !== readTo()) {
         if (!closed) {
           setAttach((n) => n + 1)
         }
+        return
+      }
+      if (hold.append(delta.messages, delta.cursor)) {
         return
       }
       for (const m of delta.messages) {
@@ -108,7 +144,7 @@ export function useLiveTranscript(
     }
     const close = client.subscribe(
       'liveSessions.watchTranscript',
-      { sessionId, fromCursor: held.current.cursor, images: 'refs' },
+      { sessionId, fromCursor: readTo(), images: 'refs' },
       (raw) => {
         const parsed = liveTranscriptFrameSchema.safeParse(raw)
         if (closed || !parsed.success) {
@@ -143,7 +179,7 @@ export function useLiveTranscript(
       closed = true
       close()
     }
-  }, [client, sessionId, attach, listed])
+  }, [client, sessionId, attach, listed, hold])
 
   const loadEarlier = useCallback(async () => {
     const before = held.current.start
@@ -174,5 +210,6 @@ export function useLiveTranscript(
   }, [client, sessionId])
 
   const retry = useCallback(() => setAttach((n) => n + 1), [])
-  return { ...state, loadEarlier, retry }
+  const retainHistory = useCallback(() => hold.retain(), [hold])
+  return { ...state, loadEarlier, retry, retainHistory }
 }
