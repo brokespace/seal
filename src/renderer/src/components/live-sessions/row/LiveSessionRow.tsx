@@ -55,9 +55,9 @@ export type LiveSessionRowProps = {
   machine?: string | null
   account: string | null
   unread: boolean
-  /** Its chat is the one showing in the main area. */
+  /** Its tab is the one on view in the main area. */
   current: boolean
-  /** A Projects badge, a fresh launch, or the active workspace points at it. */
+  /** A Projects badge or a fresh launch points at it. */
   highlighted: boolean
   /** Null outside multi-select. */
   picked: boolean | null

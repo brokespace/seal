@@ -22,7 +22,7 @@ import { useWorktreeDragRuntime } from '../drag/use-runtime'
 import { useWorktreeDragSession } from '../drag/use-session'
 import { useWorktreeDocumentDrop } from '../drag/use-document-drop'
 import { useWorktreeLineageDropCommit } from '../drag/use-lineage-drop-commit'
-import { withKeyboardPreview } from '../navigation/use-keyboard'
+import { useActiveCardMark } from './use-active-card-mark'
 import { useWorktreeViewportKeyboardNavigation } from './use-keyboard-navigation'
 import { useWorktreeRowGeometry } from './use-row-geometry'
 import { useWorktreeListVirtualizer } from './use-virtualizer'
@@ -122,14 +122,12 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
   const { handleContainerKeyDown, handleContainerKeyUp, handleContainerBlur, keyboardPreview } =
     useWorktreeViewportKeyboardNavigation({ props, scrollRef, markDirectScrollInput })
 
-  const rowProps = useMemo(
-    () => withKeyboardPreview(props, keyboardPreview),
-    [keyboardPreview, props]
-  )
+  const { rowProps, marksActiveCard } = useActiveCardMark(props, keyboardPreview)
 
   const renderRows = rows
   const { projection, activeFamilyRoots, firstHeaderIndex } = useLineageRowProjection({
     ...rowProps,
+    activeWorktreeId: marksActiveCard ? rowProps.activeWorktreeId : null,
     newCardStyle
   })
 
@@ -328,6 +326,7 @@ export const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktr
     dragUnitsByRow: rowGeometry.ranges.byRow,
     hiddenDragRanges,
     props: rowProps,
+    marksActiveCard,
     projection,
     activeFamilyRoots,
     renderRows,

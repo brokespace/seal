@@ -22,6 +22,7 @@ import type { ProjectHeaderHostContext } from '../rows/project-header-host-conte
 
 type BuildArgs = {
   props: VirtualizedWorktreeViewportProps
+  marksActiveCard: boolean
   projectGroups: readonly ProjectGroup[]
   dragUnitsByRow: ReadonlyMap<number, { identity: string }>
   hiddenDragRanges: readonly { start: number; end: number }[]
@@ -115,6 +116,7 @@ export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtual
       nativeLineageDropTargetIdentity: runtime.nativeLineageDropTargetIdentity,
       activeWorktreeId: props.activeWorktreeId,
       activeWorkspaceExecutionHostId: props.activeWorkspaceExecutionHostId,
+      marksActiveCard: args.marksActiveCard,
       currentWorktreeId: props.currentWorktreeId,
       highlightedRevealRowKey: reveal.highlightedRevealRowKey,
       selectedWorktreeIds: props.selectedWorktreeIds,
@@ -136,6 +138,7 @@ export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtual
       settings: args.settings,
       activeWorktreeId: props.activeWorktreeId,
       activeWorkspaceExecutionHostId: props.activeWorkspaceExecutionHostId,
+      marksActiveCard: args.marksActiveCard,
       currentWorktreeId: props.currentWorktreeId,
       selectedWorktreeIds: props.selectedWorktreeIds,
       repoMap: props.repoMap,

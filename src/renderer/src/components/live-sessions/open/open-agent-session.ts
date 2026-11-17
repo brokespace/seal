@@ -6,13 +6,13 @@ import { activateWorkspaceTabPaletteResult } from '@/lib/workspace/search/tabs/w
 import { useAppStore } from '@/store/index'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import type { Tab } from '../../../../../shared/tab-types'
-import { toHostSessionPaneKey } from '../../../../../shared/workspace-layout/terminal-surface-id'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { liveSessionTitle } from '../live-session-presentation'
 import { liveSessionRegistryStore } from '../live-session-registry-store'
 import type { SplitViewTabPlace } from '@/components/split-view/split-view-types'
 import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
 import type { AgentSessionOpenMode } from './agent-session-open-mode'
+import { isChatTabOf, isTerminalTabOfPane } from './agent-session-tab-match'
 import { agentSessionTabWorktreeId } from './agent-session-workspace'
 import {
   activateExternalAgentSessionTab,
@@ -45,19 +45,13 @@ function showWorkspaceTab(tab: Tab, contentType: 'agent-session' | 'terminal'): 
 }
 
 function showChatTab(chatSessionId: string): boolean {
-  const tab = findTab((t) => t.contentType === 'agent-session' && t.entityId === chatSessionId)
+  const tab = findTab((t) => isChatTabOf(t, chatSessionId))
   return tab !== null && showWorkspaceTab(tab, 'agent-session')
 }
 
 function showTerminalPane(paneKey: string): boolean {
   const leafId = paneKey.slice(paneKey.lastIndexOf(':') + 1)
-  // A paired host's record names the pane by that host's tab, which this window mirrors under its own id.
-  const hostPaneKey = toHostSessionPaneKey(paneKey)
-  const tab = findTab(
-    (t) =>
-      t.contentType === 'terminal' &&
-      toHostSessionPaneKey(`${t.entityId}:${leafId}`) === hostPaneKey
-  )
+  const tab = findTab((t) => isTerminalTabOfPane(t, paneKey))
   if (!tab || !showWorkspaceTab(tab, 'terminal')) {
     return false
   }
