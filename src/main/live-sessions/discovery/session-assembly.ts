@@ -215,7 +215,8 @@ export function assembleHostSessions(input: {
             (registry?.state ? null : leftoverCommands(commands, summary, status))),
       nowMs: now
     })
-    const left = claudeBackgroundWait(transcript, activity, commands, registry)
+    // With no process seen there is nobody to be woken, however fresh the last write.
+    const left = claudeBackgroundWait(process && transcript, activity, commands, registry)
     const waits = withBackgroundWait({ status, statusDetail }, summary, activity, left)
     ;({ status, statusDetail } = waits)
     if (claudeRegistryHoldsBusy({ status, statusDetail }, summary, registry)) {
