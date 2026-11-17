@@ -6,6 +6,7 @@ import {
   type UtilityModelStatus
 } from '../../shared/utility-model/utility-model-types'
 import type { UtilityModelChoice } from '../../shared/utility-model/utility-model-selection'
+import { createClefDecisions, type ClefDecisions } from './clef-decisions'
 import { CloudflareAiConfigStore, type CloudflareAiConfigFields } from './cloudflare-ai-config'
 import { OpenRouterAccountStore } from './openrouter-utility-provider'
 import {
@@ -53,6 +54,8 @@ export class UtilityModelHost {
   private readonly services = new Map<UtilityModelProviderId, UtilityModelService>()
   private readonly listeners = new Set<() => void>()
   private context: UtilityModelHostContext | null = null
+  /** Clef for every judge on this host: OpenRouter when it has a key, else the Workers AI account. */
+  readonly clef: ClefDecisions = createClefDecisions((id) => this.provider(id))
 
   constructor(deps: UtilityModelHostDeps = {}) {
     this.cloudflare = deps.cloudflare ?? new CloudflareAiConfigStore()

@@ -107,10 +107,8 @@ export class SessionSummariesHost {
             liveSessions,
             transcripts,
             utility: this.models.recaps,
-            // The judge runs on Workers AI whatever the read step runs on; an injected model brings none.
-            decisions: options.utilityModel
-              ? undefined
-              : getUtilityModelHost().provider('cloudflare-workers-ai'),
+            // The judge runs on Clef whatever the read step runs on; an injected model brings none.
+            decisions: options.utilityModel ? undefined : getUtilityModelHost().clef,
             userDataPath: options.userDataPath,
             enabled: () => this.recapOn() && this.isConfigured('recaps'),
             serverRecapCall: options.serverRecapCall,

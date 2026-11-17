@@ -49,7 +49,7 @@ export function recapJudgeVerdict(
   return fired ? fired[1] : 'open'
 }
 
-/** The request body a Workers AI decision model takes: the state and the whole question book. */
+/** What a decision model is asked: the state and the whole question book, in Workers AI's request. */
 export function recapJudgeBody(model: string, state: RecapJudgeState): unknown {
   return {
     model: model.slice(model.lastIndexOf('/') + 1),
@@ -112,7 +112,8 @@ export type RecapJudge = {
   calibration: RecapJudgeCalibration
   /** False where the judge cannot run at all: no account, or wording its cuts were not set on. */
   available(): boolean
-  ask(state: RecapJudgeState, signal: AbortSignal): Promise<RecapJudgeReply>
+  /** `kind` is the pass asking, whose allowance decides which account may answer. */
+  ask(state: RecapJudgeState, signal: AbortSignal, kind: RecapPassKind): Promise<RecapJudgeReply>
 }
 
 /** What the engine hands the requests step after the read step of one pass. */

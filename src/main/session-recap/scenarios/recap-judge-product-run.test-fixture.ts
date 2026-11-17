@@ -80,9 +80,9 @@ export async function judgeLabelledScenario(
   const settle = createRecapRequestsStep({
     judge: {
       ...judge,
-      ask: (state, signal) => {
+      ask: (state, signal, kind) => {
         asked = state
-        return judge.ask(state, signal)
+        return judge.ask(state, signal, kind)
       }
     },
     since: (id, cursor) => transcripts.of(id).since(cursor),

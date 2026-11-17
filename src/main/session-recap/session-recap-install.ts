@@ -4,11 +4,11 @@ import type { SessionTranscripts } from '../live-sessions/transcripts/session-tr
 import { recapTurnHasEnded } from '../../shared/session-recap/session-recap-request-display'
 import { utilityModelProvider } from '../../shared/utility-model/utility-model-provider-catalog'
 import { SessionSummaryCache } from '../session-summaries/session-summary-cache'
+import { CLEF_PROVIDER_IDS, type ClefDecisions } from '../utility-model/clef-decisions'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
-import type { UtilityModelService } from '../utility-model/utility-model-service'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
 import { ServerSessionRecaps, type ServerSessionRecapsDeps } from './server-session-recaps'
-import { RECAP_JUDGE_PROVIDER, SessionRecapBudget } from './session-recap-budget'
+import { SessionRecapBudget, type RecapPassKind } from './session-recap-budget'
 import { createClefRecapJudge, RecapJudgeCallLog } from './session-recap-clef-judge'
 import { redactRecapCommand } from './session-recap-command-redaction'
 import { SessionRecapEngine } from './session-recap-engine'
@@ -21,10 +21,10 @@ export type SessionRecapInstallOptions = {
   transcripts: SessionTranscripts
   utility: UtilityModelClient
   /**
-   * The Workers AI account, whose decision model the judge alone runs on whatever model the read
-   * step uses. Absent on a host with no judge: every request then stays "Open".
+   * This host's Clef, which the judge alone runs on whatever model the read step uses. Absent on a
+   * host with no judge: every request then stays "Open".
    */
-  decisions?: Pick<UtilityModelService, 'decide'>
+  decisions?: ClefDecisions
   userDataPath: string
   enabled: () => boolean
   /** Reaches paired Seal servers, which keep the recaps of the sessions they run. */
@@ -35,9 +35,13 @@ export type SessionRecapInstallOptions = {
   log?: (message: string, error?: unknown) => void
 }
 
-/** The judge on this host's Workers AI account, with its answer cache and its call log on disk. */
+/** The accounts for Clef that today's allowance still covers a pass of this kind on, preferred first. */
+const judgeProviders = (budget: SessionRecapBudget, kind: RecapPassKind) =>
+  CLEF_PROVIDER_IDS.filter((provider) => budget.allows(kind, provider))
+
+/** The judge on this host's Clef, with its answer cache and its call log on disk. */
 function judgedRequests(
-  decisions: Pick<UtilityModelService, 'decide'>,
+  decisions: ClefDecisions,
   folder: string,
   budget: SessionRecapBudget,
   log: SessionRecapInstallOptions['log']
@@ -47,9 +51,10 @@ function judgedRequests(
   void cache.load()
   void calls.load()
   return createClefRecapJudge({
-    decide: (model, request, signal) => decisions.decide(model, request, signal),
+    decide: (model, request, signal, kind) =>
+      decisions.decide(model, request, signal, { providers: judgeProviders(budget, kind) }),
     cache,
-    spend: (neurons) => budget.spend(neurons, RECAP_JUDGE_PROVIDER),
+    spend: (neurons, provider) => budget.spend(neurons, provider),
     record: (call) => calls.record(call)
   })
 }
@@ -89,7 +94,7 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
             judge: judged,
             since: transcript.since,
             turnEnded,
-            allows: (kind) => budget.allows(kind, RECAP_JUDGE_PROVIDER),
+            allows: (kind) => judgeProviders(budget, kind).length > 0,
             redact: redactRecapCommand
           })
         }
