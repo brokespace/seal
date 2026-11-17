@@ -501,6 +501,13 @@ than some clients on the wire. A client that sends its capabilities without
 - A machine that disconnects leaves the list with its sessions; they are not shown as disconnected.
 - An ended turn waits on its own command for Claude Code only. Codex keeps the first rule: its
   background terminals are leftovers.
+- A command whose launch lies before what was read of the transcript reaches the judge with no
+  text of its own. When only the reply says the agent waits on it, the judge is unsure and the
+  session reads "Waiting on you" until the agent wakes (the one held-out miss,
+  `unread-command-says-waiting`, in `background-wait-judge-report.md`).
+- The cut is close to both sides: in the measurement the least likely wait is 0.001 above it, and
+  the likeliest leftovers, a reply about a `nohup` job that is not the agent's child beside an old
+  server, are 0.04 and 0.05 below it.
 - The background wait judge needs an account for Clef (OpenRouter or Workers AI) on the host that
   summarizes sessions, and session summaries switched on. Without them the last-turn rule stands alone: a dev server
   started in the final turn reads "Waiting on 1 background task" until the user speaks, and a job

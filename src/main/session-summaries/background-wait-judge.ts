@@ -80,9 +80,8 @@ export type BackgroundWaitCalibration = {
  */
 export const BACKGROUND_WAIT_CALIBRATION: BackgroundWaitCalibration = {
   model: 'clef-flash',
-  // Not measured yet: until the wording's hash stands here the judge stays silent.
-  questionBook: 'unmeasured',
-  waitingCut: 1
+  questionBook: '7d0976546dbd',
+  waitingCut: 0.7678
 }
 
 /** False when the wording changed since the cut was measured: the last-turn rule then stands alone. */

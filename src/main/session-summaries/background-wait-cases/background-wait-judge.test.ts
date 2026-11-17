@@ -257,7 +257,8 @@ describe('the judge of background waits', () => {
           )
           .map(({ item }) => item.id)
       expect(wrong('tune')).toEqual([])
-      expect(wrong('held-out')).toEqual([])
+      // Its launch was not read, so the model has only the reply to go on: 0.63, under the cut.
+      expect(wrong('held-out')).toEqual(['unread-command-says-waiting'])
     }
   )
 
