@@ -10,12 +10,12 @@ import {
   backgroundWaitBody,
   backgroundWaitJudgeIsCalibrated,
   backgroundWaitKey,
-  backgroundWaitStanding,
   backgroundWaitState,
+  backgroundWaitVerdict,
   type BackgroundWaitAnswers,
   type BackgroundWaitCalibration,
-  type BackgroundWaitStanding,
-  type BackgroundWaitState
+  type BackgroundWaitState,
+  type BackgroundWaitVerdict
 } from './background-wait-judge'
 import { SessionSummaryCache } from './session-summary-cache'
 
@@ -29,7 +29,7 @@ const CACHE_SLOT = 'background-wait'
 const ASK_TIMEOUT_MS = 10_000
 const MAX_REMEMBERED = 400
 
-type Asked = BackgroundWaitStanding | 'asking' | 'failed'
+type Asked = BackgroundWaitVerdict | 'asking' | 'failed'
 
 function remember<Value>(map: Map<string, Value>, key: string, value: Value): void {
   map.delete(key)
@@ -42,14 +42,14 @@ function remember<Value>(map: Map<string, Value>, key: string, value: Value): vo
 /**
  * The model's say on a Claude turn that ended with commands of its own still running: the agent
  * waits on one (`waiting-task`) or they are leftovers (`your-turn`). It is asked once per state of
- * the evidence, never on a timer; until it answers, and whenever it cannot, the session keeps what
- * the last-turn rule gave it.
+ * the evidence, never on a timer; until it answers, whenever it cannot, and when its answer says
+ * neither, the session keeps what the last-turn rule gave it.
  */
 export class LiveSessionBackgroundWaits {
   /** By the state asked about. */
   private readonly asked = new Map<string, Asked>()
   /** By session: what stands while a changed state is being asked about. */
-  private readonly last = new Map<string, BackgroundWaitStanding>()
+  private readonly last = new Map<string, BackgroundWaitVerdict>()
 
   constructor(
     private readonly deps: {
@@ -84,12 +84,15 @@ export class LiveSessionBackgroundWaits {
       this.last.delete(session.id)
       return session
     }
-    const standing = asked === undefined || asked === 'asking' ? this.last.get(session.id) : asked
-    if (standing === undefined) {
+    const verdict = asked === undefined || asked === 'asking' ? this.last.get(session.id) : asked
+    if (verdict === undefined) {
       return session
     }
-    remember(this.last, session.id, standing)
-    const status = standing === 'waiting' ? 'waiting-task' : 'your-turn'
+    remember(this.last, session.id, verdict)
+    if (verdict === 'unsure') {
+      return session
+    }
+    const status = verdict === 'waiting' ? 'waiting-task' : 'your-turn'
     return {
       ...session,
       status,
@@ -121,7 +124,7 @@ export class LiveSessionBackgroundWaits {
       remember(
         this.asked,
         key,
-        'failed' in reply ? 'failed' : backgroundWaitStanding(reply.answers, waitingCut)
+        'failed' in reply ? 'failed' : backgroundWaitVerdict(reply.answers, waitingCut)
       )
       this.deps.onChange()
     })

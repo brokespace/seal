@@ -22,6 +22,19 @@ export type DiscoveryScriptOptions = {
   known: { path: string; size: number }[]
   /** Paths whose head was already read: only their tail is sent when they grow. */
   headKnown: string[]
+  /** Jobs to look for among the processes no agent runs; none asks nothing of the host. */
+  jobs?: readonly HostJobQuery[]
+}
+
+/** A job that outlived the call that started it, as a host can find it among its processes. */
+export type HostJobQuery = {
+  /** Its process started between the two (epoch seconds, host clock). */
+  from: number
+  until: number
+  /** Its command line carries one of these; `#<pid>` names the process itself. */
+  names: readonly string[]
+  /** Only a process with no terminal: not something the user runs in theirs. */
+  noTerminal: boolean
 }
 
 /** The agent processes of a host, then `@@PS` when ps listed processes at all. */
@@ -34,6 +47,19 @@ ${AGENT_PROCESS_LINES} | while read -r pid ppid tty args; do
   [ "$pid" = "@@PS" ] && { echo "@@PS"; continue; }
   echo "@@PROC $pid $ppid $tty $args"
 done
+echo "@@DONE"
+`
+}
+
+/** Only the jobs asked about: for what a scan's own read of the transcripts turned up. */
+export function buildJobProbeScript(jobs: readonly HostJobQuery[]): string {
+  return `export LC_ALL=C
+AGENTS=' '
+${AGENT_PROCESS_LINES} | {
+while read -r pid rest; do
+  [ "$pid" = "@@PS" ] || AGENTS="$AGENTS$pid "
+done
+${jobSection(jobs)}}
 echo "@@DONE"
 `
 }
@@ -76,7 +102,7 @@ while read -r pid ppid tty args; do
 ${pinSection()}
 done < "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
 rm -f "\${TMPDIR:-/tmp}/.seal-live-ps.$$"
-${childSection()}if command -v tmux >/dev/null 2>&1; then
+${childSection()}${jobSection(options.jobs ?? [])}if command -v tmux >/dev/null 2>&1; then
   SOCKS=""
   for d in "\${TMUX_TMPDIR:-}" /tmp "\${TMPDIR:-/tmp}"; do
     [ -n "$d" ] || continue
@@ -150,6 +176,63 @@ END {
     for (i = 1; i <= NR; i++) if (!(pid[i] in under) && (ppid[i] in under)) { under[pid[i]] = 1; grew = 1 }
   } while (grew)
   for (i = 1; i <= NR; i++) if (ppid[i] in under) print "@@CHILD", pid[i], ppid[i], et[i], kind[i], comm[i]
+}'
+`
+}
+
+/** A process starts within this of the call that started it, and `ps` counts whole seconds. */
+const JOB_START_SLACK_SECONDS = 3
+
+/**
+ * The processes of this user that no agent runs and that a query describes: started inside its
+ * window, with one of its names on their command line. The names are matched here, so only each
+ * process's id, start and name leave the host, never its arguments.
+ */
+function jobSection(jobs: readonly HostJobQuery[]): string {
+  if (jobs.length === 0) {
+    return ''
+  }
+  const asked = jobs
+    .map((job) => [job.from, job.until, job.noTerminal ? 'n' : 't', ...job.names].join(' '))
+    .join(';')
+  return `ps -A -o uid= -o pid= -o ppid= -o tty= -o etime= -o args= 2>/dev/null | awk -v roots="$AGENTS" -v self="$$" -v uid="$(id -u)" -v now="$(date +%s)" -v jobs=${quotePosixShell(asked)} '
+function seconds(e,  p, n, d) {
+  d = 0
+  if (index(e, "-")) { d = substr(e, 1, index(e, "-") - 1); e = substr(e, index(e, "-") + 1) }
+  n = split(e, p, ":")
+  return d * 86400 + (n == 3 ? p[1] * 3600 + p[2] * 60 + p[3] : p[1] * 60 + p[2])
+}
+BEGIN { n = split(roots, r, " "); for (i = 1; i <= n; i++) skip[r[i]] = 1; skip[self] = 1; q = split(jobs, job, ";") }
+{
+  mine[NR] = ($1 == uid); pid[NR] = $2; ppid[NR] = $3; parent[$2] = $3
+  bare[NR] = ($4 !~ /[0-9]/); start[NR] = now - seconds($5)
+  c = $6; sub(/.*\\//, "", c); comm[NR] = substr(c, 1, 40)
+  a = $0; sub(/^ *[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +/, "", a); args[NR] = a
+}
+END {
+  # A ps that cannot list this way says nothing: no answer is not "no such job".
+  if (!NR) exit
+  do {
+    grew = 0
+    for (i = 1; i <= NR; i++) if (!(pid[i] in skip) && (ppid[i] in skip)) { skip[pid[i]] = 1; grew = 1 }
+  } while (grew)
+  # What runs this script carries the names on its own command line.
+  for (p = parent[self]; p > 1 && depth++ < 64; p = parent[p]) skip[p] = 1
+  for (i = 1; i <= NR; i++) {
+    if (!mine[i] || (pid[i] in skip)) continue
+    for (j = 1; j <= q; j++) {
+      m = split(job[j], f, " ")
+      if (start[i] < f[1] - ${JOB_START_SLACK_SECONDS} || start[i] > f[2] + ${JOB_START_SLACK_SECONDS}) continue
+      if (f[3] == "n" && !bare[i]) continue
+      for (k = 4; k <= m; k++) if (f[k] == ("#" pid[i]) || index(args[i], f[k])) {
+        print "@@JOB", j - 1, k - 4, pid[i], start[i], comm[i]
+        found++
+        break
+      }
+    }
+  }
+  # Counted, so a listing whose first lines were cut off is not read as "no such job".
+  print "@@JOBS", found + 0
 }'
 `
 }

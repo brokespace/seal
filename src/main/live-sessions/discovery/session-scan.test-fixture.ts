@@ -29,6 +29,11 @@ export type ScanOptions = {
   beside?: string[]
   /** What `ps` lists under the agents, as `pid ppid etime kind command`; absent when the host lists nothing. */
   children?: string[]
+  /**
+   * What the host finds of the jobs a scan asks about (processes no agent runs), as
+   * `query name pid command`; absent when it cannot list them.
+   */
+  jobs?: string[]
   /** Other agent processes on the host, as `pid ppid tty args`. */
   processes?: string[]
   /** The transcript as it stood when only its first records were written. */
@@ -103,7 +108,7 @@ const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('bas
 function hostOutput(
   names: string[],
   options: ScanOptions
-): { script: string; files: DiscoveredFile[]; now: number } {
+): { script: (asked: string) => string; files: DiscoveredFile[]; now: number } {
   const files = names.map((name, index) => fixtureFile(name, index === 0 ? options : {}))
   const [main] = files
   const wrote = Math.max(...files.map((f) => f.mtimeMs))
@@ -153,8 +158,17 @@ function hostOutput(
     const state = { id: sessionId, state: options.hook.state, updated }
     lines.push(`@@HOOK /home/dev/.config/sisomewhere/agents/${sessionId}.json ${b64(state)}`)
   }
-  lines.push('@@DONE')
-  return { script: lines.join('\n'), files, now }
+  const jobs = (options.jobs ?? []).map(
+    (job) => `@@JOB ${job.replace(/ (?=\S+$)/, ` ${Math.floor(now / 1000) - 60} `)}`
+  )
+  // A host answers for the jobs only when the scan's script asks about some.
+  const script = (asked: string): string =>
+    [
+      ...lines,
+      ...(options.jobs && asked.includes(' -v jobs=') ? [...jobs, `@@JOBS ${jobs.length}`] : []),
+      '@@DONE'
+    ].join('\n')
+  return { script, files, now }
 }
 
 /** One scanner following a session from scan to scan, as the registry does for a machine. */
@@ -162,7 +176,7 @@ export function recordedSession(name: string): (options?: ScanOptions) => Promis
   let current = hostOutput([name], {})
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
-    run: async () => current.script,
+    run: async (script) => current.script(script),
     transcriptFiles: async () => current.files
   }
   const scanner = new HostSessionScanner(host, LOCAL_SCAN_LIMITS)
@@ -178,7 +192,7 @@ export async function scan(name: string, options: ScanOptions = {}): Promise<Liv
   const { script, files, now } = hostOutput([name, ...(options.beside ?? [])], options)
   const host: LiveSessionHost = {
     machine: { hostId: 'local', label: 'dev-box', kind: 'local' },
-    run: async () => script,
+    run: async (asked) => script(asked),
     transcriptFiles: async () => files
   }
   return (await new HostSessionScanner(host, LOCAL_SCAN_LIMITS).scan(now)).sessions

@@ -134,6 +134,21 @@ describe('LiveSessionBackgroundWaits', () => {
     })
   })
 
+  it('leaves a wait the last-turn rule found to an answer that says neither wait nor leftover', async () => {
+    // Clef Flash's `waiting` for the reported session: its likeliest standing, under the cut.
+    const unsure: BackgroundWaitAnswers = {
+      waiting: 0.4941,
+      leftover: 0.31,
+      other: 0.1959,
+      reason: null
+    }
+    const { shown } = harness(() => ({ answers: unsure }))
+    const waiting = session({ status: 'waiting-task', backgroundWait: evidence('final') })
+    expect(await shown(waiting)).toBe(waiting)
+    const left = session({ status: 'your-turn', backgroundWait: evidence('earlier') })
+    expect(await shown(left)).toBe(left)
+  })
+
   it('asks once per state of the evidence, and again only when the evidence changes', async () => {
     const { shown, asked, later } = harness(() => ({ answers: WAITS }))
     const first = session({ backgroundWait: evidence('final') })

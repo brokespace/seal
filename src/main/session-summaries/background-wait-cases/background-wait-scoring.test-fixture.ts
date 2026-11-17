@@ -1,13 +1,15 @@
 // How the judge of background waits is scored against the labels: one cut on the probability of
-// `waiting`, set on the tune split, and what the app would show at that cut on each split.
+// `waiting`, set on the tune split, and what the app would show at that cut on each split, where
+// the last-turn rule stands whenever the model's answer says neither.
 import { cutForLoss, rocAuc } from '../../session-recap/scenarios/recap-judge-scoring.test-fixture'
 import {
-  backgroundWaitStanding,
+  backgroundWaitVerdict,
   type BackgroundWaitAnswers,
   type BackgroundWaitStanding
 } from '../background-wait-judge'
 import {
   BACKGROUND_WAIT_SPLITS,
+  backgroundWaitCaseSession,
   type BackgroundWaitCase,
   type BackgroundWaitSplit
 } from './background-wait-cases.test-fixture'
@@ -45,6 +47,8 @@ export type BackgroundWaitSplitScore = {
   waits: Tally
   /** Leftovers and the rest shown as "Waiting on you". */
   others: Tally
+  /** Shown the right way round by the last-turn rule alone, with no model. */
+  byRuleAlone: Tally
   /** The model picked the labelled standing among all three. */
   standings: Tally
   unanswered: string[]
@@ -57,12 +61,28 @@ export type BackgroundWaitScore = {
   splits: Partial<Record<BackgroundWaitSplit, BackgroundWaitSplitScore>>
 }
 
-export function backgroundWaitShown(
-  answers: BackgroundWaitAnswers,
-  cut: number
-): 'waiting-task' | 'your-turn' {
-  return backgroundWaitStanding(answers, cut) === 'waiting' ? 'waiting-task' : 'your-turn'
+type Shown = 'waiting-task' | 'your-turn'
+
+/** What code shows with no model: a command still running since the user last spoke is a wait. */
+export function backgroundWaitShownByRule(item: BackgroundWaitCase): Shown {
+  return backgroundWaitCaseSession(item).status === 'waiting-task' ? 'waiting-task' : 'your-turn'
 }
+
+/** What the app shows: the last-turn rule, unless the model's answer settles it. */
+export function backgroundWaitShown(
+  item: BackgroundWaitCase,
+  answers: BackgroundWaitAnswers | null,
+  cut: number
+): Shown {
+  const verdict = answers ? backgroundWaitVerdict(answers, cut) : 'unsure'
+  if (verdict === 'unsure') {
+    return backgroundWaitShownByRule(item)
+  }
+  return verdict === 'waiting' ? 'waiting-task' : 'your-turn'
+}
+
+const isRight = (item: BackgroundWaitCase, shown: Shown): boolean =>
+  (shown === 'waiting-task') === (item.truth === 'waiting')
 
 function likeliest(answers: BackgroundWaitAnswers): BackgroundWaitStanding {
   return (['waiting', 'leftover', 'other'] as const).reduce((best, standing) =>
@@ -86,7 +106,8 @@ export function scoreBackgroundWaitJudge(
       const of = answered.filter(({ item }) => (item.truth === 'waiting') === waits)
       const shown = waits ? 'waiting-task' : 'your-turn'
       return {
-        right: of.filter(({ answers }) => backgroundWaitShown(answers, cut) === shown).length,
+        right: of.filter(({ item, answers }) => backgroundWaitShown(item, answers, cut) === shown)
+          .length,
         of: of.length
       }
     }
@@ -99,16 +120,17 @@ export function scoreBackgroundWaitJudge(
       ),
       waits: right(true),
       others: right(false),
+      byRuleAlone: {
+        right: answered.filter(({ item }) => isRight(item, backgroundWaitShownByRule(item))).length,
+        of: answered.length
+      },
       standings: {
         right: answered.filter(({ item, answers }) => likeliest(answers) === item.truth).length,
         of: answered.length
       },
       unanswered: found.filter(({ answers }) => !answers).map(({ item }) => item.id),
       wrong: answered
-        .filter(
-          ({ item, answers }) =>
-            (backgroundWaitShown(answers, cut) === 'waiting-task') !== (item.truth === 'waiting')
-        )
+        .filter(({ item, answers }) => !isRight(item, backgroundWaitShown(item, answers, cut)))
         .map(({ item }) => item.id)
     }
   }
@@ -135,24 +157,37 @@ export function backgroundWaitReportMarkdown(found: {
     const of = score.splits[split]
     return of
       ? [
-          `| ${split} | ${of.auc === null ? 'n/a' : of.auc.toFixed(3)} | ${tally(of.waits)} | ${tally(of.others)} | ${tally(of.standings)} | ${of.wrong.join(', ') || 'none'} | ${of.unanswered.join(', ') || 'none'} |`
+          `| ${split} | ${of.auc === null ? 'n/a' : of.auc.toFixed(3)} | ${tally(of.waits)} | ${tally(of.others)} | ${tally({ right: of.waits.right + of.others.right, of: of.waits.of + of.others.of })} | ${tally(of.byRuleAlone)} | ${tally(of.standings)} | ${of.wrong.join(', ') || 'none'} | ${of.unanswered.length} |`
         ]
-      : [`| ${split} | not asked | | | | | |`]
+      : [`| ${split} | not asked | | | | | | | |`]
   })
   const cases = judged.map(({ item, answers }) => {
-    const shown = answers ? backgroundWaitShown(answers, score.cut) : 'no answer'
-    const ok = answers ? (shown === 'waiting-task') === (item.truth === 'waiting') : false
+    const shown = backgroundWaitShown(item, answers, score.cut)
     const given = answers
       ? `${answers.waiting.toFixed(4)} | ${answers.leftover.toFixed(4)} | ${answers.other.toFixed(4)} | ${answers.reason ?? ''}`
-      : ' | | | '
-    return `| ${item.id} | ${item.split} | ${item.truth} | ${given} | ${shown} | ${ok ? 'yes' : '**no**'} |`
+      : 'not asked | | | '
+    return `| ${item.id} | ${item.split} | ${item.truth} | ${backgroundWaitShownByRule(item)} | ${given} | ${shown} | ${isRight(item, shown) ? 'yes' : '**no**'} |`
   })
+  const unanswered = judged.filter(({ answers }) => !answers).map(({ item }) => item.id)
+  const relabelled = judged.filter(({ item }) => item.relabelled !== undefined)
   return [
     '# Background wait judge measurement',
     '',
-    `Model \`${found.model}\`, question book \`${found.questionBook}\`. ${judged.length} labelled cases put to the model; ${found.settledByCode.length} more have nothing running and are settled by code without it (${found.settledByCode.map((item) => item.id).join(', ')}).`,
+    `Model \`${found.model}\`, question book \`${found.questionBook}\`. ${judged.length} labelled cases end with something running, ${judged.length - unanswered.length} of them answered by the model; ${found.settledByCode.length} more have nothing running and are settled by code without it (${found.settledByCode.map((item) => item.id).join(', ')}).`,
     '',
-    `The agent waits when the probability of \`waiting\` is above **${score.cut}**. The cut is set on the tune split alone; the held-out row is on cases the wording and the cut never saw. With this few cases one case moves a rate by several points.`,
+    `The last-turn rule shows a session first: a command still running that was started since the user last spoke is a wait. The model then moves a session to "Waiting on background tasks" when its probability of \`waiting\` is above **${score.cut}**, and to "Waiting on you" only when \`leftover\` is its likeliest standing; any other answer leaves the rule's status. The cut is set on the tune split alone; the held-out row is on cases the wording and the cut never saw. With this few cases one case moves a rate by several points.`,
+    ...(unanswered.length > 0
+      ? [
+          '',
+          `**${unanswered.length} cases have no answer on record** and are counted in no rate below: ${unanswered.join(', ')}. They are shown by the last-turn rule alone until a live run asks the model about them.`
+        ]
+      : []),
+    ...(relabelled.length > 0
+      ? [
+          '',
+          `**${relabelled.length} labels were changed after the model had answered**, so those cases are no blind test of it: ${relabelled.map(({ item }) => `${item.id} (${item.split}): ${item.relabelled}`).join(' ')}`
+        ]
+      : []),
     ...(found.heldOutHeldBack
       ? [
           '',
@@ -160,14 +195,14 @@ export function backgroundWaitReportMarkdown(found: {
         ]
       : []),
     '',
-    '| split | AUC of `waiting` | waits shown as waiting | others shown as your turn | likeliest standing is the label | shown wrongly | no answer |',
-    '| --- | --- | --- | --- | --- | --- | --- |',
+    '| split | AUC of `waiting` | waits shown as waiting | others shown as your turn | shown right | right by the rule alone | likeliest standing is the label | shown wrongly | no answer |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...rows,
     '',
     `${spend.asked} requests in this run, ${spend.inputTokens} input tokens on record, $${spend.usd.toFixed(5)}${median === null ? '' : `, median ${median} ms`}.`,
     '',
-    '| case | split | label | waiting | leftover | other | reason | shown | right |',
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    '| case | split | label | by the rule alone | waiting | leftover | other | reason | shown | right |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...cases,
     ''
   ].join('\n')

@@ -9,6 +9,7 @@ import { LIVE_TODO_STATUSES } from '../../../shared/live-sessions/live-session-a
 import {
   backgroundTaskEnd,
   dropForegroundCallsBefore,
+  endDetachingLaunch,
   endWakeupsBefore,
   noteRunningTask,
   openBackgroundLaunch,
@@ -42,6 +43,11 @@ export type ClaudeActivityState = {
   todos: LiveTodo[] | null
   /** Background work reported finished whose launch this state never saw, by task and tool id. */
   ended: Map<string, LiveSubagentStatus>
+  /**
+   * Subagents that stopped to wait on background work of their own, and when (epoch ms), by task
+   * and tool id: Claude Code resumes one when that work reports, and it notifies again.
+   */
+  parked: Map<string, number>
   /** When the user last spoke or interrupted: what was launched since is the newest turn's own. */
   userSpokeAt: number | null
 }
@@ -54,6 +60,7 @@ export function newClaudeActivityState(): ClaudeActivityState {
     creating: new Map(),
     todos: null,
     ended: new Map(),
+    parked: new Map(),
     userSpokeAt: null
   }
 }
@@ -109,13 +116,36 @@ export function claudeTaskReport(
   return toolUseId && report ? { toolUseId, report } : null
 }
 
+/** Claude Code 2.1.326's notice of a subagent that stopped with work of its own still running. */
+const PARKED_SUMMARY = /^Agent "[\s\S]*" is waiting on its own background work$/
+const PARKED_RESULT = 'This agent stopped with background work of its own still running.'
+
+function isParked(notification: string): boolean {
+  return (
+    PARKED_SUMMARY.test(tag(notification, 'summary') ?? '') ||
+    (tag(notification, 'result') ?? '').startsWith(PARKED_RESULT)
+  )
+}
+
+/** When a subagent, by its own id or its launching call, stopped to wait on work of its own. */
+export function subagentParkedAt(
+  state: ClaudeActivityState | null,
+  ids: (string | null)[]
+): number | undefined {
+  return ids
+    .flatMap((id) => (id === null ? [] : [state?.parked.get(id)]))
+    .find((at) => at !== undefined)
+}
+
 function finish(
   state: ClaudeActivityState,
   ids: (string | null)[],
   status: LiveSubagentStatus,
-  summary: string | null
+  summary: string | null,
+  at: number | null
 ): void {
   const known = ids.filter((id): id is string => id !== null)
+  known.forEach((id) => state.parked.delete(id))
   let found = false
   for (const agent of state.agents.values()) {
     if (known.includes(agent.toolUseId) || (agent.agentId && known.includes(agent.agentId))) {
@@ -127,6 +157,12 @@ function finish(
     if (known.includes(task.toolUseId) || (task.taskId && known.includes(task.taskId))) {
       task.status = status
       task.summary = summary ?? task.summary
+      // A shell that was killed took its jobs with it; one that ran to its end may have left one.
+      if (status === 'stopped') {
+        task.detached = null
+      } else {
+        endDetachingLaunch(task, at)
+      }
       found = true
     }
   }
@@ -180,7 +216,13 @@ function foldToolUse(state: ClaudeActivityState, tool: TranscriptRecord, at: num
       })
     }
   } else if (name === 'KillShell' || name === 'KillBash' || name === 'TaskStop') {
-    finish(state, [str(input?.shell_id), str(input?.task_id), str(input?.bash_id)], 'stopped', null)
+    finish(
+      state,
+      [str(input?.shell_id), str(input?.task_id), str(input?.bash_id)],
+      'stopped',
+      null,
+      at
+    )
   }
 }
 
@@ -210,7 +252,7 @@ function foldToolResult(
   }
   const launch = state.background.get(id)
   if (launch) {
-    settleBackgroundLaunch(state.background, launch, outcome)
+    settleBackgroundLaunch(state.background, launch, outcome, timeOf(record))
     return
   }
   const creating = state.creating.get(id)
@@ -221,10 +263,17 @@ function foldToolResult(
   }
 }
 
-/** Folds main-thread records, oldest first, into the state. */
-export function foldClaudeActivity(state: ClaudeActivityState, records: TranscriptRecord[]): void {
+/**
+ * Folds one thread's records, oldest first, into the state: a session's main thread, or the
+ * transcript a subagent writes for itself, where every record is a sidechain's.
+ */
+export function foldClaudeActivity(
+  state: ClaudeActivityState,
+  records: TranscriptRecord[],
+  thread: 'main' | 'subagent' = 'main'
+): void {
   for (const record of records) {
-    if (record.isSidechain === true) {
+    if (thread === 'main' && record.isSidechain === true) {
       continue
     }
     const notification = notificationOf(record)
@@ -232,8 +281,11 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
       const ended = backgroundTaskEnd(tag(notification, 'status'))
       const taskId = tag(notification, 'task-id')
       const summary = tag(notification, 'summary')
-      if (ended) {
-        finish(state, [taskId, tag(notification, 'tool-use-id')], ended, summary)
+      const ids = [taskId, tag(notification, 'tool-use-id')]
+      if (ended === 'completed' && isParked(notification)) {
+        ids.forEach((id) => id && state.parked.set(id, timeOf(record) ?? 0))
+      } else if (ended) {
+        finish(state, ids, ended, summary, timeOf(record))
       } else if (!taskId || !state.ended.has(taskId)) {
         noteRunningTask(state.background, taskId, summary)
       }
@@ -254,7 +306,7 @@ export function foldClaudeActivity(state: ClaudeActivityState, records: Transcri
       const origin = rec(record.origin)
       if (origin?.kind === 'peer' && str(origin.from)) {
         // A subagent handed its report back; its notification follows.
-        finish(state, [str(origin.from)], 'completed', null)
+        finish(state, [str(origin.from)], 'completed', null, timeOf(record))
         continue
       }
       for (const block of blocks(content)) {

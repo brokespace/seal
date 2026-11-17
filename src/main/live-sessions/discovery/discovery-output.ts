@@ -2,6 +2,7 @@ import type { LiveSessionProvider } from '../../../shared/live-sessions/live-ses
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import type { DiscoveredSubagentFile } from './claude-subagent-files'
 import { parseClaudeRegistryEntry, type ClaudeRegistryEntry } from './claude-session-registry'
+import { discoveredJobsIn, type DiscoveredJob } from './discovered-host-jobs'
 
 export type DiscoveredProcess = {
   pid: number
@@ -76,6 +77,8 @@ export type DiscoveryOutput = {
   processesListed: boolean
   /** Processes under the agents; null when the host listed none (an older script, no `ps`). */
   children: DiscoveredChild[] | null
+  /** What the host found of the jobs it was asked about; null when it was not asked or could not list. */
+  jobs: DiscoveredJob[] | null
   panes: DiscoveredPane[]
   /** Raw hook state files (SISomewhere-compatible), keyed by path. */
   hookStates: { path: string; text: string }[]
@@ -137,6 +140,7 @@ export function parseDiscoveryOutput(stdout: string): DiscoveryOutput {
     processes: [],
     processesListed: false,
     children: null,
+    jobs: discoveredJobsIn(stdout),
     panes: [],
     hookStates: [],
     claudeSessions: [],

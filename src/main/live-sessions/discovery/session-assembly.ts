@@ -16,9 +16,15 @@ import {
 } from '../../../shared/live-sessions/live-session-activity'
 import type { ClaudeActivityState } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
+import type { NamedJobs } from './detached-job-lookup'
 import { pendingCallStatus, turnStatus, withBackgroundWait } from './session-status'
 import { toolProcesses } from './agent-tool-processes'
-import { backgroundWaitOf, claudeBackgroundWait, leftoverCommands } from './claude-background-wait'
+import {
+  backgroundWaitOf,
+  claudeBackgroundWait,
+  leftoverCommands,
+  namedJobTasks
+} from './claude-background-wait'
 import {
   claudeRegistryBackgroundShells,
   claudeRegistryHoldsBusy,
@@ -50,6 +56,8 @@ export type SummarizedTranscript = {
   claudeActivity?: ClaudeActivityState
   /** Claude: the session's subagent transcripts. */
   subagents?: SubagentFileSummary[]
+  /** Claude: running jobs the reply names that no launch accounts for, as the host last found them. */
+  namedJobs?: NamedJobs
   /** Codex: the newest `update_plan`. */
   codexPlan?: LiveTodo[] | null
   /** Codex: the background terminals its rollout left running, folded scan after scan. */
@@ -200,6 +208,8 @@ export function assembleHostSessions(input: {
           ? commands && (commands.length > 0 ? 'running' : 'none')
           : (claudeRegistryBackgroundShells(registry) ??
             (registry?.state ? null : leftoverCommands(commands, summary, status))),
+      // With no process seen there is nobody to be woken by a job.
+      named: process ? namedJobTasks(transcript) : [],
       nowMs: now
     })
     // With no process seen there is nobody to be woken, however fresh the last write.

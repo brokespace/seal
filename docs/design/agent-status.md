@@ -74,7 +74,10 @@ one of them wakes the agent, that is a new turn: `working`, then `your-turn` aga
   command still runs under the agent.
 - After a Claude Code turn, the agent ended its turn to wait on a command it started in the
   background (a loop that sleeps until a job is gone, a build, a test run) and will go on when
-  Claude Code wakes it at the command's exit. A dev server or a log tail left running is not that.
+  Claude Code wakes it at the command's exit. A job it or one of its subagents left running by
+  itself (`nohup`, `setsid`, `&`) since the user last spoke holds the turn the same way, though
+  its end wakes nobody: the session then goes straight to `your-turn`. A dev server or a log tail
+  left running is not that.
   Which of the two an ended turn is cannot be read off a field, so it is judged:
   [An ended turn with commands still running](#an-ended-turn-with-commands-still-running).
 
@@ -154,12 +157,46 @@ from a window eight times the tail it keeps and drops those records first
 | Claude | `Bash` with `run_in_background`, or a command Claude moved to the background | a `<task-notification>` with a `<status>`; or the agent has nothing left running                                                                   |
 | Claude | `Monitor` (a watch on a command or a file)                                   | its closing notification, its timeout, or (a command) nothing left running                                                                         |
 | Claude | `Agent` / `Task` launched in the background, `Workflow`                      | its notification; a subagent also by its own transcript going quiet                                                                                |
+| Claude | a job a `Bash` call left running by itself (`nohup`, `setsid`, `&`, …)       | the host lists no process for it any more                                                                                                          |
+| Claude | a job the reply names (a script, a PID) that no call read started            | the host lists no process for it any more                                                                                                          |
 | Claude | `ScheduleWakeup`                                                             | the wake-up fires, or a minute after it was due                                                                                                    |
 | Codex  | `exec_command` handed back with "Process running with session ID N"          | Codex writes that the command ended (`CommandExecution` completed); a `write_stdin` poll sees it exit; or no command runs under the agent any more |
 | Codex  | helper threads (`spawn_agent`)                                               | the helper's own rollout ends its turn                                                                                                             |
 
 A `<task-notification>` without a `<status>` is a progress event (a Monitor line, a "still
 running" check-in). It names a task that is running and never ends it.
+
+A subagent's notification with `<status>completed</status>` whose summary reads `Agent "…" is
+waiting on its own background work` does not end it either (Claude Code 2.1.326): the subagent
+stopped with commands of its own still running, Claude Code resumes it when they report, and the
+same task notifies again. Such a subagent counts as running while a task its own transcript
+launched runs; where that transcript was not read, while the agent says it has commands in the
+background; and never once the agent has nothing left running.
+
+A subagent's commands are its session's. Each subagent transcript is folded the same way as the
+main thread (`foldClaudeActivity`, kept in `SubagentFileSummary.launched`), so what a subagent
+left running is listed with the session's tasks and counts for the turn of the session it was
+started in.
+
+**Jobs no agent runs.** A foreground `Bash` call can return and leave a job behind: `nohup`,
+`setsid`, `disown`, a trailing `&`, a detached `tmux` or `screen` (`detached-shell-jobs.ts`). Claude
+Code tracks no task for such a job and writes nothing when it ends, and once the call's shell
+exits the job is no longer under the agent, so neither the transcript nor the agent's process tree
+shows it. The scan asks the host instead (`jobSection` in `discovery-script.ts`,
+`detached-job-lookup.ts`): for each such call, the processes of the same user that run under no
+agent, started between the call and its result (3 s either way), whose command line carries a
+script or program the command names. A `run_in_background` call that detaches a job is asked
+about from the moment Claude Code reports the call itself over. The names are matched on the host;
+only each process's id, start and executable name come back. While one is listed the job is a
+running task; once a listing shows none it is over for good; a host that cannot list them (no
+`ps`, or a `ps` without these columns) says nothing and the call counts for nothing, as before.
+A job the scan's own read of the transcripts turned up is asked about in the same scan, by a
+second, small script.
+
+The reply is read the same way: a script it names (`fq_cache.py`) or a process it gives by id
+(`PID 4821`) that no listed call accounts for is looked for among the user's processes that have no
+terminal, run under no agent and started since the user last spoke. One that is found is a task of
+the final turn.
 
 "Nothing left running" is the confirmation step. For Claude it is the registry saying `idle`
 rather than `shell`; on a build that writes no state, the absence of any command of Claude's Bash
@@ -171,8 +208,8 @@ on its resting status. Whether an ended turn waits on one is the next section's 
 
 ### An ended turn with commands still running
 
-A Claude Code turn can end (`stop_reason: end_turn`) while a `run_in_background` command or a
-Monitor it started still runs. Two different sessions look alike at that point: one whose agent
+A Claude Code turn can end (`stop_reason: end_turn`) while a `run_in_background` command, a
+Monitor, or a job left running by itself that it or one of its subagents started still runs. Two different sessions look alike at that point: one whose agent
 started `until ! pgrep -f job.py; do sleep 60; done` and said "the job is still running", and one
 whose agent started `pnpm dev` and said "take a look". Claude Code wakes the agent when either
 command exits, and its registry says `shell` for both. The first is the agent's move
@@ -182,10 +219,14 @@ Code settles what it can, in `withBackgroundWait` (`session-status.ts`):
 
 | The ended turn has                                                       | Status                              |
 | ------------------------------------------------------------------------ | ----------------------------------- |
-| background subagents running                                             | `waiting-subagent`                  |
+| background subagents running, or stopped to wait on their own commands   | `waiting-subagent`                  |
 | no command of its own running                                            | `your-turn`                         |
 | a command still running that was started since the user last spoke       | `waiting-task` (the last-turn rule) |
 | only commands still running that were started before the user last spoke | `your-turn`, with the leftover note |
+
+"A command" in the last three rows is any of: a task Claude Code tracks, on the main thread or in
+a subagent's transcript; a job a call left running by itself that the host still lists; a job the
+reply names that the host still lists.
 
 The last two rows are a rule of thumb, right for a waiter and for an old dev server, wrong for a
 dev server started in the final turn and for a job from an earlier turn the agent still reports
@@ -202,15 +243,26 @@ it:
 | `commands[].turn`, `.startedAt`      | whether it was started since the user last spoke (`final`) or before (`earlier`)        |
 | `commands[].state`                   | still running, or over (the final turn's finished commands are kept: they are the work) |
 | `commands[].runs`                    | the programs under its shell right now (`sleep` for a loop between two checks)          |
+| `commands[].origin`                  | `detached`: a call left it running by itself; `named`: only the reply names it          |
+| `commands[].subagent`                | a subagent started it, in its own transcript                                            |
+| `commands[].named`                   | what the reply calls a `named` job                                                      |
 
 The judge is Cloudflare Clef Flash, asked through this host's one path to Clef, the same the
 recap's judge uses (`getUtilityModelHost().clef`, `clef-decisions.ts`): OpenRouter when the host
 has a key for it, pinned to Cloudflare's own host there, else the Workers AI account. It answers
 two `choice` questions about the evidence put into words (`backgroundWaitState`): `standing`
 (`waiting`, `leftover` or `other`, with a probability for each) and `reason` (one of a fixed
-list, read in the measurement report). The agent waits only when the probability of `waiting` is
-above the cut measured for the wording; `leftover` and `other` are both `your-turn`. The verdict
-is published with `statusSource: classifier`.
+list, read in the measurement report). Its answer moves a session in two cases only
+(`backgroundWaitVerdict`):
+
+| The answer                                                            | Status                               | Source       |
+| --------------------------------------------------------------------- | ------------------------------------ | ------------ |
+| the probability of `waiting` is above the cut                         | `waiting-task`                       | `classifier` |
+| `leftover` is the likeliest standing (and `waiting` is under the cut) | `your-turn`                          | `classifier` |
+| anything else: `waiting` likeliest but under the cut, `other`         | what the table above gave, unchanged | `transcript` |
+
+So an answer that is merely not sure enough of a wait never takes the turn away from a command
+that still runs since the user last spoke: only a model that reads the commands as leftovers does.
 
 - **A state the host reads whole.** Cloudflare's host may read only about the first 2,000 tokens
   of a state and drop the rest without an error, so the state is never longer than 3,000
@@ -235,11 +287,26 @@ is published with `statusSource: classifier`.
   `your-turn`.
 
 `BACKGROUND_WAIT_CALIBRATION` pins the model, the hash of the question wording and the cut
-together. The cut comes from 44 labelled cases (`background-wait-cases/__fixtures__`): 40 are put
-to the model and 4 have nothing running and are settled by code. Half are the tune split, on which
-the wording and the cut are set; the other half is held out. Clef Flash's answers are recorded
-(`answers-clef-flash.json`), and CI replays the cases through the judge client, its cache and the
-status rule with no network (`background-wait-judge.test.ts`). To measure again after a change to
+together. The cut comes from 55 labelled cases (`background-wait-cases/__fixtures__`): 52 end with
+something running and 3 have nothing running and are settled by code. Half are the tune split, on
+which the wording and the cut are set; the other half is held out. Clef Flash's answers are
+recorded (`answers-clef-flash.json`), and CI replays the cases through the judge client, its cache
+and the status rule with no network (`background-wait-judge.test.ts`).
+
+Twelve of the 52 have **no answer on record yet**: the cases in the form a live session now takes
+(a subagent's job, a job left running by itself, a job only the reply names), added with the
+detection above on a host with no account for Clef. They are shown by the last-turn rule alone and
+are counted in no rate until a live run asks about them. Two older cases, a reply about a `nohup`
+job beside an old server in each split, were labelled `leftover` when Clef Flash answered them and
+are labelled `waiting` now, since a job started since the user last spoke is a wait whether or not
+Claude Code tracks it; each says so in its `relabelled` field and the report names them. The cut
+moved with those labels, from 0.7678 to 0.5197, on the answers already on record:
+
+```sh
+BACKGROUND_WAIT_JUDGE_RESCORE=1 pnpm test src/main/session-summaries/background-wait-cases --maxWorkers=1
+```
+
+scores them again with no model called and writes `measured.json` and the report. To measure again after a change to
 the wording or the cases, on a host with `OPENROUTER_API_KEY` or `~/.config/seal/openrouter.json`
 (else a Workers AI credential, whose free daily allocation a full run may not fit in):
 
@@ -357,10 +424,10 @@ Read top to bottom; the first row that matches wins.
 | 15  | Transcript: turn in progress                                                                | `working`                            | `transcript`  |
 | 16  | Turn ended, Claude registry `busy`                                                          | `working`                            | `agent-state` |
 | 17  | Turn ended, interrupt hint on screen                                                        | `working`                            | `screen`      |
-| 18  | Turn ended, background subagents running                                                    | `waiting-subagent`                   | `transcript`  |
+| 18  | Turn ended, background subagents running or stopped to wait on their own commands           | `waiting-subagent`                   | `transcript`  |
 | 19  | Turn ended, reply ends in a question                                                        | `waiting-input`                      | `transcript`  |
 | 20  | Claude turn ended, a command of its own still runs, the judge says the agent waits on it    | `waiting-task`                       | `classifier`  |
-| 21  | Claude turn ended, a command it started since the user last spoke still runs, no verdict    | `waiting-task`                       | `transcript`  |
+| 21  | Claude turn ended, a command started since the user last spoke runs, judge not `leftover`   | `waiting-task`                       | `transcript`  |
 | 22  | Turn ended, reply unclear, classifier says ASKS                                             | `waiting-input`                      | `classifier`  |
 | 23  | Turn ended, with or without commands, monitors or a wake-up left running                    | `your-turn`                          | `transcript`  |
 | 24  | No turn yet                                                                                 | `idle`                               | `transcript`  |
@@ -450,8 +517,8 @@ within half a second instead of waiting for its next scan (`SealPaneStatusChange
   `working` group for `idle` or `finished`. Entering or leaving a wait says nothing. A turn that
   ends with commands or monitors left running is announced when it ends, like any other, and
   again after each turn one of them wakes. A turn that ended to wait on its own command is
-  announced when that wait is over: after the turn the command's exit wakes, or when the judge
-  calls the command a leftover. A turn that ends with subagents still running is
+  announced when that wait is over: after the turn the command's exit wakes, when a job that
+  wakes nobody is over, or when the judge calls the command a leftover. A turn that ends with subagents still running is
   announced once they are over and the session reaches `your-turn`.
 - Summaries describe a settled session (`isSettledLiveSessionStatus`): one that rests, asks, or
   waits on subagents. A `waiting-task` session is inside its turn, or about to be woken into
@@ -502,12 +569,23 @@ than some clients on the wire. A client that sends its capabilities without
 - An ended turn waits on its own command for Claude Code only. Codex keeps the first rule: its
   background terminals are leftovers.
 - A command whose launch lies before what was read of the transcript reaches the judge with no
-  text of its own. When only the reply says the agent waits on it, the judge is unsure and the
-  session reads "Waiting on you" until the agent wakes (the one held-out miss,
-  `unread-command-says-waiting`, in `background-wait-judge-report.md`).
-- The cut is close to both sides: in the measurement the least likely wait is 0.001 above it, and
-  the likeliest leftovers, a reply about a `nohup` job that is not the agent's child beside an old
-  server, are 0.04 and 0.05 below it.
+  text of its own; when only the reply says the agent waits on it, the judge gave `waiting` 0.63
+  (`unread-command-says-waiting`), above the cut now and under the one before.
+- The cut (0.5197) was set on answers recorded before the cases took their live form, and two
+  labels changed after those answers were seen. On record it sits between the likeliest non-wait
+  (0.31 on the tune split, 0.38 held out) and the least likely wait (0.73, 0.63), but no live-form
+  state has been put to the model: the first live run decides whether it holds.
+- A job left running by itself is found by when it started and by a name on its command line. A
+  command that names neither a script nor a program (`(sleep 600; ./x) &` names `x`; `( … ) &`
+  around shell builtins names nothing) is not found, and neither is a job on a host whose `ps`
+  lacks `uid`, `tty` or `etime`. A second process of the same user with the same name on its
+  command line, started in the same seconds under no agent, counts as the job.
+- A job the reply names is looked for only when the scan read the user's last message (it bounds
+  when the job may have started) and only among processes with no terminal: a job the agent
+  started in a `tmux` window by a call that was not read is not found.
+- A job left running by itself wakes nobody: Claude Code does not resume the agent when it ends.
+  The session reads "Waiting on N background tasks" while it runs and "Waiting on you" once it is
+  over, with no turn in between.
 - The background wait judge needs an account for Clef (OpenRouter or Workers AI) on the host that
   summarizes sessions, and session summaries switched on. Without them the last-turn rule stands alone: a dev server
   started in the final turn reads "Waiting on 1 background task" until the user speaks, and a job
@@ -528,9 +606,11 @@ Automated, all on the real scanner (`HostSessionScanner`) with a scripted host:
   for Codex. A changed transition fails the row that names it.
 - `seal-pane-sessions.test.ts` holds the hook-row table and the pane-against-discovery table.
 - `transcript-turn-tail.test.ts` runs the real `/bin/sh` scan script over a transcript padded with
-  request logs.
+  request logs. `detached-job-lookup.test.ts` runs the job script against a real process started
+  with `nohup … &`: found while it runs, by its start and its script's name, and not after.
 - `live-session-background-waits.test.ts` holds the judge's part in a status: one question per
-  state of the evidence, and the last-turn rule whenever the model cannot answer.
+  state of the evidence, and the last-turn rule whenever the model cannot answer or says neither
+  wait nor leftover.
   `background-wait-cases/background-wait-judge.test.ts` holds the labelled cases and replays
   Clef Flash's recorded answers through the app's own code.
 - `session-status-fixtures.test.ts`, `session-assembly.test.ts`, `host-session-scanner.test.ts`,
@@ -545,7 +625,11 @@ were recorded with the real CLIs driven by a scripted model endpoint, so the too
 scripted and every record is the CLI's own. `live-claude-background-waiter` and
 `live-claude-background-server-leftover` are written by hand in Claude Code 2.1.326's record
 shapes, after a session seen live: a waiter started eight seconds before `end_turn`, and a dev
-server left from an earlier turn. `claude-background-command-check-in` is written by hand
+server left from an earlier turn. `live-claude-subagent-detached-job` is written by hand in the
+same shapes after another session seen live (paths and names changed): a background subagent
+starts a job with `setsid … &`, chains a `run_in_background` sweep behind it and stops; the
+session is told the subagent "is waiting on its own background work" and ends its turn on "I'm
+waiting on that job". `claude-background-command-check-in` is written by hand
 from Claude Code's notification format, and `claude-task-output-pending` is a recorded background
 command followed by a hand-written `TaskOutput` call.
 
@@ -562,4 +646,7 @@ By hand, to re-check against a live agent: start `claude` or `codex` in tmux, op
 5. ask it to delete a file in default permission mode → Waiting for approval;
 6. let a turn finish → Waiting on you;
 7. ask it to run two subagents in the background → Waiting on 2 subagents;
-8. kill the agent while a question is up → Ended.
+8. kill the agent while a question is up → Ended;
+9. ask it to start `nohup sh -c 'sleep 120' > /dev/null 2>&1 &` (not in the background) and to
+   say it will report when it is done → Waiting on 1 background task until the sleep ends, then
+   Waiting on you.

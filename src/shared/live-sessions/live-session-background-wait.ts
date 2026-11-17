@@ -3,6 +3,16 @@
 // `docs/design/agent-status.md` has the rule and the judge that read it.
 import type { LiveSubagentStatus } from './live-session-activity'
 
+/**
+ * How the session came to have a command. Absent for a call run in the background, which Claude
+ * Code reports on and wakes the agent for.
+ *
+ * - `detached`: a call that returned left it running by itself (`nohup`, `setsid`, `&`, a
+ *   detached tmux or screen); only the machine's processes say whether it still runs.
+ * - `named`: no call that was read started it; the reply names it and it runs on the machine.
+ */
+export type BackgroundWaitCommandOrigin = 'detached' | 'named'
+
 export type BackgroundWaitCommand = {
   kind: 'shell' | 'monitor'
   /** Null when its launch lies before what was read of the transcript. */
@@ -14,6 +24,11 @@ export type BackgroundWaitCommand = {
   state: LiveSubagentStatus
   /** The programs under its shell right now, by name; null when the host could not say. */
   runs: string[] | null
+  origin?: BackgroundWaitCommandOrigin
+  /** A subagent of the session started it, not its main thread. */
+  subagent?: true
+  /** `named` only: what the reply calls it (a script, `PID 4821`). */
+  named?: string
 }
 
 export type BackgroundWaitEvidence = {

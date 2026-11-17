@@ -1,0 +1,10 @@
+{
+  "agentType": "general-purpose",
+  "isBuiltIn": true,
+  "description": "SMALL: 110-130 GB exploration",
+  "toolUseId": "toolu_small01",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true,
+  "model": "opus"
+}

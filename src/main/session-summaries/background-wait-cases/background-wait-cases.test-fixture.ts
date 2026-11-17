@@ -1,6 +1,7 @@
 // The labelled cases the judge of background waits is measured on: what a Claude Code turn left
 // running when it ended, as the app would read it, and whether the agent waits on it. Each was
-// labelled from the case alone, before any model saw it. See docs/design/agent-status.md.
+// labelled from the case alone, before any model saw it; one whose label changed since says so
+// (`relabelled`). See docs/design/agent-status.md.
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import * as z from 'zod'
@@ -22,6 +23,8 @@ const caseSchema = z.strictObject({
   truth: z.enum(BACKGROUND_WAIT_STANDINGS),
   /** What in the case decides its label. */
   why: z.string().min(1),
+  /** Why its label was changed after the model had answered it: such a case is no blind test. */
+  relabelled: z.string().min(1).optional(),
   /** How long ago the turn ended when the session is looked at. */
   endedAgoSeconds: z.number().positive(),
   reply: z.string().min(1).nullable(),
@@ -34,7 +37,10 @@ const caseSchema = z.strictObject({
       description: z.string().min(1).nullable(),
       command: z.string().min(1).nullable(),
       state: z.enum(LIVE_SUBAGENT_STATUSES),
-      runs: z.array(z.string().min(1)).nullable()
+      runs: z.array(z.string().min(1)).nullable(),
+      origin: z.enum(['detached', 'named']).optional(),
+      subagent: z.literal(true).optional(),
+      named: z.string().min(1).optional()
     })
   )
 })
