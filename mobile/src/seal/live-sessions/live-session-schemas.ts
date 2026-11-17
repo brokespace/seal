@@ -99,6 +99,11 @@ const liveSessionSchema = z.looseObject({
     .looseObject({ worktreeId: z.string().min(1), projectKey: z.string() })
     .optional()
     .catch(undefined),
+  // What names the project of a session no workspace holds.
+  repository: z
+    .looseObject({ name: z.string().min(1), projectKey: z.string().optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
   context: contextSchema.optional().catch(undefined),
   model: z.string().optional().catch(undefined)
 })

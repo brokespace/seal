@@ -169,8 +169,22 @@ export type LiveSession = {
   capabilities: AgentSessionCapabilityFlags
   /** The workspace it belongs to, set by the registry's link step. */
   workspace?: { worktreeId: string; projectKey: string }
+  /** The git repository its folder is in, when no workspace holds it and its machine could say. */
+  repository?: LiveSessionRepository
+  /** The project the user moved it to in Seal; wins over the one its folder or workspace gives it. */
+  assignedProject?: LiveSessionProject
   context?: NativeChatContextUsageSummary
   model?: string
+}
+
+/** A project a session is listed under: a known project's id, or `folder:<name>` for one named by a folder alone. */
+export type LiveSessionProject = { key: string; name: string }
+
+export type LiveSessionRepository = {
+  /** The main checkout's folder name, also for a session in a linked worktree or a subfolder. */
+  name: string
+  /** The project its remotes name, keyed as `getProjectIdentityKey` keys a project. */
+  projectKey?: string
 }
 
 /** What the user sets on a session in Seal; an absent field is left as it is. */
@@ -179,6 +193,8 @@ export type LiveSessionAnnotation = {
   /** Null or blank goes back to the agent's own title. */
   customTitle?: string | null
   pinned?: boolean
+  /** Null goes back to the project its folder or workspace gives it. */
+  project?: LiveSessionProject | null
 }
 
 export type LiveSessionRegistrySnapshot = {

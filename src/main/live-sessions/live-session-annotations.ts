@@ -1,10 +1,16 @@
 import type {
   LiveSession,
-  LiveSessionAnnotation
+  LiveSessionAnnotation,
+  LiveSessionProject
 } from '../../shared/live-sessions/live-session-types'
 import { LiveSessionJsonStore } from './live-session-json-store'
 
-type Saved = { sessionId: string; customTitle?: string; pinned?: boolean }
+type Saved = {
+  sessionId: string
+  customTitle?: string
+  pinned?: boolean
+  project?: LiveSessionProject
+}
 
 function isSaved(item: unknown): item is Saved {
   return (
@@ -15,7 +21,7 @@ function isSaved(item: unknown): item is Saved {
   )
 }
 
-/** What the user set on a session in Seal (its name, its pin); kept across rescans and restarts. */
+/** What the user set on a session in Seal (its name, its pin, its project); kept across rescans and restarts. */
 export class LiveSessionAnnotations {
   private readonly bySession = new Map<string, Saved>()
   private readonly store: LiveSessionJsonStore<Saved>
@@ -44,20 +50,25 @@ export class LiveSessionAnnotations {
     return {
       ...session,
       ...(saved.customTitle ? { customTitle: saved.customTitle } : {}),
-      ...(saved.pinned ? { pinned: true } : {})
+      ...(saved.pinned ? { pinned: true } : {}),
+      ...(saved.project ? { assignedProject: saved.project } : {})
     }
   }
 
-  set({ sessionId, customTitle, pinned }: LiveSessionAnnotation): void {
+  set({ sessionId, customTitle, pinned, project }: LiveSessionAnnotation): void {
     const saved = this.bySession.get(sessionId)
-    // Undefined leaves a field as it was; null or false clears it.
+    // Undefined leaves a field as it was; null, blank or false clears it.
     const title = customTitle === undefined ? saved?.customTitle : customTitle?.trim()
     const pin = pinned ?? saved?.pinned
-    if (title || pin) {
+    const name = project?.name.trim()
+    const assigned =
+      project === undefined ? saved?.project : project && name ? { key: project.key, name } : null
+    if (title || pin || assigned) {
       this.bySession.set(sessionId, {
         sessionId,
         ...(title ? { customTitle: title } : {}),
-        ...(pin ? { pinned: true } : {})
+        ...(pin ? { pinned: true } : {}),
+        ...(assigned ? { project: assigned } : {})
       })
     } else {
       this.bySession.delete(sessionId)
@@ -65,7 +76,7 @@ export class LiveSessionAnnotations {
     this.save()
   }
 
-  /** A session keeps its name and pin when its transcript gives it its lasting id. */
+  /** A session keeps its name, pin and project when its transcript gives it its lasting id. */
   move(fromSessionId: string, toSessionId: string): void {
     const saved = this.bySession.get(fromSessionId)
     if (!saved) {

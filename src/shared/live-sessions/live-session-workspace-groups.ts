@@ -1,10 +1,11 @@
+import { folderProjectKey, liveSessionFolderProject } from './live-session-project'
 import { compareListedLiveSessions } from './live-session-summary'
 import type { LiveSession } from './live-session-types'
 
 /** What grouping reads; mobile's decoded sessions satisfy it too. */
 export type WorkspaceGroupableLiveSession = Pick<
   LiveSession,
-  'status' | 'lastActivityAt' | 'cwd' | 'project'
+  'status' | 'lastActivityAt' | 'cwd' | 'project' | 'repository'
 > & {
   pinned?: boolean
   machine: { hostId: string; label: string }
@@ -21,8 +22,8 @@ export type LiveSessionPlace = {
 
 /**
  * A session's place from its record alone: the workspace its registry linked it to, named by its
- * folder. A record without a link (an older host, or a folder nothing could place) is listed by
- * that folder on its machine.
+ * folder. A record without a link (an older host, or a folder nothing could place) is listed
+ * under the project that folder gives it.
  */
 export function liveSessionPlaceOf(session: WorkspaceGroupableLiveSession): LiveSessionPlace {
   const folder = session.project ?? session.cwd
@@ -35,9 +36,10 @@ export function liveSessionPlaceOf(session: WorkspaceGroupableLiveSession): Live
       workspace: session.cwd
     }
   }
+  const project = liveSessionFolderProject(session)
   return {
-    projectKey: `folder:${folder ?? ''}`,
-    project: folder,
+    projectKey: project?.key ?? folderProjectKey(''),
+    project: project?.name ?? null,
     workspaceKey: `${session.machine.hostId}\n${session.cwd ?? ''}`,
     workspace: session.cwd
   }

@@ -73,5 +73,8 @@ export const LiveSessionRemoveParams = z.object({
 export const LiveSessionAnnotateParams = z.object({
   sessionId: SessionId,
   customTitle: z.string().max(200).nullish(),
-  pinned: z.boolean().optional()
+  pinned: z.boolean().optional(),
+  project: z
+    .object({ key: z.string().min(1).max(1024), name: z.string().min(1).max(200) })
+    .nullish()
 })

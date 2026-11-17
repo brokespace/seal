@@ -188,6 +188,14 @@ const serverSessionSchema = z.object({
     .object({ worktreeId: z.string().min(1), projectKey: z.string() })
     .optional()
     .catch(undefined),
+  repository: z
+    .object({ name: z.string().min(1), projectKey: z.string().min(1).optional().catch(undefined) })
+    .optional()
+    .catch(undefined),
+  assignedProject: z
+    .object({ key: z.string().min(1), name: z.string().min(1) })
+    .optional()
+    .catch(undefined),
   context: contextSchema.optional().catch(undefined),
   model: z.string().optional().catch(undefined)
 } satisfies Record<keyof LiveSession, z.ZodType>)
