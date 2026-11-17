@@ -188,6 +188,14 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
   if (found.statusSource === 'screen') {
     return found.permission !== null
   }
+  // A wait read with what the ended turn left running is that turn's; any other is a stale read.
+  const endedOnWait =
+    pane.status === 'your-turn' &&
+    found.status === 'waiting-task' &&
+    found.backgroundWait !== undefined
+  if (endedOnWait) {
+    return true
+  }
   if (found.statusSource === 'classifier') {
     return false
   }
@@ -201,9 +209,7 @@ function discoveryKnowsMore(pane: SealPane, found: LiveSession): boolean {
       found.status === 'needs-permission' ||
       found.status === 'waiting-input')
   if (pane.status === 'your-turn') {
-    // A wait read with what the ended turn left running is that turn's; any other is a stale read.
-    const endedOnWait = found.status === 'waiting-task' && found.backgroundWait !== undefined
-    return RESTS_ON.has(found.status) || agentSays || endedOnWait
+    return RESTS_ON.has(found.status) || agentSays
   }
   if (pane.status === 'working') {
     return WORKS_ON.has(found.status) || (agentSays && found.status !== 'working')

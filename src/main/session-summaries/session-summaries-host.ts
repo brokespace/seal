@@ -22,8 +22,8 @@ import { getUtilityModelHost, type UtilityModelClient } from '../utility-model/u
 import { renameCliSessionTab } from './cli-session-tab-title'
 import { lastAssistantText } from './last-assistant-text'
 import { LiveSessionSummaries } from './live-session-summaries'
-import { createReplyAskClassifier, type ReplyAskClassifier } from './reply-ask-install'
 import { sessionPaneWorkspaceId } from './session-pane-workspace'
+import { createSessionStatusJudges } from './session-status-judges'
 import { SessionSummarizer } from './session-summarizer'
 import { createSessionTitleWriteThrough } from './session-title-write-through-install'
 import { unrefTimer } from './unref-timer'
@@ -34,13 +34,14 @@ import type { SessionSummariesInstallOptions } from './session-summaries-install
 export type { SessionSummariesInstallOptions }
 
 const CONFIGURED_RECHECK_MS = 60_000
+const log = (message: string, error?: unknown): void => console.warn(message, error ?? '')
 
 /** Session status summaries on this host: what makes them, and what clients read. */
 export class SessionSummariesHost {
   private readonly models: Record<UtilityModelTask, UtilityModelClient>
   private readonly summarizer: SessionSummarizer
   private readonly sessions: LiveSessionSummaries
-  private readonly replyAsks: ReplyAskClassifier | null
+  private readonly replyAsks: ReturnType<typeof createSessionStatusJudges> | null
   private readonly recap: { recaps: LiveSessionRecaps; dispose: () => void } | null
   private readonly releases: (() => void)[] = []
   private readonly configured: Record<UtilityModelTask, boolean> = {
@@ -53,7 +54,6 @@ export class SessionSummariesHost {
   private republishQueued = false
 
   constructor(private readonly options: SessionSummariesInstallOptions) {
-    const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
     const { liveSessions } = options
     this.models = {
       summaries: options.utilityModel ?? this.chosenModel('summaries'),
@@ -73,6 +73,8 @@ export class SessionSummariesHost {
       setTimer: unrefTimer
     })
     const transcripts = liveSessions ? liveSessionTranscripts(liveSessions) : null
+    // Judges run on Clef whatever model reads and summarizes; an injected model brings none.
+    const judgeHost = options.utilityModel ? undefined : getUtilityModelHost()
     const summarizeRegistry = transcripts !== null && options.summarizeLive !== false
     this.sessions = new LiveSessionSummaries({
       summarizer: this.summarizer,
@@ -91,12 +93,13 @@ export class SessionSummariesHost {
     })
     this.replyAsks =
       liveSessions && transcripts && summarizeRegistry
-        ? createReplyAskClassifier({
+        ? createSessionStatusJudges({
             liveSessions,
             transcripts,
             userDataPath: options.userDataPath,
             model: () => this.model('summaries'),
             enabled: () => this.isAvailable(),
+            decisions: judgeHost,
             onChange: () => this.republishSoon(),
             log
           })
@@ -107,8 +110,7 @@ export class SessionSummariesHost {
             liveSessions,
             transcripts,
             utility: this.models.recaps,
-            // The judge runs on Clef whatever the read step runs on; an injected model brings none.
-            decisions: options.utilityModel ? undefined : getUtilityModelHost().clef,
+            decisions: judgeHost?.clef,
             userDataPath: options.userDataPath,
             enabled: () => this.recapOn() && this.isConfigured('recaps'),
             serverRecapCall: options.serverRecapCall,
@@ -157,7 +159,6 @@ export class SessionSummariesHost {
       }
     })
     if (liveSessions) {
-      const log = (message: string, error?: unknown) => console.warn(message, error ?? '')
       const titles = createSessionTitleWriteThrough({
         liveSessions,
         renameCliTab: (paneKey, title) => renameCliSessionTab(runtime, paneKey, title, log),
