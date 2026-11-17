@@ -1,6 +1,7 @@
 import { MessageSquare, TriangleAlert } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { formatAgentTypeLabel } from '../../../../../shared/agent-status/presentation/agent-type-label'
 import { NATIVE_CHAT_EMPTY_STATE_COPY } from '../../../../../shared/native-chat/native-chat-empty-state'
 import type { NativeChatSession } from '../../../../../shared/native-chat/native-chat-types'
@@ -14,7 +15,7 @@ export function NativeChatEmptyState({
 }: {
   kind: 'loading' | 'empty' | 'error' | 'not-agent'
   message?: string
-  /** The chat's own sentence for a failure or an empty chat, said once: it takes the generic title's place. */
+  /** The chat's own sentence for a failure, a wait or an empty chat, said once: it takes the generic title's place. */
   headline?: string
   agent?: NativeChatSession['agent']
   /** Structured reads retry automatically; show a loading failure without directing users back to a terminal. */
@@ -33,6 +34,8 @@ export function NativeChatEmptyState({
       >
         {kind === 'error' ? (
           <TriangleAlert className="size-6" />
+        ) : kind === 'loading' ? (
+          <LoadingSpinner className="size-6" />
         ) : (
           <MessageSquare className="size-6" />
         )}
@@ -54,6 +57,9 @@ function emptyStateCopy(
 ): { title: string; subtitle: string | null } {
   switch (kind) {
     case 'loading':
+      if (words.headline) {
+        return { title: words.headline, subtitle: null }
+      }
       return {
         title: t(
           'components.native-chat.state.loading.title',

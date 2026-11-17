@@ -16,18 +16,22 @@ function localOs(): MachineOs | null {
 export type MachinesInventory = {
   machines: MachineSummary[]
   views: readonly MachineView[]
+  /** False until the machines and their servers' statuses were first read: every status before that is a guess. */
+  loaded: boolean
   reload: () => void
 }
 
 /** The stored machines, refetched when a machine, SSH host or server changes; nothing polls. */
 export function useMachineViews(): {
   views: readonly MachineView[]
+  loaded: boolean
   /** Bumps on every refetch, so callers can refresh what they read beside the list. */
   revision: number
   reload: () => void
 } {
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
   const [views, setViews] = useState<readonly MachineView[]>([])
+  const [loaded, setLoaded] = useState(() => !window.api.machines)
   const [revision, setRevision] = useState(0)
   const reload = useCallback(() => setRevision((current) => current + 1), [])
 
@@ -41,6 +45,11 @@ export function useMachineViews(): {
         }
       })
       .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setLoaded(true)
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -59,17 +68,18 @@ export function useMachineViews(): {
     }
   }, [reload])
 
-  return { views, revision, reload }
+  return { views, loaded, revision, reload }
 }
 
 /** Live machine list; any SSH host or server change anywhere in the app refreshes it. */
 export function useMachinesInventory(localName: string): MachinesInventory {
   const sshStates = useAppStore((s) => s.sshConnectionStates)
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
-  const { views, revision, reload } = useMachineViews()
+  const { views, loaded: viewsLoaded, revision, reload } = useMachineViews()
   const [runtimeStatuses, setRuntimeStatuses] = useState<Map<string, RuntimeHostStatusSnapshot>>(
     () => new Map()
   )
+  const [statusesLoaded, setStatusesLoaded] = useState(() => !window.api.runtimeEnvironments)
 
   useEffect(() => {
     let cancelled = false
@@ -81,6 +91,11 @@ export function useMachinesInventory(localName: string): MachinesInventory {
         }
       })
       .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setStatusesLoaded(true)
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -105,5 +120,5 @@ export function useMachinesInventory(localName: string): MachinesInventory {
       }),
     [localName, views, sshStates, runtimeStatuses]
   )
-  return { machines, views, reload }
+  return { machines, views, loaded: viewsLoaded && statusesLoaded, reload }
 }

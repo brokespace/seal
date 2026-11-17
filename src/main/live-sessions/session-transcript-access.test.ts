@@ -60,7 +60,8 @@ describe('a transcript watch begun before the session is listed', () => {
       start: 0,
       more: false
     })
-    const server: Pick<FederatedTranscripts, 'page' | 'since' | 'watch'> = {
+    const server: Pick<FederatedTranscripts, 'page' | 'since' | 'watch' | 'imageBase64'> = {
+      imageBase64: async () => '',
       page: () => fromServer,
       since: async () => ({ messages: [], cursor: 2, shrank: false }),
       watch: () => ({ ready: fromServer, unsubscribe: stopServer })
@@ -69,6 +70,7 @@ describe('a transcript watch begun before the session is listed', () => {
       session: () => listed,
       server: () => (listed ? server : null),
       files: {
+        imageBase64: async () => '',
         page: async () => NOTHING,
         since: async () => ({ messages: [], cursor: 0, shrank: false }),
         subscribe: () => ({ ready: Promise.resolve(NOTHING), unsubscribe: stopFile })
@@ -97,5 +99,38 @@ describe('a transcript watch begun before the session is listed', () => {
     watch.unsubscribe()
     expect(stopServer).toHaveBeenCalledTimes(1)
     expect(told.size).toBe(0)
+  })
+
+  it('gives a watcher that has read nothing the newest page, not everything before it', async () => {
+    const newest: LiveTranscriptPage = {
+      sessionId: ID,
+      messages: [REPLIED],
+      cursor: 900,
+      start: 800,
+      more: true
+    }
+    const subscribe = vi.fn(() => ({ ready: Promise.resolve(newest), unsubscribe: vi.fn() }))
+    const access = new SessionTranscriptAccess({
+      session: () => null,
+      server: () => null,
+      files: {
+        imageBase64: async () => '',
+        page: async () => newest,
+        since: async () => ({ messages: [], cursor: 0, shrank: false }),
+        subscribe
+      },
+      onSessionsChanged: () => () => {}
+    })
+    const deltas: unknown[] = []
+
+    const watch = access.watch(ID, 0, (delta) => deltas.push(delta))
+    expect(await watch.ready).toBeNull()
+    await Promise.resolve()
+
+    expect(subscribe.mock.calls[0].slice(0, 2)).toEqual([ID, null])
+    expect(deltas).toEqual([
+      { sessionId: ID, from: 0, cursor: 900, messages: [REPLIED], reset: true }
+    ])
+    watch.unsubscribe()
   })
 })

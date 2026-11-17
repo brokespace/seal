@@ -2,10 +2,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
-import {
-  completeLines,
-  decodeTranscriptLines
-} from '../live-sessions/transcripts/live-transcript-reader'
+import { decodeTranscriptLines } from '../live-sessions/transcripts/live-transcript-reader'
+import { completeLines } from '../live-sessions/transcripts/transcript-file-source'
 import { recapConversationSince } from './session-recap-conversation'
 
 /** A recording as the live session reader hands it to the recap. */

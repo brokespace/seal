@@ -7,6 +7,7 @@ import {
   LiveSessionMessagesParams,
   LiveSessionRetryParams,
   LiveSessionSendParams,
+  LiveSessionTranscriptImageParams,
   LiveSessionTranscriptParams,
   LiveSessionTranscriptSinceParams,
   LiveSessionUnwatchParams,
@@ -21,6 +22,8 @@ import type { LiveSessionService } from '../../../../live-sessions/live-session-
 import { defineMethod, defineStreamingMethod } from '../../core'
 import { holdSubscription } from '../rpc-subscription-hold'
 import { runLiveSessionHostScript } from '../../../../live-sessions/hosts/live-session-host-run'
+import { withInlineImages } from '../../../../live-sessions/transcripts/transcript-inline-images'
+import type { NativeChatMessage } from '../../../../../shared/native-chat/native-chat-types'
 
 function service(): LiveSessionService {
   const found = getLiveSessionService()
@@ -28,6 +31,22 @@ function service(): LiveSessionService {
     throw new Error('Live sessions are not available on this host')
   }
   return found
+}
+
+/** What a client that did not ask for image references is sent: its inline images as data URLs. */
+async function forClient<T extends { messages: NativeChatMessage[] }>(
+  sessionId: string,
+  images: 'refs' | undefined,
+  held: T
+): Promise<T> {
+  return images === 'refs'
+    ? held
+    : {
+        ...held,
+        messages: await withInlineImages(held.messages, (start, length) =>
+          service().transcriptImageBase64(sessionId, start, length)
+        )
+      }
 }
 
 export const LIVE_SESSION_METHODS = [
@@ -71,28 +90,52 @@ export const LIVE_SESSION_METHODS = [
     name: 'liveSessions.transcript',
     permission: 'workspace',
     params: LiveSessionTranscriptParams,
-    handler: ({ sessionId, before, limit }) =>
-      service().transcriptPage(sessionId, before ?? null, limit)
+    handler: async ({ sessionId, before, limit, images }) =>
+      forClient(sessionId, images, await service().transcriptPage(sessionId, before ?? null, limit))
   }),
   // What a paired desktop's recap of a chat here reads: the rows after a cursor it already holds.
   defineMethod({
     name: 'liveSessions.transcriptSince',
     permission: 'workspace',
     params: LiveSessionTranscriptSinceParams,
-    handler: ({ sessionId, cursor }) => service().transcriptSince(sessionId, cursor)
+    handler: async ({ sessionId, cursor, images }) =>
+      forClient(sessionId, images, await service().transcriptSince(sessionId, cursor))
+  }),
+  // One piece of an inline image's base64, as a row's reference names it.
+  defineMethod({
+    name: 'liveSessions.transcriptImage',
+    permission: 'workspace',
+    params: LiveSessionTranscriptImageParams,
+    handler: async ({ sessionId, start, length }) => ({
+      base64: await service().transcriptImageBase64(sessionId, start, length)
+    })
   }),
   // Resumable: pass the last delta's cursor as fromCursor after a reconnect.
   defineStreamingMethod({
     name: 'liveSessions.watchTranscript',
     permission: 'workspace',
     params: LiveSessionWatchTranscriptParams,
-    handler: async ({ sessionId, fromCursor }, ctx, emit) => {
+    handler: async ({ sessionId, fromCursor, images }, ctx, emit) => {
       const live = service()
       await holdSubscription('live-transcript', ctx, emit, (subscriptionId) => {
+        // Frames leave in the order the transcript gave them, whatever each one's images take to read.
+        let sent: Promise<unknown> = Promise.resolve()
+        const send = (frame: () => Promise<unknown>): void => {
+          sent = sent
+            .then(frame)
+            .then(emit)
+            .catch(() => undefined)
+        }
         const subscription = live.watchTranscript(sessionId, fromCursor ?? null, (delta) =>
-          emit({ type: 'delta', delta })
+          send(async () => ({ type: 'delta', delta: await forClient(sessionId, images, delta) }))
         )
-        void subscription.ready.then((page) => emit({ type: 'ready', subscriptionId, page }))
+        void subscription.ready.then((page) =>
+          send(async () => ({
+            type: 'ready',
+            subscriptionId,
+            page: page && (await forClient(sessionId, images, page))
+          }))
+        )
         return subscription.unsubscribe
       })
     }

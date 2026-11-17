@@ -1,10 +1,12 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
+import type { MobileNativeChatUrlImageSource } from '../../session/native-chat/visual/mobile-native-chat-image-preview'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { answerLivePermission } from './live-session-operations'
 import { canTakeOverLiveSession, liveSessionAcceptsInput } from './live-session-presentation'
 import type { LiveMessage, LiveSession } from './live-session-schemas'
 import { currentLiveSessionId, type LiveSessionsFeedState } from './live-sessions-feed'
+import { liveTranscriptImageSource } from './live-transcript-image-source'
 import { useLiveSessionOutbox } from './use-live-session-outbox'
 import { useLiveTranscript } from './use-live-transcript'
 
@@ -20,6 +22,8 @@ export type LiveSessionChatSource = {
   /** Null before the list is read, and once the session has left it. */
   session: LiveSession | null
   messages: ReturnType<typeof useLiveTranscript>
+  /** Reads the images the transcript holds inline, which its rows name by reference. */
+  images: MobileNativeChatUrlImageSource | undefined
   /** The outbox: messages on their way, oldest first, and the ones that did not arrive. */
   pending: { list: LiveMessage[]; retry: (message: LiveMessage) => Promise<void> }
   prompt: NonNullable<LiveSession['permission']> | null
@@ -47,7 +51,11 @@ export function useLiveSessionChatSource({
   const t = useMobileTranslation()
   const sessionId = currentLiveSessionId(feed, routeSessionId)
   const session = feed.sessions.find((entry) => entry.id === sessionId) ?? null
-  const messages = useLiveTranscript(client, sessionId)
+  const messages = useLiveTranscript(client, sessionId, session !== null)
+  const images = useMemo(
+    () => (client ? liveTranscriptImageSource(client, sessionId) : undefined),
+    [client, sessionId]
+  )
   const outbox = useLiveSessionOutbox({
     client,
     feed,
@@ -86,6 +94,7 @@ export function useLiveSessionChatSource({
     sessionId,
     session,
     messages,
+    images,
     pending: { list: outbox.pending.map((pending) => pending.message), retry: outbox.retry },
     prompt: session?.permission ?? null,
     answer,

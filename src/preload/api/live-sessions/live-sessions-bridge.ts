@@ -23,7 +23,8 @@ import { LIVE_SESSION_IPC } from '../../../shared/live-sessions/live-session-ipc
 
 export type LiveSessionsApi = {
   snapshot: () => Promise<LiveSessionRegistrySnapshot>
-  refresh: () => Promise<void>
+  /** Scans every machine, or the one named, and settles once each has answered. */
+  refresh: (hostId?: string) => Promise<void>
   onEvent: (callback: (event: LiveSessionRegistryEvent) => void) => () => void
   transcriptPage: (args: {
     sessionId: string
@@ -36,6 +37,8 @@ export type LiveSessionsApi = {
     fromCursor?: LiveTranscriptCursor | null
   }) => Promise<{ watchId: string; page: LiveTranscriptPage | null }>
   unwatchTranscript: (args: { watchId: string }) => Promise<void>
+  /** An inline image a transcript row refers to (`url` is the row's), as a data URL; null when it can't be read. */
+  transcriptImage: (args: { sessionId: string; url: string }) => Promise<string | null>
   onTranscriptDelta: (
     callback: (payload: { watchId: string; delta: LiveTranscriptDelta }) => void
   ) => () => void
@@ -66,11 +69,12 @@ function listen<T>(channel: string, callback: (payload: T) => void): () => void 
 
 export const liveSessionsApi: LiveSessionsApi = {
   snapshot: () => ipcRenderer.invoke(LIVE_SESSION_IPC.snapshot),
-  refresh: () => ipcRenderer.invoke(LIVE_SESSION_IPC.refresh),
+  refresh: (hostId) => ipcRenderer.invoke(LIVE_SESSION_IPC.refresh, hostId),
   onEvent: (callback) => listen(LIVE_SESSION_IPC.event, callback),
   transcriptPage: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.transcriptPage, args),
   watchTranscript: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.watchTranscript, args),
   unwatchTranscript: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.unwatchTranscript, args),
+  transcriptImage: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.transcriptImage, args),
   onTranscriptDelta: (callback) => listen(LIVE_SESSION_IPC.transcriptDelta, callback),
   send: (request) => ipcRenderer.invoke(LIVE_SESSION_IPC.send, request),
   retry: (args) => ipcRenderer.invoke(LIVE_SESSION_IPC.retry, args),

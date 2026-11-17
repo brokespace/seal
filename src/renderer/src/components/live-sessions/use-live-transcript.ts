@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { NativeChatMessage } from '../../../../shared/native-chat/native-chat-types'
 import type { LiveTranscriptDelta } from '../../../../shared/live-sessions/live-session-types'
+import { LiveTranscriptReaderHold } from '../../../../shared/live-sessions/live-transcript-reader-hold'
 import type { NativeChatOlderPageResult } from '../native-chat/viewport/history/native-chat-pagination'
 import { liveTranscriptFeed, type AgentSessionTranscriptFeed } from './chat/live-transcript-feed'
 
@@ -16,14 +17,17 @@ export type LiveTranscriptState = {
 
 export type LiveTranscript = LiveTranscriptState & {
   loadEarlier: () => Promise<NativeChatOlderPageResult>
+  /** A reader left the end: the rows on view stay until the returned call says they are back. */
+  retainHistory: () => () => void
 }
 
 type Held = {
-  feed: AgentSessionTranscriptFeed | null
+  feed: AgentSessionTranscriptFeed
   byId: Map<string, NativeChatMessage>
   start: number | null
   /** The newest page was read; a later watch only continues from it. */
   read: boolean
+  hold: LiveTranscriptReaderHold
 }
 
 const UNREAD: LiveTranscriptState = {
@@ -41,36 +45,69 @@ function ordered(byId: Map<string, NativeChatMessage>): NativeChatMessage[] {
   return [...byId.values()].sort((a, b) => offsetOf(a) - offsetOf(b))
 }
 
-function unread(feed: AgentSessionTranscriptFeed | null): Held {
-  return { feed, byId: new Map(), start: null, read: false }
-}
-
 /**
  * Holds what a chat source's transcript feed has read. Messages are keyed by id, so a page and a
  * delta that overlap merge instead of doubling. While `enabled` is false nothing is watched; the
- * feed catches up from where it stopped when it is watched again.
+ * feed catches up from where it stopped when it is watched again. A first page that could not be
+ * read is read again when `retryOn` changes. A newest page that would replace the rows a reader
+ * has scrolled away from waits until they are back at the end.
  */
 export function useLiveTranscriptFeed(
   feed: AgentSessionTranscriptFeed | null,
-  enabled = true
+  enabled = true,
+  retryOn?: unknown
 ): LiveTranscript {
-  const held = useRef<Held>(unread(null))
+  const held = useRef<Held | null>(null)
   const [state, setState] = useState(UNREAD)
   const [shown, setShown] = useState(feed)
+  const [attempt, setAttempt] = useState({ on: retryOn, count: 0 })
   if (shown !== feed) {
     setShown(feed)
     setState(UNREAD)
+  } else if (attempt.on !== retryOn) {
+    const failed = state.phase === 'error'
+    setAttempt({ on: retryOn, count: attempt.count + (failed ? 1 : 0) })
+    if (failed) {
+      setState(UNREAD)
+    }
   }
+
+  const heldFor = useCallback((of: AgentSessionTranscriptFeed): Held => {
+    if (held.current?.feed === of) {
+      return held.current
+    }
+    const mine: Held = {
+      feed: of,
+      byId: new Map(),
+      start: null,
+      read: false,
+      // A reader may return after the watch stopped: the rows are shown from here, not from it.
+      hold: new LiveTranscriptReaderHold((rows) => {
+        mine.byId = rows.byId
+        mine.start = rows.start
+        mine.read = true
+        if (held.current === mine) {
+          setState((s) => ({
+            ...s,
+            phase: 'ready',
+            error: null,
+            messages: ordered(rows.byId),
+            readTo: rows.cursor,
+            hasMore: rows.more
+          }))
+        }
+      })
+    }
+    held.current = mine
+    return mine
+  }, [])
 
   // oxlint-disable-next-line react-doctor/effect-needs-cleanup -- cleanup stops the watch, including one started after the first page.
   useEffect(() => {
     if (!feed || !enabled) {
       return
     }
-    if (held.current.feed !== feed) {
-      held.current = unread(feed)
-    }
-    const mine = held.current
+    const mine = heldFor(feed)
     let closed = false
     let stop: (() => void) | null = null
     const publish = (readTo: number, hasMore?: boolean) =>
@@ -84,10 +121,15 @@ export function useLiveTranscriptFeed(
       }))
     const applyDelta = (delta: LiveTranscriptDelta) => {
       if (delta.reset) {
-        mine.byId = new Map(delta.messages.map((m) => [m.id, m]))
-        mine.start = delta.messages.length ? offsetOf(delta.messages[0]) : delta.cursor
-        mine.read = true
-        publish(delta.cursor, mine.start > 0)
+        const start = delta.messages.length ? offsetOf(delta.messages[0]) : delta.cursor
+        const byId = new Map(delta.messages.map((m) => [m.id, m]))
+        mine.hold.replace(
+          { byId, start, cursor: delta.cursor, more: start > 0 },
+          mine.byId.size > 0
+        )
+        return
+      }
+      if (mine.hold.append(delta.messages, delta.cursor)) {
         return
       }
       for (const m of delta.messages) {
@@ -126,12 +168,12 @@ export function useLiveTranscriptFeed(
       closed = true
       stop?.()
     }
-  }, [feed, enabled])
+  }, [feed, enabled, attempt.count, heldFor])
 
   const loadEarlier = useCallback(async (): Promise<NativeChatOlderPageResult> => {
     const mine = held.current
-    const before = mine.start
-    if (!feed || mine.feed !== feed || before === null || before === 0) {
+    const before = mine?.start ?? null
+    if (!feed || mine?.feed !== feed || before === null || before === 0) {
       return 'exhausted'
     }
     setState((s) => ({ ...s, loadingEarlier: true }))
@@ -139,6 +181,11 @@ export function useLiveTranscriptFeed(
       const page = await feed.page(before)
       if (held.current !== mine) {
         return 'failed'
+      }
+      if (mine.start !== before) {
+        // The rows were replaced while this read was out: its page is not the one before them.
+        setState((s) => ({ ...s, loadingEarlier: false }))
+        return 'superseded'
       }
       for (const m of page.messages) {
         mine.byId.set(m.id, m)
@@ -159,7 +206,15 @@ export function useLiveTranscriptFeed(
     }
   }, [feed])
 
-  return useMemo(() => ({ ...state, loadEarlier }), [state, loadEarlier])
+  const retainHistory = useCallback(
+    () => (feed ? heldFor(feed).hold.retain() : () => {}),
+    [feed, heldFor]
+  )
+
+  return useMemo(
+    () => ({ ...state, loadEarlier, retainHistory }),
+    [state, loadEarlier, retainHistory]
+  )
 }
 
 /** Streams one transcript by id straight from the registry: a session's, or one of its subagents'. */

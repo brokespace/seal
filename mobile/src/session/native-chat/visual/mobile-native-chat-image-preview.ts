@@ -5,6 +5,7 @@ import { filePreviewImageSchema } from '../../../files/preview/file-preview-repl
 import { bindDeferredRpcOperation, defineRpcOperation } from '../../../transport/rpc/rpc-operation'
 import { rpcResultVariant } from '../../../transport/rpc/rpc-operation-result-reader'
 import type { RpcClient } from '../../../transport/rpc/rpc-client-contract'
+import type { NativeChatImageRefBlock } from '../../../../../src/shared/native-chat/native-chat-types'
 
 // Accept device-loadable URI schemes only; a bare host/SSH path must remain a text placeholder.
 const RENDERABLE_IMAGE_URI = /^(file:|data:|https?:|content:|blob:)/i
@@ -39,15 +40,41 @@ export type MobileNativeChatImageSource = {
   worktreeId: string
 }
 
+/** Seal: a chat outside a workspace, whose rows name images by a URL only its host can read. */
+export type MobileNativeChatUrlImageSource = {
+  reads: (url: string) => boolean
+  /** Null when the image is not there or the read failed. */
+  read: (url: string, signal: AbortSignal) => Promise<string | null>
+}
+
+export type MobileNativeChatRowImageSource =
+  | MobileNativeChatImageSource
+  | MobileNativeChatUrlImageSource
+
+/** What `readHostChatImage` reads for a block the phone cannot load itself; null when the source reads nothing for it. */
+export function hostChatImageRef(
+  source: MobileNativeChatRowImageSource,
+  block: NativeChatImageRefBlock
+): string | null {
+  if ('read' in source) {
+    return block.url && source.reads(block.url) ? block.url : null
+  }
+  return block.path ?? null
+}
+
 // Each reply can be megabytes; a burst over a slow link overflows the host's outbound queue, which drops the socket.
-const hostImageReads = new PrioritySemaphore(2)
+export const hostImageReads = new PrioritySemaphore(2)
 
 // Null on any failure, including older hosts that refuse these methods to phones: the row keeps its placeholder.
 export async function readHostChatImage(
-  { client, worktreeId }: MobileNativeChatImageSource,
+  source: MobileNativeChatRowImageSource,
   path: string,
   signal: AbortSignal
 ): Promise<string | null> {
+  if ('read' in source) {
+    return source.read(path, signal)
+  }
+  const { client, worktreeId } = source
   const release = await hostImageReads.acquire(0, signal).catch(() => null)
   if (!release || signal.aborted) {
     release?.()

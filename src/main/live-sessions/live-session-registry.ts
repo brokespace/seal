@@ -157,7 +157,7 @@ export class LiveSessionRegistry {
     return () => this.listeners.delete(listener)
   }
 
-  /** Scan every host now (after a send, or when a view opens). */
+  /** Scan every host now (after a send, or when a view opens); settles once each has answered. */
   async refresh(hostId?: string): Promise<void> {
     this.syncHosts()
     await Promise.all(
@@ -176,7 +176,7 @@ export class LiveSessionRegistry {
     this.syncHosts()
     const now = this.now()
     for (const state of this.hosts.values()) {
-      if (state.scanning || now < state.nextScanAt) {
+      if (state.scan || now < state.nextScanAt) {
         continue
       }
       if (this.federated(state)) {
@@ -209,7 +209,7 @@ export class LiveSessionRegistry {
     const now = this.now()
     let wakeAt = now + HOST_SYNC_MS
     for (const state of this.hosts.values()) {
-      if (!state.scanning) {
+      if (!state.scan) {
         wakeAt = Math.min(wakeAt, state.nextScanAt)
       }
     }
@@ -243,11 +243,12 @@ export class LiveSessionRegistry {
     }
   }
 
-  private async scanHost(state: HostScanState): Promise<void> {
-    if (state.scanning) {
-      return
-    }
-    state.scanning = true
+  private scanHost(state: HostScanState): Promise<void> {
+    state.scan ??= this.readHost(state)
+    return state.scan
+  }
+
+  private async readHost(state: HostScanState): Promise<void> {
     state.paneChanged = false
     const hostId = state.host.machine.hostId
     try {
@@ -281,7 +282,7 @@ export class LiveSessionRegistry {
         this.publish()
       }
     } finally {
-      state.scanning = false
+      state.scan = null
       state.nextScanAt = this.now() + nextScanDelayMs(state, this.intervals)
       this.schedule()
     }

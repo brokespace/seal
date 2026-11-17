@@ -15,7 +15,7 @@ import {
   useMobileNativeChatConversationState,
   type MobileNativeChatConversation
 } from '../use-mobile-native-chat-conversation-state'
-import type { MobileNativeChatImageSource } from '../visual/mobile-native-chat-image-preview'
+import type { MobileNativeChatRowImageSource } from '../visual/mobile-native-chat-image-preview'
 import { MobileNativeChatRewindContext } from './mobile-native-chat-rewind-context'
 import { useMobileNativeChatRewindDialog } from './use-mobile-native-chat-rewind-dialog'
 import { MobileNativeChatRewindDialog } from './MobileNativeChatRewindDialog'
@@ -28,7 +28,7 @@ export function MobileNativeChatRowOverlaysHost({
   children
 }: {
   conversation: MobileNativeChatConversation
-  imageSource?: MobileNativeChatImageSource
+  imageSource?: MobileNativeChatRowImageSource
   /** Absent where the host can't open a browser tab for this chat. */
   onOpenUrlInOrca?: (url: string) => void
   /** The chat's "Rewind to here"; absent where it can't rewind. */

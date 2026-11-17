@@ -12,7 +12,8 @@ export type HostScanState = {
   scanner: Pick<HostSessionScanner, 'scan' | 'noteResumed'>
   sessions: LiveSession[]
   nextScanAt: number
-  scanning: boolean
+  /** The scan under way, for a caller that wants its answer. */
+  scan: Promise<void> | null
   /** Scans in a row that found nothing new; each stretches the wait, up to MAX_IDLE_STRETCH. */
   idleScans: number
   /** Scans that returned, for the status hold: a session leaves "working" on the second that says so. */
@@ -48,7 +49,7 @@ export function newHostScanState(
       host.machine.kind === 'local' ? agentWakingScans(scanner, () => state.idleScans) : scanner,
     sessions: [],
     nextScanAt: 0,
-    scanning: false,
+    scan: null,
     idleScans: 0,
     scans: 0,
     read: false,

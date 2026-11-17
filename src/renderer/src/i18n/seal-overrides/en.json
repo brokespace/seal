@@ -2672,6 +2672,7 @@
       "endedResume": "This session has ended. Send a message to resume it.",
       "takeOver": "Take over",
       "unavailable": "This session is no longer available",
+      "reconnecting": "Reconnecting to {{machine}}…",
       "promptReadOnly": "Seal can’t answer this prompt. Answer it where the session runs.",
       "answerFailed": "Seal couldn’t answer this prompt."
     },

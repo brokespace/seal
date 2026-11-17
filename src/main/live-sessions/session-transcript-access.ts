@@ -16,9 +16,11 @@ import { chatJournalOf, type SessionTranscript } from './transcripts/session-tra
 export type SessionTranscriptAccessDeps = {
   session(sessionId: string): LiveSession | null
   /** The paired server whose own list holds the session; null for one this Seal reads itself. */
-  server(sessionId: string): Pick<FederatedTranscripts, 'page' | 'since' | 'watch'> | null
+  server(
+    sessionId: string
+  ): Pick<FederatedTranscripts, 'page' | 'since' | 'watch' | 'imageBase64'> | null
   /** Transcript files: CLI and external sessions this Seal scans. */
-  files: Pick<LiveTranscriptStreams, 'page' | 'since' | 'subscribe'>
+  files: Pick<LiveTranscriptStreams, 'page' | 'since' | 'subscribe' | 'imageBase64'>
   /** Tells of every change to the session list; returns how to stop being told. */
   onSessionsChanged(listener: () => void): () => void
   log?: (message: string, error?: unknown) => void
@@ -59,6 +61,14 @@ export class SessionTranscriptAccess {
     return journal ? journal.since(cursor) : this.deps.files.since(sessionId, cursor)
   }
 
+  /** A base64 run of the transcript an image row refers to; empty when it is not there. */
+  imageBase64(sessionId: string, start: number, length: number): Promise<string> {
+    const server = this.deps.server(sessionId)
+    return server
+      ? server.imageBase64(sessionId, start, length)
+      : this.deps.files.imageBase64(sessionId, start, length)
+  }
+
   watch(
     sessionId: string,
     fromCursor: LiveTranscriptCursor | null,
@@ -66,7 +76,24 @@ export class SessionTranscriptAccess {
   ): LiveTranscriptSubscription {
     let stopped = false
     let holder = this.holderOf(sessionId) ?? 'files'
-    let followed = this.follow(holder, sessionId, fromCursor, listener)
+    // A watcher at zero has read nothing: it is given the newest page, not the history up to it.
+    const unread = fromCursor === 0
+    let followed = this.follow(holder, sessionId, unread ? null : fromCursor, listener)
+    const resetTo = (opened: LiveTranscriptSubscription): void => {
+      void opened.ready.then(
+        (page) => {
+          if (page && !stopped && followed === opened) {
+            const { cursor, messages } = page
+            listener({ sessionId, from: 0, cursor, messages, reset: true })
+          }
+        },
+        (error: unknown) =>
+          this.deps.log?.(`[live-sessions] reading the transcript of ${sessionId} failed`, error)
+      )
+    }
+    if (unread) {
+      resetTo(followed)
+    }
     // Who holds a transcript can change under a watcher: a chat listed after the watch began, a
     // CLI continued in Chat. Cursors differ between holders, so the new one starts from its page.
     const off = this.deps.onSessionsChanged(() => {
@@ -76,21 +103,11 @@ export class SessionTranscriptAccess {
       }
       followed.unsubscribe()
       holder = next
-      const reopened = this.follow(next, sessionId, null, listener)
-      followed = reopened
-      void reopened.ready.then(
-        (page) => {
-          if (page && !stopped && followed === reopened) {
-            const { cursor, messages } = page
-            listener({ sessionId, from: 0, cursor, messages, reset: true })
-          }
-        },
-        (error: unknown) =>
-          this.deps.log?.(`[live-sessions] reading the transcript of ${sessionId} failed`, error)
-      )
+      followed = this.follow(next, sessionId, null, listener)
+      resetTo(followed)
     })
     return {
-      ready: followed.ready,
+      ready: unread ? Promise.resolve(null) : followed.ready,
       unsubscribe: () => {
         stopped = true
         off()

@@ -6,6 +6,7 @@ import type {
 import type { LiveTranscriptSubscription } from '../transcripts/live-transcript-streams'
 import {
   readTranscriptFrame,
+  readTranscriptImage,
   readTranscriptPage,
   readTranscriptSince,
   type ServerTranscriptSince
@@ -42,7 +43,7 @@ export class FederatedTranscripts {
     limit?: number
   ): Promise<LiveTranscriptPage> {
     const page = readTranscriptPage(
-      await this.call(sessionId, 'liveSessions.transcript', { before, limit })
+      await this.call(sessionId, 'liveSessions.transcript', { before, limit, images: 'refs' })
     )
     if (!page) {
       throw new Error(UNREADABLE)
@@ -52,12 +53,19 @@ export class FederatedTranscripts {
 
   async since(sessionId: string, cursor: LiveTranscriptCursor): Promise<ServerTranscriptSince> {
     const since = readTranscriptSince(
-      await this.call(sessionId, 'liveSessions.transcriptSince', { cursor })
+      await this.call(sessionId, 'liveSessions.transcriptSince', { cursor, images: 'refs' })
     )
     if (!since) {
       throw new Error(UNREADABLE)
     }
     return since
+  }
+
+  /** A base64 run an image row of the server's refers to; empty when the server does not have it. */
+  async imageBase64(sessionId: string, start: number, length: number): Promise<string> {
+    return readTranscriptImage(
+      await this.call(sessionId, 'liveSessions.transcriptImage', { start, length })
+    )
   }
 
   /** Follows the server's own watch; a dropped stream is reopened from the last cursor it gave. */
@@ -149,7 +157,7 @@ export class FederatedTranscripts {
         .subscribe(
           target.environmentId,
           'liveSessions.watchTranscript',
-          { sessionId: target.sessionId, fromCursor: cursor },
+          { sessionId: target.sessionId, fromCursor: cursor, images: 'refs' },
           {
             onFrame: (frame) => {
               if (current === attempt) {

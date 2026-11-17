@@ -4,7 +4,7 @@ import type { NativeChatDeliveryNotice } from '../../native-chat/messages/rows/N
 import type { NativeChatLiveSession } from '../../native-chat/session/terminal/read/native-chat-live-session-contract'
 import type { PendingRow } from '../live-session-pending-rows'
 import { liveMessageStateLabel } from '../live-session-presentation'
-import type { LiveTranscript } from '../use-live-transcript'
+import type { LiveTranscriptState } from '../use-live-transcript'
 
 /** The transcript with the outbox's rows, as the chat's message list reads a session. */
 export function externalAgentSessionChatRows({
@@ -16,7 +16,7 @@ export function externalAgentSessionChatRows({
 }: {
   agent: AgentType
   providerSessionId: string | null
-  transcript: LiveTranscript
+  transcript: LiveTranscriptState & Pick<NativeChatLiveSession, 'loadEarlier' | 'retainHistory'>
   pending: readonly PendingRow[]
   /** Waiting on its own subagents or background tasks is still the agent's turn. */
   working: boolean
@@ -34,7 +34,8 @@ export function externalAgentSessionChatRows({
     hasMore: transcript.hasMore,
     loadingEarlier: transcript.loadingEarlier,
     olderHistoryGeneration: 0,
-    loadEarlier: transcript.loadEarlier
+    loadEarlier: transcript.loadEarlier,
+    retainHistory: transcript.retainHistory
   }
 }
 

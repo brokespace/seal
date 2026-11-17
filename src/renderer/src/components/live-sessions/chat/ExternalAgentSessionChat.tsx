@@ -50,8 +50,10 @@ import {
   ExternalAgentSessionPrompt,
   externalAgentSessionPromptOwnsComposer
 } from './ExternalAgentSessionPrompt'
+import { ExternalAgentSessionUnlisted } from './ExternalAgentSessionUnlisted'
 import { useExternalAgentSessionChatSource } from './use-external-agent-session-chat-source'
 import { useExternalAgentSessionFocus } from './use-external-agent-session-focus'
+import { LiveTranscriptImagesContext } from './use-live-transcript-image'
 
 // The registry refuses a send outright; none of the structured host's refusal causes arise here.
 const NO_REFUSAL_CAUSES = {
@@ -229,11 +231,9 @@ function ExternalAgentSessionChatPane({
     >
       <div className="relative flex min-h-0 flex-1 flex-col">
         {find.isOpen ? <NativeChatFindBar find={find} isVisible={isVisible} /> : null}
-        {unavailable ? (
-          <NativeChatEmptyState
-            kind="empty"
-            headline={t('seal.sessionTab.unavailable', 'This session is no longer available')}
-          />
+        {unavailable && isVisible ? (
+          // Only the tab in view asks after its machine.
+          <ExternalAgentSessionUnlisted sessionId={source.sessionId} />
         ) : viewState.kind === 'loading' || (session === null && !isConversation) ? (
           <NativeChatEmptyState kind="loading" />
         ) : viewState.kind === 'error' ? (
@@ -280,5 +280,9 @@ function ExternalAgentSessionChatPane({
       <LinkActionPopover request={linkActionRequest} onClose={closeLinkActions} />
     </div>
   )
-  return <NativeChatLinkClickContext value={onLinkClick}>{root}</NativeChatLinkClickContext>
+  return (
+    <NativeChatLinkClickContext value={onLinkClick}>
+      <LiveTranscriptImagesContext value={source.sessionId}>{root}</LiveTranscriptImagesContext>
+    </NativeChatLinkClickContext>
+  )
 }
