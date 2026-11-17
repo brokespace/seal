@@ -34,6 +34,10 @@ const PINNING_WATCHER =
 const ONE_LEFT_RUNNING = '1 background task still running'
 const CLEF_WAITER =
   'until ! pgrep -f run_clef_coding.py >/dev/null; do sleep 60; done; tail -n 5 logs/clef-coding.log'
+const CACHE_BUILD =
+  'setsid numactl --interleave=all nice -n 5 python fq_cache.py --sizes 110,120,130 --out cache2 > cache2.log 2>&1 < /dev/null &'
+const SIZE_SWEEP =
+  'until ! pgrep -f fq_cache.py >/dev/null; do sleep 60; done; ./run_a13.sh > a13.log 2>&1'
 
 // One scanner follows each session from scan to scan. Claude transcripts were recorded from Claude
 // Code 2.1.325 (docs/design/agent-status.md says how); `records` is how much of one was written.
@@ -460,6 +464,64 @@ const CLAUDE: Transitions[] = [
         shows: 'waiting-task'
       },
       { when: 'it left, and took its command with it', host: LEFT, shows: 'done' }
+    ]
+  },
+  {
+    session:
+      'a turn that ended on a job its subagent started with setsid, behind a sweep waiting on it',
+    fixture: 'live-claude-subagent-detached-job',
+    steps: [
+      {
+        when: 'the subagent stopped to wait on its sweep, and the turn ended on "waiting on that job"',
+        host: {
+          registry: { state: 'shell' },
+          children: CLAUDE_SHELL('00:38'),
+          jobs: ['0 0 5120 python']
+        },
+        shows: 'waiting-subagent',
+        detail: 'Waiting on 1 subagent',
+        tasks: [
+          [SIZE_SWEEP, 'running'],
+          [CACHE_BUILD, 'running']
+        ]
+      },
+      {
+        when: 'the sweep is gone and the cache build, which no agent runs, goes on',
+        host: {
+          quietMs: 40 * 60_000,
+          registry: { state: 'idle' },
+          children: [],
+          jobs: ['0 0 5120 python']
+        },
+        shows: 'waiting-task',
+        detail: null,
+        tasks: [
+          [CACHE_BUILD, 'running'],
+          [SIZE_SWEEP, 'completed']
+        ]
+      },
+      {
+        when: 'the cache build is over',
+        host: { quietMs: 2 * 60 * 60_000, registry: { state: 'idle' }, children: [], jobs: [] },
+        shows: 'your-turn',
+        detail: null,
+        tasks: [
+          [SIZE_SWEEP, 'completed'],
+          [CACHE_BUILD, 'completed']
+        ]
+      }
+    ]
+  },
+  {
+    session: 'the same turn on a host that cannot say which jobs run by themselves',
+    fixture: 'live-claude-subagent-detached-job',
+    steps: [
+      {
+        when: 'Claude says nothing of its is running',
+        host: { registry: { state: 'idle' }, children: [] },
+        shows: 'your-turn',
+        tasks: [[SIZE_SWEEP, 'completed']]
+      }
     ]
   }
 ]

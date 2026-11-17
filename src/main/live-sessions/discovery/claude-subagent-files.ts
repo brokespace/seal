@@ -2,6 +2,12 @@
 // `<session>/subagents/agent-<id>.jsonl`, with `agent-<id>.meta.json` describing how it was started.
 import { parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 import {
+  foldClaudeActivity,
+  newClaudeActivityState,
+  type ClaudeActivityState
+} from './claude-transcript-activity'
+import type { TranscriptRecord } from './transcript-records'
+import {
   basename,
   blocks,
   contentText,
@@ -39,6 +45,8 @@ export type SubagentFileSummary = {
   midTurn: boolean
   activity: string | null
   lastAt: number | null
+  /** What its own transcript launched, folded read after read: its commands are its session's. */
+  launched: ClaudeActivityState
 }
 
 /** Where a session's subagent transcripts live, given the session's own transcript. */
@@ -51,10 +59,9 @@ export function subagentIdOfPath(path: string): string | null {
 }
 
 function tailFacts(
-  tail: string | null,
+  records: TranscriptRecord[],
   whole: boolean
 ): Pick<SubagentFileSummary, 'finished' | 'midTurn' | 'activity' | 'lastAt' | 'title'> {
-  const records = recordsOf(tail, !whole)
   let finished = false
   let midTurn = false
   let activity: string | null = null
@@ -94,8 +101,14 @@ export function summarizeSubagentFile(
     return null
   }
   const meta = file.meta ? parseJsonRecord(file.meta) : null
+  const whole = file.size <= tailBytes
+  const records = file.tail === null ? null : recordsOf(file.tail, !whole)
   // A re-read replaces what the old bytes said: a finished subagent can be sent on again.
-  const facts = file.tail === null ? previous : tailFacts(file.tail, file.size <= tailBytes)
+  const facts = records === null ? previous : tailFacts(records, whole)
+  const launched = previous?.launched ?? newClaudeActivityState()
+  if (records) {
+    foldClaudeActivity(launched, records, 'subagent')
+  }
   return {
     agentId,
     path: file.path,
@@ -111,6 +124,7 @@ export function summarizeSubagentFile(
     finished: meta ? meta.finished === true || facts?.finished === true : facts?.finished === true,
     midTurn: facts?.midTurn ?? false,
     activity: facts?.activity ?? previous?.activity ?? null,
-    lastAt: facts?.lastAt ?? previous?.lastAt ?? null
+    lastAt: facts?.lastAt ?? previous?.lastAt ?? null,
+    launched
   }
 }

@@ -3,7 +3,12 @@ import type {
   LiveSessionMachine
 } from '../../../shared/live-sessions/live-session-types'
 import type { LiveSessionHost } from '../hosts/live-session-hosts'
-import { buildAgentProbeScript, buildDiscoveryScript } from './discovery-script'
+import {
+  buildAgentProbeScript,
+  buildDiscoveryScript,
+  buildJobProbeScript
+} from './discovery-script'
+import { jobAnswers, jobLookups, settleJobLookups } from './detached-job-lookup'
 import { parseDiscoveryOutput, type DiscoveredFile, type DiscoveryOutput } from './discovery-output'
 import { assembleHostSessions, type SummarizedTranscript } from './session-assembly'
 import {
@@ -37,7 +42,8 @@ export const LOCAL_SCAN_LIMITS: HostScanLimits = {
   tailBytes: 48 * 1024,
   maxSubagents: 24,
   maxSubagentReads: 48,
-  subagentTailBytes: 12 * 1024
+  // A subagent's last calls and their results: the commands it left running are its session's.
+  subagentTailBytes: 24 * 1024
 }
 
 // SSH exec keeps only the last 1 MB of output; a handful of reads stays well under it.
@@ -47,7 +53,7 @@ export const SSH_SCAN_LIMITS: HostScanLimits = {
   maxReads: 6,
   maxSubagents: 12,
   maxSubagentReads: 10,
-  subagentTailBytes: 6 * 1024
+  subagentTailBytes: 12 * 1024
 }
 
 // A runtime answers up to 4 MB of JSON; the server caps the script's output below that.
@@ -114,11 +120,13 @@ export class HostSessionScanner {
     ])
     const headKnown = cached.filter((t) => t.head !== null).map((t) => t.path)
     const findFiles = this.host.transcriptFiles
+    const asked = jobLookups(cached)
     const script = buildDiscoveryScript({
       ...this.limits,
       transcripts: !findFiles,
       known: findFiles ? [] : known,
-      headKnown: findFiles ? [] : headKnown
+      headKnown: findFiles ? [] : headKnown,
+      jobs: asked
     })
     const output = parseDiscoveryOutput(await this.host.run(script))
     this.agentPids = output.complete ? agentPidsOf(output) : null
@@ -143,6 +151,7 @@ export class HostSessionScanner {
         }
       }
     }
+    await this.settleDetachedJobs(asked, output)
     // A scan cut short lists only some: the rest stand as earlier scans read them.
     const transcripts = [...this.cache.values()].map((transcript) => ({
       ...transcript,
@@ -174,6 +183,27 @@ export class HostSessionScanner {
       session.lastActivityAt ||= seen
     }
     return { sessions, complete: output.complete }
+  }
+
+  /**
+   * Which jobs the sessions left running by themselves still run. What this scan read may have
+   * started one the script was not asked about: the host is asked again, for the jobs alone.
+   */
+  private async settleDetachedJobs(
+    asked: ReturnType<typeof jobLookups>,
+    output: DiscoveryOutput
+  ): Promise<void> {
+    const transcripts = [...this.cache.values()]
+    const wanted = jobLookups(transcripts)
+    const known = new Set(asked.map((lookup) => lookup.key))
+    if (wanted.every((lookup) => known.has(lookup.key))) {
+      settleJobLookups(transcripts, wanted, jobAnswers(asked, output.jobs))
+      return
+    }
+    const probe = await this.host
+      .run(buildJobProbeScript(wanted))
+      .then(parseDiscoveryOutput, () => null)
+    settleJobLookups(transcripts, wanted, jobAnswers(wanted, probe?.complete ? probe.jobs : null))
   }
 
   /** Subagent transcripts change while their session's own file stands still. */

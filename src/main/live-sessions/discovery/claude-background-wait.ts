@@ -1,5 +1,8 @@
 // The evidence on a Claude Code turn that ended with commands of its own still running.
-import type { LiveSessionActivity } from '../../../shared/live-sessions/live-session-activity'
+import type {
+  LiveBackgroundTask,
+  LiveSessionActivity
+} from '../../../shared/live-sessions/live-session-activity'
 import { isRestingLiveSessionStatus } from '../../../shared/live-sessions/live-session-status'
 import type {
   LiveSession,
@@ -10,9 +13,11 @@ import type {
   BackgroundWaitEvidence
 } from '../../../shared/live-sessions/live-session-background-wait'
 import type { ToolProcess } from './agent-tool-processes'
-import type { ClaudeBackgroundLaunch } from './claude-background-launches'
+import { detachedJobOf, type ClaudeBackgroundLaunch } from './claude-background-launches'
+import { claudeSessionTasks } from './claude-session-launches'
 import type { ClaudeRegistryEntry } from './claude-session-registry'
 import type { ClaudeActivityState } from './claude-transcript-activity'
+import type { NamedJob } from './detached-job-lookup'
 import type { SummarizedTranscript } from './session-assembly'
 import type { TranscriptSummary } from './transcript-summary'
 
@@ -28,6 +33,19 @@ function turnOf(
     return null
   }
   return state.userSpokeAt === null || launch.startedAt >= state.userSpokeAt ? 'final' : 'earlier'
+}
+
+const namedTaskId = (job: NamedJob): string => `named-${job.pid}`
+
+/** The jobs the reply names, as tasks of the session: each is something it may be waiting on. */
+export function namedJobTasks(transcript: SummarizedTranscript | null): LiveBackgroundTask[] {
+  return (transcript?.namedJobs?.jobs ?? []).map((job) => ({
+    id: namedTaskId(job),
+    label: job.label,
+    status: 'running',
+    startedAt: job.startedAt,
+    summary: null
+  }))
 }
 
 /** The shell of Claude's Bash tool that started when the launch did; each shell stands for one launch. */
@@ -68,21 +86,44 @@ export function claudeBackgroundWait(
   )
   const shells = processes?.filter((process) => process.claudeBash) ?? null
   const claimed = new Set<ToolProcess>()
-  const commands: BackgroundWaitCommand[] = [...state.background.values()]
-    .filter((launch) => launch.taskId !== null && launch.runsCommand)
-    .map((launch): BackgroundWaitCommand => {
-      const live = running.has(launch.taskId!)
+  const commands: BackgroundWaitCommand[] = claudeSessionTasks(state, transcript.subagents)
+    .filter(({ launch }) => launch.runsCommand)
+    .map(({ launch, subagent }): BackgroundWaitCommand => {
+      const live = running.has(launch.taskId)
+      const job = detachedJobOf(launch)
       return {
         kind: launch.kind === 'monitor' ? 'monitor' : 'shell',
         command: launch.command,
         description: launch.description,
+        // A subagent's command belongs to the turn of its session that it ran in.
         turn: turnOf(launch, state),
         startedAt: launch.startedAt,
         state: live ? 'running' : launch.status === 'running' ? 'completed' : launch.status,
-        runs: live && shells ? (shellOf(launch, shells, claimed)?.runs ?? null) : null
+        runs: job
+          ? job.runs
+          : live && shells
+            ? (shellOf(launch, shells, claimed)?.runs ?? null)
+            : null,
+        ...(job ? { origin: 'detached' as const } : {}),
+        ...(subagent ? { subagent: true as const } : {})
       }
     })
     .filter((command) => command.state === 'running' || command.turn === 'final')
+  for (const job of transcript.namedJobs?.jobs ?? []) {
+    if (running.has(namedTaskId(job))) {
+      commands.push({
+        kind: 'shell',
+        command: null,
+        description: null,
+        turn: 'final',
+        startedAt: job.startedAt,
+        state: 'running',
+        runs: [job.runs],
+        origin: 'named',
+        named: job.label
+      })
+    }
+  }
   // A command the agent vouches for whose launch lies before what was read of the transcript.
   if (running.has('background')) {
     const unread = shells?.filter((shell) => !claimed.has(shell)) ?? []

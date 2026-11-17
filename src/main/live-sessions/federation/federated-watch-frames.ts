@@ -118,7 +118,10 @@ const backgroundWaitSchema: z.ZodType<BackgroundWaitEvidence> = z.object({
       turn: z.enum(['final', 'earlier']).nullable(),
       startedAt: Finite.nullable(),
       state: z.enum(LIVE_SUBAGENT_STATUSES),
-      runs: z.array(z.string()).nullable()
+      runs: z.array(z.string()).nullable(),
+      origin: z.enum(['detached', 'named']).optional(),
+      subagent: z.literal(true).optional(),
+      named: z.string().optional()
     })
   )
 })

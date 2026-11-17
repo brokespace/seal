@@ -6,8 +6,9 @@ import type {
   LiveSubagent,
   LiveSubagentStatus
 } from '../../../shared/live-sessions/live-session-activity'
-import { claudeTodos } from './claude-transcript-activity'
-import type { ClaudeBackgroundLaunch } from './claude-background-launches'
+import { claudeTodos, subagentParkedAt } from './claude-transcript-activity'
+import { detachedJobOf, type ClaudeBackgroundLaunch } from './claude-background-launches'
+import { claudeSessionTasks } from './claude-session-launches'
 import type { ClaudeActivityState, ClaudeAgentLaunch } from './claude-transcript-activity'
 import type { SubagentFileSummary } from './claude-subagent-files'
 import type { SummarizedTranscript } from './session-assembly'
@@ -34,7 +35,38 @@ export type SessionActivityInput = {
    * some still run, none do, or (null) neither can tell.
    */
   backgroundShells?: 'running' | 'none' | null
+  /** Jobs no launch accounts for that the reply names and the machine shows running. */
+  named?: readonly LiveBackgroundTask[]
   nowMs: number
+}
+
+/**
+ * A subagent that stopped to wait on work of its own is not over while that work runs: the
+ * tasks its transcript launched, else whatever the agent still has in the background.
+ */
+function parkedStatus(
+  since: number,
+  file: SubagentFileSummary | undefined,
+  input: SessionActivityInput
+): LiveSubagentStatus {
+  if (!input.running) {
+    return 'stopped'
+  }
+  if (input.backgroundShells === 'none') {
+    return 'completed'
+  }
+  const own = [...(file?.launched.background.values() ?? [])].filter(
+    (launch) => launch.taskId !== null && detachedJobOf(launch) === null
+  )
+  if (own.length > 0) {
+    return own.some((launch) => backgroundTaskStatus(launch, input) === 'running')
+      ? 'running'
+      : 'completed'
+  }
+  // Neither the agent nor its processes say: its work is not taken to run for ever.
+  return input.backgroundShells === 'running' || input.nowMs - since < LAUNCH_STALE_MS
+    ? 'running'
+    : 'completed'
 }
 
 function fileStatus(
@@ -42,6 +74,10 @@ function fileStatus(
   launch: ClaudeAgentLaunch | undefined,
   input: SessionActivityInput
 ): LiveSubagentStatus {
+  const parkedAt = subagentParkedAt(input.state, [file.agentId, file.toolUseId])
+  if (parkedAt !== undefined) {
+    return parkedStatus(parkedAt, file, input)
+  }
   const ended =
     input.state?.ended.get(file.agentId) ??
     (file.toolUseId ? input.state?.ended.get(file.toolUseId) : undefined)
@@ -71,6 +107,10 @@ function fileStatus(
 }
 
 function launchStatus(launch: ClaudeAgentLaunch, input: SessionActivityInput): LiveSubagentStatus {
+  const parkedAt = subagentParkedAt(input.state, [launch.agentId, launch.toolUseId])
+  if (parkedAt !== undefined) {
+    return parkedStatus(parkedAt, undefined, input)
+  }
   if (launch.status !== 'running') {
     return launch.status
   }
@@ -89,6 +129,14 @@ function backgroundTaskStatus(
   task: ClaudeBackgroundLaunch,
   input: SessionActivityInput
 ): LiveSubagentStatus {
+  const job = detachedJobOf(task)
+  if (job) {
+    // The launch is over; what it left behind runs for as long as the machine shows it.
+    if (job.runs?.length) {
+      return input.running ? 'running' : 'stopped'
+    }
+    return task.status === 'running' ? 'completed' : task.status
+  }
   if (task.status !== 'running') {
     return task.status
   }
@@ -157,15 +205,18 @@ export function claudeSessionActivity(input: SessionActivityInput): LiveSessionA
       })
     }
   }
-  const tasks: LiveBackgroundTask[] = [...(input.state?.background.values() ?? [])]
-    .filter((task) => task.taskId !== null)
-    .map((task) => ({
-      id: task.taskId!,
-      label: task.label,
-      status: backgroundTaskStatus(task, input),
-      startedAt: task.startedAt,
-      summary: task.summary
-    }))
+  const tasks: LiveBackgroundTask[] = claudeSessionTasks(input.state, input.files).map(
+    ({ launch }) => ({
+      id: launch.taskId,
+      label: launch.label,
+      status: backgroundTaskStatus(launch, input),
+      startedAt: launch.startedAt,
+      summary: launch.summary
+    })
+  )
+  if (input.running) {
+    tasks.push(...(input.named ?? []))
+  }
   if (
     input.running &&
     input.backgroundShells === 'running' &&
@@ -237,6 +288,7 @@ export function sessionActivityOf(input: {
   running: boolean
   turnOpen: boolean
   backgroundShells?: 'running' | 'none' | null
+  named?: readonly LiveBackgroundTask[]
   nowMs: number
 }): LiveSessionActivity {
   const { transcript, running, nowMs } = input
@@ -247,6 +299,7 @@ export function sessionActivityOf(input: {
       running,
       turnOpen: input.turnOpen,
       backgroundShells: input.backgroundShells ?? null,
+      named: input.named,
       nowMs
     })
   }
