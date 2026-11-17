@@ -25,6 +25,9 @@ export type SplitViewZone = SplitViewEdge | 'center'
 /** Where items land: beside a pane, or in its strip (`index` omitted appends). */
 export type SplitViewPlacement = { paneId: string; zone: SplitViewZone; index?: number }
 
+/** Where a tab opens: in a workspace (null: the one in view), in front or on an edge beside its tabs. */
+export type SplitViewTabPlace = { worktreeId: string | null; zone: SplitViewZone }
+
 export const EMPTY_SPLIT_VIEW: SplitViewState = {
   layout: null,
   panes: {},

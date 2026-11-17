@@ -1,29 +1,18 @@
 import { useEffect } from 'react'
 import { useAppStore } from '@/store/index'
 import { hasVisibleOverlay } from '@/lib/overlay-interaction/visible-overlay'
-import {
-  offerSidebarSectionKeyboardCursor,
-  type SidebarSectionEntryEdge
-} from '@/components/sidebar/sidebar-section-keyboard-handoff'
+import { offerSidebarSectionKeyboardCursor } from '@/components/sidebar/sidebar-section-keyboard-handoff'
 import { getExecutionHostIdFromWorktreeHostIdentity } from '../../../../../shared/worktree/host-qualified-identity'
 import { liveSessionMarksStore } from '../live-session-marks-store'
 import { scrollSidebarSessionRowIntoView } from './session-row-reveal'
-import {
-  SIDEBAR_LIST as LIST,
-  SESSION_GROUP,
-  SESSION_GROUP_TOGGLE,
-  SIDEBAR_SESSION_ROW
-} from './sidebar-session-row-dom'
+import { SIDEBAR_LIST as LIST, SESSION_GROUP, SIDEBAR_SESSION_ROW } from './sidebar-session-row-dom'
 
-const SESSIONS = `${LIST}, ${SESSION_GROUP}`
 const WORKSPACE_ROWS_SECTION = '[data-worktree-sidebar-content]'
 const WORKSPACE_OPTION = '[role="option"][data-worktree-id]'
 const CARD = '[data-worktree-card-surface]'
-// A project's sessions under its header: no card holds them, and they are no section of their own.
-const HEADER_GROUP = `${WORKSPACE_ROWS_SECTION} ${SESSION_GROUP}`
-// The lines that unfold ended sessions and a group are stops too, or the keyboard could not open them.
-const SESSION_ROW = `[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle]), ${SESSION_GROUP_TOGGLE}`
-const TAB_STOP_ROW = `${SIDEBAR_SESSION_ROW}, ${SESSION_GROUP_TOGGLE}`
+// The line that unfolds ended sessions is a stop too, or the keyboard could not open it.
+const SESSION_ROW =
+  '[data-workspace-session-rows] :is([data-live-session-row], [data-workspace-sessions-finished-toggle])'
 const KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape'])
 
 // Why closest(): a card can hold other workspaces' cards, whose rows are not its own.
@@ -97,9 +86,9 @@ function groupStops(group: Element | null): HTMLElement[] {
   return group ? Array.from(group.querySelectorAll<HTMLElement>(SESSION_ROW)) : []
 }
 
-/** What the arrow keys step through between workspaces: each card, and each project's sessions under its header. */
+/** What the arrow keys step through between workspaces: each card, and the sessions under each header that no card holds. */
 function listStops(list: HTMLElement): Element[] {
-  return Array.from(list.querySelectorAll(`${CARD}, ${HEADER_GROUP}`))
+  return Array.from(list.querySelectorAll(`${CARD}, ${SESSION_GROUP}`))
 }
 
 /** Moves on to the card or group beside `from`; false at the list's own end. */
@@ -143,23 +132,21 @@ function moveFromList(list: HTMLElement, event: KeyboardEvent): boolean {
     : focusSessionRow(up ? groupStops(beside).at(-1) : groupStops(beside)[0])
 }
 
-/** A group after the workspaces takes the cursor a neighbouring sidebar section offers, on its first or last stop. */
-export function enterSessionGroup(group: Element | null, edge: SidebarSectionEntryEdge): boolean {
-  const stops = groupStops(group)
-  return focusSessionRow(edge === 'first' ? stops[0] : stops.at(-1))
-}
-
-function moveInSessionGroup(group: Element, row: HTMLElement, event: KeyboardEvent): boolean {
+function moveInSessionGroup(
+  list: HTMLElement,
+  group: Element,
+  row: HTMLElement,
+  event: KeyboardEvent
+): boolean {
   const stops = groupStops(group)
   const up = event.key === 'ArrowUp'
   if (focusSessionRow(stops[stops.indexOf(row) + (up ? -1 : 1)])) {
     return true
   }
-  const list = group.matches(HEADER_GROUP) ? group.closest<HTMLElement>(LIST) : null
-  if (!list || !moveToListStop(list, group, up)) {
-    // Past its own ends the cursor moves on through the sidebar list, or stays when no workspace takes it.
+  if (!moveToListStop(list, group, up)) {
+    // Past the list's own ends the cursor moves on through the sidebar, or stays when nothing takes it.
     offerSidebarSectionKeyboardCursor(
-      list ? list.querySelector(WORKSPACE_ROWS_SECTION) : group,
+      list.querySelector(WORKSPACE_ROWS_SECTION),
       up ? 'up' : 'down',
       event.repeat
     )
@@ -170,18 +157,17 @@ function moveInSessionGroup(group: Element, row: HTMLElement, event: KeyboardEve
 function moveFromSessionRow(row: HTMLElement, event: KeyboardEvent): boolean {
   const list = row.closest<HTMLElement>(LIST)
   const card = row.closest(CARD)
-  // A stop no card holds is a group's: a project's sessions under its header, or a section after the workspaces.
+  // A stop no card holds is one of the sessions under a header.
   const group = card ? null : row.closest(SESSION_GROUP)
-  const sessions = list ?? group
-  if (!sessions || (!card && !group)) {
+  if (!list || (!card && !group)) {
     return false
   }
   if (event.key === 'Home' || event.key === 'End') {
-    const rows = Array.from(sessions.querySelectorAll<HTMLElement>(SESSION_ROW))
+    const rows = Array.from(list.querySelectorAll<HTMLElement>(SESSION_ROW))
     return focusSessionRow(event.key === 'Home' ? rows[0] : rows.at(-1))
   }
-  if (!list || !card) {
-    return group !== null && moveInSessionGroup(group, row, event)
+  if (!card) {
+    return group !== null && moveInSessionGroup(list, group, row, event)
   }
   const rows = sessionRowsOf(card)
   const at = rows.indexOf(row)
@@ -231,7 +217,7 @@ function onKeyDown(event: KeyboardEvent): void {
     return
   }
   // Keys typed anywhere else in the window are not the sidebar's.
-  if (!target.closest(SESSIONS)) {
+  if (!target.closest(LIST)) {
     return
   }
   if (hasVisibleOverlay() || useAppStore.getState().activeModal !== 'none') {
@@ -265,7 +251,7 @@ function onTabKey(event: KeyboardEvent): void {
 /** A row Tab lands on holds the keyboard as one the arrow keys moved to does, clear of the pinned headers. */
 function onFocusIn(event: FocusEvent): void {
   const row = event.target
-  if (!tabbing || !(row instanceof HTMLElement) || !row.matches(TAB_STOP_ROW)) {
+  if (!tabbing || !(row instanceof HTMLElement) || !row.matches(SIDEBAR_SESSION_ROW)) {
     return
   }
   markRowForKeyboard(row)

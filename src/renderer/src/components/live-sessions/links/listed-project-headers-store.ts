@@ -6,7 +6,7 @@ const listeners = new Set<() => void>()
 
 /**
  * The project headers the sidebar list has now, folded or not. The list says which; the sessions
- * no workspace holds read it to sit under their project's header, or after the list without one.
+ * no workspace holds read it to sit under their project's header, or to bring a header without one.
  */
 export const listedProjectHeadersStore = {
   subscribe(listener: () => void): () => void {

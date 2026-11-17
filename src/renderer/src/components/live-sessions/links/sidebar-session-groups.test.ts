@@ -35,8 +35,7 @@ function group(
   return {
     cards: [...groups.byWorkspace].map(([id, list]) => [id, ids(list)]),
     headers: [...groups.byHeader].map(([key, list]) => [key, ids(list)]),
-    loose: groups.loose.map(({ name, sessions: list }) => [name, ids(list)]),
-    unassigned: ids(groups.unassigned)
+    brought: groups.sessionHeaders.map(({ key, name }) => [key, name])
   }
 }
 
@@ -63,9 +62,15 @@ it('gives every session with a folder a project, and leaves only one without a f
     )
   ).toEqual({
     cards: [['repo-1::/code/alpharidge-app', ['on-card']]],
-    headers: [[HEADER, ['same-name', 'in-repo']]],
-    loose: [['fitness', ['fitness']]],
-    unassigned: ['no-folder']
+    headers: [
+      [HEADER, ['same-name', 'in-repo']],
+      ['active-agents:project:fitness', ['fitness']],
+      ['active-agents:unassigned', ['no-folder']]
+    ],
+    brought: [
+      ['active-agents:project:fitness', 'fitness'],
+      ['active-agents:unassigned', null]
+    ]
   })
 })
 
@@ -91,21 +96,28 @@ it('lists a session under the project the user moved it to, whatever its folder 
     )
   ).toEqual({
     cards: [],
-    headers: [[HEADER, ['to-listed']]],
-    loose: [
-      ['fitness', ['off-card']],
-      ['Ops', ['named']]
+    headers: [
+      ['active-agents:project:fitness', ['off-card']],
+      [HEADER, ['to-listed']],
+      ['active-agents:project:ops', ['named']]
     ],
-    unassigned: []
+    brought: [
+      ['active-agents:project:fitness', 'fitness'],
+      ['active-agents:project:ops', 'Ops']
+    ]
   })
 })
 
-it('lists a project after the list while the list draws no header for it', () => {
+it('brings a header for a project while the list draws none for it', () => {
   expect(
     group(
       [sampleLiveSession('same-name', { cwd: '/srv/alpharidge-app', project: 'alpharidge-app' })],
       [],
       []
     )
-  ).toEqual({ cards: [], headers: [], loose: [['alpharidge-app', ['same-name']]], unassigned: [] })
+  ).toEqual({
+    cards: [],
+    headers: [['active-agents:project:alpharidge-app', ['same-name']]],
+    brought: [['active-agents:project:alpharidge-app', 'alpharidge-app']]
+  })
 })

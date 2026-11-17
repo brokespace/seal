@@ -50,6 +50,8 @@ export type GroupHeaderRow = {
   hostWorktreeCounts?: ReadonlyMap<ExecutionHostId, number>
   hostWorktreeIds?: ReadonlyMap<ExecutionHostId, readonly string[]>
   worktreeIds?: readonly string[]
+  /** Agent sessions alone sit under it: a project the list has no workspace of, or none. Only the desktop adds these. */
+  sessionsOnly?: true
 }
 
 export type WorktreeRow = {
@@ -139,6 +141,8 @@ export type ProjectSessionsRow = {
   type: 'project-sessions'
   key: string
   headerKey: string
+  /** The project the header names, which a session in a folder of that name need not repeat. */
+  project: string | null
   groupDepth: number
 }
 

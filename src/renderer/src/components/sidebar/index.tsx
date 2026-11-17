@@ -155,9 +155,7 @@ function Sidebar({
               <LocalGitToolchainScanBanner />
               <StartupWorktreeRefreshStatus />
               <WorktreeCardsUpdateNotice />
-              {/* Projects and the sessions no workspace holds are sections of one list: both render inside its scroll container. */}
               <SidebarScrollSections
-                trailing={<SidebarSessions />}
                 pinnedHeader={
                   <SidebarHeader
                     onWorkspaceBoardMenuOpenChange={setWorkspaceBoardMenuOpen}
@@ -175,6 +173,7 @@ function Sidebar({
                   onWorkspaceBoardDragPreviewCancel={cancelWorkspaceBoardDragPreview}
                   projectsCollapseTarget={projectsCollapseTarget}
                 />
+                <SidebarSessions />
               </SidebarScrollSections>
               <WslMovedProjectsSection />
               <HiddenProjectsSection />

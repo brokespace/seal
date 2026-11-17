@@ -4,7 +4,7 @@ import TabGroupDropOverlay from '../tab-group/TabGroupDropOverlay'
 import {
   useSplitViewDropPreview,
   type SplitViewDropPreview as Preview
-} from './split-view-drop-target'
+} from './split-view-drag-state'
 
 function useDropLabel(kind: Preview['kind']): string | undefined {
   const t = useTranslate()

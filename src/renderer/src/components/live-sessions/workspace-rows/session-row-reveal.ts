@@ -20,7 +20,7 @@ import {
   matchesSidebarSessionFilters,
   sidebarSessionFilterStore
 } from './sidebar-session-filter-store'
-import { sessionGroupCollapseKey, sessionGroupFinishedOpenKey } from './session-fold-keys'
+import { headerSessionGroup, sessionGroupFinishedOpenKey } from './session-fold-keys'
 import { SESSION_GROUP, SIDEBAR_LIST } from './sidebar-session-row-dom'
 import { workspaceFinishedOpenKey } from './workspace-session-rows-model'
 
@@ -78,7 +78,7 @@ export function revealFirstListedSession(sessionIds: readonly string[]): void {
   liveSessionMarksStore.reveal(listed ?? sessionIds[0])
 }
 
-/** Stops what hides a session's row: the filters, the fold of its project or group, and for an ended one the line it sits behind. */
+/** Stops what hides a session's row: the filters, the fold of its header, and for an ended one the line it sits behind. */
 function unhideSessionRow(session: LiveSession, place: SidebarSessionPlace | undefined): void {
   if (!matchesSidebarSessionFilters(session, sidebarSessionFilterStore.getState())) {
     sidebarSessionFilterStore.clear()
@@ -90,18 +90,12 @@ function unhideSessionRow(session: LiveSession, place: SidebarSessionPlace | und
   const finishedOpenKey =
     place.kind === 'workspace'
       ? workspaceFinishedOpenKey(place.worktreeId)
-      : sessionGroupFinishedOpenKey(place.group)
+      : sessionGroupFinishedOpenKey(headerSessionGroup(place.headerKey))
   if (!isActiveLiveSession(session) && !app.collapsedGroups.has(finishedOpenKey)) {
     app.toggleCollapsedGroup(finishedOpenKey)
   }
-  const foldKey =
-    place.kind === 'header'
-      ? place.headerKey
-      : place.kind === 'group'
-        ? sessionGroupCollapseKey(place.group)
-        : null
-  if (foldKey && app.collapsedGroups.has(foldKey)) {
-    app.toggleCollapsedGroup(foldKey)
+  if (place.kind === 'header' && app.collapsedGroups.has(place.headerKey)) {
+    app.toggleCollapsedGroup(place.headerKey)
   }
 }
 
@@ -132,7 +126,7 @@ function useSessionRowRevealRequest(
   }, [reveal, showAtRequest])
 }
 
-/** Shows a session row asked for from elsewhere: under its workspace, or under its project. */
+/** Shows a session row asked for from elsewhere: under its workspace, or under its header. */
 export function useSidebarSessionRowReveal(): void {
   useSessionRowRevealRequest((session, place) => {
     unhideSessionRow(session, place)
@@ -147,7 +141,7 @@ export function useSidebarSessionRowReveal(): void {
     if (worktreeId && mountedRows().length === 0) {
       useAppStore.getState().revealWorktreeInSidebar(worktreeId, { behavior: 'auto' })
     } else if (place?.kind === 'header' && mountedRows().length === 0) {
-      // Its rows sit right under the project's header, which the list knows how to reach.
+      // Its rows sit right under their header, which the list knows how to reach.
       useAppStore
         .getState()
         .revealSidebarRow(place.headerKey, { behavior: 'auto', highlight: false })

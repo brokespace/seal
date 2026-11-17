@@ -8,7 +8,7 @@ import type {
 } from '../../../../../shared/live-sessions/live-session-types'
 import type { LiveSessionLink } from './live-session-links'
 import { sessionProjectNameKey, type SessionProjectCatalog } from './session-project-catalog'
-import type { LooseSessionProject } from './sidebar-session-groups'
+import type { SessionsHeader } from './sidebar-session-groups'
 import { useLiveSessionLinks } from './use-live-session-links'
 import { useSessionProjectCatalog, useSidebarSessionGroups } from './use-workspace-sessions'
 
@@ -40,7 +40,7 @@ export function sessionProjectChoices(
   session: LiveSession,
   link: LiveSessionLink | undefined,
   catalog: SessionProjectCatalog,
-  loose: readonly LooseSessionProject[]
+  sessionHeaders: readonly SessionsHeader[]
 ): SessionProjectChoices {
   const moved = session.assignedProject
   const named = moved ?? (link ? undefined : liveSessionFolderProject(session))
@@ -49,7 +49,7 @@ export function sessionProjectChoices(
   const byName = new Map<string, LiveSessionProject>()
   for (const project of [
     ...catalog.projects,
-    ...loose.map(({ name }) => ({ key: folderProjectKey(name), name }))
+    ...sessionHeaders.flatMap(({ name }) => (name ? [{ key: folderProjectKey(name), name }] : []))
   ]) {
     const nameKey = sessionProjectNameKey(project.name)
     if (!byName.has(nameKey)) {
@@ -68,6 +68,6 @@ export function sessionProjectChoices(
 export function useSessionProjectChoices(session: LiveSession): SessionProjectChoices {
   const { links } = useLiveSessionLinks()
   const catalog = useSessionProjectCatalog()
-  const { loose } = useSidebarSessionGroups()
-  return sessionProjectChoices(session, links.get(session.id), catalog, loose)
+  const { sessionHeaders } = useSidebarSessionGroups()
+  return sessionProjectChoices(session, links.get(session.id), catalog, sessionHeaders)
 }

@@ -9,7 +9,8 @@ import {
   setSidebarPointerDragDocumentStyles
 } from './worktree-sidebar-pointer-drag-dom'
 import { getWorktreeSidebarDragGrab } from './worktree-sidebar-drag-geometry'
-import { beginSplitViewDrag, canDropOnSplitView } from '../../../split-view/split-view-drop-target'
+import { beginSplitViewDrag } from '../../../split-view/split-view-drag-state'
+import { canDropOnSplitView } from '../../../split-view/split-view-drop-target'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from './drop-commit-context'
 import type {
   ShouldShowWorkspaceBoardDropIndicator,
