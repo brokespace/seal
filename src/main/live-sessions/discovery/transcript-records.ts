@@ -1,4 +1,5 @@
 // Reading JSONL transcript records defensively: any field may be missing or another type.
+import { oneLine } from '../../../shared/live-sessions/one-line-text'
 import { isJsonRecord, parseJsonRecord } from '../../../shared/live-sessions/transcript-json-record'
 
 export type TranscriptRecord = Record<string, unknown>
@@ -43,10 +44,7 @@ export function timeOf(record: TranscriptRecord): number | null {
   return Number.isFinite(ms) ? ms : null
 }
 
-export function oneLine(text: string, max = 120): string {
-  const flat = text.replace(/\s+/g, ' ').trim()
-  return flat.length <= max ? flat : `${flat.slice(0, max - 1)}…`
-}
+export { oneLine }
 
 export function blocks(content: unknown): TranscriptRecord[] {
   return Array.isArray(content) ? content.map(rec).filter((b) => b !== null) : []

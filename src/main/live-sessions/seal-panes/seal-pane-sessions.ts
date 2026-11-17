@@ -1,25 +1,29 @@
 // Sessions running in Seal's own terminal panes, as Orca's hook server reports them.
-import type { AgentStatusIpcPayload } from '../../../shared/agent-status/contracts/agent-status-ipc-payload'
 import type { PendingPrompt } from '../../../shared/agent-status/contracts/agent-pending-prompt'
 import type {
   AgentSessionSurface,
   LiveSession,
   LiveSessionMachine,
-  LiveSessionPermissionPrompt,
   LiveSessionStatus
 } from '../../../shared/live-sessions/live-session-types'
-import { agentVerdictDisplayMark } from '../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
-import { AGENT_STATUS_STALE_AFTER_MS } from '../../../shared/agent-status/contracts/agent-status-freshness'
-import { liveSessionId, projectOf } from '../discovery/session-assembly'
-import { oneLine } from '../discovery/transcript-records'
+import { liveSessionId } from '../../../shared/live-sessions/live-session-id'
+import { isWaitingOnBackgroundWork } from '../../../shared/live-sessions/live-session-status'
 import {
-  isWaitingOnBackgroundWork,
-  liveSessionStatusFromEvidence
-} from '../../../shared/live-sessions/live-session-status'
-import { hookRowEvidence } from '../adapters/hook-row-evidence'
+  sealPaneFromRow,
+  sealPaneProviderSession,
+  sealPaneRecord,
+  type SealPane,
+  type SealPaneRow
+} from '../../../shared/live-sessions/seal-pane-session'
 import { liveSessionAdapter } from '../adapters/live-session-adapters'
 import { sessionCapabilities } from '../adapters/session-capabilities'
 import { LOCAL_HOST_ID } from '../hosts/live-session-hosts'
+
+export {
+  permissionFromPendingPrompt,
+  type SealPane,
+  type SealPaneRow
+} from '../../../shared/live-sessions/seal-pane-session'
 
 /** What a finished turn may still rest on, which a Stop hook does not say. */
 const RESTS_ON: ReadonlySet<LiveSessionStatus> = new Set([
@@ -35,99 +39,6 @@ const WORKS_ON: ReadonlySet<LiveSessionStatus> = new Set([
   'running-shell'
 ])
 
-export type SealPaneRow = Pick<
-  AgentStatusIpcPayload,
-  | 'paneKey'
-  | 'state'
-  | 'agentType'
-  | 'providerSession'
-  | 'providerSessionOnly'
-  | 'structuredHost'
-  | 'receivedAt'
-  | 'stateStartedAt'
-  | 'connectionId'
-  | 'prompt'
-  | 'toolName'
-  | 'lastAssistantMessage'
-  | 'lastAssistantMessageIsToolOutput'
-  | 'workingMode'
-  | 'interrupted'
-  | 'mainAgent'
-  | 'restoredUnconfirmed'
-  | 'evidenceObservedAt'
->
-
-export type SealPane = {
-  paneKey: string
-  provider: LiveSession['provider']
-  /** `pane-<paneKey>` while the agent's hooks have named no session. */
-  providerSessionId: string
-  /** Null for this machine; the mux connection id for a remote Seal host. */
-  connectionId: string | null
-  status: LiveSessionStatus
-  statusDetail: string | null
-  cwd: string | null
-  transcriptPath: string | null
-  prompt: string | null
-  /** The agent's newest message as its hooks carried it, one line. */
-  lastMessage: string | null
-  receivedAt: number
-  permission: LiveSessionPermissionPrompt | null
-  /** Its hooks went quiet mid-turn, or were last heard by an earlier run of Seal: they no longer say what the agent does now. */
-  silent: boolean
-}
-
-function hookDetail(
-  row: SealPaneRow,
-  status: LiveSessionStatus,
-  permission: LiveSessionPermissionPrompt | null
-): string | null {
-  switch (status) {
-    case 'working':
-      return row.toolName ?? null
-    case 'waiting-input':
-      return 'Question for you'
-    case 'your-turn':
-      return agentVerdictDisplayMark(row) === 'interrupted' ? 'Interrupted' : null
-    case 'needs-permission':
-      return (
-        permission?.question ??
-        (row.state === 'waiting' && row.toolName ? `Allow ${row.toolName}?` : null)
-      )
-    case 'errored':
-    case 'running-shell':
-    case 'waiting-subagent':
-    case 'waiting-task':
-    case 'idle':
-    case 'done':
-      return null
-  }
-}
-
-export function permissionFromPendingPrompt(
-  prompt: PendingPrompt | null
-): LiveSessionPermissionPrompt | null {
-  if (!prompt || prompt.kind === 'unsupported') {
-    return null
-  }
-  return {
-    promptId: prompt.promptId,
-    question:
-      prompt.kind === 'approval'
-        ? `Allow ${prompt.tool}${prompt.summary ? `: ${prompt.summary}` : ''}?`
-        : prompt.question,
-    options: prompt.options.map(({ id, label }) => ({ id, label }))
-  }
-}
-
-function wentSilent(row: SealPaneRow, now: number): boolean {
-  return (
-    row.restoredUnconfirmed === true ||
-    (row.state !== 'done' &&
-      now - (row.evidenceObservedAt ?? row.receivedAt) > AGENT_STATUS_STALE_AFTER_MS)
-  )
-}
-
 export function sealPanesFromRows(
   rows: SealPaneRow[],
   pendingPrompt: (paneKey: string, agent: LiveSession['provider']) => PendingPrompt | null,
@@ -139,35 +50,15 @@ export function sealPanesFromRows(
     if (!adapter || row.structuredHost !== undefined || row.providerSessionOnly) {
       return []
     }
-    const session = adapter.cli?.sessionOf ? adapter.cli.sessionOf(row) : row.providerSession
     // Discovery lists an agent it can find until its hooks name the session.
-    if (!session?.id && adapter.discovery) {
+    if (!sealPaneProviderSession(row, adapter)?.id && adapter.discovery) {
       return []
     }
     const prompt =
       row.state === 'blocked' || row.state === 'waiting'
         ? pendingPrompt(row.paneKey, adapter.agent)
         : null
-    const status = liveSessionStatusFromEvidence(hookRowEvidence(row, prompt, adapter))
-    const permission = permissionFromPendingPrompt(prompt)
-    const message = row.lastAssistantMessageIsToolOutput ? undefined : row.lastAssistantMessage
-    return [
-      {
-        paneKey: row.paneKey,
-        provider: adapter.agent,
-        providerSessionId: session?.id || `pane-${row.paneKey}`,
-        connectionId: row.connectionId,
-        status,
-        statusDetail: hookDetail(row, status, permission),
-        cwd: session?.cwd ?? null,
-        transcriptPath: session?.transcriptPath ?? null,
-        prompt: row.prompt ? oneLine(row.prompt, 80) : null,
-        lastMessage: message ? oneLine(message, 200) : null,
-        receivedAt: row.receivedAt,
-        permission,
-        silent: wentSilent(row, now)
-      }
-    ]
+    return [sealPaneFromRow(row, adapter, prompt, now)]
   })
 }
 
@@ -294,33 +185,11 @@ export function mergeSealPanes(
       out[index] = { ...merged, capabilities: sessionCapabilities(merged) }
       continue
     }
-    const machine = pane.connectionId === null ? localMachine : REMOTE_SEAL_MACHINE
-    const added = {
-      provider: pane.provider,
-      providerSessionId: pane.providerSessionId,
-      machine,
-      surface,
-      inputRoutes: [route]
-    }
-    out.push({
-      ...added,
-      id: liveSessionId(machine.hostId, pane.provider, pane.providerSessionId),
-      capabilities: sessionCapabilities(added),
-      origin: 'seal',
-      cwd: pane.cwd,
-      project: projectOf(pane.cwd),
-      title: pane.prompt,
-      status: pane.status,
-      statusSource: 'seal-hooks',
-      statusDetail: pane.statusDetail,
-      lastActivityAt: pane.receivedAt,
-      startedAt: null,
-      alive: true,
-      pid: null,
-      transcriptPath: pane.transcriptPath,
-      permission: pane.permission,
-      lastMessage: pane.lastMessage
-    })
+    const added = sealPaneRecord(
+      pane,
+      pane.connectionId === null ? localMachine : REMOTE_SEAL_MACHINE
+    )
+    out.push({ ...added, capabilities: sessionCapabilities(added) })
   }
   return out
 }

@@ -1,14 +1,14 @@
 // What a pane's hook row says of its agent, as evidence for the status module.
-import type { PendingPrompt } from '../../../shared/agent-status/contracts/agent-pending-prompt'
-import type { AgentStatusIpcPayload } from '../../../shared/agent-status/contracts/agent-status-ipc-payload'
-import { isAgentStatusHeldOpenByChildWork } from '../../../shared/agent-status/lifecycle/agent-lead-status-fold'
-import { agentVerdictDisplayMark } from '../../../shared/agent-status/lifecycle/agent-main-agent-verdict'
-import { isAskUserQuestionTool } from '../../../shared/agent-status/lifecycle/agent-question-answered-intent'
+import type { PendingPrompt } from '../agent-status/contracts/agent-pending-prompt'
+import type { AgentStatusIpcPayload } from '../agent-status/contracts/agent-status-ipc-payload'
+import { isAgentStatusHeldOpenByChildWork } from '../agent-status/lifecycle/agent-lead-status-fold'
+import { agentVerdictDisplayMark } from '../agent-status/lifecycle/agent-main-agent-verdict'
+import { isAskUserQuestionTool } from '../agent-status/lifecycle/agent-question-answered-intent'
 import type {
   AgentSessionAdapter,
   AgentSessionStatusEvidence
-} from '../../../shared/live-sessions/adapters/agent-session-adapter'
-import { isClaudeAskTool } from '../discovery/claude-transcript-phase'
+} from './adapters/agent-session-adapter'
+import { isClaudeAskTool } from './claude-ask-tools'
 
 /** A hook reports a question and a permission request alike as `waiting`. */
 function waitsOnQuestion(
