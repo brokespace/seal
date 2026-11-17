@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import {
+  RECAP_SECTIONS,
   RECAP_WORK_STATES,
   type RecapSection,
   type RecapWorkState
@@ -93,6 +94,22 @@ const deltaSchema = z.object({
 
 const KNOWN_KEYS = ['title', 'goal', 'standing', 'add', 'update', 'resolve']
 
+/**
+ * Models now and then write the lists of `add` beside it instead of inside it. That is still what
+ * they have to say, so the lists are read from where they are.
+ */
+function withListsUnderAdd(raw: Record<string, unknown>): Record<string, unknown> {
+  const misplaced = RECAP_SECTIONS.filter((section) => Array.isArray(raw[section]))
+  if (misplaced.length === 0) {
+    return raw
+  }
+  const add = isRecord(raw.add) ? raw.add : {}
+  return {
+    ...raw,
+    add: { ...Object.fromEntries(misplaced.map((section) => [section, raw[section]])), ...add }
+  }
+}
+
 /** The JSON object in a reply that may wrap it in a code fence or a sentence. */
 function jsonObjectIn(reply: string): string | null {
   const start = reply.indexOf('{')
@@ -118,13 +135,13 @@ export function parseRecapDelta(reply: string): RecapDeltaResult {
       error: `The reply is not valid JSON: ${error instanceof Error ? error.message : 'parse error'}`
     }
   }
-  if (!isRecord(raw) || !KNOWN_KEYS.some((key) => key in raw)) {
+  if (!isRecord(raw) || ![...KNOWN_KEYS, ...RECAP_SECTIONS].some((key) => key in raw)) {
     return {
       ok: false,
       error: `The JSON object has none of the keys ${KNOWN_KEYS.join(', ')}.`
     }
   }
-  const parsed = deltaSchema.safeParse(raw)
+  const parsed = deltaSchema.safeParse(withListsUnderAdd(raw))
   if (!parsed.success) {
     return { ok: false, error: z.prettifyError(parsed.error) }
   }

@@ -3,6 +3,7 @@
   "title": "The agent stops writing while a subagent it started is still doing one of the asks",
   "categories": ["subagent", "mid-turn"],
   "surfaces": ["claude-cli"],
+  "pending": true,
   "expected": "While the subagent runs, the audit is work under way, not a request the agent overlooked and not a to-do for the user. Once the agent reports the result, the audit is done and nothing is listed as not addressed.",
   "steps": [
     {

@@ -3,6 +3,7 @@
   "title": "The user withdraws an ask, then asks for it again",
   "categories": ["withdrawn-or-changed", "addressed-later-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "pending": true,
   "expected": "While withdrawn, dark mode is neither not addressed nor a question waiting on the user. Asked for again and done, it is recorded as done.",
   "steps": [
     {

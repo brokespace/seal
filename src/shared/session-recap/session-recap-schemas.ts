@@ -83,7 +83,8 @@ export const sessionRecapSchema: z.ZodType<SessionRecap> = z.object({
   coveredTo: z.number().nonnegative(),
   nextItemId: z.number().int().positive(),
   requests: z.array(recapRequestSchema).optional(),
-  degraded: z.literal(true).optional()
+  degraded: z.literal(true).optional(),
+  anchor: z.object({ sessionId: z.string().min(1), at: Timestamp }).optional()
 })
 
 export const recapMarksSchema = z.record(z.string(), z.enum(RECAP_ITEM_MARKS))

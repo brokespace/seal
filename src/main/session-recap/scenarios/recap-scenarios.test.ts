@@ -159,20 +159,20 @@ describe('recap scenarios', () => {
           sound = false
           expect.fail(`Workers AI did not answer: ${model.liveFailures.join(', ')}. Run it again.`)
         }
-        if (scenario.pending && run.status === 'pending') {
-          awaited.push(...model.pending)
-          return
-        }
-        pending.push(...model.pending)
+        const awaitsRecording = scenario.pending === true && run.status === 'pending'
+        ;(awaitsRecording ? awaited : pending).push(...model.pending)
         rows.push(recapMatrixRow(run))
         results[run.id] = failingRecapChecks(run)
         if (recording) {
           return
         }
-        // It has recordings now: drop `pending` from the scenario and add its checks to the baseline.
-        expect(scenario.pending).toBeUndefined()
-        // A request with no recorded reply means the prompt or the scenario changed: record it again.
-        expect(model.pending.map((request) => request.key)).toEqual([])
+        if (!awaitsRecording) {
+          // It has recordings now: drop `pending` from the scenario and add its checks to the baseline.
+          expect(scenario.pending).toBeUndefined()
+          // A request with no recorded reply means the prompt or the scenario changed: record it again.
+          expect(model.pending.map((request) => request.key)).toEqual([])
+        }
+        // A scenario that waits for recordings still answers for the checks it reaches before it stops.
         expect(failingRecapChecks(run)).toEqual(baseline[run.id] ?? [])
       })
     }

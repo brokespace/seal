@@ -43,7 +43,7 @@ The schema for scenarios, with every step and check kind, is `recap-scenario-sch
 | `RECAP_SCENARIOS_PENDING=<file>`    | Without a credential: write the unanswered requests to this file instead of failing.                                        |
 | `RECAP_SCENARIOS_REPLIES=<file>`    | With the above: file replies to those requests (`[{ "contentHash", "model", "reply" }]`) into the cassettes before running. |
 
-A scenario with `"pending": true` has no recordings yet. It runs up to its first model request and stops, and is not in the baseline. Once it has recordings the suite fails until the mark is removed.
+A scenario with `"pending": true` has a request with no recording: it is new, or a change to the pipeline changed what it asks. It runs up to its first unrecorded request and stops. The checks it reaches before that are held to the baseline like any other; the ones after it are not run. Once it has recordings the suite fails until the mark is removed.
 
 ### The credential
 

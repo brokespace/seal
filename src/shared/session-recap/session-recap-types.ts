@@ -112,6 +112,12 @@ export type SessionRecap = { version: typeof SESSION_RECAP_VERSION } & Record<
     requests?: RecapRequest[]
     /** The last pass could not use the model's reply and kept only what the host reads itself. */
     degraded?: true
+    /**
+     * Where reading stopped in the transcript's own terms: the session `coveredTo` is an offset
+     * into, and the time of the last message read. A fork or a resume into a new file keeps its
+     * messages' times and not their offsets.
+     */
+    anchor?: { sessionId: string; at: number }
   }
 
 export const RECAP_ITEM_MARKS = ['done', 'dismissed'] as const

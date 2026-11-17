@@ -3,6 +3,7 @@
   "title": "The user sends a second ask while the agent is still on the first",
   "categories": ["multiple-asks", "mid-turn"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "pending": true,
   "expected": "A recap opened right after the second message shows neither ask as not addressed: the agent is still working. After the turn both are recorded and done.",
   "steps": [
     {

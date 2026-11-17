@@ -83,7 +83,8 @@ type SessionRecap = {
   coveredFrom: number // transcript byte offset the recap starts at (0 = whole session)
   coveredTo: number // transcript byte offset it has read up to
   nextItemId: number
-  degraded?: true // the last pass fell back to what the host can read without the model
+  degraded?: true // the host wrote the newest requests down itself; the model has yet to read them
+  anchor?: { sessionId: string; at: number } // where reading stopped: see "Forks and resumes"
 }
 
 type RecapItem = {
@@ -150,20 +151,39 @@ a new title once; one that keeps working on the same thing keeps its title.
 ## When it is recomputed
 
 Always incrementally: the previous recap, compacted, plus the messages since `coveredTo`. The
-transcript is never re-read from the start.
+transcript is never re-read from the start. `session-recap-pass-schedule.ts` decides when;
+`session-recap-engine.ts` does the pass.
 
-| Trigger                                                                                      | Rule                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The session stops (`waiting-input`, `your-turn`, `idle`, `waiting-subagent`, `waiting-task`) | Same stop detection as status summaries. At most one stop pass per session every 4 minutes; a stop inside that window is picked up when it ends. A pass made while it worked never delays this one.                                                                                              |
-| The session is working (`working`, `running-shell`)                                          | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its stop pass. |
-| He opens the session, or comes back to the window or app                                     | If the transcript has moved past `coveredTo`, one pass now, whatever the session's status; at most one a minute.                                                                                                                                                                                 |
-| Refresh recap                                                                                | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text).                                                                                                                                                                                       |
-| The transcript shrank (rewritten)                                                            | Start over from the recent history.                                                                                                                                                                                                                                                              |
+| Trigger                                                                     | Rule                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The turn ends (`waiting-input`, `your-turn`, `idle`, `done`, `errored`)     | One pass 2.5 seconds after the stop, once the transcript has settled. Turns that end within 20 seconds of the last turn-end pass share the next one. It never waits for a pass made while the session worked. On an agent CLI provider, which starts a process per request, turn-end passes are 4 minutes apart instead. |
+| The session is working (`working`, `running-shell`)                         | From 4 minutes into the turn, and 4 minutes after any pass, one pass as soon as the agent has written 1,200 characters of new prose (checked at most once a minute, on new activity). After 10 minutes without a pass, any new prose is enough. A turn that ends sooner gets only its turn-end pass.                     |
+| The turn is parked (`waiting-subagent`, `waiting-task`, `needs-permission`) | The turn is not over, and the agent has said what it will for now: one pass 2.5 seconds after it parks, taking whatever it said, and at most one every 4 minutes while it stays parked.                                                                                                                                  |
+| The session ends                                                            | A session this host watched run gets one last pass as it ends. History that a scan lists and nobody watched is recapped when someone opens it.                                                                                                                                                                           |
+| A pass failed                                                               | Tried again after 30 seconds, then 2 minutes, then 10 minutes, and after that at the next turn end. While the provider is paused (a rate limit), the retry waits for the pause to end instead.                                                                                                                           |
+| He opens the session, or comes back to the window or app                    | If the recap is behind, one pass now. While a turn runs, at most one a minute; after a pass that just failed, not before the first retry delay.                                                                                                                                                                          |
+| Refresh recap                                                               | A pass now. When nothing is new it rebuilds from the recent history instead (ticks kept by matching text). A rebuild whose replies cannot be read leaves the recap it would have replaced.                                                                                                                               |
+| The transcript shrank (rewritten)                                           | Start over from the recent history.                                                                                                                                                                                                                                                                                      |
 
-A pass on a working session reads the turn before it has ended, so its request says so: the
-agent's last message is unfinished, work in it is recorded as in progress, never done, and
-_where it stands_ says what the agent is doing now. The stop pass that follows settles it. While
-the agent has written too little, the check asks no model and leaves `coveredTo` where it was.
+A pass made before the turn is over (working or parked) says so in its request: the agent's last
+message is unfinished, work in it is recorded as in progress, never done, and _where it stands_
+says what the agent is doing now. Whether the turn is over is the registry's status when the pass
+runs, not the kind of pass. The turn-end pass that follows settles it. While the agent has written
+too little, the check asks no model and leaves `coveredTo` where it was.
+
+**Behind.** A recap is out of date when the session's last activity is later than both the
+recap's last change and the last pass that read the transcript to its end. A pass that reads new
+rows and finds nothing to say (a compaction, a hook) leaves the recap as it was, and the recap is
+not behind for that.
+
+### Forks and resumes
+
+`coveredTo` is a byte offset into one transcript file. A fork or a resume continues the
+conversation in a new file, where that offset means nothing. The recap therefore also keeps
+`anchor`: the session id the offset belongs to and the time of the last message read. When the
+recap has moved to another session id, the pass pages back through the new transcript to the last
+message at or before that time and reads only what follows, so what was copied over is not read
+twice and what was said since is not skipped.
 
 ## Not addressed: the judge
 
@@ -219,12 +239,22 @@ reasoning are never sent, to either step.
 - **Incremental pass.** Read forward from `coveredTo` (`readTranscriptForward`, the reader the
   chat view tails with). Typically one turn: a few hundred tokens.
 - **First pass.** Page backward from the end (`transcriptPage`) until 3 chunks' worth of prose
-  is collected or the start is reached. Older history is left out and `coveredFrom` says so; the
-  UI states that the recap covers recent history only. The first prompt still informs the goal: it is the
-  provider title the registry already holds.
+  is collected or the start is reached (`session-recap-reading.ts`). Older history is left out
+  and `coveredFrom` says so; the UI states that the recap covers recent history only. The first
+  prompt still informs the goal: it is the provider title the registry already holds.
 - **Chunks.** 24,000 characters of prose each (about 6.9k tokens), processed oldest to newest,
-  each call carrying the rolling recap forward. At most 1 chunk for a first pass nobody asked
-  for (a stop, or a working session), 3 for a pass he asked for. Anything beyond that is dropped from the old end, never from the new.
+  each call carrying the rolling recap forward. At most 3 chunks a pass, for a first pass on its
+  own as for one he asked for, so a long session's first recap is the one Refresh would write.
+  Anything beyond that is dropped from the old end, never from the new.
+- **Rows that ask for nothing.** Some rows on the user's side of a transcript are not requests:
+  the agent's own record of an interrupt (`[Request interrupted by user]`), a `!` command he ran
+  in the agent's shell, and a turn that holds only an image. They are left out of the digest, so
+  none becomes a _What I asked_ line that nothing could ever address.
+- **Where a request comes from.** A request is his, so it belongs to one of his messages. The
+  model cites the agent's reply, or no message, for about a quarter of them. The host moves such
+  a request to the user message that reply answers, or to the chunk's only one
+  (`session-recap-request-sources.ts`). The judge needs that message to know which conversation
+  follows the request; a request with none stays "Open".
 
 The context window (131k tokens) is never the constraint; the daily allocation is.
 
@@ -245,22 +275,26 @@ status summaries. Tokens are estimated at 3.5 characters each.
 | Status summary, for comparison            | 600                              | 30            | ~4.4    |
 | One judged request (typical)              | 450 questions + 400 conversation | 0             | ~19     |
 
-A day of 150 turns across all sessions is about 2,700 neurons of recaps plus 660 of summaries.
-A session that works without stopping adds at most 15 passes an hour, about 270 neurons. The
-host keeps its own tally (per UTC day, persisted) and enforces three tiers, each leaving room
-for the next:
+A day of 150 turns across all sessions is about 2,700 neurons of recaps plus 660 of summaries,
+and the judge adds about 19 for each request it has not already answered. A pass runs at every
+turn end, so a busy day goes past the free allocation: the tiers sit above it on purpose, and the
+last one is about $0.22 a day beyond the allowance. A session that works without stopping adds at
+most 15 passes an hour, about 270 neurons. The host keeps its own tally (per UTC day, persisted,
+`session-recap-budget.ts`) and enforces three tiers, each leaving room for the next:
 
-- **Passes on working sessions stop at 3,000 neurons** of recap work a day (about 11 hours of
-  uninterrupted agent work). After that a session is recapped when it stops, as before.
-- **Passes on stops stop at 6,000 neurons**. Rows keep their last recap and the panel says
-  updates resume tomorrow.
-- **Passes he asks for** (open, Refresh) run until 9,000.
-- The judge's calls count in the same tally and stop with the tier of the pass they follow.
+- **Passes inside a turn stop at 5,000 neurons** of recap work a day. After that a session is
+  recapped when its turn ends.
+- **Passes at a turn's end stop at 20,000 neurons**. Rows keep their last recap and the panel
+  says updates resume tomorrow.
+- **Passes he asks for** (open, Refresh) run until 30,000.
+- **One tally per provider.** The read step is counted against the provider it runs on, and the
+  judge against Workers AI, where it always runs. A recap written on OpenRouter or an agent CLI
+  does not use up the judge's share, and the judge's calls stop with the tier of the pass they
+  follow on Workers AI's tally. A model with no Workers AI rate is counted at the dearest one
+  (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps hold on every provider.
 - A 429 or a spent allocation pauses every utility request to that provider through its
-  `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note.
-- The tally counts every provider. A model with no Workers AI rate is counted at the dearest one
-  (9.09 neurons per 1k input tokens, 36.4 per 1k output), so the caps hold on OpenRouter, MiniMax
-  or an agent CLI too.
+  `UtilityModelService`, as it does for summaries; the recap shows the same "paused until" note,
+  and the pass that failed runs again when the pause ends.
 
 Recaps can be turned off on their own (Settings > Session summaries & recaps) without losing the
 one-line summaries, and can run on a different provider or model than the summaries.
@@ -271,17 +305,30 @@ one-line summaries, and can run on a different provider or model than the summar
 schema is enforced by the host, not the API:
 
 1. The prompt gives the delta's shape and asks for one JSON object and nothing else.
-2. The reply is read leniently: code fences and stray prose around the object are dropped.
+2. The reply is read leniently: code fences and stray prose around the object are dropped, and
+   section lists written beside `add` instead of inside it are read from where they are.
 3. It is validated with zod. A wrong field or item is discarded on its own; the reply fails only
    when it is not an object or holds nothing recognizable. Text is clipped, `ref`s that name no
    message in the chunk become unlinked items, ids that name no item are ignored.
 4. On failure, **one retry** that shows the model its reply and the error.
-5. On a second failure, a **fallback** with no model: his messages become "What I asked" lines
-   (their first line), files and links are still collected, the cursor still advances, and the
-   recap is marked degraded so the panel can say so. A bad chunk never loops or blocks later ones.
+5. On a second failure, **the next model** is asked the same request, with the same one retry
+   (`session-recap-model-read.ts`). The service cannot do this on its own: only the caller knows
+   the text it got was unusable, so it names the models to pass over (`avoid`).
+6. When no model's reply can be read, the pass **fails and nothing moves**: no item is written
+   and `coveredTo` stays where it was. The scheduler tries it again.
+7. When the next pass cannot be read either, the **host writes the requests down itself**: his
+   messages become "What I asked" lines (their first line), files and links are still collected,
+   and the recap is marked degraded so the panel can say so. The cursor is still held, so the
+   span stays the model's to read. The first pass the model can write reads it again; its
+   request for a message takes the id of the host's line for that message, so a tick or a
+   verdict on it stays, and the degraded mark goes.
 
 A failure of the provider itself (network, auth, rate limit) is different: nothing advances, the
-panel shows why, and the next trigger tries again.
+panel shows why, and the retries above apply. Inside the provider's service, a model that times
+out or answers with a server error is that model's failure and not the provider's: it is rested
+for a minute and the fallback model answers the same request
+(`utility-model-service.ts`). None of this applies to the judge, which is one model with no
+fallback.
 
 ```jsonc
 {

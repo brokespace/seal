@@ -3,6 +3,7 @@
   "title": "The agent finishes and its process exits at once",
   "categories": ["session-end"],
   "surfaces": ["claude-cli", "codex-cli", "chat-journal"],
+  "pending": true,
   "expected": "The finished session has a recap that says the sitemap was generated.",
   "steps": [
     {

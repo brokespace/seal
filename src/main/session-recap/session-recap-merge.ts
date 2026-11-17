@@ -44,12 +44,12 @@ const TITLE_NOISE = new Set([
   'task'
 ])
 
-/** Two recap texts say the same thing once case and punctuation are gone. */
+/** Two recap texts say the same thing once case and punctuation are gone, in any script. */
 export function sameRecapText(a: string, b: string): boolean {
   const plain = (text: string): string =>
     text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim()
   return plain(a) === plain(b)
 }

@@ -3,6 +3,7 @@
   "title": "The provider rate-limits the request",
   "categories": ["model-failure"],
   "surfaces": ["claude-cli"],
+  "pending": true,
   "expected": "The recap is paused, and is written once the pause is over without the user doing anything.",
   "steps": [
     {

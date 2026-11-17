@@ -81,9 +81,9 @@ describe('SessionRecapEngine', () => {
     expect(recap?.coveredTo).toBe(400)
   })
 
-  it('recaps a long session from its recent end: three chunks when asked, one on its own', async () => {
+  it('recaps a long session from its recent end in three chunks, on its own as when asked', async () => {
     const asked = await recapHarness(longSession(), [FIRST_REPLY, FIRST_REPLY, FIRST_REPLY])
-    expect(await asked.engine.update('s1', 'asked')).toBe('updated')
+    expect(await asked.engine.update('s1', 'auto')).toBe('updated')
 
     expect(asked.requests).toHaveLength(3)
     expect(lastContent(asked.requests[2])).toContain('USER: Request 60.')
@@ -93,13 +93,6 @@ describe('SessionRecapEngine', () => {
     ).toBe(false)
     expect(asked.store.get('s1')?.recap?.coveredFrom).toBeGreaterThan(0)
     expect(asked.store.get('s1')?.recap?.coveredTo).toBe(12_000)
-
-    const auto = await recapHarness(longSession(), [FIRST_REPLY])
-    expect(await auto.engine.update('s1', 'auto')).toBe('updated')
-
-    expect(auto.requests).toHaveLength(1)
-    expect(lastContent(auto.requests[0])).toContain('USER: Request 60.')
-    expect(auto.store.get('s1')?.recap?.coveredTo).toBe(12_000)
   })
 
   it('settles the requests after each read, and again when only tools moved the transcript', async () => {
@@ -146,19 +139,22 @@ describe('SessionRecapEngine', () => {
     expect(h.requests).toHaveLength(1)
   })
 
-  it('asks again once when the reply is not JSON, then keeps what it can read without the model', async () => {
-    const h = await recapHarness(firstTurn(), ['Sure! Here is your recap.', 'Still not JSON'])
+  it('holds its place while no reply can be read, writes the requests down itself the second time, and hands them back to the model', async () => {
+    const replies = ['Sure! Here is your recap.', 'Still not JSON']
+    const h = await recapHarness(firstTurn(), replies)
 
-    expect(await h.engine.update('s1', 'asked')).toBe('updated')
-
-    expect(h.requests).toHaveLength(2)
+    expect(await h.engine.update('s1', 'auto')).toBe('failed')
     expect(h.requests[1].messages.at(-2)).toEqual({
       role: 'assistant',
       content: 'Sure! Here is your recap.'
     })
-    const recap = h.store.get('s1')?.recap
-    expect(recap?.degraded).toBe(true)
-    expect(recap?.asked).toEqual([
+    expect(h.store.get('s1')?.recap ?? null).toBeNull()
+
+    replies.push('Not JSON either', 'Nor this')
+    expect(await h.engine.update('s1', 'auto')).toBe('degraded')
+    const held = h.store.get('s1')?.recap
+    expect(held?.degraded).toBe(true)
+    expect(held?.asked).toEqual([
       {
         id: 'a1',
         text: 'Add a dark mode toggle, with a switch in the header too',
@@ -166,7 +162,58 @@ describe('SessionRecapEngine', () => {
         at: 50_000
       }
     ])
+    expect(held?.coveredTo).toBe(0)
+    h.store.mark('s1', 'a1', 'done')
+
+    replies.push(FIRST_REPLY)
+    expect(await h.engine.update('s1', 'auto')).toBe('updated')
+    const recap = h.store.get('s1')?.recap
+    expect(recap?.degraded).toBeUndefined()
+    expect(recap?.asked.map((item) => [item.id, item.text])).toEqual([
+      ['a1', 'Add a dark mode toggle']
+    ])
+    expect(recap?.did.map((item) => item.text)).toEqual(['Added the toggle to settings'])
+    expect(h.store.get('s1')?.marks).toEqual({ a1: 'done' })
     expect(recap?.coveredTo).toBe(200)
+  })
+
+  it('asks the next model for a reply the first could not give, naming the one to avoid', async () => {
+    const h = await recapHarness(firstTurn(), ['not json', 'still not', FIRST_REPLY])
+
+    expect(await h.engine.update('s1', 'auto')).toBe('updated')
+
+    expect(h.avoided).toEqual([undefined, undefined, ['@cf/zai-org/glm-4.7-flash']])
+    expect(h.store.get('s1')?.recap?.degraded).toBeUndefined()
+  })
+
+  it('reads only what was said after the recap once the session moves to a new transcript', async () => {
+    const messages = firstTurn()
+    const h = await recapHarness(messages, [
+      FIRST_REPLY,
+      JSON.stringify({ add: { asked: [{ text: 'Default to the system theme', ref: 'm1' }] } })
+    ])
+    await h.engine.update('s1', 'asked')
+
+    // A resume copies the conversation into a new file: the same messages at other offsets.
+    h.store.move('s1', 's2')
+    const copied = messages.splice(0).map((message, index) => ({
+      ...message,
+      id: `n${index}`,
+      transcriptOffset: 5_000 + index * 100
+    }))
+    messages.push(...copied, {
+      ...recapMessage(5_200, 'user', 'Default to the system theme'),
+      timestamp: 2_000
+    })
+    expect(await h.engine.update('s2', 'auto')).toBe('updated')
+
+    const second = lastContent(h.requests[1])
+    expect(second).toContain('[m1] USER: Default to the system theme')
+    expect(second).not.toContain('switch in the header')
+    expect(h.store.get('s2')?.recap?.asked.map((item) => item.text)).toEqual([
+      'Add a dark mode toggle',
+      'Default to the system theme'
+    ])
   })
 
   it('uses a repaired reply and does not mark the recap degraded', async () => {
@@ -193,7 +240,7 @@ describe('SessionRecapEngine', () => {
 
   it("stops automatic passes at the day's share and still runs one the user asked for", async () => {
     const h = await recapHarness(firstTurn(), [FIRST_REPLY])
-    h.budget.spend(6_000)
+    h.budget.spend(20_000)
 
     expect(await h.engine.update('s1', 'auto')).toBe('over-budget')
     expect(h.requests).toHaveLength(0)
@@ -201,9 +248,9 @@ describe('SessionRecapEngine', () => {
     expect(await h.engine.update('s1', 'asked')).toBe('updated')
   })
 
-  it('stops passes on working sessions at half the automatic share, and still recaps a stop', async () => {
+  it('stops passes on working sessions at a quarter of the automatic share, and still recaps a stop', async () => {
     const h = await recapHarness(firstTurn(), [FIRST_REPLY])
-    h.budget.spend(3_000)
+    h.budget.spend(5_000)
 
     expect(await h.engine.update('s1', 'working')).toBe('over-budget')
     expect(h.requests).toHaveLength(0)

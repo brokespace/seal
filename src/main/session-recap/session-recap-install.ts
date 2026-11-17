@@ -2,15 +2,17 @@ import { join } from 'node:path'
 import type { LiveSessionService } from '../live-sessions/live-session-service'
 import type { SessionTranscripts } from '../live-sessions/transcripts/session-transcript'
 import { recapTurnHasEnded } from '../../shared/session-recap/session-recap-request-display'
+import { utilityModelProvider } from '../../shared/utility-model/utility-model-provider-catalog'
 import { SessionSummaryCache } from '../session-summaries/session-summary-cache'
 import type { UtilityModelClient } from '../utility-model/utility-model-host'
 import type { UtilityModelService } from '../utility-model/utility-model-service'
 import { LiveSessionRecaps, type LiveSessionRecapsDeps } from './live-session-recaps'
 import { ServerSessionRecaps, type ServerSessionRecapsDeps } from './server-session-recaps'
-import { SessionRecapBudget } from './session-recap-budget'
+import { RECAP_JUDGE_PROVIDER, SessionRecapBudget } from './session-recap-budget'
 import { createClefRecapJudge, RecapJudgeCallLog } from './session-recap-clef-judge'
 import { redactRecapCommand } from './session-recap-command-redaction'
 import { SessionRecapEngine } from './session-recap-engine'
+import { RECAP_AUTO_INTERVAL_MS } from './session-recap-pass-schedule'
 import { createRecapRequestsStep } from './session-recap-requests'
 import { SessionRecapStore } from './session-recap-store'
 
@@ -47,7 +49,7 @@ function judgedRequests(
   return createClefRecapJudge({
     decide: (model, request, signal) => decisions.decide(model, request, signal),
     cache,
-    spend: (neurons) => budget.spend(neurons),
+    spend: (neurons) => budget.spend(neurons, RECAP_JUDGE_PROVIDER),
     record: (call) => calls.record(call)
   })
 }
@@ -70,9 +72,15 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
   const judged = options.decisions ? judgedRequests(options.decisions, folder, budget, log) : null
   // Rows drawn before the file was read get their titles and badges once it is.
   void store.load().then(options.onChange)
+  const turnEnded = (sessionId: string): boolean => {
+    const session = liveSessions.registry.get(sessionId)
+    return session !== null && recapTurnHasEnded(session.status)
+  }
   const engine = new SessionRecapEngine({
     transcript,
-    complete: (request, signal) => utility.complete(request, signal),
+    complete: (request, signal, callOptions) => utility.complete(request, signal, callOptions),
+    provider: () => utility.provider?.(),
+    turnEnded,
     store,
     budget,
     ...(judged
@@ -80,11 +88,8 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
           requests: createRecapRequestsStep({
             judge: judged,
             since: transcript.since,
-            turnEnded: (sessionId) => {
-              const session = liveSessions.registry.get(sessionId)
-              return session !== null && recapTurnHasEnded(session.status)
-            },
-            allows: (kind) => budget.allows(kind),
+            turnEnded,
+            allows: (kind) => budget.allows(kind, RECAP_JUDGE_PROVIDER),
             redact: redactRecapCommand
           })
         }
@@ -106,6 +111,13 @@ export function createLiveSessionRecaps(options: SessionRecapInstallOptions): {
     pausedUntil: () => utility.health().pausedUntil,
     session: (sessionId) => liveSessions.registry.get(sessionId),
     readable: (session) => transcripts.has(session),
+    // An agent CLI starts a process for every request: its turn-end passes keep the interval.
+    turnEndIntervalMs: () => {
+      const provider = utility.provider?.()
+      return provider && utilityModelProvider(provider).kind === 'agent-cli'
+        ? RECAP_AUTO_INTERVAL_MS
+        : 0
+    },
     server: serverRecaps ?? undefined,
     setTimer: options.setTimer
   })

@@ -3,6 +3,7 @@
   "title": "The primary model does not answer in time",
   "categories": ["model-failure"],
   "surfaces": ["claude-cli"],
+  "pending": true,
   "expected": "The fallback model writes the recap. Failing that, the pass is tried again without the user having to open the session.",
   "steps": [
     {

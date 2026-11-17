@@ -91,6 +91,7 @@ export async function runRecapScenario(
       () => clock.now
     )
     const since = (id: string, cursor: number) => transcripts.of(id).since(cursor)
+    const turnEnded = (id: string): boolean => recapTurnHasEnded(sessionOf(id)?.status ?? 'working')
     const judge = createClefRecapJudge({
       decide: (judging, request, signal) => utility.decide(judging, request, signal),
       // Kept for the run only: a restart asks again, and the recordings answer.
@@ -104,13 +105,14 @@ export async function runRecapScenario(
         page: (id, before, limit) => transcripts.of(id).page(before, limit),
         since
       },
-      complete: (request, signal) => utility.complete(request, signal),
+      complete: (request, signal, options) => utility.complete(request, signal, options),
+      turnEnded,
       store,
       budget,
       requests: createRecapRequestsStep({
         judge,
         since,
-        turnEnded: (id) => recapTurnHasEnded(sessionOf(id)?.status ?? 'working'),
+        turnEnded,
         allows: (kind) => budget.allows(kind),
         redact: redactRecapCommand,
         now: () => clock.now

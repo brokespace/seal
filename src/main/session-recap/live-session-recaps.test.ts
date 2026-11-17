@@ -156,6 +156,67 @@ describe('LiveSessionRecaps', () => {
     expect(h.passes).toEqual(['auto local:claude:abc'])
   })
 
+  it("recaps every turn's end within seconds, and lets turns that end close together share a pass", async () => {
+    const h = await harness()
+
+    h.seen(session({ status: 'your-turn', lastActivityAt: 2_000 }))
+    await h.wait(3_000)
+    expect(h.passes).toEqual(['auto local:claude:abc'])
+
+    h.seen(session({ status: 'your-turn', lastActivityAt: 3_000 }))
+    h.seen(session({ status: 'your-turn', lastActivityAt: 4_000 }))
+    await h.wait(10_000)
+    expect(h.passes).toEqual(['auto local:claude:abc'])
+
+    await h.wait(10_000)
+    expect(h.passes).toEqual(['auto local:claude:abc', 'auto local:claude:abc'])
+  })
+
+  it('tries a failed pass again after 30 seconds, 2 minutes and 10 minutes, then waits for the next turn', async () => {
+    const h = await harness()
+    h.outcomes.push('failed', 'failed', 'failed', 'failed')
+
+    h.seen(session({ status: 'your-turn', lastActivityAt: 2_000 }))
+    await h.wait(3_000)
+    expect(h.passes).toHaveLength(1)
+    await h.wait(30_000)
+    expect(h.passes).toHaveLength(2)
+    await h.wait(2 * 60_000)
+    expect(h.passes).toHaveLength(3)
+    await h.wait(10 * 60_000)
+    expect(h.passes).toHaveLength(4)
+
+    await h.wait(60 * 60_000)
+    expect(h.passes).toHaveLength(4)
+
+    h.seen(session({ status: 'your-turn', lastActivityAt: 3_000 }))
+    await h.wait(3_000)
+    expect(h.passes).toHaveLength(5)
+  })
+
+  it('reads a turn parked on a subagent soon after it parks, whatever little it said', async () => {
+    const h = await harness()
+
+    h.seen(session({ status: 'working' }))
+    await h.wait(30_000)
+    h.seen(session({ status: 'waiting-subagent', lastActivityAt: 2_000 }))
+    await h.wait(3_000)
+
+    expect(h.passes).toEqual(['working 1+ local:claude:abc'])
+  })
+
+  it('is not behind after a pass that read the session and found nothing to say', async () => {
+    const h = await harness()
+    h.store.setRecap('local:claude:abc', recap(2_000), {})
+    h.outcomes.push('current')
+
+    h.seen(session({ status: 'your-turn', lastActivityAt: 9_000 }))
+    expect(h.recaps.view('local:claude:abc', false).stale).toBe(true)
+    await h.wait(3_000)
+
+    expect(h.recaps.view('local:claude:abc', false).stale).toBe(false)
+  })
+
   it('recaps a first turn as it stops although the chat was opened before it had said anything', async () => {
     const h = await harness()
     h.sessions.set('local:claude:abc', session())
