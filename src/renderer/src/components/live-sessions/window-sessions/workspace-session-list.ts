@@ -5,6 +5,7 @@ import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapter
 import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { findAgentSessionRecord } from '../chat/use-agent-session-record'
+import { windowSubagents } from './window-agent-session'
 
 export type WorkspaceSessionListInputs = {
   /** The registry's records of this workspace. */
@@ -75,16 +76,32 @@ function unnamedProcessOf(
   )
 }
 
-const withModel = new WeakMap<LiveSession, LiveSession>()
+const filledRecords = new WeakMap<LiveSession, { from: string; filled: LiveSession }>()
 
-/** A record whose host reports no model shows the one this window's feed carries. */
-function recordWithModel(record: LiveSession, model: string): LiveSession {
-  const known = withModel.get(record)
-  if (known?.model === model) {
-    return known
+/** A record whose host reports no model, or no subagents, shows the ones this window's feed carries. */
+function recordWithWindowDetails(
+  record: LiveSession,
+  row: DashboardAgentRow,
+  children: readonly DashboardAgentRow[]
+): LiveSession {
+  const model = record.model ? undefined : row.entry.model?.trim()
+  const subagents = record.activity?.subagents.length ? [] : windowSubagents(children)
+  if (!model && subagents.length === 0) {
+    return record
   }
-  const filled = { ...record, model }
-  withModel.set(record, filled)
+  const from = `${model ?? ''}|${subagents.map((child) => `${child.id}:${child.status}`).join()}`
+  const known = filledRecords.get(record)
+  if (known?.from === from) {
+    return known.filled
+  }
+  const filled: LiveSession = {
+    ...record,
+    ...(model ? { model } : {}),
+    ...(subagents.length > 0
+      ? { activity: { tasks: [], todos: [], ...record.activity, subagents } }
+      : {})
+  }
+  filledRecords.set(record, { from, filled })
   return filled
 }
 
@@ -110,11 +127,11 @@ export function workspaceSessionList(inputs: WorkspaceSessionListInputs): readon
     const chat = chats.get(row.paneKey)
     const record = recordOf(all, row, chat)
     if (record) {
-      const model = row.entry.model?.trim()
-      const at = record.model || !model ? -1 : listed.indexOf(record)
+      const filled = recordWithWindowDetails(record, row, subagents.get(row.paneKey) ?? [])
+      const at = filled === record ? -1 : listed.indexOf(record)
       if (at !== -1) {
         out ??= [...listed]
-        out[at] = recordWithModel(record, model!)
+        out[at] = filled
       }
       continue
     }

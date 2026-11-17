@@ -1,7 +1,15 @@
 import { useMemo } from 'react'
-import { getStructuredAgentSessionTabsByPaneKey } from '@/components/native-chat/session/status/structured-agent-session-tabs'
+import type { DashboardAgentRow } from '@/components/dashboard/rows/dashboard-agent-row'
+import { rowConversationName } from '@/components/dashboard/snapshot/dashboard-card-labels'
+import {
+  getStructuredAgentSessionTabsByPaneKey,
+  type StructuredTab
+} from '@/components/native-chat/session/status/structured-agent-session-tabs'
 import { useWorktreeAgentRows } from '@/components/sidebar/workspace-card/activity/useWorktreeAgentRows'
+import { getStructuredChatTabNames } from '@/runtime/native-chat/naming/structured-chat-name-observation'
+import { readStructuredChatTabSavedName } from '@/runtime/native-chat/naming/structured-chat-tab-name'
 import { useAppStore } from '@/store/index'
+import type { AppState } from '@/store/types'
 import type { ExecutionHostId } from '../../../../../shared/execution-host'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
 import { useLiveSessions } from '../live-session-registry-store'
@@ -58,6 +66,30 @@ function useGroupedSessions(): GroupedSessions {
   return groupSessions(sessions, links)
 }
 
+/** A chat goes by the name its record will carry; a pane known by its title alone, by what that title names. */
+function windowSessionName(
+  state: AppState,
+  row: DashboardAgentRow,
+  chat: StructuredTab | undefined
+): string | null {
+  if (chat) {
+    return readStructuredChatTabSavedName(chat, state)
+  }
+  if (row.entry.observation?.origin !== 'title') {
+    return null
+  }
+  return (
+    rowConversationName(
+      row,
+      state.settings?.tabAutoGenerateTitle === true,
+      state.terminalLayoutsByTabId?.[row.tab.id],
+      state.runtimePaneTitlesByTabId?.[row.tab.id],
+      getStructuredChatTabNames(),
+      state.unifiedTabsByWorktree
+    ) ?? null
+  )
+}
+
 /** Reads the clock as the agent rows' own selector does: each new `rows` carries a fresh decay state. */
 function windowSessionBuilder(
   worktreeId: string,
@@ -72,6 +104,7 @@ function windowSessionBuilder(
         worktreeId,
         machine: windowAgentSessionMachine(state, row, worktreeId, all),
         chat,
+        name: windowSessionName(state, row, chat),
         subagents
       },
       now
@@ -91,8 +124,9 @@ export function useWorkspaceSessions(
   const listed = useGroupedSessions().byWorkspace.get(worktreeId) ?? NONE
   const { sessions: all } = useLiveSessions()
   const rows = useWorktreeAgentRows(worktreeId, true, hostId)
+  // Every workspace's chats: the map stays the same while no chat tab changes anywhere.
   const chats = useAppStore((state) =>
-    getStructuredAgentSessionTabsByPaneKey(state.unifiedTabsByWorktree[worktreeId])
+    getStructuredAgentSessionTabsByPaneKey(state.unifiedTabsByWorktree)
   )
   return useMemo(
     () =>

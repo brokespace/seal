@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
-import { focusTerminalTabSurface } from '@/components/terminal-pane/input/focus/focus-terminal-tab-surface'
 import { translate } from '@/i18n/i18n'
 import { activateAndRevealWorkspace } from '@/lib/workspace/activation/worktree-activation'
+import { activateTabAndFocusPane } from '@/lib/workspace/tabs/activate-tab-and-focus-pane'
 import { activateWorkspaceTabPaletteResult } from '@/lib/workspace/search/tabs/workspace-tab-palette-activation'
 import { useAppStore } from '@/store/index'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
@@ -54,7 +54,12 @@ function showTerminalPane(paneKey: string): boolean {
   if (!tab || !showWorkspaceTab(tab, 'terminal')) {
     return false
   }
-  focusTerminalTabSurface(terminalTabId, paneKey.slice(separator + 1))
+  // Makes the pane its split's active one, as a click on it does.
+  activateTabAndFocusPane(terminalTabId, paneKey.slice(separator + 1), {
+    ackPaneKeyOnSuccess: paneKey,
+    flashFocusedPane: true,
+    scrollToBottomIfOutputSinceLastView: true
+  })
   return true
 }
 

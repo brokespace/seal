@@ -41,6 +41,8 @@ export type WindowAgentSessionPlace = {
   machine: LiveSessionMachine
   /** The chat tab behind the row; absent for a terminal pane. */
   chat: StructuredTab | undefined
+  /** The name its tab shows where the prompt is not the title: a named chat, or a pane known by its title alone. */
+  name: string | null
   /** The row's child rows, which the card listed under it. */
   subagents: readonly DashboardAgentRow[]
 }
@@ -53,25 +55,26 @@ function statusOf(row: DashboardAgentRow, pane: SealPane): LiveSessionStatus {
   return row.state === 'idle' || row.state === 'unverifiable' ? 'idle' : pane.status
 }
 
-function subagentOf(row: DashboardAgentRow): LiveSubagent[] {
-  const child = row.childRow
-  if (!child || child.kind !== 'agent') {
-    return []
-  }
-  return [
-    {
-      id: child.id,
-      title: child.name,
-      agentType: child.agentType ?? null,
-      model: child.model ?? null,
-      status: child.settled ? 'completed' : 'running',
-      background: false,
-      activity: null,
-      startedAt: child.firstObservedAt > 0 ? child.firstObservedAt : null,
-      lastActivityAt: child.observedAt ?? null,
-      transcriptPath: null
-    }
-  ]
+/** The agents a row started, as its child rows carry them. */
+export function windowSubagents(rows: readonly DashboardAgentRow[]): LiveSubagent[] {
+  return rows.flatMap(({ childRow: child }) =>
+    child?.kind === 'agent'
+      ? [
+          {
+            id: child.id,
+            title: child.name,
+            agentType: child.agentType ?? null,
+            model: child.model ?? null,
+            status: child.settled ? 'completed' : 'running',
+            background: false,
+            activity: null,
+            startedAt: child.firstObservedAt > 0 ? child.firstObservedAt : null,
+            lastActivityAt: child.observedAt ?? null,
+            transcriptPath: null
+          }
+        ]
+      : []
+  )
 }
 
 /** Null for an agent the launcher does not know: it has no icon, name or resume to show. */
@@ -117,11 +120,12 @@ export function windowAgentSession(
   const status = statusOf(row, pane)
   const titleOnly = entry.observation?.origin === 'title'
   const model = entry.model?.trim()
-  const subagents = place.subagents.flatMap(subagentOf)
+  const subagents = windowSubagents(place.subagents)
   const session: LiveSession = {
     ...sealPaneRecord(pane, place.machine),
     id: liveSessionId(place.machine.hostId, adapter.agent, providerSessionId),
     providerSessionId,
+    ...(place.name ? { title: place.name } : {}),
     status,
     statusDetail:
       row.state === 'unverifiable'

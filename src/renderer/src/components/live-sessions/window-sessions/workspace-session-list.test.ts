@@ -83,7 +83,11 @@ function list(
     rows,
     chats,
     build: (row, chat, subagents) =>
-      windowAgentSession(row, { worktreeId: 'wt-dev', machine: SERVER, chat, subagents }, NOW)
+      windowAgentSession(
+        row,
+        { worktreeId: 'wt-dev', machine: SERVER, chat, name: null, subagents },
+        NOW
+      )
   })
 }
 
@@ -168,10 +172,13 @@ describe('a workspace card lists each agent session once', () => {
         } as DashboardAgentRow['childRow']
       }
     )
-    const sessions = list([agentRow('tab-1:0', {}), child], [])
-    expect(sessions.map((s) => s.activity?.subagents.map((a) => [a.title, a.status]))).toEqual([
-      [['Audit payments', 'running']]
-    ])
+    const counted = [[['Audit payments', 'running']]]
+    const subagents = (sessions: readonly LiveSession[]): unknown =>
+      sessions.map((s) => s.activity?.subagents.map((a) => [a.title, a.status]))
+    expect(subagents(list([agentRow('tab-1:0', {}), child], []))).toEqual(counted)
+    // Also on a record whose host reports none.
+    const listed = [record({ surface: { kind: 'cli', paneKey: 'tab-1:0' } })]
+    expect(subagents(list([agentRow('tab-1:0', {}), child], listed))).toEqual(counted)
   })
 
   it('shows the model this window knows on a record that has none', () => {
