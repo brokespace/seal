@@ -60,6 +60,26 @@ describe('journalSessionTranscript', () => {
     expect({ start: older.start, more: older.more }).toEqual({ start: 0, more: false })
   })
 
+  it('keeps the newest rows that fit one reply in a page, and pages back from the first of them', async () => {
+    const megabyte = 'x'.repeat(1024 * 1024)
+    const { transcript } = journal(
+      [said(1, 'assistant', megabyte), said(2, 'assistant', megabyte), said(3, 'user', 'Thanks')],
+      3
+    )
+
+    const newest = await transcript.page(null)
+    expect(newest.messages.map((message) => message.id)).toEqual(['item-2', 'item-3'])
+    expect({ cursor: newest.cursor, start: newest.start, more: newest.more }).toEqual({
+      cursor: 3,
+      start: 2,
+      more: true
+    })
+
+    const older = await transcript.page(newest.start)
+    expect(older.messages.map((message) => message.id)).toEqual(['item-1'])
+    expect({ start: older.start, more: older.more }).toEqual({ start: 0, more: false })
+  })
+
   it('holds back the reply a running turn is still writing until the turn ends', async () => {
     const { state, transcript } = journal(
       [said(1, 'user', 'Fix the login redirect'), said(2, 'assistant', 'Patch')],

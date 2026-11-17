@@ -11,6 +11,7 @@ import type {
 import { projectStructuredItemToNativeChat } from '../../../shared/agent-session/view/structured-agent-session-projection'
 import type { NativeChatMessage } from '../../../shared/native-chat/native-chat-types'
 import { getStructuredAgentSessionHost } from '../../native-chat/agent-session-wire/host/structured-agent-session-registry'
+import { boundNativeChatRpcPageByBytes } from '../../runtime/rpc/methods/native-chat/native-chat-rpc-page-bounds'
 import type { SessionTranscript } from './session-transcript'
 
 export type ChatJournalRead = {
@@ -83,13 +84,20 @@ export function journalSessionTranscript(
         first--
       }
       const page = older.slice(first)
+      // A journal row has no size limit, and a reply to another machine does: the newest rows
+      // that fit one reply are the page, and the rest is the page before it.
+      const fitted = boundNativeChatRpcPageByBytes(
+        page,
+        first > 0,
+        // A file's first page starts at byte 0; a journal's first row has a later sequence.
+        first > 0 ? sequenceOf(page[0]) : 0
+      )
       return {
         sessionId: recordId,
-        messages: page,
+        messages: fitted.messages,
         cursor: through,
-        // A file's first page starts at byte 0; a journal's first row has a later sequence.
-        start: first > 0 ? sequenceOf(page[0]) : 0,
-        more: first > 0
+        start: fitted.beforeOffset,
+        more: fitted.hasMore
       }
     },
     async since(cursor) {
