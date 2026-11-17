@@ -276,7 +276,7 @@ describe('the judge of background waits', () => {
           return
         }
         requests++
-        const started = Date.now()
+        const started = performance.now()
         try {
           const { answers, inputTokens, provider } = await clef.decide(MODEL, {
             body: backgroundWaitBody(stateOf(item)),
@@ -286,7 +286,7 @@ describe('the judge of background waits', () => {
             unread = shapeOf(answers)
             return
           }
-          ms.push(Date.now() - started)
+          ms.push(Math.round(performance.now() - started))
           records.set(key, { key, item: item.id, answers, inputTokens, ms: ms.at(-1)!, provider })
         } catch (error) {
           const failed = error instanceof UtilityModelError ? error.kind : String(error)
