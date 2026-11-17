@@ -17,12 +17,8 @@ import { TabDragPointerSensor } from '@/components/tab-group/tab-drag-pointer-se
 import { TAB_DRAG_ACTIVATION_DISTANCE_PX } from '@/components/tab-group/useTabDragSplit'
 import { isItemTabDragData, ItemTabIcon } from './ItemTab'
 import { bringKeyboardFocusIntoFocusedPane } from './pane-keyboard-focus'
-import {
-  beginSplitViewDrag,
-  commitSplitViewDrop,
-  trackSplitViewDrop,
-  useSplitViewDragActive
-} from './split-view-drop-target'
+import { beginSplitViewDrag, useSplitViewDragActive } from './split-view-drag-state'
+import { commitSplitViewDrop, trackSplitViewDrop } from './split-view-drop-target'
 import type { SplitViewItem } from './split-view-types'
 import { useResolvedSplitViewItem, useSplitViewItemTitle } from './use-resolved-split-view-item'
 

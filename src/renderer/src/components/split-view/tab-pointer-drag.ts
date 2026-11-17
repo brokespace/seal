@@ -4,26 +4,32 @@ import {
   swallowClickAfterNextRelease,
   swallowNextClickOnDragHandle
 } from '@/components/sidebar/worktree-list/drag/header-drag-click-swallow'
-import { beginSplitViewPaneDrop, type SplitViewPaneDrop } from './split-view-pane-drop'
-import type { SplitViewItem } from './split-view-types'
+import {
+  beginSplitViewPaneDrop,
+  splitViewTabLoad,
+  type SplitViewPaneDrop
+} from './split-view-pane-drop'
+import type { SplitViewTabPlace } from './split-view-types'
 
 /**
- * The pointer drag of a sidebar row that only ever lands in panes (an agent session's row). Call
- * from the row's pointer-down. Esc, window blur and a missed release cancel. `onDropped` runs
- * once the main area took the item.
+ * The pointer drag of a sidebar row that opens as a tab (an agent session's row) and only ever
+ * lands in panes. `worktreeId` is the workspace the tab is in, which the drag brings along; null
+ * for a tab of no workspace, which joins the one it is dropped on. Call from the row's
+ * pointer-down. Esc, window blur and a missed release cancel. `onDropped` runs once the main area
+ * took it, with where the tab opens.
  */
-export function startItemPointerDrag(
+export function startTabPointerDrag(
   event: { button: number; clientX: number; clientY: number },
   source: HTMLElement,
-  item: SplitViewItem,
-  onDropped?: () => void
+  worktreeId: string | null,
+  onDropped: (place: SplitViewTabPlace) => void
 ): void {
   if (event.button !== 0) {
     return
   }
   const startX = event.clientX
   const startY = event.clientY
-  let drop: SplitViewPaneDrop | null = null
+  let drop: SplitViewPaneDrop<SplitViewTabPlace | null> | null = null
 
   const finish = (): void => {
     window.removeEventListener('pointermove', onMove)
@@ -52,12 +58,12 @@ export function startItemPointerDrag(
       // The press may have started a text selection before selection was turned off.
       window.getSelection()?.removeAllRanges()
       setSidebarPointerDragDocumentStyles(true)
-      drop = beginSplitViewPaneDrop([item], source, 'everywhere')
+      drop = beginSplitViewPaneDrop(splitViewTabLoad(worktreeId), source, 'everywhere')
     }
     drop.track(move.clientX, move.clientY)
   }
   const onUp = (up: PointerEvent): void => {
-    let dropped = false
+    let dropped: SplitViewTabPlace | null = null
     if (drop) {
       swallowNextClickOnDragHandle(source)
       // Before the drag ends: ending it brings back a hover card that would cover the drop.
@@ -65,7 +71,7 @@ export function startItemPointerDrag(
     }
     finish()
     if (dropped) {
-      onDropped?.()
+      onDropped(dropped)
     }
   }
   const onKeyDown = (key: KeyboardEvent): void => {

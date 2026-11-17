@@ -1,16 +1,20 @@
-import { useSyncExternalStore } from 'react'
 import { useAppStore } from '@/store/index'
-import { acquireWebviewsDragPassthrough } from '@/components/browser-pane/host-guest/webview-drag-passthrough'
 import { isWorkspaceKanbanSidebarDropPointInBoard } from '@/components/sidebar/workspace-board/drag/workspace-kanban-sidebar-drop'
 import { selectWorktreeCreationSurfaceShown } from '@/lib/workspace/creation/worktree-creation-surface'
 import { resolveDropZone } from '../tab-group/tab-drop-zone'
-import type { HoveredTabInsertion } from '../tab-group/tab-insertion'
 import {
   currentSplitViewItem,
   navigateToSplitViewItem,
   placeItemsInSplitView,
+  workspaceSplitViewItem,
   type SplitViewDropPlace
 } from './split-view-commands'
+import {
+  setSplitViewDropPreview,
+  type SplitViewDropPreview,
+  type SplitViewDropRect as Rect
+} from './split-view-drag-state'
+import { containsDropPoint, dropZoneRect, findDropElementAt } from './split-view-drop-geometry'
 import { selectItemViewShown } from './split-view-showing'
 import { splitViewStore } from './split-view-store'
 import {
@@ -19,9 +23,14 @@ import {
   fitSplitViewZoneToSize,
   splitViewPaneGridSize
 } from './split-view-pane-size'
-import { splitViewItemKey, type SplitViewItem, type SplitViewZone } from './split-view-types'
+import {
+  activeSplitViewItem,
+  splitViewItemKey,
+  type SplitViewItem,
+  type SplitViewTabPlace,
+  type SplitViewZone
+} from './split-view-types'
 
-const SPLIT_VIEW_DRAG_ATTRIBUTE = 'data-split-view-drag'
 /** On a strip: the id of its pane. */
 export const ITEM_TAB_STRIP_ATTRIBUTE = 'data-item-tab-strip'
 export const ITEM_TAB_KEY_ATTRIBUTE = 'data-item-tab-key'
@@ -30,76 +39,13 @@ export const ITEM_TAB_ROW_ATTRIBUTE = 'data-item-tab-row'
 
 const EDGE_SHARE = 0.3
 
-type Rect = { left: number; top: number; width: number; height: number }
-
-export type SplitViewDropPreview = {
-  /** In viewport coordinates. */
-  rect: Rect
-  kind: SplitViewZone | 'insert' | 'open'
-  /** For `insert`: the tab the pointer is on and the side of it, in the strip `groupId` names. */
-  insertion?: HoveredTabInsertion
-}
-
 type ResolvedDrop = { place: SplitViewDropPlace | 'open'; preview: SplitViewDropPreview }
 
-let preview: SplitViewDropPreview | null = null
-let dragCount = 0
-const listeners = new Set<() => void>()
+/** The main area under the pointer, and what it accepts. */
+type DropArea = { mode: DropMode; area: HTMLElement; areaRect: Rect }
 
-function notify(): void {
-  for (const listener of listeners) {
-    listener()
-  }
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
-function setPreview(next: SplitViewDropPreview | null): void {
-  const same =
-    next === preview ||
-    (next !== null &&
-      preview !== null &&
-      next.kind === preview.kind &&
-      next.rect.left === preview.rect.left &&
-      next.rect.top === preview.rect.top &&
-      next.rect.width === preview.rect.width &&
-      next.rect.height === preview.rect.height &&
-      next.insertion?.groupId === preview.insertion?.groupId &&
-      next.insertion?.visibleTabId === preview.insertion?.visibleTabId &&
-      next.insertion?.side === preview.insertion?.side)
-  if (same) {
-    return
-  }
-  preview = next
-  notify()
-}
-
-export function useSplitViewDropPreview(): SplitViewDropPreview | null {
-  return useSyncExternalStore(subscribe, () => preview)
-}
-
-/** Something is being dragged towards the panes: a sidebar row, a project, or a tab. */
-export function useSplitViewDragActive(): boolean {
-  return useSyncExternalStore(subscribe, () => dragCount > 0)
-}
-
-function contains(rect: Rect, x: number, y: number): boolean {
-  return (
-    x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height
-  )
-}
-
-function findAt(selector: string, x: number, y: number): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>(`[${selector}]`)) {
-    if (contains(element.getBoundingClientRect(), x, y)) {
-      return element
-    }
-  }
-  return null
-}
+/** Null in single view: the main area is one implicit pane. */
+type DropPane = { paneId: string | null; pane: HTMLElement }
 
 type DropMode = 'grid' | 'single' | 'open'
 
@@ -193,51 +139,65 @@ function resolveStripDrop(
   }
 }
 
+function dropAreaAt(x: number, y: number): DropArea | null {
+  const area = document.querySelector<HTMLElement>(`[${SPLIT_VIEW_DROP_AREA_ATTRIBUTE}]`)
+  const mode = dropMode()
+  if (!area || !mode) {
+    return null
+  }
+  const areaRect = area.getBoundingClientRect()
+  // The Workspace Board takes the drop while it is open; so does anything else floating above.
+  if (!containsDropPoint(areaRect, x, y) || isWorkspaceKanbanSidebarDropPointInBoard(x, y)) {
+    return null
+  }
+  const hit = document.elementFromPoint(x, y)
+  return hit && area.contains(hit) ? { mode, area, areaRect } : null
+}
+
+function dropPaneAt({ mode, area }: DropArea, x: number, y: number): DropPane | null {
+  const pane = mode === 'grid' ? findDropElementAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
+  return pane
+    ? { pane, paneId: mode === 'grid' ? pane.getAttribute(SPLIT_VIEW_PANE_ATTRIBUTE) : null }
+    : null
+}
+
+function zoneAt(target: DropPane, x: number, y: number): { zone: SplitViewZone; rect: Rect } {
+  const rect = target.pane.getBoundingClientRect()
+  const zone = fitSplitViewZoneToSize(
+    resolveDropZone(rect, { x, y }, EDGE_SHARE),
+    splitViewPaneGridSize(target.paneId, rect)
+  )
+  return { zone, rect }
+}
+
 function resolveDrop(
   x: number,
   y: number,
   items: readonly SplitViewItem[],
   pointerCaptured = false
 ): ResolvedDrop | null {
-  const area = document.querySelector<HTMLElement>(`[${SPLIT_VIEW_DROP_AREA_ATTRIBUTE}]`)
-  const mode = dropMode()
-  if (!area || !mode || items.length === 0) {
+  const area = items.length > 0 ? dropAreaAt(x, y) : null
+  if (!area) {
     return null
   }
-  const areaRect = area.getBoundingClientRect()
-  // The Workspace Board takes the drop while it is open; so does anything else floating above.
-  if (!contains(areaRect, x, y) || isWorkspaceKanbanSidebarDropPointInBoard(x, y)) {
-    return null
-  }
-  const hit = document.elementFromPoint(x, y)
-  if (!hit || !area.contains(hit)) {
-    return null
-  }
-  if (mode === 'open') {
-    return { place: 'open', preview: { kind: 'open', rect: areaRect } }
+  if (area.mode === 'open') {
+    return { place: 'open', preview: { kind: 'open', rect: area.areaRect } }
   }
   const dragged = new Set(items.map(splitViewItemKey))
-  const strip = findAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
+  const strip = findDropElementAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y)
   const stripPaneId = strip?.getAttribute(ITEM_TAB_STRIP_ATTRIBUTE)
   if (strip && stripPaneId) {
     return resolveStripDrop(strip, x, stripPaneId, dragged, pointerCaptured)
   }
-  const pane = mode === 'grid' ? findAt(SPLIT_VIEW_PANE_ATTRIBUTE, x, y) : area
-  if (!pane) {
+  const target = dropPaneAt(area, x, y)
+  if (!target) {
     return null
   }
-  const paneId = mode === 'grid' ? pane.getAttribute(SPLIT_VIEW_PANE_ATTRIBUTE) : null
-  const rect = pane.getBoundingClientRect()
-  let zone = fitSplitViewZoneToSize(
-    resolveDropZone(rect, { x, y }, EDGE_SHARE),
-    splitViewPaneGridSize(paneId, rect)
-  )
+  const { paneId } = target
+  const at = zoneAt(target, x, y)
   const held = paneKeys(paneId)
-  const leavesNothing = held.every((key) => dragged.has(key))
   // Nothing would be left to split from: the drop adds tabs instead.
-  if (leavesNothing) {
-    zone = 'center'
-  }
+  const zone = held.every((key) => dragged.has(key)) ? 'center' : at.zone
   // Dropped where it already shows, nothing would change; a tab behind another comes forward.
   if (
     zone === 'center' &&
@@ -246,15 +206,67 @@ function resolveDrop(
   ) {
     return null
   }
-  const half = { ...rect, left: rect.left, top: rect.top, width: rect.width, height: rect.height }
-  if (zone === 'left' || zone === 'right') {
-    half.width = rect.width / 2
-    half.left = zone === 'left' ? rect.left : rect.left + rect.width / 2
-  } else if (zone === 'up' || zone === 'down') {
-    half.height = rect.height / 2
-    half.top = zone === 'up' ? rect.top : rect.top + rect.height / 2
+  return { place: { paneId, zone }, preview: { kind: zone, rect: dropZoneRect(at.rect, zone) } }
+}
+
+type ResolvedTabDrop = {
+  /** Null where the workspace already shows, or the tab brings none: no pane changes. */
+  place: SplitViewDropPlace | 'open' | null
+  preview: SplitViewDropPreview
+  tab: SplitViewTabPlace
+}
+
+/** The workspace a pane, or single view, has in front. */
+function shownWorktreeId(paneId: string | null): string | null {
+  const shown =
+    paneId === null
+      ? currentSplitViewItem()
+      : activeSplitViewItem(splitViewStore.getState(), paneId)
+  return shown?.kind === 'workspace' ? shown.worktreeId : null
+}
+
+/**
+ * Where a tab lands. One with a workspace of its own brings that along as any item and shows in
+ * it; one with none joins the workspace the pane under the pointer shows, on an edge beside its tabs.
+ */
+function resolveTabDrop(x: number, y: number, worktreeId: string | null): ResolvedTabDrop | null {
+  const area = dropAreaAt(x, y)
+  const target = area && dropPaneAt(area, x, y)
+  if (!area || !target) {
+    return null
   }
-  return { place: { paneId, zone }, preview: { kind: zone, rect: half } }
+  if (worktreeId) {
+    const workspace = workspaceSplitViewItem({ id: worktreeId })
+    const tab: SplitViewTabPlace = { worktreeId, zone: 'center' }
+    const drop = resolveDrop(x, y, [workspace])
+    if (drop) {
+      return { ...drop, tab }
+    }
+    // Its workspace already shows here: only the tab comes forward.
+    return shownKey(target.paneId) === splitViewItemKey(workspace)
+      ? { place: null, preview: { kind: 'center', rect: target.pane.getBoundingClientRect() }, tab }
+      : null
+  }
+  const shown = area.mode === 'open' ? null : shownWorktreeId(target.paneId)
+  if (shown) {
+    const at = zoneAt(target, x, y)
+    // On the pane's own strip it is one more tab, as an item dropped there is.
+    const zone = findDropElementAt(ITEM_TAB_STRIP_ATTRIBUTE, x, y) ? 'center' : at.zone
+    return {
+      place: null,
+      preview: { kind: zone, rect: dropZoneRect(at.rect, zone) },
+      tab: { worktreeId: shown, zone }
+    }
+  }
+  // Home or a project's page shows no workspace: the tab opens in the one last in view.
+  const last = useAppStore.getState().activeWorktreeId
+  return last
+    ? {
+        place: null,
+        preview: { kind: 'open', rect: area.areaRect },
+        tab: { worktreeId: last, zone: 'center' }
+      }
+    : null
 }
 
 /** Shows where a drop would land. False when the main area is not taking the pointer. */
@@ -265,7 +277,7 @@ export function trackSplitViewDrop(
   pointerCaptured = false
 ): boolean {
   const drop = resolveDrop(x, y, items, pointerCaptured)
-  setPreview(drop?.preview ?? null)
+  setSplitViewDropPreview(drop?.preview ?? null)
   return drop !== null
 }
 
@@ -277,7 +289,7 @@ export function commitSplitViewDrop(
   activeKey?: string
 ): boolean {
   const drop = resolveDrop(x, y, items)
-  setPreview(null)
+  setSplitViewDropPreview(null)
   if (!drop) {
     return false
   }
@@ -290,23 +302,31 @@ export function commitSplitViewDrop(
   return true
 }
 
-/** Lets the pointer through embedded pages for the length of a drag. Returns the end of it. */
-export function beginSplitViewDrag(): () => void {
-  const releaseWebviews = acquireWebviewsDragPassthrough()
-  // Hover cards open under a held pointer too, and one under it would take the drop.
-  document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, true)
-  dragCount += 1
-  notify()
-  let ended = false
-  return () => {
-    if (ended) {
-      return
-    }
-    ended = true
-    releaseWebviews()
-    dragCount -= 1
-    document.body.toggleAttribute(SPLIT_VIEW_DRAG_ATTRIBUTE, dragCount > 0)
-    preview = null
-    notify()
+/** Shows where a tab would land; `worktreeId` is the workspace it brings, or null. False when the main area is not taking the pointer. */
+export function trackSplitViewTabDrop(x: number, y: number, worktreeId: string | null): boolean {
+  const drop = resolveTabDrop(x, y, worktreeId)
+  setSplitViewDropPreview(drop?.preview ?? null)
+  return drop !== null
+}
+
+/** Commits a tab's release: its workspace takes its pane. Returns where the tab opens; null when the main area did not take it. */
+export function commitSplitViewTabDrop(
+  x: number,
+  y: number,
+  worktreeId: string | null
+): SplitViewTabPlace | null {
+  const drop = resolveTabDrop(x, y, worktreeId)
+  setSplitViewDropPreview(null)
+  if (!drop) {
+    return null
   }
+  if (worktreeId && drop.place) {
+    const workspace = workspaceSplitViewItem({ id: worktreeId })
+    if (drop.place === 'open') {
+      navigateToSplitViewItem(workspace)
+    } else {
+      placeItemsInSplitView([workspace], drop.place)
+    }
+  }
+  return drop.tab
 }

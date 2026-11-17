@@ -2,6 +2,7 @@ import { requestNativeChatComposerFocus } from '@/components/native-chat/compose
 import { useAppStore } from '@/store/index'
 import { resolveEditorPreviewIntent } from '@/store/slices/editor/tabs/editor-preview-tab-setting'
 import { patchTab } from '@/store/slices/tabs/tab-group-state'
+import type { TabSplitDirection } from '@/store/slices/tabs/tabs-slice-contract'
 import type { AppState } from '@/store/types'
 import type { AgentSessionAgentId } from '../../../../../shared/live-sessions/adapters/agent-session-agent-ids'
 import type { Tab } from '../../../../../shared/tab-types'
@@ -46,13 +47,15 @@ export function activateExternalAgentSessionTab(worktreeId: string, tabId: strin
 }
 
 /**
- * Shows the session's tab, creating it in `worktreeId` when it has none. The workspace itself is
- * not switched to. Returns the tab id, or null when the group to split from is gone.
+ * Shows the session's tab, creating it in `worktreeId` when it has none: beside the focused tab
+ * group on `edge`, which `split` alone puts to the right. The workspace itself is not switched
+ * to. Returns the tab id, or null when the group to split from is gone.
  */
 export function openExternalAgentSessionTab(args: {
   worktreeId: string
   sessionId: string
   mode: AgentSessionOpenMode
+  edge?: TabSplitDirection
   label: string
   agent: AgentSessionAgentId
 }): string | null {
@@ -64,12 +67,13 @@ export function openExternalAgentSessionTab(args: {
   }
   const init = { entityId: args.sessionId, label: args.label, agentSessionAgent: args.agent }
   const sourceGroupId = state.activeGroupIdByWorktree[args.worktreeId]
+  const splitDirection = args.edge ?? (args.mode === 'split' ? 'right' : null)
   const created =
-    args.mode === 'split' && sourceGroupId
+    splitDirection && sourceGroupId
       ? state.createUnifiedTabInSplit(
           args.worktreeId,
           EXTERNAL_AGENT_SESSION_TAB,
-          { sourceGroupId, splitDirection: 'right' },
+          { sourceGroupId, splitDirection },
           init
         )
       : state.createUnifiedTab(args.worktreeId, EXTERNAL_AGENT_SESSION_TAB, {

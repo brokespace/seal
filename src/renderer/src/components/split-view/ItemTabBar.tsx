@@ -14,11 +14,8 @@ import { KEEPS_FOCUS_ATTRIBUTE } from '@/lib/overlay-interaction/focus-keeping-p
 import type { ItemTabCommands } from './item-tab-commands'
 import { ItemTab } from './ItemTab'
 import { bridgeTabKeyFromItemStrip } from './pane-tab-key-order'
-import {
-  ITEM_TAB_ROW_ATTRIBUTE,
-  ITEM_TAB_STRIP_ATTRIBUTE,
-  useSplitViewDropPreview
-} from './split-view-drop-target'
+import { useSplitViewDropPreview } from './split-view-drag-state'
+import { ITEM_TAB_ROW_ATTRIBUTE, ITEM_TAB_STRIP_ATTRIBUTE } from './split-view-drop-target'
 import { splitViewItemKey, type SplitViewTab } from './split-view-types'
 import { useSelectedTabKeptInNarrowingStrip } from './use-selected-tab-kept-in-narrowing-strip'
 
