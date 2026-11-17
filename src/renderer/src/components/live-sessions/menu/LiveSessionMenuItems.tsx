@@ -6,7 +6,9 @@ import {
   Columns2,
   Copy,
   EyeOff,
+  FolderInput,
   FolderOpen,
+  FolderPlus,
   FolderSearch,
   Hand,
   ListTodo,
@@ -22,6 +24,7 @@ import {
   SquareArrowOutUpRight,
   TerminalSquare,
   Trash2,
+  Undo2,
   type LucideIcon
 } from 'lucide-react'
 import {
@@ -40,6 +43,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTranslate, type Translate } from '@/i18n/use-translate'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
+import { useSessionProjectChoices } from '../links/session-project-choices'
 import { useLiveSessionLinks } from '../links/use-live-session-links'
 import { canTakeOver } from '../take-over/live-session-take-over'
 import { windowAgentSessionWorktreeId } from '../window-sessions/window-agent-session'
@@ -47,6 +51,7 @@ import { liveSessionSwapTargets, useLocalSealAccounts } from './live-session-acc
 import {
   liveSessionMenuItems,
   runLiveSessionMenuItem,
+  type LiveSessionMenuArgs,
   type LiveSessionMenuContext,
   type LiveSessionMenuEffects,
   type LiveSessionMenuItemId
@@ -88,6 +93,7 @@ const ICONS: Record<LiveSessionMenuItemId, LucideIcon> = {
   'view-tasks': ListTodo,
   rename: Pencil,
   pin: Pin,
+  'move-to-project': FolderInput,
   'copy-session-id': Copy,
   'copy-resume-command': TerminalSquare,
   'swap-account': ArrowRightLeft,
@@ -127,6 +133,8 @@ export function liveSessionMenuLabel(
       return session.pinned
         ? t('auto.components.live-sessions.menu.unpin', 'Unpin')
         : t('auto.components.live-sessions.menu.pin', 'Pin to top')
+    case 'move-to-project':
+      return t('auto.components.live-sessions.menu.moveToProject', 'Move to project')
     case 'copy-session-id':
       return t('auto.components.live-sessions.menu.copyId', 'Copy session id')
     case 'copy-resume-command':
@@ -155,10 +163,12 @@ export function liveSessionMenuLabel(
 export function useLiveSessionMenuContext(session: LiveSession): LiveSessionMenuContext {
   const { links } = useLiveSessionLinks()
   const accounts = useLocalSealAccounts()
+  const projects = useSessionProjectChoices(session)
   const windowWorktreeId = windowAgentSessionWorktreeId(session)
   return {
     worktreeId: links.get(session.id)?.worktreeId ?? windowWorktreeId,
     swapAccounts: liveSessionSwapTargets(session, accounts),
+    projects,
     canTakeOver: canTakeOver(session),
     listed: windowWorktreeId === null
   }
@@ -178,42 +188,84 @@ export function LiveSessionMenuItemsView({
 }): React.JSX.Element {
   const t = useTranslate()
   const { Item, Separator, Sub, SubTrigger, SubContent } = kit
-  const run = (id: LiveSessionMenuItemId, accountKey?: string) =>
+  const run = (
+    id: LiveSessionMenuItemId,
+    picked?: Pick<LiveSessionMenuArgs, 'accountKey' | 'project'>
+  ) =>
     runLiveSessionMenuItem(id, session, context, effects, {
       resumeCommand: liveSessionResumeCommand(session),
-      accountKey
+      ...picked
     })
+  const submenu = (id: LiveSessionMenuItemId): React.JSX.Element | null => {
+    switch (id) {
+      case 'swap-account':
+        return (
+          <SubContent>
+            {context.swapAccounts.map((target) => (
+              <Item
+                key={target.key}
+                data-live-session-account={target.key}
+                disabled={target.current}
+                onSelect={() => run('swap-account', { accountKey: target.key })}
+              >
+                {target.current ? <Check className="size-3.5" /> : <span className="size-3.5" />}
+                {target.label}
+              </Item>
+            ))}
+          </SubContent>
+        )
+      case 'move-to-project':
+        return (
+          <SubContent className="max-h-80 max-w-80 overflow-y-auto scrollbar-sleek">
+            {context.projects.choices.map(({ key, name, current }) => (
+              <Item
+                key={key}
+                data-live-session-project={key}
+                disabled={current}
+                onSelect={() => run('move-to-project', { project: { key, name } })}
+              >
+                {current ? <Check className="size-3.5" /> : <span className="size-3.5 shrink-0" />}
+                <span className="min-w-0 truncate">{name}</span>
+              </Item>
+            ))}
+            {context.projects.choices.length > 0 ? <Separator /> : null}
+            <Item
+              data-live-session-project-new
+              onSelect={() => run('move-to-project', { project: 'new' })}
+            >
+              <FolderPlus className="size-3.5" />
+              {t('auto.components.live-sessions.menu.newProject', 'New project…')}
+            </Item>
+            <Item
+              data-live-session-project-reset
+              disabled={!context.projects.moved}
+              onSelect={() => run('move-to-project', { project: null })}
+            >
+              <Undo2 className="size-3.5" />
+              {t('auto.components.live-sessions.menu.resetProject', 'Reset to automatic')}
+            </Item>
+          </SubContent>
+        )
+      default:
+        return null
+    }
+  }
   return (
     <>
       {liveSessionMenuItems(session, context).map((item) => {
         const Icon = item.id === 'pin' && session.pinned ? PinOff : ICONS[item.id]
         const label = liveSessionMenuLabel(item.id, session, t)
+        const choices = item.disabled ? null : submenu(item.id)
         return (
           <Fragment key={item.id}>
             {item.startsGroup ? <Separator /> : null}
-            {item.id === 'swap-account' && !item.disabled ? (
+            {choices ? (
               <Sub>
                 <SubTrigger data-live-session-menu-item={item.id}>
                   <Icon className="size-3.5" />
                   {label}
                 </SubTrigger>
-                <SubContent>
-                  {context.swapAccounts.map((target) => (
-                    <Item
-                      key={target.key}
-                      data-live-session-account={target.key}
-                      disabled={target.current}
-                      onSelect={() => run('swap-account', target.key)}
-                    >
-                      {target.current ? (
-                        <Check className="size-3.5" />
-                      ) : (
-                        <span className="size-3.5" />
-                      )}
-                      {target.label}
-                    </Item>
-                  ))}
-                </SubContent>
+                {choices}
               </Sub>
             ) : (
               <Item

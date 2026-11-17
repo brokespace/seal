@@ -67,6 +67,13 @@ const context: LiveSessionMenuContext = {
     { key: 'claude:personal', label: 'personal', current: true },
     { key: 'claude:work', label: 'work', current: false }
   ],
+  projects: {
+    choices: [
+      { key: 'folder:billing', name: 'billing', current: false },
+      { key: 'folder:shop', name: 'shop', current: true }
+    ],
+    moved: false
+  },
   canTakeOver: true,
   listed: true
 }
@@ -82,6 +89,7 @@ const EXPECTED: Record<LiveSessionMenuItemId, [keyof LiveSessionMenuEffects, ...
   'view-tasks': ['focus', SESSION_ID, 'tasks'],
   rename: ['askRename', session],
   pin: ['setPinned', session, true],
+  'move-to-project': ['moveToProject', session, { key: 'folder:billing', name: 'billing' }],
   'copy-session-id': ['copy', '04186322-14da-4a67-890c-c5f4a754e99f', 'session-id'],
   'copy-resume-command': [
     'copy',
@@ -112,6 +120,8 @@ function recordingEffects(calls: unknown[][] = []): LiveSessionMenuEffects {
     askRename: record('askRename'),
     askMessage: record('askMessage'),
     setPinned: record('setPinned'),
+    moveToProject: record('moveToProject'),
+    askNewProject: record('askNewProject'),
     copy: record('copy'),
     swapAccount: record('swapAccount'),
     takeOver: record('takeOver'),
@@ -153,6 +163,9 @@ describe('session menu', () => {
       // The accounts sit in a submenu, opened here the way the keyboard opens it.
       fireEvent.keyDown(element!, { key: 'ArrowRight' })
       fireEvent.click(document.querySelector('[data-live-session-account="claude:work"]')!)
+    } else if (id === 'move-to-project') {
+      fireEvent.keyDown(element!, { key: 'ArrowRight' })
+      fireEvent.click(document.querySelector('[data-live-session-project="folder:billing"]')!)
     } else {
       fireEvent.click(element!)
     }
@@ -176,7 +189,13 @@ describe('session menu', () => {
         <DropdownMenuContent>
           <LiveSessionMenuItemsView
             session={quiet}
-            context={{ worktreeId: null, swapAccounts: [], canTakeOver: false, listed: true }}
+            context={{
+              worktreeId: null,
+              swapAccounts: [],
+              projects: { choices: [], moved: false },
+              canTakeOver: false,
+              listed: true
+            }}
             kit={DROPDOWN_MENU_KIT}
             effects={recordingEffects()}
           />

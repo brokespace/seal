@@ -2,9 +2,11 @@ import { agentSessionAdapter } from '../../../../../shared/live-sessions/adapter
 import { isProvisionalLiveSessionId } from '../../../../../shared/live-sessions/live-session-provisional-id'
 import type {
   LiveRemoveRequest,
-  LiveSession
+  LiveSession,
+  LiveSessionProject
 } from '../../../../../shared/live-sessions/live-session-types'
 import type { AgentSessionFocusTarget } from '../chat/agent-session-focus-requests'
+import type { SessionProjectChoices } from '../links/session-project-choices'
 import type { AgentSessionOpenMode } from '../open/agent-session-open-mode'
 
 export const LIVE_SESSION_MENU_ITEM_IDS = [
@@ -17,6 +19,7 @@ export const LIVE_SESSION_MENU_ITEM_IDS = [
   'view-tasks',
   'rename',
   'pin',
+  'move-to-project',
   'copy-session-id',
   'copy-resume-command',
   'swap-account',
@@ -45,6 +48,8 @@ export type LiveSessionMenuContext = {
   worktreeId: string | null
   /** Accounts it can move to; empty when Seal did not launch it or has no other login. */
   swapAccounts: readonly { key: string; label: string; current: boolean }[]
+  /** Projects it can be listed under, and whether the user already chose one. */
+  projects: SessionProjectChoices
   canTakeOver: boolean
   /** False while only this window knows the session: the registry has no record to act on yet. */
   listed: boolean
@@ -58,6 +63,9 @@ export type LiveSessionMenuEffects = {
   askRename: (session: LiveSession) => void
   askMessage: (session: LiveSession) => void
   setPinned: (session: LiveSession, pinned: boolean) => void
+  /** Lists the session under `project`; null gives it back to automatic placement. */
+  moveToProject: (session: LiveSession, project: LiveSessionProject | null) => void
+  askNewProject: (session: LiveSession) => void
   copy: (text: string, what: 'session-id' | 'resume-command') => void
   swapAccount: (session: LiveSession, accountKey: string) => void
   takeOver: (session: LiveSession) => void
@@ -118,6 +126,7 @@ function isDisabled(
     case 'open-split':
     case 'rename':
     case 'pin':
+    case 'move-to-project':
     case 'copy-session-id':
     case 'open-machine':
     case 'remove':
@@ -170,6 +179,8 @@ export type LiveSessionMenuArgs = {
   resumeCommand: string
   /** `swap-account`: the account picked in the submenu. */
   accountKey?: string
+  /** `move-to-project`: the project picked in the submenu, `'new'` to name one, null for automatic. */
+  project?: LiveSessionProject | null | 'new'
 }
 
 /** Runs one menu item. Dangerous items only ever ask; nothing here stops or deletes. */
@@ -199,6 +210,13 @@ export function runLiveSessionMenuItem(
       return effects.askRename(session)
     case 'pin':
       return effects.setPinned(session, session.pinned !== true)
+    case 'move-to-project':
+      if (args.project === 'new') {
+        effects.askNewProject(session)
+      } else if (args.project !== undefined) {
+        effects.moveToProject(session, args.project)
+      }
+      return
     case 'copy-session-id':
       return effects.copy(session.providerSessionId, 'session-id')
     case 'copy-resume-command':
