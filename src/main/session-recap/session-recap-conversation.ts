@@ -43,6 +43,9 @@ export const recapConversationLine = {
   compacted: '(the agent compacted its context here)'
 } as const
 
+/** Claude's, Codex's, and OpenCode 1's and 2's as they reach a chat's journal. */
+const SUBAGENT_TOOLS = new Set(['Task', 'Agent', 'spawn_agent', 'task', 'subagent'])
+
 /** The line for a tool call that is not an edit, a question or a finished subagent. */
 export function recapToolLine(
   name: string,
@@ -57,7 +60,7 @@ export function recapToolLine(
   const started =
     said('description' in fields ? fields.description : null) ??
     said('prompt' in fields ? fields.prompt : null)
-  if ((name === 'Task' || name === 'Agent') && started) {
+  if (SUBAGENT_TOOLS.has(name) && started) {
     return recapConversationLine.startedSubagent(started)
   }
   return recapConversationLine.used(name, toolFilePath(input))
@@ -117,7 +120,6 @@ export type RecapConversation = {
   complete: boolean
 }
 
-const SUBAGENT_TOOLS = new Set(['Task', 'Agent', 'spawn_agent'])
 const QUESTION_TOOLS = new Set(['AskUserQuestion', 'request_user_input'])
 const BACKGROUND_ENDS: ReadonlySet<string> = new Set(['completed', 'failed', 'stopped'])
 // The thresholds were measured on whole messages: these only keep a paste from filling the state.
@@ -271,7 +273,10 @@ export function recapConversationSince(
           kind: asked ? 'question' : SUBAGENT_TOOLS.has(block.name) ? 'subagent' : 'other',
           question: asked?.question ?? null,
           prompt: said(field(input, 'prompt')) ?? said(field(input, 'message')),
-          background: field(input, 'run_in_background') === true ? 'launching' : null
+          background:
+            field(input, 'run_in_background') === true || field(input, 'background') === true
+              ? 'launching'
+              : null
         })
         if (asked) {
           say(recapConversationLine.asked(asked.question, asked.options), false)
@@ -303,11 +308,20 @@ export function recapConversationSince(
           say(recapConversationLine.subagentReported(sessionProse(output)), false)
         }
       } else if (block.type === 'subagent' && block.background) {
-        // A chat's journal keeps a background subagent's result on its own row once it has ended.
-        if (BACKGROUND_ENDS.has(block.state) && block.lastMessage?.trim()) {
-          say(recapConversationLine.subagentReported(sessionProse(block.lastMessage)), false)
-        } else {
+        if (!BACKGROUND_ENDS.has(block.state)) {
           complete = false
+          continue
+        }
+        // A chat's journal keeps a background subagent's result on its own row once it has ended,
+        // and the call that launched it gets no second result: it waits for nothing more.
+        const launched = open.findIndex(
+          (call) => call.kind === 'subagent' && call.background !== null
+        )
+        if (launched !== -1) {
+          open.splice(launched, 1)
+        }
+        if (block.lastMessage?.trim()) {
+          say(recapConversationLine.subagentReported(sessionProse(block.lastMessage)), false)
         }
       } else if (block.type === 'background-task') {
         complete &&= block.state === 'done'

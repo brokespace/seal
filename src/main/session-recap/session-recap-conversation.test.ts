@@ -56,6 +56,51 @@ describe('recapConversationSince', () => {
     expect(conversation(messages.slice(0, 4))?.complete).toBe(false)
   })
 
+  it("closes a chat's background subagent call once its own row has ended", () => {
+    const message = (
+      id: string,
+      role: 'user' | 'assistant',
+      blocks: NativeChatMessage['blocks']
+    ): NativeChatMessage => ({ id, role, blocks, timestamp: null, source: 'transcript' })
+    const row = (state: 'running' | 'completed', lastMessage?: string): NativeChatMessage =>
+      message('3', 'assistant', [
+        {
+          type: 'subagent',
+          id: 'child-1',
+          label: 'Audit logs',
+          groupId: 'turn-1',
+          background: true,
+          state,
+          ...(lastMessage ? { lastMessage } : {})
+        }
+      ])
+    const launch = [
+      message('1', 'user', [{ type: 'text', text: 'Audit the logs in the background' }]),
+      message('2', 'assistant', [
+        {
+          type: 'tool-call',
+          // OpenCode 2's subagent call, as its chat journals it.
+          name: 'subagent',
+          callId: 'call-1',
+          input: { agent: 'general', description: 'Audit logs', prompt: 'Audit', background: true }
+        },
+        { type: 'tool-result', callId: 'call-1', output: 'Started in the background.' }
+      ])
+    ]
+
+    expect(conversation([...launch, row('running')])?.complete).toBe(false)
+    expect(conversation([...launch, row('completed', 'No errors found.')])).toEqual({
+      lines: [
+        'USER: Audit the logs in the background',
+        'AGENT started a subagent: Audit logs',
+        'SUBAGENT reported: No errors found.'
+      ],
+      userTurns: 0,
+      endsOnUser: false,
+      complete: true
+    })
+  })
+
   it('leaves out user rows that ask the agent for nothing', () => {
     const row = (id: string, role: 'user' | 'assistant', text: string): NativeChatMessage => ({
       id,

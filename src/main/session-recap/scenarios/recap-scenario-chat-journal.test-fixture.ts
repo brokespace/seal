@@ -18,7 +18,21 @@ export type ChatJournalScenario = {
   setWorking(working: boolean): void
 }
 
-export function chatJournalScenario(): ChatJournalScenario {
+/** The agent behind the chat, which decides the names its tools are journaled under. */
+export type ChatJournalAgent = 'claude' | 'opencode' | 'copilot'
+
+/**
+ * A shell command as each agent's chat journals it. OpenCode 2 names its tool `shell`
+ * (`acp/fixtures/opencode-v2-tool.jsonl`). No recording holds Copilot's name for it: `execute` is
+ * the ACP kind, which the journal falls back to.
+ */
+const COMMAND_TOOL: Record<ChatJournalAgent, string> = {
+  claude: 'Bash',
+  opencode: 'shell',
+  copilot: 'execute'
+}
+
+export function chatJournalScenario(agent: ChatJournalAgent = 'claude'): ChatJournalScenario {
   const items: AgentJournalRenderItem[] = []
   let sequence = 0
   let working = false
@@ -61,11 +75,12 @@ export function chatJournalScenario(): ChatJournalScenario {
         } else if ('agent' in step) {
           said('assistant', step.agent, at)
         } else if ('tool' in step) {
+          const command = step.tool.name === 'Bash' && agent !== 'claude'
           add(
             {
               kind: 'tool-call',
-              name: step.tool.name,
-              input: step.tool.input,
+              name: command ? COMMAND_TOOL[agent] : step.tool.name,
+              input: command ? { ...step.tool.input, cwd: '/srv/shop' } : step.tool.input,
               state: 'completed',
               output: payload(step.tool.output ?? '')
             },
@@ -94,13 +109,22 @@ export function chatJournalScenario(): ChatJournalScenario {
             at
           )
         } else if ('subagent' in step) {
+          if (agent === 'copilot') {
+            // No recording holds the call Copilot starts a subagent with.
+            return false
+          }
           const { prompt, says, result } = step.subagent
           const agentId = `sub-${sequence + 1}`
+          const description = prompt.slice(0, 40)
           add(
             {
               kind: 'tool-call',
-              name: 'Task',
-              input: { description: prompt.slice(0, 40), prompt },
+              // OpenCode 2's, as in `acp/fixtures/opencode-v2-subagent-foreground.jsonl`.
+              name: agent === 'opencode' ? 'subagent' : 'Task',
+              input:
+                agent === 'opencode'
+                  ? { agent: 'general', description, prompt }
+                  : { description, prompt },
               state: 'completed',
               output: payload(result)
             },
