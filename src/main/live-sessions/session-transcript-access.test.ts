@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { LiveSession, LiveTranscriptPage } from '../../shared/live-sessions/live-session-types'
+import type {
+  LiveSession,
+  LiveTranscriptDelta,
+  LiveTranscriptPage
+} from '../../shared/live-sessions/live-session-types'
 import { sampleSessionSurface } from '../../shared/live-sessions/live-session-surface.test-fixture'
 import type { NativeChatMessage } from '../../shared/native-chat/native-chat-types'
 import type { FederatedTranscripts } from './federation/federated-transcripts'
@@ -99,6 +103,68 @@ describe('a transcript watch begun before the session is listed', () => {
     watch.unsubscribe()
     expect(stopServer).toHaveBeenCalledTimes(1)
     expect(told.size).toBe(0)
+  })
+
+  it('keeps the rows a watcher holds while the server that now lists the session has not answered', async () => {
+    let listed: LiveSession | null = null
+    const told = new Set<() => void>()
+    // What a server's watch answers when its first open fails: nothing, until the server is reached.
+    const unanswered = Promise.resolve(NOTHING)
+    let fromServer: (delta: LiveTranscriptDelta) => void = () => {}
+    const fromFile: LiveTranscriptPage = {
+      sessionId: ID,
+      messages: [ASKED, REPLIED],
+      cursor: 2,
+      start: 0,
+      more: false
+    }
+    const access = new SessionTranscriptAccess({
+      session: () => listed,
+      server: () =>
+        listed
+          ? {
+              imageBase64: async () => '',
+              page: () => unanswered,
+              since: async () => ({ messages: [], cursor: 0, shrank: false }),
+              watch: (_id, _cursor, listener) => {
+                fromServer = listener
+                return { ready: unanswered, unsubscribe: () => {} }
+              }
+            }
+          : null,
+      files: {
+        imageBase64: async () => '',
+        page: async () => fromFile,
+        since: async () => ({ messages: [], cursor: 2, shrank: false }),
+        subscribe: () => ({ ready: Promise.resolve(fromFile), unsubscribe: () => {} })
+      },
+      onSessionsChanged: (listener) => {
+        told.add(listener)
+        return () => told.delete(listener)
+      }
+    })
+    const deltas: LiveTranscriptDelta[] = []
+    const watch = access.watch(ID, null, (delta) => deltas.push(delta))
+    expect(await watch.ready).toEqual(fromFile)
+
+    listed = SERVER_CHAT
+    for (const tell of told) {
+      tell()
+    }
+    await unanswered
+    await Promise.resolve()
+    expect(deltas).toEqual([])
+
+    const answered: LiveTranscriptDelta = {
+      sessionId: ID,
+      from: 0,
+      cursor: 3,
+      messages: [ASKED, REPLIED, row('m3', 'user', 'Ship it')],
+      reset: true
+    }
+    fromServer(answered)
+    expect(deltas).toEqual([answered])
+    watch.unsubscribe()
   })
 
   it('gives a watcher that has read nothing the newest page, not everything before it', async () => {

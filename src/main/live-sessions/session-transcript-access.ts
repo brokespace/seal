@@ -79,10 +79,13 @@ export class SessionTranscriptAccess {
     // A watcher at zero has read nothing: it is given the newest page, not the history up to it.
     const unread = fromCursor === 0
     let followed = this.follow(holder, sessionId, unread ? null : fromCursor, listener)
-    const resetTo = (opened: LiveTranscriptSubscription): void => {
+    const resetTo = (opened: LiveTranscriptSubscription, from: TranscriptHolder): void => {
       void opened.ready.then(
         (page) => {
-          if (page && !stopped && followed === opened) {
+          // A server yet to answer gives an empty page, then its first page as a reset of its own:
+          // passing the empty one on would drop the rows a watcher holds until then.
+          const unanswered = from === 'server' && page?.cursor === 0 && page.messages.length === 0
+          if (page && !unanswered && !stopped && followed === opened) {
             const { cursor, messages } = page
             listener({ sessionId, from: 0, cursor, messages, reset: true })
           }
@@ -92,7 +95,7 @@ export class SessionTranscriptAccess {
       )
     }
     if (unread) {
-      resetTo(followed)
+      resetTo(followed, holder)
     }
     // Who holds a transcript can change under a watcher: a chat listed after the watch began, a
     // CLI continued in Chat. Cursors differ between holders, so the new one starts from its page.
@@ -104,7 +107,7 @@ export class SessionTranscriptAccess {
       followed.unsubscribe()
       holder = next
       followed = this.follow(next, sessionId, null, listener)
-      resetTo(followed)
+      resetTo(followed, next)
     })
     return {
       ready: unread ? Promise.resolve(null) : followed.ready,
