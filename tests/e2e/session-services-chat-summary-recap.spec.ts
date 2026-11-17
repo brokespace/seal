@@ -72,7 +72,9 @@ test('a chat that finished its turn shows the scripted summary on its row and a 
   const panel = pane.locator('[data-live-session-panel="recap"]')
   await expect(panel).toBeVisible()
   const items = (section: string) => panel.locator(`[data-recap-section="${section}"] li`)
-  await expect(items('asked')).toHaveText([SCRIPTED.recapAsked])
+  await expect(panel.locator('[data-recap-request] [data-recap-item-text]')).toHaveText([
+    SCRIPTED.recapAsked
+  ])
   await expect(items('did')).toHaveText([SCRIPTED.recapDid])
   await expect(items('decisions')).toHaveText([SCRIPTED.recapDecision])
   // The host reads references off the chat's journal; the model never names them.

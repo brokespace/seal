@@ -13,7 +13,12 @@ export function recapViewWithoutMessageJumps(view: SessionRecapView): SessionRec
   if (!view.recap) {
     return view
   }
-  const recap: SessionRecap = { ...view.recap, references: plain(view.recap.references) }
+  const { requests } = view.recap
+  const recap: SessionRecap = {
+    ...view.recap,
+    references: plain(view.recap.references),
+    ...(requests ? { requests: plain(requests) } : {})
+  }
   for (const section of RECAP_SECTIONS) {
     recap[section] = plain(view.recap[section])
   }

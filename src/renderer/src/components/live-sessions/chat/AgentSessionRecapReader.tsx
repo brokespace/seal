@@ -13,12 +13,12 @@ export function AgentSessionRecapReader({
   session: Pick<LiveSession, 'id' | 'recap'>
   onModel: (model: SessionRecapModel) => void
 }): null {
-  const { view, refreshing, refresh, mark } = useSessionRecap(session.id, session.recap)
+  const { view, refreshing, failed, refresh, mark } = useSessionRecap(session.id, session.recap)
   useEffect(() => {
     // A reader that has no answer yet leaves the last one showing.
     if (view !== null) {
-      onModel({ view, refreshing, refresh, mark })
+      onModel({ view, refreshing, failed, refresh, mark })
     }
-  }, [onModel, view, refreshing, refresh, mark])
+  }, [onModel, view, refreshing, failed, refresh, mark])
   return null
 }

@@ -14,7 +14,7 @@ import {
   runningSubagents
 } from '../../../../../shared/live-sessions/live-session-activity'
 import type { LiveSession } from '../../../../../shared/live-sessions/live-session-types'
-import { recapOpenCount } from '../../../../../shared/session-recap/session-recap-view'
+import { recapAttention } from '../../../../../shared/session-recap/session-recap-view'
 import { liveSessionProviderLabel, liveSessionTitle } from '../live-session-presentation'
 import { DROPDOWN_MENU_KIT, LiveSessionMenuItems } from '../menu/LiveSessionMenuItems'
 import { LiveSessionStatusPill } from '../status/LiveSessionStatusPill'
@@ -90,7 +90,7 @@ export function AgentSessionHeader({
           <AgentSessionPanelButton
             panel="recap"
             active={panel === 'recap'}
-            count={recapOpenCount(session.recap)}
+            count={recapAttention(session.recap).total}
             running={false}
             attention
             label={t('seal.sessionRecap.title', 'Recap')}

@@ -277,7 +277,7 @@ test('summarizer failure in a chat: the failed recap is written without new chat
 
   await panel.locator('[data-recap-refresh]').click()
   await waitForChatRecapPass(orcaPage, sessionId, 0, 60_000)
-  await expect(panel.locator('[data-recap-section="asked"] li')).toHaveCount(1)
+  await expect(panel.locator('[data-recap-section="requests"]')).toBeVisible()
   const refreshed = await captureRecapCheckpoint(
     orcaPage,
     testInfo,

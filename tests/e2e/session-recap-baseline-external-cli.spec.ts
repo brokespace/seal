@@ -30,11 +30,13 @@ import {
   RECAP_BASELINE_ENABLED,
   openRecapPanel,
   readRecapPanelLists,
+  recapPanelItems,
   readRecapScenario,
   recapEvidencePath,
   recordedRecapCassette,
   recordedRecapRepliesWithRepairs,
   saveRecapEvidence,
+  unfoldSettledRecapRequests,
   waitForRecapPass,
   type RecapPanelLists
 } from './helpers/recap-baseline'
@@ -130,16 +132,17 @@ function waitForSessionRecapPass(
   )
 }
 
-/** The panel draws the recap the host holds: every item under its section, and no section without items. */
+/** The panel draws the recap the host holds: every item in its list, and nothing in a list without items. */
 async function expectPanelShows(panel: Locator, view: SessionRecapView): Promise<void> {
+  await unfoldSettledRecapRequests(panel)
   for (const section of RECAP_SECTIONS) {
-    const shown = panel.locator(`[data-recap-section="${section}"]`)
+    const shown = recapPanelItems(panel, section)
     const items = view.recap?.[section] ?? []
     if (items.length === 0) {
       await expect(shown).toHaveCount(0)
     }
     for (const item of items) {
-      await expect(shown).toContainText(item.text)
+      await expect(shown.filter({ hasText: item.text })).not.toHaveCount(0)
     }
   }
 }
@@ -463,9 +466,11 @@ test.describe('session recap baseline: agent CLI sessions started outside Seal',
       // The recap is up to date, so this look starts no pass.
       const panel = await openRecapPanel(orcaPage, session.sessionId)
       await baseline.checkpoint('after turn 2', 'after-turn-2', panel)
-      const ignored = panel.locator('[data-recap-section="ignored"]')
-      if ((await ignored.count()) > 0) {
-        await ignored.screenshot({ path: recapEvidencePath(testInfo, 'after-turn-2-ignored.png') })
+      const requests = panel.locator('[data-recap-section="requests"]')
+      if ((await requests.count()) > 0) {
+        await requests.screenshot({
+          path: recapEvidencePath(testInfo, 'after-turn-2-requests.png')
+        })
       }
     } finally {
       session.stop()

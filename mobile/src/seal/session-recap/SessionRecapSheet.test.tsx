@@ -25,6 +25,7 @@ vi.mock('lucide-react-native', () => ({
   GitPullRequest: 'GitPullRequest',
   Link2: 'Link2',
   ListChecks: 'ListChecks',
+  ListX: 'ListX',
   MessageCircleQuestionMark: 'MessageCircleQuestionMark',
   Undo2: 'Undo2',
   X: 'X'
@@ -141,6 +142,48 @@ describe('SessionRecapSheet', () => {
     press(byTestId('recap-restore-t3')[0])
 
     expect(onMark.mock.calls).toEqual([['t3', null]])
+  })
+
+  it('lists requests by where they stand, and lets the user settle one or take a tick back', () => {
+    const judged = {
+      at: LAST_LOOK + 400,
+      coveredTo: 0,
+      model: '@cf/cloudflare/clef',
+      questionBook: 'book',
+      answers: { done: 0.02, did_part: 0.02, declined: 0.02, withdrawn: 0.02, left_undone: 0.9 },
+      leftUndone: true,
+      turnEnded: true,
+      complete: true
+    }
+    const base = recapView()
+    const { onMark } = render({
+      view: recapView({
+        recap: {
+          ...base.recap!,
+          requests: [
+            { ...item('a1', 'Add a flag', 10, null), status: 'addressed', statusAt: 20 },
+            { ...item('a2', 'Log the event id', 30, null), status: 'open', statusAt: 30, judged },
+            { ...item('a3', 'Write the backfill', 40, null), status: 'partly', statusAt: 50 }
+          ]
+        },
+        marks: { a3: 'done' },
+        turnEnded: true
+      })
+    })
+
+    expect(byTestId('recap-request-state-not-addressed')).toHaveLength(1)
+    expect(byTestId('recap-request-a1')).toHaveLength(0)
+
+    press(byTestId('recap-request-dismiss-a2')[0])
+    press(byTestId('recap-requests-settled')[0])
+    expect(byTestId('recap-request-a1')).toHaveLength(1)
+    expect(byTestId('recap-request-not-done-a1')).toHaveLength(0)
+    press(byTestId('recap-request-not-done-a3')[0])
+
+    expect(onMark.mock.calls).toEqual([
+      ['a2', 'dismissed'],
+      ['a3', null]
+    ])
   })
 
   it('sends a pull request to the browser', () => {
