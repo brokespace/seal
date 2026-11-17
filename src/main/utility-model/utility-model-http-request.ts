@@ -56,11 +56,17 @@ export async function requestUtilityModelJson(input: {
       throw error
     }
     // The cause can carry the request URL; only its class of failure is reported.
+    if (timeout.aborted) {
+      // A model that is too slow is that model's own failure: the next one may answer in time.
+      throw new UtilityModelError(
+        'network',
+        `${input.provider} did not answer in time`,
+        input.model ? { model: input.model, modelScoped: true } : {}
+      )
+    }
     throw new UtilityModelError(
       'network',
-      timeout.aborted
-        ? `${input.provider} did not answer in time`
-        : `Could not reach ${input.provider}`,
+      `Could not reach ${input.provider}`,
       input.model ? { model: input.model } : {}
     )
   }

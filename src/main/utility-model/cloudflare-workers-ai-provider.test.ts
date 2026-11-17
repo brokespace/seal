@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCloudflareWorkersAiProvider } from './cloudflare-workers-ai-provider'
 import { UtilityModelError } from './utility-model-provider'
+import { UtilityModelService } from './utility-model-service'
 
 const CREDENTIALS = { accountId: 'a'.repeat(32), apiToken: 'cf-token-value-0123456789' }
 const REQUEST = { messages: [{ role: 'user' as const, content: 'hello' }], maxTokens: 48 }
@@ -124,6 +125,34 @@ describe('Cloudflare Workers AI provider', () => {
 
     expect(error.kind).toBe('network')
     expect(error.message).toBe('Could not reach Cloudflare')
+  })
+
+  it('has the next model answer when one fails on its server or does not answer in time', async () => {
+    const answered = { success: true, result: { response: 'Fixed the login redirect.' } }
+    const failing = (fail: (init: RequestInit) => Promise<Response>) =>
+      new UtilityModelService({
+        backend: async () => ({
+          provider: createCloudflareWorkersAiProvider(CREDENTIALS, (url, init) =>
+            url.endsWith('glm-4.7-flash') ? fail(init) : Promise.resolve(json(200, answered))
+          ),
+          models: ['@cf/zai-org/glm-4.7-flash', '@cf/google/gemma-4-26b-a4b-it']
+        })
+      })
+    const erroring = failing(async () =>
+      json(500, { success: false, errors: [{ message: 'Internal server error' }] })
+    )
+    const silent = failing(
+      (init) =>
+        new Promise((_resolve, reject) =>
+          init.signal?.addEventListener('abort', () => reject(new Error('aborted')))
+        )
+    )
+
+    const afterError = await erroring.complete(REQUEST)
+    const afterSilence = await silent.complete({ ...REQUEST, timeoutMs: 5 })
+
+    expect(afterError.model).toBe('@cf/google/gemma-4-26b-a4b-it')
+    expect(afterSilence.model).toBe('@cf/google/gemma-4-26b-a4b-it')
   })
 
   it('posts a decision model its own body and reads the answers and the tokens billed', async () => {

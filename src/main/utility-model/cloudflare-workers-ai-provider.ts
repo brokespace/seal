@@ -55,7 +55,9 @@ function failureOf(response: Response, body: unknown, model?: string): UtilityMo
   if (response.status === 404 || /no such model|model not found/i.test(message)) {
     return new UtilityModelError('model-not-found', message, detail)
   }
-  return new UtilityModelError('bad-response', message, detail)
+  // A server error or a timeout upstream is that model's host failing: the next model may answer.
+  const modelScoped = model !== undefined && (response.status === 408 || response.status >= 500)
+  return new UtilityModelError('bad-response', message, { ...detail, modelScoped })
 }
 
 /** `result.response`, else the OpenAI-shaped `result.choices[0].message.content` newer models answer with. */
