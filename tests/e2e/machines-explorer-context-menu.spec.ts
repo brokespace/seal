@@ -5,6 +5,7 @@ import path from 'node:path'
 import { expect, test, type ElectronApplication, type Page } from '@stablyai/playwright-test'
 import { launchHeadlessPairedRuntimeHost } from './helpers/headless-paired-runtime-host'
 import { localSshdUnavailableReason, startLocalSshdMachines } from './helpers/local-sshd-machines'
+import { connectRemoteMachines, listMachines, selectMachine } from './helpers/machines-page'
 import { createRestartSession } from './helpers/orca-restart'
 import { seedIsolatedSshConfig } from './helpers/ssh-config-host-picker'
 import { waitForSessionReady } from './helpers/store'
@@ -13,40 +14,8 @@ import type { MachineId } from '../../src/shared/machines/machine-types'
 const SSH_ALIAS = 'seal-e2e-menu-box'
 const SSH_USER = 'sealmenu'
 
-type MachineRow = { id: MachineId; ssh: boolean; server: boolean }
-
-async function listMachines(page: Page): Promise<MachineRow[]> {
-  return page.evaluate(async () =>
-    (await window.api.machines!.list()).map((machine) => ({
-      id: machine.id,
-      ssh: machine.ssh !== null,
-      server: machine.server !== null
-    }))
-  )
-}
-
-async function connectRemoteMachines(page: Page): Promise<void> {
-  for (const machine of await listMachines(page)) {
-    if (machine.id !== 'local') {
-      // A machine reached both ways merges into one, so an id listed a moment ago can vanish.
-      await page
-        .evaluate((machineId) => window.api.machines!.connect({ machineId }), machine.id)
-        .catch((error: unknown) => {
-          if (!String(error).includes('Unknown machine')) {
-            throw error
-          }
-        })
-    }
-  }
-}
-
 async function showMachine(page: Page, machineId: MachineId): Promise<void> {
-  // A narrow window shows one machine in place of the list.
-  const back = page.getByRole('button', { name: 'All machines' })
-  if (await back.isVisible()) {
-    await back.click()
-  }
-  await page.locator(`[data-machines-page] [data-machine-id="${machineId}"]`).click()
+  await selectMachine(page, machineId)
   await expect(
     page.locator(`[data-machine-explorer="${machineId}"] [role=treeitem]`).first()
   ).toBeVisible({ timeout: 120_000 })
