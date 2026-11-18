@@ -4918,37 +4918,8 @@
   },
   "agents": {
     "list": {
-      "idleCount": "{{count}} idle",
-      "offlineTitle": "{{desktop}} is offline",
-      "offlineMessage": "Reconnect it to open this agent.",
-      "actions": "Actions for {{title}}",
-      "workers_one": "{{count}} worker",
-      "workers_other": "{{count}} workers",
       "emptyTitle": "No agents running",
-      "pairDesktop": "Pair a desktop to see its agents here.",
-      "unread": "Unread",
-      "hideWorkers": "Hide {{workers}}",
-      "showWorkers": "Show {{workers}}"
-    },
-    "actions": {
-      "offlineHint": "Its desktop is offline.",
-      "open": "Open",
-      "goToWorkspace": "Go to workspace",
-      "copyTitle": "Copy title",
-      "copied": "Copied",
-      "copyFailed": "Couldn’t copy the title",
-      "markRead": "Mark as read",
-      "markUnread": "Mark as unread",
-      "clear": "Clear from list"
-    },
-    "swipe": {
-      "read": "Read",
-      "unread": "Unread",
-      "clear": "Clear"
-    },
-    "activity": {
-      "needsWindow": "Couldn’t update. Open Orca on {{desktop}}.",
-      "failed": "Couldn’t update the agent list."
+      "pairDesktop": "Pair a desktop to see its agents here."
     }
   }
 }

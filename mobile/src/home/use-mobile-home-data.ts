@@ -1,28 +1,20 @@
 import { useRouter, useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  notifyManager,
   replaceEqualDeep,
   useQueries,
   useQueryClient,
   type QueryObserverResult
 } from '@tanstack/react-query'
 import { warmUpWebShell } from '../../modules/orca-mobile-web-shell/src'
-import {
-  countAgentsNeedingYouByHost,
-  selectActiveAgents,
-  selectAgentsNeedingYou,
-  type AgentListInput
-} from '../agents/agent-list-rows'
-import { useAgentActivityWrites } from '../agents/use-agent-activity-writes'
 import { accountsSnapshotOptions } from '../accounts/accounts-snapshot-stream'
 import type { AccountsSnapshot } from '../accounts/accounts-snapshot'
 import {
   HOST_LIST_TARGET,
-  homeWorktreeCountsKey,
+  hostServerWorkspacesInput,
+  hostServerWorkspacesQuery,
   NO_HOST_LIST_INPUT
 } from '../host-screen/catalog/host-list-queries'
-import { useNow } from '../hooks/use-now'
 import {
   loadMobileOnboardingSteps,
   mobileOnboardingDestination
@@ -37,15 +29,22 @@ import { hostObserverOptions, type HostQuery } from '../query/host-query'
 import { isHostNotConnectedError } from '../query/host-query-errors'
 import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import {
+  countHomeWorktrees,
   homeWorktreeCountsQuery,
   type HomeWorktreeCounts
 } from '../worktree/home-host-worktree-fetch'
-import { homeWorktreeInfo, type HostWorktreeInfo } from '../worktree/home-worktree-info'
+import {
+  homeWorktreeInfo,
+  withServerWorktreeCounts,
+  type HostWorktreeInfo
+} from '../worktree/home-worktree-info'
+import type { ServerWorkspaces } from '../worktree/server-workspaces'
 import { homeStatsQuery } from '../stats/home-stats-summary-read'
 import { totalHomeStats, type HomeStatsRow } from '../stats/home-stats-total'
 import { projectHomeHostConnections } from './home-host-connection-projection'
 import { restoreHomeQueries } from './home-query-restore'
 import { useMobileHomeHostConnections } from './use-mobile-home-host-connections'
+import { useHomeLiveSessions } from './use-home-live-sessions'
 
 export type MobileHomeData = ReturnType<typeof useMobileHomeData>
 
@@ -58,6 +57,9 @@ const homeQueryOptions = <TData>(
   query: HostQuery<typeof NO_HOST_LIST_INPUT, TData>,
   host: HomeHost
 ) => hostObserverOptions(query, host.client, host.hostId, HOST_LIST_TARGET, NO_HOST_LIST_INPUT)
+
+// The key a current desktop stores its server rows under, as the host screen reads them first.
+const SERVER_WORKSPACES_INPUT = hostServerWorkspacesInput(null)
 
 const readOf = (result: QueryObserverResult<HomeWorktreeCounts>) => ({
   data: result.data,
@@ -78,7 +80,6 @@ export function useMobileHomeData() {
   const hosts = useMemo(() => selectConnectableHostProfiles(hostCatalog), [hostCatalog])
   const connections = useMobileHomeHostConnections(hosts, hostCatalog)
   const { allClients, hostLastConnected, hostStates } = connections
-  const allClientsRef = useRef(allClients)
   // Every paired desktop keeps its last counts and totals on Home, connected or not.
   const homeHosts = useMemo((): HomeHost[] => {
     const clients = new Map(allClients.map((entry) => [entry.hostId, entry.client]))
@@ -117,21 +118,54 @@ export function useMobileHomeData() {
       const byHost: Record<string, HostWorktreeInfo> = {}
       homeHosts.forEach(({ hostId }, at) => {
         const result = results[at]
-        const info = result && homeWorktreeInfo(hostId, readOf(result), isLive)
+        const info = result && homeWorktreeInfo(hostId, readOf(result))
         if (info) {
           byHost[hostId] = info
         }
       })
       return byHost
     },
-    [homeHosts, isLive]
+    [homeHosts]
   )
   // A hidden Home reads nothing; coming back reads what went stale meanwhile.
-  const worktreeInfo = useQueries({
+  const desktopWorktreeInfo = useQueries({
     queries: countsQueries,
     combine: combineCounts,
     subscribed: homeFocused
   })
+  // The servers a desktop relays to list in its sidebar and host screen, so its card counts them too.
+  const serverQueries = useMemo(
+    () =>
+      homeHosts.map((host) =>
+        hostObserverOptions(
+          hostServerWorkspacesQuery,
+          host.client,
+          host.hostId,
+          HOST_LIST_TARGET,
+          SERVER_WORKSPACES_INPUT
+        )
+      ),
+    [homeHosts]
+  )
+  const combineServerCounts = useCallback(
+    (results: QueryObserverResult<ServerWorkspaces>[]) =>
+      Object.fromEntries(
+        homeHosts.map(({ hostId }, at) => [
+          hostId,
+          countHomeWorktrees(results[at]?.data?.worktrees ?? [])
+        ])
+      ),
+    [homeHosts]
+  )
+  const serverCounts = useQueries({
+    queries: serverQueries,
+    combine: combineServerCounts,
+    subscribed: homeFocused
+  })
+  const worktreeInfo = useMemo(
+    () => withServerWorktreeCounts(desktopWorktreeInfo, serverCounts),
+    [desktopWorktreeInfo, serverCounts]
+  )
   const statsQueries = useMemo(
     () => homeHosts.map((host) => homeQueryOptions(homeStatsQuery, host)),
     [homeHosts]
@@ -181,10 +215,6 @@ export function useMobileHomeData() {
     }
   }, [hasPairedHost])
 
-  useEffect(() => {
-    allClientsRef.current = allClients
-  }, [allClients])
-
   useFocusEffect(
     useCallback(() => {
       let stale = false
@@ -220,45 +250,8 @@ export function useMobileHomeData() {
 
   const sortedHosts = useMemo(() => sortHostsByLastConnected(hosts), [hosts])
   const sortedHostCatalog = useMemo(() => sortHostsByLastConnected(hostCatalog), [hostCatalog])
-  // One clock for every agent count, so Feed, the Agents badge and each desktop agree.
-  const now = useNow(30_000, homeFocused)
-  // A fresh read, not one already out: that one may predate the write it must carry. The cached rows stay
-  // its delta base, so the desktop answers with only what changed.
-  const refetchHostAgents = useCallback(
-    async (hostId: string): Promise<void> => {
-      const entry = allClientsRef.current.find((candidate) => candidate.hostId === hostId)
-      if (entry?.client.getState() !== 'connected') {
-        return
-      }
-      await queryClient
-        .refetchQueries(
-          { queryKey: homeWorktreeCountsKey(hostId), exact: true },
-          { cancelRefetch: true, throwOnError: false }
-        )
-        .catch(() => undefined)
-      // Resolves once observers hold the answer, so the write's guess isn't dropped a frame early.
-      await new Promise<void>((resolve) => notifyManager.schedule(resolve))
-    },
-    [queryClient]
-  )
-  const agentActivity = useAgentActivityWrites(allClients, refetchHostAgents)
-  const { pendingActivity } = agentActivity
-  const agentList = useMemo<AgentListInput>(
-    () => ({
-      hosts: sortedHosts,
-      hostStates,
-      worktreeInfo,
-      now,
-      pendingActivity
-    }),
-    [sortedHosts, hostStates, worktreeInfo, now, pendingActivity]
-  )
-  const agentsNeedingYou = useMemo(() => selectAgentsNeedingYou(agentList), [agentList])
-  const activeAgents = useMemo(() => selectActiveAgents(agentList), [agentList])
-  const needsYouByHost = useMemo(
-    () => countAgentsNeedingYouByHost(agentsNeedingYou),
-    [agentsNeedingYou]
-  )
+  // Every desktop's live sessions, one record per session: the Agents tab, its badge and Feed agree.
+  const liveSessions = useHomeLiveSessions(homeHosts)
   const connectedHosts = useMemo(
     () => sortedHosts.filter((host) => hostStates[host.id] === 'connected'),
     [sortedHosts, hostStates]
@@ -275,16 +268,12 @@ export function useMobileHomeData() {
   return {
     ...connections,
     accountsByHost,
-    applyAgentActivity: agentActivity.apply,
-    activeAgents,
-    agentList,
-    agentsNeedingYou,
     connectedHosts,
     hostCatalog,
     hostCatalogLoaded,
     hostConnections,
     hostsConnecting,
-    needsYouByHost,
+    liveSessions,
     router,
     setHostCatalog,
     sortedHostCatalog,

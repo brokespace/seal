@@ -35,6 +35,8 @@ import { hostScreenStyles as styles } from '../host-screen-styles'
 import { useRepoLookById, type RepoLook } from '../catalog/host-repo-looks'
 import { HostPendingCreationRow } from './host-pending-creation-row'
 import { useSlowPendingKeys } from './use-slow-pending-keys'
+import { useHostWorkspaceSessions } from './host-workspace-sessions'
+import { useLiveSessionOpener } from '../../seal/live-sessions/LiveSessionsHostList'
 import { useHostMutationDrafts } from '../../query/host-mutation-drafts'
 import { workspaceRenameDraftKey } from '../workspace-actions/workspace-rename-sheet'
 import { projectGroupHeaderIndent } from '../../worktree/project-group-indent'
@@ -116,6 +118,9 @@ export function HostWorkspaceList({
     [rawSections]
   )
   const { collapsedGroups } = controller
+  const workspaceSessions = useHostWorkspaceSessions(client, displayWorktrees)
+  const sessionOpener = useLiveSessionOpener(hostId)
+  const openSession = sessionOpener.open
   const { groupBy, agentActivityDisplayMode } = state.view
   const { toggleCollapsed, toggleWorktreeLineage } = settings
   const { setActionTarget } = state
@@ -163,9 +168,13 @@ export function HostWorkspaceList({
         onLongPress={item.workspaceKind === 'folder-workspace' ? undefined : setActionTarget}
         onToggleLineage={toggleWorktreeLineage}
         unsavedName={unsavedRename(renameDrafts, hostId, item)}
+        sessions={workspaceSessions.get(getWorktreeRowIdentity(item))}
+        onSessionPress={openSession}
       />
     ),
     [
+      workspaceSessions,
+      openSession,
       renameDrafts,
       hostId,
       isReadOnly,

@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
 import type { RpcClient } from '../../transport/rpc/rpc-client-contract'
 import { readLiveMessages, readLiveSessions } from './live-session-operations'
 import {
@@ -218,4 +218,33 @@ export function useLiveSessionsFeed(client: RpcClient | null): LiveSessionsFeedS
   }, [feed])
   const upsertMessage = useCallback((message: LiveMessage) => feed?.upsertMessage(message), [feed])
   return { ...state, refresh, upsertMessage }
+}
+
+/** Each client's feed state, in order, on the same shared streams; a missing client reads as empty. */
+export function useLiveSessionsFeedStates(
+  clients: readonly (RpcClient | null)[]
+): readonly LiveSessionsFeedState[] {
+  const feeds = useMemo(() => clients.map((client) => (client ? feedFor(client) : null)), [clients])
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      const unsubscribes = feeds.map((feed) => feed?.subscribe(listener))
+      return () => {
+        for (const unsubscribe of unsubscribes) {
+          unsubscribe?.()
+        }
+      }
+    },
+    [feeds]
+  )
+  // The snapshot keeps its identity until a feed's state changes, as useSyncExternalStore requires.
+  const last = useRef<readonly LiveSessionsFeedState[]>([])
+  const getSnapshot = useCallback(() => {
+    const states = feeds.map((feed) => feed?.getState() ?? EMPTY)
+    const held = last.current
+    if (held.length !== states.length || states.some((state, at) => state !== held[at])) {
+      last.current = states
+    }
+    return last.current
+  }, [feeds])
+  return useSyncExternalStore(subscribe, getSnapshot)
 }

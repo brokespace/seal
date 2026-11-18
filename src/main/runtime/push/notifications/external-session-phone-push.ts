@@ -1,6 +1,7 @@
-// Push a notice about a session started outside Seal from the host whose registry scans it. Chats and panes are pushed by their own owners.
+// Push a notice about a session started outside Seal to this host's phones. Chats and panes are pushed by their own owners.
 import { isPairedServerLiveSession } from '../../../../shared/live-sessions/live-session-paired-server'
 import type { LiveSession } from '../../../../shared/live-sessions/live-session-types'
+import { parseExecutionHostId } from '../../../../shared/execution-host'
 import {
   LIVE_SESSION_NOTICE_AGENT_STATE,
   type LiveSessionNotification
@@ -24,10 +25,14 @@ export function createExternalSessionPhonePush(
       return
     }
     const session = sessions.get(sessionId)
-    // A paired server lists the session in its own registry and pushes its own phones.
-    if (!session || isPairedServerLiveSession(session)) {
+    if (!session) {
       return
     }
+    // A paired server never holds the push registrations of the phones this desktop relays to it,
+    // so this desktop pushes its sessions, as it does the server's panes.
+    const server = isPairedServerLiveSession(session)
+      ? parseExecutionHostId(session.machine.executionHostId)
+      : null
     runtime.dispatchMobileNotification({
       type: 'notification',
       emittedAt: now(),
@@ -35,6 +40,7 @@ export function createExternalSessionPhonePush(
       title,
       body,
       ...(session.workspace ? { worktreeId: session.workspace.worktreeId } : {}),
+      ...(server?.kind === 'runtime' ? { executionHost: server.id } : {}),
       agentState: LIVE_SESSION_NOTICE_AGENT_STATE[kind],
       // Keyed per notice: a repeat collapses, a question right after its turn's end does not.
       attentionKey: `live-session:${sessionId}:${kind}`

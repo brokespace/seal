@@ -87,13 +87,21 @@ function readApproval(lines: string[]): AgentScreenApproval | null {
     return null
   }
   const options: AgentScreenApproval['options'] = []
+  let labelColumn = -1
   for (const line of region.slice(questionAt + 1)) {
     const text = inner(line).replace(CURSOR, '')
     const m = OPTION.exec(text)
+    const last = options.at(-1)
+    // Columns as drawn, a dialog's left border blanked so indents compare.
+    const drawn = line.replace(/^(\s*)[\u2502\u2503|]/, '$1 ')
     if (m) {
       options.push({ id: m[1], label: m[2].replace(/\s*\((?:esc|[a-z])\)$/i, ''), keys: m[1] })
+      labelColumn = drawn.indexOf(m[2])
     } else if (options.length > 0 && text.trim() === '') {
       break
+    } else if (last && labelColumn > 0 && drawn.search(/\S/) >= labelColumn) {
+      // A long label wraps onto lines indented under its first.
+      last.label = `${last.label} ${text.trim()}`
     }
   }
   const question = QUESTION.exec(inner(region[questionAt]))![1]

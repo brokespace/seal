@@ -96,7 +96,7 @@ describe('phone push for sessions outside Seal', () => {
     ])
   })
 
-  it('leaves chats and panes to their owners, and a paired server’s session to that server', () => {
+  it('leaves chats and panes to their owners', () => {
     const { pushed, see } = host({ notifications: allOn })
     const others: LiveSession[] = [
       { ...outside, id: 'chat', surface: { kind: 'chat', sessionId: 'c1', tabId: 'tab-c1' } },
@@ -108,14 +108,28 @@ describe('phone push for sessions outside Seal', () => {
       // The one notice the registry notifier raises for a surface it does not own.
       see({ ...session, status: 'waiting-input', statusSource: 'classifier' })
     }
+    expect(pushed).toEqual([])
+  })
+
+  it('pushes a paired server’s session for that server, which holds no registration of this phone', () => {
+    const { pushed, see } = host({ notifications: allOn })
     const onServer: LiveSession = {
       ...outside,
-      id: 'box:claude:s1',
-      machine: { hostId: 'box', label: 'build-box', kind: 'remote', connection: 'server' }
+      id: 'runtime:box:claude:s1',
+      machine: {
+        hostId: 'runtime:box',
+        label: 'build-box',
+        kind: 'remote',
+        executionHostId: 'runtime:box',
+        connection: 'server'
+      },
+      workspace: { worktreeId: 'repo-1::/srv/shop', projectKey: 'repo:repo-1', projectName: 'shop' }
     }
     see(onServer)
     see({ ...onServer, ...asking })
-    expect(pushed).toEqual([])
+    expect(pushed).toMatchObject([
+      { worktreeId: 'repo-1::/srv/shop', executionHost: 'runtime:box', agentState: 'waiting' }
+    ])
   })
 
   it('follows "Agent needs input", "Agent task complete" and the switch for outside sessions', () => {

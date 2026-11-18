@@ -72,7 +72,9 @@ const liveSessionSchema = z.looseObject({
     label: z.string(),
     kind: z.enum(['local', 'remote', 'ssh', 'runtime']),
     machineId: z.string().optional(),
-    executionHostId: z.string().optional()
+    executionHostId: z.string().optional(),
+    // `server`: a paired Seal server's own session, relayed by this desktop.
+    connection: z.enum(['local', 'ssh', 'server']).optional().catch(undefined)
   }),
   origin: z.enum(['seal', 'external']),
   cwd: z.string().nullable(),
