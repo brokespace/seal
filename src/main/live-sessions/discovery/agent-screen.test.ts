@@ -59,6 +59,26 @@ describe('parseAgentScreen', () => {
     })
   })
 
+  it('joins an option label Claude Code wraps onto the next line', () => {
+    const screen = parseAgentScreen(
+      [
+        ' touch phone-approved.txt && echo created',
+        ' Do you want to proceed?',
+        ' \u276f 1. Yes',
+        '   2. Yes, and always allow access to /home/dev/permtest from',
+        '      this project',
+        '   3. No',
+        '',
+        ' Esc to cancel \u00b7 Tab to amend'
+      ].join('\n')
+    )
+    expect(screen.approval?.options.map((option) => option.label)).toEqual([
+      'Yes',
+      'Yes, and always allow access to /home/dev/permtest from this project',
+      'No'
+    ])
+  })
+
   it('reads a Codex approval and its bare composer', () => {
     const approval = parseAgentScreen(
       [
