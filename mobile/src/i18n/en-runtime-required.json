@@ -9,12 +9,6 @@
       "messages_other": "{{count}} messages"
     }
   },
-  "agents": {
-    "list": {
-      "workers_one": "{{count}} worker",
-      "workers_other": "{{count}} workers"
-    }
-  },
   "app": {
     "terminalSettings": {
       "restoreAfterMinutes_one": "After {{count}} minute",
