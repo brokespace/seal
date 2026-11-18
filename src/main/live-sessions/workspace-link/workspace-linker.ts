@@ -70,7 +70,8 @@ function folderPlace(session: LiveSession): FolderPlace | null {
 }
 
 function sessionWorkspace(workspace: SessionWorkspace): SessionWorkspace {
-  return { worktreeId: workspace.worktreeId, projectKey: workspace.projectKey }
+  const { worktreeId, projectKey, projectName } = workspace
+  return { worktreeId, projectKey, ...(projectName ? { projectName } : {}) }
 }
 
 function repositoryOf(probe: ReadableProbe): LiveSessionRepository | null {

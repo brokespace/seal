@@ -189,7 +189,11 @@ const serverSessionSchema = z.object({
   surface: surfaceSchema.optional().catch(undefined),
   capabilities: capabilitiesSchema.optional().catch(undefined),
   workspace: z
-    .object({ worktreeId: z.string().min(1), projectKey: z.string() })
+    .object({
+      worktreeId: z.string().min(1),
+      projectKey: z.string(),
+      projectName: z.string().min(1).optional().catch(undefined)
+    })
     .optional()
     .catch(undefined),
   repository: z

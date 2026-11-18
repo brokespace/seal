@@ -169,8 +169,8 @@ export type LiveSession = {
   /** Set by every registry; a record from a server that predates it is filled in from `origin`. */
   surface: AgentSessionSurface
   capabilities: AgentSessionCapabilityFlags
-  /** The workspace it belongs to, set by the registry's link step. */
-  workspace?: { worktreeId: string; projectKey: string }
+  /** The workspace it belongs to, set by the registry's link step; `projectName` names its project. */
+  workspace?: { worktreeId: string; projectKey: string; projectName?: string }
   /** The git repository its folder is in, when no workspace holds it and its machine could say. */
   repository?: LiveSessionRepository
   /** The project the user moved it to in Seal; wins over the one its folder or workspace gives it. */
